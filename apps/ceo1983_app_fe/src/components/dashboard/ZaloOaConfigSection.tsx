@@ -389,16 +389,26 @@ export const ZaloOaConfigSection: React.FC = () => {
         }
       );
       const data = await res.json();
-      if (data && data.success && Array.isArray(data.data)) {
-        setRecentChats(data.data);
-        if (data.data.length > 0) {
+      if (data && data.success) {
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          setRecentChats(data.data);
           toast.success(`🎉 Đã tìm thấy ${data.data.length} hội viên vừa tương tác qua Zalo OA!`);
           if (!selectedUserId) {
             setSelectedUserId(data.data[0].userId);
             setTargetMemberName(data.data[0].displayName);
           }
+        } else if (data.zaloError && data.zaloError.code !== 0) {
+          const errCode = data.zaloError.code;
+          const errMsg = data.zaloError.message;
+          if (errCode === -216) {
+            toast.error(`Zalo OA báo: Access Token không hợp lệ hoặc đã hết hạn (Mã: -216). Vui lòng nhấn nút 'Gia hạn Access Token' phía dưới!`);
+          } else if (errCode === -212) {
+            toast.error(`Zalo OA báo: Ứng dụng chưa được cấp quyền Quản lý tin nhắn trên Zalo Developers (Mã: -212). Bạn có thể nhập trực tiếp Zalo UID của hội viên để gửi thật ngay!`);
+          } else {
+            toast.warning(`Zalo OA phản hồi: ${errMsg} (Mã: ${errCode}). Bạn có thể nhập trực tiếp Zalo UID của hội viên vào ô bên dưới.`);
+          }
         } else {
-          toast.info("Chưa có hội viên nào gửi tin nhắn tới Zalo OA này.");
+          toast.info("Chưa có tương tác mới ghi nhận từ API Zalo. Bạn có thể nhập trực tiếp Zalo User ID (UID) của hội viên vào ô bên dưới để bắn thật ngay lập tức!");
         }
       } else {
         toast.error(`Zalo phản hồi: ${data?.message || "Không thể tải danh sách chat"}`);
@@ -414,6 +424,10 @@ export const ZaloOaConfigSection: React.FC = () => {
   const handleSendDirectNotice = async () => {
     if (!accessToken.trim()) {
       toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
+      return;
+    }
+    if (!selectedUserId.trim()) {
+      toast.error("Vui lòng nhập Zalo User ID (UID) của hội viên hoặc bấm 'Đồng bộ danh bạ từ Zalo OA' trước khi bắn thông báo thật!");
       return;
     }
     setSendingFeeNotice(true);
@@ -843,10 +857,50 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-500 italic">
-              💡 Bấm nút <b>"Đồng bộ danh bạ từ Zalo OA"</b> để tải hội viên (như Phạm Vũ) vừa chat với OA và tự động chọn Zalo UID. Nếu không chọn, hệ thống sẽ tự phân giải theo tên người nhận gần nhất.
-            </p>
+            <div className="space-y-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-slate-500">Gợi ý chọn nhanh hội viên CLB:</span>
+                {DEFAULT_BULK_MEMBERS.slice(0, 3).map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      setTargetMemberName(m.name);
+                      setTargetPhone(m.phone);
+                      setTargetMemberCode(m.memberCode);
+                      toast.info(`Đã chọn thông tin: ${m.name} (${m.phone})`);
+                    }}
+                    className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-500 transition font-medium cursor-pointer"
+                  >
+                    👤 {m.name} ({m.phone})
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-500 italic">
+                💡 <b>Mẹo đồng bộ nhanh:</b> Bấm <b>"Đồng bộ danh bạ từ Zalo OA"</b>. Nếu Zalo chưa cấp quyền đọc tin nhắn cho App, bạn có thể <b>nhập trực tiếp Zalo User ID (UID)</b> vào ô bên dưới (lấy từ Webhook hoặc trang chat.oa.zalo.me) để gửi tin nhắn thật 100%!
+              </p>
+            </div>
           )}
+
+          {/* Webhook Endpoint Banner */}
+          <div className="p-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mt-2">
+            <div className="text-xs text-blue-900 dark:text-blue-200">
+              <span className="font-bold">🔗 Zalo Webhook URL tự động nhận diện tin nhắn: </span>
+              <code className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 font-mono text-[11px]">
+                https://crm.ceo1983.viconnect.vn/api/zalo/webhook
+              </code>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText("https://crm.ceo1983.viconnect.vn/api/zalo/webhook");
+                toast.success("Đã sao chép Webhook URL vào bộ nhớ đệm!");
+              }}
+              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition cursor-pointer shrink-0"
+            >
+              Sao chép Webhook URL
+            </button>
+          </div>
         </div>
 
         {/* Form thiết lập thông số người nhận & 2 Nút Bắn Hành Động */}
@@ -886,6 +940,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
           <div>
             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center justify-between">
               <span>Zalo User ID (UID):</span>
+              <span className="text-[10px] text-blue-600 font-semibold">*Bắt buộc gửi thật</span>
             </label>
             <div className="relative">
               <KeyRound className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
@@ -893,8 +948,8 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                 type="text"
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
-                placeholder="Tự động phân giải / Chọn bên trên..."
-                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono text-foreground focus:ring-2 focus:ring-blue-500/20"
+                placeholder="Nhập UID (VD: 3700646744485476903)..."
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono text-foreground focus:ring-2 focus:ring-blue-500/20 font-bold"
               />
             </div>
           </div>

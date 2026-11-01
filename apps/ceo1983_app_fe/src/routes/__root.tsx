@@ -237,13 +237,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   })})();`;
 
   return (
-    <html
-      lang="vi"
-      className="dark"
-      data-theme="dark"
-      style={{ colorScheme: "dark" }}
-      suppressHydrationWarning
-    >
+    <html lang="vi" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />

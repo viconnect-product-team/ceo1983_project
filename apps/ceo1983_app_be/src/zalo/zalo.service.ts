@@ -35,8 +35,52 @@ export class SendBulkZaloMessageDto {
 @Injectable()
 export class ZaloService {
   private readonly logger = new Logger(ZaloService.name);
+  private readonly webhookInteractions = new Map<
+    string,
+    { userId: string; displayName: string; avatar: string; lastMessage: string; time: number }
+  >();
 
   constructor(@Optional() private readonly prisma?: PrismaService) {}
+
+  /**
+   * Tiếp nhận sự kiện Webhook thời gian thực từ Zalo OA (user_send_text, follow, v.v.)
+   */
+  recordWebhookInteraction(event: any) {
+    try {
+      const senderId =
+        event?.sender?.id ||
+        event?.user_id_by_app ||
+        event?.from_id ||
+        event?.follower?.id ||
+        event?.data?.sender?.id;
+      if (!senderId) return;
+
+      const uid = String(senderId).trim();
+      const msg =
+        event?.message?.text ||
+        event?.msg_text ||
+        event?.event_name ||
+        'Tương tác qua Zalo OA';
+      const time = event?.timestamp ? Number(event.timestamp) : Date.now();
+      const existing = this.webhookInteractions.get(uid);
+
+      this.webhookInteractions.set(uid, {
+        userId: uid,
+        displayName:
+          existing?.displayName ||
+          event?.sender?.name ||
+          event?.user_name ||
+          `Hội viên Zalo (${uid.slice(-4)})`,
+        avatar: existing?.avatar || event?.sender?.avatar || '',
+        lastMessage: msg,
+        time,
+      });
+
+      this.logger.log(`✅ [Zalo Webhook] Đã ghi nhận tương tác từ Zalo User ID: ${uid} - Nội dung: "${msg}"`);
+    } catch (err: any) {
+      this.logger.warn(`⚠️ [Zalo Webhook] Lỗi khi xử lý payload: ${err.message}`);
+    }
+  }
 
   /**
    * Tự động gia hạn Access Token mới bằng Refresh Token qua cổng OAuth Zalo (Server-to-Server, Không bị CORS)
@@ -80,11 +124,20 @@ export class ZaloService {
   }
 
   /**
-   * Lấy danh sách hội thoại gần nhất của Official Account (Chuẩn Zalo OpenAPI v2.0 listrecentchat & getfollowers)
+   * Lấy danh sách hội thoại gần nhất của Official Account (Chuẩn Zalo OpenAPI v2.0 listrecentchat & getfollowers kèm Webhook cache)
    */
   async getRecentChats(accessToken: string) {
     const chats: any[] = [];
     const seenIds = new Set<string>();
+    let lastZaloError: { code: number; message: string; guide?: string } | null = null;
+
+    // 0. Ưu tiên nạp các tương tác thời gian thực từ Zalo Webhook vừa gửi đến server
+    for (const item of this.webhookInteractions.values()) {
+      if (!seenIds.has(item.userId)) {
+        seenIds.add(item.userId);
+        chats.push(item);
+      }
+    }
 
     // 1. Thử lấy danh sách tin nhắn tương tác gần đây qua API listrecentchat
     try {
@@ -101,24 +154,38 @@ export class ZaloService {
         timeout: 5000,
       });
 
-      if (response.data && response.data.error === 0 && Array.isArray(response.data.data)) {
-        for (const item of response.data.data) {
-          // src === 1: Người dùng gửi cho OA (from_id là userId của khách)
-          // src === 0: OA gửi cho người dùng (to_id là userId của khách)
-          const uid = String(item.src === 1 ? item.from_id : item.to_id);
-          const name = item.src === 1 ? item.from_display_name : item.to_display_name;
-          const avatar = item.src === 1 ? item.from_avatar : item.to_avatar;
+      if (response.data) {
+        if (response.data.error === 0 && Array.isArray(response.data.data)) {
+          for (const item of response.data.data) {
+            // src === 1: Người dùng gửi cho OA (from_id là userId của khách)
+            // src === 0: OA gửi cho người dùng (to_id là userId của khách)
+            const uid = String(item.src === 1 ? item.from_id : item.to_id);
+            const name = item.src === 1 ? item.from_display_name : item.to_display_name;
+            const avatar = item.src === 1 ? item.from_avatar : item.to_avatar;
 
-          if (uid && uid !== 'undefined' && !seenIds.has(uid)) {
-            seenIds.add(uid);
-            chats.push({
-              userId: uid,
-              displayName: name || 'Hội viên Zalo',
-              avatar: avatar || '',
-              lastMessage: item.message || '',
-              time: item.time,
-            });
+            if (uid && uid !== 'undefined' && !seenIds.has(uid)) {
+              seenIds.add(uid);
+              chats.push({
+                userId: uid,
+                displayName: name || 'Hội viên Zalo',
+                avatar: avatar || '',
+                lastMessage: item.message || '',
+                time: item.time,
+              });
+            }
           }
+        } else if (response.data.error !== 0) {
+          lastZaloError = {
+            code: response.data.error,
+            message: response.data.message || 'Lỗi OpenAPI listrecentchat',
+            guide:
+              response.data.error === -216
+                ? 'Access Token đã hết hạn hoặc không hợp lệ. Vui lòng bấm Gia hạn Access Token!'
+                : response.data.error === -212
+                ? 'Ứng dụng chưa được kích hoạt quyền Quản lý tin nhắn trên Zalo Developers.'
+                : undefined,
+          };
+          this.logger.warn(`[Zalo OA] listrecentchat error ${response.data.error}: ${response.data.message}`);
         }
       }
     } catch (err: any) {
@@ -136,36 +203,48 @@ export class ZaloService {
           timeout: 5000,
         });
 
-        const users = followersRes.data?.data?.users;
-        if (Array.isArray(users) && users.length > 0) {
-          for (const u of users) {
-            const uid = String(u.user_id);
-            if (uid && !seenIds.has(uid)) {
-              seenIds.add(uid);
+        if (followersRes.data) {
+          if (followersRes.data.error === 0 && Array.isArray(followersRes.data?.data?.users)) {
+            const users = followersRes.data.data.users;
+            for (const u of users) {
+              const uid = String(u.user_id);
+              if (uid && !seenIds.has(uid)) {
+                seenIds.add(uid);
 
-              // Lấy profile
-              let displayName = 'Hội viên Zalo';
-              let avatar = '';
-              try {
-                const profileRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getprofile', {
-                  headers: { access_token: accessToken.trim() },
-                  params: { data: JSON.stringify({ user_id: uid }) },
-                  timeout: 3000,
+                // Lấy profile
+                let displayName = 'Hội viên Zalo';
+                let avatar = '';
+                try {
+                  const profileRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getprofile', {
+                    headers: { access_token: accessToken.trim() },
+                    params: { data: JSON.stringify({ user_id: uid }) },
+                    timeout: 3000,
+                  });
+                  if (profileRes.data && profileRes.data.error === 0) {
+                    displayName = profileRes.data.data?.display_name || displayName;
+                    avatar = profileRes.data.data?.avatar || '';
+                  }
+                } catch {}
+
+                chats.push({
+                  userId: uid,
+                  displayName,
+                  avatar,
+                  lastMessage: 'Đang theo dõi Official Account',
+                  time: Date.now(),
                 });
-                if (profileRes.data && profileRes.data.error === 0) {
-                  displayName = profileRes.data.data?.display_name || displayName;
-                  avatar = profileRes.data.data?.avatar || '';
-                }
-              } catch {}
-
-              chats.push({
-                userId: uid,
-                displayName,
-                avatar,
-                lastMessage: 'Đang theo dõi Official Account',
-                time: Date.now(),
-              });
+              }
             }
+          } else if (followersRes.data.error !== 0 && !lastZaloError) {
+            lastZaloError = {
+              code: followersRes.data.error,
+              message: followersRes.data.message || 'Lỗi OpenAPI getfollowers',
+              guide:
+                followersRes.data.error === -216
+                  ? 'Access Token đã hết hạn hoặc không hợp lệ. Vui lòng bấm Gia hạn Access Token!'
+                  : undefined,
+            };
+            this.logger.warn(`[Zalo OA] getfollowers error ${followersRes.data.error}: ${followersRes.data.message}`);
           }
         }
       } catch (err: any) {
@@ -177,6 +256,7 @@ export class ZaloService {
       success: true,
       total: chats.length,
       data: chats,
+      zaloError: lastZaloError,
     };
   }
 
@@ -185,7 +265,7 @@ export class ZaloService {
    */
   async sendMessage(dto: SendZaloMessageDto) {
     if (!dto.accessToken?.trim()) {
-      throw new HttpException('Thiếu Access Token của Zalo OA', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Thiếu Access Token của Zalo OA. Vui lòng dán Access Token hợp lệ!', HttpStatus.BAD_REQUEST);
     }
     if (!dto.message?.trim()) {
       throw new HttpException('Nội dung tin nhắn không được để trống', HttpStatus.BAD_REQUEST);
@@ -194,12 +274,32 @@ export class ZaloService {
     let targetUserId = dto.userId?.trim();
     let recipientName = dto.targetName || 'Hội viên';
 
-    // Nếu chưa có User ID trực tiếp, tự động tìm kiếm qua danh bạ chat gần nhất của OA
+    // 1. Nếu chưa có User ID trực tiếp, thử tra cứu trong bộ nhớ Webhook interactions
+    if (!targetUserId && this.webhookInteractions.size > 0) {
+      const targetLower = (dto.targetName || '').toLowerCase().trim();
+      for (const item of this.webhookInteractions.values()) {
+        const nameLower = (item.displayName || '').toLowerCase().trim();
+        if (targetLower && (nameLower.includes(targetLower) || targetLower.includes(nameLower))) {
+          targetUserId = item.userId;
+          recipientName = item.displayName;
+          break;
+        }
+      }
+      if (!targetUserId) {
+        // Lấy hội viên mới nhắn tin gần nhất qua Webhook
+        const latest = Array.from(this.webhookInteractions.values()).pop();
+        if (latest) {
+          targetUserId = latest.userId;
+          recipientName = latest.displayName;
+        }
+      }
+    }
+
+    // 2. Nếu vẫn chưa có User ID, tự động tìm kiếm qua danh bạ chat gần nhất của OA
     if (!targetUserId) {
       try {
         const chatsRes = await this.getRecentChats(dto.accessToken);
         if (chatsRes.success && chatsRes.data.length > 0) {
-          // Tìm theo tên (ví dụ: "Phạm Vũ" hoặc "Vũ")
           const targetLower = (dto.targetName || '').toLowerCase().trim();
           const matched = chatsRes.data.find((c: any) => {
             const nameLower = (c.displayName || '').toLowerCase().trim();
@@ -216,7 +316,6 @@ export class ZaloService {
             targetUserId = matched.userId;
             recipientName = matched.displayName;
           } else {
-            // Mặc định lấy hội thoại tương tác gần nhất
             targetUserId = chatsRes.data[0].userId;
             recipientName = chatsRes.data[0].displayName;
           }
@@ -228,7 +327,7 @@ export class ZaloService {
 
     if (!targetUserId) {
       throw new HttpException(
-        'Không tìm thấy Zalo User ID tương ứng. Hội viên cần mở Zalo và gửi 1 tin nhắn chào vào Zalo OA "CLB CEO 1983" để kích hoạt cuộc trò chuyện trước khi hệ thống có thể gửi tin tự động!',
+        'Không tìm thấy Zalo User ID (UID) của người nhận. Vui lòng nhập trực tiếp Zalo UID vào ô cấu hình hoặc bấm "Đồng bộ danh bạ từ Zalo OA" sau khi hội viên gửi tin nhắn tới Zalo OA!',
         HttpStatus.BAD_REQUEST,
       );
     }
