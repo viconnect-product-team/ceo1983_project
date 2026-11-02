@@ -113,6 +113,7 @@ export class AnalyticsService {
         dealsValue: number;
         eventsAttended: number;
         feedInteractions: number;
+        referralsCount: number;
         interactionScore: number;
         totalValueVnd: number;
       }>();
@@ -137,6 +138,7 @@ export class AnalyticsService {
           dealsValue: 0,
           eventsAttended: 0,
           feedInteractions: 0,
+          referralsCount: 0,
           interactionScore: 0,
           totalValueVnd: fee,
         };
@@ -243,12 +245,12 @@ export class AnalyticsService {
         }
       });
 
-      // Define Medal Tier helper
+      // Define Medal Tier helper - Trả về đầy đủ Top 10 cho chức năng khen thưởng CRM & App
       const assignTiers = (list: any[]) => {
-        return list.slice(0, 3).map((item, idx) => {
-          let tier = 'Vàng';
-          let tierCode = 'GOLD';
-          let badgeColor = 'bg-amber-500 text-white';
+        return list.slice(0, 10).map((item, idx) => {
+          let tier = 'Top 10 Doanh Nhân Xuất Sắc';
+          let tierCode = 'TOP_HONOR';
+          let badgeColor = 'bg-blue-600 text-white';
           if (idx === 0) {
             tier = 'Kim Cương';
             tierCode = 'DIAMOND';
@@ -257,6 +259,10 @@ export class AnalyticsService {
             tier = 'Bạch Kim';
             tierCode = 'PLATINUM';
             badgeColor = 'bg-slate-300 text-slate-800';
+          } else if (idx === 2) {
+            tier = 'Vàng';
+            tierCode = 'GOLD';
+            badgeColor = 'bg-amber-500 text-white';
           }
           return {
             ...item,
@@ -268,19 +274,24 @@ export class AnalyticsService {
         });
       };
 
-      // Category 1: 3 thành viên kết nối nhiều nhất (tháng, quý, năm)
+      // Category 1: Top 10 thành viên kết nối nhiều nhất (tháng, quý, năm)
       const topConnections = assignTiers(
         [...uniqueStats].sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore)
       );
 
-      // Category 2: Hội viên chia sẻ cơ hội nhiều nhất (tháng, quý, năm) - Chỉ tính cơ hội public
+      // Category 2: Top 10 hội viên chia sẻ cơ hội nhiều nhất (tháng, quý, năm) - Chỉ tính cơ hội public
       const topOpportunities = assignTiers(
         [...uniqueStats].sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.interactionScore - a.interactionScore)
       );
 
-      // Category 3: 3 thành viên tham gia nhiều sự kiện, cuộc họp nhất và tương tác nhiều nhất (tháng, quý, năm)
+      // Category 3: Top 10 thành viên tham gia nhiều sự kiện, cuộc họp nhất và tương tác nhiều nhất (tháng, quý, năm)
       const topEventsMeetings = assignTiers(
         [...uniqueStats].sort((a, b) => (b.eventsAttended * 2 + b.feedInteractions) - (a.eventsAttended * 2 + a.feedInteractions) || b.interactionScore - a.interactionScore)
+      );
+
+      // Category 4: Top 10 người giới thiệu hội viên mới tích cực nhất
+      const topReferrals = assignTiers(
+        [...uniqueStats].sort((a, b) => (b.referralsCount || b.connectionsCount || 0) - (a.referralsCount || a.connectionsCount || 0) || b.interactionScore - a.interactionScore)
       );
 
       // Total club values
@@ -386,10 +397,16 @@ export class AnalyticsService {
             metricLabel: 'Lượt tham gia & tương tác',
             data: topEventsMeetings,
           },
+          topReferrals: {
+            title: `Top 10 người giới thiệu hội viên (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Hội viên đã giới thiệu',
+            data: topReferrals,
+          },
         },
         topConnections,
         topOpportunities,
         topEventsMeetings,
+        topReferrals,
         // Sentiment & Least active
         memberActivitySentiment: {
           activeCount: activeMembers.length,

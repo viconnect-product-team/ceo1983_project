@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Cake, Gift, X, Sparkles, Copy, Check, ArrowRight, Heart } from "lucide-react";
+import { Cake, Gift, X, Sparkles, Copy, Check, ArrowRight, Heart, Crown, Award } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import type { MyMember } from "@/lib/member-app.functions";
@@ -42,7 +42,7 @@ export function BirthdayCelebrationModal({ member }: BirthdayCelebrationModalPro
       if (isBirthday) {
         setPolicy(parsed);
         // Small delay so page renders nicely first
-        const timer = setTimeout(() => setOpen(true), 1200);
+        const timer = setTimeout(() => setOpen(true), 1000);
         return () => clearTimeout(timer);
       }
     } catch {}
@@ -59,109 +59,147 @@ export function BirthdayCelebrationModal({ member }: BirthdayCelebrationModalPro
     if (!policy?.voucherCode) return;
     navigator.clipboard.writeText(policy.voucherCode);
     setCopied(true);
-    toast.success(`Đã sao chép mã ưu đãi: ${policy.voucherCode}`);
+    toast.success(`✓ Đã sao chép mã ưu đãi độc quyền: ${policy.voucherCode}`);
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const memberName =
+    (member as any)?.fullName ||
+    (member as any)?.name ||
+    "Quý Hội Viên Doanh Nhân";
+
+  const bannerImg =
+    policy.bannerUrl ||
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=1000&auto=format&fit=crop&q=80";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border border-amber-400/50 p-6 text-white shadow-2xl overflow-hidden text-center">
-        {/* Glow & Confetti Effects */}
-        <div className="absolute -top-16 -right-16 h-44 w-44 bg-amber-500/25 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 h-44 w-44 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
-        
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-[420px] rounded-[32px] bg-gradient-to-b from-[#0a1428] via-[#0b1936] to-[#040a18] border-2 border-amber-400/60 shadow-[0_20px_60px_-15px_rgba(212,160,23,0.35)] overflow-hidden text-white animate-in zoom-in-95 duration-200">
+        {/* Glow ambient background rings */}
+        <div className="absolute -top-20 -right-20 h-52 w-52 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 h-52 w-52 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
+
         {/* Close Button */}
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-4 right-4 rounded-xl p-1.5 text-slate-400 hover:text-white hover:bg-white/10 transition z-20"
+          aria-label="Đóng"
+          className="absolute top-3.5 right-3.5 z-30 size-8 rounded-full bg-black/40 hover:bg-black/60 border border-white/20 text-white flex items-center justify-center transition active:scale-90 cursor-pointer shadow-md"
         >
-          <X className="h-5 w-5" />
+          <X className="size-4" />
         </button>
 
-        <div className="relative z-10 flex flex-col items-center">
-          {/* Cake Icon */}
-          <div className="relative mb-3">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-amber-400 via-amber-300 to-orange-400 text-slate-950 flex items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.5)] animate-bounce" style={{ animationDuration: "3s" }}>
-              <Cake className="h-10 w-10" />
+        {/* 1. Header Banner & Floating Badge */}
+        <div className="relative h-36 w-full overflow-hidden">
+          <img
+            src={bannerImg}
+            alt="Sinh nhật CEO 1983"
+            className="w-full h-full object-cover brightness-[0.85]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a1428] via-[#0a1428]/40 to-transparent" />
+
+          {/* Floating celebratory ribbon */}
+          <div className="absolute top-3 left-3.5 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/90 text-slate-950 text-[10.5px] font-black uppercase tracking-wider shadow-lg border border-amber-300">
+            <Crown className="size-3.5 text-slate-950 fill-current" />
+            <span>Đặc Quyền Sinh Nhật CEO 1983</span>
+          </div>
+
+          {/* Avatar / Cake Icon Floating Center */}
+          <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
+            <div className="relative size-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-300 to-yellow-400 p-1 shadow-[0_8px_24px_rgba(251,191,36,0.6)] flex items-center justify-center border-2 border-white">
+              <div className="size-full rounded-xl bg-slate-950 flex items-center justify-center text-amber-400">
+                <Cake className="size-8" />
+              </div>
+              <span className="absolute -top-1 -right-1 text-sm animate-bounce">✨</span>
+              <span className="absolute -bottom-1 -left-1 text-sm">🎉</span>
             </div>
-            <div className="absolute -top-1 -right-1 text-lg">✨</div>
-            <div className="absolute -bottom-1 -left-1 text-lg">🎉</div>
           </div>
+        </div>
 
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-[11px] font-bold tracking-wide uppercase mb-2">
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span>MÓN QUÀ TRI ÂN TỪ HIỆP HỘI</span>
-          </div>
-
+        {/* 2. Main Content Body */}
+        <div className="px-5 pt-8 pb-5 flex flex-col items-center text-center">
           {/* Title */}
-          <h3 className="text-xl font-black text-amber-300 leading-tight">
-            {policy.title || "Chúc Mừng Sinh Nhật!"}
+          <h3 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 tracking-tight leading-snug">
+            {policy.title || "Chúc Mừng Sinh Nhật Hội Viên!"}
           </h3>
 
-          <p className="text-xs font-semibold text-blue-200 mt-1">
-            Kính gửi Hội viên: <span className="text-white font-bold">{(member as any)?.fullName || (member as any)?.name || "Quý Hội Viên"}</span>
-          </p>
+          <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-[11px] font-bold text-amber-300">
+            <span>Kính gửi CEO:</span>
+            <span className="text-white font-extrabold">{memberName}</span>
+          </div>
 
-          {/* Message */}
-          <p className="mt-3 text-xs text-slate-300 leading-relaxed px-2">
+          {/* Greeting message */}
+          <p className="mt-2.5 text-xs text-slate-300 leading-relaxed max-w-[340px]">
             {policy.greetingMessage}
           </p>
 
-          {/* Voucher / Perk Gift Card */}
-          <div className="my-4 w-full rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border border-amber-400/40 p-4 text-left shadow-inner">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
-                <Gift className="h-4 w-4 text-amber-400" />
-                <span>{policy.giftTitle}</span>
+          {/* 3. Luxury Voucher Perk Card (Vé VIP Sinh Nhật) */}
+          <div className="mt-4 w-full rounded-2xl bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent border border-amber-400/50 p-3.5 text-left relative overflow-hidden shadow-inner">
+            {/* Background watermark badge */}
+            <Award className="absolute -right-3 -bottom-3 size-20 text-amber-400/10 pointer-events-none" />
+
+            <div className="flex items-center justify-between gap-2 border-b border-amber-400/20 pb-2">
+              <div className="flex items-center gap-1.5 text-amber-300 font-extrabold text-xs uppercase tracking-wide">
+                <Gift className="size-4 text-amber-400" />
+                <span>{policy.giftTitle || "Quà Tặng Tri Ân Doanh Nhân"}</span>
               </div>
-              <span className="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                VIP PERK
+              <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider shadow-xs">
+                VIP GIFT
               </span>
             </div>
 
-            <div className="mt-1.5 text-base font-extrabold text-white">
-              {policy.discountValue}
+            <div className="mt-2.5 flex items-baseline justify-between gap-2">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                  Giá trị đặc quyền
+                </span>
+                <span className="text-base font-black text-amber-300 tracking-tight">
+                  {policy.discountValue}
+                </span>
+              </div>
+              <span className="text-[10.5px] text-slate-400">
+                Hiệu lực {policy.validDays || 30} ngày
+              </span>
             </div>
 
-            {/* Voucher Code Copy Bar */}
-            <div className="mt-3 flex items-center justify-between bg-slate-950/80 rounded-xl p-2 border border-amber-400/30">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider">Mã ưu đãi độc quyền</span>
-                <span className="font-mono text-xs font-bold text-amber-300 tracking-wider">
+            {/* Voucher Code Box */}
+            <div className="mt-2.5 flex items-center justify-between bg-black/60 rounded-xl p-2 border border-amber-400/30">
+              <div className="flex flex-col pl-1">
+                <span className="text-[9px] text-amber-200/70 font-bold uppercase tracking-wider">
+                  Mã Voucher VIP
+                </span>
+                <span className="font-mono text-xs font-black text-amber-300 tracking-widest">
                   {policy.voucherCode || "CEO1983-BDAY"}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleCopyCode}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-bold hover:bg-amber-300 transition active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black transition active:scale-95 shadow-xs cursor-pointer"
               >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? <Check className="size-3.5 text-slate-950" /> : <Copy className="size-3.5 text-slate-950" />}
                 <span>{copied ? "Đã chép" : "Sao chép"}</span>
               </button>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="w-full flex items-center gap-2.5 pt-1">
+          {/* 4. Action Buttons */}
+          <div className="mt-4 w-full flex items-center gap-2">
             <Link
               to="/association/perks"
               onClick={handleClose}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-900 shadow-md flex items-center justify-center gap-1.5 transition hover:brightness-105 active:scale-98"
+              className="flex-1 py-2.5 rounded-xl text-xs font-black text-slate-950 shadow-md flex items-center justify-center gap-1.5 transition hover:brightness-110 active:scale-98 cursor-pointer"
               style={{
-                background:
-                  "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
+                background: "linear-gradient(135deg, #F6E1C3 0%, #D8B282 45%, #C29B69 70%, #8C653B 100%)",
               }}
             >
               <span>Xem ưu đãi thành viên</span>
-              <ArrowRight className="h-3.5 w-3.5 text-slate-900" />
+              <ArrowRight className="size-3.5 text-slate-950" />
             </Link>
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 rounded-xl border border-white/20 text-xs font-semibold text-slate-300 hover:bg-white/10 transition"
+              className="px-4 py-2.5 rounded-xl border border-white/20 text-xs font-bold text-slate-300 hover:bg-white/10 transition active:scale-95 cursor-pointer"
             >
               Để sau
             </button>

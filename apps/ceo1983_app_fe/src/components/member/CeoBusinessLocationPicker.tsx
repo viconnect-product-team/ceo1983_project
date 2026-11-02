@@ -305,15 +305,12 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
         // Custom Zoom Control ở góc phải dưới
         L.control.zoom({ position: "bottomright" }).addTo(map);
 
-        // Tile layer CartoDB Voyager 2D: Rất đẹp, phố xá rõ nét, tốc độ siêu nhanh tại Việt Nam
-        L.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-          {
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OSM',
-            maxZoom: 19,
-            subdomains: "abcd",
-          }
-        ).addTo(map);
+        // Google Maps 2D Roadmap Tile Layer (Tải siêu nhanh tại Việt Nam, sắc nét 100% tiếng Việt chuẩn như Google Maps)
+        L.tileLayer("https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+          subdomains: ["0", "1", "2", "3"],
+          maxZoom: 20,
+          attribution: "© Google Maps 2D",
+        }).addTo(map);
 
         // Tạo custom icon ghim đỏ thương hiệu CEO 1983
         const redIcon = L.divIcon({
@@ -367,9 +364,24 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
           await reverseGeocode(clickLat, clickLng);
         });
 
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 200);
+        // Kích hoạt tính toán lại kích thước bản đồ để render toàn bộ tile mượt mà
+        [100, 300, 600, 1200].forEach((delay) => {
+          setTimeout(() => {
+            if (!isCancelled && mapInstanceRef.current) {
+              mapInstanceRef.current.invalidateSize();
+            }
+          }, delay);
+        });
+
+        // Theo dõi thay đổi kích thước container để luôn hiển thị bản đồ sắc nét
+        if (typeof ResizeObserver !== "undefined" && mapContainerRef.current) {
+          const ro = new ResizeObserver(() => {
+            if (!isCancelled && mapInstanceRef.current) {
+              mapInstanceRef.current.invalidateSize();
+            }
+          });
+          ro.observe(mapContainerRef.current);
+        }
       })
       .catch((err) => {
         console.warn("Leaflet CDN delay, using 2D Canvas Engine fallback:", err);
@@ -392,6 +404,7 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
     if (mapInstanceRef.current && markerRef.current) {
       markerRef.current.setLatLng([newLat, newLng]);
       mapInstanceRef.current.setView([newLat, newLng], zoom, { animate: true });
+      mapInstanceRef.current.invalidateSize();
     }
   };
 

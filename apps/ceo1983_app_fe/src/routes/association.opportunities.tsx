@@ -41,7 +41,6 @@ import {
   ArrowUpDown,
   BarChart3,
 } from "lucide-react";
-import { OpportunityMultiMetricChart } from "@/components/opportunities/OpportunityMultiMetricChart";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -990,12 +989,12 @@ function OpportunitiesScreen() {
             </button>
           </div>
 
-          {/* 3 Horizontal Primary Metrics Grid */}
+          {/* 3 Horizontal Primary Metrics Grid - Đồng bộ chuẩn nhận diện Hải quân & Vàng kim CEO 1983 */}
           <div className="grid grid-cols-3 gap-2">
             {/* 1. Tổng chia sẻ */}
             <div
               onClick={() => navigate({ to: "/association/analytics" })}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left"
+              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-amber-400/25 transition cursor-pointer flex flex-col justify-between text-left shadow-xs"
             >
               <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
                 <span className="uppercase tracking-wider">Tổng chia sẻ</span>
@@ -1014,7 +1013,7 @@ function OpportunitiesScreen() {
             {/* 2. Tổng lượt deal được */}
             <div
               onClick={() => navigate({ to: "/association/analytics" })}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left"
+              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left shadow-xs"
             >
               <div className="flex items-center justify-between text-[10px] font-bold text-emerald-300">
                 <span className="uppercase tracking-wider">Deal đã chốt</span>
@@ -1033,17 +1032,17 @@ function OpportunitiesScreen() {
             {/* 3. Tổng lượt hội viên đó share đi */}
             <div
               onClick={() => navigate({ to: "/association/analytics" })}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left"
+              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left shadow-xs"
             >
-              <div className="flex items-center justify-between text-[10px] font-bold text-sky-300">
+              <div className="flex items-center justify-between text-[10px] font-bold text-amber-200">
                 <span className="uppercase tracking-wider">Tôi share đi</span>
-                <Share2 className="size-3 text-sky-300 shrink-0" />
+                <Share2 className="size-3 text-amber-300 shrink-0" />
               </div>
               <div className="mt-1.5">
                 <div className="text-base font-black text-white leading-tight">
                   {oppReport.summary.mySharedCount || 0} <span className="text-[10px] font-normal text-slate-300">tin</span>
                 </div>
-                <div className="text-[9.5px] text-sky-200 font-semibold truncate mt-0.5">
+                <div className="text-[9.5px] text-amber-100 font-semibold truncate mt-0.5">
                   {formatSmartPrice(oppReport.summary.mySharedValue || 0)}
                 </div>
               </div>
@@ -1053,23 +1052,17 @@ function OpportunitiesScreen() {
           {/* Sub-footer link leading to Analytics */}
           <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10.5px]">
             <span className="text-slate-300 font-medium truncate">
-              Mọi biểu đồ & danh sách all cơ hội đã được chuyển vào màn Thống kê
+              Mọi biểu đồ phân tích chuyên sâu đã được gom về mục Thống kê
             </span>
             <button
               type="button"
               onClick={() => navigate({ to: "/association/analytics" })}
               className="text-amber-300 font-bold hover:underline inline-flex items-center gap-0.5 shrink-0 cursor-pointer"
             >
-              <span>Xem chi tiết</span>
+              <span>Xem Thống kê</span>
               <ArrowRight className="size-3" />
             </button>
           </div>
-        </div>
-
-
-        {/* 2.5 BIỂU ĐỒ 3 CHỈ SỐ BIẾN ĐỘNG TRÊN THANH TÌM KIẾM (Req 4) */}
-        <div className="w-full">
-          <OpportunityMultiMetricChart opportunities={allOpportunities} />
         </div>
 
         {/* 3. SEARCH & CHIPS & BỘ LỌC NGÀNH NGHỀ & % CÓ LỢI NHẤT */}

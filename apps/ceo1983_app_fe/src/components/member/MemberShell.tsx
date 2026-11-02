@@ -457,58 +457,34 @@ function useVirtualKeyboard() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
-    const handleFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      const tag = target.tagName?.toLowerCase();
-      const isInput = tag === "input" || tag === "textarea" || target.isContentEditable;
-      if (isInput) {
-        setKeyboardOpen(true);
-      }
-    };
+    if (typeof window === "undefined") return;
 
-    const handleFocusOut = () => {
-      setTimeout(() => {
-        const active = document.activeElement;
-        const tag = active?.tagName?.toLowerCase();
-        const isInput =
-          tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
-        if (!isInput) {
-          setKeyboardOpen(false);
-        }
-      }, 100);
-    };
+    // Chỉ kiểm tra virtual keyboard trên thiết bị di động có màn hình cảm ứng thực sự
+    const isTouchDevice =
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0 ||
+      (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
 
-    window.addEventListener("focusin", handleFocusIn);
-    window.addEventListener("focusout", handleFocusOut);
+    // Trên máy tính / Desktop / Laptop có chuột & phím vật lý: không bao giờ ẩn tab bar footer
+    if (!isTouchDevice) {
+      return;
+    }
 
     const vv = window.visualViewport;
-    if (!vv) {
-      return () => {
-        window.removeEventListener("focusin", handleFocusIn);
-        window.removeEventListener("focusout", handleFocusOut);
-      };
-    }
+    if (!vv) return;
 
     const handleResize = () => {
       const diff = window.innerHeight - vv.height - (vv.offsetTop || 0);
-      if (diff > 140) {
+      // Trên mobile thực tế, bàn phím ảo Android/iOS luôn chiếm tối thiểu > 180px
+      if (diff > 180) {
         setKeyboardOpen(true);
       } else {
-        const active = document.activeElement;
-        const tag = active?.tagName?.toLowerCase();
-        const isInput =
-          tag === "input" || tag === "textarea" || (active as HTMLElement)?.isContentEditable;
-        if (!isInput) {
-          setKeyboardOpen(false);
-        }
+        setKeyboardOpen(false);
       }
     };
 
     vv.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("focusin", handleFocusIn);
-      window.removeEventListener("focusout", handleFocusOut);
       vv.removeEventListener("resize", handleResize);
     };
   }, []);

@@ -104,45 +104,8 @@ export function TrainingsPage() {
       if (Array.isArray(res) && res.length > 0) {
         setTrainings(res);
       } else {
-        // Fallback default sample data if table is empty
-        setTrainings([
-          {
-            id: "trn-leadership-40",
-            title: "Kỹ Năng Lãnh Đạo & Điều Hành Doanh Nghiệp Thời Đại AI 4.0",
-            description: "Chương trình chuyên sâu bồi dưỡng tư duy chiến lược, ứng dụng AI và chuyển đổi số cho doanh nghiệp hội viên CEO 1983.",
-            instructor_name: "TS. Nguyễn Hoàng Nam",
-            instructor_title: "Chuyên gia Cố vấn BĐH CLB CEO 1983",
-            category: "Kỹ năng lãnh đạo",
-            format: "hybrid",
-            status: "upcoming",
-            start_time: new Date(Date.now() + 86400000 * 2).toISOString(),
-            location: "Trụ sở CLB CEO 1983 - Tầng 8 Tòa nhà Doanh Nhân",
-            address: "Số 68 Đường Cầu Giấy, Hà Nội",
-            meeting_room_id: "CEO1983_LANH_DAO_40",
-            meeting_link: "https://meet.jit.si/CEO1983_LANH_DAO_40",
-            meeting_passcode: "198388",
-            max_attendees: 80,
-            open_registration: true,
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "trn-finance-cfos",
-            title: "Quản Trị Dòng Tiền & Tối Ưu Thuế Pháp Lý Cho Doanh Nghiệp Vừa & Nhỏ",
-            description: "Phân tích cấu trúc vốn, quản trị rủi ro dòng tiền và kế toán quản trị thực chiến năm 2026.",
-            instructor_name: "ThS. Trần Thu Phương",
-            instructor_title: "Trưởng Ban Tài Chính CLB",
-            category: "Quản trị tài chính",
-            format: "online",
-            status: "upcoming",
-            start_time: new Date(Date.now() + 86400000 * 4).toISOString(),
-            meeting_room_id: "CEO1983_TAI_CHINH_2026",
-            meeting_link: "https://meet.jit.si/CEO1983_TAI_CHINH_2026",
-            meeting_passcode: "888888",
-            max_attendees: 120,
-            open_registration: true,
-            created_at: new Date().toISOString(),
-          },
-        ]);
+        // Danh sách rỗng thực tế nếu CRM chưa tạo khóa đào tạo nào
+        setTrainings([]);
       }
     } catch {
       toast.error("Không thể tải danh sách chương trình đào tạo");
@@ -164,25 +127,23 @@ export function TrainingsPage() {
 
     setSubmitting(true);
     try {
-      const roomId = formMeetingRoomId.trim() || `CEO1983_MEET_${Date.now().toString().slice(-6)}`;
-      const meetingLink =
-        formMeetingLink.trim() ||
-        (formFormat !== "offline" ? `https://meet.jit.si/CEO1983_${roomId}` : "");
+      const roomId = formMeetingRoomId.trim();
+      const meetingLink = formMeetingLink.trim();
 
       const payload = {
         title: formTitle.trim(),
         description: formDescription.trim(),
-        instructor_name: formInstructor.trim() || "Chuyên gia Hội đồng CEO 1983",
-        instructor_title: formInstructorTitle.trim() || "Diễn giả Doanh nhân",
+        instructor_name: formInstructor.trim() || undefined,
+        instructor_title: formInstructorTitle.trim() || undefined,
         category: formCategory,
         format: formFormat,
         status: "upcoming",
         start_time: formStartTime || new Date(Date.now() + 86400000).toISOString(),
-        location: formLocation.trim() || (formFormat === "online" ? "Trực tuyến qua Video Call" : "Trụ sở CLB CEO 1983"),
-        address: formAddress.trim(),
-        meeting_room_id: roomId,
-        meeting_link: meetingLink,
-        meeting_passcode: formMeetingPasscode.trim() || "198388",
+        location: formLocation.trim() || undefined,
+        address: formAddress.trim() || undefined,
+        meeting_room_id: roomId || undefined,
+        meeting_link: meetingLink || undefined,
+        meeting_passcode: formMeetingPasscode.trim() || undefined,
         max_attendees: Number(formMaxAttendees) || 50,
         open_registration: formOpenRegistration,
       };
@@ -209,7 +170,10 @@ export function TrainingsPage() {
       setFormTitle("");
       setFormDescription("");
       setFormInstructor("");
+      setFormInstructorTitle("");
       setFormMeetingRoomId("");
+      setFormMeetingLink("");
+      setFormMeetingPasscode("");
       setFormLocation("");
       setFormAddress("");
     } catch {
@@ -219,29 +183,67 @@ export function TrainingsPage() {
     }
   };
 
-  // HÀNH ĐỘNG: BẮN XUỐNG APP CEO 1983 & BẢNG TIN MẠNG LƯỚI (THEO YÊU CẦU 2)
+  // HÀNH ĐỘNG: BẮN XUỐNG APP CEO 1983 & BẢNG TIN MẠNG LƯỚI - CHỈ BẮN NHỮNG TRƯỜNG CÓ KHAI BÁO THỰC TẾ
   const handleBroadcastToFeed = async (t: TrainingItem) => {
     setBroadcastingId(t.id);
     try {
       const regUrl = `${window.location.origin}/guest-event-register/${t.id}`;
       const formatText =
         t.format === "online"
-          ? "Trực tuyến qua Video Call Jitsi"
+          ? "Trực tuyến qua Video Call"
           : t.format === "offline"
           ? "Trực tiếp tại Hội trường"
           : "Kết hợp Trực tiếp & Trực tuyến";
 
-      const feedContent = `🎯 THÔNG BÁO KHÓA ĐÀO TẠO & PHÒNG HỌP BAN ĐIỀU HÀNH:
-${t.title}
+      // Xây dựng nội dung bài đăng động, CHỈ hiển thị những trường thực tế được khai báo ở CRM
+      const lines: string[] = [
+        `🎯 THÔNG BÁO CHƯƠNG TRÌNH ĐÀO TẠO & BỒI DƯỠNG:`,
+        `${t.title}`,
+        "",
+      ];
 
-👨‍🏫 Giảng viên / Chủ trì: ${t.instructor_name || "Chuyên gia CLB CEO 1983"} (${t.instructor_title || "Diễn giả"})
-⏰ Thời gian: ${t.start_time ? new Date(t.start_time).toLocaleString("vi-VN") : "Sắp diễn ra"}
-📌 Hình thức tổ chức: ${formatText}
-🏛️ Địa điểm / Link họp: ${t.meeting_link || t.location || "Trụ sở CLB CEO 1983"}
-🔑 Mật mã phòng: ${t.meeting_passcode || "198388"}
+      // Giảng viên / Chủ trì: Chỉ in khi có khai báo thực tế
+      if (t.instructor_name && t.instructor_name.trim()) {
+        const titleStr = t.instructor_title?.trim() ? ` (${t.instructor_title.trim()})` : "";
+        lines.push(`👨‍🏫 Giảng viên / Chủ trì: ${t.instructor_name.trim()}${titleStr}`);
+      }
 
-${t.description ? `📝 Nội dung tóm tắt: ${t.description}\n\n` : ""}👉 Form mở đăng ký tham gia (Dành cho Hội viên mới & Doanh nhân muốn đăng ký):
-${regUrl}`;
+      // Thời gian
+      if (t.start_time) {
+        lines.push(`⏰ Thời gian: ${new Date(t.start_time).toLocaleString("vi-VN")}`);
+      }
+
+      // Hình thức tổ chức
+      lines.push(`📌 Hình thức tổ chức: ${formatText}`);
+
+      // Địa điểm / Link họp (chỉ in khi có khai báo)
+      if (t.meeting_link && t.meeting_link.trim()) {
+        lines.push(`🔗 Link phòng họp trực tuyến: ${t.meeting_link.trim()}`);
+      }
+      if (t.location && t.location.trim()) {
+        const addrStr = t.address?.trim() ? ` - ${t.address.trim()}` : "";
+        lines.push(`🏛️ Địa điểm tổ chức: ${t.location.trim()}${addrStr}`);
+      }
+
+      // Mật mã phòng: CHỈ in khi thực tế có mật mã
+      if (t.meeting_passcode && t.meeting_passcode.trim()) {
+        lines.push(`🔑 Mật mã phòng: ${t.meeting_passcode.trim()}`);
+      }
+
+      // Nội dung tóm tắt: CHỈ in khi có mô tả thực tế
+      if (t.description && t.description.trim()) {
+        lines.push("");
+        lines.push(`📝 Nội dung: ${t.description.trim()}`);
+      }
+
+      // Form đăng ký: chỉ in khi mở đăng ký
+      if (t.open_registration) {
+        lines.push("");
+        lines.push(`👉 Form mở đăng ký tham gia (Dành cho Hội viên & Doanh nhân quan tâm):`);
+        lines.push(regUrl);
+      }
+
+      const feedContent = lines.join("\n");
 
       await fetchNestApi("/feed", {
         method: "POST",

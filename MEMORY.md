@@ -1,5 +1,33 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 02/11/2026 (v10.12): Chuẩn Hóa Triệt Để 8 Hạng Mục CRM & Mobile App CEO 1983 ([NODE-APP-003], [NODE-APP-005], [NODE-APP-008], [NODE-APP-009], [NODE-CRM-001], [NODE-CRM-006], [NODE-CRM-010], [NODE-CRM-014])**:
+  1. *Web CRM - Không Hiện QR Thanh Toán Trực Tiếp Vào Tin Nhắn Zalo (`MailTemplateManager.tsx`)*:
+     - Loại bỏ biến `vietqr_url` và link QR khỏi mẫu gửi tin nhắn Zalo OA / ZNS về nợ phí và tài chính.
+     - Tin nhắn Zalo chỉ hiển thị thông tin tài khoản chuyển khoản chính thức của CLB CEO 1983 (MB Bank 1983000000) hoặc link dẫn đến cổng thanh toán bảo mật, tránh làm rác tin nhắn và chống lỗi hiển thị link QR trên Zalo.
+  2. *Web CRM & Mobile App - Nâng Cấp Giao Diện Popup Ưu Đãi Sinh Nhật VIP Siêu Sang Trọng (`BirthdayCelebrationModal.tsx`, `BirthdayPromoManager.tsx`)*:
+     - Thiết kế lại toàn diện cả popup chúc mừng sinh nhật trên App và trình xem trước trên CRM: Banner vương miện Hoàng Gia CEO 1983 Gold Luxury, hiệu ứng ánh sáng vàng kim sang trọng, huy hiệu "Đặc Quyền Sinh Nhật VIP Doanh Nhân CEO 1983".
+     - Thẻ Voucher Coupon VIP perforated với viền răng cưa, nút 1-click sao chép mã ưu đãi tiện lợi và CTA "Sử Dụng Ưu Đãi Ngay" màu vàng kim quý phái.
+  3. *Web CRM - Chức Năng Khen Thưởng Kết Nối Trực Tiếp API Top 10 Thống Kê (`analytics.service.ts`, `benefits.tsx`)*:
+     - Backend: Cập nhật hàm `assignTiers` trả về đầy đủ Top 10 đại biểu xuất sắc của cả 4 danh mục: Top 1 Kim Cương 💎, Top 2 Bạch Kim 🪙, Top 3 Vàng 🥇, Top 4-10 Doanh Nhân Xuất Sắc 🌟; bổ sung `topReferrals` vào dữ liệu API `/analytics/overview`.
+     - Frontend CRM: Tích hợp Tab "Khen Thưởng Top 10 Thống Kê" trong `/benefits`, gọi API `/analytics/overview?period=${period}`, hiển thị danh sách Top 10 của cả 4 danh mục cốt lõi kèm nút "Trao Khen Thưởng" mở modal phát hành voucher & vinh danh.
+  4. *CEO 1983 Mobile App - Khắc Phục Lỗi Mất Footer Khi Bấm Bình Luận Ở Mạng Lưới (`MemberShell.tsx`)*:
+     - Triệt tiêu lỗi unmount `MemberTabBar`: Hook `useVirtualKeyboard` trước đây lắng nghe `focusin` toàn cục trên `<input>`, khiến người dùng click vào ô bình luận là footer biến mất ngay lập tức trên máy tính/web responsive.
+     - Tái cấu trúc hook chỉ kích hoạt ẩn tab bar trên thiết bị cảm ứng thật (`isTouchDevice`) khi `visualViewport` co rút thực sự (`diff > 180`). Trên desktop/laptop không bao giờ ẩn thanh footer.
+  5. *CEO 1983 Mobile App - Tinh Giản Màn Chia Sẻ Cơ Hội & Chuẩn Hóa Nhận Diện Thương Hiệu (`association.opportunities.tsx`)*:
+     - Bỏ biểu đồ đa chỉ số `OpportunityMultiMetricChart` khỏi màn chia sẻ cơ hội, trả lại không gian tối giản tập trung cho kết nối giao thương B2B (đúng theo chỉ dẫn dòng phụ: "Mọi biểu đồ đã được chuyển vào màn Thống kê").
+     - Chuẩn hóa dải 3 thẻ thống kê ngang (Tổng chia sẻ, Deal đã chốt, Tôi share đi) sang tông màu Hải quân (`#002855`) viền Vàng kim (`#D4A017`) sang trọng, loại bỏ hoàn toàn các màu sắc lộn xộn.
+  6. *CEO 1983 Mobile App - Tái Cấu Trúc Toàn Diện Màn Thống Kê Hiệp Hội (`association.analytics.tsx`)*:
+     - Biểu đồ ComposedChart luôn hiển thị ở vị trí đầu tiên ngay dưới bộ chọn chu kỳ và danh mục.
+     - Bổ sung bộ lọc 3 trạng thái biểu đồ: "Vừa tăng vừa giảm" (hiển thị cả mốc tăng và giảm), "Chỉ tăng" (biểu đồ chỉ hiển thị mốc tăng trưởng tích cực), "Chỉ giảm" (biểu đồ chỉ hiển thị mốc sụt giảm/cần cảnh báo) kèm màu sắc cột & đường tương ứng (Xanh Navy / Emerald / Đỏ cờ).
+     - Bố cục các khối tiếp theo theo thứ tự logic: 4 thẻ KPI chi tiết -> 4 chỉ số lớn -> Gamification mốc thưởng -> Bục vinh danh Top 3 -> Bảng xếp hạng Top 4-10 -> Thảo luận & xuất báo cáo.
+  7. *Web CRM - Xóa Dữ Liệu Fake Khi Bắn Chương Trình Đào Tạo Xuống Mạng Lưới (`trainings.tsx`)*:
+     - Xóa bỏ toàn bộ dữ liệu mẫu giả cứng (`trn-leadership-40`, `trn-finance-cfos` với tên ThS. Trần Thu Phương, mật khẩu 888888).
+     - Không tự động chèn các giá trị fallback giả ("Chuyên gia Hội đồng CEO 1983", "198388").
+     - Hàm `handleBroadcastToFeed` xây dựng nội dung bài đăng động, CHỈ hiển thị những trường thực tế được khai báo trong CRM.
+  8. *CEO 1983 Mobile App - Khắc Phục Lỗi Bản Đồ 2D Xám Xịt Tại Trang Cá Nhân (`CeoBusinessLocationPicker.tsx`)*:
+     - Thay thế tile layer CartoDB Voyager (bị lỗi/chặn tại Việt Nam) bằng Google Maps 2D Roadmap Tile Layer (`https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}`) tải siêu nhanh, sắc nét 100% tiếng Việt chuẩn Google Maps.
+     - Thêm cơ chế kích hoạt `map.invalidateSize()` tại các mốc thời gian (100ms, 300ms, 600ms, 1200ms) và lắng nghe `ResizeObserver` để đảm bảo bản đồ luôn render đầy đủ, không bao giờ bị xám xịt.
+
 - **Bản cập nhật ngày 02/11/2026 (v10.11): Hoàn Thiện Triệt Để UI Mạng Lưới & Tin Nhắn Mobile, Gộp Email Marketing Vào Template Manager, Tải Ảnh Thiệp Sinh Nhật & Đồng Bộ Audit Logs CRM ([NODE-APP-003], [NODE-CRM-001], [NODE-CRM-010], [NODE-CRM-015], [NODE-CRM-016])**:
   1. *CEO 1983 Mobile App - Bỏ Border Bình Luận & Tìm Kiếm, Ẩn Header Mạng Lưới Khi Mở Tin Nhắn (Ảnh e3200fcb.png)*:
      - **Bỏ Viền Ô Bình Luận (`FeedView.tsx`)**: Chuyển capsule bình luận và ô `<input>` từ viền tím/xanh sang dạng phẳng hoàn toàn không viền (`border-0 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none` kèm inline style `border: none; outline: none; boxShadow: none`), triệt tiêu triệt để viền bo tím nổi cộm trong ảnh người dùng upload.

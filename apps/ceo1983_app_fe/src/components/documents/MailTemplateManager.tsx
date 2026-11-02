@@ -850,11 +850,13 @@ export function MailTemplateManager() {
       // 2. Gửi qua Zalo OA nếu chọn Zalo hoặc Cả hai
       if (sendChannel === "zalo" || sendChannel === "both") {
         const zaloAccessToken = typeof window !== "undefined" ? localStorage.getItem("vba_zalo_access_token") || "" : "";
-        const qrUrl = sampleValues.qr_code_url || sampleValues.vietqr_url || "";
+        // TUYỆT ĐỐI KHÔNG hiện QR thanh toán (vietqr_url) trực tiếp vào Zalo theo yêu cầu CRM
+        const qrUrl = sampleValues.qr_code_url || "";
+        const zaloVariables = activeTemplate.variables?.filter((v) => v.key !== "vietqr_url") || [];
         const zaloMsg = `📢 [CEO 1983 - ${renderedContent.inAppTitle || renderedContent.subject}]
 ${renderedContent.inAppBody || renderedContent.subject}
 
-${activeTemplate.variables?.map((v) => `• ${v.label}: ${sampleValues[v.key] || v.example}`).join("\n") || ""}${qrUrl ? `\n\n📱 Link Mã QR: ${qrUrl}` : ""}`;
+${zaloVariables.map((v) => `• ${v.label}: ${sampleValues[v.key] || v.example}`).join("\n")}${qrUrl ? `\n\n📱 Link Mã QR Check-in: ${qrUrl}` : ""}`;
 
         await fetchNestApi("/zalo/send-message", {
           method: "POST",
