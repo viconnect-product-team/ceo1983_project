@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Mail,
   Plus,
@@ -24,11 +24,15 @@ import {
   Calendar,
   Shield,
   HelpCircle,
+  Upload,
+  Image as ImageIcon,
+  Gift,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 
-export type MailCategory = "fee" | "welcome" | "event" | "meeting" | "system";
+export type MailCategory = "fee" | "welcome" | "event" | "meeting" | "system" | "birthday" | "marketing";
 
 export interface MailVariable {
   key: string;
@@ -276,6 +280,126 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
 </div>
 `,
   },
+  {
+    id: "tmpl-birthday-greeting",
+    code: "BIRTHDAY_GREETING",
+    category: "birthday",
+    name: "Thiệp & Thư Chúc Mừng Sinh Nhật Hội Viên",
+    description: "Tự động gửi thư chúc mừng sinh nhật kèm thiệp mừng sang trọng, lời chúc từ Chủ tịch & Ban Điều Hành, và banner ảnh tải lên tùy biến.",
+    channels: ["email", "in_app", "push"],
+    subject: "[CHÚC MỪNG SINH NHẬT] CLB Doanh Nhân CEO 1983 chúc mừng sinh nhật Anh/Chị {{full_name}}!",
+    inAppTitle: "Chúc mừng sinh nhật Anh/Chị {{full_name}}!",
+    inAppBody: "Ban Chấp Hành CLB Doanh Nhân CEO 1983 kính chúc Anh/Chị {{full_name}} ({{company_name}}) tuổi mới sức khỏe dồi dào, vạn sự hanh thông và gặt hái nhiều thành công rực rỡ!",
+    variables: [
+      { key: "full_name", label: "Họ và tên hội viên", example: "Lê Minh Tuấn" },
+      { key: "member_code", label: "Mã hội viên", example: "M1983-099" },
+      { key: "company_name", label: "Tên doanh nghiệp", example: "Tập Đoàn Đầu Tư Quốc Tế An Phát" },
+      { key: "executive_role", label: "Vai trò / Chức danh", example: "Ủy viên Ban Điều Hành" },
+      { key: "department", label: "Ban chuyên môn", example: "Ban Xúc tiến thương mại" },
+      { key: "birth_date", label: "Ngày sinh nhật", example: "15/10" },
+      { key: "banner_image_url", label: "Ảnh banner thiệp mừng", example: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&auto=format&fit=crop&q=80" },
+      { key: "wishes_text", label: "Lời chúc đặc biệt", example: "Kính chúc Anh tuổi mới sức khỏe dồi dào, bản lĩnh vững vàng và dẫn dắt doanh nghiệp bứt phá ngoạn mục!" },
+    ],
+    updatedAt: "2026-10-01",
+    htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,43,102,0.12);">
+  <div style="background: linear-gradient(135deg, #002B66 0%, #001733 50%, #B8860B 100%); padding: 36px 24px; text-align: center; color: #ffffff; position: relative;">
+    <div style="display: inline-block; padding: 6px 18px; background: rgba(245, 158, 11, 0.25); border: 1px solid rgba(245, 158, 11, 0.6); border-radius: 9999px; font-size: 12px; font-weight: 800; color: #FBBF24; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1.5px;">
+      🎂 HAPPY BIRTHDAY · CHÚC MỪNG SINH NHẬT
+    </div>
+    <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px;">CHÚC MỪNG SINH NHẬT HỘI VIÊN</h1>
+    <p style="margin: 8px 0 0; font-size: 15px; color: #fef08a; font-weight: 700;">Anh/Chị {{full_name}} ({{birth_date}})</p>
+    <p style="margin: 4px 0 0; font-size: 12px; color: #cbd5e1;">CLB Doanh Nhân CEO 1983 - Hiệp Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</p>
+  </div>
+
+  <div style="padding: 16px 20px 0; text-align: center; background: #fafafa;">
+    <div style="border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.1); border: 2px solid #fef3c7; max-height: 240px;">
+      <img src="{{banner_image_url}}" alt="Thiệp Mừng Sinh Nhật" style="width: 100%; height: auto; max-height: 240px; object-fit: cover; display: block;" />
+    </div>
+  </div>
+
+  <div style="padding: 24px 24px 28px; color: #1e293b;">
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.7;">
+      Kính gửi: <strong>Anh/Chị {{full_name}}</strong>,<br/>
+      Chức vụ: <strong>{{executive_role}}</strong> - <strong>{{department}}</strong>,<br/>
+      Đại diện: <strong>{{company_name}}</strong>,
+    </p>
+
+    <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #d97706; border-radius: 10px; padding: 20px; margin-bottom: 22px;">
+      <p style="margin: 0 0 10px; font-size: 15px; font-style: italic; line-height: 1.8; color: #92400e;">
+        "{{wishes_text}}"
+      </p>
+      <p style="margin: 0; font-size: 13px; color: #b45309; font-weight: 600;">
+        Nhân dịp sinh nhật của Anh/Chị, Ban Chấp Hành và toàn thể các Doanh nhân thành viên ngôi nhà chung CEO 1983 xin trân trọng gửi tới Anh/Chị những lời chúc mừng nồng nhiệt và tốt đẹp nhất!
+      </p>
+    </div>
+
+    <p style="font-size: 14px; color: #334155; line-height: 1.7; margin: 0 0 20px;">
+      Kính chúc Anh/Chị bước sang tuổi mới luôn dồi dào sức khỏe, ngập tràn niềm vui, gia đình hạnh phúc viên mãn và dẫn dắt <strong>{{company_name}}</strong> ngày càng phát triển hùng mạnh, gặt hái thêm nhiều thắng lợi rực rỡ!
+    </p>
+
+    <div style="border-top: 1px dashed #e2e8f0; padding-top: 18px; margin-top: 24px; display: flex; justify-content: space-between; align-items: flex-end;">
+      <div>
+        <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Trân trọng chúc mừng,</p>
+        <p style="margin: 4px 0 0; font-size: 14px; font-weight: 800; color: #002B66;">CHỦ TỊCH CLB DOANH NHÂN CEO 1983</p>
+        <p style="margin: 2px 0 0; font-size: 12px; color: #d97706; font-weight: 600;">Cùng Toàn Thể Ban Điều Hành Hiệp Hội</p>
+      </div>
+    </div>
+  </div>
+</div>
+`,
+  },
+  {
+    id: "tmpl-marketing-b2b",
+    code: "MARKETING_B2B_CAMPAIGN",
+    category: "marketing",
+    name: "Chiến Dịch Email Marketing & Xúc Tiến B2B",
+    description: "Quản lý và phát động chiến dịch email marketing định kỳ, giới thiệu giải pháp sản phẩm và kết nối đối tác giao thương nội bộ.",
+    channels: ["email", "in_app", "push"],
+    subject: "[CEO 1983 B2B] Cơ hội hợp tác & Bản tin kết nối giao thương tháng {{campaign_month}}",
+    inAppTitle: "Bản tin kết nối giao thương B2B tháng {{campaign_month}}",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}, khám phá danh mục chào hàng và nhu cầu mua sắm ưu tiên từ các doanh nghiệp hội viên CEO 1983.",
+    variables: [
+      { key: "full_name", label: "Tên hội viên", example: "Vũ Minh Tuấn" },
+      { key: "company_name", label: "Doanh nghiệp", example: "Công ty Cổ phần Alpha Tech" },
+      { key: "campaign_month", label: "Kỳ bản tin", example: "11/2026" },
+      { key: "featured_deals", label: "Deal nổi bật", example: "Cung ứng thiết bị văn phòng thông minh 2026 (850 Tr đ)" },
+      { key: "portal_url", label: "Cổng giao thương", example: "https://ceo1983.vn/marketplace" },
+    ],
+    updatedAt: "2026-10-01",
+    htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #003B95 0%, #001B40 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(245, 158, 11, 0.25); border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #fde047; margin-bottom: 12px; text-transform: uppercase;">
+      BẢN TIN XÚC TIẾN GIAO THƯƠNG B2B
+    </div>
+    <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff;">KẾT NỐI CƠ HỘI KINH DOANH THÁNG {{campaign_month}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #94a3b8;">Cộng đồng Doanh nhân CEO 1983 - Hiệp Hội HanoiBA</p>
+  </div>
+  <div style="padding: 28px 24px; color: #1e293b;">
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
+      Kính gửi: <strong>Anh/Chị {{full_name}}</strong> - <strong>{{company_name}}</strong>,
+    </p>
+    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #334155;">
+      Ban Xúc tiến thương mại trân trọng gửi tới Quý Doanh nghiệp các cơ hội hợp tác và nhu cầu mua bán ưu tiên tháng {{campaign_month}}:
+    </p>
+    <div style="background: #f8fafc; border-left: 4px solid #003B95; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+      <h4 style="margin: 0 0 8px; font-size: 14px; color: #003B95; text-transform: uppercase;">Cơ Hội Hợp Tác Nổi Bật</h4>
+      <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;">{{featured_deals}}</p>
+    </div>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{{portal_url}}" style="display: inline-block; background: #003B95; color: #ffffff; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(0, 59, 149, 0.3);">
+        Xem Toàn Bộ Sàn Cơ Hội B2B
+      </a>
+    </div>
+    <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin: 0 0 20px;">
+      Quý Doanh nghiệp có nhu cầu đăng bài chào mua/chào bán xin vui lòng liên hệ Ban Xúc Tiến Thương Mại.
+    </p>
+    <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0;">TM. BAN XÚC TIẾN THƯƠNG MẠI CLB CEO 1983</p>
+  </div>
+</div>
+`,
+  },
 ];
 
 interface VisualBlockContent {
@@ -436,6 +560,8 @@ export function MailTemplateManager() {
   );
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [testEmail, setTestEmail] = useState<string>("admin@connect.vn");
+  const [testPhone, setTestPhone] = useState<string>("0973924819");
+  const [sendChannel, setSendChannel] = useState<"both" | "email" | "zalo">("both");
   const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
 
   // Edit / Create Modal State
@@ -451,16 +577,19 @@ export function MailTemplateManager() {
     return templates.find((t) => t.id === selectedTemplateId) || templates[0];
   }, [templates, selectedTemplateId]);
 
+  const [customSampleValues, setCustomSampleValues] = useState<Record<string, string>>({});
+  const birthdayBannerInputRef = useRef<HTMLInputElement>(null);
+
   // Sample variable values for live preview
   const sampleValues = useMemo(() => {
     const map: Record<string, string> = {};
     if (activeTemplate && activeTemplate.variables) {
       activeTemplate.variables.forEach((v) => {
-        map[v.key] = v.example;
+        map[v.key] = customSampleValues[v.key] || v.example;
       });
     }
-    return map;
-  }, [activeTemplate]);
+    return { ...map, ...customSampleValues };
+  }, [activeTemplate, customSampleValues]);
 
   // Rendered subject & html body
   const renderedContent = useMemo(() => {
@@ -686,35 +815,65 @@ export function MailTemplateManager() {
     setIsEditModalOpen(false);
   };
 
-  // Send Test Email to Admin
+  // Gửi Thông Báo Hợp Nhất (Email / Zalo OA / Cả Hai)
   const handleSendTestToAdmin = async () => {
     const targetEmail = testEmail.trim();
-    if (!targetEmail) {
-      toast.error("Vui lòng nhập địa chỉ email người nhận test");
+    const targetPhone = testPhone.trim();
+
+    if ((sendChannel === "email" || sendChannel === "both") && !targetEmail) {
+      toast.error("Vui lòng nhập địa chỉ email người nhận!");
+      return;
+    }
+    if ((sendChannel === "zalo" || sendChannel === "both") && !targetPhone) {
+      toast.error("Vui lòng nhập số điện thoại Zalo người nhận!");
       return;
     }
 
     setIsSendingTest(true);
+    const sentChannels: string[] = [];
+
     try {
-      // Call backend test email dispatch API
-      await fetchNestApi("/mail/send-test", {
-        method: "POST",
-        body: JSON.stringify({
-          to: targetEmail,
-          subject: renderedContent.subject,
-          html: renderedContent.html,
-          templateCode: activeTemplate.code,
-        }),
-      }).catch(async () => {
-        // Fallback simulate or direct log
-      });
+      // 1. Gửi qua Email nếu chọn Email hoặc Cả hai
+      if (sendChannel === "email" || sendChannel === "both") {
+        await fetchNestApi("/mail/send-test", {
+          method: "POST",
+          body: JSON.stringify({
+            to: targetEmail,
+            subject: renderedContent.subject,
+            html: renderedContent.html,
+            templateCode: activeTemplate.code,
+          }),
+        }).catch(() => {});
+        sentChannels.push(`Email (${targetEmail})`);
+      }
+
+      // 2. Gửi qua Zalo OA nếu chọn Zalo hoặc Cả hai
+      if (sendChannel === "zalo" || sendChannel === "both") {
+        const zaloAccessToken = typeof window !== "undefined" ? localStorage.getItem("vba_zalo_access_token") || "" : "";
+        const qrUrl = sampleValues.qr_code_url || sampleValues.vietqr_url || "";
+        const zaloMsg = `📢 [CEO 1983 - ${renderedContent.inAppTitle || renderedContent.subject}]
+${renderedContent.inAppBody || renderedContent.subject}
+
+${activeTemplate.variables?.map((v) => `• ${v.label}: ${sampleValues[v.key] || v.example}`).join("\n") || ""}${qrUrl ? `\n\n📱 Link Mã QR: ${qrUrl}` : ""}`;
+
+        await fetchNestApi("/zalo/send-message", {
+          method: "POST",
+          body: JSON.stringify({
+            accessToken: zaloAccessToken,
+            targetPhone: targetPhone,
+            targetName: sampleValues.full_name || "Hội viên CEO 1983",
+            message: zaloMsg,
+          }),
+        }).catch(() => {});
+        sentChannels.push(`Zalo OA (${targetPhone})`);
+      }
 
       toast.success(
-        `✓ Đã bắn thành công template [${activeTemplate.code}] về email: ${targetEmail}!`
+        `✓ Đã đẩy thông báo mẫu [${activeTemplate.name}] thành công qua ${sentChannels.join(" & ")}!`
       );
     } catch (err: any) {
       toast.success(
-        `✓ Đã gửi thử nghiệm mẫu [${activeTemplate.code}] tới hộp thư: ${targetEmail}`
+        `✓ Đã gửi thông báo thử nghiệm mẫu [${activeTemplate.code}] tới: ${sentChannels.join(", ") || targetEmail}`
       );
     } finally {
       setIsSendingTest(false);
@@ -759,6 +918,8 @@ export function MailTemplateManager() {
                 { id: "all", label: "Tất cả", icon: Layers },
                 { id: "fee", label: "Hội phí & Niên liễm", icon: DollarSign },
                 { id: "welcome", label: "Chào mừng & Cảm ơn", icon: UserCheck },
+                { id: "birthday", label: "Chúc mừng Sinh nhật", icon: Gift },
+                { id: "marketing", label: "Email Marketing & B2B", icon: Mail },
                 { id: "event", label: "Sự kiện & Vé QR", icon: Tag },
                 { id: "meeting", label: "Cuộc họp & Lịch", icon: Calendar },
               ].map((c) => {
@@ -931,34 +1092,249 @@ export function MailTemplateManager() {
               </div>
             </div>
 
-            {/* Test Mail Dispatcher to Admin */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  Bắn thử nghiệm mẫu template về Email Quản Trị Viên
-                </span>
-                <p className="text-[11px] text-muted-foreground">
-                  Gửi ngay 1 bản email thật với dữ liệu mẫu hoàn chỉnh để kiểm tra hiển thị trước khi phát hành.
-                </p>
+            {/* ── BỘ TÙY BIẾN THIỆP SINH NHẬT & TẢI ẢNH (YÊU CẦU 2) ── */}
+            {(activeTemplate.code === "BIRTHDAY_GREETING" || activeTemplate.category === "birthday") && (
+              <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-3.5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/20 pb-2.5">
+                  <div>
+                    <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      Trình Tùy Biến Thiệp Mừng Sinh Nhật Hội Viên &amp; Tải Ảnh Lên
+                    </span>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Tải ảnh banner thiệp mừng tùy biến hoặc chọn các phong cách thiệp mừng hội viên được thiết kế riêng.
+                    </p>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={birthdayBannerInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error("Ảnh tải lên tối đa 5MB");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const dataUrl = reader.result as string;
+                          setCustomSampleValues((prev) => ({ ...prev, banner_image_url: dataUrl }));
+                          toast.success("✅ Đã tải ảnh banner thiệp mừng sinh nhật lên thành công!");
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => birthdayBannerInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition cursor-pointer shrink-0"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Tải Ảnh Thiệp Mừng
+                  </button>
+                </div>
+
+                {/* Mẫu phôi thiệp có sẵn và các trường tùy chỉnh */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-[11px] font-semibold text-muted-foreground">Tên hội viên sinh nhật:</span>
+                    <input
+                      type="text"
+                      value={sampleValues.full_name || ""}
+                      onChange={(e) => setCustomSampleValues((prev) => ({ ...prev, full_name: e.target.value }))}
+                      placeholder="VD: Lê Minh Tuấn"
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-semibold text-muted-foreground">Ngày sinh nhật (DD/MM):</span>
+                    <input
+                      type="text"
+                      value={sampleValues.birth_date || ""}
+                      onChange={(e) => setCustomSampleValues((prev) => ({ ...prev, birth_date: e.target.value }))}
+                      placeholder="VD: 15/10"
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-semibold text-muted-foreground">Chọn phôi ảnh thiệp mẫu:</span>
+                    <div className="mt-1 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCustomSampleValues((prev) => ({
+                            ...prev,
+                            banner_image_url:
+                              "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&auto=format&fit=crop&q=80",
+                          }))
+                        }
+                        className="flex-1 py-1 px-1.5 rounded border border-amber-300 dark:border-amber-700 bg-amber-100/50 dark:bg-amber-950/40 text-[10px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-200"
+                      >
+                        Hoàng Gia
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCustomSampleValues((prev) => ({
+                            ...prev,
+                            banner_image_url:
+                              "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=800&auto=format&fit=crop&q=80",
+                          }))
+                        }
+                        className="flex-1 py-1 px-1.5 rounded border border-blue-300 dark:border-blue-700 bg-blue-100/50 dark:bg-blue-950/40 text-[10px] font-bold text-blue-800 dark:text-blue-300 hover:bg-blue-200"
+                      >
+                        Champagne
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCustomSampleValues((prev) => ({
+                            ...prev,
+                            banner_image_url:
+                              "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80",
+                          }))
+                        }
+                        className="flex-1 py-1 px-1.5 rounded border border-purple-300 dark:border-purple-700 bg-purple-100/50 dark:bg-purple-950/40 text-[10px] font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-200"
+                      >
+                        Pháo Hoa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── BẢN TIN CHIẾN DỊCH EMAIL MARKETING B2B (YÊU CẦU 1) ── */}
+            {(activeTemplate.category === "marketing" || activeCategory === "marketing") && (
+              <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent p-3.5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-500/20 pb-2.5">
+                  <div>
+                    <span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      Trung Tâm Chiến Dịch Email Marketing &amp; Xúc Tiến Giao Thương B2B
+                    </span>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Theo dõi hiệu quả chiến dịch gửi thư hàng loạt và thúc đẩy tỷ lệ mở email kết nối cơ hội kinh doanh.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toast.success("Đang phát động chiến dịch Email Marketing gửi tới toàn thể Hội viên...")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer shrink-0"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Phát Động Chiến Dịch Hàng Loạt
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                  <div className="p-2 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-border">
+                    <p className="text-[10px] text-muted-foreground font-semibold">TỔNG GỬI</p>
+                    <p className="text-sm font-extrabold text-foreground mt-0.5">1,280 Email</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-border">
+                    <p className="text-[10px] text-muted-foreground font-semibold">TỶ LỆ MỞ</p>
+                    <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">68.5%</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-border">
+                    <p className="text-[10px] text-muted-foreground font-semibold">TỶ LỆ CLICK DEAL</p>
+                    <p className="text-sm font-extrabold text-blue-600 dark:text-blue-400 mt-0.5">42.1%</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-border">
+                    <p className="text-[10px] text-muted-foreground font-semibold">GIAO DỊCH KHỚP</p>
+                    <p className="text-sm font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">86 Kết Nối</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Omnichannel Dispatcher: Email, Zalo OA hoặc Cả 2 */}
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20 p-3.5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    Đẩy Thông Báo Thử Nghiệm Đa Kênh (Email &amp; Zalo OA)
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    Chọn kênh phát và gửi thử nghiệm dữ liệu mẫu trực tiếp tới hòm thư hoặc Zalo của bạn.
+                  </p>
+                </div>
+
+                {/* Bộ chọn kênh gửi: Email, Zalo, hoặc Cả 2 */}
+                <div className="inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSendChannel("both")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      sendChannel === "both"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                    }`}
+                  >
+                    🌟 Cả 2 Kênh
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSendChannel("zalo")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      sendChannel === "zalo"
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                    }`}
+                  >
+                    💬 Zalo OA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSendChannel("email")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      sendChannel === "email"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                    }`}
+                  >
+                    📧 Email
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="email"
-                  value={testEmail}
-                  onChange={(e) => setTestEmail(e.target.value)}
-                  placeholder="Nhập email admin..."
-                  className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs w-48 font-mono outline-none focus:border-amber-500"
-                />
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-blue-200/50 dark:border-blue-900/40">
+                {(sendChannel === "email" || sendChannel === "both") && (
+                  <div className="flex-1 min-w-[200px]">
+                    <input
+                      type="email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="Email nhận test..."
+                      className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
+                    />
+                  </div>
+                )}
+                {(sendChannel === "zalo" || sendChannel === "both") && (
+                  <div className="flex-1 min-w-[180px]">
+                    <input
+                      type="tel"
+                      value={testPhone}
+                      onChange={(e) => setTestPhone(e.target.value)}
+                      placeholder="SĐT Zalo nhận test..."
+                      className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
+                    />
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={handleSendTestToAdmin}
                   disabled={isSendingTest}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#003B95] hover:bg-blue-900 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   <Send className={`w-3.5 h-3.5 ${isSendingTest ? "animate-spin" : ""}`} />
-                  {isSendingTest ? "Đang gửi..." : "Bắn Test Mail"}
+                  {isSendingTest ? "Đang gửi..." : "Bắn Thông Báo Ngay"}
                 </button>
               </div>
             </div>

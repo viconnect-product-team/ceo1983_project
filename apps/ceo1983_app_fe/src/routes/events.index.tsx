@@ -481,35 +481,38 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
 
   return (
     <AppShell>
-      <PageHeader
-        title={t("events.title")}
-        subtitle={t("events.subtitle")}
-        actions={
-          <>
-            {can("EVTO_EXPORT") && (
-              <button
-                onClick={handleExport}
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
-              >
-                <Download className="h-4 w-4 text-muted-foreground" />
-                {t("common.export")}
-              </button>
-            )}
-            {can(PERMISSIONS.EVENT_CREATE) && (
-              <button
-                onClick={() => {
-                  setWizardOpen(true);
-                }}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                <Plus className="h-4 w-4" />
-                {t("events.create")}
-              </button>
-            )}
-          </>
-        }
-      />
+      <div className="w-full max-w-7xl mx-auto space-y-6">
+        <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
+          <PageHeader
+            title={t("events.title")}
+            subtitle={t("events.subtitle")}
+            actions={
+              <>
+                {can("EVTO_EXPORT") && (
+                  <button
+                    onClick={handleExport}
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted cursor-pointer"
+                  >
+                    <Download className="h-4 w-4 text-muted-foreground" />
+                    {t("common.export")}
+                  </button>
+                )}
+                {can(PERMISSIONS.EVENT_CREATE) && (
+                  <button
+                    onClick={() => {
+                      setWizardOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t("events.create")}
+                  </button>
+                )}
+              </>
+            }
+          />
+        </div>
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
@@ -974,6 +977,7 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
         onClose={() => setQrGatekeeperEvent(null)}
         onUpdateEvent={() => router.invalidate()}
       />
+      </div>
     </AppShell>
   );
 }

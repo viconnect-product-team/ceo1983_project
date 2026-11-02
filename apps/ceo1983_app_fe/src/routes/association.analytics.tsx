@@ -675,19 +675,19 @@ export function AssociationAnalyticsScreen() {
       </div>
 
       <div className="px-3 sm:px-4 pt-3.5 space-y-4">
-        {/* ── KHỐI TIẾN TRÌNH GIẢI THƯỞNG MỐC THỐNG KÊ (GAMIFICATION BẮN TỪ CRM XUỐNG APP) ── */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-amber-500/10 via-rose-500/10 to-blue-500/10 dark:from-amber-950/40 dark:via-slate-900/60 dark:to-blue-950/40 border-2 border-amber-400/50 dark:border-amber-500/30 shadow-md relative overflow-hidden">
+        {/* ── KHỐI TIẾN TRÌNH GIẢI THƯỞNG MỐC THỐNG KÊ (GAMIFICATION CHUẨN 3 MÀU CEO 1983) ── */}
+        <div className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-blue-200 dark:border-blue-900/50 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-2.5">
             <div className="flex items-center gap-2">
-              <div className="size-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 shadow-sm font-black">
-                <Trophy className="size-4 text-slate-950" />
+              <div className="size-8 rounded-xl bg-gradient-to-tr from-[#003B95] to-blue-600 flex items-center justify-center text-white shadow-sm font-black">
+                <Trophy className="size-4 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#003B95] dark:text-blue-400">
                     Giải Thưởng Mốc Thống Kê
                   </span>
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                     {currentAwardProgress.mappedCat === "top_referrals"
                       ? "Top Giới Thiệu"
                       : currentAwardProgress.mappedCat === "top_connect"
@@ -706,22 +706,22 @@ export function AssociationAnalyticsScreen() {
             <button
               type="button"
               onClick={() => setShowAwardsRoadmapModal(true)}
-              className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-[11px] font-bold text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+              className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-slate-800 text-[11px] font-bold text-[#003B95] dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
             >
               <Gift className="size-3.5" />
               <span>Lộ trình ({currentAwardProgress.categoryAwards.length})</span>
             </button>
           </div>
 
-          {/* Câu thông điệp tiến trình chuẩn yêu cầu: "Bạn đang giới thiệu được /10 người hãy giới thiệu thêm..." */}
-          <div className="p-3 rounded-2xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-xs border border-slate-200/80 dark:border-slate-800 space-y-2">
+          {/* Câu thông điệp tiến trình chuẩn yêu cầu */}
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-800 space-y-2">
             <div className="flex items-start gap-2">
-              <Sparkles className="size-4 text-amber-500 shrink-0 mt-0.5 animate-pulse" />
+              <Sparkles className="size-4 text-[#003B95] dark:text-blue-400 shrink-0 mt-0.5" />
               <p className="text-xs text-slate-800 dark:text-slate-100 font-medium leading-relaxed">
                 {currentAwardProgress.isCompleted ? (
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
                     🎉 Xuất sắc! Bạn đã đạt mốc {currentAwardProgress.targetCount} {currentAwardProgress.unitLabel} và mở khóa thành công giải thưởng:{" "}
-                    <span className="font-black text-amber-500">{currentAwardProgress.award?.awardName}</span>!
+                    <span className="font-black text-[#003B95] dark:text-blue-400">{currentAwardProgress.award?.awardName}</span>!
                   </span>
                 ) : (
                   <>
@@ -734,11 +734,11 @@ export function AssociationAnalyticsScreen() {
                       {currentAwardProgress.targetCount}
                     </strong>{" "}
                     {currentAwardProgress.unitLabel}, hãy {currentAwardProgress.actionVerb} thêm{" "}
-                    <strong className="text-[#DC2626] font-black text-sm">
+                    <strong className="text-[#003B95] dark:text-cyan-400 font-black text-sm">
                       {currentAwardProgress.remaining}
                     </strong>{" "}
                     {currentAwardProgress.unitLabel} nữa để mở khóa giải thưởng:{" "}
-                    <span className="font-black text-amber-600 dark:text-amber-400 underline decoration-amber-400">
+                    <span className="font-black text-[#003B95] dark:text-blue-400 underline decoration-blue-400">
                       {currentAwardProgress.award?.awardName}
                     </span>
                     !
@@ -749,26 +749,26 @@ export function AssociationAnalyticsScreen() {
 
             {/* Chi tiết phần thưởng */}
             {currentAwardProgress.award?.rewardValueStr && (
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 bg-amber-50/80 dark:bg-amber-950/30 px-2.5 py-1 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
-                <Gift className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                <Gift className="size-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
                 <span>Phần thưởng mở khóa:</span>
-                <span className="font-bold text-amber-700 dark:text-amber-300">
+                <span className="font-bold text-[#003B95] dark:text-blue-300">
                   {currentAwardProgress.award.rewardValueStr}
                 </span>
               </div>
             )}
 
-            {/* Thanh tiến trình % động màu Đỏ - Vàng - Xanh */}
+            {/* Thanh tiến trình % động màu CEO 1983 Blue */}
             <div className="space-y-1 pt-1">
               <div className="flex justify-between items-center text-[10px] font-bold">
                 <span className="text-slate-500">Tiến độ mở khóa</span>
-                <span className="text-[#003B95] dark:text-amber-400 font-black">
+                <span className="text-[#003B95] dark:text-blue-400 font-black">
                   {currentAwardProgress.percent}%
                 </span>
               </div>
               <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#DC2626] via-[#F59E0B] to-[#003B95] transition-all duration-500 shadow-xs"
+                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-[#003B95] transition-all duration-500 shadow-xs"
                   style={{ width: `${currentAwardProgress.percent}%` }}
                 />
               </div>

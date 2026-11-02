@@ -653,9 +653,9 @@ function AccountsPage() {
 
   return (
     <AppShell>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
         {/* Header với Icon Logo */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-5">
           <img
             src="/icons/ceo1983_icon_2/image 6.png"
             alt="CEO 1983"

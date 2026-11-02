@@ -89,21 +89,11 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
       }
     });
 
-    // Fallback numbers if database has few records
+    // Trả về dữ liệu thực tế 100% từ CSDL PostgreSQL, hoàn toàn không mock
     return {
-      green: green.length > 0 ? green : [
-        { id: "g1", title: "Cung ứng thiết bị văn phòng thông minh 2026", company: "Công ty Công Nghệ Alpha", value: "850 Tr đ", status: "open" },
-        { id: "g2", title: "Tìm đối tác thi công nội thất trụ sở tập đoàn", company: "Tập đoàn Xây dựng Việt", value: "3.2 Tỷ đ", status: "open" },
-        { id: "g3", title: "Hợp tác phân phối nông sản xuất khẩu Nhật Bản", company: "Nông Sản Xanh CEO", value: "1.5 Tỷ đ", status: "open" },
-      ],
-      yellow: yellow.length > 0 ? yellow : [
-        { id: "y1", title: "Tư vấn chuyển đổi số & AI Automation", company: "Uranus Tech Group", value: "1.2 Tỷ đ", status: "negotiating", claimedByName: "CEO Phạm Văn Vũ" },
-        { id: "y2", title: "Thuê sàn văn phòng thương mại Hạng A", company: "Bất Động Sản Viconnect", value: "4.5 Tỷ đ", status: "negotiating", claimedByName: "CEO Nguyễn Minh Châu" },
-      ],
-      red: red.length > 0 ? red : [
-        { id: "r1", title: "Gói bảo hiểm sức khỏe doanh nghiệp CEO", company: "Bảo hiểm Thăng Long", value: "600 Tr đ", status: "closed" },
-        { id: "r2", title: "Cung ứng quà tặng sự kiện Gala 2025", company: "Quà tặng Doanh Nhân", value: "450 Tr đ", status: "expired" },
-      ],
+      green,
+      yellow,
+      red,
     };
   }, [opportunities]);
 
@@ -113,19 +103,44 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
   const totalCount = countGreen + countYellow + countRed;
 
   // Percentage calculations for Donut segments
-  const pctGreen = totalCount > 0 ? (countGreen / totalCount) * 100 : 40;
-  const pctYellow = totalCount > 0 ? (countYellow / totalCount) * 100 : 35;
-  const pctRed = totalCount > 0 ? (countRed / totalCount) * 100 : 25;
+  const pctGreen = totalCount > 0 ? (countGreen / totalCount) * 100 : 0;
+  const pctYellow = totalCount > 0 ? (countYellow / totalCount) * 100 : 0;
+  const pctRed = totalCount > 0 ? (countRed / totalCount) * 100 : 0;
 
   // Donut SVG circumference calculation (radius = 16, c = 2 * PI * 16 = 100.53)
   const C = 100.53;
-  const strokeGreen = (pctGreen / 100) * C;
-  const strokeYellow = (pctYellow / 100) * C;
-  const strokeRed = (pctRed / 100) * C;
+  const strokeGreen = totalCount > 0 ? (pctGreen / 100) * C : 0;
+  const strokeYellow = totalCount > 0 ? (pctYellow / 100) * C : 0;
+  const strokeRed = totalCount > 0 ? (pctRed / 100) * C : 0;
+
+  const calculatedTotalValue = useMemo(() => {
+    let sum = 0;
+    opportunities.forEach((o: any) => {
+      const v = Number(o.value || o.amount || 0);
+      if (!isNaN(v)) sum += v;
+    });
+    if (sum >= 1_000_000_000) return `${(sum / 1_000_000_000).toFixed(1)} Tỷ đ`;
+    if (sum >= 1_000_000) return `${(sum / 1_000_000).toFixed(0)} Tr đ`;
+    return sum > 0 ? `${sum.toLocaleString("vi-VN")} đ` : "0 đ";
+  }, [opportunities]);
+
+  const calculatedDealValue = useMemo(() => {
+    let sum = 0;
+    opportunities.forEach((o: any) => {
+      const s = String(o.status || "").toLowerCase();
+      if (s === "won" || s === "completed" || s === "closed") {
+        const v = Number(o.value || o.amount || 0);
+        if (!isNaN(v)) sum += v;
+      }
+    });
+    if (sum >= 1_000_000_000) return `${(sum / 1_000_000_000).toFixed(1)} Tỷ đ`;
+    if (sum >= 1_000_000) return `${(sum / 1_000_000).toFixed(0)} Tr đ`;
+    return sum > 0 ? `${sum.toLocaleString("vi-VN")} đ` : "0 đ";
+  }, [opportunities]);
 
   const displayTotalCount = totalOpportunitiesCount || totalCount;
-  const displayTotalValue = totalOpportunitiesValue || "28.5 Tỷ đ";
-  const displayDealValue = totalDealsWonValue || "12.8 Tỷ đ";
+  const displayTotalValue = totalOpportunitiesValue || calculatedTotalValue;
+  const displayDealValue = totalDealsWonValue || calculatedDealValue;
 
   return (
     <>
@@ -134,7 +149,7 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
         {/* Header bar */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <span className="p-1.5 rounded-xl bg-[#003B95] text-amber-300">
+            <span className="p-1.5 rounded-xl bg-[#003B95] text-white shadow-xs">
               <Handshake className="size-4" />
             </span>
             <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
@@ -299,7 +314,7 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
             {/* Modal Header */}
             <div className="p-4 bg-gradient-to-r from-[#003B95] to-blue-900 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-xl bg-amber-400 text-slate-950">
+                <span className="p-1.5 rounded-xl bg-white/20 text-white shadow-xs">
                   <Handshake className="size-4" />
                 </span>
                 <div>
@@ -387,40 +402,46 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
                       <span>({segmentedOpps[countFilter].length})</span>
                     </div>
 
-                    {segmentedOpps[countFilter].map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col gap-1.5"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-snug">
-                            {item.title}
-                          </h4>
-                          <span
-                            className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              countFilter === "green"
-                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                : countFilter === "yellow"
-                                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                                : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                            }`}
-                          >
-                            {countFilter === "green" && "Đang mở"}
-                            {countFilter === "yellow" && (item.claimedByName ? `Đang deal: ${item.claimedByName}` : "Đang deal")}
-                            {countFilter === "red" && "Đã kết thúc"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5 border-t border-slate-200 dark:border-slate-700/60">
-                          <span className="flex items-center gap-1 truncate">
-                            <Building2 className="size-3 text-slate-400 shrink-0" />
-                            <span>{item.company}</span>
-                          </span>
-                          <span className="font-black text-[#003B95] dark:text-amber-400">
-                            {item.value}
-                          </span>
-                        </div>
+                    {segmentedOpps[countFilter].length === 0 ? (
+                      <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 font-medium bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                        Chưa có cơ hội nào trong danh mục này.
                       </div>
-                    ))}
+                    ) : (
+                      segmentedOpps[countFilter].map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col gap-1.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="text-xs font-extrabold text-slate-900 dark:text-white leading-snug">
+                              {item.title}
+                            </h4>
+                            <span
+                              className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                countFilter === "green"
+                                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                  : countFilter === "yellow"
+                                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                  : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                              }`}
+                            >
+                              {countFilter === "green" && "Đang mở"}
+                              {countFilter === "yellow" && (item.claimedByName ? `Đang deal: ${item.claimedByName}` : "Đang deal")}
+                              {countFilter === "red" && "Đã kết thúc"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5 border-t border-slate-200 dark:border-slate-700/60">
+                            <span className="flex items-center gap-1 truncate">
+                              <Building2 className="size-3 text-slate-400 shrink-0" />
+                              <span>{item.company}</span>
+                            </span>
+                            <span className="font-black text-[#003B95] dark:text-blue-400">
+                              {item.value}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

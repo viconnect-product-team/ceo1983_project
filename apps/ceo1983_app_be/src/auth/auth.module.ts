@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { ZaloModule } from '../zalo/zalo.module';
 import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
@@ -16,6 +17,7 @@ import { DataScopeInterceptor } from './data-scope.interceptor';
     PrismaModule,
     UsersModule,
     MailModule,
+    ZaloModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'super-secret-jwt-key',

@@ -50,6 +50,7 @@ import {
 import { HomeOpportunityRowWidget } from "@/components/opportunities/HomeOpportunityRowWidget";
 import { CeoInteractiveMapModal } from "@/components/member/CeoInteractiveMapModal";
 import { CeoCalendarAlarmModal } from "@/components/member/CeoCalendarAlarmModal";
+import { MemberProfileModal } from "@/components/member/MemberProfileModal";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/context/AuthContext";
 import { SeasonalEventHeader, getEffectiveThemeOption, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
@@ -326,6 +327,7 @@ function Home() {
   const [copied, setCopied] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [alarmModalOpen, setAlarmModalOpen] = useState(false);
+  const [selectedMemberForProfile, setSelectedMemberForProfile] = useState<any | null>(null);
   const [effectiveTheme, setEffectiveTheme] = useState(() => getEffectiveThemeOption());
 
   const { theme } = useTheme();
@@ -340,28 +342,28 @@ function Home() {
       return {
         backgroundColor: `${effectiveTheme.primaryColor}18`,
         borderColor: `${effectiveTheme.primaryColor}35`,
-        color: effectiveTheme.primaryColor,
+        color: effectiveTheme.primaryColor || "#003B95",
         boxShadow:
           effectiveTheme.iconStyle === "glow-neon"
-            ? `0 0 12px ${effectiveTheme.accentColor}70`
+            ? `0 0 12px ${effectiveTheme.primaryColor}70`
             : undefined,
       };
     }
-    // High-contrast, vibrant luminous styling for Dark Mode
+    // High-contrast, vibrant luminous styling for Dark Mode - Quy chuẩn toàn bộ sang Blue tone
     const darkPalette: Record<string, { bg: string; border: string; color: string }> = {
-      card: { bg: "rgba(245, 158, 11, 0.18)", border: "rgba(245, 158, 11, 0.45)", color: "#FBBF24" },
-      members: { bg: "rgba(56, 189, 248, 0.18)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
-      checkin: { bg: "rgba(52, 211, 153, 0.18)", border: "rgba(52, 211, 153, 0.45)", color: "#34D399" },
-      perks: { bg: "rgba(251, 191, 36, 0.20)", border: "rgba(251, 191, 36, 0.50)", color: "#FDE047" },
-      voting: { bg: "rgba(167, 139, 250, 0.18)", border: "rgba(167, 139, 250, 0.45)", color: "#A78BFA" },
-      history: { bg: "rgba(96, 165, 250, 0.18)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
-      marketplace: { bg: "rgba(251, 113, 133, 0.18)", border: "rgba(251, 113, 133, 0.45)", color: "#FB7185" },
-      fees: { bg: "rgba(16, 185, 129, 0.18)", border: "rgba(16, 185, 129, 0.45)", color: "#10B981" },
+      card: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
+      members: { bg: "rgba(30, 58, 138, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
+      checkin: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
+      perks: { bg: "rgba(37, 99, 235, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
+      voting: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(147, 197, 253, 0.45)", color: "#93C5FD" },
+      history: { bg: "rgba(30, 58, 138, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
+      marketplace: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
+      fees: { bg: "rgba(37, 99, 235, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
     };
     const item = darkPalette[iconKey] || {
-      bg: "rgba(245, 158, 11, 0.18)",
-      border: "rgba(245, 158, 11, 0.45)",
-      color: effectiveTheme.accentColor || "#FBBF24",
+      bg: "rgba(0, 59, 149, 0.22)",
+      border: "rgba(56, 189, 248, 0.45)",
+      color: "#38BDF8",
     };
     return {
       backgroundColor: item.bg,
@@ -1280,8 +1282,8 @@ function Home() {
                 <div
                   className={`size-14 relative ${roundedClass} flex justify-center items-center group-hover:scale-105 transition-all shadow-xs`}
                   style={{
-                    backgroundColor: isDark ? `${effectiveTheme.primaryColor}30` : `${effectiveTheme.primaryColor}14`,
-                    borderColor: `${effectiveTheme.accentColor || "#D97706"}45`,
+                    backgroundColor: isDark ? `${effectiveTheme.primaryColor || "#003B95"}25` : `${effectiveTheme.primaryColor || "#003B95"}12`,
+                    borderColor: `${effectiveTheme.primaryColor || "#003B95"}40`,
                     borderWidth: "1px",
                     borderStyle: "solid",
                   }}
@@ -1291,7 +1293,7 @@ function Home() {
                       {customThemeIcon}
                     </span>
                   ) : (
-                    <span style={{ color: effectiveTheme.accentColor || "#1E3A8A" }}>
+                    <span style={{ color: effectiveTheme.primaryColor || "#003B95" }}>
                       {getShortcutIcon(def.iconName, "size-6")}
                     </span>
                   )}
@@ -1582,7 +1584,7 @@ function Home() {
           </div>
 
           <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-2.5 pb-1">
-            {(directoryMembers?.length > 0 ? directoryMembers.slice(0, 6) : [
+            {(directoryMembers?.length > 0 ? directoryMembers.slice(0, 8) : [
               { name: "Cao Văn Mạnh", company: "Cao Văn Mạnh", code: "VM" },
               { name: "Dương Thị Huệ", company: "Dương Thị Huệ", code: "TH" },
               { name: "Nguyễn Văn Hùng", company: "Hùng Vương JSC", code: "VH" },
@@ -1590,19 +1592,21 @@ function Home() {
               const pName = (m as any).personName || (m as any).contact || m.name || "Hội viên";
               const cName = (m as any).company || ((m as any).type === 'company' ? m.name : '') || (m as any).companyName || "Doanh nghiệp hội viên";
               return (
-                <Link
+                <button
+                  type="button"
                   key={(m as any).id || (m as any).code || i}
-                  to="/association/members"
-                  className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-amber-400 transition"
+                  onClick={() => setSelectedMemberForProfile(m)}
+                  className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-[#003B95] dark:hover:border-blue-500 hover:shadow-md transition cursor-pointer text-left"
+                  title={`Xem hồ sơ chi tiết của ${pName}`}
                 >
-                  <div className="size-9 bg-sky-900 rounded-xl outline outline-1 outline-amber-400 flex justify-center items-center shrink-0">
-                    <span className="text-yellow-500 text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(pName)}</span>
+                  <div className="size-9 bg-[#003B95] rounded-xl outline outline-1 outline-blue-400 flex justify-center items-center shrink-0 shadow-2xs">
+                    <span className="text-white text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(pName)}</span>
                   </div>
                   <div className="inline-flex flex-col justify-start items-start min-w-0">
                     <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{pName}</span>
                     <span className="text-slate-400 text-[11px] truncate max-w-[120px]">{cName}</span>
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -1903,6 +1907,14 @@ function Home() {
         isOpen={createConnectionModalOpen}
         onClose={() => setCreateConnectionModalOpen(false)}
       />
+
+      {/* ── XEM HỒ SƠ CHI TIẾT HỘI VIÊN MỚI ── */}
+      {selectedMemberForProfile && (
+        <MemberProfileModal
+          member={selectedMemberForProfile}
+          onClose={() => setSelectedMemberForProfile(null)}
+        />
+      )}
     </div>
   );
 }

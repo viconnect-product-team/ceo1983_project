@@ -42,16 +42,35 @@ export const Route = createFileRoute("/events-overview")({
   ),
 });
 
-function Kpi({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Users }) {
+function Kpi({
+  label,
+  value,
+  icon: Icon,
+  gradient = "from-sky-100 to-slate-50",
+  iconColor = "text-blue-600",
+}: {
+  label: string;
+  value: number;
+  icon: typeof Users;
+  gradient?: string;
+  iconColor?: string;
+}) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Icon aria-hidden="true" className="h-4 w-4" />
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+    <div
+      className={`h-32 p-4 bg-gradient-to-b ${gradient} dark:from-slate-800/80 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs`}
+    >
+      <div className="h-8 flex items-center gap-2">
+        <Icon aria-hidden="true" className={`h-4 w-4 ${iconColor}`} />
+        <div className={`text-xs font-semibold font-['Inter'] uppercase tracking-tight ${iconColor}`}>
+          {label}
+        </div>
+      </div>
+      <div className="text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-7">
         {value.toLocaleString("vi-VN")}
-      </p>
+      </div>
+      <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+        Dữ liệu thực tế hệ thống
+      </div>
     </div>
   );
 }
@@ -127,9 +146,9 @@ function EventsOverviewPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto w-full max-w-6xl p-6">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
+        <header className="border-b border-slate-200 dark:border-slate-800 pb-5">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {t("eventsOverview.title")}
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -138,7 +157,7 @@ function EventsOverviewPage() {
         </header>
 
         {/* Bộ lọc trạng thái sự kiện gọi theo Database API */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-border bg-card shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-border bg-card shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
             <Filter className="h-4 w-4 text-[#003B95]" />
             <span>Lọc Trạng Thái Sự Kiện:</span>
@@ -192,15 +211,35 @@ function EventsOverviewPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi label={t("eventsOverview.kpiEvents")} value={totals.events} icon={CalendarDays} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Kpi
+            label={t("eventsOverview.kpiEvents")}
+            value={totals.events}
+            icon={CalendarDays}
+            gradient="from-sky-100 to-slate-50"
+            iconColor="text-blue-600"
+          />
           <Kpi
             label={t("eventsOverview.kpiRegistrations")}
             value={totals.registrations}
             icon={Ticket}
+            gradient="from-violet-100 to-white"
+            iconColor="text-indigo-500"
           />
-          <Kpi label={t("eventsOverview.kpiAttended")} value={totals.attended} icon={UserCheck} />
-          <Kpi label={t("eventsOverview.kpiCapacity")} value={totals.capacity} icon={Users} />
+          <Kpi
+            label={t("eventsOverview.kpiAttended")}
+            value={totals.attended}
+            icon={UserCheck}
+            gradient="from-emerald-100 to-white"
+            iconColor="text-emerald-500"
+          />
+          <Kpi
+            label={t("eventsOverview.kpiCapacity")}
+            value={totals.capacity}
+            icon={Users}
+            gradient="from-orange-100 to-white"
+            iconColor="text-orange-500"
+          />
         </div>
 
         <label className="mt-6 flex min-h-10 max-w-sm items-center gap-2 rounded-xl border border-border bg-card px-3">

@@ -56,16 +56,22 @@ export function playCeoAlarmChime() {
   }
 }
 
-// Lấy danh sách toàn bộ mục trong Lịch
+// Lấy danh sách toàn bộ mục trong Lịch (Chỉ lấy dữ liệu thật, loại bỏ hoàn toàn seed mock)
 export function getSavedCalendarItems(): CalendarReminderItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_CALENDAR_ITEMS);
-    if (!raw) return getDefaultSeedCalendarItems();
+    if (!raw) return [];
     const list = JSON.parse(raw);
-    return Array.isArray(list) ? list : getDefaultSeedCalendarItems();
+    if (!Array.isArray(list)) return [];
+    // Tự động thanh lọc các mục fake seed cũ khỏi CSDL bộ nhớ
+    const cleaned = list.filter((i) => i && !i.id?.includes("seed"));
+    if (cleaned.length !== list.length) {
+      localStorage.setItem(STORAGE_CALENDAR_ITEMS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
-    return getDefaultSeedCalendarItems();
+    return [];
   }
 }
 
@@ -165,50 +171,5 @@ export function saveMorningDigestSettings(settings: {
     const updated = { ...current, ...settings };
     localStorage.setItem(STORAGE_MORNING_DIGEST, JSON.stringify(updated));
   } catch {}
-}
-
-// Mock seed data ban đầu nếu chưa có lịch nào
-function getDefaultSeedCalendarItems(): CalendarReminderItem[] {
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
-
-  return [
-    {
-      id: "ev-seed-1",
-      sourceType: "event",
-      title: "Gala Giao Thương Doanh Nhân CEO 1983 - Kết Nối B2B Quý 4",
-      dateStr: todayStr,
-      timeStr: "08:30",
-      location: "Khách sạn Grand Plaza Hà Nội, 117 Trần Duy Hưng",
-      details: "Gặp gỡ 150+ chủ doanh nghiệp, ký kết biên bản ghi nhớ hợp tác thương mại",
-      alarmEnabled: true,
-      alarmLeadMinutes: 30,
-    },
-    {
-      id: "meeting-seed-1",
-      sourceType: "meeting",
-      title: "Họp Ban Điều Hành & Ban Thư Ký CLB CEO 1983",
-      dateStr: todayStr,
-      timeStr: "14:00",
-      location: "Tầng 12A, Keangnam Landmark 72, Hà Nội",
-      details: "Đánh giá KPI tháng và phê duyệt quy chế hoạt động hội viên mới",
-      alarmEnabled: true,
-      alarmLeadMinutes: 15,
-    },
-    {
-      id: "training-seed-1",
-      sourceType: "training",
-      title: "Chương Trình Đào Tạo: Quản Trị Tài Chính & Tối Ưu Chi Phí DN 2026",
-      dateStr: tomorrowStr,
-      timeStr: "09:00",
-      location: "Hội trường VCCI, Số 9 Đào Duy Anh, Đống Đa, Hà Nội",
-      details: "Chuyên gia đầu ngành chia sẻ về cấu trúc dòng tiền và giải pháp tài chính số",
-      alarmEnabled: true,
-      alarmLeadMinutes: 60,
-    },
-  ];
 }
 

@@ -111,7 +111,6 @@ const finance: Item[] = [
 ];
 const comm: Item[] = [
   { key: "nav.notify", icon: Bell, to: "/notifications" },
-  { key: "nav.email", icon: Mail, to: "/email-marketing" },
   { key: "nav.news", icon: Newspaper, to: "/news" },
   { key: "nav.perks", icon: Gift, to: "/perks" },
   { key: "nav.benefits", icon: Award, to: "/benefits" },
@@ -129,6 +128,13 @@ const system: Item[] = [
     icon: CheckSquare,
     to: "/tasks",
     label: "Quản lý công việc",
+    children: [
+      { to: "/tasks?view=table", label: "📋 Tất cả công việc" },
+      { to: "/tasks?view=tree", label: "🌳 Cây công việc phân ban" },
+      { to: "/tasks?view=kanban", label: "📌 Bảng Kanban tiến độ" },
+      { to: "/tasks?view=calendar", label: "📅 Lịch hạn hoàn thành" },
+      { to: "/tasks?view=timeline", label: "⏳ Dòng thời gian Gantt" },
+    ],
   },
   { key: "nav.settings", icon: Settings, to: "/settings" },
   { key: "nav.activityLogs" as TKey, icon: History, to: "/activity-logs", label: "Nhật ký thao tác (Audit Log)" },
@@ -224,13 +230,11 @@ function NavItem({
     }
   }, [isParentActive]);
 
-  const cls = `group relative flex w-full items-center gap-3 rounded-lg py-2 text-[13px] outline-none transition-[background-color,color] duration-[var(--motion-fast)] ease-out focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
-    collapsed ? "justify-center px-0" : "pl-3.5 pr-3"
-  } ${
-    active
+  const cls = `group relative flex w-full items-center gap-3 rounded-lg py-2 text-[13px] outline-none transition-[background-color,color] duration-[var(--motion-fast)] ease-out focus-visible:ring-2 focus-visible:ring-sidebar-ring ${collapsed ? "justify-center px-0" : "pl-3.5 pr-3"
+    } ${active
       ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
       : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-  }`;
+    }`;
   const badgeEl = showBadge ? (
     collapsed ? (
       <span className="vba-badge-pop absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar" />
@@ -249,9 +253,8 @@ function NavItem({
         <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-sidebar-primary" />
       )}
       <Icon
-        className={`h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--motion-fast)] ease-out ${
-          active ? "text-sidebar-primary" : "group-hover:translate-x-0.5"
-        }`}
+        className={`h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--motion-fast)] ease-out ${active ? "text-sidebar-primary" : "group-hover:translate-x-0.5"
+          }`}
         strokeWidth={active ? 2.4 : 1.9}
       />
       {!collapsed && <span className="flex-1 truncate text-left font-medium">{label}</span>}
@@ -313,16 +316,14 @@ function NavItem({
                 key={child.to}
                 to={child.to}
                 onClick={onNavigate}
-                className={`group flex items-center gap-2 rounded-lg py-1.5 px-2.5 text-[12px] font-medium transition-[background-color,color] ${
-                  childActive
+                className={`group flex items-center gap-2 rounded-lg py-1.5 px-2.5 text-[12px] font-medium transition-[background-color,color] ${childActive
                     ? "bg-sidebar-accent text-sidebar-primary font-bold shadow-2xs"
                     : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                }`}
+                  }`}
               >
                 <span
-                  className={`size-1.5 rounded-full transition-transform ${
-                    childActive ? "bg-sidebar-primary scale-125" : "bg-sidebar-foreground/35 group-hover:bg-sidebar-foreground/60"
-                  }`}
+                  className={`size-1.5 rounded-full transition-transform ${childActive ? "bg-sidebar-primary scale-125" : "bg-sidebar-foreground/35 group-hover:bg-sidebar-foreground/60"
+                    }`}
                 />
                 <span className="truncate">{child.label}</span>
               </Link>
@@ -641,13 +642,7 @@ export function Sidebar({
     return isBQT || isBTC;
   });
 
-  const filteredComm = comm.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/email-marketing") {
-      return canManageMedia || isBQT || isBTT;
-    }
-    return true;
-  });
+  const filteredComm = comm.filter((it) => isAllowed(it.to));
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
@@ -684,9 +679,8 @@ export function Sidebar({
     >
       {/* Logo */}
       <div
-        className={`flex h-[72px] items-center gap-3 border-b border-sidebar-border ${
-          isCollapsed ? "justify-center px-2" : "px-5"
-        }`}
+        className={`flex h-[72px] items-center gap-3 border-b border-sidebar-border ${isCollapsed ? "justify-center px-2" : "px-5"
+          }`}
       >
         <img
           src={brandLogo || "/app-icon.png"}
@@ -698,11 +692,8 @@ export function Sidebar({
         />
         {!isCollapsed && (
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-[13px] font-semibold text-sidebar-foreground">
+            <div className="truncate text-[14px] font-bold text-sidebar-foreground">
               {brandName}
-            </div>
-            <div className="truncate text-[11px] text-sidebar-foreground/60">
-              {t("brand.tagline")}
             </div>
           </div>
         )}

@@ -48,19 +48,47 @@ import {
   TaskDetailDrawer,
 } from '@/features/tasks';
 
-export const Route = createFileRoute('/tasks')({ component: TasksPage });
+interface TaskSearchParams {
+  view?: 'table' | 'kanban' | 'calendar' | 'timeline' | 'tree';
+  filter?: string;
+  dept?: string;
+}
+
+export const Route = createFileRoute('/tasks')({
+  validateSearch: (search: Record<string, unknown>): TaskSearchParams => {
+    const validViews = ['table', 'kanban', 'calendar', 'timeline', 'tree'];
+    return {
+      view: validViews.includes(search.view as string)
+        ? (search.view as TaskSearchParams['view'])
+        : undefined,
+      filter: typeof search.filter === 'string' ? search.filter : undefined,
+      dept: typeof search.dept === 'string' ? search.dept : undefined,
+    };
+  },
+  component: TasksPage,
+});
 
 type TaskViewMode = 'table' | 'kanban' | 'calendar' | 'timeline' | 'tree';
 
 function TasksPage() {
+  const searchParams = Route.useSearch();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [selectedDept, setSelectedDept] = useState<string>('ALL');
+  const [selectedDept, setSelectedDept] = useState<string>(() => searchParams.dept || 'ALL');
   const [selectedPriority, setSelectedPriority] = useState<string>('ALL');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
-  const [viewMode, setViewMode] = useState<TaskViewMode>('table');
+  const [viewMode, setViewMode] = useState<TaskViewMode>(() => searchParams.view || 'table');
+
+  useEffect(() => {
+    if (searchParams.view) {
+      setViewMode(searchParams.view);
+    }
+    if (searchParams.dept) {
+      setSelectedDept(searchParams.dept);
+    }
+  }, [searchParams.view, searchParams.dept]);
 
   // Modals & Drawers
   const [formOpen, setFormOpen] = useState(false);

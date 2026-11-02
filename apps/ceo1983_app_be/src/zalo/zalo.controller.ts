@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, Headers, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Headers, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import {
   ZaloService,
   SendZaloMessageDto,
@@ -108,6 +108,17 @@ export class ZaloController {
     },
   ) {
     return this.zaloService.triggerScheduledBroadcast(dto);
+  }
+
+  @Get('templates')
+  async getTemplates() {
+    return this.zaloService.getSavedTemplates();
+  }
+
+  @Post('templates')
+  @UseGuards(JwtAuthGuard)
+  async saveTemplates(@Req() req: any, @Body() body: { templates: any[] }) {
+    return this.zaloService.saveTemplates(body.templates, req.user?.id);
   }
 }
 

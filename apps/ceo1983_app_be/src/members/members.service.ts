@@ -79,18 +79,19 @@ export class MembersService {
       ) {
         return true;
       }
+
+      const roles = await this.prisma.$queryRaw<any[]>`
+        SELECT role::text FROM public.user_roles WHERE user_id::text = ${vUsers[0].id}::text
+      `.catch(() => [] as any[]);
+      if (roles.some((r: any) => adminRoles.includes((r.role || '').toLowerCase()))) {
+        return true;
+      }
     }
 
     const roles = await this.prisma.$queryRaw<any[]>`
       SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
     `.catch(() => [] as any[]);
     if (roles.some((r: any) => adminRoles.includes((r.role || '').toLowerCase()))) {
-      return true;
-    }
-    const userRole = await this.prisma.$queryRaw<any[]>`
-      SELECT executive_role as role FROM public.members WHERE user_id = ${userId}::uuid OR id::text = ${userId}::text LIMIT 1
-    `.catch(() => []);
-    if (userRole.length && adminRoles.includes((userRole[0].role || '').toLowerCase())) {
       return true;
     }
     return false;
@@ -103,20 +104,28 @@ export class MembersService {
       const executiveRoles = [
         'admin', 'association_admin', 'owner', 'platform_admin', 'tenant_admin', 'superadmin',
         'quan_tri', 'chu_tich', 'truong_ban_dieu_hanh', 'thanh_vien_ban_dieu_hanh',
-        'ban_dieu_hanh', 'bqt', 'adm'
+        'ban_dieu_hanh', 'bqt', 'adm', 'truong_ban', 'ban_thu_ky', 'tong_thu_ky'
       ];
 
-      // Check memberships
+      // 1. Check user_roles
+      const roles = await this.prisma.$queryRaw<any[]>`
+        SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
+      `.catch(() => [] as any[]);
+      if (roles.some((r: any) => executiveRoles.includes((r.role || '').toLowerCase()))) {
+        return true;
+      }
+
+      // 2. Check memberships if any
       let mems: any[] = [];
       if (assocId) {
         mems = await this.prisma.$queryRaw<any[]>`
           SELECT role FROM public.memberships 
-          WHERE user_id = ${userId}::uuid AND association_id = ${assocId}::uuid
+          WHERE user_id::text = ${userId}::text AND association_id::text = ${assocId}::text
         `.catch(() => []);
       } else {
         mems = await this.prisma.$queryRaw<any[]>`
           SELECT role FROM public.memberships 
-          WHERE user_id = ${userId}::uuid
+          WHERE user_id::text = ${userId}::text
         `.catch(() => []);
       }
 
@@ -124,19 +133,18 @@ export class MembersService {
         return true;
       }
 
-      // Check member's executive_role and department
+      // 3. Check member's department
       const memRows = await this.prisma.$queryRaw<any[]>`
-        SELECT executive_role, department FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
+        SELECT department FROM public.members WHERE user_id::text = ${userId}::text LIMIT 1
       `.catch(() => []);
       if (memRows.length > 0) {
-        const er = (memRows[0].executive_role || '').toLowerCase();
         const dept = (memRows[0].department || '').toLowerCase();
         if (
-          executiveRoles.includes(er) ||
           dept.includes('điều hành') ||
           dept.includes('quản trị') ||
-          er.includes('trưởng ban') ||
-          er.includes('chủ tịch')
+          dept.includes('thư ký') ||
+          dept.includes('trưởng ban') ||
+          dept.includes('chủ tịch')
         ) {
           return true;
         }
@@ -160,13 +168,12 @@ export class MembersService {
         return true;
       }
 
-      // 2. Lấy thông tin user hiện tại
+      // 2. Lấy thông tin user hiện tại an toàn (không truy vấn m.executive_role)
       const userRows = await this.prisma.$queryRaw<any[]>`
-        SELECT u.email, m.code, m.executive_role, m.department, mem.role as membership_role
+        SELECT u.email, m.code, m.department
         FROM public.vione_users u
         LEFT JOIN public.members m ON (m.user_id = u.id)
-        LEFT JOIN public.memberships mem ON (mem.user_id = u.id)
-        WHERE u.id = ${userId}::uuid LIMIT 1
+        WHERE u.id::text = ${userId}::text LIMIT 1
       `.catch(() => [] as any[]);
 
       const user = userRows[0];
@@ -191,11 +198,6 @@ export class MembersService {
         }
       }
 
-      // Nếu là Admin hoặc Ban Điều Hành và không bị explicitly denied -> Cho phép thực hiện
-      if (await this.checkIsAdmin(userId, assocId)) {
-        return true;
-      }
-
       // 4. Kiểm tra cấu hình trong ma trận app_settings.crm_permission_matrix
       const matrixRow = await this.prisma.$queryRaw<{ value: any }[]>`
         SELECT value FROM public.app_settings WHERE key = 'crm_permission_matrix' LIMIT 1
@@ -205,26 +207,31 @@ export class MembersService {
         const val = matrixRow[0].value;
         const cats = Array.isArray(val) ? val : (val.categories || val.rows || []);
         if (Array.isArray(cats) && cats.length > 0) {
+          const userRoleRows = await this.prisma.$queryRaw<any[]>`
+            SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
+          `.catch(() => []);
+          const rawRole = (userRoleRows[0]?.role || '').toLowerCase();
+          const dept = (user?.department || '').toLowerCase();
+
           let roleKey = 'member';
-          const rawRole = (user?.executive_role || user?.membership_role || '').toLowerCase();
-          if (rawRole.includes('admin') || rawRole.includes('bqt') || rawRole.includes('chủ tịch')) {
+          if (rawRole.includes('admin') || rawRole.includes('bqt') || rawRole.includes('chủ tịch') || email === 'admin@connect.vn') {
             roleKey = 'admin';
           } else if (rawRole.includes('quan_tri') || rawRole.includes('superadmin')) {
             roleKey = 'quan_tri';
-          } else if (rawRole.includes('tong_thu_ky') || (rawRole.includes('thư ký') && rawRole.includes('tổng'))) {
+          } else if (rawRole.includes('tong_thu_ky') || dept.includes('thư ký')) {
             roleKey = 'tong_thu_ky';
-          } else if (rawRole.includes('ban_thu_ky') || rawRole.includes('thu_ky') || rawRole.includes('thư ký')) {
-            roleKey = 'ban_thu_ky';
-          } else if (rawRole.includes('truyền thông') || rawRole.includes('btt') || rawRole === 'truong_ban_truyen_thong') {
+          } else if (rawRole.includes('truyền thông') || dept.includes('truyền thông')) {
             roleKey = 'truong_ban_truyen_thong';
-          } else if (rawRole.includes('thành viên') || rawRole.includes('btv') || rawRole === 'truong_ban_thanh_vien') {
+          } else if (rawRole.includes('thành viên') || dept.includes('thành viên')) {
             roleKey = 'truong_ban_thanh_vien';
-          } else if (rawRole.includes('xúc tiến') || rawRole.includes('bxt') || rawRole.includes('thương mại') || rawRole === 'truong_ban_xuc_tien') {
+          } else if (rawRole.includes('xúc tiến') || dept.includes('xúc tiến') || dept.includes('thương mại')) {
             roleKey = 'truong_ban_xuc_tien';
-          } else if (rawRole.includes('tài chính') || rawRole.includes('btc') || rawRole === 'truong_ban_tai_chinh') {
+          } else if (rawRole.includes('tài chính') || dept.includes('tài chính')) {
             roleKey = 'truong_ban_tai_chinh';
-          } else if (rawRole.includes('thiện nguyện') || rawRole.includes('btn') || rawRole === 'truong_ban_thien_nguyen') {
+          } else if (rawRole.includes('thiện nguyện') || dept.includes('thiện nguyện')) {
             roleKey = 'truong_ban_thien_nguyen';
+          } else if (dept.includes('điều hành') || rawRole.includes('dieu_hanh')) {
+            roleKey = 'truong_ban_dieu_hanh';
           }
 
           for (const cat of cats) {
@@ -242,6 +249,11 @@ export class MembersService {
             }
           }
         }
+      }
+
+      // Nếu là Admin hoặc Ban Điều Hành và không bị explicitly denied -> Cho phép thực hiện
+      if (await this.checkIsAdmin(userId, assocId)) {
+        return true;
       }
 
       return true;
@@ -1458,12 +1470,9 @@ export class MembersService {
 
     const current = existing[0];
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
-    if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền xóa');
-    }
     const canDelete = await this.checkActionPermission(userId, 'MEM_DELETE', current.association_id);
-    if (!canDelete) {
-      throw new ForbiddenException('Hành động xóa (MEM_DELETE) đã bị thu hồi trong cấu hình phân quyền hệ thống');
+    if (!isAdmin && !canDelete) {
+      throw new ForbiddenException('Chỉ quản trị viên hoặc tài khoản được cấp quyền xóa (MEM_DELETE) mới có quyền xóa');
     }
 
     const memberEmail = (current.email || '').trim().toLowerCase();
@@ -1524,12 +1533,42 @@ export class MembersService {
         WHERE id = ${current.id}
       `.catch(() => {});
 
+      const actorUserId = userId && userId.length === 36 ? userId : '00000000-0000-4000-8000-000000000002';
+      const actorEmailRow = (await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT email FROM public.vione_users WHERE id = $1::uuid LIMIT 1`,
+        actorUserId
+      ).catch(() => [])) as any[];
+      const actorEmail = actorEmailRow[0]?.email || 'admin@connect.vn';
+      const effectiveAssoc = current.association_id || 'c1983000-0000-4000-8000-000000001983';
+
+      // Ghi đồng bộ vào cả 2 bảng audit_logs (CRM Audit Logs) và activity_log (Chi tiết hệ thống)
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.audit_logs (
+          id, actor_user_id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
+        ) VALUES (
+          gen_random_uuid(),
+          $1::uuid,
+          'DELETE_COMPANY',
+          'COMPANY',
+          $2,
+          '127.0.0.1',
+          'Web CRM Quản Trị',
+          $3::jsonb,
+          now()
+        )
+      `, actorUserId, current.code || current.id, JSON.stringify({
+        memberName: current.name,
+        companyName: companyName || current.company_name,
+        memberCode: current.code,
+        mode: 'company_only'
+      })).catch((e: any) => this.logger.warn(`Could not log to audit_logs: ${e?.message}`));
+
       await this.logActivity(
         'Xóa doanh nghiệp liên kết',
         `${companyName || current.name} (${current.code || cleanId})`,
         'company',
-        'admin@connect.vn',
-        current.association_id,
+        actorEmail,
+        effectiveAssoc,
       );
 
       return { ok: true, mode: 'company_only', message: 'Đã xóa dữ liệu doanh nghiệp liên kết thành công' };
@@ -1642,24 +1681,43 @@ export class MembersService {
          OR (company_name IS NOT NULL AND LOWER(company_name) = LOWER(${companyName}))
     `;
 
-    // 5. Ghi nhật ký hoạt động
-    await this.prisma.$executeRaw`
-      INSERT INTO public.activity_log (
-        id, code, "user", action, target, category, at, ip, association_id, created_at, updated_at
+    // 5. Ghi nhật ký hoạt động đồng bộ vào cả 2 bảng audit_logs (CRM) và activity_log (Hệ thống)
+    const actorUserId = userId && userId.length === 36 ? userId : '00000000-0000-4000-8000-000000000002';
+    const actorEmailRow = (await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT email FROM public.vione_users WHERE id = $1::uuid LIMIT 1`,
+      actorUserId
+    ).catch(() => [])) as any[];
+    const actorEmail = actorEmailRow[0]?.email || 'admin@connect.vn';
+    const effectiveAssoc = current.association_id || 'c1983000-0000-4000-8000-000000001983';
+
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.audit_logs (
+        id, actor_user_id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
       ) VALUES (
         gen_random_uuid(),
-        ${current.id},
-        ${userId},
-        'Xóa hội viên, tài khoản & doanh nghiệp liên quan',
-        ${current.name || companyName},
-        'member',
-        to_char(NOW(), 'YYYY-MM-DD HH24:MI:SS'),
+        $1::uuid,
+        'DELETE_MEMBER',
+        'MEMBER',
+        $2,
         '127.0.0.1',
-        ${current.association_id ? current.association_id : null}::uuid,
-        NOW(),
-        NOW()
+        'Web CRM Quản Trị',
+        $3::jsonb,
+        now()
       )
-    `.catch(() => null);
+    `, actorUserId, current.code || current.id, JSON.stringify({
+      memberName: current.name,
+      companyName: companyName || current.company_name,
+      memberCode: current.code,
+      mode: 'all'
+    })).catch((e: any) => this.logger.warn(`Could not log to audit_logs: ${e?.message}`));
+
+    await this.logActivity(
+      'Xóa hội viên, tài khoản & doanh nghiệp liên quan',
+      `${current.name || companyName || 'Hội viên'} (${current.code || cleanId})`,
+      'member',
+      actorEmail,
+      effectiveAssoc
+    );
 
     return { ok: true, mode: 'all', message: 'Đã xóa hội viên, doanh nghiệp và tài khoản liên quan thành công' };
   }

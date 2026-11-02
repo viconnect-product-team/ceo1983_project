@@ -3,14 +3,68 @@ import {
   CalendarReminderItem,
   getMorningDigestSettings,
   getSavedCalendarItems,
+  saveCalendarItem,
   saveMorningDigestSettings,
   updateCalendarAlarm,
 } from "@/lib/calendar-reminder";
+import { fetchNestApi } from "@/lib/api-client";
 import type { ActiveReminderNotice } from "@/components/calendar/CeoFacebookReminderBanner";
 
 export function useCalendarNotifications() {
   const [activeNotice, setActiveNotice] = useState<ActiveReminderNotice | null>(null);
   const snoozeUntilRef = useRef<number>(0);
+
+  // Đồng bộ hóa lịch sự kiện & cuộc họp thật từ PostgreSQL Backend
+  useEffect(() => {
+    const syncRealtimeSchedule = async () => {
+      try {
+        const [eventsRes, meetingsRes] = await Promise.allSettled([
+          fetchNestApi<any[]>("/events"),
+          fetchNestApi<any[]>("/business-connect/meetings"),
+        ]);
+
+        if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
+          eventsRes.value.forEach((ev) => {
+            if (ev.date && ev.status !== "cancelled") {
+              const dStr = ev.date.split("T")[0];
+              saveCalendarItem({
+                id: `ev-${ev.id}`,
+                sourceType: "event",
+                title: ev.name || ev.title || "Sự kiện CLB CEO 1983",
+                dateStr: dStr,
+                timeStr: ev.time || "08:30",
+                location: ev.location || "Keangnam Landmark 72, Hà Nội",
+                alarmEnabled: true,
+                alarmLeadMinutes: 30,
+              });
+            }
+          });
+        }
+
+        if (meetingsRes.status === "fulfilled" && Array.isArray(meetingsRes.value)) {
+          meetingsRes.value.forEach((mt) => {
+            if (mt.date && mt.status !== "cancelled") {
+              const dStr = mt.date.split("T")[0];
+              saveCalendarItem({
+                id: `mt-${mt.id}`,
+                sourceType: "meeting",
+                title: mt.title || "Cuộc gặp kết nối giao thương",
+                dateStr: dStr,
+                timeStr: mt.time || "09:00",
+                location: mt.venue || mt.location || "Hà Nội",
+                alarmEnabled: true,
+                alarmLeadMinutes: 15,
+              });
+            }
+          });
+        }
+      } catch {
+        /* Ignore offline sync errors */
+      }
+    };
+
+    syncRealtimeSchedule();
+  }, []);
 
   const checkReminders = useCallback(() => {
     // Nếu đang trong thời gian snooze thì hoãn

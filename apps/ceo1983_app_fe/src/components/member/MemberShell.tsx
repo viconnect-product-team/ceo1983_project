@@ -809,9 +809,9 @@ function MemberTabBar() {
                   <span
                     className="relative grid h-13 w-13 place-items-center rounded-full shadow-md group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
                     style={{
-                      background: "linear-gradient(135deg, #1E3A8A 0%, #003B95 50%, #991B1B 100%)",
+                      background: "linear-gradient(135deg, #003B95 0%, #1E3A8A 100%)",
                       border: "2.5px solid rgba(255, 255, 255, 0.95)",
-                      boxShadow: "0 4px 14px rgba(30, 58, 138, 0.25)",
+                      boxShadow: "0 4px 14px rgba(0, 59, 149, 0.3)",
                     }}
                   >
                     <QrCode className="size-6 text-white stroke-[2.2]" />
@@ -824,7 +824,7 @@ function MemberTabBar() {
                       </span>
                     )}
                   </span>
-                  <span className="text-[11px] font-bold text-[#1E3A8A] dark:text-amber-400 mt-1">
+                  <span className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 mt-1">
                     Check-in
                   </span>
                 </button>

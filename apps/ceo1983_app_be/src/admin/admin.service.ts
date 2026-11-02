@@ -2273,11 +2273,11 @@ export class AdminService implements OnModuleInit {
         a.metadata,
         a.created_at,
         m.id as member_id,
-        COALESCE(m.name, vu.full_name, vu.username, (a.metadata->>'name'), 'Quản trị viên') as actor_name,
+        COALESCE(m.name, vu.name, vu.username, (a.metadata->>'name'), 'Quản trị viên') as actor_name,
         COALESCE(m.company_name, (a.metadata->>'company'), '') as actor_company,
-        COALESCE(m.avatar, vu.avatar, '') as actor_avatar,
+        COALESCE(m.avatar, vu.avatar_url, '') as actor_avatar,
         COALESCE(m.department, 'Ban Thư Ký') as actor_department,
-        COALESCE(m.executive_role, vu.role, 'Admin') as actor_role,
+        'Admin' as actor_role,
         COALESCE(vu.email, m.email, '') as actor_email
       FROM public.audit_logs a
       LEFT JOIN public.members m ON (m.user_id = a.actor_user_id)
@@ -2285,7 +2285,10 @@ export class AdminService implements OnModuleInit {
       WHERE ${where}
       ORDER BY a.created_at DESC
       LIMIT ${limit} OFFSET ${offset};
-    `).catch(() => []);
+    `).catch((err) => {
+      console.warn(`listAuditLogs query error: ${err?.message || err}`);
+      return [];
+    });
 
     return {
       success: true,

@@ -76,9 +76,11 @@ import { sendExternalNotification } from "@/lib/notification-permissions";
 export function ConversationList({
   onOpen,
   members: propMembers,
+  onBack,
 }: {
   onOpen: (c: MyConversation) => void;
   members?: DirectoryMember[];
+  onBack?: () => void;
 }) {
   const { user } = useAuth();
   const { data: myMember } = useServerData<MyMember | null>(
@@ -935,7 +937,7 @@ export function ConversationList({
 
   return (
     <div className="vba-animate min-h-full bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white pb-20">
-      <MemberHeader title="Tin nhắn" back />
+      <MemberHeader title="Tin nhắn" back onBack={onBack} />
 
       {/* Clean Full-width Search Bar */}
       <div className="px-4 pt-3 pb-1">

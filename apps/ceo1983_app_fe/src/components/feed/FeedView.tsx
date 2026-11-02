@@ -1310,7 +1310,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                           </div>
                         )}
 
-                        <div className="flex-1 flex items-center gap-1.5 bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-[22px] px-3.5 py-1.5 border border-transparent focus-within:border-blue-400 dark:focus-within:border-blue-500 shadow-2xs transition">
+                        <div className="flex-1 flex items-center gap-1.5 bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-[22px] px-3.5 py-1.5 border-0 focus-within:border-none focus-within:ring-0 shadow-none transition">
                           <input
                             type="text"
                             placeholder={
@@ -1323,7 +1323,8 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                               setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
                             }
                             onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
-                            className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none"
+                            className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-500 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none"
+                            style={{ border: "none", outline: "none", boxShadow: "none" }}
                           />
 
                           {inlineInputText[post.id] && (

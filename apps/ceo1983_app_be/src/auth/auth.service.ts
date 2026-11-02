@@ -1,8 +1,9 @@
 /* eslint-disable */
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, Optional } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../mail/mail.service';
+import { ZaloService } from '../zalo/zalo.service';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
@@ -21,6 +22,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService?: MailService,
+    @Optional() private zaloService?: ZaloService,
   ) {
     this.googleClient = new OAuth2Client();
     this.appleJwksClient = jwksClient({
@@ -213,8 +215,8 @@ export class AuthService {
 
     // Gửi email chào mừng đăng ký thành công về email người đăng ký
     const targetEmail = (data.email || (data.username?.includes('@') ? data.username : '') || '').trim();
+    const applicantName = data.name || data.fullName || data.username || 'Quý Hội viên';
     if (this.mailService && targetEmail && targetEmail.includes('@')) {
-      const applicantName = data.name || data.fullName || data.username || 'Quý Hội viên';
       void this.mailService.sendAppWelcomeRegistrationEmail({
         to: targetEmail,
         fullName: applicantName,
@@ -224,6 +226,26 @@ export class AuthService {
         portalUrl: process.env.APP_URL ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login` : 'https://ceo1983.viconnect.vn/association/login',
       }).catch((err) => {
         console.warn('Could not send app welcome email:', err?.message);
+      });
+    }
+
+    // Gửi tin nhắn chào mừng hội viên mới đến với kênh Zalo CEO 1983
+    if (this.zaloService && (data.phone || data.username)) {
+      const welcomeMsg = `🎉 [CLB DOANH NHÂN CEO 1983 - CHÀO MỪNG HỘI VIÊN MỚI]
+Kính gửi: Anh/Chị ${applicantName}
+Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA) nồng nhiệt chào mừng Anh/Chị đã đăng ký tài khoản thành công trên Hệ sinh thái Số CEO 1983!
+
+🌟 Kênh Zalo Official chính thức của CLB: https://zalo.me/clbceo1983
+🏢 Nền tảng kết nối Doanh nhân: https://ceo1983.viconnect.vn
+Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng, kết nối mạnh mẽ và lan tỏa giá trị cùng cộng đồng 200+ Doanh nhân CEO 1983!`;
+
+      void this.zaloService.sendMessage({
+        accessToken: process.env.ZALO_ACCESS_TOKEN || '',
+        targetPhone: data.phone || data.username,
+        targetName: applicantName,
+        message: welcomeMsg,
+      }).catch((err: any) => {
+        console.warn('Could not send Zalo welcome message:', err?.message);
       });
     }
 

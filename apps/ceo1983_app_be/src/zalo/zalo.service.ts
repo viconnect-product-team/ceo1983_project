@@ -870,4 +870,40 @@ Trân trọng cảm ơn Anh/Chị!`;
       message: `Đã liên kết Zalo UID: ${cleanUid} với Hội viên ${name || cleanPhone} thành công!`,
     };
   }
+
+  /**
+   * Lấy danh sách mẫu thông báo Zalo đã lưu từ CSDL app_settings
+   */
+  async getSavedTemplates() {
+    if (!this.prisma) return { ok: true, templates: [] };
+    try {
+      const row: any[] = await this.prisma.$queryRawUnsafe(`
+        SELECT value FROM public.app_settings WHERE key = 'crm_zalo_templates' LIMIT 1
+      `);
+      return { ok: true, templates: row[0]?.value || [] };
+    } catch (err: any) {
+      this.logger.warn(`getSavedTemplates error: ${err?.message}`);
+      return { ok: true, templates: [] };
+    }
+  }
+
+  /**
+   * Lưu danh sách mẫu thông báo Zalo vào CSDL app_settings để đồng bộ toàn hệ thống
+   */
+  async saveTemplates(templates: any[], userId?: string) {
+    if (!this.prisma) return { ok: true };
+    try {
+      const validUserId = userId && userId.length === 36 ? userId : null;
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+        VALUES ('crm_zalo_templates', $1::jsonb, now(), $2::uuid)
+        ON CONFLICT (key) DO UPDATE
+        SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
+      `, JSON.stringify(templates), validUserId);
+      return { ok: true, message: 'Đã lưu mẫu tin nhắn Zalo thành công' };
+    } catch (err: any) {
+      this.logger.warn(`saveTemplates error: ${err?.message}`);
+      return { ok: false, message: err?.message || 'Lỗi lưu mẫu tin nhắn' };
+    }
+  }
 }

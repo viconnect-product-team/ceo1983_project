@@ -1146,21 +1146,21 @@ export default function ProfileScreen() {
                 className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                     <Handshake className="size-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cuộc gặp giao thương 1-on-1
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-black border border-amber-200 dark:border-amber-900">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-black border border-blue-200 dark:border-blue-900">
                       {meetings1on1.length}
                     </span>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["meetings_1on1"] ? "rotate-180 text-amber-700 dark:text-amber-400" : ""
+                    expandedSections["meetings_1on1"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
                   }`}
                 />
               </button>
@@ -1173,10 +1173,10 @@ export default function ProfileScreen() {
                       className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-xs text-[#1E3A8A] dark:text-blue-400">
+                        <span className="font-bold text-xs text-[#003B95] dark:text-blue-400">
                           {meet.partnerName}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[9.5px] font-extrabold border border-amber-200">
+                        <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[9.5px] font-extrabold border border-blue-200">
                           {meet.status}
                         </span>
                       </div>
@@ -1188,7 +1188,7 @@ export default function ProfileScreen() {
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
                         <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                          <Clock className="size-3 text-amber-600" />
+                          <Clock className="size-3 text-[#003B95] dark:text-blue-400" />
                           <span>{meet.time} ngày {meet.date}</span>
                         </span>
                         <span className="flex items-center gap-1 truncate max-w-full">
@@ -1201,15 +1201,15 @@ export default function ProfileScreen() {
                           href={`https://zalo.me/${meet.phone}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-[#1E3A8A] dark:text-blue-300 text-[10.5px] font-bold hover:bg-blue-100 transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-[#003B95] dark:text-blue-300 text-[10.5px] font-bold hover:bg-blue-100 transition cursor-pointer"
                         >
                           <span>Nhắn Zalo đối tác</span>
                         </a>
                         <a
                           href={`tel:${meet.phone}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-[10.5px] font-bold hover:bg-amber-100 transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-[#003B95] dark:text-blue-300 text-[10.5px] font-bold hover:bg-blue-100 transition cursor-pointer"
                         >
-                          <Phone className="size-3 text-amber-600" />
+                          <Phone className="size-3 text-[#003B95]" />
                           <span>Gọi điện</span>
                         </a>
                       </div>
@@ -1227,21 +1227,21 @@ export default function ProfileScreen() {
                 className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#991B1B] dark:text-red-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                     <TrendingUp className="size-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cơ hội giao thương B2B
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#991B1B] dark:text-red-300 text-[10px] font-black border border-red-200 dark:border-red-900">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-black border border-blue-200 dark:border-blue-900">
                       {connectedOpportunities.length}
                     </span>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["opportunities"] ? "rotate-180 text-[#991B1B] dark:text-red-400" : ""
+                    expandedSections["opportunities"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
                   }`}
                 />
               </button>
@@ -1255,7 +1255,7 @@ export default function ProfileScreen() {
                       </p>
                       <Link
                         to="/association/opportunities"
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#991B1B] dark:text-red-400 hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline"
                       >
                         <span>Khám phá cơ hội hợp tác B2B</span>
                         <ChevronRight className="size-3.5" />
@@ -1267,17 +1267,17 @@ export default function ProfileScreen() {
                         <Link
                           key={opp.id}
                           to="/association/opportunities"
-                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
+                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-blue-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
                         >
                           <div className="min-w-0">
-                            <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600 transition">
+                            <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#003B95] transition">
                               {opp.title}
                             </h5>
                             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
                               {opp.company || "Hội viên CLB"} • {opp.value || "Thỏa thuận B2B"}
                             </p>
                           </div>
-                          <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-300 text-[10px] font-extrabold shrink-0 border border-blue-200">
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-extrabold shrink-0 border border-blue-200">
                             {opp.interested ? "Đã quan tâm" : "Đã đăng"}
                           </span>
                         </Link>
@@ -1296,7 +1296,7 @@ export default function ProfileScreen() {
                 className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                     <Package className="size-4" />
                   </div>
                   <div>
@@ -1307,7 +1307,7 @@ export default function ProfileScreen() {
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["marketplace"] ? "rotate-180 text-[#1E3A8A] dark:text-blue-400" : ""
+                    expandedSections["marketplace"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
                   }`}
                 />
               </button>
@@ -1317,10 +1317,10 @@ export default function ProfileScreen() {
                   <Link
                     to="/association/products"
                     search={undefined as any}
-                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-blue-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-400 grid place-items-center shrink-0">
+                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                         <Package className="size-4" />
                       </div>
                       <div className="min-w-0">
@@ -1333,10 +1333,10 @@ export default function ProfileScreen() {
 
                   <Link
                     to="/association/members"
-                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-blue-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 grid place-items-center shrink-0">
+                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                         <Users className="size-4" />
                       </div>
                       <div className="min-w-0">
@@ -1349,23 +1349,23 @@ export default function ProfileScreen() {
 
                   <Link
                     to="/association/calendar"
-                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-amber-400 transition cursor-pointer"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-blue-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8.5 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#991B1B] dark:text-red-400 grid place-items-center shrink-0">
+                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                         <Calendar className="size-4" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <h5 className="text-xs font-bold text-slate-900 dark:text-white">Lịch hoạt động &amp; Nhắc hẹn</h5>
-                          <span className="px-1.5 py-0.2 rounded-md bg-[#991B1B] text-white text-[8.5px] font-bold uppercase">
+                          <span className="px-1.5 py-0.2 rounded-md bg-[#003B95] text-white text-[8.5px] font-bold uppercase">
                             Nhắc lịch
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400">Xem sự kiện, họp ban, cuộc gặp &amp; cài thông báo nhắc</p>
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-[#991B1B] shrink-0" />
+                    <ChevronRight className="size-4 text-[#003B95] shrink-0" />
                   </Link>
                 </div>
               )}
@@ -1379,7 +1379,7 @@ export default function ProfileScreen() {
                 className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
                     <History className="size-4" />
                   </div>
                   <div>
@@ -1390,7 +1390,7 @@ export default function ProfileScreen() {
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["audit_history"] ? "rotate-180 text-slate-900 dark:text-white" : ""
+                    expandedSections["audit_history"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
                   }`}
                 />
               </button>

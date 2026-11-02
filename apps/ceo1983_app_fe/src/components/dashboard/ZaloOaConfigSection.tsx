@@ -263,7 +263,7 @@ export const ZaloOaConfigSection: React.FC = () => {
   }[]>([]);
   const [loadingChats, setLoadingChats] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [sendMethod, setSendMethod] = useState<"zns_enterprise" | "oa_chat" | "zalo_direct">("zns_enterprise");
+  const [sendMethod, setSendMethod] = useState<"oa_chat" | "zalo_direct">("oa_chat");
   const [znsTemplateId, setZnsTemplateId] = useState("ZNS_CEO1983_FEE_REMINDER");
 
   // Chế độ gửi: Gửi trực tiếp hội viên vs Chiến dịch bắn hàng loạt vs Lịch tự động theo chu kỳ
@@ -332,12 +332,26 @@ export const ZaloOaConfigSection: React.FC = () => {
     if (storedAccess) setAccessToken(storedAccess);
     const storedRefresh = localStorage.getItem("vba_zalo_refresh_token");
     if (storedRefresh) setRefreshToken(storedRefresh);
-    try {
-      const stored = localStorage.getItem("vba_zalo_oa_templates");
-      if (stored) setTemplates(JSON.parse(stored));
-    } catch {
-      /* ignore */
-    }
+    // Tải mẫu tin nhắn đã lưu từ máy chủ Backend
+    (async () => {
+      try {
+        const res = await fetch(getNestApiUrl("/zalo/templates"), {
+          headers: getAuthHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
+            setTemplates(data.templates);
+            localStorage.setItem("vba_zalo_oa_templates", JSON.stringify(data.templates));
+            return;
+          }
+        }
+      } catch {}
+      try {
+        const stored = localStorage.getItem("vba_zalo_oa_templates");
+        if (stored) setTemplates(JSON.parse(stored));
+      } catch {}
+    })();
   }, []);
 
   const [activeCategory, setActiveCategory] = useState<"all" | "membership_fee" | "event" | "training" | "meeting">("all");
@@ -346,7 +360,7 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [sendingTest, setSendingTest] = useState(false);
 
   // Save config Dynamic 100%
-  const saveZaloConfig = () => {
+  const saveZaloConfig = async () => {
     try {
       const cfg = {
         oaId,
@@ -364,7 +378,15 @@ export const ZaloOaConfigSection: React.FC = () => {
       localStorage.setItem("vba_zalo_refresh_token", refreshToken);
       localStorage.setItem("vba_zalo_oa_config", JSON.stringify(cfg));
       localStorage.setItem("vba_zalo_oa_templates", JSON.stringify(templates));
-      toast.success("Đã lưu cấu hình Zalo OA & Toàn bộ Token vào hệ thống thành công!");
+
+      // Lưu đồng bộ toàn bộ mẫu template lên cơ sở dữ liệu server backend
+      await fetch(getNestApiUrl("/zalo/templates"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ templates }),
+      }).catch(() => {});
+
+      toast.success("Đã lưu cấu hình Zalo OA & Toàn bộ Mẫu Thông Báo vào hệ thống thành công!");
     } catch {
       toast.error("Không thể lưu cấu hình Zalo OA");
     }
@@ -730,7 +752,10 @@ Anh/Chị quan tâm vui lòng phản hồi qua tin nhắn Zalo này hoặc liên
     setBulkProgress({ current: 0, total: selectedMembers.length, percentage: 0 });
     setBulkResults(null);
 
-    const messageTemplate = `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO HỘI PHÍ NIÊN LIỄM]
+    const activeTpl = templates.find((t) => t.id === selectedTemplateId) || templates[0];
+    const messageTemplate =
+      activeTpl?.messageContent?.trim() ||
+      `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO HỘI PHÍ NIÊN LIỄM]
 Kính gửi Hội viên: {ho_ten} (Mã HV: {ma_hoi_vien} - SĐT: {so_dien_thoai})
 Ban Tài chính CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng thông báo kỳ hoàn tất hội phí thường niên năm ${feeYear}:
 
@@ -1112,39 +1137,13 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               </span>
             </div>
             <span className="text-[11px] font-semibold text-slate-500 italic">
-              {sendMethod === "zns_enterprise" && "🌟 Chuẩn Enterprise: Không cần Zalo UID, gửi trực tiếp theo Số điện thoại"}
-              {sendMethod === "oa_chat" && "💬 Chat CS qua OA: Yêu cầu Zalo UID hoặc đã nhắn tin cho OA"}
+              {sendMethod === "oa_chat" && "💬 Chat CS qua Zalo OA: Gửi trực tiếp tin nhắn thông báo chính thức"}
               {sendMethod === "zalo_direct" && "⚡ Mở Chat Zalo 1-Click: Sao chép nội dung & mở thẳng Zalo cá nhân"}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Phương án 1: ZNS Theo SĐT */}
-            <div
-              onClick={() => setSendMethod("zns_enterprise")}
-              className={`p-3 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
-                sendMethod === "zns_enterprise"
-                  ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
-                  : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-emerald-300"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                  <Smartphone className="size-4 text-emerald-600" />
-                  <span>1. ZNS THEO SỐ ĐIỆN THOẠI</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-black uppercase">
-                  KHUYÊN DÙNG
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                • <b>Không cần Zalo UID</b><br />
-                • Hội viên <b>không cần quan tâm OA trước</b><br />
-                • Bắn tin nhắn tick vàng chính thức theo SĐT
-              </p>
-            </div>
-
-            {/* Phương án 2: Chat CS Miễn Phí */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Phương án 1: Chat CS Qua Zalo OA */}
             <div
               onClick={() => setSendMethod("oa_chat")}
               className={`p-3 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
@@ -1156,20 +1155,20 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-black text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
                   <MessageSquareText className="size-4 text-blue-600" />
-                  <span>2. CHAT CS QUA ZALO OA</span>
+                  <span>1. GỬI TIN NHẮN QUA ZALO OA</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-[9px] font-bold">
-                  MIỄN PHÍ
+                  CHÍNH THỨC
                 </span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                • Yêu cầu có <b>Zalo User ID (UID)</b><br />
-                • Hội viên đã nhắn tin hoặc theo dõi OA<br />
-                • Tự động khớp từ Webhook / CSDL
+                • Gửi qua API Zalo Official Account chính thức của CEO 1983<br />
+                • Tự động khớp nối danh bạ từ Webhook và CSDL<br />
+                • Hỗ trợ đẩy thông báo Hội phí, Sự kiện &amp; Lịch họp
               </p>
             </div>
 
-            {/* Phương án 3: 1-Click Zalo Direct */}
+            {/* Phương án 2: 1-Click Zalo Direct */}
             <div
               onClick={() => setSendMethod("zalo_direct")}
               className={`p-3 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
@@ -1181,16 +1180,16 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-black text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
                   <ExternalLink className="size-4 text-indigo-600" />
-                  <span>3. MỞ CHAT ZALO 1-CLICK</span>
+                  <span>2. MỞ CHAT ZALO 1-CLICK</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-[9px] font-bold">
                   TỨC THÌ
                 </span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                • <b>100% không bao giờ lỗi API</b><br />
-                • Tự sao chép nội dung vào Clipboard<br />
-                • Mở thẳng app Zalo với hội viên
+                • <b>100% không bao giờ lỗi API</b> hoặc hết hạn Token<br />
+                • Tự sao chép nội dung thông báo vào Clipboard<br />
+                • Mở thẳng app Zalo trò chuyện với hội viên
               </p>
             </div>
           </div>
@@ -1629,22 +1628,6 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
         {/* NÚT HÀNH ĐỘNG BẮN THÔNG BÁO THEO PHƯƠNG THỨC ĐÃ CHỌN */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           {/* Nút Thực Thi Tùy Chọn */}
-          {sendMethod === "zns_enterprise" && (
-            <button
-              type="button"
-              onClick={handleSendZns}
-              disabled={sendingFeeNotice}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
-            >
-              {sendingFeeNotice ? (
-                <RefreshCw className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4 text-amber-200" />
-              )}
-              <span>🚀 BẮN THÔNG BÁO ZNS (THEO SỐ ĐIỆN THOẠI) CHO HỘI VIÊN</span>
-            </button>
-          )}
-
           {sendMethod === "oa_chat" && (
             <button
               type="button"
