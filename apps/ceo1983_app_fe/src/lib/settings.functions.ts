@@ -18,8 +18,8 @@ export type AppSettings = {
 };
 
 const DEFAULTS: AppSettings = {
-  orgName: "Hiệp hội Doanh nghiệp Việt Nam",
-  orgEmail: "contact@vba.vn",
+  orgName: "CLB Doanh Nhân CEO 1983",
+  orgEmail: "contact@ceo1983.vn",
   lang: "vi",
   emailNotif: true,
   smsNotif: false,

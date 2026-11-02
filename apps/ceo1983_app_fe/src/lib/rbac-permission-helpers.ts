@@ -3,7 +3,7 @@
  * Ma trận phân quyền 5 vai trò cốt lõi: Quản trị, Admin, Tổng thư ký, Trưởng ban, Thành viên
  */
 
-export const RBAC_MATRIX_STORAGE_KEY = "ceo1983_rbac_tree_matrix_v5_5roles";
+export const RBAC_MATRIX_STORAGE_KEY = "ceo1983_rbac_tree_matrix_v7_sidebar_menu";
 
 export type SystemRoleKey =
   | "quan_tri"

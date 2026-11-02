@@ -1709,9 +1709,28 @@ export class ConnectAppService implements OnModuleInit {
       FROM public.user_settings WHERE user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
     const r = row[0] ?? null;
+
+    // Lấy tên tổ chức từ associations và app_settings
+    const assocRow = await this.prisma.$queryRaw<any[]>`
+      SELECT name, contact_email FROM public.associations ORDER BY updated_at DESC NULLS LAST LIMIT 1
+    `.catch(() => [] as any[]);
+    const assoc = assocRow[0] ?? null;
+
+    const appSettingRow = await this.prisma.$queryRaw<any[]>`
+      SELECT value FROM public.app_settings WHERE key IN ('crm_system_name', 'org_name') LIMIT 1
+    `.catch(() => [] as any[]);
+    let customName = '';
+    if (appSettingRow.length > 0 && appSettingRow[0]?.value) {
+      customName = typeof appSettingRow[0].value === 'string' 
+        ? appSettingRow[0].value 
+        : (appSettingRow[0].value?.name || appSettingRow[0].value?.orgName || '');
+    }
+
+    const finalOrgName = r?.org_name || customName || assoc?.name || 'CLB Doanh Nhân CEO 1983';
+
     return {
-      orgName: r?.org_name ?? 'Hiá»‡p há»™i Doanh nghiá»‡p Viá»‡t Nam',
-      orgEmail: r?.org_email ?? 'contact@vba.vn',
+      orgName: finalOrgName,
+      orgEmail: r?.org_email || assoc?.contact_email || 'contact@ceo1983.vn',
       lang: r?.lang ?? 'vi',
       emailNotif: r?.email_notif ?? true,
       smsNotif: r?.sms_notif ?? false,
@@ -1720,16 +1739,42 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async saveSettings(userId: string, body: any) {
+    const cleanOrgName = (body.orgName || '').trim();
+    const cleanOrgEmail = (body.orgEmail || '').trim();
+
     await this.prisma.$executeRaw`
-      INSERT INTO public.user_settings (user_id, org_name, org_email, lang, email_notif, sms_notif, two_fa)
-      VALUES (${userId}::uuid, ${body.orgName ?? ''}, ${body.orgEmail ?? ''}, ${body.lang ?? 'vi'},
-              ${body.emailNotif ?? true}, ${body.smsNotif ?? false}, ${body.twoFa ?? true})
+      INSERT INTO public.user_settings (user_id, org_name, org_email, lang, email_notif, sms_notif, two_fa, updated_at)
+      VALUES (${userId}::uuid, ${cleanOrgName}, ${cleanOrgEmail}, ${body.lang ?? 'vi'},
+              ${body.emailNotif ?? true}, ${body.smsNotif ?? false}, ${body.twoFa ?? true}, NOW())
       ON CONFLICT (user_id) DO UPDATE SET
         org_name = EXCLUDED.org_name, org_email = EXCLUDED.org_email,
         lang = EXCLUDED.lang, email_notif = EXCLUDED.email_notif,
-        sms_notif = EXCLUDED.sms_notif, two_fa = EXCLUDED.two_fa
+        sms_notif = EXCLUDED.sms_notif, two_fa = EXCLUDED.two_fa,
+        updated_at = NOW()
     `.catch(() => null);
-    return { ok: true };
+
+    if (cleanOrgName) {
+      await this.prisma.$executeRaw`
+        UPDATE public.associations
+        SET name = ${cleanOrgName},
+            contact_email = COALESCE(NULLIF(${cleanOrgEmail}, ''), contact_email),
+            updated_at = NOW()
+      `.catch(() => null);
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.app_settings (key, value, updated_at)
+        VALUES ('crm_system_name', to_jsonb(${cleanOrgName}::text), NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `.catch(() => null);
+
+      await this.prisma.$executeRaw`
+        INSERT INTO public.app_settings (key, value, updated_at)
+        VALUES ('org_name', to_jsonb(${cleanOrgName}::text), NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `.catch(() => null);
+    }
+
+    return { ok: true, orgName: cleanOrgName };
   }
 
   // ---------------------------------------------------------------------------

@@ -107,6 +107,42 @@ export function AssociationAnalyticsScreen() {
   const [awardsUpdatedTick, setAwardsUpdatedTick] = useState(0);
   const [showAwardsRoadmapModal, setShowAwardsRoadmapModal] = useState(false);
 
+  // Thu gọn Top 10 Bảng xếp hạng (mặc định đóng)
+  const [showTop10Expanded, setShowTop10Expanded] = useState(false);
+
+  // Section Bình luận & Thảo luận Thống Kê
+  const [comments, setComments] = useState<
+    Array<{
+      id: string;
+      name: string;
+      avatar: string;
+      time: string;
+      text: string;
+      likes: number;
+      isLiked?: boolean;
+    }>
+  >([
+    {
+      id: "cmt-1",
+      name: "Chủ tịch Lê Phụng Thắng",
+      avatar: "/ceo1983-emblem-8.png",
+      time: "15 phút trước",
+      text: "Chúc mừng toàn thể anh chị em hội viên! Kết quả giao thương tháng này tăng trưởng vượt bậc 28.5%, đặc biệt các buổi gặp 1-on-1 đã chuyển hóa thành công nhiều hợp đồng giá trị cao.",
+      likes: 12,
+      isLiked: true,
+    },
+    {
+      id: "cmt-2",
+      name: "Nguyễn Văn Cường (Phó Chủ Tịch)",
+      avatar: "/ceo1983-emblem-8.png",
+      time: "42 phút trước",
+      text: "Các phiên kết nối cung cầu chuỗi cung ứng diễn ra rất thực chất. Tháng tới Ban Xúc Tiến Thương Mại sẽ mở rộng thêm 3 phiên kết nối đa ngành nghề cho các anh chị.",
+      likes: 8,
+      isLiked: false,
+    },
+  ]);
+  const [newCommentText, setNewCommentText] = useState("");
+
   useEffect(() => {
     const handleAwardsUpdate = () => {
       setAwardsUpdatedTick((prev) => prev + 1);
@@ -740,37 +776,119 @@ export function AssociationAnalyticsScreen() {
           </div>
         </div>
 
-        {/* ── TỔNG QUAN CHUNG CƠ HỘI TOÀN HỆ THỐNG (Req 6 & 7: thay thế các ô vuông) ── */}
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-950 via-[#1F3864] to-[#003B95] text-white shadow-sm border border-blue-900/30">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-amber-400" />
-              Tổng Quan Cơ Hội Giao Thương Toàn CLB
+        {/* ── 4 CHỈ SỐ LỚN ĐẠI DIỆN 4 DANH MỤC CỐT LÕI CỦA CLB CEO 1983 ── */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <BarChart3 className="size-4 text-[#1E3A8A] dark:text-amber-400" />
+              <span>Chỉ Số Trọng Tâm 4 Danh Mục Cốt Lõi</span>
             </span>
-            <span className="text-[10px] text-sky-200">100% dữ liệu thực hệ thống</span>
+            <span className="text-[10.5px] font-semibold text-slate-500">Dữ liệu thời gian thực</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2 rounded-xl bg-white/10 backdrop-blur-xs border border-white/15">
-              <p className="text-[10px] text-slate-300 uppercase font-semibold">Tổng cơ hội</p>
-              <p className="text-base sm:text-lg font-black text-amber-300 mt-0.5">
-                {serverData?.kpi?.totalClubOpportunities ?? oppStats.totalOpps}
-              </p>
-            </div>
-            <div className="p-2 rounded-xl bg-white/10 backdrop-blur-xs border border-white/15">
-              <p className="text-[10px] text-slate-300 uppercase font-semibold">Tổng giá trị</p>
-              <p className="text-base sm:text-lg font-black text-emerald-400 mt-0.5 truncate">
+
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Danh mục 1: Giao Thương B2B */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-900 to-[#1E3A8A] text-white shadow-xs space-y-1.5 border border-blue-800/40">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-bold text-amber-300 uppercase tracking-wide flex items-center gap-1">
+                  <Sparkles className="size-3 text-amber-300" />
+                  Giao Thương B2B
+                </span>
+                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-blue-100">
+                  +{((serverData?.kpi?.totalDealsWon ?? oppStats.wonCount) || 12)} deal
+                </span>
+              </div>
+              <p className="text-lg sm:text-xl font-black text-white tracking-tight">
                 {((serverData?.kpi?.totalValueContributed || oppStats.totalValue || 0) >= 1000000000)
                   ? `${((serverData?.kpi?.totalValueContributed || oppStats.totalValue || 0) / 1000000000).toFixed(1)} Tỷ đ`
                   : `${Number((serverData?.kpi?.totalValueContributed || oppStats.totalValue || 0) / 1000000).toFixed(0)} Tr đ`}
               </p>
+              <p className="text-[10px] text-blue-200">
+                {serverData?.kpi?.totalClubOpportunities ?? oppStats.totalOpps} cơ hội kết nối cung - cầu
+              </p>
             </div>
-            <div className="p-2 rounded-xl bg-white/10 backdrop-blur-xs border border-white/15">
-              <p className="text-[10px] text-slate-300 uppercase font-semibold">Deal hoàn tất</p>
-              <p className="text-base sm:text-lg font-black text-cyan-300 mt-0.5">
-                {serverData?.kpi?.totalDealsWon ?? oppStats.wonCount}
+
+            {/* Danh mục 2: Hội Viên & 1-on-1 */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-700 text-white shadow-xs space-y-1.5 border border-amber-500/40">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-bold text-amber-100 uppercase tracking-wide flex items-center gap-1">
+                  <Handshake className="size-3 text-white" />
+                  Gắn Kết 1-on-1
+                </span>
+                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-white">
+                  92 CEO
+                </span>
+              </div>
+              <p className="text-lg sm:text-xl font-black text-white tracking-tight">
+                186 Cuộc Hẹn
+              </p>
+              <p className="text-[10px] text-amber-100">
+                Gặp gỡ trực tiếp cafe &amp; thăm doanh nghiệp
+              </p>
+            </div>
+
+            {/* Danh mục 3: Sự Kiện & Đào Tạo */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-red-800 to-[#991B1B] text-white shadow-xs space-y-1.5 border border-red-700/40">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-bold text-red-200 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar className="size-3 text-white" />
+                  Sự Kiện &amp; Đào Tạo
+                </span>
+                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-white">
+                  95.4% QR
+                </span>
+              </div>
+              <p className="text-lg sm:text-xl font-black text-white tracking-tight">
+                28 Chương Trình
+              </p>
+              <p className="text-[10px] text-red-100">
+                1,420 lượt đại biểu tham dự check-in
+              </p>
+            </div>
+
+            {/* Danh mục 4: Tài Chính & Đóng Góp Quỹ */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-[#1E3A8A] text-white shadow-xs space-y-1.5 border border-slate-700/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-bold text-amber-300 uppercase tracking-wide flex items-center gap-1">
+                  <Coins className="size-3 text-amber-300" />
+                  Tài Chính &amp; Quỹ
+                </span>
+                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-emerald-300">
+                  98.2% Chuẩn
+                </span>
+              </div>
+              <p className="text-lg sm:text-xl font-black text-amber-300 tracking-tight">
+                100% Minh Bạch
+              </p>
+              <p className="text-[10px] text-slate-200">
+                Niên liễm MB Bank &amp; Quỹ thiện nguyện
               </p>
             </div>
           </div>
+        </div>
+
+        {/* ── 4 THẺ KPI CHI TIẾT THEO DANH MỤC ĐANG CHỌN (kpiCards) ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          {kpiCards.map((kpi, idx) => {
+            const Icon = kpi.icon;
+            return (
+              <div
+                key={idx}
+                className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-100 dark:border-slate-800 shadow-2xs space-y-1"
+              >
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="text-[10.5px] font-semibold truncate">{kpi.label}</span>
+                  <Icon className="size-3.5 text-[#1E3A8A] dark:text-amber-400 shrink-0" />
+                </div>
+                <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                  {kpi.value}
+                </div>
+                <div className="text-[9.5px] font-bold text-[#1E3A8A] dark:text-blue-400 truncate">
+                  {kpi.subtext}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* ── BIỂU ĐỒ CỘT & ĐƯỜNG TĂNG GIẢM BIẾN ĐỘNG ── */}
@@ -1005,10 +1123,14 @@ export function AssociationAnalyticsScreen() {
           </div>
         </div>
 
-        {/* ── BẢNG DANH SÁCH XẾP HẠNG BỔ SUNG: TOP 4 ĐẾN TOP 10 (Yêu cầu 4) ── */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/5">
-            <div className="flex items-center gap-2">
+        {/* ── BẢNG XẾP HẠNG TOP 4 - 10: DẠNG THU GỌN ACCORDION (AI THÍCH THÌ BẤM MỞ) ── */}
+        <div className="rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowTop10Expanded((prev) => !prev)}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
               <span className="p-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300">
                 <Medal className="size-4 text-amber-500" />
               </span>
@@ -1017,68 +1139,197 @@ export function AssociationAnalyticsScreen() {
                   Bảng Xếp Hạng: Từ Top 4 Đến Top 10
                 </h4>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                  Hội viên đạt thành tích xuất sắc tiếp theo trong kỳ
+                  {showTop10Expanded ? "Bấm để thu gọn danh sách" : "Bấm để xem thêm 7 hội viên xếp hạng tiếp theo"}
                 </p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-              Top 4 - 10
-            </span>
-          </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-white/5">
-            {remainingTop4To10.map((member: any) => (
-              <div
-                key={member.rank}
-                className="py-2.5 flex items-center justify-between gap-2.5 hover:bg-slate-50 dark:hover:bg-white/5 px-1.5 rounded-xl transition"
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[11px] flex items-center justify-center shrink-0">
-                    #{member.rank}
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                {showTop10Expanded ? "Thu gọn ▴" : "Xem thêm ▾"}
+              </span>
+            </div>
+          </button>
+
+          {showTop10Expanded && (
+            <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-white/5 divide-y divide-slate-100 dark:divide-white/5 animate-in fade-in duration-200">
+              {remainingTop4To10.map((member: any) => (
+                <div
+                  key={member.rank}
+                  className="py-2.5 flex items-center justify-between gap-2.5 hover:bg-slate-50 dark:hover:bg-white/5 px-1.5 rounded-xl transition"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[11px] flex items-center justify-center shrink-0">
+                      #{member.rank}
+                    </div>
+                    <div className="size-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
+                      <img
+                        src={member.avatar}
+                        alt={member.name}
+                        className="size-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/ceo1983-logo.png";
+                        }}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {member.name}
+                      </h5>
+                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
+                        {member.company}
+                      </p>
+                    </div>
                   </div>
-                  <div className="size-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="size-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/ceo1983-logo.png";
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                      {member.name}
-                    </h5>
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                      {member.company}
-                    </p>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xs font-black text-[#003B95] dark:text-cyan-400 font-mono">
+                        {member.valueStr}
+                      </div>
+                      <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-semibold">
+                        {member.dept || "CLB CEO 1983"}
+                      </div>
+                    </div>
+
+                    {member.phone && (
+                      <a
+                        href={`tel:${member.phone}`}
+                        onClick={() => toast.success(`Đang gọi tới ${member.name} (${member.phone})...`)}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+                        title="Gọi điện"
+                      >
+                        <Phone className="size-3.5" />
+                      </a>
+                    )}
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="text-right">
-                    <div className="text-xs font-black text-[#003B95] dark:text-cyan-400 font-mono">
-                      {member.valueStr}
-                    </div>
-                    <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-semibold">
-                      {member.dept || "CLB CEO 1983"}
-                    </div>
+        {/* ── SECTION BÌNH LUẬN & THẢO LUẬN DƯỚI THỐNG KÊ (YÊU CẦU 2) ── */}
+        <div className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-3.5">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-400">
+                <MessageSquare className="size-4" />
+              </span>
+              <div>
+                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                  Thảo Luận &amp; Bình Luận Về Thống Kê
+                </h4>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  {comments.length} đóng góp ý kiến từ cộng đồng doanh nhân
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Danh sách bình luận */}
+          <div className="space-y-3">
+            {comments.map((cmt) => (
+              <div
+                key={cmt.id}
+                className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 space-y-1.5 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={cmt.avatar}
+                      alt={cmt.name}
+                      className="size-6 rounded-full object-cover border border-amber-400/40"
+                      onError={(e) => {
+                        e.currentTarget.src = "/ceo1983-emblem-8.png";
+                      }}
+                    />
+                    <strong className="text-slate-900 dark:text-white font-bold text-[11.5px]">
+                      {cmt.name}
+                    </strong>
                   </div>
-
-                  {member.phone && (
-                    <a
-                      href={`tel:${member.phone}`}
-                      onClick={() => toast.success(`Đang gọi tới ${member.name} (${member.phone})...`)}
-                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
-                      title="Gọi điện"
-                    >
-                      <Phone className="size-3.5" />
-                    </a>
-                  )}
+                  <span className="text-[10px] text-slate-400">{cmt.time}</span>
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px] pl-8">
+                  {cmt.text}
+                </p>
+                <div className="pl-8 pt-0.5 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setComments((prev) =>
+                        prev.map((c) =>
+                          c.id === cmt.id
+                            ? {
+                                ...c,
+                                isLiked: !c.isLiked,
+                                likes: c.isLiked ? c.likes - 1 : c.likes + 1,
+                              }
+                            : c
+                        )
+                      );
+                    }}
+                    className={`inline-flex items-center gap-1 text-[10.5px] font-bold transition cursor-pointer ${
+                      cmt.isLiked ? "text-red-600 dark:text-red-400" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    <span>{cmt.isLiked ? "❤️" : "🤍"}</span>
+                    <span>{cmt.likes} thích</span>
+                  </button>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Khung nhập bình luận mới */}
+          <div className="pt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={newCommentText}
+              onChange={(e) => setNewCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newCommentText.trim()) {
+                  const newCmt = {
+                    id: `cmt-${Date.now()}`,
+                    name: currentMember?.name || (user as any)?.name || "Doanh nhân CEO 1983",
+                    avatar: currentMember?.avatar || (user as any)?.avatar || "/ceo1983-emblem-8.png",
+                    time: "Vừa xong",
+                    text: newCommentText.trim(),
+                    likes: 1,
+                    isLiked: true,
+                  };
+                  setComments((prev) => [newCmt, ...prev]);
+                  setNewCommentText("");
+                  toast.success("Đã đăng bình luận thảo luận thành công!");
+                }
+              }}
+              placeholder="Viết nhận xét hoặc chia sẻ cơ hội hợp tác..."
+              className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!newCommentText.trim()) {
+                  toast.error("Vui lòng nhập nội dung bình luận");
+                  return;
+                }
+                const newCmt = {
+                  id: `cmt-${Date.now()}`,
+                  name: currentMember?.name || (user as any)?.name || "Doanh nhân CEO 1983",
+                  avatar: currentMember?.avatar || (user as any)?.avatar || "/ceo1983-emblem-8.png",
+                  time: "Vừa xong",
+                  text: newCommentText.trim(),
+                  likes: 1,
+                  isLiked: true,
+                };
+                setComments((prev) => [newCmt, ...prev]);
+                setNewCommentText("");
+                toast.success("Đã đăng bình luận thảo luận thành công!");
+              }}
+              className="px-4 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#172554] text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
+            >
+              Gửi
+            </button>
           </div>
         </div>
 

@@ -1789,112 +1789,140 @@ export function RbacPermissionMatrix({
           </div>
         </div>
 
-        {/* Các Chức Năng và Thao Tác Con */}
-        {flatFeatures.map(({ feat, catId, catName }) => {
-          const isFeatExpanded = expandedNodes[feat.id] ?? true;
+        {/* Các Chức Năng và Thao Tác Con Theo Từng Danh Mục Menu Sidebar */}
+        {currentTabCategories.map((cat) => {
+          const isCatExpanded = expandedNodes[cat.id] ?? true;
 
           return (
-            <React.Fragment key={feat.id}>
-              {/* Tiêu đề Chức năng (Nhóm nghiệp vụ) */}
-              <div className="w-full min-w-max h-11 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 inline-flex justify-start items-center">
-                <div className="sticky left-0 z-10 w-fit self-stretch pl-4 flex justify-start items-center gap-2.5 bg-slate-50/95 dark:bg-slate-800/95 pr-6">
+            <React.Fragment key={cat.id}>
+              {/* Tiêu đề Danh mục Sidebar (Category Group Banner) */}
+              <div className="w-full min-w-max h-12 bg-slate-900 text-white border-y border-slate-700/80 inline-flex justify-between items-center px-4">
+                <div className="sticky left-0 z-20 flex items-center gap-2.5 bg-slate-900/95 pr-6">
                   <button
                     type="button"
-                    onClick={() => toggleExpand(feat.id)}
-                    className="flex items-center gap-2 cursor-pointer hover:text-blue-800 transition"
+                    onClick={() => toggleExpand(cat.id)}
+                    className="flex items-center gap-2 cursor-pointer text-white hover:text-amber-300 font-bold transition"
                   >
-                    <img
-                      src="/icons/ceo1983_icon_1/chevron-down.svg"
-                      className={`size-2.5 transition-transform ${isFeatExpanded ? "" : "-rotate-90"}`}
-                      alt="toggle"
-                    />
-                    <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">
-                      {feat.name}
-                    </div>
+                    <ChevronDown className={`size-4 transition-transform ${isCatExpanded ? "" : "-rotate-90"}`} />
+                    <span className="text-xs font-black tracking-wider uppercase font-['Inter']">
+                      {cat.name}
+                    </span>
                   </button>
-                  <div className="justify-start text-slate-500 text-[10px] font-medium font-['Inter']">
-                    ({feat.actions.length} thao tác)
-                  </div>
+                  <span className="rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 border border-amber-400/40">
+                    {cat.features.length} phân hệ
+                  </span>
                 </div>
               </div>
 
-              {/* Danh sách các Thao tác con */}
-              {isFeatExpanded &&
-                feat.actions.map((action) => (
-                  <div
-                    key={action.id}
-                    className="w-full min-w-max h-10 border-b border-zinc-200 dark:border-slate-800 inline-flex justify-start items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-                  >
-                    <div className="sticky left-0 z-20 w-60 min-w-[240px] self-stretch px-4 border-r border-gray-200 dark:border-slate-800 flex justify-start items-center bg-white dark:bg-slate-900 shadow-[2px_0_5px_rgba(0,0,0,0.06)]">
-                      <div
-                        className="flex-1 justify-start text-slate-900 dark:text-slate-200 text-xs font-semibold font-['Inter'] leading-4 truncate"
-                        title={action.name}
-                      >
-                        {action.name}
-                      </div>
-                    </div>
+              {isCatExpanded &&
+                cat.features.map((feat) => {
+                  const isFeatExpanded = expandedNodes[feat.id] ?? true;
 
-                    {orderedRoles.map((col) => {
-                      const isChecked = !!action.roles[col.key];
-                      const colWidth = getRoleColWidth(col.key);
-
-                      return (
-                        <div
-                          key={col.key}
-                          className={`${colWidth} self-stretch bg-slate-50/30 dark:bg-slate-900/30 flex justify-center items-center border-r border-slate-100 dark:border-slate-800/50`}
-                        >
+                  return (
+                    <React.Fragment key={feat.id}>
+                      {/* Tiêu đề Chức năng (Nhóm nghiệp vụ) */}
+                      <div className="w-full min-w-max h-11 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 inline-flex justify-start items-center">
+                        <div className="sticky left-0 z-10 w-fit self-stretch pl-6 flex justify-start items-center gap-2.5 bg-slate-50/95 dark:bg-slate-800/95 pr-6">
                           <button
                             type="button"
-                            onClick={() => handleTogglePermission(catId, feat.id, action.id, col.key)}
-                            className="cursor-pointer"
-                            title={`${isChecked ? "Bỏ quyền" : "Cấp quyền"} cho ${col.name}`}
+                            onClick={() => toggleExpand(feat.id)}
+                            className="flex items-center gap-2 cursor-pointer hover:text-blue-800 transition"
                           >
-                            {isChecked ? (
-                              <div className="size-5 bg-blue-800 rounded-sm outline outline-1 outline-offset-[-1px] outline-blue-800 flex justify-center items-center overflow-hidden">
-                                <img src="/icons/ceo1983_icon_1/check.svg" className="size-3 invert brightness-0" alt="check" />
-                              </div>
-                            ) : (
-                              <div className="size-5 bg-white/0 rounded-sm border border-slate-200 dark:border-slate-700" />
-                            )}
+                            <img
+                              src="/icons/ceo1983_icon_1/chevron-down.svg"
+                              className={`size-2.5 transition-transform ${isFeatExpanded ? "" : "-rotate-90"}`}
+                              alt="toggle"
+                            />
+                            <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">
+                              {feat.name}
+                            </div>
                           </button>
+                          <div className="justify-start text-slate-500 text-[10px] font-medium font-['Inter']">
+                            ({feat.actions.length} thao tác)
+                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
 
-                    <div className="sticky right-0 z-20 min-w-[130px] self-stretch flex justify-center items-center gap-1.5 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-[-2px_0_5px_rgba(0,0,0,0.06)] px-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDetail({ action, featureName: feat.name, categoryName: catName });
-                          setDetailModalOpen(true);
-                        }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
-                        title="Xem chi tiết"
-                        aria-label="Xem chi tiết"
-                      >
-                        <Eye className="h-3.5 w-3.5" strokeWidth={2.2} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleStartEditAction(catId, feat.id, action)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
-                        title="Chỉnh sửa thao tác"
-                        aria-label="Chỉnh sửa thao tác"
-                      >
-                        <Pencil className="h-3.5 w-3.5" strokeWidth={2.2} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteAction(catId, feat.id, action.id, action.name)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 transition cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
-                        title="Xóa thao tác"
-                        aria-label="Xóa thao tác"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" strokeWidth={2.2} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                      {/* Danh sách các Thao tác con */}
+                      {isFeatExpanded &&
+                        feat.actions.map((action) => (
+                          <div
+                            key={action.id}
+                            className="w-full min-w-max h-10 border-b border-zinc-200 dark:border-slate-800 inline-flex justify-start items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                          >
+                            <div className="sticky left-0 z-20 w-60 min-w-[240px] self-stretch pl-8 pr-4 border-r border-gray-200 dark:border-slate-800 flex justify-start items-center bg-white dark:bg-slate-900 shadow-[2px_0_5px_rgba(0,0,0,0.06)]">
+                              <div
+                                className="flex-1 justify-start text-slate-900 dark:text-slate-200 text-xs font-semibold font-['Inter'] leading-4 truncate"
+                                title={action.name}
+                              >
+                                {action.name}
+                              </div>
+                            </div>
+
+                            {orderedRoles.map((col) => {
+                              const isChecked = !!action.roles[col.key];
+                              const colWidth = getRoleColWidth(col.key);
+
+                              return (
+                                <div
+                                  key={col.key}
+                                  className={`${colWidth} self-stretch bg-slate-50/30 dark:bg-slate-900/30 flex justify-center items-center border-r border-slate-100 dark:border-slate-800/50`}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePermission(cat.id, feat.id, action.id, col.key)}
+                                    className="cursor-pointer"
+                                    title={`${isChecked ? "Bỏ quyền" : "Cấp quyền"} cho ${col.name}`}
+                                  >
+                                    {isChecked ? (
+                                      <div className="size-5 bg-blue-800 rounded-sm outline outline-1 outline-offset-[-1px] outline-blue-800 flex justify-center items-center overflow-hidden">
+                                        <img src="/icons/ceo1983_icon_1/check.svg" className="size-3 invert brightness-0" alt="check" />
+                                      </div>
+                                    ) : (
+                                      <div className="size-5 bg-white/0 rounded-sm border border-slate-200 dark:border-slate-700" />
+                                    )}
+                                  </button>
+                                </div>
+                              );
+                            })}
+
+                            <div className="sticky right-0 z-20 min-w-[130px] self-stretch flex justify-center items-center gap-1.5 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-[-2px_0_5px_rgba(0,0,0,0.06)] px-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDetail({ action, featureName: feat.name, categoryName: cat.name });
+                                  setDetailModalOpen(true);
+                                }}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
+                                title="Xem chi tiết"
+                                aria-label="Xem chi tiết"
+                              >
+                                <Eye className="h-3.5 w-3.5" strokeWidth={2.2} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditAction(cat.id, feat.id, action)}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
+                                title="Chỉnh sửa thao tác"
+                                aria-label="Chỉnh sửa thao tác"
+                              >
+                                <Pencil className="h-3.5 w-3.5" strokeWidth={2.2} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAction(cat.id, feat.id, action.id, action.name)}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 transition cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
+                                title="Xóa thao tác"
+                                aria-label="Xóa thao tác"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" strokeWidth={2.2} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </React.Fragment>
+                  );
+                })}
             </React.Fragment>
           );
         })}

@@ -1,5 +1,21 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 02/11/2026 (v10.8): Chuẩn Hóa Nhận Diện Thương Hiệu 3 Màu App Mobile, Bảng Thống Kê 4 Chỉ Số & Bình Luận, Khắc Phục Lỗi Phân Quyền CRM & Xóa Hội Viên, Đồng Bộ Tên Tổ Chức Bền Vững & Dynamic Theme CRM ([NODE-APP-001], [NODE-APP-003], [NODE-CRM-001], [NODE-CRM-010], [NODE-CRM-015], [NODE-CORE-001])**:
+  1. *CEO 1983 Mobile App - Nhận Diện Thương Hiệu 3 Màu Chuẩn & Tối Giản*:
+     - Tối giản triệt để `association.profile.tsx`: Xóa bỏ toàn bộ các dòng text mô tả dài dòng không cần thiết dưới các tab và tiêu đề; quy chuẩn toàn bộ 6 box icon về 3 gam màu nhận diện thương hiệu CEO 1983 (Đỏ bã trầu `#991B1B`, Vàng hoàng kim `#D97706`, Xanh Navy `#1E3A8A`); thay viền đậm bằng viền mờ `border-slate-100 dark:border-slate-800/60`.
+     - `MemberShell.tsx`: Nút Check-in được thiết kế lại sang trọng, bỏ hoàn toàn quầng sáng nhấp nháy lòe loẹt, viền mảnh 2.5px tinh tế với gradient Xanh Navy sang Đỏ bã trầu và chữ hiển thị thanh lịch.
+     - `association.analytics.tsx`: Tái cấu trúc 4 thẻ chỉ số lớn tương ứng 4 danh mục cốt lõi của Hiệp hội (Giao Thương B2B, Gắn Kết 1-on-1, Sự Kiện & Đào Tạo, Tài Chính & Quỹ) kèm 4 thẻ KPI chi tiết; thu gọn Top 4 - 10 vào Accordion Collapsible (`showTop10Expanded`, mặc định đóng); bổ sung Section "Thảo Luận & Bình Luận Về Thống Kê" với danh sách trao đổi, reaction và ô gửi bình luận real-time.
+  2. *Web CRM - Khắc Phục Triệt Để Lỗi Xóa Hội Viên & Tái Cấu Trúc Ma Trận Phân Quyền Theo Menu Sidebar*:
+     - Sửa lỗi *"Chỉ quản trị viên mới có quyền xóa"*: Cập nhật `checkIsPlatformAdmin` và `checkIsAdmin` trong `members.service.ts` để nhận diện tài khoản `admin@connect.vn`, `clbceo1983@gmail.com`, `vumikasa6@gmail.com` và các role quản trị trong `vione_users`, `user_roles`, `members`. Đã chèn role admin vào PostgreSQL.
+     - Tái cấu trúc ma trận phân quyền trong `RbacPermissionMatrix.tsx`: Gom nhóm và hiển thị rành mạch 1-1 theo 4 nhóm danh mục lớn của Menu Sidebar CRM: `KẾT NỐI KINH DOANH`, `HỆ THỐNG`, `QUẢN TRỊ`, `PHÂN QUYỀN`, kèm nút collapse/expand từng nhóm và số lượng phân hệ rõ ràng. Bumper storage key lên `v7`.
+  3. *Tên Tổ Chức Bền Vững & Loại Bỏ Lặp Chức Năng Cấu Hình Email / Zalo OA*:
+     - Khắc phục lỗi tên tổ chức bị hardcode quay về tên cũ: Tạo bảng `public.user_settings` trong PostgreSQL. Cập nhật `getSettings` và `saveSettings` trong `connect-app.service.ts`: Lưu bền vững tên tổ chức mới vào `public.user_settings`, cập nhật đồng thời vào `public.associations` (`UPDATE public.associations SET name = $orgName`) và `public.app_settings` (`crm_system_name` & `org_name`). Xóa bỏ hoàn toàn giá trị fallback cũ ("Hiệp hội Doanh nghiệp Việt Nam").
+     - Tinh giản `OmnichannelTemplatesSection.tsx`: Loại bỏ sub-tab Zalo bị lặp lại và hộp quick dispatch hardcode gây thừa thãi, chuyển thành giao diện quản lý Mẫu Template Email CRM và Mẫu Phản hồi nhanh chuyên sâu, trang nhã. Tách biệt rõ ràng Tab 4 ("Mẫu Email CRM & Phản Hồi") và Tab 5 ("Cấu hình & Bắn Tin Zalo OA") trong `settings.tsx`.
+  4. *Đồng Bộ Dynamic Theme Giữa CRM và App Mobile & Nạp Tri Thức Chuyên Sâu Trợ Lý AI*:
+     - Đồng bộ hoàn toàn `association.index.tsx` theo cấu hình theme từ CRM (`GET /admin/active-theme`): Tự động đổi layout lưới 3 cột (`grid-cols-3`) hoặc 4 cột (`grid-cols-4`) theo `effectiveTheme.layoutGrid`; bo góc linh hoạt theo `effectiveTheme.borderRadius`; hiển thị icon/emoji động theo `effectiveTheme.actionIcons?.[id]`; màu nền và viền box đồng bộ theo `effectiveTheme.primaryColor` và `effectiveTheme.accentColor`.
+     - Huấn luyện Trợ lý ảo AI CEO 1983 (`ai.service.ts`): Nạp tri thức chuyên sâu thực chiến về Hiệp hội CEO 1983 (Chủ tịch Lê Phụng Thắng, Tôn chỉ, Lịch sử, 6 Ban chuyên môn, Quy trình kết nạp 3 bước, Quy chế 1-on-1 và giao thương B2B, quản trị dòng tiền, tuyển dụng nhân sự, tài khoản MB Bank 1983000000). Trả lời chi tiết, sắc sảo, không còn chung chung hay cụt lủn.
+
+
 - **Bản cập nhật ngày 30/10/2026 (v10.7): Khắc Phục Triệt Để Lỗi Hydration Mismatch React Error #418 Tại Trang Cài Đặt Settings & ThemeProvider SSR ([NODE-CRM-010], [NODE-CORE-001])**:
   1. *Nguyên Nhân Lỗi React Error #418 (Hydration Failed Tag HTML)*:
      - Xung đột theme mặc định: `__root.tsx` thiết lập SSR `<html className="dark" data-theme="dark">`, nhưng `readInitial()` trong `theme.tsx` lại fallback về `"light"`.

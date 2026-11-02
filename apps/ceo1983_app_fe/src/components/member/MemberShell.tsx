@@ -803,21 +803,18 @@ function MemberTabBar() {
                     setQrModalOpen(true);
                   }}
                   aria-label="Check-in & Quét mã QR"
-                  className="-mt-7 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none pb-0.5"
+                  className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none pb-0.5"
                 >
-                  {/* Subtle Glow */}
-                  <span className="absolute inset-0 -top-1 rounded-full bg-blue-600/25 blur-md animate-pulse pointer-events-none" />
-
-                  {/* Circular Button matching user design: size-14, bg-linear-46 from-sky-900 to-blue-700 */}
+                  {/* Nút tròn Check-in chuẩn 3 màu CEO 1983 tối giản */}
                   <span
-                    className="relative grid h-14 w-14 place-items-center rounded-full shadow-[0_8px_20px_-4px_rgba(220,38,38,0.5)] group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
+                    className="relative grid h-13 w-13 place-items-center rounded-full shadow-md group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
                     style={{
-                      background: "linear-gradient(135deg, #991B1B 0%, #DC2626 45%, #D97706 100%)",
-                      border: "3px solid rgba(255, 255, 255, 0.9)",
-                      boxShadow: "0 6px 20px rgba(220, 38, 38, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.4)",
+                      background: "linear-gradient(135deg, #1E3A8A 0%, #003B95 50%, #991B1B 100%)",
+                      border: "2.5px solid rgba(255, 255, 255, 0.95)",
+                      boxShadow: "0 4px 14px rgba(30, 58, 138, 0.25)",
                     }}
                   >
-                    <QrCode className="size-7 text-white stroke-[2.2] drop-shadow-sm" />
+                    <QrCode className="size-6 text-white stroke-[2.2]" />
                     {isMidAutumn && (
                       <span
                         className="absolute -top-1 -right-1 text-[10px] select-none"
@@ -827,7 +824,7 @@ function MemberTabBar() {
                       </span>
                     )}
                   </span>
-                  <span className="text-[11px] font-bold text-[#DC2626] dark:text-amber-400 mt-1">
+                  <span className="text-[11px] font-bold text-[#1E3A8A] dark:text-amber-400 mt-1">
                     Check-in
                   </span>
                 </button>

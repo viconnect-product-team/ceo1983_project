@@ -1256,7 +1256,7 @@ function Home() {
               <span>Xem tất cả tính năng</span>
             </button>
           </div>
-          <div className="self-stretch inline-flex justify-between items-start gap-2">
+          <div className={`self-stretch grid ${effectiveTheme.layoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"} gap-2.5 items-start`}>
             {activeShortcutIds.map((id) => {
               const def = ALL_SHORTCUT_OPTIONS.find((o) => o.id === id) || ALL_SHORTCUT_OPTIONS[0];
               let badgeVal: string | number | undefined = def.badge;
@@ -1273,11 +1273,28 @@ function Home() {
               }
 
               const isHash = def.to.startsWith("#");
+              const roundedClass = effectiveTheme.borderRadius || "rounded-2xl";
+              const customThemeIcon = effectiveTheme.actionIcons?.[id];
+
               const iconAndBadge = (
-                <div className="size-14 relative rounded-2xl bg-gradient-to-br from-amber-50 to-blue-50 dark:bg-slate-800/90 border border-amber-200/60 dark:border-amber-500/30 flex justify-center items-center group-hover:scale-105 group-hover:border-amber-400 transition-all shadow-xs">
-                  <span className="text-[#003B95] dark:text-amber-300">
-                    {getShortcutIcon(def.iconName, "size-6")}
-                  </span>
+                <div
+                  className={`size-14 relative ${roundedClass} flex justify-center items-center group-hover:scale-105 transition-all shadow-xs`}
+                  style={{
+                    backgroundColor: isDark ? `${effectiveTheme.primaryColor}30` : `${effectiveTheme.primaryColor}14`,
+                    borderColor: `${effectiveTheme.accentColor || "#D97706"}45`,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                  }}
+                >
+                  {customThemeIcon ? (
+                    <span className="text-2xl select-none leading-none" role="img" aria-label={def.name}>
+                      {customThemeIcon}
+                    </span>
+                  ) : (
+                    <span style={{ color: effectiveTheme.accentColor || "#1E3A8A" }}>
+                      {getShortcutIcon(def.iconName, "size-6")}
+                    </span>
+                  )}
                   {badgeVal && (
                     <div className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900 ${badgeColor}`}>
                       <span className="text-[10px] font-black font-sans leading-3">

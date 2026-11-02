@@ -2663,6 +2663,72 @@ QUY TẮC PHÂN TÍCH NGỮ CẢNH CÂU HỎI (BẮT BUỘC):
     const q = (rawPrompt || '').toLowerCase().trim();
     const userName = context?.user?.name || 'Quý Anh/Chị';
 
+    // 0.1. Tri thức Chuyên Sâu: Chủ Tịch, Ban Điều Hành, Lịch Sử & Tôn Chỉ CLB CEO 1983
+    if (
+      q.includes('chủ tịch') || q.includes('chu tich') || q.includes('lê phụng thắng') || q.includes('le phung thang') ||
+      q.includes('ban điều hành') || q.includes('ban dieu hanh') || q.includes('hanoiba') || q.includes('hội doanh nghiệp trẻ') ||
+      q.includes('tôn chỉ') || q.includes('lịch sử') || q.includes('thành lập') || q.includes('clb ceo 1983') ||
+      q.includes('hiệp hội ceo 1983') || q.includes('giới thiệu clb')
+    ) {
+      const answer = `🏛️ **Thông Tin Ban Lãnh Đạo, Lịch Sử & Tôn Chỉ CLB Doanh Nhân CEO 1983 (HanoiBA):**\n\nKính gửi Quý Anh/Chị **${userName}**, em xin gửi thông tin chuẩn mực và đầy đủ nhất về Hiệp hội:\n\n1. 👑 **Chủ Tịch Hiệp Hội:**\n   - **Anh Lê Phụng Thắng** — Chủ tịch HĐQT kiêm Tổng Giám đốc Tập đoàn Thép Citicom, Phó Chủ tịch Thường trực Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA).\n   - Là người đặt nền móng kiến tạo, định hình tầm nhìn chiến lược và văn hóa đoàn kết, hào sảng, phụng sự cộng đồng doanh nhân.\n2. 🌟 **Tôn Chỉ Hoạt Động:**\n   - *"Gắn kết doanh nhân — Chia sẻ cơ hội — Phát triển bền vững"*.\n   - Nơi hội tụ các nhà lãnh đạo tài năng sinh năm 1983 (tuổi Quý Hợi) — thế hệ doanh nhân chín muồi về bản lĩnh, khát vọng và tinh thần đổi mới sáng tạo.\n3. 🏢 **Tổ Chức Chủ Quản & Trụ Sở:**\n   - Trực thuộc **Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA)**.\n   - **Trụ sở:** Cung Trí Thức Hà Nội, Số 1 Tôn Thất Thuyết, Cầu Giấy, TP. Hà Nội.\n   - **Hotline Ban Thư Ký:** **0983 198 307** (Hỗ trợ 24/7).\n4. ⚙️ **Cơ Cấu 6 Ban Chuyên Môn:**\n   - **Ban Điều Hành & Ban Thư Ký:** Điều phối chung và vận hành nền tảng số.\n   - **Ban Thành Viên:** Kết nạp, thẩm định và chăm sóc quyền lợi hội viên.\n   - **Ban Xúc Tiến Thương Mại:** Điều phối giao thương B2B và chuỗi giá trị.\n   - **Ban Truyền Thông:** Xây dựng thương hiệu cá nhân CEO và kỷ yếu số.\n   - **Ban Tài Chính:** Quản lý quỹ, hội phí niên liễm MB Bank \`1983000000\`.\n   - **Ban Thiện Nguyện:** Các chương trình an sinh xã hội và CSR cộng đồng.\n\n👉 *Quý Anh/Chị có muốn em mở mục Danh Bạ Ban Điều Hành hoặc kết nối Ban Thư Ký ngay không ạ?*`;
+      const speechText = `Chủ tịch CLB Doanh Nhân CEO 1983 là anh Lê Phụng Thắng, Chủ tịch HĐQT Citicom kiêm Phó Chủ tịch Thường trực HanoiBA. CLB hoạt động theo tôn chỉ Gắn kết doanh nhân, Chia sẻ cơ hội, Phát triển bền vững ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-members',
+        route: '/association/members',
+        featureName: 'Ban Điều Hành & Hội Viên CEO 1983',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-charter-v2',
+      };
+    }
+
+    // 0.2. Tri thức Chuyên Sâu: Quy Trình Kết Nạp, Điều Kiện Gia Nhập & Quyền Lợi Hội Viên
+    if (
+      q.includes('kết nạp') || q.includes('ket nap') || q.includes('gia nhập') || q.includes('gia nhap') ||
+      q.includes('điều kiện') || q.includes('dieu kien') || q.includes('đăng ký hội viên') ||
+      q.includes('quy chế hội viên') || q.includes('trở thành hội viên') || q.includes('hồ sơ kết nạp')
+    ) {
+      const answer = `📝 **Quy Trình Kết Nạp, Tiêu Chuẩn & Quyền Lợi Hội Viên CEO 1983:**\n\nKính gửi Quý Anh/Chị **${userName}**, quy trình gia nhập CLB được chuẩn hóa 3 bước chặt chẽ:\n\n1. 🎯 **Tiêu Chuẩn Gia Nhập:**\n   - Lãnh đạo, Chủ tịch, Tổng giám đốc, Cổ đông sáng lập sinh năm 1983 (tuổi Quý Hợi) hoặc lãnh đạo doanh nghiệp liên kết uy tín.\n   - Doanh nghiệp có pháp nhân minh bạch, tuân thủ pháp luật và đạo đức kinh doanh.\n2. 📋 **Quy Trình 3 Bước Kết Nạp Chính Thức:**\n   - **Bước 1 — Đăng ký Online:** Điền đơn đăng ký trên cổng thông tin CLB CEO 1983, tải ảnh chân dung và thông tin doanh nghiệp.\n   - **Bước 2 — Thẩm định & Xác minh:** Ban Thành Viên liên hệ gặp gỡ, xác minh thông tin doanh nghiệp trong vòng 48h làm việc.\n   - **Bước 3 — Phê duyệt & Cấp Mã:** Ban Điều Hành họp xét duyệt, cấp Mã Hội viên chính thức (\`M1983-xxx\`), kích hoạt Thẻ Thông Minh Smart Card NFC và cấp tài khoản CRM/App di động.\n3. 💎 **Đặc Quyền Vượt Trội Của Hội Viên Chính Thức:**\n   - Sở hữu **Danh Thiếp Số 5.0** và thẻ thông minh NFC chạm là kết nối.\n   - Tiếp cận mạng lưới **200+ CEO** tinh hoa, đăng bán sản phẩm miễn phí trên Sàn B2B Marketplace.\n   - Tham gia định kỳ các buổi Cà phê Doanh nhân, Gala thường niên, diễn đàn đào tạo quản trị cấp cao và các giải Golf giao hữu.\n\n👉 *Quý Anh/Chị có muốn em dẫn đường mở ngay form Đăng Ký Hội Viên mới không ạ?*`;
+      const speechText = `Quy trình kết nạp CEO 1983 gồm ba bước: Đăng ký online, Ban Thành viên thẩm định và Ban Điều hành phê duyệt cấp mã hội viên. Hội viên được cấp Thẻ thông minh NFC và tham gia toàn bộ mạng lưới giao thương B2B ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-profile',
+        route: '/association/profile',
+        featureName: 'Hồ Sơ & Thủ Tục Hội Viên',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-membership-v2',
+      };
+    }
+
+    // 0.3. Tri thức Chuyên Sâu: Quy Chế Kết Nối 1-on-1 & Giao Thương B2B Thực Chiến
+    if (
+      q.includes('1-on-1') || q.includes('1-1') || q.includes('hẹn gặp') || q.includes('hen gap') ||
+      q.includes('cà phê doanh nhân') || q.includes('quy chế giao thương') || q.includes('kết nối đối tác')
+    ) {
+      const answer = `🤝 **Quy Chế Kết Nối 1-on-1 & Giao Thương B2B Thực Chiến (CEO 1983 Standards):**\n\nKính gửi Quý Anh/Chị **${userName}**, kết nối 1-on-1 là "đặc sản" hiệu quả nhất để xây dựng niềm tin và chốt các thương vụ lớn:\n\n1. 🔍 **Bước 1 — Tìm Kiếm & Nghiên Cứu Đối Tác:**\n   - Mở mục **Danh Bạ Hội Viên** trên App CEO 1983, lọc theo ngành nghề hoặc từ khóa kinh doanh.\n   - Xem trước hồ sơ năng lực 360°, ngành nghề thế mạnh và nhu cầu cung - cầu của đối tác.\n2. 📅 **Bước 2 — Gửi Lời Mời Hẹn Gặp:**\n   - Bấm nút **"Hẹn gặp 1-on-1"**, chọn thời gian (sáng/chiều), địa điểm (trụ sở công ty hoặc các điểm hẹn doanh nhân trang nhã).\n   - Ghi rõ nội dung mục tiêu buổi gặp: Giới thiệu giải pháp, tìm kiếm nguồn cung hoặc liên minh dự án.\n3. 📇 **Bước 3 — Phiên Làm Việc Thực Chiến (45 - 60 phút):**\n   - 15 phút đầu: Chạm thẻ NFC chia sẻ danh thiếp số, giới thiệu câu chuyện thành lập doanh nghiệp.\n   - 30 phút giữa: Trình bày chi tiết sản phẩm, dịch vụ và điểm nghẽn có thể tương hỗ cho nhau.\n   - 15 phút cuối: Thống nhất kế hoạch hành động cụ thể (Action Items) và thời hạn phản hồi.\n4. 📈 **Bước 4 — Báo Cáo & Tích Lũy Chỉ Số KPI:**\n   - Sau buổi gặp, vào App bấm **"Xác nhận đã gặp"** để hệ thống tự động ghi nhận điểm gắn kết và đề xuất cơ hội giao thương tương ứng.\n\n👉 *Quý Anh/Chị có muốn em mở Danh Bạ Hội Viên để chọn đối tác hẹn gặp 1-on-1 ngay bây giờ không ạ?*`;
+      const speechText = `Quy trình một một chuẩn của CEO 1983 gồm bốn bước: Tra cứu danh bạ, gửi lời mời hẹn gặp, làm việc thực chiến và xác nhận kết quả trên app. Em có thể mở Danh bạ để Quý Anh/Chị kết nối ngay ạ!`;
+
+      return {
+        answer,
+        speechText,
+        intent: 'feature_guide',
+        suggestTour: true,
+        tourId: 'association-members',
+        route: '/association/members',
+        featureName: 'Danh Bạ & Hẹn Gặp 1-on-1',
+        provider: 'ceo1983-executive-core',
+        model: 'executive-b2b-v2',
+      };
+    }
+
     // 1. Quản trị Dòng tiền, Tài chính, Cắt giảm chi phí, Lạm phát, Thuế & Kế toán
     if (
       q.includes('dòng tiền') || q.includes('dong tien') || q.includes('cashflow') ||
