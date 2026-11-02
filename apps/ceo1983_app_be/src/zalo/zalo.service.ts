@@ -25,6 +25,14 @@ export class SendBulkRecipientDto {
   company?: string;
 }
 
+export class SendZnsMessageDto {
+  templateId!: string;
+  phone!: string;
+  templateData!: Record<string, any>;
+  accessToken?: string;
+  trackingId?: string;
+}
+
 export class SendBulkZaloMessageDto {
   accessToken!: string;
   recipients!: SendBulkRecipientDto[];
@@ -44,8 +52,9 @@ export class ZaloService {
 
   /**
    * Tiếp nhận sự kiện Webhook thời gian thực từ Zalo OA (user_send_text, follow, v.v.)
+   * Tự động lưu vào PostgreSQL bền vững và khớp nối với danh sách Hội viên CRM
    */
-  recordWebhookInteraction(event: any) {
+  async recordWebhookInteraction(event: any) {
     try {
       const senderId =
         event?.sender?.id ||
@@ -56,25 +65,88 @@ export class ZaloService {
       if (!senderId) return;
 
       const uid = String(senderId).trim();
+      const eventName = event?.event_name || 'user_send_text';
       const msg =
         event?.message?.text ||
         event?.msg_text ||
+        event?.info?.text ||
         event?.event_name ||
         'Tương tác qua Zalo OA';
       const time = event?.timestamp ? Number(event.timestamp) : Date.now();
-      const existing = this.webhookInteractions.get(uid);
+      const displayName =
+        event?.sender?.name ||
+        event?.user_name ||
+        event?.info?.name ||
+        `Hội viên Zalo (${uid.slice(-4)})`;
+      const avatar = event?.sender?.avatar || event?.info?.avatar || '';
 
+      // 1. Lưu vào bộ nhớ RAM tạm thời
       this.webhookInteractions.set(uid, {
         userId: uid,
-        displayName:
-          existing?.displayName ||
-          event?.sender?.name ||
-          event?.user_name ||
-          `Hội viên Zalo (${uid.slice(-4)})`,
-        avatar: existing?.avatar || event?.sender?.avatar || '',
+        displayName,
+        avatar,
         lastMessage: msg,
         time,
       });
+
+      // 2. Ghi vĩnh viễn vào CSDL PostgreSQL (Tránh mất khi server restart)
+      if (this.prisma) {
+        try {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.zalo_webhook_logs (event_name, sender_id, recipient_id, message_text, raw_payload)
+             VALUES ($1, $2, $3, $4, $5::jsonb)`,
+            eventName,
+            uid,
+            String(event?.recipient?.id || ''),
+            msg,
+            JSON.stringify(event)
+          );
+
+          // Phát hiện nếu tin nhắn chứa SĐT di động Việt Nam
+          let extractedPhone = '';
+          const phoneMatch = msg.match(/(0[3|5|7|8|9][0-9]{8})/);
+          if (phoneMatch) {
+            extractedPhone = phoneMatch[1];
+          }
+
+          let matchedMemberId: string | null = null;
+          if (extractedPhone) {
+            const memberRow: any[] = await this.prisma.$queryRawUnsafe(
+              `SELECT id FROM public.members WHERE phone LIKE $1 LIMIT 1`,
+              `%${extractedPhone}%`
+            );
+            if (memberRow.length > 0) {
+              matchedMemberId = memberRow[0].id;
+              await this.prisma.$executeRawUnsafe(
+                `UPDATE public.members SET zalo_user_id = $1 WHERE id = $2`,
+                uid,
+                matchedMemberId
+              );
+            }
+          }
+
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.zalo_subscribers (zalo_user_id, display_name, avatar_url, phone, member_id, last_message, last_interacted_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+             ON CONFLICT (zalo_user_id) DO UPDATE SET
+               display_name = COALESCE(EXCLUDED.display_name, public.zalo_subscribers.display_name),
+               avatar_url = COALESCE(NULLIF(EXCLUDED.avatar_url, ''), public.zalo_subscribers.avatar_url),
+               phone = COALESCE(NULLIF(EXCLUDED.phone, ''), public.zalo_subscribers.phone),
+               member_id = COALESCE(EXCLUDED.member_id, public.zalo_subscribers.member_id),
+               last_message = EXCLUDED.last_message,
+               last_interacted_at = NOW(),
+               updated_at = NOW()`,
+            uid,
+            displayName,
+            avatar,
+            extractedPhone || null,
+            matchedMemberId,
+            msg
+          );
+        } catch (dbErr: any) {
+          this.logger.warn(`Lỗi lưu Zalo Webhook vào DB: ${dbErr.message}`);
+        }
+      }
 
       this.logger.log(`✅ [Zalo Webhook] Đã ghi nhận tương tác từ Zalo User ID: ${uid} - Nội dung: "${msg}"`);
     } catch (err: any) {
@@ -131,7 +203,75 @@ export class ZaloService {
     const seenIds = new Set<string>();
     let lastZaloError: { code: number; message: string; guide?: string } | null = null;
 
-    // 0. Ưu tiên nạp các tương tác thời gian thực từ Zalo Webhook vừa gửi đến server
+    // 0. Nạp từ CSDL PostgreSQL (zalo_subscribers và members đã có liên kết Zalo)
+    if (this.prisma) {
+      try {
+        const dbSubs: any[] = await this.prisma.$queryRawUnsafe(`
+          SELECT 
+            s.zalo_user_id as "userId",
+            COALESCE(m.name, s.display_name, 'Hội viên Zalo') as "displayName",
+            COALESCE(s.avatar_url, m.avatar_url, '') as "avatar",
+            COALESCE(s.last_message, 'Đang quan tâm Official Account') as "lastMessage",
+            EXTRACT(EPOCH FROM s.last_interacted_at)*1000 as "time",
+            COALESCE(m.phone, s.phone, '') as "phone",
+            m.code as "memberCode",
+            m.company_name as "company"
+          FROM public.zalo_subscribers s
+          LEFT JOIN public.members m ON s.member_id = m.id OR s.zalo_user_id = m.zalo_user_id
+          ORDER BY s.last_interacted_at DESC
+          LIMIT 50;
+        `);
+        for (const sub of dbSubs) {
+          if (!seenIds.has(sub.userId)) {
+            seenIds.add(sub.userId);
+            chats.push({
+              userId: sub.userId,
+              displayName: sub.displayName,
+              avatar: sub.avatar || '',
+              lastMessage: sub.lastMessage || 'Tương tác gần đây',
+              time: Number(sub.time) || Date.now(),
+              phone: sub.phone || '',
+              memberCode: sub.memberCode || '',
+              company: sub.company || '',
+            });
+          }
+        }
+
+        const dbMembersWithZalo: any[] = await this.prisma.$queryRawUnsafe(`
+          SELECT 
+            zalo_user_id as "userId",
+            name as "displayName",
+            avatar_url as "avatar",
+            'Đã kết nối tài khoản Zalo' as "lastMessage",
+            EXTRACT(EPOCH FROM updated_at)*1000 as "time",
+            phone as "phone",
+            code as "memberCode",
+            company_name as "company"
+          FROM public.members
+          WHERE zalo_user_id IS NOT NULL AND zalo_user_id != ''
+          LIMIT 50;
+        `);
+        for (const m of dbMembersWithZalo) {
+          if (!seenIds.has(m.userId)) {
+            seenIds.add(m.userId);
+            chats.push({
+              userId: m.userId,
+              displayName: m.displayName,
+              avatar: m.avatar || '',
+              lastMessage: m.lastMessage,
+              time: Number(m.time) || Date.now(),
+              phone: m.phone || '',
+              memberCode: m.memberCode || '',
+              company: m.company || '',
+            });
+          }
+        }
+      } catch (dbErr: any) {
+        this.logger.warn(`Lỗi nạp danh bạ Zalo từ DB: ${dbErr.message}`);
+      }
+    }
+
+    // 0.2. Nạp thêm từ bộ nhớ RAM Webhook
     for (const item of this.webhookInteractions.values()) {
       if (!seenIds.has(item.userId)) {
         seenIds.add(item.userId);
@@ -274,7 +414,36 @@ export class ZaloService {
     let targetUserId = dto.userId?.trim();
     let recipientName = dto.targetName || 'Hội viên';
 
-    // 1. Nếu chưa có User ID trực tiếp, thử tra cứu trong bộ nhớ Webhook interactions
+    // 1. Tra cứu Zalo User ID qua CSDL PostgreSQL theo Số điện thoại hoặc tên
+    if (!targetUserId && this.prisma && dto.targetPhone) {
+      try {
+        const cleanPhone = dto.targetPhone.replace(/\D/g, '');
+        const phoneVariants = [cleanPhone, cleanPhone.startsWith('84') ? '0' + cleanPhone.slice(2) : cleanPhone];
+        const member: any[] = await this.prisma.$queryRawUnsafe(
+          `SELECT zalo_user_id, name FROM public.members WHERE (phone LIKE $1 OR phone LIKE $2) AND zalo_user_id IS NOT NULL AND zalo_user_id != '' LIMIT 1`,
+          `%${phoneVariants[0]}%`,
+          `%${phoneVariants[1]}%`
+        );
+        if (member.length > 0 && member[0].zalo_user_id) {
+          targetUserId = member[0].zalo_user_id;
+          recipientName = member[0].name || recipientName;
+        } else {
+          const sub: any[] = await this.prisma.$queryRawUnsafe(
+            `SELECT zalo_user_id, display_name FROM public.zalo_subscribers WHERE (phone LIKE $1 OR phone LIKE $2) LIMIT 1`,
+            `%${phoneVariants[0]}%`,
+            `%${phoneVariants[1]}%`
+          );
+          if (sub.length > 0 && sub[0].zalo_user_id) {
+            targetUserId = sub[0].zalo_user_id;
+            recipientName = sub[0].display_name || recipientName;
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`Could not lookup user by phone: ${err.message}`);
+      }
+    }
+
+    // 1.2. Tra cứu trong bộ nhớ Webhook interactions
     if (!targetUserId && this.webhookInteractions.size > 0) {
       const targetLower = (dto.targetName || '').toLowerCase().trim();
       for (const item of this.webhookInteractions.values()) {
@@ -286,7 +455,6 @@ export class ZaloService {
         }
       }
       if (!targetUserId) {
-        // Lấy hội viên mới nhắn tin gần nhất qua Webhook
         const latest = Array.from(this.webhookInteractions.values()).pop();
         if (latest) {
           targetUserId = latest.userId;
@@ -327,7 +495,7 @@ export class ZaloService {
 
     if (!targetUserId) {
       throw new HttpException(
-        'Không tìm thấy Zalo User ID (UID) của người nhận. Vui lòng nhập trực tiếp Zalo UID vào ô cấu hình hoặc bấm "Đồng bộ danh bạ từ Zalo OA" sau khi hội viên gửi tin nhắn tới Zalo OA!',
+        'Chưa xác định được Zalo User ID (UID) của hội viên này. Bạn có thể: 1) Chọn hình thức gửi ZNS theo Số Điện Thoại (Chuẩn doanh nghiệp 100% tự động); 2) Bấm nút "Mở Chat Zalo Trực Tiếp" để gửi ngay; hoặc 3) Cấu hình Webhook để hệ thống tự động ghi nhận UID khi hội viên nhắn tin.',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -538,7 +706,7 @@ export class ZaloService {
     if (this.prisma) {
       try {
         const members: any[] = await this.prisma.$queryRawUnsafe(
-          `SELECT id, name, phone, member_code, company_name FROM public.members WHERE phone IS NOT NULL AND phone != '' LIMIT 50`
+          `SELECT id, name, phone, code as member_code, company_name FROM public.members WHERE phone IS NOT NULL AND phone != '' LIMIT 50`
         );
         recipients = members.map((m) => ({
           phone: m.phone || '',
@@ -574,5 +742,132 @@ Trân trọng cảm ơn Anh/Chị!`;
       messageTemplate: template,
       delayMs: 250,
     });
+  }
+
+  /**
+   * Bắn thông báo ZNS (Zalo Notification Service) theo Số Điện Thoại
+   * Chuẩn doanh nghiệp lớn 100%: Không cần Zalo User ID, Hội viên không cần quan tâm OA trước!
+   */
+  async sendZns(dto: {
+    templateId: string;
+    phone: string;
+    templateData: Record<string, any>;
+    accessToken: string;
+    trackingId?: string;
+  }) {
+    if (!dto.accessToken?.trim()) {
+      throw new HttpException('Thiếu Access Token để gửi ZNS', HttpStatus.BAD_REQUEST);
+    }
+    if (!dto.phone?.trim()) {
+      throw new HttpException('Số điện thoại nhận ZNS không được để trống', HttpStatus.BAD_REQUEST);
+    }
+    if (!dto.templateId?.trim()) {
+      throw new HttpException('Template ID ZNS không được để trống', HttpStatus.BAD_REQUEST);
+    }
+
+    let formattedPhone = dto.phone.replace(/\D/g, '');
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '84' + formattedPhone.slice(1);
+    } else if (!formattedPhone.startsWith('84')) {
+      formattedPhone = '84' + formattedPhone;
+    }
+
+    try {
+      this.logger.log(`Sending ZNS template ${dto.templateId} to phone: ${formattedPhone}`);
+      const response = await axios.post(
+        'https://business.openapi.zalo.me/message/template',
+        {
+          phone: formattedPhone,
+          template_id: dto.templateId.trim(),
+          template_data: dto.templateData || {},
+          tracking_id: dto.trackingId || `ceo1983_${Date.now()}`,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            access_token: dto.accessToken.trim(),
+          },
+          timeout: 10000,
+        }
+      );
+
+      const resData = response.data;
+      if (resData && resData.error === 0) {
+        return {
+          success: true,
+          message: 'Bắn thông báo ZNS tới số điện thoại thành công!',
+          data: resData.data,
+        };
+      }
+
+      this.logger.warn(`ZNS failed: error ${resData.error}: ${resData.message}`);
+      return {
+        success: false,
+        error: resData.error,
+        message: resData.message || 'Lỗi gửi ZNS từ Zalo Cloud API',
+        guide:
+          resData.error === -124
+            ? 'Access Token hết hạn hoặc không có quyền gửi ZNS.'
+            : resData.error === -108
+            ? 'Số điện thoại không hợp lệ hoặc chưa đăng ký tài khoản Zalo.'
+            : resData.error === -118
+            ? 'Tài khoản ZCA (Zalo Cloud Account) của Doanh nghiệp không đủ số dư để gửi ZNS.'
+            : resData.error === -114
+            ? 'Template ID ZNS chưa được Zalo phê duyệt hoặc các biến template_data không khớp.'
+            : undefined,
+      };
+    } catch (err: any) {
+      this.logger.error(`Error sending ZNS: ${err.message}`);
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Lỗi mạng khi kết nối Zalo ZNS API',
+      };
+    }
+  }
+
+  /**
+   * Liên kết Zalo User ID (UID) với Hội viên hoặc Số Điện Thoại trong CRM
+   */
+  async bindMemberUid(body: { phone?: string; zaloUid: string; name?: string; memberId?: string }) {
+    const { phone, zaloUid, name, memberId } = body;
+    if (!zaloUid?.trim()) {
+      throw new HttpException('Zalo User ID không được để trống', HttpStatus.BAD_REQUEST);
+    }
+    const cleanUid = zaloUid.trim();
+    const cleanPhone = (phone || '').trim();
+
+    if (this.prisma) {
+      if (memberId) {
+        await this.prisma.$executeRawUnsafe(
+          `UPDATE public.members SET zalo_user_id = $1 WHERE id = $2`,
+          cleanUid,
+          memberId
+        );
+      } else if (cleanPhone) {
+        await this.prisma.$executeRawUnsafe(
+          `UPDATE public.members SET zalo_user_id = $1 WHERE phone LIKE $2`,
+          cleanUid,
+          `%${cleanPhone}%`
+        );
+      }
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.zalo_subscribers (zalo_user_id, display_name, phone, member_id, last_message, last_interacted_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'Liên kết từ CRM', NOW(), NOW())
+         ON CONFLICT (zalo_user_id) DO UPDATE SET
+           phone = COALESCE(NULLIF(EXCLUDED.phone, ''), public.zalo_subscribers.phone),
+           display_name = COALESCE(NULLIF(EXCLUDED.display_name, ''), public.zalo_subscribers.display_name),
+           member_id = COALESCE(EXCLUDED.member_id, public.zalo_subscribers.member_id),
+           updated_at = NOW()`,
+        cleanUid,
+        name || 'Hội viên',
+        cleanPhone || null,
+        memberId || null
+      );
+    }
+
+    return {
+      success: true,
+      message: `Đã liên kết Zalo UID: ${cleanUid} với Hội viên ${name || cleanPhone} thành công!`,
+    };
   }
 }

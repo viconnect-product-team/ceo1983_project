@@ -64,6 +64,12 @@ function ActivityLogsPage() {
   const [actionFilter, setActionFilter] = useState("ALL");
   const [targetFilter, setTargetFilter] = useState("ALL");
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
+  const [stats, setStats] = useState<{ total: number; loginsToday: number; oppsCount: number; uniqueActors: number }>({
+    total: 0,
+    loginsToday: 0,
+    oppsCount: 0,
+    uniqueActors: 0,
+  });
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -77,8 +83,30 @@ function ActivityLogsPage() {
       const res = await fetchNestApi<any>(`/admin/audit-logs?${query.toString()}`);
       if (res && Array.isArray(res.items)) {
         setLogs(res.items);
+        if (res.stats) {
+          setStats(res.stats);
+        } else {
+          setStats({
+            total: res.total || res.items.length,
+            loginsToday: res.items.filter((l: any) => String(l.action).toUpperCase().includes("LOGIN")).length,
+            oppsCount: res.items.filter((l: any) => {
+              const a = String(l.action).toUpperCase();
+              return a.includes("OPPORTUNITY") || a.includes("CREATE") || a.includes("DEAL");
+            }).length,
+            uniqueActors: new Set(res.items.map((l: any) => l.actor_name)).size,
+          });
+        }
       } else if (Array.isArray(res)) {
         setLogs(res);
+        setStats({
+          total: res.length,
+          loginsToday: res.filter((l: any) => String(l.action).toUpperCase().includes("LOGIN")).length,
+          oppsCount: res.filter((l: any) => {
+            const a = String(l.action).toUpperCase();
+            return a.includes("OPPORTUNITY") || a.includes("CREATE") || a.includes("DEAL");
+          }).length,
+          uniqueActors: new Set(res.map((l: any) => l.actor_name)).size,
+        });
       }
     } catch {
       toast.error("Không thể tải nhật ký thao tác hệ thống");
@@ -188,9 +216,9 @@ function ActivityLogsPage() {
             <div>
               <span className="text-xs font-bold text-slate-500 uppercase">Tổng lượt thao tác</span>
               <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
-                {logs.length > 0 ? `${logs.length * 12 + 140}` : "1,420"}
+                {new Intl.NumberFormat("vi-VN").format(stats.total || logs.length)}
               </div>
-              <span className="text-[10px] text-emerald-600 font-semibold">Ghi nhận đầy đủ IP & thiết bị</span>
+              <span className="text-[10px] text-emerald-600 font-semibold">Ghi nhận đầy đủ CSDL & IP</span>
             </div>
             <div className="p-2.5 rounded-xl bg-blue-50 text-[#1F3864] dark:bg-blue-950 dark:text-blue-300">
               <History className="size-5" />
@@ -201,9 +229,9 @@ function ActivityLogsPage() {
             <div>
               <span className="text-xs font-bold text-slate-500 uppercase">Lượt đăng nhập hôm nay</span>
               <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
-                128 lượt
+                {stats.loginsToday} lượt
               </div>
-              <span className="text-[10px] text-emerald-600 font-semibold">Tỷ lệ truy cập 85.3%</span>
+              <span className="text-[10px] text-emerald-600 font-semibold">Tài khoản xác thực hệ thống</span>
             </div>
             <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
               <LogIn className="size-5" />
@@ -212,11 +240,11 @@ function ActivityLogsPage() {
 
           <Card className="p-4 border-l-4 border-l-amber-500 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-500 uppercase">Thao tác Trao Cơ Hội</span>
+              <span className="text-xs font-bold text-slate-500 uppercase">Thao tác Nghiệp Vụ & Cơ Hội</span>
               <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
-                42 giao dịch
+                {stats.oppsCount} giao dịch
               </div>
-              <span className="text-[10px] text-amber-600 font-semibold">Phạm vi cá nhân & nhóm</span>
+              <span className="text-[10px] text-amber-600 font-semibold">Biến động dữ liệu thực tế</span>
             </div>
             <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
               <Sparkles className="size-5" />
@@ -225,11 +253,11 @@ function ActivityLogsPage() {
 
           <Card className="p-4 border-l-4 border-l-cyan-600 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-slate-500 uppercase">Bảo mật hệ thống</span>
+              <span className="text-xs font-bold text-slate-500 uppercase">Hội viên tương tác</span>
               <div className="text-xl font-black text-emerald-600 mt-1">
-                An toàn 100%
+                {stats.uniqueActors || new Set(logs.map(l => l.actor_name)).size} tài khoản
               </div>
-              <span className="text-[10px] text-slate-400">Không có dấu hiệu bất thường</span>
+              <span className="text-[10px] text-slate-400">Kiểm soát bảo mật 100%</span>
             </div>
             <div className="p-2.5 rounded-xl bg-cyan-50 text-cyan-600 dark:bg-cyan-950 dark:text-cyan-300">
               <ShieldCheck className="size-5" />

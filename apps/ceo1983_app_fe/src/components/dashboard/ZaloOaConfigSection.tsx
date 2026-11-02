@@ -31,6 +31,11 @@ import {
   Square,
   ListFilter,
   Clock,
+  Ticket,
+  MapPin,
+  Briefcase,
+  Handshake,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getNestApiUrl, getAuthToken } from "@/lib/api-client";
@@ -214,6 +219,7 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [targetMemberName, setTargetMemberName] = useState("Phạm Văn Vũ");
   const [targetPhone, setTargetPhone] = useState("0973924819");
   const [targetMemberCode, setTargetMemberCode] = useState("CEO1983-088");
+  const [targetCompany, setTargetCompany] = useState("Viconnect Digital Tech");
   const [feeAmount, setFeeAmount] = useState(10000000);
   const [feeYear, setFeeYear] = useState("2026");
   const [feeDueDate, setFeeDueDate] = useState("31/12/2026");
@@ -221,6 +227,31 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [sendingFeeNotice, setSendingFeeNotice] = useState(false);
   const [feeNoticeText, setFeeNoticeText] = useState("");
   const [showFeeModal, setShowFeeModal] = useState(false);
+
+  // Đa dạng loại thông báo Zalo OA: Hội phí, Sự kiện + QR Check-in, Lịch họp BĐH, Giao thương B2B
+  const [noticeType, setNoticeType] = useState<"fee" | "event" | "meeting" | "b2b">("fee");
+
+  // Sự kiện & Mã QR Check-in
+  const [eventName, setEventName] = useState("Gala Doanh Nhân CEO 1983 & Kết Nối Giao Thương 2026");
+  const [eventTime, setEventTime] = useState("08:30 - Thứ Bảy, 15/11/2026");
+  const [eventLocation, setEventLocation] = useState("Keangnam Landmark 72, Phạm Hùng, Hà Nội");
+  const [eventTicketCode, setEventTicketCode] = useState("CEO1983-VIP-088");
+
+  // Lịch Họp Ban & Hội Nghị
+  const [meetingTitle, setMeetingTitle] = useState("Họp Ban Thường Trực & Ban Điều Hành CLB CEO 1983");
+  const [meetingTime, setMeetingTime] = useState("14:00 - Thứ Tư, 12/11/2026");
+  const [meetingLocation, setMeetingLocation] = useState("Phòng VIP Văn phòng HanoiBA, Tầng 4 Cung Trí Thức Hà Nội");
+  const [meetingAgenda, setMeetingAgenda] = useState("Thống nhất kế hoạch xúc tiến thương mại Quý 4 & Xét duyệt kết nạp hội viên mới");
+
+  // Giao Thương & Hợp Tác B2B
+  const [b2bTitle, setB2bTitle] = useState("Cơ hội Cung ứng Vật tư Xây dựng & Giải pháp Chuyển đổi số");
+  const [b2bPartner, setB2bPartner] = useState("Ban Xúc Tiến Thương Mại CLB Doanh Nhân CEO 1983");
+  const [b2bRequirement, setB2bRequirement] = useState("Tìm kiếm đối tác thành viên cung cấp giải pháp công nghệ số và vật liệu xanh chất lượng cao");
+  const [b2bContact, setB2bContact] = useState("0973924819");
+
+  // Dynamic Event Check-in QR Payload & URL
+  const eventQrData = `CEO1983_EVENT_CHECKIN|EVENT:${encodeURIComponent(eventName)}|MEMBER:${targetMemberCode}|TICKET:${eventTicketCode}|PHONE:${targetPhone}`;
+  const eventQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventQrData)}`;
 
   // Danh sách hội viên tương tác gần đây từ Zalo OA (để lấy User ID chính xác 100%)
   const [recentChats, setRecentChats] = useState<{
@@ -232,6 +263,8 @@ export const ZaloOaConfigSection: React.FC = () => {
   }[]>([]);
   const [loadingChats, setLoadingChats] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [sendMethod, setSendMethod] = useState<"zns_enterprise" | "oa_chat" | "zalo_direct">("zns_enterprise");
+  const [znsTemplateId, setZnsTemplateId] = useState("ZNS_CEO1983_FEE_REMINDER");
 
   // Chế độ gửi: Gửi trực tiếp hội viên vs Chiến dịch bắn hàng loạt vs Lịch tự động theo chu kỳ
   const [broadcastMode, setBroadcastMode] = useState<"direct_send" | "bulk_campaign" | "scheduled_auto">("direct_send");
@@ -256,6 +289,36 @@ export const ZaloOaConfigSection: React.FC = () => {
 
   // Template Management
   const [templates, setTemplates] = useState<ZaloOaTemplate[]>(DEFAULT_TEMPLATES);
+
+  useEffect(() => {
+    // Nạp danh sách hội viên thật từ CRM Backend
+    const loadCrmMembers = async () => {
+      try {
+        const res = await fetch(getNestApiUrl("/members"), {
+          headers: getAuthHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const mapped: BulkMember[] = data.map((m: any) => ({
+              id: m.id,
+              name: m.name || "Hội viên",
+              phone: m.phone || "",
+              memberCode: m.code || m.member_code || "CEO1983",
+              company: m.company_name || m.company || "Doanh nghiệp CEO 1983",
+              feeStatus: m.fee_paid ? "paid" : "unpaid",
+              role: (m.type === "board" || m.level === "board") ? "board" : "member",
+              userId: m.zalo_user_id || undefined,
+            }));
+            setBulkMembers(mapped);
+          }
+        }
+      } catch {
+        /* fallback to DEFAULT_BULK_MEMBERS */
+      }
+    };
+    loadCrmMembers();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -420,18 +483,10 @@ export const ZaloOaConfigSection: React.FC = () => {
     }
   };
 
-  // Gửi Bắn Thông Báo Zalo OA Thật Trực Tiếp Cho Hội Viên (Đã bọc Authorization Token, Zero Test)
-  const handleSendDirectNotice = async () => {
-    if (!accessToken.trim()) {
-      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
-      return;
-    }
-    if (!selectedUserId.trim()) {
-      toast.error("Vui lòng nhập Zalo User ID (UID) của hội viên hoặc bấm 'Đồng bộ danh bạ từ Zalo OA' trước khi bắn thông báo thật!");
-      return;
-    }
-    setSendingFeeNotice(true);
-    const content = `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO CHÍNH THỨC]
+  // Helper tạo nội dung thông báo đa dạng: Hội phí, Sự kiện + QR Check-in, Lịch họp, B2B
+  const generateNoticeContent = () => {
+    if (noticeType === "fee") {
+      return `📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO HỘI PHÍ NIÊN LIỄM]
 Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
 Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thông báo đóng hội phí thường niên năm ${feeYear}:
 
@@ -445,7 +500,149 @@ Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thô
 - Hoặc thanh toán qua Cổng VNPay: https://ceo1983.vn/payment/vnpay?ref=${targetMemberCode}
 
 Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng và gặt hái nhiều thành công trong năm ${feeYear}!`;
+    }
 
+    if (noticeType === "event") {
+      return `🎟️ [CLB DOANH NHÂN CEO 1983 - THƯ MỜI SỰ KIỆN & VÉ CHECK-IN ĐIỆN TỬ]
+Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
+Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng kính mời Anh/Chị tham dự sự kiện:
+
+🌟 Tên sự kiện: ${eventName}
+🗓️ Thời gian: ${eventTime}
+📍 Địa điểm: ${eventLocation}
+🎫 Mã vé Check-in: ${eventTicketCode}
+📱 Link Mã QR Check-in điện tử: ${eventQrUrl}
+
+* Hướng dẫn Check-in: Anh/Chị vui lòng lưu mã QR hoặc mở tin nhắn Zalo này tại bàn Lễ tân / Cổng Check-in để quét mã nhận Thẻ đại biểu & Quà tặng chính thức.
+Rất hân hạnh được đón tiếp Anh/Chị!`;
+    }
+
+    if (noticeType === "meeting") {
+      return `📅 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO LỊCH HỌP BAN CHẤP HÀNH]
+Kính gửi Anh/Chị: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
+Ban Thường Trực CLB Doanh Nhân CEO 1983 trân trọng thông báo lịch họp:
+
+📋 Tiêu đề: ${meetingTitle}
+🗓️ Thời gian: ${meetingTime}
+📍 Địa điểm: ${meetingLocation}
+📝 Nội dung trọng tâm: ${meetingAgenda}
+
+Kính đề nghị Anh/Chị sắp xếp thời gian tham dự đúng giờ để phiên họp đạt hiệu quả cao nhất!`;
+    }
+
+    return `🤝 [CLB DOANH NHÂN CEO 1983 - CƠ HỘI KẾT NỐI GIAO THƯƠNG B2B]
+Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode})
+Ban Xúc Tiến Thương Mại CLB Doanh Nhân CEO 1983 trân trọng thông báo cơ hội hợp tác:
+
+💼 Tiêu đề: ${b2bTitle}
+🏢 Đơn vị chủ trì: ${b2bPartner}
+🔍 Chi tiết yêu cầu: ${b2bRequirement}
+📞 Đầu mối liên hệ: ${b2bContact}
+
+Anh/Chị quan tâm vui lòng phản hồi qua tin nhắn Zalo này hoặc liên hệ hotline BXT để nhận hồ sơ chi tiết!`;
+  };
+
+  // 1. Gửi thông báo ZNS qua Số Điện Thoại - Chuẩn Enterprise 100% (Không cần Zalo UID, Không cần hội viên quan tâm OA trước)
+  const handleSendZns = async () => {
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
+      return;
+    }
+    if (!targetPhone.trim()) {
+      toast.error("Vui lòng nhập số điện thoại Zalo của hội viên!");
+      return;
+    }
+    setSendingFeeNotice(true);
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/send-zns"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          accessToken: accessToken.trim(),
+          templateId: znsTemplateId,
+          phone: targetPhone.trim(),
+          templateData: {
+            customer_name: targetMemberName,
+            member_code: targetMemberCode,
+            fee_amount: new Intl.NumberFormat("vi-VN").format(feeAmount),
+            due_date: feeDueDate,
+            company_name: targetCompany || "CLB Doanh Nhân CEO 1983",
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        toast.success(`🎉 BẮN THÔNG BÁO ZNS THÀNH CÔNG TỚI SĐT ${targetPhone}!`, {
+          description: `Đã gửi qua cổng Zalo Notification Service chính thức tới ${targetMemberName}.`,
+        });
+      } else {
+        toast.error(`Zalo ZNS phản hồi: ${data?.message || "Lỗi gửi ZNS"}`, {
+          description: data?.guide || (data?.error ? `Mã lỗi: ${data.error}` : undefined),
+        });
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi kết nối máy chủ khi gửi ZNS: ${err.message}`);
+    } finally {
+      setSendingFeeNotice(false);
+    }
+  };
+
+  // 2. Mở Chat Zalo Trực Tiếp 1-Click (Deep Link zalo.me - Không cần API/Token, 100% Thành Công)
+  const handleOpenDirectZalo = () => {
+    if (!targetPhone.trim()) {
+      toast.error("Vui lòng nhập số điện thoại hội viên!");
+      return;
+    }
+    const cleanPhone = targetPhone.replace(/\D/g, "");
+    const content = generateNoticeContent();
+    try {
+      navigator.clipboard.writeText(content);
+      toast.success(`📋 Đã tự động sao chép toàn bộ thông báo vào Clipboard! Đang mở cửa sổ chat Zalo với ${targetMemberName} (${targetPhone})...`);
+    } catch {}
+    window.open(`https://zalo.me/${cleanPhone}`, "_blank");
+  };
+
+  // 3. Mô phỏng thử nghiệm gửi Webhook Zalo (Simulation) để kiểm tra luồng tự động bắt UID
+  const handleSimulateWebhook = async () => {
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/webhook"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_name: "user_send_text",
+          sender: { id: "3700646744485476903", name: targetMemberName || "Phạm Văn Vũ" },
+          message: { text: `Tôi là ${targetMemberName || "Phạm Văn Vũ"} ${targetPhone || "0973924819"} - Nhắn tin kết nối CEO 1983` },
+          timestamp: Date.now(),
+        }),
+      });
+      const data = await res.json();
+      if (data && data.error === 0) {
+        toast.success("✅ Đã mô phỏng gửi tin nhắn Webhook thành công! Bấm 'Đồng bộ danh bạ' để thấy kết quả tức thì.");
+        handleFetchRecentChats();
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi mô phỏng Webhook: ${err.message}`);
+    }
+  };
+
+  // Gửi Bắn Thông Báo Zalo OA Thật Trực Tiếp Cho Hội Viên (Đã bọc Authorization Token, Zero Test)
+  const handleSendDirectNotice = async () => {
+    if (!accessToken.trim()) {
+      toast.error("Vui lòng lấy và dán Access Token vào ô cấu hình phía dưới trước!");
+      return;
+    }
+    if (!selectedUserId.trim()) {
+      toast.warning("Hội viên chưa có Zalo User ID (UID).", {
+        description: "Zalo yêu cầu UID để gửi tin chat CS miễn phí. Bạn có thể chọn gửi bằng 'ZNS THEO SỐ ĐIỆN THOẠI' (không cần UID) hoặc bấm 'MỞ CHAT ZALO 1-CLICK'!",
+        action: {
+          label: "Mở Chat Zalo",
+          onClick: handleOpenDirectZalo,
+        },
+      });
+      return;
+    }
+    setSendingFeeNotice(true);
+    const content = generateNoticeContent();
     setFeeNoticeText(content);
 
     try {
@@ -868,6 +1065,8 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                       setTargetMemberName(m.name);
                       setTargetPhone(m.phone);
                       setTargetMemberCode(m.memberCode);
+                      setTargetCompany(m.company || "Doanh nghiệp CEO 1983");
+                      if (m.userId) setSelectedUserId(m.userId);
                       toast.info(`Đã chọn thông tin: ${m.name} (${m.phone})`);
                     }}
                     className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-500 transition font-medium cursor-pointer"
@@ -903,8 +1102,170 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
           </div>
         </div>
 
-        {/* Form thiết lập thông số người nhận & 2 Nút Bắn Hành Động */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1">
+                {/* CHỌN PHƯƠNG THỨC GỬI TIN NHẮN (CHUẨN DOANH NGHIỆP LỚN) */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border-2 border-indigo-500/30 dark:border-indigo-900/60 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 tracking-tight">
+                Phương Thức Gửi Tin Nhắn (Chuẩn Doanh Nghiệp):
+              </span>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-500 italic">
+              {sendMethod === "zns_enterprise" && "🌟 Chuẩn Enterprise: Không cần Zalo UID, gửi trực tiếp theo Số điện thoại"}
+              {sendMethod === "oa_chat" && "💬 Chat CS qua OA: Yêu cầu Zalo UID hoặc đã nhắn tin cho OA"}
+              {sendMethod === "zalo_direct" && "⚡ Mở Chat Zalo 1-Click: Sao chép nội dung & mở thẳng Zalo cá nhân"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Phương án 1: ZNS Theo SĐT */}
+            <div
+              onClick={() => setSendMethod("zns_enterprise")}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                sendMethod === "zns_enterprise"
+                  ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-emerald-300"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                  <Smartphone className="size-4 text-emerald-600" />
+                  <span>1. ZNS THEO SỐ ĐIỆN THOẠI</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-black uppercase">
+                  KHUYÊN DÙNG
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                • <b>Không cần Zalo UID</b><br />
+                • Hội viên <b>không cần quan tâm OA trước</b><br />
+                • Bắn tin nhắn tick vàng chính thức theo SĐT
+              </p>
+            </div>
+
+            {/* Phương án 2: Chat CS Miễn Phí */}
+            <div
+              onClick={() => setSendMethod("oa_chat")}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                sendMethod === "oa_chat"
+                  ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-blue-300"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-black text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                  <MessageSquareText className="size-4 text-blue-600" />
+                  <span>2. CHAT CS QUA ZALO OA</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-[9px] font-bold">
+                  MIỄN PHÍ
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                • Yêu cầu có <b>Zalo User ID (UID)</b><br />
+                • Hội viên đã nhắn tin hoặc theo dõi OA<br />
+                • Tự động khớp từ Webhook / CSDL
+              </p>
+            </div>
+
+            {/* Phương án 3: 1-Click Zalo Direct */}
+            <div
+              onClick={() => setSendMethod("zalo_direct")}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                sendMethod === "zalo_direct"
+                  ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-indigo-300"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-black text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                  <ExternalLink className="size-4 text-indigo-600" />
+                  <span>3. MỞ CHAT ZALO 1-CLICK</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-[9px] font-bold">
+                  TỨC THÌ
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                • <b>100% không bao giờ lỗi API</b><br />
+                • Tự sao chép nội dung vào Clipboard<br />
+                • Mở thẳng app Zalo với hội viên
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* BỘ CHỌN LOẠI THÔNG BÁO: HỘI PHÍ, SỰ KIỆN & QR CHECK-IN, LỊCH HỌP, B2B */}
+        <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-blue-100 dark:border-blue-950 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-black text-slate-800 dark:text-slate-200 px-2 flex items-center gap-1.5">
+              <Sparkles className="size-3.5 text-amber-500" />
+              <span>Dạng Tin Nhắn:</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setNoticeType("fee")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                noticeType === "fee"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <CreditCard className="size-3.5" />
+              <span>💰 Hội Phí Niên Liễm</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setNoticeType("event")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                noticeType === "event"
+                  ? "bg-gradient-to-r from-[#991B1B] via-red-600 to-amber-600 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Ticket className="size-3.5" />
+              <span>🎟️ Thư Mời Sự Kiện &amp; QR Check-in</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-300 text-slate-950 text-[9px] font-black">
+                MỚI
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setNoticeType("meeting")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                noticeType === "meeting"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Calendar className="size-3.5" />
+              <span>📅 Lịch Họp Ban BĐH</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setNoticeType("b2b")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                noticeType === "b2b"
+                  ? "bg-gradient-to-r from-amber-600 to-orange-700 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Handshake className="size-3.5" />
+              <span>🤝 Kết Nối Giao Thương B2B</span>
+            </button>
+          </div>
+
+          <span className="text-[11px] font-semibold text-slate-500 italic pr-2">
+            {noticeType === "event" && "✅ Tự động sinh mã QR Check-in điện tử cho hội viên"}
+            {noticeType === "fee" && "🏦 Kèm STK MB Bank & Cổng thanh toán VNPay"}
+            {noticeType === "meeting" && "📋 Gửi kèm lịch biểu và nội dung phiên họp"}
+            {noticeType === "b2b" && "💼 Kết nối cung cầu xúc tiến thương mại"}
+          </span>
+        </div>
+
+        {/* THÔNG TIN NGƯỜI NHẬN (4 CỘT) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
           <div>
             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
               Họ Tên Hội Viên Nhận:
@@ -923,7 +1284,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
 
           <div>
             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-              Số Điện Thoại Zalo Của Bạn:
+              Số Điện Thoại Zalo:
             </label>
             <div className="relative">
               <Phone className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
@@ -932,6 +1293,22 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                 value={targetPhone}
                 onChange={(e) => setTargetPhone(e.target.value)}
                 placeholder="Ví dụ: 0973924819..."
+                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Mã Hội Viên CLB:
+            </label>
+            <div className="relative">
+              <Building2 className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={targetMemberCode}
+                onChange={(e) => setTargetMemberCode(e.target.value)}
+                placeholder="Ví dụ: CEO1983-088..."
                 className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
@@ -953,76 +1330,356 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               />
             </div>
           </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-              Số Tiền Hội Phí (VNĐ):
-            </label>
-            <div className="relative">
-              <DollarSign className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="number"
-                value={feeAmount}
-                onChange={(e) => setFeeAmount(Number(e.target.value))}
-                placeholder="10000000"
-                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-              Kỳ Phí &amp; Hạn Nộp:
-            </label>
-            <div className="relative">
-              <Calendar className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                value={`${feeYear} (Hạn: ${feeDueDate})`}
-                onChange={(e) => setFeeDueDate(e.target.value)}
-                placeholder="2026 (Hạn: 31/12/2026)"
-                className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
-              />
-            </div>
-          </div>
         </div>
 
-        {/* NÚT HÀNH ĐỘNG BẮN THÔNG BÁO THẬT & SAO CHÉP */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          {/* Nút 1: Bắn Thật Trực Tiếp */}
-          <button
-            type="button"
-            onClick={handleSendDirectNotice}
-            disabled={sendingFeeNotice}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
-          >
-            {sendingFeeNotice ? (
-              <RefreshCw className="size-4 animate-spin" />
-            ) : (
-              <Send className="size-4 text-amber-300" />
-            )}
-            <span>🚀 BẮN THÔNG BÁO ZALO OA THẬT CHO HỘI VIÊN</span>
-          </button>
+        {/* CÁC TRƯỜNG DỮ LIỆU TÙY BIẾN THEO LOẠI THÔNG BÁO */}
+        {noticeType === "fee" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-950">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Số Tiền Hội Phí (VNĐ):
+              </label>
+              <div className="relative">
+                <DollarSign className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="number"
+                  value={feeAmount}
+                  onChange={(e) => setFeeAmount(Number(e.target.value))}
+                  placeholder="10000000"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            </div>
 
-          {/* Nút 2: Xem & Sao Chép Mẫu */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Kỳ Niên Liễm:
+              </label>
+              <div className="relative">
+                <Calendar className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={feeYear}
+                  onChange={(e) => setFeeYear(e.target.value)}
+                  placeholder="2026"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Hạn Nộp Hoàn Tất:
+              </label>
+              <div className="relative">
+                <Calendar className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={feeDueDate}
+                  onChange={(e) => setFeeDueDate(e.target.value)}
+                  placeholder="31/12/2026"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {noticeType === "event" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-red-200 dark:border-red-950">
+            {/* Form trường sự kiện */}
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Tên Sự Kiện / Gala:
+                </label>
+                <div className="relative">
+                  <Ticket className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder="Nhập tên sự kiện..."
+                    className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-red-500/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Thời Gian Diễn Ra:
+                </label>
+                <div className="relative">
+                  <Clock className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    placeholder="08:30 - Thứ Bảy, 15/11/2026"
+                    className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-red-500/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Mã Vé Điện Tử:
+                </label>
+                <div className="relative">
+                  <QrCode className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={eventTicketCode}
+                    onChange={(e) => setEventTicketCode(e.target.value)}
+                    placeholder="CEO1983-VIP-088"
+                    className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-red-500/20"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Địa Điểm Tổ Chức:
+                </label>
+                <div className="relative">
+                  <MapPin className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={eventLocation}
+                    onChange={(e) => setEventLocation(e.target.value)}
+                    placeholder="Keangnam Landmark 72, Phạm Hùng, Hà Nội"
+                    className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-red-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Khối Live Preview Mã QR Check-in */}
+            <div className="lg:col-span-4 flex flex-col items-center justify-center p-3 rounded-xl bg-gradient-to-b from-red-50/80 to-amber-50/50 dark:from-red-950/30 dark:to-slate-900 border border-red-200/80 dark:border-red-900/60 text-center">
+              <div className="size-28 bg-white p-2 rounded-2xl border-2 border-red-600/40 shadow-sm flex items-center justify-center">
+                <img
+                  src={eventQrUrl}
+                  alt="Mã QR Check-in Sự Kiện"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="text-[11px] font-black text-red-700 dark:text-red-400 mt-2">
+                MÃ QR CHECK-IN SỰ KIỆN
+              </div>
+              <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300 mt-0.5">
+                Vé: {eventTicketCode}
+              </span>
+              <div className="flex items-center gap-1.5 mt-2">
+                <a
+                  href={eventQrUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={`QR_Checkin_${eventTicketCode}.png`}
+                  className="px-2.5 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-[10px] font-bold inline-flex items-center gap-1 transition"
+                >
+                  <Download className="size-3" />
+                  <span>Tải QR</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(eventQrUrl);
+                    toast.success("Đã sao chép đường link mã QR Check-in!");
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Copy className="size-3" />
+                  <span>Sao Chép Link</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {noticeType === "meeting" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-950">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Tiêu Đề Cuộc Họp / Hội Nghị:
+              </label>
+              <div className="relative">
+                <Calendar className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={meetingTitle}
+                  onChange={(e) => setMeetingTitle(e.target.value)}
+                  placeholder="Họp Ban Thường Trực & Ban Điều Hành CLB CEO 1983"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Thời Gian Họp:
+              </label>
+              <div className="relative">
+                <Clock className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={meetingTime}
+                  onChange={(e) => setMeetingTime(e.target.value)}
+                  placeholder="14:00 - Thứ Tư, 12/11/2026"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Địa Điểm Cuộc Họp:
+              </label>
+              <div className="relative">
+                <MapPin className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={meetingLocation}
+                  onChange={(e) => setMeetingLocation(e.target.value)}
+                  placeholder="Phòng VIP Văn phòng HanoiBA"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Nội Dung Trọng Tâm:
+              </label>
+              <textarea
+                value={meetingAgenda}
+                onChange={(e) => setMeetingAgenda(e.target.value)}
+                rows={2}
+                placeholder="Thống nhất kế hoạch xúc tiến thương mại Quý 4 & Xét duyệt kết nạp hội viên mới..."
+                className="w-full rounded-xl border border-input bg-background p-2.5 text-xs font-medium text-foreground focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+        )}
+
+        {noticeType === "b2b" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-950">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Tiêu Đề Cơ Hội Hợp Tác:
+              </label>
+              <div className="relative">
+                <Briefcase className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={b2bTitle}
+                  onChange={(e) => setB2bTitle(e.target.value)}
+                  placeholder="Cơ hội Cung ứng Vật tư Xây dựng & Giải pháp Chuyển đổi số"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-amber-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Đơn Vị Chủ Trì / Kết Nối:
+              </label>
+              <div className="relative">
+                <Building2 className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={b2bPartner}
+                  onChange={(e) => setB2bPartner(e.target.value)}
+                  placeholder="Ban Xúc Tiến Thương Mại CLB CEO 1983"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-amber-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Đầu Mối Liên Hệ (SĐT/Hotline):
+              </label>
+              <div className="relative">
+                <Phone className="size-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={b2bContact}
+                  onChange={(e) => setB2bContact(e.target.value)}
+                  placeholder="0973924819"
+                  className="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-2 text-xs font-mono font-bold text-foreground focus:ring-2 focus:ring-amber-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                Yêu Cầu Hợp Tác Chi Tiết:
+              </label>
+              <textarea
+                value={b2bRequirement}
+                onChange={(e) => setB2bRequirement(e.target.value)}
+                rows={2}
+                placeholder="Tìm kiếm đối tác thành viên cung cấp giải pháp công nghệ số và vật liệu xanh chất lượng cao..."
+                className="w-full rounded-xl border border-input bg-background p-2.5 text-xs font-medium text-foreground focus:ring-2 focus:ring-amber-500/20"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* NÚT HÀNH ĐỘNG BẮN THÔNG BÁO THEO PHƯƠNG THỨC ĐÃ CHỌN */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          {/* Nút Thực Thi Tùy Chọn */}
+          {sendMethod === "zns_enterprise" && (
+            <button
+              type="button"
+              onClick={handleSendZns}
+              disabled={sendingFeeNotice}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
+            >
+              {sendingFeeNotice ? (
+                <RefreshCw className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4 text-amber-200" />
+              )}
+              <span>🚀 BẮN THÔNG BÁO ZNS (THEO SỐ ĐIỆN THOẠI) CHO HỘI VIÊN</span>
+            </button>
+          )}
+
+          {sendMethod === "oa_chat" && (
+            <button
+              type="button"
+              onClick={handleSendDirectNotice}
+              disabled={sendingFeeNotice}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
+            >
+              {sendingFeeNotice ? (
+                <RefreshCw className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4 text-amber-300" />
+              )}
+              <span>💬 GỬI TIN NHẮN CHAT ZALO OA (CS MESSAGE)</span>
+            </button>
+          )}
+
+          {sendMethod === "zalo_direct" && (
+            <button
+              type="button"
+              onClick={handleOpenDirectZalo}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
+            >
+              <ExternalLink className="size-4 text-emerald-300" />
+              <span>⚡ MỞ CHAT TRỰC TIẾP TRÊN ZALO (1-CLICK)</span>
+            </button>
+          )}
+
+          {/* Nút Xem & Sao Chép Mẫu */}
           <button
             type="button"
             onClick={() => {
-              setFeeNoticeText(`📢 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO CHÍNH THỨC]
-Kính gửi Hội viên: ${targetMemberName} (Mã HV: ${targetMemberCode} - SĐT: ${targetPhone})
-Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thông báo đóng hội phí thường niên năm ${feeYear}:
-
-💰 Số tiền: ${new Intl.NumberFormat("vi-VN").format(feeAmount)} VNĐ
-🗓️ Hạn nộp: Trước ngày ${feeDueDate}
-🏦 Thông tin thụ hưởng chính thức:
-- Ngân hàng: MB Bank (Ngân hàng TMCP Quân Đội)
-- Số tài khoản: 1983000000
-- Chủ tài khoản: CLB DOANH NHAN CEO 1983
-- Nội dung CK: HP1983 ${targetMemberCode} ${targetPhone}
-- Hoặc thanh toán qua Cổng VNPay: https://ceo1983.vn/payment/vnpay?ref=${targetMemberCode}`);
+              setFeeNoticeText(generateNoticeContent());
               setShowFeeModal(true);
             }}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 hover:from-slate-800 hover:to-black text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
           >
             <Eye className="size-4 text-emerald-300" />
             <span>📋 XEM &amp; SAO CHÉP MẪU NỘI DUNG</span>
@@ -1348,14 +2005,19 @@ Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thô
       )}
       </div>
 
-      {/* POPUP MODAL SAU KHI BẮN THÔNG BÁO PHÍ HỘI VIÊN */}
+      {/* POPUP MODAL SAU KHI BẮN THÔNG BÁO THẬT HOẶC XEM TRƯỚC */}
       {showFeeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
           <div className="bg-card w-full max-w-lg rounded-3xl border border-border shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2 text-primary font-black text-sm">
                 <CheckCircle2 className="size-5 text-emerald-500" />
-                <span>Nội Dung Thông Báo Phí Hội Viên Đã Khởi Tạo</span>
+                <span>
+                  {noticeType === "event" && "Thư Mời Sự Kiện & Mã QR Check-in"}
+                  {noticeType === "fee" && "Thông Báo Hội Phí Niên Liễm"}
+                  {noticeType === "meeting" && "Thông Báo Lịch Họp Ban BĐH"}
+                  {noticeType === "b2b" && "Cơ Hội Kết Nối Giao Thương B2B"}
+                </span>
               </div>
               <button
                 type="button"
@@ -1367,8 +2029,36 @@ Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thô
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Thông báo đóng phí niên liễm đã được biên soạn theo đúng quy chuẩn Ban Tài Chính CLB CEO 1983 gửi tới Zalo SĐT <b>{targetPhone}</b>:
+              Nội dung đã được biên soạn theo đúng quy chuẩn CLB CEO 1983 sẵn sàng gửi tới Zalo SĐT <b>{targetPhone}</b> ({targetMemberName}):
             </div>
+
+            {/* Khối hiển thị ảnh QR Check-in nếu là sự kiện */}
+            {noticeType === "event" && (
+              <div className="flex items-center gap-3.5 bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/40 dark:to-slate-900 p-3 rounded-2xl border border-red-200 dark:border-red-900/60">
+                <div className="size-20 bg-white p-1 rounded-xl border border-red-300 dark:border-red-800 shadow-xs shrink-0 flex items-center justify-center">
+                  <img src={eventQrUrl} alt="QR Checkin Sự kiện" className="w-full h-full object-contain" />
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="font-extrabold text-foreground text-[13px] leading-tight">{eventName}</div>
+                  <div className="text-muted-foreground text-[11px]">
+                    🎫 Vé: <span className="font-mono font-bold text-red-600 dark:text-red-400">{eventTicketCode}</span>
+                  </div>
+                  <div className="text-muted-foreground text-[11px]">
+                    📍 {eventLocation}
+                  </div>
+                  <a
+                    href={eventQrUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    download={`QR_Checkin_${eventTicketCode}.png`}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline pt-0.5"
+                  >
+                    <Download className="size-3" />
+                    <span>Tải ảnh QR Check-in về máy</span>
+                  </a>
+                </div>
+              </div>
+            )}
 
             <div className="bg-muted/50 p-4 rounded-2xl border border-border font-mono text-[11px] whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
               {feeNoticeText}
@@ -1379,7 +2069,7 @@ Ban Thường trực CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng gửi thô
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(feeNoticeText);
-                  toast.success("Đã sao chép toàn bộ thông báo hội phí!");
+                  toast.success("Đã sao chép toàn bộ nội dung tin nhắn!");
                 }}
                 className="flex-1 py-2.5 px-3 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
               >

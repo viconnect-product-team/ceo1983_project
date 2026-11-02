@@ -253,6 +253,7 @@ function DocsPage() {
   // Modals phong cách Google Drive
   const [shareModalDoc, setShareModalDoc] = useState<Document | null>(null);
   const [moveModalDoc, setMoveModalDoc] = useState<Document | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const onSaveDoc = async (payload: any) => {
@@ -714,9 +715,11 @@ function DocsPage() {
       <div
         onClick={() => {
           if (isFolder) setCurrentFolderId(d.id);
+          else setPreviewDoc(d);
         }}
-        className={`group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-md)] ${isFolder ? "cursor-pointer hover:border-amber-500/50 hover:bg-amber-500/5" : ""
-          }`}
+        className={`group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-md)] cursor-pointer ${
+          isFolder ? "hover:border-amber-500/50 hover:bg-amber-500/5" : "hover:border-blue-500/40 hover:bg-muted/40"
+        }`}
       >
         <div className="flex items-start gap-3">
           <TypeGlyph d={d} />
@@ -729,14 +732,17 @@ function DocsPage() {
                 📁 {d.name}
               </span>
             ) : (
-              <Link
-                to="/documents/$docId"
-                params={{ docId: d.id } as any}
-                className="block truncate text-sm font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewDoc(d);
+                }}
+                className="block truncate text-sm font-semibold text-foreground hover:text-primary hover:underline text-left cursor-pointer"
                 title={d.name}
               >
                 {d.name}
-              </Link>
+              </button>
             )}
             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
               <span
@@ -1655,7 +1661,14 @@ function DocsPage() {
                             {tc.pageRows.map((d, idx) => (
                               <tr
                                 key={d.id}
-                                className="group border-b border-border/50 transition hover:bg-secondary/40"
+                                onClick={() => {
+                                  if (d.isFolder || d.type === "folder") {
+                                    setCurrentFolderId(d.id);
+                                  } else {
+                                    setPreviewDoc(d);
+                                  }
+                                }}
+                                className="group border-b border-border/50 transition hover:bg-secondary/40 cursor-pointer"
                               >
                                 <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
                                   {(tc.page - 1) * tc.pageSize + idx + 1}
@@ -1663,13 +1676,21 @@ function DocsPage() {
                                 <td className="sticky left-[56px] z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
                                   <div className="flex items-center gap-3">
                                     <TypeGlyph d={d} size="sm" />
-                                    <Link
-                                      to="/documents/$docId"
-                                      params={{ docId: d.id } as any}
-                                      className="font-semibold text-foreground hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (d.isFolder || d.type === "folder") {
+                                          setCurrentFolderId(d.id);
+                                        } else {
+                                          setPreviewDoc(d);
+                                        }
+                                      }}
+                                      className="font-semibold text-foreground hover:text-primary hover:underline text-left cursor-pointer flex items-center gap-1.5"
                                     >
+                                      {d.isFolder || d.type === "folder" ? <Folder className="h-4 w-4 text-amber-500 shrink-0" /> : null}
                                       <TruncatedText text={d.name} maxWidth="max-w-[260px]" className="font-semibold text-foreground" />
-                                    </Link>
+                                    </button>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3 text-foreground border-b border-border/50">
@@ -1946,6 +1967,127 @@ function DocsPage() {
           allDocuments={DOCUMENTS}
           onMove={onMoveDoc}
         />
+
+        {/* Modal Xem Trước & Thao Tác Tệp Chuẩn Google Drive */}
+        {previewDoc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+            <div className="bg-card w-full max-w-xl rounded-3xl border border-border shadow-2xl p-6 space-y-4 animate-in zoom-in-95">
+              <div className="flex items-start justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-base text-foreground truncate" title={previewDoc.name}>
+                      {previewDoc.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      <span className="font-semibold uppercase text-amber-600 dark:text-amber-400">
+                        {previewDoc.type}
+                      </span>
+                      <span>•</span>
+                      <span>{previewDoc.size || "—"}</span>
+                      <span>•</span>
+                      <span>{fmt.date(previewDoc.uploadedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Thông tin chi tiết */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-xl bg-muted/50 p-2.5">
+                  <span className="text-muted-foreground block text-[11px]">Danh mục:</span>
+                  <span className="font-bold text-foreground truncate block mt-0.5">{previewDoc.category}</span>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-2.5">
+                  <span className="text-muted-foreground block text-[11px]">Người tải lên:</span>
+                  <span className="font-bold text-foreground truncate block mt-0.5">{previewDoc.uploadedBy || "Hiệp hội"}</span>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-2.5">
+                  <span className="text-muted-foreground block text-[11px]">Phân loại quyền:</span>
+                  <span className="font-bold text-foreground block mt-0.5">
+                    {previewDoc.docScope === "enterprise" ? "🏢 Doanh nghiệp" : "🏛️ Hiệp hội"}
+                  </span>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-2.5">
+                  <span className="text-muted-foreground block text-[11px]">Chế độ chia sẻ:</span>
+                  <span className="font-bold text-foreground block mt-0.5">
+                    {previewDoc.shareScope === "public" ? "🌐 Công khai" : "🔒 Nội bộ"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Preview preview content if image */}
+              {previewDoc.filePath && (previewDoc.type === "png" || previewDoc.type === "jpg" || previewDoc.type === "jpeg") ? (
+                <div className="rounded-2xl border border-border overflow-hidden bg-black/5 max-h-64 flex items-center justify-center p-2">
+                  <img
+                    src={previewDoc.filePath.startsWith("http") ? previewDoc.filePath : previewDoc.filePath}
+                    alt={previewDoc.name}
+                    className="max-h-60 object-contain rounded-lg"
+                  />
+                </div>
+              ) : null}
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-border">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareModalDoc(previewDoc);
+                      setPreviewDoc(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span>Chia sẻ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMoveModalDoc(previewDoc);
+                      setPreviewDoc(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                  >
+                    <Move className="h-4 w-4" />
+                    <span>Di chuyển</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {previewDoc.driveUrl && (
+                    <a
+                      href={previewDoc.driveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      <span>Mở Google Drive</span>
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void onDownload(previewDoc)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Tải về máy</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Drag & Drop Visual Indicator Overlay */}
         {isDraggingOver && (

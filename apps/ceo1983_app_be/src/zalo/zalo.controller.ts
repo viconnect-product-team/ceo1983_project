@@ -25,8 +25,8 @@ export class ZaloController {
 
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
-  handleWebhook(@Body() payload: any) {
-    this.zaloService.recordWebhookInteraction(payload);
+  async handleWebhook(@Body() payload: any) {
+    await this.zaloService.recordWebhookInteraction(payload);
     return { error: 0, message: 'Success' };
   }
 
@@ -53,6 +53,41 @@ export class ZaloController {
   @UseGuards(JwtAuthGuard)
   async sendMessage(@Body() dto: SendZaloMessageDto) {
     return this.zaloService.sendMessage(dto);
+  }
+
+  /**
+   * Bắn thông báo ZNS qua Số Điện Thoại - Chuẩn Enterprise 100% (Không cần Zalo User ID)
+   */
+  @Post('send-zns')
+  @UseGuards(JwtAuthGuard)
+  async sendZns(
+    @Body()
+    dto: {
+      templateId: string;
+      phone: string;
+      templateData: Record<string, any>;
+      accessToken: string;
+      trackingId?: string;
+    },
+  ) {
+    return this.zaloService.sendZns(dto);
+  }
+
+  /**
+   * Liên kết Zalo User ID với Hội viên CRM
+   */
+  @Post('bind-uid')
+  @UseGuards(JwtAuthGuard)
+  async bindMemberUid(
+    @Body()
+    dto: {
+      phone?: string;
+      zaloUid: string;
+      name?: string;
+      memberId?: string;
+    },
+  ) {
+    return this.zaloService.bindMemberUid(dto);
   }
 
   @Post('send-bulk')

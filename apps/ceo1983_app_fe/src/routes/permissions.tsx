@@ -131,16 +131,20 @@ export function normalizeDept(d?: string): string {
 }
 
 function PermissionsPage() {
-  const { isPlatformAdmin, isBQT, isAdmin, srsRole, loading } = useRole();
+  const { isPlatformAdmin, isBQT, isAdmin, isSuperAdmin, isPresident, isChuTich, srsRole, loading } = useRole();
   const hasAccess =
     isPlatformAdmin ||
+    isSuperAdmin ||
+    isPresident ||
+    isChuTich ||
     isBQT ||
     isAdmin ||
     srsRole === "BQT" ||
     srsRole === "ADM" ||
     srsRole === "admin" ||
     srsRole === "quan_tri" ||
-    srsRole === "ban_dieu_hanh";
+    srsRole === "ban_dieu_hanh" ||
+    srsRole === "chu_tich";
 
   const [matrixDirty, setMatrixDirty] = useState(false);
   const isDirty = matrixDirty;

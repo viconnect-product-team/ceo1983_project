@@ -21,6 +21,43 @@ export class PrismaService
     try {
       await this.$connect();
       this.logger.log('✅ [PrismaService] Kết nối cơ sở dữ liệu Prisma thành công.');
+
+      // Đảm bảo bảng app_settings luôn sẵn sàng cho RBAC Ma trận phân quyền và cấu hình hệ thống
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.app_settings (
+          key TEXT PRIMARY KEY,
+          value JSONB NOT NULL DEFAULT '{}'::jsonb,
+          updated_by UUID,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+      `).catch(() => {});
+
+      // Đảm bảo các bảng lưu trữ tương tác Zalo OA và mapping hội viên luôn sẵn sàng
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.zalo_subscribers (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          zalo_user_id TEXT UNIQUE NOT NULL,
+          display_name TEXT,
+          avatar_url TEXT,
+          phone TEXT,
+          member_id TEXT,
+          last_message TEXT,
+          last_interacted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS public.zalo_webhook_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          event_name TEXT,
+          sender_id TEXT,
+          recipient_id TEXT,
+          message_text TEXT,
+          raw_payload JSONB,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        ALTER TABLE public.members ADD COLUMN IF NOT EXISTS zalo_user_id TEXT;
+      `).catch(() => {});
     } catch (err: any) {
       this.logger.warn(
         `⚠️ [PrismaService] Chưa thể kết nối cơ sở dữ liệu khi khởi động (${err?.message || err}). Tiến trình sẽ tiếp tục chạy và tự động tái kết nối khi CSDL sẵn sàng.`,

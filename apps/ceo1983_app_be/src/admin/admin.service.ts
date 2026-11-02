@@ -1705,6 +1705,37 @@ export class AdminService implements OnModuleInit {
     };
   }
 
+  private isUuid(val?: string): boolean {
+    if (!val) return false;
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+  }
+
+  async recordAudit(
+    actorUserId?: string,
+    action?: string,
+    targetType?: string,
+    targetId?: string,
+    metadata?: any,
+    ipAddress?: string,
+  ) {
+    try {
+      const validActor = this.isUuid(actorUserId) ? `'${actorUserId}'::uuid` : 'NULL';
+      const metaJson = JSON.stringify(metadata || {});
+      await this.prisma.$executeRawUnsafe(
+        `
+        INSERT INTO public.audit_logs (id, actor_user_id, action, target_type, target_id, ip_address, user_agent, metadata, created_at)
+        VALUES (gen_random_uuid(), ${validActor}, $1, $2, $3, $4, $5, $6::jsonb, NOW())
+      `,
+        action || 'ACTION',
+        targetType || 'SYSTEM',
+        targetId || 'GLOBAL',
+        ipAddress || '127.0.0.1',
+        'Web CRM',
+        metaJson,
+      ).catch(() => {});
+    } catch {}
+  }
+
   async savePermissionMatrix(payload: any, userId?: string) {
     const categories = payload?.categories || (Array.isArray(payload) ? payload : payload?.rows);
     if (!Array.isArray(categories) || categories.length === 0) {
@@ -1717,14 +1748,25 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     });
 
+    const userParam = this.isUuid(userId) ? `'${userId}'::uuid` : 'NULL';
+
     await this.prisma.$executeRawUnsafe(
       `
       INSERT INTO public.app_settings (key, value, updated_at, updated_by)
-      VALUES ('crm_permission_matrix', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      VALUES ('crm_permission_matrix', $1::jsonb, NOW(), ${userParam})
       ON CONFLICT (key) DO UPDATE
       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
     `,
       jsonValue,
+    );
+
+    // Ghi nhật ký thao tác thời gian thực vào audit_logs
+    await this.recordAudit(
+      userId,
+      'UPDATE_PERMISSION_MATRIX',
+      'RBAC',
+      'crm_permission_matrix',
+      { categoryCount: categories.length, note: 'Quản trị viên cập nhật Ma Trận Phân Quyền CRM Web & App Mobile' },
     );
 
     return {
@@ -1768,10 +1810,12 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     });
 
+    const userParam = this.isUuid(userId) ? `'${userId}'::uuid` : 'NULL';
+
     await this.prisma.$executeRawUnsafe(
       `
       INSERT INTO public.app_settings (key, value, updated_at, updated_by)
-      VALUES ('active_association_theme', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      VALUES ('active_association_theme', $1::jsonb, NOW(), ${userParam})
       ON CONFLICT (key) DO UPDATE
       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
     `,
@@ -1811,10 +1855,12 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     });
 
+    const userParam = this.isUuid(userId) ? `'${userId}'::uuid` : 'NULL';
+
     await this.prisma.$executeRawUnsafe(
       `
       INSERT INTO public.app_settings (key, value, updated_at, updated_by)
-      VALUES ('crm_sidebar_labels', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      VALUES ('crm_sidebar_labels', $1::jsonb, NOW(), ${userParam})
       ON CONFLICT (key) DO UPDATE
       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
     `,
@@ -1851,10 +1897,12 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     });
 
+    const userParam = this.isUuid(userId) ? `'${userId}'::uuid` : 'NULL';
+
     await this.prisma.$executeRawUnsafe(
       `
       INSERT INTO public.app_settings (key, value, updated_at, updated_by)
-      VALUES ('crm_member_permissions', $1::jsonb, NOW(), ${userId ? `'${userId}'::uuid` : 'NULL'})
+      VALUES ('crm_member_permissions', $1::jsonb, NOW(), ${userParam})
       ON CONFLICT (key) DO UPDATE
       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
     `,
@@ -2195,8 +2243,23 @@ export class AdminService implements OnModuleInit {
       SELECT COUNT(*)::int as total
       FROM public.audit_logs a
       LEFT JOIN public.members m ON (m.user_id = a.actor_user_id)
+      LEFT JOIN public.vione_users vu ON (vu.id = a.actor_user_id)
       WHERE ${where};
     `).catch(() => [{ total: 0 }]);
+
+    const loginsTodayRes = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT COUNT(*)::int as count FROM public.audit_logs 
+      WHERE action ILIKE '%LOGIN%' AND created_at >= CURRENT_DATE;
+    `).catch(() => [{ count: 0 }]);
+
+    const oppsRes = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT COUNT(*)::int as count FROM public.audit_logs 
+      WHERE (action ILIKE '%OPPORTUNITY%' OR action ILIKE '%CREATE%' OR action ILIKE '%DEAL%');
+    `).catch(() => [{ count: 0 }]);
+
+    const actorsRes = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT COUNT(DISTINCT actor_user_id)::int as count FROM public.audit_logs;
+    `).catch(() => [{ count: 0 }]);
 
     const items = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT 
@@ -2210,13 +2273,15 @@ export class AdminService implements OnModuleInit {
         a.metadata,
         a.created_at,
         m.id as member_id,
-        m.name as actor_name,
-        m.company_name as actor_company,
-        m.avatar as actor_avatar,
-        m.department as actor_department,
-        m.executive_role as actor_role
+        COALESCE(m.name, vu.full_name, vu.username, (a.metadata->>'name'), 'Quản trị viên') as actor_name,
+        COALESCE(m.company_name, (a.metadata->>'company'), '') as actor_company,
+        COALESCE(m.avatar, vu.avatar, '') as actor_avatar,
+        COALESCE(m.department, 'Ban Thư Ký') as actor_department,
+        COALESCE(m.executive_role, vu.role, 'Admin') as actor_role,
+        COALESCE(vu.email, m.email, '') as actor_email
       FROM public.audit_logs a
       LEFT JOIN public.members m ON (m.user_id = a.actor_user_id)
+      LEFT JOIN public.vione_users vu ON (vu.id = a.actor_user_id)
       WHERE ${where}
       ORDER BY a.created_at DESC
       LIMIT ${limit} OFFSET ${offset};
@@ -2225,6 +2290,12 @@ export class AdminService implements OnModuleInit {
     return {
       success: true,
       total: countRes[0]?.total || 0,
+      stats: {
+        total: countRes[0]?.total || 0,
+        loginsToday: loginsTodayRes[0]?.count || 0,
+        oppsCount: oppsRes[0]?.count || 0,
+        uniqueActors: actorsRes[0]?.count || 0,
+      },
       limit,
       offset,
       items: items.map(i => ({

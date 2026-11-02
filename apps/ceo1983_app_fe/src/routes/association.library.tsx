@@ -22,6 +22,10 @@ import {
   Lock,
   Upload,
   Plus,
+  Folder,
+  FolderOpen,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { useRole } from "@/hooks/use-role";
 import { uploadChatAttachment } from "@/lib/upload-media";
@@ -74,6 +78,9 @@ function LibraryScreen() {
     isAdmin || isPlatformAdmin || isPresident || isChuTich || isTruongBan || isBanDieuHanh
   );
 
+  // Google Drive folder state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCommittee, setSelectedCommittee] = useState("all");
@@ -104,6 +111,38 @@ function LibraryScreen() {
     }
   };
 
+  // Folder navigation & breadcrumbs - Chuẩn Google Drive trên Mobile
+  const currentFolders = useMemo(() => {
+    if (!docs || searchQuery.trim()) return [];
+    return docs.filter((d) => {
+      const scope = d.docScope || (d.enterpriseName ? "enterprise" : "association");
+      if (scope !== scopeTab) return false;
+      const isF = Boolean(d.isFolder || d.type === "FOLDER");
+      if (!isF) return false;
+      return currentFolderId ? d.folderId === currentFolderId : !d.folderId;
+    });
+  }, [docs, scopeTab, currentFolderId, searchQuery]);
+
+  const breadcrumbs = useMemo(() => {
+    const trail: { id: string | null; name: string }[] = [{ id: null, name: "Drive CEO 1983" }];
+    if (!currentFolderId || !docs) return trail;
+
+    const visited = new Set<string>();
+    const currTrail: { id: string; name: string }[] = [];
+    let curr: LibraryDoc | undefined = docs.find((d) => d.id === currentFolderId);
+    while (curr && !visited.has(curr.id)) {
+      visited.add(curr.id);
+      currTrail.unshift({ id: curr.id, name: curr.name });
+      curr = curr.folderId ? docs.find((d) => d.id === curr?.folderId) : undefined;
+    }
+    return [...trail, ...currTrail];
+  }, [docs, currentFolderId]);
+
+  const currentFolder = useMemo(() => {
+    if (!currentFolderId || !docs) return null;
+    return docs.find((d) => d.id === currentFolderId) || null;
+  }, [docs, currentFolderId]);
+
   // Filter and sort documents
   const filteredDocs = useMemo(() => {
     if (!docs) return [];
@@ -112,6 +151,15 @@ function LibraryScreen() {
       const scope = d.docScope || (d.enterpriseName ? "enterprise" : "association");
       return scope === scopeTab;
     });
+
+    // 0.1 Folder filter (Nếu không tìm kiếm thì chỉ hiện tệp thuộc thư mục đang mở)
+    if (!searchQuery.trim()) {
+      list = list.filter((d) => {
+        // Loại bỏ thư mục ra khỏi danh sách tệp
+        if (d.isFolder || d.type === "FOLDER") return false;
+        return currentFolderId ? d.folderId === currentFolderId : !d.folderId;
+      });
+    }
 
     // 1. Search Query filter
     if (searchQuery.trim()) {
@@ -152,7 +200,7 @@ function LibraryScreen() {
     });
 
     return list;
-  }, [docs, searchQuery, selectedCommittee, selectedFormat, sortOrder, scopeTab]);
+  }, [docs, searchQuery, selectedCommittee, selectedFormat, sortOrder, scopeTab, currentFolderId]);
 
   return (
     <div className="vba-animate pb-24">
@@ -284,8 +332,85 @@ function LibraryScreen() {
         </div>
       </div>
 
+      {/* ── BREADCRUMBS BAR (CHUẨN GOOGLE DRIVE MOBILE) ── */}
+      {!searchQuery.trim() && (
+        <div className="mx-4 mt-2.5 flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/25 text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar font-bold text-amber-900 dark:text-amber-300">
+            {breadcrumbs.map((crumb, idx) => {
+              const isLast = idx === breadcrumbs.length - 1;
+              return (
+                <div key={crumb.id || "root"} className="flex items-center gap-1 shrink-0">
+                  {idx > 0 && <ChevronRight className="h-3 w-3 text-amber-500/60 shrink-0" />}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentFolderId(crumb.id)}
+                    className={`shrink-0 truncate max-w-[130px] transition cursor-pointer ${
+                      isLast ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-slate-600 dark:text-slate-400 hover:text-amber-500"
+                    }`}
+                  >
+                    {idx === 0 ? "📁 Drive CLB" : crumb.name}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {currentFolderId && (
+            <button
+              type="button"
+              onClick={() => {
+                const parent = currentFolder?.folderId || null;
+                setCurrentFolderId(parent);
+              }}
+              className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 shadow-2xs cursor-pointer hover:border-amber-400"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Quay lại</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── THƯ MỤC CON (SUB-FOLDERS GRID) ── */}
+      {!searchQuery.trim() && currentFolders.length > 0 && (
+        <div className="px-4 mt-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Thư mục ({currentFolders.length})
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {currentFolders.map((f) => {
+              const childCount = docs ? docs.filter((d) => d.folderId === f.id).length : 0;
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => setCurrentFolderId(f.id)}
+                  className="p-3 rounded-2xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/30 flex items-center gap-2.5 cursor-pointer active:scale-98 transition hover:bg-amber-500/15"
+                >
+                  <Folder className="h-6 w-6 text-amber-500 shrink-0 fill-amber-500/20" />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                      {f.name}
+                    </h4>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {childCount} mục
+                    </span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-amber-500 shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Document List */}
       <div className="mt-3 space-y-2.5 px-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            Tệp tài liệu ({filteredDocs.length})
+          </span>
+        </div>
         {loading && (
           <p className="py-10 text-center text-[13px] text-[var(--vba-text-dim)]">
             {t("m.library.loading")}
@@ -416,26 +541,39 @@ function LibraryScreen() {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleDownload(selectedDoc)}
-                disabled={downloading}
-                style={{ color: "#ffffff" }}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white py-2.5 text-xs font-bold shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
-              >
-                <Download className="h-4 w-4" />
-                <span>{downloading ? (isEn ? "Downloading..." : "Đang tải...") : (isEn ? "Download file" : "Tải xuống văn bản")}</span>
-              </button>
+            <div className="pt-2 flex flex-col gap-2">
+              {selectedDoc.driveUrl && (
+                <a
+                  href={selectedDoc.driveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2 text-xs font-bold shadow-sm transition"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Mở trên Google Drive</span>
+                </a>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownload(selectedDoc)}
+                  disabled={downloading}
+                  style={{ color: "#ffffff" }}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white py-2.5 text-xs font-bold shadow-md shadow-[#003B95]/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>{downloading ? (isEn ? "Downloading..." : "Đang tải...") : (isEn ? "Download file" : "Tải xuống văn bản")}</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleShare(selectedDoc)}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>{isEn ? "Share" : "Chia sẻ"}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleShare(selectedDoc)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span>{isEn ? "Share" : "Chia sẻ"}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>,
@@ -444,3 +582,5 @@ function LibraryScreen() {
     </div>
   );
 }
+
+export { LibraryScreen };

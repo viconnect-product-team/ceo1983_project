@@ -131,6 +131,9 @@ export type LibraryDoc = {
   docScope?: "association" | "enterprise";
   enterpriseName?: string;
   enterpriseId?: string;
+  folderId?: string | null;
+  isFolder?: boolean;
+  driveUrl?: string | null;
 };
 
 export const DEFAULT_CEO1983_DOCS: LibraryDoc[] = [
@@ -259,6 +262,9 @@ export const listDocuments = createServerFn({ method: "GET" })
           docScope: d.docScope || (d.enterpriseName ? "enterprise" : "association"),
           enterpriseName: d.enterpriseName || d.enterprise_name,
           enterpriseId: d.enterpriseId || d.enterprise_id,
+          folderId: d.folderId || d.folder_id || null,
+          isFolder: Boolean(d.isFolder || d.is_folder || d.type === "folder"),
+          driveUrl: d.driveUrl || d.drive_url || null,
         }));
       }
     } catch {
