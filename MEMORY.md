@@ -1,5 +1,19 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 02/11/2026 (v10.13): Chuẩn Hóa Nhóm Quản Lý Công Việc CRM Thành Các Chức Năng Con Nghiệp Vụ Cụ Thể ([NODE-CRM-003], [NODE-CRM-010])**:
+  1. *Web CRM - Xóa Menu Tree Các Dạng Hiển Thị Khỏi Sidebar CRM (`Sidebar.tsx`)*:
+     - Gỡ bỏ hoàn toàn menu con các "dạng hiển thị" (`Dạng bảng`, `Cây công việc phân ban`, `Bảng Kanban`, `Lịch hạn`, `Gantt timeline`) trên Sidebar CRM.
+     - Tái cấu trúc thành 5 **chức năng con cụ thể trong nhóm Quản lý công việc**:
+       + `📋 Tất cả công việc` (`/tasks`): Tổng quan toàn bộ công việc và nhiệm vụ toàn CLB CEO 1983.
+       + `👤 Công việc của tôi` (`/tasks?filter=my_tasks`): Lọc riêng các đầu việc được phân công cho tài khoản hiện tại hoặc do cá nhân phụ trách.
+       + `📤 Công việc tôi giao đi` (`/tasks?filter=assigned_by_me`): Các đầu việc do tài khoản tạo ra hoặc đóng vai trò giám sát, đôn đốc.
+       + `🏢 Phân công theo Ban` (`/tasks?filter=by_department`): Theo dõi và phân công công việc theo 6 Ban chuyên môn và Ban Điều Hành.
+       + `⚠️ Cần đôn đốc / Quá hạn` (`/tasks?filter=overdue`): Danh mục các đầu việc trễ hạn hoặc có mức độ ưu tiên khẩn cấp cần xử lý ngay.
+  2. *Web CRM - Xử Lý Bộ Lọc Nghiệp Vụ & Scope Tabs Tại Trang Quản Lý Công Việc (`tasks.tsx`)*:
+     - Tiếp nhận tham số `filter` từ URL search params, tích hợp logic lọc chính xác theo `my_tasks`, `assigned_by_me`, `by_department` và `overdue`.
+     - Bổ sung thanh **Scope Filter Tabs** ngay dưới tiêu đề trang với số lượng task thời gian thực và biểu tượng chuyên biệt, cho phép chuyển đổi 1-click mượt mà giữa các chức năng con.
+     - Giữ nguyên bộ nút View Switcher (Bảng, Kanban, Lịch, Timeline Gantt, Cây phân ban) tại thanh công cụ lọc để người dùng linh hoạt xem dữ liệu dưới các dạng hiển thị phù hợp.
+
 - **Bản cập nhật ngày 02/11/2026 (v10.12): Chuẩn Hóa Triệt Để 8 Hạng Mục CRM & Mobile App CEO 1983 ([NODE-APP-003], [NODE-APP-005], [NODE-APP-008], [NODE-APP-009], [NODE-CRM-001], [NODE-CRM-006], [NODE-CRM-010], [NODE-CRM-014])**:
   1. *Web CRM - Không Hiện QR Thanh Toán Trực Tiếp Vào Tin Nhắn Zalo (`MailTemplateManager.tsx`)*:
      - Loại bỏ biến `vietqr_url` và link QR khỏi mẫu gửi tin nhắn Zalo OA / ZNS về nợ phí và tài chính.

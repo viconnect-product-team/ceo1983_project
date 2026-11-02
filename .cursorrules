@@ -2268,6 +2268,20 @@
   + Tab 4: Mạng lưới (`/association/messages`, icon `Users` / `FooterSocialNetworkIcon`)
   + Tab 5: Cá nhân (`/association/profile`, icon `User`)
 
+# [BẮT BUỘC 123] Quy Chuẩn Nhóm Quản Lý Công Việc CRM: Chức Năng Con Nghiệp Vụ Cụ Thể (Scope Tree vs View Switcher)
+- Quy Chuẩn 1: Menu Con Sidebar CRM BẮT BUỘC là Chức Năng Con Cụ Thể (`Sidebar.tsx`):
+  + TUYỆT ĐỐI KHÔNG dùng menu con Sidebar cho các dạng hiển thị (dạng bảng, cây, kanban, lịch, gantt).
+  + Menu con của Quản lý công việc BẮT BUỘC gồm 5 chức năng nghiệp vụ cụ thể:
+    1. `📋 Tất cả công việc` (`/tasks`)
+    2. `👤 Công việc của tôi` (`/tasks?filter=my_tasks`)
+    3. `📤 Công việc tôi giao đi` (`/tasks?filter=assigned_by_me`)
+    4. `🏢 Phân công theo Ban` (`/tasks?filter=by_department`)
+    5. `⚠️ Cần đôn đốc / Quá hạn` (`/tasks?filter=overdue`)
+- Quy Chuẩn 2: Thanh Chuyển Đổi View Mode Nằm Nội Bộ Trang (`tasks.tsx`):
+  + Các góc nhìn hiển thị (Bảng chi tiết, Lưới thẻ Kanban, Lịch tháng, Dòng thời gian Gantt, Cây phân ban) là công cụ hiển thị của trang, đặt tại thanh Toolbar lọc phía trên danh sách công việc.
+  + Trang `/tasks` trang bị thanh Scope Tabs ngay dưới tiêu đề để người dùng có thể nhấp lọc 1-click giữa các chức năng con với số lượng việc cập nhật thời gian thực.
+
+
 
 
 
