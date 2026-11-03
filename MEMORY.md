@@ -1,5 +1,13 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.26): Tái Cấu Trúc Toàn Diện Theme App CEO 1983, Trường Dán Link MXH B2B, Public Share & Tracking Thống Kê Lượt Click Chia Sẻ Ngoài, Refactor 100% CRM Dashboard Thành Master Table Format Chuẩn Accounts, và Hệ Thống Dynamic Landing Web Manager ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-CRM-001], [NODE-CRM-014], [NODE-CRM-016])**:
+  1. *Hạng Mục 1: Khắc Phục Triệt Để Chức Năng Đổi Màu Trên App CEO 1983 ([NODE-APP-001], [NODE-APP-009])*: Khắc phục triệt để CSS biến và gỡ bỏ hardcode !important trong styles.css và MemberShell.tsx. Cả 4 bộ màu chuẩn Brandbook chuyển đổi đồng bộ toàn app.
+  2. *Hạng Mục 2: Bổ Sung Trường Dán Link MXH B2B Cho Sự Kiện, Cuộc Gặp 1-1 & Cơ Hội B2B ([NODE-APP-003], [NODE-APP-004])*: Bổ sung trường dán link và khối hiển thị liên kết Fanpage/Website/Tài liệu kèm nút mở và sao chép.
+  3. *Hạng Mục 3: Public Share Ra Ngoài & Tracking Thống Kê Lượt Click ([NODE-APP-006], [NODE-CRM-014])*: Xây dựng Public Share Route (/share//), tự nhận diện nền tảng (Facebook, Zalo, Web) và điều hướng đăng nhập. Backend API POST /analytics/share-click và danh mục external_shares trên CRM & Mobile App Analytics.
+  4. *Hạng Mục 4: Refactor Hoàn Toàn CRM Dashboard Thành Master Table Format Chuẩn Accounts ([NODE-CRM-001])*: ExecutiveDashboard.tsx chuyển đổi 100% sang Master Data Table (PageHeader, 4 Metric Cards, Toolbar tìm kiếm/bộ lọc Ban/Trạng thái/Hội phí, Bảng dữ liệu chuẩn có phân trang Pagination, Modal xem chi tiết).
+  5. *Hạng Mục 5: Hệ Thống Dynamic Landing Web Manager Tại Cài Đặt Hệ Thống ([NODE-CRM-016])*: Component LandingWebManager.tsx tại /settings?tab=landing với 6 tab cấu hình dynamic, live preview và lưu đồng bộ.
+  6. *Kiểm Thử Chất Lượng*: Backend & Frontend tsc --noEmit đều Exit Code 0 (0 errors).
+
 - **Bản cập nhật ngày 03/11/2026 (v10.25): Tái Thiết Toàn Diện Hệ Thống Thống Kê & Báo Cáo (CRM & Mobile App), Tinh Gọn Giao Diện Đẳng Cấp Doanh Nhân Theo Chuẩn 5 Màu & Chuẩn Hóa Văn Phong B2B ([NODE-CRM-014], [NODE-APP-013], [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-008], [NODE-CRM-010], [NODE-CRM-011])**:
   1. *Hạng Mục 1: Khắc Phục Triệt Để & Tái Cấu Trúc Hệ Thống Thống Kê - Báo Cáo*:
      - Tái thiết Backend Analytics Service (`apps/ceo1983_app_be/src/analytics/analytics.service.ts`):

@@ -688,7 +688,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
         prev.map((p) => (p.id === post.id ? { ...p, sharesCount: p.sharesCount + 1 } : p))
       );
 
-      const shareUrl = `${window.location.origin}/association/messages?tab=feed&postId=${post.id}`;
+      const shareUrl = `${window.location.origin}/share/post/${post.id}`;
       if (navigator.share) {
         await navigator.share({
           title: post.title || "Bảng tin CEO 1983",

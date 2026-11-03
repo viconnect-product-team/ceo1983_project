@@ -77,7 +77,8 @@ export type AnalyticsCategory =
   | "top_connections"
   | "top_opportunities"
   | "top_events_meetings"
-  | "top_referrals";
+  | "top_referrals"
+  | "external_shares";
 
 interface CategoryMeta {
   id: AnalyticsCategory;
@@ -146,6 +147,17 @@ const CATEGORIES: CategoryMeta[] = [
     bar1Name: "Hồ sơ giới thiệu",
     bar2Name: "Đã hoàn tất kết nạp",
     lineName: "Tỷ lệ kết nạp chuẩn",
+  },
+  {
+    id: "external_shares",
+    alias: ["external_shares", "share_clicks", "public_shares", "shares"],
+    label: "Lượt click chia sẻ ra ngoài",
+    subLabel: "Thống kê lượt click từ Facebook, Zalo, Web vào các bài viết công khai",
+    metricLabel: "Lượt click",
+    unit: "Lượt",
+    bar1Name: "Lượt click công khai",
+    bar2Name: "Chuyển đổi đăng nhập",
+    lineName: "Tỷ lệ chuyển đổi (%)",
   },
 ];
 
@@ -407,6 +419,19 @@ export function AnalyticsDashboardPage() {
         { rank: 10, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", role: "Giám đốc điều hành", dept: "Ban Tài Chính", score: "1 Hội viên", metric: 1, phone: "0982 443 322", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80" },
       ];
     }
+    if (selectedCat === "external_shares") {
+      const shareData = serverData?.externalShareClicks || serverData?.categories?.externalShareClicks;
+      const fb = shareData?.facebook || 128;
+      const zalo = shareData?.zalo || 94;
+      const web = shareData?.web || 62;
+      const other = shareData?.other || 21;
+      return [
+        { rank: 1, name: "Facebook (Fanpage & Hội nhóm)", company: "Nền tảng chia sẻ Facebook", role: "Kênh Public Ngoài", dept: "Mạng Xã Hội", score: `${fb} Lượt click`, metric: fb, phone: "Facebook Share", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
+        { rank: 2, name: "Zalo (Nhóm B2B & Tin nhắn cá nhân)", company: "Ứng dụng Zalo Doanh Nghiệp", role: "Kênh Giao Thương Nhanh", dept: "Nhóm Chat B2B", score: `${zalo} Lượt click`, metric: zalo, phone: "Zalo Share", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
+        { rank: 3, name: "Trình Duyệt Web Trực Tiếp", company: "Cổng thông tin & Website doanh nghiệp", role: "Kênh Web Công Khai", dept: "Trực Tiếp", score: `${web} Lượt click`, metric: web, phone: "Direct Link", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
+        { rank: 4, name: "Nguồn khác (Email / Quét QR)", company: "Các liên kết ngoài & Email marketing", role: "Kênh Mở Rộng", dept: "Đối Tác Ngoài", score: `${other} Lượt click`, metric: other, phone: "Khác", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
+      ];
+    }
     return [];
   }, [selectedCat, serverData]);
 
@@ -450,11 +475,22 @@ export function AnalyticsDashboardPage() {
         { periodLabel: p3, bar1: 18, bar2: 16, rate: 112 },
       ];
     }
-    // Top referrals
+    if (selectedCat === "top_referrals") {
+      return [
+        { periodLabel: p1, bar1: 8, bar2: 6, rate: 75 },
+        { periodLabel: p2, bar1: 12, bar2: 10, rate: 83 },
+        { periodLabel: p3, bar1: 16, bar2: 14, rate: 88 },
+      ];
+    }
+    // external_shares
+    const shareData = serverData?.externalShareClicks || serverData?.categories?.externalShareClicks;
+    const totalClicks = shareData?.totalClicks || 305;
+    const totalConversions = shareData?.totalConversions || 142;
+    const convRate = totalClicks > 0 ? Math.round((totalConversions / totalClicks) * 100) : 46;
     return [
-      { periodLabel: p1, bar1: 8, bar2: 6, rate: 75 },
-      { periodLabel: p2, bar1: 12, bar2: 10, rate: 83 },
-      { periodLabel: p3, bar1: 16, bar2: 14, rate: 88 },
+      { periodLabel: p1, bar1: 140, bar2: 60, rate: 43 },
+      { periodLabel: p2, bar1: 220, bar2: 95, rate: 43 },
+      { periodLabel: p3, bar1: totalClicks, bar2: totalConversions, rate: convRate },
     ];
   }, [selectedCat, period, sentimentStats]);
 

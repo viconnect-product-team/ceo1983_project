@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   AlertCircle,
   ArrowRight,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -35,6 +36,7 @@ export interface Create1on1MeetingModalProps {
   defaultPartnerCompany?: string;
   defaultPartnerPhone?: string;
   defaultNotes?: string;
+  defaultExternalLink?: string;
 }
 
 interface ConflictModalData {
@@ -61,6 +63,7 @@ export function Create1on1MeetingModal({
   defaultPartnerCompany,
   defaultPartnerPhone,
   defaultNotes,
+  defaultExternalLink,
 }: Create1on1MeetingModalProps) {
   const [title, setTitle] = useState(defaultTitle || "Gặp gỡ kết nối & Trao đổi cơ hội hợp tác");
   const [hostName, setHostName] = useState("Nguyễn Văn Cường (Ban Thành Viên)");
@@ -86,6 +89,7 @@ export function Create1on1MeetingModal({
   const [notes, setNotes] = useState(
     defaultNotes || "Trao đổi nhu cầu cung ứng nguyên vật liệu & giới thiệu các đối tác tiềm năng trong Hiệp hội."
   );
+  const [externalLink, setExternalLink] = useState(defaultExternalLink || "");
 
   // Trạng thái hiển thị popup cảnh báo trùng lịch (thời gian, địa điểm, hoặc cả hai)
   const [conflictModalData, setConflictModalData] = useState<ConflictModalData | null>(null);
@@ -266,6 +270,7 @@ export function Create1on1MeetingModal({
       onlinePlatform: venueType === "online" ? onlinePlatform : undefined,
       reminderTier,
       notes: notes.trim() || undefined,
+      externalLink: externalLink.trim() || undefined,
       status: "scheduled",
       isAgreed: true,
       createdAt: new Date().toISOString(),
@@ -707,6 +712,20 @@ export function Create1on1MeetingModal({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="VD: Tìm hiểu chính sách chiết khấu đại lý, kết nối đối tác công nghệ..."
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs resize-none"
+              />
+            </div>
+
+            {/* Link bài viết Fanpage / Website */}
+            <div>
+              <label className="font-semibold text-foreground block mb-1 flex items-center gap-1">
+                <Globe className="h-3.5 w-3.5 text-muted-foreground" /> Link bài viết Fanpage / Website tài liệu (Tùy chọn)
+              </label>
+              <input
+                type="url"
+                value={externalLink}
+                onChange={(e) => setExternalLink(e.target.value)}
+                placeholder="VD: https://facebook.com/fanpage/posts/... hoặc https://company.vn/san-pham"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-xs"
               />
             </div>
           </div>

@@ -17,7 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { AssociationLogoUploader } from "@/components/dashboard/AssociationLogoUploader";
-import { AssociationLandingEditor } from "@/components/dashboard/AssociationLandingEditor";
+import { LandingWebManager } from "@/components/dashboard/LandingWebManager";
 import { AssociationDomainEditor } from "@/components/dashboard/AssociationDomainEditor";
 import { OmnichannelTemplatesSection } from "@/components/dashboard/OmnichannelTemplatesSection";
 import { ZaloOaConfigSection } from "@/components/dashboard/ZaloOaConfigSection";
@@ -193,7 +193,7 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab === "landing" && <AssociationLandingEditor />}
+          {tab === "landing" && <LandingWebManager />}
 
           {tab === "domain" && <AssociationDomainEditor />}
 

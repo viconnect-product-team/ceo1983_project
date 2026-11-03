@@ -11,6 +11,7 @@ import {
   Phone,
   Briefcase,
   Users,
+  Globe,
 } from "lucide-react";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { formatDisplayDate } from "@/lib/date-format";
@@ -62,6 +63,8 @@ export interface OpportunityCreateModalProps {
   setNewCommissionPercent?: (v: string) => void;
   selectedRecipientIds?: string[];
   setSelectedRecipientIds?: (ids: string[]) => void;
+  newExternalLink?: string;
+  setNewExternalLink?: (v: string) => void;
 }
 
 export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
@@ -109,6 +112,8 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   setNewCommissionPercent: propSetCommission,
   selectedRecipientIds: propRecipientIds,
   setSelectedRecipientIds: propSetRecipientIds,
+  newExternalLink: propExternalLink,
+  setNewExternalLink: propSetExternalLink,
 }) => {
   const [recipientType, setRecipientType] = React.useState<"all" | "by_department" | "friends">("all");
   const [friendsScope, setFriendsScope] = React.useState<"all" | "selective">("all");
@@ -119,6 +124,7 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   const [localReferrer, setLocalReferrer] = React.useState("");
   const [localCommission, setLocalCommission] = React.useState("");
   const [localRecipientIds, setLocalRecipientIds] = React.useState<string[]>([]);
+  const [localExternalLink, setLocalExternalLink] = React.useState("");
 
   const newReferrer = propReferrer !== undefined ? propReferrer : localReferrer;
   const setNewReferrer = propSetReferrer || setLocalReferrer;
@@ -126,6 +132,8 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   const setNewCommissionPercent = propSetCommission || setLocalCommission;
   const selectedRecipientIds = propRecipientIds !== undefined ? propRecipientIds : localRecipientIds;
   const setSelectedRecipientIds = propSetRecipientIds || setLocalRecipientIds;
+  const newExternalLink = propExternalLink !== undefined ? propExternalLink : localExternalLink;
+  const setNewExternalLink = propSetExternalLink || setLocalExternalLink;
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -802,6 +810,20 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                 placeholder="Mô tả cụ thể nhu cầu, tiêu chuẩn đối tác, ngân sách hoặc phương án hợp tác..."
                 rows={3}
                 className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-[12px] font-bold text-slate-700 dark:text-slate-300 block mb-1 flex items-center gap-1.5">
+                <Globe className="size-3.5 text-blue-500" />
+                Link bài viết Fanpage / Website doanh nghiệp (Tùy chọn)
+              </label>
+              <input
+                type="url"
+                value={newExternalLink}
+                onChange={(e) => setNewExternalLink(e.target.value)}
+                placeholder="VD: https://facebook.com/fanpage/posts/... hoặc https://company.vn/co-hoi-b2b"
+                className="w-full rounded-2xl border-0 bg-slate-100 dark:bg-white/[0.06] px-4 py-2.5 text-[13px] text-slate-900 dark:text-white outline-none ring-0 focus:ring-0 placeholder:text-slate-400"
               />
             </div>
           </div>

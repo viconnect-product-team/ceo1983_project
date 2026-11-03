@@ -416,7 +416,7 @@ function FooterHomeIcon({ active }: { active: boolean }) {
     <Home
       className={`size-6 transition-all duration-200 ${
         active
-          ? "text-[#003B95] dark:text-amber-400 scale-105 stroke-[2.3]"
+          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
           : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
       }`}
     />
@@ -428,7 +428,7 @@ function FooterAnalyticsIcon({ active }: { active: boolean }) {
     <BarChart3
       className={`size-6 transition-all duration-200 ${
         active
-          ? "text-[#003B95] dark:text-amber-400 scale-105 stroke-[2.3]"
+          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
           : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
       }`}
     />
@@ -440,7 +440,7 @@ function FooterSocialNetworkIcon({ active }: { active: boolean }) {
     <MessageSquare
       className={`size-6 transition-all duration-200 ${
         active
-          ? "text-[#003B95] dark:text-amber-400 scale-105 stroke-[2.3]"
+          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
           : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
       }`}
     />
@@ -452,7 +452,7 @@ function FooterUserIcon({ active }: { active: boolean }) {
     <User
       className={`size-6 transition-all duration-200 ${
         active
-          ? "text-[#003B95] dark:text-amber-400 scale-105 stroke-[2.3]"
+          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
           : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
       }`}
     />
@@ -799,9 +799,9 @@ function MemberTabBar() {
                   <span
                     className="relative grid h-13 w-13 place-items-center rounded-full shadow-md group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
                     style={{
-                      background: "linear-gradient(135deg, #003B95 0%, #1E3A8A 100%)",
+                      background: "var(--theme-primary-gradient, linear-gradient(135deg, #003B95 0%, #1E3A8A 100%))",
                       border: "2.5px solid rgba(255, 255, 255, 0.95)",
-                      boxShadow: "0 4px 14px rgba(0, 59, 149, 0.3)",
+                      boxShadow: "0 4px 14px var(--vba-border, rgba(0, 59, 149, 0.3))",
                     }}
                   >
                     <QrCode className="size-6 text-white stroke-[2.2]" />
@@ -814,7 +814,7 @@ function MemberTabBar() {
                       </span>
                     )}
                   </span>
-                  <span className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 mt-1">
+                  <span className="text-[11px] font-bold text-[var(--vba-navy)] dark:text-[var(--vba-gold)] mt-1">
                     Check-in
                   </span>
                 </button>
@@ -896,7 +896,7 @@ function MemberTabBar() {
               <span
                 className={`text-[11px] transition-colors select-none ${
                   active
-                    ? "font-bold text-[#003B95] dark:text-amber-400"
+                    ? "font-bold text-[var(--vba-navy)] dark:text-[var(--vba-gold)]"
                     : "font-normal text-slate-500 dark:text-slate-400"
                 }`}
               >
@@ -906,7 +906,7 @@ function MemberTabBar() {
               </span>
               {/* Dot indicator khi tab active */}
               {active && (
-                <span className="h-1.5 w-1.5 rounded-full bg-[#003B95] dark:bg-amber-400 shadow-sm shadow-[#003B95]/40 dark:shadow-amber-400/50 -mt-0.5 animate-in fade-in zoom-in duration-200" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--vba-navy)] dark:bg-[var(--vba-gold)] shadow-sm shadow-[var(--vba-border)] -mt-0.5 animate-in fade-in zoom-in duration-200" />
               )}
             </Link>
           );

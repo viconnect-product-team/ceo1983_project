@@ -63,7 +63,8 @@ export type AnalyticsCategory =
   | "top_connections"
   | "top_opportunities"
   | "top_events_meetings"
-  | "top_referrals";
+  | "top_referrals"
+  | "external_shares";
 
 export interface TopPerformer {
   rank: 1 | 2 | 3;
@@ -426,12 +427,19 @@ export function AssociationAnalyticsScreen() {
           { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 12, lineVal: 280, isUp: true, isTop: true, topAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" },
         ];
       case "top_referrals":
-      default:
         return [
           { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 8, lineVal: 8, isUp: true },
           { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 12, lineVal: 12, isUp: true },
           { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 16, lineVal: 16, isUp: true, isTop: true, topAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" },
           { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 24, lineVal: 24, isUp: true },
+        ];
+      case "external_shares":
+      default:
+        return [
+          { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 140, lineVal: 43, isUp: true },
+          { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 220, lineVal: 45, isUp: true },
+          { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 305, lineVal: 46, isUp: true, isTop: true, topAvatar: "/ceo1983-emblem-8.png" },
+          { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 420, lineVal: 52, isUp: true },
         ];
     }
   }, [activeCategory, timeRange]);
@@ -673,6 +681,11 @@ export function AssociationAnalyticsScreen() {
             id: "top_referrals",
             shortLabel: "Phát Triển Hội Viên",
             icon: UserPlus,
+          },
+          {
+            id: "external_shares",
+            shortLabel: "Click Chia Sẻ Ngoài",
+            icon: Share2,
           },
         ].map((tab) => {
           const Icon = tab.icon;

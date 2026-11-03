@@ -17,6 +17,7 @@ import {
   AlertCircle,
   XCircle,
   ShieldCheck,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ConnectionMeetingItem } from "@/routes/business-connect.meetings.index";
@@ -274,6 +275,39 @@ export function ViewMeetingModal({
               <p className="text-xs sm:text-sm text-foreground whitespace-pre-line leading-relaxed italic">
                 "{meeting.notes}"
               </p>
+            </div>
+          )}
+
+          {/* Link bài viết Fanpage / Website */}
+          {Boolean((meeting as any).externalLink) && (
+            <div className="rounded-2xl border border-border bg-blue-50/40 dark:bg-blue-950/20 p-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider">
+                <Globe className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <span>Link bài viết Fanpage / Website trao đổi</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href={(meeting as any).externalLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs transition"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>Mở bài viết Fanpage / Website</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText((meeting as any).externalLink);
+                    toast.success("Đã sao chép link bài viết!");
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-secondary/80 hover:bg-secondary px-3 py-2 text-xs font-semibold text-foreground transition cursor-pointer"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Sao chép link</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
