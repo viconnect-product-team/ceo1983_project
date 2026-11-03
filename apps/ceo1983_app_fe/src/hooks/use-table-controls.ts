@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-export type SortDir = "asc" | "desc";
+export type SortDir = "asc" | "desc" | null;
 
 export interface TableControls<T> {
   /** Rows for the current page after sorting. */
@@ -40,7 +40,7 @@ export function useTableControls<T>(
   const safeRows = Array.isArray(rows) ? rows : [];
 
   const sorted = useMemo(() => {
-    if (!sortKey || !accessors[sortKey]) return safeRows;
+    if (!sortKey || !sortDir || !accessors[sortKey]) return safeRows;
     const acc = accessors[sortKey];
     const copy = [...safeRows];
     copy.sort((a, b) => {
@@ -51,7 +51,7 @@ export function useTableControls<T>(
       if (bv == null) return -1;
       let cmp: number;
       if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
-      else cmp = String(av).localeCompare(String(bv), undefined, { numeric: true });
+      else cmp = String(av).localeCompare(String(bv), "vi", { numeric: true });
       return sortDir === "asc" ? cmp : -cmp;
     });
     return copy;
@@ -65,8 +65,15 @@ export function useTableControls<T>(
   const pageRows = sorted.slice(start, start + pageSize);
 
   const toggleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else if (sortDir === "desc") {
+      // 3-state sorting: reset to null (mặc định không sắp xếp)
+      setSortKey(null);
+      setSortDir(null);
     } else {
       setSortKey(key);
       setSortDir("asc");

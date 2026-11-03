@@ -571,13 +571,20 @@ function AccountsPage() {
     });
   }, [accounts, searchQuery, selectedDeptFilter, selectedRoleFilter]);
 
-  // Sắp xếp cột & phân trang đồng nhất
+  // Sắp xếp cột 3 trạng thái & phân trang đồng nhất
   const [sortKey, setSortKey] = useState<string | null>("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortDir, setSortDir] = useState<"asc" | "desc" | null>("asc");
 
   const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else if (sortDir === "desc") {
+      // 3-state sorting: Trạng thái thứ 3 quay về mặc định (null)
+      setSortKey(null);
+      setSortDir(null);
     } else {
       setSortKey(key);
       setSortDir("asc");

@@ -38,7 +38,7 @@ import {
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getNestApiUrl, getAuthToken } from "@/lib/api-client";
+import { getNestApiUrl, getAuthToken, fetchNestApi } from "@/lib/api-client";
 
 export interface ZaloOaTemplate {
   id: string;
@@ -248,6 +248,130 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [b2bPartner, setB2bPartner] = useState("Ban Xúc Tiến Thương Mại CLB Doanh Nhân CEO 1983");
   const [b2bRequirement, setB2bRequirement] = useState("Tìm kiếm đối tác thành viên cung cấp giải pháp công nghệ số và vật liệu xanh chất lượng cao");
   const [b2bContact, setB2bContact] = useState("0973924819");
+
+  // Dữ liệu thực tế gọi từ Database API của các chức năng (Sự kiện, Cuộc họp, Đào tạo, Cơ hội B2B)
+  const [dbEvents, setDbEvents] = useState<any[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
+  const [dbMeetings, setDbMeetings] = useState<any[]>([]);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>("");
+  const [loadingMeetings, setLoadingMeetings] = useState(false);
+
+  const [dbTrainings, setDbTrainings] = useState<any[]>([]);
+  const [selectedTrainingId, setSelectedTrainingId] = useState<string>("");
+  const [loadingTrainings, setLoadingTrainings] = useState(false);
+
+  const [dbOpps, setDbOpps] = useState<any[]>([]);
+  const [selectedOppId, setSelectedOppId] = useState<string>("");
+  const [loadingOpps, setLoadingOpps] = useState(false);
+
+  const loadEventsApi = async () => {
+    try {
+      setLoadingEvents(true);
+      const res = await fetchNestApi<any[]>("/events");
+      if (Array.isArray(res) && res.length > 0) {
+        setDbEvents(res);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const loadMeetingsApi = async () => {
+    try {
+      setLoadingMeetings(true);
+      const res = await fetchNestApi<any[]>("/business-connect/meetings").catch(() =>
+        fetchNestApi<any[]>("/meetings")
+      );
+      if (Array.isArray(res) && res.length > 0) {
+        setDbMeetings(res);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMeetings(false);
+    }
+  };
+
+  const loadTrainingsApi = async () => {
+    try {
+      setLoadingTrainings(true);
+      const res = await fetchNestApi<any>("/trainings");
+      const list = Array.isArray(res) ? res : res?.items || [];
+      if (Array.isArray(list) && list.length > 0) {
+        setDbTrainings(list);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingTrainings(false);
+    }
+  };
+
+  const loadOppsApi = async () => {
+    try {
+      setLoadingOpps(true);
+      const res = await fetchNestApi<any[]>("/opportunities");
+      if (Array.isArray(res) && res.length > 0) {
+        setDbOpps(res);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingOpps(false);
+    }
+  };
+
+  const handleSelectEvent = (id: string) => {
+    setSelectedEventId(id);
+    const ev = dbEvents.find((e) => e.id === id);
+    if (!ev) return;
+    setEventName(ev.name);
+    const dStr = ev.date ? new Date(ev.date).toLocaleDateString("vi-VN") : "";
+    const tStr = ev.startTime ? ` lúc ${ev.startTime}` : "";
+    setEventTime(`${dStr}${tStr}`);
+    setEventLocation(ev.location || ev.address || "Keangnam Landmark 72, Phạm Hùng, Hà Nội");
+    setEventTicketCode(`CEO1983-${String(ev.id).slice(0, 6).toUpperCase()}`);
+    toast.success(`Đã nạp chuẩn dữ liệu từ sự kiện: "${ev.name}"`);
+  };
+
+  const handleSelectMeeting = (id: string) => {
+    setSelectedMeetingId(id);
+    const m = dbMeetings.find((item) => item.id === id);
+    if (!m) return;
+    setMeetingTitle(m.title || m.name || "Cuộc họp Ban Điều Hành CLB CEO 1983");
+    const dStr =
+      m.date || m.scheduledAt || m.startsAt
+        ? new Date(m.date || m.scheduledAt || m.startsAt).toLocaleDateString("vi-VN")
+        : "";
+    const tStr = m.startTime || m.time ? ` lúc ${m.startTime || m.time}` : "";
+    setMeetingTime(`${dStr}${tStr}`);
+    setMeetingLocation(m.location || m.address || "Văn phòng HanoiBA, Tầng 4 Cung Trí Thức Hà Nội");
+    setMeetingAgenda(m.agenda || m.description || "Thống nhất kế hoạch công tác và triển khai nhiệm vụ");
+    toast.success(`Đã nạp chuẩn dữ liệu từ cuộc họp: "${m.title || m.name}"`);
+  };
+
+  const handleSelectB2b = (id: string) => {
+    setSelectedOppId(id);
+    const op = dbOpps.find((item) => item.id === id);
+    if (!op) return;
+    setB2bTitle(op.title || "Cơ hội hợp tác B2B");
+    setB2bPartner(op.company || op.authorName || "Ban Xúc Tiến Thương Mại");
+    setB2bRequirement(op.description || "Hợp tác phát triển kinh doanh");
+    setB2bContact(op.phone || targetPhone || "0973924819");
+    toast.success(`Đã nạp chuẩn dữ liệu từ cơ hội B2B: "${op.title}"`);
+  };
+
+  // Nạp dữ liệu các chức năng khi khởi tạo hoặc chuyển loại thông báo
+  useEffect(() => {
+    loadEventsApi();
+    loadMeetingsApi();
+    loadTrainingsApi();
+    loadOppsApi();
+  }, []);
 
   // Dynamic Event Check-in QR Payload & URL
   const eventQrData = `CEO1983_EVENT_CHECKIN|EVENT:${encodeURIComponent(eventName)}|MEMBER:${targetMemberCode}|TICKET:${eventTicketCode}|PHONE:${targetPhone}`;
@@ -1386,6 +1510,44 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
 
         {noticeType === "event" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-red-200 dark:border-red-950">
+            {/* Thanh Chọn Sự Kiện Chuẩn Từ Database API */}
+            <div className="lg:col-span-12 p-3 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Ticket className="size-4 text-red-600 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-red-900 dark:text-red-200">
+                    LẤY DỮ LIỆU CHUẨN TỪ API SỰ KIỆN (/events)
+                  </div>
+                  <div className="text-[11px] text-red-700/80 dark:text-red-300/70">
+                    Hệ thống tự động điền tên, thời gian, địa điểm và tạo mã QR check-in từ CSDL
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <select
+                  value={selectedEventId}
+                  onChange={(e) => handleSelectEvent(e.target.value)}
+                  className="flex-1 rounded-xl border border-red-300 dark:border-red-800 bg-background px-3 py-1.5 text-xs font-bold text-foreground outline-none cursor-pointer focus:ring-2 focus:ring-red-500/20"
+                >
+                  <option value="">-- Chọn sự kiện có trong CSDL ({dbEvents.length}) --</option>
+                  {dbEvents.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.name} ({ev.date ? new Date(ev.date).toLocaleDateString("vi-VN") : "Sắp tới"})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={loadEventsApi}
+                  disabled={loadingEvents}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-red-300 dark:border-red-800 hover:bg-red-50 text-red-600 cursor-pointer shrink-0"
+                  title="Tải lại danh sách sự kiện từ API"
+                >
+                  <RefreshCw className={`size-3.5 ${loadingEvents ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
+
             {/* Form trường sự kiện */}
             <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
@@ -1497,6 +1659,43 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
 
         {noticeType === "meeting" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-950">
+            {/* Thanh Chọn Cuộc Họp Chuẩn Từ Database API */}
+            <div className="sm:col-span-2 p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="size-4 text-blue-600 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-blue-900 dark:text-blue-200">
+                    LẤY DỮ LIỆU CHUẨN TỪ API CUỘC HỌP (/business-connect/meetings)
+                  </div>
+                  <div className="text-[11px] text-blue-700/80 dark:text-blue-300/70">
+                    Hệ thống tự động điền tiêu đề cuộc họp, lịch trình, phòng họp và nội dung trọng tâm từ CSDL
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <select
+                  value={selectedMeetingId}
+                  onChange={(e) => handleSelectMeeting(e.target.value)}
+                  className="flex-1 rounded-xl border border-blue-300 dark:border-blue-800 bg-background px-3 py-1.5 text-xs font-bold text-foreground outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="">-- Chọn cuộc họp có trong CSDL ({dbMeetings.length}) --</option>
+                  {dbMeetings.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title || m.name} ({m.date ? new Date(m.date).toLocaleDateString("vi-VN") : "Sắp tới"})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={loadMeetingsApi}
+                  disabled={loadingMeetings}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-800 hover:bg-blue-50 text-blue-600 cursor-pointer shrink-0"
+                  title="Tải lại danh sách cuộc họp từ API"
+                >
+                  <RefreshCw className={`size-3.5 ${loadingMeetings ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
                 Tiêu Đề Cuộc Họp / Hội Nghị:
@@ -1562,6 +1761,43 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
 
         {noticeType === "b2b" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-950">
+            {/* Thanh Chọn Cơ Hội B2B Chuẩn Từ Database API */}
+            <div className="sm:col-span-2 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Briefcase className="size-4 text-amber-600 shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                    LẤY DỮ LIỆU CHUẨN TỪ API CƠ HỘI B2B (/opportunities)
+                  </div>
+                  <div className="text-[11px] text-amber-700/80 dark:text-amber-300/70">
+                    Hệ thống tự động điền tiêu đề cơ hội, doanh nghiệp chủ trì và yêu cầu hợp tác từ CSDL
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <select
+                  value={selectedOppId}
+                  onChange={(e) => handleSelectB2b(e.target.value)}
+                  className="flex-1 rounded-xl border border-amber-300 dark:border-amber-800 bg-background px-3 py-1.5 text-xs font-bold text-foreground outline-none cursor-pointer focus:ring-2 focus:ring-amber-500/20"
+                >
+                  <option value="">-- Chọn cơ hội có trong CSDL ({dbOpps.length}) --</option>
+                  {dbOpps.map((op) => (
+                    <option key={op.id} value={op.id}>
+                      {op.title} ({op.company || "Doanh nghiệp"})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={loadOppsApi}
+                  disabled={loadingOpps}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-800 hover:bg-amber-50 text-amber-600 cursor-pointer shrink-0"
+                  title="Tải lại danh sách cơ hội từ API"
+                >
+                  <RefreshCw className={`size-3.5 ${loadingOpps ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
                 Tiêu Đề Cơ Hội Hợp Tác:

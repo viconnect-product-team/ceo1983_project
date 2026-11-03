@@ -447,12 +447,13 @@ function TasksPage() {
                   if (scope.id === 'by_department') {
                     setViewMode('tree');
                   }
-                  navigate({
-                    search: (prev) => ({
-                      ...prev,
+                  void navigate({
+                    to: '/tasks',
+                    search: {
+                      ...searchParams,
                       filter: scope.id === 'all' ? undefined : scope.id,
-                      view: scope.id === 'by_department' ? 'tree' : prev.view,
-                    }),
+                      view: scope.id === 'by_department' ? 'tree' : searchParams.view,
+                    },
                   });
                 }}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${isActive

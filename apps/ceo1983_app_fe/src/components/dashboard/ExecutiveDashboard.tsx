@@ -978,9 +978,6 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
       {/* Quick actions */}
       <Panel title={t("exec.quick.title")}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {(canManageMembers || isBQT || isPlatformAdmin) && (
-            <QuickAction to="/members" icon={Plus} label={t("exec.quick.addMember")} />
-          )}
           {(canManageEvents || isBQT || isPlatformAdmin) && (
             <QuickAction to="/events" icon={CalendarPlus} label={t("exec.quick.newEvent")} />
           )}

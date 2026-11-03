@@ -1,5 +1,24 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.14): Chuẩn Hóa Toàn Diện 5 Hạng Mục Web CRM & Đào Tạo CLB CEO 1983 ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-018], [NODE-CRM-020])**:
+  1. *Web CRM - Bỏ Chức Năng Thêm Mới Hội Viên Tại Màn Tổng Quát Dashboard (`ExecutiveDashboard.tsx`)*:
+     - Gỡ bỏ hoàn toàn nút thao tác nhanh `Thêm mới hội viên` (`QuickAction to="/members"`) tại màn hình Dashboard tổng quan điều hành (`/`).
+     - Quy chuẩn luồng: Hội viên mới bắt buộc phải trải qua quy trình thẩm định, xét duyệt và cấp mã số chính thức tại phân hệ Danh bạ Hội viên (`/members`).
+  2. *Web CRM - Tạo Component `CustomTable` Chung & Chuẩn Hóa Sắp Xếp 3 Trạng Thái Toàn Bộ Chức Năng (`CustomTable.tsx`, `use-table-controls.ts`, `accounts.tsx`, `events-overview.tsx`, `trainings.tsx`)*:
+     - Xây dựng component `CustomTable<T>` dùng chung tại `src/components/common/CustomTable.tsx` mang trọn vẹn tiêu chuẩn Figma của phân hệ Quản lý tài khoản: 4 thẻ Metric Gradient (`CrmMetricCard`), thanh công cụ chuẩn hóa (`CrmToolbar`) có tìm kiếm & nút action, bảng dữ liệu co giãn cột Excel (`ResizableTh`), văn bản dài co rút gọn kèm Tooltip Ant Design nền tối, và thanh phân trang đồng nhất.
+     - **Chuẩn Hóa Sắp Xếp 3 Trạng Thái**: Nâng cấp `SortDir = "asc" | "desc" | null;` và hook `useCustomTableSort<T>` xoay vòng 3 trạng thái: `asc` (Tăng dần - icon `ChevronUp`) -> `desc` (Giảm dần - icon `ChevronDown`) -> `null` (Bỏ sắp xếp, hoàn trả thứ tự mặc định của CSDL - icon `ChevronsUpDown`).
+  3. *Web CRM - Bắn Tin Zalo OA Call API Thực Tế CSDL Các Chức Năng (`ZaloOaConfigSection.tsx`)*:
+     - Triệt tiêu việc nhập tay / dữ liệu giả khi gửi tin nhắn Zalo OA.
+     - Tích hợp Dropdown selectors gọi API thực tế của từng phân hệ: Sự kiện (`/events`), Cuộc họp (`/business-connect/meetings`), Đào tạo (`/trainings`), Cơ hội B2B (`/opportunities`).
+     - Tự động điền dữ liệu thực từ CSDL vào mẫu tin và sinh URL mã QR Check-in điện tử chính xác (`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=...`).
+  4. *Web CRM - Cân Đối Hoàn Hảo Icon & Nhãn Text Tại Cấu Hình Hệ Thống (`settings.tsx`)*:
+     - Tăng độ rộng cột sidebar điều hướng từ 220px lên 250px, rút gọn các nhãn quá dài ("Cấu hình & Bắn Tin Zalo OA" -> "Cấu hình Zalo OA"), căn chỉnh icon `shrink-0` và text ngang hàng hoàn hảo (`leading-none items-center`).
+  5. *Web CRM & Backend - Refactor Hoàn Toàn Chức Năng Đào Tạo Có Đầy Đủ Khai Báo Như Sự Kiện (Sức Chứa, Hạng Vé, Tuyệt Đối Không Xếp Chỗ) (`trainings.service.ts`, `trainings.tsx`)*:
+     - Backend: Bổ sung tự động `ensureSchema()` và hỗ trợ các cột CSDL mới: `tagline`, `instructor_name`, `instructor_title`, `instructor_company`, `format`, `location`, `address`, `room_id`, `room_url`, `meeting_passcode`, `max_attendees`, `ticket_tiers`, `materials`, `cover_image`, `registration_url`.
+     - Frontend CRM: Tái cấu trúc toàn diện màn Đào tạo bằng `CustomTable`, 4 thẻ Metric Gradient, Toolbar tìm kiếm + Thêm Mới, Modal khai báo đầy đủ như sự kiện chuyên nghiệp (Hình thức Online/Offline/Hybrid, Sức chứa học viên tối đa, Danh sách các hạng vé kèm số lượng vé, Slide bài giảng, Jitsi Meet).
+     - **TUYỆT ĐỐI KHÔNG CÓ PHẦN XẾP CHỖ**: Loại bỏ hoàn toàn sơ đồ rạp/bàn tiệc, đảm bảo phù hợp với mô hình lớp học hội trường mở và đào tạo trực tuyến.
+
+
 - **Bản cập nhật ngày 02/11/2026 (v10.13): Chuẩn Hóa Nhóm Quản Lý Công Việc CRM Thành Các Chức Năng Con Nghiệp Vụ Cụ Thể ([NODE-CRM-003], [NODE-CRM-010])**:
   1. *Web CRM - Xóa Menu Tree Các Dạng Hiển Thị Khỏi Sidebar CRM (`Sidebar.tsx`)*:
      - Gỡ bỏ hoàn toàn menu con các "dạng hiển thị" (`Dạng bảng`, `Cây công việc phân ban`, `Bảng Kanban`, `Lịch hạn`, `Gantt timeline`) trên Sidebar CRM.

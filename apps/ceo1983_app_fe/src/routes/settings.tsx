@@ -28,15 +28,15 @@ import { useLang, useT, type TKey } from "@/lib/i18n";
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
 const TABS = [
-  { key: "general", label: "set.tab.general", icon: Building2 },
-  { key: "landing", label: "set.tab.landing", icon: Layout },
-  { key: "domain", label: "set.tab.domain", icon: Globe },
-  { key: "templates", label: "Mẫu Email CRM & Phản Hồi", icon: Mail },
-  { key: "zalo_oa", label: "Cấu hình & Bắn Tin Zalo OA", icon: MessageSquareText },
-  { key: "vnpay", label: "Cổng Thanh Toán VNPay", icon: CreditCard },
-  { key: "notifications", label: "set.tab.notifications", icon: Bell },
-  { key: "security", label: "set.tab.security", icon: Shield },
-  { key: "integrations", label: "set.tab.integrations", icon: Globe },
+  { key: "general", labelKey: "set.tab.general", defaultLabel: "Thông tin chung", icon: Building2 },
+  { key: "landing", labelKey: "set.tab.landing", defaultLabel: "Trang giới thiệu", icon: Layout },
+  { key: "domain", labelKey: "set.tab.domain", defaultLabel: "Tên miền hệ thống", icon: Globe },
+  { key: "templates", defaultLabel: "Mẫu thông báo", icon: Mail },
+  { key: "zalo_oa", defaultLabel: "Cấu hình Zalo OA", icon: MessageSquareText },
+  { key: "vnpay", defaultLabel: "Thanh toán VNPay", icon: CreditCard },
+  { key: "notifications", labelKey: "set.tab.notifications", defaultLabel: "Thông báo hệ thống", icon: Bell },
+  { key: "security", labelKey: "set.tab.security", defaultLabel: "Bảo mật & Quyền", icon: Shield },
+  { key: "integrations", labelKey: "set.tab.integrations", defaultLabel: "Tích hợp mở rộng", icon: Globe },
 ] as const;
 
 function SettingsPage() {
@@ -117,23 +117,26 @@ function SettingsPage() {
     <AppShell>
       <PageHeader title={t("set.title")} subtitle={t("set.subtitle")} />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_1fr]">
-        <Card className="p-2">
-          <nav className="space-y-0.5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[250px_1fr]">
+        <Card className="p-2.5">
+          <nav className="space-y-1">
             {TABS.map((tt) => {
               const Icon = tt.icon;
               const active = tab === tt.key;
+              const label = "labelKey" in tt && tt.labelKey ? t(tt.labelKey as TKey) : tt.defaultLabel;
               return (
                 <button
                   key={tt.key}
+                  type="button"
                   onClick={() => setTab(tt.key)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${active
-                      ? "bg-secondary font-semibold text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition cursor-pointer ${
+                    active
+                      ? "bg-[#003B95] text-white shadow-xs font-bold"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground"
+                  }`}
                 >
-                  <Icon className="h-4 w-4" />
-                  {t(tt.label as TKey)}
+                  <Icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
+                  <span className="truncate text-left leading-none">{label}</span>
                 </button>
               );
             })}

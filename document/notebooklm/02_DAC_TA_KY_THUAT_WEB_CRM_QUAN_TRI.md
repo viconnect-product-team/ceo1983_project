@@ -21,13 +21,18 @@
 
 ### `[NODE-CRM-001]` Tổng Quan & Dashboard CLB
 - **Route Frontend**: `/` hoặc `/dashboard` (`src/routes/index.tsx`).
-- **Thành phần**: `OverviewCards.tsx`, `EventCalendarView.tsx`, `RecentActivitiesWidget.tsx`.
+- **Thành phần**: `OverviewCards.tsx`, `ExecutiveDashboard.tsx`, `EventCalendarView.tsx`, `RecentActivitiesWidget.tsx`.
 - **API Backend**: `GET /admin/dashboard-stats`, `GET /admin/recent-activities` (`dashboard.service.ts`).
 - **Bảng CSDL**: `members`, `events`, `meetings`, `income_records`, `expense_records`.
 - **Luồng xử lý**:
   - Hiển thị 4 thẻ KPI chỉ số: Tổng hội viên chính thức, Số sự kiện/cuộc họp trong tháng, Dòng tiền thặng dư quỹ, Tỷ lệ hội viên đóng phí niên liễm.
   - Lịch sự kiện & cuộc họp toàn CLB trực quan theo tháng.
   - Cảnh báo nhanh các trường hợp sắp đến hạn đóng phí hoặc nợ hội phí.
+  - **Quy chuẩn Thao Tác Nhanh (Strict Rules)**: **TUYỆT ĐỐI BỎ chức năng "Thêm mới hội viên"** tại màn hình Tổng quan Dashboard. Hội viên mới bắt buộc phải trải qua quy trình thẩm định, xét duyệt và cấp mã số chính thức tại phân hệ Danh Bạ Hội Viên (`/members`).
+  - **Chuẩn Hóa Kiến Trúc Bảng Dữ Liệu `CustomTable` & 3 Dạng Sắp Xếp**:
+    - Chuẩn hóa layout Dashboard tại các chức năng theo chuẩn Quản Lý Tài Khoản (`/accounts`): 4 thẻ Metric Gradient Figma (`CrmMetricCard`), thanh công cụ chuẩn hóa (`CrmToolbar`), và bảng `CustomTable<T>`.
+    - **Cơ chế Sắp Xếp 3 Trạng Thái Bắt Buộc**: Mọi cột hỗ trợ sort đều có 3 trạng thái xoay vòng: `asc` (Tăng dần - icon `ChevronUp`) -> `desc` (Giảm dần - icon `ChevronDown`) -> `null` (Bỏ sắp xếp, quay về mặc định - icon `ChevronsUpDown`).
+    - Hỗ trợ co dãn độ rộng cột kiểu Excel (`ResizableTh`), văn bản dài tự co rút gọn kèm Tooltip Ant Design nền tối, và thanh phân trang đồng nhất.
 
 ### `[NODE-CRM-002]` Trung Tâm Thống Kê Chuyên Sâu 5 Danh Mục, Biểu Đồ Cột Đường Đỉnh Top Avatar & Bục Top 3 Một Hàng
 - **Route Frontend**: `/analytics` (`src/routes/analytics.tsx`).
@@ -188,18 +193,37 @@
   - Khử prefix `RNW-`, truy vấn linh hoạt `WHERE id::text = ${cleanId} OR code = ${cleanId}` tránh lỗi ép kiểu UUID PostgreSQL.
   - LEFT JOIN tài khoản `vione_users` mới nhất và hiển thị thanh tiến độ gia hạn toàn màn hình.
 
-### `[NODE-CRM-018]` Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid) & Bắn Xuống Feed App
+### `[NODE-CRM-018]` Quản Trị Đào Tạo Doanh Nhân Chuẩn Hóa Khai Báo (Có Số Lượng & Hạng Vé, Tuyệt Đối Không Xếp Chỗ) & Bắn Xuống Feed App
 - **Route Frontend**: `/trainings` (`src/routes/trainings.tsx`).
 - **Menu Sidebar**: `Sidebar.tsx` (Menu "Đào tạo & Video Call", Icon `GraduationCap`).
-- **Thành phần**: `TrainingManager.tsx`, Open Registration Form Modal, MeetingRoomModal.
+- **Thành phần**: `TrainingFormModal.tsx`, `MeetingRoomModal.tsx`, `CustomTable.tsx`, `CrmMetricGrid`, `CrmToolbar`.
 - **API Backend**: `GET /trainings`, `POST /trainings`, `PUT /trainings/:id`, `DELETE /trainings/:id`, `POST /feed` (`trainings.service.ts`, `feed.service.ts`).
-- **Bảng CSDL**: `trainings`, `training_attendees`, `feed_posts`.
+- **Bảng CSDL**: `trainings` (mở rộng đầy đủ các trường: `tagline`, `instructor_name`, `instructor_title`, `instructor_company`, `format`, `location`, `address`, `room_id`, `room_url`, `meeting_passcode`, `max_attendees`, `ticket_tiers`, `materials`, `cover_image`, `registration_url`), `training_attendees`, `feed_posts`.
 - **Luồng xử lý**:
-  - Quản lý danh sách các khóa học đào tạo điều hành, nâng cao năng lực doanh nhân.
-  - **Đa thức đào tạo linh hoạt**: Hỗ trợ thiết lập Trực tuyến (Online: link, room ID, password), Trực tiếp (Offline: địa điểm, địa chỉ, sức chứa), hoặc Kết hợp (Hybrid).
-  - **Biểu mẫu đăng ký mở & Mã QR động**: Hệ thống sinh đường link mở kèm mã QR động phóng to, chia sẻ thuận tiện cho ứng viên/khách ngoài.
-  - **Nút "Bắn Xuống App CEO 1983"**: Phát hành trực tiếp khóa đào tạo lên Bảng tin Mạng lưới Mobile kèm ảnh Poster và Mã QR Điểm Danh.
-  - Tích hợp phòng họp trực tuyến Jitsi Meet trực tiếp trên giao diện quản trị với đầy đủ tính năng bật/tắt camera, micro, chia sẻ màn hình và điểm danh đại biểu.
+  - **Refactor Toàn Diện Khai Báo Khóa Đào Tạo Như Sự Kiện Chuyên Nghiệp**:
+    + Tiêu đề khóa học, Tagline/Thông điệp đào tạo, Thông tin Giảng viên / Chuyên gia (Họ tên, Học hàm/Học vị, Đơn vị/Tổ chức).
+    + Thời gian bắt đầu - Thời gian kết thúc.
+    + Hình thức tổ chức linh hoạt: Trực tiếp (`offline`), Trực tuyến (`online` qua Jitsi Meet với Room ID và Mật mã phòng), hoặc Kết hợp (`hybrid`).
+    + **Khai Báo Số Lượng Học Viên & Sức Chứa (`max_attendees`)**: Thiết lập giới hạn học viên tham gia tối đa để kiểm soát chất lượng đào tạo và sức chứa phòng học.
+    + **Khai Báo Các Hạng Vé Học Viên Kèm Số Lượng Vé Tối Đa (`ticket_tiers`)**: Cho phép khai báo nhiều hạng vé (VD: Hội viên chính thức [Miễn phí / 50 vé], Khách mời kết nối [Phí 500.000đ / 20 vé], VIP Mentor [10 vé]).
+    + Tài liệu / Slide giáo trình đính kèm (`materials`) và Link ảnh bìa khóa học (`cover_image`).
+    + **QUY TẮC BẮT BUỘC VỀ SƠ ĐỒ GHẾ**: **TUYỆT ĐỐI KHÔNG CÓ PHẦN XẾP CHỖ** (Không dùng sơ đồ ghế Cinema/Banquet như sự kiện lớn, vì đào tạo là phòng học mở / hội trường linh hoạt hoặc online).
+  - **Biểu mẫu đăng ký mở & Mã QR động**: Tự động sinh link đăng ký công khai (`/guest-event-register/trn-...`) kèm QR Code sắc nét cho học viên quét ghi danh.
+  - **Bắn Tin Đào Tạo Xuống Feed App Mobile (Broadcast to Feed)**: Bấm nút "Bắn Mạng Lưới" (Icon `Send`), hệ thống đẩy bài viết chuẩn hóa lên Bảng tin Mạng lưới App Mobile (`POST /feed`), hiển thị ảnh khóa học, thông tin giảng viên, link Jitsi / địa điểm và thẻ QR Code Check-in điểm danh tự động.
+  - Tích hợp phòng đào tạo ảo Jitsi Meet trực tiếp trên giao diện quản trị với đầy đủ tính năng tương tác.
+
+### `[NODE-CRM-020]` Cấu Hình Hệ Thống & Bắn Tin Zalo OA Call API CSDL Thực Tế
+- **Route Frontend**: `/settings` (`src/routes/settings.tsx`).
+- **Menu Sidebar**: `Sidebar.tsx` (Menu "Cấu hình hệ thống", Icon `Settings`).
+- **Thành phần**: `ZaloOaConfigSection.tsx`, `SystemSettingsGeneral.tsx`, `SettingsThemeStudio.tsx`.
+- **API Backend**: `GET /events`, `GET /business-connect/meetings`, `GET /trainings`, `GET /opportunities`, `POST /admin/zalo-oa/send-template`, `POST /admin/zalo-oa/test-broadcast` (`events.service.ts`, `meetings.service.ts`, `trainings.service.ts`, `opportunity.service.ts`, `admin.service.ts`).
+- **Luồng xử lý**:
+  - **Cân Đối Giao Diện Cấu Hình**: Tăng chiều rộng menu sidebar cấu hình lên 250px, rút gọn tiêu đề các tab dài (như "Cấu hình Zalo OA" thay vì tiêu đề dài gây tràn dòng), căn chỉnh icon `shrink-0` và text ngang hàng hoàn hảo với layout flex đồng đều.
+  - **Bắn Tin Zalo OA Liên Kết API Dữ Liệu Thật**:
+    + Tuyệt đối không dùng dữ liệu giả lập (mock data) hoặc bắt người dùng gõ tay thông tin đã có trong hệ thống.
+    + Tích hợp bộ chọn Dropdown nạp dữ liệu động trực tiếp từ CSDL: Sự kiện CLB (`/events`), Cuộc họp Ban (`/business-connect/meetings`), Khóa đào tạo (`/trainings`), Cơ hội giao thương B2B (`/opportunities`).
+    + Khi người dùng chọn một mục trong dropdown, hệ thống tự động điền các thông tin: Tiêu đề, Thời gian, Địa điểm/Link họp, Giảng viên/Chủ trì, và tự động tạo mã vé Check-in + sinh URL mã QR Check-in điện tử chính xác (`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=...`).
+    + Hỗ trợ gửi tin nhắn qua Zalo OA với mã QR hiển thị dưới dạng đường link check-in điện tử chuẩn mực cho từng hội viên.
 
 ### `[NODE-CRM-019]` Phân Hệ Nhật Ký Lịch Sử Thao Tác Toàn Hệ Thống (Audit Log)
 - **Route Frontend**: `/activity-logs` (`src/routes/activity-logs.tsx`).

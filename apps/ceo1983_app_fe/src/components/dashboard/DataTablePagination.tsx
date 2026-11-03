@@ -39,7 +39,7 @@ export function SortHeader({
 }: SortHeaderProps) {
   const thRef = useRef<HTMLTableCellElement>(null);
   const [isResizing, setIsResizing] = useState(false);
-  const active = sortKey === columnKey;
+  const active = sortKey === columnKey && sortDir !== null;
   const Icon = !active ? ChevronsUpDown : sortDir === "asc" ? ChevronUp : ChevronDown;
 
   const handleResizeStart = useCallback(
