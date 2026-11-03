@@ -596,22 +596,20 @@ function RegPage() {
     <AppShell>
       <PageHeader
         title="Quản Lý Đăng Ký & Xếp Chỗ Sự Kiện"
-        subtitle="Quản lý hội viên tham dự, xếp chỗ VIP/bàn tiệc, theo dõi thanh toán 3 ngày & thu tiền mặt tại chỗ"
+        subtitle="Quản lý danh sách tham dự, sơ đồ chỗ ngồi và theo dõi thanh toán sự kiện"
         actions={
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPosterStudioOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-xs transition cursor-pointer"
             >
-              <Sparkles className="h-4 w-4" />
-              Thiết Kế Poster Thư Mời
+              <span>Tạo Poster Thư Mời</span>
             </button>
             <button
               onClick={() => setEventReminderModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-[#003B95] hover:from-blue-800 hover:to-[#002f78] px-4 py-2 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
             >
-              <Bell className="h-4 w-4" />
-              Bắn Tin Nhắc Sự Kiện (Kèm Poster)
+              <span>Gửi Thông Báo Sự Kiện</span>
             </button>
             <button
               onClick={() => {
@@ -619,83 +617,81 @@ function RegPage() {
                 setSeatInput("");
                 setSeatingModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-muted px-4 py-2 text-sm font-semibold text-foreground shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer"
             >
-              <Layers className="h-4 w-4 text-primary" />
-              Sơ Đồ Xếp Chỗ
+              <span>Sơ Đồ Chỗ Ngồi</span>
             </button>
             <button
               onClick={() => {
                 setAttendeeMode("qr");
                 setAddAttendeeModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer"
             >
-              <QrCode className="h-4 w-4" />
-              Quét QR / Thêm người tham gia
+              <span>Thêm Người Tham Dự</span>
             </button>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted">
-              <Download className="h-4 w-4 text-muted-foreground" />
-              {t("common.exportExcel")}
+            <button className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer">
+              <Download className="h-4 w-4 text-slate-500" />
+              <span>Xuất Báo Cáo</span>
             </button>
           </div>
         }
       />
 
-      {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+      {/* ── 4 THẺ CHỈ SỐ CHUẨN MÀU: XANH NAVY - ĐEN - VÀNG - XANH LÁ ── */}
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Tổng số người đăng ký (Sky gradient - Blue) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="registrations" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG SỐ ĐĂNG KÝ</div>
+        {/* Card 1: Tổng số người đăng ký (Xanh Navy) */}
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[#003B95] dark:text-blue-400 text-xs font-bold uppercase tracking-wider">TỔNG ĐĂNG KÝ</span>
+            <span className="size-2 rounded-full bg-[#003B95]" />
           </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
             {REGISTRATIONS.length}
           </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          <div className="text-slate-500 dark:text-slate-400 text-xs">
             Hội viên &amp; khách mời tham dự
           </div>
         </div>
 
-        {/* Card 2: Đã xếp chỗ ngồi (Violet gradient - Indigo) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="seated" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">ĐÃ XẾP CHỖ NGỒI</div>
+        {/* Card 2: Đã xếp chỗ ngồi (Đen / Slate) */}
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider">ĐÃ XẾP CHỖ NGỒI</span>
+            <span className="size-2 rounded-full bg-slate-500" />
           </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
             {seatedCount}
           </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          <div className="text-slate-500 dark:text-slate-400 text-xs">
             Đã gắn số bàn &amp; vị trí ghế
           </div>
         </div>
 
-        {/* Card 3: Chờ thanh toán (Orange gradient - Orange) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="pending" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHỜ THANH TOÁN</div>
+        {/* Card 3: Chờ thanh toán (Vàng hổ phách) */}
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">CHỜ THANH TOÁN</span>
+            <span className="size-2 rounded-full bg-amber-500" />
           </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
             {pendingCount}
           </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          <div className="text-slate-500 dark:text-slate-400 text-xs">
             Chờ xác nhận phí tham dự
           </div>
         </div>
 
-        {/* Card 4: Đã thanh toán phí (Green gradient - Emerald) */}
-        <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-          <div className="h-8 flex items-center gap-2">
-            <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="paid" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-            <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ THANH TOÁN PHÍ</div>
+        {/* Card 4: Đã thanh toán phí (Xanh lá) */}
+        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">ĐÃ THANH TOÁN PHÍ</span>
+            <span className="size-2 rounded-full bg-emerald-500" />
           </div>
-          <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+          <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
             {paidCount}
           </div>
-          <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+          <div className="text-slate-500 dark:text-slate-400 text-xs">
             Vé hợp lệ và sẵn sàng check-in
           </div>
         </div>

@@ -71,34 +71,34 @@ type Tone = "navy" | "gold" | "green" | "amber" | "rose" | "blue";
 
 const gradientCardStyles: Record<Tone, { bg: string; textTitle: string; iconBg: string }> = {
   navy: {
-    bg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900",
-    textTitle: "text-blue-600 dark:text-blue-400",
-    iconBg: "bg-blue-600/10 text-blue-600",
+    bg: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+    textTitle: "text-[#003B95] dark:text-blue-400",
+    iconBg: "bg-blue-600/10 text-[#003B95]",
   },
   blue: {
-    bg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900",
-    textTitle: "text-blue-600 dark:text-blue-400",
-    iconBg: "bg-blue-600/10 text-blue-600",
+    bg: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+    textTitle: "text-[#003B95] dark:text-blue-400",
+    iconBg: "bg-blue-600/10 text-[#003B95]",
   },
   gold: {
-    bg: "bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900",
-    textTitle: "text-indigo-500 dark:text-indigo-400",
-    iconBg: "bg-indigo-500/10 text-indigo-500",
+    bg: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+    textTitle: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-500/10 text-amber-600",
   },
   green: {
-    bg: "bg-gradient-to-b from-green-100 to-white dark:from-emerald-950/40 dark:to-slate-900",
-    textTitle: "text-emerald-500 dark:text-emerald-400",
-    iconBg: "bg-emerald-500/10 text-emerald-500",
+    bg: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+    textTitle: "text-emerald-600 dark:text-emerald-400",
+    iconBg: "bg-emerald-500/10 text-emerald-600",
   },
   amber: {
-    bg: "bg-gradient-to-b from-orange-100 to-white dark:from-amber-950/40 dark:to-slate-900",
-    textTitle: "text-orange-500 dark:text-amber-400",
-    iconBg: "bg-orange-500/10 text-orange-500",
+    bg: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+    textTitle: "text-amber-600 dark:text-amber-400",
+    iconBg: "bg-amber-500/10 text-amber-600",
   },
   rose: {
-    bg: "bg-gradient-to-b from-rose-100 to-white dark:from-rose-950/40 dark:to-slate-900",
-    textTitle: "text-rose-500 dark:text-rose-400",
-    iconBg: "bg-rose-500/10 text-rose-500",
+    bg: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
+    textTitle: "text-red-600 dark:text-red-400",
+    iconBg: "bg-red-500/10 text-red-600",
   },
 };
 

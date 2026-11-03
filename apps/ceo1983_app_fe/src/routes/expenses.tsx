@@ -650,43 +650,43 @@ function ExpensesPage() {
     <AppShell>
       <PageHeader
         title="Quản Lý Chi & Tạm Ứng"
-        subtitle="Theo dõi toàn diện các khoản chi tiêu, phân loại tiền mặt / chuyển khoản, quản lý tạm ứng và hoàn ứng tiền thừa minh bạch chuẩn xác"
+        subtitle="Theo dõi chi tiêu, quản lý tạm ứng và hoàn ứng ngân quỹ minh bạch"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleExport}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
-              <Download className="h-4 w-4 text-muted-foreground" />
-              {t("common.exportExcel")}
+              <Download className="h-4 w-4" />
+              <span>Xuất Excel</span>
             </button>
             <button
               onClick={() => setInvoiceExportOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 px-3.5 py-2 text-sm font-medium text-amber-800 dark:text-amber-300 shadow-[var(--shadow-card)] hover:bg-amber-100/60 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-xs cursor-pointer transition"
             >
-              <Receipt className="h-4 w-4 text-amber-600" />
+              <Receipt className="h-4 w-4" />
               <span>Xuất Hóa Đơn & Bảng Kê</span>
             </button>
             <button
               onClick={() => setImportModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-xs cursor-pointer transition"
             >
-              <Upload className="h-4 w-4 text-rose-600" />
-              Import Excel
+              <Upload className="h-4 w-4" />
+              <span>Nhập Excel</span>
             </button>
             <button
               onClick={() => openCreate(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 px-3.5 py-2 text-sm font-black text-slate-950 shadow-sm shadow-amber-500/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
               <RotateCcw className="h-4 w-4" />
-              Lập Phiếu Tạm Ứng
+              <span>Lập Phiếu Tạm Ứng</span>
             </button>
             <button
               onClick={() => openCreate(false)}
-              className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
               <Plus className="h-4 w-4" />
-              Lập Phiếu Chi
+              <span>Lập Phiếu Chi</span>
             </button>
           </div>
         }
@@ -732,61 +732,61 @@ function ExpensesPage() {
       {/* ── CHẾ ĐỘ 1: DASHBOARD TỔNG HỢP (4 THẺ KPI + BẢNG EXCEL CO DÃN CỘT) ── */}
       {viewMode === "dashboard" && (
         <>
-          {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+          {/* ── 4 METRIC CARDS CHUẨN MÀU: ĐỎ - XANH LÁ - XANH NAVY - VÀNG ── */}
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Tổng Chi Thực Tế (Sky gradient - Blue) */}
-            <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG CHI THỰC TẾ</div>
+            {/* Card 1: Tổng Chi Thực Tế (Đỏ) */}
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-red-600 dark:text-red-400 text-xs font-bold uppercase tracking-wider">TỔNG CHI THỰC TẾ</span>
+                <span className="size-2 rounded-full bg-red-600" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(totalActualExpense)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
                 Chi trực tiếp + Tạm ứng - Hoàn ứng
               </div>
             </div>
 
-            {/* Card 2: Quỹ Còn Lại Sau Chi (Emerald gradient) */}
-            <div className="h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-              <div className="h-8 flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">QUỸ CÒN LẠI (DÒNG TIỀN)</div>
+            {/* Card 2: Quỹ Còn Lại Sau Chi (Xanh lá) */}
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">QUỸ CÒN LẠI</span>
+                <span className="size-2 rounded-full bg-emerald-500" />
               </div>
-              <div className={`text-2xl font-bold font-['Inter'] leading-7 ${netFundBalance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-rose-600 dark:text-rose-400"}`}>
+              <div className={`text-2xl font-black ${netFundBalance >= 0 ? "text-slate-900 dark:text-slate-100" : "text-red-600 dark:text-red-400"}`}>
                 {fmt.money(netFundBalance)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-                Tổng quỹ đã trừ thực chi (-{fmt.money(totalActualExpense)})
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
+                Tổng quỹ đã trừ thực chi
               </div>
             </div>
 
-            {/* Card 3: Chi Chuyển Khoản (Orange gradient - Orange) */}
-            <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHI CHUYỂN KHOẢN</div>
+            {/* Card 3: Chi Chuyển Khoản (Xanh Navy) */}
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[#003B95] dark:text-blue-400 text-xs font-bold uppercase tracking-wider">CHI CHUYỂN KHOẢN</span>
+                <span className="size-2 rounded-full bg-[#003B95]" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(expenseBank)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-                Ủy nhiệm chi &amp; chuyển khoản ngân hàng
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
+                Ủy nhiệm chi ngân hàng
               </div>
             </div>
 
-            {/* Card 4: Tạm Ứng & Hoàn Ứng (Green gradient - Emerald) */}
-            <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">TẠM ỨNG &amp; HOÀN ỨNG</div>
+            {/* Card 4: Tạm Ứng & Hoàn Ứng (Vàng hổ phách) */}
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">TẠM ỨNG & HOÀN ỨNG</span>
+                <span className="size-2 rounded-full bg-amber-500" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(totalAdvance)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-                Đã hoàn ứng: <strong className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">+{fmt.money(totalRefunded)}</strong>
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
+                Đã hoàn ứng: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">+{fmt.money(totalRefunded)}</strong>
               </div>
             </div>
           </div>

@@ -667,9 +667,9 @@ export function EventPosterStudioModal({
               type="button"
               onClick={handleSaveToEvent}
               disabled={isSaving}
-              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-bold text-white shadow-md transition bg-gradient-to-r from-blue-700 to-[#003B95] hover:from-blue-800 hover:to-[#002f78] cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-xs transition bg-[#003B95] hover:bg-[#002B70] cursor-pointer"
             >
-              <Save className="h-4 w-4 text-amber-400" />
+              <Save className="h-4 w-4" />
               <span>{isSaving ? "Đang lưu..." : "Lưu Làm Poster Sự Kiện"}</span>
             </button>
 
@@ -680,10 +680,10 @@ export function EventPosterStudioModal({
                   onBroadcastReminder(currentBg);
                   onClose();
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 shadow-xs transition cursor-pointer"
               >
                 <Send className="h-4 w-4" />
-                <span>Bắn Tin Nhắc Với Poster Này</span>
+                <span>Gửi Thông Báo Kèm Poster</span>
               </button>
             )}
           </div>

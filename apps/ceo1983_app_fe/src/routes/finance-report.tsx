@@ -401,41 +401,41 @@ function FinanceReport() {
     <AppShell>
       {/* Header */}
       <PageHeader
-        title="Báo Cáo Tài Chính & Kiểm Toán Toàn Diện"
-        subtitle="Báo cáo thu chi thực tế, phân tích cơ cấu ngân quỹ, tỷ lệ thặng dư và sổ nhật ký kế toán minh bạch"
+        title="Báo Cáo & Kiểm Toán Tài Chính"
+        subtitle="Tổng hợp thu chi thực tế, cơ cấu ngân quỹ và số liệu kế toán minh bạch"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowImportModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#003B95] dark:text-blue-300 shadow-xs hover:bg-blue-100/60 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-xs hover:bg-slate-50 cursor-pointer transition"
             >
               <Upload className="h-4 w-4" />
-              <span>Nhập File Excel</span>
+              <span>Nhập Excel</span>
             </button>
             <button
               type="button"
               onClick={handleExportCsv}
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/40 px-3.5 py-2 text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100/60 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
-              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-              <span>Xuất Excel (.xlsx)</span>
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Xuất Excel</span>
             </button>
             <button
               type="button"
               onClick={() => setInvoiceExportModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 px-3.5 py-2 text-xs sm:text-sm font-semibold text-amber-800 dark:text-amber-300 shadow-xs hover:bg-amber-100/60 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-xs cursor-pointer transition"
             >
-              <Receipt className="h-4 w-4 text-amber-600" />
-              <span>Xuất Hóa Đơn & Bảng Kê (Tổng / Danh Mục)</span>
+              <Receipt className="h-4 w-4" />
+              <span>Xuất Hóa Đơn & Bảng Kê</span>
             </button>
             <button
               type="button"
               onClick={handleExportPdf}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs sm:text-sm font-bold text-primary-foreground shadow-sm hover:opacity-90 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
               <FileText className="h-4 w-4" />
-              <span>In / Xuất Báo Cáo PDF</span>
+              <span>In / Lưu PDF</span>
             </button>
           </div>
         }
