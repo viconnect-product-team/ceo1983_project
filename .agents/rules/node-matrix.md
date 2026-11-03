@@ -78,7 +78,7 @@ Dành cho: DevOps, Quản trị hệ thống, Backend Core.
 | **`[NODE-CORE-003]`** | **Realtime Socket.IO Gateway** | `apps/ceo1983_app_be/src/events/` | Socket.IO, WebSocket | Thông báo realtime: Người đăng ký mới, phiên biểu quyết mới, tin nhắn kết nối B2B mới. |
 | **`[NODE-CORE-004]`** | **Triển Khai Độc Lập Mobile App CEO 1983** | `deploy/ceo1983/` | Docker Compose, Port 5002 | Build độc lập frontend cho Mobile/Hội viên (`.env.association`, `Dockerfile.frontend`, `fast-deploy.ps1`). |
 | **`[NODE-CORE-005]`** | **Triển Khai Độc Lập Web CRM Quản Trị** | `deploy/crm/` | Docker Compose, Port 5005 | Build độc lập frontend cho Web CRM Quản trị (`.env.crm`, `Dockerfile.frontend`, `fast-deploy.ps1`). |
-| **`[NODE-CORE-006]`** | **Nginx VPS Reverse Proxy & SSL Let's Encrypt** | `deploy/ssl/`, Host Systemd Nginx | Port 80, 443 | Port 80 và 443 do Nginx VPS quản lý. Container phụ trợ TUYỆT ĐỐI KHÔNG bind 80:80 hay 443:443. |
+| **`[NODE-CORE-006]`** | **Nginx VPS Reverse Proxy & SSL Let's Encrypt** | `deploy/ssl/`, Host Systemd Nginx | Host 80/443; CEO proxy 5443/5444 | Port 80 và 443 do Nginx VPS quản lý. Container phụ trợ TUYỆT ĐỐI KHÔNG bind 80:80 hay 443:443. Cập nhật 03/11/2026: CEO không lấy 5445/5446 hoặc xóa proxy/network ViOne; setup-ssl.sh chỉ validate/recreate service proxy CEO. Quy hoạch trước có 5445 được giữ trong lịch sử tài liệu deployment. |
 
 ---
 

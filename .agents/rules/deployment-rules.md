@@ -2,6 +2,8 @@
 ## HỆ THỐNG CLB DOANH NHÂN CEO 1983 (HANOIBA)
 *Áp dụng độc quyền cho: Triển khai Docker, Nginx VPS, CI/CD và Cấu hình máy chủ*
 
+> **Cập nhật 03/11/2026 — NODE-CORE-006:** CEO proxy chỉ publish 5443/5444; 5445/5446 dành riêng ViOne. Quy hoạch cũ có nhắc 5445 bên dưới được giữ làm lịch sử và không còn áp dụng cho CEO. Script deploy/ssl/setup-ssl.sh không được xóa/stop/recreate proxy ViOne, quản lý vione-network hoặc firewall cổng ViOne. Validate Compose trước khi chỉ recreate service ssl-reverse-proxy bằng --no-deps; không down --remove-orphans hoặc docker rm liên dự án. Giữ Nginx hệ điều hành 80/443 và các upstream production hiện hành.
+
 ---
 
 ## 1. PHÂN LẬP MÔI TRƯỜNG TRIỂN KHAI ĐỘC LẬP (SEPARATE DEPLOYMENTS)
