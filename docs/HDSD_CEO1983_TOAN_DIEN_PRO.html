@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HƯỚNG DẪN SỬ DỤNG TOÀN DIỆN — CLB DOANH NHÂN CEO 1983 (HANOIBA)</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm 15mm 20mm 15mm;
+      @top-left {
+        content: "CLB DOANH NHÂN CEO 1983 — HANOIBA";
+        font-family: 'Times New Roman', serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+      @top-right {
+        content: "TÀI LIỆU HƯỚNG DẪN SỬ DỤNG CHUYỂN GIAO";
+        font-family: 'Times New Roman', serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+      @bottom-left {
+        content: "Bản quyền © 2026 CLB Doanh Nhân CEO 1983";
+        font-family: 'Times New Roman', serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+      @bottom-right {
+        content: "Trang " counter(page) " / " counter(pages);
+        font-family: 'Times New Roman', serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+
+    /* TRANG BÌA CHUẨN A4 297MM */
+    .cover-page {
+      width: 100%;
+      height: 297mm;
+      max-height: 297mm;
+      padding: 40mm 20mm 30mm 20mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
+      page-break-after: always;
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+      border-bottom: 3px solid #003b95;
+    }
+
+    .cover-top h3 {
+      font-size: 14pt;
+      color: #d97706;
+      margin: 0 0 5px 0;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .cover-top h4 {
+      font-size: 12pt;
+      color: #003b95;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .cover-center {
+      margin: auto 0;
+    }
+
+    .cover-center h1 {
+      font-size: 24pt;
+      color: #003b95;
+      margin: 0 0 15px 0;
+      line-height: 1.3;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .cover-center h2 {
+      font-size: 14pt;
+      color: #475569;
+      font-weight: normal;
+      font-style: italic;
+      margin: 0;
+    }
+
+    .cover-bottom {
+      font-size: 11pt;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .cover-bottom strong {
+      color: #003b95;
+    }
+
+    /* NỘI DUNG TÀI LIỆU */
+    .document-body {
+      padding: 0;
+    }
+
+    h1.chapter-title {
+      font-size: 16pt;
+      color: #003b95;
+      border-bottom: 2px solid #003b95;
+      padding-bottom: 5px;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      page-break-before: always;
+      text-transform: uppercase;
+    }
+
+    h2.section-title {
+      font-size: 13pt;
+      color: #0084ff;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    h3.sub-title {
+      font-size: 12pt;
+      color: #d97706;
+      margin-top: 15px;
+      margin-bottom: 8px;
+    }
+
+    p {
+      margin: 0 0 10px 0;
+      text-align: justify;
+    }
+
+    /* KHUNG HỘP GHI CHÚ */
+    .callout {
+      padding: 12px 16px;
+      margin: 15px 0;
+      border-left: 4px solid #0084ff;
+      background-color: #f0f7ff;
+      border-radius: 0 6px 6px 0;
+      font-size: 11pt;
+    }
+
+    .callout.warning {
+      border-left-color: #d97706;
+      background-color: #fffbeb;
+    }
+
+    .callout.danger {
+      border-left-color: #dc2626;
+      background-color: #fef2f2;
+    }
+
+    .callout-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    /* QUY CHUẨN ẢNH PLAYBOOK 18 */
+    /* 1. Màn hình Desktop Web CRM: Chiếm full trang hoặc 90% */
+    .desktop-screenshot-container {
+      width: 100%;
+      margin: 15px 0;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+
+    .desktop-screenshot {
+      width: 100%;
+      max-width: 95%;
+      height: auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: inline-block;
+    }
+
+    /* 2. Màn hình Mobile App: BẮT BUỘC đặt trong khung điện thoại tỷ lệ dọc (275px-320px) */
+    .mobile-mockup-wrapper {
+      width: 100%;
+      margin: 15px 0;
+      display: flex;
+      justify-content: center;
+      page-break-inside: avoid;
+    }
+
+    .phone-mockup {
+      width: 290px;
+      height: auto;
+      background: #0f172a;
+      border: 8px solid #1e293b;
+      border-radius: 36px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      padding: 10px 6px;
+      display: inline-block;
+      text-align: center;
+      position: relative;
+    }
+
+    .phone-mockup::before {
+      content: "";
+      display: block;
+      width: 70px;
+      height: 4px;
+      background: #334155;
+      border-radius: 2px;
+      margin: 0 auto 8px auto;
+    }
+
+    .phone-mockup img {
+      width: 100%;
+      height: auto;
+      border-radius: 24px;
+      display: block;
+    }
+
+    .image-caption {
+      font-size: 10pt;
+      font-style: italic;
+      color: #64748b;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* BẢNG BIỂU */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 10.5pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #003b95;
+      color: #ffffff;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TRANG BÌA CHUẨN A4 297MM -->
+  <div class="cover-page">
+    <div class="cover-top">
+      <h3>CÂU LẠC BỘ DOANH NHÂN CEO 1983</h3>
+      <h4>TRỰC THUỘC HỘI DOANH NHÂN TRẺ HÀ NỘI (HANOIBA)</h4>
+    </div>
+
+    <div class="cover-center">
+      <h1>HƯỚNG DẪN SỬ DỤNG & ĐÀO TẠO CHUYỂN GIAO VẬN HÀNH</h1>
+      <h2>Hệ Sinh Thái Số Hóa Quản Trị Hiệp Hội & Ứng Dụng Doanh Nhân CEO 1983</h2>
+      <p style="text-align:center; color:#64748b; margin-top:20px; font-size:11pt;">
+        Chuẩn Mực Vận Hành 6 Ban Chuyên Môn & 500+ Hội Viên Chính Danh
+      </p>
+    </div>
+
+    <div class="cover-bottom">
+      <p>
+        <strong>Mã Tài Liệu:</strong> HDSD-CEO1983-MASTER-V5.0<br>
+        <strong>Phiên Bản:</strong> Version 5.0 (Master Production Release)<br>
+        <strong>Đơn Vị Thực Hiện:</strong> Ban Công Nghệ Chuyển Đổi Số & ViConnect Platform<br>
+        <strong>Ngày Ban Hành:</strong> 04/10/2026
+      </p>
+    </div>
+  </div>
+
+  <div class="document-body">
+
+    <!-- CHƯƠNG 1 -->
+    <h1 class="chapter-title">CHƯƠNG 1: TỔNG QUAN HỆ THỐNG & CƠ CẤU 6 CHUYÊN BAN</h1>
+    <p>Hệ sinh thái công nghệ của CLB Doanh Nhân CEO 1983 (trực thuộc HanoiBA) được thiết kế đồng bộ nhằm phục vụ hơn 500+ doanh nhân tuổi Quý Hợi 1983. Hệ thống vận hành theo ma trận phân quyền 5 cấp bậc nghiêm ngặt kết hợp phân công tác nghiệp theo 6 Ban chuyên môn:</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Ban Chuyên Môn</th>
+          <th>Tài Khoản Điều Hành</th>
+          <th>Phạm Vi Quản Trị Cốt Lõi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:center;">1</td>
+          <td><strong>Ban Quản Trị (BQT)</strong></td>
+          <td><code>admin@connect.vn</code></td>
+          <td>Lãnh đạo tối cao, phê duyệt ngân sách, sự kiện và phân quyền hệ thống.</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;">2</td>
+          <td><strong>Ban Thư Ký (BTK)</strong></td>
+          <td><code>ceo.tongthuky@ceo1983.com</code></td>
+          <td>Triệu tập họp, phòng họp Sapphire Hub, biên bản. <em>Tuyệt đối không duyệt hội viên.</em></td>
+        </tr>
+        <tr>
+          <td style="text-align:center;">3</td>
+          <td><strong>Ban Thành Viên (BTV)</strong></td>
+          <td><code>ceo.thanhvien@ceo1983.com</code></td>
+          <td><strong>Độc quyền tiếp nhận, thẩm định và phê duyệt kết nạp hội viên mới.</strong></td>
+        </tr>
+        <tr>
+          <td style="text-align:center;">4</td>
+          <td><strong>Ban Thiện Nguyện (BTN)</strong></td>
+          <td><code>ceo.thiennguyen@ceo1983.com</code></td>
+          <td>Điều hành Quỹ an sinh xã hội, sổ quỹ chi tiêu 3 cấp, sao kê minh bạch.</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;">5</td>
+          <td><strong>Ban Truyền Thông (BTT)</strong></td>
+          <td><code>ceo.truyenthong@ceo1983.com</code></td>
+          <td>Quản trị bảng tin, soát vé an ninh QR Gate (&lt; 0.2s) và Vòng quay Lucky Draw.</td>
+        </tr>
+        <tr>
+          <td style="text-align:center;">6</td>
+          <td><strong>Ban Xúc Tiến (BXT)</strong></td>
+          <td><code>ceo.xuctien@ceo1983.com</code></td>
+          <td>Kiểm duyệt Sàn B2B có trợ giá nội bộ và điều phối cơ hội Cung - Cầu 1-on-1.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout danger">
+      <div class="callout-title">🚫 LƯU Ý PHÂN QUYỀN ĐẶC BIỆT:</div>
+      Ban Thư Ký TUYỆT ĐỐI KHÔNG CÓ THẨM QUYỀN PHÊ DUYỆT HỘI VIÊN MỚI. Thẩm quyền này thuộc về ĐỘC QUYỀN Ban Thành Viên (BTV) hoặc Ban Quản Trị tối cao. Mọi can thiệp sẽ bị hệ thống API chặn đứng bằng mã lỗi HTTP 403 Forbidden.
+    </div>
+
+    <!-- CHƯƠNG 2 -->
+    <h1 class="chapter-title">CHƯƠNG 2: HƯỚNG DẪN QUẢN TRỊ TRÊN CỔNG WEB CRM</h1>
+    <h2 class="section-title">2.1. Đăng Nhập Cổng Quản Trị Trung Tâm</h2>
+    <p><strong>Bước 1:</strong> Mở trình duyệt máy tính, truy cập Cổng Quản trị CRM tại địa chỉ: <code>https://14.225.217.232:5443</code>.</p>
+    <p><strong>Bước 2:</strong> Nhập thông tin tài khoản chuyên ban (Ví dụ: <code>ceo.thanhvien@ceo1983.com</code>) và Mật khẩu.</p>
+    <p><strong>Bước 3:</strong> Nhấn nút "Đăng Nhập". Hệ thống chuyển hướng vào Bàn làm việc Dashboard trung tâm.</p>
+
+    <div class="desktop-screenshot-container">
+      <img class="desktop-screenshot" src="images/03_crm_login_page.png" alt="Màn hình Đăng nhập Cổng Quản Trị Web CRM" />
+      <div class="image-caption">Hình 2.1: Màn hình Đăng nhập Cổng Quản Trị Web CRM CLB CEO 1983</div>
+    </div>
+
+    <h2 class="section-title">2.2. Thẩm Định & Phê Duyệt Hội Viên Mới (Độc Quyền Ban Thành Viên)</h2>
+    <p><strong>Bước 1:</strong> Cán bộ BTV mở màn hình "Quản Lý Hội Viên" (<code>/members</code>) và chọn tab "Chờ Thẩm Định".</p>
+    <p><strong>Bước 2:</strong> Bấm vào hồ sơ ứng viên để mở Ngăn kéo chi tiết (Drawer). Kiểm tra năm sinh (bắt buộc 1983), MST và uy tín doanh nghiệp.</p>
+    <p><strong>Bước 3:</strong> Nhấn nút "Phê Duyệt Kết Nạp". Hệ thống tự động cấp mã định danh <code>CEO-83xxx</code> và gửi email mật khẩu đến hội viên.</p>
+
+    <div class="desktop-screenshot-container">
+      <img class="desktop-screenshot" src="images/04_crm_members_management.png" alt="Quản lý hồ sơ hội viên và phê duyệt kết nạp trên CRM" />
+      <div class="image-caption">Hình 2.2: Bảng Quản trị Danh bạ Hội viên 360 độ và Ngăn kéo Thẩm định của Ban Thành Viên</div>
+    </div>
+
+    <h2 class="section-title">2.3. Vận Hành Cổng An Ninh Soát Vé Gate Check-in QR (&lt; 0.2s)</h2>
+    <p><strong>Bước 1:</strong> Ban Truyền Thông mở màn hình Soát vé an ninh (<code>/checkin</code>) tại sảnh sự kiện Gala.</p>
+    <p><strong>Bước 2:</strong> Hướng camera về phía mã QR trên điện thoại của đại biểu.</p>
+    <p><strong>Bước 3:</strong> Màn hình xanh lục hợp lệ trong 0.2s kèm số bàn VIP; nếu quét lại lần 2 màn hình báo đỏ rực cảnh báo gian lận trùng vé.</p>
+
+    <div class="desktop-screenshot-container">
+      <img class="desktop-screenshot" src="images/12_crm_events_list.png" alt="Quản trị sự kiện Gala và Cổng Soát Vé QR Gate" />
+      <div class="image-caption">Hình 2.3: Giao diện Quản lý Sự kiện Gala và Soát vé an ninh thời gian thực</div>
+    </div>
+
+    <!-- CHƯƠNG 3 -->
+    <h1 class="chapter-title">CHƯƠNG 3: HƯỚNG DẪN HỘI VIÊN SỬ DỤNG MOBILE APP</h1>
+    <h2 class="section-title">3.1. Đăng Nhập & Bắt Buộc Đổi Mật Khẩu Lần Đầu</h2>
+    <p>Hội viên mở ứng dụng trên điện thoại, đăng nhập bằng Email/SĐT và mật khẩu khởi tạo. Hệ thống bắt buộc đổi mật khẩu cá nhân mới trước khi vào màn hình chính.</p>
+
+    <div class="mobile-mockup-wrapper">
+      <div class="phone-mockup">
+        <img src="images/06_app_login_screen.png" alt="Màn hình Đăng nhập Mobile App CEO 1983" />
+        <div class="image-caption">Hình 3.1: Màn hình Đăng nhập Mobile App Hội viên</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">3.2. Sử Dụng Thẻ VIP 3D Titanium & Chạm NFC</h2>
+    <p>Hội viên mở mục "Thẻ VIP", chạm để lật 180 độ 3D. Khi gặp đối tác, chạm mặt sau thẻ vào điện thoại đối tác để mở trang công khai <code>/card/:slug</code> và bấm "Lưu Danh Bạ" xuất file vCard (.vcf) đồng bộ trong 1 giây.</p>
+
+    <div class="mobile-mockup-wrapper">
+      <div class="phone-mockup">
+        <img src="images/09_app_vip_card.png" alt="Thẻ Hội Viên VIP 3D Titanium" />
+        <div class="image-caption">Hình 3.2: Thẻ Hội Viên VIP 3D Titanium hiệu ứng lật 180 độ</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">3.3. Thanh Toán Hội Phí Thường Niên Qua VietQR Napas 24/7</h2>
+    <p>Hội viên mở mục "Hội Phí", nhấn "Thanh Toán VietQR". Mở app ngân hàng quét mã chuyển tiền nhanh 5.000.000 VNĐ. Kế toán đối soát sao kê và duyệt gạch nợ trên CRM gia hạn thẻ +365 ngày.</p>
+
+    <div class="mobile-mockup-wrapper">
+      <div class="phone-mockup">
+        <img src="images/08_app_vietqr_payment_modal.png" alt="Mã VietQR động Napas 24/7" />
+        <div class="image-caption">Hình 3.3: Mã VietQR động nộp hội phí thường niên Napas 24/7</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">3.4. Vé Sự Kiện Điện Tử E-Ticket QR Check-in</h2>
+    <p>Hội viên mở mục "Vé Của Tôi" để xuất trình mã QR khổ lớn tại Cổng an ninh đón tiếp. Mã vé được lưu trữ offline, kèm số bốc thăm may mắn (#LUCKY-xxxx).</p>
+
+    <div class="mobile-mockup-wrapper">
+      <div class="phone-mockup">
+        <img src="images/14_app_event_checkin_pass.png" alt="Vé điện tử E-Ticket QR" />
+        <div class="image-caption">Hình 3.4: Vé Sự kiện điện tử E-Ticket QR độc bản</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">3.5. Biểu Quyết Đại Hội Trực Tuyến 1 Người 1 Phiếu</h2>
+    <p>Khi phiên biểu quyết mở, hội viên vào mục "Biểu Quyết" (<code>/association/voting</code>), chọn phương án và bấm "Xác Nhận". Kết quả cập nhật trực tiếp lên màn hình lớn đại hội trong 1 giây.</p>
+
+    <div class="mobile-mockup-wrapper">
+      <div class="phone-mockup">
+        <img src="images/15_app_live_voting.png" alt="Biểu quyết đại hội trực tuyến" />
+        <div class="image-caption">Hình 3.5: Giao diện Biểu quyết Đại hội điện tử trực tuyến</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">3.6. Giao Thương Sàn B2B & Bảng Tin Cơ Hội Cung - Cầu</h2>
+    <p>Hội viên đăng bán sản phẩm trợ giá nội bộ (chiết khấu &gt;= 5%) và đăng tin tìm đối tác Cung - Cầu 1-on-1 có bảo chứng của câu lạc bộ.</p>
+
+    <div class="mobile-mockup-wrapper">
+      <div class="phone-mockup">
+        <img src="images/16_app_products_ecommerce_grid.png" alt="Sàn Thương Mại Doanh Nhân B2B" />
+        <div class="image-caption">Hình 3.6: Sàn Thương Mại Doanh Nhân B2B CEO 1983</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

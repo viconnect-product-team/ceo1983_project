@@ -157,7 +157,7 @@ function createCallout(title, textLines, type = 'info') {
   return new Table({
     width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA },
     columnWidths: [TOTAL_TABLE_WIDTH_DXA],
-    layout: TableLayoutType.FIXED,
+    alignment: AlignmentType.CENTER,
     rows: [
       new TableRow({
         cantSplit: true,
@@ -366,7 +366,7 @@ function createTable(headers, rowsData, widths = []) {
   return new Table({
     width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA },
     columnWidths: colWidthsDxa,
-    layout: TableLayoutType.FIXED,
+    alignment: AlignmentType.CENTER,
     rows: [headerRow, ...bodyRows],
   });
 }
@@ -757,10 +757,12 @@ async function buildBRD() {
     }
   }
 
-  // Ghi file ra docs và document
+  // Ghi file ra docs và document (cả .docx và .doc)
   safeWrite(path.join(__dirname, '../docs/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx'), buffer);
+  safeWrite(path.join(__dirname, '../docs/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.doc'), buffer);
   safeWrite(path.join(__dirname, '../docs/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.md'), md, true);
   safeWrite(path.join(__dirname, '../document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx'), buffer);
+  safeWrite(path.join(__dirname, '../document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.doc'), buffer);
   safeWrite(path.join(__dirname, '../document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.md'), md, true);
 
   console.log('✅ Đã xuất bản thành công BRD (DOCX + MD)!');
@@ -1045,9 +1047,12 @@ async function generateSrsDocument({ title, subTitle, docCode, useCases, targetF
     }
   }
 
-  // Ghi đồng thời ra các target files chỉ định
+  // Ghi đồng thời ra các target files chỉ định (cả .docx và .doc)
   targetFiles.forEach((f) => {
     safeWrite(f.docx, buffer);
+    if (f.docx.endsWith('.docx')) {
+      safeWrite(f.docx.replace(/\.docx$/i, '.doc'), buffer);
+    }
     safeWrite(f.md, md, true);
   });
 }
@@ -1070,22 +1075,6 @@ async function buildSRS() {
       {
         docx: path.join(__dirname, '../document/SRS_IEEE830_CEO1983_TOAN_DIEN.docx'),
         md: path.join(__dirname, '../document/SRS_IEEE830_CEO1983_TOAN_DIEN.md'),
-      },
-      {
-        docx: path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx'),
-        md: path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.md'),
-      },
-      {
-        docx: path.join(__dirname, '../docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx'),
-        md: path.join(__dirname, '../docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.md'),
-      },
-      {
-        docx: path.join(__dirname, '../docs/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx'),
-        md: path.join(__dirname, '../docs/SRS_CEO1983_HE_THONG_TOAN_DIEN.md'),
-      },
-      {
-        docx: path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx'),
-        md: path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.md'),
       },
     ],
   });

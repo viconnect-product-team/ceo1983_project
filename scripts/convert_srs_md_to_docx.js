@@ -1,8 +1,8 @@
 /**
- * CONVERT SRS MARKDOWN TO MICROSOFT WORD (.DOCX)
+ * CONVERT SRS MARKDOWN TO MICROSOFT WORD (.DOCX & .DOC)
  * Chuẩn hóa tài liệu SRS CEO 1983 V6.0 (147 Use Cases) sang định dạng Word chuyên nghiệp
  * Thiết kế chuẩn nhận diện CEO 1983: Deep Cobalt Navy (#1F3864), Amber Gold (#B8860B)
- * Khổ giấy A4, Font Times New Roman, Bảng biểu viền mảnh sang trọng
+ * Khổ giấy A4, Font Times New Roman, Bảng biểu viền mảnh sang trọng, chống vỡ format trên mọi ứng dụng
  */
 
 const fs = require('fs');
@@ -28,7 +28,11 @@ const {
   PageBreak
 } = docx;
 
-// Color Palette
+// TỔNG CHIỀU RỘNG CHUẨN A4 TRỪ LỀ LÀ 9026 DXA (~15.92 cm)
+// Khổ A4 = 11906 DXA, Margin Trái = 1440 DXA, Margin Phải = 1440 DXA -> Phần thân = 9026 DXA
+const TOTAL_TABLE_WIDTH = 9026;
+
+// Color Palette Hoàng Gia CEO 1983
 const COLORS = {
   NAVY: '1F3864',
   GOLD: 'B8860B',
@@ -51,13 +55,6 @@ const TABLE_BORDER = {
   right: { style: BorderStyle.SINGLE, size: 1, color: COLORS.BORDER_COLOR }
 };
 
-const NO_BORDER = {
-  top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-  bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-  left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-  right: { style: BorderStyle.NONE, size: 0, color: 'auto' }
-};
-
 /**
  * Phân tích chuỗi có chứa định dạng markdown inline (**bold**, *italic*, `code`)
  * thành mảng TextRun của thư viện docx
@@ -65,100 +62,211 @@ const NO_BORDER = {
 function parseInlineMarkdown(text, baseOptions = {}) {
   if (!text) return [new TextRun({ text: '', ...baseOptions })];
 
-  // Chuẩn hóa thẻ <br> thành newline
-  const clean = text.replace(/<br\s*\/?>/gi, '\n');
-  const lines = clean.split('\n');
   const runs = [];
+  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
+  let lastIdx = 0;
+  let match;
 
-  lines.forEach((line, lineIdx) => {
-    if (lineIdx > 0) {
-      // Xuống dòng trong cùng đoạn văn
-      runs.push(new TextRun({ break: 1, ...baseOptions }));
-    }
-
-    // Tokenize line by markdown tokens
-    const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
-    let lastIdx = 0;
-    let match;
-
-    while ((match = regex.exec(line)) !== null) {
-      if (match.index > lastIdx) {
-        runs.push(new TextRun({
-          text: line.slice(lastIdx, match.index),
-          font: 'Times New Roman',
-          ...baseOptions
-        }));
-      }
-
-      const raw = match[0];
-      if (raw.startsWith('**') && raw.endsWith('**')) {
-        runs.push(new TextRun({
-          text: raw.slice(2, -2),
-          bold: true,
-          font: 'Times New Roman',
-          ...baseOptions
-        }));
-      } else if (raw.startsWith('*') && raw.endsWith('*')) {
-        runs.push(new TextRun({
-          text: raw.slice(1, -1),
-          italics: true,
-          font: 'Times New Roman',
-          ...baseOptions
-        }));
-      } else if (raw.startsWith('`') && raw.endsWith('`')) {
-        runs.push(new TextRun({
-          text: raw.slice(1, -1),
-          font: 'Consolas',
-          color: COLORS.DARK_GOLD,
-          bold: true,
-          ...baseOptions
-        }));
-      }
-      lastIdx = regex.lastIndex;
-    }
-
-    if (lastIdx < line.length) {
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
       runs.push(new TextRun({
-        text: line.slice(lastIdx),
+        text: text.slice(lastIdx, match.index),
         font: 'Times New Roman',
         ...baseOptions
       }));
     }
-  });
 
-  return runs;
+    const raw = match[0];
+    if (raw.startsWith('**') && raw.endsWith('**')) {
+      runs.push(new TextRun({
+        text: raw.slice(2, -2),
+        bold: true,
+        font: 'Times New Roman',
+        ...baseOptions
+      }));
+    } else if (raw.startsWith('*') && raw.endsWith('*')) {
+      runs.push(new TextRun({
+        text: raw.slice(1, -1),
+        italics: true,
+        font: 'Times New Roman',
+        ...baseOptions
+      }));
+    } else if (raw.startsWith('`') && raw.endsWith('`')) {
+      runs.push(new TextRun({
+        text: raw.slice(1, -1),
+        font: 'Consolas',
+        color: COLORS.DARK_GOLD,
+        bold: true,
+        ...baseOptions
+      }));
+    }
+    lastIdx = regex.lastIndex;
+  }
+
+  if (lastIdx < text.length) {
+    runs.push(new TextRun({
+      text: text.slice(lastIdx),
+      font: 'Times New Roman',
+      ...baseOptions
+    }));
+  }
+
+  return runs.length > 0 ? runs : [new TextRun({ text: '', ...baseOptions })];
 }
 
 /**
- * Xử lý tạo TableCell chứa dữ liệu có hỗ trợ xuống dòng
+ * Format toàn bộ các đoạn văn bản (paragraphs) trong một TableCell:
+ * - Tự động nhận diện các bước (1. , 2. , Bước 1:) và in đậm số thứ tự, thụt lề chuẩn
+ * - Nhận diện các gạch đầu dòng con (- , * , +) và thụt lề cấp 1, cấp 2
+ * - Loại bỏ các dòng trống thừa
+ */
+function formatCellParagraphs(content, isHeader, isFirstCol) {
+  if (isHeader) {
+    return [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 80, after: 80, line: 240 },
+        children: [
+          new TextRun({
+            text: content.trim(),
+            bold: true,
+            color: COLORS.WHITE,
+            size: 20, // 10pt
+            font: 'Times New Roman'
+          })
+        ]
+      })
+    ];
+  }
+
+  // Tách dòng bởi thẻ <br> hoặc newline
+  const rawLines = content.split(/<br\s*\/?>|\r?\n/gi);
+  const paras = [];
+
+  rawLines.forEach((rawLine) => {
+    const trimmed = rawLine.trim();
+    if (!trimmed) return;
+
+    // 1. Kiểm tra bước đánh số: "1. ", "2. ", "Bước 1:", "Step 1:"
+    const stepMatch = trimmed.match(/^((?:Bước\s*\d+|Step\s*\d+|\d+[\.\)])(?:\s*:|\s*))\s*(.*)$/i);
+    // 2. Kiểm tra gạch đầu dòng con thụt lề cấp 2 ("   + ", "    - ")
+    const subBulletMatch = rawLine.match(/^(\s{3,}|\t+)(?:[\+\-\*•])\s*(.*)$/);
+    // 3. Kiểm tra gạch đầu dòng cấp 1 ("- ", "* ", "+ ", "• ")
+    const bulletMatch = trimmed.match(/^([\-\*•\+])\s*(.*)$/);
+
+    if (stepMatch) {
+      const stepNum = stepMatch[1].trim();
+      const stepContent = stepMatch[2].trim();
+      const runs = [
+        new TextRun({
+          text: stepNum + ' ',
+          bold: true,
+          color: COLORS.NAVY,
+          size: 20,
+          font: 'Times New Roman'
+        }),
+        ...parseInlineMarkdown(stepContent, {
+          color: COLORS.DARK_SLATE,
+          size: 20
+        })
+      ];
+      paras.push(
+        new Paragraph({
+          alignment: AlignmentType.LEFT,
+          indent: { left: 240 },
+          spacing: { before: 40, after: 40, line: 240 },
+          children: runs
+        })
+      );
+    } else if (subBulletMatch) {
+      const subContent = subBulletMatch[2].trim();
+      const runs = [
+        new TextRun({
+          text: '◦ ',
+          bold: true,
+          color: COLORS.GOLD,
+          size: 20,
+          font: 'Times New Roman'
+        }),
+        ...parseInlineMarkdown(subContent, {
+          color: COLORS.DARK_SLATE,
+          size: 20
+        })
+      ];
+      paras.push(
+        new Paragraph({
+          alignment: AlignmentType.LEFT,
+          indent: { left: 600 },
+          spacing: { before: 20, after: 20, line: 240 },
+          children: runs
+        })
+      );
+    } else if (bulletMatch) {
+      const bulletContent = bulletMatch[2].trim();
+      const runs = [
+        new TextRun({
+          text: '• ',
+          bold: true,
+          color: COLORS.NAVY,
+          size: 20,
+          font: 'Times New Roman'
+        }),
+        ...parseInlineMarkdown(bulletContent, {
+          color: COLORS.DARK_SLATE,
+          size: 20
+        })
+      ];
+      paras.push(
+        new Paragraph({
+          alignment: AlignmentType.LEFT,
+          indent: { left: 360 },
+          spacing: { before: 30, after: 30, line: 240 },
+          children: runs
+        })
+      );
+    } else {
+      const runs = parseInlineMarkdown(trimmed, {
+        bold: isFirstCol,
+        color: isFirstCol ? COLORS.NAVY : COLORS.DARK_SLATE,
+        size: 20
+      });
+      paras.push(
+        new Paragraph({
+          alignment: isFirstCol ? AlignmentType.LEFT : AlignmentType.JUSTIFIED,
+          spacing: { before: 30, after: 30, line: 240 },
+          children: runs
+        })
+      );
+    }
+  });
+
+  if (paras.length === 0) {
+    paras.push(
+      new Paragraph({
+        spacing: { before: 30, after: 30, line: 240 },
+        children: [new TextRun({ text: '', size: 20 })]
+      })
+    );
+  }
+
+  return paras;
+}
+
+/**
+ * Tạo ô TableCell với kích thước DXA chuẩn xác 100%
  */
 function createTableCell(content, options = {}) {
   const {
     isHeader = false,
-    width = 4500,
+    widthDxa = 4500,
     bgColor = isHeader ? COLORS.NAVY : null,
-    bold = isHeader,
-    textColor = isHeader ? COLORS.WHITE : COLORS.DARK_SLATE,
-    alignment = AlignmentType.LEFT
+    isFirstCol = false
   } = options;
 
-  // Tách các đoạn văn bản nếu có nhiều dòng
-  const lines = content.split(/<br\s*\/?>|\n/i);
-  const paragraphs = lines.map(line => {
-    const runs = parseInlineMarkdown(line.trim(), {
-      bold: bold,
-      color: textColor,
-      size: isHeader ? 21 : 20 // 10.5pt hoặc 10pt
-    });
-    return new Paragraph({
-      alignment: alignment,
-      spacing: { before: 40, after: 40, line: 240 },
-      children: runs.length > 0 ? runs : [new TextRun({ text: '', size: 20 })]
-    });
-  });
+  const paragraphs = formatCellParagraphs(content, isHeader, isFirstCol);
 
   const cellConfig = {
-    width: { size: width, type: WidthType.DXA },
+    width: { size: widthDxa, type: WidthType.DXA },
     borders: TABLE_BORDER,
     margins: { top: 100, bottom: 100, left: 140, right: 140 },
     children: paragraphs
@@ -176,12 +284,12 @@ function createTableCell(content, options = {}) {
 }
 
 /**
- * Tạo bảng Word từ các dòng Markdown table
+ * Tạo bảng Word từ các dòng Markdown table với columnWidths và w:tblGrid chuẩn xác
  */
 function createWordTable(tableLines) {
   if (tableLines.length < 2) return null;
 
-  // Lọc bỏ dòng phân cách `| :--- | :--- |`
+  // Lọc bỏ dòng phân cách | :--- | :--- |
   const validRows = tableLines.filter(line => !line.match(/^\|\s*[:\-\s|]+\|$/));
   if (validRows.length === 0) return null;
 
@@ -189,27 +297,28 @@ function createWordTable(tableLines) {
   const parsedRows = validRows.map(line => {
     return line
       .split('|')
-      .slice(1, -1) // Bỏ phần tử đầu và cuối do split từ '| col1 | col2 |'
+      .slice(1, -1)
       .map(cell => cell.trim());
   });
 
   const colCount = Math.max(...parsedRows.map(r => r.length));
   if (colCount === 0) return null;
 
-  // Tính toán độ rộng cột (Tổng width khả dụng khổ A4 là ~9000 DXA)
-  const TOTAL_WIDTH = 9026;
-  let colWidths = [];
+  // Phân bổ chiều rộng cột theo tiêu chuẩn DXA khổ A4 (Tổng = 9026 DXA)
+  let colWidthsDxa = [];
 
   if (colCount === 2) {
-    colWidths = [2600, 6426]; // Tỷ lệ chuẩn cho Bảng Use Case
+    // Tỷ lệ chuẩn cho Bảng Use Case: 2500 DXA Cột Thuộc Tính (~27.7%), 6526 DXA Cột Mô Tả (~72.3%)
+    colWidthsDxa = [2500, 6526];
   } else if (colCount === 3) {
-    colWidths = [2000, 3500, 3526];
+    // Tỷ lệ chuẩn cho Bảng 3 Cột (Từ viết tắt / Thuật ngữ / Định nghĩa)
+    colWidthsDxa = [1800, 3200, 4026];
   } else if (colCount === 4) {
-    colWidths = [1500, 2500, 2500, 2526];
+    colWidthsDxa = [1500, 2500, 2500, 2526];
   } else {
-    const w = Math.floor(TOTAL_WIDTH / colCount);
-    colWidths = Array(colCount).fill(w);
-    colWidths[colCount - 1] += TOTAL_WIDTH - (w * colCount);
+    const w = Math.floor(TOTAL_TABLE_WIDTH / colCount);
+    colWidthsDxa = Array(colCount).fill(w);
+    colWidthsDxa[colCount - 1] += TOTAL_TABLE_WIDTH - (w * colCount);
   }
 
   const tableRows = parsedRows.map((rowCells, rowIdx) => {
@@ -218,27 +327,30 @@ function createWordTable(tableLines) {
 
     for (let c = 0; c < colCount; c++) {
       const cellText = rowCells[c] || '';
-      const cellWidth = colWidths[c];
+      const cellWidth = colWidthsDxa[c];
       const isFirstCol = c === 0 && !isHeader;
 
-      cells.push(createTableCell(cellText, {
-        isHeader: isHeader,
-        width: cellWidth,
-        bgColor: isHeader ? COLORS.NAVY : (isFirstCol ? COLORS.BG_LIGHT : null),
-        bold: isHeader || isFirstCol,
-        textColor: isHeader ? COLORS.WHITE : COLORS.DARK_SLATE,
-        alignment: isHeader ? AlignmentType.CENTER : AlignmentType.LEFT
-      }));
+      cells.push(
+        createTableCell(cellText, {
+          isHeader: isHeader,
+          widthDxa: cellWidth,
+          bgColor: isHeader ? COLORS.NAVY : (isFirstCol ? COLORS.BG_LIGHT : null),
+          isFirstCol: isFirstCol
+        })
+      );
     }
 
     return new TableRow({
       tableHeader: isHeader,
+      cantSplit: isHeader, // Header không tách, các row dài tự động tách trang mượt mà
       children: cells
     });
   });
 
   return new Table({
-    width: { size: TOTAL_WIDTH, type: WidthType.DXA },
+    width: { size: TOTAL_TABLE_WIDTH, type: WidthType.DXA },
+    columnWidths: colWidthsDxa, // BẮT BUỘC: ĐỂ w:tblGrid SINH RA ĐÚNG 2500 & 6526 DXA!
+    alignment: AlignmentType.CENTER,
     rows: tableRows
   });
 }
@@ -288,9 +400,9 @@ function createImageBlock(altText, rawSrc, basePath) {
 
   // Fallback: Tạo hộp ghi chú minh chứng trang nhã
   const calloutCell = new TableCell({
-    width: { size: 9026, type: WidthType.DXA },
+    width: { size: TOTAL_TABLE_WIDTH, type: WidthType.DXA },
     borders: {
-      left: { style: BorderStyle.SINGLE, size: 24, color: COLORS.GOLD }, // Viền dày bên trái màu Vàng Gold
+      left: { style: BorderStyle.SINGLE, size: 24, color: COLORS.GOLD },
       top: BorderStyle.NONE,
       bottom: BorderStyle.NONE,
       right: BorderStyle.NONE
@@ -332,7 +444,9 @@ function createImageBlock(altText, rawSrc, basePath) {
   });
 
   elements.push(new Table({
-    width: { size: 9026, type: WidthType.DXA },
+    width: { size: TOTAL_TABLE_WIDTH, type: WidthType.DXA },
+    columnWidths: [TOTAL_TABLE_WIDTH],
+    alignment: AlignmentType.CENTER,
     rows: [new TableRow({ children: [calloutCell] })]
   }));
   elements.push(new Paragraph({ spacing: { before: 80, after: 80 } }));
@@ -341,13 +455,10 @@ function createImageBlock(altText, rawSrc, basePath) {
 }
 
 /**
- * HÀM CHÍNH BUILD TÀI LIỆU DOCX
+ * HÀM CHÍNH BUILD TÀI LIỆU DOCX & DOC
  */
 async function buildDocxFromMarkdown() {
   const mdPath = path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.md');
-  const outputDocxPath = path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx');
-  const shortDocxPath = path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx');
-  const feDocxPath = path.join(__dirname, '../apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx');
 
   console.log(`Đang đọc nội dung từ: ${mdPath}...`);
   const mdContent = fs.readFileSync(mdPath, 'utf8');
@@ -444,38 +555,40 @@ async function buildDocxFromMarkdown() {
   }));
 
   // Bảng thông tin phát hành trên bìa
+  const coverColWidths = [2800, 4700];
   const coverInfoTable = new Table({
-    width: { size: 7000, type: WidthType.DXA },
+    width: { size: 7500, type: WidthType.DXA },
+    columnWidths: coverColWidths,
     alignment: AlignmentType.CENTER,
     rows: [
       new TableRow({
         children: [
-          createTableCell('Cơ Quan Ban Hành:', { width: 2500, bold: true, textColor: COLORS.NAVY }),
-          createTableCell('Ban Chấp Hành CLB Doanh Nhân CEO 1983', { width: 4500, bold: true })
+          createTableCell('Cơ Quan Ban Hành:', { widthDxa: coverColWidths[0], bold: true, isFirstCol: true }),
+          createTableCell('Ban Chấp Hành CLB Doanh Nhân CEO 1983', { widthDxa: coverColWidths[1], bold: true })
         ]
       }),
       new TableRow({
         children: [
-          createTableCell('Phiên Bản Hệ Thống:', { width: 2500, bold: true, textColor: COLORS.NAVY }),
-          createTableCell('Version 6.0 (Cập nhật Tháng 11/2026)', { width: 4500, bold: true, textColor: COLORS.GOLD })
+          createTableCell('Phiên Bản Hệ Thống:', { widthDxa: coverColWidths[0], bold: true, isFirstCol: true }),
+          createTableCell('Version 6.0 (Cập nhật Tháng 11/2026)', { widthDxa: coverColWidths[1], bold: true })
         ]
       }),
       new TableRow({
         children: [
-          createTableCell('Tổng Số Nghiệp Vụ:', { width: 2500, bold: true, textColor: COLORS.NAVY }),
-          createTableCell('147 Use Cases Toàn Diện (10 PUB + 84 CRM + 53 APP)', { width: 4500, bold: true })
+          createTableCell('Tổng Số Nghiệp Vụ:', { widthDxa: coverColWidths[0], bold: true, isFirstCol: true }),
+          createTableCell('147 Use Cases Toàn Diện (10 PUB + 84 CRM + 53 APP)', { widthDxa: coverColWidths[1], bold: true })
         ]
       }),
       new TableRow({
         children: [
-          createTableCell('Cấp Độ Bảo Mật:', { width: 2500, bold: true, textColor: COLORS.NAVY }),
-          createTableCell('LƯU HÀNH NỘI BỘ & NGHIỆM THU CHÍNH THỨC', { width: 4500, bold: true, textColor: COLORS.DARK_GOLD })
+          createTableCell('Cấp Độ Bảo Mật:', { widthDxa: coverColWidths[0], bold: true, isFirstCol: true }),
+          createTableCell('LƯU HÀNH NỘI BỘ & NGHIỆM THU CHÍNH THỨC', { widthDxa: coverColWidths[1], bold: true })
         ]
       }),
       new TableRow({
         children: [
-          createTableCell('Hạ Tầng Triển Khai:', { width: 2500, bold: true, textColor: COLORS.NAVY }),
-          createTableCell('Production Server VPS | CRM & Mobile App Tách Biệt Độc Lập', { width: 4500 })
+          createTableCell('Hạ Tầng Triển Khai:', { widthDxa: coverColWidths[0], bold: true, isFirstCol: true }),
+          createTableCell('Production Server VPS | CRM & Mobile App Tách Biệt Độc Lập', { widthDxa: coverColWidths[1] })
         ]
       })
     ]
@@ -570,7 +683,6 @@ async function buildDocxFromMarkdown() {
     // Xử lý Heading cấp 1 `# `
     if (trimmed.startsWith('# ')) {
       const headingText = trimmed.replace(/^#\s+/, '');
-      // Bỏ qua tiêu đề trang bìa đã tạo ở trên
       if (!headingText.includes('SOFTWARE REQUIREMENTS SPECIFICATION') && !headingText.includes('HỆ SINH THÁI SỐ HÓA')) {
         docChildren.push(new Paragraph({
           heading: HeadingLevel.HEADING_1,
@@ -593,7 +705,6 @@ async function buildDocxFromMarkdown() {
     // Xử lý Heading cấp 2 `## `
     if (trimmed.startsWith('## ')) {
       const headingText = trimmed.replace(/^##\s+/, '');
-      // Bỏ qua tiêu đề TRANG BÌA vì đã tạo rồi
       if (headingText.includes('TRANG BÌA')) {
         i++;
         continue;
@@ -662,7 +773,7 @@ async function buildDocxFromMarkdown() {
     if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
       const bulletText = trimmed.replace(/^[\*\-]\s+/, '');
       const runs = parseInlineMarkdown(bulletText, {
-        size: 21, // 10.5pt
+        size: 21,
         color: COLORS.DARK_SLATE
       });
 
@@ -684,7 +795,6 @@ async function buildDocxFromMarkdown() {
         color: COLORS.DARK_SLATE
       });
 
-      // Thêm số thứ tự in đậm vào đầu
       runs.unshift(new TextRun({
         text: `${numMatch[1]}. `,
         bold: true,
@@ -704,7 +814,7 @@ async function buildDocxFromMarkdown() {
 
     // Xử lý đoạn văn thường (Normal Paragraph)
     const runs = parseInlineMarkdown(trimmed, {
-      size: 21, // 10.5pt
+      size: 21,
       color: COLORS.DARK_SLATE
     });
 
@@ -826,23 +936,25 @@ async function buildDocxFromMarkdown() {
     ]
   });
 
-  console.log('Đang đóng gói file Microsoft Word (.docx)...');
+  console.log('Đang đóng gói file Microsoft Word (.docx & .doc)...');
   const buffer = await docx.Packer.toBuffer(doc);
 
-  // Ghi file ra các vị trí đích
-  fs.writeFileSync(outputDocxPath, buffer);
-  console.log(`Đã xuất thành công: ${outputDocxPath} (${Math.round(buffer.length / 1024)} KB)`);
+  // Danh sách các tệp xuất bản (cả .docx và .doc)
+  const targets = [
+    path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx'),
+    path.join(__dirname, '../document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.doc'),
+    path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx'),
+    path.join(__dirname, '../document/SRS_CEO1983_HE_THONG_TOAN_DIEN.doc'),
+    path.join(__dirname, '../apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx'),
+    path.join(__dirname, '../apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.doc')
+  ];
 
-  fs.writeFileSync(shortDocxPath, buffer);
-  console.log(`Đã xuất thành công: ${shortDocxPath}`);
-
-  // Đảm bảo thư mục public/docs tồn tại
-  const feDocsDir = path.dirname(feDocxPath);
-  if (!fs.existsSync(feDocsDir)) {
-    fs.mkdirSync(feDocsDir, { recursive: true });
-  }
-  fs.writeFileSync(feDocxPath, buffer);
-  console.log(`Đã đồng bộ sang: ${feDocxPath}`);
+  targets.forEach(t => {
+    const dir = path.dirname(t);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(t, buffer);
+    console.log(`✓ Đã xuất thành công: ${t}`);
+  });
 
   console.log('\nHOÀN TẤT XUẤT BẢN WORD TÀI LIỆU SRS CEO 1983 V6.0!');
 }
@@ -851,4 +963,3 @@ buildDocxFromMarkdown().catch(err => {
   console.error('Lỗi khi build tài liệu Word:', err);
   process.exit(1);
 });
-

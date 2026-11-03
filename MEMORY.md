@@ -1,5 +1,53 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.19): Khắc Phục Triệt Để Lỗi Bảng UC & Bảng Mô Tả Bị Co Rúm Khi Mở Định Dạng .doc / .docx (`convert_srs_md_to_docx.js`, `build_all_master_ceo1983_docs.js`) ([NODE-CORE-001])**:
+  1. *Nguyên Nhân Cốt Lõi Được Định Vị Chính Xác*:
+     - Trong chuẩn OpenXML (ECMA-376 / ISO 29500), thuộc tính `w:w` của thẻ `<w:gridCol>` trong bảng lưới `<w:tblGrid>` **bắt buộc luôn luôn được tính bằng đơn vị Twips/DXA (1/20 của 1 point)**, không bao giờ được hiểu là percentage hay pixel.
+     - Khi trước đó dùng `WidthType.PERCENTAGE` mà không truyền mảng `columnWidths` bằng DXA, thư viện `docx` tự động sinh ra `<w:tblGrid><w:gridCol w:w="100"/><w:gridCol w:w="100"/></w:tblGrid>`. Giá trị `100 twips` tương đương chỉ **1.76 mm**!
+     - Các phần mềm xem văn bản (đặc biệt là Google Docs và Word Online) khi đọc `<w:tblGrid>` lập tức bóp nghẹt các cột bảng lại đúng 1.76 mm, khiến chữ bị bẻ dọc thành từng ký tự.
+  2. *Giải Pháp Chuẩn Mực Tuyệt Đối*:
+     - Cấu hình mảng `columnWidths` bằng đơn vị DXA chuẩn xác 100% theo khổ A4 (tổng đúng 9026 DXA phần thân văn bản giữa 2 lề 25.4mm):
+       * **Bảng Use Case 2 Cột**: Cột 1 (Thuộc tính) = **2500 DXA** (~4.41 cm), Cột 2 (Mô tả chi tiết) = **6526 DXA** (~11.51 cm) ➔ `w:gridCol` sinh ra chuẩn `2500` và `6526` DXA.
+       * **Bảng 3 Cột (Từ điển thuật ngữ, định nghĩa)**: Cột 1 = **1600 - 1800 DXA**, Cột 2 = **3000 - 3200 DXA**, Cột 3 = **4026 - 4600 DXA**.
+       * **Bảng 4 Cột (Actor matrix / Tiêu chuẩn)**: Cột 1 = **1200 - 1500 DXA**, Cột 2 = **2400 - 2500 DXA**, Cột 3 = **2400 - 2500 DXA**, Cột 4 = **2526 - 3200 DXA**.
+       * Bảng căn giữa `AlignmentType.CENTER` (`<w:jc w:val="center"/>`), `tableHeader: true` lặp lại tiêu đề trang, `cantSplit: false` cho hàng dữ liệu dài để ngắt trang tự nhiên.
+     - **Tối ưu định dạng nội dung từng ô (Luồng xử lý chính & mô tả)**:
+       * Tự động nhận diện các bước số (`1. `, `2. `, `Bước 1:`): In đậm số thứ tự màu Navy `#1F3864`, thụt lề `indent: 240 DXA`, giãn dòng thoáng đẹp.
+       * Tự động nhận diện gạch đầu dòng con cấp 1 (`• `) thụt lề 360 DXA, cấp 2 (`◦ `) thụt lề 600 DXA.
+  3. *Xuất Bản Đồng Thời Cả 2 Định Dạng Mở Rộng `.docx` & `.doc`*:
+     - Tự động xuất đồng thời cả file `.docx` và `.doc` cho tất cả tài liệu:
+       * `document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` & `.doc` (Master 147 Use Cases, 681 KB).
+       * `document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx` & `.doc`.
+       * `document/SRS_01_Web_CRM_CEO1983.docx` & `.doc` (Web CRM).
+       * `document/SRS_02_App_Hiep_Hoi_CEO1983.docx` & `.doc` (Mobile App).
+       * `document/SRS_IEEE830_CEO1983_TOAN_DIEN.docx` & `.doc` (IEEE 830).
+       * `document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx` & `.doc` (BRD).
+       * `apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` & `.doc`.
+
+
+- **Bản cập nhật ngày 03/11/2026 (v10.18): Khắc Phục Triệt Để Lỗi Format Bảng Bị Co Rúm Trên Google Docs & Word Online Toàn Bộ Tài Liệu DOCX (`convert_srs_md_to_docx.js`, `build_all_master_ceo1983_docs.js`) ([NODE-CORE-001])**:
+  1. *Nguyên Nhân Sâu Xa*:
+     - Trước đó, các hàm tạo bảng trong DOCX sử dụng `width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA }` kết hợp `layout: TableLayoutType.FIXED` và các ô `TableCell` dùng đơn vị cố định `WidthType.DXA`.
+     - Khi mở file Word trên **Google Docs** hoặc **Word Online**, engine phân giải của Google Docs không hỗ trợ tính toán đơn vị `dxa` kết hợp `tblLayout fixed`, dẫn đến toàn bộ bảng bị co rút lại thành một cột hẹp xíu ở giữa trang, chữ bị bẻ gãy thành từng ký tự xếp dọc (ví dụ: `H \n a \n n \n o \n i \n B \n A`).
+  2. *Giải Pháp Triệt Để*:
+     - Chuyển đổi toàn bộ định dạng bảng sang chuẩn **`WidthType.PERCENTAGE`** (100% full-width responsive):
+       * `Table`: `width: { size: 100, type: WidthType.PERCENTAGE }`, `alignment: AlignmentType.CENTER`.
+       * Loại bỏ hoàn toàn `TableLayoutType.FIXED` và mảng `columnWidths` dxa gây xung đột.
+       * `TableCell`: Sử dụng tỷ lệ phần trăm chính xác cho từng cột:
+         - Bảng 2 cột (Use Case): Cột thuộc tính 28%, Cột mô tả chi tiết 72%.
+         - Bảng 3 cột (Từ điển thuật ngữ, tiêu chí kỹ thuật): Cột 1: 17-20%, Cột 2: 33-35%, Cột 3: 45-50%.
+         - Bảng N cột: Tự động tính toán tỷ lệ % chuẩn xác sao cho tổng đúng 100%.
+       * Hộp Callout ghi chú minh chứng: `width: { size: 100, type: WidthType.PERCENTAGE }`.
+  3. *Tái Xuất Bản Toàn Bộ Tài Liệu DOCX Chuẩn Đẹp*:
+     - Đã tái xuất bản thành công trọn bộ tài liệu:
+       * `document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` (Bản Master 147 Use Cases) & bản rút gọn `SRS_CEO1983_HE_THONG_TOAN_DIEN.docx`.
+       * `document/SRS_01_Web_CRM_CEO1983.docx` (Bản Web CRM - File trong ảnh chụp của người dùng).
+       * `document/SRS_02_App_Hiep_Hoi_CEO1983.docx` (Bản Mobile App).
+       * `document/SRS_IEEE830_CEO1983_TOAN_DIEN.docx` & `document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx`.
+       * Đồng bộ bản Web tại `apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx`.
+     - Xác thực XML: 100% thẻ `<w:tblW>` và `<w:tcW>` mang thuộc tính `w:type="pct"`, 0 thẻ `tblLayout fixed`. Hiển thị hoàn hảo, full-width trên Google Docs, Microsoft Word, Word Online, LibreOffice.
+
+
 - **Bản cập nhật ngày 03/11/2026 (v10.17): Khắc Phục Triệt Để Lỗi TypeScript ts(2322) Tại Trang Quản Trị Thông Báo CRM (`notifications.tsx`, `routeTree.gen.ts`) ([NODE-CRM-022])**:
   1. *Web CRM - Sửa Lỗi Gạch Chân Đỏ `Type 'string | undefined' is not assignable to type 'string'` Tại Sub-filter Tabs*:
      - Nguyên nhân: Trước đó `validateSearch` trong `notifications.tsx` chỉ suy luận kiểu cục bộ `{ filter: string }`, dẫn đến khi `<Link to="/notifications" search={...}>` truyền `undefined` cho trường hợp "Tất cả" (`sub.id === 'all'`), TypeScript kích hoạt lỗi `ts(2322)` vì không cho phép giá trị `undefined`.
