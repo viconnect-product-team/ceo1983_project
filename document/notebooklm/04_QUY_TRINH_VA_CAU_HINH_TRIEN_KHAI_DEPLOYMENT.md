@@ -8,6 +8,7 @@
 - **Hai file thực thi:** deploy/ssl/docker-compose.ssl.yml bỏ mapping 5445; deploy/ssl/setup-ssl.sh chỉ quản lý ceo1983-network/firewall CEO, validate Compose rồi up --no-deps --force-recreate ssl-reverse-proxy. Không xóa proxy ViOne, không down --remove-orphans hay docker rm liên dự án, không quản lý vione-network hoặc firewall 5445/5446.
 - **Lịch sử và nguyên nhân:** trước cập nhật, script xóa cả vione-ssl-proxy và Compose CEO lấy 5445. Deploy CEO ngày 03/11 đã làm ViOne dev trả giao diện CEO và mất cổng CRM 5446. Runtime đã được khôi phục riêng; bản sửa nguồn ngăn đợt deploy CEO tiếp theo lặp lại lỗi. Các ví dụ/quy hoạch cũ bên dưới được giữ làm lịch sử, không còn áp dụng quyền sở hữu 5445 cho CEO.
 - **Kiểm chứng:** Bash/Compose parser và điều kiện ports/network trước push; pipeline main typecheck cả frontend/backend trước deploy; sau triển khai đối chiếu CEO 5443/5444, hai subdomain CEO và ViOne 5445/5446 cùng provider Keycloak. Không thay luồng nghiệp vụ, tài khoản, dữ liệu hoặc cơ chế xác thực.
+- **Nghiệm thu thực tế 03/11/2026:** commit 902e3d2, [pipeline 41577012680](https://github.com/viconnect-product-team/ceo1983_project/actions/runs/41577012680) thành công; TypeScript FE/BE exit 0, build/deploy đạt. Kiểm tra lúc 11:30:42 Asia/Saigon xác nhận CEO proxy chỉ 5443/5444 và ViOne proxy vẫn 5445/5446; 12 container ViOne giữ nguyên ID/start time sau deploy CEO. Bốn URL CEO trả HTTPS 200, hai portal ViOne tiếp tục đúng metadata/provider Keycloak, Code+PKCE/cookie/login/CSS. Không submit mật khẩu hoặc thay dữ liệu trong kiểm tra này.
 
 ---
 
