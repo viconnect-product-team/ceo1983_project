@@ -2,6 +2,11 @@
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
 # ==============================================================================
+# CẬP NHẬT 03/11/2026 — [NODE-CORE-006], ưu tiên hơn quy hoạch cổng cũ bên dưới:
+# ceo1983-ssl-proxy chỉ publish 5443/5444; 5445/5446 thuộc vione-ssl-proxy độc lập.
+# setup-ssl.sh không xóa/stop/recreate vione-ssl-proxy, không quản lý vione-network hoặc firewall 5445/5446.
+# setup-ssl.sh validate Compose rồi up --no-deps --force-recreate ssl-reverse-proxy; không down --remove-orphans hay docker rm liên dự án.
+# Giữ Host Nginx 80/443 và upstream production hiện có. Đối chiếu CEO 5443/5444 và ViOne 5445/5446 sau deploy.
 #
 # ------------------------------------------------------------------------------
 # 0. QUY TRÌNH 5 BƯỚC BẮT BUỘC & MA TRẬN NODE (STRICT NODE-DRIVEN WORKFLOW)

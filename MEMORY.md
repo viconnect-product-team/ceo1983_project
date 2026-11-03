@@ -1,5 +1,11 @@
 # System Memory & Architecture
 
+- **03/11/2026 (v10.18) — Cô lập proxy CEO 1983 và ViOne ([NODE-CORE-006])**:
+  - Người dùng cho phép commit/push CEO/main và chạy lại pipeline production để áp dụng bản vá hai file proxy đã duyệt. Trước sửa, setup-ssl.sh xóa cả vione-ssl-proxy và Compose CEO publish 5445; lần deploy 10:52 đã làm ViOne dev trả giao diện CEO, cổng CRM 5446 mất kết nối.
+  - deploy/ssl/docker-compose.ssl.yml chỉ publish 5443/5444. deploy/ssl/setup-ssl.sh chỉ quản lý firewall các cổng CEO/host, ceo1983-network và service ssl-reverse-proxy; bỏ down --remove-orphans, docker rm liên dự án, vione-network và quản lý 5445. Validate Compose trước up --no-deps --force-recreate đúng service.
+  - ViOne tiếp tục giữ proxy riêng 5445/5446 và Keycloak riêng; không thay mã ứng dụng, xác thực hoặc dữ liệu CEO/ViOne. Đồng bộ deployment-rules, Node Matrix, Cursor Rules và tài liệu NotebookLM; giữ lịch sử trước đây.
+  - Bản vá hai file đã qua git apply --check, Bash syntax và Compose YAML/ports/network validation. Pipeline main bắt buộc typecheck frontend/backend trước deploy; kết quả pipeline và kiểm tra hai hệ thống sẽ bổ sung sau chạy thực tế.
+
 - **Bản cập nhật ngày 03/11/2026 (v10.17): Khắc Phục Triệt Để Lỗi TypeScript ts(2322) Tại Trang Quản Trị Thông Báo CRM (`notifications.tsx`, `routeTree.gen.ts`) ([NODE-CRM-022])**:
   1. *Web CRM - Sửa Lỗi Gạch Chân Đỏ `Type 'string | undefined' is not assignable to type 'string'` Tại Sub-filter Tabs*:
      - Nguyên nhân: Trước đó `validateSearch` trong `notifications.tsx` chỉ suy luận kiểu cục bộ `{ filter: string }`, dẫn đến khi `<Link to="/notifications" search={...}>` truyền `undefined` cho trường hợp "Tất cả" (`sub.id === 'all'`), TypeScript kích hoạt lỗi `ts(2322)` vì không cho phép giá trị `undefined`.

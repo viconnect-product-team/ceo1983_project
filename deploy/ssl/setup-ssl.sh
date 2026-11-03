@@ -5,12 +5,11 @@ cd /root/ssl-proxy
 
 # 1. Mở các cổng trên UFW nếu có UFW
 if command -v ufw >/dev/null 2>&1; then
-    echo "[UFW] Mở cổng 80, 443, 5443, 5444, 5445 trên tường lửa Ubuntu..."
+    echo "[UFW] Mở cổng 80, 443, 5443, 5444 trên tường lửa Ubuntu..."
     ufw allow 80/tcp >/dev/null 2>&1 || true
     ufw allow 443/tcp >/dev/null 2>&1 || true
     ufw allow 5443/tcp >/dev/null 2>&1 || true
     ufw allow 5444/tcp >/dev/null 2>&1 || true
-    ufw allow 5445/tcp >/dev/null 2>&1 || true
     ufw reload >/dev/null 2>&1 || true
 fi
 
@@ -19,18 +18,15 @@ iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
 iptables -I INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
 iptables -I INPUT -p tcp --dport 5443 -j ACCEPT 2>/dev/null || true
 iptables -I INPUT -p tcp --dport 5444 -j ACCEPT 2>/dev/null || true
-iptables -I INPUT -p tcp --dport 5445 -j ACCEPT 2>/dev/null || true
 
 # 3. Chuẩn hóa tệp tin cấu hình (xóa bỏ \r nếu có)
 sed -i 's/\r$//' nginx.conf docker-compose.ssl.yml 2>/dev/null || true
 
 # 4. Khởi động lại container Nginx Proxy
-echo "[Docker] Đảm bảo mạng ceo1983-network & vione-network và khởi tạo container ceo1983-ssl-proxy..."
+echo "[Docker] Đảm bảo mạng ceo1983-network và khởi tạo container ceo1983-ssl-proxy..."
 docker network create ceo1983-network 2>/dev/null || true
-docker network create vione-network 2>/dev/null || true
-docker compose -f docker-compose.ssl.yml down --remove-orphans 2>/dev/null || true
-docker rm -f ceo1983-ssl-proxy vione-ssl-proxy 2>/dev/null || true
-docker compose -f docker-compose.ssl.yml up -d --force-recreate
+docker compose -f docker-compose.ssl.yml config --quiet
+docker compose -f docker-compose.ssl.yml up -d --no-deps --force-recreate ssl-reverse-proxy
 
 # 5. Đợi 2s để Nginx worker process ổn định
 sleep 2

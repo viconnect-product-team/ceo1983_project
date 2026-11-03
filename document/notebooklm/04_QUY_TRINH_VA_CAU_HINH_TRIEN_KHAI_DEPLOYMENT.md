@@ -2,6 +2,13 @@
 *Tài liệu nguồn chuẩn hóa tải lên Google NotebookLM (Sổ tay: https://notebook.google.com/notebook/6ea9dec4-b8c1-4b4b-a077-d874b625bafd)*
 *Phân hệ: DevOps, Triển khai Docker, Nginx Reverse Proxy, Ports & SSL*
 
+## Bổ sung 03/11/2026 — Cô lập proxy CEO 1983 và ViOne (NODE-CORE-006)
+
+- **Quy hoạch hiện hành:** ceo1983-ssl-proxy chỉ publish 5443 (CRM CEO) và 5444 (App CEO). vione-ssl-proxy độc lập giữ 5445 (App ViOne) và 5446 (CRM ViOne). Host Nginx tiếp tục giữ 80/443 và các upstream subdomain production đang có.
+- **Hai file thực thi:** deploy/ssl/docker-compose.ssl.yml bỏ mapping 5445; deploy/ssl/setup-ssl.sh chỉ quản lý ceo1983-network/firewall CEO, validate Compose rồi up --no-deps --force-recreate ssl-reverse-proxy. Không xóa proxy ViOne, không down --remove-orphans hay docker rm liên dự án, không quản lý vione-network hoặc firewall 5445/5446.
+- **Lịch sử và nguyên nhân:** trước cập nhật, script xóa cả vione-ssl-proxy và Compose CEO lấy 5445. Deploy CEO ngày 03/11 đã làm ViOne dev trả giao diện CEO và mất cổng CRM 5446. Runtime đã được khôi phục riêng; bản sửa nguồn ngăn đợt deploy CEO tiếp theo lặp lại lỗi. Các ví dụ/quy hoạch cũ bên dưới được giữ làm lịch sử, không còn áp dụng quyền sở hữu 5445 cho CEO.
+- **Kiểm chứng:** Bash/Compose parser và điều kiện ports/network trước push; pipeline main typecheck cả frontend/backend trước deploy; sau triển khai đối chiếu CEO 5443/5444, hai subdomain CEO và ViOne 5445/5446 cùng provider Keycloak. Không thay luồng nghiệp vụ, tài khoản, dữ liệu hoặc cơ chế xác thực.
+
 ---
 
 ## 1. SƠ ĐỒ ĐỊNH TUYẾN MẠNG & QUY HOẠCH CỔNG (PORT MATRIX)
