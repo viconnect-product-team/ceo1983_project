@@ -163,6 +163,34 @@ export class AdminController {
     return this.adminService.deleteNotification(id);
   }
 
+  // ── EVENT ATTENDEE REMINDER WITH POSTER ─────────────────────────────
+
+  @Get('events/:eventId/attendees-preview')
+  @UseGuards(JwtAuthGuard)
+  async getEventAttendeesPreview(
+    @Param('eventId') eventId: string,
+  ) {
+    return this.adminService.getEventAttendeesPreview(eventId);
+  }
+
+  @Post('events/send-attendee-reminder')
+  @UseGuards(JwtAuthGuard)
+  async sendEventAttendeeReminder(
+    @Request() req,
+    @Body()
+    body: {
+      eventId: string;
+      title: string;
+      body: string;
+      posterUrl?: string;
+      targetFilter?: 'all_registered' | 'confirmed_only' | 'unpaid_only';
+      channel?: string;
+    },
+  ) {
+    const userId = req.user?.id || '';
+    return this.adminService.sendEventAttendeeReminder(userId, body);
+  }
+
   // ── EMAIL MARKETING CAMPAIGNS ─────────────────────────────────────────
 
   @Get('campaigns')

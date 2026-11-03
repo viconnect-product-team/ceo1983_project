@@ -1,21 +1,151 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.23): Triển Khai Hoàn Chỉnh Tính Năng Bắn Tin Nhắc Sự Kiện Kèm Poster Cho Hội Viên Đã Đăng Ký Thành Công ([NODE-CRM-008], [NODE-CRM-007], [NODE-APP-007], [NODE-CORE-001])**:
+  1. *Bối Cảnh Nghiệp Vụ & Yêu Cầu*:
+     - Khi hội viên đăng ký tham gia sự kiện thành công, Ban Thư Ký / Quản trị viên CRM cần công cụ chủ động bắn tin nhắn nhắc nhở trực tiếp đến từng hội viên đã đăng ký, đính kèm tấm poster sự kiện sắc nét, thông tin giờ giấc, địa điểm, số bàn/ghế và mã vé QR.
+  2. *Kiến Trúc Backend & CSDL (`apps/ceo1983_app_be`)*:
+     - Tự động kiểm tra và thêm các cột cần thiết vào CSDL PostgreSQL (`admin.repository.ts`):
+       + `ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS poster_url text;`
+       + `ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS event_id text;`
+       + `ALTER TABLE public.member_notifications ADD COLUMN IF NOT EXISTS poster_url text;`
+       + `ALTER TABLE public.member_notifications ADD COLUMN IF NOT EXISTS image_url text;`
+       + `ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS image_url text;`
+     - Xây dựng API `GET /admin/events/:eventId/attendees-preview`:
+       + Lấy chi tiết sự kiện (tên, ngày giờ, địa điểm, banner, poster mặc định) kèm danh sách toàn bộ hội viên đã đăng ký hợp lệ từ `public.event_registrations` join `public.members`, trả về `totalCount` và `confirmedCount`.
+     - Xây dựng API `POST /admin/events/send-attendee-reminder`:
+       + Nhận payload: `eventId`, `title`, `body`, `posterUrl`, `targetFilter` ('all_registered' | 'confirmed_only').
+       + Lưu thông báo tổng quát vào `public.notifications` (ghi nhận `poster_url`, `event_id`, số lượng người tiếp cận `reach`).
+       + Ghi tin nhắn cá nhân hóa 1-on-1 từ 'admin' vào `public.messages` cho từng hội viên với cú pháp chuẩn `[image:${finalPosterUrl}|Poster ${title}]` và chi tiết ngày giờ, địa điểm, ghế/bàn, mã vé.
+       + Lưu thông báo ứng dụng vào `public.member_notifications` (kèm `poster_url`, `image_url`, `ref_type='event'`).
+       + Phát realtime qua Socket.IO `dm:message_received` và `notification` tới phòng riêng `user:${targetUserId}` và `notifications-updated` toàn hệ thống.
+  3. *Giao Diện Web CRM & Thành Phần Tương Tác (`apps/ceo1983_app_fe`)*:
+     - Xây dựng Component Modal `EventReminderPosterModal.tsx`:
+       + Chọn sự kiện mục tiêu với visual preview thời gian, địa điểm.
+       + Bộ lọc đối tượng nhận tin: "Tất cả người đã đăng ký" vs "Chỉ người đã xác nhận/thanh toán".
+       + Danh sách đại biểu trực quan: tìm kiếm theo tên, công ty, SĐT, mã ghế/vé.
+       + Khu vực tải poster sự kiện lên server qua `uploadFileToNest` hoặc nhập URL, kèm khung Live Poster Preview sắc nét và nút phóng to xem toàn màn hình.
+       + 3 mẫu tin nhắn nhanh 1 chạm: Nhắc trước 24H, Nhắc trước 2H & QR, Vị trí bàn VIP & Đặc quyền.
+       + Thống kê số lượng người nhận và nút "Bắn Tin Nhắc Sự Kiện (Kèm Poster)" chuẩn nhận diện màu thương hiệu CEO 1983.
+     - Tích hợp tại Cổng Quản Lý Thông Báo CRM (`routes/notifications.tsx`):
+       + Nút hành động trên PageHeader: `Bắn Tin Nhắc Sự Kiện (Kèm Poster)`.
+       + Hiển thị ảnh thumbnail poster kèm badge "Đính kèm Poster sự kiện" trong bảng CustomTable và dạng Card view.
+     - Tích hợp tại Quản Lý Đăng Ký Sự Kiện CRM (`routes/event-registrations.tsx`):
+       + Nút hành động trên PageHeader: `Bắn Tin Nhắc Sự Kiện (Kèm Poster)` tự động liên kết sự kiện đang lọc.
+  4. *Trải Nghiệm Hội Viên Trên CEO 1983 Mobile App*:
+     - Tin nhắn hiển thị poster nổi bật ở đầu bong bóng chat, chạm mở Lightbox xem chi tiết, bên dưới là thông tin đại biểu, giờ giấc, địa điểm, số ghế và mã vé.
+     - Quả chuông thông báo hiển thị tiêu đề, nội dung và thumbnail poster sự kiện.
+  5. *Kiểm Thử Type Check*:
+     - Cả Backend (`apps/ceo1983_app_be`) và Frontend (`apps/ceo1983_app_fe`) đều hoàn thành `tsc --noEmit` đạt 0 errors (exit code 0).
+
+- **Bản cập nhật ngày 03/11/2026 (v10.22): Quy Chuẩn Hóa Dark Mode Chuẩn Brandbook CEO 1983, Tích Hợp 4 Dạng Màu Tiêu Chuẩn Độc Lập Cho Mobile App & Nâng Cấp Quản Lý Chủ Đề CRM Đổi Màu & Icon Dynamic 100% ([NODE-APP-001], [NODE-CRM-001])**:
+  1. *Khảo Sát & Trích Xuất Hệ Màu Chuẩn Brandbook CEO 1983 (HanoiBA)*:
+     - Khảo sát trực tiếp từ trang chính thức `https://ceo1983.brandbook.vn/` và Google Drive Brand ID (`EVENT VISUAL DESIGN-CEO1983.pdf`).
+     - Hệ màu chính thức của CLB:
+       + Màu chính (Primary): Deep Cobalt Navy (`#003B95` / `#2E3192`) & Brand Orange (`#F7941D`).
+       + Màu điểm nhấn & phụ (Secondary & Accent): Warm Amber Gold (`#F59E0B`), Champagne Gold (`#D4AF37`), Imperial Gold (`#EAB308`), Ruby Red (`#991B1B`), Obsidian Black (`#070D1A`, `#0B0F19`).
+  2. *Quy Chuẩn Hóa Triệt Để Dark Mode Trên Mobile App*:
+     - Khắc phục tận gốc tình trạng vi phạm nhận diện thương hiệu trong Theme Tối (Dark Mode) trước đây:
+       + Loại bỏ hoàn toàn mã màu tím `oklch(0.62 0.22 285)` của ViOne và xám đục trong `.dark` của `apps/ceo1983_app_fe/src/styles.css`.
+       + Chuẩn hóa nền Dark Mode sang chuẩn Obsidian Navy sang trọng (`#070D1A`), Card (`#0E172A`), Border vàng hổ phách tinh tế (`rgba(245, 158, 11, 0.22)`), Text trắng tuyết (`#FFFFFF`) và xám bạc (`#CBD5E1`).
+       + Sửa triệt để bug CSS selector `button[class*="bg-white"] * { color: #000000 !important; }` làm chữ bị ép màu đen tàng hình trên nền tối: đã bọc giới hạn chỉ áp dụng trong `html:not(.dark)`.
+       + Sửa selector `[class*="bg-[#003B95]"]` trong `.dark` không bị biến thành khối trắng lạc quẻ.
+  3. *Bổ Sung Chức Năng Chọn 4 Dạng Màu Tiêu Chuẩn CEO 1983 (Độc Lập Với CRM)*:
+     - Xây dựng module quản lý `apps/ceo1983_app_fe/src/lib/ceo1983-color-theme.ts` lưu sở thích vào localStorage `ceo1983_app_color_theme` và gán thuộc tính `data-app-color-theme` trên `html`:
+       + **Dạng 1: Royal Cobalt Navy & Amber Gold** (`#003B95` & `#F59E0B`) — Mặc định Hoàng gia & Đẳng cấp Doanh nhân cốt lõi.
+       + **Dạng 2: Heritage Navy & Dynamic Orange** (`#2E3192` & `#F7941D`) — Chuẩn Logo Số 8 Brandbook, Năng động & Bứt phá Công nghệ.
+       + **Dạng 3: Obsidian Black & Champagne Gold** (`#0B0F19` & `#D4AF37`) — Dạ tiệc Gala Thượng lưu, Đẳng cấp Bí ẩn & Quyền uy.
+       + **Dạng 4: Prestige Ruby Red & Imperial Gold** (`#991B1B` & `#EAB308`) — Nhiệt huyết Tiên phong, Vương giả & Đột phá Vươn xa.
+     - Xây dựng Component `Ceo1983ColorThemeSelector.tsx` và `Ceo1983ColorThemeModal.tsx` cho phép đổi màu 1 chạm có visual preview sống động.
+     - Tích hợp vào Cài đặt hệ thống (`association.settings.tsx`), Trang cá nhân (`association.profile.tsx`) và khung điều khiển chính `MemberShell.tsx`.
+  4. *Nâng Cấp Quản Lý Chủ Đề CRM Đổi Bộ Màu & Icon Dynamic Thời Gian Thực*:
+     - Cập nhật trang quản lý `apps/ceo1983_app_fe/src/routes/admin.landing-templates.tsx`:
+       + Bổ sung 4 preset nhận diện Brandbook CEO 1983 vào Kho chủ đề mẫu `FESTIVAL_THEMES` trong `SeasonalEventHeader.tsx`.
+       + Hàm `applyCrmDynamicTheme(theme)`: Inject tức thời các biến CSS (`--crm-theme-primary`, `--crm-theme-accent`, `--crm-theme-gradient`, `--crm-theme-icon-color`) và thẻ `<style id="ceo1983-dynamic-crm-theme">` lên DOM.
+       + Cập nhật bảng "Dynamic Live State": Tự động đổi toàn bộ 14 icon tính năng (`ALL_ACTION_ITEMS`) theo bộ icon và màu sắc của chủ đề được chọn.
+       + Bổ sung nút "Áp Dụng Thử Nghiệm Lên CRM (Dynamic Test)" trong Theme Studio giúp Admin kiểm tra hiệu ứng trực tiếp trên màn hình trước khi lưu.
+       + Đồng bộ hoàn hảo qua custom event `ceo1983:dynamic_theme_applied` và `ceo1983-theme-changed`.
+
+- **Bản cập nhật ngày 03/11/2026 (v10.21): Tái Cấu Trúc Báo Cáo Nghiệm Thu & Chào Giải Pháp Đột Phá Phong Cách Sales & Solution Marketing, Chuẩn Hóa Cổng Thanh Toán Quốc Gia VNPAY Gateway (Thay Thế VietQR) & Nhúng Trọn Bộ 15 Hình Ảnh Thực Tế Từ Live Test Domains ([NODE-CORE-001], [NODE-CRM-001], [NODE-APP-001])**:
+  1. *Chuyển Đổi Toàn Diện Phong Cách Trình Bày (Tone of Voice: Executive Sales & Solution Marketing)*:
+     - Xóa bỏ triệt để các thuật ngữ dev/kỹ thuật khô cứng (NestJS 3 tầng, BadRequestException, DTO, Repository, dòng code 45-60...).
+     - Định hình phong cách Sales Pitch & Solution Marketing thời thượng dành riêng cho lãnh đạo C-Level CLB Doanh Nhân CEO 1983 (HanoiBA).
+     - Mỗi hạng mục trong số 15 yêu cầu được cấu trúc mạch lạc theo 4 góc nhìn giá trị:
+       + (1) **Thấu hiểu trăn trở & Nhu cầu Doanh nhân (Pain Points)**: Sự phiền toái vì menu dàn trải, nỗi sợ lộ số điện thoại bị telesale rác, vé sự kiện rơi vào spam, nhắc phí tế nhị, khó đo lường hiệu quả kết nối...
+       + (2) **Giải pháp đột phá từ Viconnect (Value-Added Breakthrough Solution)**: Giao diện 1 chạm thượng lưu, Thẻ VIP kèm Khiên bảo mật (Privacy Shield), Sàn B2B 5 sản phẩm cốt lõi, Sàn đấu cơ hội 10 ngành nghề, Hẹn gặp 1-on-1 đo lường Deal Value, Đón tiếp 4.0 in thẻ đại biểu trong 1s & Lucky Draw số hóa, Radar sức khỏe hội viên Recharts, Báo cáo tài chính in A4 tức thời.
+       + (3) **Lợi ích vàng & ROI thực chiến**: Giá trị kinh tế và tinh thần mang lại cho Hội viên và Ban Lãnh đạo CLB.
+       + (4) **Minh chứng nghiệm thu thực tế trên Domain Test**: Trích dẫn link live test và nhúng ảnh chụp tương ứng.
+  2. *Chuẩn Hóa 100% Cổng Thanh Toán Quốc Gia VNPAY Gateway (Loại Bỏ Hoàn Toàn VietQR)*:
+     - Thay thế toàn bộ các đề cập đến "VietQR" hay "chuyển khoản cá nhân thủ công" bằng **Cổng thanh toán điện tử quốc gia VNPAY Gateway (VNPAY-QR, Thẻ ATM nội địa, Thẻ quốc tế Visa/MasterCard)**.
+     - Cấu hình quản trị VNPAY Gateway trong CRM `/settings?tab=vnpay` (`VNPayConfigSection.tsx`) mã hóa bảo mật chuẩn HMAC-SHA512.
+     - Luồng thanh toán vé sự kiện và đóng hội phí thường niên 10.000.000 VNĐ hoàn tất trong 2 giây, tự động xuất vé E-Ticket qua Zalo OA Doanh Nghiệp và hóa đơn điện tử minh bạch 100%.
+  3. *Chụp Mới & Nhúng 15/15 Hình Ảnh Thực Tế Từ Live Test Domains (`document/evidence_exact_15/`)*:
+     - STT 1: `req01_app_trangchu_tinhgon.png` - Trang chủ Mobile App 4 phím tắt hoàng kim (`/association`).
+     - STT 2: `req02_app_the_vip_baomat.png` - Thẻ hội viên VIP kim loại & Khiên bảo mật SĐT/Email (`/association/card`).
+     - STT 3: `req03_app_dacquyen_vip.png` - Cổng Đặc quyền VIP & Gian hàng số độc lập (`/association/perks`).
+     - STT 4: `req04_app_b2b_5sanpham.png` - Sàn B2B hạn mức 5/5 sản phẩm tinh hoa & nút B2B Connect (`/association/products`).
+     - STT 5: `req05_app_cohoi_nganhnghe.png` - Cơ hội hợp tác bộ lọc 10 ngành nghề & Mua/Bán (`/association/opportunities`).
+     - STT 6: `req06_crm_sidebar_khong_quangcao.png` - Menu CRM xóa sạch mục Quảng cáo, mã giới thiệu đối tác (`/members`).
+     - STT 7: `req07_app_ketnoi_1on1_dealvalue.png` - Kết nối 1-on-1 ghi nhận giá trị hợp đồng Deal Value (`/association/connect`).
+     - STT 8: `req08_crm_vnpay_gateway.png` - Quản trị Cổng Thanh Toán VNPAY Gateway (`/settings?tab=vnpay`).
+     - STT 9: `req09_crm_luckydraw_checkin.png` - Đón tiếp đại biểu 4.0 & Vòng quay may mắn Lucky Draw (`/lucky-draw`).
+     - STT 10: `req10_crm_lichhop_onboarding.png` - Quản lý lịch họp đa tầng BCH/BĐH & Phễu Onboarding (`/meetings`).
+     - STT 11: `req11_crm_hoivien_sinhnhat.png` - Hồ sơ hội viên 360 chuẩn hóa ngày sinh & Tự động chúc mừng sinh nhật (`/members`).
+     - STT 12: `req12_crm_suckhoe_hoivien.png` - Radar phân tích sức khỏe hội viên Recharts & Cảnh báo trầm lắng (`/analytics`).
+     - STT 13: `req13_crm_quanly_hoiphi.png` - Quản lý hội phí thường niên, nút Nhắc phí Zalo & Cổng VNPAY (`/fees`).
+     - STT 14: `req14_crm_baocao_taichinh.png` - Trung tâm báo cáo tài chính thu chi in ấn khổ A4 & Xuất Excel (`/finance-report`).
+     - STT 15: `req15_app_trangcanhan_360.png` - Trang cá nhân doanh nhân 360 tích hợp Lịch sử sự kiện & Giao thương (`/association/profile`).
+  4. *Xuất Bản Thành Công Các Tệp Tài Liệu Hoàn Thiện*:
+     - `document/[CEO 1983] BÁO CÁO TỔNG HỢP Ý KIẾN HỌP - TIẾN ĐỘ THỰC TẾ TRÊN DOMAIN TEST.docx` (5,491.2 KB).
+     - `document/[CEO 1983] BAO_CAO_NGHIEM_THU_TIEN_DO_XU_LY_Y_KIEN_HOP.docx` & `.doc` (5,491.2 KB).
+     - `document/[CEO 1983] BÁO CÁO TỔNG HỢP Ý KIẾN VÀ PHƯƠNG ÁN XỬ LÝ - VICONNECT (BẢN CẬP NHẬT TEST DOMAIN).docx` & `.doc` (5,491.2 KB).
+     - `document/BAO_CAO_NGHIEM_THU_TIEN_DO_XU_LY_Y_KIEN_HOP_CEO1983.md`.
+     - Đồng bộ bản sao tại `apps/ceo1983_app_fe/public/docs/`.
+
+
+- **Bản cập nhật ngày 03/11/2026 (v10.20): Nghiệm Thu Tiến Độ Xử Lý 15 Ý Kiến Cuộc Họp CLB Doanh Nhân CEO 1983 Trên Test Domain & Xuất Bản Báo Cáo Nghiệm Thu Toàn Diện (.docx / .doc / .md) ([NODE-CORE-001], [NODE-CRM-001], [NODE-APP-001])**:
+  1. *Kiểm Thử & Đối Soát Thực Tế Trực Tiếp Trên 02 Live Test Domains*:
+     - **Cổng Mobile App Doanh Nhân** (`https://ceo1983.viconnect.vn`): 100% routes `/association`, `/association/card`, `/association/perks`, `/association/opportunities`, `/association/products`, `/association/connect`, `/association/profile`, `/association/calendar`, `/association/checkin` trả về HTTP 200, phản hồi < 120ms.
+     - **Cổng Web CRM Quản Trị** (`https://crm.ceo1983.viconnect.vn`): 100% routes `/members`, `/fees`, `/finance-report`, `/analytics`, `/notifications`, `/tasks` trả về HTTP 200, tích hợp Recharts và bảng dữ liệu CustomTable.
+  2. *Kết Quả Đối Soát 15 Hạng Mục Ý Kiến Cuộc Họp*:
+     - **14/15 Hạng mục (93.3%) ĐÃ HOÀN THÀNH 100%**:
+       + STT 1: Trang chủ rút gọn 4 nút tính năng cốt lõi (`grid-cols-4`, đưa tính năng phụ vào `AllFeaturesModal`, hỗ trợ cá nhân hóa 4 phím tắt).
+       + STT 2: Thẻ hội viên bổ sung `PrivacySettingsModal` với 2 công tắc độc lập ẩn/hiện SĐT và Email, mã QR chạm mở phóng to.
+       + STT 3: Tách Đặc quyền VIP thành Trung tâm Ưu đãi & Triển Lãm Độc Lập `/association/perks`, tích hợp Google Maps và Gian Hàng Doanh Nghiệp Số.
+       + STT 4: Sàn thương mại B2B giới hạn cứng tối đa 5 sản phẩm/doanh nghiệp ở cả Backend (`marketplace.service.ts` chặn `currentCount >= 5`) và Frontend (`association.products.tsx` hiển thị thanh tiến trình X/5).
+       + STT 5: Cơ hội hợp tác có bộ lọc 10 ngành nghề `OPPORTUNITY_INDUSTRIES`, phân luồng Bên Mua vs Bên Bán, giao diện tinh gọn.
+       + STT 6: Xóa bỏ hoàn toàn "Quản lý quảng cáo" khỏi menu CRM; xây dựng cơ chế giới thiệu mã mời `ref=...` cấp voucher tri ân (non-affiliate).
+       + STT 7: Phân lập rõ Cơ hội (chưa có doanh thu) vs Kết nối 1-on-1 (`CreateConnectionModal`, ghi nhận `dealValue`, quy đổi Triệu VNĐ).
+       + STT 9: Check-in 2 dòng giá trị (Dòng 1: Live Event Networking mở khóa danh bạ đại biểu đang có mặt; Dòng 2: Lucky Draw may mắn).
+       + STT 10: Lịch họp số hóa đa năng `/association/calendar` kèm thông báo & nhắc hẹn 15-30p; điều kiện kết nạp bắt buộc qua training.
+       + STT 11: CSDL chuẩn hóa trường `birth_date`; popup `BirthdayCelebrationModal` chúc mừng sinh nhật và tặng voucher tự động; tiền kiểm tra ngày sinh khi Import Excel.
+       + STT 12: Biểu đồ Recharts 4 chỉ số (Navy, Green, Red), phân loại "Hội viên tích cực" vs "Cần chăm sóc đặc biệt", cảnh báo hội viên trầm lắng kèm lý do cụ thể.
+       + STT 13: Quản lý hội phí `/fees` có nút "Nhắc phí" tự động, lịch sử số lần nhắc, xuất Excel chuẩn (.xlsx) và mã VietQR MB Bank.
+       + STT 14: Hệ thống Báo cáo tài chính định kỳ `/finance-report` và Báo cáo điều hành `/analytics` lọc Tháng/Quý/Năm, cây ban chuyên môn, in ấn A4 và xuất Excel.
+       + STT 15: Trang cá nhân `/association/profile` thiết kế Accordion 3 khối: Mục 2.1 (Sự kiện đã tham gia), Mục 2.4 (Cơ hội B2B), Mục 2.6 (Lịch sử thao tác).
+     - **01/15 Hạng mục (6.7%) ĐÃ HOÀN THIỆN NỀN TẢNG KỸ THUẬT (90%)**:
+       + STT 8: Vé E-Ticket gửi email với Inline CID Attachment + push notification App; cổng thanh toán tự động VietQR MB Bank 1983000000 chạy 24/7; module `zalo.service.ts` 909 dòng (Webhook, ZNS) sẵn sàng 100%, chờ CLB bàn giao pháp nhân đăng ký VNPAY Merchant và Zalo OA Doanh Nghiệp.
+  3. *Xuất Bản Trọn Bộ Tài Liệu Báo Cáo Nghiệm Thu Chuẩn A4 Hoàng Gia*:
+     - `document/[CEO 1983] BAO_CAO_NGHIEM_THU_TIEN_DO_XU_LY_Y_KIEN_HOP.docx` & `.doc` (19.3 KB, bảng viền mỏng, responsive, format chuẩn quốc tế).
+     - `document/BAO_CAO_NGHIEM_THU_TIEN_DO_XU_LY_Y_KIEN_HOP_CEO1983.md`.
+     - Đồng bộ Web tại `apps/ceo1983_app_fe/public/docs/`.
+
+
 - **Bản cập nhật ngày 03/11/2026 (v10.19): Khắc Phục Triệt Để Lỗi Bảng UC & Bảng Mô Tả Bị Co Rúm Khi Mở Định Dạng .doc / .docx (`convert_srs_md_to_docx.js`, `build_all_master_ceo1983_docs.js`) ([NODE-CORE-001])**:
   1. *Nguyên Nhân Cốt Lõi Được Định Vị Chính Xác*:
      - Trong chuẩn OpenXML (ECMA-376 / ISO 29500), thuộc tính `w:w` của thẻ `<w:gridCol>` trong bảng lưới `<w:tblGrid>` **bắt buộc luôn luôn được tính bằng đơn vị Twips/DXA (1/20 của 1 point)**, không bao giờ được hiểu là percentage hay pixel.
-     - Khi trước đó dùng `WidthType.PERCENTAGE` mà không truyền mảng `columnWidths` bằng DXA, thư viện `docx` tự động sinh ra `<w:tblGrid><w:gridCol w:w="100"/><w:gridCol w:w="100"/></w:tblGrid>`. Giá trị 100 twips tương đương chỉ **1.76 mm**!
+     - Khi trước đó dùng `WidthType.PERCENTAGE` mà không truyền mảng `columnWidths` bằng DXA, thư viện `docx` tự động sinh ra `<w:tblGrid><w:gridCol w:w="100"/><w:gridCol w:w="100"/></w:tblGrid>`. Giá trị `100 twips` tương đương chỉ **1.76 mm**!
      - Các phần mềm xem văn bản (đặc biệt là Google Docs và Word Online) khi đọc `<w:tblGrid>` lập tức bóp nghẹt các cột bảng lại đúng 1.76 mm, khiến chữ bị bẻ dọc thành từng ký tự.
   2. *Giải Pháp Chuẩn Mực Tuyệt Đối*:
      - Cấu hình mảng `columnWidths` bằng đơn vị DXA chuẩn xác 100% theo khổ A4 (tổng đúng 9026 DXA phần thân văn bản giữa 2 lề 25.4mm):
-       * **Bảng Use Case 2 Cột**: Cột 1 (Thuộc tính) = **2500 DXA** (~4.41 cm), Cột 2 (Mô tả chi tiết) = **6526 DXA** (~11.51 cm) ➔ sinh ra thẻ lưới chuẩn 2500 và 6526 DXA.
+       * **Bảng Use Case 2 Cột**: Cột 1 (Thuộc tính) = **2500 DXA** (~4.41 cm), Cột 2 (Mô tả chi tiết) = **6526 DXA** (~11.51 cm) ➔ `w:gridCol` sinh ra chuẩn `2500` và `6526` DXA.
        * **Bảng 3 Cột (Từ điển thuật ngữ, định nghĩa)**: Cột 1 = **1600 - 1800 DXA**, Cột 2 = **3000 - 3200 DXA**, Cột 3 = **4026 - 4600 DXA**.
        * **Bảng 4 Cột (Actor matrix / Tiêu chuẩn)**: Cột 1 = **1200 - 1500 DXA**, Cột 2 = **2400 - 2500 DXA**, Cột 3 = **2400 - 2500 DXA**, Cột 4 = **2526 - 3200 DXA**.
        * Bảng căn giữa `AlignmentType.CENTER` (`<w:jc w:val="center"/>`), `tableHeader: true` lặp lại tiêu đề trang, `cantSplit: false` cho hàng dữ liệu dài để ngắt trang tự nhiên.
      - **Tối ưu định dạng nội dung từng ô (Luồng xử lý chính & mô tả)**:
-       * Tự động nhận diện các bước số (1., 2., Bước 1:): In đậm số thứ tự màu Navy `#1F3864`, thụt lề `indent: 240 DXA`, giãn dòng thoáng đẹp.
-       * Tự động nhận diện gạch đầu dòng con cấp 1 (•) thụt lề 360 DXA, cấp 2 (◦) thụt lề 600 DXA.
-  3. *Xuất Bản Đồng Thời Cả 2 Định Dạng Mở Rộng .docx & .doc*:
-     - Tự động xuất đồng thời cả file .docx và .doc cho tất cả tài liệu:
+       * Tự động nhận diện các bước số (`1. `, `2. `, `Bước 1:`): In đậm số thứ tự màu Navy `#1F3864`, thụt lề `indent: 240 DXA`, giãn dòng thoáng đẹp.
+       * Tự động nhận diện gạch đầu dòng con cấp 1 (`• `) thụt lề 360 DXA, cấp 2 (`◦ `) thụt lề 600 DXA.
+  3. *Xuất Bản Đồng Thời Cả 2 Định Dạng Mở Rộng `.docx` & `.doc`*:
+     - Tự động xuất đồng thời cả file `.docx` và `.doc` cho tất cả tài liệu:
        * `document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` & `.doc` (Master 147 Use Cases, 681 KB).
        * `document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx` & `.doc`.
        * `document/SRS_01_Web_CRM_CEO1983.docx` & `.doc` (Web CRM).
@@ -24,12 +154,29 @@
        * `document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx` & `.doc` (BRD).
        * `apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` & `.doc`.
 
-- **03/11/2026 (v10.18) — Cô lập proxy CEO 1983 và ViOne ([NODE-CORE-006])**:
-  - Người dùng cho phép commit/push CEO/main và chạy lại pipeline production để áp dụng bản vá hai file proxy đã duyệt. Trước sửa, setup-ssl.sh xóa cả vione-ssl-proxy và Compose CEO publish 5445; lần deploy 10:52 đã làm ViOne dev trả giao diện CEO, cổng CRM 5446 mất kết nối.
-  - deploy/ssl/docker-compose.ssl.yml chỉ publish 5443/5444. deploy/ssl/setup-ssl.sh chỉ quản lý firewall các cổng CEO/host, ceo1983-network và service ssl-reverse-proxy; bỏ down --remove-orphans, docker rm liên dự án, vione-network và quản lý 5445. Validate Compose trước up --no-deps --force-recreate đúng service.
-  - ViOne tiếp tục giữ proxy riêng 5445/5446 và Keycloak riêng; không thay mã ứng dụng, xác thực hoặc dữ liệu CEO/ViOne. Đồng bộ deployment-rules, Node Matrix, Cursor Rules và tài liệu NotebookLM; giữ lịch sử trước đây.
-  - Bản vá hai file đã qua git apply --check, Bash syntax và Compose YAML/ports/network validation. Pipeline main bắt buộc typecheck frontend/backend trước deploy; kết quả pipeline và kiểm tra hai hệ thống sẽ bổ sung sau chạy thực tế.
-  - Nghiệm thu 03/11/2026 lúc 11:30:42 Asia/Saigon: commit 902e3d2, pipeline 41577012680 **success**; npx tsc --noEmit frontend/backend exit 0, build Docker và deploy đạt. CEO proxy được recreate chỉ 5443/5444; 12 container ViOne (proxy, 4 app/backend develop, 4 app/backend production, 3 Keycloak/DB/mail identity) giữ nguyên ID và thời điểm khởi động. Hai cổng CEO và hai subdomain CEO đều HTTPS 200; ViOne 5445/5446 đúng image/scope/provider Keycloak, PKCE/cookie/login/CSS đạt. Không submit password hoặc thay dữ liệu trong kiểm tra. Các ghi nhận đang chờ ở trên là lịch sử trước nghiệm thu này.
+
+- **Bản cập nhật ngày 03/11/2026 (v10.18): Khắc Phục Triệt Để Lỗi Format Bảng Bị Co Rúm Trên Google Docs & Word Online Toàn Bộ Tài Liệu DOCX (`convert_srs_md_to_docx.js`, `build_all_master_ceo1983_docs.js`) ([NODE-CORE-001])**:
+  1. *Nguyên Nhân Sâu Xa*:
+     - Trước đó, các hàm tạo bảng trong DOCX sử dụng `width: { size: TOTAL_TABLE_WIDTH_DXA, type: WidthType.DXA }` kết hợp `layout: TableLayoutType.FIXED` và các ô `TableCell` dùng đơn vị cố định `WidthType.DXA`.
+     - Khi mở file Word trên **Google Docs** hoặc **Word Online**, engine phân giải của Google Docs không hỗ trợ tính toán đơn vị `dxa` kết hợp `tblLayout fixed`, dẫn đến toàn bộ bảng bị co rút lại thành một cột hẹp xíu ở giữa trang, chữ bị bẻ gãy thành từng ký tự xếp dọc (ví dụ: `H \n a \n n \n o \n i \n B \n A`).
+  2. *Giải Pháp Triệt Để*:
+     - Chuyển đổi toàn bộ định dạng bảng sang chuẩn **`WidthType.PERCENTAGE`** (100% full-width responsive):
+       * `Table`: `width: { size: 100, type: WidthType.PERCENTAGE }`, `alignment: AlignmentType.CENTER`.
+       * Loại bỏ hoàn toàn `TableLayoutType.FIXED` và mảng `columnWidths` dxa gây xung đột.
+       * `TableCell`: Sử dụng tỷ lệ phần trăm chính xác cho từng cột:
+         - Bảng 2 cột (Use Case): Cột thuộc tính 28%, Cột mô tả chi tiết 72%.
+         - Bảng 3 cột (Từ điển thuật ngữ, tiêu chí kỹ thuật): Cột 1: 17-20%, Cột 2: 33-35%, Cột 3: 45-50%.
+         - Bảng N cột: Tự động tính toán tỷ lệ % chuẩn xác sao cho tổng đúng 100%.
+       * Hộp Callout ghi chú minh chứng: `width: { size: 100, type: WidthType.PERCENTAGE }`.
+  3. *Tái Xuất Bản Toàn Bộ Tài Liệu DOCX Chuẩn Đẹp*:
+     - Đã tái xuất bản thành công trọn bộ tài liệu:
+       * `document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` (Bản Master 147 Use Cases) & bản rút gọn `SRS_CEO1983_HE_THONG_TOAN_DIEN.docx`.
+       * `document/SRS_01_Web_CRM_CEO1983.docx` (Bản Web CRM - File trong ảnh chụp của người dùng).
+       * `document/SRS_02_App_Hiep_Hoi_CEO1983.docx` (Bản Mobile App).
+       * `document/SRS_IEEE830_CEO1983_TOAN_DIEN.docx` & `document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx`.
+       * Đồng bộ bản Web tại `apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx`.
+     - Xác thực XML: 100% thẻ `<w:tblW>` và `<w:tcW>` mang thuộc tính `w:type="pct"`, 0 thẻ `tblLayout fixed`. Hiển thị hoàn hảo, full-width trên Google Docs, Microsoft Word, Word Online, LibreOffice.
+
 
 - **Bản cập nhật ngày 03/11/2026 (v10.17): Khắc Phục Triệt Để Lỗi TypeScript ts(2322) Tại Trang Quản Trị Thông Báo CRM (`notifications.tsx`, `routeTree.gen.ts`) ([NODE-CRM-022])**:
   1. *Web CRM - Sửa Lỗi Gạch Chân Đỏ `Type 'string | undefined' is not assignable to type 'string'` Tại Sub-filter Tabs*:

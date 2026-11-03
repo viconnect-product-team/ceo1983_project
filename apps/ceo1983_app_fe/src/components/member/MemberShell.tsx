@@ -20,6 +20,7 @@ import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
 import { useCalendarNotifications } from "@/hooks/use-calendar-notifications";
 import { CeoFacebookReminderBanner } from "@/components/calendar/CeoFacebookReminderBanner";
+import { Ceo1983ColorThemeModal } from "@/components/member/Ceo1983ColorThemeModal";
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
@@ -30,6 +31,15 @@ export function MemberScreen({ children }: { children: ReactNode }) {
 
   // Nhắc lịch thông minh kiểu Facebook Pop-up (7h sáng & trước sự kiện/cuộc họp)
   const { activeNotice, dismissNotice, snoozeNotice } = useCalendarNotifications();
+
+  // Modal chọn 4 dạng màu tiêu chuẩn CEO 1983 (độc lập với CRM)
+  const [colorThemeModalOpen, setColorThemeModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenColorModal = () => setColorThemeModalOpen(true);
+    window.addEventListener("ceo1983:open_color_theme_modal", handleOpenColorModal);
+    return () => window.removeEventListener("ceo1983:open_color_theme_modal", handleOpenColorModal);
+  }, []);
 
   // ── BẢO VỆ ĐIỀU HƯỚNG CHUẨN NATIVE APP (NHƯ MOMO) ──
   // 1. Lắng nghe sự kiện phím Back cứng từ Native Android APK (Capacitor Bridge)
@@ -303,6 +313,10 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         />
         <IncomingConnectionModal />
         <WelcomeMemberModal />
+        <Ceo1983ColorThemeModal
+          open={colorThemeModalOpen}
+          onClose={() => setColorThemeModalOpen(false)}
+        />
       </div>
     </div>
   );

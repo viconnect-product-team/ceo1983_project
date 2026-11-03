@@ -87,6 +87,7 @@ import { useRole } from "@/hooks/use-role";
 import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi, isDeadAvatarUrl } from "@/lib/api-client";
 import { requestNotificationPermission } from "@/lib/notification-permissions";
+import { Ceo1983ColorThemeSelector } from "@/components/member/Ceo1983ColorThemeSelector";
 import { toast } from "sonner";
 // @ts-ignore
 import heroImg from "@/assets/vba-hero.jpg";
@@ -1721,6 +1722,11 @@ export default function ProfileScreen() {
                         <Moon className="size-3.5 text-sky-400" />
                         <span>Tối</span>
                       </button>
+                    </div>
+
+                    {/* 4 Dạng Màu Tiêu Chuẩn CEO 1983 */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <Ceo1983ColorThemeSelector />
                     </div>
                   </div>
 

@@ -88,3 +88,70 @@ export const pushNotificationToMessagesFn = createServerFn({ method: "POST" })
       },
     );
   });
+
+export const getEventAttendeesPreviewFn = createServerFn({ method: "GET" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => z.object({ eventId: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }): Promise<{
+    event: {
+      id: string;
+      name: string;
+      date: string;
+      location: string;
+      bannerUrl?: string;
+      posterUrl?: string;
+      capacity?: number;
+      ticketPrice?: number;
+    } | null;
+    attendees: Array<{
+      id: string;
+      name: string;
+      code: string;
+      email: string;
+      phone: string;
+      company: string;
+      seat: string;
+      ticketCode: string;
+      status: string;
+      paymentStatus: string;
+      avatarUrl?: string;
+      userId?: string;
+      registeredAt?: string;
+    }>;
+    totalCount: number;
+    confirmedCount: number;
+  }> => {
+    return fetchNestApiFromServer(`/admin/events/${encodeURIComponent(data.eventId)}/attendees-preview`, context.token);
+  });
+
+const eventReminderInput = z.object({
+  eventId: z.string().min(1),
+  title: z.string().min(1).max(300),
+  body: z.string().min(1).max(4000),
+  posterUrl: z.string().optional(),
+  targetFilter: z.enum(["all_registered", "confirmed_only", "unpaid_only"]).default("all_registered"),
+  channel: z.string().optional(),
+});
+
+export const sendEventAttendeeReminderFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator((d: unknown) => eventReminderInput.parse(d))
+  .handler(async ({ data, context }): Promise<{
+    ok: boolean;
+    notifCode: string;
+    eventName: string;
+    eventDate: string;
+    posterUrl?: string;
+    recipientCount: number;
+    recipients: Array<{
+      name: string;
+      code: string;
+      phone: string;
+      seat: string;
+    }>;
+  }> => {
+    return fetchNestApiFromServer("/admin/events/send-attendee-reminder", context.token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  });

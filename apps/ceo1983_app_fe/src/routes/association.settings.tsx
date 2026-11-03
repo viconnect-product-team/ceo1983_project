@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ShieldCheck,
   Settings as Cog,
@@ -18,9 +19,10 @@ import {
   Check,
   LogOut,
   Smartphone,
+  Palette,
 } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
+import { Ceo1983ColorThemeSelector } from "@/components/member/Ceo1983ColorThemeSelector";
 import { useServerData } from "@/hooks/use-server-data";
 import { getMyMember, type MyMember } from "@/lib/member-app.functions";
 import { useAuth } from "@/context/AuthContext";
@@ -313,7 +315,7 @@ function AssociationSettingsScreen() {
                 type="button"
                 onClick={() => {
                   setTheme("dark");
-                  toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
+                  toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối chuẩn CEO 1983");
                 }}
                 className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
                   theme === "dark"
@@ -325,6 +327,11 @@ function AssociationSettingsScreen() {
                 <span>{isEn ? "Dark" : "Giao diện tối"}</span>
               </button>
             </div>
+          </div>
+
+          {/* Mục 3.2: 4 Dạng Màu Tiêu Chuẩn CEO 1983 (Brandbook) */}
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#0E172A] border border-slate-200/80 dark:border-amber-400/25 space-y-3">
+            <Ceo1983ColorThemeSelector />
           </div>
 
           {/* Mục 4: Thông báo đẩy & Tin nhắn nền */}

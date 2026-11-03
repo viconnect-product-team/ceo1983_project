@@ -75,21 +75,70 @@ export function setActiveAppThemeId(id: string): void {
   }
 }
 
+/** Injects dynamic CSS variables and classes onto the CRM DOM so icons & colors react dynamically */
+export function applyCrmDynamicTheme(theme: FestivalThemeOption | null): void {
+  if (typeof document === "undefined") return;
+  const styleId = "ceo1983-dynamic-crm-theme";
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
+  }
+
+  if (!theme || theme.id === "none") {
+    styleEl.innerHTML = "";
+    document.documentElement.style.removeProperty("--crm-theme-primary");
+    document.documentElement.style.removeProperty("--crm-theme-accent");
+    document.documentElement.style.removeProperty("--crm-theme-gradient");
+    document.documentElement.style.removeProperty("--crm-theme-icon-color");
+    return;
+  }
+
+  const primary = theme.primaryColor || "#003B95";
+  const accent = theme.accentColor || "#F59E0B";
+  const gradient = theme.bannerGradient || `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)`;
+
+  document.documentElement.style.setProperty("--crm-theme-primary", primary);
+  document.documentElement.style.setProperty("--crm-theme-accent", accent);
+  document.documentElement.style.setProperty("--crm-theme-gradient", gradient);
+  document.documentElement.style.setProperty("--crm-theme-icon-color", accent);
+
+  styleEl.innerHTML = `
+    :root {
+      --crm-active-primary: ${primary};
+      --crm-active-accent: ${accent};
+    }
+    .crm-dynamic-accent { color: ${accent} !important; }
+    .crm-dynamic-accent-bg { background-color: ${accent} !important; color: #000 !important; }
+    .crm-dynamic-primary-bg { background-color: ${primary} !important; }
+    .crm-dynamic-gradient { background: ${gradient} !important; }
+    .crm-dynamic-border { border-color: ${accent} !important; }
+    .crm-dynamic-ring { box-shadow: 0 0 0 2px ${accent}40 !important; }
+    .crm-theme-badge-glow { box-shadow: 0 0 16px ${accent}60 !important; }
+    .crm-dynamic-icon { filter: drop-shadow(0 0 6px ${accent}80); }
+  `;
+
+  window.dispatchEvent(new CustomEvent("ceo1983:dynamic_theme_applied", { detail: theme }));
+}
+
 const PRESET_PRIMARY_COLORS = [
+  { name: "Royal Cobalt (Brandbook)", value: "#003B95" },
+  { name: "Heritage Navy (Brandbook)", value: "#2E3192" },
+  { name: "Obsidian Black (Brandbook)", value: "#0B0F19" },
+  { name: "Ruby Prestige (Brandbook)", value: "#991B1B" },
   { name: "Navy Hoàng Gia", value: "#001B54" },
-  { name: "Xanh Sapphire", value: "#003B95" },
   { name: "Tím Đêm", value: "#312E81" },
   { name: "Đỏ Quốc Kỳ", value: "#DC2626" },
-  { name: "Đỏ Rượu Vang", value: "#991B1B" },
   { name: "Xanh Noel", value: "#065F46" },
-  { name: "Đỏ May Mắn", value: "#B91C1C" },
   { name: "Hổ Phách Doanh Nhân", value: "#B45309" },
 ];
 
 const PRESET_ACCENT_COLORS = [
-  { name: "Vàng Champagne", value: "#D4AF37" },
-  { name: "Vàng Kim Rực Rỡ", value: "#F59E0B" },
-  { name: "Vàng Sao Vàng", value: "#EAB308" },
+  { name: "Hổ Phách Gold (Brandbook)", value: "#F59E0B" },
+  { name: "Cam Brandbook (#F7941D)", value: "#F7941D" },
+  { name: "Champagne Gold (Brandbook)", value: "#D4AF37" },
+  { name: "Hoàng Kim (Brandbook)", value: "#EAB308" },
   { name: "Đỏ Noel", value: "#EF4444" },
   { name: "Vàng Đào Tết", value: "#FBBF24" },
   { name: "Xanh Cyan Tươi", value: "#38BDF8" },
@@ -287,10 +336,18 @@ export function AdminThemeManagementPage() {
           setEventThemeEnabled(true);
           if (res.customConfig) {
             saveCustomThemeConfig(res.customConfig);
+            applyCrmDynamicTheme(res.customConfig);
+          } else {
+            const foundPreset = FESTIVAL_THEMES.find((t) => t.id === res.themeId);
+            if (foundPreset) applyCrmDynamicTheme(foundPreset);
           }
         }
       })
       .catch(() => {});
+
+    // Khởi tạo dynamic theme ngay khi tải trang
+    const initialTheme = isEventThemeEnabled() ? getEffectiveThemeOption() : null;
+    applyCrmDynamicTheme(initialTheme);
 
     const handleThemeChange = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
@@ -299,6 +356,8 @@ export function AdminThemeManagementPage() {
       } else {
         setActiveThemeIdState(getActiveAppThemeId());
       }
+      const updatedTheme = isEventThemeEnabled() ? getEffectiveThemeOption() : null;
+      applyCrmDynamicTheme(updatedTheme);
     };
 
     window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange);
@@ -318,6 +377,7 @@ export function AdminThemeManagementPage() {
     setActiveEventThemeType(targetType);
     setActiveAppThemeId(crmId);
     setActiveThemeIdState(crmId);
+    applyCrmDynamicTheme(theme);
 
     try {
       await fetchNestApi("/admin/active-theme", {
@@ -329,7 +389,7 @@ export function AdminThemeManagementPage() {
     }
 
     toast.success(`Đã kích hoạt thành công chủ đề "${theme.name}" cho App Hiệp hội!`, {
-      description: "Toàn bộ App CEO 1983 đã đổi màu sắc, bố cục và hiệu ứng icon tương ứng.",
+      description: "Toàn bộ App CEO 1983 & CRM đã đổi màu sắc, bố cục và icon tương ứng tức thì.",
     });
   };
 
@@ -386,6 +446,7 @@ export function AdminThemeManagementPage() {
     setActiveEventThemeType("custom");
     setActiveAppThemeId("custom");
     setActiveThemeIdState("custom");
+    applyCrmDynamicTheme(customConfig);
 
     try {
       await fetchNestApi("/admin/active-theme", {
@@ -401,8 +462,31 @@ export function AdminThemeManagementPage() {
     }
 
     toast.success(`Đã lưu và áp dụng chủ đề tùy chỉnh thành công!`, {
-      description: "App Hiệp hội CEO 1983 đã cập nhật bố cục, bộ icon và hiệu ứng mới.",
+      description: "App Hiệp hội CEO 1983 & CRM đã cập nhật bố cục, bộ icon và hiệu ứng mới tức thì.",
     });
+  };
+
+  const handleTestInCrmLive = () => {
+    const liveConfig: FestivalThemeOption = {
+      id: "custom",
+      name: customName.trim() || "Chủ Đề Tùy Chỉnh",
+      tagline: customTagline.trim(),
+      badge: customBadge.trim() || "🎨 Tùy Biến",
+      colorScheme: "Custom Palette",
+      bannerGradient: `linear-gradient(135deg, ${customPrimaryColor} 0%, #1e293b 50%, ${customAccentColor} 100%)`,
+      primaryColor: customPrimaryColor,
+      accentColor: customAccentColor,
+      iconEmoji: customBadge.slice(0, 2) || "🎨",
+      backgroundImageUrl: customBackgroundUrl.trim() || undefined,
+      appBackgroundStyle: customAppBackgroundStyle,
+      layoutGrid: customLayoutGrid,
+      borderRadius: customBorderRadius,
+      iconStyle: customIconStyle,
+      effectType: customEffectType,
+      actionIcons: customIcons,
+    };
+    applyCrmDynamicTheme(liveConfig);
+    toast.success("Đã đồng bộ trực tiếp bộ màu & icon của Studio lên giao diện CRM!");
   };
 
   const handleDeactivateTheme = async () => {
@@ -410,6 +494,7 @@ export function AdminThemeManagementPage() {
     setActiveEventThemeType("none");
     setActiveAppThemeId("none");
     setActiveThemeIdState("none");
+    applyCrmDynamicTheme(null);
 
     try {
       await fetchNestApi("/admin/active-theme", {
@@ -520,6 +605,90 @@ export function AdminThemeManagementPage() {
                   <span>Xem Chi Tiết</span>
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Theme & Icon Live Sync Panel */}
+        <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="size-9 rounded-xl flex items-center justify-center text-lg shadow-xs"
+                style={{
+                  backgroundColor: `${effectiveActive.primaryColor}25`,
+                  borderColor: effectiveActive.accentColor,
+                  borderWidth: "1.5px",
+                }}
+              >
+                <span className="crm-dynamic-icon">{effectiveActive.iconEmoji || "🎨"}</span>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-foreground flex items-center gap-2">
+                  <span>Hệ Thống Icon & Bộ Màu Đang Áp Dụng (Dynamic Live State)</span>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase text-white shadow-xs"
+                    style={{ backgroundColor: effectiveActive.accentColor }}
+                  >
+                    Active Sync
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Khi kích hoạt chủ đề hoặc lưu tùy biến, toàn bộ biến màu CSS và icon hành động sẽ lập tức biến đổi trực tiếp trên DOM.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span
+                  className="size-4 rounded-full border border-white/40 shadow-xs"
+                  style={{ backgroundColor: effectiveActive.primaryColor }}
+                  title={`Primary: ${effectiveActive.primaryColor}`}
+                />
+                <span className="text-[11px] font-bold text-foreground">{effectiveActive.primaryColor}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span
+                  className="size-4 rounded-full border border-white/40 shadow-xs"
+                  style={{ backgroundColor: effectiveActive.accentColor }}
+                  title={`Accent: ${effectiveActive.accentColor}`}
+                />
+                <span className="text-[11px] font-bold text-foreground">{effectiveActive.accentColor}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Action Icons Grid */}
+          <div className="pt-2 border-t border-border/60">
+            <div className="text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Bộ Biểu Tượng Ứng Dụng Biến Đổi Theo Chủ Đề Hiện Tại:</span>
+              <span className="font-mono text-amber-500 font-bold">{effectiveActive.name}</span>
+            </div>
+            <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-14 gap-2">
+              {ALL_ACTION_ITEMS.map((item) => {
+                const icon = effectiveActive.actionIcons[item.key] || item.defaultIcon;
+                return (
+                  <div
+                    key={item.key}
+                    className="flex flex-col items-center gap-1 p-2 rounded-xl border border-border/70 bg-background/60 hover:bg-muted/40 transition text-center"
+                  >
+                    <div
+                      className="size-9 rounded-xl flex items-center justify-center text-lg shadow-2xs transition-transform hover:scale-110"
+                      style={{
+                        backgroundColor: `${effectiveActive.primaryColor}18`,
+                        borderColor: `${effectiveActive.accentColor}50`,
+                        borderWidth: "1px",
+                      }}
+                    >
+                      <span className="crm-dynamic-icon">{icon}</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-muted-foreground line-clamp-1 w-full">
+                      {item.name}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1109,11 +1278,19 @@ export function AdminThemeManagementPage() {
               </div>
 
               {/* Nút Hành Động */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestInCrmLive}
+                  className="w-full sm:w-auto py-3 px-4 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Áp Dụng Thử Nghiệm Lên CRM (Dynamic Test)</span>
+                </button>
                 <button
                   type="button"
                   onClick={handleSaveAndApplyCustomTheme}
-                  className="flex-1 py-3 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="flex-1 w-full py-3 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <Save className="w-4 h-4" />
                   <span>LƯU & ÁP DỤNG NGAY CHO APP CEO 1983</span>

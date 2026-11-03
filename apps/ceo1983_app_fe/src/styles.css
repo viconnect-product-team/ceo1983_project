@@ -161,49 +161,54 @@
 }
 
 .dark {
-  --background: oklch(0.16 0.03 265);
-  --foreground: oklch(0.97 0.005 260);
-  --card: oklch(0.2 0.04 265);
-  --card-foreground: oklch(0.97 0.005 260);
-  --popover: oklch(0.2 0.04 265);
-  --popover-foreground: oklch(0.97 0.005 260);
-  --primary: oklch(0.62 0.22 285);
-  --primary-foreground: oklch(0.15 0.03 265);
-  --secondary: oklch(0.26 0.04 265);
-  --secondary-foreground: oklch(0.97 0.005 260);
-  --muted: oklch(0.26 0.04 265);
-  --muted-foreground: oklch(0.7 0.03 260);
-  --accent: oklch(0.3 0.08 285);
-  --accent-foreground: oklch(0.97 0.005 260);
-  --border: oklch(1 0 0 / 22%);
-  --input: oklch(1 0 0 / 24%);
-  --ring: oklch(0.62 0.22 285);
+  /* ============================================================
+     CEO 1983 OFFICIAL DARK MODE IDENTITY (Brandbook HanoiBA CEO 1983)
+     Deep Obsidian Cobalt Navy, Warm Amber Gold Accents, Zero Purple
+     ============================================================ */
+  --background: #070D1A;
+  --foreground: #FFFFFF;
+  --card: #0E172A;
+  --card-foreground: #FFFFFF;
+  --popover: #0E172A;
+  --popover-foreground: #FFFFFF;
+  --primary: #F59E0B;
+  --primary-foreground: #070D1A;
+  --primary-glow: #FBBF24;
+  --secondary: #14223E;
+  --secondary-foreground: #CBD5E1;
+  --muted: #14223E;
+  --muted-foreground: #94A3B8;
+  --accent: #192744;
+  --accent-foreground: #F59E0B;
+  --border: rgba(245, 158, 11, 0.22);
+  --input: rgba(245, 158, 11, 0.25);
+  --ring: #F59E0B;
 
-  /* State colours tuned for dark surfaces (AA on --card) */
-  --destructive: oklch(0.68 0.2 25);
-  --destructive-foreground: oklch(0.16 0.03 265);
-  --success: oklch(0.74 0.16 155);
-  --success-foreground: oklch(0.16 0.03 265);
-  --warning: oklch(0.82 0.15 75);
-  --warning-foreground: oklch(0.16 0.03 265);
-  --info: oklch(0.74 0.14 240);
-  --info-foreground: oklch(0.16 0.03 265);
+  /* State colours tuned for CEO 1983 dark surfaces */
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --success: #10B981;
+  --success-foreground: #FFFFFF;
+  --warning: #F59E0B;
+  --warning-foreground: #070D1A;
+  --info: #38BDF8;
+  --info-foreground: #070D1A;
 
-  --sidebar: oklch(0.14 0.03 265);
-  --sidebar-foreground: oklch(0.9 0.02 260);
-  --sidebar-primary: oklch(0.62 0.22 285);
-  --sidebar-primary-foreground: oklch(0.15 0.03 265);
-  --sidebar-accent: oklch(0.22 0.05 268);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.62 0.22 285);
-  --gradient-sidebar: linear-gradient(180deg, oklch(0.16 0.04 265), oklch(0.12 0.03 265));
+  --sidebar: #050912;
+  --sidebar-foreground: #CBD5E1;
+  --sidebar-primary: #F59E0B;
+  --sidebar-primary-foreground: #070D1A;
+  --sidebar-accent: #0E172A;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(245, 158, 11, 0.16);
+  --sidebar-ring: #F59E0B;
+  --gradient-sidebar: linear-gradient(180deg, #070D1A 0%, #050912 100%);
 
-  --chart-1: oklch(0.68 0.19 285);
-  --chart-2: oklch(0.72 0.17 340);
-  --chart-3: oklch(0.74 0.16 155);
-  --chart-4: oklch(0.82 0.15 75);
-  --chart-5: oklch(0.72 0.16 220);
+  --chart-1: #003B95;
+  --chart-2: #F59E0B;
+  --chart-3: #10B981;
+  --chart-4: #EF4444;
+  --chart-5: #38BDF8;
 }
 
 /* ------------------------------------------------------------------
@@ -527,30 +532,55 @@ html.hc .vba-gold-grad {
   box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.40);
 }
 
-/* System-wide brand color update: Replace ALL bg-[#003B95] with white background and black text */
-[class*="bg-[#003B95]"],
-[class*="hover:bg-[#003B95]"]:hover {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #003B95 !important;
+/* ============================================================
+   CEO 1983 COLOR STANDARDS & CONTRAST (Light & Dark Mode)
+   ============================================================ */
+/* Navy brand buttons & highlights in Light Mode */
+html:not(.dark) [class*="bg-[#003B95]"],
+html:not(.dark) [class*="hover:bg-[#003B95]"]:hover {
+  background-color: #003B95;
+  color: #ffffff;
 }
 
-[class*="bg-[#003B95]"] *,
-[class*="hover:bg-[#003B95]"]:hover * {
-  color: #000000 !important;
-  stroke: #000000 !important;
+html:not(.dark) [class*="bg-[#003B95]"] *,
+html:not(.dark) [class*="hover:bg-[#003B95]"]:hover * {
+  color: #ffffff;
+  stroke: #ffffff;
 }
 
-/* Any button with white background or bg-white: always pure black text for readability */
-button[class*="bg-white"],
-button.bg-white,
-button[class*="bg-white"] *,
-button.bg-white * {
-  color: #000000 !important;
-  stroke: #000000 !important;
+/* Navy brand buttons & highlights in Dark Mode: Deep Navy with Amber Gold border */
+.dark [class*="bg-[#003B95]"],
+.dark [class*="hover:bg-[#003B95]"]:hover {
+  background-color: #003B95 !important;
+  color: #ffffff !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
 }
 
-/* Nút Đăng nhập CRM: luôn nền Navy đặc + chữ trắng đậm (không bị rule trên ghi đè) */
+.dark [class*="bg-[#003B95]"] *,
+.dark [class*="hover:bg-[#003B95]"]:hover * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* White buttons ONLY in Light Mode have black text; in Dark Mode they follow dark surface colors */
+html:not(.dark) button.bg-white,
+html:not(.dark) button.bg-white * {
+  color: #0F172A;
+  stroke: #0F172A;
+}
+
+.dark button.bg-white,
+.dark button[class*="dark:bg-"] {
+  color: #FFFFFF !important;
+}
+
+.dark button.bg-white *,
+.dark button[class*="dark:bg-"] * {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+/* Nút Đăng nhập CRM: luôn nền Navy đặc + chữ trắng đậm */
 button.ceo-login-submit {
   background-color: #003B95 !important;
   color: #ffffff !important;
@@ -567,6 +597,112 @@ button.ceo-login-submit svg {
   stroke: #ffffff !important;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+/* ============================================================
+   4 DẠNG MÀU TIÊU CHUẨN CEO 1983 (BRANDBOOK GUIDELINES)
+   ============================================================ */
+
+/* 1. Royal Cobalt Navy & Amber Gold (Mặc định cốt lõi) */
+[data-app-color-theme="royal-gold"] {
+  --vba-navy: #003B95;
+  --vba-navy-deep: #001D4A;
+  --vba-gold: #F59E0B;
+  --vba-gold-2: #FBBF24;
+  --theme-icon-color: #F59E0B;
+}
+
+/* 2. Heritage Navy & Dynamic Brand Orange (Chuẩn Logo Brandbook) */
+[data-app-color-theme="heritage-orange"] {
+  --vba-navy: #2E3192;
+  --vba-navy-deep: #19194D;
+  --vba-gold: #F7941D;
+  --vba-gold-2: #F8A74B;
+  --theme-icon-color: #F7941D;
+}
+
+.dark[data-app-color-theme="heritage-orange"] .vba-app,
+[data-app-color-theme="heritage-orange"].dark .vba-app {
+  --vba-bg: #0A0D24;
+  --vba-surface: #121638;
+  --vba-surface-2: #1B1E4A;
+  --vba-border: rgba(247, 148, 29, 0.35);
+}
+
+/* 3. Obsidian Black & Champagne Gold (Dạ Tiệc Thượng Lưu) */
+[data-app-color-theme="obsidian-gold"] {
+  --vba-navy: #0B0F19;
+  --vba-navy-deep: #05070D;
+  --vba-gold: #D4AF37;
+  --vba-gold-2: #E5C07B;
+  --theme-icon-color: #D4AF37;
+}
+
+.dark[data-app-color-theme="obsidian-gold"] .vba-app,
+[data-app-color-theme="obsidian-gold"].dark .vba-app {
+  --vba-bg: #05070D;
+  --vba-surface: #0F1420;
+  --vba-surface-2: #171E30;
+  --vba-border: rgba(212, 175, 55, 0.35);
+}
+
+/* 4. Prestige Ruby Red & Imperial Gold (Đột Phá Khởi Sắc) */
+[data-app-color-theme="ruby-gold"] {
+  --vba-navy: #991B1B;
+  --vba-navy-deep: #450A0A;
+  --vba-gold: #EAB308;
+  --vba-gold-2: #FDE047;
+  --theme-icon-color: #EAB308;
+}
+
+.dark[data-app-color-theme="ruby-gold"] .vba-app,
+[data-app-color-theme="ruby-gold"].dark .vba-app {
+  --vba-bg: #140707;
+  --vba-surface: #200D0D;
+  --vba-surface-2: #301414;
+  --vba-border: rgba(234, 179, 8, 0.35);
+}
+
+/* ============================================================
+   CEO 1983 DARK THEME STANDARDS (CHỐNG LỖI MÀU SLATE XÁM VÀ MỜ TỐI)
+   ============================================================ */
+.dark .vba-app,
+.dark .ceo-theme-dark-standard {
+  background-color: #070D1A !important;
+  color: #FFFFFF !important;
+}
+
+.dark .bg-slate-950 {
+  background-color: #070D1A !important;
+}
+
+.dark .bg-slate-900 {
+  background-color: #0E172A !important;
+}
+
+.dark .bg-slate-800 {
+  background-color: #14223E !important;
+}
+
+.dark .border-slate-800,
+.dark .border-slate-700 {
+  border-color: rgba(245, 158, 11, 0.18) !important;
+}
+
+.dark .text-slate-400 {
+  color: #94A3B8 !important;
+}
+
+.dark .text-slate-300 {
+  color: #CBD5E1 !important;
+}
+
+.dark .text-slate-200 {
+  color: #E2E8F0 !important;
+}
+
+.dark .text-slate-100 {
+  color: #F8FAFC !important;
 }
 
 

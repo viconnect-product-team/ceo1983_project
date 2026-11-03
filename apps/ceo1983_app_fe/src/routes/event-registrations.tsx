@@ -42,6 +42,7 @@ import {
 import { useFmt, useT } from "@/lib/i18n";
 import { CinemaSeatingMap } from "@/components/dashboard/CinemaSeatingMap";
 import { useRole } from "@/hooks/use-role";
+import { EventReminderPosterModal } from "@/components/dashboard/EventReminderPosterModal";
 
 export const Route = createFileRoute("/event-registrations")({
   ssr: false,
@@ -154,6 +155,7 @@ function RegPage() {
 
   // Add Attendee / QR Checkin Modal state
   const [addAttendeeModalOpen, setAddAttendeeModalOpen] = useState(false);
+  const [eventReminderModalOpen, setEventReminderModalOpen] = useState(false);
   const [attendeeMode, setAttendeeMode] = useState<"qr" | "manual">("qr");
   const [qrCodeInput, setQrCodeInput] = useState("");
   const [isScanningCamera, setIsScanningCamera] = useState(false);
@@ -591,6 +593,13 @@ function RegPage() {
         subtitle="Quản lý hội viên tham dự, xếp chỗ VIP/bàn tiệc, theo dõi thanh toán 3 ngày & thu tiền mặt tại chỗ"
         actions={
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEventReminderModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-[#003B95] hover:from-blue-800 hover:to-[#002f78] px-4 py-2 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
+            >
+              <Bell className="h-4 w-4" />
+              Bắn Tin Nhắc Sự Kiện (Kèm Poster)
+            </button>
             <button
               onClick={() => {
                 setSelectedReg(null);
@@ -1589,6 +1598,17 @@ function RegPage() {
           </div>
         </div>
       )}
+
+      {/* Event Reminder With Poster Modal */}
+      <EventReminderPosterModal
+        open={eventReminderModalOpen}
+        initialEventId={eventId !== "all" ? eventId : undefined}
+        onClose={() => setEventReminderModalOpen(false)}
+        onSuccess={() => {
+          fetchLiveRegistrations();
+          router.invalidate();
+        }}
+      />
     </AppShell>
   );
 }

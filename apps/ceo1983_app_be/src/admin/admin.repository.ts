@@ -48,6 +48,21 @@ export class AdminRepository {
     await this.prisma.$executeRawUnsafe(`
       ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS pushed_to_messages boolean DEFAULT false;
     `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS poster_url text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS event_id text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.member_notifications ADD COLUMN IF NOT EXISTS poster_url text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.member_notifications ADD COLUMN IF NOT EXISTS image_url text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS image_url text;
+    `).catch(() => {});
   }
 
   async queryRawUnsafe<T = any>(query: string, ...values: any[]): Promise<T[]> {

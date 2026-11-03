@@ -31,6 +31,7 @@ import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { EmptyState, NoNotifications, NoSearchResult } from "@/components/dashboard/StateKit";
 import type { Notification } from "@/lib/extra-data";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import { EventReminderPosterModal } from "@/components/dashboard/EventReminderPosterModal";
 import { getLastSeen, markNotificationsSeen } from "@/hooks/use-unread-notifications";
 import {
   createNotificationFn,
@@ -268,6 +269,7 @@ function NotifyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pushingId, setPushingId] = useState<string | null>(null);
+  const [eventReminderModalOpen, setEventReminderModalOpen] = useState(false);
 
   const [pushedMessageIds, setPushedMessageIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -499,6 +501,29 @@ function NotifyPage() {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                 {n.body}
               </p>
+            )}
+            {((n as any).poster_url || (n as any).posterUrl) && (
+              <div className="mt-2 flex items-center gap-2">
+                <a
+                  href={(n as any).poster_url || (n as any).posterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group/poster relative h-10 w-16 overflow-hidden rounded-lg border border-amber-300 dark:border-amber-700 bg-slate-900 shadow-xs block shrink-0"
+                >
+                  <img
+                    src={(n as any).poster_url || (n as any).posterUrl}
+                    alt="Poster sự kiện"
+                    className="h-full w-full object-cover group-hover/poster:scale-110 transition duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover/poster:opacity-100 transition">
+                    <Sparkles className="h-3 w-3 text-amber-300" />
+                  </div>
+                </a>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                  <Calendar className="h-3 w-3" />
+                  Đính kèm Poster sự kiện
+                </span>
+              </div>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500">
               {(n as any).code && (
@@ -797,6 +822,30 @@ function NotifyPage() {
           </div>
           {n.body && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">{n.body}</p>}
 
+          {((n as any).poster_url || (n as any).posterUrl) && (
+            <div className="mt-2.5 flex items-center gap-2.5">
+              <a
+                href={(n as any).poster_url || (n as any).posterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group/poster relative h-12 w-20 overflow-hidden rounded-xl border border-amber-300 dark:border-amber-700 bg-slate-900 shadow-xs block shrink-0"
+              >
+                <img
+                  src={(n as any).poster_url || (n as any).posterUrl}
+                  alt="Poster sự kiện"
+                  className="h-full w-full object-cover group-hover/poster:scale-110 transition duration-200"
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover/poster:opacity-100 transition">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                </div>
+              </a>
+              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                <Calendar className="h-3.5 w-3.5" />
+                Đính kèm Poster sự kiện
+              </span>
+            </div>
+          )}
+
           <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${scopeConf.bg} ${scopeConf.text} ${scopeConf.border}`}>
               {scopeConf.label}
@@ -898,6 +947,14 @@ function NotifyPage() {
                 <span>{t("notif.markAll")}</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setEventReminderModalOpen(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-amber-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-sm transition cursor-pointer"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Bắn Tin Nhắc Sự Kiện (Kèm Poster)</span>
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -1187,6 +1244,13 @@ function NotifyPage() {
           setOpen(false);
           setEditing(null);
         }}
+      />
+
+      {/* ── MODAL BẮN TIN NHẮC SỰ KIỆN KÈM POSTER ── */}
+      <EventReminderPosterModal
+        open={eventReminderModalOpen}
+        onClose={() => setEventReminderModalOpen(false)}
+        onSuccess={() => router.invalidate()}
       />
     </AppShell>
   );

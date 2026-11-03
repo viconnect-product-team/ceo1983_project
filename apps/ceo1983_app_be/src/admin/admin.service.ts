@@ -1386,6 +1386,273 @@ export class AdminService implements OnModuleInit {
     };
   }
 
+  // ── Bắn tin nhắc sự kiện kèm poster tới người đã đăng ký ───────────
+  async getEventAttendeesPreview(eventId: string) {
+    if (!eventId) throw new BadRequestException('eventId is required');
+
+    // 1. Lấy thông tin sự kiện
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, title, date, location, banner_url, poster_url, capacity, ticket_price, status
+      FROM public.events
+      WHERE id::text = ${eventId}
+      LIMIT 1
+    `.catch(() => []);
+
+    const ev = eventRows[0] || null;
+    if (!ev) {
+      return { event: null, attendees: [], totalCount: 0, confirmedCount: 0 };
+    }
+
+    // 2. Lấy danh sách hội viên / đại biểu đã đăng ký sự kiện này
+    const attendees = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        er.id,
+        er.event_id,
+        COALESCE(er.member_name, m.name, 'Hội viên CEO') as name,
+        COALESCE(er.member_code, m.code, '') as code,
+        COALESCE(er.email, m.email, '') as email,
+        COALESCE(er.phone, m.phone, '') as phone,
+        COALESCE(m.company_name, 'Doanh nghiệp CEO 1983') as company,
+        COALESCE(er.seat_assignment, 'VIP Bàn') as seat,
+        COALESCE(er.lucky_number, er.id) as ticket_code,
+        er.status,
+        COALESCE(er.payment_status, 'free') as payment_status,
+        COALESCE(m.avatar_url, m.avatar, '') as avatar_url,
+        m.user_id,
+        er.created_at,
+        er.registered_at
+      FROM public.event_registrations er
+      LEFT JOIN public.members m ON (m.code = er.member_code OR (er.email IS NOT NULL AND er.email != '' AND m.email = er.email))
+      WHERE er.event_id = ${eventId} AND er.status != 'cancelled'
+      ORDER BY er.created_at DESC
+      LIMIT 500
+    `.catch(() => []);
+
+    const confirmedCount = attendees.filter(
+      (a) => a.status === 'confirmed' || a.payment_status === 'paid' || a.payment_status === 'free',
+    ).length;
+
+    return {
+      event: {
+        id: ev.id,
+        name: ev.name || ev.title || 'Sự kiện CEO 1983',
+        date: ev.date,
+        location: ev.location || 'Hà Nội',
+        bannerUrl: ev.banner_url || ev.poster_url || '',
+        posterUrl: ev.poster_url || ev.banner_url || '',
+        capacity: ev.capacity || 100,
+        ticketPrice: ev.ticket_price || 0,
+      },
+      attendees: attendees.map((a) => ({
+        id: a.id,
+        name: a.name,
+        code: a.code,
+        email: a.email,
+        phone: a.phone,
+        company: a.company,
+        seat: a.seat,
+        ticketCode: a.ticket_code,
+        status: a.status,
+        paymentStatus: a.payment_status,
+        avatarUrl: a.avatar_url,
+        userId: a.user_id,
+        registeredAt: a.registered_at || a.created_at,
+      })),
+      totalCount: attendees.length,
+      confirmedCount,
+    };
+  }
+
+  async sendEventAttendeeReminder(
+    userId: string,
+    data: {
+      eventId: string;
+      title: string;
+      body: string;
+      posterUrl?: string;
+      targetFilter?: 'all_registered' | 'confirmed_only' | 'unpaid_only';
+      channel?: string;
+    },
+  ) {
+    const { eventId, title, body, posterUrl, targetFilter = 'all_registered' } = data;
+    if (!eventId) throw new BadRequestException('eventId is required');
+    if (!title || !title.trim()) throw new BadRequestException('title is required');
+
+    // 1. Lấy thông tin sự kiện
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, title, date, location, banner_url, poster_url
+      FROM public.events
+      WHERE id::text = ${eventId}
+      LIMIT 1
+    `.catch(() => []);
+    const ev = eventRows[0];
+    const eventName = ev?.name || ev?.title || 'Sự kiện CEO 1983';
+    const eventLocation = ev?.location || 'Trung tâm Hội nghị CEO 1983';
+    const eventDate = ev?.date ? new Date(ev.date) : new Date();
+    const eventDateStr = eventDate.toLocaleDateString('vi-VN', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const finalPosterUrl = posterUrl?.trim() || ev?.poster_url || ev?.banner_url || null;
+
+    // 2. Lấy danh sách hội viên thỏa mãn bộ lọc
+    let filterCondition = `er.event_id = '${eventId}' AND er.status != 'cancelled'`;
+    if (targetFilter === 'confirmed_only') {
+      filterCondition += ` AND (er.status = 'confirmed' OR er.payment_status = 'paid' OR er.payment_status = 'free')`;
+    } else if (targetFilter === 'unpaid_only') {
+      filterCondition += ` AND (er.payment_status = 'unpaid' OR er.payment_status = 'pending')`;
+    }
+
+    const attendees = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        er.id,
+        COALESCE(er.member_name, m.name, 'Hội viên CEO') as name,
+        COALESCE(er.member_code, m.code, '') as code,
+        COALESCE(er.email, m.email, '') as email,
+        COALESCE(er.phone, m.phone, '') as phone,
+        COALESCE(m.company_name, 'Doanh nghiệp CEO 1983') as company,
+        er.seat_assignment,
+        COALESCE(er.lucky_number, er.id) as ticket_code,
+        m.user_id
+      FROM public.event_registrations er
+      LEFT JOIN public.members m ON (m.code = er.member_code OR (er.email IS NOT NULL AND er.email != '' AND m.email = er.email))
+      WHERE ${filterCondition}
+      ORDER BY er.created_at DESC
+      LIMIT 1000
+    `).catch(() => []);
+
+    const notifCode = `NTF-EVT-${Date.now().toString(36).toUpperCase()}`;
+    const nowIso = new Date().toISOString();
+
+    // 3. Lưu thông báo tổng quát vào public.notifications
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.notifications (
+        id, code, title, body, audience, channel, status, sent_at, reach,
+        association_id, app_scope, target_app, target_channel, poster_url, event_id,
+        created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, 'members', 'inapp', 'sent', NOW(), $4,
+        null, 'association_app', 'association_app', 'channel_media', $5, $6,
+        NOW(), NOW()
+      )
+    `, notifCode, title, body, attendees.length, finalPosterUrl, eventId).catch(() => {});
+
+    // 4. Bắn tin nhắn và gửi thông báo trực tiếp tới từng hội viên đã đăng ký
+    for (const att of attendees) {
+      const targetUserId = att.user_id;
+      const targetMemberCode = att.code;
+      const attendeeName = att.name || 'Quý Hội viên';
+      const seatInfo = att.seat_assignment ? `Ghế/Bàn: ${att.seat_assignment}` : '';
+      const ticketInfo = att.ticket_code ? `Mã vé: #${att.ticket_code}` : '';
+
+      // Nội dung tin nhắn kèm chi tiết sự kiện
+      const textDetails = `🎫 [NHẮC LỊCH SỰ KIỆN] ${title}\n\nKính gửi Anh/Chị ${attendeeName},\n${body}\n\n📅 Thời gian: ${eventDateStr}\n📍 Địa điểm: ${eventLocation}${seatInfo ? `\n🪑 ${seatInfo}` : ''}${ticketInfo ? `\n🎟️ ${ticketInfo}` : ''}`;
+      const directMsgText = finalPosterUrl
+        ? `[image:${finalPosterUrl}|Poster ${title}]\n\n${textDetails}`
+        : textDetails;
+
+      // A. Ghi vào public.messages của hội viên (Direct Chat Message)
+      if (targetUserId) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.messages (id, from_id, to_id, text, image_url, created_at)
+          VALUES (gen_random_uuid(), 'admin', $1, $2, $3, NOW())
+        `, String(targetUserId), directMsgText, finalPosterUrl).catch(() => {});
+      }
+      if (targetMemberCode && targetMemberCode !== targetUserId) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.messages (id, from_id, to_id, text, image_url, created_at)
+          VALUES (gen_random_uuid(), 'admin', $1, $2, $3, NOW())
+        `, String(targetMemberCode).toLowerCase(), directMsgText, finalPosterUrl).catch(() => {});
+      }
+
+      // B. Ghi vào public.member_notifications cho App Hiệp Hội
+      const memberRecipientId = targetMemberCode || targetUserId || att.id;
+      if (memberRecipientId) {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, poster_url, image_url, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'event', $4, $5, $5, NOW()
+          )
+        `, String(memberRecipientId), title, body, eventId, finalPosterUrl).catch(() => {});
+      }
+
+      // C. Ghi vào public.business_notifications
+      if (targetUserId && isValidUuid(targetUserId)) {
+        const dedupeKey = `evt-remind-${notifCode}-${targetUserId}`;
+        const displayData = JSON.stringify({
+          title,
+          body,
+          posterUrl: finalPosterUrl,
+          eventId,
+          eventName,
+          date: eventDateStr,
+          location: eventLocation,
+          seat: att.seat_assignment,
+          ticketCode: att.ticket_code,
+          crmNotificationCode: notifCode,
+        });
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.business_notifications (
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1::uuid, 'event', $2, 'event_reminder', 'event_reminder',
+            $3, $4, $5::jsonb, 'high', 'delivered', $6, 'association_app', 'association_app', NOW(), NOW()
+          ) ON CONFLICT (dedupe_key) DO NOTHING
+        `, targetUserId, eventId, title, body, displayData, dedupeKey).catch(() => {});
+      }
+
+      // D. Phát realtime Socket tới phòng của người dùng
+      if (targetUserId) {
+        this.gateway.emitToRoom(`user:${targetUserId}`, 'dm:message_received', {
+          id: `msg-${Date.now()}-${Math.random()}`,
+          from_id: 'admin',
+          to_id: targetUserId,
+          text: directMsgText,
+          image_url: finalPosterUrl,
+          created_at: nowIso,
+        });
+        this.gateway.emitNotification(targetUserId, {
+          id: notifCode,
+          title,
+          body,
+          posterUrl: finalPosterUrl,
+          eventId,
+          sentAt: nowIso,
+          targetApp: 'association_app',
+        });
+      }
+    }
+
+    // E. Phát thông báo realtime tới toàn bộ máy khách đang mở
+    this.gateway.emitToAll('notifications-updated', {
+      type: 'event_reminder',
+      eventId,
+      notifCode,
+      posterUrl: finalPosterUrl,
+    });
+
+    return {
+      ok: true,
+      notifCode,
+      eventName,
+      eventDate: eventDateStr,
+      posterUrl: finalPosterUrl,
+      recipientCount: attendees.length,
+      recipients: attendees.map((a) => ({
+        name: a.name,
+        code: a.code,
+        phone: a.phone,
+        seat: a.seat_assignment,
+      })),
+    };
+  }
+
   // ── Email Marketing Campaigns ─────────────────────────────────────
   async listCampaigns() {
     const rows = await this.prisma.$queryRaw<any[]>`
