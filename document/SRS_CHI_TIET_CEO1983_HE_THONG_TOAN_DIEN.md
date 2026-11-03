@@ -10,9 +10,9 @@
 * **Tên dự án:** Hệ Sinh Thái Số Hóa Toàn Diện CLB Doanh Nhân CEO 1983
 * **Cơ quan chủ quản:** Câu Lạc Bộ Doanh Nhân CEO 1983 — Trực thuộc Hội Doanh Nhân Trẻ Hà Nội (HanoiBA)
 * **Môi trường triển khai:** Cổng Thông Tin Điện Tử, Cổng Quản Trị Ban Chấp Hành & Ứng Dụng Doanh Nhân CEO 1983
-* **Mã tài liệu:** SRS-CEO1983-ENTERPRISE-MASTER-V5.0
-* **Phiên bản:** 5.0 (Dual-System Upgrade — Nâng cấp toàn diện Thống kê 5 danh mục, Bản đồ 2D Google Maps, Đào tạo Online/Offline/Hybrid, Bắn Mạng Lưới Sự Kiện, Theme Studio, Footer & Bảng tin Mạng lưới)
-* **Ngày phát hành:** 23/10/2026
+* **Mã tài liệu:** SRS-CEO1983-ENTERPRISE-MASTER-V6.0
+* **Phiên bản:** 6.0 (Enterprise Dual-System Upgrade — Chuẩn Hóa Toàn Diện 147 Use Cases, Bổ Sung Trung Tâm Thông Báo Quản Trị Hệ Thống, Tự Động Quét Cảnh Báo Hội Phí & Hồ Sơ Mới, Quản Lý Nhân Sự Doanh Nghiệp, Phân Công Công Việc 5 Nhóm Chức Năng Con, Chuẩn Hóa CustomTable 3 Trạng Thái & Zalo OA API CSDL Thực Tế)
+* **Ngày phát hành:** 03/11/2026
 * **Email đại diện đăng ký mẫu:** vupv090120@gmail.com (Doanh nhân Phạm Văn Vũ - CEO Công ty CP Công nghệ VIO CONNECT)
 * **Trạng thái tài liệu:** Đã thẩm định, kiểm thử thực tế, hoàn thành mã nguồn và nghiệm thu kỹ thuật 100%
 
@@ -22,14 +22,14 @@
 
 1. **Giới Thiệu Chung & Mục Đích Tài Liệu**
 2. **Kiến Trúc Tổng Thể & Bối Cảnh Hệ Thống**
-3. **Danh Mục 142 Use Cases Chi Tiết Theo 3 Khối Nghiệp Vụ:**
+3. **Danh Mục 147 Use Cases Chi Tiết Theo 3 Khối Nghiệp Vụ:**
    - **Phần I: Cổng Thông Tin Công Khai & Đăng Ký Hội Viên (10 Use Cases: UC-PUB-01 -> UC-PUB-10)**
-   - **Phần II: Cổng Điều Hành & Quản Trị Ban Chấp Hành (79 Use Cases: UC-CRM-01 -> UC-CRM-79)**
+   - **Phần II: Cổng Điều Hành & Quản Trị Ban Chấp Hành (84 Use Cases: UC-CRM-01 -> UC-CRM-84)**
    - **Phần III: Ứng Dụng Hội Viên Doanh Nhân CEO 1983 (53 Use Cases: UC-APP-01 -> UC-APP-53)**
 4. **Yêu Cầu Phi Chức Năng (Hiệu Năng, An Toàn Thông Tin, Sao Lưu Dữ Liệu)**
 5. **Yêu Cầu Giao Diện & Trải Nghiệm Người Dùng (UI/UX Design Tokens)**
 6. **Phụ Lục Minh Chứng Hình Ảnh Chụp Thực Tế Toàn Diện**
-7. **Quy Chuẩn Đặc Tả Vận Hành & Kiến Trúc Nâng Cấp Hệ Thống (Bổ sung V5.0)**
+7. **Quy Chuẩn Đặc Tả Vận Hành & Kiến Trúc Nâng Cấp Hệ Thống (Bổ sung V6.0)**
 
 ---
 
@@ -2418,16 +2418,16 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Hậu Điều Kiện (Post-conditions)** | Tài khoản doanh nhân được bảo vệ đa lớp, ngăn chặn 100% nguy cơ xâm nhập trái phép. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Màn hình quản lý thiết bị đăng nhập, cấu hình xác thực hai yếu tố và bảo mật tài khoản* |
 
-### 5.139. Bảng Use Case UC-CRM-79: Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid), Form Đăng Ký Mở, Dynamic QR & Bắn Xuống Feed App Mobile
+### 5.139. Bảng Use Case UC-CRM-79: Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid), Khai Báo Sức Chứa, Hạng Vé, Form Đăng Ký Mở, Dynamic QR & Bắn Xuống Feed App Mobile (Tuyệt Đối Không Xếp Chỗ)
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-CRM-79** |
 | **Phân Hệ / Nhóm** | Ban Đào Tạo & Phát Triển Doanh Nhân |
-| **Tên Chức Năng** | Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid), Form Đăng Ký Mở, Dynamic QR & Bắn Xuống Feed App Mobile |
+| **Tên Chức Năng** | Quản Trị Đào Tạo Doanh Nhân Đa Thức (Online/Offline/Hybrid), Khai Báo Sức Chứa, Hạng Vé, Form Đăng Ký Mở, Dynamic QR & Bắn Xuống Feed App Mobile (Tuyệt Đối Không Xếp Chỗ) |
 | **Tác Nhân (Actor)** | Trưởng Ban Đào Tạo, Ban Thư Ký, Chuyên gia Giảng viên |
 | **Tiền Điều Kiện (Pre-conditions)** | Ban Đào Tạo đăng nhập Cổng Quản Trị và mở phân hệ Đào Tạo (`/trainings`). |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở trang Quản Trị Đào Tạo (/trainings) và bấm "Tạo Khóa Đào Tạo Mới".<br>2. **Thiết Lập Đa Thức Đào Tạo Linh Hoạt**:<br>   - *Hình thức Online*: Nhập liên kết phòng họp trực tuyến (Jitsi Meet / Zoom), ID phòng họp và mật khẩu bảo mật.<br>   - *Hình thức Offline*: Nhập địa điểm phòng học, địa chỉ hội trường thực tế và sức chứa lớp.<br>   - *Hình thức Hybrid*: Tích hợp đồng thời cả địa điểm offline và đường link phát sóng online đa nền tảng.<br>3. **Đường Dẫn Đăng Ký Mở & Mã QR Động (Open Registration & Dynamic QR)**:<br>   - Hệ thống tự động sinh một đường link công khai duy nhất cho khóa học (Public Registration Form URL) kèm **Mã QR Động** có thể phóng to, tải về hoặc sao chép để Ban Đào Tạo gửi tới các ứng viên tiềm năng và doanh nhân quan tâm ngoài hiệp hội.<br>4. **Tính Năng Bắn Xuống App CEO 1983 (Broadcast to Mobile App Feed)**:<br>   - Tại danh sách khóa học, người dùng bấm nút **"Bắn Xuống App CEO 1983"** (Icon `Send` màu navy/emerald).<br>   - Hệ thống lập tức tạo một bài viết truyền thông đào tạo trên Bảng tin Mạng lưới Mobile (`POST /feed` với category `TRAINING`), đính kèm ảnh Poster chuyên đề và **Mã QR Điểm Danh**, giúp hội viên chỉ cần mở app là quét mã vào học tức thì. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở trang Quản Trị Đào Tạo (/trainings) với giao diện chuẩn `CustomTable`, 4 thẻ Metric Gradient và bấm "Thêm khóa đào tạo".<br>2. **Khai Báo Toàn Diện Thông Tin Đào Tạo**:<br>   - Tiêu đề khóa học, Tagline thông điệp, Giảng viên/Chuyên gia đào tạo (Họ tên, Học vị/Chức danh, Đơn vị công tác).<br>   - Thời gian bắt đầu - kết thúc rõ ràng.<br>   - **Khai Báo Sức Chứa Học Viên Tối Đa (`max_attendees`)**: Thiết lập giới hạn học viên tham gia để kiểm soát chất lượng đào tạo và sức chứa phòng.<br>   - **Khai Báo Danh Sách Các Hạng Vé Học Viên Kèm Số Lượng Vé Tối Đa (`ticket_tiers`)**: Cho phép khai báo nhiều hạng vé (Hội viên chính thức [Miễn phí / 50 vé], Khách mời kết nối [Phí 500.000đ / 20 vé], VIP Mentor).<br>   - Tài liệu/Slide giáo trình đính kèm (`materials`) và Link ảnh bìa khóa học (`cover_image`).<br>3. **Thiết Lập Đa Thức Đào Tạo Linh Hoạt**:<br>   - *Hình thức Online*: Nhập liên kết phòng học trực tuyến (Jitsi Meet nhúng sẵn / Zoom), ID phòng họp và mật khẩu bảo mật.<br>   - *Hình thức Offline*: Nhập địa điểm phòng học, địa chỉ hội trường thực tế có bản đồ tương tác.<br>   - *Hình thức Hybrid*: Tích hợp đồng thời cả địa điểm offline và đường link phát sóng online đa nền tảng.<br>4. **QUY TẮC BẮT BUỘC: TUYỆT ĐỐI KHÔNG CÓ PHẦN XẾP CHỖ**:<br>   - Khác với sự kiện đại tiệc Gala, chức năng đào tạo loại bỏ hoàn toàn phần sơ đồ bàn tiệc/ghế ngồi Cinema, đảm bảo tính linh hoạt mở của lớp học doanh nhân.<br>5. **Đường Dẫn Đăng Ký Mở & Mã QR Động (Open Registration & Dynamic QR)**:<br>   - Hệ thống tự động sinh một đường link công khai duy nhất cho khóa học (Public Registration Form URL) kèm **Mã QR Động** có thể phóng to, tải về hoặc sao chép để chia sẻ tới ứng viên và doanh nhân.<br>6. **Tính Năng Bắn Xuống App CEO 1983 (Broadcast to Mobile App Feed)**:<br>   - Tại danh sách khóa học, người dùng bấm nút **"Bắn Xuống App CEO 1983"** (Icon `Send`). Hệ thống tự động tạo bài viết truyền thông trên Bảng tin Mạng lưới Mobile (`POST /feed` với category `TRAINING`), lấy CHÍNH XÁC dữ liệu thực từ CSDL (tuyệt đối không dùng dữ liệu giả lập), đính kèm ảnh Poster chuyên đề và **Mã QR Điểm Danh**. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Giảng viên có thể cập nhật tài liệu giáo trình (Slide PDF, bảng tính Excel) bất kỳ lúc nào trước giờ phát sóng; tài liệu tự động đồng bộ sang ứng dụng di động. |
 | **Hậu Điều Kiện (Post-conditions)** | Khóa đào tạo được tổ chức chuyên nghiệp, kết nối đồng bộ 2 chiều giữa Cổng Quản trị và Ứng dụng Di Động Hội Viên. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện quản trị khóa đào tạo đa thức, form đăng ký mở kèm mã QR và nút bắn xuống App di động* |
@@ -2435,16 +2435,16 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Giao diện quản trị khóa đào tạo đa thức, form đăng ký mở kèm mã QR và nút bắn xuống App di động](images/evidence/crm_trainings_management.png)
 
 
-### 5.140. Bảng Use Case UC-APP-51: Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Biểu Đồ Cột Đường (Xanh Tăng, Đỏ Giảm), Ghim Avatar Đỉnh Top 1, Bục Vinh Danh Top 3 Một Hàng & Xuất Báo Cáo A4/Excel
+### 5.140. Bảng Use Case UC-APP-51: Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Bộ Lọc Biểu Đồ 3 Trạng Thái, Ghim Avatar Đỉnh Top 1, Bục Vinh Danh Top 3 Một Hàng & Xuất Báo Cáo A4/Excel
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-51** |
 | **Phân Hệ / Nhóm** | Trung Tâm Thống Kê & Bảng Vinh Danh Doanh Nhân |
-| **Tên Chức Năng** | Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Biểu Đồ Cột Đường (Xanh Tăng, Đỏ Giảm), Ghim Avatar Đỉnh Top 1, Bục Vinh Danh Top 3 Một Hàng & Xuất Báo Cáo A4/Excel |
+| **Tên Chức Năng** | Trung Tâm Thống Kê 5 Phân Loại Nghiệp Vụ, Bộ Lọc Biểu Đồ 3 Trạng Thái, Ghim Avatar Đỉnh Top 1, Bục Vinh Danh Top 3 Một Hàng & Xuất Báo Cáo A4/Excel |
 | **Tác Nhân (Actor)** | Toàn thể Hội viên Doanh nhân CEO 1983 |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên mở tab "Thống kê" (`/association/analytics`) tại vị trí nút thứ 2 trên thanh điều hướng chân trang. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình Thống Kê Di Động (/association/analytics) mở ra với giao diện tinh gọn, tập trung hoàn toàn vào dữ liệu, loại bỏ toàn bộ phần giao diện thừa thãi phía trên biểu đồ.<br>2. **4 Ô Thẻ Chỉ Số KPI Cốt Lõi Trên Đầu Biểu Đồ**:<br>   - Ô 1: Tổng cơ hội kết nối kinh doanh đã trao đổi.<br>   - Ô 2: Tổng chi tiêu giao dịch và doanh số các deal chốt thành công.<br>   - Ô 3: Lượt tương tác, tần suất mở app và bình luận của cộng đồng.<br>   - Ô 4: Số lượng sự kiện, diễn đàn và cuộc họp đang diễn ra sôi nổi.<br>3. **Biểu Đồ Cột Kết Hợp Đường (Composed Bar + Line Chart)**:<br>   - Áp dụng bảng màu tối giản 3 màu thương hiệu: Xanh Navy/Emerald, Trắng sứ, Đen tuyền Obsidian.<br>   - Cột Bar thể hiện số lượng/khối lượng của từng chu kỳ thời gian.<br>   - Đường kẻ Line thể hiện biến động tăng giảm: **Đường màu xanh lá (`#10B981`)** thể hiện xu hướng tăng, **Đường màu đỏ (`#EF4444`)** thể hiện xu hướng giảm.<br>   - **Ghim Avatar Đỉnh Top 1**: Tại đỉnh của cột cao nhất hoặc điểm kết thúc của đường kẻ, hệ thống tự động ghim **Avatar tròn viền vàng** vinh danh Doanh nhân đang dẫn đầu bảng xếp hạng.<br>4. **Bục Vinh Danh Top 3 Nằm Chung 1 Hàng Ngang (Award Podium)**:<br>   - Bố trí trực tiếp bên dưới biểu đồ theo quy chuẩn bục giải thưởng thể thao:<br>     + **Top 1 ở giữa cao nhất**: Vinh danh Doanh nhân xuất sắc nhất kèm vương miện Vàng.<br>     + **Top 2 ở bên cạnh trái**: Chiều cao bục nhì kèm huy hiệu Bạc.<br>     + **Top 3 ở bên cạnh phải**: Chiều cao bục ba kèm huy hiệu Đồng.<br>   - Tất cả 3 bục cùng nằm trên 1 hàng ngang duy nhất, tối ưu diện tích hiển thị trên màn hình điện thoại.<br>5. **Phân Định Rõ Ràng 5 Danh Mục Thống Kê Chuyên Biệt**:<br>   - Thống kê cơ hội kết nối kinh doanh (Opportunities).<br>   - Thống kê các giao dịch đã chi tiêu (Spending & Transactions).<br>   - Thống kê lượt tương tác và tần suất hoạt động trong app (App Interaction Frequency).<br>   - Thống kê sự kiện và hoạt động đang diễn ra (Ongoing Events).<br>   - Thống kê top thành viên hoạt động nhiều nhất (Top Active Members: tổng hợp bình luận + chia sẻ cơ hội).<br>6. **Hộp Thoại Xuất Báo Cáo Chuẩn Hóa**:<br>   - Hội viên có thể bấm "Xuất Báo Cáo" để mở modal:<br>     + Tùy chọn In ấn khổ giấy A4 chuẩn trang in di động.<br>     + Tùy chọn Tải tệp bảng tính Excel (`.xlsx`) phục vụ lưu trữ cá nhân và đối soát doanh số. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Màn hình Thống Kê Di Động (/association/analytics) mở ra với giao diện tinh gọn, tập trung hoàn toàn vào dữ liệu.<br>2. **Biểu Đồ Luôn Hiển Thị Đầu Tiên & Bộ Lọc Biểu Đồ 3 Trạng Thái**:<br>   - Biểu đồ ComposedChart kết hợp Cột và Đường luôn hiển thị ở vị trí trên cùng ngay dưới bộ chọn chu kỳ và danh mục.<br>   - **Chức năng lọc 3 trạng thái biểu đồ**:<br>     + *Trạng thái 1: "Vừa tăng vừa giảm"*: Hiển thị đầy đủ cả mốc tăng trưởng và mốc sụt giảm.<br>     + *Trạng thái 2: "Chỉ tăng"*: Biểu đồ lọc riêng các mốc tăng trưởng tích cực, đường xu hướng chuyển sang màu Xanh Ngọc Emerald (`#10B981`).<br>     + *Trạng thái 3: "Chỉ giảm"*: Biểu đồ lọc riêng các mốc sụt giảm hoặc cần cảnh báo, đường xu hướng chuyển sang màu Đỏ cờ (`#EF4444`).<br>3. **4 Ô Thẻ Chỉ Số KPI Cốt Lõi Phía Dưới Biểu Đồ**:<br>   - Ô 1: Tổng cơ hội kết nối kinh doanh đã trao đổi.<br>   - Ô 2: Tổng chi tiêu giao dịch và doanh số các deal chốt thành công.<br>   - Ô 3: Lượt tương tác, tần suất mở app và bình luận của cộng đồng.<br>   - Ô 4: Số lượng sự kiện, diễn đàn và cuộc họp đang diễn ra sôi nổi.<br>4. **Ghim Avatar Đỉnh Top 1**: Tại đỉnh của cột cao nhất hoặc điểm kết thúc của đường kẻ, hệ thống tự động ghim **Avatar tròn viền vàng** vinh danh Doanh nhân đang dẫn đầu bảng xếp hạng.<br>5. **Bục Vinh Danh Top 3 Nằm Chung 1 Hàng Ngang (Award Podium)**:<br>   - Bố trí trực tiếp bên dưới biểu đồ theo quy chuẩn bục giải thưởng thể thao:<br>     + **Top 1 ở giữa cao nhất**: Vinh danh Doanh nhân xuất sắc nhất kèm vương miện Vàng.<br>     + **Top 2 ở bên cạnh trái**: Chiều cao bục nhì kèm huy hiệu Bạc.<br>     + **Top 3 ở bên cạnh phải**: Chiều cao bục ba kèm huy hiệu Đồng.<br>   - Tất cả 3 bục cùng nằm trên 1 hàng ngang duy nhất (`grid-cols-3`), tối ưu diện tích hiển thị trên màn hình điện thoại.<br>6. **Phân Định Rõ Ràng 5 Danh Mục Thống Kê Chuyên Biệt**:<br>   - Thống kê cơ hội kết nối kinh doanh (Opportunities).<br>   - Thống kê các giao dịch đã chi tiêu (Spending & Transactions).<br>   - Thống kê lượt tương tác và tần suất hoạt động trong app (App Interaction Frequency).<br>   - Thống kê sự kiện và hoạt động đang diễn ra (Ongoing Events).<br>   - Thống kê thành viên hoạt động nhiều nhất (Top Active Members).<br>7. **Hộp Thoại Xuất Báo Cáo Chuẩn Hóa**: In ấn khổ giấy A4 chuẩn trang in di động hoặc tải tệp bảng tính Excel (`.xlsx`). |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi đổi danh mục thống kê: Biểu đồ và bục vinh danh tự động chuyển động cập nhật số liệu tương ứng mượt mà. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên theo dõi trực quan hiệu quả giao thương của bản thân và toàn CLB, kích thích động lực thi đua kết nối kinh doanh. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Trung tâm Thống kê di động với 4 thẻ KPI, biểu đồ cột đường ghim avatar và bục vinh danh Top 3 một hàng* |
@@ -2484,6 +2484,81 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Hình Ảnh Minh Chứng Thực Tế** | *Cửa sổ chào mừng hội viên mới với thiết kế Hoàng gia hỗ trợ cả chế độ Sáng và Tối* |
 
 ![Cửa sổ chào mừng hội viên mới với thiết kế Hoàng gia hỗ trợ cả chế độ Sáng và Tối](images/evidence/app_welcome_onboarding_modal.png)
+
+
+### 5.143. Bảng Use Case UC-CRM-80: Quản Trị Đội Ngũ Nhân Sự Trực Thuộc Doanh Nghiệp Thành Viên & Modal Thêm Cán Bộ Nhanh
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-CRM-80** |
+| **Phân Hệ / Nhóm** | Quản Trị Doanh Nghiệp Thành Viên (`[NODE-CRM-004]`) |
+| **Tên Chức Năng** | Quản Trị Đội Ngũ Nhân Sự Trực Thuộc Doanh Nghiệp Thành Viên & Modal Thêm Cán Bộ Nhanh |
+| **Tác Nhân (Actor)** | Ban Quản Trị, Ban Thành Viên, Ban Thư Ký, Chủ doanh nghiệp |
+| **Tiền Điều Kiện (Pre-conditions)** | Người dùng đăng nhập Cổng Quản Trị CRM và truy cập màn hình chi tiết doanh nghiệp (`/companies/$companyId`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng truy cập danh sách doanh nghiệp (/companies) và chọn một doanh nghiệp để xem chi tiết (/companies/$companyId).<br>2. **Tab "Đội Ngũ Nhân Sự"**: Hệ thống hiển thị Tab thứ 5 dành riêng cho việc quản lý các cán bộ, nhân sự trực thuộc công ty.<br>3. **Truy Vấn Tích Hợp Thông Minh**: Backend tự động tổng hợp danh sách nhân sự liên quan từ CSDL PostgreSQL qua API `GET /members/:id/personnel`, bao gồm người đại diện pháp luật, hội viên có cùng tên/mã công ty và bảng liên kết `public.company_members`.<br>4. **Thẻ Tóm Tắt & Danh Sách Nhân Sự**: Hiển thị bảng chi tiết các thành viên: Họ tên, Chức vụ trong công ty, Số điện thoại liên hệ, Email, Ngày tham gia và Trạng thái hoạt động.<br>5. **Modal Thêm Nhân Sự Nhanh (`AddPersonnelModal`)**: Bấm nút "Thêm nhân sự", nhập Họ tên, Chức vụ, Email, Số điện thoại và bấm "Lưu nhân sự" để hệ thống cập nhật tức thì vào CSDL qua `POST /members/:id/personnel`.<br>6. **Đồng Bộ Quy Mô Lao Động**: Số lượng nhân sự thực tế tự động được cập nhật vào trường quy mô doanh nghiệp trên toàn bộ danh bạ. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu doanh nghiệp mới chưa có nhân sự trực thuộc: Hệ thống hiển thị trạng thái Empty State trang nhã kèm nút mời thêm nhân sự đầu tiên. |
+| **Hậu Điều Kiện (Post-conditions)** | Cơ cấu nhân sự của doanh nghiệp được lưu trữ đầy đủ, minh bạch, phục vụ kết nối giao thương B2B và phân quyền tác nghiệp. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện quản lý đội ngũ nhân sự trực thuộc doanh nghiệp và modal thêm mới cán bộ trên CRM* |
+
+
+### 5.144. Bảng Use Case UC-CRM-81: Trung Tâm Thông Báo Quản Trị Hệ Thống, Phân Loại Menu Tree Sidebar & Tự Động Quét Cảnh Báo Hội Phí / Hồ Sơ Chờ Duyệt
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-CRM-81** |
+| **Phân Hệ / Nhóm** | Trung Tâm Thông Báo & Cảnh Báo Quản Trị (`[NODE-CRM-022]`) |
+| **Tên Chức Năng** | Trung Tâm Thông Báo Quản Trị Hệ Thống, Phân Loại Menu Tree Sidebar & Tự Động Quét Cảnh Báo Hội Phí / Hồ Sơ Chờ Duyệt |
+| **Tác Nhân (Actor)** | Chủ tịch CLB, Ban Thường Trực, Ban Quản Trị, Ban Thư Ký, Kế toán |
+| **Tiền Điều Kiện (Pre-conditions)** | Quản trị viên đăng nhập Cổng Quản Trị CRM và mở phân hệ Thông Báo (`/notifications`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. **Menu Tree Phân Nhánh Tại Sidebar CRM**:<br>   - Menu "Thông báo hệ thống" được tổ chức thành cấu trúc cây 5 nhánh nghiệp vụ chuyên biệt:<br>     + `🔔 Tất cả thông báo` (`/notifications`)<br>     + `👤 Hội viên mới nộp hồ sơ` (`/notifications?filter=new_members`)<br>     + `⚠️ Cảnh báo & Quá hạn hội phí` (`/notifications?filter=fee_alerts`)<br>     + `🏢 BQT & Điều hành` (`/notifications?filter=admin_system`)<br>     + `📅 Sự kiện & Cuộc họp` (`/notifications?filter=events_meetings`)<br>2. **Cơ Chế Tự Động Quét & Sinh Cảnh Báo Hệ Thống (Auto-Sync Alerts)**:<br>   - Khi quản trị viên truy cập, Backend NestJS tự động rà soát CSDL PostgreSQL thời gian thực:<br>     + *Hồ sơ mới nộp*: Tự động phát hiện các ứng viên có `status = 'pending'` và sinh cảnh báo xét duyệt.<br>     + *Quá hạn hội phí*: Tự động phát hiện hội viên có `term_end < NOW()` và `fee_paid = false` để sinh cảnh báo đôn đốc thu phí.<br>     + *Cảnh báo sắp hết hạn*: Tự động nhắc nhở đối với hội viên có hạn niên liễm trong vòng **30 ngày tới**.<br>     + *Tự động dọn dẹp*: Khi hồ sơ được duyệt hoặc hội viên đã nộp phí, thông báo cảnh báo tương ứng tự động được gỡ bỏ.<br>3. **Giao Diện Chuẩn Hóa CustomTable & 4 Thẻ KPI Gradient Figma**:<br>   - 4 Thẻ KPI động: Tổng thông báo, Hồ sơ hội viên mới, Cảnh báo hội phí, Thông báo chưa đọc.<br>   - Dải Sub-filter Tabs đồng bộ trực tiếp với menu Sidebar với badge đếm số lượng thời gian thực.<br>   - Bảng dữ liệu chuẩn `CustomTable` với tính năng sắp xếp 3 trạng thái và bộ lọc đọc/chưa đọc.<br>4. **Các Phím Tắt Thao Tác Nhanh (Quick Actions)**:<br>   - Hồ sơ mới: Nút **[Duyệt hồ sơ]** chuyển ngay sang `/members?status=pending`.<br>   - Cảnh báo hội phí: Nút **[Thu phí / Gia hạn]** chuyển ngay sang `/renewal`.<br>   - Sự kiện / Cuộc họp: Nút **[Xem chi tiết]** mở trang `/events`.<br>   - Nút **[Đưa vào tin nhắn]**: Phát thanh thông báo vào kênh tin nhắn chỉ định trên App Mobile. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Người dùng có thể chuyển đổi giữa chế độ hiển thị Bảng (`table`) và chế độ Thẻ chi tiết (`cards`) tùy theo thói quen sử dụng. |
+| **Hậu Điều Kiện (Post-conditions)** | Ban Quản Trị không bao giờ bỏ sót hồ sơ kết nạp mới hay tình trạng quá hạn hội phí; mọi cảnh báo vận hành được kiểm soát chặt chẽ. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện Trung tâm Thông báo Quản trị chuẩn CustomTable với 4 thẻ KPI và dải Sub-filter tabs* |
+
+
+### 5.145. Bảng Use Case UC-CRM-82: Quản Lý Công Việc Điều Hành Theo 5 Nhóm Chức Năng Con Nghiệp Vụ Cụ Thể (Scope Tree vs View Mode Switcher)
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-CRM-82** |
+| **Phân Hệ / Nhóm** | Giao Việc & Quản Lý Công Việc Ban Chuyên Môn (`[NODE-CRM-012]`) |
+| **Tên Chức Năng** | Quản Lý Công Việc Điều Hành Theo 5 Nhóm Chức Năng Con Nghiệp Vụ Cụ Thể (Scope Tree vs View Mode Switcher) |
+| **Tác Nhân (Actor)** | Chủ tịch, Trưởng Ban, Phó Ban, Thành viên Ban Chuyên Môn |
+| **Tiền Điều Kiện (Pre-conditions)** | Người dùng đăng nhập Cổng Quản Trị CRM và truy cập phân hệ Quản Lý Công Việc (`/tasks`). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. **Tổ Chức Menu Con Sidebar Thành 5 Chức Năng Nghiệp Vụ Cụ Thể**:<br>   - Loại bỏ hoàn toàn menu con các dạng hiển thị (bảng, kanban, gantt) khỏi Sidebar.<br>   - Thay thế bằng **5 chức năng con nghiệp vụ cụ thể**:<br>     + `📋 Tất cả công việc` (`/tasks`): Tổng quan toàn bộ công việc toàn CLB.<br>     + `👤 Công việc của tôi` (`/tasks?filter=my_tasks`): Đầu việc được giao cho cá nhân phụ trách.<br>     + `📤 Công việc tôi giao đi` (`/tasks?filter=assigned_by_me`): Đầu việc do tài khoản tạo hoặc giám sát.<br>     + `🏢 Phân công theo Ban` (`/tasks?filter=by_department`): Theo dõi công việc theo 6 Ban chuyên môn.<br>     + `⚠️ Cần đôn đốc / Quá hạn` (`/tasks?filter=overdue`): Đầu việc trễ hạn hoặc ưu tiên khẩn cấp.<br>2. **Thanh Scope Filter Tabs Thời Gian Thực**: Ngay dưới tiêu đề trang, hiển thị dải tab tương ứng với số lượng đầu việc cập nhật động theo quyền hạn người dùng.<br>3. **Bộ Chuyển Đổi View Mode Nằm Nội Bộ Trang**: Thanh công cụ lọc phía trên danh sách trang bị các nút chuyển đổi góc nhìn linh hoạt: Dạng Bảng chuẩn, Lưới thẻ Kanban kéo thả, Lịch tháng, Dòng thời gian Gantt và Sơ đồ cây phân ban.<br>4. Thao tác tạo mới, cập nhật tiến độ, giao việc và đính kèm tệp tin tài liệu (Excel, PDF, ảnh) diễn ra liền mạch. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi nhấp vào "Phân công theo Ban", hệ thống tự động kích hoạt chế độ xem cây phân ban để người dùng quan sát cơ cấu công việc trực quan nhất. |
+| **Hậu Điều Kiện (Post-conditions)** | Tiến độ công việc của từng ban và từng cá nhân được giám sát rõ ràng, đúng người đúng việc, chống chồng chéo nhiệm vụ. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện quản lý công việc với 5 nhóm chức năng con nghiệp vụ và thanh chuyển đổi chế độ xem nội bộ* |
+
+
+### 5.146. Bảng Use Case UC-CRM-83: Cấu Hình Gửi Tin Zalo OA Liên Kết API Dữ Liệu CSDL Thực Tế & Sinh Mã QR Check-in Điện Tử
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-CRM-83** |
+| **Phân Hệ / Nhóm** | Cấu Hình Hệ Thống & Tích Hợp Zalo OA (`[NODE-CRM-020]`) |
+| **Tên Chức Năng** | Cấu Hình Gửi Tin Zalo OA Liên Kết API Dữ Liệu CSDL Thực Tế & Sinh Mã QR Check-in Điện Tử |
+| **Tác Nhân (Actor)** | Ban Quản Trị, Ban Truyền Thông, Quản trị viên hệ thống |
+| **Tiền Điều Kiện (Pre-conditions)** | Quản trị viên đăng nhập CRM, mở mục Cấu Hình Hệ Thống (`/settings`) và chọn tab Zalo OA. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở giao diện Cấu Hình Zalo OA (`ZaloOaConfigSection.tsx`).<br>2. **Cân Đối Giao Diện Cấu Hình**: Chiều rộng cột sidebar cấu hình được tối ưu 250px, các nhãn được rút gọn cân đối, icon và chữ ngang hàng chuẩn xác.<br>3. **Tích Hợp Dropdown Gọi API Dữ Liệu Thực Tế CSDL**:<br>   - Triệt tiêu hoàn toàn dữ liệu giả lập (mock data) hoặc việc phải nhập tay thông tin.<br>   - Tích hợp các bộ chọn nạp dữ liệu động trực tiếp từ CSDL PostgreSQL:<br>     + Sự kiện CLB: Gọi API `/events`<br>     + Cuộc họp Ban: Gọi API `/business-connect/meetings`<br>     + Khóa đào tạo: Gọi API `/trainings`<br>     + Cơ hội B2B: Gọi API `/opportunities`<br>4. **Tự Động Điền Dữ Liệu & Sinh URL Mã QR Check-in Điện Tử**:<br>   - Khi người dùng chọn một mục trong dropdown, hệ thống tự động điền: Tiêu đề, Thời gian, Địa điểm/Link họp, Diễn giả/Chủ trì.<br>   - Tự động sinh mã vé và URL mã QR Check-in điện tử chuẩn xác dạng đường link (`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=...`) để đại biểu lưu ảnh hoặc quét trực tiếp tại cổng đón tiếp.<br>5. Bấm "Gửi Thử Nghiệm Zalo OA" hoặc "Phát Hành Tin Nhắn Hàng Loạt" để phát tín hiệu thông báo đến Zalo hội viên. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu không tìm thấy thông tin sự kiện trong CSDL, hệ thống hiển thị thông báo nhắc nhở kiểm tra lại phân hệ Sự kiện trước khi gửi tin. |
+| **Hậu Điều Kiện (Post-conditions)** | Thông báo Zalo OA được phát hành nhanh chóng, chính xác tuyệt đối với dữ liệu thực, nâng cao tính chuyên nghiệp của hiệp hội. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện cấu hình Zalo OA tích hợp dropdown gọi API dữ liệu thực tế và xem trước tin nhắn check-in điện tử* |
+
+
+### 5.147. Bảng Use Case UC-CRM-84: Chuẩn Hóa Bảng Dữ Liệu CustomTable Toàn Hệ Thống Với Cơ Chế Sắp Xếp 3 Trạng Thái & 4 Thẻ KPI Gradient Figma
+
+| Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
+| :--- | :--- |
+| **Mã Use Case (ID)** | **UC-CRM-84** |
+| **Phân Hệ / Nhóm** | Nền Tảng Giao Diện Dùng Chung (`[NODE-CRM-001]` -> `[NODE-CRM-022]`) |
+| **Tên Chức Năng** | Chuẩn Hóa Bảng Dữ Liệu CustomTable Toàn Hệ Thống Với Cơ Chế Sắp Xếp 3 Trạng Thái & 4 Thẻ KPI Gradient Figma |
+| **Tác Nhân (Actor)** | Toàn thể Ban Quản Trị, Ban Thư Ký và Người dùng Cổng Quản Trị CRM |
+| **Tiền Điều Kiện (Pre-conditions)** | Người dùng mở bất kỳ phân hệ quản trị nào trên Cổng Quản Trị CRM (Tài khoản, Sự kiện, Đào tạo, Thông báo, v.v.). |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. **Thành Phần Bảng Dữ Liệu Dùng Chung (`CustomTable.tsx`)**:<br>   - Kế thừa trọn vẹn tiêu chuẩn thiết kế Figma từ phân hệ Quản lý tài khoản, được xuất bản thành component dùng chung tại `src/components/common/CustomTable.tsx`.<br>   - Trang bị 4 Thẻ Metric Gradient tinh tế (`CrmMetricCard`, `CrmMetricGrid`) với 4 tông màu: Sky, Violet, Orange, Green.<br>   - Thanh công cụ chuẩn hóa (`CrmToolbar`) kết hợp tìm kiếm tức thời và nút Thêm mới nổi bật.<br>2. **Quy Chuẩn Cơ Chế Sắp Xếp 3 Trạng Thái (3-State Sorting)**:<br>   - Mọi cột có thuộc tính `sortable` trên toàn hệ thống đều tuân thủ nghiêm ngặt chu trình xoay vòng 3 trạng thái qua hook `useCustomTableSort`:<br>     + *Lần nhấp 1*: Sắp xếp Tăng dần (Ascending - Icon `ChevronUp`).<br>     + *Lần nhấp 2*: Sắp xếp Giảm dần (Descending - Icon `ChevronDown`).<br>     + *Lần nhấp 3*: Hoàn trả trạng thái Mặc định không sắp xếp (Default/Null - Icon `ChevronsUpDown`, trả về thứ tự CSDL gốc).<br>3. **Tính Năng Bảng Nâng Cao**:<br>   - Cột STT tự động tính theo trang hiện tại.<br>   - Khả năng co giãn chiều rộng cột bằng chuột kiểu Excel (`ResizableTh`).<br>   - Rút gọn văn bản dài kèm Tooltip Ant Design nền đen chữ trắng khi di chuột.<br>   - Thanh phân trang đồng nhất cho phép tùy chọn 10, 15, 20, 50, 100 bản ghi trên mỗi trang. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi không có dữ liệu thỏa mãn bộ lọc: Bảng tự động hiển thị Empty State chuẩn mực với thông báo hướng dẫn rõ ràng. |
+| **Hậu Điều Kiện (Post-conditions)** | Trải nghiệm thao tác trên toàn bộ Cổng Quản Trị CRM đạt độ đồng bộ 100%, chuẩn chỉ, tiện lợi và đẳng cấp doanh nghiệp. |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện bảng dữ liệu chuẩn CustomTable với sắp xếp 3 trạng thái và 4 thẻ Metric Gradient Figma* |
 
 
 ---
@@ -2656,4 +2731,58 @@ Toàn bộ 138 hình ảnh minh chứng thực tế trên hệ thống được 
 * **Đa Dạng Phương Thức Đào Tạo**: Thiết lập khóa học Online (Jitsi/Zoom link, room ID, password), Offline (hội trường, địa chỉ, sức chứa), hoặc Hybrid kết hợp cả hai.
 * **Đường Dẫn Đăng Ký Mở & Mã QR Động**: Tự động sinh link công khai (Public Registration URL) kèm mã QR động có thể phóng to, copy link để chia sẻ cho các ứng viên hoặc khách mời ngoài.
 * **Nút "Bắn Xuống App CEO 1983"**: Phát hành bài viết đào tạo truyền thông lên Bảng tin Mạng lưới Mobile kèm Poster và Mã QR Điểm Danh chỉ bằng 1 cú nhấp chuột.
+
+### 9.19. Quản Lý Đội Ngũ Nhân Sự Doanh Nghiệp Trực Thuộc (CRM & API Nested Personnel)
+* **Bối cảnh & Tầm quan trọng**: Doanh nghiệp hội viên CEO 1983 thường cử cán bộ quản lý cấp cao, trợ lý hoặc nhân sự chuyên trách phối hợp cùng hiệp hội trong các hoạt động xúc tiến, đào tạo và sự kiện. Do đó, hệ thống mở rộng tính năng quản lý đội ngũ nhân sự trực thuộc tại chi tiết doanh nghiệp hội viên (`/members/:id`).
+* **Đặc tả API & Dữ liệu**:
+  - `GET /members/:id/personnel`: Trả về danh sách nhân sự trực thuộc doanh nghiệp gồm: `id`, `name`, `position` (Chức vụ: Phó Giám Đốc, Trợ Lý, Kế Toán Trưởng,...), `phone`, `email`, `role_description`, `is_primary_contact` (Đầu mối liên hệ chính), `status` (`ACTIVE`, `INACTIVE`), `created_at`.
+  - `POST /members/:id/personnel`: Thêm mới nhân sự cho doanh nghiệp với validation hợp lệ về số điện thoại và email.
+  - `PUT /members/:id/personnel/:personnelId`: Cập nhật thông tin nhân sự hoặc trạng thái công tác.
+  - `DELETE /members/:id/personnel/:personnelId`: Thu hồi / xóa nhân sự khỏi danh sách quản lý.
+* **Giao diện Tab "Đội Ngũ Nhân Sự"**: Tích hợp trực tiếp dưới trang chi tiết hội viên/doanh nghiệp, hiển thị dạng danh sách thẻ Card hoặc bảng mini, có nút "Thêm nhân sự mới" mở Drawer/Modal thao tác nhanh, hỗ trợ gán cờ "Người liên hệ chính" để nhận thông báo từ Ban Thư Ký.
+
+### 9.20. Trung Tâm Thông Báo Quản Trị Hệ Thống, Menu Tree Sidebar & Quét Cảnh Báo Hội Phí Tự Động
+* **Tái cấu trúc Sidebar Menu Tree**:
+  - Tách menu "Thông báo" trên Sidebar CRM thành cấu trúc Menu Tree phân cấp rõ ràng gồm:
+    + **Tất cả thông báo**: Xem dòng thời gian toàn bộ thông báo hệ thống.
+    + **Cảnh báo hội phí & Tài chính**: Danh sách hội viên sắp đến hạn hội phí (trong vòng 15-30 ngày) và hội viên quá hạn cần đôn đốc.
+    + **Hồ sơ hội viên chờ duyệt**: Cảnh báo tức thì khi có doanh nhân nộp đơn gia nhập mới qua landing page.
+    + **Thông báo sự kiện & Đào tạo**: Cảnh báo về các lớp học hoặc sự kiện sắp diễn ra, danh sách đại biểu đăng ký mới.
+    + **Cấu hình & Tự động hóa**: Thiết lập chu kỳ quét cảnh báo và mẫu thông báo đẩy.
+* **Cơ chế Quét Tự Động Hội Phí & Cảnh Báo Role Admin**:
+  - Hệ thống tự động kích hoạt Service quét định kỳ (Cron / Schedule Check) trạng thái hạn hội phí của tất cả hội viên.
+  - Khi phát hiện hội viên sắp hết hạn (trước 30 ngày) hoặc quá hạn, hệ thống tự động sinh thông báo cảnh báo đẩy vào Notification Center cho các tài khoản mang vai trò Admin Quản Trị (`admin`, `chu_tich`, `pho_chu_tich`, `ban_tai_chinh`, `ban_thu_ky`).
+  - Khắc phục triệt để lỗi mạng Service Worker tại endpoint `/notifications`, tích hợp bộ đệm an toàn và tự động retry khi mất kết nối tạm thời.
+
+### 9.21. Tái Cấu Trúc Nhóm Quản Lý Công Việc Điều Hành: 5 Chức Năng Con Nghiệp Vụ Cụ Thể
+* **Chuyển đổi từ Menu Tree hiển thị sang 5 Chức Năng Con Nghiệp Vụ**:
+  - Trước đây: Nhóm công việc bị phân chia theo các dạng hiển thị (Bảng, Kanban, Lịch, Cây phòng ban) gây khó khăn trong phân công tác nghiệp.
+  - Chuẩn hóa mới: Nhóm Quản Lý Công Việc (`/tasks`) được tổ chức thành **5 chức năng con nghiệp vụ cụ thể**:
+    1. **Công việc của tôi (`my_tasks`)**: Chỉ hiển thị các đầu việc được giao trực tiếp cho tài khoản đang đăng nhập hoặc các việc do chính người dùng tạo.
+    2. **Việc Ban Điều Hành giao (`assigned_by_leadership`)**: Danh sách các nhiệm vụ, chỉ đạo trọng điểm từ Chủ tịch hoặc Ban Thường trực giao cho các Ban chuyên môn.
+    3. **Việc theo Ban chuyên môn (`by_department`)**: Phân nhóm công việc theo từng Ban (Sự kiện, Xúc tiến, Tài chính, Truyền thông, Hội viên, Thiện nguyện) với cây thư mục (Tree View) rõ ràng.
+    4. **Công việc ưu tiên & Quá hạn (`urgent_overdue`)**: Bộ lọc tự động tập trung các đầu việc gắn cờ "Gấp", "Khẩn cấp" hoặc đã vượt quá Deadline cần xử lý ngay.
+    5. **Tất cả công việc hiệp hội (`all_tasks`)**: Toàn cảnh các chương trình hành động của CLB CEO 1983, cho phép lọc đa chiều theo tiến độ, người phụ trách và ngày hoàn thành.
+* **Tách bạch Bộ Chuyển Chế Độ Xem (View Mode Switcher)**:
+  - 4 Chế độ hiển thị (Dạng Thẻ Kanban, Dạng Bảng Danh Sách, Dạng Lịch Tuần/Tháng, Dạng Cây Phòng Ban) được đưa lên thanh công cụ phía trên (`ViewModeSwitch`), hoạt động độc lập và áp dụng linh hoạt cho cả 5 chức năng con nghiệp vụ nêu trên.
+
+### 9.22. Cấu Hình Gửi Tin Zalo OA Liên Kết API Dữ Liệu Thực Tế CSDL & Mã QR Check-in Điện Tử
+* **Liên kết API Dữ Liệu Thực Tế (Không Hardcode Mock Data)**:
+  - Khi cấu hình gửi thông báo Zalo OA (Zalo Official Account) cho các chiến dịch sự kiện hoặc đào tạo, hệ thống tự động gọi API nghiệp vụ tương ứng (`GET /events` hoặc `GET /trainings`) để nạp danh sách thực tế từ CSDL PostgreSQL.
+  - Người dùng chọn trực tiếp Sự kiện hoặc Khóa đào tạo từ danh sách thực tế; hệ thống tự động điền các tham số: Tên chương trình, Thời gian bắt đầu, Địa điểm tổ chức, Giảng viên / Chủ trì, Đường dẫn tham dự trực tuyến.
+* **Cơ Chế Sinh Đường Dẫn QR Check-in Điện Tử Trực Tiếp**:
+  - Trong nội dung tin nhắn Zalo gửi đến từng hội viên, hệ thống không chỉ gửi thông tin văn bản thuần túy mà tự động đính kèm đường dẫn mã QR Check-in cá nhân hóa:
+    `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=MÃ_HỘI_VIÊN%7CTICKET%3AMÃ_VÉ%7CPHONE%3ASĐT`
+  - Hội viên chỉ cần mở tin nhắn Zalo tại bàn lễ tân sự kiện để ban tổ chức quét mã check-in tức thì và in thẻ đại biểu tự động.
+
+### 9.23. Chuẩn Hóa Bảng Dữ Liệu CustomTable Toàn Hệ Thống CRM: Sắp Xếp 3 Trạng Thái & 4 Thẻ KPI Gradient Figma
+* **Chuẩn Hóa Component Dùng Chung `CustomTable`**:
+  - Áp dụng chuẩn thiết kế Dashboard từ màn hình Quản lý Tài khoản (`/accounts`) thay thế đồng bộ cho toàn bộ các màn hình bảng biểu của CRM (Hội viên, Doanh nghiệp, Đào tạo, Sự kiện, Giao dịch B2B, Lịch hẹn, Phân quyền).
+  - Tích hợp 4 Thẻ KPI Gradient Figma đặc trưng ở đầu bảng: Thẻ Xanh Navy Tổng số lượng, Thẻ Xanh Emerald Đang hoạt động, Thẻ Vàng Amber Chờ phê duyệt/Sắp diễn ra, Thẻ Xám/Đỏ Quá hạn/Cần xử lý.
+* **Cơ Chế Sắp Xếp 3 Trạng Thái Trên Toàn Bộ Các Cột (Tri-State Sorting)**:
+  - Mọi cột trong bảng dữ liệu đều hỗ trợ chu kỳ sắp xếp 3 bước tuần hoàn:
+    1. **Tăng dần (Ascending - `asc`)**: Mũi tên hướng lên ▲.
+    2. **Giảm dần (Descending - `desc`)**: Mũi tên hướng xuống ▼.
+    3. **Không sắp xếp / Mặc định (None / Default)**: Hai mũi tên xám nhạt ▲▼, khôi phục thứ tự mặc định của CSDL.
+  - Cơ chế này thay thế hoàn toàn tình trạng sắp xếp 2 trạng thái cũ, mang lại trải nghiệm chuẩn mực và nhất quán như phần mềm bảng tính cao cấp.
 

@@ -222,7 +222,7 @@ export function NotificationCenter() {
       return;
     }
 
-    void navigate({ to: "/notifications" });
+    void navigate({ to: "/notifications", search: { filter: undefined } });
   };
 
   const renderItem = (n: Notification, i: number) => {
@@ -345,6 +345,7 @@ export function NotificationCenter() {
 
           <Link
             to="/notifications"
+            search={{ filter: undefined }}
             onClick={() => setOpen(false)}
             className="flex items-center justify-center gap-1 border-t border-border px-3.5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-muted"
           >

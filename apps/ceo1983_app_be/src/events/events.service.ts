@@ -1166,11 +1166,10 @@ export class EventsService implements OnModuleInit {
         const crmPaidNotifCode = `NOTIF-PAID-EVT-${Date.now().toString().slice(-6)}`;
         await this.prisma.$executeRaw`
           INSERT INTO public.notifications (
-            id, code, title, body, description, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+            id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
           ) VALUES (
             gen_random_uuid(), ${crmPaidNotifCode},
             ${`Hội viên đăng ký vé sự kiện: ${event.title || event.name}`},
-            ${`Hội viên ${memberName} (${memberCode}) đã đăng ký ${ticketCount} vé sự kiện "${event.title || event.name}" (Tổng tiền: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ). Hóa đơn: ${invoiceNo}.`},
             ${`Hội viên ${memberName} (${memberCode}) đã đăng ký ${ticketCount} vé sự kiện "${event.title || event.name}" (Tổng tiền: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ). Hóa đơn: ${invoiceNo}.`},
             'all', 'inapp', 'sent', now(), 1, ${event.association_id ? event.association_id : null}::uuid, 'all', 'all', 'admins', true, now(), now()
           )
@@ -2742,11 +2741,10 @@ export class EventsService implements OnModuleInit {
     const crmGuestNotifCode = `NOTIF-GUEST-EVT-${Date.now().toString().slice(-6)}`;
     await this.prisma.$executeRaw`
       INSERT INTO public.notifications (
-        id, code, title, body, description, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
       ) VALUES (
         gen_random_uuid(), ${crmGuestNotifCode},
         ${`Đại biểu khách đăng ký sự kiện: ${event.title || event.name}`},
-        ${`Khách mời ${fullName} (${company || 'Khách vãng lai'}) đã đăng ký ${ticketCount} vé tham gia sự kiện "${event.title || event.name}" (${isFree ? 'Miễn phí' : new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ'}). Mã vé: ${regId}.`},
         ${`Khách mời ${fullName} (${company || 'Khách vãng lai'}) đã đăng ký ${ticketCount} vé tham gia sự kiện "${event.title || event.name}" (${isFree ? 'Miễn phí' : new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ'}). Mã vé: ${regId}.`},
         'all', 'inapp', 'sent', now(), 1, ${event.association_id ? event.association_id : null}::uuid, 'all', 'all', 'admins', true, now(), now()
       )

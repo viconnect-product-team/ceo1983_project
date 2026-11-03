@@ -1094,6 +1094,143 @@ export class MembersService {
     };
   }
 
+  async getCompanyPersonnel(userId: string, companyId: string) {
+    let company: any = null;
+    try {
+      company = await this.getMemberById(userId, companyId);
+    } catch {
+      // ignore
+    }
+
+    const compName = company?.company || company?.company_name || company?.name || '';
+    const personnel: any[] = [];
+    const seenEmails = new Set<string>();
+    const seenIds = new Set<string>();
+
+    // 1. Lấy từ bảng public.members theo ID hoặc tên công ty
+    if (compName || companyId) {
+      const memberRows = await this.prisma.$queryRaw<any[]>`
+        SELECT m.id, m.code, m.name, m.contact, m.email, m.phone,
+               COALESCE(m.executive_role, 'member') as executive_role,
+               COALESCE(m.department, 'Hội viên CEO 1983') as department,
+               m.status, m.avatar_url, m.created_at, m.joined_at,
+               u.name AS user_name, u.email AS user_email, u.phone AS user_phone, u.avatar_url AS user_avatar
+        FROM public.members m
+        LEFT JOIN public.vione_users u ON m.user_id = u.id
+        WHERE m.id = ${companyId}
+           OR (${compName} != '' AND (
+             LOWER(TRIM(COALESCE(m.company_name, ''))) = LOWER(TRIM(${compName}))
+             OR LOWER(TRIM(COALESCE(m.company, ''))) = LOWER(TRIM(${compName}))
+           ))
+        ORDER BY m.created_at ASC
+      `.catch(() => []);
+
+      for (const r of memberRows) {
+        const id = r.id;
+        const email = r.user_email || r.email || '';
+        const name = r.contact || r.user_name || r.name || 'Nhân sự Doanh nghiệp';
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+        if (email) seenEmails.add(email.toLowerCase());
+
+        const isOwner = r.id === companyId;
+        personnel.push({
+          id: r.id,
+          code: r.code || '',
+          name,
+          title: isOwner ? (company?.contact ? 'Đại diện pháp luật / Chủ tịch' : 'Đại diện doanh nghiệp') : (r.executive_role && r.executive_role !== 'member' ? r.executive_role : 'Nhân sự chủ chốt'),
+          role: isOwner ? 'owner' : (r.executive_role || 'member'),
+          department: r.department || 'Nhân sự',
+          email: r.user_email || r.email || '',
+          phone: r.user_phone || r.phone || '',
+          status: r.status || 'active',
+          avatarUrl: r.user_avatar || r.avatar_url || null,
+          joinedAt: r.joined_at || r.created_at,
+          isRepresentative: isOwner,
+        });
+      }
+    }
+
+    // 2. Lấy từ bảng public.company_members nếu có
+    const cmRows = await this.prisma.$queryRaw<any[]>`
+      SELECT cm.id, cm.company_id, cm.email, cm.role, cm.status, cm.created_at,
+             u.id as user_id, u.name as user_name, u.email as user_email, u.phone as user_phone, u.avatar_url as user_avatar
+      FROM public.company_members cm
+      LEFT JOIN public.vione_users u ON cm.user_id = u.id
+      WHERE cm.company_id::text = ${companyId}
+      ORDER BY cm.created_at ASC
+    `.catch(() => []);
+
+    for (const cm of cmRows) {
+      const email = cm.user_email || cm.email || '';
+      if (email && seenEmails.has(email.toLowerCase())) continue;
+      if (seenIds.has(cm.id)) continue;
+      seenIds.add(cm.id);
+      if (email) seenEmails.add(email.toLowerCase());
+
+      personnel.push({
+        id: cm.id,
+        code: '',
+        name: cm.user_name || cm.email || 'Nhân sự',
+        title: cm.role === 'owner' ? 'Đại diện pháp luật' : cm.role === 'admin' ? 'Quản lý điều hành' : 'Nhân sự doanh nghiệp',
+        role: cm.role || 'member',
+        department: 'Nhân sự',
+        email,
+        phone: cm.user_phone || '',
+        status: cm.status || 'active',
+        avatarUrl: cm.user_avatar || null,
+        joinedAt: cm.created_at,
+        isRepresentative: cm.role === 'owner',
+      });
+    }
+
+    // 3. Fallback: Nếu danh sách rỗng, luôn đưa Người đại diện chính thức của doanh nghiệp vào
+    if (personnel.length === 0 && company) {
+      personnel.push({
+        id: company.id || 'owner-1',
+        code: company.code || '',
+        name: company.contact || company.name || 'Người đại diện pháp luật',
+        title: 'Đại diện pháp luật / Giám đốc',
+        role: 'owner',
+        department: 'Ban Giám Đốc',
+        email: company.email || '',
+        phone: company.phone || '',
+        status: company.status || 'active',
+        avatarUrl: company.avatarUrl || null,
+        joinedAt: company.joinedAt || new Date().toISOString(),
+        isRepresentative: true,
+      });
+    }
+
+    return personnel;
+  }
+
+  async addCompanyPersonnel(userId: string, companyId: string, data: any) {
+    const now = new Date();
+    const name = String(data.name || '').trim();
+    const email = String(data.email || '').trim();
+    const phone = String(data.phone || '').trim();
+    const title = String(data.title || 'Nhân sự').trim();
+    const role = String(data.role || 'member').trim();
+
+    if (!name && !email) {
+      throw new BadRequestException('Vui lòng nhập họ tên hoặc email nhân sự');
+    }
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.company_members (id, company_id, email, role, status, created_at, updated_at)
+      VALUES (gen_random_uuid(), ${companyId}::uuid, ${email || null}, ${role}, 'active', ${now}, ${now})
+    `.catch(async () => {
+      const newId = 'CM' + now.getTime().toString(36).toUpperCase();
+      await this.prisma.$executeRaw`
+        INSERT INTO public.members (id, code, name, contact, email, phone, company_name, executive_role, department, status, joined_at)
+        VALUES (${newId}, ${'NV-' + Math.floor(1000 + Math.random() * 9000)}, ${name || email}, ${name}, ${email}, ${phone}, ${companyId}, ${role}, ${title}, 'active', ${now.toISOString().slice(0, 10)})
+      `.catch(() => {});
+    });
+
+    return { ok: true, message: 'Thêm nhân sự thành công' };
+  }
+
   async getMyMemberHistory(userId: string) {
     const memRows = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
@@ -2946,21 +3083,20 @@ export class MembersService {
 
     await this.prisma.$executeRaw`
       INSERT INTO public.notifications (
-        id, code, title, body, description, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
       ) VALUES (
         gen_random_uuid(),
         ${notifCode},
         ${notifTitle},
         ${notifBody},
-        ${notifBody},
-        'all',
+        'staff',
         'inapp',
         'sent',
         NOW(),
         1,
         ${assocId}::uuid,
-        'all',
-        'all',
+        'crm',
+        'crm',
         'admins',
         true,
         NOW(),

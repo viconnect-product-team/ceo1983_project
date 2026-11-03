@@ -30,6 +30,7 @@ import {
   ExternalLink,
   Clock,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { SendEmailModal } from "@/components/dashboard/SendEmailModal";
@@ -57,9 +58,11 @@ export const Route = createFileRoute("/companies/$companyId")({
     const company = await fetchNestApi<Member>(`/members/${params.companyId}`).catch(() => null);
     if (!company) throw notFound();
     const history = await fetchNestApi<CompanyHistory>(`/members/${params.companyId}/history`).catch(() => null);
+    const personnel = await fetchNestApi<any[]>(`/members/${params.companyId}/personnel`).catch(() => []);
     return {
       company,
       history: history || { activities: [], events: [], payments: [] },
+      personnel: Array.isArray(personnel) ? personnel : [],
     };
   },
   component: CompanyDetailPage,
@@ -161,12 +164,23 @@ function CompanyDetailPage() {
   const loaderData = Route.useLoaderData() as {
     company: Member;
     history?: CompanyHistory;
+    personnel?: any[];
   };
   const loaded = loaderData.company;
   const history = loaderData.history || { activities: [], events: [], payments: [] };
   const activities = history.activities || [];
   const events = history.events || [];
   const payments = history.payments || [];
+  const [personnelList, setPersonnelList] = useState<any[]>(loaderData.personnel || []);
+  const [openAddPersonnel, setOpenAddPersonnel] = useState(false);
+  const [submittingPersonnel, setSubmittingPersonnel] = useState(false);
+
+  const reloadPersonnel = async () => {
+    try {
+      const res = await fetchNestApi<any[]>(`/members/${loaded.id}/personnel`);
+      if (Array.isArray(res)) setPersonnelList(res);
+    } catch {}
+  };
 
   const { isAdmin } = useRole();
   const [companyState, setCompanyState] = useState<Member>(loaded);
@@ -181,7 +195,7 @@ function CompanyDetailPage() {
   });
   const company: Member = { ...companyState, ...contact };
 
-  const [tab, setTab] = useState<"overview" | "activity" | "events" | "payments">("overview");
+  const [tab, setTab] = useState<"overview" | "personnel" | "activity" | "events" | "payments">("overview");
 
   const fields: CrudField[] = [
     { name: "name", label: t("members.f.name"), type: "text", required: true },
@@ -376,10 +390,50 @@ function CompanyDetailPage() {
     }
   };
 
+  const handleAddPersonnel = async (values: CrudValues) => {
+    try {
+      setSubmittingPersonnel(true);
+      await fetchNestApi(`/members/${company.id}/personnel`, {
+        method: "POST",
+        body: JSON.stringify(values),
+      });
+      toast.success("Đã thêm nhân sự vào doanh nghiệp!");
+      setOpenAddPersonnel(false);
+      await reloadPersonnel();
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể thêm nhân sự");
+    } finally {
+      setSubmittingPersonnel(false);
+    }
+  };
+
+  const personnelFields: CrudField[] = [
+    { name: "name", label: "Họ và tên nhân sự", type: "text", required: true },
+    { name: "title", label: "Chức vụ / Vị trí đảm nhiệm", type: "text", required: true },
+    { name: "email", label: "Email làm việc", type: "text" },
+    { name: "phone", label: "Số điện thoại liên hệ", type: "text" },
+    {
+      name: "role",
+      label: "Phân quyền trong doanh nghiệp",
+      type: "select",
+      options: [
+        { value: "owner", label: "Người đại diện pháp luật / Chủ tịch" },
+        { value: "admin", label: "Quản lý điều hành / Giám đốc" },
+        { value: "member", label: "Cán bộ nhân viên chính thức" },
+      ],
+    },
+  ];
+
   const s = statusStyle[company.status] || statusStyle.pending;
 
-  const tabs: { key: typeof tab; label: TKey; Icon: typeof Activity; count?: number }[] = [
-    { key: "overview", label: "cdetail.tab.overview", Icon: Building2 },
+  const tabs: { key: typeof tab; label: string; Icon: typeof Activity; count?: number }[] = [
+    { key: "overview", label: t("cdetail.tab.overview") || "Tổng quan", Icon: Building2 },
+    {
+      key: "personnel",
+      label: "Đội ngũ nhân sự",
+      Icon: Users,
+      count: personnelList.length,
+    },
     {
       key: "activity",
       label: "cdetail.tab.activity",
@@ -548,9 +602,29 @@ function CompanyDetailPage() {
           submittingFee={submittingFee}
         />
       )}
+      {tab === "personnel" && (
+        <PersonnelTab
+          company={company}
+          entries={personnelList}
+          onAddClick={() => setOpenAddPersonnel(true)}
+        />
+      )}
       {tab === "activity" && <ActivityTab entries={history.activities} />}
       {tab === "events" && <EventsTab entries={history.events} />}
       {tab === "payments" && <PaymentsTab entries={history.payments} />}
+
+      {/* Add Personnel Modal */}
+      <CrudModal
+        open={openAddPersonnel}
+        title="Thêm nhân sự doanh nghiệp"
+        fields={personnelFields}
+        initial={{ role: "member", title: "Cán bộ nhân viên" }}
+        submitting={submittingPersonnel}
+        submitLabel="Thêm nhân sự"
+        cancelLabel="Hủy"
+        onSubmit={handleAddPersonnel}
+        onClose={() => setOpenAddPersonnel(false)}
+      />
 
       {/* Send Email Modal */}
       <SendEmailModal
@@ -1085,6 +1159,143 @@ function PaymentsTab({ entries }: { entries: CompanyHistory["payments"] }) {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function PersonnelTab({
+  company,
+  entries,
+  onAddClick,
+}: {
+  company: Member;
+  entries: any[];
+  onAddClick: () => void;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-5 border-b border-border">
+        <div>
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            Đội ngũ nhân sự & Đại diện ({entries.length})
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Danh sách nhân sự, đại diện pháp luật và cán bộ trực thuộc {company.name}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onAddClick}
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow transition hover:bg-primary/90 cursor-pointer"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          Thêm nhân sự
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-secondary/60 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+              <th className="px-5 py-3">Nhân sự</th>
+              <th className="px-5 py-3">Chức danh / Vai trò</th>
+              <th className="px-5 py-3">Phân ban</th>
+              <th className="px-5 py-3">Liên hệ</th>
+              <th className="px-5 py-3 text-center">Trạng thái</th>
+              <th className="px-5 py-3 text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/60">
+            {entries.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+                  Chưa có thông tin nhân sự. Bấm "Thêm nhân sự" để khai báo.
+                </td>
+              </tr>
+            ) : (
+              entries.map((p, idx) => (
+                <tr key={p.id || idx} className="hover:bg-muted/40 transition">
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden ring-1 ring-border">
+                        {p.avatarUrl ? (
+                          <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          (p.name?.[0] || "N").toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground flex items-center gap-1.5">
+                          {p.name}
+                          {p.isRepresentative && (
+                            <span className="rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-1.5 py-0.5">
+                              Đại diện
+                            </span>
+                          )}
+                        </div>
+                        {p.code && <div className="text-[11px] text-muted-foreground">Mã: {p.code}</div>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5 font-medium text-foreground">
+                    <span className="rounded-lg bg-secondary px-2.5 py-1 text-xs text-secondary-foreground font-semibold">
+                      {p.title || p.role || "Cán bộ nhân viên"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-xs text-muted-foreground">
+                    {p.department || "Nhân sự doanh nghiệp"}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="space-y-0.5 text-xs">
+                      {p.email && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate max-w-[180px]">{p.email}</span>
+                        </div>
+                      )}
+                      {p.phone && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Phone className="h-3 w-3 shrink-0" />
+                          <span>{p.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5 text-center">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      {p.status === "active" ? "Hoạt động" : "Đã kích hoạt"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {p.email && (
+                        <a
+                          href={`mailto:${p.email}`}
+                          className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition"
+                          title="Gửi email"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                      {p.phone && (
+                        <a
+                          href={`tel:${p.phone}`}
+                          className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-emerald-600 hover:border-emerald-500/40 transition"
+                          title="Gọi điện"
+                        >
+                          <Phone className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

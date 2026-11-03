@@ -2280,18 +2280,25 @@
   + Tab 4: Mạng lưới (`/association/messages`, icon `Users` / `FooterSocialNetworkIcon`)
   + Tab 5: Cá nhân (`/association/profile`, icon `User`)
 
-# [BẮT BUỘC 123] Quy Chuẩn Nhóm Quản Lý Công Việc CRM: Chức Năng Con Nghiệp Vụ Cụ Thể (Scope Tree vs View Switcher)
-- Quy Chuẩn 1: Menu Con Sidebar CRM BẮT BUỘC là Chức Năng Con Cụ Thể (`Sidebar.tsx`):
-  + TUYỆT ĐỐI KHÔNG dùng menu con Sidebar cho các dạng hiển thị (dạng bảng, cây, kanban, lịch, gantt).
-  + Menu con của Quản lý công việc BẮT BUỘC gồm 5 chức năng nghiệp vụ cụ thể:
-    1. `📋 Tất cả công việc` (`/tasks`)
-    2. `👤 Công việc của tôi` (`/tasks?filter=my_tasks`)
-    3. `📤 Công việc tôi giao đi` (`/tasks?filter=assigned_by_me`)
-    4. `🏢 Phân công theo Ban` (`/tasks?filter=by_department`)
-    5. `⚠️ Cần đôn đốc / Quá hạn` (`/tasks?filter=overdue`)
-- Quy Chuẩn 2: Thanh Chuyển Đổi View Mode Nằm Nội Bộ Trang (`tasks.tsx`):
-  + Các góc nhìn hiển thị (Bảng chi tiết, Lưới thẻ Kanban, Lịch tháng, Dòng thời gian Gantt, Cây phân ban) là công cụ hiển thị của trang, đặt tại thanh Toolbar lọc phía trên danh sách công việc.
-  + Trang `/tasks` trang bị thanh Scope Tabs ngay dưới tiêu đề để người dùng có thể nhấp lọc 1-click giữa các chức năng con với số lượng việc cập nhật thời gian thực.
+# [BẮT BUỘC 124] Quy Chuẩn Hệ Thống Thông Báo Quản Trị CRM & Cảnh Báo Hội Phí / Hội Viên Mới & Nhân Sự Doanh Nghiệp
+- Quy Chuẩn 1: Phân Loại Thông Báo Qua Sidebar Tree Menu & CustomTable (`notifications.tsx`, `Sidebar.tsx`):
+  + Menu con của Thông báo hệ thống trên Sidebar CRM gồm 5 mục cụ thể:
+    1. `🔔 Tất cả thông báo` (`/notifications`)
+    2. `👤 Hội viên mới nộp hồ sơ` (`/notifications?filter=new_members`)
+    3. `⚠️ Cảnh báo & Quá hạn hội phí` (`/notifications?filter=fee_alerts`)
+    4. `🏢 BQT & Điều hành` (`/notifications?filter=admin_system`)
+    5. `📅 Sự kiện & Cuộc họp` (`/notifications?filter=events_meetings`)
+  + Màn hình `/notifications` đồng bộ dải Sub-filter Tabs với số lượng đếm thời gian thực, 4 thẻ Metric Gradient Figma (`CrmMetricGrid`, `CrmMetricCard`), bảng dữ liệu `CustomTable` với sắp xếp 3 trạng thái và các nút hành động nhanh theo phân hệ (Duyệt hồ sơ -> `/members?status=pending`, Thu phí / Gia hạn -> `/renewal`, Xem sự kiện -> `/events`, Đưa vào tin nhắn Hiệp hội).
+- Quy Chuẩn 2: Tự Động Quét Cảnh Báo Hệ Thống (Backend Auto-Sync Alerts) (`admin.service.ts`):
+  + Khi quản trị viên truy cập, hệ thống tự động quét CSDL và sinh thông báo:
+    * Hồ sơ hội viên mới nộp đơn đang chờ duyệt (`status = 'pending'`).
+    * Hội viên quá hạn hội phí niên liễm (`fee_paid = false` và ngày hết hạn < hiện tại).
+    * Hội viên sắp đến hạn hội phí niên liễm trong vòng 30 ngày.
+    * Tự động dọn dẹp các thông báo tương ứng khi hội viên đã được duyệt hoặc hoàn thành đóng phí niên liễm.
+  + Đảm bảo câu lệnh `INSERT INTO public.notifications` luôn đầy đủ và không sử dụng các trường ngoài schema (như `description` trước đây).
+- Quy Chuẩn 3: Quản Lý Nhân Sự Trực Thuộc Doanh Nghiệp (`members.service.ts`, `companies.$companyId.tsx`):
+  + Màn chi tiết Doanh nghiệp (`/companies/$companyId`) trang bị Tab "Đội ngũ nhân sự", hiển thị danh sách cán bộ nhân sự trực thuộc từ `public.members`, `public.company_members`, và người đại diện pháp luật `public.companies`, kèm Modal thêm nhân sự nhanh.
+
 
 
 

@@ -40,23 +40,43 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Không can thiệp API calls hoặc WebSocket
-  if (url.pathname.startsWith("/api") || url.pathname.startsWith("/dm") || url.pathname.startsWith("/socket.io")) {
+  // Chỉ can thiệp vào same-origin requests
+  if (url.origin !== self.location.origin) return;
+
+  // Không can thiệp API calls, WebSocket, Server Functions hoặc data endpoints
+  if (
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/dm") ||
+    url.pathname.startsWith("/socket.io") ||
+    url.pathname.startsWith("/_serverFn") ||
+    url.pathname.startsWith("/admin/") ||
+    url.pathname.startsWith("/notifications") ||
+    url.pathname.startsWith("/members") ||
+    url.pathname.startsWith("/events") ||
+    url.pathname.startsWith("/meetings")
+  ) {
     return;
   }
 
   // 1. Navigation request (HTML pages): Network-First để luôn nhận phiên bản mới nhất khi deploy
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
           return networkResponse;
-        })
-        .catch(() => caches.match(request) || caches.match("/association"))
+        } catch {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const fallback = (await caches.match("/association")) || (await caches.match("/"));
+          if (fallback) return fallback;
+          return new Response("Offline", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+        }
+      })()
     );
     return;
   }
@@ -64,34 +84,52 @@ self.addEventListener("fetch", (event) => {
   // 2. Chunks JS/CSS hoặc assets: Network-First với fallback cache
   if (url.pathname.includes("/assets/") || url.pathname.includes("/_build/")) {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
           return networkResponse;
-        })
-        .catch(() => caches.match(request))
+        } catch {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          return new Response("", { status: 408, statusText: "Request Timeout" });
+        }
+      })()
     );
     return;
   }
 
   // 3. Các assets tĩnh khác: Stale-While-Revalidate
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+    (async () => {
+      try {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+          fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                const copy = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+              }
+            })
+            .catch(() => {});
+          return cachedResponse;
+        }
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+        }
+        return networkResponse;
+      } catch {
+        const fallback = await caches.match(request);
+        if (fallback) return fallback;
+        return new Response("", { status: 404, statusText: "Not Found" });
+      }
+    })()
   );
 });
 

@@ -110,7 +110,19 @@ const finance: Item[] = [
   { key: "nav.financeReport", icon: PieChart, to: "/finance-report" },
 ];
 const comm: Item[] = [
-  { key: "nav.notify", icon: Bell, to: "/notifications" },
+  {
+    key: "nav.notify",
+    icon: Bell,
+    to: "/notifications",
+    label: "Thông báo hệ thống",
+    children: [
+      { to: "/notifications", label: "🔔 Tất cả thông báo" },
+      { to: "/notifications?filter=new_members", label: "👤 Hội viên mới nộp hồ sơ" },
+      { to: "/notifications?filter=fee_alerts", label: "⚠️ Cảnh báo & Quá hạn hội phí" },
+      { to: "/notifications?filter=admin_system", label: "🏢 BQT & Điều hành" },
+      { to: "/notifications?filter=events_meetings", label: "📅 Sự kiện & Cuộc họp" },
+    ],
+  },
   { key: "nav.news", icon: Newspaper, to: "/news" },
   { key: "nav.perks", icon: Gift, to: "/perks" },
   { key: "nav.benefits", icon: Award, to: "/benefits" },
@@ -492,23 +504,20 @@ export function Sidebar({
   const unreadNotify = useUnreadNotifications();
   const badges: Record<string, number> = { "/notifications": unreadNotify };
 
-  const [overrideBrandName, setOverrideBrandName] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name");
-    }
-    return null;
-  });
+  const [overrideBrandName, setOverrideBrandName] = useState<string | null>(null);
+  const [overrideBrandLogo, setOverrideBrandLogo] = useState<string | null>(null);
 
-  const [overrideBrandLogo, setOverrideBrandLogo] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return (
+  useEffect(() => {
+    try {
+      const savedName = localStorage.getItem("vba_active_assoc_name") || localStorage.getItem("crm_system_name");
+      if (savedName) setOverrideBrandName(savedName);
+      const savedLogo =
         localStorage.getItem("vba_active_assoc_logo") ||
         localStorage.getItem("crm_system_logo") ||
-        null
-      );
-    }
-    return null;
-  });
+        null;
+      if (savedLogo) setOverrideBrandLogo(savedLogo);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const onChange = (e: any) => {

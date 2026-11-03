@@ -296,6 +296,19 @@ export class MembersController {
   }
 
   @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/personnel')
+  async getCompanyPersonnel(@Request() req: any, @Param('id') id: string) {
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000000';
+    return this.membersService.getCompanyPersonnel(userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/personnel')
+  async addCompanyPersonnel(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+    return this.membersService.addCompanyPersonnel(req.user.id, id, body);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   async getMemberById(@Request() req: any, @Param('id') id: string) {
     const userId = req.user?.id || '00000000-0000-0000-0000-000000000000';

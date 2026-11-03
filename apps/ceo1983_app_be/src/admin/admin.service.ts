@@ -589,6 +589,129 @@ export class AdminService implements OnModuleInit {
 
   private dismissedNotifIds = new Set<string>();
 
+  /**
+   * Tự động quét và đồng bộ các cảnh báo hệ thống vào public.notifications:
+   * 1. 👤 Hồ sơ hội viên mới nộp đơn đang chờ duyệt (status = 'pending')
+   * 2. ⚠️ Hội viên quá hạn hội phí (fee_paid = false && (new_term_end || term_end) < NOW())
+   * 3. ⏳ Hội viên sắp đến hạn hội phí trong 30 ngày (term_end BETWEEN NOW() AND NOW() + 30 days)
+   * 4. Tự động dọn dẹp các cảnh báo đã xử lý xong (đã duyệt hoặc đã nộp phí)
+   */
+  async syncSystemAlertNotifications(associationId?: string): Promise<void> {
+    try {
+      const validAssocId = isValidUuid(associationId) ? associationId : null;
+
+      // 1. Quét hồ sơ hội viên mới (status = 'pending')
+      const pendingMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, name, company_name, created_at, association_id
+        FROM public.members
+        WHERE status = 'pending'
+        LIMIT 50
+      `.catch(() => []);
+
+      for (const m of pendingMembers) {
+        const notifCode = `NOTIF-MBR-PENDING-${m.id}`;
+        const company = m.company_name || 'Doanh nghiệp mới';
+        const notifTitle = `👤 [Hồ sơ hội viên mới] Đăng ký: ${company}`;
+        const notifBody = `Hội viên ${m.name} (${company}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983 và đang chờ Ban Quản Trị phê duyệt.`;
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.notifications (
+            id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, 'staff', 'inapp', 'sent', NOW(), 1, $4::uuid, 'crm', 'crm', 'admins', false, NOW(), NOW()
+          ) ON CONFLICT (code) DO NOTHING
+        `, notifCode, notifTitle, notifBody, m.association_id || validAssocId || null).catch(() => {});
+      }
+
+      // Xóa thông báo pending cho các hội viên đã được duyệt hoặc từ chối
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM public.notifications
+        WHERE code LIKE 'NOTIF-MBR-PENDING-%'
+          AND substring(code from 19) IN (
+            SELECT id FROM public.members WHERE status != 'pending'
+          )
+      `).catch(() => {});
+
+      // 2. Quét hội viên quá hạn hội phí
+      const overdueMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, name, company_name, term_end, new_term_end, fee_paid, payment_status, association_id
+        FROM public.members
+        WHERE (status != 'rejected' AND status != 'pending')
+          AND (
+            (COALESCE(new_term_end, term_end) IS NOT NULL AND COALESCE(new_term_end, term_end) < CURRENT_DATE AND (fee_paid = false OR payment_status = 'unpaid'))
+            OR (status = 'expired')
+          )
+        LIMIT 50
+      `.catch(() => []);
+
+      for (const m of overdueMembers) {
+        const notifCode = `NOTIF-FEE-OVERDUE-${m.id}`;
+        const company = m.company_name || m.code || 'Hội viên';
+        const dateStr = m.term_end ? new Date(m.term_end).toLocaleDateString('vi-VN') : 'kỳ trước';
+        const notifTitle = `⚠️ [Quá hạn hội phí] ${m.name} (${company})`;
+        const notifBody = `Hội viên ${m.name} (${company}) đã quá hạn đóng phí niên liễm (Hạn đóng: ${dateStr}). Đề nghị Ban Thư Ký & Kế toán kiểm tra và đôn đốc thu phí.`;
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.notifications (
+            id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, 'staff', 'inapp', 'sent', NOW(), 1, $4::uuid, 'crm', 'crm', 'admins', false, NOW(), NOW()
+          ) ON CONFLICT (code) DO NOTHING
+        `, notifCode, notifTitle, notifBody, m.association_id || validAssocId || null).catch(() => {});
+      }
+
+      // Xóa thông báo quá hạn nếu hội viên đã hoàn thành đóng phí
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM public.notifications
+        WHERE code LIKE 'NOTIF-FEE-OVERDUE-%'
+          AND substring(code from 19) IN (
+            SELECT id FROM public.members WHERE fee_paid = true AND (payment_status = 'paid' OR payment_status IS NULL)
+          )
+      `).catch(() => {});
+
+      // 3. Quét hội viên sắp đến hạn hội phí trong 30 ngày
+      const soonExpiringMembers = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, name, company_name, term_end, new_term_end, fee_paid, association_id,
+               ROUND(EXTRACT(EPOCH FROM (COALESCE(new_term_end, term_end)::timestamp - NOW())) / 86400) as days_left
+        FROM public.members
+        WHERE (status = 'active' OR status IS NULL)
+          AND COALESCE(new_term_end, term_end) IS NOT NULL
+          AND COALESCE(new_term_end, term_end) >= CURRENT_DATE
+          AND COALESCE(new_term_end, term_end) <= (CURRENT_DATE + INTERVAL '30 days')
+          AND (fee_paid = false OR fee_paid IS NULL)
+        LIMIT 50
+      `.catch(() => []);
+
+      for (const m of soonExpiringMembers) {
+        const notifCode = `NOTIF-FEE-SOON-${m.id}`;
+        const company = m.company_name || m.code || 'Hội viên';
+        const days = Math.max(1, Number(m.days_left || 0));
+        const dateStr = m.term_end ? new Date(m.term_end).toLocaleDateString('vi-VN') : '';
+        const notifTitle = `⏳ [Cảnh báo sắp hết hạn hội phí] ${m.name}`;
+        const notifBody = `Hội viên ${m.name} (${company}) sắp đến hạn đóng phí thường niên (còn ${days} ngày nữa, hạn: ${dateStr}). Đề nghị phát thông báo gia hạn hội phí.`;
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.notifications (
+            id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, 'staff', 'inapp', 'sent', NOW(), 1, $4::uuid, 'crm', 'crm', 'admins', false, NOW(), NOW()
+          ) ON CONFLICT (code) DO NOTHING
+        `, notifCode, notifTitle, notifBody, m.association_id || validAssocId || null).catch(() => {});
+      }
+
+      // Xóa thông báo sắp đến hạn nếu hội viên đã hoàn thành đóng phí
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM public.notifications
+        WHERE code LIKE 'NOTIF-FEE-SOON-%'
+          AND substring(code from 16) IN (
+            SELECT id FROM public.members WHERE fee_paid = true AND (payment_status = 'paid' OR payment_status IS NULL)
+          )
+      `).catch(() => {});
+    } catch (err: any) {
+      console.warn('[syncSystemAlertNotifications] Error:', err?.message);
+    }
+  }
+
   // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
 
   async listNotifications(userId: string, associationId?: string, appScope?: string) {
@@ -596,6 +719,10 @@ export class AdminService implements OnModuleInit {
     const seenMap = new Set<string>();
     const filterScope = appScope && appScope !== 'all' ? appScope : null;
     const isAdmin = await this.checkIsAdmin(userId, associationId);
+
+    if (isAdmin) {
+      await this.syncSystemAlertNotifications(associationId);
+    }
 
     const dismissedIds = new Set<string>(this.dismissedNotifIds);
     try {

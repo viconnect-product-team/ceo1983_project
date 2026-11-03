@@ -1,5 +1,66 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.17): Khắc Phục Triệt Để Lỗi TypeScript ts(2322) Tại Trang Quản Trị Thông Báo CRM (`notifications.tsx`, `routeTree.gen.ts`) ([NODE-CRM-022])**:
+  1. *Web CRM - Sửa Lỗi Gạch Chân Đỏ `Type 'string | undefined' is not assignable to type 'string'` Tại Sub-filter Tabs*:
+     - Nguyên nhân: Trước đó `validateSearch` trong `notifications.tsx` chỉ suy luận kiểu cục bộ `{ filter: string }`, dẫn đến khi `<Link to="/notifications" search={...}>` truyền `undefined` cho trường hợp "Tất cả" (`sub.id === 'all'`), TypeScript kích hoạt lỗi `ts(2322)` vì không cho phép giá trị `undefined`.
+     - Giải pháp triệt để:
+       * Khai báo kiểu tìm kiếm rõ ràng: `type NotificationSearchParams = { filter?: string; }`.
+       * Định nghĩa kiểu trả về tường minh cho `validateSearch: (search: Record<string, unknown>): NotificationSearchParams => ({ filter: typeof search.filter === 'string' ? search.filter : undefined })`.
+       * Tối ưu thuộc tính `search` tại thẻ `<Link>`: `search={sub.id === "all" ? {} : { filter: sub.id }}`, vừa đảm bảo đường dẫn URL sạch sẽ khi xem tất cả (`/notifications`), vừa đáp ứng hoàn hảo kiểu tham số truy vấn.
+       * Chạy `npm run routes:gen` để đồng bộ hóa mã nguồn `src/routeTree.gen.ts` cho TanStack Router.
+     - Kiểm chứng: Chạy kiểm tra AST Diagnostic qua TypeScript Compiler API trên toàn bộ route notifications và routeTree ➔ **0 errors, 0 warnings (Exit code 0)**.
+
+
+- **Bản cập nhật ngày 03/11/2026 (v10.16): Nâng Cấp Toàn Diện Tài Liệu SRS Lên Version 6.0 (147 Use Cases) & Xuất Bản Sang Định Dạng Microsoft Word (.docx) Chuẩn Khổ A4 Hoàng Gia ([NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-004], [NODE-CRM-010], [NODE-CRM-020], [NODE-CRM-022])**:
+  1. *Cập Nhật Tài Liệu SRS Markdown Lên Version 6.0 (`document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.md`)*:
+     - Nâng cấp Trang bìa & Mục lục sang Version 6.0 với tổng số **147 Use Cases** (10 PUB + 84 CRM + 53 APP).
+     - Cập nhật bổ sung nội dung đặc tả chi tiết cho:
+       + `UC-CRM-79`: Quản lý chương trình Đào tạo Doanh nhân có đầy đủ trường khai báo như sự kiện (Sức chứa, Hạng vé, Slide giáo trình, Jitsi Meet) và **tuyệt đối không có phần xếp chỗ**.
+       + `UC-APP-51`: Trung tâm thống kê Mobile với bộ lọc biểu đồ 3 trạng thái ("Vừa tăng vừa giảm", "Chỉ tăng", "Chỉ giảm") và ComposedChart hiển thị ưu tiên hàng đầu.
+     - Bổ sung **5 Use Cases nghiệp vụ mới toàn diện**:
+       + `UC-CRM-80`: Quản trị đội ngũ nhân sự trực thuộc doanh nghiệp thành viên (`GET/POST /members/:id/personnel`, Tab "Đội ngũ nhân sự", Modal thêm nhân sự nhanh).
+       + `UC-CRM-81`: Trung tâm thông báo quản trị hệ thống, phân loại Menu Tree Sidebar 5 nhánh & tự động quét rà soát cảnh báo hội phí / hồ sơ chờ duyệt.
+       + `UC-CRM-82`: Quản lý công việc điều hành theo 5 nhóm chức năng con nghiệp vụ cụ thể (Scope Tree: Công việc của tôi, Việc BĐH giao, Việc theo Ban, Việc ưu tiên/quá hạn, Tất cả việc) độc lập với bộ chuyển chế độ xem View Mode Switcher.
+       + `UC-CRM-83`: Cấu hình gửi tin Zalo OA liên kết API dữ liệu CSDL thực tế (`GET /events`, `GET /trainings`,...) & tự động sinh mã QR Check-in điện tử.
+       + `UC-CRM-84`: Chuẩn hóa bảng dữ liệu `CustomTable` toàn hệ thống CRM với cơ chế sắp xếp 3 trạng thái xoay vòng (`asc` -> `desc` -> `null`) & 4 thẻ KPI Metric Gradient Figma.
+     - Bổ sung các tiểu mục đặc tả kỹ thuật vận hành mới vào **Mục 9**:
+       + `9.19`: Quản lý đội ngũ nhân sự doanh nghiệp trực thuộc (CRM & API Nested Personnel).
+       + `9.20`: Trung tâm thông báo quản trị hệ thống, Menu Tree Sidebar & quét cảnh báo hội phí tự động.
+       + `9.21`: Tái cấu trúc nhóm quản lý công việc điều hành: 5 chức năng con nghiệp vụ cụ thể thay thế dạng hiển thị.
+       + `9.22`: Cấu hình gửi tin Zalo OA liên kết API dữ liệu thực tế CSDL & mã QR Check-in điện tử.
+       + `9.23`: Chuẩn hóa bảng dữ liệu CustomTable toàn hệ thống CRM: Sắp xếp 3 trạng thái & 4 thẻ KPI Gradient Figma.
+  2. *Xây Dựng Script Chuyển Đổi Markdown Sang Word (.docx) Chuẩn Mực (`scripts/convert_srs_md_to_docx.js`)*:
+     - Tự động phân tích toàn bộ cấu trúc Markdown: Tiêu đề Headings 1-4, Đoạn văn, In đậm, In nghiêng, Mã code, Danh sách bullet & số thứ tự.
+     - Thiết kế Trang bìa (Cover Page) đẳng cấp nhận diện CEO 1983 (Cobalt Navy `#1F3864`, Amber Gold `#B8860B`, Bảng thông tin phát hành, ngắt trang độc lập).
+     - Định dạng 147 Bảng Use Cases và bảng tiêu chuẩn kỹ thuật với Header nền Navy `#1F3864` chữ trắng, Cột 1 nền `#F8FAFC` chữ đậm, padding và viền xám mảnh sang trọng.
+     - Tích hợp nhúng ảnh minh chứng thực tế và hộp callout minh chứng trang nhã.
+     - Header & Footer chuẩn tài liệu bảo mật nội bộ, tự động đánh số trang dạng `Trang X / Y`.
+     - Xuất bản thành công ra 3 vị trí đích:
+       + `document/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` (Dung lượng ~640 KB, 285 bảng, 4,754 đoạn văn).
+       + `document/SRS_CEO1983_HE_THONG_TOAN_DIEN.docx`.
+       + `apps/ceo1983_app_fe/public/docs/SRS_CHI_TIET_CEO1983_HE_THONG_TOAN_DIEN.docx` (Sẵn sàng phục vụ tải về trực tiếp từ Web CRM).
+
+
+- **Bản cập nhật ngày 03/11/2026 (v10.15): Khắc Phục Triệt Để 3 Lỗi Bug CRM (Console Log / Service Worker / Hydration, Danh Sách Nhân Sự Doanh Nghiệp, & Tái Cấu Trúc Toàn Diện Hệ Thống Thông Báo Quản Trị) ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-008], [NODE-CORE-001])**:
+  1. *Web CRM - Sửa Lỗi Console Log, Service Worker & Hydration Mismatch (`sw.js`, `Sidebar.tsx`)*:
+     - Khắc phục triệt để lỗi Service Worker `Uncaught (in promise) TypeError: Failed to convert value to 'Response'`: Bỏ qua các API route (`/api`, `/_serverFn`, `/notifications`, `/members`) và đảm bảo mọi handler `event.respondWith` luôn resolve ra một instance hợp lệ của `Response`.
+     - Triệt tiêu hoàn toàn lỗi Hydration SSR React Error #418: Chuyển khởi tạo `overrideBrandName` và `overrideBrandLogo` trong `Sidebar.tsx` từ đọc trực tiếp `localStorage` sang đồng bộ trong `useEffect`.
+  2. *Web CRM & Backend - Khắc Phục Lỗi Không Lấy Được Danh Sách Nhân Sự Doanh Nghiệp (`members.service.ts`, `members.controller.ts`, `companies.$companyId.tsx`, `companies.index.tsx`)*:
+     - Backend: Bổ sung endpoint `@Get(':id/personnel')` và `@Post(':id/personnel')` trong `members.controller.ts`, kết hợp truy vấn nhân sự từ `public.members` (theo tên công ty/ID), `public.company_members`, và người đại diện pháp luật `public.companies`.
+     - Frontend CRM: Thêm Tab thứ 5 "Đội ngũ nhân sự" tại màn chi tiết doanh nghiệp (`/companies/$companyId`) hiển thị danh sách nhân sự trực thuộc kèm Modal thêm mới nhân sự. Chuẩn hóa cột quy mô/nhân sự tại màn danh sách (`/companies`).
+  3. *Web CRM & Backend - Tái Cấu Trúc Toàn Diện Hệ Thống Thông Báo Quản Trị & Cảnh Báo Hội Phí / Hội Viên Mới (`admin.service.ts`, `admin.repository.ts`, `members.service.ts`, `events.service.ts`, `meetings.service.ts`, `notifications.tsx`, `Sidebar.tsx`)*:
+     - Sửa lỗi schema CSDL: Loại bỏ cột `description` không tồn tại trong câu lệnh `INSERT INTO public.notifications` tại `members.service.ts`, `events.service.ts`, `meetings.service.ts`, đồng thời bổ sung `ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS description text;` tại `AdminRepository.ensureSchema()` phòng ngừa.
+     - Backend Auto-Sync Alerts: Thêm cơ chế `syncSystemAlertNotifications()` tự động quét CSDL khi Admin truy cập:
+       * Tự động sinh cảnh báo khi có hồ sơ hội viên mới nộp đơn (`status = 'pending'`).
+       * Tự động sinh cảnh báo khi có hội viên quá hạn hội phí (`fee_paid = false` và ngày hết hạn < hiện tại).
+       * Tự động nhắc nhở khi hội viên sắp đến hạn hội phí trong vòng 30 ngày.
+       * Tự động xóa dọn dẹp các cảnh báo khi hội viên đã được duyệt hoặc đã hoàn thành đóng phí niên liễm.
+     - Frontend CRM: Refactor toàn diện trang `/notifications` bằng bộ component chuẩn `CustomTable`:
+       * 4 thẻ KPI Metric Gradient Figma (`CrmMetricGrid`, `CrmMetricCard`).
+       * Dải Sub-filter Tabs đồng bộ trực tiếp với menu con trên Sidebar (`Tất cả`, `Hội viên mới nộp hồ sơ`, `Cảnh báo & Quá hạn hội phí`, `BQT & Điều hành`, `Sự kiện & Cuộc họp`).
+       * Bảng dữ liệu chuẩn `CustomTable` với sắp xếp 3 trạng thái, các nút hành động nhanh theo phân hệ (Duyệt hồ sơ -> `/members?status=pending`, Thu phí / Gia hạn -> `/renewal`, Xem sự kiện -> `/events`, Đưa vào tin nhắn Hiệp hội).
+       * Hỗ trợ chuyển đổi linh hoạt giữa giao diện Bảng (`table`) và giao diện Thẻ (`cards`).
+
 - **Bản cập nhật ngày 03/11/2026 (v10.14): Chuẩn Hóa Toàn Diện 5 Hạng Mục Web CRM & Đào Tạo CLB CEO 1983 ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-018], [NODE-CRM-020])**:
   1. *Web CRM - Bỏ Chức Năng Thêm Mới Hội Viên Tại Màn Tổng Quát Dashboard (`ExecutiveDashboard.tsx`)*:
      - Gỡ bỏ hoàn toàn nút thao tác nhanh `Thêm mới hội viên` (`QuickAction to="/members"`) tại màn hình Dashboard tổng quan điều hành (`/`).

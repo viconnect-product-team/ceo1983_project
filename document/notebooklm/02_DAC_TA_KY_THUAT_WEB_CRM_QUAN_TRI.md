@@ -59,14 +59,18 @@
     2. "Xóa cả hội viên và doanh nghiệp" (`all`): Xóa cascade hội viên, công ty, thẻ số và user đăng nhập.
   - Luôn tích hợp fallback `DEFAULT_MEMBERS` để bảo đảm giao diện không bị trống.
 
-### `[NODE-CRM-004]` Quản Trị Doanh Nghiệp Thành Viên
-- **Route Frontend**: `/companies` (`src/routes/companies.tsx`).
-- **Thành phần**: `CompanyTable.tsx`, `CompanyEditModal.tsx`.
-- **API Backend**: `GET /companies`, `PUT /companies/:id` (`members.service.ts`).
-- **Bảng CSDL**: `companies`, `members`.
+### `[NODE-CRM-004]` Quản Trị Doanh Nghiệp Thành Viên & Quản Lý Đội Ngũ Nhân Sự
+- **Route Frontend**: `/companies` (`src/routes/companies.index.tsx`), `/companies/$companyId` (`src/routes/companies.$companyId.tsx`).
+- **Thành phần**: `CompanyTable.tsx`, `CompanyEditModal.tsx`, `PersonnelTab`, `AddPersonnelModal`.
+- **API Backend**: `GET /companies`, `PUT /companies/:id`, `GET /members/:id/personnel`, `POST /members/:id/personnel` (`members.service.ts`, `members.controller.ts`).
+- **Bảng CSDL**: `companies`, `members`, `company_members`.
 - **Luồng xử lý**:
   - Modal chỉnh sửa doanh nghiệp CHỈ HIỂN THỊ VÀ SỬA các trường doanh nghiệp (Tên doanh nghiệp, MST, Ngành nghề, Quy mô, Website, Địa chỉ, Hội phí).
   - Cột 3 của bảng doanh nghiệp BẮT BUỘC hiển thị Tên doanh nghiệp.
+  - **Quản lý Đội ngũ nhân sự trực thuộc**:
+    + Màn chi tiết doanh nghiệp (`/companies/$companyId`) trang bị Tab "Đội ngũ nhân sự", hiển thị danh sách cán bộ, nhân sự trực thuộc từ `public.members`, `public.company_members`, và người đại diện pháp luật `public.companies`.
+    + Cho phép thêm mới nhân sự nhanh chóng trực tiếp vào doanh nghiệp bằng Modal `AddPersonnelModal`.
+    + Bảng danh sách doanh nghiệp hiển thị chính xác số lượng nhân sự/quy mô lao động.
 
 ### `[NODE-CRM-005]` Quản Lý Tài Khoản & Gán Ban Chuyên Môn
 - **Route Frontend**: `/accounts` (`src/routes/accounts.tsx`).
@@ -246,4 +250,29 @@
   - **Bộ chọn biểu tượng 14 tính năng di động (Icon Picker)**: Tùy biến icon cho Trang chủ, Thẻ số, Danh bạ, Cơ hội, Thống kê, Gian hàng B2B, Sự kiện, Biểu quyết, Mạng lưới, Tin nhắn, Cá nhân, Cài đặt, Đặc quyền, Đào tạo.
   - **Live Mobile Preview**: Khung mô phỏng điện thoại thông minh hiển thị trực tiếp các thay đổi về giao diện theo thời gian thực.
   - **Phát hành đồng bộ toàn hệ thống**: Kích hoạt biến CSS toàn cục `--festival-bg-image` đồng bộ xuống cả Trang Chủ và Mạng Lưới Feed của Mobile App.
+
+### `[NODE-CRM-022]` Trung Tâm Thông Báo Quản Trị Hệ Thống & Cảnh Báo Hội Phí / Hồ Sơ Mới
+- **Route Frontend**: `/notifications` (`src/routes/notifications.tsx`).
+- **Menu Sidebar**: `Sidebar.tsx` (Menu dạng Tree "Thông báo hệ thống", Icon `Bell`).
+  - `🔔 Tất cả thông báo` (`/notifications`)
+  - `👤 Hội viên mới nộp hồ sơ` (`/notifications?filter=new_members`)
+  - `⚠️ Cảnh báo & Quá hạn hội phí` (`/notifications?filter=fee_alerts`)
+  - `🏢 BQT & Điều hành` (`/notifications?filter=admin_system`)
+  - `📅 Sự kiện & Cuộc họp` (`/notifications?filter=events_meetings`)
+- **Thành phần**: `CustomTable.tsx`, `CrmMetricCard`, `CrmMetricGrid`, `CrmToolbar`, `CrudModal.tsx`.
+- **API Backend**: `GET /admin/notifications`, `POST /admin/notifications`, `PATCH /admin/notifications/:id`, `DELETE /admin/notifications/:id`, `POST /admin/notifications/:id/push-messages` (`admin.service.ts`, `admin.controller.ts`).
+- **Bảng CSDL**: `notifications`, `members`, `business_notifications`.
+- **Luồng xử lý**:
+  - **Backend Auto-Sync Alerts**: Cơ chế quét tự động đồng bộ hóa thông báo hệ thống khi quản trị viên truy cập:
+    + Cảnh báo tức thì khi có hồ sơ đăng ký mới (`status = 'pending'`).
+    + Cảnh báo hội viên quá hạn đóng phí niên liễm (`fee_paid = false` và ngày hết hạn < hiện tại).
+    + Nhắc nhở cảnh báo hội viên sắp hết hạn hội phí niên liễm trong vòng 30 ngày.
+    + Tự động dọn dẹp và ẩn cảnh báo khi hội viên đã được duyệt hoặc hoàn thành đóng phí.
+  - **Chuẩn Hóa Giao Diện CustomTable**:
+    + 4 Thẻ KPI Gradient Figma (`CrmMetricGrid`, `CrmMetricCard`).
+    + Thanh Sub-filter Tabs phân nhánh đồng bộ 100% với menu Tree Sidebar.
+    + Bảng dữ liệu chuẩn `CustomTable` với tính năng sắp xếp 3 trạng thái.
+    + Phím tắt thao tác nhanh (Quick Action): Duyệt hồ sơ (`/members?status=pending`), Xử lý thu phí/gia hạn (`/renewal`), Xem sự kiện (`/events`), Đưa vào kênh tin nhắn Hiệp hội.
+    + Cho phép chuyển đổi linh hoạt giữa giao diện Bảng (`table`) và giao diện Thẻ chi tiết (`cards`).
+
 

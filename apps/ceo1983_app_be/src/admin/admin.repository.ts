@@ -34,6 +34,9 @@ export class AdminRepository {
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_channel text;
     `).catch(() => {});
     await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS description text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS pushed_to_messages boolean DEFAULT false;
     `).catch(() => {});
     await this.prisma.$executeRawUnsafe(`
