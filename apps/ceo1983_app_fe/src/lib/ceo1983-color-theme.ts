@@ -140,10 +140,33 @@ export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
   const theme = CEO1983_COLOR_THEMES.find((t) => t.id === themeId) || CEO1983_COLOR_THEMES[0];
   const root = document.documentElement;
 
-  // Gán data attribute
+  // Gán data attribute trên cả root và body
   root.dataset.appColorTheme = theme.id;
+  if (document.body) {
+    document.body.dataset.appColorTheme = theme.id;
+  }
+
+  const bg =
+    theme.id === "ruby-gold"
+      ? "#140707"
+      : theme.id === "heritage-orange"
+      ? "#0A0D24"
+      : theme.id === "obsidian-gold"
+      ? "#05070D"
+      : "#070D1A";
+
+  const bg2 =
+    theme.id === "ruby-gold"
+      ? "#0B0303"
+      : theme.id === "heritage-orange"
+      ? "#060818"
+      : theme.id === "obsidian-gold"
+      ? "#020306"
+      : "#050912";
 
   // Áp dụng biến CSS thời gian thực
+  root.style.setProperty("--vba-bg", bg);
+  root.style.setProperty("--vba-bg-2", bg2);
   root.style.setProperty("--vba-navy", theme.primaryColor);
   root.style.setProperty("--vba-navy-deep", theme.primaryDeep);
   root.style.setProperty("--vba-gold", theme.accentColor);
@@ -155,6 +178,8 @@ export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
   root.style.setProperty("--theme-icon-color", theme.iconColor);
   root.style.setProperty("--theme-primary-gradient", theme.gradientPrimary);
   root.style.setProperty("--theme-card-gradient", theme.gradientCard);
+  root.style.setProperty("--bc-mobile-accent", theme.primaryColor);
+  root.style.setProperty("--bc-mobile-accent-grad", theme.gradientPrimary);
 
   try {
     localStorage.setItem(COLOR_THEME_STORAGE_KEY, themeId);

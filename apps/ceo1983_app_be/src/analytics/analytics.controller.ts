@@ -25,4 +25,15 @@ export class AnalyticsController {
   async importAnalytics(@Body() body: any) {
     return this.analyticsService.importAnalytics(body);
   }
+
+  @Post('share-click')
+  async recordShareClick(@Body() body: any, @Request() req: any) {
+    const ip = req.headers?.['x-forwarded-for'] || req.socket?.remoteAddress;
+    const userAgent = req.headers?.['user-agent'];
+    return this.analyticsService.recordShareClick({
+      ...body,
+      ip: body?.ip || ip,
+      userAgent: body?.userAgent || userAgent,
+    });
+  }
 }

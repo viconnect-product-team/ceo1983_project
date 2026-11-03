@@ -87,6 +87,47 @@ export class AnalyticsService {
         SELECT id, user_id, created_at FROM public.feed_comments WHERE created_at >= ${startDate}
       `.catch(() => [] as any[]);
 
+      // 6. Fetch external share clicks & conversions
+      const shareLogs = await this.prisma.audit_logs.findMany({
+        where: {
+          action: { in: ['share_click', 'share_conversion'] },
+          created_at: { gte: startDate },
+        },
+        orderBy: { created_at: 'desc' },
+        take: 200,
+      }).catch(async () => {
+        return await this.prisma.$queryRaw<any[]>`
+          SELECT id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
+          FROM public.audit_logs
+          WHERE action IN ('share_click', 'share_conversion')
+          ORDER BY created_at DESC
+          LIMIT 200
+        `.catch(() => [] as any[]);
+      });
+
+      let shareFbCount = 0;
+      let shareZaloCount = 0;
+      let shareWebCount = 0;
+      let shareOtherCount = 0;
+      let shareConversions = 0;
+
+      shareLogs.forEach((log: any) => {
+        if (log.action === 'share_conversion') {
+          shareConversions++;
+        }
+        let meta: any = {};
+        try {
+          meta = typeof log.metadata === 'string' ? JSON.parse(log.metadata) : (log.metadata || {});
+        } catch {}
+        const p = (meta?.platform || '').toLowerCase();
+        if (p.includes('facebook') || p.includes('fb')) shareFbCount++;
+        else if (p.includes('zalo')) shareZaloCount++;
+        else if (p.includes('web')) shareWebCount++;
+        else shareOtherCount++;
+      });
+
+      const totalShareClicks = shareLogs.length;
+
       const totalInteractions = 
         eventRegs.length + 
         feedLikes.length + 
@@ -426,6 +467,37 @@ export class AnalyticsService {
             metricLabel: 'Hội viên giới thiệu',
             data: topReferrals,
           },
+          externalShareClicks: {
+            title: `Lượt click bài viết share ra ngoài (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Lượt click công khai',
+            totalClicks: totalShareClicks,
+            totalConversions: shareConversions,
+            conversionRatePercent: totalShareClicks > 0 ? Math.round((shareConversions / totalShareClicks) * 100) : 0,
+            platforms: [
+              { name: 'Facebook', count: shareFbCount, color: '#1877F2' },
+              { name: 'Zalo', count: shareZaloCount, color: '#0068FF' },
+              { name: 'Trình duyệt Web', count: shareWebCount, color: '#003B95' },
+              { name: 'Nguồn khác', count: shareOtherCount, color: '#64748B' },
+            ],
+            recentLogs: shareLogs.slice(0, 15).map((l: any) => ({
+              id: l.id,
+              action: l.action,
+              targetType: l.target_type,
+              targetId: l.target_id,
+              createdAt: l.created_at,
+              metadata: typeof l.metadata === 'string' ? JSON.parse(l.metadata) : (l.metadata || {}),
+            })),
+          },
+        },
+        externalShareClicks: {
+          totalClicks: totalShareClicks,
+          totalConversions: shareConversions,
+          conversionRatePercent: totalShareClicks > 0 ? Math.round((shareConversions / totalShareClicks) * 100) : 0,
+          facebook: shareFbCount,
+          zalo: shareZaloCount,
+          web: shareWebCount,
+          other: shareOtherCount,
+          recentLogs: shareLogs.slice(0, 15),
         },
         topConnections,
         topOpportunities,
@@ -494,5 +566,38 @@ export class AnalyticsService {
       message: 'Nhập dữ liệu thành công. Các chỉ số thống kê đã được đồng bộ vào hệ thống.',
       rowsProcessed: Array.isArray(body?.rows) ? body.rows.length : 1,
     };
+  }
+
+  async recordShareClick(data: {
+    type: string;
+    id: string;
+    platform?: string;
+    referrer?: string;
+    ip?: string;
+    userAgent?: string;
+    converted?: boolean;
+  }) {
+    try {
+      const action = data.converted ? 'share_conversion' : 'share_click';
+      await this.prisma.audit_logs.create({
+        data: {
+          action,
+          target_type: data.type || 'unknown',
+          target_id: String(data.id || 'unknown'),
+          ip_address: data.ip ? String(data.ip).slice(0, 45) : null,
+          user_agent: data.userAgent ? String(data.userAgent).slice(0, 500) : null,
+          metadata: {
+            platform: data.platform || 'web',
+            referrer: data.referrer || '',
+            timestamp: new Date().toISOString(),
+            converted: !!data.converted,
+          },
+        },
+      });
+      return { ok: true, message: 'Đã ghi nhận lượt click chia sẻ thành công' };
+    } catch (err: any) {
+      console.warn('recordShareClick warning:', err.message);
+      return { ok: true, fallback: true };
+    }
   }
 }

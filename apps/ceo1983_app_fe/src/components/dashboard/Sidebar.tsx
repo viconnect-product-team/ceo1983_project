@@ -103,6 +103,7 @@ const finance: Item[] = [
       { to: "/analytics?category=top_opportunities", label: "Cơ hội kinh doanh" },
       { to: "/analytics?category=top_events_meetings", label: "Sự kiện & cuộc họp" },
       { to: "/analytics?category=top_referrals", label: "Phát triển hội viên" },
+      { to: "/analytics?category=external_shares", label: "Lượt click chia sẻ ra ngoài" },
     ],
   },
   { key: "nav.fee", icon: Wallet, to: "/fees" },

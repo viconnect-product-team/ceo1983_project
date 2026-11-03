@@ -18,7 +18,12 @@ import {
   Trash2,
   Check,
   Flame,
+  Globe,
+  Share2,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { MyOpportunity } from "@/lib/member-app.functions";
 import { OpportunityMultiMetricChart } from "../OpportunityMultiMetricChart";
 
@@ -436,6 +441,108 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                   </span>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Link bài viết Fanpage / Website doanh nghiệp */}
+          {Boolean(
+            (selectedOpp as any).externalUrl ||
+            (selectedOpp as any).externalLink ||
+            (selectedOpp as any).fanpageUrl ||
+            (selectedOpp as any).articleUrl
+          ) && (
+            <div className="rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 p-3.5 space-y-2">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-blue-900 dark:text-blue-300">
+                <Globe className="size-4 text-blue-600 dark:text-blue-400" />
+                <span>Bài viết Fanpage / Website giới thiệu</span>
+              </div>
+              <div className="flex items-center gap-2 pt-0.5">
+                <a
+                  href={
+                    (selectedOpp as any).externalUrl ||
+                    (selectedOpp as any).externalLink ||
+                    (selectedOpp as any).fanpageUrl ||
+                    (selectedOpp as any).articleUrl
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition"
+                >
+                  <span>Mở bài viết Fanpage / Website</span>
+                  <ExternalLink className="size-3.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const u =
+                      (selectedOpp as any).externalUrl ||
+                      (selectedOpp as any).externalLink ||
+                      (selectedOpp as any).fanpageUrl ||
+                      (selectedOpp as any).articleUrl;
+                    navigator.clipboard.writeText(u);
+                    toast.success("Đã sao chép link bài viết!");
+                  }}
+                  className="px-3 py-2 rounded-xl border border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold text-xs transition cursor-pointer"
+                >
+                  Sao chép
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CHIA SẺ PUBLIC RA NGOÀI (FACEBOOK, ZALO) */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white">
+                <Share2 className="size-4 text-amber-500" />
+                <span>Chia Sẻ Public Ra Ngoài (Facebook, Zalo)</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-bold">
+                Bản xem trước
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Người ngoài không phải hội viên vẫn xem được bản tóm tắt cơ hội này. Khi bấm xem chi tiết sẽ chuyển đến màn hình đăng nhập và ghi nhận thống kê click.
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/share/opportunity/${selectedOpp.id}?source=facebook`;
+                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank");
+                  toast.success("Đang mở chia sẻ Facebook...");
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1877F2] text-white font-bold text-xs shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
+              >
+                <span>Chia sẻ Facebook</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/share/opportunity/${selectedOpp.id}?source=zalo`;
+                  window.open(`https://zalo.me/share?url=${encodeURIComponent(shareUrl)}`, "_blank");
+                  toast.success("Đang mở chia sẻ Zalo...");
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0068FF] text-white font-bold text-xs shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
+              >
+                <span>Chia sẻ Zalo</span>
+              </button>
+            </div>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/share/opportunity/${selectedOpp.id}`;
+                  navigator.clipboard.writeText(shareUrl);
+                  toast.success("Đã sao chép liên kết chia sẻ public!", {
+                    description: shareUrl,
+                  });
+                }}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+              >
+                <Copy className="size-3.5 text-slate-500" />
+                <span>Sao chép link chia sẻ public</span>
+              </button>
             </div>
           </div>
         </div>

@@ -387,7 +387,7 @@
   --vba-success: #10B981;
   --vba-danger: #EF4444;
 
-  background: #070D1A;
+  background: var(--vba-bg, #070D1A);
   color: var(--vba-text);
   min-height: 100dvh;
   font-family: var(--font-sans);
@@ -604,89 +604,152 @@ button.ceo-login-submit svg {
    ============================================================ */
 
 /* 1. Royal Cobalt Navy & Amber Gold (Mặc định cốt lõi) */
-[data-app-color-theme="royal-gold"] {
+[data-app-color-theme="royal-gold"],
+.dark[data-app-color-theme="royal-gold"] {
+  --vba-bg: #070D1A;
+  --vba-bg-2: #050912;
+  --vba-surface: #0E172A;
+  --vba-surface-2: #14223E;
   --vba-navy: #003B95;
   --vba-navy-deep: #001D4A;
   --vba-gold: #F59E0B;
   --vba-gold-2: #FBBF24;
+  --vba-border: rgba(245, 158, 11, 0.32);
+  --vba-border-soft: rgba(245, 158, 11, 0.18);
   --theme-icon-color: #F59E0B;
+  --theme-primary-gradient: linear-gradient(135deg, #0052CC 0%, #003B95 60%, #001D4A 100%);
+  --theme-card-gradient: linear-gradient(135deg, #0E172A 0%, #14223E 100%);
+  --bc-mobile-accent: #003B95;
+  --bc-mobile-accent-grad: linear-gradient(135deg, #0052CC 0%, #003B95 60%, #001D4A 100%);
 }
 
 /* 2. Heritage Navy & Dynamic Brand Orange (Chuẩn Logo Brandbook) */
-[data-app-color-theme="heritage-orange"] {
+[data-app-color-theme="heritage-orange"],
+.dark[data-app-color-theme="heritage-orange"] {
+  --vba-bg: #0A0D24;
+  --vba-bg-2: #060818;
+  --vba-surface: #121638;
+  --vba-surface-2: #1B1E4A;
   --vba-navy: #2E3192;
   --vba-navy-deep: #19194D;
   --vba-gold: #F7941D;
   --vba-gold-2: #F8A74B;
-  --theme-icon-color: #F7941D;
-}
-
-.dark[data-app-color-theme="heritage-orange"] .vba-app,
-[data-app-color-theme="heritage-orange"].dark .vba-app {
-  --vba-bg: #0A0D24;
-  --vba-surface: #121638;
-  --vba-surface-2: #1B1E4A;
   --vba-border: rgba(247, 148, 29, 0.35);
+  --vba-border-soft: rgba(247, 148, 29, 0.20);
+  --theme-icon-color: #F7941D;
+  --theme-primary-gradient: linear-gradient(135deg, #2E3192 0%, #1E206A 60%, #19194D 100%);
+  --theme-card-gradient: linear-gradient(135deg, #121638 0%, #1B1E4A 100%);
+  --bc-mobile-accent: #2E3192;
+  --bc-mobile-accent-grad: linear-gradient(135deg, #2E3192 0%, #1E206A 60%, #19194D 100%);
 }
 
 /* 3. Obsidian Black & Champagne Gold (Dạ Tiệc Thượng Lưu) */
-[data-app-color-theme="obsidian-gold"] {
-  --vba-navy: #0B0F19;
-  --vba-navy-deep: #05070D;
-  --vba-gold: #D4AF37;
-  --vba-gold-2: #E5C07B;
-  --theme-icon-color: #D4AF37;
-}
-
-.dark[data-app-color-theme="obsidian-gold"] .vba-app,
-[data-app-color-theme="obsidian-gold"].dark .vba-app {
+[data-app-color-theme="obsidian-gold"],
+.dark[data-app-color-theme="obsidian-gold"] {
   --vba-bg: #05070D;
+  --vba-bg-2: #020306;
   --vba-surface: #0F1420;
   --vba-surface-2: #171E30;
+  --vba-navy: #1E293B;
+  --vba-navy-deep: #0B0F19;
+  --vba-gold: #D4AF37;
+  --vba-gold-2: #E5C07B;
   --vba-border: rgba(212, 175, 55, 0.35);
+  --vba-border-soft: rgba(212, 175, 55, 0.18);
+  --theme-icon-color: #D4AF37;
+  --theme-primary-gradient: linear-gradient(135deg, #1A1F2C 0%, #10141E 60%, #05070D 100%);
+  --theme-card-gradient: linear-gradient(135deg, #0F1420 0%, #171E30 100%);
+  --bc-mobile-accent: #D4AF37;
+  --bc-mobile-accent-grad: linear-gradient(135deg, #1A1F2C 0%, #10141E 60%, #05070D 100%);
 }
 
 /* 4. Prestige Ruby Red & Imperial Gold (Đột Phá Khởi Sắc) */
-[data-app-color-theme="ruby-gold"] {
+[data-app-color-theme="ruby-gold"],
+.dark[data-app-color-theme="ruby-gold"] {
+  --vba-bg: #140707;
+  --vba-bg-2: #0B0303;
+  --vba-surface: #200D0D;
+  --vba-surface-2: #301414;
   --vba-navy: #991B1B;
   --vba-navy-deep: #450A0A;
   --vba-gold: #EAB308;
   --vba-gold-2: #FDE047;
-  --theme-icon-color: #EAB308;
-}
-
-.dark[data-app-color-theme="ruby-gold"] .vba-app,
-[data-app-color-theme="ruby-gold"].dark .vba-app {
-  --vba-bg: #140707;
-  --vba-surface: #200D0D;
-  --vba-surface-2: #301414;
   --vba-border: rgba(234, 179, 8, 0.35);
+  --vba-border-soft: rgba(234, 179, 8, 0.20);
+  --theme-icon-color: #EAB308;
+  --theme-primary-gradient: linear-gradient(135deg, #DC2626 0%, #991B1B 60%, #450A0A 100%);
+  --theme-card-gradient: linear-gradient(135deg, #200D0D 0%, #301414 100%);
+  --bc-mobile-accent: #991B1B;
+  --bc-mobile-accent-grad: linear-gradient(135deg, #DC2626 0%, #991B1B 60%, #450A0A 100%);
 }
 
 /* ============================================================
-   CEO 1983 DARK THEME STANDARDS (CHỐNG LỖI MÀU SLATE XÁM VÀ MỜ TỐI)
+   CEO 1983 DARK THEME STANDARDS (DÂY CHUYỀN MÀU THEO THEME CHUẨN)
    ============================================================ */
 .dark .vba-app,
-.dark .ceo-theme-dark-standard {
-  background-color: #070D1A !important;
+.vba-app {
+  background-color: var(--vba-bg) !important;
   color: #FFFFFF !important;
 }
 
-.dark .bg-slate-950 {
-  background-color: #070D1A !important;
+.dark .vba-app .bg-slate-950,
+.vba-app .bg-slate-950 {
+  background-color: var(--vba-bg) !important;
 }
 
-.dark .bg-slate-900 {
-  background-color: #0E172A !important;
+.dark .vba-app .bg-slate-900,
+.vba-app .bg-slate-900 {
+  background-color: var(--vba-surface) !important;
 }
 
-.dark .bg-slate-800 {
-  background-color: #14223E !important;
+.dark .vba-app .bg-slate-800,
+.vba-app .bg-slate-800 {
+  background-color: var(--vba-surface-2) !important;
 }
 
-.dark .border-slate-800,
-.dark .border-slate-700 {
-  border-color: rgba(245, 158, 11, 0.18) !important;
+.dark .vba-app .border-slate-800,
+.dark .vba-app .border-slate-700,
+.vba-app .border-slate-800,
+.vba-app .border-slate-700 {
+  border-color: var(--vba-border-soft) !important;
+}
+
+/* Biến đổi màu chủ đạo và accent linh hoạt trong vba-app */
+.vba-app .bg-\[\#003B95\],
+.vba-app [class*="bg-[#003B95]"] {
+  background-color: var(--vba-navy) !important;
+}
+
+.vba-app .text-\[\#003B95\],
+.vba-app [class*="text-[#003B95]"] {
+  color: var(--vba-navy) !important;
+}
+
+.vba-app .border-\[\#003B95\],
+.vba-app [class*="border-[#003B95]"] {
+  border-color: var(--vba-navy) !important;
+}
+
+.vba-app .text-amber-400,
+.vba-app .text-amber-500,
+.vba-app .text-yellow-400 {
+  color: var(--vba-gold) !important;
+}
+
+.vba-app .border-amber-400,
+.vba-app .border-amber-400\/30,
+.vba-app .border-amber-500 {
+  border-color: var(--vba-border) !important;
+}
+
+.vba-app .from-\[\#003B95\],
+.vba-app [class*="from-[#003B95]"] {
+  --tw-gradient-from: var(--vba-navy) var(--tw-gradient-from-position) !important;
+}
+
+.vba-app .to-\[\#001D4A\],
+.vba-app [class*="to-[#001D4A]"] {
+  --tw-gradient-to: var(--vba-navy-deep) var(--tw-gradient-to-position) !important;
 }
 
 .dark .text-slate-400 {
