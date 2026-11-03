@@ -339,13 +339,13 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     id: "tmpl_payment_invoice_pending",
     code: "PAYMENT_INVOICE_PENDING",
     category: "payment",
-    name: "Lệnh Thanh Toán & Mã QR Chuyển Khoản VietQR",
-    description: "Gửi thông báo thanh toán (phí hội viên, vé sự kiện, gói tài trợ) kèm mã QR chuẩn VietQR tự động điền số tiền và nội dung.",
+    name: "Lệnh Thanh Toán & Mã QR Chuyển Khoản VNPAY-QR",
+    description: "Gửi thông báo thanh toán (phí hội viên, vé sự kiện, gói tài trợ) kèm mã QR chuẩn VNPAY-QR tự động điền số tiền và nội dung.",
     targetRole: "payer",
     channels: ["email", "in_app", "push"],
     subject: "[LỆNH THANH TOÁN] {{serviceName}} - Số tiền: {{amountFormatted}}",
     inAppTitle: "Lệnh thanh toán: {{serviceName}}",
-    inAppBody: "Quý hội viên có lệnh thanh toán {{amountFormatted}} cho '{{serviceName}}'. Quét VietQR hoặc chuyển khoản trước {{deadline}}.",
+    inAppBody: "Quý hội viên có lệnh thanh toán {{amountFormatted}} cho '{{serviceName}}'. Quét VNPAY-QR hoặc thanh toán trước {{deadline}}.",
     variables: [
       { key: "payerName", label: "Tên người nộp", example: "Vũ Thu Trang" },
       { key: "serviceName", label: "Dịch vụ / Hạng mục", example: "Vé VIP Gala Dinner Doanh Nhân 1983" },
@@ -355,7 +355,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
       { key: "accountNumber", label: "Số tài khoản", example: "198388889999" },
       { key: "accountHolder", label: "Chủ tài khoản", example: "CLB DOANH NHAN CEO 1983" },
       { key: "transferContent", label: "Nội dung chuyển khoản", example: "INV8891 VU THU TRANG" },
-      { key: "qrCodeUrl", label: "Link ảnh VietQR", example: "https://img.vietqr.io/image/MB-198388889999-compact2.png?amount=2500000&addInfo=INV8891%20VU%20THU%20TRANG" },
+      { key: "qrCodeUrl", label: "Link ảnh VNPAY-QR", example: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=VNPAYQR" },
       { key: "deadline", label: "Hạn chót thanh toán", example: "18:00 ngày 14/10/2026" },
     ],
     isLocked: true,
@@ -383,7 +383,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
     </div>
     <div style="display: flex; gap: 24px; align-items: center; background: #ffffff; border: 1px dashed #94a3b8; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
       <div style="text-align: center; flex-shrink: 0;">
-        <img src="{{qrCodeUrl}}" alt="VietQR Thanh Toán" style="width: 150px; height: 150px; border-radius: 8px; border: 1px solid #e2e8f0;" />
+        <img src="{{qrCodeUrl}}" alt="VNPAY-QR Thanh Toán" style="width: 150px; height: 150px; border-radius: 8px; border: 1px solid #e2e8f0;" />
         <p style="margin: 6px 0 0; font-size: 11px; color: #64748b;">Quét app Ngân hàng</p>
       </div>
       <div style="font-size: 13px; color: #334155; line-height: 1.7;">

@@ -44,6 +44,7 @@ import { StandardDateInput } from "@/components/common/StandardDateInput";
 import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
 import { useResizableColumns, ResizableTh } from "@/components/dashboard/ResizableTableHeaders";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
+import { InvoiceExportModal, type InvoiceItem } from "@/components/dashboard/InvoiceExportModal";
 
 type IncomeColKey =
   | "stt"
@@ -211,6 +212,7 @@ function IncomePage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [invoiceExportOpen, setInvoiceExportOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -352,6 +354,20 @@ function IncomePage() {
   const incomeList = useMemo(() => {
     return TRANSACTIONS.filter((tx) => tx.type === "income");
   }, [TRANSACTIONS]);
+
+  const invoiceItems: InvoiceItem[] = useMemo(() => {
+    return incomeList.map((tx) => ({
+      id: tx.id,
+      code: tx.id,
+      date: tx.date,
+      category: getCategoryLabel(tx.category),
+      description: tx.description,
+      amount: tx.amount,
+      recipient: tx.recipient || "—",
+      method: tx.method,
+      status: tx.status,
+    }));
+  }, [incomeList]);
 
   // Breakdown by Cash vs Bank transfer
   const incomeCash = useMemo(() => {
@@ -537,6 +553,13 @@ function IncomePage() {
             >
               <Download className="h-4 w-4 text-muted-foreground" />
               {t("common.exportExcel")}
+            </button>
+            <button
+              onClick={() => setInvoiceExportOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 px-3.5 py-2 text-sm font-medium text-amber-800 dark:text-amber-300 shadow-[var(--shadow-card)] hover:bg-amber-100/60 cursor-pointer"
+            >
+              <Receipt className="h-4 w-4 text-amber-600" />
+              <span>Xuất Hóa Đơn & Bảng Kê</span>
             </button>
             <button
               onClick={() => setImportModalOpen(true)}
@@ -1032,7 +1055,7 @@ function IncomePage() {
                     className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="cash">Tiền mặt (Thu tại bàn tiếp đón)</option>
-                    <option value="bank">Chuyển khoản (VietQR / Ngân hàng)</option>
+                    <option value="bank">Chuyển khoản (VNPAY-QR / Ngân hàng)</option>
                     <option value="card">Quẹt thẻ POS</option>
                   </select>
                 </div>
@@ -1077,6 +1100,15 @@ function IncomePage() {
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         onImportSuccess={() => router.invalidate()}
+      />
+
+      {/* Invoice & Statement Export Modal */}
+      <InvoiceExportModal
+        open={invoiceExportOpen}
+        onClose={() => setInvoiceExportOpen(false)}
+        sourceType="finance"
+        title="BẢNG KÊ & HÓA ĐƠN NGUỒN THU HIỆP HỘI"
+        items={invoiceItems}
       />
     </AppShell>
   );

@@ -359,7 +359,7 @@ export class AdminService implements OnModuleInit {
     }
 
     if (this.mailService) {
-      const methodLabel = method === 'bank' ? 'Chuyển khoản VietQR' : method === 'cash' ? 'Tiền mặt' : method === 'card' ? 'Thẻ ngân hàng' : 'Ví điện tử';
+      const methodLabel = method === 'bank' ? 'Chuyển khoản VNPAY' : method === 'cash' ? 'Tiền mặt' : method === 'card' ? 'Thẻ ngân hàng' : 'Ví điện tử';
       const recipientEmail = (existing.invoice.member?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
       const memberName = existing.invoice.member?.name || 'Quý Hội viên';
 
@@ -464,11 +464,11 @@ export class AdminService implements OnModuleInit {
             `, String(targetUserId), notifTitle, notifBody, id).catch(() => {});
           }
 
-          // 3. Đẩy template tin nhắn tương tác (Actionable template) kèm VietQR trực tiếp vào tin nhắn
+          // 3. Đẩy template tin nhắn tương tác (Actionable template) kèm VNPAY-QR trực tiếp vào tin nhắn
           const invoiceAmount = Number(existing.invoice.amount || 0);
           const invoiceNo = existing.invoice.invoiceNo || id;
-          const vietQrUrl = `https://img.vietqr.io/image/MB-0988888888-compact2.png?amount=${invoiceAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
-          const actionMsg = `[action:payment|amount:${invoiceAmount}|invoice:${invoiceNo}|qr:${vietQrUrl}|due:${existing.invoice.dueDate || 'Hôm nay'}|desc:${encodeURIComponent(notifBody)}]`;
+          const vnpayQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|FEE|${invoiceNo}|${invoiceAmount}`)}`;
+          const actionMsg = `[action:payment|amount:${invoiceAmount}|invoice:${invoiceNo}|qr:${vnpayQrUrl}|due:${existing.invoice.dueDate || 'Hôm nay'}|desc:${encodeURIComponent(notifBody)}]`;
 
           if (memberCode) {
             await this.prisma.$executeRaw`
@@ -488,7 +488,7 @@ export class AdminService implements OnModuleInit {
               year: existing.invoice.year || new Date().getFullYear(),
               amount: invoiceAmount,
               dueDate: existing.invoice.dueDate || 'Hôm nay',
-              vietQrUrl,
+              vietQrUrl: vnpayQrUrl,
               bankAccount: '0988888888',
               bankOwner: 'CLB DOANH NHAN CEO 1983',
               bankName: 'MB Bank',
@@ -523,7 +523,7 @@ export class AdminService implements OnModuleInit {
     if (this.mailService) {
       const invoiceAmount = Number(created.invoice.amount || 0);
       const invoiceNo = created.invoice.invoiceNo || id;
-      const vietQrUrl = `https://img.vietqr.io/image/MB-0988888888-compact2.png?amount=${invoiceAmount}&addInfo=${encodeURIComponent(invoiceNo)}`;
+      const vnpayQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|FEE|${invoiceNo}|${invoiceAmount}`)}`;
       const recipientEmail = (created.invoice.member?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
       const memberName = created.invoice.member?.name || 'Quý Hội viên';
 
@@ -534,7 +534,7 @@ export class AdminService implements OnModuleInit {
         year: created.invoice.year || new Date().getFullYear(),
         amount: invoiceAmount,
         dueDate: created.invoice.dueDate || `${year}-12-31`,
-        vietQrUrl,
+        vietQrUrl: vnpayQrUrl,
         bankAccount: '0988888888',
         bankOwner: 'CLB DOANH NHAN CEO 1983',
         bankName: 'MB Bank',
@@ -1391,12 +1391,12 @@ export class AdminService implements OnModuleInit {
     if (!eventId) throw new BadRequestException('eventId is required');
 
     // 1. Lấy thông tin sự kiện
-    const eventRows = await this.prisma.$queryRaw<any[]>`
+    const eventRows: any[] = (await this.prisma.$queryRaw<any[]>`
       SELECT id, name, title, date, location, banner_url, poster_url, capacity, ticket_price, status
       FROM public.events
       WHERE id::text = ${eventId}
       LIMIT 1
-    `.catch(() => []);
+    `.catch(() => [])) || [];
 
     const ev = eventRows[0] || null;
     if (!ev) {
@@ -1404,7 +1404,7 @@ export class AdminService implements OnModuleInit {
     }
 
     // 2. Lấy danh sách hội viên / đại biểu đã đăng ký sự kiện này
-    const attendees = await this.prisma.$queryRaw<any[]>`
+    const attendees: any[] = (await this.prisma.$queryRaw<any[]>`
       SELECT 
         er.id,
         er.event_id,
@@ -1426,10 +1426,10 @@ export class AdminService implements OnModuleInit {
       WHERE er.event_id = ${eventId} AND er.status != 'cancelled'
       ORDER BY er.created_at DESC
       LIMIT 500
-    `.catch(() => []);
+    `.catch(() => [])) || [];
 
     const confirmedCount = attendees.filter(
-      (a) => a.status === 'confirmed' || a.payment_status === 'paid' || a.payment_status === 'free',
+      (a: any) => a.status === 'confirmed' || a.payment_status === 'paid' || a.payment_status === 'free',
     ).length;
 
     return {
@@ -1507,7 +1507,7 @@ export class AdminService implements OnModuleInit {
       filterCondition += ` AND (er.payment_status = 'unpaid' OR er.payment_status = 'pending')`;
     }
 
-    const attendees = await this.prisma.$queryRawUnsafe<any[]>(`
+    const attendees: any[] = (await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT 
         er.id,
         COALESCE(er.member_name, m.name, 'Hội viên CEO') as name,
@@ -1523,7 +1523,7 @@ export class AdminService implements OnModuleInit {
       WHERE ${filterCondition}
       ORDER BY er.created_at DESC
       LIMIT 1000
-    `).catch(() => []);
+    `).catch(() => [])) || [];
 
     const notifCode = `NTF-EVT-${Date.now().toString(36).toUpperCase()}`;
     const nowIso = new Date().toISOString();

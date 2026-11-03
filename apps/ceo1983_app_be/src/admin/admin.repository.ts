@@ -63,6 +63,89 @@ export class AdminRepository {
     await this.prisma.$executeRawUnsafe(`
       ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS image_url text;
     `).catch(() => {});
+
+    // Chuẩn hóa bảng transactions tài chính cho VNPAY & Thu Chi
+    await this.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS public.transactions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        code text UNIQUE,
+        date date DEFAULT CURRENT_DATE,
+        type text NOT NULL DEFAULT 'income',
+        category text NOT NULL,
+        description text,
+        amount numeric DEFAULT 0,
+        method text DEFAULT 'vnpay',
+        status text DEFAULT 'completed',
+        association_id uuid,
+        recipient text,
+        invoice_url text,
+        provider text DEFAULT 'vnpay',
+        provider_ref text,
+        metadata jsonb DEFAULT '{}'::jsonb,
+        created_at timestamptz DEFAULT now(),
+        updated_at timestamptz DEFAULT now()
+      );
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS provider text DEFAULT 'vnpay';
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS provider_ref text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
+    `).catch(() => {});
+
+    // Chuẩn hóa bảng invoices (Hóa đơn điện tử hội phí & sự kiện)
+    await this.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS public.invoices (
+        id text PRIMARY KEY,
+        member_id text,
+        invoice_no text,
+        year integer,
+        amount bigint DEFAULT 0,
+        due_date date,
+        paid_at date,
+        status text DEFAULT 'pending',
+        method text DEFAULT 'vnpay',
+        category text DEFAULT 'Hội phí',
+        customer_name text,
+        customer_email text,
+        customer_phone text,
+        association_id uuid,
+        created_at timestamptz DEFAULT now(),
+        updated_at timestamptz DEFAULT now()
+      );
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS category text DEFAULT 'Hội phí';
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS customer_name text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS customer_email text;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS customer_phone text;
+    `).catch(() => {});
+
+    // Chuẩn hóa cột thanh toán VNPAY trong event_registrations
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'pending';
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS payment_amount numeric DEFAULT 0;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'vnpay';
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS paid_at timestamptz;
+    `).catch(() => {});
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS vnp_txn_ref text;
+    `).catch(() => {});
   }
 
   async queryRawUnsafe<T = any>(query: string, ...values: any[]): Promise<T[]> {

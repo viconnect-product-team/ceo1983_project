@@ -1748,7 +1748,7 @@ function NotificationsScreen() {
                   </div>
                 )}
                 <div className="text-[11.5px] text-slate-600 dark:text-slate-400">
-                  Hội viên có thể quét mã VietQR chuyển khoản tự động hoặc thanh toán trực tiếp qua cổng ngân hàng của hiệp hội.
+                  Hội viên có thể quét mã VNPAY-QR chuyển khoản tự động hoặc thanh toán trực tiếp qua cổng thanh toán của hiệp hội.
                 </div>
                 <button
                   type="button"

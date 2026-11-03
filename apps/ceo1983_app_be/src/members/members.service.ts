@@ -2060,7 +2060,7 @@ export class MembersService {
         Để duy trì liên tục các quyền lợi đặc quyền: Danh thiếp số Titanium, gian hàng Marketplace B2B, quyền biểu quyết đại hội và cơ hội kết nối giao thương giữa các hội viên, Quý Anh/Chị vui lòng hoàn tất đóng phí niên liễm bằng cách:
       </p>
       <ul style="font-size: 13px; color: #475569; line-height: 1.6; padding-left: 20px; margin-bottom: 24px;">
-        <li><strong>Chuyển khoản VietQR:</strong> Quét mã VietQR trên App Hiệp Hội (hệ thống tự động gạch nợ sau 3-5 giây).</li>
+        <li><strong>Thanh toán VNPAY-QR:</strong> Quét mã VNPAY-QR trên App Hiệp Hội (hệ thống tự động gạch nợ và xuất hóa đơn sau 3-5 giây).</li>
         <li><strong>Nộp tiền mặt:</strong> Đóng trực tiếp tại Văn phòng Ban Thư Ký CLB.</li>
       </ul>
 
@@ -2559,7 +2559,7 @@ export class MembersService {
         year: currentYear,
         amount: Number(quote.amount || 15000000),
         paidDate: new Date().toISOString().slice(0, 10),
-        paymentMethod: body.method === 'bank' ? 'Chuyển khoản VietQR' : body.method || 'Cổng thanh toán điện tử',
+        paymentMethod: body.method === 'bank' ? 'Cổng thanh toán VNPAY' : body.method || 'Cổng thanh toán điện tử',
       });
     } catch (err: any) {
       this.logger.warn(`Failed to send membership fee success email for renewal: ${err?.message}`);

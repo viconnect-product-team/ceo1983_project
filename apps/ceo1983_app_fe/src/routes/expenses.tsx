@@ -44,6 +44,7 @@ import { StandardDateInput } from "@/components/common/StandardDateInput";
 import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
 import { useResizableColumns, ResizableTh } from "@/components/dashboard/ResizableTableHeaders";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
+import { InvoiceExportModal, type InvoiceItem } from "@/components/dashboard/InvoiceExportModal";
 
 type ExpenseColKey =
   | "stt"
@@ -205,6 +206,7 @@ function ExpensesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [invoiceExportOpen, setInvoiceExportOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [refundingTx, setRefundingTx] = useState<Transaction | null>(null);
   const [refundAmountInput, setRefundAmountInput] = useState<number>(0);
@@ -396,6 +398,20 @@ function ExpensesPage() {
   const expenseList = useMemo(() => {
     return TRANSACTIONS.filter((tx) => tx.type === "expense");
   }, [TRANSACTIONS]);
+
+  const invoiceItems: InvoiceItem[] = useMemo(() => {
+    return expenseList.map((tx) => ({
+      id: tx.id,
+      code: tx.id,
+      date: tx.date,
+      category: getCategoryLabel(tx.category),
+      description: tx.description,
+      amount: tx.advanceAmount ? tx.advanceAmount - (tx.refundAmount || 0) : tx.amount,
+      recipient: tx.recipient || "—",
+      method: tx.method,
+      status: tx.status,
+    }));
+  }, [expenseList]);
 
   // Income transactions to compute remaining fund balance
   const incomeList = useMemo(() => {
@@ -643,6 +659,13 @@ function ExpensesPage() {
             >
               <Download className="h-4 w-4 text-muted-foreground" />
               {t("common.exportExcel")}
+            </button>
+            <button
+              onClick={() => setInvoiceExportOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 px-3.5 py-2 text-sm font-medium text-amber-800 dark:text-amber-300 shadow-[var(--shadow-card)] hover:bg-amber-100/60 cursor-pointer"
+            >
+              <Receipt className="h-4 w-4 text-amber-600" />
+              <span>Xuất Hóa Đơn & Bảng Kê</span>
             </button>
             <button
               onClick={() => setImportModalOpen(true)}
@@ -1283,6 +1306,15 @@ function ExpensesPage() {
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         onImportSuccess={() => router.invalidate()}
+      />
+
+      {/* Invoice & Statement Export Modal */}
+      <InvoiceExportModal
+        open={invoiceExportOpen}
+        onClose={() => setInvoiceExportOpen(false)}
+        sourceType="finance"
+        title="BẢNG KÊ & CHỨNG TỪ KHOẢN CHI HIỆP HỘI"
+        items={invoiceItems}
       />
     </AppShell>
   );

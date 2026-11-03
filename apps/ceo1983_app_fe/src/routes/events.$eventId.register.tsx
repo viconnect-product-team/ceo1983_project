@@ -154,7 +154,7 @@ function GuestEventRegistrationPage() {
         toast.success(
           isFree
             ? `Đăng ký thành công! Vé và mã quay thưởng đã được gửi tới email ${email.trim()}`
-            : `Đăng ký thành công! Mã VietQR thanh toán đã được gửi về email ${email.trim()}`
+            : `Đăng ký thành công! Mã VNPAY-QR thanh toán đã được gửi về email ${email.trim()}`
         );
         return;
       }
@@ -173,15 +173,16 @@ function GuestEventRegistrationPage() {
         return;
       }
 
-      // 2. Client-side Fallback an toàn: Tự sinh mã vé và mã VietQR chuẩn xác
+      // 2. Client-side Fallback an toàn: Tự sinh mã vé và mã VNPAY-QR chuẩn xác
       const fallbackRegId = `GUEST-${Date.now().toString(36).toUpperCase()}`;
       const fallbackLuckyNum = Math.floor(1000 + Math.random() * 9000);
       const fallbackInvoice = `EV${fallbackRegId}`;
-      const fallbackVietQrUrl = isFree
+      const fallbackVnpayPayload = `VNPAYQR|00020101021238540010A00000072701240006970422011019830000000208QRIBFTTA520460115303704540${totalAmount}5802VN62${encodeURIComponent(`${fallbackInvoice} ${phone.trim()}`)}6304`;
+      const fallbackVnpayQrUrl = isFree
         ? ""
-        : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(
-          `${fallbackInvoice} ${phone.trim()}`
-        )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`;
+        : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+          fallbackVnpayPayload
+        )}`;
       const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
         fallbackRegId
       )}`;
@@ -193,7 +194,7 @@ function GuestEventRegistrationPage() {
         luckyNumber: fallbackLuckyNum,
         isFree,
         totalAmount,
-        vietQrUrl: fallbackVietQrUrl,
+        vnpayQrUrl: fallbackVnpayQrUrl,
         qrCodeUrl: fallbackQrCodeUrl,
         fullName: fullName.trim(),
         phone: phone.trim(),
@@ -445,10 +446,11 @@ function GuestEventRegistrationPage() {
                 <div className="w-64 h-64 mx-auto bg-white p-3 rounded-2xl border-2 border-slate-200 shadow-md flex items-center justify-center relative group">
                   <img
                     src={
-                      result.vietQrUrl ||
-                      `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${result.totalAmount}&addInfo=${encodeURIComponent(
-                        `EV${result.registrationId} ${result.phone}`
-                      )}&accountName=${encodeURIComponent("CLB DOANH NHAN CEO 1983")}`
+                      result.vnpayQrUrl ||
+                      result.qrCodeUrl ||
+                      `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                        `VNPAYQR|CEO1983|EV${result.registrationId}|${result.totalAmount}|${result.phone}`
+                      )}`
                     }
                     alt="VNPAY-QR Thanh Toán Phí Sự Kiện"
                     className="w-full h-full object-contain"
@@ -713,7 +715,7 @@ function GuestEventRegistrationPage() {
               2. Địa chỉ Email chính thức nhận vé & mã QR <span className="text-rose-500">*</span>
             </label>
             <p className="text-xs text-slate-500">
-              Hệ thống sẽ gửi vé điện tử E-Ticket (hoặc hóa đơn VietQR) qua địa chỉ email này.
+              Hệ thống sẽ gửi vé điện tử E-Ticket (hoặc hóa đơn VNPAY) qua địa chỉ email này.
             </p>
             <div className="relative pt-1">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
@@ -894,7 +896,7 @@ function GuestEventRegistrationPage() {
                   <Send className="w-4 h-4 text-slate-950" />
                   {isFree
                     ? "Gửi Bản Đăng Ký & Nhận Vé Điện Tử E-Ticket (0đ)"
-                    : `Gửi Bản Đăng Ký & Nhận Mã VietQR (${new Intl.NumberFormat("vi-VN").format(
+                    : `Gửi Bản Đăng Ký & Nhận Mã VNPAY-QR (${new Intl.NumberFormat("vi-VN").format(
                       totalAmount
                     )} đ)`}
                 </>

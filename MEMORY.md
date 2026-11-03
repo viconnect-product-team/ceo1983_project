@@ -1,5 +1,55 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.24): Hoàn Thiện Poster Thư Mời Sự Kiện Dynamic Studio, Refactor Menu Sidebar CRM, Chuẩn Hóa Luồng Thanh Toán VNPAY-QR Kèm Atomic Transactions & Xuất Hóa Đơn/Bảng Kê Tổng Hợp/Theo Danh Mục ([NODE-CRM-008], [NODE-CRM-001], [NODE-CORE-001], [NODE-CRM-010], [NODE-CRM-011])**:
+  1. *Hạng Mục 1: Poster Thư Mời Sự Kiện Dynamic Studio Theo Phong Cách Hoàng Gia*:
+     - Xây dựng component `EventPosterStudioModal.tsx` tại `apps/ceo1983_app_fe/src/components/dashboard/`:
+       + Tái hiện trung thực bố cục thư mời hoàng gia đẳng cấp theo ảnh mẫu: nền bầu trời thành phố tương lai vươn tầm có chiều sâu perspective (`/skyline_perspective_dark.jpg`), tông màu chủ đạo Deep Cobalt Navy kết hợp viền ánh sáng Cyan phát quang và Amber Gold hoàng gia.
+       + Thay bỏ hoàn toàn ảnh người, bố trí Logo CEO 1983 & HanoiBA trang trọng trên đỉnh.
+       + Khối tiêu đề 3D glowing neon metallic: Kicker, Tên sự kiện, Subtitle cổ điển, Dòng Kính gửi (`salutation`).
+       + Bục Hologram phát quang với các vòng năng lượng cyber và biểu tượng 3D số 8 CEO 1983.
+       + Tấm cuốn thư cuộn góc thủy tinh cyan (glassmorphism parchment) chứa nội dung thư mời trang trọng, ngày giờ, địa điểm và chữ ký Ban Tổ Chức.
+       + Bộ điều khiển dynamic 100%: Quản trị viên tự do nhập text, đổi màu phát quang (Cyan/Gold/Royal), điều chỉnh vị trí trục dọc (Offset Y) của khối tiêu đề và tấm cuốn thư, tải ảnh nền riêng hoặc ảnh logo riêng.
+       + Tích hợp chức năng xuất ảnh chất lượng cao (PNG) và nút "Lưu Làm Poster Sự Kiện", "Bắn Tin Nhắc Với Poster Này".
+       + Tích hợp nút "Thiết Kế Poster Thư Mời" trên PageHeader của `/event-registrations` và nút "Thiết Kế Thư Mời (Studio)" trong `EventReminderPosterModal.tsx`.
+  2. *Hạng Mục 2: Refactor Menu Sidebar CRM & Phân Nhóm Hệ Thống*:
+     - Tại `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`:
+       + Gỡ bỏ hoàn toàn mục "Nhật ký thao tác (Audit Log)" (`/activity-logs`) khỏi thanh điều hướng Sidebar.
+       + Chuyển và refactor lại chức năng "Nhật ký hoạt động" (`/activity` với icon `Activity`) lên sidebar thuộc nhóm Hệ thống (`system: Item[]`).
+       + Đảm bảo phân quyền truy cập RBAC mượt mà cho Ban Thư Ký, Ban Quản Trị và Admin.
+  3. *Hạng Mục 3: Chuẩn Hóa Luồng Thanh Toán VNPAY-QR Kèm Atomic Transactions Toàn Diện (Gỡ Bỏ Hoàn Toàn VietQR)*:
+     - Tự động chuẩn hóa CSDL PostgreSQL (`apps/ceo1983_app_be/src/admin/admin.repository.ts`):
+       + Kiểm tra và tự động khởi tạo bảng `public.transactions`, `public.invoices`.
+       + Bổ sung các cột vào `public.event_registrations`: `payment_status`, `payment_amount`, `payment_method`, `paid_at`, `vnp_txn_ref`.
+     - Kiến trúc Backend NestJS (`apps/ceo1983_app_be/src/payment/`):
+       + Xây dựng `createEventCheckout()` và `createFeeCheckout()` tạo đơn hàng và URL thanh toán VNPAY Gateway chuẩn SHA-512.
+       + Xây dựng `executePaymentSuccessTransaction()` bọc trong Prisma/Database Transaction:
+         * Khi thanh toán thành công (VNPAY responseCode = '00'), tự động cập nhật trạng thái phiếu đăng ký/hội phí thành `paid`.
+         * Tăng số lượng người tham dự thực tế của sự kiện `registered`.
+         * Tự động ghi nhận khoản thu mới vào Sổ quỹ tài chính `public.transactions` (loại `income`, số tiền, danh mục, mã chứng từ).
+         * Tự động khởi tạo hóa đơn điện tử trong `public.invoices` (`INV-EVT-...` hoặc `INV-FEE-...`).
+         * Gửi email xác nhận kèm vé điện tử mã QR check-in vào cửa và hóa đơn điện tử đến email của đại biểu.
+         * Bắn thông báo Socket.IO realtime `dm:message_received` và `notification` tới ứng dụng di động hội viên.
+       + Xây dựng endpoint `POST /payment/simulate-success` phục vụ kiểm thử đối soát trực tiếp trên môi trường live test.
+     - Frontend Modal `VnpayPaymentModal.tsx` & Gỡ bỏ triệt để VietQR:
+       + Tạo modal `apps/ceo1983_app_fe/src/components/common/VnpayPaymentModal.tsx` hiển thị QR Code VNPAY chuẩn, số tiền, mã đơn hàng, đếm ngược 15 phút, nút mở cổng VNPAY Web (ATM/Visa/MasterCard), và nút xác nhận đối soát trực tiếp.
+       + Gắn nút thanh toán VNPAY-QR vào bảng Đăng ký sự kiện (`event-registrations.tsx`) và Quản lý hội phí (`fees.index.tsx`).
+       + Rà soát và loại bỏ toàn bộ các tham chiếu `vietqr` tại `events.$eventId.register.tsx`, `guest-event-register.$eventId.tsx`, `sponsors.tsx`, `sponsor-report.tsx`, `association.events.tsx`, `income.tsx`, `mail.service.ts`, `admin.service.ts`, `notification-templates.ts`.
+  4. *Hạng Mục 4: Xuất Hóa Đơn / Bảng Kê Tổng Hợp & Theo Từng Danh Mục Cụ Thể*:
+     - Xây dựng component `InvoiceExportModal.tsx` tại `apps/ceo1983_app_fe/src/components/dashboard/`:
+       + Hỗ trợ 2 chế độ xuất linh hoạt: (1) Xuất tổng hợp toàn bộ các khoản phát sinh; (2) Xuất theo từng danh mục cụ thể (Hội phí thường niên, Vé sự kiện, Tài trợ, Vận hành, F&B, Thuê địa điểm...).
+       + Xem trước văn bản khổ A4 chuẩn thể thức kế toán Việt Nam (Quốc hiệu, Tiêu ngữ, Tên đơn vị phát hành CLB CEO 1983, Bảng kê chi tiết, Số tiền viết bằng chữ tiếng Việt, 3 chữ ký: Người lập bảng, Kế toán trưởng, Chủ tịch CLB).
+       + In trực tiếp hoặc lưu file PDF khổ A4.
+       + Xuất file Excel (.xlsx) chuẩn doanh nghiệp có chữ ký và bảng kê.
+     - Tích hợp đồng bộ tại 4 màn hình tài chính:
+       + Quản lý Hội Phí (`/fees`): Nút "Xuất Hóa Đơn / Bảng Kê".
+       + Báo Cáo Tài Chính Toàn Diện (`/finance-report`): Nút "Xuất Hóa Đơn & Bảng Kê (Tổng / Danh Mục)" trên PageHeader và trong Modal xuất báo cáo.
+       + Quản Lý Nguồn Thu (`/income`): Nút "Xuất Hóa Đơn & Bảng Kê".
+       + Quản Lý Khoản Chi & Tạm Ứng (`/expenses`): Nút "Xuất Hóa Đơn & Bảng Kê".
+  5. *Kiểm Thử Chất Lượng Mã Nguồn*:
+     - Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ quy tắc không tự ý `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 03/11/2026 (v10.23): Triển Khai Hoàn Chỉnh Tính Năng Bắn Tin Nhắc Sự Kiện Kèm Poster Cho Hội Viên Đã Đăng Ký Thành Công ([NODE-CRM-008], [NODE-CRM-007], [NODE-APP-007], [NODE-CORE-001])**:
   1. *Bối Cảnh Nghiệp Vụ & Yêu Cầu*:
      - Khi hội viên đăng ký tham gia sự kiện thành công, Ban Thư Ký / Quản trị viên CRM cần công cụ chủ động bắn tin nhắn nhắc nhở trực tiếp đến từng hội viên đã đăng ký, đính kèm tấm poster sự kiện sắc nét, thông tin giờ giấc, địa điểm, số bàn/ghế và mã vé QR.

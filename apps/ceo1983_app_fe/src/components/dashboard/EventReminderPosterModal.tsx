@@ -27,6 +27,7 @@ import {
   getEventAttendeesPreviewFn,
   sendEventAttendeeReminderFn,
 } from "@/lib/notifications.functions";
+import { EventPosterStudioModal } from "./EventPosterStudioModal";
 
 interface EventReminderPosterModalProps {
   open: boolean;
@@ -63,6 +64,7 @@ export function EventReminderPosterModal({
   const [showAttendeesList, setShowAttendeesList] = useState(false);
   const [attendeeSearch, setAttendeeSearch] = useState("");
   const [previewPosterFull, setPreviewPosterFull] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -493,7 +495,15 @@ export function EventReminderPosterModal({
                     className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold inline-flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
                   >
                     <Upload className="size-3.5" />
-                    <span>{isUploadingPoster ? "Đang tải ảnh..." : "Tải Tấm Poster Lên Từ Máy Tính"}</span>
+                    <span>{isUploadingPoster ? "Đang tải ảnh..." : "Tải Ảnh Từ Máy"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStudioOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-bold inline-flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Sparkles className="size-3.5 text-amber-500" />
+                    <span>Thiết Kế Thư Mời (Studio)</span>
                   </button>
                   <span className="text-[11px] text-muted-foreground">hoặc dán đường dẫn ảnh:</span>
                 </div>
@@ -661,6 +671,15 @@ export function EventReminderPosterModal({
           </div>
         </div>
       )}
+
+      {/* Dynamic Poster Studio Modal */}
+      <EventPosterStudioModal
+        open={studioOpen}
+        onClose={() => setStudioOpen(false)}
+        event={eventData}
+        onSavePoster={(url) => setPosterUrl(url)}
+        onBroadcastReminder={(url) => setPosterUrl(url)}
+      />
     </div>
   );
 }

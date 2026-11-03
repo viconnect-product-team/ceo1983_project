@@ -99,7 +99,7 @@ function SponsorsPage() {
         await createFn({ data: payload as never });
         if (payload.email && payload.email.includes("@")) {
           toast.success(
-            "Thêm nhà tài trợ thành công! Đã tự động gửi email kèm mã VietQR và thông tin tài trợ đến đối tác."
+            "Thêm nhà tài trợ thành công! Đã tự động gửi email kèm mã QR VNPAY và thông tin tài trợ đến đối tác."
           );
         } else {
           toast.success(t("common.created"));
@@ -222,7 +222,7 @@ function SponsorsPage() {
               ? "Hiện vật"
               : s.packageType === "cash"
               ? "Tiền mặt"
-              : "Chuyển khoản (VietQR)",
+              : "Chuyển khoản (VNPAY / Ngân hàng)",
         },
         { header: "Chi tiết hiện vật", key: "inKind", width: 32, value: (s) => s.inKindDescription || "—" },
         { header: "Đại Diện / Người Liên Hệ", key: "contact", width: 24, value: (s) => s.contact || "—" },
@@ -346,7 +346,7 @@ function SponsorsPage() {
           className="h-10 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs cursor-pointer"
         >
           <option value="all">Tất cả hình thức</option>
-          <option value="bank_transfer">🏦 Chuyển khoản (VietQR)</option>
+          <option value="bank_transfer">🏦 Chuyển khoản (VNPAY / Ngân hàng)</option>
           <option value="cash">💵 Tiền mặt trực tiếp</option>
           <option value="in_kind">🎁 Tài trợ Hiện vật</option>
         </select>

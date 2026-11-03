@@ -496,7 +496,7 @@ export class SponsorsService {
       : (sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật' : '0 đ');
 
     const packageTypeLabels: Record<string, string> = {
-      bank_transfer: 'Tài trợ Chuyển khoản (VietQR Napas 24/7)',
+      bank_transfer: 'Tài trợ Chuyển khoản (VNPAY-QR / Ngân hàng)',
       cash: 'Tài trợ Tiền mặt (Trực tiếp)',
       in_kind: 'Tài trợ Hiện vật / Sản phẩm dịch vụ',
     };
@@ -509,7 +509,7 @@ export class SponsorsService {
     const bankName = 'Ngân hàng TMCP Quân Đội (MB Bank)';
     const bankOwner = 'CLB DOANH NHAN CEO 1983';
     const memo = `TT ${sponsor.id} ${sponsor.name}`.slice(0, 25).trim();
-    const vietQrUrl = `https://img.vietqr.io/image/MB-${bankAccount}-compact2.png?amount=${numAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(bankOwner)}`;
+    const vnpayQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|SPONSOR|${sponsor.id}|${numAmount}|${bankAccount}`)}`;
 
     let paymentMethodHtml = '';
     if (sponsor.packageType === 'cash') {
@@ -545,16 +545,16 @@ export class SponsorsService {
       paymentMethodHtml = `
       <div style="background: #ffffff; border: 2px solid #002B7A; border-radius: 18px; padding: 24px; margin: 24px 0; text-align: center; box-shadow: 0 8px 24px rgba(0, 43, 122, 0.08);">
         <div style="display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
-          ✦ MÃ VIETQR CHUYỂN KHOẢN TÀI TRỢ CHÍNH THỨC ✦
+          ✦ MÃ VNPAY-QR CHUYỂN KHOẢN TÀI TRỢ CHÍNH THỨC ✦
         </div>
         <div style="font-size: 15px; font-weight: 800; color: #001B54; margin-bottom: 6px;">
           Số Tiền Khai Báo Tài Trợ: <span style="color: #d97706;">${formattedAmount}</span>
         </div>
         <p style="font-size: 12.5px; color: #64748b; margin: 0 0 16px 0;">
-          Quý Doanh nghiệp vui lòng mở bất kỳ Ứng dụng Ngân hàng nào để quét mã VietQR Napas 24/7 dưới đây:
+          Quý Doanh nghiệp vui lòng mở bất kỳ Ứng dụng Ngân hàng nào để quét mã VNPAY-QR dưới đây:
         </p>
         <div style="display: inline-block; background: #ffffff; padding: 12px; border-radius: 16px; border: 2px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
-          <img src="${vietQrUrl}" alt="VietQR Thanh Toán Tài Trợ" style="width: 240px; height: 240px; display: block; margin: 0 auto; object-fit: contain;" />
+          <img src="${vnpayQrUrl}" alt="VNPAY-QR Thanh Toán Tài Trợ" style="width: 240px; height: 240px; display: block; margin: 0 auto; object-fit: contain;" />
         </div>
         <div style="margin-top: 18px; text-align: left; background: #f8fafc; border-radius: 12px; padding: 14px 18px; border: 1px solid #e2e8f0; font-size: 13px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 7px;">
@@ -585,7 +585,7 @@ export class SponsorsService {
       `;
     }
 
-    const subject = `[CLB CEO 1983] Thư Tri Ân & Mã VietQR Xác Nhận Tài Trợ — ${sponsor.name}`;
+    const subject = `[CLB CEO 1983] Thư Tri Ân & Mã VNPAY-QR Xác Nhận Tài Trợ — ${sponsor.name}`;
 
     const html = `
 <!DOCTYPE html>

@@ -22,6 +22,7 @@ import {
   X,
   XCircle,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -43,6 +44,8 @@ import { useFmt, useT } from "@/lib/i18n";
 import { CinemaSeatingMap } from "@/components/dashboard/CinemaSeatingMap";
 import { useRole } from "@/hooks/use-role";
 import { EventReminderPosterModal } from "@/components/dashboard/EventReminderPosterModal";
+import { EventPosterStudioModal } from "@/components/dashboard/EventPosterStudioModal";
+import { VnpayPaymentModal } from "@/components/common/VnpayPaymentModal";
 
 export const Route = createFileRoute("/event-registrations")({
   ssr: false,
@@ -156,6 +159,9 @@ function RegPage() {
   // Add Attendee / QR Checkin Modal state
   const [addAttendeeModalOpen, setAddAttendeeModalOpen] = useState(false);
   const [eventReminderModalOpen, setEventReminderModalOpen] = useState(false);
+  const [posterStudioOpen, setPosterStudioOpen] = useState(false);
+  const [vnpayModalOpen, setVnpayModalOpen] = useState(false);
+  const [selectedVnpayReg, setSelectedVnpayReg] = useState<Registration | null>(null);
   const [attendeeMode, setAttendeeMode] = useState<"qr" | "manual">("qr");
   const [qrCodeInput, setQrCodeInput] = useState("");
   const [isScanningCamera, setIsScanningCamera] = useState(false);
@@ -594,6 +600,13 @@ function RegPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setPosterStudioOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-4 py-2 text-sm font-semibold text-slate-950 shadow-sm transition cursor-pointer"
+            >
+              <Sparkles className="h-4 w-4" />
+              Thiết Kế Poster Thư Mời
+            </button>
+            <button
               onClick={() => setEventReminderModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-[#003B95] hover:from-blue-800 hover:to-[#002f78] px-4 py-2 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
             >
@@ -972,11 +985,10 @@ function RegPage() {
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                              isPaid
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${isPaid
                                 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                                 : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                            }`}
+                              }`}
                           >
                             {isPaid ? "Đã nộp" : "Chờ thanh toán"}
                           </span>
@@ -1054,15 +1066,18 @@ function RegPage() {
                           </button>
                         )}
 
-                        {/* Kiểm tra đối soát dòng tiền VietQR MB Bank */}
+                        {/* Thanh toán vé qua cổng VNPAY-QR */}
                         {!isPaid && !isCancelled && (
                           <button
-                            onClick={() => handleReconcilePayment(r)}
-                            className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:text-blue-300 cursor-pointer transition-colors"
-                            title="Kiểm tra đối soát dòng tiền VietQR MB Bank tự động"
+                            onClick={() => {
+                              setSelectedVnpayReg(r);
+                              setVnpayModalOpen(true);
+                            }}
+                            className="inline-flex items-center shrink-0 gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-500/20 dark:text-blue-300 cursor-pointer transition-colors"
+                            title="Thanh toán vé qua cổng VNPAY-QR"
                           >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                            Đối soát
+                            <QrCode className="h-3.5 w-3.5 text-blue-600" />
+                            VNPAY-QR
                           </button>
                         )}
 
@@ -1376,22 +1391,20 @@ function RegPage() {
               <button
                 type="button"
                 onClick={() => setAttendeeMode("qr")}
-                className={`py-2 rounded-lg transition ${
-                  attendeeMode === "qr"
+                className={`py-2 rounded-lg transition ${attendeeMode === "qr"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Quét QR / Điểm danh nhanh
               </button>
               <button
                 type="button"
                 onClick={() => setAttendeeMode("manual")}
-                className={`py-2 rounded-lg transition ${
-                  attendeeMode === "manual"
+                className={`py-2 rounded-lg transition ${attendeeMode === "manual"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Thêm thông tin người mới
               </button>
@@ -1604,6 +1617,38 @@ function RegPage() {
         open={eventReminderModalOpen}
         initialEventId={eventId !== "all" ? eventId : undefined}
         onClose={() => setEventReminderModalOpen(false)}
+        onSuccess={() => {
+          fetchLiveRegistrations();
+          router.invalidate();
+        }}
+      />
+
+      {/* Event Poster Studio Modal */}
+      <EventPosterStudioModal
+        open={posterStudioOpen}
+        onClose={() => setPosterStudioOpen(false)}
+        event={EVENTS.find((e: any) => String(e.id) === String(eventId)) || EVENTS[0]}
+        onSavePoster={() => router.invalidate()}
+        onBroadcastReminder={() => {
+          setPosterStudioOpen(false);
+          setEventReminderModalOpen(true);
+        }}
+      />
+
+      {/* VNPAY-QR Payment Gateway Modal */}
+      <VnpayPaymentModal
+        open={vnpayModalOpen}
+        onClose={() => {
+          setVnpayModalOpen(false);
+          setSelectedVnpayReg(null);
+        }}
+        type="event"
+        targetId={selectedVnpayReg?.id || ""}
+        eventId={selectedVnpayReg?.eventId}
+        amount={selectedVnpayReg?.paymentAmount || selectedVnpayReg?.eventTicketPrice || 500000}
+        title={selectedVnpayReg?.eventName || "Vé Tham Dự Sự Kiện CEO 1983"}
+        attendeeName={selectedVnpayReg?.memberName}
+        memberCode={selectedVnpayReg?.memberCode}
         onSuccess={() => {
           fetchLiveRegistrations();
           router.invalidate();

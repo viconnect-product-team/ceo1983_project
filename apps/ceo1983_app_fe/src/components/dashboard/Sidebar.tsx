@@ -40,6 +40,7 @@ import {
   FolderOpen,
   Settings,
   History,
+  Activity,
   Sparkles,
   MessageSquare,
   Store,
@@ -149,7 +150,7 @@ const system: Item[] = [
     ],
   },
   { key: "nav.settings", icon: Settings, to: "/settings" },
-  { key: "nav.activityLogs" as TKey, icon: History, to: "/activity-logs", label: "Nhật ký thao tác (Audit Log)" },
+  { key: "nav.activity" as TKey, icon: Activity, to: "/activity", label: "Nhật ký hoạt động" },
   {
     key: "nav.themeManagement" as TKey,
     icon: Palette,

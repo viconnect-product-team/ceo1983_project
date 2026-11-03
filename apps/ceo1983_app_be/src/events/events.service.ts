@@ -1208,8 +1208,11 @@ export class EventsService implements OnModuleInit {
       }
     }
 
-    // Đối với sự kiện có phí: chỉ gửi email thông báo mã VietQR thanh toán (KHÔNG có số lucky, mã dự thưởng, hay mã QR vé)
+    // Đối với sự kiện có phí: chỉ gửi email thông báo mã VNPAY-QR thanh toán (KHÔNG có số lucky, mã dự thưởng, hay mã QR vé)
     if (!isFree) {
+      const vnpayQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+        `VNPAYQR|EV${regId}|${totalAmount}|${phone || ''}`
+      )}`;
       const paymentNoticePayload = {
         fullName: memberName,
         phone,
@@ -1226,9 +1229,9 @@ export class EventsService implements OnModuleInit {
         paymentConfirmed: false,
         totalAmount,
         qrCodeUrl: '',
-        vietQrUrl,
+        vietQrUrl: vnpayQrUrl,
         bankAccount: '1983000000',
-        bankName: 'MB Bank (Quân Đội)',
+        bankName: 'Cổng Thanh Toán Quốc Gia VNPAY (HanoiBA)',
         bankOwner: 'CLB DOANH NHAN CEO 1983',
       };
 
@@ -1677,17 +1680,17 @@ export class EventsService implements OnModuleInit {
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(actualRegId)}`;
 
     // 4. Record income in transactions if amount > 0
-    const txCode = `THU-CK-EV${actualRegId}`;
+    const txCode = `THU-EV${actualRegId}`;
     if (amount > 0) {
       await this.prisma.$executeRaw`
         INSERT INTO public.transactions (
-          id, code, date, type, category, description, amount, method, status, association_id, recipient, invoice_url, created_at, updated_at
+          id, code, date, type, category, description, amount, method, status, association_id, recipient, invoice_url, provider, provider_ref, created_at, updated_at
         ) VALUES (
           gen_random_uuid(),
           ${txCode},
           now()::date,
           'income',
-          'event_fee',
+          'Vé sự kiện',
           ${'Xác nhận thanh toán phí tham dự sự kiện: ' + (reg.member_name || 'Hội viên') + ' (' + actualRegId + ')'},
           ${amount},
           ${paymentMethod},
@@ -1695,10 +1698,23 @@ export class EventsService implements OnModuleInit {
           ${reg.association_id ? reg.association_id : 'c1983000-0000-4000-8000-000000001983'}::uuid,
           ${reg.member_name || 'Hội viên'},
           ${'/invoices/' + txCode + '.pdf'},
+          'vnpay',
+          ${actualRegId},
           now(),
           now()
         )
       `.catch((err) => console.error('Error inserting event confirmation transaction:', err));
+
+      const invoiceNo = `INV-EVT-${actualRegId}`;
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.invoices (
+          id, member_id, invoice_no, year, amount, due_date, paid_at, status, method, category, customer_name, customer_email, customer_phone, association_id, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, CURRENT_DATE, CURRENT_DATE, 'paid', $6, 'Vé sự kiện', $7, $8, $9, $10, NOW(), NOW()
+        )
+        ON CONFLICT (id) DO UPDATE
+        SET status = 'paid', paid_at = CURRENT_DATE, method = $6, updated_at = NOW()
+      `, invoiceNo, reg.member_code || actualRegId, invoiceNo, new Date().getFullYear(), Math.round(amount), paymentMethod, reg.member_name || 'Đại biểu', reg.email || '', reg.phone || '', reg.association_id ? reg.association_id : null).catch(() => {});
     }
 
     // 5. Fetch event details for email & notifications
@@ -2649,9 +2665,9 @@ export class EventsService implements OnModuleInit {
       ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(regId)}`
       : '';
     const invoiceNo = `EV${regId}`;
-    const vietQrUrl = isFree
+    const vnpayQrUrl = isFree
       ? ''
-      : `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(`${invoiceNo} ${phone}`)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
+      : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`https://ceo1983.vn/payment/checkout?regId=${regId}&amount=${totalAmount}`)}`;
 
     // Gửi email vé điện tử E-Ticket CHỈ DÀNH CHO SỰ KIỆN MIỄN PHÍ (0đ)
     // Sự kiện có phí phải chờ Ban Truyền Thông / Tài Chính kiểm tra và bấm "Đã thanh toán" mới gửi vé kèm QR check-in!
@@ -2704,9 +2720,9 @@ export class EventsService implements OnModuleInit {
         paymentConfirmed: false,
         totalAmount,
         qrCodeUrl: '',
-        vietQrUrl,
+        vietQrUrl: vnpayQrUrl,
         bankAccount: '1983000000',
-        bankName: 'MB Bank (Quân Đội)',
+        bankName: 'Cổng Thanh Toán Quốc Gia VNPAY (HanoiBA)',
         bankOwner: 'CLB DOANH NHAN CEO 1983',
       };
 
@@ -2757,7 +2773,8 @@ export class EventsService implements OnModuleInit {
       luckyNumber: luckyNum,
       isFree,
       totalAmount,
-      vietQrUrl,
+      vnpayQrUrl,
+      vietQrUrl: vnpayQrUrl,
       eventTitle: event.title || event.name,
       eventDate: event.date,
       eventLocation: event.location,

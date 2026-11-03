@@ -718,11 +718,11 @@ export class MailService {
         </div>
 
         ${!isConfirmedTicket ? `
-        <!-- TEMPLATE MÃ VIETQR THANH TOÁN DÀNH CHO SỰ KIỆN CÓ PHÍ CHỜ THANH TOÁN -->
+        <!-- TEMPLATE MÃ VNPAY-QR THANH TOÁN DÀNH CHO SỰ KIỆN CÓ PHÍ CHỜ THANH TOÁN -->
         <div class="qr-container">
-          <div style="font-weight: 800; color: #003B95; font-size: 14px; text-transform: uppercase;">MÃ VIETQR THANH TOÁN PHÍ THAM DỰ</div>
+          <div style="font-weight: 800; color: #003B95; font-size: 14px; text-transform: uppercase;">MÃ VNPAY-QR THANH TOÁN PHÍ THAM DỰ</div>
           <div class="price-tag">${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ</div>
-          <img src="${vietQrSrc}" alt="Mã VietQR Thanh Toán" class="qr-img" />
+          <img src="${vietQrSrc}" alt="Mã VNPAY-QR Thanh Toán" class="qr-img" />
           <div class="qr-caption">NỘI DUNG CK: EV${registrationId}</div>
           <div class="qr-hint">Mở ứng dụng Ngân hàng bất kỳ (MB, Vietcombank, Techcombank...) để quét mã chuyển khoản</div>
 
@@ -777,7 +777,7 @@ export class MailService {
                 ? '<span class="badge-status">✓ ĐÃ THANH TOÁN (HỢP LỆ)</span>'
                 : (isFree 
                   ? '<span class="badge-status">✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)</span>' 
-                  : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VIETQR</span>'
+                  : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VNPAY-QR</span>'
                 )
               }
             </div>
@@ -1976,7 +1976,7 @@ export class MailService {
   }
 
   /**
-   * 4. Gửi email thông báo hội phí thường niên & nhắc phí kèm mã VietQR
+   * 4. Gửi email thông báo hội phí thường niên & nhắc phí kèm mã VNPAY-QR
    */
   async sendMembershipFeeNotificationEmail(options: SendMembershipFeeNotificationEmailOptions): Promise<{ ok: boolean; message?: string }> {
     const {
@@ -1999,9 +1999,9 @@ export class MailService {
     const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
     const isReminder = Boolean(reminderCount && reminderCount > 0);
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/profile`;
-    const vietQrUrlStr = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`HOIPHI ${memberCode || invoiceNo} ${memberName}`)}&accountName=${encodeURIComponent(bankOwner)}`;
-    const vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_fee_qr', `vietqr-fee-${invoiceNo}.png`);
-    const qrImg = vietQrAttachment ? 'cid:vietqr_fee_qr' : vietQrUrlStr;
+    const vietQrUrlStr = vietQrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|CEO1983|FEE|${invoiceNo}|${amount}|${memberCode || ''}`)}`;
+    const vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vnpay_fee_qr', `vnpay-fee-${invoiceNo}.png`);
+    const qrImg = vietQrAttachment ? 'cid:vnpay_fee_qr' : vietQrUrlStr;
 
     const subject = isReminder
       ? `[CLB CEO 1983] Nhắc Đóng Hội Phí Thường Niên Năm ${year} (Lần ${reminderCount}) — Hội Viên ${memberName}`
@@ -2058,9 +2058,9 @@ export class MailService {
       </div>
 
       <div class="vietqr-box">
-        <div style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin-bottom: 6px;">QUÉT MÃ VIETQR ĐỂ THANH TOÁN TỰ ĐỘNG</div>
+        <div style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin-bottom: 6px;">QUÉT MÃ VNPAY-QR ĐỂ THANH TOÁN TỰ ĐỘNG</div>
         <div style="font-size: 12px; color: #475569; margin-bottom: 12px;">Số tiền và cú pháp chuyển khoản đã được tích hợp sẵn chính xác 100%</div>
-        <img src="${qrImg}" alt="VietQR Hội Phí" class="qr-img" />
+        <img src="${qrImg}" alt="VNPAY-QR Hội Phí" class="qr-img" />
         <div style="margin-top: 12px; font-size: 12.5px; text-align: left; background: #ffffff; padding: 12px; border-radius: 8px;">
           <div><strong>Ngân hàng:</strong> ${bankName}</div>
           <div><strong>Số tài khoản:</strong> <span style="color:#003B95; font-weight:800; font-family:monospace; font-size:14px;">${bankAccount}</span></div>

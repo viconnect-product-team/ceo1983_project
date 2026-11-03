@@ -25,6 +25,8 @@ import {
   BellRing,
   CheckSquare,
   Square,
+  QrCode,
+  FileText,
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { EmptyState, NoSearchResult } from "@/components/dashboard/StateKit";
@@ -46,6 +48,8 @@ import { fetchNestApi } from "@/lib/api-client";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 import { FormattedCurrencyInput } from "@/components/common/FormattedCurrencyInput";
 import type { Member } from "@/lib/members-data";
+import { InvoiceExportModal, type InvoiceItem } from "@/components/dashboard/InvoiceExportModal";
+import { VnpayPaymentModal } from "@/components/common/VnpayPaymentModal";
 
 export const Route = createFileRoute("/fees/")({
   ssr: false,
@@ -210,6 +214,9 @@ function FeesPage() {
   const [sortKey, setSortKey] = useState<string>(sortMap.due.key);
   const [sortDir, setSortDir] = useState<"asc" | "desc">(sortMap.due.dir);
   const [showCreate, setShowCreate] = useState(false);
+  const [invoiceExportOpen, setInvoiceExportOpen] = useState(false);
+  const [vnpayModalOpen, setVnpayModalOpen] = useState(false);
+  const [selectedVnpayFee, setSelectedVnpayFee] = useState<FeeRecord | null>(null);
 
   const handleDelete = async (r: FeeRecord) => {
     if (!window.confirm(t("fees.deleteConfirm"))) return;
@@ -244,6 +251,20 @@ function FeesPage() {
     });
 
   const yearRecords = useMemo(() => allRecords.filter((r) => r.year === year), [allRecords, year]);
+
+  const invoiceItems: InvoiceItem[] = useMemo(() => {
+    return yearRecords.map((r) => ({
+      id: r.id,
+      code: r.invoiceNo,
+      date: r.paidAt || r.dueDate || new Date().toISOString(),
+      category: `Hội phí niên khóa ${r.year}`,
+      description: `Thu hội phí thường niên CLB Doanh Nhân CEO 1983 - ${r.member?.name || r.member?.contact || `Hội viên ${r.member?.code || ""}`}`,
+      amount: r.amount,
+      recipient: r.member?.name || r.member?.contact || `Hội viên ${r.member?.code || ""}`,
+      method: r.method || "vnpay",
+      status: r.status,
+    }));
+  }, [yearRecords]);
 
   const records = useMemo(() => {
     return yearRecords
@@ -412,13 +433,22 @@ function FeesPage() {
         </div>
         <div className="flex items-center gap-2">
           {(can("FEE_VIEW") || can(PERMISSIONS.FINANCE_VIEW)) && (
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" aria-hidden="true" />
-              {t("fees.export")}
-            </button>
+            <>
+              <button
+                onClick={handleExport}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("fees.export")}
+              </button>
+              <button
+                onClick={() => setInvoiceExportOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              >
+                <FileText className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                <span>Xuất Hóa Đơn / Bảng Kê</span>
+              </button>
+            </>
           )}
           {can(PERMISSIONS.FINANCE_MANAGE) && (
             <button
@@ -728,7 +758,17 @@ function FeesPage() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {tc.pageRows.map((r: any) => (
-              <FeeCard key={r.id} r={r} onDelete={handleDelete} onRemind={handleRemind} canManage={can(PERMISSIONS.FINANCE_MANAGE) || can("FEE_EDIT")} />
+              <FeeCard
+                key={r.id}
+                r={r}
+                onDelete={handleDelete}
+                onRemind={handleRemind}
+                onPayVnpay={(fee) => {
+                  setSelectedVnpayFee(fee);
+                  setVnpayModalOpen(true);
+                }}
+                canManage={can(PERMISSIONS.FINANCE_MANAGE) || can("FEE_EDIT")}
+              />
             ))}
           </div>
           <div className="mt-4 rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -805,7 +845,18 @@ function FeesPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {tc.pageRows.map((r: any, idx: number) => (
-                  <FeeRow key={r.id} r={r} index={(tc.page - 1) * tc.pageSize + idx + 1} onDelete={handleDelete} onRemind={handleRemind} canManage={can(PERMISSIONS.FINANCE_MANAGE) || can("FEE_EDIT")} />
+                  <FeeRow
+                    key={r.id}
+                    r={r}
+                    index={(tc.page - 1) * tc.pageSize + idx + 1}
+                    onDelete={handleDelete}
+                    onRemind={handleRemind}
+                    onPayVnpay={(fee) => {
+                      setSelectedVnpayFee(fee);
+                      setVnpayModalOpen(true);
+                    }}
+                    canManage={can(PERMISSIONS.FINANCE_MANAGE) || can("FEE_EDIT")}
+                  />
                 ))}
               </tbody>
             </table>
@@ -844,6 +895,33 @@ function FeesPage() {
           }}
         />
       )}
+
+      {/* Invoice Export Modal */}
+      <InvoiceExportModal
+        open={invoiceExportOpen}
+        onClose={() => setInvoiceExportOpen(false)}
+        sourceType="fees"
+        title={`BẢNG KÊ & HÓA ĐƠN HỘI PHÍ THƯỜNG NIÊN NĂM ${year}`}
+        items={invoiceItems}
+      />
+
+      {/* VNPAY-QR Payment Gateway Modal */}
+      <VnpayPaymentModal
+        open={vnpayModalOpen}
+        onClose={() => {
+          setVnpayModalOpen(false);
+          setSelectedVnpayFee(null);
+        }}
+        type="fee"
+        targetId={selectedVnpayFee?.id || ""}
+        amount={selectedVnpayFee?.amount || 5000000}
+        title={`Thu hội phí CLB CEO 1983 - Niên khóa ${selectedVnpayFee?.year || year} (${selectedVnpayFee?.invoiceNo || ""})`}
+        attendeeName={selectedVnpayFee?.member?.name || selectedVnpayFee?.member?.contact}
+        memberCode={selectedVnpayFee?.member?.code || selectedVnpayFee?.memberId}
+        onSuccess={() => {
+          router.invalidate();
+        }}
+      />
     </AppShell>
   );
 }
@@ -1032,11 +1110,13 @@ function FeeCard({
   r,
   onDelete,
   onRemind,
+  onPayVnpay,
   canManage,
 }: {
   r: FeeRecord;
   onDelete: (r: FeeRecord) => void;
   onRemind?: (r: FeeRecord) => void;
+  onPayVnpay?: (r: FeeRecord) => void;
   canManage: boolean;
 }) {
   const t = useT();
@@ -1116,6 +1196,15 @@ function FeeCard({
               className="inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
             >
               <Send className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <button
+              onClick={() => onPayVnpay?.(r)}
+              title="Thanh toán VNPAY-QR"
+              aria-label="Thanh toán VNPAY-QR"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+              <span>VNPAY-QR</span>
             </button>
             <Link
               to="/fees/$invoiceId"
@@ -1288,12 +1377,14 @@ function FeeRow({
   index,
   onDelete,
   onRemind,
+  onPayVnpay,
   canManage,
 }: {
   r: FeeRecord;
   index: number;
   onDelete: (r: FeeRecord) => void;
   onRemind?: (r: FeeRecord) => void;
+  onPayVnpay?: (r: FeeRecord) => void;
   canManage: boolean;
 }) {
   const t = useT();
@@ -1358,10 +1449,22 @@ function FeeRow({
               >
                 <Send className="h-3.5 w-3.5" />
               </button>
-              <button className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90">
+              <button
+                onClick={() => onPayVnpay?.(r)}
+                title="Thanh toán VNPAY-QR"
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-[11px] font-semibold text-white shadow-xs transition-colors cursor-pointer"
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                <span>VNPAY</span>
+              </button>
+              <Link
+                to="/fees/$invoiceId"
+                params={{ invoiceId: r.id }}
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+              >
                 {t("fees.action.markPaid")}
                 <ArrowRight className="h-3 w-3" />
-              </button>
+              </Link>
             </>
           ) : (
             <span className="text-[11px] text-muted-foreground">

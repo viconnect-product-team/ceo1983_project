@@ -13,6 +13,7 @@ import {
   ArrowDownRight,
   FileSpreadsheet,
   FileText,
+  Receipt,
   Building2,
   CheckCircle2,
   Clock,
@@ -35,6 +36,7 @@ import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImpo
 import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
 import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
 import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
+import { InvoiceExportModal, type InvoiceItem } from "@/components/dashboard/InvoiceExportModal";
 
 const FALLBACK_TRANSACTIONS: Transaction[] = [
   {
@@ -177,6 +179,7 @@ function FinanceReport() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [invoiceExportModalOpen, setInvoiceExportModalOpen] = useState(false);
 
   const txQuery = useQuery({
     queryKey: ["finance-report-data", statusFilter],
@@ -288,6 +291,20 @@ function FinanceReport() {
       return true;
     });
   }, [activeRawTransactions, typeFilter, statusFilter, searchQuery, period]);
+
+  const invoiceItems: InvoiceItem[] = useMemo(() => {
+    return transactions.map((tx) => ({
+      id: tx.id,
+      code: tx.id,
+      date: tx.date,
+      category: tx.category,
+      description: tx.description,
+      amount: tx.amount,
+      recipient: tx.recipient || "—",
+      method: tx.method,
+      status: tx.status,
+    }));
+  }, [transactions]);
 
   const tc = useTableControls<Transaction>(
     transactions,
@@ -403,6 +420,14 @@ function FinanceReport() {
             >
               <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
               <span>Xuất Excel (.xlsx)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInvoiceExportModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 px-3.5 py-2 text-xs sm:text-sm font-semibold text-amber-800 dark:text-amber-300 shadow-xs hover:bg-amber-100/60 cursor-pointer transition-all"
+            >
+              <Receipt className="h-4 w-4 text-amber-600" />
+              <span>Xuất Hóa Đơn & Bảng Kê (Tổng / Danh Mục)</span>
             </button>
             <button
               type="button"
@@ -912,6 +937,34 @@ function FinanceReport() {
                   <span>Tải Báo Cáo Excel (.xlsx)</span>
                 </button>
               </div>
+
+              {/* Invoice / Receipt Option */}
+              <div className="p-4 rounded-2xl border border-border bg-muted/30 hover:border-amber-500/50 transition-all flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
+                    <Receipt className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">
+                      Bảng Kê Hóa Đơn & Chứng Từ (Tổng Hợp / Theo Danh Mục)
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Xem và xuất bảng kê hóa đơn kèm chứng từ gốc, tùy chọn xuất tổng hoặc lọc theo từng danh mục cụ thể (Hội phí, Vé sự kiện, F&B, Tài trợ...).
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportModalOpen(false);
+                    setInvoiceExportModalOpen(true);
+                  }}
+                  className="shrink-0 px-4 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm hover:bg-amber-700 cursor-pointer"
+                >
+                  <Receipt className="h-4 w-4" />
+                  <span>Mở Bảng Kê</span>
+                </button>
+              </div>
             </div>
 
             {/* Footer */}
@@ -933,6 +986,15 @@ function FinanceReport() {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImportSuccess={() => txQuery.refetch()}
+      />
+
+      {/* Invoice & Statement Export Modal (Total or By Category) */}
+      <InvoiceExportModal
+        open={invoiceExportModalOpen}
+        onClose={() => setInvoiceExportModalOpen(false)}
+        sourceType="finance"
+        title={`BẢNG KÊ & HÓA ĐƠN THU CHI TÀI CHÍNH (${periodLabels[period].toUpperCase()})`}
+        items={invoiceItems}
       />
     </AppShell>
   );

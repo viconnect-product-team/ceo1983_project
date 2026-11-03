@@ -1165,7 +1165,7 @@ function EventsScreen() {
         toast.success(`Đăng ký thành công! Số vé may mắn của bạn: ${luckyNum}`);
       } else {
         toast.success(
-          "Đã tiếp nhận đăng ký tham gia sự kiện! Vui lòng quét mã VietQR để hoàn tất thanh toán và kích hoạt vé QR.",
+          "Đã tiếp nhận đăng ký tham gia sự kiện! Vui lòng quét mã VNPAY-QR để hoàn tất thanh toán và kích hoạt vé QR.",
         );
       }
       reload();
