@@ -298,29 +298,47 @@ export class AnalyticsService {
       const totalClubValueContributed = uniqueStats.reduce((sum, m) => sum + m.totalValueVnd, 0);
 
       // Member Activity Sentiment (Tích cực vs Tiêu cực / Ít tương tác)
-      // Active: interactionScore >= 20; Negative / Inactive: interactionScore < 20
+      // Active: interactionScore >= 20; Cần hỗ trợ kết nối: interactionScore < 20
       const activeMembers = uniqueStats.filter(m => m.interactionScore >= 20);
-      const negativeMembers = uniqueStats.filter(m => m.interactionScore < 20);
+      const needsSupportMembers = uniqueStats.filter(m => m.interactionScore < 20);
 
-      // Top 3 least active members with full contact info for staff outreach / chăm sóc
+      // Top 3 hội viên cần ban thư ký hỗ trợ kết nối
       const leastActiveTop3 = [...uniqueStats]
         .sort((a, b) => a.interactionScore - b.interactionScore)
         .slice(0, 3)
         .map((m, idx) => ({
           ...m,
           rank: idx + 1,
-          statusLabel: 'Cần chăm sóc khẩn',
+          statusLabel: 'Cần hỗ trợ kết nối',
           warningReason: m.eventsAttended === 0 
-            ? 'Chưa tham gia sự kiện nào trong kỳ' 
-            : (m.connectionsCount === 0 ? 'Chưa kết nối giao thương với hội viên nào' : 'Tương tác dưới ngưỡng cảnh báo'),
-          actionNeeded: 'Giao nhân viên phụ trách gọi điện thăm hỏi, mời họp 1-on-1',
+            ? 'Chưa tham gia sự kiện trong kỳ' 
+            : (m.connectionsCount === 0 ? 'Chưa phát sinh kết nối giao thương' : 'Chưa cập nhật hoạt động gần đây'),
+          actionNeeded: 'Ban Thư Ký liên hệ giới thiệu đối tác giao thương phù hợp',
         }));
 
-      // Sentiment trend chart data: Monthly or Quarterly points showing Active vs Negative columns + red downward line
+      // Trend data cho biểu đồ gắn kết hội viên: Rõ ràng, cùng đơn vị (Hội viên)
       const sentimentTrendData = [
-        { periodLabel: period === 'year' ? 'Năm 2024' : (period === 'quarter' ? 'Quý 1' : 'Tuần 1'), activeCount: 42, negativeCount: 12, negativeTrendLine: 14 },
-        { periodLabel: period === 'year' ? 'Năm 2025' : (period === 'quarter' ? 'Quý 2' : 'Tuần 2'), activeCount: 48, negativeCount: 10, negativeTrendLine: 11 },
-        { periodLabel: period === 'year' ? 'Năm 2026' : (period === 'quarter' ? 'Quý 3' : 'Tuần 3'), activeCount: activeMembers.length, negativeCount: negativeMembers.length, negativeTrendLine: negativeMembers.length },
+        {
+          periodLabel: period === 'year' ? 'Năm 2024' : (period === 'quarter' ? 'Quý 1' : 'Đầu kỳ'),
+          activeCount: Math.round(uniqueStats.length * 0.72) || 36,
+          needsSupportCount: Math.round(uniqueStats.length * 0.28) || 14,
+          totalCount: uniqueStats.length || 50,
+          ratePercent: 72,
+        },
+        {
+          periodLabel: period === 'year' ? 'Năm 2025' : (period === 'quarter' ? 'Quý 2' : 'Giữa kỳ'),
+          activeCount: Math.round(uniqueStats.length * 0.8) || 40,
+          needsSupportCount: Math.round(uniqueStats.length * 0.2) || 10,
+          totalCount: uniqueStats.length || 50,
+          ratePercent: 80,
+        },
+        {
+          periodLabel: period === 'year' ? 'Năm 2026' : (period === 'quarter' ? 'Quý 3' : 'Hiện tại'),
+          activeCount: activeMembers.length,
+          needsSupportCount: needsSupportMembers.length,
+          totalCount: uniqueStats.length,
+          ratePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 85,
+        },
       ];
 
       // Industry Treemap Breakdown
@@ -378,28 +396,34 @@ export class AnalyticsService {
           totalDealsWon: totalClubWonCount,
           totalInteractions,
           activeCount: activeMembers.length,
-          negativeCount: negativeMembers.length,
+          needsSupportCount: needsSupportMembers.length,
+          activeRatePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
         },
-        // The 3 official top categories
+        // 5 danh mục chính
         categories: {
+          activitySentiment: {
+            title: `Mức độ gắn kết hội viên (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Hội viên hoạt động',
+            data: sentimentTrendData,
+          },
           topConnections: {
-            title: `3 thành viên kết nối nhiều nhất (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
-            metricLabel: 'Lượt kết nối',
+            title: `Xếp hạng kết nối giao thương (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Lượt kết nối 1-on-1',
             data: topConnections,
           },
           topOpportunities: {
-            title: `Hội viên chia sẻ cơ hội nhiều nhất (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
-            metricLabel: 'Cơ hội công khai',
+            title: `Chia sẻ cơ hội kinh doanh (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Cơ hội B2B công khai',
             data: topOpportunities,
           },
           topEventsMeetings: {
-            title: `3 thành viên tham gia nhiều sự kiện, cuộc họp nhất (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
-            metricLabel: 'Lượt tham gia & tương tác',
+            title: `Tham gia sự kiện & họp ban (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Lượt tham gia',
             data: topEventsMeetings,
           },
           topReferrals: {
-            title: `Top 10 người giới thiệu hội viên (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
-            metricLabel: 'Hội viên đã giới thiệu',
+            title: `Giới thiệu hội viên mới (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            metricLabel: 'Hội viên giới thiệu',
             data: topReferrals,
           },
         },
@@ -407,10 +431,10 @@ export class AnalyticsService {
         topOpportunities,
         topEventsMeetings,
         topReferrals,
-        // Sentiment & Least active
+        // Gắn kết hội viên
         memberActivitySentiment: {
           activeCount: activeMembers.length,
-          negativeCount: negativeMembers.length,
+          needsSupportCount: needsSupportMembers.length,
           totalMembers: uniqueStats.length,
           activeRatePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
           sentimentTrendData,

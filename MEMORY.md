@@ -1,5 +1,42 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 03/11/2026 (v10.25): Tái Thiết Toàn Diện Hệ Thống Thống Kê & Báo Cáo (CRM & Mobile App), Tinh Gọn Giao Diện Đẳng Cấp Doanh Nhân Theo Chuẩn 5 Màu & Chuẩn Hóa Văn Phong B2B ([NODE-CRM-014], [NODE-APP-013], [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-008], [NODE-CRM-010], [NODE-CRM-011])**:
+  1. *Hạng Mục 1: Khắc Phục Triệt Để & Tái Cấu Trúc Hệ Thống Thống Kê - Báo Cáo*:
+     - Tái thiết Backend Analytics Service (`apps/ceo1983_app_be/src/analytics/analytics.service.ts`):
+       + Loại bỏ hoàn toàn các thuật ngữ phản cảm và sai lệch văn hóa B2B ("thành viên tiêu cực (cột đỏ)", "chăm sóc khẩn", "bắn tin").
+       + Chuẩn hóa thành chỉ số "Mức độ gắn kết hội viên" với 2 nhóm rõ ràng: Hội viên hoạt động tích cực (`activeMembers`) và Hội viên cần hỗ trợ kết nối (`needsSupportMembers`).
+       + Chuẩn hóa đơn vị đo lường và cấu trúc trả về cho 5 danh mục: Gắn kết hội viên, Kết nối giao thương 1-on-1, Chia sẻ cơ hội kinh doanh B2B công khai, Sự kiện & cuộc họp, Giới thiệu hội viên mới.
+     - Tái thiết Dashboard Thống Kê CRM Quản Trị (`apps/ceo1983_app_fe/src/routes/analytics.tsx`):
+       + Tinh gọn biểu đồ Recharts: Khắc phục tình trạng nhồi nhét 4 cột Bar + 2 đường Line gây lệch tỷ lệ và khó hiểu; chuyển thành biểu đồ 2 cột đối xứng (Thực tế đạt được màu Xanh Navy `#003B95` vs Chỉ tiêu kế hoạch/Cần hỗ trợ màu Đỏ `#DC2626` / Slate `#64748B`) kèm 1 đường Line xu hướng tỷ lệ (%) màu Xanh lá `#10B981`. Cột có `maxBarSize=36`, khoảng cách margin chuẩn đối xứng không cắt trục.
+       + Chuẩn hóa bộ 4 thẻ KPI cân đối theo 4 nhóm màu chuẩn (Navy, Emerald, Amber, Red).
+       + Thiết kế lại Bục vinh danh Top 3 đối xứng trang nhã: Hạng 2 Bạch Kim (Bên trái) | Hạng 1 Quán Quân Xanh Navy viền Vàng (Ở giữa cao nhất) | Hạng 3 Vàng Đồng (Bên phải).
+       + Bảng xếp hạng Top 4-10 ngay ngắn, trang nhã, không dùng icon hay hiệu ứng bay nhảy phản cảm.
+     - Tái thiết Màn hình Thống Kê Mobile App (`apps/ceo1983_app_fe/src/routes/association.analytics.tsx`):
+       + Tinh gọn 4 tab nghiệp vụ rõ ràng: "Kết Nối Giao Thương", "Cơ Hội Kinh Doanh", "Sự Kiện & Cuộc Họp", "Phát Triển Hội Viên".
+       + Tối ưu biểu đồ ComposedChart trên màn hình di động: Chiều cao `h-56`, margin cân xứng không cắt trục Y, gỡ bỏ bộ lọc gây rối rắm ("Vừa tăng vừa giảm / Chỉ tăng / Chỉ giảm") và các khối text giải thích dài dòng, thay bằng chú thích 1 dòng thanh lịch.
+       + Bục vinh danh Top 3: Bỏ màu cyan chói và animation bounce, chuẩn hóa bục bậc thang màu Navy `#003B95` viền Vàng `#F59E0B`.
+  2. *Hạng Mục 2: Chuẩn Hóa Bộ 5 Màu Nghiêm Ngặt & Loại Bỏ Icon Hardcoded Toàn Diện Trên CRM*:
+     - Nghiêm cấm sử dụng các màu ngoài quy chuẩn (loại bỏ tím `#8B5CF6`, hồng `#EC4899`, cyan `#06B6D4`, cam chói).
+     - Áp dụng nghiêm ngặt bộ 5 màu:
+       + Trắng (`#FFFFFF`): Nền thẻ, text trên nền tối.
+       + Xanh Navy (`#003B95`): Màu thương hiệu chủ đạo, nút hành động chính, Quán quân Hạng 1.
+       + Đen / Chì đậm (`#0F172A` / `#334155`): Text chính, thẻ Dark, Á quân Hạng 2.
+       + Vàng Hổ Phách (`#F59E0B`): Vinh danh, điểm thưởng, Á quân Hạng 3.
+       + Đỏ (`#DC2626`): Cảnh báo, trễ hạn, ghi nhận khoản chi, hội viên cần hỗ trợ.
+       + Xanh Lá (`#10B981`): Doanh thu, tăng trưởng, đã thanh toán, tỷ lệ đạt.
+     - Loại bỏ toàn bộ các icon hardcode bay nhảy (Sparkles animate-pulse, Crown animate-bounce, Star...) tại các nút bấm và tiêu đề.
+     - Gỡ bỏ hoàn toàn emoji rườm rà tại `Sidebar.tsx` (nhóm Thống kê, Thông báo, Quản lý công việc).
+     - Đồng bộ lại hệ thống thẻ metric cards tại Sổ quỹ thu (`income.tsx`), Sổ quỹ chi (`expenses.tsx`), Báo cáo tài chính (`finance-report.tsx`), Dashboard điều hành (`ExecutiveDashboard.tsx`), Quản lý sự kiện (`event-registrations.tsx`).
+  3. *Hạng Mục 3: Refactor Toàn Bộ Tiêu Đề & Nội Dung Chuẩn Văn Phong Doanh Nhân*:
+     - Thay thế toàn bộ các từ ngữ thừa thãi, rườm rà gây hiểu nhầm:
+       + "Thiết Kế Poster Thư Mời" thay bằng "Tạo Poster Thư Mời".
+       + "Bắn Tin Nhắc Kèm Poster" / "Bắn Tin Nhắc Sự Kiện" thay bằng "Gửi Thông Báo Kèm Poster" / "Gửi Thông Báo Sự Kiện".
+       + "Quét QR / Thêm người tham gia" thay bằng "Thêm Người Tham Dự".
+       + Loại bỏ các từ ngữ phản cảm ("thần thánh", "cột đỏ tiêu cực", "bắn tin").
+  4. *Kiểm Thử Chất Lượng Mã Nguồn*:
+     - Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> Exit Code 0 (0 errors).
+
 - **Bản cập nhật ngày 03/11/2026 (v10.24): Hoàn Thiện Poster Thư Mời Sự Kiện Dynamic Studio, Refactor Menu Sidebar CRM, Chuẩn Hóa Luồng Thanh Toán VNPAY-QR Kèm Atomic Transactions & Xuất Hóa Đơn/Bảng Kê Tổng Hợp/Theo Danh Mục ([NODE-CRM-008], [NODE-CRM-001], [NODE-CORE-001], [NODE-CRM-010], [NODE-CRM-011])**:
   1. *Hạng Mục 1: Poster Thư Mời Sự Kiện Dynamic Studio Theo Phong Cách Hoàng Gia*:
      - Xây dựng component `EventPosterStudioModal.tsx` tại `apps/ceo1983_app_fe/src/components/dashboard/`:

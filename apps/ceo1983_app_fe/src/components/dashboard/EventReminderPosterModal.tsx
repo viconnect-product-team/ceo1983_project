@@ -281,15 +281,15 @@ export function EventReminderPosterModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-foreground">
-                  Bắn Tin Nhắc Sự Kiện Kèm Poster Cho Hội Viên
+                <h2 className="text-base sm:text-lg font-bold text-foreground">
+                  Gửi Thông Báo Kèm Poster Sự Kiện
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  Targeted Broadcast
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-[#003B95] dark:bg-blue-950 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
+                  Thông Báo Hội Viên
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Gửi thông báo đẩy và tin nhắn trực tiếp kèm hình ảnh poster tới các hội viên đã đăng ký sự kiện thành công
+                Gửi thông báo đẩy và nội dung thư mời kèm poster tới các hội viên đăng ký sự kiện
               </p>
             </div>
           </div>
@@ -309,7 +309,7 @@ export function EventReminderPosterModal({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Ticket className="size-4 text-amber-500" />
-                <span>1. Chọn Sự Kiện Cần Bắn Tin Nhắc</span>
+                <span>1. Chọn Sự Kiện Mục Tiêu</span>
               </label>
               {loadingEvents && <span className="text-[11px] text-muted-foreground animate-pulse">Đang tải sự kiện...</span>}
             </div>
@@ -644,10 +644,10 @@ export function EventReminderPosterModal({
               type="button"
               disabled={isSending || activeRecipientsCount === 0}
               onClick={handleSendReminder}
-              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+              className="px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] disabled:opacity-50 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
             >
               <Send className="size-3.5" />
-              <span>{isSending ? "Đang bắn tin nhắc..." : `BẮN TIN NHẮC KÈM POSTER (${activeRecipientsCount})`}</span>
+              <span>{isSending ? "Đang gửi thông báo..." : `Gửi Thông Báo (${activeRecipientsCount})`}</span>
             </button>
           </div>
         </div>

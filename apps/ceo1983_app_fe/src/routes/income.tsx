@@ -549,38 +549,38 @@ function IncomePage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleExport}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
-              <Download className="h-4 w-4 text-muted-foreground" />
-              {t("common.exportExcel")}
+              <Download className="h-4 w-4" />
+              <span>Xuất Excel</span>
             </button>
             <button
               onClick={() => setInvoiceExportOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/60 dark:bg-amber-950/40 px-3.5 py-2 text-sm font-medium text-amber-800 dark:text-amber-300 shadow-[var(--shadow-card)] hover:bg-amber-100/60 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-xs cursor-pointer transition"
             >
-              <Receipt className="h-4 w-4 text-amber-600" />
+              <Receipt className="h-4 w-4" />
               <span>Xuất Hóa Đơn & Bảng Kê</span>
             </button>
             <button
               onClick={() => setImportModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-[var(--shadow-card)] hover:bg-muted"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-xs cursor-pointer transition"
             >
-              <Upload className="h-4 w-4 text-emerald-600" />
-              Import Excel
+              <Upload className="h-4 w-4" />
+              <span>Nhập Excel</span>
             </button>
             <button
               onClick={() => openCreate("event_walkin", "cash")}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 px-3.5 py-2 text-sm font-black text-slate-950 shadow-sm shadow-amber-500/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
               <Banknote className="h-4 w-4" />
-              Thu Tiền Mặt Đột Xuất
+              <span>Thu Tiền Mặt Trực Tiếp</span>
             </button>
             <button
               onClick={() => openCreate("membership_fee", "bank")}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition"
             >
               <Plus className="h-4 w-4" />
-              Lập Phiếu Thu
+              <span>Lập Phiếu Thu</span>
             </button>
           </div>
         }
@@ -623,71 +623,71 @@ function IncomePage() {
         </div>
       )}
 
-      {/* ── CHẾ ĐỘ 1: DASHBOARD TỔNG HỢP (4 THẺ KPI + BẢNG EXCEL CO DÃN CỘT) ── */}
+      {/* ── CHẾ ĐỘ 1: DASHBOARD TỔNG HỢP (4 THẺ KPI CHUẨN MÀU + BẢNG EXCEL CO DÃN CỘT) ── */}
       {viewMode === "dashboard" && (
         <>
-          {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+          {/* ── 4 METRIC CARDS CHUẨN MÀU: XANH NAVY - XANH LÁ - VÀNG - ĐEN ── */}
           <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Tổng thu quỹ (Sky gradient - Blue) */}
-            <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG THU QUỸ</div>
+            {/* Card 1: Tổng thu quỹ (Xanh Navy) */}
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[#003B95] dark:text-blue-400 text-xs font-bold uppercase tracking-wider">TỔNG THU QUỸ</span>
+                <span className="size-2 rounded-full bg-[#003B95]" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(totalIncome)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
                 Toàn bộ các nguồn thu quỹ hội
               </div>
             </div>
 
-            {/* Card 2: Đã Thu Thực Tế (Emerald gradient - Green) */}
+            {/* Card 2: Đã Thu Thực Tế (Xanh Lá) */}
             <div
               onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
-              className={`h-32 p-4 bg-gradient-to-b from-emerald-100 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${statusFilter === "completed" ? "ring-2 ring-emerald-500" : ""
+              className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs cursor-pointer hover:shadow-md transition-all ${statusFilter === "completed" ? "ring-2 ring-emerald-500" : ""
                 }`}
             >
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ THU THỰC TẾ</div>
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">ĐÃ THU THỰC TẾ</span>
+                <span className="size-2 rounded-full bg-emerald-500" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(completedIncome)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
-                Đã thanh toán &amp; vào quỹ an toàn
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
+                Đã nộp vào tài khoản quỹ
               </div>
             </div>
 
-            {/* Card 3: Chờ Thanh Toán (Amber / Orange gradient) */}
+            {/* Card 3: Chờ Thanh Toán (Vàng hổ phách) */}
             <div
               onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
-              className={`h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs cursor-pointer hover:shadow-md transition-all ${statusFilter === "pending" ? "ring-2 ring-amber-500" : ""
+              className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs cursor-pointer hover:shadow-md transition-all ${statusFilter === "pending" ? "ring-2 ring-amber-500" : ""
                 }`}
             >
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CHỜ THANH TOÁN</div>
+              <div className="flex items-center justify-between">
+                <span className="text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">CHỜ THANH TOÁN</span>
+                <span className="size-2 rounded-full bg-amber-500" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(pendingIncome)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
                 {pendingCount} khoản đang chờ xác nhận
               </div>
             </div>
 
-            {/* Card 4: Thu Tiền Mặt (Violet gradient - Indigo) */}
-            <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
-              <div className="h-8 flex items-center gap-2">
-                <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
-                <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">THU TIỀN MẶT</div>
+            {/* Card 4: Thu Tiền Mặt (Đen / Slate) */}
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider">THU TIỀN MẶT</span>
+                <span className="size-2 rounded-full bg-slate-500" />
               </div>
-              <div className="text-slate-900 dark:text-slate-100 text-2xl font-bold font-['Inter'] leading-7">
+              <div className="text-slate-900 dark:text-slate-100 text-2xl font-black">
                 {fmt.money(incomeCash)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter']">
+              <div className="text-slate-500 dark:text-slate-400 text-xs">
                 Thu trực tiếp tại quầy &amp; sự kiện
               </div>
             </div>

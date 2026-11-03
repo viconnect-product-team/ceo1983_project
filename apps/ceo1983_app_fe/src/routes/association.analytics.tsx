@@ -656,26 +656,22 @@ export function AssociationAnalyticsScreen() {
         {[
           {
             id: "top_connections",
-            label: `3 thành viên kết nối nhiều nhất (${timeRange === "month" ? "tháng" : timeRange === "quarter" ? "quý" : "năm"})`,
-            shortLabel: "Top Kết Nối",
+            shortLabel: "Kết Nối Giao Thương",
             icon: Handshake,
           },
           {
             id: "top_opportunities",
-            label: `Hội viên chia sẻ cơ hội nhiều nhất (${timeRange === "month" ? "tháng" : timeRange === "quarter" ? "quý" : "năm"}) - Công khai`,
-            shortLabel: "Top Chia Sẻ Cơ Hội",
+            shortLabel: "Cơ Hội Kinh Doanh",
             icon: Sparkles,
           },
           {
             id: "top_events_meetings",
-            label: `3 thành viên tham gia nhiều sự kiện, họp nhất (${timeRange === "month" ? "tháng" : timeRange === "quarter" ? "quý" : "năm"})`,
-            shortLabel: "Top Tham Gia & Tương Tác",
+            shortLabel: "Sự Kiện & Cuộc Họp",
             icon: Calendar,
           },
           {
             id: "top_referrals",
-            label: `Top người giới thiệu hội viên (${timeRange === "month" ? "tháng" : timeRange === "quarter" ? "quý" : "năm"})`,
-            shortLabel: "Top Người Giới Thiệu",
+            shortLabel: "Phát Triển Hội Viên",
             icon: UserPlus,
           },
         ].map((tab) => {
@@ -686,9 +682,9 @@ export function AssociationAnalyticsScreen() {
               key={tab.id}
               type="button"
               onClick={() => setActiveCategory(tab.id as AnalyticsCategory)}
-              className={`shrink-0 px-3 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isActive
-                  ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white shadow-md font-black"
+                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
                   : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
               }`}
             >
@@ -700,68 +696,35 @@ export function AssociationAnalyticsScreen() {
       </div>
 
       <div className="px-3 sm:px-4 pt-3.5 space-y-4">
-        {/* ── 1. BIỂU ĐỒ CỘT & ĐƯỜNG LUÔN HIỆN LÊN ĐẦU TIÊN (Theo yêu cầu CEO 1983) ── */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        {/* ── 1. BIỂU ĐỒ CỘT & ĐƯỜNG CÂN ĐỐI ── */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <BarChart3 className="size-4 text-[#003B95] dark:text-amber-400" />
-                <span>Biểu Đồ Xu Hướng ({timeRange === "month" ? "Tháng" : timeRange === "quarter" ? "Quý" : "Năm"})</span>
-                <span className="size-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                <span>Biểu Đồ Xu Hướng ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : "Năm Tài Khóa"})</span>
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Cột thể hiện khối lượng giao thương, đường kẻ đo lường chỉ số tăng trưởng & avatar vinh danh Top
+                Cột thể hiện khối lượng thực tế, đường đo lường tỷ lệ tăng trưởng
               </p>
             </div>
 
-            {/* BỘ LỌC 3 CHỨC NĂNG XEM BIỂU ĐỒ: VỪA TĂNG VỪA GIẢM | CHỈ TĂNG | CHỈ GIẢM */}
-            <div className="inline-flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl self-start sm:self-auto shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setTrendFilter("all")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  trendFilter === "all"
-                    ? "bg-white dark:bg-[#003B95] text-[#003B95] dark:text-white shadow-xs font-black"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                }`}
-                title="Hiển thị toàn bộ các mốc tăng và giảm"
-              >
-                <Activity className="size-3" />
-                <span>Vừa tăng vừa giảm</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTrendFilter("up")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  trendFilter === "up"
-                    ? "bg-emerald-600 text-white shadow-xs font-black"
-                    : "text-emerald-700 dark:text-emerald-400 hover:text-emerald-900"
-                }`}
-                title="Chỉ hiển thị các mốc tăng trưởng tích cực"
-              >
-                <TrendingUp className="size-3" />
-                <span>Chỉ tăng</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTrendFilter("down")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  trendFilter === "down"
-                    ? "bg-red-600 text-white shadow-xs font-black"
-                    : "text-red-600 dark:text-red-400 hover:text-red-800"
-                }`}
-                title="Chỉ hiển thị các mốc có xu hướng sụt giảm cần quan tâm"
-              >
-                <TrendingDown className="size-3" />
-                <span>Chỉ giảm</span>
-              </button>
+            <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300 shrink-0">
+              <span className="flex items-center gap-1">
+                <span className="size-2.5 rounded-xs bg-[#003B95]" />
+                Thực tế
+              </span>
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="w-3 h-0.5 bg-[#10B981]" />
+                Tăng trưởng
+              </span>
             </div>
           </div>
 
           {/* Recharts Composed Chart Canvas */}
-          <div className="h-60 w-full pt-2">
+          <div className="h-56 w-full pt-1">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+              <ComposedChart data={chartData} margin={{ top: 15, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
                 <XAxis
                   dataKey="name"
@@ -781,9 +744,9 @@ export function AssociationAnalyticsScreen() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="p-2.5 rounded-xl bg-slate-900 text-white text-xs shadow-xl border border-slate-700">
-                          <p className="font-bold">{label}</p>
+                          <p className="font-bold border-b border-slate-800 pb-1 mb-1">{label}</p>
                           <p className="text-blue-300">Khối lượng: {payload[0]?.value}</p>
-                          <p className="text-cyan-400">Chỉ số: {payload[1]?.value}</p>
+                          <p className="text-emerald-400">Tăng trưởng: {payload[1]?.value}%</p>
                         </div>
                       );
                     }
@@ -792,98 +755,21 @@ export function AssociationAnalyticsScreen() {
                 />
                 <Bar
                   dataKey="columnVal"
-                  fill={trendFilter === "down" ? "#DC2626" : trendFilter === "up" ? "#059669" : "#003B95"}
-                  radius={[6, 6, 0, 0]}
-                  maxBarSize={36}
-                >
-                  {filteredChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        trendFilter === "down"
-                          ? "#DC2626"
-                          : trendFilter === "up"
-                          ? "#059669"
-                          : entry.isTop
-                          ? "#06B6D4"
-                          : entry.isUp
-                          ? "#003B95"
-                          : "#DC2626"
-                      }
-                      opacity={0.9}
-                    />
-                  ))}
-                </Bar>
+                  name="Khối lượng"
+                  fill="#003B95"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={32}
+                />
                 <Line
                   type="monotone"
                   dataKey="lineVal"
-                  stroke={trendFilter === "down" ? "#DC2626" : trendFilter === "up" ? "#059669" : "#003B95"}
+                  name="Tăng trưởng"
+                  stroke="#10B981"
                   strokeWidth={2.5}
-                  dot={renderTopAvatarDot}
-                  activeDot={{ r: 6, fill: "#06B6D4" }}
+                  dot={{ r: 4, fill: "#10B981", stroke: "#ffffff", strokeWidth: 1.5 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
-
-          {/* ── 4 TRƯỜNG CHÚ THÍCH DƯỚI BIỂU ĐỒ ── */}
-          <div className="pt-3 border-t border-slate-100 dark:border-white/10 space-y-2">
-            <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-              Chú giải chỉ số &amp; Màu sắc biểu đồ ({trendFilter === "all" ? "Toàn bộ" : trendFilter === "up" ? "Chỉ hiển thị tăng" : "Chỉ hiển thị giảm"}):
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px]">
-              {/* Trường 1: Cột khối lượng */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/5">
-                <span
-                  className="w-3.5 h-3.5 rounded-md shrink-0 mt-0.5 shadow-xs"
-                  style={{
-                    backgroundColor:
-                      trendFilter === "down" ? "#DC2626" : trendFilter === "up" ? "#059669" : "#003B95",
-                  }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white">
-                    {trendFilter === "down" ? "Cột đỏ sụt giảm (#DC2626)" : trendFilter === "up" ? "Cột xanh tăng trưởng (#059669)" : "Cột xanh Navy (#003B95)"}
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Khối lượng / Giá trị giao dịch thực tế phát sinh của các thành viên trong từng mốc thời gian.
-                  </p>
-                </div>
-              </div>
-
-              {/* Trường 2: Đường chỉ số */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/5">
-                <span className="w-3.5 h-3.5 rounded-md bg-[#059669] shrink-0 mt-0.5 shadow-xs" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white">Đường chỉ số Xanh Lục (#059669)</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Tỷ lệ tăng trưởng &amp; mức độ hoàn thành chỉ tiêu KPI giao thương so với chu kỳ liền kề.
-                  </p>
-                </div>
-              </div>
-
-              {/* Trường 3: Điểm mốc Vàng Amber */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/5">
-                <span className="w-3.5 h-3.5 rounded-md bg-[#B8860B] shrink-0 mt-0.5 shadow-xs" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white">Điểm mốc Vàng Hoàng Gia (#B8860B)</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Tần suất tương tác B2B, số lượt kết nối chia sẻ cơ hội hoặc phản hồi deal thành công.
-                  </p>
-                </div>
-              </div>
-
-              {/* Trường 4: Avatar / Huy hiệu Top 1 */}
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/5">
-                <span className="w-3.5 h-3.5 rounded-md bg-[#06B6D4] shrink-0 mt-0.5 shadow-xs" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-900 dark:text-white">Đỉnh kim cương &amp; Avatar Top 1</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Doanh nhân đạt thành tích giao thương cao nhất kỳ, vinh danh giải thưởng Kim Cương.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1103,78 +989,39 @@ export function AssociationAnalyticsScreen() {
           </div>
         </div>
 
-        {/* ── 4 THẺ KPI CHI TIẾT THEO DANH MỤC ĐANG CHỌN (kpiCards) ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          {kpiCards.map((kpi, idx) => {
-            const Icon = kpi.icon;
-            return (
-              <div
-                key={idx}
-                className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-100 dark:border-slate-800 shadow-2xs space-y-1"
-              >
-                <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[10.5px] font-semibold truncate">{kpi.label}</span>
-                  <Icon className="size-3.5 text-[#1E3A8A] dark:text-amber-400 shrink-0" />
-                </div>
-                <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
-                  {kpi.value}
-                </div>
-                <div className="text-[9.5px] font-bold text-[#1E3A8A] dark:text-blue-400 truncate">
-                  {kpi.subtext}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ── BỤC VINH DANH GIẢI THƯỞNG 3 NGƯỜI ĐỨNG TOP: KIM CƯƠNG - BẠCH KIM - VÀNG ── */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-4">
+        {/* ── BỤC VINH DANH TOP 3 HỘI VIÊN XUẤT SẮC: HẠNG 1 (GIỮA) - HẠNG 2 (TRÁI) - HẠNG 3 (PHẢI) ── */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-4">
           <div className="text-center">
-            <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center justify-center gap-1.5">
-              <span>🏆 BỤC VINH DANH TOP 3 XUẤT SẮC NHẤT</span>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Vinh Danh Top 3 Xuất Sắc Nhất
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Top 1 <strong>Kim Cương 💎</strong> ở giữa cao nhất • Top 2 <strong>Bạch Kim 🪙</strong> bên trái • Top 3 <strong>Vàng 🥇</strong> bên phải
+              Hạng 1 ở giữa cao nhất • Hạng 2 bên trái • Hạng 3 bên phải
             </p>
           </div>
 
           {/* Dàn 3 cột chung 1 hàng ngang với bục bậc thang */}
-          <div className="grid grid-cols-3 gap-2 items-end pt-4 pb-2">
+          <div className="grid grid-cols-3 gap-2 items-end pt-3 pb-1">
             {podiumTop3.map((performer) => {
-              const isTop1 = performer.rank === 1; // Kim Cương
-              const isTop2 = performer.rank === 2; // Bạch Kim
-              const isTop3 = performer.rank === 3; // Vàng
+              const isTop1 = performer.rank === 1;
+              const isTop2 = performer.rank === 2;
+              const isTop3 = performer.rank === 3;
 
               return (
                 <div
                   key={performer.rank}
                   className={`flex flex-col items-center text-center transition-all ${
-                    isTop1 ? "order-2 -mt-5 z-10" : isTop2 ? "order-1" : "order-3"
+                    isTop1 ? "order-2 -mt-4 z-10" : isTop2 ? "order-1" : "order-3"
                   }`}
                 >
-                  {/* Avatar và Vương miện / Huy hiệu */}
                   <div className="relative mb-2 flex flex-col items-center">
-                    {isTop1 ? (
-                      <span className="text-2xl animate-bounce mb-0.5" style={{ animationDuration: "2s" }} title="Kim Cương">
-                        💎
-                      </span>
-                    ) : isTop2 ? (
-                      <span className="text-xl mb-0.5" title="Bạch Kim">
-                        🪙
-                      </span>
-                    ) : (
-                      <span className="text-xl mb-0.5" title="Vàng">
-                        🥇
-                      </span>
-                    )}
-
                     <div
-                      className={`relative rounded-full overflow-hidden p-0.5 shadow-md ${
+                      className={`relative rounded-full overflow-hidden p-0.5 shadow-sm ${
                         isTop1
-                          ? "size-16 ring-3 ring-cyan-400 shadow-cyan-400/40"
+                          ? "size-15 ring-2 ring-amber-400 shadow-amber-400/30"
                           : isTop2
-                          ? "size-13 ring-2 ring-slate-300 shadow-slate-300/30"
-                          : "size-13 ring-2 ring-amber-400 shadow-amber-400/30"
+                          ? "size-12 ring-2 ring-slate-400 shadow-slate-300/30"
+                          : "size-12 ring-2 ring-amber-500 shadow-amber-500/30"
                       }`}
                     >
                       <img
@@ -1190,13 +1037,13 @@ export function AssociationAnalyticsScreen() {
                     <span
                       className={`absolute -bottom-1 px-1.5 py-0.2 rounded-full text-[9px] font-black text-white ${
                         isTop1
-                          ? "bg-cyan-500 shadow-sm"
+                          ? "bg-[#003B95] border border-amber-400"
                           : isTop2
-                          ? "bg-slate-500"
-                          : "bg-amber-500"
+                          ? "bg-slate-600"
+                          : "bg-amber-600"
                       }`}
                     >
-                      {performer.tier}
+                      {isTop1 ? "Hạng 1" : isTop2 ? "Hạng 2" : "Hạng 3"}
                     </span>
                   </div>
 
@@ -1207,21 +1054,23 @@ export function AssociationAnalyticsScreen() {
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate w-full px-1">
                     {performer.company}
                   </p>
-                  <p className="text-[10.5px] font-black text-[#003B95] dark:text-cyan-400 truncate w-full px-1 mt-0.5">
+                  <p className="text-[10.5px] font-bold text-[#003B95] dark:text-amber-400 truncate w-full px-1 mt-0.5">
                     {performer.valueStr}
                   </p>
 
-                  {/* Bục Bậc Thang (Podium block) */}
+                  {/* Bục Bậc Thang chuẩn màu */}
                   <div
-                    className={`w-full rounded-t-2xl flex flex-col items-center justify-center mt-2.5 border-t border-x ${
+                    className={`w-full rounded-t-xl flex flex-col items-center justify-center mt-2.5 border-t border-x ${
                       isTop1
-                        ? "h-26 bg-gradient-to-b from-cyan-400/25 via-cyan-400/10 to-transparent border-cyan-400/50 text-cyan-500 font-black text-lg"
+                        ? "h-24 bg-[#003B95] text-white border-amber-400 shadow-xs"
                         : isTop2
-                        ? "h-18 bg-gradient-to-b from-slate-300/25 via-slate-300/10 to-transparent border-slate-300/50 text-slate-400 font-bold text-sm"
-                        : "h-14 bg-gradient-to-b from-amber-400/25 via-amber-400/10 to-transparent border-amber-400/50 text-amber-500 font-bold text-sm"
+                        ? "h-16 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                        : "h-14 bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300"
                     }`}
                   >
-                    <span className="font-black text-sm">{performer.badge}</span>
+                    <span className="font-black text-xs">
+                      {isTop1 ? "Quán Quân" : isTop2 ? "Á Quân 1" : "Á Quân 2"}
+                    </span>
                     <span className="text-[9px] font-medium opacity-80">#{performer.rank}</span>
                   </div>
                 </div>
