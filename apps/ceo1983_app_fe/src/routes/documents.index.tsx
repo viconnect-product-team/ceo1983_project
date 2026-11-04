@@ -1642,22 +1642,22 @@ function DocsPage() {
                       </>
                     )
                   ) : (
-                    <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+                    <div className="self-stretch relative bg-white dark:bg-card rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
                       <div className="relative overflow-x-auto w-full">
-                        <table className="w-full border-separate border-spacing-0 text-sm">
+                        <table className="w-full border-collapse min-w-[1050px] text-sm">
                           <thead>
-                            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                              <th className="sticky left-0 z-20 w-14 bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">STT</th>
-                              <th className="sticky left-[56px] z-20 bg-secondary/90 px-4 py-3 text-xs font-bold border-b border-border">{t("doc.col.name")}</th>
-                              <th className="px-4 py-3 border-b border-border">{t("doc.col.cat")}</th>
-                              <th className="px-4 py-3 border-b border-border">{t("doc.col.type")}</th>
-                              <th className="px-4 py-3 border-b border-border">{t("doc.col.size")}</th>
-                              <th className="px-4 py-3 border-b border-border">{t("doc.col.uploader")}</th>
-                              <th className="px-4 py-3 border-b border-border">{t("doc.col.date")}</th>
-                              <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right text-xs font-bold border-b border-border">{t("common.actions")}</th>
+                            <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
+                              <th className="sticky left-0 z-20 w-14 bg-blue-50/90 dark:bg-blue-950/90 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800 select-none">STT</th>
+                              <th className="sticky left-[56px] z-20 bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">{t("doc.col.name")}</th>
+                              <th className="px-4 py-3 border-b border-r border-slate-200 dark:border-slate-800">{t("doc.col.cat")}</th>
+                              <th className="px-4 py-3 border-b border-r border-slate-200 dark:border-slate-800">{t("doc.col.type")}</th>
+                              <th className="px-4 py-3 border-b border-r border-slate-200 dark:border-slate-800">{t("doc.col.size")}</th>
+                              <th className="px-4 py-3 border-b border-r border-slate-200 dark:border-slate-800">{t("doc.col.uploader")}</th>
+                              <th className="px-4 py-3 border-b border-r border-slate-200 dark:border-slate-800">{t("doc.col.date")}</th>
+                              <th className="sticky right-0 z-20 bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 text-right text-xs font-bold border-b border-l border-slate-200 dark:border-slate-800">{t("common.actions")}</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-border">
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                             {tc.pageRows.map((d, idx) => (
                               <tr
                                 key={d.id}
@@ -1668,12 +1668,12 @@ function DocsPage() {
                                     setPreviewDoc(d);
                                   }
                                 }}
-                                className="group border-b border-border/50 transition hover:bg-secondary/40 cursor-pointer"
+                                className="group border-b border-slate-200 dark:border-slate-800 transition hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer"
                               >
-                                <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+                                <td className="sticky left-0 z-10 bg-card px-3 py-3.5 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-r border-slate-200 dark:border-slate-800">
                                   {(tc.page - 1) * tc.pageSize + idx + 1}
                                 </td>
-                                <td className="sticky left-[56px] z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                                <td className="sticky left-[56px] z-10 bg-card px-4 py-3.5 group-hover:bg-muted/70 border-b border-r border-slate-200 dark:border-slate-800">
                                   <div className="flex items-center gap-3">
                                     <TypeGlyph d={d} size="sm" />
                                     <button
@@ -1693,18 +1693,18 @@ function DocsPage() {
                                     </button>
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-foreground border-b border-border/50">
+                                <td className="px-4 py-3.5 text-foreground border-b border-r border-slate-200 dark:border-slate-800">
                                   <TruncatedText text={d.category} maxWidth="max-w-[160px]" />
                                 </td>
-                                <td className="px-4 py-3 text-[11px] font-semibold uppercase text-muted-foreground border-b border-border/50">
+                                <td className="px-4 py-3.5 text-[11px] font-semibold uppercase text-muted-foreground border-b border-r border-slate-200 dark:border-slate-800">
                                   {d.type}
                                 </td>
-                                <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{d.size}</td>
-                                <td className="px-4 py-3 text-foreground border-b border-border/50">
+                                <td className="px-4 py-3.5 text-muted-foreground border-b border-r border-slate-200 dark:border-slate-800">{d.size}</td>
+                                <td className="px-4 py-3.5 text-foreground border-b border-r border-slate-200 dark:border-slate-800">
                                   <TruncatedText text={d.uploadedBy} maxWidth="max-w-[160px]" />
                                 </td>
-                                <td className="px-4 py-3 text-muted-foreground border-b border-border/50">{fmt.date(d.uploadedAt)}</td>
-                                <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+                                <td className="px-4 py-3.5 text-muted-foreground border-b border-r border-slate-200 dark:border-slate-800">{fmt.date(d.uploadedAt)}</td>
+                                <td className="sticky right-0 z-10 bg-card px-4 py-3.5 group-hover:bg-muted/70 border-b border-l border-slate-200 dark:border-slate-800">
                                   <div className="flex items-center justify-end gap-1">
                                     <PinButton d={d} />
                                     <button

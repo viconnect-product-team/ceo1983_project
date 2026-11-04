@@ -32,7 +32,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canScanEventQr } from "@/lib/checkin-gatekeeper-auth";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useTableControls } from "@/hooks/use-table-controls";
-import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { type EventItem } from "@/lib/events.functions";
 import { fetchNestApi } from "@/lib/api-client";
 import {
@@ -727,30 +727,80 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
           />
         )
       ) : view === "table" ? (
-        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        <div className="self-stretch relative bg-white dark:bg-card rounded-[20px] outline outline-1 outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
           <div className="overflow-x-auto relative w-full">
-            <table className="w-full min-w-[1100px] whitespace-nowrap text-sm border-separate border-spacing-0">
+            <table className="w-full min-w-[1200px] whitespace-nowrap text-sm border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800">
+                <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <th className="sticky left-0 z-20 w-[56px] min-w-[56px] max-w-[56px] bg-blue-50/90 dark:bg-blue-950/90 px-3 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800 select-none">
                     STT
                   </th>
-                  <th className="sticky left-[56px] z-20 min-w-[100px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                  <th className="sticky left-[56px] z-20 min-w-[100px] bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] text-left">
                     Mã
                   </th>
-                  <th className="px-4 py-3 border-b border-border">Tên sự kiện</th>
-                  <th className="px-4 py-3 border-b border-border">Thời gian</th>
-                  <th className="px-4 py-3 border-b border-border">Địa điểm</th>
-                  <th className="px-4 py-3 border-b border-border">Phân loại</th>
-                  <th className="px-4 py-3 border-b border-border">Giá vé / Phí</th>
-                  <th className="px-4 py-3 border-b border-border">Đăng ký / Sức chứa</th>
-                  <th className="px-4 py-3 border-b border-border">Trạng thái</th>
-                  <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                  <SortHeader
+                    label="Tên sự kiện"
+                    columnKey="name"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={260}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Thời gian"
+                    columnKey="date"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Địa điểm"
+                    columnKey="location"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={220}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Phân loại"
+                    columnKey="type"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Giá vé / Phí"
+                    columnKey="ticketPrice"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={140}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <th className="px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 text-left min-w-[150px]">
+                    Đăng ký / Sức chứa
+                  </th>
+                  <SortHeader
+                    label="Trạng thái"
+                    columnKey="status"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <th className="sticky right-0 z-20 min-w-[170px] bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 text-right border-l border-b border-slate-200 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
                     Thao tác
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {tc.pageRows.map((e: any, idx: number) => {
                   const tone =
                     STATUS_TONE[e.status as keyof typeof STATUS_TONE] ?? STATUS_TONE.upcoming;
@@ -758,42 +808,42 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
                   return (
                     <tr
                       key={e.id}
-                      className="group border-b border-border transition-all duration-150 hover:bg-secondary/60 cursor-pointer"
+                      className="group border-b border-slate-200 dark:border-slate-800 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer"
                       onClick={(evt) => {
                         if ((evt.target as HTMLElement).closest("a,button")) return;
                         router.navigate({ to: "/events/$eventId", params: { eventId: e.id } });
                       }}
                     >
-                      <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-r border-b border-border transition-colors">
+                      <td className="sticky left-0 z-10 w-[56px] min-w-[56px] max-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3.5 text-center text-xs font-medium text-muted-foreground border-r border-b border-slate-200 dark:border-slate-800 transition-colors">
                         {(tc.page - 1) * tc.pageSize + idx + 1}
                       </td>
-                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors whitespace-nowrap">
+                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-4 py-3.5 font-mono text-[12px] font-semibold text-primary border-r border-b border-slate-200 dark:border-slate-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors whitespace-nowrap">
                         EV-{e.id.slice(0, 6).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <TruncatedText
                           text={e.name}
                           maxWidth="max-w-[280px]"
                           className="font-semibold text-foreground text-xs"
                         />
                       </td>
-                      <td className="px-4 py-3 text-xs border-b border-border whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <span className="font-semibold text-foreground text-xs">
                           {d.toLocaleDateString("vi-VN")}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs border-b border-border whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                           <TruncatedText text={e.location || "Online / Khách Sạn Daewoo"} maxWidth="max-w-[240px]" className="text-foreground font-medium text-xs" />
                         </div>
                       </td>
-                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <span className="inline-flex rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
                           {t(TYPE_KEY[e.type as EventItem["type"]] ?? "events.type.forum")}
                         </span>
                       </td>
-                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         {e.ticketPrice && Number(e.ticketPrice) > 0 ? (
                           <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                             {fmt.money(Number(e.ticketPrice))}
@@ -804,7 +854,7 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <div className="text-xs font-semibold text-foreground">
                           {e.registered} / {e.capacity}
                         </div>
@@ -817,7 +867,7 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
                           />
                         </div>
                       </td>
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800">
                         <span
                           className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                           style={{ background: tone.bg, color: tone.fg }}
@@ -831,7 +881,7 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
                           )}
                         </span>
                       </td>
-                      <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                      <td className="sticky right-0 z-10 min-w-[170px] bg-card group-hover:bg-muted/70 px-4 py-3.5 text-right border-l border-b border-slate-200 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                         <div className="inline-flex items-center gap-1">
                           <button
                             type="button"

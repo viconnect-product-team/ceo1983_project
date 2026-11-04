@@ -53,7 +53,7 @@ import { CURRENT_USER_ID } from "@/lib/networking-data";
 import { useAuth } from "@/context/AuthContext";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
-import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { formatDisplayDate, formatDisplayDateTime } from "@/lib/date-format";
 
 function formatCurrencyInput(val: string): string {
@@ -1044,32 +1044,86 @@ function OpportunitiesPage() {
           {tab === "mine" ? t("opp.empty.mine") : t("opp.empty.browse")}
         </Card>
       ) : view === "table" ? (
-        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        <div className="self-stretch relative bg-white dark:bg-card rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
           <div className="relative overflow-x-auto w-full">
-            <table className="w-full min-w-[1250px] whitespace-nowrap border-separate border-spacing-0 text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">
+            <table className="w-full min-w-[1300px] whitespace-nowrap border-collapse text-sm">
+              <thead>
+                <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <th className="sticky left-0 z-20 w-14 min-w-[56px] bg-blue-50/90 dark:bg-blue-950/90 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800 select-none">
                     STT
                   </th>
-                  <th className="sticky left-[56px] z-20 min-w-[90px] bg-secondary px-3 py-3 border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                  <th className="sticky left-[56px] z-20 min-w-[90px] bg-blue-50/90 dark:bg-blue-950/90 px-3 py-3 border-b border-r border-slate-200 dark:border-slate-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] text-left">
                     Mã
                   </th>
-                  <th className="px-4 py-3 border-b border-border text-left">Cơ hội / Tiêu đề</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Người tạo cơ hội</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Người liên hệ</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Người nhận cơ hội</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Phân loại</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Ngành & Khu vực</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Ngân sách</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Hạn chót</th>
-                  <th className="px-4 py-3 border-b border-border text-left">Trạng thái</th>
-                  <th className="sticky right-0 z-20 min-w-[150px] bg-secondary px-4 py-3 text-right font-bold border-b border-l border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                  <SortHeader
+                    label="Cơ hội / Tiêu đề"
+                    columnKey="title"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={260}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Người tạo cơ hội"
+                    columnKey="poster"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={180}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <th className="px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 text-left min-w-[150px]">
+                    Người liên hệ
+                  </th>
+                  <th className="px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 text-left min-w-[150px]">
+                    Người nhận cơ hội
+                  </th>
+                  <SortHeader
+                    label="Phân loại"
+                    columnKey="type"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <th className="px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 text-left min-w-[140px]">
+                    Ngành & Khu vực
+                  </th>
+                  <SortHeader
+                    label="Ngân sách"
+                    columnKey="budget"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={140}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Hạn chót"
+                    columnKey="deadline"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <SortHeader
+                    label="Trạng thái"
+                    columnKey="status"
+                    sortKey={tc.sortKey}
+                    sortDir={tc.sortDir}
+                    onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
+                  />
+                  <th className="sticky right-0 z-20 min-w-[150px] bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 text-right font-bold border-b border-l border-slate-200 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
                     Thao tác
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {tc.pageRows.map((opp, idx) => {
                   const poster = getPoster(opp.posterId);
                   const isOwner = opp.posterId === CURRENT_USER_ID;
@@ -1084,15 +1138,15 @@ function OpportunitiesPage() {
                   return (
                     <tr
                       key={opp.id}
-                      className="group border-b border-border transition-all duration-150 hover:bg-secondary/60"
+                      className="group border-b border-slate-200 dark:border-slate-800 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                     >
                       {/* Sticky STT */}
-                      <td className="sticky left-0 z-10 w-14 min-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3 text-center text-xs font-medium text-muted-foreground border-b border-r border-border transition-colors">
+                      <td className="sticky left-0 z-10 w-14 min-w-[56px] bg-card group-hover:bg-muted/70 px-3 py-3.5 text-center text-xs font-medium text-muted-foreground border-b border-r border-slate-200 dark:border-slate-800 transition-colors">
                         {(tc.page - 1) * tc.pageSize + idx + 1}
                       </td>
 
                       {/* Sticky Code */}
-                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-3 py-3 font-mono text-[12px] font-semibold text-primary border-b border-r border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                      <td className="sticky left-[56px] z-10 min-w-[100px] bg-card group-hover:bg-muted/70 px-3 py-3.5 font-mono text-[12px] font-semibold text-primary border-b border-r border-slate-200 dark:border-slate-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors">
                         <div className="flex items-center gap-1.5">
                           <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded bg-secondary/40 flex items-center justify-center text-sm">
                             {(() => {
@@ -1119,7 +1173,7 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Title & Description with Tooltip */}
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <Link
                           to="/opportunities/$id"
                           params={{ id: opp.id }}
@@ -1135,7 +1189,7 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Người tạo cơ hội */}
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <Link
                           to="/members/$memberId"
                           params={{ memberId: opp.posterId }}
@@ -1156,7 +1210,7 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Người liên hệ */}
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         {opp.contactName || opp.contactPhone || opp.company ? (
                           <div>
                             <div className="font-semibold text-foreground text-xs">
@@ -1182,7 +1236,7 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Người nhận cơ hội */}
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         {opp.claimedByName ? (
                           <div>
                             <div className="flex items-center gap-1 text-xs font-semibold text-emerald-500">
@@ -1207,12 +1261,12 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Phân loại */}
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <Pill color="primary">{t(opp.type)}</Pill>
                       </td>
 
                       {/* Ngành & Khu vực */}
-                      <td className="px-4 py-3 border-b border-border text-xs">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 text-xs whitespace-nowrap">
                         <div className="font-medium text-foreground">
                           <TruncatedText text={opp.industry} maxWidth="max-w-[300px]" />
                         </div>
@@ -1222,22 +1276,22 @@ function OpportunitiesPage() {
                       </td>
 
                       {/* Ngân sách */}
-                      <td className="px-4 py-3 border-b border-border font-semibold text-xs text-foreground">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 font-semibold text-xs text-foreground whitespace-nowrap">
                         {budget}
                       </td>
 
                       {/* Hạn chót */}
-                      <td className="px-4 py-3 border-b border-border text-xs text-muted-foreground">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 text-xs text-muted-foreground whitespace-nowrap">
                         {fmt.date(opp.deadline)}
                       </td>
 
                       {/* Trạng thái */}
-                      <td className="px-4 py-3 border-b border-border">
+                      <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                         <Pill color={STATUS_COLOR[opp.status]}>{t(STATUS_KEY[opp.status])}</Pill>
                       </td>
 
                       {/* Sticky Thao tác */}
-                      <td className="sticky right-0 z-10 min-w-[150px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-b border-l border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                      <td className="sticky right-0 z-10 min-w-[150px] bg-card group-hover:bg-muted/70 px-4 py-3.5 text-right border-b border-l border-slate-200 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                         <div className="inline-flex items-center gap-1.5 justify-end">
                           <Link
                             to="/opportunities/$id"

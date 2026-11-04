@@ -1,5 +1,33 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 04/11/2026 (v10.33): Phục Hồi Chuẩn Giao Diện CRM Tổng Quan (Executive Dashboard) & Đồng Bộ Hóa Toàn Diện Chuẩn Bảng Excel Kéo Dãn Cột (SortHeader), Phân Trang & Đường Kẻ Grid Cột/Hàng Cho Tất Cả Các Phân Hệ Quản Trị ([NODE-CRM-001], [NODE-CRM-002], [NODE-CRM-003], [NODE-CRM-004], [NODE-CRM-005], [NODE-CRM-006])**:
+  1. *Phục Hồi Chuẩn Giao Diện CRM Tổng Quan (apps/ceo1983_app_fe/src/components/dashboard/ExecutiveDashboard.tsx)*:
+     - Phục hồi lại toàn diện giao diện Tổng quan Ban Điều Hành (Executive Overview Dashboard): Giữ nguyên hệ thống biểu đồ AreaChart tiến độ, các thẻ KPI thống kê tài chính - hội viên - sự kiện, danh sách hoạt động gần đây, sự kiện sắp diễn ra, thông báo và lối tắt thao tác nhanh (Quick Actions).
+     - Áp dụng triệt để quy chuẩn 5 màu tối giản thương hiệu CEO 1983 (White, Navy #003B95, Dark Slate #0F172A, Amber Gold, Sky/Emerald), loại bỏ hoàn toàn các dải màu gradient lòe loẹt.
+  2. *Đồng Bộ Hóa Toàn Diện Chuẩn Bảng Quản Lý Tài Khoản (accounts.tsx) Cho Toàn Bộ CRM*:
+     - **Quản lý Hội viên (`apps/ceo1983_app_fe/src/routes/members.index.tsx`)**:
+       + Cập nhật `thead`: Thẻ `tr` chuẩn chiều cao `h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 font-bold`.
+       + Cột STT căn giữa với `border-r border-slate-200 dark:border-slate-800`.
+       + Áp dụng `SortHeader` kèm độ rộng `width={...}` và tính năng co dãn cột kéo thả mượt mà trên tất cả các cột dữ liệu.
+       + Bổ sung đường kẻ dọc phân tách cột (`border-r border-slate-200 dark:border-slate-800`) và kẻ ngang hàng (`divide-y divide-slate-200 dark:divide-slate-800`) trên 100% các ô `td`, tạo giao diện bảng Excel trực quan, rõ ràng, không bị dính chữ.
+     - **Quản lý Sự kiện (`apps/ceo1983_app_fe/src/routes/events.index.tsx`)**:
+       + Chuyển đổi bảng sang chuẩn `border-collapse`, header `h-16 bg-blue-50/70`, tích hợp `SortHeader` resizable cột Tên sự kiện, Thời gian, Địa điểm, Phân loại, Giá vé, Trạng thái.
+       + Bổ sung đầy đủ đường kẻ cột `border-r border-slate-200 dark:border-slate-800` và hàng `border-b` cho toàn bộ danh sách.
+     - **Cơ hội Giao thương B2B (`apps/ceo1983_app_fe/src/routes/opportunities.index.tsx`)**:
+       + Chuẩn hóa header `h-16 bg-blue-50/70`, `SortHeader` resizable cho Tiêu đề, Người tạo, Phân loại, Ngân sách, Hạn chót, Trạng thái.
+       + Phân tách rõ ràng từng cột bằng viền dọc `border-r` và viền ngang `border-b`.
+     - **Quản lý Hội phí (`apps/ceo1983_app_fe/src/routes/fees.index.tsx`)**:
+       + Chuẩn hóa header `h-16 bg-blue-50/70`, `SortHeader` có co dãn cột cho Mã hóa đơn, Hội viên, Số tiền, Hạn nộp, Ngày đóng, Trạng thái.
+       + Phân tách toàn diện từng ô dữ liệu `FeeRow` bằng viền `border-r` và `border-b`.
+     - **Quản lý Công việc & Họp (`apps/ceo1983_app_fe/src/features/tasks/components/TaskTableView.tsx`)**:
+       + Bổ sung cột STT rõ ràng, header `h-16 bg-blue-50/70`, viền kẻ dọc `border-r border-slate-200` và kẻ ngang hàng chuẩn Excel.
+     - **Quản lý Văn bản & Tài liệu (`apps/ceo1983_app_fe/src/routes/documents.index.tsx`)**:
+       + Cập nhật bảng văn bản dạng lưới Excel chuẩn với header `h-16 bg-blue-50/70`, viền `border-r` và `border-b`.
+  3. *Chất Lượng Mã Nguồn & Kiểm Thử*:
+     - Backend (`apps/ceo1983_app_be`): `tsc --noEmit` đạt 0 lỗi (Exit Code 0).
+     - Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` đạt 0 lỗi (Exit Code 0).
+     - Chụp ảnh kiểm thử trực quan với Microsoft Edge Playwright: Lưu lại hình ảnh giao diện Tổng quan đã phục hồi (`screenshot_crm_overview_restored.png`) và Bảng Hội viên chuẩn Excel (`screenshot_crm_members_table.png`).
+
 - **Bản cập nhật ngày 04/11/2026 (v10.32): Tích Hợp Toàn Diện Cổng Thanh Toán MoMo (MoMo Payment Gateway v2 All-In-One); Bổ Sung Strategy Pattern Đa Cổng MoMo + VNPAY, Webhook IPN Callback Xác Thực HMAC-SHA256, Giao Dịch Database Nguyên Tử & Cập Nhật Giao Diện VnpayPaymentModal Linh Hoạt ([NODE-CORE-001], [NODE-CRM-005], [NODE-APP-003], [NODE-APP-010])**:
   1. *Kiến Trúc Strategy Pattern Cho Đa Cổng Thanh Toán (apps/ceo1983_app_be/src/common/patterns/strategy/payment.strategy.ts)*:
      - Định nghĩa `MoMoPaymentStrategy implements IPaymentStrategy` với `methodCode = 'MOMO'`.

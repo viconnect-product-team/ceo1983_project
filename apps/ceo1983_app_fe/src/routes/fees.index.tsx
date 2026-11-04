@@ -785,19 +785,20 @@ function FeesPage() {
           </div>
         </>
       ) : (
-        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        <div className="self-stretch relative bg-white dark:bg-card rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
           <div className="relative overflow-x-auto w-full">
-            <table className="w-full min-w-[1050px] whitespace-nowrap border-separate border-spacing-0 text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="sticky left-0 z-20 w-14 bg-slate-100 dark:bg-slate-800 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800">STT</th>
+            <table className="w-full min-w-[1050px] whitespace-nowrap border-collapse text-sm">
+              <thead>
+                <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <th className="sticky left-0 z-20 w-14 bg-blue-50/90 dark:bg-blue-950/90 px-3 py-3 text-center text-xs font-bold border-b border-r border-slate-200 dark:border-slate-800 select-none">STT</th>
                   <SortHeader
                     label={t("fees.col.invoice")}
                     columnKey="invoice"
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
-                    className="sticky left-[56px] z-20 bg-secondary/90 border-b border-border"
+                    width={130}
+                    className="sticky left-[56px] z-20 bg-blue-50/90 dark:bg-blue-950/90 border-b border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("fees.col.member")}
@@ -805,7 +806,8 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
-                    className="border-b border-border"
+                    width={240}
+                    className="border-b border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("fees.col.amount")}
@@ -814,7 +816,8 @@ function FeesPage() {
                     sortDir={sortDir}
                     onSort={toggleSort}
                     align="right"
-                    className="border-b border-border"
+                    width={160}
+                    className="border-b border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("fees.col.due")}
@@ -822,7 +825,8 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
-                    className="border-b border-border"
+                    width={130}
+                    className="border-b border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("fees.col.paid")}
@@ -830,7 +834,8 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
-                    className="border-b border-border"
+                    width={130}
+                    className="border-b border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("fees.col.status")}
@@ -838,12 +843,13 @@ function FeesPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onSort={toggleSort}
-                    className="border-b border-border"
+                    width={140}
+                    className="border-b border-r border-slate-200 dark:border-slate-800"
                   />
-                  <th className="sticky right-0 z-20 bg-secondary/90 px-4 py-3 text-right font-bold border-b border-border">{t("fees.col.actions")}</th>
+                  <th className="sticky right-0 z-20 bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 text-right font-bold border-b border-l border-slate-200 dark:border-slate-800">{t("fees.col.actions")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {tc.pageRows.map((r: any, idx: number) => (
                   <FeeRow
                     key={r.id}
@@ -1392,11 +1398,11 @@ function FeeRow({
   const memberCode = r.member?.code || r.memberId || "MB";
 
   return (
-    <tr className="group transition-colors hover:bg-accent/40 border-b border-border/50">
-      <td className="sticky left-0 z-10 bg-card px-3 py-3 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-border/50">
+    <tr className="group transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
+      <td className="sticky left-0 z-10 bg-card px-3 py-3.5 text-center font-mono text-xs font-semibold text-muted-foreground group-hover:bg-muted/70 border-b border-r border-slate-200 dark:border-slate-800">
         {index}
       </td>
-      <td className="sticky left-[56px] z-10 bg-card px-4 py-3 font-mono text-[12px] font-semibold group-hover:bg-muted/70 border-b border-border/50">
+      <td className="sticky left-[56px] z-10 bg-card px-4 py-3.5 font-mono text-[12px] font-semibold group-hover:bg-muted/70 border-b border-r border-slate-200 dark:border-slate-800">
         <Link
           to="/fees/$invoiceId"
           params={{ invoiceId: r.id }}
@@ -1405,7 +1411,7 @@ function FeeRow({
           {r.invoiceNo}
         </Link>
       </td>
-      <td className="px-4 py-3 border-b border-border/50">
+      <td className="px-4 py-3.5 border-b border-r border-slate-200 dark:border-slate-800">
         <Link
           to="/companies/$companyId"
           params={{ companyId: r.member?.id || r.memberId || "unknown" }}
@@ -1426,19 +1432,19 @@ function FeeRow({
           </div>
         </Link>
       </td>
-      <td className="px-4 py-3 text-right font-semibold text-foreground tabular-nums border-b border-border/50">
+      <td className="px-4 py-3.5 text-right font-semibold text-foreground tabular-nums border-b border-r border-slate-200 dark:border-slate-800">
         {formatVnd(r.amount)}
       </td>
-      <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
+      <td className="px-4 py-3.5 text-muted-foreground border-b border-r border-slate-200 dark:border-slate-800">
         {new Date(r.dueDate).toLocaleDateString("vi-VN")}
       </td>
-      <td className="px-4 py-3 text-muted-foreground border-b border-border/50">
+      <td className="px-4 py-3.5 text-muted-foreground border-b border-r border-slate-200 dark:border-slate-800">
         {r.paidAt ? new Date(r.paidAt).toLocaleDateString("vi-VN") : "—"}
       </td>
-      <td className="px-4 py-3 border-b border-border/50">
+      <td className="px-4 py-3.5 border-b border-r border-slate-200 dark:border-slate-800">
         <StatusBadge s={r.status} />
       </td>
-      <td className="sticky right-0 z-10 bg-card px-4 py-3 group-hover:bg-muted/70 border-b border-border/50">
+      <td className="sticky right-0 z-10 bg-card px-4 py-3.5 group-hover:bg-muted/70 border-b border-l border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-end gap-1">
           {r.status !== "paid" ? (
             <>

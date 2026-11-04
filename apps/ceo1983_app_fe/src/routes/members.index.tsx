@@ -1217,12 +1217,12 @@ function MembersPage() {
           ))}
         </div>
       ) : (
-        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        <div className="self-stretch relative bg-white dark:bg-card rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-hidden shadow-xs">
           <div className="overflow-x-auto relative w-full">
-            <table className="w-full text-sm border-separate border-spacing-0">
+            <table className="w-full text-sm border-collapse min-w-[1350px]">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  <th className="sticky left-0 z-20 w-[72px] min-w-[72px] max-w-[72px] bg-slate-100 dark:bg-slate-800 px-2 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800">
+                <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <th className="sticky left-0 z-20 w-[72px] min-w-[72px] max-w-[72px] bg-blue-50/90 dark:bg-blue-950/90 px-2 py-3 text-center border-r border-b border-slate-200 dark:border-slate-800 select-none">
                     <div className="inline-flex items-center gap-1.5 justify-center">
                       <input
                         type="checkbox"
@@ -1234,7 +1234,7 @@ function MembersPage() {
                       <span>STT</span>
                     </div>
                   </th>
-                  <th className="sticky left-[72px] z-20 min-w-[110px] bg-secondary px-4 py-3 border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                  <th className="sticky left-[72px] z-20 min-w-[110px] bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] text-left">
                     <button
                       type="button"
                       onClick={() => tc.toggleSort("code")}
@@ -1250,6 +1250,8 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={220}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label="Ban chuyên môn"
@@ -1257,6 +1259,8 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={170}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("tbl.industry")}
@@ -1264,6 +1268,8 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={160}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("tbl.region")}
@@ -1271,6 +1277,8 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={140}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("tbl.type")}
@@ -1278,6 +1286,8 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
                   <SortHeader
                     label={t("tbl.status")}
@@ -1285,8 +1295,10 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
-                  <th className="px-4 py-3 border-b border-border bg-secondary text-left">
+                  <th className="px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 text-left min-w-[130px]">
                     <div className="flex items-center gap-1.5 whitespace-nowrap">
                       <button
                         type="button"
@@ -1318,14 +1330,16 @@ function MembersPage() {
                     sortKey={tc.sortKey}
                     sortDir={tc.sortDir}
                     onSort={tc.toggleSort}
+                    width={130}
+                    className="border-r border-slate-200 dark:border-slate-800"
                   />
-                  <th className="px-4 py-3 text-left border-b border-border font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                  <th className="px-4 py-3 text-left border-r border-b border-slate-200 dark:border-slate-800 font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap min-w-[170px]">
                     Tài khoản
                   </th>
-                  <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t("tbl.actions")}</th>
+                  <th className="sticky right-0 z-20 min-w-[140px] bg-blue-50/90 dark:bg-blue-950/90 px-4 py-3 text-right border-l border-b border-slate-200 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">{t("tbl.actions")}</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {tc.pageRows.map((m, idx) => (
                   <tr
                     key={m.id}
@@ -1333,9 +1347,9 @@ function MembersPage() {
                       if ((e.target as HTMLElement).closest("a,button,input")) return;
                       openMember(m);
                     }}
-                    className="group cursor-pointer border-b border-border transition-all duration-150 hover:bg-secondary/60 hover:shadow-[inset_3px_0_0_0_var(--primary)]"
+                    className="group cursor-pointer border-b border-slate-200 dark:border-slate-800 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                   >
-                    <td className="sticky left-0 z-10 w-[72px] min-w-[72px] max-w-[72px] bg-card group-hover:bg-muted/70 px-2 py-3 text-center border-r border-b border-border transition-colors">
+                    <td className="sticky left-0 z-10 w-[72px] min-w-[72px] max-w-[72px] bg-card group-hover:bg-muted/70 px-2 py-3.5 text-center border-r border-b border-slate-200 dark:border-slate-800 transition-colors">
                       <div className="inline-flex items-center gap-1.5 justify-center">
                         <input
                           type="checkbox"
@@ -1347,10 +1361,10 @@ function MembersPage() {
                         <span className="font-medium text-muted-foreground text-xs">{(tc.page - 1) * tc.pageSize + idx + 1}</span>
                       </div>
                     </td>
-                    <td className="sticky left-[72px] z-10 min-w-[110px] bg-card group-hover:bg-muted/70 px-4 py-3 font-mono text-[12px] font-semibold text-primary border-r border-b border-border shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors whitespace-nowrap">
+                    <td className="sticky left-[72px] z-10 min-w-[110px] bg-card group-hover:bg-muted/70 px-4 py-3.5 font-mono text-[12px] font-semibold text-primary border-r border-b border-slate-200 dark:border-slate-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] transition-colors whitespace-nowrap">
                       {m.code}
                     </td>
-                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Avatar m={m} className="h-9 w-9 text-[11px]" />
                         <div className="min-w-0">
@@ -1358,35 +1372,35 @@ function MembersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40 shadow-2xs">
                         <Shield className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                         <span>{getMemberDepartment(m)}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-foreground border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <TruncatedText text={t(m.industry as TKey)} maxWidth="max-w-[160px]" />
                     </td>
-                    <td className="px-4 py-3 text-foreground border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-foreground border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <TruncatedText text={t(m.region as TKey)} maxWidth="max-w-[140px]" />
                     </td>
-                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <TypeChip type={m.type} />
                     </td>
-                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <StatusBadge status={m.status} />
                     </td>
-                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <MemberPaymentSelect
                         member={m}
                         onChange={(s) => handleUpdatePaymentStatus(m, s)}
                         disabled={!can(PERMISSIONS.FINANCE_MANAGE) && !can("FEE_EDIT")}
                       />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-muted-foreground border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString("vi-VN") : "—"}
                     </td>
-                    <td className="px-4 py-3 border-b border-border whitespace-nowrap">
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       <div className="flex flex-col gap-0.5">
                         <span className="font-mono text-xs font-semibold text-foreground">
                           {m.email || m.phone || "—"}
@@ -1404,7 +1418,7 @@ function MembersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
+                    <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3.5 text-right border-l border-b border-slate-200 dark:border-slate-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                       <div className="inline-flex items-center gap-1.5">
                         {m.status === "pending" && canApprove && (
                           <button

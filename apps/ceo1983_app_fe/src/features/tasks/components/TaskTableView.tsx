@@ -50,28 +50,31 @@ export function TaskTableView({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+    <div className="self-stretch bg-white dark:bg-card rounded-[20px] outline outline-1 outline-slate-200 dark:outline-slate-800 overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-[13px] border-collapse min-w-[950px]">
+        <table className="w-full text-left text-xs border-collapse min-w-[1050px]">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/90 text-slate-600 dark:border-slate-800 dark:bg-slate-800/90 dark:text-slate-400 font-semibold">
-              <th className="sticky left-0 z-20 bg-slate-50 dark:bg-slate-800 py-3 px-4 w-[110px] min-w-[110px] border-r border-slate-200 dark:border-slate-800 shadow-xs">
+            <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
+              <th className="sticky left-0 z-20 bg-blue-50/90 dark:bg-blue-950/90 py-3 px-3 w-12 text-center border-r border-b border-slate-200 dark:border-slate-800 select-none">
+                STT
+              </th>
+              <th className="sticky left-12 z-20 bg-blue-50/90 dark:bg-blue-950/90 py-3 px-4 w-[110px] min-w-[110px] border-r border-b border-slate-200 dark:border-slate-800 shadow-xs">
                 Mã CV
               </th>
-              <th className="py-3 px-4 min-w-[240px]">Tên công việc</th>
-              <th className="py-3 px-4 min-w-[180px]">Ban phụ trách</th>
-              <th className="py-3 px-4 min-w-[160px]">Người thực hiện</th>
-              <th className="py-3 px-4 w-[120px]">Hạn chót</th>
-              <th className="py-3 px-4 w-[110px]">Ưu tiên</th>
-              <th className="py-3 px-4 min-w-[140px]">Tiến độ</th>
-              <th className="py-3 px-4 min-w-[140px]">Trạng thái</th>
-              <th className="sticky right-0 z-20 bg-slate-50 dark:bg-slate-800 py-3 px-4 w-[110px] min-w-[110px] text-right border-l border-slate-200 dark:border-slate-800 shadow-xs">
+              <th className="py-3 px-4 min-w-[240px] border-r border-b border-slate-200 dark:border-slate-800">Tên công việc</th>
+              <th className="py-3 px-4 min-w-[180px] border-r border-b border-slate-200 dark:border-slate-800">Ban phụ trách</th>
+              <th className="py-3 px-4 min-w-[160px] border-r border-b border-slate-200 dark:border-slate-800">Người thực hiện</th>
+              <th className="py-3 px-4 w-[120px] border-r border-b border-slate-200 dark:border-slate-800">Hạn chót</th>
+              <th className="py-3 px-4 w-[110px] border-r border-b border-slate-200 dark:border-slate-800">Ưu tiên</th>
+              <th className="py-3 px-4 min-w-[140px] border-r border-b border-slate-200 dark:border-slate-800">Tiến độ</th>
+              <th className="py-3 px-4 min-w-[140px] border-r border-b border-slate-200 dark:border-slate-800">Trạng thái</th>
+              <th className="sticky right-0 z-20 bg-blue-50/90 dark:bg-blue-950/90 py-3 px-4 w-[110px] min-w-[110px] text-right border-l border-b border-slate-200 dark:border-slate-800 shadow-xs">
                 Thao tác
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-            {pagedTasks.map((task) => {
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
+            {pagedTasks.map((task, idx) => {
               const priorityInfo = TASK_PRIORITY_CONFIG[task.priority] || TASK_PRIORITY_CONFIG.MEDIUM;
               const statusInfo = TASK_STATUS_CONFIG[task.status] || TASK_STATUS_CONFIG.TODO;
               const isOverdue =
@@ -81,16 +84,19 @@ export function TaskTableView({
               return (
                 <tr
                   key={task.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer border-b border-slate-200 dark:border-slate-800"
                   onClick={() => onTaskClick(task)}
                 >
-                  <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 py-3 px-4 whitespace-nowrap border-r border-slate-100 dark:border-slate-800 shadow-xs">
+                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/70 py-3.5 px-3 text-center font-mono text-slate-500 border-r border-b border-slate-200 dark:border-slate-800">
+                    {(page - 1) * pageSize + idx + 1}
+                  </td>
+                  <td className="sticky left-12 z-10 bg-card group-hover:bg-muted/70 py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800 shadow-xs">
                     <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20 font-mono">
                       {task.code}
                     </span>
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="py-3.5 px-4 border-r border-b border-slate-200 dark:border-slate-800">
                     <div className="font-semibold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors">
                       {task.title}
                     </div>
@@ -128,14 +134,14 @@ export function TaskTableView({
                     )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
                     <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
                       <Building className="w-3 h-3 text-[#003B95] dark:text-blue-300" />
                       {task.department}
                     </span>
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
                     {task.assignees && task.assignees.length > 1 ? (
                       <div className="flex items-center gap-2">
                         <div className="flex items-center -space-x-1.5">
@@ -193,7 +199,7 @@ export function TaskTableView({
                     )}
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
                     <span
                       className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
                         isOverdue
@@ -206,7 +212,7 @@ export function TaskTableView({
                     </span>
                   </td>
 
-                  <td className="py-3 px-4 whitespace-nowrap">
+                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
                     <span
                       className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold border ${priorityInfo.badge}`}
                     >
@@ -215,7 +221,7 @@ export function TaskTableView({
                     </span>
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="py-3.5 px-4 border-r border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                         <div
@@ -232,7 +238,7 @@ export function TaskTableView({
                   </td>
 
                   <td
-                    className="py-3 px-4 whitespace-nowrap"
+                    className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <select
@@ -251,7 +257,7 @@ export function TaskTableView({
                   </td>
 
                   <td
-                    className="sticky right-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 py-3 px-4 text-right whitespace-nowrap border-l border-slate-100 dark:border-slate-800 shadow-xs"
+                    className="sticky right-0 z-10 bg-card group-hover:bg-muted/70 py-3.5 px-4 text-right whitespace-nowrap border-l border-b border-slate-200 dark:border-slate-800 shadow-xs"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-end gap-1">
