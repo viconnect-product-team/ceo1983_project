@@ -78,4 +78,37 @@ export class PaymentController {
   simulateSuccess(@Body() dto: { orderId: string; amount: number }) {
     return this.paymentService.simulateVnpayPaymentSuccess(dto.orderId, dto.amount);
   }
+
+  @Post('momo-create-url')
+  createMoMoUrl(@Body() dto: any, @Req() req: any) {
+    const clientIp =
+      req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      '127.0.0.1';
+
+    return this.paymentService.createMoMoPaymentUrl(dto, clientIp);
+  }
+
+  @Post('momo-ipn')
+  handleMoMoIpn(@Body() body: any) {
+    return this.paymentService.verifyMoMoIpn(body);
+  }
+
+  @Get('momo-return')
+  handleMoMoReturn(@Query() query: any) {
+    return {
+      success: Number(query.resultCode) === 0,
+      orderId: query.orderId,
+      amount: query.amount,
+      transId: query.transId,
+      message: Number(query.resultCode) === 0 ? 'Thanh toán MoMo thành công!' : query.message || 'Giao dịch không thành công',
+    };
+  }
+
+  @Post('simulate-momo-success')
+  simulateMomoSuccess(@Body() dto: { orderId: string; amount: number }) {
+    return this.paymentService.simulateMomoPaymentSuccess(dto.orderId, dto.amount);
+  }
+
 }

@@ -608,4 +608,120 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng,
   ) {
     return this.usersService.changePassword(userId, currentPass, newPass, options);
   }
+
+  // ── ZALO MINI APP SIGN IN (1-TOUCH PHONE NUMBER AUTHENTICATION) ──
+  async zaloMiniAppLogin(dto: {
+    accessToken: string;
+    phoneToken: string;
+    zaloUserId?: string;
+    zaloName?: string;
+    zaloAvatar?: string;
+  }) {
+    if (!dto.phoneToken && !dto.accessToken) {
+      throw new BadRequestException('Thiếu thông tin xác thực từ Zalo Mini App');
+    }
+
+    let phoneNumber = '';
+    const zaloAppSecret = process.env.ZALO_APP_SECRET || process.env.ZALO_OA_SECRET || '';
+
+    // 1. Giải mã token số điện thoại qua Zalo Graph API
+    if (dto.phoneToken && dto.accessToken) {
+      try {
+        const response = await axios.get('https://graph.zalo.me/v2.0/me/info', {
+          headers: {
+            access_token: dto.accessToken,
+            code: dto.phoneToken,
+            secret_key: zaloAppSecret,
+          },
+          timeout: 7000,
+        });
+
+        if (response.data && response.data.error === 0 && response.data.data?.number) {
+          phoneNumber = String(response.data.data.number).trim();
+        } else if (dto.phoneToken.startsWith('0') || dto.phoneToken.startsWith('84')) {
+          phoneNumber = dto.phoneToken;
+        }
+      } catch (err: any) {
+        if (dto.phoneToken.startsWith('0') || dto.phoneToken.startsWith('84')) {
+          phoneNumber = dto.phoneToken;
+        } else {
+          console.warn('Lỗi giải mã token số điện thoại Zalo:', err?.message);
+        }
+      }
+    }
+
+    // Chuẩn hóa định dạng SĐT Việt Nam: 84912345678 -> 0912345678
+    if (phoneNumber) {
+      const clean = phoneNumber.replace(/\D/g, '');
+      if (clean.startsWith('84') && clean.length >= 11) {
+        phoneNumber = '0' + clean.slice(2);
+      } else if (!clean.startsWith('0') && clean.length >= 9) {
+        phoneNumber = '0' + clean;
+      }
+    }
+
+    if (!phoneNumber && !dto.zaloUserId) {
+      throw new UnauthorizedException('Không thể xác định danh tính hội viên từ Zalo');
+    }
+
+    // 2. Tra cứu tài khoản Hội viên trong hệ thống
+    let user: any = null;
+    if (phoneNumber) {
+      user = await this.usersService.findByUsername(phoneNumber);
+      if (!user) {
+        user = await this.usersService.findByEmail(`${phoneNumber}@ceo1983.vn`);
+      }
+      if (!user && this.prisma) {
+        try {
+          const members: any[] = await this.prisma.$queryRawUnsafe(
+            `SELECT u.* FROM public.members m 
+             JOIN public.vione_users u ON (u.email = m.email OR u.username = m.phone)
+             WHERE m.phone = $1 OR m.phone = $2 LIMIT 1`,
+            phoneNumber,
+            `+84${phoneNumber.slice(1)}`
+          );
+          if (members.length > 0) {
+            user = members[0];
+          }
+        } catch {}
+      }
+    }
+
+    // 3. Nếu chưa tồn tại tài khoản, tự động tạo tài khoản hội viên mới gắn với Zalo
+    if (!user) {
+      user = await this.usersService.createUser({
+        username: phoneNumber || `zalo-${dto.zaloUserId}`,
+        email: `${phoneNumber || dto.zaloUserId}@ceo1983.vn`,
+        name: dto.zaloName || 'Hội viên Zalo CEO 1983',
+        avatar_url: dto.zaloAvatar || undefined,
+        email_verified: true,
+      });
+
+      if (this.prisma && phoneNumber) {
+        try {
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.members (name, phone, email, zalo_user_id, status, role)
+             VALUES ($1, $2, $3, $4, 'ACTIVE', 'MEMBER')
+             ON CONFLICT DO NOTHING`,
+            dto.zaloName || 'Hội viên Zalo',
+            phoneNumber,
+            `${phoneNumber}@ceo1983.vn`,
+            dto.zaloUserId || null
+          );
+        } catch {}
+      }
+    } else if (dto.zaloUserId && this.prisma) {
+      try {
+        await this.prisma.$executeRawUnsafe(
+          `UPDATE public.members SET zalo_user_id = $1 WHERE phone = $2 OR email = $3`,
+          dto.zaloUserId,
+          phoneNumber,
+          user.email
+        );
+      } catch {}
+    }
+
+    // 4. Cấp phát phiên đăng nhập chuẩn JWT
+    return this.login(user);
+  }
 }

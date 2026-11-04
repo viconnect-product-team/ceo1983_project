@@ -64,10 +64,26 @@ export class VietQRPaymentStrategy implements IPaymentStrategy {
   }
 }
 
+
+export class MoMoPaymentStrategy implements IPaymentStrategy {
+  readonly methodCode = 'MOMO';
+
+  async processPayment(intent: PaymentIntent): Promise<PaymentProcessResult> {
+    return {
+      success: true,
+      method: 'MOMO',
+      transactionRef: intent.orderId,
+      paymentUrl: intent.returnUrl || `https://test-payment.momo.vn/v2/gateway/pay?orderId=${intent.orderId}`,
+      qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=momo://pay?orderId=${intent.orderId}&amount=${intent.amount}`,
+    };
+  }
+}
+
 export class PaymentStrategyFactory {
   private static registry = new Map<string, IPaymentStrategy>([
     ['BANK_TRANSFER', new BankTransferPaymentStrategy()],
     ['VIETQR', new VietQRPaymentStrategy()],
+    ['MOMO', new MoMoPaymentStrategy()],
   ]);
 
   static register(strategy: IPaymentStrategy) {

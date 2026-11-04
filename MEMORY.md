@@ -1,5 +1,54 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 04/11/2026 (v10.32): Tích Hợp Toàn Diện Cổng Thanh Toán MoMo (MoMo Payment Gateway v2 All-In-One); Bổ Sung Strategy Pattern Đa Cổng MoMo + VNPAY, Webhook IPN Callback Xác Thực HMAC-SHA256, Giao Dịch Database Nguyên Tử & Cập Nhật Giao Diện VnpayPaymentModal Linh Hoạt ([NODE-CORE-001], [NODE-CRM-005], [NODE-APP-003], [NODE-APP-010])**:
+  1. *Kiến Trúc Strategy Pattern Cho Đa Cổng Thanh Toán (apps/ceo1983_app_be/src/common/patterns/strategy/payment.strategy.ts)*:
+     - Định nghĩa `MoMoPaymentStrategy implements IPaymentStrategy` với `methodCode = 'MOMO'`.
+     - Đăng ký tự động vào `PaymentStrategyFactory`, cho phép hoán đổi hoặc mở rộng các cổng thanh toán (MoMo, VNPAY, ViettelMoney) mà không làm biến đổi nghiệp vụ lõi.
+  2. *Dịch Vụ Backend & Controller MoMo v2 (apps/ceo1983_app_be/src/payment/)*:
+     - Dịch vụ `PaymentService`:
+       + `createMoMoPaymentUrl(dto, clientIp)`: Ký số HMAC-SHA256 theo chuẩn MoMo v2 (`captureWallet`), trả về `payUrl` (trang thanh toán MoMo), `deeplink` (mở ứng dụng MoMo 1 chạm trên di động), `qrCodeUrl` (mã QR thanh toán). Tích hợp cơ chế fallback sandbox tự động sinh mã QR dự phòng khi môi trường dev bị hạn chế mạng ngoại vi.
+       + `verifyMoMoIpn(body)`: Tiếp nhận Webhook IPN từ MoMo, xác thực chữ ký HMAC-SHA256, tự động kiểm tra `resultCode === 0` và gọi `executePaymentSuccessTransaction` để thực thi cập nhật nguyên tử (atomic transaction) vào PostgreSQL.
+       + `simulateMomoPaymentSuccess(orderId, amount)`: Hỗ trợ giả lập thanh toán MoMo thành công cho môi trường test/staging.
+     - Bộ Controller `PaymentController` cung cấp 4 endpoints chuẩn RESTful:
+       + `POST /payment/momo-create-url`
+       + `POST /payment/momo-ipn`
+       + `GET /payment/momo-return`
+       + `POST /payment/simulate-momo-success`
+  3. *Thực Thi Transaction Database Nguyên Tử*:
+     - Tự động ghi nhận log thanh toán vào bảng `public.transactions` (`payment_method = 'MOMO'`, `status = 'COMPLETED'`).
+     - Tự động phát hành hóa đơn điện tử vào bảng `public.invoices` (`status = 'PAID'`).
+     - Cập nhật tức thời trạng thái vé sự kiện `event_registrations` (`payment_status = 'PAID'`) và tăng số lượng tham gia thực tế `events.current_participants`.
+     - Gửi email hóa đơn vé điện tử và phát tín hiệu Socket.IO thông báo tức thì đến người dùng và ban điều hành.
+  4. *Nâng Cấp Giao Diện Modal Đa Cổng Thanh Toán (apps/ceo1983_app_fe/src/components/common/VnpayPaymentModal.tsx)*:
+     - Nâng cấp modal thành giao diện thanh toán đa kênh thông minh: Hỗ trợ tab chuyển đổi mượt mà giữa **Cổng VNPAY-QR** (Xanh Navy #003B95) và **Ví Điện Tử MoMo** (Hồng Tím MoMo #A50064).
+     - Khi chọn MoMo: Hiển thị mã QR MoMo sắc nét, nút 1 chạm "Mở ứng dụng MoMo thanh toán" (Deeplink), nút kiểm tra trạng thái thanh toán và tự động phát hiện giao dịch thành công.
+  5. *Biến Môi Trường & Cẩm Nang Tài Liệu*:
+     - Bổ sung cấu hình mẫu vào `apps/ceo1983_app_be/.env.example` (`MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`, `MOMO_ENDPOINT`, `MOMO_RETURN_URL`, `MOMO_IPN_URL`).
+     - Xuất bản tài liệu cẩm nang chi tiết: `document/HUONG_DAN_TICH_HOP_VA_SU_DUNG_CONG_THANH_TOAN_MOMO_CEO1983.md` hướng dẫn đăng ký MoMo Business, lấy API Key, cấu hình Webhook IPN và hướng dẫn sử dụng.
+
+- **Bản cập nhật ngày 04/11/2026 (v10.31): Cấu Hình & Thiết Lập Toàn Diện Zalo Mini App (ZMA) CLB Doanh Nhân CEO 1983 (HanoiBA); Bổ Sung Native Bridge SDK, Backend 1-Touch Phone Authentication, Cấu Hình app-config.json Chuẩn Navy #003B95 & Xuất Bản Cẩm Nang Hướng Dẫn Vận Hành Từ A-Z ([NODE-APP-001], [NODE-APP-010], [NODE-CORE-001])**:
+  1. *Cấu Hình Hệ Thống Zalo Mini App (apps/ceo1983_zma/)*:
+     - Khởi tạo thư mục cấu hình chuẩn: `apps/ceo1983_zma/app-config.json` và `apps/ceo1983_zma/project.config.json`.
+     - Nhận diện thương hiệu chuẩn CLB: Header Title "CEO 1983 - HanoiBA", thanh điều hướng màu Royal Cobalt Navy `#003B95`, text trắng `#FFFFFF`.
+     - Đăng ký bộ 3 quyền hạn nòng cốt: `scope.userInfo`, `scope.userPhonenumber`, `scope.userLocation`.
+  2. *Thư Viện Native Bridge SDK (apps/ceo1983_app_fe/src/lib/zalo-mini-app.ts)*:
+     - Tích hợp 5 chức năng giao tiếp hai chiều với Zalo:
+       + `loginWithZaloPhone()`: Xin quyền số điện thoại và tự động đăng nhập 1 chạm không cần mật khẩu.
+       + `scanQrCodeZalo()`: Mở Camera Native Zalo quét mã QR điểm danh sự kiện và kết nối danh bạ tức thì.
+       + `openZaloChatWithUser()`: Mở trực tiếp khung chat riêng Zalo giữa 2 doanh nhân đối tác.
+       + `followCeo1983OA()`: Mở popup bấm Quan tâm Zalo Official Account của CLB CEO 1983.
+       + `shareToZalo()`: Chia sẻ Thẻ danh thiếp số và Cơ hội kinh doanh B2B lên Zalo Feed / Zalo Chat.
+  3. *Backend API Xác Thực 1 Chạm (apps/ceo1983_app_be/src/auth/)*:
+     - Endpoint mới: `POST /auth/zalo-miniapp-login` (nhận `phoneToken` + `accessToken`).
+     - Giải mã số điện thoại qua Zalo Graph API `https://graph.zalo.me/v2.0/me/info` với `ZALO_APP_SECRET`.
+     - Tự động chuẩn hóa SĐT Việt Nam, tra cứu đối chiếu trong `vione_users` và `members`, cấp phát phiên đăng nhập JWT hợp lệ.
+  4. *Cẩm Nang Hướng Dẫn Chi Tiết Toàn Diện Từ A-Z*:
+     - Xuất bản tài liệu: `document/HUONG_DAN_CAU_HINH_VA_SU_DUNG_ZALO_MINI_APP_CEO1983.md`.
+     - Hướng dẫn đầy đủ 7 bước từ đăng ký tài khoản Zalo Developers, tạo Mini App, cấp quyền, cấu hình biến môi trường, dùng công cụ `zmp-cli` (`zmp login`, `zmp start`, `zmp deploy`) đến gắn vào Menu Bar của Zalo OA.
+  5. *Chất Lượng Mã Nguồn & Type-Check*:
+     - Cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều chạy `tsc --noEmit` đạt Exit Code 0 (0 errors).
+
+
 - **Bản cập nhật ngày 04/11/2026 (v10.30): Tối Ưu Hóa UI/UX Màn Thống Kê Chuẩn Trắng - Đen - Xanh Navy; Triệt Tiêu Hoàn Toàn Lỗi Tương Phản Text Đen Trên Nền Xanh; Hoàn Thiện Cơ Chế Biến Đổi 100% Giao Diện Theo 4 Dạng Màu Tiêu Chuẩn Brandbook CEO 1983 ([NODE-APP-001], [NODE-APP-006], [NODE-APP-012])**:
   1. *Tối Ưu Hóa UI/UX Màn Thống Kê (association.analytics.tsx)*:
      - Tối giản hóa toàn diện bảng màu: Khắc phục triệt để hiện tượng màu mè, chỉ sử dụng 3 tông màu cốt lõi chuẩn CEO 1983: Trắng (#FFFFFF), Đen (#0F172A / #000000), Xanh Navy (#003B95).

@@ -1,0 +1,13 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "ceo1983-zalo-mini-app",
+  "description": "Zalo Mini App Dành Cho Hội Viên CLB Doanh Nhân CEO 1983 (HanoiBA)",
+  "appid": "YOUR_ZALO_APP_ID",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  }
+}
+

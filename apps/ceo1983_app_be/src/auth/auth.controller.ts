@@ -115,5 +115,19 @@ export class AuthController {
       },
     );
   }
-}
 
+  @Post('zalo-miniapp-login')
+  @HttpCode(HttpStatus.OK)
+  async zaloMiniAppLogin(
+    @Body()
+    dto: {
+      accessToken: string;
+      phoneToken: string;
+      zaloUserId?: string;
+      zaloName?: string;
+      zaloAvatar?: string;
+    },
+  ) {
+    return this.authService.zaloMiniAppLogin(dto);
+  }
+}

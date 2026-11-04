@@ -1,0 +1,37 @@
+{
+  "app": {
+    "title": "CLB Doanh Nhân CEO 1983",
+    "headerTitle": "CEO 1983 - HanoiBA",
+    "headerColor": "#003B95",
+    "textColor": "white",
+    "statusBar": "transparent",
+    "leftButton": "back"
+  },
+  "pages": [
+    "pages/index/index",
+    "pages/members/index",
+    "pages/card/index",
+    "pages/connect/index",
+    "pages/opportunities/index",
+    "pages/events/index",
+    "pages/perks/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#003B95",
+    "navigationBarTitleText": "CLB CEO 1983",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F8FAFC"
+  },
+  "permissions": {
+    "scope.userInfo": true,
+    "scope.userPhonenumber": true,
+    "scope.userLocation": true
+  },
+  "template": {
+    "name": "ceo1983-zma",
+    "version": "1.0.0"
+  }
+}
+
