@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export interface IncomingConnectionData {
@@ -38,6 +39,7 @@ export interface IncomingConnectionData {
 }
 
 export function IncomingConnectionModal() {
+  const { user } = useAuth();
   const [incoming, setIncoming] = useState<IncomingConnectionData | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
@@ -83,9 +85,29 @@ export function IncomingConnectionModal() {
     socket.on("connection:requested", handleConnectionRequested);
     socket.on("notification:new", handleNotification);
 
+    const handleCustomEvent = (e: any) => {
+      const data = e.detail;
+      if (!data) return;
+      setIncoming({
+        connectionId: data.connectionId || `conn-${Date.now()}`,
+        requesterProfile: {
+          display_name: data.requesterName || data.name || "Doanh nhân CEO 1983",
+          company_name: data.requesterCompany || data.company || "Tập đoàn Đầu tư Alpha",
+          phone: data.requesterPhone || data.phone || "0988 123 456",
+          avatar_url: data.requesterAvatar || data.avatar,
+          job_title: data.jobTitle || "Chủ tịch HĐQT / CEO",
+        },
+        timestamp: new Date().toISOString(),
+      });
+      setAccepted(false);
+      setAccepting(false);
+    };
+    window.addEventListener("vba:incoming_connection", handleCustomEvent);
+
     return () => {
       socket.off("connection:requested", handleConnectionRequested);
       socket.off("notification:new", handleNotification);
+      window.removeEventListener("vba:incoming_connection", handleCustomEvent);
     };
   }, []);
 
@@ -113,7 +135,14 @@ export function IncomingConnectionModal() {
         const socket = getConnectAppSocket();
         socket.emit("connection:accept", {
           connectionId: incoming.connectionId,
-          targetUserId: profile.userId,
+          targetUserId: profile.userId || profile.memberCode,
+          accepterProfile: {
+            display_name: user?.name || "Hội viên CEO 1983",
+            name: user?.name || "Hội viên CEO 1983",
+            avatar_url: user?.avatar,
+            memberCode: user?.code,
+            userId: user?.id,
+          },
         });
       } catch {}
 
@@ -154,41 +183,23 @@ export function IncomingConnectionModal() {
     }
   };
 
-  const handleLater = () => {
-    // Không decline yêu cầu kết nối! Giữ nguyên pending và lưu vào mục Thông báo để xem sau
+  const handleDecline = () => {
     try {
-      const rawNotifs = localStorage.getItem("vba_notifications");
-      const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
-      const connId = incoming.connectionId || `conn_req_${Date.now()}`;
-      const existingIdx = notifs.findIndex((x: any) => x.id === connId || x.refId === connId);
-      if (existingIdx === -1) {
-        notifs.unshift({
-          id: connId,
-          refId: connId,
-          title: "Lời mời kết nối mới",
-          body: `${displayName} muốn kết nối danh thiếp số với bạn.`,
-          createdAt: incoming.timestamp || new Date().toISOString(),
-          unread: true,
-          type: "connection",
-          notificationKind: "connection_request_received",
-          avatar,
-          safeDisplayData: {
-            counterpartDisplayName: displayName,
-            companyName: company,
-            jobTitle: title,
-            avatarUrl: avatar,
-            connectionId: incoming.connectionId,
-            phone,
-            email,
-          },
-        });
-        localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
-      }
-      window.dispatchEvent(new CustomEvent("notifications-updated"));
+      const socket = getConnectAppSocket();
+      socket.emit("connection:decline", {
+        connectionId: incoming.connectionId,
+        targetUserId: profile.userId || profile.memberCode,
+        declinerProfile: {
+          display_name: user?.name || "Hội viên CEO 1983",
+          name: user?.name || "Hội viên CEO 1983",
+          memberCode: user?.code,
+          userId: user?.id,
+        },
+      });
     } catch {}
 
+    toast.info(`Đã từ chối lời mời kết nối từ ${displayName}.`);
     setIncoming(null);
-    toast.info("Đã lưu yêu cầu kết nối vào mục Thông báo để bạn xem lại sau.");
   };
 
   return createPortal(
@@ -291,10 +302,10 @@ export function IncomingConnectionModal() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={handleLater}
-                  className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  onClick={handleDecline}
+                  className="py-2.5 px-3 rounded-xl border border-slate-300 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
-                  Để sau
+                  Từ chối
                 </button>
                 <button
                   type="button"

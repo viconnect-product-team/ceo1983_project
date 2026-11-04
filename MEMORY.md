@@ -1,5 +1,36 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 04/11/2026 (v10.28): Kiểm Thử Toàn Diện & Tối Ưu Hóa 7 Kịch Bản Trọng Yếu CEO 1983 Mobile App; Khắc Phục Triệt Để Luồng Kết Nối Danh Bạ/QR, Chia Sẻ Cơ Hội B2B, Sàn Giao Thương, Ưu Đãi 3 Phân Mục, Gamification Nhiệm Vụ 1 Đường Ngang Kèm Hiệu Ứng Quà Rung, Đăng Bài 5 Ảnh & External Share; Chụp & Lưu Trữ 10 Ảnh Minh Chứng Thực Tế Đạt Chuẩn 100% ([NODE-APP-001], [NODE-APP-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-APP-006], [NODE-APP-010], [NODE-APP-011], [NODE-CORE-001])**:
+  1. *Case 1 (Kết Nối Danh Bạ Hội Viên) & Case 2 (Kết Nối Quét Mã QR & Thẻ NFC) ([NODE-APP-002], [NODE-APP-010])*:
+     - Bổ sung 3 sự kiện WebSocket hai chiều tại `connect-app.gateway.ts`: `@SubscribeMessage('connection:request')`, `@SubscribeMessage('connection:accept')`, `@SubscribeMessage('connection:decline')` chuyển tiếp lời mời theo room user.
+     - Cập nhật `IncomingConnectionModal.tsx`: Tích hợp lắng nghe `vba:incoming_connection` và WebSocket `connection:received`, hiển thị thông tin đối tác quét QR kèm 2 nút "Đồng ý" và "Từ chối" (thay thế nút "Để sau").
+     - Khi đối tác phản hồi, socket bắn thông báo tức thì về tài khoản người gửi; trên danh bạ nút "Kết nối" chuyển sang "Đã gửi". Minh chứng: `case_1_member_connection.png` & `case_2_qr_connection_popup.png`.
+  2. *Case 3 (Chia Sẻ Cơ Hội Kinh Doanh B2B) ([NODE-APP-004], [NODE-APP-003])*:
+     - Tại `association.opportunities.tsx`: Phân định chặt chẽ quyền chủ sở hữu: Nếu là cơ hội của chính mình (`checkIsMine`) -> chỉ hiển thị nút "Chỉnh sửa" và "Xóa"; nếu là cơ hội của hội viên khác -> chỉ hiển thị nút "Quan tâm" và "Deal chào giá".
+     - Xây dựng modal "Gửi Deal Chào Giá B2B" nhập giá chào thầu và lời nhắn năng lực. Khi chủ cơ hội đồng ý deal, hệ thống bắn thông báo kèm nút "Kết nối cuộc gặp" chuyển tiếp thẳng tới B2B Connect.
+     - Chuẩn hóa màn hình B2B Connect (`association.connect.tsx`) thành 3 danh mục rõ rệt: "Cuộc gặp của tôi" (`my_meetings`), "Cuộc gặp đã gửi" (`sent_meetings`) và "Lịch sử cuộc gặp" (`history`). Minh chứng: `case_3_opportunity_edit_delete_deal.png` & `case_3_b2b_connect_categories.png`.
+  3. *Case 4 (Sàn Thương Mại & Chợ Giao Thương B2B) ([NODE-APP-005])*:
+     - Tương tự Case 3, tại `association.products.tsx`: Sản phẩm của chính doanh nghiệp mình (`checkCanManageProduct`) chỉ có nút "Sửa" và "Xóa"; sản phẩm của hội viên khác chỉ có nút "Quan tâm" và "Deal chào giá" / "Báo giá".
+     - Luồng đàm phán deal sản phẩm được duyệt kích hoạt nút "Kết nối cuộc gặp" điều hướng sang B2B Connect. Minh chứng: `case_4_marketplace_deal.png`.
+  4. *Case 5 (Màn Ưu Đãi Hội Viên - 2 Tab & 3 Section Tuần Tự) ([NODE-APP-011])*:
+     - Tại `association.perks.index.tsx`: Thiết lập 2 danh mục tab cấp cao nhất: "Tất cả" và "Của tôi (số lượng)".
+     - Trong tab "Tất cả", sắp xếp cấu trúc 3 section tuần tự:
+       + Section 1: "Ưu Đãi Hội Viên Khác Tài Trợ Lên CLB CEO 1983" - mỗi ưu đãi có nút "Lưu" (bấm lưu thì chuyển vào tab "Của tôi", đồng thời nút đổi thành "Bỏ lưu").
+       + Section 2: "Ưu Đãi Sinh Nhật".
+       + Section 3: "Ưu Đãi Cho Người Có Rank Cao Nhất Ở Thống Kê".
+     - Tab "Của tôi" hiển thị danh sách đã lưu kèm nút "Bỏ lưu". Minh chứng: `case_5_perks_3sections_saved.png`.
+  5. *Case 6 (Thống Kê - Nhiệm Vụ 1 Đường Ngang & Hiệu Ứng Hộp Quà Rung Rung) ([NODE-APP-006])*:
+     - Tại `association.analytics.tsx`: Tái cấu trúc khối tiến trình nhiệm vụ thành 1 đường ngang duy nhất (progress bar) chia thành 3 mốc (Note 1: 3 NV, Note 2: 7 NV, Note 3: 10 NV).
+     - Khi tiến độ vượt qua từng note, icon hộp quà phía trên note kích hoạt hiệu ứng rung nhẹ (`gentleWiggle 1s ease-in-out infinite`) cùng chấm đỏ thông báo.
+     - Bấm vào bất kỳ note nào sẽ mở popup chi tiết giải thưởng kèm nút "Nhận phần thưởng & Lưu vào Ưu đãi của tôi" (tự động đồng bộ vào `vba_my_saved_perks`). Minh chứng: `case_6_analytics_horizontal_milestones.png` & `case_6_analytics_reward_modal.png`.
+  6. *Case 7 (Mạng Lưới - Đăng Bài Tối Đa 5 Ảnh & Chia Sẻ Link Từ Bên Ngoài) ([NODE-APP-001], [NODE-APP-006])*:
+     - Tại `CreatePostModal.tsx`: Bổ sung trường "Tiêu đề bài viết", cơ chế tải ảnh ràng buộc tối đa 5 ảnh kèm huy hiệu hiển thị số lượng `(X/5 ảnh)` và tự động khóa nút chọn khi đủ 5 ảnh.
+     - Tích hợp tab "Chia sẻ bài viết từ bên ngoài (Dạng Facebook)": Nhập liên kết ngoài (CafeF, VnExpress, Báo chí), tự động bóc tách Domain, Tiêu đề, Tóm tắt và render Card Preview Facebook-style trước khi chia sẻ vào bảng tin hiệp hội. Minh chứng: `case_7_feed_create_post_5images.png` & `case_7_feed_external_share.png`.
+  7. *Kiểm Thử Toàn Diện & Chất Lượng Mã Nguồn*:
+     - Chạy kịch bản tự động `scratch/test_and_capture_7_cases.cjs` trên trình duyệt headless Microsoft Edge với mobile viewport (420x890): Đạt 100% (7/7 cases pass với Exit Code 0).
+     - Toàn bộ 10 tệp ảnh minh chứng chất lượng cao được lưu trữ tại `document/evidence/app_tests/`.
+     - Tuân thủ quy tắc nghiêm ngặt: Không tự ý chạy `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 04/11/2026 (v10.27): Kiểm Tra Toàn Diện & Chuẩn Hóa Theo 3 Bộ Quy Chuẩn 46-DESIGN-PATTERN-PRAGMATISM, 47-SECURE-CODING-AND-DATA-PROTECTION, 49-MONOREPO-DOMAIN-ARCHITECTURE; Tái Lập Kết Nối Database Chuẩn CEO 1983; Xây Dựng 6-Layer Zero-Trust Gateway; 5 Core Pragmatic Design Patterns; Vượt Qua 100% (7/7) Kịch Bản Live Penetration Test; Xuất Bản 3 Báo Cáo Word Định Dạng Đen-Trắng-Xám Kèm Minh Chứng ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-001], [NODE-APP-001])**:
   1. *Hạng Mục 1: Tái Lập Kết Nối Database Chuẩn CEO 1983 & Đồng Bộ Schema PostgreSQL ([NODE-CORE-002])*:
      - Phát hiện packages/db/.env cấu hình sai địa chỉ database sang cụm vione cũ (113.20.107.184:6432/vione_app). Đã tái lập kết nối chuẩn về máy chủ PostgreSQL CEO 1983: postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public.

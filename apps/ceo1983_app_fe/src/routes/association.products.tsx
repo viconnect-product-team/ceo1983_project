@@ -50,6 +50,7 @@ import {
   Star,
   Menu,
   ArrowUpDown,
+  Handshake,
 } from "lucide-react";
 import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
 import { ProductExcelModal } from "@/components/dashboard/ProductExcelModal";
@@ -400,6 +401,39 @@ function ProductsScreen() {
   const [quotePhone, setQuotePhone] = useState("0988 123 456");
   const [quoteNote, setQuoteNote] = useState("");
   const [quoteSubmitting, setQuoteSubmitting] = useState(false);
+
+  // Case 4 Deal B2B state
+  const [agreedProductDeals, setAgreedProductDeals] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const stored = localStorage.getItem("vba_agreed_product_deals");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleApproveProductDeal = (p: MyProduct) => {
+    const next = { ...agreedProductDeals, [p.id]: true };
+    setAgreedProductDeals(next);
+    try {
+      localStorage.setItem("vba_agreed_product_deals", JSON.stringify(next));
+      const rawNotifs = localStorage.getItem("vba_notifications");
+      const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+      notifs.unshift({
+        id: `prod_deal_${Date.now()}`,
+        title: "Deal chào giá sản phẩm đã được đồng ý!",
+        body: `Người bán sản phẩm "${p.name}" đã đồng ý với đề xuất deal của bạn. Nhấn để thiết lập cuộc gặp B2B ngay!`,
+        createdAt: new Date().toISOString(),
+        unread: true,
+        type: "deal",
+        actionUrl: `/association/connect?partnerName=${encodeURIComponent(p.sellerName || p.company || "Người bán")}&partnerCompany=${encodeURIComponent(p.company || "CLB CEO 1983")}&notes=${encodeURIComponent(`Gặp gỡ 1-1 xúc tiến thương vụ sản phẩm: ${p.name}`)}`,
+      });
+      localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+      window.dispatchEvent(new CustomEvent("notifications-updated"));
+    } catch {}
+    toast.success("Đã đồng ý deal chào giá! Hệ thống đã gửi thông báo đến đối tác để kết nối cuộc gặp B2B.");
+  };
 
   // Author/Admin Quotes Inspection state
   const [viewingQuotesProduct, setViewingQuotesProduct] = useState<MyProduct | null>(null);
@@ -1465,46 +1499,80 @@ function ProductsScreen() {
         {/* Action Button */}
         <div className="p-3 pt-0">
           {canManage ? (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleOpenProductQuotes(p)}
-                className="flex-1 h-8.5 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-bold text-[#003B95] dark:text-blue-300 text-center flex items-center justify-center gap-1.5 hover:bg-blue-100 transition cursor-pointer"
-                title="Xem danh sách người quan tâm & yêu cầu báo giá"
-              >
-                <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
-                <span className="truncate">Người quan tâm</span>
-              </button>
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={(e) => startEditProduct(p, e)}
-                className="h-8.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                className="h-8.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
                 title="Chỉnh sửa sản phẩm"
               >
+                <Pencil className="size-3" />
                 <span>Sửa</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleDeleteProduct(p.id, e)}
+                className="h-8.5 px-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
+                title="Xóa sản phẩm"
+              >
+                <Trash2 className="size-3" />
+                <span>Xóa</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMessageSeller(p);
-                }}
-                className="h-8.5 w-8.5 rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 grid place-items-center transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0"
-                title="Nhắn tin cho công ty / người bán sản phẩm này"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleOpenQuoteModal(p)}
-                className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>Nhận báo giá VIP</span>
-                <ArrowRight className="h-3.5 w-3.5 text-white shrink-0" />
-              </button>
+            <div className="flex items-center gap-1.5">
+              {agreedProductDeals[p.id] ? (
+                <div className="flex items-center gap-1.5 w-full">
+                  <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-md text-[10.5px] font-bold flex items-center gap-1">
+                    <Check className="size-3" /> Deal đã duyệt
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate({
+                        to: "/association/connect" as any,
+                        search: {
+                          partnerName: p.sellerName || p.company || "Người bán",
+                          partnerCompany: p.company || "CLB CEO 1983",
+                          notes: `Gặp gỡ 1-1 xúc tiến thương vụ sản phẩm: ${p.name}`,
+                        } as any,
+                      });
+                    }}
+                    className="flex-1 h-8.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <Calendar className="size-3.5" />
+                    <span>Kết nối cuộc gặp</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleInterest(p.id);
+                    }}
+                    className={`h-8.5 px-3 rounded-xl border text-xs font-bold transition active:scale-95 cursor-pointer flex items-center justify-center gap-1 shadow-2xs ${
+                      interestedIds.includes(p.id)
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
+                        : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
+                    }`}
+                    title="Quan tâm sản phẩm"
+                  >
+                    <Heart className={`size-3.5 ${interestedIds.includes(p.id) ? "fill-emerald-600 text-emerald-600" : ""}`} />
+                    <span>{interestedIds.includes(p.id) ? "Đã quan tâm" : "Quan tâm"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQuoteModal(p)}
+                    className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Handshake className="size-3.5 text-amber-300 shrink-0" />
+                    <span>Deal chào giá</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

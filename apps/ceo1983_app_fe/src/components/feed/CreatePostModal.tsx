@@ -114,15 +114,26 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
 
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    const remainingSlots = 5 - images.length;
+    if (remainingSlots <= 0) {
+      toast.warning("Hội viên chỉ được đính kèm tối đa 5 ảnh cho mỗi bài viết.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      toast.info(`Hệ thống đã nhận ${remainingSlots} ảnh đầu tiên để đảm bảo giới hạn tối đa 5 ảnh.`);
+    }
+
     setUploadingImages(true);
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
+      const uploadPromises = filesToUpload.map(async (file) => {
         const res = await uploadFileToNest(file);
         return res?.url || URL.createObjectURL(file);
       });
       const uploadedUrls = await Promise.all(uploadPromises);
-      setImages((prev) => [...prev, ...uploadedUrls]);
-      toast.success(`Đã thêm ${uploadedUrls.length} ảnh`);
+      setImages((prev) => [...prev, ...uploadedUrls].slice(0, 5));
+      toast.success(`Đã thêm ${uploadedUrls.length} ảnh (${images.length + uploadedUrls.length}/5)`);
     } catch {
       toast.error("Không thể tải một số ảnh lên");
     } finally {
@@ -421,14 +432,15 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              Tiêu đề (Tùy chọn)
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+              <span>Tiêu đề bài viết</span>
+              <span className="text-[10px] text-slate-400 font-normal">Tùy chọn hoặc tiêu đề bài báo</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Thông báo họp Ban Xúc tiến tháng 10..."
+              placeholder="VD: Thông báo tọa đàm hợp tác doanh nghiệp CEO 1983..."
               className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder:text-slate-400 outline-none focus:border-red-600"
             />
           </div>
@@ -451,16 +463,20 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Hình ảnh đính kèm ({images.length})
+                Tải ảnh (tối đa 5 ảnh) <span className="text-red-600 font-bold">({images.length}/5 ảnh)</span>
               </label>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImages}
-                className="text-xs font-bold text-red-600 hover:text-red-700 dark:text-red-400 inline-flex items-center gap-1 cursor-pointer"
+                disabled={uploadingImages || images.length >= 5}
+                className={`text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition ${
+                  images.length >= 5
+                    ? "text-slate-400 cursor-not-allowed opacity-60"
+                    : "text-red-600 hover:text-red-700 dark:text-red-400"
+                }`}
               >
                 <ImagePlus className="size-3.5" />
-                <span>Thêm nhiều ảnh</span>
+                <span>{images.length >= 5 ? "Đã đạt tối đa 5 ảnh" : "Thêm ảnh"}</span>
               </button>
               <input
                 ref={fileInputRef}
@@ -468,6 +484,7 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
                 multiple
                 accept="image/*"
                 className="hidden"
+                disabled={images.length >= 5}
                 onChange={(e) => handleImageFiles(e.target.files)}
               />
             </div>

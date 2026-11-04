@@ -301,6 +301,57 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
+  @SubscribeMessage('connection:request')
+  handleConnectionRequest(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      targetUserId: string;
+      requesterProfile: any;
+      connectionId?: string;
+    },
+  ) {
+    if (!payload?.targetUserId || !this.server) return { ok: false };
+    const connectionId = payload.connectionId || `conn_${Date.now()}`;
+    this.logger.log(`Connection request from ${payload.requesterProfile?.display_name || payload.requesterProfile?.name || 'unknown'} to user:${payload.targetUserId}`);
+    this.emitConnectionRequested(payload.targetUserId, payload.requesterProfile, connectionId);
+    return { ok: true, connectionId };
+  }
+
+  @SubscribeMessage('connection:accept')
+  handleConnectionAccept(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      targetUserId: string;
+      accepterProfile?: any;
+      connectionId?: string;
+    },
+  ) {
+    if (!payload?.targetUserId || !this.server) return { ok: false };
+    const connectionId = payload.connectionId || `conn_${Date.now()}`;
+    this.logger.log(`Connection accepted by ${payload.accepterProfile?.display_name || payload.accepterProfile?.name || 'unknown'} to user:${payload.targetUserId}`);
+    this.emitConnectionAccepted(payload.targetUserId, payload.accepterProfile, connectionId);
+    return { ok: true };
+  }
+
+  @SubscribeMessage('connection:decline')
+  handleConnectionDecline(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      targetUserId: string;
+      declinerProfile?: any;
+      connectionId?: string;
+    },
+  ) {
+    if (!payload?.targetUserId || !this.server) return { ok: false };
+    const connectionId = payload.connectionId || `conn_${Date.now()}`;
+    this.logger.log(`Connection declined by ${payload.declinerProfile?.display_name || payload.declinerProfile?.name || 'unknown'} to user:${payload.targetUserId}`);
+    this.emitConnectionDeclined(payload.targetUserId, payload.declinerProfile, connectionId);
+    return { ok: true };
+  }
+
   emitMeetingRequested(targetUserId: string, requesterProfile: any, meeting: any) {
     if (!this.server) return;
     const rooms = [`user:${targetUserId}`];

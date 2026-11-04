@@ -31,6 +31,8 @@ import {
   Store,
   Navigation,
   Plus,
+  Heart,
+  Building2,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { MemberHeader } from "@/components/member/MemberShell";
@@ -233,6 +235,76 @@ const LUCKY_DRAW_PRIZES = [
   },
 ];
 
+export const BIRTHDAY_PERKS: ExtendedPerk[] = [
+  {
+    id: "bday-001",
+    title: "Voucher Sinh Nhật Hội Viên: Giảm 50% Tiệc Doanh Nghiệp & Tặng Bánh Khánh Tiết",
+    category: "Ưu đãi sinh nhật",
+    partner: "Ban Chấp Hành CLB CEO 1983",
+    discount: "Giảm 50%",
+    summary: "Đặc quyền mừng sinh nhật hội viên: Giảm 50% chi phí đặt tiệc tại chuỗi khách sạn đối tác & tặng kèm bánh khánh tiết mạ vàng",
+    description: "Ban Chấp Hành CLB CEO 1983 trân trọng chúc mừng sinh nhật Quý Hội viên. Voucher có giá trị sử dụng trọn vẹn trong tháng sinh nhật của bạn.",
+    icon: "gift",
+    link: "",
+    validUntil: "Trong tháng sinh nhật",
+    locationName: "Khách sạn Daewoo & Pullman Hà Nội",
+    address: "360 Kim Mã, Ba Đình, Hà Nội",
+    hotline: "0983 1983 83",
+    voucherCode: "BDAY-CEO1983-50",
+  },
+  {
+    id: "bday-002",
+    title: "Gói Quà Tặng Sinh Nhật Doanh Nhân: Hộp Trà Cổ Thụ & Bình Giữ Nhiệt Khắc Tên",
+    category: "Ưu đãi sinh nhật",
+    partner: "Trà Cổ Thụ & Quà Tặng Doanh Nhân",
+    discount: "Tặng 100%",
+    summary: "Set quà tặng trà Shan tuyết cổ thụ nghìn năm và bình giữ nhiệt mạ vàng khắc tên hội viên độc bản",
+    description: "Hội viên xuất trình thẻ số CEO 1983 tại Văn phòng Ban Thư Ký để nhận bộ quà sinh nhật cao cấp.",
+    icon: "shopping",
+    link: "",
+    validUntil: "31/12/2026",
+    locationName: "Văn phòng Hiệp hội Doanh nhân CEO 1983",
+    address: "Tòa tháp Doanh nhân, Cầu Giấy, Hà Nội",
+    hotline: "1900 1983",
+    voucherCode: "BDAY-GIFT-VIP",
+  },
+];
+
+export const TOP_RANK_PERKS: ExtendedPerk[] = [
+  {
+    id: "rank-001",
+    title: "Cúp Vinh Danh Quán Quân Top 1 & Bài PR Thương Hiệu Trên Tạp Chí Doanh Nhân",
+    category: "Ưu đãi rank cao nhất",
+    partner: "Hiệp hội Doanh nhân CEO 1983",
+    discount: "Đặc quyền Top 1",
+    summary: "Cúp vinh danh mạ vàng & 01 Bài PR chuyên sâu thương hiệu trên Tạp chí Doanh Nhân phát hành toàn quốc",
+    description: "Đặc quyền tối cao dành cho Hội viên đạt Rank 1 trên Bảng xếp hạng Thống kê. Được vinh danh trực tiếp tại Gala doanh nhân định kỳ.",
+    icon: "trophy",
+    link: "",
+    validUntil: "Kỳ xếp hạng 2026",
+    locationName: "Trung tâm Hội nghị Quốc gia Hà Nội",
+    address: "Đại lộ Thăng Long, Mễ Trì, Nam Từ Liêm, Hà Nội",
+    hotline: "0983 1983 83",
+    voucherCode: "RANK1-CHAMPION",
+  },
+  {
+    id: "rank-002",
+    title: "Sử Dụng Miễn Phí 100% Phòng Tiệc VIP Khánh Tiết Hội Nghị Cấp Cao",
+    category: "Ưu đãi rank cao nhất",
+    partner: "Almaz Convention Center",
+    discount: "Tặng 100%",
+    summary: "Miễn phí phòng tiệc khánh tiết cao cấp cho hội nghị cổ đông & tiếp đón đối tác chiến lược",
+    description: "Dành riêng cho Doanh nhân dẫn đầu bảng xếp hạng thành tích kết nối và giao thương B2B của CLB.",
+    icon: "hotel",
+    link: "",
+    validUntil: "31/12/2026",
+    locationName: "Almaz Convention Center, Vinhomes Riverside",
+    address: "Khu đô thị Vinhomes Riverside, Long Biên, Hà Nội",
+    hotline: "024 3657 4455",
+    voucherCode: "RANK1-ALMAZ-VIP",
+  },
+];
+
 function PerksScreen() {
   const t = useT();
   const [serverPerks, setServerPerks] = useState<ExtendedPerk[]>(DEFAULT_PERKS_SEED);
@@ -284,6 +356,48 @@ function PerksScreen() {
   const [isCreatePerkOpen, setIsCreatePerkOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("Tất cả");
   const [activePrize, setActivePrize] = useState<(typeof LUCKY_DRAW_PRIZES)[0] | null>(null);
+
+  // Case 5: 2 Danh mục chính (Tất cả & Của tôi)
+  const [activeMainTab, setActiveMainTab] = useState<"all" | "my_perks">("all");
+  const [savedPerks, setSavedPerks] = useState<ExtendedPerk[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vba_my_saved_perks");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const handleSyncSavedPerks = () => {
+      try {
+        const stored = localStorage.getItem("vba_my_saved_perks");
+        if (stored) setSavedPerks(JSON.parse(stored));
+      } catch {}
+    };
+    window.addEventListener("vba:saved_perks_updated", handleSyncSavedPerks);
+    return () => window.removeEventListener("vba:saved_perks_updated", handleSyncSavedPerks);
+  }, []);
+
+  const savedPerkIds = useMemo(() => savedPerks.map((p) => p.id), [savedPerks]);
+
+  const handleToggleSavePerk = (p: ExtendedPerk) => {
+    const isSaved = savedPerkIds.includes(p.id);
+    let next: ExtendedPerk[];
+    if (isSaved) {
+      next = savedPerks.filter((x) => x.id !== p.id);
+      toast.info(`Đã bỏ lưu ưu đãi "${p.title}" khỏi mục Của tôi.`);
+    } else {
+      next = [p, ...savedPerks.filter((x) => x.id !== p.id)];
+      toast.success(`Đã lưu ưu đãi "${p.title}" vào mục Của tôi thành công!`);
+    }
+    setSavedPerks(next);
+    try {
+      localStorage.setItem("vba_my_saved_perks", JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("vba:saved_perks_updated"));
+    } catch {}
+  };
 
   // Load custom perks posted by members
   const [memberCustomPerks, setMemberCustomPerks] = useState<ExtendedPerk[]>(() => {
@@ -380,7 +494,38 @@ function PerksScreen() {
 
   return (
     <div className="vba-animate pb-24">
-      <MemberHeader title="Ưu đãi & Trúng thưởng" back />
+      <MemberHeader title="Ưu đãi & Đặc quyền" back />
+
+      {/* ── 2 DANH MỤC CHUẨN CASE 5: TẤT CẢ | CỦA TÔI ── */}
+      <div className="px-4 pt-3">
+        <div className="p-1 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl flex items-center gap-1 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("all")}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeMainTab === "all"
+                ? "bg-[#003B95] text-white shadow-md shadow-blue-900/20"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Sparkles className="size-3.5" />
+            <span>Tất cả</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("my_perks")}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeMainTab === "my_perks"
+                ? "bg-[#B8860B] text-white shadow-md shadow-amber-900/20"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Gift className="size-3.5" />
+            <span>Của tôi ({savedPerks.length})</span>
+          </button>
+        </div>
+      </div>
 
       {/* ── BỐ CỤC MÀN ƯU ĐÃI CHUẨN THEME SÁNG & SANG TRỌNG ── */}
       <div className="px-4 pt-3">
@@ -727,75 +872,10 @@ function PerksScreen() {
         </div>
       )}
 
-      {/* Perks List */}
-      <div className="mt-4 space-y-3 px-4">
-        {loading && (
-          <p className="py-10 text-center text-[13px] text-slate-400">
-            {t("m.perks.loading")}
-          </p>
-        )}
-        {!loading && combinedPerks.length === 0 && (
-          <p className="py-10 text-center text-[13px] text-slate-400">
-            {t("m.perks.empty")}
-          </p>
-        )}
-        {combinedPerks.map((p) => {
-          const isPrize = (p as any).category === "Trúng thưởng";
-
-          if (isPrize) {
-            return (
-              <div
-                key={p.id}
-                className="rounded-2xl border border-amber-300/80 dark:border-amber-500/40 p-3.5 bg-gradient-to-r from-amber-50/80 via-white to-amber-50/50 dark:from-[#1c1810] dark:via-[#131a26] dark:to-[#17130c] shadow-sm flex flex-col gap-2.5"
-              >
-                <div
-                  onClick={() => setActivePrize(p as any)}
-                  className="flex items-center gap-3 cursor-pointer group"
-                >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100/90 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/80 p-1 shadow-2xs group-hover:scale-108 transition-transform duration-300">
-                    <img
-                      src="/f7e3331b1c09a1006d5662da8900f36748428901.png"
-                      alt={p.title}
-                      className="h-full w-full object-contain filter drop-shadow-sm"
-                    />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block rounded-md bg-amber-200/90 dark:bg-amber-900/60 border border-amber-400 dark:border-amber-600 px-2 py-0.5 text-[10.5px] font-extrabold text-amber-950 dark:text-amber-200">
-                        🏆 Trúng thưởng
-                      </span>
-                      {(p as any).discount && (
-                        <span className="text-[12px] font-black text-amber-600 dark:text-amber-400">
-                          {(p as any).discount}
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="mt-1 truncate text-[14px] font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                      {p.title}
-                    </h2>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-amber-500" />
-                </div>
-
-                {/* Location and Quick Actions Row */}
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
-                  <div className="flex items-center gap-1 truncate max-w-[200px]">
-                    <MapPin className="size-3 text-emerald-600 shrink-0" />
-                    <span className="truncate">{(p as any).address || (p as any).locationName || "Hà Nội"}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActivePrize(p as any)}
-                    className="px-2.5 py-1 rounded-lg bg-[#B8860B] hover:bg-[#9a7009] text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-xs transition"
-                  >
-                    <span>Xem mã nhận</span>
-                  </button>
-                </div>
-              </div>
-            );
-          }
-
-          const extPerk = p as ExtendedPerk;
+      {/* ── BỐ CỤC CHUẨN CASE 5: TẤT CẢ (3 SECTIONS) & CỦA TÔI ── */}
+      {(() => {
+        const renderPerkCard = (p: ExtendedPerk) => {
+          const isSaved = savedPerkIds.includes(p.id);
           return (
             <div
               key={p.id}
@@ -816,9 +896,9 @@ function PerksScreen() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {extPerk.isMemberPerk && (
+                    {p.isMemberPerk && (
                       <span className="inline-block rounded-md bg-blue-100 dark:bg-blue-950/90 border border-blue-300 dark:border-blue-600/80 px-2 py-0.5 text-[10px] font-extrabold text-blue-900 dark:text-blue-300">
-                        🏢 Hội viên đăng
+                        🏢 Hội viên tài trợ
                       </span>
                     )}
                     {p.category && (
@@ -837,74 +917,52 @@ function PerksScreen() {
                   </h3>
                   <div className="text-[11px] text-slate-500 font-semibold truncate flex items-center gap-1.5">
                     <span>{p.partner}</span>
-                    {extPerk.voucherCode && (
+                    {p.voucherCode && (
                       <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">
-                        • Mã: {extPerk.voucherCode}
+                        • Mã: {p.voucherCode}
                       </span>
                     )}
                   </div>
-                  {extPerk.productName && (
-                    <div className="text-[11px] text-blue-700 dark:text-blue-300 font-medium truncate">
-                      Sản phẩm: {extPerk.productName}
-                    </div>
-                  )}
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:translate-x-0.5 transition-transform mt-1" />
               </Link>
 
-              {/* Location & Applicable Scope Display */}
-              <div className="space-y-0.5 text-[11px] px-1">
-                {extPerk.applicableLocation && (
-                  <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
-                    <Store className="size-3.5 text-amber-600 shrink-0" />
-                    <span className="truncate">Áp dụng: {extPerk.applicableLocation}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-                  <MapPin className="size-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate">{extPerk.address || extPerk.locationName || "Hệ thống đối tác toàn quốc"}</span>
-                </div>
-              </div>
+              {p.summary && (
+                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 px-1">
+                  {p.summary}
+                </p>
+              )}
 
-              {/* Quick Utility Action Buttons Row (STRICTLY NO RED BUTTONS) */}
-              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-                {/* 1. Dynamic QR Code Button */}
+              {/* Action Buttons: Nút Lưu / Bỏ lưu & Mã QR */}
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setQrPerkModal(extPerk)}
-                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
+                  onClick={() => handleToggleSavePerk(p)}
+                  className={`py-1.5 px-3.5 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs ${
+                    isSaved
+                      ? "bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-100"
+                      : "bg-[#003B95] hover:bg-[#002B70] text-white"
+                  }`}
                 >
-                  <QrCode className="size-3.5 text-amber-300" />
-                  <span>Mã QR Nhận Ưu Đãi</span>
+                  <Heart
+                    className={`size-3.5 ${isSaved ? "fill-rose-500 text-rose-500" : ""}`}
+                  />
+                  <span>{isSaved ? "Bỏ lưu" : "Lưu"}</span>
                 </button>
 
-                {/* 2. Google Maps Direct Navigation Link */}
-                <a
-                  href={extPerk.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(extPerk.partner + " " + (extPerk.address || "Ha Noi"))}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="py-1.5 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1 shadow-xs transition"
-                  title="Dẫn đường Google Maps"
+                <button
+                  type="button"
+                  onClick={() => setQrPerkModal(p)}
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold inline-flex items-center justify-center gap-1 transition cursor-pointer"
                 >
-                  <Navigation className="size-3.5" />
-                  <span className="hidden sm:inline">Chỉ đường</span>
-                </a>
+                  <QrCode className="size-3.5 text-[#003B95] dark:text-amber-300" />
+                  <span>Mã QR ưu đãi</span>
+                </button>
 
-                {/* 3. Hotline Call Button */}
-                <a
-                  href={`tel:${extPerk.hotline || "0901000001"}`}
-                  className="py-1.5 px-2.5 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1 shadow-xs transition"
-                  title="Gọi hotline"
-                >
-                  <Phone className="size-3.5" />
-                  <span className="hidden sm:inline">Hotline</span>
-                </a>
-
-                {/* 4. Partner Stall / Store Link */}
                 <Link
                   to="/association/products"
-                  className="py-1.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold inline-flex items-center justify-center gap-1 transition"
-                  title="Đến gian hàng đối tác"
+                  className="py-1.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold inline-flex items-center justify-center gap-1 transition"
+                  title="Đến sàn thương mại"
                 >
                   <Store className="size-3.5 text-slate-600 dark:text-slate-400" />
                   <span className="hidden sm:inline">Gian hàng</span>
@@ -912,8 +970,130 @@ function PerksScreen() {
               </div>
             </div>
           );
-        })}
-      </div>
+        };
+
+        if (activeMainTab === "my_perks") {
+          return (
+            <div className="space-y-3 px-4 pt-4">
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Gift className="size-4 text-[#B8860B]" />
+                  <span>Danh Mục Ưu Đãi Của Tôi ({savedPerks.length})</span>
+                </span>
+                <span className="text-[11px] text-slate-400">Đã lưu trữ cá nhân</span>
+              </div>
+
+              {savedPerks.length === 0 ? (
+                <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400 space-y-2">
+                  <Gift className="size-8 mx-auto text-slate-300 dark:text-slate-600" />
+                  <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">
+                    Bạn chưa lưu ưu đãi nào vào mục Của tôi
+                  </p>
+                  <p className="text-[11.5px] text-slate-400 max-w-xs mx-auto">
+                    Hãy bấm nút "Lưu" tại các mục ưu đãi hoặc nhận quà thành tích từ màn Thống kê để lưu trữ tại đây.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMainTab("all")}
+                    className="mt-2 px-4 py-2 rounded-xl bg-[#003B95] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition"
+                  >
+                    <Sparkles className="size-3.5 text-amber-300" />
+                    <span>Khám phá ưu đãi CLB ngay</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedPerks.map((p) => renderPerkCard(p))}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-6 px-4 pt-4">
+            {/* ── SECTION 1: ƯU ĐÃI HỘI VIÊN KHÁC TÀI TRỢ LÊN CLBCEO1983 ── */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 flex items-center justify-center font-bold">
+                    <Building2 className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                      Ưu Đãi Hội Viên Khác Tài Trợ Lên CLB CEO 1983
+                    </h3>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Gói quà tặng, chiết khấu nội khối do doanh nhân thành viên tài trợ
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/40 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  Section 1
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {[...memberCustomPerks, ...DEFAULT_PERKS_SEED.slice(0, 4)].map((p) =>
+                  renderPerkCard({ ...p, isMemberPerk: true }),
+                )}
+              </div>
+            </div>
+
+            {/* ── SECTION 2: ƯU ĐÃI SINH NHẬT ── */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                    <Gift className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                      Ưu Đãi Sinh Nhật
+                    </h3>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Món quà đặc biệt từ Ban Chấp Hành mừng sinh nhật hội viên trong tháng
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  Section 2
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {BIRTHDAY_PERKS.map((p) => renderPerkCard(p))}
+              </div>
+            </div>
+
+            {/* ── SECTION 3: ƯU ĐÃI CHO NGƯỜI CÓ RANK CAO NHẤT Ở THỐNG KÊ ── */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400 flex items-center justify-center font-bold">
+                    <Trophy className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                      Ưu Đãi Cho Người Có Rank Cao Nhất Ở Thống Kê
+                    </h3>
+                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                      Đặc quyền vinh danh Quán quân Bảng Xếp Hạng Doanh Nhân Tiêu Biểu CEO 1983
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+                  Section 3
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {TOP_RANK_PERKS.map((p) => renderPerkCard(p))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal Đăng Ưu Đãi Doanh Nghiệp Của Hội Viên */}
       <MemberPerkCreateModal

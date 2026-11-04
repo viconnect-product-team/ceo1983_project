@@ -54,6 +54,7 @@ import {
   useDisconnect,
 } from "@/hooks/use-connection";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { toast } from "sonner";
 import { MemberProfileModal } from "@/components/member/MemberProfileModal";
 import { InviteMemberModal } from "@/components/member/InviteMemberModal";
@@ -976,6 +977,26 @@ function MembersScreen() {
       };
       saveLocalSentRequests([newSent, ...localSentRequests.filter((r) => r.targetCode !== m.code)]);
     };
+
+    // Emit real-time connection:request event over socket
+    try {
+      const socket = getConnectAppSocket();
+      socket.emit("connection:request", {
+        targetUserId: m.userId || m.code,
+        requesterProfile: {
+          display_name: myMember?.name || "Hội viên CEO 1983",
+          name: myMember?.name || "Hội viên CEO 1983",
+          avatar_url: myMember?.avatar,
+          memberCode: myMember?.code,
+          userId: myMember?.userId,
+          company_name: (myMember as any)?.company || "CLB Doanh Nhân CEO 1983",
+          job_title: (myMember as any)?.title || "Hội viên Chính thức",
+          targetMemberCode: m.code,
+          targetMemberId: m.userId,
+        },
+        connectionId: `conn_dir_${Date.now()}`,
+      });
+    } catch {}
 
     if (m.userId) {
       try {

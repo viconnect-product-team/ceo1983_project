@@ -582,5 +582,3 @@ function LibraryScreen() {
     </div>
   );
 }
-
-export { LibraryScreen };

@@ -40,6 +40,7 @@ import {
   Percent,
   ArrowUpDown,
   BarChart3,
+  Heart,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -213,6 +214,86 @@ function OpportunitiesScreen() {
   const [loadingInterests, setLoadingInterests] = useState(false);
   const [negotiateTarget, setNegotiateTarget] = useState<BusinessConnectTarget | null>(null);
   const [negotiateOpp, setNegotiateOpp] = useState<any>(null);
+
+  // Case 3 Deal B2B States
+  const [dealModalOpp, setDealModalOpp] = useState<any>(null);
+  const [dealPrice, setDealPrice] = useState("50000000");
+  const [dealMessage, setDealMessage] = useState("");
+  const [submittingDeal, setSubmittingDeal] = useState(false);
+  const [agreedDeals, setAgreedDeals] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const stored = localStorage.getItem("vba_agreed_opp_deals");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleOpenDealModal = (o: any) => {
+    setDealModalOpp(o);
+    setDealPrice(o.budgetMin ? String(o.budgetMin) : "50000000");
+    setDealMessage(
+      `Chào Quý Công Ty, chúng tôi rất quan tâm đến cơ hội "${o.title}" và muốn đề xuất hợp tác chào giá cung ứng trực tiếp.`,
+    );
+  };
+
+  const handleSubmitDeal = () => {
+    if (!dealModalOpp) return;
+    setSubmittingDeal(true);
+    try {
+      const dealId = `deal_${Date.now()}`;
+      const newDeal = {
+        id: dealId,
+        oppId: dealModalOpp.id,
+        oppTitle: dealModalOpp.title,
+        partnerName: member?.name || "Hội viên CEO 1983",
+        partnerCompany: (member as any)?.company || (member as any)?.companyName || "Doanh nghiệp CLB",
+        partnerPhone: member?.phone || "",
+        ownerName: dealModalOpp.contactName || dealModalOpp.company || "Chủ cơ hội",
+        ownerCompany: dealModalOpp.company,
+        price: dealPrice,
+        message: dealMessage,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+
+      const rawDeals = localStorage.getItem("vba_opp_deals");
+      const list = rawDeals ? JSON.parse(rawDeals) : [];
+      list.unshift(newDeal);
+      localStorage.setItem("vba_opp_deals", JSON.stringify(list));
+
+      toast.success("Đã gửi đề xuất Deal chào giá tới chủ cơ hội thành công!");
+      setDealModalOpp(null);
+    } catch {
+      toast.error("Không thể gửi deal chào giá.");
+    } finally {
+      setSubmittingDeal(false);
+    }
+  };
+
+  const handleApproveDeal = (oppId: string, oppTitle: string, partnerName: string, partnerCompany: string) => {
+    const next = { ...agreedDeals, [oppId]: true };
+    setAgreedDeals(next);
+    try {
+      localStorage.setItem("vba_agreed_opp_deals", JSON.stringify(next));
+      const rawNotifs = localStorage.getItem("vba_notifications");
+      const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+      notifs.unshift({
+        id: `deal_appr_${Date.now()}`,
+        title: "Deal chào giá đã được chủ cơ hội đồng ý!",
+        body: `Chủ cơ hội "${oppTitle}" đã đồng ý với đề xuất deal của bạn. Nhấn để thiết lập cuộc gặp B2B ngay!`,
+        createdAt: new Date().toISOString(),
+        unread: true,
+        type: "deal",
+        actionUrl: `/association/connect?partnerName=${encodeURIComponent(partnerName)}&partnerCompany=${encodeURIComponent(partnerCompany)}&notes=${encodeURIComponent(`Gặp gỡ 1-1 xúc tiến thương vụ: ${oppTitle}`)}`,
+      });
+      localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+      window.dispatchEvent(new CustomEvent("notifications-updated"));
+    } catch {}
+
+    toast.success("Đã đồng ý deal chào giá! Hệ thống đã gửi thông báo đến đối tác để kết nối cuộc gặp.");
+  };
 
   const [oppReport, setOppReport] = useState<{
     summary: {
@@ -1385,49 +1466,86 @@ function OpportunitiesScreen() {
                             </button>
 
                             {checkIsMine(o) ? (
-                              <div className="px-3 py-1.5 bg-amber-500/10 rounded-md text-[11px] font-bold text-amber-700">
-                                Của bạn
-                              </div>
-                            ) : o.interested || interestedIds.includes(o.id) ? (
-                              <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                                <div className="px-2 py-1 bg-emerald-100 rounded-md text-[10.5px] font-bold text-emerald-700 flex items-center gap-1">
-                                  <Check className="size-3" /> Đã quan tâm
-                                </div>
+                              <div className="flex items-center gap-1.5 justify-end">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMessagePoster(o);
-                                  }}
-                                  className="px-2.5 py-1 bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white rounded-md text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95 shadow-xs"
-                                  title="Nhắn tin trao đổi gửi kèm thông tin cơ hội này"
+                                  onClick={(e) => startEditOpp(o as any, e)}
+                                  className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs"
+                                  title="Chỉnh sửa cơ hội"
                                 >
-                                  <MessageSquare className="size-3" /> Nhắn tin
+                                  <Pencil className="size-3" />
+                                  <span>Chỉnh sửa</span>
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleNegotiate(o);
-                                  }}
-                                  className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-md text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95 shadow-xs"
-                                  title="Lên lịch hẹn 1-1 đàm phán cơ hội này"
+                                  onClick={(e) => handleDeleteOpp(o.id, e)}
+                                  className="px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs"
+                                  title="Xóa cơ hội"
                                 >
-                                  <Handshake className="size-3" /> Đàm phán 1-1
+                                  <Trash2 className="size-3" />
+                                  <span>Xóa</span>
                                 </button>
                               </div>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  interest(o.id, o);
-                                }}
-                                disabled={busy === o.id}
-                                className="px-4 py-1.5 bg-sky-950 hover:bg-sky-900 rounded-md flex justify-start items-start text-white text-xs font-bold font-['Inter'] cursor-pointer transition active:scale-95 disabled:opacity-50"
-                              >
-                                {busy === o.id ? "..." : "Quan tâm"}
-                              </button>
+                              <div className="flex items-center gap-1.5 justify-end">
+                                {agreedDeals[o.id] ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-md text-[10.5px] font-bold flex items-center gap-1">
+                                      <Check className="size-3" /> Deal đã đồng ý
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate({
+                                          to: "/association/connect" as any,
+                                          search: {
+                                            partnerName: o.contactName || o.company || "Chủ cơ hội",
+                                            partnerCompany: o.company || "CLB CEO 1983",
+                                            notes: `Gặp gỡ 1-1 xúc tiến thương vụ: ${o.title}`,
+                                          } as any,
+                                        });
+                                      }}
+                                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-md shadow-emerald-600/20"
+                                    >
+                                      <Calendar className="size-3.5" />
+                                      <span>Kết nối cuộc gặp</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        interest(o.id, o);
+                                      }}
+                                      disabled={busy === o.id}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs ${
+                                        o.interested || interestedIds.includes(o.id)
+                                          ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-300"
+                                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                                      }`}
+                                    >
+                                      <Heart
+                                        className={`size-3 ${o.interested || interestedIds.includes(o.id) ? "fill-emerald-600 text-emerald-600" : ""}`}
+                                      />
+                                      <span>{o.interested || interestedIds.includes(o.id) ? "Đã quan tâm" : "Quan tâm"}</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenDealModal(o);
+                                      }}
+                                      className="px-3 py-1.5 bg-[#003B95] hover:bg-[#002b6e] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-xs"
+                                    >
+                                      <Handshake className="size-3.5 text-amber-300" />
+                                      <span>Deal chào giá</span>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1594,6 +1712,109 @@ function OpportunitiesScreen() {
           setNegotiateOpp(null);
         }}
       />
+
+      {/* POPUP DEAL CHÀO GIÁ B2B CHO CƠ HỘI KINH DOANH (Case 3) */}
+      {dealModalOpp && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-[#0c1427] text-slate-900 dark:text-white shadow-2xl border border-amber-500/30 overflow-hidden m-auto p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/20 text-amber-500">
+                  <Handshake className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    Gửi Deal Chào Giá B2B
+                  </h3>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                    Cơ hội: {dealModalOpp.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDealModalOpp(null)}
+                className="grid h-7 w-7 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-left">
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Giá chào thầu / Báo giá đề xuất (VNĐ)
+                </label>
+                <input
+                  type="text"
+                  value={dealPrice}
+                  onChange={(e) => setDealPrice(e.target.value)}
+                  placeholder="Ví dụ: 150000000"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold outline-none focus:border-[#003B95]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Năng lực & Lời nhắn chào giá
+                </label>
+                <textarea
+                  rows={3}
+                  value={dealMessage}
+                  onChange={(e) => setDealMessage(e.target.value)}
+                  placeholder="Nêu rõ tiến độ, năng lực thực thi và cam kết chất lượng..."
+                  className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-[#003B95] resize-none"
+                />
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                <Sparkles className="size-3.5 shrink-0 mt-0.5 text-amber-500" />
+                <span>
+                  Khi chủ cơ hội đồng ý với mức giá & giải pháp này, hệ thống sẽ gửi thông báo đến bạn để mở nút <strong>Kết nối cuộc gặp</strong> trực tiếp tại B2B Connect.
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDealModalOpp(null)}
+                  className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitDeal}
+                  disabled={submittingDeal}
+                  className="py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md shadow-[#003B95]/30 active:scale-98 transition cursor-pointer disabled:opacity-50"
+                >
+                  {submittingDeal ? "Đang gửi..." : "Gửi Deal chào giá"}
+                </button>
+              </div>
+
+              {/* Action cho Chủ cơ hội đồng ý Deal ngay */}
+              <button
+                type="button"
+                onClick={() => {
+                  const opp = dealModalOpp;
+                  handleApproveDeal(
+                    opp.id,
+                    opp.title,
+                    opp.contactName || opp.company || "Chủ cơ hội",
+                    opp.company || "CLB CEO 1983",
+                  );
+                  setDealModalOpp(null);
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition cursor-pointer"
+              >
+                ✓ Đồng ý deal chào giá này &amp; Bắn thông báo kết nối cuộc gặp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

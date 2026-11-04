@@ -63,7 +63,7 @@ export function AssociationConnectScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"confirmed" | "incoming" | "sent">("confirmed");
+  const [activeTab, setActiveTab] = useState<"my_meetings" | "sent_meetings" | "history">("my_meetings");
   const [loading, setLoading] = useState(false);
   const [meetings, setMeetings] = useState<ConnectionMeeting[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,6 +83,22 @@ export function AssociationConnectScreen() {
   const [formVenue, setFormVenue] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Prefill from Deal URL params (Case 3 & 4)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const pName = sp.get("partnerName");
+      const pComp = sp.get("partnerCompany");
+      const notes = sp.get("notes");
+      if (pName) {
+        setFormPartnerName(pName);
+        if (pComp) setFormPartnerCompany(pComp);
+        if (notes) setFormNotes(notes);
+        setCreateModalOpen(true);
+      }
+    }
+  }, []);
 
   // Deal Form State
   const [dealValueInput, setDealValueInput] = useState("500000000");
@@ -278,35 +294,42 @@ export function AssociationConnectScreen() {
     }
   };
 
-  const confirmedList = useMemo(() => {
+  const myMeetingsList = useMemo(() => {
     return meetings.filter(
       (m) =>
         m.status === "confirmed" ||
         m.status === "scheduled" ||
+        m.status === "accepted" ||
+        (!m.isUserHost && m.status === "pending"),
+    );
+  }, [meetings]);
+
+  const sentMeetingsList = useMemo(() => {
+    return meetings.filter(
+      (m) =>
+        m.isUserHost ||
+        (m.status === "pending" && !m.isUserInvitee) ||
+        m.status === "draft",
+    );
+  }, [meetings]);
+
+  const historyList = useMemo(() => {
+    return meetings.filter(
+      (m) =>
         m.status === "completed" ||
-        m.status === "accepted",
-    );
-  }, [meetings]);
-
-  const incomingList = useMemo(() => {
-    return meetings.filter(
-      (m) => (m.status === "pending" || m.status === "draft") && m.isUserInvitee,
-    );
-  }, [meetings]);
-
-  const sentList = useMemo(() => {
-    return meetings.filter(
-      (m) => (m.status === "pending" || m.status === "draft") && !m.isUserInvitee,
+        m.status === "cancelled" ||
+        m.status === "declined" ||
+        Boolean(m.dealValue),
     );
   }, [meetings]);
 
   const filteredCurrentList = useMemo(() => {
     let list =
-      activeTab === "confirmed"
-        ? confirmedList
-        : activeTab === "incoming"
-        ? incomingList
-        : sentList;
+      activeTab === "my_meetings"
+        ? myMeetingsList
+        : activeTab === "sent_meetings"
+        ? sentMeetingsList
+        : historyList;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -318,7 +341,7 @@ export function AssociationConnectScreen() {
       );
     }
     return list;
-  }, [activeTab, confirmedList, incomingList, sentList, searchQuery]);
+  }, [activeTab, myMeetingsList, sentMeetingsList, historyList, searchQuery]);
 
   return (
     <div className="vba-animate pb-24 min-h-screen bg-stone-50 dark:bg-slate-950 font-sans">
@@ -351,21 +374,21 @@ export function AssociationConnectScreen() {
         {/* 3 Metric Cards */}
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Cuộc gặp</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Cuộc gặp của tôi</span>
             <div className="text-base font-black text-[#1F3864] dark:text-blue-400 mt-0.5">
-              {confirmedList.length}
+              {myMeetingsList.length}
             </div>
           </div>
           <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Lời mời nhận</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Cuộc gặp đã gửi</span>
             <div className="text-base font-black text-amber-600 mt-0.5">
-              {incomingList.length}
+              {sentMeetingsList.length}
             </div>
           </div>
           <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Deal đã chốt</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Lịch sử cuộc gặp</span>
             <div className="text-base font-black text-emerald-600 mt-0.5">
-              {meetings.filter((m) => m.status === "completed" || m.dealValue).length}
+              {historyList.length}
             </div>
           </div>
         </div>
@@ -381,45 +404,45 @@ export function AssociationConnectScreen() {
           />
         </div>
 
-        {/* Navigation Tabs (Strictly No Red) */}
+        {/* 3 Danh Mục Chuẩn Case 3: Cuộc gặp của tôi | Cuộc gặp đã gửi | Lịch sử cuộc gặp */}
         <div className="p-1 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl flex items-center gap-1 shadow-inner">
           <button
             type="button"
-            onClick={() => setActiveTab("confirmed")}
+            onClick={() => setActiveTab("my_meetings")}
             className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === "confirmed"
+              activeTab === "my_meetings"
                 ? "bg-[#1F3864] text-white shadow-md shadow-blue-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Calendar className="size-3.5" />
-            <span>Lịch hẹn ({confirmedList.length})</span>
+            <span>Cuộc gặp của tôi ({myMeetingsList.length})</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab("incoming")}
+            onClick={() => setActiveTab("sent_meetings")}
             className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === "incoming"
+              activeTab === "sent_meetings"
                 ? "bg-[#B8860B] text-white shadow-md shadow-amber-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Clock className="size-3.5" />
-            <span>Đã nhận ({incomingList.length})</span>
+            <Users className="size-3.5" />
+            <span>Cuộc gặp đã gửi ({sentMeetingsList.length})</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab("sent")}
+            onClick={() => setActiveTab("history")}
             className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === "sent"
+              activeTab === "history"
                 ? "bg-[#1F3864] text-white shadow-md shadow-blue-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Users className="size-3.5" />
-            <span>Đã gửi ({sentList.length})</span>
+            <Clock className="size-3.5" />
+            <span>Lịch sử cuộc gặp ({historyList.length})</span>
           </button>
         </div>
 
@@ -524,8 +547,8 @@ export function AssociationConnectScreen() {
                   </div>
                 </div>
 
-                {/* Action Buttons for Confirmed Meeting (STRICTLY NO RED BUTTONS) */}
-                {activeTab === "confirmed" && (
+                {/* Action Buttons for Confirmed / Active Meeting in My Meetings */}
+                {activeTab === "my_meetings" && m.status === "confirmed" && (
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     {/* Call Online Video Call Button */}
                     {m.venueType === "online" && (
@@ -564,21 +587,19 @@ export function AssociationConnectScreen() {
                     )}
 
                     {/* Log Won Deal Button */}
-                    {m.status !== "completed" && (
-                      <button
-                        type="button"
-                        onClick={() => setDealModalMeeting(m)}
-                        className="py-2 px-3 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-xs font-bold inline-flex items-center gap-1 shadow-xs transition cursor-pointer ml-auto"
-                      >
-                        <DollarSign className="size-3.5" />
-                        <span>Ghi nhận Deal</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setDealModalMeeting(m)}
+                      className="py-2 px-3 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-xs font-bold inline-flex items-center gap-1 shadow-xs transition cursor-pointer ml-auto"
+                    >
+                      <DollarSign className="size-3.5" />
+                      <span>Ghi nhận Deal</span>
+                    </button>
                   </div>
                 )}
 
-                {/* Action Buttons for Incoming Invitation */}
-                {activeTab === "incoming" && (
+                {/* Action Buttons for Incoming Invitation in My Meetings */}
+                {activeTab === "my_meetings" && m.status === "pending" && (
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
@@ -599,7 +620,7 @@ export function AssociationConnectScreen() {
                 )}
 
                 {/* Action Buttons for Sent Invitation */}
-                {activeTab === "sent" && (
+                {activeTab === "sent_meetings" && m.status === "pending" && (
                   <div className="flex items-center justify-between pt-1 text-xs">
                     <span className="text-slate-400">Đang đợi đối tác CEO phản hồi</span>
                     <button

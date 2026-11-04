@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
@@ -135,6 +137,7 @@ export function AssociationQrScanModal({
   onSuccess,
 }: AssociationQrScanModalProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [torch, setTorch] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [scannedPartner, setScannedPartner] = useState<ScannedPartner | null>(null);
@@ -350,11 +353,34 @@ export function AssociationQrScanModal({
   const handleSendConnection = async () => {
     if (!scannedPartner) return;
     setConnecting(true);
+    const connId = `conn_qr_${Date.now()}`;
+    const targetId = scannedPartner.userId || scannedPartner.code;
+
+    // Real-time socket relay
+    try {
+      const socket = getConnectAppSocket();
+      socket.emit("connection:request", {
+        targetUserId: targetId,
+        requesterProfile: {
+          display_name: user?.name || "Doanh nhân CEO 1983",
+          name: user?.name || "Doanh nhân CEO 1983",
+          avatar_url: user?.avatar,
+          memberCode: user?.code,
+          userId: user?.id,
+          company_name: (user as any)?.company || "CLB Doanh Nhân CEO 1983",
+          job_title: (user as any)?.jobTitle || (user as any)?.title || "Hội viên Chính thức",
+          targetMemberCode: scannedPartner.code,
+          targetMemberId: scannedPartner.userId,
+        },
+        connectionId: connId,
+      });
+    } catch {}
+
     try {
       await fetchNestApi("/network/requests", {
         method: "POST",
         body: JSON.stringify({
-          targetUserId: scannedPartner.userId || scannedPartner.code,
+          targetUserId: targetId,
           memberCode: scannedPartner.code,
           message: customNote.trim() || `Chào bạn! Tôi đã quét mã QR danh thiếp của bạn và rất mong được kết nối hợp tác giao thương!`,
         }),
