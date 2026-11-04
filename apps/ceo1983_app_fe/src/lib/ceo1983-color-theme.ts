@@ -2,6 +2,7 @@
  * CEO1983 COLOR THEME SYSTEM (Quy Chuẩn Nhận Diện 4 Dạng Màu Tiêu Chuẩn CEO 1983 - HanoiBA)
  * Tuân thủ Brandbook: https://ceo1983.brandbook.vn/ & BRAND ID Guidelines
  * Độc lập với CRM, tối ưu hiển thị Dark Mode & Light Mode
+ * Đồng bộ toàn diện 100% giao diện: Nút bấm, Icon, Bảng biểu, Navigation Bar & Header
  */
 
 export type Ceo1983ColorThemeId =
@@ -19,6 +20,8 @@ export interface Ceo1983ColorTheme {
   primaryDeep: string;
   accentColor: string;
   accentLight: string;
+  lightBg: string;
+  lightBorder: string;
   badgeBg: string;
   gradientPrimary: string;
   gradientCard: string;
@@ -41,14 +44,16 @@ export const CEO1983_COLOR_THEMES: Ceo1983ColorTheme[] = [
     primaryDeep: "#001D4A",
     accentColor: "#F59E0B",
     accentLight: "#FBBF24",
-    badgeBg: "bg-amber-500/15 text-amber-400 border-amber-400/40",
+    lightBg: "#EBF3FF",
+    lightBorder: "#BFDBFE",
+    badgeBg: "bg-amber-500/15 text-amber-500 border-amber-400/40",
     gradientPrimary: "linear-gradient(135deg, #0052CC 0%, #003B95 60%, #001D4A 100%)",
     gradientCard: "linear-gradient(135deg, #0E172A 0%, #14223E 100%)",
     darkSurface: "#0E172A",
     darkSurface2: "#14223E",
     darkBorder: "rgba(245, 158, 11, 0.32)",
     darkBorderSoft: "rgba(245, 158, 11, 0.18)",
-    iconColor: "#F59E0B",
+    iconColor: "#003B95",
     description: "Nhận diện cốt lõi của CLB CEO 1983 - HanoiBA. Thể hiện phong thái đĩnh đạc, uy quyền và kết nối thịnh vượng.",
     swatches: ["#003B95", "#F59E0B"],
   },
@@ -61,14 +66,16 @@ export const CEO1983_COLOR_THEMES: Ceo1983ColorTheme[] = [
     primaryDeep: "#19194D",
     accentColor: "#F7941D", // RGB 247, 148, 29 chuẩn Brandbook
     accentLight: "#F8A74B",
-    badgeBg: "bg-orange-500/15 text-orange-400 border-orange-400/40",
+    lightBg: "#EEF2FF",
+    lightBorder: "#C7D2FE",
+    badgeBg: "bg-orange-500/15 text-orange-500 border-orange-400/40",
     gradientPrimary: "linear-gradient(135deg, #2E3192 0%, #1E206A 60%, #19194D 100%)",
     gradientCard: "linear-gradient(135deg, #121638 0%, #1B1E4A 100%)",
     darkSurface: "#121638",
     darkSurface2: "#1B1E4A",
     darkBorder: "rgba(247, 148, 29, 0.35)",
     darkBorderSoft: "rgba(247, 148, 29, 0.20)",
-    iconColor: "#F7941D",
+    iconColor: "#2E3192",
     description: "Chuẩn màu Logo số 8 và tên gọi CEO 1983 theo tài liệu Brandbook. Sắc cam tượng trưng cho đổi mới sáng tạo và mũi tên tiên phong.",
     swatches: ["#2E3192", "#F7941D"],
   },
@@ -77,20 +84,22 @@ export const CEO1983_COLOR_THEMES: Ceo1983ColorTheme[] = [
     name: "Dạ Tiệc & Vàng Kim Sang Trọng",
     subtitle: "Obsidian Black & Champagne Gold",
     tag: "💎 Thượng Lưu",
-    primaryColor: "#0B0F19",
+    primaryColor: "#0F172A",
     primaryDeep: "#05070D",
     accentColor: "#D4AF37",
     accentLight: "#E5C07B",
-    badgeBg: "bg-yellow-500/15 text-yellow-300 border-yellow-400/40",
-    gradientPrimary: "linear-gradient(135deg, #1A1F2C 0%, #10141E 60%, #05070D 100%)",
+    lightBg: "#F8FAFC",
+    lightBorder: "#CBD5E1",
+    badgeBg: "bg-yellow-500/15 text-yellow-500 border-yellow-400/40",
+    gradientPrimary: "linear-gradient(135deg, #1E293B 0%, #0F172A 60%, #05070D 100%)",
     gradientCard: "linear-gradient(135deg, #0F1420 0%, #171E30 100%)",
     darkSurface: "#0F1420",
     darkSurface2: "#171E30",
     darkBorder: "rgba(212, 175, 55, 0.35)",
     darkBorderSoft: "rgba(212, 175, 55, 0.18)",
-    iconColor: "#D4AF37",
+    iconColor: "#0F172A",
     description: "Phong cách Dạ Tiệc Gala & Hội nghị Doanh nhân Thượng lưu. Tôn vinh vẻ đẹp vương giả, huyền bí và chiều sâu lãnh đạo.",
-    swatches: ["#0B0F19", "#D4AF37"],
+    swatches: ["#0F172A", "#D4AF37"],
   },
   {
     id: "ruby-gold",
@@ -101,14 +110,16 @@ export const CEO1983_COLOR_THEMES: Ceo1983ColorTheme[] = [
     primaryDeep: "#450A0A",
     accentColor: "#EAB308",
     accentLight: "#FDE047",
-    badgeBg: "bg-red-500/15 text-red-400 border-red-400/40",
+    lightBg: "#FEF2F2",
+    lightBorder: "#FECACA",
+    badgeBg: "bg-red-500/15 text-red-500 border-red-400/40",
     gradientPrimary: "linear-gradient(135deg, #DC2626 0%, #991B1B 60%, #450A0A 100%)",
     gradientCard: "linear-gradient(135deg, #200D0D 0%, #301414 100%)",
     darkSurface: "#200D0D",
     darkSurface2: "#301414",
     darkBorder: "rgba(234, 179, 8, 0.35)",
     darkBorderSoft: "rgba(234, 179, 8, 0.20)",
-    iconColor: "#EAB308",
+    iconColor: "#991B1B",
     description: "Khí chất chiến thắng, năng lượng bứt phá và may mắn. Rất thích hợp cho các dịp Caravan, Đại hội và Lễ kỷ niệm đặc biệt.",
     swatches: ["#991B1B", "#EAB308"],
   },
@@ -135,6 +146,121 @@ export function getActiveCeo1983ColorTheme(): Ceo1983ColorTheme {
   return CEO1983_COLOR_THEMES.find((t) => t.id === id) || CEO1983_COLOR_THEMES[0];
 }
 
+/**
+ * Cập nhật style sheet toàn cục để đổi màu 100% app khi chọn Dạng màu tiêu chuẩn
+ */
+function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
+  if (typeof document === "undefined") return;
+
+  const styleId = "ceo1983-dynamic-theme-override";
+  let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
+  if (!styleTag) {
+    styleTag = document.createElement("style");
+    styleTag.id = styleId;
+    document.head.appendChild(styleTag);
+  }
+
+  const primary = theme.primaryColor;
+  const primaryDeep = theme.primaryDeep;
+  const accent = theme.accentColor;
+  const lightBg = theme.lightBg;
+  const lightBorder = theme.lightBorder;
+  const gradientPrimary = theme.gradientPrimary;
+
+  styleTag.innerHTML = `
+    /* ========================================================== */
+    /* CEO1983 COMPREHENSIVE DYNAMIC BRAND THEME: ${theme.name}  */
+    /* ========================================================== */
+    :root {
+      --vba-navy: ${primary} !important;
+      --vba-navy-deep: ${primaryDeep} !important;
+      --vba-gold: ${accent} !important;
+      --theme-icon-color: ${primary} !important;
+      --theme-primary-gradient: ${gradientPrimary} !important;
+      --bc-mobile-accent: ${primary} !important;
+      --bc-mobile-accent-grad: ${gradientPrimary} !important;
+      --vba-theme-primary: ${primary} !important;
+      --vba-theme-light-bg: ${lightBg} !important;
+      --vba-theme-light-border: ${lightBorder} !important;
+    }
+
+    html:not(.dark) {
+      --vba-bg: #FFFFFF !important;
+      --vba-bg-2: #F8FAFC !important;
+      --vba-surface: #FFFFFF !important;
+      --vba-surface-2: #F1F5F9 !important;
+      --vba-text: #0F172A !important;
+      --vba-text-muted: #475569 !important;
+    }
+
+    /* 1. Recolor All Primary Buttons & Badges Across Entire App */
+    [class*="bg-[#003B95]"],
+    [class*="bg-[#002B66]"],
+    [class*="bg-[#0052CC]"],
+    [class*="bg-[#1E3A8A]"],
+    [class*="bg-[#1F3864]"],
+    .vba-btn-primary,
+    .vba-active-tab {
+      background-color: ${primary} !important;
+    }
+
+    /* Đảm bảo text trên nền màu chính luôn là TRẮNG TUYỆT ĐỐI */
+    [class*="bg-[#003B95]"],
+    [class*="bg-[#002B66]"],
+    [class*="bg-[#0052CC]"],
+    [class*="bg-[#1E3A8A]"],
+    [class*="bg-[#1F3864]"],
+    [class*="bg-[#2E3192]"],
+    [class*="bg-[#991B1B]"] {
+      color: #FFFFFF !important;
+    }
+    [class*="bg-[#003B95]"] *,
+    [class*="bg-[#002B66]"] *,
+    [class*="bg-[#1E3A8A]"] *,
+    [class*="bg-[#1F3864]"] *,
+    [class*="bg-[#2E3192]"] *,
+    [class*="bg-[#991B1B]"] * {
+      color: #FFFFFF;
+    }
+
+    /* 2. Recolor All Primary Texts */
+    [class*="text-[#003B95]"],
+    [class*="text-[#002B66]"],
+    [class*="text-[#1E3A8A]"] {
+      color: ${primary} !important;
+    }
+
+    /* 3. Recolor All Borders */
+    [class*="border-[#003B95]"],
+    [class*="border-[#002B66]"],
+    [class*="border-[#1E3A8A]"] {
+      border-color: ${primary} !important;
+    }
+
+    /* 4. Recolor Soft Tints in Light Mode */
+    html:not(.dark) [class*="bg-blue-50"] {
+      background-color: ${lightBg} !important;
+    }
+    html:not(.dark) [class*="border-blue-200"],
+    html:not(.dark) [class*="border-blue-100"] {
+      border-color: ${lightBorder} !important;
+    }
+
+    /* 5. Recolor Gradients */
+    [class*="from-[#003B95]"] {
+      --tw-gradient-from: ${primary} var(--tw-gradient-from-position) !important;
+      --tw-gradient-to: ${primaryDeep} var(--tw-gradient-to-position) !important;
+      --tw-gradient-stops: var(--tw-gradient-from), ${primaryDeep} var(--tw-gradient-to-position) !important;
+    }
+
+    /* 6. Bottom Navigation Bar Active Elements */
+    .vba-bottom-bar button span[class*="rounded-full"][class*="shadow"] {
+      background: ${gradientPrimary} !important;
+      box-shadow: 0 4px 14px ${primary}50 !important;
+    }
+  `;
+}
+
 export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
   if (typeof document === "undefined") return;
   const theme = CEO1983_COLOR_THEMES.find((t) => t.id === themeId) || CEO1983_COLOR_THEMES[0];
@@ -146,40 +272,54 @@ export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
     document.body.dataset.appColorTheme = theme.id;
   }
 
-  const bg =
-    theme.id === "ruby-gold"
-      ? "#140707"
-      : theme.id === "heritage-orange"
-      ? "#0A0D24"
-      : theme.id === "obsidian-gold"
-      ? "#05070D"
-      : "#070D1A";
+  const isDark = root.classList.contains("dark") || (typeof localStorage !== "undefined" && localStorage.getItem("theme") === "dark");
 
-  const bg2 =
-    theme.id === "ruby-gold"
-      ? "#0B0303"
-      : theme.id === "heritage-orange"
-      ? "#060818"
-      : theme.id === "obsidian-gold"
-      ? "#020306"
-      : "#050912";
+  const bg = isDark
+    ? (theme.id === "ruby-gold"
+        ? "#140707"
+        : theme.id === "heritage-orange"
+        ? "#0A0D24"
+        : theme.id === "obsidian-gold"
+        ? "#05070D"
+        : "#070D1A")
+    : "#FFFFFF";
+
+  const bg2 = isDark
+    ? (theme.id === "ruby-gold"
+        ? "#0B0303"
+        : theme.id === "heritage-orange"
+        ? "#060818"
+        : theme.id === "obsidian-gold"
+        ? "#020306"
+        : "#050912")
+    : "#F8FAFC";
+
+  const surface = isDark ? theme.darkSurface : "#FFFFFF";
+  const surface2 = isDark ? theme.darkSurface2 : "#F8FAFC";
+  const textColor = isDark ? "#FFFFFF" : "#0F172A";
+  const textMuted = isDark ? "#94A3B8" : "#475569";
 
   // Áp dụng biến CSS thời gian thực
   root.style.setProperty("--vba-bg", bg);
   root.style.setProperty("--vba-bg-2", bg2);
+  root.style.setProperty("--vba-surface", surface);
+  root.style.setProperty("--vba-surface-2", surface2);
+  root.style.setProperty("--vba-text", textColor);
+  root.style.setProperty("--vba-text-muted", textMuted);
   root.style.setProperty("--vba-navy", theme.primaryColor);
   root.style.setProperty("--vba-navy-deep", theme.primaryDeep);
   root.style.setProperty("--vba-gold", theme.accentColor);
   root.style.setProperty("--vba-gold-2", theme.accentLight);
   root.style.setProperty("--vba-border", theme.darkBorder);
   root.style.setProperty("--vba-border-soft", theme.darkBorderSoft);
-  root.style.setProperty("--vba-surface", theme.darkSurface);
-  root.style.setProperty("--vba-surface-2", theme.darkSurface2);
   root.style.setProperty("--theme-icon-color", theme.iconColor);
   root.style.setProperty("--theme-primary-gradient", theme.gradientPrimary);
   root.style.setProperty("--theme-card-gradient", theme.gradientCard);
   root.style.setProperty("--bc-mobile-accent", theme.primaryColor);
   root.style.setProperty("--bc-mobile-accent-grad", theme.gradientPrimary);
+
+  // Kích hoạt engine style override để đổi màu 100% app
+  injectGlobalThemeOverride(theme);
 
   try {
     localStorage.setItem(COLOR_THEME_STORAGE_KEY, themeId);
@@ -188,4 +328,3 @@ export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
     /* ignore */
   }
 }
-

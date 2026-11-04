@@ -56,6 +56,11 @@ import { useAuth } from "@/context/AuthContext";
 import { SeasonalEventHeader, getEffectiveThemeOption, syncThemeFromBackend } from "@/components/member/SeasonalEventHeader";
 import { useTheme } from "@/lib/theme";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
+import {
+  getActiveCeo1983ColorTheme,
+  COLOR_THEME_EVENT,
+  type Ceo1983ColorTheme,
+} from "@/lib/ceo1983-color-theme";
 import { canScanEventQr as checkCanScanEventQr } from "@/lib/checkin-gatekeeper-auth";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
@@ -329,6 +334,23 @@ function Home() {
   const [alarmModalOpen, setAlarmModalOpen] = useState(false);
   const [selectedMemberForProfile, setSelectedMemberForProfile] = useState<any | null>(null);
   const [effectiveTheme, setEffectiveTheme] = useState(() => getEffectiveThemeOption());
+  const [brandColorTheme, setBrandColorTheme] = useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
+
+  useEffect(() => {
+    const handleColorThemeUpdate = (e: any) => {
+      if (e?.detail) {
+        setBrandColorTheme(e.detail);
+      } else {
+        setBrandColorTheme(getActiveCeo1983ColorTheme());
+      }
+    };
+    window.addEventListener(COLOR_THEME_EVENT, handleColorThemeUpdate);
+    window.addEventListener("storage", handleColorThemeUpdate);
+    return () => {
+      window.removeEventListener(COLOR_THEME_EVENT, handleColorThemeUpdate);
+      window.removeEventListener("storage", handleColorThemeUpdate);
+    };
+  }, []);
 
   const { theme } = useTheme();
   const isDark = theme === "dark" || (typeof document !== "undefined" && document.documentElement.classList.contains("dark"));
@@ -338,38 +360,24 @@ function Home() {
   }, []);
 
   const getActionIconStyle = (iconKey: string) => {
+    const primary = brandColorTheme.primaryColor;
+    const accent = brandColorTheme.accentColor;
     if (!isDark) {
       return {
-        backgroundColor: `${effectiveTheme.primaryColor}18`,
-        borderColor: `${effectiveTheme.primaryColor}35`,
-        color: effectiveTheme.primaryColor || "#003B95",
+        backgroundColor: brandColorTheme.lightBg,
+        borderColor: brandColorTheme.lightBorder,
+        color: primary,
         boxShadow:
           effectiveTheme.iconStyle === "glow-neon"
-            ? `0 0 12px ${effectiveTheme.primaryColor}70`
+            ? `0 0 12px ${primary}60`
             : undefined,
       };
     }
-    // High-contrast, vibrant luminous styling for Dark Mode - Quy chuẩn toàn bộ sang Blue tone
-    const darkPalette: Record<string, { bg: string; border: string; color: string }> = {
-      card: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
-      members: { bg: "rgba(30, 58, 138, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
-      checkin: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
-      perks: { bg: "rgba(37, 99, 235, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
-      voting: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(147, 197, 253, 0.45)", color: "#93C5FD" },
-      history: { bg: "rgba(30, 58, 138, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
-      marketplace: { bg: "rgba(0, 59, 149, 0.22)", border: "rgba(56, 189, 248, 0.45)", color: "#38BDF8" },
-      fees: { bg: "rgba(37, 99, 235, 0.22)", border: "rgba(96, 165, 250, 0.45)", color: "#60A5FA" },
-    };
-    const item = darkPalette[iconKey] || {
-      bg: "rgba(0, 59, 149, 0.22)",
-      border: "rgba(56, 189, 248, 0.45)",
-      color: "#38BDF8",
-    };
     return {
-      backgroundColor: item.bg,
-      borderColor: item.border,
-      color: item.color,
-      boxShadow: `0 0 10px ${item.border}`,
+      backgroundColor: `${primary}30`,
+      borderColor: `${accent}60`,
+      color: accent,
+      boxShadow: `0 0 10px ${primary}40`,
     };
   };
 
@@ -1278,14 +1286,16 @@ function Home() {
               const roundedClass = effectiveTheme.borderRadius || "rounded-2xl";
               const customThemeIcon = effectiveTheme.actionIcons?.[id];
 
+              const isDarkTheme = isDark;
               const iconAndBadge = (
                 <div
                   className={`size-14 relative ${roundedClass} flex justify-center items-center group-hover:scale-105 transition-all shadow-xs`}
                   style={{
-                    backgroundColor: isDark ? `${effectiveTheme.primaryColor || "#003B95"}25` : `${effectiveTheme.primaryColor || "#003B95"}12`,
-                    borderColor: `${effectiveTheme.primaryColor || "#003B95"}40`,
-                    borderWidth: "1px",
+                    backgroundColor: isDarkTheme ? `${brandColorTheme.primaryColor}28` : brandColorTheme.lightBg,
+                    borderColor: isDarkTheme ? `${brandColorTheme.accentColor}55` : brandColorTheme.lightBorder,
+                    borderWidth: "1.5px",
                     borderStyle: "solid",
+                    boxShadow: isDarkTheme ? `0 0 10px ${brandColorTheme.primaryColor}25` : undefined,
                   }}
                 >
                   {customThemeIcon ? (
@@ -1293,12 +1303,20 @@ function Home() {
                       {customThemeIcon}
                     </span>
                   ) : (
-                    <span style={{ color: effectiveTheme.primaryColor || "#003B95" }}>
+                    <span style={{ color: isDarkTheme ? brandColorTheme.accentColor : brandColorTheme.primaryColor }}>
                       {getShortcutIcon(def.iconName, "size-6")}
                     </span>
                   )}
                   {badgeVal && (
-                    <div className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900 ${badgeColor}`}>
+                    <div
+                      className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900`}
+                      style={{
+                        backgroundColor: badgeColor.includes("amber")
+                          ? brandColorTheme.accentColor
+                          : brandColorTheme.primaryColor,
+                        color: badgeColor.includes("amber") ? "#0f172a" : "#ffffff",
+                      }}
+                    >
                       <span className="text-[10px] font-black font-sans leading-3">
                         {badgeVal}
                       </span>

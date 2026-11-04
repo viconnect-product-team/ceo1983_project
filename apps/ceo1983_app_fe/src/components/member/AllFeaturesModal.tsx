@@ -2,6 +2,11 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  getActiveCeo1983ColorTheme,
+  COLOR_THEME_EVENT,
+  type Ceo1983ColorTheme,
+} from "@/lib/ceo1983-color-theme";
+import {
   X,
   Users,
   Calendar,
@@ -53,6 +58,20 @@ export function AllFeaturesModal({
 }: AllFeaturesModalProps) {
   const navigate = useNavigate();
   const [search, setSearch] = React.useState("");
+  const [brandColorTheme, setBrandColorTheme] = React.useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
+
+  React.useEffect(() => {
+    const handleUpdate = (e: any) => {
+      if (e?.detail) setBrandColorTheme(e.detail);
+      else setBrandColorTheme(getActiveCeo1983ColorTheme());
+    };
+    window.addEventListener(COLOR_THEME_EVENT, handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener(COLOR_THEME_EVENT, handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
 
   const features: FeatureItem[] = [
     {
@@ -285,8 +304,10 @@ export function AllFeaturesModal({
                         className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/80 hover:bg-blue-50/80 dark:hover:bg-slate-800/90 border border-slate-200/80 dark:border-slate-800 hover:border-[#003B95]/50 dark:hover:border-amber-500/50 transition cursor-pointer flex flex-col justify-between group shadow-xs active:scale-[0.98]"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div className="size-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 group-hover:border-amber-400/80 text-[#003B95] dark:text-amber-400 grid place-items-center shadow-2xs group-hover:scale-105 transition-transform">
-                            <Icon className="size-4.5" />
+                          <div className="size-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 group-hover:border-amber-400/80 grid place-items-center shadow-2xs group-hover:scale-105 transition-transform">
+                            <span style={{ color: brandColorTheme.primaryColor }}>
+       <Icon className="size-4.5" />
+     </span>
                           </div>
                           {f.badge && (
                             <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black leading-none ${f.badgeColor || "bg-amber-500 text-slate-900"}`}>

@@ -830,36 +830,39 @@ export default function ProfileScreen() {
               onClick={() => setActiveTab("about")}
               className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "about"
-                  ? "bg-white dark:bg-[#003B95] text-[#003B95] dark:text-white shadow-xs font-extrabold"
+                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
+              style={activeTab === "about" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
             >
-              <User className="h-3.5 w-3.5" />
-              <span>Hồ sơ</span>
+              <User className={`h-3.5 w-3.5 ${activeTab === "about" ? "text-white" : ""}`} />
+              <span style={activeTab === "about" ? { color: "#ffffff" } : undefined}>Hồ sơ</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("friends")}
               className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "friends"
-                  ? "bg-white dark:bg-[#003B95] text-[#003B95] dark:text-white shadow-xs font-extrabold"
+                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
+              style={activeTab === "friends" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
             >
-              <Briefcase className="h-3.5 w-3.5" />
-              <span>Giao thương</span>
+              <Briefcase className={`h-3.5 w-3.5 ${activeTab === "friends" ? "text-white" : ""}`} />
+              <span style={activeTab === "friends" ? { color: "#ffffff" } : undefined}>Giao thương</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("posts")}
               className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "posts"
-                  ? "bg-white dark:bg-[#003B95] text-[#003B95] dark:text-white shadow-xs font-extrabold"
+                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
+              style={activeTab === "posts" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
             >
-              <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
-              <span>Cài đặt &amp; Bảo mật</span>
+              <ShieldCheck className={`h-3.5 w-3.5 ${activeTab === "posts" ? "text-white" : "text-amber-500"}`} />
+              <span style={activeTab === "posts" ? { color: "#ffffff" } : undefined}>Cài đặt &amp; Bảo mật</span>
             </button>
           </div>
         </div>

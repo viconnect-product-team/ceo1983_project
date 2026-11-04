@@ -730,30 +730,34 @@ export function AssociationAnalyticsScreen() {
         back
       />
 
-      {/* ── BỘ LỌC KỲ BÁO CÁO: THÁNG / QUÝ / NĂM ── */}
+      {/* ── BỘ LỌC KỲ BÁO CÁO: THÁNG / QUÝ / NĂM (CHUẨN TRẮNG ĐEN XANH) ── */}
       <div className="px-3 sm:px-4 pt-3 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
-        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
           Kỳ thống kê:
         </span>
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-0.5 rounded-xl">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-0.5 rounded-xl border border-slate-200/60 dark:border-white/10">
           {[
             { id: "month", label: "Tháng" },
             { id: "quarter", label: "Quý" },
             { id: "year", label: "Năm" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTimeRange(item.id as any)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                timeRange === item.id
-                  ? "bg-white dark:bg-[#003B95] text-[#003B95] dark:text-white shadow-xs font-black"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+          ].map((item) => {
+            const isSelected = timeRange === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTimeRange(item.id as any)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-[#003B95] text-white shadow-xs font-black ring-1 ring-[#002B66]"
+                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                style={isSelected ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
+              >
+                <span style={isSelected ? { color: "#ffffff" } : undefined}>{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -793,14 +797,15 @@ export function AssociationAnalyticsScreen() {
               key={tab.id}
               type="button"
               onClick={() => setActiveCategory(tab.id as AnalyticsCategory)}
-              className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isActive
-                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
-                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                  ? "bg-[#003B95] text-white shadow-xs font-extrabold border border-[#002B66]"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-200"
               }`}
+              style={isActive ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
             >
-              <Icon className="size-3.5" />
-              <span>{tab.shortLabel}</span>
+              <Icon className={`size-3.5 ${isActive ? "text-white" : "text-[#003B95] dark:text-slate-300"}`} />
+              <span style={isActive ? { color: "#ffffff" } : undefined}>{tab.shortLabel}</span>
             </button>
           );
         })}
@@ -812,7 +817,7 @@ export function AssociationAnalyticsScreen() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <BarChart3 className="size-4 text-[#003B95] dark:text-amber-400" />
+                <BarChart3 className="size-4 text-[#003B95] dark:text-blue-400" />
                 <span>Biểu Đồ Xu Hướng ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : "Năm Tài Khóa"})</span>
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -821,12 +826,12 @@ export function AssociationAnalyticsScreen() {
             </div>
 
             <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300 shrink-0">
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
                 <span className="size-2.5 rounded-xs bg-[#003B95]" />
                 Thực tế
               </span>
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span className="w-3 h-0.5 bg-[#10B981]" />
+              <span className="flex items-center gap-1.5 text-[#0284C7] dark:text-sky-400 font-bold">
+                <span className="w-3 h-0.5 bg-[#0284C7]" />
                 Tăng trưởng
               </span>
             </div>
@@ -857,7 +862,7 @@ export function AssociationAnalyticsScreen() {
                         <div className="p-2.5 rounded-xl bg-slate-900 text-white text-xs shadow-xl border border-slate-700">
                           <p className="font-bold border-b border-slate-800 pb-1 mb-1">{label}</p>
                           <p className="text-blue-300">Khối lượng: {payload[0]?.value}</p>
-                          <p className="text-emerald-400">Tăng trưởng: {payload[1]?.value}%</p>
+                          <p className="text-sky-300">Tăng trưởng: {payload[1]?.value}%</p>
                         </div>
                       );
                     }
@@ -875,9 +880,9 @@ export function AssociationAnalyticsScreen() {
                   type="monotone"
                   dataKey="lineVal"
                   name="Tăng trưởng"
-                  stroke="#10B981"
+                  stroke="#0284C7"
                   strokeWidth={2.5}
-                  dot={{ r: 4, fill: "#10B981", stroke: "#ffffff", strokeWidth: 1.5 }}
+                  dot={{ r: 4, fill: "#003B95", stroke: "#ffffff", strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -891,16 +896,18 @@ export function AssociationAnalyticsScreen() {
             return (
               <div
                 key={idx}
-                className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-100 dark:border-slate-800 shadow-2xs space-y-1"
+                className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-1"
               >
                 <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[10.5px] font-semibold truncate">{kpi.label}</span>
-                  <Icon className="size-3.5 text-[#1E3A8A] dark:text-amber-400 shrink-0" />
+                  <span className="text-[10.5px] font-semibold truncate text-slate-600 dark:text-slate-400">{kpi.label}</span>
+                  <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 shrink-0">
+                    <Icon className="size-3.5 text-[#003B95] dark:text-blue-300" />
+                  </div>
                 </div>
                 <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
                   {kpi.value}
                 </div>
-                <div className="text-[9.5px] font-bold text-[#1E3A8A] dark:text-blue-400 truncate">
+                <div className="text-[9.5px] font-bold text-[#003B95] dark:text-blue-400 truncate">
                   {kpi.subtext}
                 </div>
               </div>
@@ -909,7 +916,7 @@ export function AssociationAnalyticsScreen() {
         </div>
 
         {/* ── 3. KHỐI TIẾN TRÌNH NHIỆM VỤ 1 ĐƯỜNG NGANG CHIA 3 NOTE (Case 6) ── */}
-        <div id="analytics-task-milestones" className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-blue-200 dark:border-blue-900/50 shadow-sm relative overflow-hidden">
+        <div id="analytics-task-milestones" className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
           <style>{`
             @keyframes gentleWiggle {
               0%, 100% { transform: rotate(-5deg) scale(1.05); }
@@ -918,19 +925,19 @@ export function AssociationAnalyticsScreen() {
           `}</style>
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <div className="size-8 rounded-xl bg-gradient-to-tr from-[#003B95] to-blue-600 flex items-center justify-center text-white shadow-sm font-black">
+              <div className="size-8 rounded-xl bg-[#003B95] flex items-center justify-center text-white shadow-xs font-black">
                 <Trophy className="size-4 text-white" />
               </div>
               <div>
                 <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
                   Nhiệm Vụ &amp; Mốc Thống Kê
                 </h4>
-                <p className="text-[10.5px] text-slate-500">
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
                   Hoàn thành <strong className="text-[#003B95] dark:text-blue-400 font-bold">{currentTaskCompletedCount}/10</strong> nhiệm vụ
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800">
               3 Mốc Nhận Thưởng
             </span>
           </div>
@@ -940,7 +947,7 @@ export function AssociationAnalyticsScreen() {
             {/* Thanh ngang nền */}
             <div className="absolute left-8 right-8 top-[3.75rem] h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full z-0 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-600 via-[#003B95] to-amber-500 rounded-full transition-all duration-700 shadow-sm"
+                className="h-full bg-[#003B95] rounded-full transition-all duration-700 shadow-xs"
                 style={{ width: `${Math.min(100, (currentTaskCompletedCount / 10) * 100)}%` }}
               />
             </div>
@@ -958,12 +965,12 @@ export function AssociationAnalyticsScreen() {
                     className="flex flex-col items-center cursor-pointer group"
                     style={{ width: "30%" }}
                   >
-                    {/* Hộp quà phía trên note với hiệu ứng rung rung khi qua note */}
+                    {/* Hộp quà phía trên note với hiệu ứng rung rung khi qua note (Chuẩn Xanh Navy & Trắng) */}
                     <div className="relative mb-2">
                       <div
                         className={`size-11 rounded-2xl flex items-center justify-center p-2 transition-all shadow-md ${
                           isPassed
-                            ? "bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 border-2 border-amber-500 text-amber-950 group-hover:scale-110"
+                            ? "bg-gradient-to-tr from-[#003B95] via-[#1E3A8A] to-[#0052CC] border-2 border-[#002B66] text-white group-hover:scale-110"
                             : "bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-400 grayscale"
                         }`}
                         style={
@@ -972,12 +979,12 @@ export function AssociationAnalyticsScreen() {
                             : undefined
                         }
                       >
-                        <Gift className={`size-6 ${isPassed ? "text-amber-900 fill-amber-500/20" : "text-slate-400"}`} />
+                        <Gift className={`size-6 ${isPassed ? "text-white fill-white/20" : "text-slate-400"}`} />
                       </div>
                       {isPassed && !isClaimed && (
                         <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0284C7]"></span>
                         </span>
                       )}
                     </div>
@@ -986,7 +993,7 @@ export function AssociationAnalyticsScreen() {
                     <div
                       className={`size-6 rounded-full flex items-center justify-center font-bold text-[10px] border-2 shadow-xs transition-transform group-hover:scale-110 ${
                         isClaimed
-                          ? "bg-emerald-500 border-white text-white"
+                          ? "bg-slate-900 border-white text-white"
                           : isPassed
                           ? "bg-[#003B95] border-white text-white ring-2 ring-blue-300"
                           : "bg-white dark:bg-slate-800 border-slate-300 text-slate-500"
@@ -1003,9 +1010,9 @@ export function AssociationAnalyticsScreen() {
                       <span
                         className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold ${
                           isClaimed
-                            ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                             : isPassed
-                            ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-black animate-pulse"
+                            ? "bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-black animate-pulse"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                         }`}
                       >
@@ -1023,7 +1030,7 @@ export function AssociationAnalyticsScreen() {
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <BarChart3 className="size-4 text-[#1E3A8A] dark:text-amber-400" />
+              <BarChart3 className="size-4 text-[#003B95] dark:text-blue-400" />
               <span>Chỉ Số Trọng Tâm 4 Danh Mục Cốt Lõi</span>
             </span>
             <span className="text-[10.5px] font-semibold text-slate-500">Dữ liệu thời gian thực</span>
@@ -1031,13 +1038,13 @@ export function AssociationAnalyticsScreen() {
 
           <div className="grid grid-cols-2 gap-2.5">
             {/* Danh mục 1: Giao Thương B2B */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-900 to-[#1E3A8A] text-white shadow-xs space-y-1.5 border border-blue-800/40">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#003B95] to-[#002B66] text-white shadow-xs space-y-1.5 border border-[#002B66]">
               <div className="flex items-center justify-between">
-                <span className="text-[10.5px] font-bold text-amber-300 uppercase tracking-wide flex items-center gap-1">
-                  <Sparkles className="size-3 text-amber-300" />
+                <span className="text-[10.5px] font-bold text-blue-100 uppercase tracking-wide flex items-center gap-1">
+                  <Sparkles className="size-3 text-white" />
                   Giao Thương B2B
                 </span>
-                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-blue-100">
+                <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-[9px] font-bold text-white">
                   +{((serverData?.kpi?.totalDealsWon ?? oppStats.wonCount) || 12)} deal
                 </span>
               </div>
@@ -1052,58 +1059,58 @@ export function AssociationAnalyticsScreen() {
             </div>
 
             {/* Danh mục 2: Hội Viên & 1-on-1 */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-700 text-white shadow-xs space-y-1.5 border border-amber-500/40">
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131a26] text-slate-900 dark:text-white shadow-xs space-y-1.5 border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <span className="text-[10.5px] font-bold text-amber-100 uppercase tracking-wide flex items-center gap-1">
-                  <Handshake className="size-3 text-white" />
+                <span className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
+                  <Handshake className="size-3 text-[#003B95]" />
                   Gắn Kết 1-on-1
                 </span>
-                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-white">
+                <span className="px-1.5 py-0.2 rounded-md bg-blue-50 dark:bg-blue-950/60 text-[9px] font-bold text-[#003B95] dark:text-blue-300">
                   92 CEO
                 </span>
               </div>
-              <p className="text-lg sm:text-xl font-black text-white tracking-tight">
+              <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                 186 Cuộc Hẹn
               </p>
-              <p className="text-[10px] text-amber-100">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 Gặp gỡ trực tiếp cafe &amp; thăm doanh nghiệp
               </p>
             </div>
 
             {/* Danh mục 3: Sự Kiện & Đào Tạo */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-red-800 to-[#991B1B] text-white shadow-xs space-y-1.5 border border-red-700/40">
+            <div className="p-3.5 rounded-2xl bg-white dark:bg-[#131a26] text-slate-900 dark:text-white shadow-xs space-y-1.5 border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <span className="text-[10.5px] font-bold text-red-200 uppercase tracking-wide flex items-center gap-1">
-                  <Calendar className="size-3 text-white" />
+                <span className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar className="size-3 text-[#003B95]" />
                   Sự Kiện &amp; Đào Tạo
                 </span>
-                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-white">
+                <span className="px-1.5 py-0.2 rounded-md bg-blue-50 dark:bg-blue-950/60 text-[9px] font-bold text-[#003B95] dark:text-blue-300">
                   95.4% QR
                 </span>
               </div>
-              <p className="text-lg sm:text-xl font-black text-white tracking-tight">
+              <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                 28 Chương Trình
               </p>
-              <p className="text-[10px] text-red-100">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 1,420 lượt đại biểu tham dự check-in
               </p>
             </div>
 
             {/* Danh mục 4: Tài Chính & Đóng Góp Quỹ */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 to-[#1E3A8A] text-white shadow-xs space-y-1.5 border border-slate-700/50">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white shadow-xs space-y-1.5 border border-slate-800">
               <div className="flex items-center justify-between">
-                <span className="text-[10.5px] font-bold text-amber-300 uppercase tracking-wide flex items-center gap-1">
-                  <Coins className="size-3 text-amber-300" />
+                <span className="text-[10.5px] font-bold text-slate-200 uppercase tracking-wide flex items-center gap-1">
+                  <Coins className="size-3 text-white" />
                   Tài Chính &amp; Quỹ
                 </span>
-                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-emerald-300">
+                <span className="px-1.5 py-0.2 rounded-md bg-white/15 text-[9px] font-bold text-white">
                   98.2% Chuẩn
                 </span>
               </div>
-              <p className="text-lg sm:text-xl font-black text-amber-300 tracking-tight">
+              <p className="text-lg sm:text-xl font-black text-white tracking-tight">
                 100% Minh Bạch
               </p>
-              <p className="text-[10px] text-slate-200">
+              <p className="text-[10px] text-slate-300">
                 Niên liễm MB Bank &amp; Quỹ thiện nguyện
               </p>
             </div>
@@ -1139,10 +1146,10 @@ export function AssociationAnalyticsScreen() {
                     <div
                       className={`relative rounded-full overflow-hidden p-0.5 shadow-sm ${
                         isTop1
-                          ? "size-15 ring-2 ring-amber-400 shadow-amber-400/30"
+                          ? "size-15 ring-3 ring-[#003B95] shadow-md"
                           : isTop2
-                          ? "size-12 ring-2 ring-slate-400 shadow-slate-300/30"
-                          : "size-12 ring-2 ring-amber-500 shadow-amber-500/30"
+                          ? "size-12 ring-2 ring-slate-400"
+                          : "size-12 ring-2 ring-slate-300"
                       }`}
                     >
                       <img
@@ -1156,12 +1163,12 @@ export function AssociationAnalyticsScreen() {
                     </div>
 
                     <span
-                      className={`absolute -bottom-1 px-1.5 py-0.2 rounded-full text-[9px] font-black text-white ${
+                      className={`absolute -bottom-1 px-2 py-0.5 rounded-full text-[9px] font-black text-white ${
                         isTop1
-                          ? "bg-[#003B95] border border-amber-400"
+                          ? "bg-[#003B95] border border-white"
                           : isTop2
-                          ? "bg-slate-600"
-                          : "bg-amber-600"
+                          ? "bg-slate-700"
+                          : "bg-slate-500"
                       }`}
                     >
                       {isTop1 ? "Hạng 1" : isTop2 ? "Hạng 2" : "Hạng 3"}
@@ -1175,7 +1182,7 @@ export function AssociationAnalyticsScreen() {
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate w-full px-1">
                     {performer.company}
                   </p>
-                  <p className="text-[10.5px] font-bold text-[#003B95] dark:text-amber-400 truncate w-full px-1 mt-0.5">
+                  <p className="text-[10.5px] font-bold text-[#003B95] dark:text-blue-400 truncate w-full px-1 mt-0.5">
                     {performer.valueStr}
                   </p>
 
@@ -1183,13 +1190,13 @@ export function AssociationAnalyticsScreen() {
                   <div
                     className={`w-full rounded-t-xl flex flex-col items-center justify-center mt-2.5 border-t border-x ${
                       isTop1
-                        ? "h-24 bg-[#003B95] text-white border-amber-400 shadow-xs"
+                        ? "h-24 bg-[#003B95] text-white border-[#002B66] shadow-xs"
                         : isTop2
-                        ? "h-16 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                        : "h-14 bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300"
+                        ? "h-16 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                        : "h-14 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
                     }`}
                   >
-                    <span className="font-black text-xs">
+                    <span className="font-black text-xs text-inherit">
                       {isTop1 ? "Quán Quân" : isTop2 ? "Á Quân 1" : "Á Quân 2"}
                     </span>
                     <span className="text-[9px] font-medium opacity-80">#{performer.rank}</span>
@@ -1755,10 +1762,10 @@ export function AssociationAnalyticsScreen() {
         </div>
       )}
 
-      {/* POPUP CHI TIẾT MỐC & NÚT NHẬN LƯU VÀO ƯU ĐÃI CỦA TÔI (Case 6) */}
+      {/* POPUP CHI TIẾT MỐC & NÚT NHẬN LƯU VÀO ƯU ĐÃI CỦA TÔI (Case 6 - TRẮNG ĐEN XANH) */}
       {selectedMilestone && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-[#0c1427] text-slate-900 dark:text-white shadow-2xl border border-amber-500/30 overflow-hidden m-auto p-5 text-center space-y-4">
+          <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-[#0c1427] text-slate-900 dark:text-white shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden m-auto p-5 text-center space-y-4">
             <button
               type="button"
               onClick={() => setSelectedMilestone(null)}
@@ -1767,12 +1774,12 @@ export function AssociationAnalyticsScreen() {
               <X className="h-4 w-4" />
             </button>
 
-            <div className="size-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-500 mx-auto flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/30">
-              <Gift className="size-9 text-slate-950" />
+            <div className="size-16 rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#1E3A8A] mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-900/30">
+              <Gift className="size-9 text-white" />
             </div>
 
             <div>
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10.5px] font-extrabold uppercase">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-300 text-[10.5px] font-extrabold uppercase border border-blue-200 dark:border-blue-800">
                 Phần Thưởng {selectedMilestone.label}
               </span>
               <h3 className="text-base font-black text-slate-900 dark:text-white mt-1 leading-snug">
@@ -1784,8 +1791,8 @@ export function AssociationAnalyticsScreen() {
               {selectedMilestone.rewardDesc}
             </p>
 
-            <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-left text-xs space-y-1">
-              <div className="font-bold text-amber-900 dark:text-amber-300">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left text-xs space-y-1">
+              <div className="font-bold text-[#003B95] dark:text-blue-300">
                 Ưu đãi: {selectedMilestone.rewardDiscount}
               </div>
               <div className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
@@ -1795,7 +1802,7 @@ export function AssociationAnalyticsScreen() {
 
             <div className="pt-2">
               {claimedMilestones[selectedMilestone.id] ? (
-                <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-300 flex items-center justify-center gap-1.5">
+                <div className="p-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold border border-slate-800 flex items-center justify-center gap-1.5">
                   <CheckCircle2 className="size-4" />
                   <span>Đã nhận thành công và đã lưu vào Ưu đãi của tôi</span>
                 </div>
@@ -1805,7 +1812,7 @@ export function AssociationAnalyticsScreen() {
                   onClick={() => handleClaimMilestone(selectedMilestone)}
                   className="w-full py-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md shadow-[#003B95]/30 active:scale-98 transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <Gift className="size-4 text-amber-300" />
+                  <Gift className="size-4 text-white" />
                   <span>Nhận phần thưởng &amp; Lưu vào Ưu đãi của tôi</span>
                 </button>
               ) : (

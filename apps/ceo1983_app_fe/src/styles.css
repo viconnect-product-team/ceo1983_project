@@ -3028,3 +3028,53 @@ td[title] {
   }
 }
 
+
+
+/* ============================================================
+   CEO 1983 GLOBAL COLOR THEME OVERRIDES & STRICT WHITE-ON-BLUE
+   ============================================================ */
+
+/* 1. Recolor elements based on active brand theme across entire application */
+[data-app-color-theme] .bg-\[\#003B95\],
+[data-app-color-theme] .vba-btn-primary,
+[data-app-color-theme] .vba-active-tab {
+  background-color: var(--vba-navy) !important;
+}
+
+[data-app-color-theme] .text-\[\#003B95\] {
+  color: var(--vba-navy) !important;
+}
+
+[data-app-color-theme] .border-\[\#003B95\] {
+  border-color: var(--vba-navy) !important;
+}
+
+[data-app-color-theme] .from-\[\#003B95\] {
+  --tw-gradient-from: var(--vba-navy) var(--tw-gradient-from-position) !important;
+}
+
+/* 2. Text TRẮNG TUYỆT ĐỐI trên toàn bộ nền xanh / màu chính */
+.bg-\[\#003B95\],
+.bg-\[\#002B66\],
+.bg-\[\#1E3A8A\],
+.bg-\[\#1F3864\],
+.bg-\[\#2E3192\],
+.bg-\[\#991B1B\],
+html.dark .dark\:bg-\[\#003B95\],
+[data-app-color-theme] .bg-\[\#003B95\],
+[data-app-color-theme] .vba-btn-primary {
+  color: #FFFFFF !important;
+}
+
+.bg-\[\#003B95\] *,
+.bg-\[\#002B66\] *,
+.bg-\[\#1E3A8A\] *,
+.bg-\[\#1F3864\] *,
+.bg-\[\#2E3192\] *,
+.bg-\[\#991B1B\] *,
+html.dark .dark\:bg-\[\#003B95\] *,
+[data-app-color-theme] .bg-\[\#003B95\] *,
+[data-app-color-theme] .vba-btn-primary * {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
