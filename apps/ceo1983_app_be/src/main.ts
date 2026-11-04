@@ -88,18 +88,36 @@ import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { createVietnameseValidationPipe } from './common/pipes/validation.pipe';
+import { RateLimiterMiddleware } from './common/middleware/rate-limiter.middleware';
+import { QuerySanitizerMiddleware } from './common/middleware/query-sanitizer.middleware';
+import { PayloadGuardMiddleware } from './common/middleware/payload-guard.middleware';
 
 async function bootstrap() {
   await resolveDatabaseConfig();
   const app = await NestFactory.create(AppModule);
   // VULN-15 Fix: Giảm tải trọng JSON từ 50MB xuống 15MB để ngăn ngừa tấn công DoS
-  app.use(json({ limit: '15mb' }));
-  app.use(urlencoded({ extended: true, limit: '15mb' }));
+  // Lớp 4 Zero-Trust: Giới hạn kích thước Payload Stream <= 10MB (OS-SEC-ZERO-TRUST-47)
+  const payloadGuard = new PayloadGuardMiddleware();
+  app.use(payloadGuard.use.bind(payloadGuard));
+
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
+
+  // Lớp 3 Zero-Trust: Rate Limiter Middleware (600 req/min, Brute-Force lockout 15 fails/min)
+  const rateLimiter = new RateLimiterMiddleware();
+  app.use(rateLimiter.use.bind(rateLimiter));
+
+  // Lớp 6 Zero-Trust: SQLi Query Identifier Sanitizer
+  const querySanitizer = new QuerySanitizerMiddleware();
+  app.use(querySanitizer.use.bind(querySanitizer));
 
   // Security Headers Middleware (OWASP Standard)
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-Frame-Options', 'DENY');
+    if (req.url && (req.url.includes('/auth/') || req.url.includes('/api/auth/'))) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');

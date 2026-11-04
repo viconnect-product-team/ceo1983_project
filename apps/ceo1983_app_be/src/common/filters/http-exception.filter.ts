@@ -74,6 +74,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = 'Đã xảy ra lỗi trong quá trình xử lý máy chủ. Vui lòng thử lại sau!';
     }
 
+      message = this.redactInfrastructure(message);
+      if (errors) {
+        for (const k of Object.keys(errors)) {
+          errors[k] = this.redactInfrastructure(errors[k]);
+        }
+      }
+
     response.status(status).json({
       statusCode: status,
       success: false,
@@ -82,6 +89,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
     });
+  }
+
+  private redactInfrastructure(text: string): string {
+    if (!text || typeof text !== 'string') return text;
+    return text
+      .replace(/postgresql:\/\/[^@]+@([^\/:]+)(?::\d+)?\/[^\s?]*/gi, 'postgresql://[REDACTED]')
+      .replace(/14\.225\.217\.232(:\d+)?/g, '[REDACTED_HOST]')
+      .replace(/ceo1983-postgres-prod(:\d+)?/g, '[REDACTED_DB_HOST]')
+      .replace(/113\.20\.107\.184(:\d+)?/g, '[REDACTED_HOST]');
   }
 
   private translateEnglishMessage(raw: string, status: number, path?: string): string {

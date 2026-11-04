@@ -1,5 +1,58 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 04/11/2026 (v10.27): Kiểm Tra Toàn Diện & Chuẩn Hóa Theo 3 Bộ Quy Chuẩn 46-DESIGN-PATTERN-PRAGMATISM, 47-SECURE-CODING-AND-DATA-PROTECTION, 49-MONOREPO-DOMAIN-ARCHITECTURE; Tái Lập Kết Nối Database Chuẩn CEO 1983; Xây Dựng 6-Layer Zero-Trust Gateway; 5 Core Pragmatic Design Patterns; Vượt Qua 100% (7/7) Kịch Bản Live Penetration Test; Xuất Bản 3 Báo Cáo Word Định Dạng Đen-Trắng-Xám Kèm Minh Chứng ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-001], [NODE-APP-001])**:
+  1. *Hạng Mục 1: Tái Lập Kết Nối Database Chuẩn CEO 1983 & Đồng Bộ Schema PostgreSQL ([NODE-CORE-002])*:
+     - Phát hiện packages/db/.env cấu hình sai địa chỉ database sang cụm vione cũ (113.20.107.184:6432/vione_app). Đã tái lập kết nối chuẩn về máy chủ PostgreSQL CEO 1983: postgresql://app1:5%5ES0CEpvYwC1(%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public.
+     - Chạy tái sinh Prisma Client v6.4.1 trong packages/db (npm run generate --prefix packages/db).
+     - Rà soát toàn bộ 144 bảng trong source code đối chiếu CSDL; bổ sung 8 bảng cốt lõi và bảng thu hồi token: public.reviews, public.polls, public.poll_options, public.poll_votes, public.business_card_settings, public.business_card_ai_history, public.tasks, public.meeting_participants, public.revoked_tokens.
+     - Tạo hàm và trigger PostgreSQL trg_guard_user_roles thực thi fn_enforce_lookup_table_write_guard() chặn đứng mọi hành vi leo thang đặc quyền trái phép vào bảng public.user_roles với mã lỗi SQL chuẩn 42501.
+  2. *Hạng Mục 2: Xây Dựng Hệ Thống Cổng Bảo Mật 6 Lớp Zero-Trust Gateway Theo Chuẩn 47-SECURE-CODING ([NODE-CORE-001], [NODE-CORE-003])*:
+     - Lớp 1 (JWT Cryptographic Integrity & Revocation): Cấp phát JWT Access Token và Refresh Token tích hợp mã định danh duy nhất UUID jti. Xây dựng Revocation Denylist Store kết hợp đồng bộ CSDL public.revoked_tokens. Cơ chế Refresh Token Rotation tự động thu hồi token cũ khi cấp token mới. Bổ sung endpoint POST /auth/logout.
+     - Lớp 2 (Strict Bcrypt Password Verification): Loại bỏ hoàn toàn lỗ hổng so sánh mật khẩu thô (cleanPass === user.password). Bắt buộc mã hóa Bcrypt $2a$ / $2b$ với cost factor >= 10. Xác nhận 100% tài khoản trong vione_users đã được băm an toàn.
+     - Lớp 3 (Sliding-Window Rate Limiter): Tích hợp middleware rate-limiter.middleware.ts giới hạn 600 req/phút toàn hệ thống, và tối đa 15 lần đăng nhập sai/phút theo IP -> HTTP 429 Too Many Requests kèm header Retry-After: 60.
+     - Lớp 4 (Payload Guard & Memory Flooding Defense): Tích hợp middleware payload-guard.middleware.ts kiểm soát kích thước payload tối đa 10MB (10,485,760 bytes) cả qua header content-length lẫn đo đếm byte stream thực tế -> HTTP 413 Payload Too Large.
+     - Lớp 5 (Database RBAC Trigger Guard): Trigger PostgreSQL chặn trực tiếp mọi câu lệnh INSERT/UPDATE trái phép vào bảng phân quyền public.user_roles với mã lỗi 42501 insufficient_privilege.
+     - Lớp 6 (SQL Injection & Malicious Identifier Defense): Tích hợp middleware query-sanitizer.middleware.ts kiểm tra và từ chối các ký tự SQL Injection trong query parameters (;, --, DROP, UNION) -> HTTP 400 Bad Request.
+     - Thanh lọc dữ liệu hạ tầng: Cấu hình http-exception.filter.ts thanh lọc (redact) toàn bộ IP máy chủ (14.225.217.232, 113.20.107.184), chuỗi kết nối PostgreSQL và số cổng nhạy cảm khỏi phản hồi lỗi phía client.
+     - Frontend Sanitization: Hàm purgeLegacyUnsignedTokensFromStorage() trong AuthContext.tsx tự động quét và xóa sạch token không chữ ký hoặc alg === 'none' trong localStorage khi khởi chạy ứng dụng.
+  3. *Hạng Mục 3: Hiện Thực Hóa 5 Design Pattern Thực Dụng Theo Chuẩn 46-DESIGN-PATTERN ([NODE-CORE-001])*:
+     - Khởi tạo thư mục apps/ceo1983_app_be/src/common/patterns/:
+       + Strategy Pattern: fee-calculation.strategy.ts (Regular, VIP, Executive Member Fee Strategies + Resolver), payment.strategy.ts (Bank Transfer, VietQR Strategies + Factory).
+       + Adapter Pattern: vnpay.adapter.ts (HMAC-SHA512 + timingSafeEqual), storage.adapter.ts (MinIO Object Storage), mail.adapter.ts (Nodemailer), zalo.adapter.ts (Zalo Official Account).
+       + Observer Pattern: domain-event-emitter.ts (DomainEventEmitter & Singleton domainEventBus cho các sự kiện miền bất đồng bộ).
+       + Builder Pattern: membership-certificate.builder.ts (MembershipCertificateBuilder fluent API xuất chứng nhận hội viên).
+       + State Pattern: approval-workflow.state.ts (DraftState, PendingReviewState, ApprovedState, RejectedState, CancelledState + Context cho quy trình phê duyệt).
+  4. *Hạng Mục 4: Kiểm Thử Xâm Nhập Thực Tế (Live Penetration Test) Vượt Qua 100% (7/7 Vectors)*:
+     - Viết kịch bản tự động scratch/run_live_penetration_test.cjs kiểm thử trực tiếp trên backend đang chạy:
+       + Vector 1 (Plaintext Password Fallback Bypass): PASSED (Rejected với mã 401).
+       + Vector 2 (JWT None/Unsigned Algorithm Tampering): PASSED (Rejected với mã 401).
+       + Vector 3 (Unauthorized Privilege Escalation into user_roles): PASSED (Trigger kích hoạt lỗi 42501).
+       + Vector 4 (Denial of Service - Payload Flooding > 10MB): PASSED (Rejected với mã 413).
+       + Vector 5 (SQL Injection & Query Parameter Attack): PASSED (Rejected với mã 400).
+       + Vector 6 (Brute Force Rate Limiting - 15 failed logins): PASSED (Chặn với mã 429 sau 15 lần).
+       + Vector 7 (Infrastructure Info Leakage Redaction in Errors): PASSED (IP và chuỗi kết nối đã được ẩn giấu).
+  5. *Hạng Mục 5: Tạo Minh Chứng Trực Quan & Xuất Bản 3 Báo Cáo Word Định Dạng Đen-Trắng-Xám*:
+     - Sinh 5 biểu đồ/sơ đồ minh chứng chất lượng cao dạng PNG tại document/evidence/:
+       + evidence_db_reconnect_ceo1983.png (Sơ đồ tái lập kết nối database & đối chiếu schema).
+       + evidence_46_design_patterns.png (Kiến trúc 5 Design Patterns thực dụng).
+       + evidence_47_zero_trust_6layers.png (Sơ đồ 6 Lớp Phòng Thủ Zero-Trust Gateway).
+       + evidence_pentest_results.png (Bảng kết quả 7 Vector kiểm thử xâm nhập thực tế).
+       + evidence_49_monorepo_architecture.png (Kiến trúc Monorepo DDD & Ranh giới phân hệ).
+     - Biên soạn và xuất bản 3 tài liệu Word (.docx) chuyên nghiệp theo phong cách Đen - Trắng - Xám tại document/:
+       + BAO_CAO_46_DESIGN_PATTERN_PRAGMATISM.docx (145 KB)
+       + BAO_CAO_47_SECURE_CODING_AND_DATA_PROTECTION.docx (293 KB)
+       + BAO_CAO_49_MONOREPO_DOMAIN_ARCHITECTURE.docx (258 KB)
+7. *Chốt Cấu Hình CSDL Theo Phương Án 1 (113.20.107.184:6432/ceo1983_project) ([NODE-CORE-002])*:
+     - Thiết lập kết nối chuẩn hóa vào CSDL `ceo1983_project` trên máy chủ `113.20.107.184:6432` với chuỗi kết nối: `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+     - Đồng bộ và xác thực dữ liệu: 39 hội viên thật, 43 tài khoản doanh nhân, 2 sự kiện chính thức.
+     - Tự động bổ sung bảng bảo mật Zero-Trust `public.revoked_tokens` và trigger bảo vệ quyền hạn `trg_guard_user_roles` (`fn_enforce_lookup_table_write_guard`).
+     - Tái sinh Prisma Client v6.4.1 (@vibe/db) và kiểm tra kết nối thành công 100%.
+     - Xuất bản Bản Brief Tính Năng Tinh Gọn Dành Cho Thiết Kế UI/UX (PDF 2 trang): `document/BRIEF_THIET_KE_CRM_VA_APP_CEO1983.pdf`.
+  6. *Kiểm Thử Chất Lượng Mã Nguồn*:
+     - Backend apps/ceo1983_app_be: tsc --noEmit -> Exit Code 0 (0 errors).
+     - Frontend apps/ceo1983_app_fe: tsc --noEmit -> Exit Code 0 (0 errors).
+     - Tuân thủ nghiêm ngặt quy tắc: Không tự động chạy git commit hay git push.
+
 - **Bản cập nhật ngày 03/11/2026 (v10.26): Tái Cấu Trúc Toàn Diện Theme App CEO 1983, Trường Dán Link MXH B2B, Public Share & Tracking Thống Kê Lượt Click Chia Sẻ Ngoài, Refactor 100% CRM Dashboard Thành Master Table Format Chuẩn Accounts, và Hệ Thống Dynamic Landing Web Manager ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-CRM-001], [NODE-CRM-014], [NODE-CRM-016])**:
   1. *Hạng Mục 1: Khắc Phục Triệt Để Chức Năng Đổi Màu Trên App CEO 1983 ([NODE-APP-001], [NODE-APP-009])*: Khắc phục triệt để CSS biến và gỡ bỏ hardcode !important trong styles.css và MemberShell.tsx. Cả 4 bộ màu chuẩn Brandbook chuyển đổi đồng bộ toàn app.
   2. *Hạng Mục 2: Bổ Sung Trường Dán Link MXH B2B Cho Sự Kiện, Cuộc Gặp 1-1 & Cơ Hội B2B ([NODE-APP-003], [NODE-APP-004])*: Bổ sung trường dán link và khối hiển thị liên kết Fanpage/Website/Tài liệu kèm nút mở và sao chép.

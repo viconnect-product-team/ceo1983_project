@@ -1,28 +1,30 @@
 /* eslint-disable */
-import { Injectable, BadRequestException, UnauthorizedException, Optional } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, Optional, OnModuleInit } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../mail/mail.service';
 import { ZaloService } from '../zalo/zalo.service';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import axios from 'axios';
-
 import * as crypto from 'crypto';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private googleClient: OAuth2Client;
   private appleJwksClient: jwksClient.JwksClient;
   private resetTokenStore = new Map<string, { token: string; expiresAt: number }>();
+  private revokedJtiStore = new Set<string>();
 
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService?: MailService,
     @Optional() private zaloService?: ZaloService,
+    @Optional() private prisma?: PrismaService,
   ) {
     this.googleClient = new OAuth2Client();
     this.appleJwksClient = jwksClient({
@@ -30,6 +32,47 @@ export class AuthService {
       cache: true,
       rateLimit: true,
     });
+  }
+
+  async onModuleInit() {
+    try {
+      if (this.prisma) {
+        const rows = await this.prisma.$queryRaw<any[]>`
+          SELECT jti FROM public.revoked_tokens WHERE expires_at > now()
+        `.catch(() => [] as any[]);
+        for (const r of rows) {
+          if (r.jti) this.revokedJtiStore.add(r.jti);
+        }
+      }
+    } catch {}
+  }
+
+  async revokeToken(jti: string, userId: string, tokenType = 'access_token', exp?: number) {
+    this.revokedJtiStore.add(jti);
+    const expiresAt = exp ? new Date(exp * 1000) : new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    try {
+      if (this.prisma) {
+        await this.prisma.$executeRawUnsafe(
+          `INSERT INTO public.revoked_tokens (jti, user_id, token_type, expires_at) VALUES ($1, $2::uuid, $3, $4) ON CONFLICT (jti) DO NOTHING`,
+          jti,
+          userId,
+          tokenType,
+          expiresAt,
+        ).catch(() => {});
+      }
+    } catch {}
+  }
+
+  isTokenRevoked(jti?: string): boolean {
+    if (!jti) return false;
+    return this.revokedJtiStore.has(jti);
+  }
+
+  async logout(userId: string, jti?: string) {
+    if (jti) {
+      await this.revokeToken(jti, userId, 'access_token');
+    }
+    return { success: true, message: 'Đăng xuất thành công, phiên làm việc đã bị thu hồi (Lớp 1 Token Revocation).' };
   }
 
   async validateUser(username: string, pass: string): Promise<any> {
@@ -42,18 +85,14 @@ export class AuthService {
       return null;
     }
 
-    // Tier 1: bcrypt compare
+    // Tier 1: Strict Bcrypt compare only ($2a$ or $2b$, cost >= 10) - Strictly forbid plaintext fallback (OS-SEC-ZERO-TRUST-47)
+    if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
+      return null;
+    }
+
     let isMatch = await bcrypt.compare(cleanPass, user.password).catch(() => false);
     if (!isMatch && normalizedPass !== cleanPass) {
       isMatch = await bcrypt.compare(normalizedPass, user.password).catch(() => false);
-    }
-
-    // Tier 2: legacy plaintext auto-migration to bcrypt (one-time security upgrade)
-    if (!isMatch && user.password && !user.password.startsWith('$2') && (cleanPass === user.password || normalizedPass === user.password)) {
-      isMatch = true;
-      const salt = await bcrypt.genSalt(10);
-      const newHash = await bcrypt.hash(cleanPass || normalizedPass, salt);
-      await this.usersService.syncUserPasswordHash(user.id, newHash).catch(() => {});
     }
 
     if (isMatch) {
@@ -74,8 +113,11 @@ export class AuthService {
     const department = details?.department || 'Hội viên ceo1983';
 
     const permissions = details?.permissions || [];
+    const accessJti = crypto.randomUUID();
+    const refreshJti = crypto.randomUUID();
 
     const payload = {
+      jti: accessJti,
       username: user.username,
       sub: user.id,
       id: user.id,
@@ -97,7 +139,7 @@ export class AuthService {
     };
     const isSystemAdmin = user.email === 'admin@connect.vn' || user.username === 'admin@connect.vn' || Boolean(details?.isAdmin) || resolvedRole === 'quan_tri' || resolvedRole === 'admin';
     const mustChangePassword = isSystemAdmin ? false : await this.usersService.checkMustChangePassword(user.id);
-    const refreshPayload = { sub: user.id, type: 'refresh' };
+    const refreshPayload = { jti: refreshJti, sub: user.id, type: 'refresh' };
 
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),
@@ -133,6 +175,17 @@ export class AuthService {
       if (decoded?.type !== 'refresh') {
         throw new UnauthorizedException('Phiên làm việc không hợp lệ hoặc đã hết hạn');
       }
+
+      // Check if refresh token has been revoked
+      if (decoded?.jti && this.isTokenRevoked(decoded.jti)) {
+        throw new UnauthorizedException('Refresh token đã bị thu hồi hoặc đã được làm mới (Refresh Token Rotation)');
+      }
+
+      // Refresh Token Rotation: Revoke previous refresh token immediately
+      if (decoded?.jti) {
+        await this.revokeToken(decoded.jti, decoded.sub, 'refresh_token', decoded.exp);
+      }
+
       const user = await this.usersService.findById(decoded.sub);
       if (!user) {
         throw new UnauthorizedException('Tài khoản người dùng không tồn tại');
@@ -144,7 +197,11 @@ export class AuthService {
       const department = details?.department || 'Hội viên ceo1983';
       const permissions = details?.permissions || [];
 
+      const newAccessJti = crypto.randomUUID();
+      const newRefreshJti = crypto.randomUUID();
+
       const payload = {
+        jti: newAccessJti,
         username: user.username,
         sub: user.id,
         id: user.id,
@@ -164,7 +221,7 @@ export class AuthService {
         isDepartmentLeader: Boolean(details?.isDepartmentLeader),
         permissions,
       };
-      const newRefreshPayload = { sub: user.id, type: 'refresh' };
+      const newRefreshPayload = { jti: newRefreshJti, sub: user.id, type: 'refresh' };
       return {
         access_token: this.jwtService.sign(payload, { expiresIn: '60m' }),
         refresh_token: this.jwtService.sign(newRefreshPayload, { expiresIn: '7d' }),

@@ -1,6 +1,40 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { clearServerDataCache } from '@/hooks/use-server-data';
 
+/**
+ * Quét và xóa sạch các token cũ chưa ký HMAC-SHA256 hoặc token BaaS cũ (Zero-Trust Lớp 1 - OS-SEC-ZERO-TRUST-47)
+ */
+export function purgeLegacyUnsignedTokensFromStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const tokenKeys = ['vibe_token', 'token', 'access_token', 'vba_token', 'vibe_refresh_token'];
+    for (const key of tokenKeys) {
+      const val = localStorage.getItem(key);
+      if (!val) continue;
+
+      const parts = val.split('.');
+      if (parts.length !== 3) {
+        console.warn(`[ZeroTrust Gate] Phát hiện token không đủ 3 phần ký số (${key}). Đã thu hồi.`);
+        localStorage.removeItem(key);
+        continue;
+      }
+
+      try {
+        const headerJson = atob(parts[0].replace(/-/g, '+').replace(/_/g, '/'));
+        const header = JSON.parse(headerJson);
+        if (header.alg === 'none' || !header.alg || header.alg !== 'HS256') {
+          console.warn(`[ZeroTrust Gate] Phát hiện token có thuật toán ký không an toàn (${header.alg}). Đã xóa.`);
+          localStorage.removeItem(key);
+        }
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch (err) {
+    console.error('Error in purgeLegacyUnsignedTokensFromStorage:', err);
+  }
+}
+
 export function clearUserSessionData() {
   if (typeof window === 'undefined') return;
   try {
@@ -375,8 +409,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Dọn dẹp an toàn: Xóa bỏ các key nhạy cảm bị lưu trữ trái phép trước đây
+    // Dọn dẹp an toàn: Xóa bỏ các key nhạy cảm và token không hợp lệ (Zero-Trust Lớp 1)
     if (typeof window !== 'undefined') {
+      purgeLegacyUnsignedTokensFromStorage();
       const insecureKeys = [
         'vba_is_admin',
         'vba_is_president',
