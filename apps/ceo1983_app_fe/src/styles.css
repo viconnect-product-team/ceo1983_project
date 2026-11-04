@@ -1213,7 +1213,6 @@ html.hc .bc-app {
    switch to dark navy so it's readable on white card surfaces.
    ============================================================ */
 
-html:not(.dark) .bc-app .text-white,
 html:not(.dark) .bc-app .text-slate-50,
 html:not(.dark) .bc-app .text-slate-100,
 html:not(.dark) .bc-app .text-slate-200,
@@ -2457,9 +2456,7 @@ textarea::placeholder {
   font-weight: 700 !important;
 }
 
-.ceo1983-landing[data-theme="light"] .text-white {
-  color: #0F172A !important; /* Deep Obsidian Slate */
-}
+/* Eliminated: .text-white must always be pure white on colored backgrounds */
 
 .ceo1983-landing[data-theme="light"] .text-slate-200,
 .ceo1983-landing[data-theme="light"] .text-slate-300,
@@ -3077,4 +3074,72 @@ html.dark .dark\:bg-\[\#003B95\] *,
 [data-app-color-theme] .vba-btn-primary * {
   color: #FFFFFF !important;
   stroke: #FFFFFF !important;
+}
+
+/* ============================================================
+   MOMO-STYLE SCANNING BUTTON ANIMATION
+   Continuous vertical scanning laser line moving from top to bottom
+   ============================================================ */
+@keyframes momoLaserScan {
+  0% {
+    top: 15%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 85%;
+    opacity: 0;
+  }
+}
+
+@keyframes momoLaserPulse {
+  0%, 100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.22;
+  }
+}
+
+/* ============================================================
+   ZERO-TOLERANCE CONTRAST ENFORCEMENT FOR CEO 1983
+   Text on blue/navy/dark backgrounds MUST ALWAYS BE PURE WHITE (#FFFFFF).
+   Black/slate text on blue backgrounds is strictly forbidden.
+   ============================================================ */
+.bg-\[\#003B95\],
+.bg-\[\#003b95\],
+.bg-\[\#002B66\],
+.bg-\[\#002b66\],
+.bg-\[\#002B70\],
+.bg-\[\#002b70\],
+.bg-\[\#0052CC\],
+.bg-\[\#0052cc\],
+.bg-\[\#1E3A8A\],
+.bg-\[\#1e3a8a\],
+.bg-blue-600,
+.bg-blue-700,
+.bg-blue-800,
+.bg-blue-900,
+button.bg-\[\#003B95\],
+button.bg-\[\#003b95\],
+a.bg-\[\#003B95\],
+a.bg-\[\#003b95\] {
+  color: #FFFFFF !important;
+}
+
+.bg-\[\#003B95\] *:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-yellow"]):not([class*="text-emerald"]):not([class*="text-cyan"]),
+.bg-\[\#003b95\] *:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-yellow"]):not([class*="text-emerald"]):not([class*="text-cyan"]),
+button.bg-\[\#003B95\] *:not([class*="bg-"]),
+button.bg-\[\#003b95\] *:not([class*="bg-"]) {
+  color: #FFFFFF !important;
+}
+
+.text-white,
+[class*="text-white"] {
+  color: #FFFFFF !important;
 }

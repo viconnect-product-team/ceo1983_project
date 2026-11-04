@@ -471,24 +471,24 @@ const METRIC_TONE_STYLES: Record<
   }
 > = {
   sky: {
-    bg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900",
-    textTitle: "text-blue-600 dark:text-blue-400",
-    iconColor: "text-blue-600 dark:text-blue-400",
+    bg: "bg-white dark:bg-card border border-slate-200 dark:border-slate-800",
+    textTitle: "text-[#003B95] dark:text-blue-400",
+    iconColor: "text-[#003B95] dark:text-blue-400",
   },
   violet: {
-    bg: "bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900",
-    textTitle: "text-indigo-500 dark:text-indigo-400",
-    iconColor: "text-indigo-500 dark:text-indigo-400",
+    bg: "bg-white dark:bg-card border border-slate-200 dark:border-slate-800",
+    textTitle: "text-[#003B95] dark:text-blue-400",
+    iconColor: "text-[#003B95] dark:text-blue-400",
   },
   orange: {
-    bg: "bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900",
-    textTitle: "text-orange-500 dark:text-amber-400",
-    iconColor: "text-orange-500 dark:text-amber-400",
+    bg: "bg-white dark:bg-card border border-slate-200 dark:border-slate-800",
+    textTitle: "text-amber-600 dark:text-amber-400",
+    iconColor: "text-amber-600 dark:text-amber-400",
   },
   green: {
-    bg: "bg-gradient-to-b from-green-100 to-white dark:from-emerald-950/40 dark:to-slate-900",
-    textTitle: "text-emerald-500 dark:text-emerald-400",
-    iconColor: "text-emerald-500 dark:text-emerald-400",
+    bg: "bg-white dark:bg-card border border-slate-200 dark:border-slate-800",
+    textTitle: "text-emerald-600 dark:text-emerald-400",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
   },
 };
 

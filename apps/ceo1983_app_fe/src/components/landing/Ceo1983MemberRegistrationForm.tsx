@@ -52,6 +52,24 @@ export function Ceo1983MemberRegistrationForm() {
   const [registeredData, setRegisteredData] = useState<any>(null);
   const [referrerCode, setReferrerCode] = useState<string>("");
 
+  const [landingConfig, setLandingConfig] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("ceo1983_landing_web_config");
+        if (raw) return JSON.parse(raw);
+      } catch {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      if (e.detail) setLandingConfig(e.detail);
+    };
+    window.addEventListener("ceo1983_landing_config_updated", handleUpdate);
+    return () => window.removeEventListener("ceo1983_landing_config_updated", handleUpdate);
+  }, []);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -272,16 +290,46 @@ export function Ceo1983MemberRegistrationForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4F9] py-8 sm:py-12 px-3 sm:px-6 font-sans text-slate-800">
+    <div className="min-h-screen bg-[#F0F4F9] font-sans text-slate-800 relative overflow-x-hidden">
+      {/* Tên Miền Chính Thức Đã Gắn Cho Landing Web */}
+      {landingConfig?.customDomain && landingConfig?.showDomainBanner !== false && (
+        <div className="w-full bg-[#003B95] text-white py-2 px-4 text-center text-xs font-bold flex items-center justify-center gap-2 border-b border-white/20 relative z-20">
+          <Globe className="h-3.5 w-3.5" />
+          <span>Tên miền chính thức:</span>
+          <span className="underline decoration-amber-400 font-mono text-amber-300">{landingConfig.customDomain}</span>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white font-semibold ml-2">Đã kích hoạt SSL</span>
+        </div>
+      )}
+
+      {/* Ảnh Chìm (Watermark) Tự Động Phủ Toàn Trang */}
+      {landingConfig?.watermarkUrl && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0"
+          style={{
+            opacity: (landingConfig.watermarkOpacity ?? 12) / 100,
+            backgroundImage: `url(${landingConfig.watermarkUrl})`,
+            backgroundPosition:
+              landingConfig.watermarkPosition === "bottom-right"
+                ? "bottom right"
+                : landingConfig.watermarkPosition === "top-left"
+                ? "top left"
+                : "center",
+            backgroundRepeat: landingConfig.watermarkPosition === "repeat" ? "repeat" : "no-repeat",
+            backgroundSize: landingConfig.watermarkPosition === "repeat" ? "200px" : "contain",
+          }}
+        />
+      )}
+
+      <div className="py-8 sm:py-12 px-3 sm:px-6 relative z-10">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header Branding Card - Clean CEO 1983 Brand */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
           {/* Top CEO1983 Navy Accent Strip */}
           <div className="h-3.5 bg-[#003B95]" />
 
-          <div className="p-6 sm:p-8">
+          <div className={`p-6 sm:p-8 ${landingConfig?.heroTextAlign === "center" ? "text-center" : landingConfig?.heroTextAlign === "right" ? "text-right" : "text-left"}`}>
             {/* Clean Brand Header: Logo + Cổng Tiếp Nhận Hồ Sơ Gia Nhập */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 text-center sm:text-left mb-5 pb-5 border-b border-slate-100">
+            <div className={`flex flex-col sm:flex-row items-center gap-4 mb-5 pb-5 border-b border-slate-100 ${landingConfig?.heroTextAlign === "center" ? "justify-center" : landingConfig?.heroTextAlign === "right" ? "justify-end sm:flex-row-reverse" : "justify-start"}`}>
               <img
                 src="/ceo1983-logo.png"
                 alt="CEO 1983"
@@ -745,6 +793,7 @@ export function Ceo1983MemberRegistrationForm() {
             </a>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

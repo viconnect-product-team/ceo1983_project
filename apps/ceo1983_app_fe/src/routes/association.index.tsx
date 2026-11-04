@@ -1172,7 +1172,7 @@ function Home() {
             className="size-9 relative bg-amber-50 dark:bg-slate-800 rounded-full border border-amber-300/80 dark:border-amber-500/40 flex justify-center items-center hover:scale-105 active:scale-95 transition-transform shadow-2xs"
             aria-label="Thông báo"
           >
-            <Bell className="size-5 text-[#003B95] dark:text-amber-400" />
+            <Bell className="size-5 text-[#003B95] dark:text-slate-300" />
             {unreadNotifCount > 0 && (
               <div className="size-4 -right-1 -top-1 absolute bg-rose-500 rounded-full flex justify-center items-center overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
                 <span className="text-white text-[9.5px] font-bold font-sans leading-3">{unreadNotifCount > 9 ? "9+" : unreadNotifCount}</span>
@@ -1224,11 +1224,11 @@ function Home() {
                   e.stopPropagation();
                   setQuickEditOpen(true);
                 }}
-                className="size-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 inline-flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-amber-500/25"
+                className="size-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-[#003B95] dark:text-slate-300 inline-flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-amber-500/25"
                 title="Chỉnh sửa thông tin"
                 aria-label="Chỉnh sửa thông tin"
               >
-                <Pencil className="size-3.5 text-amber-500" />
+                <Pencil className="size-3.5 text-[#003B95]" />
               </button>
             </div>
           </div>
@@ -1245,7 +1245,7 @@ function Home() {
             {displayAvatar && !avatarError ? (
               <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
             ) : (
-              <span className="text-amber-300 text-xl font-black font-sans leading-none">{initials(displayName)}</span>
+              <span className="text-white text-xl font-black font-sans leading-none">{initials(displayName)}</span>
             )}
           </div>
         </div>
@@ -1259,10 +1259,10 @@ function Home() {
             <button
               type="button"
               onClick={() => setAllFeaturesModalOpen(true)}
-              className="px-2 py-0.5 rounded-full text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer"
+              className="px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003B95] dark:text-slate-300 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer"
               title="Xem tất cả tính năng"
             >
-              <Sparkles className="size-3 text-amber-500" />
+              <Sparkles className="size-3 text-[#003B95]" />
               <span>Xem tất cả tính năng</span>
             </button>
           </div>
@@ -1369,16 +1369,16 @@ function Home() {
         <div className="w-full">
           <div className="mb-3 flex items-center justify-between">
             <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-              <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 text-xs border border-amber-500/40 shadow-xs">
-                <Calendar className="size-3.5 text-amber-300" />
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#003B95] text-white text-xs border border-blue-400/30 shadow-xs">
+                <Calendar className="size-3.5 text-white" />
               </span>
-              <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-amber-500 transition-colors flex items-center gap-1">
+              <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-[#003B95] transition-colors flex items-center gap-1">
                 <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+                <Sparkles className="h-3.5 w-3.5 text-[#003B95] fill-[#003B95]/20" />
                 <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </h2>
             </Link>
-            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-amber-600 dark:text-amber-400 hover:underline p-1">
+            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-[#003B95] dark:text-blue-400 hover:underline p-1">
               <span>{isEn ? "See all" : "Xem tất cả"}</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
@@ -1386,8 +1386,8 @@ function Home() {
 
           {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, tối đa 5 sự kiện */}
           {displayEvents.length === 0 ? (
-            <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-amber-500/30">
-              <Calendar className="mx-auto h-7 w-7 text-amber-500/50 mb-1.5" />
+            <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-300 dark:border-slate-700">
+              <Calendar className="mx-auto h-7 w-7 text-[#003B95]/50 mb-1.5" />
               <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                 {isEn ? "No upcoming events scheduled" : "Chưa có sự kiện mới được lên lịch"}
               </p>
@@ -1447,20 +1447,20 @@ function Home() {
 
                     {/* Bottom information */}
                     <div className="absolute inset-x-3.5 bottom-3.5 z-10 flex flex-col gap-1.5">
-                      <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-amber-300 transition-colors">
+                      <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-white transition-colors">
                         {realTitle}
                       </h3>
                       <div className="flex items-center justify-between text-xs text-slate-200">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 font-medium text-amber-300">
-                            <Clock className="size-3.5 text-amber-400 shrink-0" />
+                          <span className="inline-flex items-center gap-1 font-medium text-white">
+                            <Clock className="size-3.5 text-slate-300 shrink-0" />
                             {currentEv.time || "08:30 - 11:30"}
                           </span>
                           <span className="truncate max-w-[150px] text-slate-300 text-[11px]">
                             {(currentEv as any).location || (currentEv as any).place || (currentEv as any).venue || "Hà Nội"}
                           </span>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black text-[11px] shadow-sm">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#003B95] text-white font-bold text-[11px] shadow-sm">
                           <span>Chi tiết</span>
                           <ChevronRight className="size-3 stroke-[3]" />
                         </span>
@@ -1561,7 +1561,7 @@ function Home() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-[#1F3864] dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
+              <div className="flex items-center gap-1 text-xs font-bold text-[#1F3864] dark:text-slate-300 group-hover:translate-x-0.5 transition-transform">
                 <span>Gian hàng</span>
                 <ChevronRight className="size-3.5" />
               </div>
@@ -1577,7 +1577,7 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
               <div className="absolute inset-x-3 bottom-3 flex items-center justify-between text-white">
                 <div>
-                  <div className="text-xs font-bold text-amber-300">
+                  <div className="text-xs font-bold text-white">
                     📦 {products.length || 24} sản phẩm &amp; gói thầu niêm yết
                   </div>
                   <div className="text-[11px] text-slate-300">
@@ -1697,8 +1697,8 @@ function Home() {
                   <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-1" />
                   <div className="self-stretch inline-flex justify-between items-center text-[10px]">
                     <span className="text-slate-500 dark:text-slate-400 font-medium">{item.author || "Ban Thư Ký"}</span>
-                    <span className="inline-flex items-center gap-1 text-slate-600 dark:text-amber-300 font-semibold font-mono">
-                      <Clock className="size-3 text-amber-500 shrink-0" />
+                    <span className="inline-flex items-center gap-1 text-slate-600 dark:text-white font-semibold font-mono">
+                      <Clock className="size-3 text-[#003B95] shrink-0" />
                       {formatNewsDate(item.time)}
                     </span>
                   </div>
@@ -1718,17 +1718,17 @@ function Home() {
               <span className="text-white text-xs font-bold leading-4">
                 Quét mã QR Check-in<br />sự kiện
               </span>
-              <div className="px-2 py-0.5 bg-yellow-500 rounded-3xl inline-flex justify-start items-center gap-1">
+              <div className="px-2 py-0.5 bg-[#003B95] rounded-3xl inline-flex justify-start items-center gap-1">
                 <ShieldCheck className="size-3 text-sky-950" />
-                <span className="text-sky-950 text-[9.5px] font-bold">BAN SOÁT VÉ SỰ KIỆN</span>
+                <span className="text-white text-[9.5px] font-bold">BAN SOÁT VÉ SỰ KIỆN</span>
               </div>
             </div>
             <Link
               to="/association/checkin"
-              className="px-3.5 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md active:scale-95 transition"
+              className="px-3.5 py-2 bg-[#003B95] hover:bg-[#002B70] text-white rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md active:scale-95 transition"
             >
-              <span className="text-slate-950 text-xs font-black">Quét ngay</span>
-              <ChevronRight className="size-3.5 text-slate-950 stroke-[3]" />
+              <span className="text-white text-xs font-bold">Quét ngay</span>
+              <ChevronRight className="size-3.5 text-white stroke-[2.5]" />
             </Link>
           </div>
         )}

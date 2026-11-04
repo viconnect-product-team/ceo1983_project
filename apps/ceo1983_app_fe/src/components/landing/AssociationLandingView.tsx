@@ -22,6 +22,7 @@ import {
   Users,
   Award,
   Building2,
+  Globe,
   Phone,
   Zap,
 } from "lucide-react";
@@ -395,6 +396,23 @@ import { Ceo1983MemberRegistrationForm } from "./Ceo1983MemberRegistrationForm";
 export function AssociationLandingView({ a }: { a: PublicAssociation }) {
   const { lang } = useLang();
   const [appUrl, setAppUrl] = useState("/m");
+  const [landingConfig, setLandingConfig] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("ceo1983_landing_web_config");
+        if (raw) return JSON.parse(raw);
+      } catch {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      if (e.detail) setLandingConfig(e.detail);
+    };
+    window.addEventListener("ceo1983_landing_config_updated", handleUpdate);
+    return () => window.removeEventListener("ceo1983_landing_config_updated", handleUpdate);
+  }, []);
 
   const l = (LAND_I18N as any)[lang] || LAND_I18N.vi;
 
@@ -649,6 +667,34 @@ export function AssociationLandingView({ a }: { a: PublicAssociation }) {
       className="vba-app relative min-h-screen w-full bg-[var(--vba-bg)] text-[var(--vba-text)] antialiased selection:bg-[var(--vba-gold)]/30 selection:text-white"
       style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
     >
+      {/* Tên Miền Chính Thức Đã Gắn Cho Landing Web */}
+      {landingConfig?.customDomain && landingConfig?.showDomainBanner !== false && (
+        <div className="w-full bg-[#003B95] text-white py-2 px-4 text-center text-xs font-bold flex items-center justify-center gap-2 border-b border-white/20 relative z-50">
+          <Globe className="h-3.5 w-3.5" />
+          <span>Tên miền chính thức:</span>
+          <span className="underline decoration-amber-400 font-mono text-amber-300">{landingConfig.customDomain}</span>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white font-semibold ml-2">Đã kích hoạt SSL</span>
+        </div>
+      )}
+
+      {/* Ảnh Chìm (Watermark) Tự Động Phủ Toàn Trang */}
+      {landingConfig?.watermarkUrl && (
+        <div
+          className="fixed inset-0 pointer-events-none z-1"
+          style={{
+            opacity: (landingConfig.watermarkOpacity ?? 12) / 100,
+            backgroundImage: `url(${landingConfig.watermarkUrl})`,
+            backgroundPosition:
+              landingConfig.watermarkPosition === "bottom-right"
+                ? "bottom right"
+                : landingConfig.watermarkPosition === "top-left"
+                ? "top left"
+                : "center",
+            backgroundRepeat: landingConfig.watermarkPosition === "repeat" ? "repeat" : "no-repeat",
+            backgroundSize: landingConfig.watermarkPosition === "repeat" ? "200px" : "contain",
+          }}
+        />
+      )}
       {/* Background Starry Mesh Overlay for Dark mode */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
         <img

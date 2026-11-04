@@ -2337,3 +2337,21 @@
 
 
 
+
+# [BẮT BUỘC 125] Quy Chuẩn Đại Tu Cổng CRM Quản Trị & CEO 1983 Mobile App (Đồng Bộ Bảng, Bảng Màu Tối Giản, Landing Dynamic 100%, RBAC Real-time, Check Trùng & MoMo Scan Check-in)
+- Quy Chuẩn 1: Đồng Bộ Bảng Quản Trị & Bảng Màu Tối Giản 5 Màu Phân Hệ CRM:
+  + Toàn bộ bảng dữ liệu màn hình quản trị phải thống nhất chuẩn CustomTable: viền cột hàng rõ nét (border-r border-slate-200 dark:border-slate-800, divide-y divide-slate-200), co giãn độ rộng cột bằng kéo thả chuột, cột STT cố định, thanh công cụ tìm kiếm lọc CrmToolbar và phân trang Pagination.
+  + Toàn hệ thống CRM tối giản tuyệt đối với 5 mã màu cốt lõi: Xanh Navy (#003B95), Vàng Hổ Phách (#F59E0B), Xanh Lá (#059669), Đỏ Cảnh Báo (#DC2626) và Trắng/Slate Nền (#FFFFFF, #F8FAFC, #0F172A). Loại bỏ toàn bộ gradient chuyển màu lòe loẹt.
+- Quy Chuẩn 2: Cấu Hình Landing Web Dynamic 100% & Avatar API Thực Tế:
+  + Landing Web Manager hỗ trợ: Gắn tên miền riêng tùy chỉnh (hiển thị banner chính thức kèm chứng chỉ SSL), Tải ảnh chìm Watermark bảo vệ thương hiệu (tùy chỉnh độ mờ đục 0-100% và vị trí phủ), Căn chỉnh vị trí chữ (Trái - Giữa - Phải), và Lựa chọn bố cục layout cùng tỷ lệ khung hình ảnh từng section (16:9, 4:3, 21:9, 1:1).
+  + Avatar quản trị viên và hội viên CRM bắt buộc gọi API thực tế: GET /users/me khi load trang, POST /upload/avatar khi cập nhật và resolveMediaUrl(avatar) khi hiển thị.
+- Quy Chuẩn 3: Phân Quyền RBAC Real-time & Kiểm Tra Chống Trùng Toàn Diện:
+  + Phân quyền tài khoản đồng bộ cả giao diện UI (isRouteAllowedByMatrix trong Sidebar & Menu) và bảo vệ API Backend (RolesGuard kiểm tra trực tiếp public.app_settings.crm_permission_matrix). Khi admin cấp quyền, tài khoản áp dụng ngay lập tức mà không cần phân lại role tĩnh.
+  + Kiểm tra trùng lặp bắt buộc: Validate chống trùng Email, Số điện thoại và Mã hội viên trên toàn bộ auth.service, users.service, members.service; Validate chống đăng cơ hội trùng tiêu đề trong 1 giờ (opportunity.service).
+  + Ràng buộc nghiệp vụ: Tuyệt đối cho phép trùng Họ và tên cùng Ngày tháng năm sinh giữa các hội viên.
+- Quy Chuẩn 4: Tối Ưu Màn Hình Thống Kê & 3 Màu Trắng - Đen - Xanh Trên Mobile App:
+  + Biểu đồ xu hướng: Bắt buộc render Avatar và huy hiệu TOP 1 của hội viên dẫn đầu trực tiếp tại đỉnh đường kẻ (renderTopAvatarDot); Loại bỏ triệt để câu chữ rườm rà; Mở rộng ô chữ 4 thẻ KPI không bị cắt xén dấu chấm lửng (...); Căn chỉnh đường kẻ timeline nhiệm vụ đi xuyên tâm 3 mốc nhận thưởng.
+  + Giao diện Trang chủ và Sự kiện tối giản nghiêm ngặt 3 màu: Trắng (#FFFFFF), Đen/Slate (#0F172A) và Xanh Navy (#003B95).
+  + Nút bấm Check-in trung tâm: Bỏ chữ text "Check-in", trang bị thanh laser quét ngang từ trên xuống liên tục mô phỏng hiệu ứng MoMo scanner.
+  + Quy tắc tương phản Zero-Tolerance: Cấm tuyệt đối text đen trên nền xanh navy, ép buộc chữ và icon luôn là #FFFFFF !important trên toàn bộ các nền xanh.
+  + Bộ chọn màu hệ thống: Đổi màu đồng bộ 100% toàn ứng dụng thông qua CSS variables và global style override.

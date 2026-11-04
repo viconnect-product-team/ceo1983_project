@@ -1257,6 +1257,28 @@ export class MembersService {
     const feeYear = now.getFullYear();
     const joinedAt = now.toISOString().slice(0, 10);
 
+    // Kiểm tra trùng Email trong danh sách hội viên
+    const cleanEmail = (data.email || '').trim().toLowerCase();
+    if (cleanEmail) {
+      const existingEmail = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
+      `.catch(() => []);
+      if (existingEmail.length > 0) {
+        throw new BadRequestException('Email này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+      }
+    }
+
+    // Kiểm tra trùng Số điện thoại trong danh sách hội viên
+    const cleanPhone = (data.phone || '').replace(/[^0-9+]/g, '').trim();
+    if (cleanPhone && cleanPhone.length >= 8) {
+      const existingPhone = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanPhone} LIMIT 1
+      `.catch(() => []);
+      if (existingPhone.length > 0) {
+        throw new BadRequestException('Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+      }
+    }
+
     // Insert into public.members. The DB trigger trg_set_member_code will automatically
     // assign the sequential code (e.g. HV-00000x or PREFIX-00000x) if code is empty!
     await this.prisma.$executeRaw`
@@ -1333,6 +1355,31 @@ export class MembersService {
     const canEdit = await this.checkActionPermission(userId, 'MEM_EDIT', current.association_id);
     if (!canEdit) {
       throw new ForbiddenException('Hành động chỉnh sửa thông tin hội viên (MEM_EDIT) đã bị thu hồi trong cấu hình phân quyền hệ thống');
+    }
+
+    // Kiểm tra trùng Email khi cập nhật
+    if (data.email && data.email.trim().toLowerCase() !== (current.email || '').trim().toLowerCase()) {
+      const cleanEmail = data.email.trim().toLowerCase();
+      const dup = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} AND id != ${current.id} LIMIT 1
+      `.catch(() => []);
+      if (dup.length > 0) {
+        throw new BadRequestException('Email này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+      }
+    }
+
+    // Kiểm tra trùng Số điện thoại khi cập nhật
+    if (data.phone) {
+      const cleanNewPhone = data.phone.replace(/[^0-9+]/g, '').trim();
+      const cleanCurPhone = (current.phone || '').replace(/[^0-9+]/g, '').trim();
+      if (cleanNewPhone && cleanNewPhone !== cleanCurPhone && cleanNewPhone.length >= 8) {
+        const dup = await this.prisma.$queryRaw<any[]>`
+          SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanNewPhone} AND id != ${current.id} LIMIT 1
+        `.catch(() => []);
+        if (dup.length > 0) {
+          throw new BadRequestException('Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+        }
+      }
     }
 
     const name = data.name !== undefined ? data.name : current.name;
@@ -2985,6 +3032,28 @@ export class MembersService {
     const id = `MB${now.getTime().toString(36).toUpperCase()}`;
     const feeYear = now.getFullYear();
     const joinedAt = now.toISOString().slice(0, 10);
+
+    // Kiểm tra trùng Email trong danh sách hội viên
+    const cleanEmail = (data.email || '').trim().toLowerCase();
+    if (cleanEmail) {
+      const existingEmail = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
+      `.catch(() => []);
+      if (existingEmail.length > 0) {
+        throw new BadRequestException('Email này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+      }
+    }
+
+    // Kiểm tra trùng Số điện thoại trong danh sách hội viên
+    const cleanPhone = (data.phone || '').replace(/[^0-9+]/g, '').trim();
+    if (cleanPhone && cleanPhone.length >= 8) {
+      const existingPhone = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanPhone} LIMIT 1
+      `.catch(() => []);
+      if (existingPhone.length > 0) {
+        throw new BadRequestException('Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+      }
+    }
 
     const aboutMeta = JSON.stringify({
       representative: fullName,

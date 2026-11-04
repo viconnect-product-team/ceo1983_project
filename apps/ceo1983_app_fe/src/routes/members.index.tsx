@@ -32,6 +32,7 @@ import { useT, type TKey } from "@/lib/i18n";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
 import { exportToExcel, formatDisplayDate } from "@/lib/excel-export";
 import { useUrlState } from "@/hooks/use-url-state";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { TruncatedText } from "@/components/dashboard/TruncatedText";
@@ -1650,10 +1651,22 @@ function MembersPage() {
 /* ----------------------------- sub components ----------------------------- */
 
 function Avatar({ m, className = "" }: { m: Member; className?: string }) {
+  const avatarSrc = (m as any).avatar || (m as any).avatarUrl || (m as any).photo;
+  if (avatarSrc) {
+    return (
+      <img
+        src={resolveMediaUrl(avatarSrc) || avatarSrc}
+        alt={m.name}
+        className={`shrink-0 rounded-full object-cover border border-slate-200 dark:border-slate-700 ${className}`}
+        onError={(e) => {
+          (e.currentTarget as HTMLElement).style.display = "none";
+        }}
+      />
+    );
+  }
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full font-bold text-primary-foreground ${className}`}
-      style={{ background: "var(--gradient-primary)" }}
+      className={`flex shrink-0 items-center justify-center rounded-full font-bold text-white bg-[#003B95] ${className}`}
     >
       {m.type === "company" ? <Building2 className="h-1/2 w-1/2" /> : initials(m.name)}
     </div>

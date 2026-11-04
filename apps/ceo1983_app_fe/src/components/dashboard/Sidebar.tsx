@@ -640,19 +640,10 @@ export function Sidebar({
     return true;
   });
 
-  const filteredSponsors = sponsors.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/sponsor-report" || it.to === "/sponsor-packages") {
-      return canManageFinance || isBQT || isBXT;
-    }
-    return isBQT || isBXT;
-  });
-
-  const filteredFinance = finance.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    return isBQT || isBTC;
-  });
-
+  const filteredSponsors = sponsors.filter((it) => isAllowed(it.to));
+  
+  const filteredFinance = finance.filter((it) => isAllowed(it.to));
+  
   const filteredComm = comm.filter((it) => isAllowed(it.to));
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { RBAC_MATRIX_STORAGE_KEY } from '@/lib/rbac-permission-helpers';
 import { clearServerDataCache } from '@/hooks/use-server-data';
 
 /**
@@ -396,6 +397,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('in');
     setSessionCookies(sess);
     scheduleRefresh(sess.access_token, sess.refresh_token);
+
+    // Đồng bộ Ma Trận Phân Quyền RBAC thời gian thực về localStorage cho mọi tài khoản
+    fetch(`${API_BASE}/api/admin/permission-matrix`, {
+      headers: { Authorization: `Bearer ${sess.access_token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.categories || data?.rows || Array.isArray(data)) {
+          const matrixData = data.categories || data.rows || data;
+          localStorage.setItem(RBAC_MATRIX_STORAGE_KEY, JSON.stringify(matrixData));
+          window.dispatchEvent(new CustomEvent('rbac-matrix-synced', { detail: matrixData }));
+          window.dispatchEvent(new Event('role-changed'));
+        }
+      })
+      .catch(() => {});
+
+    // Làm giàu thông tin quyền hạn và avatar từ API /users/me
+    fetch(`${API_BASE}/api/users/me`, {
+      headers: { Authorization: `Bearer ${sess.access_token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((fresh) => {
+        if (fresh && fresh.id) {
+          const enrichedUser: AppUser = {
+            ...sess.user,
+            name: fresh.name || sess.user.name,
+            avatar_url: fresh.avatar_url || fresh.avatar || sess.user.avatar_url,
+            permissions: Array.isArray(fresh.permissions) ? fresh.permissions : sess.user.permissions,
+            roles: Array.isArray(fresh.roles) ? fresh.roles : sess.user.roles,
+            role: fresh.role || sess.user.role,
+            department: fresh.department || sess.user.department,
+          };
+          setUser(enrichedUser);
+          try {
+            localStorage.setItem('vibe_user', JSON.stringify(enrichedUser));
+          } catch {}
+          if (fresh.permissionMatrix) {
+            const matrixData = fresh.permissionMatrix.categories || fresh.permissionMatrix.rows || fresh.permissionMatrix;
+            localStorage.setItem(RBAC_MATRIX_STORAGE_KEY, JSON.stringify(matrixData));
+            window.dispatchEvent(new CustomEvent('rbac-matrix-synced', { detail: matrixData }));
+          }
+        }
+      })
+      .catch(() => {});
 
     // Chỉ phát sự kiện làm mới giao diện khi có thay đổi danh tính thực sự hoặc đăng nhập mới
     // Tuyệt đối không broadcast trong quá trình refresh token nền định kỳ để tránh nhấp nháy UI

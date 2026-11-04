@@ -678,35 +678,53 @@ export function AssociationAnalyticsScreen() {
     return allRankedList.slice(3, 10);
   }, [allRankedList]);
 
-  // Custom Dot hiển thị Avatar người đứng Top ở đỉnh đường kẻ
+  // Custom Dot hiển thị Avatar & Huy hiệu của Hội viên đứng Top 1 ở đỉnh đường kẻ biểu đồ
   const renderTopAvatarDot = (props: any) => {
     const { cx, cy, payload, index } = props;
-    if (payload?.isTop && payload?.topAvatar) {
+    if (payload?.isTop) {
+      const topMember = allRankedList[0];
+      const avatarUrl = payload?.topAvatar || topMember?.avatar || "/ceo1983-emblem-8.png";
       return (
         <g key={`dot-${index}`}>
-          <circle cx={cx} cy={cy} r={14} fill="#06B6D4" stroke="#ffffff" strokeWidth={2} />
+          {/* Vầng hào quang xanh nhẹ xung quanh avatar Top 1 */}
+          <circle cx={cx} cy={cy} r={20} fill="#003B95" opacity={0.15} />
+          {/* Vòng viền avatar chuẩn CEO 1983 */}
+          <circle cx={cx} cy={cy} r={15} fill="#003B95" stroke="#FFFFFF" strokeWidth={2.5} />
           <clipPath id={`avatar-clip-${index}`}>
-            <circle cx={cx} cy={cy} r={12} />
+            <circle cx={cx} cy={cy} r={13} />
           </clipPath>
           <image
-            href={payload.topAvatar}
-            x={cx - 12}
-            y={cy - 12}
-            width={24}
-            height={24}
+            href={avatarUrl}
+            x={cx - 13}
+            y={cy - 13}
+            width={26}
+            height={26}
             clipPath={`url(#avatar-clip-${index})`}
             preserveAspectRatio="xMidYMid slice"
           />
-          <text
-            x={cx}
-            y={cy - 16}
-            textAnchor="middle"
-            fill="#06B6D4"
-            fontSize={9}
-            fontWeight="bold"
-          >
-            KIM CƯƠNG 💎
-          </text>
+          {/* Huy hiệu Top 1 nổi bật ngay trên đỉnh chấm */}
+          <g transform={`translate(${cx}, ${cy - 22})`}>
+            <rect
+              x={-34}
+              y={-10}
+              width={68}
+              height={18}
+              rx={9}
+              fill="#003B95"
+              stroke="#FFFFFF"
+              strokeWidth={1.5}
+            />
+            <text
+              x={0}
+              y={2}
+              textAnchor="middle"
+              fill="#FFFFFF"
+              fontSize={8.5}
+              fontWeight="bold"
+            >
+              👑 TOP 1
+            </text>
+          </g>
         </g>
       );
     }
@@ -715,10 +733,10 @@ export function AssociationAnalyticsScreen() {
         key={`dot-norm-${index}`}
         cx={cx}
         cy={cy}
-        r={payload?.isUp ? 4 : 4}
-        fill={payload?.isUp ? "#003B95" : "#DC2626"}
+        r={4}
+        fill="#003B95"
         stroke="#ffffff"
-        strokeWidth={1.5}
+        strokeWidth={2}
       />
     );
   };
@@ -816,13 +834,23 @@ export function AssociationAnalyticsScreen() {
         <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <BarChart3 className="size-4 text-[#003B95] dark:text-blue-400" />
-                <span>Biểu Đồ Xu Hướng ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : "Năm Tài Khóa"})</span>
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Cột thể hiện khối lượng thực tế, đường đo lường tỷ lệ tăng trưởng
-              </p>
+              <div className="flex flex-col gap-1">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BarChart3 className="size-4 text-[#003B95] dark:text-blue-400" />
+                  <span>Biểu Đồ Xu Hướng ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : "Năm Tài Khóa"})</span>
+                </h4>
+                {/* Banner nổi bật Hội viên dẫn đầu Top 1 */}
+                {allRankedList[0] && (
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-blue-100 dark:bg-blue-950 text-[#003B95] dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
+                        Top 1: {allRankedList[0].name}
+                      </span>
+                      <span className="text-[10.5px] text-slate-500 font-normal">({allRankedList[0].valueStr})</span>
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300 shrink-0">
@@ -882,7 +910,8 @@ export function AssociationAnalyticsScreen() {
                   name="Tăng trưởng"
                   stroke="#0284C7"
                   strokeWidth={2.5}
-                  dot={{ r: 4, fill: "#003B95", stroke: "#ffffff", strokeWidth: 2 }}
+                  dot={renderTopAvatarDot}
+                  activeDot={{ r: 6, fill: "#003B95", stroke: "#ffffff", strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -898,16 +927,16 @@ export function AssociationAnalyticsScreen() {
                 key={idx}
                 className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-1"
               >
-                <div className="flex items-center justify-between text-slate-500">
-                  <span className="text-[10.5px] font-semibold truncate text-slate-600 dark:text-slate-400">{kpi.label}</span>
-                  <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 shrink-0">
+                <div className="flex items-start justify-between text-slate-500 gap-1">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2 min-h-[32px]">{kpi.label}</span>
+                  <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 shrink-0 mt-0.5">
                     <Icon className="size-3.5 text-[#003B95] dark:text-blue-300" />
                   </div>
                 </div>
-                <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                <div className="text-base font-black text-slate-900 dark:text-white leading-tight pt-0.5">
                   {kpi.value}
                 </div>
-                <div className="text-[9.5px] font-bold text-[#003B95] dark:text-blue-400 truncate">
+                <div className="text-[10px] font-bold text-[#003B95] dark:text-blue-400 leading-tight line-clamp-1">
                   {kpi.subtext}
                 </div>
               </div>
@@ -945,7 +974,7 @@ export function AssociationAnalyticsScreen() {
           {/* ĐƯỜNG NGANG DUY NHẤT CHIA 3 NOTE */}
           <div className="relative pt-12 pb-6 px-4">
             {/* Thanh ngang nền */}
-            <div className="absolute left-8 right-8 top-[3.75rem] h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full z-0 overflow-hidden">
+            <div className="absolute left-10 right-10 top-[76px] h-2 bg-slate-200 dark:bg-slate-800 rounded-full z-0 overflow-hidden">
               <div
                 className="h-full bg-[#003B95] rounded-full transition-all duration-700 shadow-xs"
                 style={{ width: `${Math.min(100, (currentTaskCompletedCount / 10) * 100)}%` }}
@@ -966,7 +995,7 @@ export function AssociationAnalyticsScreen() {
                     style={{ width: "30%" }}
                   >
                     {/* Hộp quà phía trên note với hiệu ứng rung rung khi qua note (Chuẩn Xanh Navy & Trắng) */}
-                    <div className="relative mb-2">
+                    <div className="relative mb-3">
                       <div
                         className={`size-11 rounded-2xl flex items-center justify-center p-2 transition-all shadow-md ${
                           isPassed
@@ -991,7 +1020,7 @@ export function AssociationAnalyticsScreen() {
 
                     {/* Note marker trên đường ngang */}
                     <div
-                      className={`size-6 rounded-full flex items-center justify-center font-bold text-[10px] border-2 shadow-xs transition-transform group-hover:scale-110 ${
+                      className={`size-7 rounded-full flex items-center justify-center font-bold text-xs border-2 shadow-xs transition-transform group-hover:scale-110 z-10 ${
                         isClaimed
                           ? "bg-slate-900 border-white text-white"
                           : isPassed

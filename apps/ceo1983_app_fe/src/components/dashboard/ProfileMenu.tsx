@@ -39,6 +39,21 @@ export function ProfileMenu() {
       setEmail(user.email || "");
     }
 
+    // Call API /users/me để tải avatar và thông tin mới nhất trực tiếp từ cơ sở dữ liệu
+    async function loadFreshProfile() {
+      try {
+        const res = await fetchNestApi<any>("/users/me");
+        if (res) {
+          if (res.name) setFullName(res.name);
+          const freshAvatar = res.avatar_url || res.avatar || res.profile?.avatar_url;
+          if (freshAvatar) setAvatarUrl(freshAvatar);
+          if (res.email) setEmail(res.email);
+          if (res.id) setUserId(res.id);
+        }
+      } catch {}
+    }
+    loadFreshProfile();
+
     const handleCrmUpdate = (e: any) => {
       if (e?.detail) {
         if (e.detail.name || e.detail.full_name) setFullName(e.detail.name || e.detail.full_name);
@@ -158,6 +173,8 @@ export function ProfileMenu() {
           userId={userId}
           email={email}
           fullName={fullName}
+          avatarUrl={avatarUrl}
+          onAvatarUpdated={(url) => setAvatarUrl(url)}
           onSaved={(n) => setFullName(n)}
           onClose={() => setProfileOpen(false)}
         />
@@ -191,18 +208,52 @@ function ProfileModal({
   userId,
   email,
   fullName,
+  avatarUrl,
+  onAvatarUpdated,
   onSaved,
   onClose,
 }: {
   userId: string | null;
   email: string;
   fullName: string;
+  avatarUrl: string;
+  onAvatarUpdated: (url: string) => void;
   onSaved: (n: string) => void;
   onClose: () => void;
 }) {
   const t = useT();
   const [name, setName] = useState(fullName);
+  const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetchNestApi<any>("/upload/avatar", {
+        method: "POST",
+        body: formData,
+      });
+      const newUrl = res?.url || res?.avatar_url || res?.avatar;
+      if (newUrl) {
+        setCurrentAvatar(newUrl);
+        onAvatarUpdated(newUrl);
+        window.dispatchEvent(
+          new CustomEvent("crm_admin_profile_updated", { detail: { avatar_url: newUrl } })
+        );
+        toast.success("Tải lên ảnh đại diện thành công!");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Tải lên ảnh đại diện thất bại");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function save() {
     if (!userId) return;
@@ -225,6 +276,49 @@ function ProfileModal({
   return (
     <Modal title={t("profile.title")} onClose={onClose}>
       <div className="space-y-4">
+        {/* Avatar Upload Preview */}
+        <div className="flex items-center gap-4 p-3 bg-secondary/50 rounded-xl border border-border">
+          <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 border-primary/20 bg-muted flex items-center justify-center">
+            {currentAvatar ? (
+              <img
+                src={resolveMediaUrl(currentAvatar) || currentAvatar}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-lg font-bold text-muted-foreground">
+                {initials(name || email)}
+              </div>
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+            >
+              {uploading ? "Đang tải lên..." : "Đổi ảnh đại diện"}
+            </button>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Hỗ trợ PNG, JPG, WEBP tối đa 5MB
+            </p>
+          </div>
+        </div>
+
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
             {t("profile.fullName")}
@@ -255,7 +349,7 @@ function ProfileModal({
           <button
             onClick={save}
             disabled={saving}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60 cursor-pointer"
           >
             {t("common.save")}
           </button>

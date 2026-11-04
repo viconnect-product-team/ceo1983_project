@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useRole, clearMeCache } from "@/hooks/use-role";
 import { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeRole, normalizeDept } from "@/routes/permissions";
 import { SYSTEM_ROLES, COMMITTEES } from "@/components/dashboard/RbacPermissionMatrix";
@@ -678,45 +678,45 @@ function AccountsPage() {
           </div>
         </div>
 
-        {/* ── 4 METRIC CARDS (Figma Exact Gradients) ── */}
+        {/* ── 4 METRIC CARDS (Minimalist Solid 5-Colors) ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-32 p-4 bg-white dark:bg-card rounded-[20px] border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="users" />
-              <div className="text-blue-600 text-xs font-semibold font-['Inter']">TỔNG SỐ TÀI KHOẢN</div>
+              <div className="text-[#003B95] dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG SỐ TÀI KHOẢN</div>
             </div>
-            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">{accounts.length}</div>
+            <div className="text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-7">{accounts.length}</div>
             <div className="text-slate-500 text-xs font-normal font-['Inter']">Tài khoản quản trị &amp; hội viên</div>
           </div>
 
-          <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-32 p-4 bg-white dark:bg-card rounded-[20px] border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="shield" />
-              <div className="text-indigo-500 text-xs font-semibold font-['Inter']">LÃNH ĐẠO &amp; QUẢN TRỊ</div>
+              <div className="text-[#003B95] dark:text-blue-400 text-xs font-semibold font-['Inter']">LÃNH ĐẠO &amp; QUẢN TRỊ</div>
             </div>
-            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">
+            <div className="text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-7">
               {accounts.filter((a) => a.role === "quan_tri" || a.role === "admin" || a.role === "chu_tich").length}
             </div>
             <div className="text-slate-500 text-xs font-normal font-['Inter']">Admin &amp; Ban điều hành cấp cao</div>
           </div>
 
-          <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-32 p-4 bg-white dark:bg-card rounded-[20px] border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="building" />
-              <div className="text-orange-500 text-xs font-semibold font-['Inter']">TRƯỞNG BAN CHUYÊN MÔN</div>
+              <div className="text-amber-600 dark:text-amber-400 text-xs font-semibold font-['Inter']">TRƯỞNG BAN CHUYÊN MÔN</div>
             </div>
-            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">
+            <div className="text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-7">
               {accounts.filter((a) => a.role.startsWith("truong_ban_")).length}
             </div>
             <div className="text-slate-500 text-xs font-normal font-['Inter']">Được phân quyền quản lý theo ban</div>
           </div>
 
-          <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white rounded-[20px] outline outline-[0.50px] outline-slate-200 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          <div className="h-32 p-4 bg-white dark:bg-card rounded-[20px] border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="check" />
-              <div className="text-emerald-500 text-xs font-semibold font-['Inter']">ĐANG HOẠT ĐỘNG</div>
+              <div className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐANG HOẠT ĐỘNG</div>
             </div>
-            <div className="text-slate-900 text-2xl font-bold font-['Inter'] leading-7">
+            <div className="text-slate-900 dark:text-white text-2xl font-bold font-['Inter'] leading-7">
               {accounts.filter((a) => a.status === "active").length}
             </div>
             <div className="text-slate-500 text-xs font-normal font-['Inter']">Đã kích hoạt và sẵn sàng đăng nhập</div>
@@ -900,9 +900,20 @@ function AccountsPage() {
                     {/* THÔNG TIN TÀI KHOẢN */}
                     <td className="px-6 border-r border-slate-200">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center font-semibold text-xs shrink-0">
-                          {acc.name.charAt(0).toUpperCase()}
-                        </div>
+                        {acc.avatar ? (
+                          <img
+                            src={resolveMediaUrl(acc.avatar) || acc.avatar}
+                            alt={acc.name}
+                            className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#003B95] text-white flex items-center justify-center font-semibold text-xs shrink-0">
+                            {acc.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="text-slate-900 dark:text-white text-xs font-bold truncate">{acc.name}</div>
                           <div className="mt-0.5 inline-flex px-1 bg-indigo-50 dark:bg-indigo-950/60 rounded-[3px]">

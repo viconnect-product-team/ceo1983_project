@@ -19,6 +19,9 @@ import {
   Eye,
   Sliders,
   Image as ImageIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,6 +51,22 @@ export interface LandingBenefitItem {
 
 export interface LandingWebConfig {
   // 1. Nhận diện & thương hiệu
+  customDomain?: string;
+  showDomainBanner?: boolean;
+  watermarkUrl?: string;
+  watermarkOpacity?: number; // 0-100%
+  watermarkPosition?: 'center' | 'repeat' | 'bottom-right' | 'top-left';
+
+  // Section Dynamic Alignments & Aspect Ratios
+  heroTextAlign?: 'left' | 'center' | 'right';
+  aboutTextAlign?: 'left' | 'center' | 'right';
+  benefitsTextAlign?: 'left' | 'center' | 'right';
+  heroAspectRatio?: '16:9' | '4:3' | '21:9' | '1:1';
+  heroLayout?: 'split-left' | 'split-right' | 'stacked-center' | 'banner-bg';
+  introAspectRatio?: '16:9' | '4:3' | '1:1';
+  showcaseAspectRatio?: '16:9' | '4:3' | '1:1';
+
+  // Nhận diện cơ bản
   orgName: string;
   tagline: string;
   about: string;
@@ -96,6 +115,18 @@ export const DEFAULT_LANDING_CONFIG: LandingWebConfig = {
   faviconUrl: "/favicon.ico",
   brandPrimary: "#003B95",
   isPublished: true,
+  customDomain: "ceo1983.vn",
+  showDomainBanner: true,
+  watermarkUrl: "/ceo1983-emblem-8.png",
+  watermarkOpacity: 12,
+  watermarkPosition: "center",
+  heroTextAlign: "left",
+  aboutTextAlign: "left",
+  benefitsTextAlign: "left",
+  heroAspectRatio: "16:9",
+  heroLayout: "split-right",
+  introAspectRatio: "16:9",
+  showcaseAspectRatio: "16:9",
 
   heroBadge: "HỆ SINH THÁI DOANH NHÂN HANOIBA",
   heroTitle: "CỘNG ĐỒNG DOANH NHÂN CEO 1983 TIÊN PHONG",
@@ -165,7 +196,7 @@ export function LandingWebManager() {
 
   // Active sub-tab
   const [activeTab, setActiveTab] = useState<
-    "branding" | "hero" | "metrics" | "benefits" | "seo" | "contact"
+    "branding" | "hero" | "watermark" | "metrics" | "benefits" | "seo" | "contact"
   >("branding");
 
   // State cấu hình Landing Web
@@ -337,7 +368,7 @@ export function LandingWebManager() {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs font-black flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
           >
             <Save className="size-3.5 text-slate-950" />
             <span>{saving ? "Đang lưu..." : "Lưu & Xuất Bản"}</span>
@@ -457,6 +488,104 @@ export function LandingWebManager() {
                 </div>
               </div>
 
+              {/* Custom Domain & SSL */}
+              <div className="md:col-span-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Globe className="size-4 text-[#003B95] dark:text-blue-400" />
+                      Gắn Tên Miền Riêng (Custom Domain) &amp; Chứng Chỉ SSL
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Gắn tên miền định danh thương hiệu độc quyền cho landing web (VD: ceo1983.vn hoặc clbceo1983.hanoiba.vn)
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                    <CheckCircle2 className="size-3" /> SSL Active
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="sm:col-span-2">
+                    <input
+                      type="text"
+                      value={config.customDomain || ""}
+                      onChange={(e) => setConfig({ ...config, customDomain: e.target.value })}
+                      placeholder="VD: ceo1983.vn hoặc landing.ceo1983.vn"
+                      className="w-full h-10 px-3 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-600"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.showDomainBanner !== false}
+                        onChange={(e) => setConfig({ ...config, showDomainBanner: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#003B95]"></div>
+                    </label>
+                    <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">Hiện banner tên miền</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Watermark Configuration */}
+              <div className="md:col-span-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ImageIcon className="size-4 text-[#003B95] dark:text-blue-400" />
+                    Cấu Hình Ảnh Chìm (Watermark / Brand Pattern Phủ Toàn Trang)
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Tự động tạo dấu ấn nhận diện chìm cho landing page bảo vệ bản quyền và nhận diện CLB
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      URL Ảnh Chìm (Logo / Biểu Trưng)
+                    </label>
+                    <input
+                      type="text"
+                      value={config.watermarkUrl || ""}
+                      onChange={(e) => setConfig({ ...config, watermarkUrl: e.target.value })}
+                      placeholder="/ceo1983-emblem-8.png hoặc https://..."
+                      className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Độ Mờ Đục (Opacity: {config.watermarkOpacity ?? 12}%)
+                      </label>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={100}
+                      value={config.watermarkOpacity ?? 12}
+                      onChange={(e) => setConfig({ ...config, watermarkOpacity: Number(e.target.value) })}
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#003B95] mt-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Vị Trí Phủ
+                    </label>
+                    <select
+                      value={config.watermarkPosition || "center"}
+                      onChange={(e) => setConfig({ ...config, watermarkPosition: e.target.value as any })}
+                      className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-600"
+                    >
+                      <option value="center">Chính giữa màn hình (Center)</option>
+                      <option value="repeat">Lặp lại hoa văn (Pattern Repeat)</option>
+                      <option value="bottom-right">Góc dưới phải (Bottom Right)</option>
+                      <option value="top-left">Góc trên trái (Top Left)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div className="md:col-span-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white">
@@ -525,6 +654,86 @@ export function LandingWebManager() {
                   placeholder="Mô tả tóm tắt lợi ích nổi bật..."
                   className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-600"
                 />
+              </div>
+
+              {/* Dynamic Layout, Text Align & Aspect Ratio */}
+              <div className="md:col-span-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Sliders className="size-4 text-[#003B95] dark:text-blue-400" />
+                  Cấu Hình Bố Cục Hero, Tỷ Lệ Ảnh &amp; Căn Chỉnh Vị Trí Chữ (Dynamic 100%)
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Kiểu Bố Trí Hero (Hero Layout)
+                    </label>
+                    <select
+                      value={config.heroLayout || "split-right"}
+                      onChange={(e) => setConfig({ ...config, heroLayout: e.target.value as any })}
+                      className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-600"
+                    >
+                      <option value="split-right">Chia đôi - Ảnh bên phải</option>
+                      <option value="split-left">Chia đôi - Ảnh bên trái</option>
+                      <option value="stacked-center">Xếp chồng - Căn giữa</option>
+                      <option value="banner-bg">Ảnh nền phủ toàn trang (Full Banner)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Căn Chỉnh Vị Trí Chữ
+                    </label>
+                    <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 h-10">
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, heroTextAlign: "left" })}
+                        className={`flex-1 h-full rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition ${
+                          (config.heroTextAlign || "left") === "left"
+                            ? "bg-[#003B95] text-white"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <AlignLeft className="size-3.5" /> Trái
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, heroTextAlign: "center" })}
+                        className={`flex-1 h-full rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition ${
+                          config.heroTextAlign === "center"
+                            ? "bg-[#003B95] text-white"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <AlignCenter className="size-3.5" /> Giữa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, heroTextAlign: "right" })}
+                        className={`flex-1 h-full rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition ${
+                          config.heroTextAlign === "right"
+                            ? "bg-[#003B95] text-white"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <AlignRight className="size-3.5" /> Phải
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Tỷ Lệ Bố Trí Ảnh Hero
+                    </label>
+                    <select
+                      value={config.heroAspectRatio || "16:9"}
+                      onChange={(e) => setConfig({ ...config, heroAspectRatio: e.target.value as any })}
+                      className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-blue-600"
+                    >
+                      <option value="16:9">16:9 (Chuẩn màn hình ngang)</option>
+                      <option value="4:3">4:3 (Hình chữ nhật cổ điển)</option>
+                      <option value="21:9">21:9 (Toàn cảnh Cinematic)</option>
+                      <option value="1:1">1:1 (Hình vuông cân đối)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-2">

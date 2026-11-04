@@ -257,6 +257,36 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('Tên đăng nhập hoặc địa chỉ email này đã tồn tại trên hệ thống. Vui lòng sử dụng thông tin khác!');
     }
 
+    // Kiểm tra trùng Email trên toàn hệ thống (vione_users & members)
+    const cleanEmail = (data.email || (data.username?.includes('@') ? data.username : '') || '').toLowerCase().trim();
+    if (cleanEmail && this.prisma) {
+      const existingEmailUser = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.vione_users WHERE LOWER(email) = ${cleanEmail} OR LOWER(username) = ${cleanEmail} LIMIT 1
+      `.catch(() => []);
+      if (existingEmailUser.length > 0) {
+        throw new BadRequestException('Địa chỉ email này đã được sử dụng trên hệ thống. Vui lòng chọn email khác!');
+      }
+      const existingEmailMember = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
+      `.catch(() => []);
+      if (existingEmailMember.length > 0) {
+        throw new BadRequestException('Địa chỉ email này đã được sử dụng bởi một hội viên. Vui lòng chọn email khác!');
+      }
+    }
+
+    // Kiểm tra trùng Số điện thoại trên toàn hệ thống (members & user_profiles)
+    const cleanPhone = (data.phone || (!data.username?.includes('@') ? data.username : '') || '').replace(/[^0-9+]/g, '').trim();
+    if (cleanPhone && cleanPhone.length >= 8 && this.prisma) {
+      const existingPhone = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanPhone}
+        UNION
+        SELECT user_id as id FROM public.user_profiles WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanPhone}
+        LIMIT 1
+      `.catch(() => []);
+      if (existingPhone.length > 0) {
+        throw new BadRequestException('Số điện thoại này đã được sử dụng trên hệ thống. Vui lòng chọn số khác!');
+      }
+    }
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(data.password, salt);
 

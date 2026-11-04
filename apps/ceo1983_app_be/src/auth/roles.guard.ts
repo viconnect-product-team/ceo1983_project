@@ -123,9 +123,50 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const hasPermission = requiredRoles.some((role) =>
+    let hasPermission = requiredRoles.some((role) =>
       normalizedUserRoles.includes(role.toLowerCase().trim()),
     );
+
+    // Kiểm tra thêm quyền từ user.permissions hoặc ma trận phân quyền dynamic trong DB (Đồng bộ RBAC API)
+    if (!hasPermission) {
+      const userPerms: string[] = Array.isArray(user.permissions) ? user.permissions.map((p: any) => String(p).toLowerCase().trim()) : [];
+      if (userPerms.includes('*') || requiredRoles.some((req) => userPerms.includes(req.toLowerCase().trim()))) {
+        hasPermission = true;
+      }
+    }
+
+    if (!hasPermission) {
+      try {
+        const matrixRows = await this.prisma.$queryRaw<{ value: any }[]>`
+          SELECT value FROM public.app_settings WHERE key = 'crm_permission_matrix' LIMIT 1
+        `.catch(() => []);
+        if (matrixRows.length > 0 && matrixRows[0]?.value) {
+          const val = matrixRows[0].value;
+          const categories = val.categories || val.rows || (Array.isArray(val) ? val : []);
+          if (Array.isArray(categories)) {
+            for (const cat of categories) {
+              if (hasPermission) break;
+              if (!cat?.features || !Array.isArray(cat.features)) continue;
+              for (const feat of cat.features) {
+                if (hasPermission) break;
+                if (!feat?.actions || !Array.isArray(feat.actions)) continue;
+                for (const act of feat.actions) {
+                  const actCode = String(act.code || act.id || '').toLowerCase().trim();
+                  const matchesReq = requiredRoles.some((req) => req.toLowerCase().trim() === actCode || actCode.includes(req.toLowerCase().trim()));
+                  if (matchesReq && act.roles) {
+                    const isGranted = normalizedUserRoles.some((r) => act.roles[r] === true);
+                    if (isGranted) {
+                      hasPermission = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch {}
+    }
 
     if (!hasPermission) {
       throw new ForbiddenException(

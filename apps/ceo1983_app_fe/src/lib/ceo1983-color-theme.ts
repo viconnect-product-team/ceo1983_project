@@ -169,12 +169,21 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
 
   styleTag.innerHTML = `
     /* ========================================================== */
-    /* CEO1983 COMPREHENSIVE DYNAMIC BRAND THEME: ${theme.name}  */
+    /* CEO1983 UNIVERSAL BRAND THEME OVERRIDE (100% APP SYNC)     */
+    /* Theme: ${theme.name} (${theme.id})                        */
     /* ========================================================== */
-    :root {
+    :root,
+    html,
+    body {
+      --primary: ${primary} !important;
+      --primary-foreground: #FFFFFF !important;
+      --ring: ${primary} !important;
+      --accent: ${accent} !important;
+      --accent-foreground: #FFFFFF !important;
       --vba-navy: ${primary} !important;
       --vba-navy-deep: ${primaryDeep} !important;
       --vba-gold: ${accent} !important;
+      --vba-gold-2: ${theme.accentLight} !important;
       --theme-icon-color: ${primary} !important;
       --theme-primary-gradient: ${gradientPrimary} !important;
       --bc-mobile-accent: ${primary} !important;
@@ -184,60 +193,73 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
       --vba-theme-light-border: ${lightBorder} !important;
     }
 
-    html:not(.dark) {
-      --vba-bg: #FFFFFF !important;
-      --vba-bg-2: #F8FAFC !important;
-      --vba-surface: #FFFFFF !important;
-      --vba-surface-2: #F1F5F9 !important;
-      --vba-text: #0F172A !important;
-      --vba-text-muted: #475569 !important;
-    }
-
-    /* 1. Recolor All Primary Buttons & Badges Across Entire App */
-    [class*="bg-[#003B95]"],
-    [class*="bg-[#002B66]"],
-    [class*="bg-[#0052CC]"],
-    [class*="bg-[#1E3A8A]"],
-    [class*="bg-[#1F3864]"],
+    /* 1. Recolor All Primary Buttons & Interactive Badges */
+    [class*="bg-[#003B95]" i],
+    [class*="bg-[#002B66]" i],
+    [class*="bg-[#0052CC]" i],
+    [class*="bg-[#1E3A8A]" i],
+    [class*="bg-[#1F3864]" i],
+    .bg-primary,
     .vba-btn-primary,
     .vba-active-tab {
       background-color: ${primary} !important;
+      background-image: none !important;
     }
 
-    /* Đảm bảo text trên nền màu chính luôn là TRẮNG TUYỆT ĐỐI */
-    [class*="bg-[#003B95]"],
-    [class*="bg-[#002B66]"],
-    [class*="bg-[#0052CC]"],
-    [class*="bg-[#1E3A8A]"],
-    [class*="bg-[#1F3864]"],
-    [class*="bg-[#2E3192]"],
-    [class*="bg-[#991B1B]"] {
+    /* Đảm bảo text và icon trên nền màu thương hiệu luôn là TRẮNG TUYỆT ĐỐI */
+    [class*="bg-[#003B95]" i],
+    [class*="bg-[#002B66]" i],
+    [class*="bg-[#0052CC]" i],
+    [class*="bg-[#1E3A8A]" i],
+    [class*="bg-[#1F3864]" i],
+    .bg-primary,
+    .vba-btn-primary {
       color: #FFFFFF !important;
     }
-    [class*="bg-[#003B95]"] *,
-    [class*="bg-[#002B66]"] *,
-    [class*="bg-[#1E3A8A]"] *,
-    [class*="bg-[#1F3864]"] *,
-    [class*="bg-[#2E3192]"] *,
-    [class*="bg-[#991B1B]"] * {
-      color: #FFFFFF;
+    [class*="bg-[#003B95]" i] *:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-cyan"]),
+    [class*="bg-[#002B66]" i] *:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-cyan"]),
+    [class*="bg-[#1E3A8A]" i] *:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-cyan"]),
+    .bg-primary *:not([class*="bg-"]):not([class*="text-amber"]):not([class*="text-cyan"]),
+    .vba-btn-primary *:not([class*="bg-"]) {
+      color: #FFFFFF !important;
     }
 
     /* 2. Recolor All Primary Texts */
-    [class*="text-[#003B95]"],
-    [class*="text-[#002B66]"],
-    [class*="text-[#1E3A8A]"] {
+    [class*="text-[#003B95]" i],
+    [class*="text-[#002B66]" i],
+    [class*="text-[#0052CC]" i],
+    [class*="text-[#1E3A8A]" i],
+    [class*="text-[#1F3864]" i],
+    .text-primary {
       color: ${primary} !important;
     }
 
     /* 3. Recolor All Borders */
-    [class*="border-[#003B95]"],
-    [class*="border-[#002B66]"],
-    [class*="border-[#1E3A8A]"] {
+    [class*="border-[#003B95]" i],
+    [class*="border-[#002B66]" i],
+    [class*="border-[#0052CC]" i],
+    [class*="border-[#1E3A8A]" i],
+    [class*="border-[#1F3864]" i],
+    .border-primary {
       border-color: ${primary} !important;
     }
 
-    /* 4. Recolor Soft Tints in Light Mode */
+    /* 4. Recolor Rings & Outlines */
+    [class*="ring-[#003B95]" i],
+    [class*="ring-[#002B66]" i],
+    [class*="ring-[#1E3A8A]" i],
+    .ring-primary {
+      --tw-ring-color: ${primary} !important;
+    }
+
+    /* 5. Recolor SVG Fills and Strokes */
+    svg[stroke="#003B95" i],
+    svg[stroke="#002B66" i],
+    svg[stroke="#1E3A8A" i] {
+      stroke: ${primary} !important;
+    }
+
+    /* 6. Recolor Soft Tints in Light Mode */
     html:not(.dark) [class*="bg-blue-50"] {
       background-color: ${lightBg} !important;
     }
@@ -246,17 +268,20 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
       border-color: ${lightBorder} !important;
     }
 
-    /* 5. Recolor Gradients */
-    [class*="from-[#003B95]"] {
+    /* 7. Recolor Gradients */
+    [class*="from-[#003B95]" i] {
       --tw-gradient-from: ${primary} var(--tw-gradient-from-position) !important;
       --tw-gradient-to: ${primaryDeep} var(--tw-gradient-to-position) !important;
       --tw-gradient-stops: var(--tw-gradient-from), ${primaryDeep} var(--tw-gradient-to-position) !important;
     }
+    [class*="to-[#003B95]" i] {
+      --tw-gradient-to: ${primary} var(--tw-gradient-to-position) !important;
+    }
 
-    /* 6. Bottom Navigation Bar Active Elements */
+    /* 8. Bottom Navigation Bar Active Indicator & QR Center Button */
     .vba-bottom-bar button span[class*="rounded-full"][class*="shadow"] {
       background: ${gradientPrimary} !important;
-      box-shadow: 0 4px 14px ${primary}50 !important;
+      box-shadow: 0 4px 14px ${primary}60 !important;
     }
   `;
 }

@@ -78,6 +78,7 @@ export function resolveUserPermissions(
   department: string = '',
   isPresident: boolean = false,
   isAdmin: boolean = false,
+  dynamicMatrix?: any,
 ): string[] {
   const normRole = (role || '').toLowerCase().trim();
   const rList = roles.map((r) => r.toLowerCase().trim());
@@ -227,6 +228,36 @@ export function resolveUserPermissions(
   if (normRole === 'ban_dieu_hanh' || dept.includes('điều hành')) {
     ['events:manage', 'events:checkin', 'members:manage', 'marketplace:manage', 'opportunities:manage', 'news:manage', 'documents:manage', 'finance:view',
      'CHK_SCAN', 'MEM_EDIT', 'EVT_ADD', 'EVT_EDIT', 'MKT_EDIT', 'OPP_EDIT', 'NWS_ADD'].forEach((p) => perms.add(p));
+  }
+
+  // 10. Dynamic RBAC Matrix from app_settings (Đồng bộ phân quyền thời gian thực)
+  if (dynamicMatrix) {
+    const categories = dynamicMatrix.categories || dynamicMatrix.rows || (Array.isArray(dynamicMatrix) ? dynamicMatrix : []);
+    if (Array.isArray(categories)) {
+      const allRoleKeys = [normRole, ...rList];
+      for (const cat of categories) {
+        if (!cat?.features || !Array.isArray(cat.features)) continue;
+        for (const feat of cat.features) {
+          if (feat.route) {
+            const hasAnyAction = (feat.actions || []).some((a: any) =>
+              allRoleKeys.some((k) => a?.roles?.[k] === true)
+            );
+            if (hasAnyAction) {
+              perms.add(feat.route);
+            }
+          }
+          if (feat.actions && Array.isArray(feat.actions)) {
+            for (const act of feat.actions) {
+              const isAllowed = allRoleKeys.some((k) => act?.roles?.[k] === true);
+              if (isAllowed) {
+                if (act.code) perms.add(act.code);
+                if (act.id) perms.add(act.id);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   return Array.from(perms);
@@ -579,12 +610,21 @@ export class UsersService {
         roleList.push(primaryRole);
       }
 
+      // Tải ma trận phân quyền từ app_settings để đồng bộ hóa quyền hạn thời gian thực
+      const matrixRows = await this.prisma.$queryRaw<{ value: any }[]>`
+        SELECT value FROM public.app_settings WHERE key = 'crm_permission_matrix' LIMIT 1
+      `.catch(() => []);
+      const dynamicMatrix = matrixRows?.[0]?.value || null;
+
+      const userAvatar = cleanStoredMediaUrl(user.avatar_url || profile?.avatar_url || (memberRow as any)?.avatar) || null;
+
       return {
         id: user.id,
         username: user.username,
         email: user.email,
         name: user.name,
-        avatar_url: user.avatar_url || profile?.avatar_url || null,
+        avatar_url: userAvatar,
+        avatar: userAvatar,
         email_verified: user.email_verified,
         google_linked: !!user.google_id,
         apple_linked: !!user.apple_id,
@@ -623,7 +663,9 @@ export class UsersService {
           normalizedDept,
           primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
           primaryRole === 'admin' || primaryRole === 'chu_tich' || roleList.includes('admin') || roleList.includes('platform_admin'),
+          dynamicMatrix,
         ),
+        permissionMatrix: dynamicMatrix,
       };
     } catch (err: any) {
       if (err instanceof NotFoundException) {
@@ -1132,15 +1174,40 @@ export class UsersService {
       throw new BadRequestException('Tên đăng nhập không được để trống');
     }
     const username = data.username.trim();
+    const cleanEmail = (data.email || (username.includes('@') ? username : '')).trim().toLowerCase();
 
     const existing = await this.usersRepo.findFirst({
       OR: [
         { username },
-        ...(data.email ? [{ email: data.email.trim() }] : []),
+        ...(cleanEmail ? [{ email: cleanEmail }] : []),
       ],
     });
     if (existing) {
       throw new BadRequestException('Tên đăng nhập hoặc Email đã tồn tại');
+    }
+
+    // Kiểm tra trùng email trong bảng members
+    if (cleanEmail) {
+      const existingMember = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
+      `.catch(() => []);
+      if (existingMember.length > 0) {
+        throw new BadRequestException('Địa chỉ Email này đã được sử dụng bởi một hội viên trên hệ thống');
+      }
+    }
+
+    // Kiểm tra trùng số điện thoại nếu username là số điện thoại
+    const potentialPhone = username.replace(/[^0-9+]/g, '');
+    if (potentialPhone.length >= 9) {
+      const existingPhone = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${potentialPhone}
+        UNION
+        SELECT user_id as id FROM public.user_profiles WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${potentialPhone}
+        LIMIT 1
+      `.catch(() => []);
+      if (existingPhone.length > 0) {
+        throw new BadRequestException('Số điện thoại này đã được sử dụng trên hệ thống');
+      }
     }
 
     const rawPassword = data.password && data.password.trim() ? data.password : 'CEO1983@123';
@@ -1191,12 +1258,19 @@ export class UsersService {
     }
 
     if (data.email && data.email !== user.email) {
+      const cleanEmail = data.email.trim().toLowerCase();
       const existing = await this.usersRepo.findFirst({
-        email: data.email,
+        email: cleanEmail,
         NOT: { id },
       });
       if (existing) {
         throw new BadRequestException('Email đã thuộc về tài khoản khác');
+      }
+      const existingMember = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} AND (user_id IS NULL OR user_id != ${id}::uuid) LIMIT 1
+      `.catch(() => []);
+      if (existingMember.length > 0) {
+        throw new BadRequestException('Địa chỉ Email này đã được sử dụng bởi một hội viên khác');
       }
     }
 

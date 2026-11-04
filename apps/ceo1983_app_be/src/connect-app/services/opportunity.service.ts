@@ -785,6 +785,21 @@ export class ConnectOpportunityService {
     const referrer = data.referrer ? String(data.referrer).trim() : null;
     const commissionPercent = data.commissionPercent != null ? Number(data.commissionPercent) : null;
 
+    // Kiểm tra trùng cơ hội kinh doanh (Cùng người đăng, cùng tiêu đề trong vòng 1 giờ)
+    const cleanTitle = (data.title || '').trim().toLowerCase();
+    if (cleanTitle) {
+      const recentDup = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.opportunities
+        WHERE poster_id = ${userId}
+          AND LOWER(TRIM(title)) = ${cleanTitle}
+          AND created_at > (NOW() - INTERVAL '1 hour')
+        LIMIT 1
+      `.catch(() => []);
+      if (recentDup.length > 0) {
+        throw new BadRequestException('Bạn vừa đăng một cơ hội kinh doanh có tiêu đề tương tự trong vòng 1 giờ qua. Vui lòng kiểm tra lại để tránh đăng trùng lặp!');
+      }
+    }
+
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (

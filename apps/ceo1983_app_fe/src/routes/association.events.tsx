@@ -449,7 +449,7 @@ function EventPosterCard({
               ? "bg-rose-600 text-white"
               : isFree
               ? "bg-sky-500 text-white"
-              : "bg-amber-500 text-slate-950 font-black"
+              : "bg-[#003B95] text-white font-bold"
           }`}
         >
           <div className="size-1.5 bg-white rounded-full" />
@@ -476,7 +476,7 @@ function EventPosterCard({
           }}
           className={`size-8 right-[12.64px] top-[12.64px] absolute rounded-full outline outline-1 outline-offset-[-1.05px] outline-white/20 inline-flex justify-center items-center overflow-hidden transition cursor-pointer shadow-md z-10 ${
             isBookmarked
-              ? "bg-amber-500 text-white font-bold"
+              ? "bg-[#003B95] text-white font-bold"
               : "bg-stone-900/80 hover:bg-stone-800 text-white"
           }`}
           title={isBookmarked ? "Bỏ lưu sự kiện" : "Lưu sự kiện"}
@@ -497,8 +497,8 @@ function EventPosterCard({
       <div className="self-stretch px-3.5 pt-3.5 pb-2.5 flex flex-col justify-start items-start gap-2.5 overflow-hidden">
         {/* Category Tag + Time */}
         <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
-          <div className="px-2.5 py-[3.16px] bg-yellow-50 dark:bg-amber-950/40 rounded-[105.36px] outline outline-[0.74px] outline-offset-[-0.74px] outline-orange-200 dark:outline-amber-800 flex justify-start items-start">
-            <span className="text-slate-800 dark:text-amber-300 text-[9.48px] font-bold font-sans leading-3">
+          <div className="px-2.5 py-[3.16px] bg-slate-100 dark:bg-slate-800 rounded-[105.36px] outline outline-[0.74px] outline-offset-[-0.74px] outline-slate-200 dark:outline-slate-700 flex justify-start items-start">
+            <span className="text-slate-800 dark:text-slate-200 text-[9.48px] font-bold font-sans leading-3">
               {agenda.category || "SỰ KIỆN CLB CEO 1983"}
             </span>
           </div>
@@ -509,19 +509,19 @@ function EventPosterCard({
         </div>
 
         {/* Title */}
-        <div className="self-stretch text-slate-800 dark:text-white text-sm font-bold font-sans leading-5 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-2">
+        <div className="self-stretch text-slate-800 dark:text-white text-sm font-bold font-sans leading-5 group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors line-clamp-2">
           {event.title}
         </div>
 
         {/* Date row */}
         <div className="inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
-          <Calendar className="size-3.5 text-amber-600" />
+          <Calendar className="size-3.5 text-[#003B95]" />
           <span className="text-xs font-sans leading-4">{eventDateStr}</span>
         </div>
 
         {/* Location row */}
         <div className="self-stretch inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
-          <MapPin className="size-3.5 text-amber-600 shrink-0" />
+          <MapPin className="size-3.5 text-[#003B95] shrink-0" />
           <span className="flex-1 text-xs font-normal font-sans line-clamp-1">
             {event.place || "Hà Nội"}
           </span>
@@ -543,10 +543,10 @@ function EventPosterCard({
                   evt.stopPropagation();
                   toast.success("Đã đồng bộ sự kiện vào Calendar trên điện thoại thành công!");
                 }}
-                className="px-2 py-[3.16px] bg-amber-50 dark:bg-amber-950/40 rounded-[31.61px] outline outline-[0.74px] outline-offset-[-0.74px] outline-amber-200 dark:outline-amber-800 flex justify-start items-center gap-1 hover:bg-amber-100 transition cursor-pointer"
+                className="px-2 py-[3.16px] bg-slate-100 dark:bg-slate-800 rounded-[31.61px] outline outline-[0.74px] outline-offset-[-0.74px] outline-slate-200 dark:outline-slate-700 flex justify-start items-center gap-1 hover:bg-slate-200 transition cursor-pointer"
               >
-                <Calendar className="size-3 text-amber-600 dark:text-amber-400" />
-                <span className="text-amber-600 dark:text-amber-400 text-[9.48px] font-normal font-sans leading-3">Lịch</span>
+                <Calendar className="size-3 text-[#003B95] dark:text-[#003B95]" />
+                <span className="text-[#003B95] dark:text-[#003B95] text-[9.48px] font-normal font-sans leading-3">Lịch</span>
               </button>
             )}
           </div>
@@ -563,7 +563,7 @@ function EventPosterCard({
                 <span>Hủy vé</span>
               </button>
             )}
-            <div className="flex justify-start items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 font-bold text-xs font-sans group cursor-pointer">
+            <div className="flex justify-start items-center gap-1 text-[#003B95] hover:text-amber-700 dark:text-[#003B95] font-bold text-xs font-sans group cursor-pointer">
               <span>{isPast ? "Xem kỷ yếu" : registered ? "Xem vé" : isFull ? "Xem chi tiết" : "Đăng ký vé"}</span>
               <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
             </div>
@@ -1408,7 +1408,7 @@ function EventsScreen() {
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Calendar className="size-3.5 text-amber-400" />
+            <Calendar className="size-3.5 text-[#003B95]" />
             <span>Sự Kiện CLB ({events.length})</span>
           </button>
 
@@ -1455,7 +1455,7 @@ function EventsScreen() {
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-[#1F3864]/10 text-[#1F3864] dark:bg-blue-950 dark:text-blue-300">
                       {m.meetingType || "Kỳ họp Ban"}
                     </span>
-                    <span className="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="text-[11px] font-mono font-bold text-[#003B95] dark:text-[#003B95]">
                       {m.time}
                     </span>
                   </div>
@@ -1471,7 +1471,7 @@ function EventsScreen() {
 
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
                     <div className="flex items-center gap-2">
-                      <MapPin className="size-3.5 text-amber-500 shrink-0" />
+                      <MapPin className="size-3.5 text-[#003B95] shrink-0" />
                       <span className="truncate">{m.location}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1586,7 +1586,7 @@ function EventsScreen() {
           <div className="px-4 pt-3 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-amber-500" />
+                <Calendar className="h-4 w-4 text-[#003B95]" />
                 {isEn ? "All Club Events" : "Danh sách các sự kiện"}
               </h2>
               <span className="text-[11px] font-bold text-slate-400 font-mono">
@@ -1752,7 +1752,7 @@ function EventsScreen() {
         {/* SỰ KIỆN XEM GẦN ĐÂY */}
         <div className="flex items-center justify-between">
           <div className="font-['Inter'] font-bold text-[13px] sm:text-[14px] leading-tight text-[#001B54] dark:text-white uppercase tracking-tight flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-amber-500" />
+            <Clock className="h-4 w-4 text-[#003B95]" />
             <span>SỰ KIỆN XEM GẦN ĐÂY</span>
           </div>
           <span className="text-[11px] font-medium text-slate-400">
@@ -1786,7 +1786,7 @@ function EventsScreen() {
               </div>
               <div className="w-full flex items-center justify-between text-[10.5px] text-slate-400 -mt-0.5">
                 <span className="truncate">CEO 1983</span>
-                <span className="text-amber-600 dark:text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform flex items-center">
+                <span className="text-[#003B95] dark:text-[#003B95] font-bold group-hover:translate-x-0.5 transition-transform flex items-center">
                   Xem <ArrowRight className="h-3 w-3 inline ml-0.5" />
                 </span>
               </div>
@@ -1796,10 +1796,10 @@ function EventsScreen() {
       </div>
 
       {/* 5. Footer: Thiết kế tối giản, thanh lịch, chuẩn xu hướng hiện đại */}
-      <div className="mx-4 mt-6 rounded-2xl border border-amber-500/30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 text-slate-800 dark:text-slate-100 shadow-[0_4px_16px_rgba(245,158,11,0.1)]">
+      <div className="mx-4 mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 text-slate-800 dark:text-slate-100 shadow-[0_4px_16px_rgba(245,158,11,0.1)]">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30 shrink-0">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-[#003B95] border border-slate-200 dark:border-slate-800 shrink-0">
               <Sparkles className="h-4.5 w-4.5" />
             </div>
             <div>
@@ -1813,7 +1813,7 @@ function EventsScreen() {
           </div>
           <Link
             to="/association/messages"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#1F3864] border border-amber-400/50 hover:border-amber-400 text-amber-300 px-3.5 py-2 text-xs font-bold shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-white/20 text-white px-3.5 py-2 text-xs font-bold shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
           >
             <span>Liên hệ Ban Truyền Thông</span>
             <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
@@ -1829,7 +1829,7 @@ function EventsScreen() {
           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="p-3.5 bg-[#1F3864] text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Users className="size-5 text-amber-400" />
+                <Users className="size-5 text-[#003B95]" />
                 <div>
                   <h4 className="font-bold text-xs truncate max-w-xs sm:max-w-md">{activeMeetingRoom.title}</h4>
                   <span className="text-[10px] text-slate-300">Phòng họp trực tuyến Jitsi Meet CLB CEO 1983</span>
@@ -2005,7 +2005,7 @@ function EventsScreen() {
           <div className="bg-[#1F3864] p-5 text-white">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <AlertTriangle className="w-5 h-5 text-[#003B95]" />
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-white">
@@ -2020,7 +2020,7 @@ function EventsScreen() {
 
           <div className="p-5 space-y-4">
             <div className="p-3 bg-amber-50 border border-amber-200/70 rounded-xl flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <Info className="w-4 h-4 text-[#003B95] shrink-0 mt-0.5" />
               <p className="text-xs text-amber-800 leading-relaxed">
                 {isEn
                   ? "Releasing your ticket will open this seat for other members. Are you sure you want to cancel?"

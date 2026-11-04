@@ -784,7 +784,7 @@ function MemberTabBar() {
 
           if (tab.center) {
             return (
-              <div key={tab.to} className="relative flex flex-1 flex-col items-center justify-end">
+              <div key={tab.to} className="relative flex flex-1 flex-col items-center justify-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -792,30 +792,44 @@ function MemberTabBar() {
                     navigate({ to: "/association/card" as any });
                     setQrModalOpen(true);
                   }}
-                  aria-label="Check-in & Quét mã QR"
-                  className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none pb-0.5"
+                  aria-label="Quét mã QR Check-in"
+                  className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none"
                 >
-                  {/* Nút tròn Check-in chuẩn 3 màu CEO 1983 tối giản */}
+                  {/* Nút tròn Quét mã QR MoMo-style với laser quét từ trên xuống */}
                   <span
-                    className="relative grid h-13 w-13 place-items-center rounded-full shadow-md group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
+                    className="relative grid h-14 w-14 place-items-center rounded-full shadow-lg group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-3"
                     style={{
                       background: "var(--theme-primary-gradient, linear-gradient(135deg, #003B95 0%, #1E3A8A 100%))",
-                      border: "2.5px solid rgba(255, 255, 255, 0.95)",
-                      boxShadow: "0 4px 14px var(--vba-border, rgba(0, 59, 149, 0.3))",
+                      border: "3px solid #FFFFFF",
+                      boxShadow: "0 6px 18px rgba(0, 59, 149, 0.4)",
                     }}
                   >
-                    <QrCode className="size-6 text-white stroke-[2.2]" />
+                    <QrCode className="size-7 text-white stroke-[2.2] relative z-10" />
+
+                    {/* MoMo-style Continuous Vertical Scanning Laser Beam */}
+                    <div
+                      className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_8px_#38bdf8] pointer-events-none z-20"
+                      style={{
+                        animation: "momoLaserScan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+                      }}
+                    />
+
+                    {/* Subtle scanner glow overlay */}
+                    <div
+                      className="absolute inset-0 bg-cyan-400/10 pointer-events-none z-10"
+                      style={{
+                        animation: "momoLaserPulse 2s ease-in-out infinite",
+                      }}
+                    />
+
                     {isMidAutumn && (
                       <span
-                        className="absolute -top-1 -right-1 text-[10px] select-none"
+                        className="absolute -top-1 -right-1 text-[10px] select-none z-30"
                         aria-hidden="true"
                       >
                         🌕
                       </span>
                     )}
-                  </span>
-                  <span className="text-[11px] font-bold text-[var(--vba-navy)] dark:text-[var(--vba-gold)] mt-1">
-                    Check-in
                   </span>
                 </button>
               </div>
