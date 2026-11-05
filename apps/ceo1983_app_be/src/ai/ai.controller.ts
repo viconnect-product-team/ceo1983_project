@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Delete, Body, Param, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiService } from './ai.service';
+import { AiCrmAnalyticsService } from './ai-crm-analytics.service';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly aiService: AiService,
+    private readonly crmAnalytics: AiCrmAnalyticsService,
+  ) {}
 
   /** GET /api/ai/live-context — Ngữ cảnh động tài khoản phiên đăng nhập */
   @Get('live-context')
@@ -158,6 +162,59 @@ export class AiController {
     @Body() body: { userId: string; blocked: boolean }
   ) {
     const res = await this.aiService.toggleBlockUserAi(body.userId, body.blocked);
+    return res;
+  }
+
+  // ==========================================
+  // SYSTEM AI CONFIGURATION & AUDIT LOGS
+  // ==========================================
+
+  /** GET /api/ai/system-config — Lấy cấu hình đa model AI & cảnh báo hạn mức */
+  @Get('system-config')
+  async getSystemConfig() {
+    const config = await this.crmAnalytics.getSystemConfig();
+    return { ok: true, data: config };
+  }
+
+  /** POST /api/ai/system-config — Lưu cấu hình đa model AI & fallback */
+  @Post('system-config')
+  async saveSystemConfig(@Request() req: any, @Body() body: any) {
+    const res = await this.crmAnalytics.saveSystemConfig(body, req.user?.id);
+    return res;
+  }
+
+  /** POST /api/ai/test-connection — Kiểm tra kết nối model */
+  @Post('test-connection')
+  async testConnection(@Body() body: { provider: string; apiKey?: string; model?: string }) {
+    const res = await this.crmAnalytics.testConnection(body.provider, body.apiKey, body.model);
+    return res;
+  }
+
+  /** GET /api/ai/system-logs — Lấy danh sách nhật ký thao tác AI */
+  @Get('system-logs')
+  async getSystemLogs() {
+    const logs = await this.crmAnalytics.getSystemLogs();
+    return { ok: true, data: logs };
+  }
+
+  // ==========================================
+  // CRM EXECUTIVE AI & SUB-REPORTS
+  // ==========================================
+
+  /** GET /api/ai/crm/analyze — Phân tích toàn diện CRM realtime */
+  @Get('crm/analyze')
+  async analyzeCrmData(@Request() req: any) {
+    const res = await this.crmAnalytics.analyzeCrmData(req.user.id);
+    return { ok: true, data: res };
+  }
+
+  /** POST /api/ai/crm/export-report — Xuất báo cáo theo chức năng con (thu chi, hóa đơn/phiếu thu) */
+  @Post('crm/export-report')
+  async exportSubReport(
+    @Request() req: any,
+    @Body() body: { type: 'financial_summary' | 'invoice' | 'receipt' | 'events_report'; options?: any }
+  ) {
+    const res = await this.crmAnalytics.exportSubReport(req.user.id, body.type, body.options);
     return res;
   }
 }

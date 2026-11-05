@@ -71,6 +71,7 @@ type Item = { key: TKey; icon: LucideIcon; to?: string; label?: string; children
 
 const overview: Item[] = [
   { key: "nav.dashboard", icon: LayoutDashboard, to: "/" },
+  { key: "nav.aiAssistant" as TKey, icon: Sparkles, to: "/ai-assistant", label: "Trợ Lý AI Điều Hành" },
 ];
 const members: Item[] = [
   { key: "nav.members", icon: Users, to: "/members" },

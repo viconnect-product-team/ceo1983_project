@@ -25,6 +25,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 import { EventPosterModal } from "@/components/events/EventPosterModal";
 import { isEventFull } from "@/lib/member-app.functions";
+import { buildDynamicShareUrl } from "@/lib/share-helper";
 
 export interface EventDetailModalProps {
   selectedEvent: any | null;
@@ -412,9 +413,16 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const shareUrl = `${window.location.origin}/share/event/${selectedEvent.id}?source=facebook`;
-                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank");
-                    toast.success("Đang mở chia sẻ Facebook...");
+                    const dynamicUrl = buildDynamicShareUrl({
+                      type: 'event',
+                      id: selectedEvent.id,
+                      title: selectedEvent.title || 'Sự kiện CEO 1983',
+                      desc: selectedEvent.description || 'Tham gia sự kiện kết nối doanh nhân CEO 1983 (HanoiBA)',
+                      image: selectedEvent.coverImage || selectedEvent.bannerUrl,
+                      targetPath: `/association/events`
+                    });
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(dynamicUrl)}`, "_blank");
+                    toast.success("Đang mở chia sẻ Facebook với thẻ OpenGraph chuẩn...");
                   }}
                   className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1877F2] text-white font-bold text-xs shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
                 >
@@ -423,9 +431,16 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const shareUrl = `${window.location.origin}/share/event/${selectedEvent.id}?source=zalo`;
-                    window.open(`https://zalo.me/share?url=${encodeURIComponent(shareUrl)}`, "_blank");
-                    toast.success("Đang mở chia sẻ Zalo...");
+                    const dynamicUrl = buildDynamicShareUrl({
+                      type: 'event',
+                      id: selectedEvent.id,
+                      title: selectedEvent.title || 'Sự kiện CEO 1983',
+                      desc: selectedEvent.description || 'Tham gia sự kiện kết nối doanh nhân CEO 1983 (HanoiBA)',
+                      image: selectedEvent.coverImage || selectedEvent.bannerUrl,
+                      targetPath: `/association/events`
+                    });
+                    window.open(`https://zalo.me/share?url=${encodeURIComponent(dynamicUrl)}`, "_blank");
+                    toast.success("Đang mở chia sẻ Zalo với ảnh đại diện sự kiện...");
                   }}
                   className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0068FF] text-white font-bold text-xs shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
                 >
@@ -436,16 +451,23 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const shareUrl = `${window.location.origin}/share/event/${selectedEvent.id}`;
-                    navigator.clipboard.writeText(shareUrl);
-                    toast.success("Đã sao chép liên kết chia sẻ public!", {
-                      description: shareUrl,
+                    const dynamicUrl = buildDynamicShareUrl({
+                      type: 'event',
+                      id: selectedEvent.id,
+                      title: selectedEvent.title || 'Sự kiện CEO 1983',
+                      desc: selectedEvent.description || 'Tham gia sự kiện kết nối doanh nhân CEO 1983 (HanoiBA)',
+                      image: selectedEvent.coverImage || selectedEvent.bannerUrl,
+                      targetPath: `/association/events`
+                    });
+                    navigator.clipboard.writeText(dynamicUrl);
+                    toast.success("Đã sao chép liên kết OpenGraph chuẩn mạng xã hội!", {
+                      description: dynamicUrl,
                     });
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                 >
                   <Copy className="size-3.5 text-slate-500" />
-                  <span>Sao chép link chia sẻ public</span>
+                  <span>Sao chép link chia sẻ chuẩn</span>
                 </button>
               </div>
             </div>

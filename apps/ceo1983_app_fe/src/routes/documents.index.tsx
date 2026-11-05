@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
+  HardDrive,
   FileText,
   FolderOpen,
   FolderPlus,
@@ -42,6 +43,7 @@ import { MailTemplateManager } from "@/components/documents/MailTemplateManager"
 import { DriveShareModal } from "@/components/documents/DriveShareModal";
 import { DriveMoveModal } from "@/components/documents/DriveMoveModal";
 import { DriveDocumentModal } from "@/components/documents/DriveDocumentModal";
+import { MemberGoogleDriveSyncModal } from "@/components/documents/MemberGoogleDriveSyncModal";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
@@ -253,6 +255,8 @@ function DocsPage() {
   // Modals phong cách Google Drive
   const [shareModalDoc, setShareModalDoc] = useState<Document | null>(null);
   const [moveModalDoc, setMoveModalDoc] = useState<Document | null>(null);
+  const [driveSyncModalDoc, setDriveSyncModalDoc] = useState<Document | null>(null);
+  const [openDriveModal, setOpenDriveModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -1713,6 +1717,15 @@ function DocsPage() {
                                     >
                                       <Download className="h-3.5 w-3.5" aria-hidden="true" />
                                       {t("common.download")}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setDriveSyncModalDoc(d)}
+                                      title="Đồng bộ / Chuyển về Google Drive cá nhân"
+                                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                                    >
+                                      <HardDrive className="h-3.5 w-3.5" />
+                                      <span className="hidden xl:inline">Đồng bộ Drive</span>
                                     </button>
                                     <button
                                       onClick={() => setShareModalDoc(d)}

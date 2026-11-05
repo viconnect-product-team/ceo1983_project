@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Activity,
+  Sparkles,
   Bell,
   Building2,
   CreditCard,
@@ -17,6 +18,7 @@ import {
   Share2,
 } from "lucide-react";
 import { SyndicationConfigSection } from "@/components/dashboard/SyndicationConfigSection";
+import { AiConfigSection } from "@/components/dashboard/AiConfigSection";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -38,6 +40,7 @@ export const Route = createFileRoute("/settings")({ component: SettingsPage });
 const TABS = [
   { key: "general", labelKey: "set.tab.general", defaultLabel: "Thông tin chung", icon: Building2 },
   { key: "landing", labelKey: "set.tab.landing", defaultLabel: "Trang giới thiệu", icon: Layout },
+  { key: "ai_config", defaultLabel: "Cấu hình AI & Nhật ký", icon: Sparkles },
   { key: "traffic", defaultLabel: "Quản lý lượng truy cập", icon: Activity },
   { key: "domain", labelKey: "set.tab.domain", defaultLabel: "Tên miền hệ thống", icon: Globe },
   { key: "templates", defaultLabel: "Mẫu thông báo", icon: Mail },
@@ -207,6 +210,7 @@ function SettingsPage() {
 
           {tab === "landing" && <LandingWebManager onSwitchTab={(newTab) => setTab(newTab as any)} />}
 
+          {tab === "ai_config" && <AiConfigSection />}
           {tab === "traffic" && <TrafficManagerSection />}
 
           {tab === "domain" && <AssociationDomainEditor />}

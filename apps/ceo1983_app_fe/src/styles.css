@@ -2534,19 +2534,7 @@ input[placeholder*="Search"]:active,
   box-shadow: none !important;
 }
 
-/* 2. Ẩn Footer / Bottom Tab Bar khi bàn phím ảo hiển thị (khi người dùng focus vào ô input / textarea) */
-body:has(input:focus):not(:has(input[type="checkbox"]:focus)):not(:has(input[type="radio"]:focus)) .vba-bottom-bar,
-body:has(textarea:focus) .vba-bottom-bar,
-html:has(input:focus):not(:has(input[type="checkbox"]:focus)):not(:has(input[type="radio"]:focus)) .vba-bottom-bar,
-html:has(textarea:focus) .vba-bottom-bar,
-body:has([contenteditable="true"]:focus) .vba-bottom-bar,
-html:has([contenteditable="true"]:focus) .vba-bottom-bar {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: translateY(100%) !important;
-}
+/* 2. Footer Bottom Tab Bar luôn giữ cố định, không bao giờ ẩn khi nhập liệu hay tìm kiếm */
 
 /* Ceo1983 Orbital Menu Animations */
 @keyframes orbit-counter {

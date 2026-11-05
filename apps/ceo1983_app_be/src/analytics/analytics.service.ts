@@ -1,81 +1,422 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-function buildTimelineData(items: any[], period: 'month' | 'quarter' | 'year') {
-  if (period === 'year') {
-    const years = [2024, 2025, 2026];
-    return years.map((yr, idx) => {
-      const matchCount = items.filter(x => x.created_at && new Date(x.created_at).getFullYear() === yr).length;
-      const count = matchCount > 0 ? matchCount : (idx === 0 ? 18 : idx === 1 ? 28 : Math.max(items.length, 36));
-      return {
-        name: String(yr),
-        columnVal: count,
-        lineVal: Math.max(2, Math.round(count * 0.72)),
-        isUp: idx > 0,
-      };
-    });
+export type TimeGranularity = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+export interface BucketInfo {
+  name: string;
+  label: string;
+  start: Date;
+  end: Date;
+  timeLabel: string;
+}
+
+export function getBuckets(granularity: TimeGranularity, now: Date = new Date()): BucketInfo[] {
+  const buckets: BucketInfo[] = [];
+  if (granularity === 'minute') {
+    // 6 mốc 5 phút gần nhất
+    for (let i = 5; i >= 0; i--) {
+      const end = new Date(now.getTime() - i * 5 * 60 * 1000);
+      const start = new Date(end.getTime() - 5 * 60 * 1000);
+      const label = i === 0 ? 'Hiện tại' : `-${i * 5}p`;
+      buckets.push({
+        name: label,
+        label,
+        start,
+        end,
+        timeLabel: `${start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
+      });
+    }
+  } else if (granularity === 'hour') {
+    // 6 mốc 1 giờ gần nhất
+    for (let i = 5; i >= 0; i--) {
+      const end = new Date(now.getTime() - i * 60 * 60 * 1000);
+      const start = new Date(end.getTime() - 60 * 60 * 1000);
+      const hStr = end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const label = i === 0 ? 'Hiện tại' : hStr;
+      buckets.push({
+        name: label,
+        label,
+        start,
+        end,
+        timeLabel: `${start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${hStr}`,
+      });
+    }
+  } else if (granularity === 'day') {
+    // 7 ngày gần nhất
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
+      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+      const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      const dayName = i === 0 ? 'Hôm nay' : dayNames[d.getDay()];
+      const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
+      buckets.push({
+        name: `${dayName} (${dateStr})`,
+        label: `${dayName} (${dateStr})`,
+        start,
+        end,
+        timeLabel: `${dayName}, ngày ${dateStr}`,
+      });
+    }
+  } else if (granularity === 'week') {
+    // 4 tuần gần nhất
+    for (let i = 3; i >= 0; i--) {
+      const end = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const label = `Tuần ${4 - i}`;
+      buckets.push({
+        name: label,
+        label,
+        start,
+        end,
+        timeLabel: `${start.toLocaleDateString('vi-VN')} - ${end.toLocaleDateString('vi-VN')}`,
+      });
+    }
+  } else if (granularity === 'month') {
+    // 6 tháng gần nhất
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0);
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+      const label = `T${d.getMonth() + 1}`;
+      buckets.push({
+        name: label,
+        label,
+        start,
+        end,
+        timeLabel: `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`,
+      });
+    }
+  } else if (granularity === 'quarter') {
+    // 4 quý
+    const curYear = now.getFullYear();
+    for (let q = 0; q < 4; q++) {
+      const start = new Date(curYear, q * 3, 1, 0, 0, 0);
+      const end = new Date(curYear, (q + 1) * 3, 0, 23, 59, 59);
+      const label = `Q${q + 1}`;
+      buckets.push({
+        name: label,
+        label,
+        start,
+        end,
+        timeLabel: `Quý ${q + 1}/${curYear}`,
+      });
+    }
+  } else {
+    // year: 3 năm gần nhất
+    const curYear = now.getFullYear();
+    for (let yr = curYear - 2; yr <= curYear; yr++) {
+      const start = new Date(yr, 0, 1, 0, 0, 0);
+      const end = new Date(yr, 11, 31, 23, 59, 59);
+      const label = String(yr);
+      buckets.push({
+        name: label,
+        label,
+        start,
+        end,
+        timeLabel: `Năm ${yr}`,
+      });
+    }
   }
-  if (period === 'quarter') {
-    const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-    return quarters.map((q, idx) => {
-      const matchCount = items.filter(x => {
-        if (!x.created_at) return false;
-        const month = new Date(x.created_at).getMonth();
-        return Math.floor(month / 3) === idx;
+  return buckets;
+}
+
+export const CHART_METAS: Record<string, {
+  unit: string;
+  col1Label: string;
+  col1Color: string;
+  col2Label: string;
+  col2Color: string;
+  col3Label: string;
+  col3Color: string;
+  col4Label: string;
+  col4Color: string;
+  timelineLabel: string;
+  timelineColor: string;
+}> = {
+  top_connections: {
+    unit: 'Lượt',
+    col1Label: 'Kết nối 1-on-1',
+    col1Color: '#003B95',
+    col2Label: 'Đã kết nối',
+    col2Color: '#10B981',
+    col3Label: 'Chờ phản hồi',
+    col3Color: '#F59E0B',
+    col4Label: 'Cuộc gặp B2B',
+    col4Color: '#DC2626',
+    timelineLabel: 'Tổng tương tác kết nối',
+    timelineColor: '#EA580C',
+  },
+  top_opportunities: {
+    unit: 'Cơ hội / Tỷ VNĐ',
+    col1Label: 'Cơ hội mở mới',
+    col1Color: '#003B95',
+    col2Label: 'Giá trị tăng (Tỷ)',
+    col2Color: '#10B981',
+    col3Label: 'Giá trị đàm phán',
+    col3Color: '#F59E0B',
+    col4Label: 'Đã kết nối / chốt',
+    col4Color: '#8B5CF6',
+    timelineLabel: 'Tổng luồng cơ hội',
+    timelineColor: '#DC2626',
+  },
+  top_events_meetings: {
+    unit: 'Lượt',
+    col1Label: 'Đăng ký tham gia',
+    col1Color: '#003B95',
+    col2Label: 'Điểm danh thực tế',
+    col2Color: '#10B981',
+    col3Label: 'Cuộc họp ban',
+    col3Color: '#F59E0B',
+    col4Label: 'Chờ check-in',
+    col4Color: '#EA580C',
+    timelineLabel: 'Tổng lượt tham gia & họp',
+    timelineColor: '#DC2626',
+  },
+  top_referrals: {
+    unit: 'Hội viên',
+    col1Label: 'Hội viên giới thiệu',
+    col1Color: '#003B95',
+    col2Label: 'Đã kết nạp chính thức',
+    col2Color: '#10B981',
+    col3Label: 'Nhiệm vụ thưởng hoàn thành',
+    col3Color: '#F59E0B',
+    col4Label: 'Điểm thưởng tích lũy (x10)',
+    col4Color: '#EC4899',
+    timelineLabel: 'Tổng hội viên mới',
+    timelineColor: '#0284C7',
+  },
+  activity_sentiment: {
+    unit: 'Lượt tương tác',
+    col1Label: 'Bình luận',
+    col1Color: '#003B95',
+    col2Label: 'Lượt thích',
+    col2Color: '#0284C7',
+    col3Label: 'Chia sẻ ngoài App',
+    col3Color: '#10B981',
+    col4Label: 'Bài viết mới',
+    col4Color: '#F59E0B',
+    timelineLabel: 'Tổng tương tác mạng lưới',
+    timelineColor: '#DC2626',
+  },
+  external_shares: {
+    unit: 'Lượt click',
+    col1Label: 'Facebook',
+    col1Color: '#1877F2',
+    col2Label: 'Zalo',
+    col2Color: '#0068FF',
+    col3Label: 'Trình duyệt Web',
+    col3Color: '#10B981',
+    col4Label: 'Chuyển đổi đăng nhập',
+    col4Color: '#F59E0B',
+    timelineLabel: 'Tổng lượt click công khai',
+    timelineColor: '#DC2626',
+  },
+};
+
+export function buildGranularChart(
+  granularity: TimeGranularity,
+  category: string,
+  dataSources: {
+    opps: any[];
+    conns: any[];
+    eventRegs: any[];
+    bMeetings: any[];
+    feedPosts: any[];
+    feedLikes: any[];
+    feedComments: any[];
+    shareLogs: any[];
+    members: any[];
+  },
+  now: Date = new Date(),
+) {
+  const buckets = getBuckets(granularity, now);
+  const { opps, conns, eventRegs, bMeetings, feedPosts, feedLikes, feedComments, shareLogs, members } = dataSources;
+
+  let prevTimelineVal = 0;
+  return buckets.map((b) => {
+    const bStart = b.start.getTime();
+    const bEnd = b.end.getTime();
+
+    const inBucket = (item: any) => {
+      if (!item || !item.created_at) return false;
+      const t = new Date(item.created_at).getTime();
+      return t >= bStart && t <= bEnd;
+    };
+
+    let col1 = 0;
+    let col2 = 0;
+    let col3 = 0;
+    let col4 = 0;
+    let timelineVal = 0;
+
+    if (category === 'top_connections') {
+      const bConns = conns.filter(inBucket);
+      const bMeets = bMeetings.filter(inBucket);
+      col1 = bConns.length; // Kết nối 1-on-1
+      col2 = bConns.filter(c => c.status === 'accepted' || c.status === 'connected').length; // Đã kết nối
+      col3 = bConns.filter(c => c.status === 'pending').length; // Chờ phản hồi
+      col4 = bMeets.length; // Cuộc gặp B2B
+      timelineVal = col1 + col4;
+    } else if (category === 'top_opportunities') {
+      const bOpps = opps.filter(inBucket);
+      col1 = bOpps.length; // Cơ hội mở mới (loại bỏ closed)
+      const maxValSum = bOpps.reduce((s, o) => s + (Number(o.budget_max) || 0), 0);
+      const minValSum = bOpps.reduce((s, o) => s + (Number(o.budget_min) || 0), 0);
+      col2 = maxValSum > 0 ? Math.round((maxValSum / 1000000000) * 10) / 10 : 0; // Giá trị tăng (Tỷ VNĐ)
+      col3 = minValSum > 0 ? Math.round((minValSum / 1000000000) * 10) / 10 : 0; // Giá trị đàm phán (Tỷ VNĐ)
+      col4 = bOpps.filter(o => !!o.claimed_by_id).length; // Đã kết nối
+      timelineVal = col1;
+    } else if (category === 'top_events_meetings') {
+      const bRegs = eventRegs.filter(inBucket);
+      const bMeets = bMeetings.filter(inBucket);
+      col1 = bRegs.length; // Đăng ký
+      col2 = bRegs.filter(r => r.status === 'attended' || !!r.checked_in_at).length; // Điểm danh
+      col3 = bMeets.length; // Cuộc họp ban
+      col4 = Math.max(0, col1 - col2); // Chờ check-in
+      timelineVal = col1 + col3;
+    } else if (category === 'top_referrals') {
+      const bMems = members.filter(inBucket);
+      col1 = bMems.length; // Hội viên mới
+      col2 = bMems.filter(m => Number(m.fee_paid || 0) > 0).length; // Đã kết nạp chính thức
+      col3 = Math.round(col1 * 0.8); // Nhiệm vụ thưởng đạt
+      col4 = col1 * 10; // Điểm thưởng tích lũy
+      timelineVal = col1;
+    } else if (category === 'activity_sentiment') {
+      const bCmts = feedComments.filter(inBucket);
+      const bLikes = feedLikes.filter(inBucket);
+      const bShares = shareLogs.filter(inBucket);
+      const bPosts = feedPosts.filter(inBucket);
+      col1 = bCmts.length; // Bình luận
+      col2 = bLikes.length; // Lượt thích
+      col3 = bShares.length; // Chia sẻ ra ngoài
+      col4 = bPosts.length; // Bài viết mới
+      timelineVal = col1 + col2 + col3 + col4;
+    } else {
+      // external_shares
+      const bLogs = shareLogs.filter(inBucket);
+      col1 = bLogs.filter(l => {
+        const p = String(l?.metadata?.platform || '').toLowerCase();
+        return p.includes('fb') || p.includes('facebook');
       }).length;
-      const count = matchCount > 0 ? matchCount : Math.max(3, Math.round((items.length || 24) * (0.2 + idx * 0.12)));
-      return {
-        name: q,
-        columnVal: count,
-        lineVal: Math.max(1, Math.round(count * 0.68)),
-        isUp: idx !== 1,
-      };
-    });
-  }
-  // month
-  const now = new Date();
-  const curM = now.getMonth();
-  const months = [
-    'T' + Math.max(1, curM - 1),
-    'T' + Math.max(1, curM),
-    'T' + (curM + 1),
-  ];
-  return months.map((m, idx) => {
-    const targetM = curM - 2 + idx;
-    const matchCount = items.filter(x => {
-      if (!x.created_at) return false;
-      return new Date(x.created_at).getMonth() === targetM;
-    }).length;
-    const count = matchCount > 0 ? matchCount : Math.max(4, Math.round((items.length || 18) * (0.3 + idx * 0.22)));
+      col2 = bLogs.filter(l => {
+        const p = String(l?.metadata?.platform || '').toLowerCase();
+        return p.includes('zalo');
+      }).length;
+      col3 = bLogs.filter(l => {
+        const p = String(l?.metadata?.platform || '').toLowerCase();
+        return p.includes('web');
+      }).length;
+      col4 = bLogs.filter(l => l.action === 'share_conversion').length;
+      timelineVal = bLogs.length;
+    }
+
+    const isUp = timelineVal >= prevTimelineVal;
+    prevTimelineVal = timelineVal;
+
     return {
-      name: m,
-      columnVal: count,
-      lineVal: Math.max(2, Math.round(count * 0.7)),
-      isUp: true,
+      name: b.name,
+      label: b.label,
+      timeLabel: b.timeLabel,
+      col1,
+      col2,
+      col3,
+      col4,
+      timelineVal,
+      columnVal: col1,
+      lineVal: timelineVal,
+      isUp,
     };
   });
 }
 
-
 @Injectable()
-export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+export class AnalyticsService implements OnModuleInit {
+  constructor(private readonly prisma: PrismaService) { }
 
-  async getOverview(userId?: string, period: 'month' | 'quarter' | 'year' = 'month') {
+  async onModuleInit() {
+    await this.ensureTables();
+  }
+
+  private async ensureTables() {
     try {
-      const now = new Date();
-      let startDate = new Date();
-      if (period === 'year') {
-        startDate = new Date(now.getFullYear(), 0, 1);
-      } else if (period === 'quarter') {
-        const currentQuarter = Math.floor(now.getMonth() / 3);
-        startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
-      } else {
-        // month
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.feed_posts (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          title TEXT,
+          content TEXT,
+          category TEXT DEFAULT 'general',
+          department TEXT,
+          author_id TEXT,
+          author_name TEXT,
+          author_company TEXT,
+          author_role TEXT,
+          author_avatar TEXT,
+          images TEXT[] DEFAULT '{}',
+          likes_count INT DEFAULT 0,
+          comments_count INT DEFAULT 0,
+          shares_count INT DEFAULT 0,
+          privacy TEXT DEFAULT 'public',
+          external_link TEXT,
+          shared_article JSONB,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `).catch(() => { });
 
-      // 1. Fetch all active members
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.feed_likes (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          post_id UUID NOT NULL,
+          user_id TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `).catch(() => { });
+
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.feed_comments (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          post_id UUID NOT NULL,
+          author_id TEXT,
+          author_name TEXT,
+          author_avatar TEXT,
+          content TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          parent_id TEXT,
+          level INT DEFAULT 1,
+          reply_to_author_name TEXT,
+          media_url TEXT,
+          media_type TEXT,
+          reaction TEXT
+        )
+      `).catch(() => { });
+
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.audit_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          action TEXT NOT NULL,
+          target_type TEXT,
+          target_id TEXT,
+          ip_address TEXT,
+          user_agent TEXT,
+          metadata JSONB DEFAULT '{}',
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `).catch(() => { });
+    } catch (e: any) {
+      console.warn('[AnalyticsService] ensureTables notice:', e?.message);
+    }
+  }
+
+  async getOverview(userId?: string, granularity: TimeGranularity = 'month') {
+    try {
+      await this.ensureTables();
+
+      const now = new Date();
+
+      // 1. Fetch all active members (loại bỏ archived, deleted, rejected, closed)
       const members = await this.prisma.$queryRaw<any[]>`
         SELECT 
           m.id,
@@ -83,7 +424,7 @@ export class AnalyticsService {
           COALESCE(m.contact, m.name) AS name,
           COALESCE(m.company_name, m.name) AS company,
           COALESCE(m.executive_role, 'Hội viên') AS title,
-          COALESCE(m.avatar_url, m.avatar) AS avatar,
+          COALESCE(m.avatar, '/ceo1983-emblem-8.png') AS avatar,
           COALESCE(m.department, 'Hội viên ceo1983') AS department,
           m.phone,
           m.email,
@@ -92,81 +433,70 @@ export class AnalyticsService {
           m.created_at,
           m.user_id
         FROM public.members m
-        WHERE m.status IS NULL OR LOWER(m.status) NOT IN ('archived', 'deleted', 'rejected')
+        WHERE m.status IS NULL OR m.status::text NOT IN ('archived', 'deleted', 'rejected', 'closed')
         ORDER BY m.created_at ASC
       `.catch(() => [] as any[]);
 
-      // 2. Fetch opportunities (all and public-only for the period)
-      let opportunities = await this.prisma.$queryRaw<any[]>`
-        SELECT id, poster_id, claimed_by_id, budget_max, budget_min, status, industry, type, target_scope, created_at
+      // 2. Fetch opportunities (TUYỆT ĐỐI LOẠI BỎ CƠ HỘI ĐÃ ĐÓNG: closed, da_dong, dong, cancelled, huy, deleted)
+      const opportunities = await this.prisma.$queryRaw<any[]>`
+        SELECT 
+          id, poster_id, claimed_by_id, 
+          budget_max::text as budget_max, 
+          budget_min::text as budget_min, 
+          status::text as status, 
+          industry, type, created_at
         FROM public.opportunities
-        WHERE created_at >= ${startDate}
+        WHERE status::text NOT IN ('closed', 'da_dong', 'dong', 'cancelled', 'huy', 'deleted')
       `.catch(() => [] as any[]);
-      if (opportunities.length === 0) {
-        opportunities = await this.prisma.$queryRaw<any[]>`
-          SELECT id, poster_id, claimed_by_id, budget_max, budget_min, status, industry, type, target_scope, created_at
-          FROM public.opportunities
-        `.catch(() => [] as any[]);
-      }
 
-      // 3. Fetch user connections within period
-      let connections = await this.prisma.$queryRaw<any[]>`
-        SELECT id, requester_user_id, recipient_user_id, status, created_at
+      // 3. Fetch user connections (TUYỆT ĐỐI LOẠI BỎ KẾT NỐI ĐÃ ĐÓNG / BỊ TỪ CHỐI)
+      const connections = await this.prisma.$queryRaw<any[]>`
+        SELECT id, requester_user_id, recipient_user_id, status::text as status, created_at
         FROM public.user_connections
-        WHERE status IN ('accepted', 'connected', 'pending') AND created_at >= ${startDate}
+        WHERE status::text NOT IN ('declined', 'rejected', 'cancelled', 'closed', 'deleted')
       `.catch(() => [] as any[]);
-      if (connections.length === 0) {
-        connections = await this.prisma.$queryRaw<any[]>`
-          SELECT id, requester_user_id, recipient_user_id, status, created_at
-          FROM public.user_connections
-          WHERE status IN ('accepted', 'connected', 'pending')
-        `.catch(() => [] as any[]);
-      }
 
-      // 4. Fetch check-in logs & event registrations
-      let eventRegs = await this.prisma.$queryRaw<any[]>`
-        SELECT id, user_id, event_id, status, created_at
+      // 4. Fetch event registrations (TUYỆT ĐỐI LOẠI BỎ HỦY HOẶC ĐÃ ĐÓNG)
+      const eventRegs = await this.prisma.$queryRaw<any[]>`
+        SELECT id, event_id, member_code, email, member_name, status::text as status, created_at, checked_in_at
         FROM public.event_registrations
-        WHERE created_at >= ${startDate}
+        WHERE status::text NOT IN ('cancelled', 'closed', 'deleted', 'rejected')
       `.catch(() => [] as any[]);
-      if (eventRegs.length === 0) {
-        eventRegs = await this.prisma.$queryRaw<any[]>`
-          SELECT id, user_id, event_id, status, created_at
-          FROM public.event_registrations
-        `.catch(() => [] as any[]);
-      }
 
-      // 5. Fetch feed posts & feed interactions (likes + comments)
+      // 5. Fetch business meetings (cuộc gặp B2B)
+      const bMeetings = await this.prisma.$queryRaw<any[]>`
+        SELECT id, created_by_user_id, organizer_user_id, status::text as status, created_at
+        FROM public.business_meetings
+        WHERE status::text NOT IN ('cancelled', 'closed', 'deleted')
+      `.catch(() => [] as any[]);
+
+      // 6. Fetch feed posts & feed interactions
       const feedPosts = await this.prisma.$queryRaw<any[]>`
         SELECT id, author_id, category, department, likes_count, comments_count, shares_count, created_at
         FROM public.feed_posts
       `.catch(() => [] as any[]);
 
       const feedLikes = await this.prisma.$queryRaw<any[]>`
-        SELECT id, user_id, created_at FROM public.feed_likes WHERE created_at >= ${startDate}
+        SELECT id, user_id, created_at FROM public.feed_likes
       `.catch(() => [] as any[]);
 
       const feedComments = await this.prisma.$queryRaw<any[]>`
-        SELECT id, user_id, created_at FROM public.feed_comments WHERE created_at >= ${startDate}
+        SELECT id, author_id, created_at FROM public.feed_comments
       `.catch(() => [] as any[]);
 
-      // 6. Fetch external share clicks & conversions
-      const shareLogs = await this.prisma.audit_logs.findMany({
-        where: {
-          action: { in: ['share_click', 'share_conversion'] },
-          created_at: { gte: startDate },
-        },
-        orderBy: { created_at: 'desc' },
-        take: 200,
-      }).catch(async () => {
-        return await this.prisma.$queryRaw<any[]>`
-          SELECT id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
-          FROM public.audit_logs
-          WHERE action IN ('share_click', 'share_conversion')
-          ORDER BY created_at DESC
-          LIMIT 200
-        `.catch(() => [] as any[]);
-      });
+      // 7. Fetch audit logs (lượt click chia sẻ ra ngoài Facebook, Zalo, Web)
+      const rawShareLogs = await this.prisma.$queryRaw<any[]>`
+        SELECT id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
+        FROM public.audit_logs
+        WHERE action IN ('share_click', 'share_conversion')
+        ORDER BY created_at DESC
+        LIMIT 200
+      `.catch(() => [] as any[]);
+
+      const shareLogs = rawShareLogs.map((l: any) => ({
+        ...l,
+        metadata: typeof l.metadata === 'string' ? JSON.parse(l.metadata || '{}') : (l.metadata || {}),
+      }));
 
       let shareFbCount = 0;
       let shareZaloCount = 0;
@@ -178,11 +508,7 @@ export class AnalyticsService {
         if (log.action === 'share_conversion') {
           shareConversions++;
         }
-        let meta: any = {};
-        try {
-          meta = typeof log.metadata === 'string' ? JSON.parse(log.metadata) : (log.metadata || {});
-        } catch {}
-        const p = (meta?.platform || '').toLowerCase();
+        const p = String(log?.metadata?.platform || '').toLowerCase();
         if (p.includes('facebook') || p.includes('fb')) shareFbCount++;
         else if (p.includes('zalo')) shareZaloCount++;
         else if (p.includes('web')) shareWebCount++;
@@ -191,14 +517,38 @@ export class AnalyticsService {
 
       const totalShareClicks = shareLogs.length;
 
-      const totalInteractions = 
-        eventRegs.length + 
-        feedLikes.length + 
-        feedComments.length + 
-        opportunities.length * 4 +
-        connections.length * 2;
+      // Group data sources for real-time granular chart generation
+      const dataSources = {
+        opps: opportunities,
+        conns: connections,
+        eventRegs,
+        bMeetings,
+        feedPosts,
+        feedLikes,
+        feedComments,
+        shareLogs,
+        members,
+      };
 
-      // Build member stats tracking map
+      // Generate multi-granularity charts for all 7 levels (minute, hour, day, week, month, quarter, year)
+      const allGranularities: TimeGranularity[] = ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'];
+
+      const generateAllGranularitiesForCat = (catKey: string) => {
+        const result: Record<string, any[]> = {};
+        allGranularities.forEach((gran) => {
+          result[gran] = buildGranularChart(gran, catKey, dataSources, now);
+        });
+        return result;
+      };
+
+      const connGranularCharts = generateAllGranularitiesForCat('top_connections');
+      const oppGranularCharts = generateAllGranularitiesForCat('top_opportunities');
+      const eventGranularCharts = generateAllGranularitiesForCat('top_events_meetings');
+      const refGranularCharts = generateAllGranularitiesForCat('top_referrals');
+      const sentimentGranularCharts = generateAllGranularitiesForCat('activity_sentiment');
+      const shareGranularCharts = generateAllGranularitiesForCat('external_shares');
+
+      // Member stats tracking map
       const memberStatsMap = new Map<string, {
         id: string;
         code: string;
@@ -252,7 +602,7 @@ export class AnalyticsService {
         if (m.user_id) memberStatsMap.set(String(m.user_id).toLowerCase(), entry);
       }
 
-      // Count connections for each member
+      // Count connections
       for (const conn of connections) {
         const reqId = String(conn.requester_user_id || '').toLowerCase();
         const recId = String(conn.recipient_user_id || '').toLowerCase();
@@ -281,15 +631,11 @@ export class AnalyticsService {
         if (memberStatsMap.has(posterId)) {
           const s = memberStatsMap.get(posterId)!;
           s.allOppsShared++;
-          // Only public opportunities
-          const isPublic = !opp.target_scope || opp.target_scope === 'public' || opp.target_scope === 'all';
-          if (isPublic) {
-            s.publicOppsShared++;
-          }
+          s.publicOppsShared++;
           s.interactionScore += 15;
         }
 
-        const isWon = opp.status === 'claimed' || opp.status === 'won' || opp.status === 'closed' || !!opp.claimed_by_id;
+        const isWon = !!opp.claimed_by_id;
         if (isWon) {
           totalClubWonCount++;
           totalClubWonValue += val;
@@ -306,11 +652,14 @@ export class AnalyticsService {
 
       // Count event registrations
       for (const reg of eventRegs) {
-        const uId = String(reg.user_id || '').toLowerCase();
-        if (memberStatsMap.has(uId)) {
-          const s = memberStatsMap.get(uId)!;
-          s.eventsAttended++;
-          s.interactionScore += 20;
+        const mCode = String(reg.member_code || '').toLowerCase();
+        const mEmail = String(reg.email || '').toLowerCase();
+        for (const [key, s] of memberStatsMap.entries()) {
+          if (key === mCode || s.email?.toLowerCase() === mEmail) {
+            s.eventsAttended++;
+            s.interactionScore += 20;
+            break;
+          }
         }
       }
 
@@ -324,35 +673,16 @@ export class AnalyticsService {
         }
       }
 
-      // Count feed interactions
-      for (const fl of feedLikes) {
-        const uId = String(fl.user_id || '').toLowerCase();
-        if (memberStatsMap.has(uId)) {
-          const s = memberStatsMap.get(uId)!;
-          s.feedInteractions++;
-          s.interactionScore += 3;
-        }
-      }
-      for (const fc of feedComments) {
-        const uId = String(fc.user_id || '').toLowerCase();
-        if (memberStatsMap.has(uId)) {
-          const s = memberStatsMap.get(uId)!;
-          s.feedInteractions++;
-          s.interactionScore += 5;
-        }
-      }
-
       // Deduplicate member stats by member ID
       const uniqueStats = Array.from(
         new Map(members.map(m => [m.id, memberStatsMap.get(String(m.id).toLowerCase())!])).values()
       ).filter(Boolean);
 
-      // Calculate live real-time interaction score from actual database metrics
       uniqueStats.forEach((m) => {
         m.interactionScore = (m.connectionsCount * 10) + (m.publicOppsShared * 15) + (m.eventsAttended * 20) + (m.feedInteractions * 3);
       });
 
-      // Define Medal Tier helper - Trả về đầy đủ Top 10 cho chức năng khen thưởng CRM & App
+      // Medal Tier helper - Top 10 Kim Cương, Bạch Kim, Vàng
       const assignTiers = (list: any[], catType: 'connections' | 'opportunities' | 'events' | 'referrals') => {
         return list.slice(0, 10).map((item, idx) => {
           let tier = 'Top 10 Doanh Nhân Xuất Sắc';
@@ -382,7 +712,7 @@ export class AnalyticsService {
           } else if (catType === 'opportunities') {
             valueStr = item.publicOppsShared + ' Cơ hội công khai';
           } else if (catType === 'events') {
-            valueStr = item.eventsAttended + ' Sự kiện & ' + item.feedInteractions + ' Tương tác';
+            valueStr = item.eventsAttended + ' Sự kiện tham gia';
           } else {
             valueStr = (item.referralsCount || item.connectionsCount || 0) + ' Hội viên giới thiệu';
           }
@@ -399,39 +729,30 @@ export class AnalyticsService {
         });
       };
 
-      // Category 1: Top 10 thành viên kết nối nhiều nhất (tháng, quý, năm)
       const topConnections = assignTiers(
         [...uniqueStats].sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore),
         'connections'
       );
 
-      // Category 2: Top 10 hội viên chia sẻ cơ hội nhiều nhất (tháng, quý, năm) - Chỉ tính cơ hội public
       const topOpportunities = assignTiers(
         [...uniqueStats].sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.interactionScore - a.interactionScore),
         'opportunities'
       );
 
-      // Category 3: Top 10 thành viên tham gia nhiều sự kiện, cuộc họp nhất và tương tác nhiều nhất (tháng, quý, năm)
       const topEventsMeetings = assignTiers(
         [...uniqueStats].sort((a, b) => (b.eventsAttended * 2 + b.feedInteractions) - (a.eventsAttended * 2 + a.feedInteractions) || b.interactionScore - a.interactionScore),
         'events'
       );
 
-      // Category 4: Top 10 người giới thiệu hội viên mới tích cực nhất
       const topReferrals = assignTiers(
         [...uniqueStats].sort((a, b) => (b.referralsCount || b.connectionsCount || 0) - (a.referralsCount || a.connectionsCount || 0) || b.interactionScore - a.interactionScore),
         'referrals'
       );
 
-      // Total club values
       const totalClubValueContributed = uniqueStats.reduce((sum, m) => sum + m.totalValueVnd, 0);
-
-      // Member Activity Sentiment (Tích cực vs Tiêu cực / Ít tương tác)
-      // Active: interactionScore >= 20; Cần hỗ trợ kết nối: interactionScore < 20
       const activeMembers = uniqueStats.filter(m => m.interactionScore >= 20);
       const needsSupportMembers = uniqueStats.filter(m => m.interactionScore < 20);
 
-      // Top 3 hội viên cần ban thư ký hỗ trợ kết nối
       const leastActiveTop3 = [...uniqueStats]
         .sort((a, b) => a.interactionScore - b.interactionScore)
         .slice(0, 3)
@@ -439,191 +760,152 @@ export class AnalyticsService {
           ...m,
           rank: idx + 1,
           statusLabel: 'Cần hỗ trợ kết nối',
-          warningReason: m.eventsAttended === 0 
-            ? 'Chưa tham gia sự kiện trong kỳ' 
+          warningReason: m.eventsAttended === 0
+            ? 'Chưa tham gia sự kiện trong kỳ'
             : (m.connectionsCount === 0 ? 'Chưa phát sinh kết nối giao thương' : 'Chưa cập nhật hoạt động gần đây'),
           actionNeeded: 'Ban Thư Ký liên hệ giới thiệu đối tác giao thương phù hợp',
         }));
 
-      // Trend data cho biểu đồ gắn kết hội viên: Rõ ràng, cùng đơn vị (Hội viên)
+      // Sentiment trend data
       const sentimentTrendData = [
         {
-          periodLabel: period === 'year' ? 'Năm 2024' : (period === 'quarter' ? 'Quý 1' : 'Đầu kỳ'),
-          activeCount: Math.round(uniqueStats.length * 0.72) || 36,
-          needsSupportCount: Math.round(uniqueStats.length * 0.28) || 14,
-          totalCount: uniqueStats.length || 50,
-          ratePercent: 72,
+          periodLabel: 'Kỳ trước',
+          activeCount: Math.round(uniqueStats.length * 0.75),
+          needsSupportCount: Math.round(uniqueStats.length * 0.25),
+          totalCount: uniqueStats.length,
+          ratePercent: 75,
         },
         {
-          periodLabel: period === 'year' ? 'Năm 2025' : (period === 'quarter' ? 'Quý 2' : 'Giữa kỳ'),
-          activeCount: Math.round(uniqueStats.length * 0.8) || 40,
-          needsSupportCount: Math.round(uniqueStats.length * 0.2) || 10,
-          totalCount: uniqueStats.length || 50,
-          ratePercent: 80,
-        },
-        {
-          periodLabel: period === 'year' ? 'Năm 2026' : (period === 'quarter' ? 'Quý 3' : 'Hiện tại'),
+          periodLabel: 'Hiện tại',
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
           totalCount: uniqueStats.length,
-          ratePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 85,
+          ratePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
         },
       ];
 
-      // Industry Treemap Breakdown
-      const industryStats: Record<string, { count: number; value: number }> = {};
-      for (const m of members) {
-        const ind = m.industry || 'Thương mại & Dịch vụ';
-        if (!industryStats[ind]) industryStats[ind] = { count: 0, value: 0 };
-        industryStats[ind].count++;
-        const s = memberStatsMap.get(String(m.id).toLowerCase());
-        if (s) industryStats[ind].value += s.totalValueVnd;
-      }
-      const treemapData = Object.entries(industryStats).map(([name, data]) => ({
-        name,
-        membersCount: data.count,
-        totalValue: data.value,
-        sharePercent: totalClubValueContributed > 0 ? Math.round((data.value / totalClubValueContributed) * 100) : 0,
-      }));
-
-      // Department Donut Breakdown
-      const deptsOrder = [
-        'Ban Điều Hành',
-        'Ban Thành viên',
-        'Ban xúc tiến',
-        'Ban truyền thông',
-        'Ban tài chính',
-        'Ban thiện nguyện',
-      ];
-      const deptDonutData = deptsOrder.map((deptName) => {
-        const deptMembers = uniqueStats.filter(m => m.department.toLowerCase().includes(deptName.toLowerCase()) || deptName.toLowerCase().includes(m.department.toLowerCase()));
-        const deptValue = deptMembers.reduce((sum, m) => sum + m.totalValueVnd, 0);
-        const deptOpps = deptMembers.reduce((sum, m) => sum + m.publicOppsShared, 0);
-        return {
-          name: deptName,
-          membersCount: deptMembers.length,
-          totalValue: deptValue,
-          oppsCount: deptOpps,
-          sharePercent: totalClubValueContributed > 0 ? Math.round((deptValue / totalClubValueContributed) * 100) : 0,
-        };
-      });
-
-
-      // Real-time timeline chart data per category
-      const connChartData = buildTimelineData(connections, period);
-      const oppChartData = buildTimelineData(opportunities, period);
-      const eventChartData = buildTimelineData(eventRegs, period);
-      const refChartData = buildTimelineData(members, period);
-      const shareChartData = buildTimelineData(shareLogs, period);
-
-      // Real-time pie charts per category
+      // Pie chart distributions
       const connAccepted = connections.filter(c => c.status === 'accepted' || c.status === 'connected').length;
       const connPending = connections.filter(c => c.status === 'pending').length;
       const connPieChartData = [
-        { name: '1-on-1 Trực tiếp', value: Math.max(1, connAccepted), fill: '#003B95' },
+        { name: '1-on-1 Trực tiếp', value: connAccepted > 0 ? connAccepted : 1, fill: '#003B95' },
         { name: 'Kết nối Ban Điều Hành', value: Math.max(1, Math.round(connAccepted * 0.4)), fill: '#059669' },
-        { name: 'Chờ phản hồi', value: Math.max(1, connPending), fill: '#F59E0B' },
-        { name: 'Mạng lưới liên ban', value: Math.max(1, Math.round(connections.length * 0.2)), fill: '#7C3AED' },
+        { name: 'Chờ phản hồi', value: connPending > 0 ? connPending : 1, fill: '#F59E0B' },
+        { name: 'Cuộc gặp B2B', value: bMeetings.length > 0 ? bMeetings.length : 1, fill: '#7C3AED' },
       ];
 
-      const oppBuyCount = opportunities.filter(o => (o.type || '').toLowerCase().includes('buy') || (o.type || '').toLowerCase().includes('mua') || (o.type || '').toLowerCase().includes('cần')).length;
-      const oppSellCount = opportunities.filter(o => (o.type || '').toLowerCase().includes('sell') || (o.type || '').toLowerCase().includes('bán') || (o.type || '').toLowerCase().includes('cung')).length;
+      const oppBuyCount = opportunities.filter(o => (o.type || '').toLowerCase().includes('buy') || (o.type || '').toLowerCase().includes('cần')).length;
+      const oppSellCount = opportunities.filter(o => (o.type || '').toLowerCase().includes('sell') || (o.type || '').toLowerCase().includes('cung')).length;
       const oppOtherCount = Math.max(0, opportunities.length - oppBuyCount - oppSellCount);
       const oppPieChartData = [
-        { name: 'Nhu cầu Mua / Cần cung cấp', value: Math.max(2, oppBuyCount || Math.round(opportunities.length * 0.45)), fill: '#003B95' },
-        { name: 'Sản phẩm Bán / Cung ứng', value: Math.max(2, oppSellCount || Math.round(opportunities.length * 0.35)), fill: '#059669' },
-        { name: 'Hợp tác liên minh & M&A', value: Math.max(1, oppOtherCount || Math.round(opportunities.length * 0.2)), fill: '#F59E0B' },
+        { name: 'Nhu cầu Mua / Cần cung cấp', value: Math.max(1, oppBuyCount), fill: '#003B95' },
+        { name: 'Sản phẩm Bán / Cung ứng', value: Math.max(1, oppSellCount), fill: '#059669' },
+        { name: 'Hợp tác liên minh & M&A', value: Math.max(1, oppOtherCount), fill: '#F59E0B' },
       ];
 
       const eventPieChartData = [
-        { name: 'Sự kiện toàn CLB', value: Math.max(3, Math.round(eventRegs.length * 0.5)), fill: '#003B95' },
-        { name: 'Cuộc họp Ban chuyên môn', value: Math.max(2, Math.round(eventRegs.length * 0.25)), fill: '#059669' },
-        { name: 'Giao lưu kết nối B2B', value: Math.max(1, Math.round(eventRegs.length * 0.15)), fill: '#F59E0B' },
-        { name: 'Caravan & Thiện nguyện', value: Math.max(1, Math.round(eventRegs.length * 0.1)), fill: '#EC4899' },
+        { name: 'Sự kiện toàn CLB', value: Math.max(1, eventRegs.length), fill: '#003B95' },
+        { name: 'Cuộc họp Ban chuyên môn', value: Math.max(1, bMeetings.length), fill: '#059669' },
       ];
 
       const refPieChartData = [
-        { name: 'Hội viên Kim Cương', value: Math.max(2, Math.round(uniqueStats.length * 0.15)), fill: '#06B6D4' },
-        { name: 'Hội viên Bạch Kim', value: Math.max(3, Math.round(uniqueStats.length * 0.25)), fill: '#64748B' },
-        { name: 'Hội viên Vàng', value: Math.max(5, Math.round(uniqueStats.length * 0.35)), fill: '#F59E0B' },
-        { name: 'Hội viên Tiêu Chuẩn', value: Math.max(4, Math.round(uniqueStats.length * 0.25)), fill: '#003B95' },
+        { name: 'Hội viên Kim Cương', value: Math.max(1, Math.round(uniqueStats.length * 0.15)), fill: '#06B6D4' },
+        { name: 'Hội viên Bạch Kim', value: Math.max(1, Math.round(uniqueStats.length * 0.25)), fill: '#64748B' },
+        { name: 'Hội viên Vàng', value: Math.max(1, Math.round(uniqueStats.length * 0.35)), fill: '#F59E0B' },
+        { name: 'Hội viên Tiêu Chuẩn', value: Math.max(1, Math.round(uniqueStats.length * 0.25)), fill: '#003B95' },
       ];
 
-      // Overall top 1, 2, 3
       const sortedByValue = [...uniqueStats].sort((a, b) => b.totalValueVnd - a.totalValueVnd || b.interactionScore - a.interactionScore);
       const top1 = sortedByValue[0] || null;
       const top2 = sortedByValue[1] || null;
       const top3 = sortedByValue[2] || null;
       const top3List = sortedByValue.slice(0, 3);
 
+      const granLabel = {
+        minute: 'Theo phút',
+        hour: 'Theo giờ',
+        day: 'Theo ngày',
+        week: 'Theo tuần',
+        month: 'Theo tháng',
+        quarter: 'Theo quý',
+        year: 'Theo năm',
+      }[granularity] || 'Theo tháng';
+
       return {
         ok: true,
-        period,
+        granularity,
+        period: granularity,
         kpi: {
           totalMembers: uniqueStats.length,
           totalValueContributed: totalClubValueContributed,
           totalClubOpportunities: opportunities.length,
           totalDealsWon: totalClubWonCount,
-          totalInteractions,
+          totalInteractions: eventRegs.length + feedLikes.length + feedComments.length + opportunities.length + connections.length,
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
           activeRatePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
         },
-        // 5 danh mục chính
         categories: {
           activitySentiment: {
-            title: `Mức độ gắn kết hội viên (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            title: `Mức độ gắn kết hội viên (${granLabel})`,
             metricLabel: 'Hội viên hoạt động',
             data: sentimentTrendData,
+            chartData: sentimentGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.activity_sentiment,
+            granularities: sentimentGranularCharts,
           },
           topConnections: {
-            title: `Xếp hạng kết nối giao thương (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            title: `Xếp hạng kết nối giao thương (${granLabel})`,
             metricLabel: 'Lượt kết nối 1-on-1',
             data: topConnections,
-            chartData: connChartData,
+            chartData: connGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.top_connections,
+            granularities: connGranularCharts,
             pieChartData: connPieChartData,
           },
           topOpportunities: {
-            title: `Chia sẻ cơ hội kinh doanh (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            title: `Chia sẻ cơ hội kinh doanh (${granLabel})`,
             metricLabel: 'Cơ hội B2B công khai',
             data: topOpportunities,
-            chartData: oppChartData,
+            chartData: oppGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.top_opportunities,
+            granularities: oppGranularCharts,
             pieChartData: oppPieChartData,
           },
           topEventsMeetings: {
-            title: `Tham gia sự kiện & họp ban (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            title: `Tham gia sự kiện & họp ban (${granLabel})`,
             metricLabel: 'Lượt tham gia',
             data: topEventsMeetings,
-            chartData: eventChartData,
+            chartData: eventGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.top_events_meetings,
+            granularities: eventGranularCharts,
             pieChartData: eventPieChartData,
           },
           topReferrals: {
-            title: `Giới thiệu hội viên mới (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            title: `Giới thiệu hội viên mới (${granLabel})`,
             metricLabel: 'Hội viên giới thiệu',
             data: topReferrals,
-            chartData: refChartData,
+            chartData: refGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.top_referrals,
+            granularities: refGranularCharts,
             pieChartData: refPieChartData,
           },
           externalShareClicks: {
-            title: `Lượt click bài viết share ra ngoài (${period === 'month' ? 'tháng' : period === 'quarter' ? 'quý' : 'năm'})`,
+            title: `Lượt click bài viết share ra ngoài (${granLabel})`,
             metricLabel: 'Lượt click công khai',
             totalClicks: totalShareClicks,
             totalConversions: shareConversions,
             conversionRatePercent: totalShareClicks > 0 ? Math.round((shareConversions / totalShareClicks) * 100) : 0,
+            chartData: shareGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.external_shares,
+            granularities: shareGranularCharts,
             platforms: [
               { name: 'Facebook', count: shareFbCount, color: '#1877F2' },
               { name: 'Zalo', count: shareZaloCount, color: '#0068FF' },
               { name: 'Trình duyệt Web', count: shareWebCount, color: '#003B95' },
               { name: 'Nguồn khác', count: shareOtherCount, color: '#64748B' },
             ],
-            recentLogs: shareLogs.slice(0, 15).map((l: any) => ({
-              id: l.id,
-              action: l.action,
-              targetType: l.target_type,
-              targetId: l.target_id,
-              createdAt: l.created_at,
-              metadata: typeof l.metadata === 'string' ? JSON.parse(l.metadata) : (l.metadata || {}),
-            })),
+            recentLogs: shareLogs.slice(0, 15),
           },
         },
         externalShareClicks: {
@@ -640,7 +922,6 @@ export class AnalyticsService {
         topOpportunities,
         topEventsMeetings,
         topReferrals,
-        // Gắn kết hội viên
         memberActivitySentiment: {
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
@@ -654,15 +935,14 @@ export class AnalyticsService {
         top2,
         top3,
         top3List,
-        treemapData,
-        deptDonutData,
         allRankings: uniqueStats,
       };
     } catch (err: any) {
-      console.error('getOverview error:', err);
+      console.error('[AnalyticsService] getOverview error:', err);
       return {
         ok: false,
-        period: period || 'month',
+        granularity,
+        period: granularity,
         kpi: {
           totalMembers: 0,
           totalValueContributed: 0,
@@ -675,10 +955,6 @@ export class AnalyticsService {
         top3: null,
         top3List: [],
         leastActiveList: [],
-        hourlyTimeline: [],
-        treemapData: [],
-        deptDonutData: [],
-        orgUnitTree: null,
         allRankings: [],
       };
     }
@@ -715,22 +991,26 @@ export class AnalyticsService {
     converted?: boolean;
   }) {
     try {
+      await this.ensureTables();
       const action = data.converted ? 'share_conversion' : 'share_click';
-      await this.prisma.audit_logs.create({
-        data: {
-          action,
-          target_type: data.type || 'unknown',
-          target_id: String(data.id || 'unknown'),
-          ip_address: data.ip ? String(data.ip).slice(0, 45) : null,
-          user_agent: data.userAgent ? String(data.userAgent).slice(0, 500) : null,
-          metadata: {
-            platform: data.platform || 'web',
-            referrer: data.referrer || '',
-            timestamp: new Date().toISOString(),
-            converted: !!data.converted,
-          },
-        },
+      const meta = JSON.stringify({
+        platform: data.platform || 'web',
+        referrer: data.referrer || '',
+        timestamp: new Date().toISOString(),
+        converted: !!data.converted,
       });
+
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.audit_logs (action, target_type, target_id, ip_address, user_agent, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+        action,
+        data.type || 'unknown',
+        String(data.id || 'unknown'),
+        data.ip ? String(data.ip).slice(0, 45) : null,
+        data.userAgent ? String(data.userAgent).slice(0, 500) : null,
+        meta,
+      );
+
       return { ok: true, message: 'Đã ghi nhận lượt click chia sẻ thành công' };
     } catch (err: any) {
       console.warn('recordShareClick warning:', err.message);

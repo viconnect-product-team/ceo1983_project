@@ -38,16 +38,17 @@ import {
 
 interface SearchParams {
   category?: string;
-  period?: "month" | "quarter" | "year";
+  period?: "minute" | "hour" | "day" | "week" | "month" | "quarter" | "year";
+  granularity?: "minute" | "hour" | "day" | "week" | "month" | "quarter" | "year";
 }
 
 export const Route = createFileRoute("/analytics")({
   validateSearch: (search: Record<string, unknown>): SearchParams => {
+    const validGrans = ["minute", "hour", "day", "week", "month", "quarter", "year"];
     return {
       category: typeof search.category === "string" ? search.category : undefined,
-      period: (["month", "quarter", "year"].includes(search.period as string)
-        ? search.period
-        : undefined) as "month" | "quarter" | "year" | undefined,
+      period: (validGrans.includes(search.period as string) ? search.period : undefined) as any,
+      granularity: (validGrans.includes(search.granularity as string) ? search.granularity : undefined) as any,
     };
   },
   component: AnalyticsDashboardPage,
@@ -176,7 +177,9 @@ interface RankedMemberItem {
 export function AnalyticsDashboardPage() {
   const search = Route.useSearch();
   const [selectedCat, setSelectedCat] = useState<AnalyticsCategory>("activity_sentiment");
-  const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
+  const [granularity, setGranularity] = useState<"minute" | "hour" | "day" | "week" | "month" | "quarter" | "year">("month");
+  const period = granularity;
+  const setPeriod = (val: any) => setGranularity(val);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showMilestoneAwardsModal, setShowMilestoneAwardsModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -203,7 +206,7 @@ export function AnalyticsDashboardPage() {
     async function loadStats() {
       setLoading(true);
       try {
-        const res = await fetchNestApi<any>(`/analytics/overview?period=${period}`);
+        const res = await fetchNestApi<any>(`/analytics/overview?granularity=${granularity}&period=${granularity}`);
         if (isMounted && res && res.ok) {
           setServerData(res);
         }
@@ -217,7 +220,7 @@ export function AnalyticsDashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [period]);
+  }, [granularity]);
 
   const activeCategoryMeta = useMemo(() => {
     return CATEGORIES.find((c) => c.id === selectedCat) || CATEGORIES[0];
@@ -430,58 +433,137 @@ export function AnalyticsDashboardPage() {
   const top3 = allRankedMembers.find((p) => p.rank === 3);
   const remainingTop4To10 = allRankedMembers.slice(3, 10);
 
-  // Dữ liệu biểu đồ 2 cột rõ ràng + 1 đường xu hướng tỷ lệ (%)
-  const chartData = useMemo(() => {
-    const p1 = period === "year" ? "Năm 2024" : period === "quarter" ? "Quý 1" : "Đầu kỳ";
-    const p2 = period === "year" ? "Năm 2025" : period === "quarter" ? "Quý 2" : "Giữa kỳ";
-    const p3 = period === "year" ? "Năm 2026" : period === "quarter" ? "Quý 3" : "Hiện tại";
+  // Định nghĩa màu sắc và nhãn 4 cột chuẩn theo từng danh mục
+  const CRM_CHART_METAS: Record<string, {
+    unit: string;
+    col1Label: string;
+    col1Color: string;
+    col2Label: string;
+    col2Color: string;
+    col3Label: string;
+    col3Color: string;
+    col4Label: string;
+    col4Color: string;
+    timelineLabel: string;
+    timelineColor: string;
+  }> = {
+    top_connections: {
+      unit: "Lượt",
+      col1Label: "Kết nối 1-on-1",
+      col1Color: "#003B95",
+      col2Label: "Đã kết nối",
+      col2Color: "#10B981",
+      col3Label: "Chờ phản hồi",
+      col3Color: "#F59E0B",
+      col4Label: "Cuộc gặp B2B",
+      col4Color: "#DC2626",
+      timelineLabel: "Tổng kết nối",
+      timelineColor: "#EA580C",
+    },
+    top_opportunities: {
+      unit: "Cơ hội / Tỷ VNĐ",
+      col1Label: "Cơ hội mở mới",
+      col1Color: "#003B95",
+      col2Label: "Giá trị tăng (Tỷ)",
+      col2Color: "#10B981",
+      col3Label: "Giá trị đàm phán",
+      col3Color: "#F59E0B",
+      col4Label: "Đã chốt / kết nối",
+      col4Color: "#8B5CF6",
+      timelineLabel: "Tổng luồng cơ hội",
+      timelineColor: "#DC2626",
+    },
+    top_events_meetings: {
+      unit: "Lượt",
+      col1Label: "Đăng ký tham gia",
+      col1Color: "#003B95",
+      col2Label: "Điểm danh thực tế",
+      col2Color: "#10B981",
+      col3Label: "Cuộc họp ban",
+      col3Color: "#F59E0B",
+      col4Label: "Chờ check-in",
+      col4Color: "#EA580C",
+      timelineLabel: "Tổng lượt sự kiện",
+      timelineColor: "#DC2626",
+    },
+    top_referrals: {
+      unit: "Hội viên",
+      col1Label: "Hội viên giới thiệu",
+      col1Color: "#003B95",
+      col2Label: "Đã kết nạp",
+      col2Color: "#10B981",
+      col3Label: "Nhiệm vụ thưởng",
+      col3Color: "#F59E0B",
+      col4Label: "Điểm thưởng (x10)",
+      col4Color: "#EC4899",
+      timelineLabel: "Tổng hội viên mới",
+      timelineColor: "#0284C7",
+    },
+    activity_sentiment: {
+      unit: "Lượt tương tác",
+      col1Label: "Bình luận",
+      col1Color: "#003B95",
+      col2Label: "Lượt thích",
+      col2Color: "#0284C7",
+      col3Label: "Chia sẻ ngoài App",
+      col3Color: "#10B981",
+      col4Label: "Bài viết mới",
+      col4Color: "#F59E0B",
+      timelineLabel: "Tổng tương tác",
+      timelineColor: "#DC2626",
+    },
+    external_shares: {
+      unit: "Lượt click",
+      col1Label: "Facebook",
+      col1Color: "#1877F2",
+      col2Label: "Zalo",
+      col2Color: "#0068FF",
+      col3Label: "Trình duyệt Web",
+      col3Color: "#10B981",
+      col4Label: "Chuyển đổi đăng nhập",
+      col4Color: "#F59E0B",
+      timelineLabel: "Tổng lượt click",
+      timelineColor: "#DC2626",
+    },
+  };
 
-    if (selectedCat === "activity_sentiment") {
-      return [
-        { periodLabel: p1, bar1: 36, bar2: 14, rate: 72 },
-        { periodLabel: p2, bar1: 40, bar2: 10, rate: 80 },
-        { periodLabel: p3, bar1: sentimentStats.activeCount || 42, bar2: sentimentStats.needsSupportCount || 8, rate: sentimentStats.activeRatePercent || 84 },
-      ];
-    }
-    if (selectedCat === "top_connections") {
-      return [
-        { periodLabel: p1, bar1: 65, bar2: 60, rate: 108 },
-        { periodLabel: p2, bar1: 82, bar2: 75, rate: 109 },
-        { periodLabel: p3, bar1: 110, bar2: 90, rate: 122 },
-      ];
-    }
-    if (selectedCat === "top_opportunities") {
-      return [
-        { periodLabel: p1, bar1: 34, bar2: 15, rate: 44 },
-        { periodLabel: p2, bar1: 45, bar2: 22, rate: 48 },
-        { periodLabel: p3, bar1: 58, bar2: 31, rate: 53 },
-      ];
-    }
-    if (selectedCat === "top_events_meetings") {
-      return [
-        { periodLabel: p1, bar1: 12, bar2: 12, rate: 100 },
-        { periodLabel: p2, bar1: 15, bar2: 14, rate: 107 },
-        { periodLabel: p3, bar1: 18, bar2: 16, rate: 112 },
-      ];
-    }
-    if (selectedCat === "top_referrals") {
-      return [
-        { periodLabel: p1, bar1: 8, bar2: 6, rate: 75 },
-        { periodLabel: p2, bar1: 12, bar2: 10, rate: 83 },
-        { periodLabel: p3, bar1: 16, bar2: 14, rate: 88 },
-      ];
-    }
-    // external_shares
-    const shareData = serverData?.externalShareClicks || serverData?.categories?.externalShareClicks;
-    const totalClicks = shareData?.totalClicks || 305;
-    const totalConversions = shareData?.totalConversions || 142;
-    const convRate = totalClicks > 0 ? Math.round((totalConversions / totalClicks) * 100) : 46;
-    return [
-      { periodLabel: p1, bar1: 140, bar2: 60, rate: 43 },
-      { periodLabel: p2, bar1: 220, bar2: 95, rate: 43 },
-      { periodLabel: p3, bar1: totalClicks, bar2: totalConversions, rate: convRate },
-    ];
-  }, [selectedCat, period, sentimentStats]);
+  const activeChartMeta = useMemo(() => {
+    let catKey = "activitySentiment";
+    if (selectedCat === "top_connections") catKey = "topConnections";
+    else if (selectedCat === "top_opportunities") catKey = "topOpportunities";
+    else if (selectedCat === "top_events_meetings") catKey = "topEventsMeetings";
+    else if (selectedCat === "top_referrals") catKey = "topReferrals";
+    else if (selectedCat === "external_shares") catKey = "externalShareClicks";
+
+    return serverData?.categories?.[catKey]?.chartMeta || CRM_CHART_METAS[selectedCat] || CRM_CHART_METAS.activity_sentiment;
+  }, [selectedCat, serverData]);
+
+  // Dữ liệu biểu đồ 4 cột chuẩn xác theo thời gian thực từ database
+  const chartData = useMemo(() => {
+    let catKey = "activitySentiment";
+    if (selectedCat === "top_connections") catKey = "topConnections";
+    else if (selectedCat === "top_opportunities") catKey = "topOpportunities";
+    else if (selectedCat === "top_events_meetings") catKey = "topEventsMeetings";
+    else if (selectedCat === "top_referrals") catKey = "topReferrals";
+    else if (selectedCat === "external_shares") catKey = "externalShareClicks";
+
+    const apiCat = serverData?.categories?.[catKey];
+    if (apiCat?.granularities?.[granularity]) return apiCat.granularities[granularity];
+    if (apiCat?.chartData && Array.isArray(apiCat.chartData)) return apiCat.chartData;
+    return [];
+  }, [selectedCat, serverData, granularity]);
+
+  const isChartEmpty = useMemo(() => {
+    if (!chartData || chartData.length === 0) return true;
+    return chartData.every(
+      (d: any) =>
+        Number(d.col1 || 0) === 0 &&
+        Number(d.col2 || 0) === 0 &&
+        Number(d.col3 || 0) === 0 &&
+        Number(d.col4 || 0) === 0 &&
+        Number(d.timelineVal || 0) === 0
+    );
+  }, [chartData]);
 
   return (
     <AppShell>
@@ -492,31 +574,42 @@ export function AnalyticsDashboardPage() {
           subtitle="Tổng hợp chỉ số gắn kết hội viên, kết quả giao thương và xếp hạng hoạt động theo kỳ"
           actions={
             <div className="flex items-center gap-2">
-              {/* Bộ lọc kỳ: Tháng, Quý, Năm */}
-              <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs">
-                {(["month", "quarter", "year"] as const).map((p) => (
+              {/* Bộ lọc Granularity Thời gian thực: Phút, Giờ, Ngày, Tuần, Tháng, Quý, Năm */}
+              <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs overflow-x-auto max-w-[420px]">
+                {[
+                  { id: "minute", label: "Phút" },
+                  { id: "hour", label: "Giờ" },
+                  { id: "day", label: "Ngày" },
+                  { id: "week", label: "Tuần" },
+                  { id: "month", label: "Tháng" },
+                  { id: "quarter", label: "Quý" },
+                  { id: "year", label: "Năm" },
+                ].map((g) => (
                   <button
-                    key={p}
-                    onClick={() => setPeriod(p)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      period === p
+                    key={g.id}
+                    onClick={() => setGranularity(g.id as any)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      granularity === g.id
                         ? "bg-[#003B95] text-white shadow-xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    {p === "month" ? "Tháng" : p === "quarter" ? "Quý" : "Năm"}
+                    {g.label}
                   </button>
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowMilestoneAwardsModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <Trophy className="size-4 text-slate-950" />
-                <span>Mốc Thưởng</span>
-              </button>
+              {/* Mốc Thưởng & Nhiệm Vụ Thưởng: CHỈ HIỂN THỊ Ở DANH MỤC PHÁT TRIỂN HỘI VIÊN */}
+              {selectedCat === "top_referrals" && (
+                <button
+                  type="button"
+                  onClick={() => setShowMilestoneAwardsModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Trophy className="size-4 text-slate-950" />
+                  <span>Mốc Thưởng</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -613,107 +706,150 @@ export function AnalyticsDashboardPage() {
           ))}
         </div>
 
-        {/* Biểu Đồ Thống Kê 2 Cột Cân Đối & Trục Chuẩn Xác */}
+        {/* Biểu Đồ Thống Kê 4 Cột & Đường Timeline Chuẩn Xác */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Biểu Đồ Xu Hướng ({activeCategoryMeta.label})
+                Biểu Đồ Xu Hướng ({activeCategoryMeta.label} - 4 Chỉ Số)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Kỳ: {period === "month" ? "Theo tháng" : period === "quarter" ? "Theo quý" : "Theo năm tài khóa"} • Đơn vị tính: {activeCategoryMeta.unit}
+                Mốc thời gian: {granularity === "minute" ? "Theo phút" : granularity === "hour" ? "Theo giờ" : granularity === "day" ? "Theo ngày" : granularity === "week" ? "Theo tuần" : granularity === "month" ? "Theo tháng" : granularity === "quarter" ? "Theo quý" : "Theo năm"} • Đơn vị tính: {activeChartMeta.unit}
               </p>
             </div>
 
-            {/* Chú giải tối giản, đúng màu */}
+            {/* Chú giải 4 cột + đường timeline */}
             <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-300">
               <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-xs bg-[#003B95]" />
-                {activeCategoryMeta.bar1Name}
+                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
+                <span>{activeChartMeta.col1Label}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span
-                  className="size-3 rounded-xs"
-                  style={{
-                    backgroundColor:
-                      selectedCat === "activity_sentiment" ? PALETTE.red : PALETTE.green,
-                  }}
-                />
-                {activeCategoryMeta.bar2Name}
+                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
+                <span>{activeChartMeta.col2Label}</span>
               </span>
-              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                <span className="w-3.5 h-0.5 bg-[#10B981]" />
-                {activeCategoryMeta.lineName} (%)
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
+                <span>{activeChartMeta.col3Label}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
+                <span>{activeChartMeta.col4Label}</span>
+              </span>
+              <span className="flex items-center gap-1.5 font-bold" style={{ color: activeChartMeta.timelineColor }}>
+                <span className="w-3.5 h-0.5 rounded-full shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
+                <span>{activeChartMeta.timelineLabel}</span>
               </span>
             </div>
           </div>
 
-          <div className="w-full h-80 pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis dataKey="periodLabel" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#94a3b8" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} stroke="#94a3b8" domain={[0, 150]} />
-                <Tooltip
-                  content={({ active, payload }: any) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="p-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-xl text-xs space-y-1 min-w-[200px]">
-                          <div className="font-bold border-b border-slate-800 pb-1 text-slate-300">
-                            {d.periodLabel}
+          <div className="w-full h-80 pt-2 relative">
+            {isChartEmpty ? (
+              <div className="h-full w-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 mb-2 shadow-xs">
+                  <TrendingUp className="size-8 text-slate-400" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Chưa có biến động dữ liệu ghi nhận trong mốc thời gian này
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+                  Cơ sở dữ liệu thực tế bằng 0. Hệ thống tuân thủ nguyên tắc không tự sinh dữ liệu giả định để đảm bảo tính minh bạch cho Ban Điều Hành.
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94a3b8" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, 'auto']} />
+                  <Tooltip
+                    content={({ active, payload, label }: any) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="p-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-xl text-xs space-y-1.5 min-w-[220px]">
+                            <div className="font-bold border-b border-slate-800 pb-1 text-slate-200 flex items-center justify-between">
+                              <span>Mốc: {label}</span>
+                              <span className="text-[10px] text-slate-400 font-normal">Thời gian thực</span>
+                            </div>
+                            {payload.map((p: any, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center text-xs">
+                                <span className="flex items-center gap-1.5" style={{ color: p.color || p.fill || p.stroke }}>
+                                  <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.fill || p.stroke }} />
+                                  <span>{p.name}:</span>
+                                </span>
+                                <strong className="text-white">{p.value} {activeChartMeta.unit}</strong>
+                              </div>
+                            ))}
                           </div>
-                          <div className="flex justify-between text-blue-300 pt-0.5">
-                            <span>{activeCategoryMeta.bar1Name}:</span>
-                            <strong>{d.bar1} {activeCategoryMeta.unit}</strong>
-                          </div>
-                          <div className="flex justify-between text-amber-300">
-                            <span>{activeCategoryMeta.bar2Name}:</span>
-                            <strong>{d.bar2} {activeCategoryMeta.unit}</strong>
-                          </div>
-                          <div className="flex justify-between text-emerald-400 border-t border-slate-800 pt-1 font-bold">
-                            <span>{activeCategoryMeta.lineName}:</span>
-                            <span>{d.rate}%</span>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend />
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar
+                    dataKey="col1"
+                    name={activeChartMeta.col1Label}
+                    fill={activeChartMeta.col1Color}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={20}
+                  />
+                  <Bar
+                    dataKey="col2"
+                    name={activeChartMeta.col2Label}
+                    fill={activeChartMeta.col2Color}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={20}
+                  />
+                  <Bar
+                    dataKey="col3"
+                    name={activeChartMeta.col3Label}
+                    fill={activeChartMeta.col3Color}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={20}
+                  />
+                  <Bar
+                    dataKey="col4"
+                    name={activeChartMeta.col4Label}
+                    fill={activeChartMeta.col4Color}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={20}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="timelineVal"
+                    name={activeChartMeta.timelineLabel}
+                    stroke={activeChartMeta.timelineColor}
+                    strokeWidth={2.5}
+                    dot={{ r: 4, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 1.5 }}
+                    activeDot={{ r: 6, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 2 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </div>
 
-                {/* 2 Cột Bar: Xanh Navy + Xanh lá / Đỏ */}
-                <Bar
-                  yAxisId="left"
-                  dataKey="bar1"
-                  name={activeCategoryMeta.bar1Name}
-                  fill="#003B95"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={36}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="bar2"
-                  name={activeCategoryMeta.bar2Name}
-                  fill={selectedCat === "activity_sentiment" ? "#DC2626" : "#10B981"}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={36}
-                />
-
-                {/* 1 Đường xu hướng Tỷ lệ % */}
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="rate"
-                  name={`${activeCategoryMeta.lineName} (%)`}
-                  stroke="#10B981"
-                  strokeWidth={2.5}
-                  dot={{ r: 4, fill: "#10B981", stroke: "#ffffff", strokeWidth: 1.5 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+          {/* Màu chú thích dưới biểu đồ */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
+              <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col1Label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
+              <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col2Label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
+              <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col3Label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
+              <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col4Label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-1 rounded-full shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
+              <span className="text-slate-700 dark:text-slate-300 font-bold">{activeChartMeta.timelineLabel}</span>
+            </div>
           </div>
         </div>
 

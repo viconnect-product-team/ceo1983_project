@@ -446,16 +446,16 @@ export function LandingWebManager({ onSwitchTab }: { onSwitchTab?: (tab: string)
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 h-9 px-3 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-700 flex items-center overflow-x-auto shadow-xs">
-                <span className="text-[#003B95] dark:text-blue-400">{typeof window !== 'undefined' ? window.location.origin : 'https://ceo1983.vn'}/h/{config.subdomain || 'ceo1983'}</span>
+                <span className="text-[#003B95] dark:text-blue-400">{typeof window !== 'undefined' ? window.location.origin : 'https://ceo1983.viconnect.vn'}/intro</span>
                 <span className="mx-2 text-slate-600 dark:text-slate-300 font-normal">|</span>
-                <span className="text-slate-600 dark:text-slate-600 dark:text-slate-300 font-normal">https://{config.subdomain || 'ceo1983'}.ceo1983.vn</span>
+                <span className="text-slate-600 dark:text-slate-300 font-normal">https://ceo1983.viconnect.vn/intro</span>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  const url = (typeof window !== 'undefined' ? window.location.origin : 'https://ceo1983.vn') + '/h/' + (config.subdomain || 'ceo1983');
+                  const url = (typeof window !== 'undefined' ? window.location.origin : 'https://ceo1983.viconnect.vn') + '/intro';
                   navigator.clipboard.writeText(url);
-                  toast.success(`Đã sao chép link Landing Page: ${url}`);
+                  toast.success(`Đã sao chép link Landing Web chính thức: ${url}`);
                 }}
                 className="px-3 h-9 rounded-xl bg-[#003B95] hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition shadow-xs cursor-pointer"
               >
@@ -463,7 +463,7 @@ export function LandingWebManager({ onSwitchTab }: { onSwitchTab?: (tab: string)
                 <span>Sao chép URL</span>
               </button>
               <a
-                href={`/h/${config.subdomain || 'ceo1983'}`}
+                href="/intro"
                 target="_blank"
                 rel="noreferrer"
                 className="px-3 h-9 rounded-xl border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 hover:bg-blue-50 text-[#003B95] dark:text-blue-300 text-xs font-bold flex items-center gap-1.5 shrink-0 transition cursor-pointer"

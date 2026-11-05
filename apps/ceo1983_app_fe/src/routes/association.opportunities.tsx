@@ -30,6 +30,8 @@ import {
   ChevronRight,
   Flame,
   TrendingUp,
+  Layers,
+  XCircle,
   Coins,
   LayoutGrid,
   List,
@@ -46,6 +48,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { z } from "zod";
 import { MemberHeader } from "@/components/member/MemberShell";
+import { executeShare } from "@/lib/share-helper";
 
 const opportunitySchema = z.object({
   title: z.string().trim().min(1, "Tiêu đề cơ hội không được phép để trống"),
@@ -478,6 +481,7 @@ function OpportunitiesScreen() {
   const [newContactTitle, setNewContactTitle] = useState("");
   const [newReferrer, setNewReferrer] = useState("");
   const [newCommissionPercent, setNewCommissionPercent] = useState("");
+  const [newExternalLink, setNewExternalLink] = useState("");
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
   const [newErrors, setNewErrors] = useState<Record<string, string>>({});
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -499,6 +503,12 @@ function OpportunitiesScreen() {
   const [editContactName, setEditContactName] = useState("");
   const [editContactPhone, setEditContactPhone] = useState("");
   const [editContactTitle, setEditContactTitle] = useState("");
+  const [editReferrer, setEditReferrer] = useState("");
+  const [editCommissionPercent, setEditCommissionPercent] = useState("");
+  const [editRecipientType, setEditRecipientType] = useState<"all" | "by_department" | "friends">("all");
+  const [editSelectedRecipientIds, setEditSelectedRecipientIds] = useState<string[]>([]);
+  const [editExternalLink, setEditExternalLink] = useState("");
+  const [evidenceModalType, setEvidenceModalType] = useState<"open_count" | "open_value" | "my_shared" | "my_dealing" | "my_won" | "my_failed" | null>(null);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [updating, setUpdating] = useState(false);
   const editImageInputRef = useRef<HTMLInputElement>(null);
@@ -603,6 +613,25 @@ function OpportunitiesScreen() {
     }
   }, [selectedOpp]);
 
+
+  // Helper lấy giá trị số của cơ hội
+  function getOppNumericValue(o: any): number {
+    if (!o) return 0;
+    if (o.budgetMax && Number(o.budgetMax) > 0) return Number(o.budgetMax);
+    if (o.budgetMin && Number(o.budgetMin) > 0) return Number(o.budgetMin);
+    if (o.estimatedValue && Number(o.estimatedValue) > 0) return Number(o.estimatedValue);
+    if (o.value) {
+      const str = String(o.value).trim().toLowerCase();
+      const num = parseFloat(str.replace(/[^\d.-]/g, ""));
+      if (!isNaN(num)) {
+        if (str.includes("tỷ") || str.includes("ty")) return num * 1_000_000_000;
+        if (str.includes("tr") || str.includes("trieu")) return num * 1_000_000;
+        return num;
+      }
+    }
+    return 0;
+  }
+
   const allOpportunities = useMemo(() => {
     const arr = [...(opportunities || [])];
     arr.sort((a, b) => {
@@ -612,6 +641,157 @@ function OpportunitiesScreen() {
     });
     return arr;
   }, [opportunities]);
+
+  // 1. Danh sách cơ hội đang có (đang mở) & Tổng giá trị
+  const openOpportunities = useMemo(() => {
+    return allOpportunities.filter((o) => {
+      const st = (o.status || "").toLowerCase();
+      return st !== "closed" && st !== "expired" && st !== "cancelled" && st !== "lost";
+    });
+  }, [allOpportunities]);
+
+  const totalOpenValue = useMemo(() => {
+    let sum = 0;
+    openOpportunities.forEach((o) => {
+      sum += getOppNumericValue(o);
+    });
+    return sum;
+  }, [openOpportunities]);
+
+  // 2. Cơ hội do chính tôi chia sẻ
+  const mySharedOpportunities = useMemo(() => {
+    return allOpportunities.filter((o) => checkIsMine(o));
+  }, [allOpportunities, checkIsMine]);
+
+  // 3. Cơ hội tôi đang deal
+  const myDealingOpportunities = useMemo(() => {
+    const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
+    return allOpportunities.filter((o) => {
+      const isMine = checkIsMine(o);
+      if (isMine) {
+        return (
+          o.status === "negotiating" ||
+          o.status === "claimed" ||
+          (o as any).status === "dealing" ||
+          Number((o as any).dealCount) > 0 ||
+          Number((o as any).interestedCount) > 0 ||
+          Boolean(agreedDeals[o.id]) ||
+          (Array.isArray((o as any).interests) && (o as any).interests.length > 0)
+        );
+      }
+      return (
+        (o as any).myDealStatus === "dealing" ||
+        (o as any).myDealStatus === "negotiating" ||
+        Boolean(agreedDeals[o.id]) ||
+        (currentUserId && String((o as any).claimedById) === String(currentUserId))
+      );
+    });
+  }, [allOpportunities, checkIsMine, user, member, agreedDeals]);
+
+  // 4. Cơ hội tôi đã nhận được / chốt thành công
+  const myWonOpportunities = useMemo(() => {
+    const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
+    return allOpportunities.filter((o) => {
+      const isMine = checkIsMine(o);
+      if (isMine) {
+        return (
+          o.status === "won" ||
+          (o as any).isWon ||
+          (o as any).dealStatus === "won" ||
+          (o as any).dealWon
+        );
+      }
+      return (
+        (o as any).myDealStatus === "won" ||
+        ((o.status === "won" || o.status === "claimed") &&
+          currentUserId &&
+          String((o as any).claimedById) === String(currentUserId))
+      );
+    });
+  }, [allOpportunities, checkIsMine, user, member]);
+
+  const myWonValue = useMemo(() => {
+    let sum = 0;
+    myWonOpportunities.forEach((o) => {
+      sum += getOppNumericValue(o);
+    });
+    return sum;
+  }, [myWonOpportunities]);
+
+  // 5. Deal tôi đã fail / thất bại / bị từ chối / hủy
+  const myFailedOpportunities = useMemo(() => {
+    return allOpportunities.filter((o) => {
+      const isMine = checkIsMine(o);
+      if (isMine) {
+        const st = (o.status || "").toLowerCase();
+        const dst = ((o as any).dealStatus || "").toLowerCase();
+        return (
+          st === "lost" ||
+          st === "cancelled" ||
+          st === "expired" ||
+          st === "failed" ||
+          dst === "lost" ||
+          dst === "failed" ||
+          dst === "rejected"
+        );
+      }
+      const mySt = ((o as any).myDealStatus || "").toLowerCase();
+      return mySt === "lost" || mySt === "failed" || mySt === "rejected" || mySt === "cancelled";
+    });
+  }, [allOpportunities, checkIsMine]);
+
+  // Dữ liệu cho Popup Minh chứng dẫn chứng thật
+  const evidenceModalData = useMemo(() => {
+    switch (evidenceModalType) {
+      case "open_count":
+        return {
+          title: "Tổng số lượng chi tiết cơ hội đang có",
+          summary: `${openOpportunities.length} cơ hội đang mở tiếp nhận giao thương trên hệ thống`,
+          list: openOpportunities,
+        };
+      case "open_value":
+        return {
+          title: "Tổng giá trị cơ hội đang có",
+          summary: `${formatSmartPrice(totalOpenValue)} tổng ngân sách dự kiến của các cơ hội đang mở`,
+          list: openOpportunities,
+        };
+      case "my_shared":
+        return {
+          title: "Số lượng cơ hội tôi đã chia sẻ",
+          summary: `${mySharedOpportunities.length} cơ hội do chính tôi đăng tải lên hệ thống`,
+          list: mySharedOpportunities,
+        };
+      case "my_dealing":
+        return {
+          title: "Số lượng cơ hội tôi đang deal",
+          summary: `${myDealingOpportunities.length} thương vụ đang trong tiến trình đàm phán / chào giá`,
+          list: myDealingOpportunities,
+        };
+      case "my_won":
+        return {
+          title: "Giá trị cơ hội tôi đã nhận được",
+          summary: `${formatSmartPrice(myWonValue)} tổng giá trị các cơ hội đã chốt thành công (${myWonOpportunities.length} thương vụ)`,
+          list: myWonOpportunities,
+        };
+      case "my_failed":
+        return {
+          title: "Số lượng deal tôi đã fail",
+          summary: `${myFailedOpportunities.length} deal đã dừng, hủy bỏ hoặc không đạt thỏa thuận`,
+          list: myFailedOpportunities,
+        };
+      default:
+        return { title: "", summary: "", list: [] };
+    }
+  }, [
+    evidenceModalType,
+    openOpportunities,
+    totalOpenValue,
+    mySharedOpportunities,
+    myDealingOpportunities,
+    myWonOpportunities,
+    myWonValue,
+    myFailedOpportunities,
+  ]);
 
   // CƠ HỘI NỔI BẬT: Top 5 cơ hội xoay vòng spotlight 2 giây/lần (Requirement 4)
   const featuredList = useMemo(() => {
@@ -1070,6 +1250,165 @@ function OpportunitiesScreen() {
 
       {/* ── SCROLLABLE CONTENT (ẢNH 2 FIGMA SPEC) ── */}
       <div className="self-stretch px-4 pt-4 pb-28 flex flex-col justify-start items-start gap-5">
+                {/* ── 6 CHỈ SỐ CHI TIẾT CƠ HỘI NỀN TRẮNG (CẤM NỀN XANH - REQ 3) ── */}
+        <div className="self-stretch flex flex-col gap-2">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="size-4 text-amber-500" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Chỉ Số Giao Thương &amp; Dẫn Chứng
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+              Chạm ô để xem minh chứng
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {/* 1. Tổng số lượng chi tiết cơ hội đang có */}
+            <button
+              type="button"
+              onClick={() => setEvidenceModalType("open_count")}
+              className="p-3 bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between text-left shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Cơ hội đang có
+                </span>
+                <Layers className="size-3.5 text-slate-600 dark:text-slate-400" />
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-lg font-black text-slate-900 dark:text-white">
+                  {openOpportunities.length}
+                </span>
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">tin</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                <span>Đang mở toàn sàn</span>
+                <ChevronRight className="size-3 text-slate-600 dark:text-slate-400" />
+              </div>
+            </button>
+
+            {/* 2. Tổng giá trị cơ hội đang có */}
+            <button
+              type="button"
+              onClick={() => setEvidenceModalType("open_value")}
+              className="p-3 bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between text-left shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Tổng giá trị
+                </span>
+                <TrendingUp className="size-3.5 text-amber-500" />
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-lg font-black text-amber-600 dark:text-amber-400">
+                  {formatSmartPrice(totalOpenValue)}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                <span>Ngân sách dự kiến</span>
+                <ChevronRight className="size-3 text-slate-600 dark:text-slate-400" />
+              </div>
+            </button>
+
+            {/* 3. Số lượng tôi đã chia sẻ */}
+            <button
+              type="button"
+              onClick={() => setEvidenceModalType("my_shared")}
+              className="p-3 bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between text-left shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Tôi đã chia sẻ
+                </span>
+                <Share2 className="size-3.5 text-slate-600 dark:text-slate-400" />
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-lg font-black text-slate-900 dark:text-white">
+                  {mySharedOpportunities.length}
+                </span>
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">tin</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                <span>Do tôi đăng tải</span>
+                <ChevronRight className="size-3 text-slate-600 dark:text-slate-400" />
+              </div>
+            </button>
+
+            {/* 4. Số lượng tôi đang deal */}
+            <button
+              type="button"
+              onClick={() => setEvidenceModalType("my_dealing")}
+              className="p-3 bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between text-left shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Tôi đang deal
+                </span>
+                <Handshake className="size-3.5 text-amber-500" />
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-lg font-black text-slate-900 dark:text-white">
+                  {myDealingOpportunities.length}
+                </span>
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">thương vụ</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                <span>Đang thương thảo</span>
+                <ChevronRight className="size-3 text-slate-600 dark:text-slate-400" />
+              </div>
+            </button>
+
+            {/* 5. Giá trị cơ hội tôi đã nhận được */}
+            <button
+              type="button"
+              onClick={() => setEvidenceModalType("my_won")}
+              className="p-3 bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between text-left shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Giá trị đã nhận
+                </span>
+                <CheckCircle2 className="size-3.5 text-emerald-500" />
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                  {formatSmartPrice(myWonValue)}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                <span>Đã chốt thành công</span>
+                <ChevronRight className="size-3 text-slate-600 dark:text-slate-400" />
+              </div>
+            </button>
+
+            {/* 6. Số lượng deal tôi đã fail */}
+            <button
+              type="button"
+              onClick={() => setEvidenceModalType("my_failed")}
+              className="p-3 bg-white dark:bg-[#131a26] border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between text-left shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm active:scale-[0.98] transition cursor-pointer"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Deal đã fail
+                </span>
+                <XCircle className="size-3.5 text-rose-500" />
+              </div>
+              <div className="mt-1.5 flex items-baseline gap-1">
+                <span className="text-lg font-black text-rose-600 dark:text-rose-400">
+                  {myFailedOpportunities.length}
+                </span>
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">deal</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400">
+                <span>Dừng / Hủy / Không đạt</span>
+                <ChevronRight className="size-3 text-slate-600 dark:text-slate-400" />
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* 3. SEARCH & CHIPS & BỘ LỌC NGÀNH NGHỀ & % CÓ LỢI NHẤT */}
         <div className="self-stretch flex flex-col gap-2.5">
           <div className="self-stretch px-3 py-2 bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex justify-start items-center gap-2 shadow-2xs">
@@ -1078,7 +1417,7 @@ function OpportunitiesScreen() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm kiếm cơ hội, đối tác, dự án..."
-              className="flex-1 bg-transparent border-none outline-none text-xs text-slate-800 placeholder:text-slate-400 font-['Inter'] whitespace-normal break-words"
+              className="flex-1 min-w-0 bg-transparent border-none outline-none text-xs text-slate-800 placeholder:text-slate-400 font-['Inter']"
             />
             {q && (
               <button
@@ -1371,17 +1710,17 @@ function OpportunitiesScreen() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const shareUrl = typeof window !== "undefined" ? window.location.href : "https://ceo1983.viconnect.vn";
-                                if (navigator.share) {
-                                  navigator.share({
+                                executeShare(
+                                  {
+                                    type: "opportunity",
+                                    id: o.id,
                                     title: o.title,
-                                    text: `Cơ hội hợp tác kinh doanh CEO 1983: ${o.title} (${formatSmartPrice(o.value)})`,
-                                    url: shareUrl,
-                                  }).catch(() => {});
-                                } else {
-                                  navigator.clipboard.writeText(`${o.title} - ${shareUrl}`);
-                                  toast.success("Đã sao chép liên kết cơ hội hợp tác!");
-                                }
+                                    desc: o.description || `Cơ hội hợp tác kinh doanh CEO 1983: ${o.title} (${formatSmartPrice(o.value)})`,
+                                    image: (o as any).images?.[0] || (o as any).image || undefined,
+                                    targetPath: `/association/opportunities?id=${o.id}`,
+                                  },
+                                  () => toast.success("Đã sao chép liên kết cơ hội hợp tác!")
+                                );
                               }}
                               className="size-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 grid place-items-center transition active:scale-95 cursor-pointer shadow-2xs"
                               title="Chia sẻ cơ hội"
