@@ -1,3 +1,4 @@
+import { executeShare } from "@/lib/share-helper";
 import { useState, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -64,6 +65,7 @@ export interface TrainingItem {
   location?: string;
   room_id?: string;
   room_url?: string;
+  cover_image?: string;
   materials?: TrainingMaterial[];
   attendee_count?: number;
   max_attendees?: number;

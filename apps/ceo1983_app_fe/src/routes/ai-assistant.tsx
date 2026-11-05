@@ -444,7 +444,7 @@ export function AiAssistantPage() {
                   <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">TỔNG THU NGÂN SÁCH</span>
                   <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
                     {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-                      financeReport?.summary?.totalIncome || 420000000
+                      financeReport?.summary?.totalIncome ?? 0
                     )}
                   </div>
                 </div>
@@ -452,7 +452,7 @@ export function AiAssistantPage() {
                   <span className="text-xs font-bold text-red-700 dark:text-red-400">TỔNG CHI HOẠT ĐỘNG</span>
                   <div className="text-xl font-black text-red-600 dark:text-red-400">
                     {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-                      financeReport?.summary?.totalExpense || 185000000
+                      financeReport?.summary?.totalExpense ?? 0
                     )}
                   </div>
                 </div>
@@ -460,7 +460,7 @@ export function AiAssistantPage() {
                   <span className="text-xs font-bold text-blue-700 dark:text-blue-400">SỐ DƯ QUỸ HIỆN HỮU</span>
                   <div className="text-xl font-black text-blue-600 dark:text-blue-400">
                     {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-                      financeReport?.summary?.balance || 235000000
+                      financeReport?.summary?.balance ?? 0
                     )}
                   </div>
                 </div>

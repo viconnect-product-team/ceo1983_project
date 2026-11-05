@@ -729,25 +729,26 @@ export class AnalyticsService implements OnModuleInit {
         });
       };
 
-      const topConnections = assignTiers(
-        [...uniqueStats].sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore),
-        'connections'
-      );
+      // CHỈ XẾP HẠNG HỘI VIÊN KHI CÓ DỮ LIỆU THỰC TẾ PHÁT SINH (> 0), KHÔNG TỰ BỊA TOP KHI CHƯA CÓ HOẠT ĐỘNG
+      const validConnectionsList = [...uniqueStats]
+        .filter(m => (m.connectionsCount || 0) > 0)
+        .sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore);
+      const topConnections = assignTiers(validConnectionsList, 'connections');
 
-      const topOpportunities = assignTiers(
-        [...uniqueStats].sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.interactionScore - a.interactionScore),
-        'opportunities'
-      );
+      const validOppsList = [...uniqueStats]
+        .filter(m => (m.publicOppsShared || 0) > 0 || (m.totalValueVnd || 0) > 0)
+        .sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.totalValueVnd - a.totalValueVnd);
+      const topOpportunities = assignTiers(validOppsList, 'opportunities');
 
-      const topEventsMeetings = assignTiers(
-        [...uniqueStats].sort((a, b) => (b.eventsAttended * 2 + b.feedInteractions) - (a.eventsAttended * 2 + a.feedInteractions) || b.interactionScore - a.interactionScore),
-        'events'
-      );
+      const validEventsList = [...uniqueStats]
+        .filter(m => (m.eventsAttended || 0) > 0 || (m.feedInteractions || 0) > 0)
+        .sort((a, b) => (b.eventsAttended * 2 + b.feedInteractions) - (a.eventsAttended * 2 + a.feedInteractions));
+      const topEventsMeetings = assignTiers(validEventsList, 'events');
 
-      const topReferrals = assignTiers(
-        [...uniqueStats].sort((a, b) => (b.referralsCount || b.connectionsCount || 0) - (a.referralsCount || a.connectionsCount || 0) || b.interactionScore - a.interactionScore),
-        'referrals'
-      );
+      const validReferralsList = [...uniqueStats]
+        .filter(m => (m.referralsCount || 0) > 0)
+        .sort((a, b) => (b.referralsCount || 0) - (a.referralsCount || 0));
+      const topReferrals = assignTiers(validReferralsList, 'referrals');
 
       const totalClubValueContributed = uniqueStats.reduce((sum, m) => sum + m.totalValueVnd, 0);
       const activeMembers = uniqueStats.filter(m => m.interactionScore >= 20);
@@ -815,11 +816,15 @@ export class AnalyticsService implements OnModuleInit {
         { name: 'Hội viên Tiêu Chuẩn', value: Math.max(1, Math.round(uniqueStats.length * 0.25)), fill: '#003B95' },
       ];
 
-      const sortedByValue = [...uniqueStats].sort((a, b) => b.totalValueVnd - a.totalValueVnd || b.interactionScore - a.interactionScore);
-      const top1 = sortedByValue[0] || null;
-      const top2 = sortedByValue[1] || null;
-      const top3 = sortedByValue[2] || null;
-      const top3List = sortedByValue.slice(0, 3);
+      // TOP 1, TOP 2, TOP 3 BẮT BUỘC PHẢI CÓ DỮ LIỆU THỰC TẾ (> 0), TUYỆT ĐỐI KHÔNG GÁN TOP KHI BẰNG 0
+      const membersWithRealActivity = [...uniqueStats]
+        .filter(m => (m.totalValueVnd || 0) > 0 || (m.publicOppsShared || 0) > 0 || (m.connectionsCount || 0) > 0 || (m.eventsAttended || 0) > 0 || (m.feedInteractions || 0) > 0 || (m.referralsCount || 0) > 0)
+        .sort((a, b) => (b.totalValueVnd - a.totalValueVnd) || (b.interactionScore - a.interactionScore));
+
+      const top1 = membersWithRealActivity.length > 0 ? membersWithRealActivity[0] : null;
+      const top2 = membersWithRealActivity.length > 1 ? membersWithRealActivity[1] : null;
+      const top3 = membersWithRealActivity.length > 2 ? membersWithRealActivity[2] : null;
+      const top3List = membersWithRealActivity.slice(0, 3);
 
       const granLabel = {
         minute: 'Theo phút',

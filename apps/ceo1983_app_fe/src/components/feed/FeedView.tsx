@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
+import { executeShare } from "@/lib/share-helper";
 import { useAuth } from "@/context/AuthContext";
 import { CreatePostModal, COMMITTEES } from "./CreatePostModal";
 
@@ -706,7 +707,7 @@ export function FeedView({
         {
           type: "post",
           id: post.id,
-          title: `[Mạng Lưới CEO 1983] ${post.title || `Bài viết từ Doanh nhân ${post.author?.name || "Hội viên"}`}`,
+          title: `[Mạng Lưới CEO 1983] ${post.title || `Bài viết từ Doanh nhân ${post.authorName || "Hội viên"}`}`,
           desc: post.content?.slice(0, 200),
           image: post.images?.[0] || undefined,
           targetPath: `/association/messages?post=${post.id}`,
