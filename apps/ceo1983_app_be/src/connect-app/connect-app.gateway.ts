@@ -259,16 +259,38 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     });
   }
 
-  emitConnectionRequested(targetUserId: string, requesterProfile: any, connectionId: string) {
+  emitConnectionRequested(targetUserId: string, requesterProfile: any, connectionId: string, extraRooms?: string[]) {
     if (!this.server) return;
-    const rooms = [`user:${targetUserId}`];
-    if (requesterProfile?.targetMemberCode) rooms.push(`user:${requesterProfile.targetMemberCode}`);
-    if (requesterProfile?.targetMemberId) rooms.push(`user:${requesterProfile.targetMemberId}`);
+    const rooms = new Set<string>();
+    if (targetUserId) {
+      rooms.add(`user:${targetUserId}`);
+      rooms.add(`user:${String(targetUserId).toLowerCase()}`);
+    }
+    if (requesterProfile?.targetMemberCode) {
+      rooms.add(`user:${requesterProfile.targetMemberCode}`);
+      rooms.add(`user:${String(requesterProfile.targetMemberCode).toLowerCase()}`);
+    }
+    if (requesterProfile?.targetMemberId) {
+      rooms.add(`user:${requesterProfile.targetMemberId}`);
+    }
+    if (Array.isArray(extraRooms)) {
+      for (const r of extraRooms) {
+        if (r) {
+          const cleanRoom = r.startsWith('user:') ? r : `user:${r}`;
+          rooms.add(cleanRoom);
+          rooms.add(cleanRoom.toLowerCase());
+        }
+      }
+    }
     for (const r of rooms) {
       this.server.to(r).emit('connection:requested', {
         requesterProfile,
         connectionId,
         timestamp: new Date().toISOString(),
+      });
+      this.server.to(r).emit('vba:close_qr_modal', {
+        requesterProfile,
+        connectionId,
       });
     }
   }
@@ -314,7 +336,11 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     if (!payload?.targetUserId || !this.server) return { ok: false };
     const connectionId = payload.connectionId || `conn_${Date.now()}`;
     this.logger.log(`Connection request from ${payload.requesterProfile?.display_name || payload.requesterProfile?.name || 'unknown'} to user:${payload.targetUserId}`);
-    this.emitConnectionRequested(payload.targetUserId, payload.requesterProfile, connectionId);
+    const extraRooms: string[] = [];
+    if ((payload as any)?.targetMemberCode) {
+      extraRooms.push((payload as any).targetMemberCode);
+    }
+    this.emitConnectionRequested(payload.targetUserId, payload.requesterProfile, connectionId, extraRooms);
     return { ok: true, connectionId };
   }
 

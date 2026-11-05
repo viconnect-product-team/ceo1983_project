@@ -573,7 +573,7 @@ export class ConnectOpportunityService {
                COALESCE(up.avatar_url, m.cover_url, u.avatar_url, '') as poster_avatar,
                COALESCE(m.phone, o.contact_phone, '') as poster_phone,
                COALESCE(m.name, bi.company_name, o.company, 'CLB Doanh Nhân CEO 1983') as poster_company,
-               o.referrer, o.commission_percent
+               o.referrer, o.commission_percent, o.target_scope, o.target_recipients, o.target_groups
         FROM public.opportunities o
         LEFT JOIN public.members m ON (o.poster_id = m.user_id::text OR o.poster_id = m.id OR o.poster_id = m.code)
         LEFT JOIN public.user_profiles up ON (o.poster_id = up.user_id::text)
@@ -602,8 +602,36 @@ export class ConnectOpportunityService {
         interestCounts[oppId] = (interestCounts[oppId] || 0) + 1;
       }
 
+      // Lấy danh sách ID bạn bè kết nối accepted của user để lọc cơ hội riêng tư
+      let connectedUserIds: string[] = [];
+      if (isValidUuid(userId)) {
+        const conns = await this.prisma.$queryRaw<any[]>`
+          SELECT requester_user_id, recipient_user_id
+          FROM public.user_connections
+          WHERE status = 'accepted'::public.global_connection_status AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
+        `.catch(() => []);
+        connectedUserIds = conns.map(c => String(c.requester_user_id) === String(userId) ? String(c.recipient_user_id) : String(c.requester_user_id));
+      }
+
+      const visibleOpps = opps.filter(o => {
+        const posterId = String(o.poster_id || '');
+        if (posterId === String(userId)) return true;
+        const scope = o.target_scope || 'all';
+        if (scope === 'all') return true;
+        if (scope === 'friends') {
+          const recips: string[] = Array.isArray(o.target_recipients)
+            ? o.target_recipients.map(String)
+            : (typeof o.target_recipients === 'string' ? JSON.parse(o.target_recipients || '[]') : []);
+          if (recips.length > 0) {
+            return recips.includes(String(userId));
+          }
+          return connectedUserIds.includes(posterId);
+        }
+        return true;
+      });
+
       return {
-        opportunities: opps.map(r => {
+        opportunities: visibleOpps.map(r => {
           const imgList = safeParseImages(r.images || (r.image ? [r.image] : []));
           const firstImg = imgList[0] || r.image || undefined;
           return {
@@ -639,6 +667,9 @@ export class ConnectOpportunityService {
             images: imgList,
             referrer: r.referrer || undefined,
             commissionPercent: r.commission_percent != null ? Number(r.commission_percent) : undefined,
+            targetScope: r.target_scope || 'all',
+            targetRecipients: r.target_recipients || [],
+            targetGroups: r.target_groups || [],
           };
         }),
         interests: interests.map(it => ({

@@ -970,13 +970,32 @@ export class MembersService {
   }
 
   async getMemberById(userId: string, id: string) {
+    const cleanId = String(id || '').trim();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.members 
-      WHERE id::text = ${id} OR code = ${id} OR user_id::text = ${id} 
+      WHERE id::text = ${cleanId} 
+         OR LOWER(code) = LOWER(${cleanId}) 
+         OR LOWER(code) = LOWER(${cleanId.replace(/^CEO1983-/i, '')})
+         OR LOWER(code) = LOWER(${'CEO1983-' + cleanId.replace(/^CEO1983-/i, '')})
+         OR user_id::text = ${cleanId} 
       LIMIT 1
     `.catch(() => []);
 
     if (rows.length === 0) {
+      // Fallback: tra c?u t? business_cards ho?c business_identities
+      const cards = await this.prisma.$queryRaw<any[]>`
+        SELECT user_id FROM public.business_cards 
+        WHERE slug = ${cleanId} OR id::text = ${cleanId} 
+        LIMIT 1
+      `.catch(() => []);
+      if (cards.length > 0 && cards[0].user_id) {
+        const memFromCard = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.members WHERE user_id = ${cards[0].user_id}::uuid LIMIT 1
+        `.catch(() => []);
+        if (memFromCard.length > 0) {
+          return this.mapMemberRow(memFromCard[0]);
+        }
+      }
       throw new NotFoundException('Không tìm thấy hội viên');
     }
 

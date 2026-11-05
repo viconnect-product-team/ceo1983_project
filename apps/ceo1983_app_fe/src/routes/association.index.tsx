@@ -1253,16 +1253,16 @@ function Home() {
         {/* ── 4 TÍNH NĂNG CỐT LÕI (CHO PHÉP HỘI VIÊN TÙY BIẾN THEO MONG MUỐN) ── */}
         <div id="tour-quick-actions" className="self-stretch px-3 py-3 flex flex-col justify-start items-start gap-2">
           <div className="w-full flex items-center justify-between px-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-['Inter']">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider font-['Inter']">
               Tính năng nhanh
             </span>
             <button
               type="button"
               onClick={() => setAllFeaturesModalOpen(true)}
-              className="px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003B95] dark:text-slate-300 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer"
+              className="px-2 py-0.5 rounded-full text-[11px] font-bold text-[var(--primary)] dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer"
               title="Xem tất cả tính năng"
             >
-              <Sparkles className="size-3 text-[#003B95]" />
+              <Sparkles className="size-3 text-[var(--primary)] dark:text-amber-400" />
               <span>Xem tất cả tính năng</span>
             </button>
           </div>
@@ -1270,16 +1270,12 @@ function Home() {
             {activeShortcutIds.map((id) => {
               const def = ALL_SHORTCUT_OPTIONS.find((o) => o.id === id) || ALL_SHORTCUT_OPTIONS[0];
               let badgeVal: string | number | undefined = def.badge;
-              let badgeColor = def.badgeColor || "bg-amber-500 text-slate-900";
               if (id === "events" && displayEvents.length > 0) {
                 badgeVal = displayEvents.length;
-                badgeColor = "bg-amber-500 text-slate-950";
               } else if (id === "members") {
                 badgeVal = directoryMembers.length > 0 ? directoryMembers.length : (member ? "12" : "10");
-                badgeColor = "bg-[#1F3864] text-white";
               } else if (id === "opportunities" && totalOpportunitiesCount > 0) {
                 badgeVal = totalOpportunitiesCount;
-                badgeColor = "bg-emerald-600 text-white";
               }
 
               const isHash = def.to.startsWith("#");
@@ -1291,11 +1287,11 @@ function Home() {
                 <div
                   className={`size-14 relative ${roundedClass} flex justify-center items-center group-hover:scale-105 transition-all shadow-xs`}
                   style={{
-                    backgroundColor: isDarkTheme ? `${brandColorTheme.primaryColor}28` : brandColorTheme.lightBg,
+                    backgroundColor: isDarkTheme ? `${brandColorTheme.primaryColor}22` : brandColorTheme.lightBg,
                     borderColor: isDarkTheme ? `${brandColorTheme.accentColor}55` : brandColorTheme.lightBorder,
                     borderWidth: "1.5px",
                     borderStyle: "solid",
-                    boxShadow: isDarkTheme ? `0 0 10px ${brandColorTheme.primaryColor}25` : undefined,
+                    boxShadow: isDarkTheme ? `0 2px 10px ${brandColorTheme.primaryColor}20` : undefined,
                   }}
                 >
                   {customThemeIcon ? (
@@ -1311,10 +1307,8 @@ function Home() {
                     <div
                       className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900`}
                       style={{
-                        backgroundColor: badgeColor.includes("amber")
-                          ? brandColorTheme.accentColor
-                          : brandColorTheme.primaryColor,
-                        color: badgeColor.includes("amber") ? "#0f172a" : "#ffffff",
+                        backgroundColor: isDarkTheme ? brandColorTheme.accentColor : brandColorTheme.primaryColor,
+                        color: isDarkTheme ? "#0F172A" : "#FFFFFF",
                       }}
                     >
                       <span className="text-[10px] font-black font-sans leading-3">
@@ -1369,16 +1363,16 @@ function Home() {
         <div className="w-full">
           <div className="mb-3 flex items-center justify-between">
             <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-              <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#003B95] text-white text-xs border border-blue-400/30 shadow-xs">
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-[var(--primary)] text-white text-xs border border-white/20 shadow-xs">
                 <Calendar className="size-3.5 text-white" />
               </span>
-              <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-[#003B95] transition-colors flex items-center gap-1">
+              <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-[var(--primary)] transition-colors flex items-center gap-1">
                 <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
-                <Sparkles className="h-3.5 w-3.5 text-[#003B95] fill-[#003B95]/20" />
+                <Sparkles className="h-3.5 w-3.5 text-[var(--primary)] fill-[var(--primary)]/20" />
                 <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </h2>
             </Link>
-            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-[#003B95] dark:text-blue-400 hover:underline p-1">
+            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-[var(--primary)] dark:text-amber-400 hover:underline p-1">
               <span>{isEn ? "See all" : "Xem tất cả"}</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>

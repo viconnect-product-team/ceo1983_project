@@ -389,13 +389,27 @@ const CATEGORY_TABS = [
   { id: "MARKETPLACE", label: "Sàn B2B" },
 ];
 
-export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
+export function FeedView({
+  searchQuery = "",
+  initialShare,
+}: {
+  searchQuery?: string;
+  initialShare?: { title?: string; text?: string; url?: string };
+}) {
   const { user } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedDepartment, setSelectedDepartment] = useState("ALL");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(() => {
+    return Boolean(initialShare?.url || initialShare?.title || initialShare?.text);
+  });
+
+  useEffect(() => {
+    if (initialShare?.url || initialShare?.title || initialShare?.text) {
+      setCreateModalOpen(true);
+    }
+  }, [initialShare]);
 
   // Per-post comments map
   const [postCommentsMap, setPostCommentsMap] = useState<Record<string, FeedComment[]>>({});
@@ -722,31 +736,31 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
     switch (cat) {
       case "OPPORTUNITY":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B8860B] text-white shadow-xs">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#B8860B] text-white shadow-xs shrink-0 whitespace-nowrap">
             Cơ hội chia sẻ
           </span>
         );
       case "EVENT_MEETING":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white shadow-xs">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white shadow-xs shrink-0 whitespace-nowrap">
             Sự kiện & Họp ban
           </span>
         );
       case "TRAINING":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-600 text-white shadow-xs">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-600 text-white shadow-xs shrink-0 whitespace-nowrap">
             Đào tạo & Huấn luyện
           </span>
         );
       case "MARKETPLACE":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-xs shrink-0 whitespace-nowrap">
             Sàn B2B
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white shadow-xs">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white shadow-xs shrink-0 whitespace-nowrap">
             Tin tức CLB
           </span>
         );
@@ -878,9 +892,9 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                 className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-3"
               >
                 {/* Post Header: Avatar, Name, Dept, Time, Badge */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-10 rounded-2xl overflow-hidden bg-[#1F3864] flex items-center justify-center text-amber-300 font-bold text-xs ring-1 ring-slate-200 dark:ring-slate-700">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="size-10 rounded-2xl overflow-hidden bg-[#1F3864] flex items-center justify-center text-amber-300 font-bold text-xs ring-1 ring-slate-200 dark:ring-slate-700 shrink-0">
                       {post.authorAvatar ? (
                         <img
                           src={resolveMediaUrl(post.authorAvatar) || post.authorAvatar}
@@ -891,24 +905,24 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
                         <span>{(post.authorName || "CEO")[0]}</span>
                       )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                           {post.authorName || "Hội viên CLB CEO 1983"}
                         </h4>
                         {post.department && (
-                          <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+                          <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 whitespace-nowrap">
                             {post.department}
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 block truncate">
                         {formatRelativeTime(post.createdAt)}
                       </span>
                     </div>
                   </div>
 
-                  <div>{renderCategoryBadge(post.category)}</div>
+                  <div className="shrink-0">{renderCategoryBadge(post.category)}</div>
                 </div>
 
                 {/* Title & Content */}
@@ -1499,6 +1513,7 @@ export function FeedView({ searchQuery = "" }: { searchQuery?: string }) {
       <CreatePostModal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
+        initialShare={initialShare}
         onSuccess={(newPost) => {
           setPosts((prev) => [newPost, ...prev]);
         }}

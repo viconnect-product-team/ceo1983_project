@@ -35,6 +35,12 @@ const messagesSearchSchema = z.object({
   peerName: z.string().optional(),
   tab: z.enum(["feed", "messages"]).optional(),
   postId: z.string().optional(),
+  share_title: z.string().optional(),
+  share_text: z.string().optional(),
+  share_url: z.string().optional(),
+  title: z.string().optional(),
+  text: z.string().optional(),
+  url: z.string().optional(),
 });
 
 export const Route = createFileRoute("/association/messages")({
@@ -109,7 +115,17 @@ function MessagesScreen() {
     "vba_directory_members",
   );
 
+  const shareTitle = search.share_title || search.title || "";
+  const shareText = search.share_text || search.text || "";
+  const shareUrl = search.share_url || search.url || "";
+  const hasShare = Boolean(shareUrl || shareTitle || shareText);
+
+  const initialShare = hasShare
+    ? { title: shareTitle, text: shareText, url: shareUrl }
+    : undefined;
+
   const [mainTab, setMainTab] = useState<"feed" | "messages">(() => {
+    if (hasShare) return "feed";
     if (search.peerCode) return "messages";
     if (search.tab === "messages") return "messages";
     return "feed";
@@ -473,7 +489,7 @@ function MessagesScreen() {
               </header>
 
               {/* Bảng tin Feed */}
-              <FeedView searchQuery={searchQuery} />
+              <FeedView searchQuery={searchQuery} initialShare={initialShare} />
             </>
           )}
         </div>

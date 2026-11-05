@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Sparkles, Palette, ShieldCheck, Zap } from "lucide-react";
+import { Check, Palette } from "lucide-react";
 import { toast } from "sonner";
 import {
   CEO1983_COLOR_THEMES,
@@ -40,15 +40,15 @@ export function Ceo1983ColorThemeSelector({
   const handleSelect = (id: Ceo1983ColorThemeId, name: string) => {
     setSelectedId(id);
     applyCeo1983ColorTheme(id);
-    toast.success(`Đã áp dụng bộ màu "${name}" chuẩn Brandbook CEO 1983!`, {
-      description: "Toàn bộ giao diện và icon đã được cập nhật đồng bộ.",
+    toast.success(`Đã áp dụng bộ màu "${name}" CEO 1983!`, {
+      description: "Toàn bộ nút bấm, viền và điểm nhấn đã được đổi mới đồng bộ.",
     });
     if (onSelected) onSelected(id);
   };
 
   if (compact) {
     return (
-      <div className={`grid grid-cols-2 gap-2.5 ${className}`}>
+      <div className={`grid grid-cols-3 gap-2 ${className}`}>
         {CEO1983_COLOR_THEMES.map((theme) => {
           const isSelected = selectedId === theme.id;
           return (
@@ -58,32 +58,33 @@ export function Ceo1983ColorThemeSelector({
               onClick={() => handleSelect(theme.id, theme.name)}
               className={`p-2.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden ${
                 isSelected
-                  ? "border-amber-400 bg-amber-500/10 shadow-[0_4px_16px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/50"
-                  : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0E172A] hover:border-slate-300 dark:hover:border-slate-700"
+                  ? "border-[var(--primary)] bg-[var(--primary)]/10 shadow-md ring-1 ring-[var(--primary)]"
+                  : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
-              <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between gap-1 mb-1.5">
+                <div className="flex items-center -space-x-1.5">
                   <div
-                    className="size-4.5 rounded-full shadow-xs border border-white/40 shrink-0"
-                    style={{ backgroundColor: theme.primaryColor }}
+                    className="size-4.5 rounded-full shadow-xs border border-white/60 shrink-0"
+                    style={{ backgroundColor: theme.threeColors[0] }}
                   />
                   <div
-                    className="size-4.5 rounded-full shadow-xs border border-white/40 -ml-2.5 shrink-0"
-                    style={{ backgroundColor: theme.accentColor }}
+                    className="size-4.5 rounded-full shadow-xs border border-white/60 shrink-0"
+                    style={{ backgroundColor: theme.threeColors[1] }}
+                  />
+                  <div
+                    className="size-4.5 rounded-full shadow-xs border border-white/60 shrink-0"
+                    style={{ backgroundColor: theme.threeColors[2] }}
                   />
                 </div>
                 {isSelected && (
-                  <span className="size-4 rounded-full bg-amber-500 text-slate-950 grid place-items-center shrink-0">
+                  <span className="size-4 rounded-full bg-[var(--primary)] text-white grid place-items-center shrink-0">
                     <Check className="size-2.5 stroke-[3]" />
                   </span>
                 )}
               </div>
               <div className="text-[12px] font-bold text-slate-900 dark:text-white truncate">
                 {theme.name}
-              </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                {theme.subtitle}
               </div>
             </button>
           );
@@ -96,24 +97,21 @@ export function Ceo1983ColorThemeSelector({
     <div className={`space-y-3 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-slate-950 grid place-items-center shadow-xs">
+          <div className="size-8 rounded-xl bg-[var(--primary)] text-white grid place-items-center shadow-xs">
             <Palette className="size-4" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              4 Dạng Màu Tiêu Chuẩn CEO 1983
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-400/30">
-                Brandbook
-              </span>
+              3 Kiểu Màu Chủ Đạo CEO 1983
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Chọn phong cách hiển thị màu sắc theo quy chuẩn nhận diện thương hiệu
+              Chọn phong cách hiển thị màu sắc theo nhận diện thương hiệu
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {CEO1983_COLOR_THEMES.map((theme) => {
           const isSelected = selectedId === theme.id;
           return (
@@ -122,32 +120,34 @@ export function Ceo1983ColorThemeSelector({
               onClick={() => handleSelect(theme.id, theme.name)}
               className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden flex flex-col justify-between group ${
                 isSelected
-                  ? "border-amber-400 bg-amber-500/10 dark:bg-[#0E172A] shadow-[0_6px_20px_rgba(245,158,11,0.22)] ring-1.5 ring-amber-400"
-                  : "border-slate-200 dark:border-amber-500/20 bg-white dark:bg-[#0E172A]/70 hover:border-amber-400/50 hover:shadow-md"
+                  ? "border-[var(--primary)] bg-[var(--primary)]/10 dark:bg-slate-900 shadow-md ring-2 ring-[var(--primary)]"
+                  : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md"
               }`}
             >
-              {/* Header card with swatches and badge */}
-              <div className="flex items-start justify-between gap-2 mb-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    <span
-                      className="size-6 rounded-full shadow-md border-2 border-white dark:border-slate-900"
-                      style={{ backgroundColor: theme.primaryColor }}
-                    />
-                    <span
-                      className="size-6 rounded-full shadow-md border-2 border-white dark:border-slate-900 -ml-2.5"
-                      style={{ backgroundColor: theme.accentColor }}
-                    />
-                  </div>
-                  <span className={`text-[10.5px] font-black uppercase px-2 py-0.5 rounded-full border ${theme.badgeBg}`}>
-                    {theme.tag}
-                  </span>
+              {/* Top: 3 Swatches + Check */}
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center -space-x-2">
+                  <span
+                    className="size-6 rounded-full shadow-md border-2 border-white dark:border-slate-800 z-30"
+                    style={{ backgroundColor: theme.threeColors[0] }}
+                    title={`Màu chính: ${theme.threeColors[0]}`}
+                  />
+                  <span
+                    className="size-6 rounded-full shadow-md border-2 border-white dark:border-slate-800 z-20"
+                    style={{ backgroundColor: theme.threeColors[1] }}
+                    title={`Nền tối: ${theme.threeColors[1]}`}
+                  />
+                  <span
+                    className="size-6 rounded-full shadow-md border-2 border-white dark:border-slate-800 z-10"
+                    style={{ backgroundColor: theme.threeColors[2] }}
+                    title={`Điểm nhấn: ${theme.threeColors[2]}`}
+                  />
                 </div>
 
                 <div
                   className={`size-5 rounded-full grid place-items-center transition-all ${
                     isSelected
-                      ? "bg-amber-500 text-slate-950 scale-110 shadow-xs"
+                      ? "bg-[var(--primary)] text-white scale-110 shadow-xs"
                       : "border border-slate-300 dark:border-slate-700 text-transparent"
                   }`}
                 >
@@ -155,32 +155,29 @@ export function Ceo1983ColorThemeSelector({
                 </div>
               </div>
 
-              {/* Title & Description */}
-              <div className="space-y-1 mb-3">
-                <h4 className="text-[13px] font-extrabold text-slate-900 dark:text-white group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
+              {/* Title & Subtitle - KHÔNG DÙNG MÔ TẢ DÀI */}
+              <div className="space-y-0.5 mb-2.5">
+                <h4 className="text-[13px] font-extrabold text-slate-900 dark:text-white transition-colors">
                   {theme.name}
                 </h4>
-                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   {theme.subtitle}
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300/90 leading-relaxed line-clamp-2">
-                  {theme.description}
-                </p>
               </div>
 
-              {/* Bottom palette indicator */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
-                <div className="flex items-center gap-2 font-mono text-slate-400">
-                  <span>{theme.primaryColor}</span>
+              {/* Bottom: 3 Hex Codes & Status */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px]">
+                <div className="flex items-center gap-1 font-mono text-[9.5px] text-slate-400 dark:text-slate-500">
+                  <span>{theme.threeColors[0]}</span>
                   <span>•</span>
-                  <span>{theme.accentColor}</span>
+                  <span>{theme.threeColors[2]}</span>
                 </div>
                 <span
                   className={`font-bold transition-colors ${
-                    isSelected ? "text-amber-500 dark:text-amber-400 font-extrabold" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200"
+                    isSelected ? "text-[var(--primary)] font-extrabold" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                   }`}
                 >
-                  {isSelected ? "Đang áp dụng ✓" : "Chọn dạng này"}
+                  {isSelected ? "Đang áp dụng ✓" : "Áp dụng"}
                 </span>
               </div>
             </div>
@@ -189,4 +186,4 @@ export function Ceo1983ColorThemeSelector({
       </div>
     </div>
   );
-};
+}

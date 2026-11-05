@@ -87,6 +87,8 @@ export class FeedService {
         ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS media_url TEXT;
         ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS media_type TEXT;
         ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS reaction TEXT;
+        ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS external_link TEXT;
+        ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS shared_article JSONB;
       `).catch(() => {});
 
       const check = await this.prisma.$queryRaw<any[]>`
@@ -320,6 +322,8 @@ export class FeedService {
         commentsCount: Number(p.comments_count || 0),
         sharesCount: Number(p.shares_count || 0),
         isLiked: userLikedPostIds.has(String(p.id)),
+        externalLink: p.external_link || null,
+        sharedArticle: p.shared_article ? (typeof p.shared_article === 'string' ? JSON.parse(p.shared_article) : p.shared_article) : null,
         createdAt: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
         updatedAt: p.updated_at ? new Date(p.updated_at).toISOString() : new Date().toISOString(),
       };
@@ -332,6 +336,8 @@ export class FeedService {
     category?: string;
     department?: string;
     images?: string[];
+    externalLink?: string;
+    sharedArticle?: any;
   }) {
     if (!data.content || !data.content.trim()) {
       throw new BadRequestException('Nội dung bài viết không được để trống.');
@@ -343,14 +349,18 @@ export class FeedService {
     const title = data.title?.trim() || null;
     const content = data.content.trim();
     const imgsJson = JSON.stringify(Array.isArray(data.images) ? data.images : []);
+    const externalLink = data.externalLink?.trim() || null;
+    const sharedArticleJson = data.sharedArticle ? JSON.stringify(data.sharedArticle) : null;
 
     const inserted = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.feed_posts (
         author_id, author_name, author_avatar, author_company, author_role,
-        title, content, category, department, images, likes_count, comments_count, shares_count, created_at, updated_at
+        title, content, category, department, images, external_link, shared_article,
+        likes_count, comments_count, shares_count, created_at, updated_at
       ) VALUES (
         ${author.id}, ${author.name}, ${author.avatar}, ${author.company}, ${author.role},
-        ${title}, ${content}, ${category}, ${department}, ${imgsJson}::jsonb, 0, 0, 0, NOW(), NOW()
+        ${title}, ${content}, ${category}, ${department}, ${imgsJson}::jsonb, ${externalLink}, ${sharedArticleJson}::jsonb,
+        0, 0, 0, NOW(), NOW()
       )
       RETURNING *
     `;
@@ -366,6 +376,8 @@ export class FeedService {
         category: p.category,
         department: p.department,
         images: data.images || [],
+        externalLink: p.external_link,
+        sharedArticle: data.sharedArticle || null,
         likesCount: 0,
         commentsCount: 0,
         sharesCount: 0,
@@ -551,5 +563,78 @@ export class FeedService {
       ok: true,
       sharesCount: Number(postRow[0]?.shares_count || 0),
     };
+  }
+  async extractUrlMetadata(targetUrl: string) {
+    if (!targetUrl || typeof targetUrl !== 'string') {
+      throw new BadRequestException('URL không hợp lệ');
+    }
+    let cleanUrl = targetUrl.trim();
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = `https://${cleanUrl}`;
+    }
+    try {
+      const urlObj = new URL(cleanUrl);
+      const domain = urlObj.hostname.replace(/^www\./, '').toUpperCase();
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      
+      const resp = await fetch(cleanUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      });
+      clearTimeout(timeout);
+
+      const html = await resp.text();
+      
+      const getMeta = (prop: string) => {
+        const regex = new RegExp(`<meta[^>]+(?:property|name)=["'](?:og:)?${prop}["'][^>]+content=["']([^"']*)["']`, 'i');
+        const match = html.match(regex);
+        if (match) return match[1];
+        const altRegex = new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+(?:property|name)=["'](?:og:)?${prop}["']`, 'i');
+        const altMatch = html.match(altRegex);
+        return altMatch ? altMatch[1] : null;
+      };
+
+      const title = getMeta('title') || html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() || `Tin tức từ ${domain}`;
+      const description = getMeta('description') || getMeta('twitter:description') || 'Bài viết chia sẻ từ liên kết bên ngoài.';
+      let image = getMeta('image') || getMeta('twitter:image') || null;
+      const siteName = getMeta('site_name') || domain;
+
+      if (image && !image.startsWith('http://') && !image.startsWith('https://')) {
+        try {
+          image = new URL(image, cleanUrl).href;
+        } catch {}
+      }
+
+      return {
+        ok: true,
+        url: cleanUrl,
+        domain,
+        title,
+        snippet: description,
+        thumbnailUrl: image,
+        sourceName: siteName,
+      };
+    } catch {
+      try {
+        const u = new URL(cleanUrl);
+        const domain = u.hostname.replace(/^www\./, '').toUpperCase();
+        return {
+          ok: true,
+          url: cleanUrl,
+          domain,
+          title: `Tin tức từ ${domain}`,
+          snippet: 'Bấm vào để đọc toàn văn bài viết chi tiết từ ứng dụng nguồn.',
+          thumbnailUrl: null,
+          sourceName: domain,
+        };
+      } catch {
+        throw new BadRequestException('Không thể phân tích URL này.');
+      }
+    }
   }
 }

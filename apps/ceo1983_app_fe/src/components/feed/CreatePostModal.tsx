@@ -43,14 +43,19 @@ interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newPost: any) => void;
+  initialShare?: {
+    title?: string;
+    text?: string;
+    url?: string;
+  };
 }
 
-export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalProps) {
+export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: CreatePostModalProps) {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState(initialShare?.title || "");
+  const [content, setContent] = useState(initialShare?.text || "");
   const [category, setCategory] = useState("NEWS");
   const [department, setDepartment] = useState(COMMITTEES[0]);
   const [images, setImages] = useState<string[]>([]);
@@ -58,13 +63,65 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
   const [submitting, setSubmitting] = useState(false);
 
   // External share states
-  const [postMode, setPostMode] = useState<"standard" | "external">("standard");
-  const [sharedUrl, setSharedUrl] = useState("");
+  const [postMode, setPostMode] = useState<"standard" | "external">(() => {
+    return initialShare?.url ? "external" : "standard";
+  });
+  const [sharedUrl, setSharedUrl] = useState(initialShare?.url || "");
   const [sharedDomain, setSharedDomain] = useState("");
-  const [sharedTitle, setSharedTitle] = useState("");
-  const [sharedSummary, setSharedSummary] = useState("");
+  const [sharedTitle, setSharedTitle] = useState(initialShare?.title || "");
+  const [sharedSummary, setSharedSummary] = useState(initialShare?.text || "");
   const [sharedThumbnail, setSharedThumbnail] = useState("");
+  const [loadingMetadata, setLoadingMetadata] = useState(false);
 
+  // Function to call backend metadata scraper for external articles
+  const fetchUrlMetadata = async (targetUrl: string) => {
+    if (!targetUrl || !targetUrl.trim()) return;
+    setLoadingMetadata(true);
+    try {
+      let cleanUrl = targetUrl.trim();
+      if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+        cleanUrl = "https://" + cleanUrl;
+      }
+      try {
+        const u = new URL(cleanUrl);
+        setSharedDomain(u.hostname.replace(/^www\./, "").toUpperCase());
+      } catch {}
+
+      const res = await fetchNestApi<any>(`/feed/url-metadata?url=${encodeURIComponent(cleanUrl)}`);
+      if (res && res.ok) {
+        if (res.domain) setSharedDomain(res.domain);
+        if (res.title) {
+          setSharedTitle(res.title);
+          setTitle((prev: string) => prev || res.title);
+        }
+        if (res.snippet) setSharedSummary(res.snippet);
+        // CRITICAL: Use REAL thumbnail without unsplash fallback!
+        if (res.thumbnailUrl) {
+          setSharedThumbnail(res.thumbnailUrl);
+        }
+      }
+    } catch {
+      // Keep user input if scraper fails
+    } finally {
+      setLoadingMetadata(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    if (initialShare?.url) {
+      setPostMode("external");
+      setSharedUrl(initialShare.url);
+      if (initialShare.title) {
+        setSharedTitle(initialShare.title);
+        setTitle(initialShare.title);
+      }
+      if (initialShare.text) setContent(initialShare.text);
+      fetchUrlMetadata(initialShare.url);
+    }
+  }, [isOpen, initialShare]);
+
+  const debounceTimerRef = useRef<any>(null);
   const handleUrlChange = (url: string) => {
     setSharedUrl(url);
     if (!url.trim()) return;
@@ -77,30 +134,12 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
       }
       const cleanDomain = hostname.replace(/^www\./, "").toUpperCase();
       setSharedDomain(cleanDomain);
-
-      // Auto smart defaults based on source
-      if (!sharedTitle) {
-        if (cleanDomain.includes("VNEXPRESS")) {
-          setSharedTitle("VnExpress - Tin tức kinh tế & thị trường doanh nghiệp mới nhất");
-          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80");
-        } else if (cleanDomain.includes("CAFEF")) {
-          setSharedTitle("CafeF - Doanh nghiệp & Xu hướng đầu tư thương mại");
-          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80");
-        } else if (cleanDomain.includes("YOUTUBE")) {
-          setSharedTitle("Video sự kiện & tọa đàm doanh nhân CEO 1983");
-          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80");
-        } else if (cleanDomain.includes("FACEBOOK")) {
-          setSharedTitle("Bài viết chia sẻ từ Facebook Hội Doanh Nhân");
-          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80");
-        } else {
-          setSharedTitle(`Tin tức từ ${cleanDomain}`);
-          if (!sharedThumbnail) setSharedThumbnail("https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80");
-        }
-      }
-      if (!sharedSummary) {
-        setSharedSummary("Bấm vào để đọc toàn văn bài viết chi tiết từ ứng dụng nguồn.");
-      }
     } catch {}
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      fetchUrlMetadata(url);
+    }, 700);
   };
 
   // Simple Cropper state
@@ -177,7 +216,7 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
               thumbnailUrl:
                 sharedThumbnail.trim() ||
                 images[0] ||
-                "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80",
+                "",
               sourceName: sharedDomain || "LIÊN KẾT NGOÀI",
             }
           : undefined;
@@ -299,14 +338,27 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
                 <Globe className="size-3.5 text-blue-600" />
                 <span>Đường link bài viết từ ứng dụng bên ngoài (*)</span>
               </div>
-              <input
-                type="text"
-                value={sharedUrl}
-                onChange={(e) => handleUrlChange(e.target.value)}
-                placeholder="Dán link bài báo (VnExpress, CafeF, Facebook, LinkedIn, YouTube, Website...)"
-                className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-800 text-slate-900 dark:text-white font-medium outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={sharedUrl}
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  placeholder="Dán link bài báo (VnExpress, CafeF, Facebook, LinkedIn, YouTube, Website...)"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-800 text-slate-900 dark:text-white font-medium outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                  required
+                />
+                {loadingMetadata && (
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] text-blue-600 font-bold">
+                    <Loader2 className="size-3.5 animate-spin" />
+                  </div>
+                )}
+              </div>
+              {loadingMetadata && (
+                <div className="text-[11px] text-blue-600 dark:text-blue-400 flex items-center gap-1.5 animate-pulse">
+                  <Sparkles className="size-3.5" />
+                  <span>Đang tự động quét ảnh đại diện & thông tin bài viết từ link ngoài...</span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>

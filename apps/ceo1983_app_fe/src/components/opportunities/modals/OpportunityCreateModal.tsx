@@ -12,6 +12,7 @@ import {
   Briefcase,
   Users,
   Globe,
+  Check,
 } from "lucide-react";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { formatDisplayDate } from "@/lib/date-format";
@@ -65,6 +66,8 @@ export interface OpportunityCreateModalProps {
   setSelectedRecipientIds?: (ids: string[]) => void;
   newExternalLink?: string;
   setNewExternalLink?: (v: string) => void;
+  recipientType?: "all" | "by_department" | "friends";
+  setRecipientType?: (v: "all" | "by_department" | "friends") => void;
 }
 
 export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
@@ -114,8 +117,14 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
   setSelectedRecipientIds: propSetRecipientIds,
   newExternalLink: propExternalLink,
   setNewExternalLink: propSetExternalLink,
+  recipientType: propRecipientType,
+  setRecipientType: propSetRecipientType,
 }) => {
-  const [recipientType, setRecipientType] = React.useState<"all" | "by_department" | "friends">("all");
+  const [localRecipientType, setLocalRecipientType] = React.useState<"all" | "by_department" | "friends">("all");
+  const recipientType = propRecipientType !== undefined ? propRecipientType : localRecipientType;
+  const setRecipientType = propSetRecipientType || setLocalRecipientType;
+  const [friendsList, setFriendsList] = React.useState<any[]>([]);
+  const [loadingFriends, setLoadingFriends] = React.useState<boolean>(false);
   const [friendsScope, setFriendsScope] = React.useState<"all" | "selective">("all");
   const [selectedDept, setSelectedDept] = React.useState<string>("");
   const [deptList, setDeptList] = React.useState<any[]>([]);
@@ -148,6 +157,23 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
       .catch(() => {})
       .finally(() => setLoadingDepts(false));
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    if (recipientType === "friends") {
+      setLoadingFriends(true);
+      fetchNestApi<any[]>("/network/connections")
+        .then((res) => {
+          if (Array.isArray(res)) {
+            setFriendsList(res);
+          } else {
+            setFriendsList([]);
+          }
+        })
+        .catch(() => setFriendsList([]))
+        .finally(() => setLoadingFriends(false));
+    }
+  }, [isOpen, recipientType]);
 
   const activeDeptMembers = React.useMemo(() => {
     if (!deptList || deptList.length === 0) return [];
@@ -638,9 +664,24 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                       </button>
                     </div>
 
-                    {friendsScope === "all" ? (
-                      <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300">
-                        Cơ hội này sẽ tự động hiển thị với tất cả các CEO và bạn bè đã kết nối với bạn.
+                    {loadingFriends ? (
+                      <div className="p-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+                        <Loader2 className="size-4 animate-spin text-[#003B95]" />
+                        <span>Đang tải danh bạ bạn bè đã kết nối...</span>
+                      </div>
+                    ) : friendsList.length === 0 ? (
+                      <div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300/70 dark:border-amber-700/50 text-center space-y-1.5">
+                        <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                          Chưa có kết nối bạn bè nào
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                          Bạn chưa có bạn bè đã kết nối trong danh bạ CEO 1983. Vui lòng quét mã QR để kết nối giao thương trước khi chia sẻ cơ hội riêng tư, hoặc chọn &quot;Tất cả hội viên&quot;.
+                        </p>
+                      </div>
+                    ) : friendsScope === "all" ? (
+                      <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                        <Check className="size-4 shrink-0 text-emerald-600" />
+                        <span>Cơ hội này sẽ hiển thị với tất cả <strong>{friendsList.length}</strong> CEO bạn bè đã kết nối trong danh bạ của bạn.</span>
                       </div>
                     ) : (
                       <div className="space-y-1.5">
@@ -648,12 +689,15 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                           Tích chọn từng người bạn muốn hiển thị cơ hội:
                         </label>
                         <div className="space-y-1.5 max-h-48 overflow-y-auto p-1 border border-slate-200/70 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/40">
-                          {allFlattenedMembers.map((mem: any) => {
-                            const memId = String(mem.id);
-                            const isChecked = selectedRecipientIds.includes(memId);
+                          {friendsList.map((friend: any) => {
+                            const friendId = String(friend.counterpartUserId || friend.id);
+                            const isChecked = selectedRecipientIds.includes(friendId);
+                            const friendName = friend.displayName || friend.name || "Hội viên CEO 1983";
+                            const friendAvatar = friend.avatarUrl || friend.avatar;
+                            const friendCompany = friend.companyName || friend.company || friend.headline || "";
                             return (
                               <label
-                                key={memId}
+                                key={friendId}
                                 className={`flex items-center gap-2 p-1.5 rounded-lg border text-[11px] cursor-pointer transition ${
                                   isChecked
                                     ? "bg-amber-50/80 dark:bg-amber-950/40 border-[#B8860B] text-slate-900 dark:text-white font-medium"
@@ -665,29 +709,31 @@ export const OpportunityCreateModal: React.FC<OpportunityCreateModalProps> = ({
                                   checked={isChecked}
                                   onChange={(e) => {
                                     if (e.target.checked) {
-                                      setSelectedRecipientIds([...selectedRecipientIds, memId]);
+                                      setSelectedRecipientIds([...selectedRecipientIds, friendId]);
                                     } else {
-                                      setSelectedRecipientIds(selectedRecipientIds.filter((id) => id !== memId));
+                                      setSelectedRecipientIds(selectedRecipientIds.filter((id) => id !== friendId));
                                     }
                                   }}
                                   className="size-3.5 accent-[#1F3864]"
                                 />
                                 <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                                  {mem.avatar ? (
+                                  {friendAvatar ? (
                                     <img
-                                      src={resolveMediaUrl(mem.avatar) || mem.avatar}
-                                      alt={mem.name}
+                                      src={resolveMediaUrl(friendAvatar) || friendAvatar}
+                                      alt={friendName}
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
-                                    (mem.name || "U").charAt(0)
+                                    friendName.charAt(0)
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-[11.5px] truncate">{mem.name}</p>
-                                  <p className="text-[10px] text-slate-400 truncate">
-                                    {mem.department} {mem.company ? `• ${mem.company}` : ""}
-                                  </p>
+                                  <p className="font-bold text-[11.5px] truncate">{friendName}</p>
+                                  {friendCompany && (
+                                    <p className="text-[10px] text-slate-400 truncate">
+                                      {friendCompany}
+                                    </p>
+                                  )}
                                 </div>
                               </label>
                             );

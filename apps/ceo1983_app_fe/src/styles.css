@@ -165,24 +165,24 @@
      CEO 1983 OFFICIAL DARK MODE IDENTITY (Brandbook HanoiBA CEO 1983)
      Deep Obsidian Cobalt Navy, Warm Amber Gold Accents, Zero Purple
      ============================================================ */
-  --background: #070D1A;
+  --background: var(--vba-bg, #070D1A);
   --foreground: #FFFFFF;
-  --card: #0E172A;
+  --card: var(--vba-surface, #0E172A);
   --card-foreground: #FFFFFF;
-  --popover: #0E172A;
+  --popover: var(--vba-surface, #0E172A);
   --popover-foreground: #FFFFFF;
-  --primary: #F59E0B;
-  --primary-foreground: #070D1A;
-  --primary-glow: #FBBF24;
-  --secondary: #14223E;
+  --primary: var(--vba-navy, #003B95);
+  --primary-foreground: #FFFFFF;
+  --primary-glow: var(--vba-gold-2, #FBBF24);
+  --secondary: var(--vba-surface-2, #14223E);
   --secondary-foreground: #CBD5E1;
-  --muted: #14223E;
+  --muted: var(--vba-surface-2, #14223E);
   --muted-foreground: #94A3B8;
-  --accent: #192744;
-  --accent-foreground: #F59E0B;
-  --border: rgba(245, 158, 11, 0.22);
-  --input: rgba(245, 158, 11, 0.25);
-  --ring: #F59E0B;
+  --accent: var(--vba-gold, #F59E0B);
+  --accent-foreground: #FFFFFF;
+  --border: var(--vba-border, rgba(245, 158, 11, 0.22));
+  --input: var(--vba-border-soft, rgba(245, 158, 11, 0.25));
+  --ring: var(--vba-navy, #003B95);
 
   /* State colours tuned for CEO 1983 dark surfaces */
   --destructive: #EF4444;

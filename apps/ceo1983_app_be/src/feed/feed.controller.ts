@@ -16,6 +16,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
+  @Get('url-metadata')
+  async extractUrlMetadata(@Query('url') url: string) {
+    return this.feedService.extractUrlMetadata(url);
+  }
+
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
   async listFeed(

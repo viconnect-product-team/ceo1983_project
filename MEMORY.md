@@ -1,5 +1,35 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 05/11/2026 (v10.35): Đại Tu Toàn Diện 5 Tính Năng Mobile App CEO 1983 - Bộ 3 Màu Sắc Nhận Diện Thương Hiệu, Real-time Handshake Quét QR Kết Nối, Trích Xuất Metadata Bài Viết Chia Sẻ Link Ngoài & Chuẩn Hóa Danh Sách Bạn Bè Cơ Hội B2B ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007], [NODE-APP-014])**:
+  1. *Đại Tu Hệ Thống Màu Sắc & Khắc Phục Lỗi Theme Sáng/Tối (`apps/ceo1983_app_fe/src/lib/ceo1983-color-theme.ts`, `apps/ceo1983_app_fe/src/styles.css`)*:
+     - Khắc phục lỗi mất chữ (chữ trắng trên nền trắng) khi chọn theme ở chế độ sáng bằng cách loại bỏ triệt để quy tắc recursive `color: #FFFFFF !important` trên toàn bộ selector con (`*`), chỉ áp dụng màu chữ tương phản cho nút bấm solid primary (`button.bg-primary`, `a.bg-primary`, `.vba-btn-primary`).
+     - Khắc phục lỗi theme tối không đổi màu: Bổ sung cơ chế inject biến CSS động cho Dark Mode (`html.dark`, `.dark`) bao gồm `--background: var(--vba-bg)`, `--card: ...`, `--border: ...`, `--primary: ...`, `--ring: ...`, `--accent: ...`. Mọi nút bấm, đường viền, nhãn hiển thị và card nội dung lập tức đổi màu đồng bộ khi người dùng chuyển đổi bảng màu.
+     - Chuẩn hóa đúng **3 bộ màu chủ đạo thương hiệu** (mỗi bản có 3 mã màu riêng biệt, loại bỏ hoàn toàn các tên hoàng gia hoa mỹ và các đoạn mô tả dài rườm rà):
+       + **Xanh Doanh Nhân (`classic-navy`)**: Xanh Navy `#003B95`, Đen Chiều Sâu `#0A1128`, Vàng Kim Điểm Xuyết `#F59E0B`.
+       + **Cam Tiên Phong (`dynamic-orange`)**: Cam Nhiệt Huyết `#EA580C`, Chàm Đẳng Cấp `#1E1B4B`, Xanh Công Nghệ `#3B82F6`.
+       + **Đỏ Nhiệt Huyết (`crimson-red`)**: Đỏ Tuyên Ngôn `#DC2626`, Than Chì Sang Trọng `#18181B`, Vàng Hổ Phách `#FBBF24`.
+     - Tối ưu giao diện Mobile PWA: Bổ sung `shrink-0 whitespace-nowrap` trên các tag/badge danh mục bài đăng, ngăn ngừa hiện tượng vỡ dòng gãy chữ như `[Sự kiện & Họp] [ban]`. Tối giản các mảng màu gây nhiễu phản cảm ở chế độ nền tối.
+  2. *Sửa Luồng Quét Mã QR Kết Nối & Tự Động Bắn Popup Handshake Thời Gian Thực (`apps/ceo1983_app_fe/src/components/member/AssociationMemberQrModal.tsx`, `apps/ceo1983_app_be/src/connect-app/connect-app.gateway.ts`, `apps/ceo1983_app_be/src/connect-app/services/network.service.ts`)*:
+     - Luồng quét mã chuẩn 2 chiều: Khi Tài khoản A quét mã QR của Tài khoản B:
+       + Tài khoản A lập tức xem được thẻ thông tin hồ sơ (Profile card) của B (tên, chức vụ, công ty, ảnh đại diện, danh thiếp số) qua endpoint giải mã mã hội viên đa dạng (`/members/:code` hỗ trợ cả mã nguyên bản, tiền tố `CEO1983-` và fallback sang business cards).
+       + Tài khoản A bấm "Lưu & Kết nối ngay" -> Backend Gateway lập tức bắn đồng thời 2 sự kiện WebSocket đến phòng người dùng B: `connection:requested` và `vba:close_qr_modal`.
+       + Modal mã QR đang mở trên máy Tài khoản B lập tức tự động đóng lại, đồng thời giao diện Tài khoản B lập tức hiển thị popup `IncomingConnectionModal` (với z-index ưu tiên tối đa `z-[100000]`) chứa đầy đủ ảnh và thông tin của Tài khoản A để B phê duyệt kết nối ngay lập tức.
+  3. *Trích Xuất Metadata Thật Khi Chia Sẻ Bài Viết Từ Bên Ngoài (`apps/ceo1983_app_be/src/feed/`, `apps/ceo1983_app_fe/src/components/feed/CreatePostModal.tsx`, `apps/ceo1983_app_fe/public/manifest.json`, `apps/ceo1983_app_fe/src/routes/association.messages.tsx`)*:
+     - Bổ sung cấu hình Web Share Target PWA chuẩn W3C trong `apps/ceo1983_app_fe/public/manifest.json`, cho phép nhận dữ liệu chia sẻ (`share_title`, `share_text`, `share_url`) trực tiếp từ menu Chia sẻ của hệ điều hành di động.
+     - Endpoint Backend tự động quét và bóc tách dữ liệu OpenGraph: `GET /feed/url-metadata?url=...` tự động trích xuất `og:image`, `og:title`, `og:description`, `site_name` và tên miền thực tế của bài báo/liên kết.
+     - `CreatePostModal`: Khi dán link hoặc nhận link từ ngoài, hệ thống hiển thị trạng thái đang quét và tự động điền tiêu đề, tóm tắt và **ảnh thumbnail thật 100% của bài viết gốc**, triệt tiêu hoàn toàn tình trạng tự ý thay thế ảnh stock Unsplash không liên quan.
+     - Lưu trữ cấu trúc `sharedArticle` vào database PostgreSQL `feed_posts`, hiển thị thẻ preview chia sẻ dạng Facebook đồng bộ trên Bảng tin CLB.
+  4. *Chuẩn Hóa Danh Sách Bạn Bè Trong Luồng Trao Cơ Hội Giao Thương B2B (`apps/ceo1983_app_fe/src/components/opportunities/modals/OpportunityCreateModal.tsx`, `apps/ceo1983_app_fe/src/routes/association.opportunities.tsx`, `apps/ceo1983_app_be/src/connect-app/services/opportunity.service.ts`)*:
+     - Sửa lỗi nghiêm trọng: Trước đây khi chọn phạm vi người nhận là "Bạn bè đã kết nối", hệ thống tải toàn bộ danh sách hội viên hiệp hội (`allFlattenedMembers`) khiến người dùng chưa kết bạn vẫn thấy người lạ.
+     - Đã thay thế triệt để bằng API danh bạ kết nối thực tế: `GET /network/connections` lọc chính xác `status = 'accepted'`.
+     - Trường hợp người dùng chưa kết bạn với ai: Hiển thị hộp thông báo trực quan, nhắc nhở quét mã QR kết nối bạn bè trước khi chia sẻ cơ hội riêng tư.
+     - Trường hợp đã có bạn bè kết nối: Hiển thị chính xác số lượng bạn bè ("Tất cả bạn bè") hoặc cho phép tích chọn từng người bạn với đầy đủ tên, ảnh đại diện và doanh nghiệp ("Chọn từng người").
+     - Backend bảo mật quyền riêng tư: Tích hợp `target_scope = 'friends'` và `target_recipients` vào câu truy vấn và bộ lọc `listAllOpportunities`, đảm bảo chỉ người tạo, các bạn bè được chỉ định hoặc bạn bè đã kết nối mới nhìn thấy cơ hội riêng tư này.
+  5. *Kiểm Thử & Đảm Bảo Chất Lượng (Strict Quality Gate)*:
+     - TypeScript compiler check đạt 0 lỗi (Exit code 0) trên cả Frontend (`apps/ceo1983_app_fe`) và Backend (`apps/ceo1983_app_be`).
+     - Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` hay `git push`.
+
+
 - **Bản cập nhật ngày 05/11/2026 (v10.34): Tích Hợp Cấu Hình Thanh Toán MoMo Dynamic Trên CRM, Bộ Điều Khiển 1-Click Tự Động Lấy & Gia Hạn Token Zalo OA (Hỗ Trợ Cả OAuth v4 Consent Flow) & Quản Trị Zalo Mini App Trực Quan Trên Web CRM ([NODE-CRM-014], [NODE-CORE-004], [NODE-CORE-005])**:
   1. *Cấu Hình Thanh Toán MoMo Dynamic Trên Web CRM (`apps/ceo1983_app_fe/src/components/dashboard/MoMoConfigSection.tsx` & `apps/ceo1983_app_fe/src/routes/settings.tsx`)*:
      - Xây dựng phân hệ Cấu hình MoMo Gateway v2 hoàn chỉnh tại Tab Cài Đặt CRM (`/settings?tab=momo`).

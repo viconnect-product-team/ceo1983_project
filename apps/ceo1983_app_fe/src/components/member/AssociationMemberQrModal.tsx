@@ -29,6 +29,7 @@ import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import heroImg from "@/assets/vba-hero.jpg";
 
@@ -66,6 +67,7 @@ export function AssociationMemberQrModal({
   memberCompany = "CLB Doanh Nhân CEO 1983",
   memberAvatar = null,
 }: AssociationMemberQrModalProps) {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"my_qr" | "scan_qr">(defaultTab);
   const [copied, setCopied] = useState(false);
@@ -108,6 +110,9 @@ export function AssociationMemberQrModal({
     if (!open) return;
     const socket = getConnectAppSocket();
     const handleClose = () => {
+      setActiveTab("my_qr");
+      setScannedPartner(null);
+      setConnected(false);
       onClose();
     };
     socket.on("connection:requested", handleClose);
@@ -241,18 +246,20 @@ export function AssociationMemberQrModal({
     }
 
     try {
-      const res = await fetchNestApi<any>(`/api/members/${code}`);
-      if (res && res.name) {
+      const cleanCode = encodeURIComponent(String(code).trim());
+      const res = await fetchNestApi<any>(`/members/${cleanCode}`);
+      if (res && (res.name || res.contact)) {
+        const pAvatar = res.avatar || res.avatarUrl;
         setScannedPartner({
           code: res.code || code,
-          name: res.name,
-          company: res.companyName || res.company || "CLB CEO 1983",
-          title: res.title || res.industry || "Hội viên",
-          avatar: res.avatar ? resolveMediaUrl(res.avatar) || res.avatar : null,
+          name: res.name || res.contact || "Hội viên CEO 1983",
+          company: res.companyName || res.company || "CLB Doanh Nhân CEO 1983",
+          title: res.title || res.executiveRole || res.industry || "Hội viên Doanh nhân",
+          avatar: pAvatar ? resolveMediaUrl(pAvatar) || pAvatar : null,
           phone: res.phone || null,
           email: res.email || null,
           industry: res.industry || null,
-          userId: res.userId || null,
+          userId: res.userId || res.user_id || res.id || null,
         });
       } else {
         setScannedPartner({
@@ -315,7 +322,26 @@ export function AssociationMemberQrModal({
         }),
       }).catch(() => {});
 
-      // 2. Real-time handshake: Gửi yêu cầu kết nối để thiết bị đối tác tự động đóng QR và bật popup thông tin của mình
+      // 2. Real-time handshake: Bắn ngay socket trực tiếp để máy đối tác đóng QR và hiện popup trong <100ms
+      try {
+        const socket = getConnectAppSocket();
+        socket.emit("connection:request", {
+          targetUserId: scannedPartner.userId || scannedPartner.code,
+          targetMemberCode: scannedPartner.code,
+          requesterProfile: {
+            display_name: user?.name || memberName,
+            name: user?.name || memberName,
+            avatar_url: memberAvatar,
+            memberCode: memberCode,
+            company_name: memberCompany,
+            job_title: memberTitle,
+            userId: user?.id,
+          },
+          message: messageText,
+        });
+      } catch {}
+
+      // Đồng thời gọi REST API lưu dữ liệu vĩnh viễn và bắn notification
       await fetchNestApi("/network/requests", {
         method: "POST",
         body: JSON.stringify({

@@ -309,7 +309,7 @@ export function MemberPerksCarousel() {
 
                   {/* Right side tag: Discount or Member tag */}
                   {s.discountTag && (
-                    <span className="px-2.5 py-1 rounded-full bg-red-600 text-white font-black text-[10px] uppercase tracking-wider shadow-md border border-red-400/50 animate-pulse">
+                    <span className="px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider shadow-md border border-amber-400/40 backdrop-blur-md">
                       {s.discountTag}
                     </span>
                   )}

@@ -126,11 +126,23 @@ export class ConnectNetworkService {
       ORDER BY responded_at DESC NULLS LAST
     `.catch(() => []);
     
+    const counterpartIds = connections.map(c => c.requester_user_id === userId ? c.target_user_id : c.requester_user_id);
+    const summaries = await this.resolvePublicCounterparts(counterpartIds);
+    const summaryMap = new Map(summaries.map(s => [s.userId, s]));
+
     return connections.map(c => {
       const counterpartUserId = c.requester_user_id === userId ? c.target_user_id : c.requester_user_id;
+      const s = summaryMap.get(counterpartUserId);
       return {
         id: c.id,
         counterpartUserId,
+        name: s?.displayName || 'Hội viên CEO 1983',
+        displayName: s?.displayName || 'Hội viên CEO 1983',
+        avatar: s?.avatarUrl || null,
+        avatarUrl: s?.avatarUrl || null,
+        companyName: s?.companyName || null,
+        headline: s?.headline || null,
+        primaryCardSlug: s?.primaryCardSlug || null,
         respondedAt: c.responded_at ? new Date(c.responded_at).toISOString() : null,
         createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
       };
@@ -817,7 +829,9 @@ export class ConnectNetworkService {
     if (!isUuid && targetUserId) {
       const memRows = await this.prisma.$queryRaw<any[]>`
         SELECT user_id FROM public.members 
-        WHERE LOWER(code) = LOWER(${String(targetUserId)}) OR id = ${String(targetUserId)} LIMIT 1
+        WHERE LOWER(code) = LOWER(${String(targetUserId)}) 
+           OR LOWER(code) = LOWER(${String(targetUserId).replace(/^CEO1983-/i, '')})
+           OR id::text = ${String(targetUserId)} LIMIT 1
       `.catch(() => []);
       if (memRows[0]?.user_id) {
         targetUserId = memRows[0].user_id;
@@ -1068,7 +1082,27 @@ export class ConnectNetworkService {
         createdAt: now.toISOString(),
       };
 
-      this.gateway.emitConnectionRequested(targetUserId, requester, reqId);
+      const targetMems = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id FROM public.members 
+        WHERE user_id::text = ${String(targetUserId)} 
+           OR id::text = ${String(targetUserId)} 
+           OR LOWER(code) = LOWER(${String(targetUserId)}) 
+           OR LOWER(code) = LOWER(${String(targetUserId).replace(/^CEO1983-/i, '')})
+        LIMIT 1
+      `.catch(() => []);
+      const extraTargetRooms: string[] = [];
+      if (targetMems[0]?.code) {
+        extraTargetRooms.push(`user:${targetMems[0].code}`);
+        extraTargetRooms.push(`user:${String(targetMems[0].code).toLowerCase()}`);
+      }
+      if (targetMems[0]?.id) {
+        extraTargetRooms.push(`user:${targetMems[0].id}`);
+      }
+      if (targetMems[0]?.user_id && targetMems[0].user_id !== targetUserId) {
+        extraTargetRooms.push(`user:${targetMems[0].user_id}`);
+      }
+
+      this.gateway.emitConnectionRequested(targetUserId, requester, reqId, extraTargetRooms);
       this.gateway.emitNotification(targetUserId, notifPayload);
     } catch (e) {
       console.warn('sendConnectionRequest notification broadcast failed:', e);

@@ -196,6 +196,7 @@ function OpportunitiesScreen() {
     null,
   );
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [recipientType, setRecipientType] = useState<"all" | "by_department" | "friends">("all");
   const [editingOpp, setEditingOpp] = useState<(MyOpportunity & { description?: string }) | null>(
     null,
   );
@@ -1000,6 +1001,7 @@ function OpportunitiesScreen() {
       setNewReferrer("");
       setNewCommissionPercent("");
       setSelectedRecipientIds([]);
+      setRecipientType("all");
       setNewImage(null);
       setNewImages([]);
       reload();
