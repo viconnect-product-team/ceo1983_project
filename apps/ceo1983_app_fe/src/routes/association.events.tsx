@@ -35,6 +35,7 @@ import {
   ChevronRight,
   History,
   AlertTriangle,
+  Share2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -43,6 +44,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, isEventFull, type MyEvent, type MyMember } from "@/lib/member-app.functions";
 import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { formatDisplayDate } from "@/lib/date-format";
+import { executeShare } from "@/lib/share-helper";
 import { saveCalendarItem } from "@/lib/calendar-reminder";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
@@ -536,6 +538,30 @@ function EventPosterCard({
             <span className="text-slate-500 dark:text-slate-400 text-xs font-normal font-sans leading-4">
               {registered ? "Đã giữ chỗ" : "Mở cho toàn thể Hội viên"}
             </span>
+            {!isPast && (
+              <button
+                type="button"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  executeShare(
+                    {
+                      type: "event",
+                      id: event.id,
+                      title: `[Sự Kiện CEO 1983] ${event.title}`,
+                      desc: `${eventDateStr} tại ${event.place || "Hà Nội"}. ${event.description || ""}`,
+                      image: displayImg || undefined,
+                      targetPath: `/association/events?id=${event.id}`,
+                    },
+                    () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
+                  );
+                }}
+                className="px-2 py-[3.16px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[31.61px] outline outline-[0.74px] outline-offset-[-0.74px] outline-slate-200 dark:outline-slate-700 flex justify-start items-center gap-1 transition cursor-pointer"
+                title="Chia sẻ sự kiện"
+              >
+                <Share2 className="size-3 text-[#003B95] dark:text-blue-400" />
+                <span className="text-[#003B95] dark:text-blue-400 text-[9.48px] font-bold font-sans leading-3">Chia sẻ</span>
+              </button>
+            )}
             {!isPast && (
               <button
                 type="button"

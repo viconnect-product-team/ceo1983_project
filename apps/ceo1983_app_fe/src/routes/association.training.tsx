@@ -686,8 +686,17 @@ export function AssociationTrainingScreen() {
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText(meetingUrl);
-                          toast.success("Đã copy link phòng họp vào clipboard!");
+                          executeShare(
+                            {
+                              type: "training",
+                              id: t.id,
+                              title: `[Đào Tạo CEO 1983] ${t.title}`,
+                              desc: t.description || "Chuyên đề nâng tầm lãnh đạo thực chiến CLB CEO 1983",
+                              image: t.cover_image || undefined,
+                              targetPath: `/association/training?id=${t.id}`,
+                            },
+                            () => toast.success("Đã sao chép liên kết khóa đào tạo!")
+                          );
                         }}
                         className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer"
                         title="Copy link phòng họp"

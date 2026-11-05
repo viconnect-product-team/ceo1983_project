@@ -217,4 +217,21 @@ export class AiController {
     const res = await this.crmAnalytics.exportSubReport(req.user.id, body.type, body.options);
     return res;
   }
+
+
+  /** POST /api/ai/crm/chat — Trò chuyện Trợ lý AI chuẩn ChatGPT với Live Context CRM & Model Free */
+  @Post('crm/chat')
+  async crmChat(
+    @Request() req: any,
+    @Body() body: { message: string; history?: Array<{ role: 'user' | 'assistant'; content: string }>; model?: string }
+  ) {
+    const res = await this.crmAnalytics.handleChatAssistant(
+      req.user?.id || 'admin',
+      body.message,
+      body.history || [],
+      body.model
+    );
+    return res;
+  }
+
 }

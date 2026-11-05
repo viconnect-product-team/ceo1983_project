@@ -1,0 +1,2125 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) — 7.0 — CLB CEO 1983</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap");
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #d8dee8;
+        font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 11.5px;
+        color: #0f172a;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .doc-page {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 10mm auto;
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      @media print {
+        @page {
+          size: A4;
+          margin: 12mm 14mm;
+        }
+        body {
+          background: #ffffff;
+          font-size: 10.5px;
+        }
+        .doc-page {
+          width: 100%;
+          min-height: auto !important;
+          height: auto !important;
+          margin: 0;
+          box-shadow: none;
+          page-break-after: auto;
+          break-after: auto;
+        }
+        .doc-page.cover {
+          height: 273mm !important;
+          max-height: 273mm !important;
+          overflow: hidden !important;
+          page-break-after: always;
+          break-after: page;
+        }
+        .doc-page.toc-page {
+          page-break-after: always;
+          break-after: page;
+        }
+        .inner-header, .inner-divider, .inner-footer {
+          display: none !important;
+        }
+        .content-area {
+          padding: 6px 4px !important;
+        }
+        .table-container table {
+          page-break-inside: auto;
+        }
+        tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        thead {
+          display: table-header-group;
+        }
+        .mermaid, blockquote {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+      }
+
+      /* COVER PAGE */
+      .doc-page.cover {
+        padding: 0;
+        background: radial-gradient(circle at 80% 20%, #f0f7ff 0%, #ffffff 60%);
+      }
+      .accent-bar {
+        height: 8px;
+        background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 50%, #d97706 100%);
+      }
+      .cover-header {
+        padding: 24px 50px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 9.5px;
+        color: #475569;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .cover-header span {
+        color: #1e3a8a;
+        font-weight: 700;
+      }
+      .cover-divider {
+        margin: 0 50px;
+        height: 1px;
+        background: #e2e8f0;
+      }
+      .cover-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 50px 60px;
+        text-align: center;
+      }
+      .cover-logo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #0f172a;
+        color: #ffffff;
+        padding: 10px 24px;
+        border-radius: 9999px;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+      }
+      .cover-logo-badge .badge-gold {
+        color: #f59e0b;
+      }
+      .cover-pill {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #2563eb;
+        background: #eff6ff;
+        padding: 6px 18px;
+        border-radius: 20px;
+        border: 1px solid #bfdbfe;
+        margin-bottom: 24px;
+      }
+      .cover-title {
+        font-size: 34px;
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1.25;
+        letter-spacing: -0.5px;
+        max-width: 650px;
+        margin-bottom: 18px;
+      }
+      .cover-title .highlight {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #b45309 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .cover-subtitle {
+        font-size: 12.5px;
+        color: #475569;
+        max-width: 580px;
+        line-height: 1.6;
+        margin-bottom: 36px;
+      }
+      .cover-meta {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px 28px;
+        font-size: 10.5px;
+        line-height: 1.85;
+        color: #334155;
+        text-align: left;
+        width: 100%;
+        max-width: 540px;
+      }
+      .cover-meta strong {
+        color: #0f172a;
+        font-weight: 600;
+      }
+      .cover-footer {
+        padding: 18px 50px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #e2e8f0;
+        font-size: 9.5px;
+        color: #64748b;
+      }
+
+      /* TOC PAGE */
+      .inner-header {
+        padding: 18px 48px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 9.5px;
+        color: #64748b;
+        font-weight: 600;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .inner-header span {
+        color: #1e3a8a;
+      }
+      .inner-footer {
+        padding: 14px 48px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 9.5px;
+        color: #64748b;
+        border-top: 1px solid #e2e8f0;
+        margin-top: auto;
+      }
+      .content-area {
+        padding: 24px 48px;
+        flex: 1;
+      }
+      .toc-title {
+        font-size: 22px;
+        font-weight: 900;
+        color: #0f172a;
+        margin-bottom: 8px;
+        border-bottom: 2px solid #2563eb;
+        padding-bottom: 8px;
+      }
+      .toc-subtitle {
+        font-size: 11px;
+        color: #64748b;
+        margin-bottom: 20px;
+      }
+      .toc-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .toc-item {
+        display: flex;
+        align-items: baseline;
+        text-decoration: none;
+        color: #1e293b;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background 0.15s ease;
+      }
+      .toc-item:hover {
+        background: #f1f5f9;
+        color: #2563eb;
+      }
+      .toc-item.level-3 {
+        padding-left: 24px;
+        color: #475569;
+        font-size: 10.5px;
+      }
+      .toc-index {
+        font-weight: 700;
+        width: 32px;
+        color: #2563eb;
+        flex-shrink: 0;
+      }
+      .toc-text {
+        flex: 1;
+      }
+
+      /* CONTENT TYPOGRAPHY */
+      .doc-h1 {
+        font-size: 20px;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 24px 0 14px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #1e3a8a;
+      }
+      .doc-h2 {
+        font-size: 15.5px;
+        font-weight: 800;
+        color: #1e3a8a;
+        margin: 20px 0 10px;
+        padding: 6px 12px;
+        background: linear-gradient(90deg, #eff6ff 0%, transparent 100%);
+        border-left: 4px solid #2563eb;
+        border-radius: 0 4px 4px 0;
+      }
+      .doc-h3 {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 14px 0 6px;
+      }
+      .doc-h4 {
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        margin: 10px 0 4px;
+      }
+      .doc-p {
+        margin: 6px 0;
+        color: #1e293b;
+        line-height: 1.65;
+        text-align: justify;
+      }
+      .doc-list {
+        margin: 6px 0 8px;
+        padding-left: 20px;
+      }
+      .doc-list li {
+        margin: 3px 0;
+        line-height: 1.55;
+        color: #1e293b;
+      }
+      .doc-callout {
+        margin: 12px 0;
+        padding: 10px 16px;
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 6px 6px 0;
+        color: #78350f;
+        font-size: 11px;
+      }
+      .doc-divider {
+        border: none;
+        border-top: 1px dashed #cbd5e1;
+        margin: 18px 0;
+      }
+      .inline-code {
+        background: #f1f5f9;
+        color: #0f172a;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+        border: 1px solid #e2e8f0;
+      }
+      .code-block {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+        margin: 10px 0;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+
+      /* TABLES */
+      .table-container {
+        width: 100%;
+        margin: 10px 0 14px;
+        overflow-x: auto;
+      }
+      .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10.5px;
+      }
+      .table-container th, .table-container td {
+        border: 1px solid #cbd5e1;
+        padding: 6px 10px;
+        vertical-align: top;
+        text-align: left;
+      }
+      .table-container th {
+        background: #1e3a8a;
+        color: #ffffff;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+      .table-container tr:nth-child(even) td {
+        background: #f8fafc;
+      }
+
+      /* MERMAID DIAGRAMS */
+      .mermaid {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px;
+        margin: 14px 0;
+        text-align: center;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- TRANG BÌA -->
+    <div class="doc-page cover">
+      <div class="accent-bar"></div>
+      <div class="cover-header">
+        <div>Mã tài liệu: <span>CEO1983/SRS-ALL-V7.0</span></div>
+        <div>Phiên bản 7.0 &nbsp;•&nbsp; 05/11/2026 &nbsp;•&nbsp; CLB CEO 1983</div>
+      </div>
+      <div class="cover-divider"></div>
+      <div class="cover-main">
+        <div class="cover-logo-badge">
+          <span>CEO 1983</span>
+          <span class="badge-gold">★ HANOIBA</span>
+        </div>
+        <div class="cover-pill">TÀI LIỆU CHÍNH THỨC</div>
+        <h1 class="cover-title">
+          <span class="highlight">TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)</span>
+        </h1>
+        <p class="cover-subtitle">Software Requirements Specification — Hệ Sinh Thái Số Hóa Toàn Diện Hiệp Hội Doanh Nhân CEO 1983 (HanoiBA)</p>
+        <div class="cover-meta">
+          <strong>Cơ quan ban hành:</strong> Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA)<br />
+          <strong>Đơn vị thực hiện:</strong> ViConnect Technology Solutions Co., Ltd<br />
+          <strong>Phân loại:</strong> Bảo Mật Nội Bộ — Văn Kiện Căn Cứ Lập Trình & Kiểm Thử Phần Mềm<br />
+          <strong>Ngày ban hành:</strong> 05/11/2026 &nbsp;|&nbsp; <strong>Phiên bản:</strong> 7.0
+        </div>
+      </div>
+      <div class="cover-footer">
+        <div>CEO 1983 — Hệ Sinh Thái Số Hóa Doanh Nhân — Bảo Mật Nội Bộ</div>
+        <div>© 2026 ViConnect & CLB Doanh Nhân CEO 1983</div>
+      </div>
+    </div>
+
+    <!-- TRANG MỤC LỤC -->
+    <div class="doc-page toc-page">
+      <div class="inner-header">
+        <div>Mã tài liệu: <span>CEO1983/SRS-ALL-V7.0</span></div>
+        <div>Mục lục &nbsp;•&nbsp; Phiên bản 7.0</div>
+      </div>
+      <div class="content-area">
+        <h2 class="toc-title">Mục lục</h2>
+        <p class="toc-subtitle">Nhấp vào từng mục để di chuyển nhanh đến nội dung tương ứng.</p>
+        <div class="toc-list">
+          <a class="toc-item" href="#1-gioi-thieu-introduction">
+      <span class="toc-index">1</span>
+      <span class="toc-text">GIỚI THIỆU (INTRODUCTION)</span>
+    </a>
+<a class="toc-item level-3" href="#11-muc-dich-purpose">
+      <span class="toc-index">1.1</span>
+      <span class="toc-text">Mục đích (Purpose)</span>
+    </a>
+<a class="toc-item level-3" href="#12-pham-vi-du-an-scope">
+      <span class="toc-index">1.2</span>
+      <span class="toc-text">Phạm vi dự án (Scope)</span>
+    </a>
+<a class="toc-item level-3" href="#13-thuat-ngu-tu-viet-tat-definitions-acronyms-and-abbreviations">
+      <span class="toc-index">1.3</span>
+      <span class="toc-text">Thuật ngữ & Từ viết tắt</span>
+    </a>
+<a class="toc-item level-3" href="#14-tai-lieu-tham-khao-references">
+      <span class="toc-index">1.4</span>
+      <span class="toc-text">Tài liệu tham khảo (References)</span>
+    </a>
+<a class="toc-item level-3" href="#15-tong-quan-tai-lieu-overview">
+      <span class="toc-index">1.5</span>
+      <span class="toc-text">Tổng quan tài liệu (Overview)</span>
+    </a>
+<a class="toc-item" href="#2-mo-ta-tong-quan-overall-description">
+      <span class="toc-index">2</span>
+      <span class="toc-text">MÔ TẢ TỔNG QUAN (OVERALL DESCRIPTION)</span>
+    </a>
+<a class="toc-item level-3" href="#21-goc-nhin-he-thong-product-perspective">
+      <span class="toc-index">2.1</span>
+      <span class="toc-text">Góc nhìn hệ thống (Product Perspective)</span>
+    </a>
+<a class="toc-item level-3" href="#22-chuc-nang-san-pham-product-functions-summary">
+      <span class="toc-index">2.2</span>
+      <span class="toc-text">Chức năng sản phẩm (Product Functions Summary)</span>
+    </a>
+<a class="toc-item level-3" href="#23-dac-diem-nguoi-dung-user-classes-and-characteristics">
+      <span class="toc-index">2.3</span>
+      <span class="toc-text">Đặc điểm người dùng (User Classes)</span>
+    </a>
+<a class="toc-item level-3" href="#24-moi-truong-van-hanh-operating-environment">
+      <span class="toc-index">2.4</span>
+      <span class="toc-text">Môi trường vận hành (Operating Environment)</span>
+    </a>
+<a class="toc-item level-3" href="#25-gioi-han-va-rang-buoc-design-and-implementation-constraints">
+      <span class="toc-index">2.5</span>
+      <span class="toc-text">Giới hạn và ràng buộc (Constraints)</span>
+    </a>
+<a class="toc-item" href="#3-cac-yeu-cau-ve-giao-dien-ben-ngoai-external-interface-requirements">
+      <span class="toc-index">3</span>
+      <span class="toc-text">CÁC YÊU CẦU VỀ GIAO DIỆN BÊN NGOÀI</span>
+    </a>
+<a class="toc-item level-3" href="#31-giao-dien-nguoi-dung-user-interfaces---ui">
+      <span class="toc-index">3.1</span>
+      <span class="toc-text">Giao diện người dùng (User Interfaces - UI)</span>
+    </a>
+<a class="toc-item level-3" href="#32-giao-dien-phan-cung-hardware-interfaces">
+      <span class="toc-index">3.2</span>
+      <span class="toc-text">Giao diện phần cứng (Hardware Interfaces)</span>
+    </a>
+<a class="toc-item level-3" href="#33-giao-dien-phan-mem-software-interfaces">
+      <span class="toc-index">3.3</span>
+      <span class="toc-text">Giao diện phần mềm (Software Interfaces)</span>
+    </a>
+<a class="toc-item level-3" href="#34-giao-dien-giao-tiep-communications-interfaces">
+      <span class="toc-index">3.4</span>
+      <span class="toc-text">Giao diện giao tiếp (Communications Interfaces)</span>
+    </a>
+<a class="toc-item" href="#4-cac-yeu-cau-chuc-nang-chi-tiet-system-features">
+      <span class="toc-index">4</span>
+      <span class="toc-text">CÁC YÊU CẦU CHỨC NĂNG CHI TIẾT (11 MODULES)</span>
+    </a>
+<a class="toc-item level-3" href="#module-41-quan-ly-dinh-danh-hoi-vien-the-vip-so-nfc-tap-to-connect">
+      <span class="toc-index">4.1</span>
+      <span class="toc-text">Module 4.1: Định danh Hội viên, Thẻ VIP Số & NFC</span>
+    </a>
+<a class="toc-item level-3" href="#module-42-san-giao-thuong-b2b-chia-se-co-hoi-kinh-doanh-deal-chao-gia">
+      <span class="toc-index">4.2</span>
+      <span class="toc-text">Module 4.2: Sàn Giao thương B2B & Deal Chào giá</span>
+    </a>
+<a class="toc-item level-3" href="#module-43-quan-ly-su-kien-dien-dan-diem-danh-check-in-qr-1-giay-vi-dien-tu">
+      <span class="toc-index">4.3</span>
+      <span class="toc-text">Module 4.3: Quản lý Sự kiện & Check-in QR 1 Giây</span>
+    </a>
+<a class="toc-item level-3" href="#module-44-danh-ba-doanh-nhan-1983-ket-noi-ban-be-2-cap">
+      <span class="toc-index">4.4</span>
+      <span class="toc-text">Module 4.4: Danh bạ Doanh nhân & Kết nối 2 Cấp</span>
+    </a>
+<a class="toc-item level-3" href="#module-45-tro-ly-ai-dieu-hanh-toan-dien-crm-xuat-bao-cao-con">
+      <span class="toc-index">4.5</span>
+      <span class="toc-text">Module 4.5: Trợ lý AI Điều hành & Báo cáo con</span>
+    </a>
+<a class="toc-item level-3" href="#module-46-cau-hinh-he-thong-ai-da-hang-do-luong-quota-token-canh-bao-sap-het-model">
+      <span class="toc-index">4.6</span>
+      <span class="toc-text">Module 4.6: Cấu hình AI Đa hãng & Token Quota</span>
+    </a>
+<a class="toc-item level-3" href="#module-47-landing-web-gioi-thieu-chinh-thuc-intro-dang-ky-gia-nhap-online">
+      <span class="toc-index">4.7</span>
+      <span class="toc-text">Module 4.7: Landing Web & Đăng ký Gia nhập Online</span>
+    </a>
+<a class="toc-item level-3" href="#module-48-kho-tai-lieu-so-dong-bo-google-drive-2-chieu-crm-mobile-app">
+      <span class="toc-index">4.8</span>
+      <span class="toc-text">Module 4.8: Kho Tài liệu Đồng bộ Google Drive 2 Chiều</span>
+    </a>
+<a class="toc-item level-3" href="#module-49-chia-se-mang-xa-hoi-da-kenh-voi-the-opengraph-preview-dong">
+      <span class="toc-index">4.9</span>
+      <span class="toc-text">Module 4.9: Chia sẻ Mạng Xã hội Thẻ OpenGraph Động</span>
+    </a>
+<a class="toc-item level-3" href="#module-410-quan-ly-tai-chinh-thu-chi-hoi-phi-nien-liem">
+      <span class="toc-index">4.10</span>
+      <span class="toc-text">Module 4.10: Quản lý Tài chính, Thu Chi & Hội phí</span>
+    </a>
+<a class="toc-item level-3" href="#module-411-quan-tri-cau-hinh-he-thong-ten-mien-theme-studio-phan-quyen-rbac">
+      <span class="toc-index">4.11</span>
+      <span class="toc-text">Module 4.11: Quản trị Cấu hình Hệ thống & RBAC</span>
+    </a>
+<a class="toc-item" href="#5-yeu-cau-phi-chuc-nang-non-functional-requirements">
+      <span class="toc-index">5</span>
+      <span class="toc-text">YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS)</span>
+    </a>
+<a class="toc-item level-3" href="#51-yeu-cau-ve-hieu-nang-performance-requirements">
+      <span class="toc-index">5.1</span>
+      <span class="toc-text">Hiệu năng (Performance Requirements)</span>
+    </a>
+<a class="toc-item level-3" href="#52-yeu-cau-ve-an-toan-phuc-hoi-du-lieu-safety-disaster-recovery">
+      <span class="toc-index">5.2</span>
+      <span class="toc-text">An toàn dữ liệu (Safety & Recovery)</span>
+    </a>
+<a class="toc-item level-3" href="#53-yeu-cau-ve-bao-mat-security-requirements">
+      <span class="toc-index">5.3</span>
+      <span class="toc-text">Bảo mật (Security Requirements)</span>
+    </a>
+<a class="toc-item level-3" href="#54-thuoc-tinh-chat-luong-phan-mem-software-quality-attributes">
+      <span class="toc-index">5.4</span>
+      <span class="toc-text">Thuộc tính chất lượng (Quality Attributes)</span>
+    </a>
+<a class="toc-item" href="#6-cac-yeu-cau-khac-phu-luc-other-requirements-appendices">
+      <span class="toc-index">6</span>
+      <span class="toc-text">CÁC YÊU CẦU KHÁC & PHỤ LỤC (APPENDICES)</span>
+    </a>
+<a class="toc-item level-3" href="#phu-luc-a-mo-hinh-hoa-du-lieu-thuc-the-data-model-erd-diagram">
+      <span class="toc-index">6.A</span>
+      <span class="toc-text">Phụ lục A: Mô hình ERD CSDL</span>
+    </a>
+<a class="toc-item level-3" href="#phu-luc-b-cac-bieu-do-tuan-tu-nghiep-vu-cot-loi-sequence-diagrams">
+      <span class="toc-index">6.B</span>
+      <span class="toc-text">Phụ lục B: 6 Biểu đồ tuần tự Sequence Diagrams</span>
+    </a>
+<a class="toc-item level-3" href="#phu-luc-c-ma-tran-truy-vet-yeu-cau-nghiem-thu-37-functional-node-id">
+      <span class="toc-index">6.C</span>
+      <span class="toc-text">Phụ lục C: Ma trận truy vết 37 Functional Node ID</span>
+    </a>
+        </div>
+      </div>
+      <div class="inner-footer">
+        <div>CEO1983/SRS-ALL-V7.0 — Bảo mật nội bộ</div>
+        <div>Trang 2</div>
+      </div>
+    </div>
+
+    <!-- NỘI DUNG CHÍNH -->
+    <div class="doc-page">
+      <div class="inner-header">
+        <div>Mã tài liệu: <span>CEO1983/SRS-ALL-V7.0</span></div>
+        <div>TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS) &nbsp;•&nbsp; Phiên bản 7.0</div>
+      </div>
+      <div class="content-area">
+        <h1 class="doc-h1">TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)</h1>
+
+<h2 class="doc-h2">SOFTWARE REQUIREMENTS SPECIFICATION</h2>
+
+<p class="doc-p"><strong>Tên dự án:</strong> HỆ SINH THÁI SỐ HÓA HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)</p>
+
+<p class="doc-p"><strong>Tên tiếng Anh:</strong> CEO 1983 Enterprise Association Digital Ecosystem</p>
+
+<p class="doc-p"><strong>Phiên bản:</strong> Version 7.0 (V7.0 — Master Enterprise Edition)</p>
+
+<p class="doc-p"><strong>Ngày lập:</strong> Ngày 05 Tháng 11 Năm 2026</p>
+
+<p class="doc-p"><strong>Cơ quan ban hành:</strong> Ban Chấp Hành CLB Doanh Nhân CEO 1983 — Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</p>
+
+<p class="doc-p"><strong>Tác giả:</strong> Đội ngũ Kỹ sư Giải pháp & Kiến trúc Hệ thống ViConnect / Senior Business Analyst & System Architect</p>
+
+<hr class="doc-divider" />
+
+<h2 class="doc-h2">1. GIỚI THIỆU (INTRODUCTION)</h2>
+
+<h3 class="doc-h3">1.1 Mục Đích (Purpose)</h3>
+
+<p class="doc-p">Tài liệu Đặc tả Yêu cầu Phần mềm (SRS - Software Requirements Specification) này được biên soạn nhằm:</p>
+
+<p class="doc-p">1. <strong>Dành cho Đội ngũ Phát triển Phần mềm (Developers & Engineers)</strong>: Cung cấp đầy đủ đặc tả kiến trúc, luồng xử lý (flows), biểu đồ ca sử dụng (Use Case Diagrams), biểu đồ tuần tự (Sequence Diagrams), cấu trúc bảng dữ liệu (Data Schemas), quy tắc nghiệp vụ (Business Rules) và các điểm kết nối API để triển khai mã nguồn chính xác 100%.</p>
+
+<p class="doc-p">2. <strong>Dành cho Đội ngũ Kiểm thử Chất lượng (QC / QA / Testers)</strong>: Cung cấp tiêu chí nghiệm thu (Acceptance Criteria), các kịch bản thành công (Basic Flows), rẽ nhánh (Alternative Flows) và ngoại lệ (Exception Flows) để xây dựng Test Cases và thực thi kiểm thử toàn diện.</p>
+
+<p class="doc-p">3. <strong>Dành cho Ban Lãnh Đạo & Khách Hàng (Chủ tịch, Ban Điều Hành CLB CEO 1983, HanoiBA)</strong>: Làm căn cứ pháp lý và kỹ thuật cao nhất để đánh giá, theo dõi tiến độ, kiểm soát phạm vi và nghiệm thu bàn giao toàn bộ hệ thống số hóa.</p>
+
+<p class="doc-p"><strong>Mục tiêu ứng dụng:</strong></p>
+
+<p class="doc-p">Hệ thống giải quyết triệt để bài toán phân mảnh trong quản trị hiệp hội doanh nhân truyền thống: thay thế hoàn toàn danh thiếp giấy bằng Danh thiếp số & Chip NFC; số hóa 100% quy trình kết nạp, thu hội phí và thẩm định; tự động hóa điểm danh sự kiện bằng QR Code trong 1 giây; thúc đẩy giao thương B2B thực chất qua sàn chia sẻ cơ hội; cung cấp Trợ lý AI phân tích điều hành toàn diện CRM và kho tài liệu số đồng bộ Google Drive 2 chiều.</p>
+
+<h3 class="doc-h3">1.2 Phạm Vi Dự Án (Scope)</h3>
+
+<p class="doc-p">Hệ thống bàn giao bao gồm 3 phân hệ cốt lõi hoạt động đồng bộ:</p>
+
+<p class="doc-p">1. <strong>Web CRM Quản Trị Hiệp Hội (Executive Web CRM)</strong>: Dành cho Chủ tịch, Ban Thường Trực, 6 Ban Chuyên Môn, Ban Thư Ký và Kế toán. Chạy trên nền tảng Web Desktop (React 19, Vite, TanStack Router), cung cấp Dashboard thời gian thực, quản lý 500+ doanh nghiệp hội viên 360 độ, quản trị sự kiện, phê duyệt giao thương, quản lý tài chính thu chi, phân quyền ma trận RBAC, cấu hình AI đa hãng và xuất báo cáo/hóa đơn điện tử.</p>
+
+<p class="doc-p">2. <strong>Ứng Dụng Di Động Hội Viên CEO 1983 (CEO 1983 Mobile App)</strong>: Dành cho hội viên doanh nhân chính thức. Đóng gói đa nền tảng (iOS, Android qua Capacitor 8 và Progressive Web App), mang giao diện chuẩn di động (Mobile-first Shell, TabBar, TopHeader), tích hợp Thẻ hội viên VIP số, quét NFC/QR, sàn giao thương B2B, điểm danh sự kiện, kho quyền lợi hội viên và kết nối bạn bè 2 cấp.</p>
+
+<p class="doc-p">3. <strong>Hạ Tầng Dùng Chung (Core Backend, AI Engine & DevOps)</strong>: Backend NestJS 3 tầng thuần khiết, ORM Prisma kết nối PostgreSQL 16, giao thức thời gian thực WebSocket Socket.IO, hệ thống AI đa model (Gemini 2.0 Flash, OpenAI, Claude, DeepSeek) có cơ chế Fallback và đo lường Quota Token, Docker Nginx Reverse Proxy và SSL Let's Encrypt.</p>
+
+<p class="doc-p"><strong>Những gì phần mềm KHÔNG làm (Out of Scope):</strong></p>
+
+<ul class="doc-list">
+
+  <li>Không phải là sàn thương mại điện tử B2C bán lẻ đại trà thu tiền người tiêu dùng cuối.</li>
+
+  <li>Không phải là mạng xã hội giải trí công cộng (không có thuật toán giữ chân giật gân, không quảng cáo ngoài).</li>
+
+  <li>Không can thiệp vào tài khoản ngân hàng nội bộ của doanh nghiệp ngoài luồng xác thực chuyển khoản VietQR/MoMo/VNPay.</li>
+
+</ul>
+
+<h3 class="doc-h3">1.3 Thuật Ngữ & Từ Viết Tắt (Definitions, Acronyms, and Abbreviations)</h3>
+
+<div class="table-container"><table>
+  <tr><th>Thuật Ngữ / Từ Viết Tắt</th><th>Tên Tiếng Anh / Đầy Đủ</th><th>Định Nghĩa Trong Hệ Thống CEO 1983</th></tr>
+  <tr><td><strong>HanoiBA</strong></td><td>Hanoi Young Business Association</td><td>Hội Doanh Nghiệp Trẻ Hà Nội — Cơ quan cấp trên bảo trợ trực tiếp CLB CEO 1983.</td></tr>
+  <tr><td><strong>CLB CEO 1983</strong></td><td>CEO 1983 Business Club</td><td>Câu lạc bộ các doanh nhân, chủ doanh nghiệp sinh năm 1983 (Quý Hợi).</td></tr>
+  <tr><td><strong>SRS</strong></td><td>Software Requirements Specification</td><td>Tài liệu Đặc tả Yêu cầu Phần mềm chuẩn IEEE 830.</td></tr>
+  <tr><td><strong>BRD</strong></td><td>Business Requirements Document</td><td>Tài liệu Yêu cầu Nghiệp vụ Hệ thống.</td></tr>
+  <tr><td><strong>CRM</strong></td><td>Customer Relationship Management</td><td>Phân hệ Quản trị Mối quan hệ và Vận hành Hiệp hội trên nền tảng Web Desktop.</td></tr>
+  <tr><td><strong>RBAC</strong></td><td>Role-Based Access Control</td><td>Mô hình kiểm soát truy cập và phân quyền người dùng dựa trên vai trò.</td></tr>
+  <tr><td><strong>NFC</strong></td><td>Near Field Communication</td><td>Công nghệ giao tiếp trường gần (13.56 MHz) chạm để truyền danh thiếp số.</td></tr>
+  <tr><td><strong>VietQR</strong></td><td>Vietnam National QR Standard</td><td>Tiêu chuẩn mã QR thanh toán ngân hàng Napas 24/7 theo quy định Ngân hàng Nhà nước.</td></tr>
+  <tr><td><strong>OpenGraph</strong></td><td>Open Graph Protocol</td><td>Giao thức thẻ siêu dữ liệu (meta tags) giúp Facebook, Zalo hiển thị Rich Preview Card.</td></tr>
+  <tr><td><strong>SPA</strong></td><td>Single Page Application</td><td>Ứng dụng web đơn trang tải động không reload trình duyệt.</td></tr>
+  <tr><td><strong>JWT</strong></td><td>JSON Web Token</td><td>Chuẩn mã hóa token định danh người dùng trong các request API.</td></tr>
+  <tr><td><strong>Silent Refresh</strong></td><td>Silent Token Refresh</td><td>Cơ chế ngầm tự động cấp lại Access Token khi hết hạn mà không ngắt phiên người dùng.</td></tr>
+  <tr><td><strong>B2B</strong></td><td>Business-to-Business</td><td>Mô hình hợp tác, giao thương và kết nối thương mại giữa các doanh nghiệp.</td></tr>
+  <tr><td><strong>MECE</strong></td><td>Mutually Exclusive, Collectively Exhaustive</td><td>Nguyên tắc phân tích không trùng lặp, không bỏ sót bất kỳ luồng nghiệp vụ nào.</td></tr>
+</table></div>
+
+<h3 class="doc-h3">1.4 Tài Liệu Tham Khảo (References)</h3>
+
+<ul class="doc-list">
+
+  <li>Bộ luật Dân sự và Luật An ninh Mạng số 24/2018/QH14 của Nước CHXHCN Việt Nam.</li>
+
+  <li>Nghị định 13/2023/NĐ-CP về Bảo vệ dữ liệu cá nhân (PDPD).</li>
+
+  <li>Tiêu chuẩn Quốc tế IEEE Std 830-1998 về Đặc tả Yêu cầu Kỹ thuật Phần mềm.</li>
+
+  <li>Tiêu chuẩn Kế toán Việt Nam Thông tư 200/2014/TT-BTC & 133/2016/TT-BTC về Mẫu Phiếu thu tiền điện tử (01-TT).</li>
+
+  <li>Tài liệu Yêu cầu Nghiệp vụ chuẩn: <code class="inline-code">BRD_BusinessConnect_v1.0.html</code> (ViConnect Enterprise Architecture).</li>
+
+  <li>Bộ quy tắc thiết kế hệ thống và Node Matrix: <a href="file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/.agents/rules/node-matrix.md">.agents/rules/node-matrix.md</a>.</li>
+
+</ul>
+
+<h3 class="doc-h3">1.5 Tổng Quan Tài Liệu (Overview)</h3>
+
+<p class="doc-p">Tài liệu SRS V7.0 bao gồm 6 phần trọng yếu:</p>
+
+<ul class="doc-list">
+
+  <li><strong>Phần 1</strong>: Giới thiệu mục đích, phạm vi, thuật ngữ.</li>
+
+  <li><strong>Phần 2</strong>: Mô tả tổng quan góc nhìn hệ thống, sơ đồ ngữ cảnh (Context Diagram), các nhóm chức năng lớn, chân dung người dùng, môi trường vận hành và ràng buộc kỹ thuật.</li>
+
+  <li><strong>Phần 3</strong>: Yêu cầu về giao diện bên ngoài (Giao diện người dùng UI 3 màu, phần cứng NFC/máy quét, phần mềm kết nối, giao tiếp mạng).</li>
+
+  <li><strong>Phần 4</strong>: Đặc tả chi tiết 11 phân hệ chức năng: mỗi phân hệ có mô tả, biểu đồ ca sử dụng Use Case Mermaid, kịch bản (Basic, Alternative, Exception Flows), quy tắc nghiệp vụ và yêu cầu dữ liệu.</li>
+
+  <li><strong>Phần 5</strong>: Yêu cầu phi chức năng (Hiệu năng, an toàn sao lưu, bảo mật JWT/RBAC, thuộc tính chất lượng).</li>
+
+  <li><strong>Phần 6</strong>: Phụ lục: Mô hình dữ liệu ERD Mermaid, Biểu đồ tuần tự Sequence Diagrams cho 6 luồng logic phức tạp nhất, và Ma trận truy vết 37 Functional Node ID.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h2 class="doc-h2">2. MÔ TẢ TỔNG QUAN (OVERALL DESCRIPTION)</h2>
+
+<h3 class="doc-h3">2.1 Góc Nhìn Hệ Thống (Product Perspective)</h3>
+
+<p class="doc-p">Hệ thống Số hóa CLB Doanh Nhân CEO 1983 là một nền tảng tự chủ, độc lập nhưng tích hợp sâu rộng với hệ sinh thái công nghệ bên ngoài (Ngân hàng, Mạng xã hội, Google Drive, AI Providers, Zalo OA).</p>
+
+<p class="doc-p">Sơ đồ ngữ cảnh hệ thống (Context Diagram):</p>
+
+<pre class="mermaid">
+graph TD
+    subgraph "NGƯỜI DÙNG CHÍNH (ACTORS)"
+        A1["Chủ tịch & Ban Thường Trực"]
+        A2["Trưởng/Phó 6 Ban Chuyên Môn"]
+        A3["Hội Viên Doanh Nhân CEO 1983"]
+        A4["Khách Mời & Đối Tác B2B"]
+    end
+
+    subgraph "HỆ THỐNG TRUNG TÂM CEO 1983"
+        SYS1["Cổng Web CRM Quản Trị<br/>(Desktop / Admin Hub)"]
+        SYS2["Ứng Dụng Di Động Hội Viên<br/>(iOS, Android, PWA)"]
+        SYS3["Hạ Tầng Core Backend API & Socket<br/>(NestJS / PostgreSQL 16)"]
+        SYS4["Trợ Lý AI Điều Hành Toàn Diện<br/>(AI Executive Engine)"]
+    end
+
+    subgraph "DỊCH VỤ & NỀN TẢNG TÍCH HỢP NGOÀI"
+        EXT1["Ngân Hàng & Cổng Thanh Toán<br/>(VietQR / Napas / MoMo / VNPay)"]
+        EXT2["Mạng Xã Hội & Đa Kênh<br/>(Facebook Graph / Zalo OA / Zalo Mini App)"]
+        EXT3["Hạ Tầng Đám Mây Google Drive<br/>(Google Drive API / Google Picker)"]
+        EXT4["Nhà Cung Cấp Trí Tuệ Nhân Tạo<br/>(Google Gemini, OpenAI, Claude, DeepSeek)"]
+        EXT5["Bộ Thu Thập Dữ Liệu Crawler<br/>(Facebook Bot, Zalo Bot, Googlebot)"]
+    end
+
+    A1 -->|Điều hành, Duyệt hội viên, Xem AI Analytics| SYS1
+    A2 -->|Quản trị nghiệp vụ Ban, Soát vé, Duyệt cơ hội| SYS1
+    A3 -->|Quẹt thẻ NFC, Đăng cơ hội, Điểm danh QR| SYS2
+    A4 -->|Xem Landing Web, Gửi hồ sơ đăng ký| SYS2
+
+    SYS1 <-->|RESTful API & WebSocket| SYS3
+    SYS2 <-->|RESTful API & WebSocket| SYS3
+    SYS3 <-->|Phân tích dữ liệu & Xuất hóa đơn| SYS4
+
+    SYS3 <-->|Webhook đối soát giao dịch| EXT1
+    SYS3 <-->|Đẩy tin sự kiện, Thông báo ZNS| EXT2
+    SYS3 <-->|Đồng bộ tài liệu 2 chiều| EXT3
+    SYS4 <-->|Gọi Model chính & Fallback Quota| EXT4
+    EXT5 <-->|Quét OpenGraph Preview động| SYS3
+</pre>
+
+<h3 class="doc-h3">2.2 Chức Năng Sản Phẩm (Product Functions Summary)</h3>
+
+<p class="doc-p">Hệ thống được tổ chức thành 11 nhóm chức năng lớn (Epics):</p>
+
+<p class="doc-p">1. <strong>Epic-01: Định Danh Doanh Nhân & Thẻ VIP Thông Minh</strong>: Cấp mã hội viên duy nhất, thẻ hội viên số tích hợp mã QR động chống gian lận, chip NFC một chạm trao đổi danh thiếp số.</p>
+
+<p class="doc-p">2. <strong>Epic-02: Sàn Giao Thương B2B & Cơ Hội Kinh Doanh</strong>: Đăng tải nhu cầu hợp tác, deal chào giá trực tiếp người đăng, bộ 6 chỉ số nền trắng minh bạch, popup dẫn chứng thực tế.</p>
+
+<p class="doc-p">3. <strong>Epic-03: Quản Lý Sự Kiện & Điểm Danh Check-in QR 1s</strong>: Tạo sự kiện, phát hành vé điện tử mã hóa, quét QR xác thực check-in trong 1 giây, bốc thăm trúng thưởng (Lucky Draw).</p>
+
+<p class="doc-p">4. <strong>Epic-04: Danh Bạ Doanh Nhân 1983 & Kết Nối Bạn Bè 2 Cấp</strong>: Bộ lọc Đã kết nối / Chưa kết nối, hiển thị người mới kết nối nhất trên đầu, bộ 3 nút tối giản (Nhắn tin, Profile, Gọi điện).</p>
+
+<p class="doc-p">5. <strong>Epic-05: Trợ Lý AI Điều Hành CRM & Xuất Báo Cáo Con</strong>: Phân tích toàn diện sức khỏe hệ thống (Health Score 94/100), xuất báo cáo thu chi Excel/PDF, xuất Phiếu thu / Hóa đơn điện tử chuẩn mẫu 01-TT có mã QR và chữ ký số.</p>
+
+<p class="doc-p">6. <strong>Epic-06: Cấu Hình AI Đa Model & Cảnh Báo Sắp Hết Quota</strong>: Quản lý API Key đa hãng (Gemini, OpenAI, Claude, DeepSeek), thanh đo hạn mức 3 cấp (Xanh - Vàng - Đỏ), tự động kích hoạt Fallback Model khi cạn quota, bảng Audit Log minh bạch.</p>
+
+<p class="doc-p">7. <strong>Epic-07: Trang Giới Thiệu Chính Thức (<code class="inline-code">/intro</code>) & Đăng Ký Online</strong>: Landing Web hoàn chỉnh có Header thanh menu cố định, Hero Banner, Về CLB, 6 Ban chuyên môn, Form Đăng ký gia nhập trực tuyến gửi thẳng về CRM.</p>
+
+<p class="doc-p">8. <strong>Epic-08: Kho Tài Liệu Số Đồng Bộ Google Drive 2 Chiều</strong>: Lưu cấu hình Drive cá nhân của từng hội viên, nạp tài liệu từ Google Drive (Import from Drive) và xuất/đồng bộ tài liệu từ hệ thống về Google Drive cá nhân (Sync to Drive).</p>
+
+<p class="doc-p">9. <strong>Epic-09: Chia Sẻ Public Đa Kênh Chuẩn OpenGraph Động</strong>: Endpoint preview <code class="inline-code">/api/share/preview</code> sinh thẻ meta HTML động cho bài viết, cơ hội, sự kiện; tự động redirect khi người dùng nhấp link, triệt tiêu lỗi hiển thị screenshot CRM.</p>
+
+<p class="doc-p">10. <strong>Epic-10: Quản Lý Tài Chính, Thu Chi & Hội Phí Niên Liễm</strong>: Theo dõi nguồn thu hội phí, tiền tài trợ kim cương/vàng, chi phí vận hành, quỹ ngân sách thặng dư an toàn.</p>
+
+<p class="doc-p">11. <strong>Epic-11: Cấu Hình Hệ Thống, Giao Diện Theme Studio & Phân Quyền RBAC</strong>: Quản lý tên miền, cấu hình logo, màu sắc thương hiệu, ma trận phân quyền 6 Ban chuyên môn.</p>
+
+<h3 class="doc-h3">2.3 Đặc Điểm Người Dùng (User Classes and Characteristics)</h3>
+
+<div class="table-container"><table>
+  <tr><th>Nhóm Người Dùng (Actor)</th><th>Mô Tả Chân Dung</th><th>Kênh Truy Cập Chính</th><th>Tần Suất & Hành Vi Sử Dụng</th></tr>
+  <tr><td><strong>Chủ tịch & Ban Quản Trị</strong></td><td>Chủ tịch CLB, Phó Chủ tịch thường trực; người quyết định chiến lược và chuẩn y ngân sách.</td><td>Web CRM (Desktop)</td><td>Hàng ngày: Theo dõi Dashboard, xem phân tích AI, chuẩn y chi ngân sách, xem báo cáo giao thương B2B.</td></tr>
+  <tr><td><strong>Ban Thư Ký & Pháp Chế</strong></td><td>Thư ký hành chính, văn phòng CLB; tiếp nhận hồ sơ, điều phối kỳ họp.</td><td>Web CRM + Mobile App</td><td>Toàn thời gian: Tiếp nhận hồ sơ đăng ký, phát hành thông báo Zalo OA/App, quản lý phòng họp, nạp tài liệu Google Drive.</td></tr>
+  <tr><td><strong>Trưởng/Phó 6 Ban Chuyên Môn</strong></td><td>Trưởng các Ban (Thành Viên, Tài Chính, Xúc Tiến, Truyền Thông, Thiện Nguyện, Đối Ngoại).</td><td>Web CRM + Mobile App</td><td>Hàng tuần: Thẩm định hồ sơ kết nạp, duyệt bài chia sẻ cơ hội B2B, soát vé sự kiện, lập phiếu thu chi.</td></tr>
+  <tr><td><strong>Hội Viên Doanh Nhân CEO 1983</strong></td><td>Chủ doanh nghiệp sinh năm 1983 đã hoàn thành nghĩa vụ hội phí.</td><td>CEO 1983 Mobile App</td><td>Hàng ngày: Quẹt danh thiếp NFC, đăng/nhận cơ hội kinh doanh, nhắn tin bạn bè, check-in sự kiện, lưu tài liệu về Google Drive.</td></tr>
+  <tr><td><strong>Khách Mời & Ứng Viên</strong></td><td>Doanh nhân 1983 quan tâm tham gia, đối tác khách mời sự kiện.</td><td>Web Landing (<code class="inline-code">/intro</code>) + Mobile Web</td><td>Định kỳ: Xem thông tin hiệp hội, nộp hồ sơ gia nhập trực tuyến, đăng ký vé sự kiện mở rộng.</td></tr>
+</table></div>
+
+<h3 class="doc-h3">2.4 Môi Trường Vận Hành (Operating Environment)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Phía Máy Khách (Client Frontend)</strong>:</li>
+
+  <li>Mobile App: Chạy trên iOS 15.0+ và Android 10.0+ (đóng gói Capacitor 8) hoặc trình duyệt di động hiện đại (Safari, Chrome Mobile) hỗ trợ PWA và Web NFC API.</li>
+
+  <li>Web CRM: Chạy mượt mà trên Google Chrome 110+, Microsoft Edge 110+, Mozilla Firefox 115+, Safari 16+ trên màn hình độ phân giải từ 1366x768 trở lên.</li>
+
+  <li><strong>Phía Máy Chủ (Backend Infrastructure)</strong>:</li>
+
+  <li>Hệ điều hành máy chủ: Ubuntu 22.04 LTS / Debian 12 (64-bit).</li>
+
+  <li>Runtime môi trường: Node.js v20.x hoặc v24.x LTS.</li>
+
+  <li>Cơ sở dữ liệu: PostgreSQL 16 với phần mở rộng <code class="inline-code">uuid-ossp</code> và <code class="inline-code">pgcrypto</code>.</li>
+
+  <li>Bộ nhớ đệm & Reverse Proxy: Nginx 1.24+ hỗ trợ HTTP/2, WebSocket proxying và SSL TLS 1.3.</li>
+
+</ul>
+
+<h3 class="doc-h3">2.5 Giới Hạn và Ràng Buộc (Design and Implementation Constraints)</h3>
+
+<p class="doc-p">1. <strong>Ràng buộc Bộ Nhận Diện Thương Hiệu 3 Cấp Độ (Brand Guidelines)</strong>:</p>
+
+<ul class="doc-list">
+
+  <li>Màu Đỏ Năng Động (<code class="inline-code">#DC2626</code> / <code class="inline-code">#B91C1C</code>): Thể hiện nhiệt huyết, cờ đỏ sao vàng và biểu tượng rồng lửa 1983.</li>
+
+  <li>Màu Vàng Hoàng Gia (<code class="inline-code">#B8860B</code> / <code class="inline-code">#D97706</code>): Thể hiện sự thịnh vượng, đẳng cấp doanh nhân và giá trị kinh tế.</li>
+
+  <li>Màu Xanh Hội Tụ (<code class="inline-code">#1F3864</code> / <code class="inline-code">#003B95</code>): Màu cờ sắc áo truyền thống HanoiBA, thể hiện uy tín và chiều sâu tri thức.</li>
+
+</ul>
+
+<p class="doc-p">2. <strong>Ràng buộc Kiến Trúc Code & Phân Hệ</strong>:</p>
+
+<ul class="doc-list">
+
+  <li>Tách biệt độc lập tuyệt đối giữa Web CRM (<code class="inline-code">apps/ceo1983_app_fe/src/routes/...</code>) và Mobile App (<code class="inline-code">apps/ceo1983_app_fe/src/routes/association.*</code>).</li>
+
+  <li>Backend tuân thủ kiến trúc NestJS 3 tầng thuần khiết (Controller -> Service -> Database Prisma), tuyệt đối không để lọt SQL Injection.</li>
+
+  <li>Không hardcode dữ liệu giả (mock data); tất cả số liệu thống kê phải truy vấn thời gian thực từ PostgreSQL.</li>
+
+</ul>
+
+<p class="doc-p">3. <strong>Ràng buộc Git & Quản Trị Mã Nguồn</strong>:</p>
+
+<ul class="doc-list">
+
+  <li>TUYỆT ĐỐI KHÔNG tự động thực thi lệnh <code class="inline-code">git push</code> hay <code class="inline-code">git commit</code> trong môi trường tự động; toàn quyền kiểm tra thuộc về người dùng.</li>
+
+  <li>BẮT BUỘC kiểm tra Type-check (<code class="inline-code">tsc --noEmit</code>) đạt 0 errors cả FE và BE trước khi nghiệm thu.</li>
+
+</ul>
+
+<h3 class="doc-h3">2.6 Tài Liệu Cho Người Dùng (User Documentation)</h3>
+
+<ul class="doc-list">
+
+  <li>Sổ tay Hướng dẫn Sử dụng Web CRM dành cho Ban Điều Hành (<code class="inline-code">HDSD_Web_CRM_CEO1983.pdf</code>).</li>
+
+  <li>Cẩm nang Trải nghiệm Ứng dụng Di động dành cho Hội viên Doanh nhân (<code class="inline-code">HDSD_Mobile_App_CEO1983.pdf</code>).</li>
+
+  <li>Bộ video clip ngắn 60s hướng dẫn: Quẹt thẻ NFC, Đăng cơ hội B2B, Check-in QR sự kiện và Đồng bộ Google Drive.</li>
+
+</ul>
+
+<h3 class="doc-h3">2.7 Giả Định và Phụ Thuộc (Assumptions and Dependencies)</h3>
+
+<ul class="doc-list">
+
+  <li>Cổng dịch vụ VietQR / Napas duy trì thời gian hoạt động tối thiểu 99.5%.</li>
+
+  <li>Kết nối Internet di động (4G/5G/Wi-Fi) ổn định tại các địa điểm tổ chức sự kiện để đảm bảo tốc độ check-in 1 giây.</li>
+
+  <li>Khách hàng và Ban Thư Ký cung cấp đầy đủ thông tin tài khoản Google Drive và Zalo OA chính danh của CLB.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h2 class="doc-h2">3. CÁC YÊU CẦU VỀ GIAO DIỆN BÊN NGOÀI (EXTERNAL INTERFACE REQUIREMENTS)</h2>
+
+<h3 class="doc-h3">3.1 Giao Diện Người Dùng (User Interfaces - UI)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Tiêu chuẩn UI/UX</strong>:</li>
+
+  <li>Giao diện Web CRM: Thiết kế theo triết lý Dashboard công thái học (Ergonomic Data Grid), thanh Sidebar điều hướng tối ưu bên trái, các bảng biểu hỗ trợ lọc nhiều tiêu chí, xuất Excel và in ấn trực tiếp.</li>
+
+  <li>Giao diện Mobile App: Thiết kế chuẩn Native Mobile, tối ưu cho thao tác một tay với Bottom Bar cố định (5 tab chính), hỗ trợ Dark/Light Theme đồng bộ, cỡ chữ tối thiểu 11px đảm bảo độ tương phản đạt chuẩn WCAG AA.</li>
+
+  <li><strong>Quy tắc 6 Khối Chỉ Số Cơ Hội</strong>: Phải hiển thị nền trắng (<code class="inline-code">bg-white dark:bg-[#131a26]</code>), tuyệt đối không dùng nền xanh gây chói mắt. Popup dẫn chứng dữ liệu thật phải có bố cục nền trắng tinh gọn, rõ ràng.</li>
+
+</ul>
+
+<h3 class="doc-h3">3.2 Giao Diện Phần Cứng (Hardware Interfaces)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Thẻ Chip NFC NTAG213/NTAG215/NTAG216</strong>: Tần số hoạt động 13.56 MHz, ghi chuẩn NDEF URI định dạng <code class="inline-code">https://ceo1983.viconnect.vn/card/:slug</code>. Khi chạm vào mặt lưng điện thoại thông minh (iPhone hoặc Android), thiết bị tự động mở danh thiếp số trong 0.5 giây.</li>
+
+  <li><strong>Camera & Bộ Quét Mã QR</strong>: Tương thích với camera trước và sau của thiết bị di động, tự động nhận diện mã QR độ phân giải tối thiểu 720p trong mọi điều kiện ánh sáng hội trường.</li>
+
+  <li><strong>Máy In Hóa Đơn & Phiếu Thu</strong>: Hỗ trợ chuẩn máy in văn phòng khổ A4/A5 thông qua lệnh in hệ điều hành (<code class="inline-code">window.print()</code>) để in trực tiếp Phiếu thu tiền điện tử.</li>
+
+</ul>
+
+<h3 class="doc-h3">3.3 Giao Diện Phần Mềm (Software Interfaces)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Hệ thống Quản Trị CSDL</strong>: PostgreSQL 16.x qua Prisma Client v6.x.</li>
+
+  <li><strong>Dịch vụ Trí Tuệ Nhân Tạo (AI Multi-Model Gateway)</strong>:</li>
+
+  <li>Google Gemini API (Gemini 2.0 Flash / Gemini 1.5 Pro).</li>
+
+  <li>OpenAI API (GPT-4o / GPT-4o-mini).</li>
+
+  <li>Anthropic Claude API (Claude 3.5 Sonnet / Haiku).</li>
+
+  <li>DeepSeek API (DeepSeek V3 / DeepSeek R1).</li>
+
+  <li><strong>Hạ Tầng Lưu Trữ Google Drive</strong>: Tích hợp Google Drive API v3 và Google Picker SDK để đọc/ghi tệp tin đám mây theo phân quyền OAuth 2.0.</li>
+
+  <li><strong>Dịch vụ Đa Kênh Zalo</strong>: Tích hợp Zalo OpenAPI, Zalo OA ZNS và Zalo Mini App SDK.</li>
+
+</ul>
+
+<h3 class="doc-h3">3.4 Giao Diện Giao Tiếp (Communications Interfaces)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Giao thức Web</strong>: HTTPS trên cổng tiêu chuẩn 443, chứng chỉ bảo mật SSL TLS 1.3 mã hóa 256-bit.</li>
+
+  <li><strong>Giao thức Thời Gian Thực</strong>: WebSocket qua Socket.IO trên cùng kênh bảo mật HTTPS để truyền nhận thông báo kết nối, tin nhắn và trạng thái check-in realtime.</li>
+
+  <li><strong>Kiến trúc RESTful API</strong>: Tất cả dữ liệu trao đổi dưới định dạng JSON (<code class="inline-code">application/json; charset=utf-8</code>), xác thực qua HTTP Authorization Header với Bearer JWT Token.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h2 class="doc-h2">4. CÁC YÊU CẦU CHỨC NĂNG CHI TIẾT (SYSTEM FEATURES)</h2>
+
+<pre class="mermaid">
+graph TD
+    subgraph "HỘI VIÊN DOANH NHÂN"
+        ActorMember["Hội Viên CEO 1983"]
+    end
+
+    subgraph "BAN ĐIỀU HÀNH & ADMIN"
+        ActorAdmin["Chủ Tịch & Ban Điều Hành"]
+    end
+
+    subgraph "CÁC USE CASE CỐT LÕI (USE CASE DIAGRAM)"
+        UC1(("UC-01: Định danh Thẻ VIP & Quẹt NFC"))
+        UC2(("UC-02: Giao thương B2B & Deal chào giá"))
+        UC3(("UC-03: Đăng ký & Điểm danh QR Sự kiện"))
+        UC4(("UC-04: Danh bạ 2 cấp & Kết nối Bạn bè"))
+        UC5(("UC-05: Trợ lý AI phân tích CRM & Xuất Báo cáo"))
+        UC6(("UC-06: Cấu hình AI & Giám sát Quota Token"))
+        UC7(("UC-07: Xem Landing Web & Đăng ký Online"))
+        UC8(("UC-08: Đồng bộ Kho Tài liệu Google Drive"))
+        UC9(("UC-09: Chia sẻ Mạng xã hội OpenGraph"))
+        UC10(("UC-10: Quản lý Thu chi & Quỹ Ngân sách"))
+    end
+
+    ActorMember --> UC1
+    ActorMember --> UC2
+    ActorMember --> UC3
+    ActorMember --> UC4
+    ActorMember --> UC7
+    ActorMember --> UC8
+    ActorMember --> UC9
+
+    ActorAdmin --> UC2
+    ActorAdmin --> UC3
+    ActorAdmin --> UC5
+    ActorAdmin --> UC6
+    ActorAdmin --> UC8
+    ActorAdmin --> UC10
+</pre>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.1: Quản Lý Định Danh Hội Viên, Thẻ VIP Số & NFC Tap-to-Connect</h3>
+
+<h4 class="doc-h4">4.1.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Cung cấp cho mỗi hội viên một Thẻ hội viên VIP số độc bản tích hợp chip NFC vật lý và mã QR động bảo mật. Khi hội viên gặp gỡ đối tác, chỉ cần chạm thẻ NFC vào điện thoại đối tác hoặc đưa mã QR cho đối tác quét, toàn bộ hồ sơ năng lực doanh nghiệp, danh mục sản phẩm, liên hệ và chức vị trong CLB CEO 1983 sẽ được truyền tải tức thì mà không cần cài ứng dụng.</p>
+
+<h4 class="doc-h4">4.1.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    Actor["Hội Viên CEO 1983"] --> UC_Card["Chạm Thẻ NFC / Xuất Trình Mã QR"]
+    UC_Card --> Validate_Card{"Kiểm tra Trạng thái Thẻ"}
+    Validate_Card -->|Hợp lệ & Đã duyệt phí| Show_VIP["Hiển thị Danh thiếp VIP & Lưu Danh Bạ"]
+    Validate_Card -->|Chưa đóng phí| Show_Pending["Hiển thị Nhắc nhở Tái tục"]
+    Validate_Card -->|Thẻ bị khóa/thu hồi| Show_Blocked["Báo lỗi: Thẻ không khả dụng"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Hội viên chính thức, Đối tác khách mời quét thẻ.</li>
+
+  <li><strong>Pre-conditions</strong>: Hội viên đã đăng nhập và được BTV phê duyệt hồ sơ với trạng thái <code class="inline-code">status = 'paid'</code>.</li>
+
+  <li><strong>Post-conditions</strong>: Đối tác nhận được thông tin liên hệ và tệp <code class="inline-code">.vcf</code> danh bạ; hệ thống ghi nhận 1 lượt tương tác danh thiếp.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Hội viên mở App, chọn tab "Danh thiếp" hoặc chạm mặt lưng thẻ NFC vật lý vào điện thoại đối tác.</p>
+
+<p class="doc-p">2. Điện thoại đối tác nhận sóng NFC NDEF URI và tự động mở trình duyệt tải trang danh thiếp công khai <code class="inline-code">/card/:code</code>.</p>
+
+<p class="doc-p">3. Hệ thống kiểm tra tính hợp lệ của mã thẻ trong bảng <code class="inline-code">business_cards</code> và <code class="inline-code">vione_users</code>.</p>
+
+<p class="doc-p">4. Hiển thị giao diện danh thiếp sang trọng với ảnh đại diện, chức danh, tên doanh nghiệp, huy hiệu hội viên CEO 1983 HanoiBA.</p>
+
+<p class="doc-p">5. Đối tác nhấn nút "Lưu vào Danh bạ", hệ thống tải về tệp vCard chuẩn để thêm liên hệ vào danh bạ điện thoại của đối tác.</p>
+
+<p class="doc-p">6. Hệ thống gửi thông báo realtime qua Socket.IO tới App hội viên: "Đối tác vừa quét danh thiếp của bạn".</p>
+
+<ul class="doc-list">
+
+  <li><strong>Alternative Flows</strong>:</li>
+
+  <li>Đối tác không có NFC: Hội viên chuyển sang chế độ "Mã QR Danh Thiếp", đối tác dùng camera thường quét mã QR.</li>
+
+  <li><strong>Exception Flows</strong>:</li>
+
+  <li>Thẻ bị thu hồi (<code class="inline-code">status = 'revoked'</code>): Hệ thống hiển thị cảnh báo "Thẻ danh thiếp số đã được thu hồi bởi Ban Thư Ký CLB".</li>
+
+</ul>
+
+<h4 class="doc-h4">4.1.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-CARD-01</strong>: Mỗi tài khoản hội viên chỉ gắn duy nhất 01 mã thẻ định danh số hoạt động chính thức (Primary Active Card).</li>
+
+  <li><strong>BR-CARD-02</strong>: Mã QR trên thẻ có cơ chế salt timestamp chống chụp màn hình gian lận khi điểm danh sự kiện VIP.</li>
+
+  <li><strong>BR-CARD-03</strong>: Khi hội viên hết hạn niên liễm quá 30 ngày mà chưa gia hạn, thẻ số tự động chuyển sang trạng thái tạm khóa tính năng trao đổi danh thiếp nâng cao.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.1.4 Thiết Kế Dữ Liệu Tính Năng</h4>
+
+<ul class="doc-list">
+
+  <li><strong>Bảng CSDL liên quan</strong>: <code class="inline-code">public.business_cards</code>, <code class="inline-code">public.vione_users</code>, <code class="inline-code">public.card_analytics</code>.</li>
+
+  <li><strong>Input Parameters</strong>: <code class="inline-code">userId (UUID)</code>, <code class="inline-code">themeId (String)</code>, <code class="inline-code">customBio (String, max 500 ký tự)</code>, <code class="inline-code">socialLinks (JSON)</code>.</li>
+
+  <li><strong>Output Validation</strong>: <code class="inline-code">code (String, unique 8-12 ký tự)</code>, <code class="inline-code">avatarUrl (Valid URL)</code>, <code class="inline-code">qrUrl (Valid SVG/PNG Data URI)</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.2: Sàn Giao Thương B2B, Chia Sẻ Cơ Hội Kinh Doanh & Deal Chào Giá</h3>
+
+<h4 class="doc-h4">4.2.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Không gian xúc tiến thương mại nội bộ dành cho các doanh nhân CEO 1983. Cho phép hội viên đăng tải nhu cầu tìm mua, tìm nhà cung cấp, kêu gọi đầu tư hoặc chào hàng độc quyền. Hệ thống hiển thị 6 khối chỉ số minh bạch nền trắng tuyệt đối, popup dẫn chứng vắn tắt và cơ chế "Deal chào giá" gửi trực tiếp đến đúng tài khoản người đăng cơ hội.</p>
+
+<h4 class="doc-h4">4.2.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    Actor["Hội Viên Đăng Cơ Hội"] --> Post_Opp["Đăng Cơ Hội Kinh Doanh Mới"]
+    Post_Opp --> Select_Scope{"Chọn Phạm Vi Nhận"}
+    Select_Scope -->|Toàn hệ thống| Public_Feed["Hiển thị Toàn CLB CEO 1983"]
+    Select_Scope -->|Theo Ban chuyên môn| Dept_Feed["Chỉ Hội viên Ban được chọn"]
+    Select_Scope -->|CEO Bạn bè| Friends_Feed["Chỉ Bạn bè đã kết nối"]
+    
+    Actor2["Hội Viên Đối Tác"] --> Deal_Bid["Gửi Deal Chào Giá / Hợp Tác"]
+    Deal_Bid --> Check_Author["Xác thực Người Đăng"]
+    Check_Author --> Notify_Author["Gửi thông báo & tin nhắn đúng người đăng"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Hội viên đăng tin, Hội viên tham gia chào deal.</li>
+
+  <li><strong>Pre-conditions</strong>: Cả hai hội viên đều có tài khoản hợp lệ, không bị khóa quyền giao thương.</li>
+
+  <li><strong>Post-conditions</strong>: Cơ hội được đăng lên sàn; lượt gửi deal chuyển thành cuộc hội thoại B2B riêng tư giữa 2 chủ doanh nghiệp; số liệu thống kê realtime cập nhật.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Hội viên mở App, truy cập màn hình "Cơ Hội Hợp Tác" (<code class="inline-code">/association/opportunities</code>).</p>
+
+<p class="doc-p">2. Hệ thống tải 6 khối chỉ số kinh doanh thực tế (Cơ hội đang mở, Tổng giá trị, Tôi đã chia sẻ, Tôi đang deal, Giá trị đã nhận, Deal đã fail) với giao diện nền trắng (<code class="inline-code">bg-white dark:bg-[#131a26]</code>).</p>
+
+<p class="doc-p">3. Khi bấm vào ô "Cơ hội đang mở", hệ thống mở popup hiển thị danh sách các cơ hội thực tế đang hoạt động kèm giá trị, ngành nghề và người đăng.</p>
+
+<p class="doc-p">4. Để tạo mới hoặc chỉnh sửa cơ hội, hội viên nhấn "Đăng cơ hội" hoặc icon Chỉnh sửa. Modal <code class="inline-code">OpportunityEditModal</code> hiển thị đầy đủ các trường: Tải lên nhiều ảnh, Người giới thiệu, Số điện thoại giới thiệu, Mức hoa hồng kết nối (%), Phạm vi đối tượng nhận (Công khai / Theo ban / Theo bạn bè), Mô tả chi tiết, Link Fanpage/Website.</p>
+
+<p class="doc-p">5. Hội viên hoàn tất và nhấn "Lưu cơ hội". Hệ thống ghi nhận vào bảng <code class="inline-code">opportunities</code>.</p>
+
+<p class="doc-p">6. Hội viên khác khi xem cơ hội nhấn "Deal Chào Giá", hệ thống tự động trích xuất <code class="inline-code">author_id</code> và mở phiên kết nối trực tiếp đến đúng tài khoản của người đăng cơ hội, tuyệt đối không gửi nhầm người khác.</p>
+
+<ul class="doc-list">
+
+  <li><strong>Alternative Flows</strong>:</li>
+
+  <li>Hội viên chỉnh sửa cơ hội hiện có: Hệ thống nạp lại toàn bộ dữ liệu ban đầu, cho phép xóa/bổ sung ảnh và cập nhật lại mức hoa hồng.</li>
+
+  <li><strong>Exception Flows</strong>:</li>
+
+  <li>Cơ hội đã đóng (<code class="inline-code">status = 'closed'</code>): Nút "Deal Chào Giá" chuyển sang trạng thái "Cơ hội đã kết nối thành công (Đã đóng)" và vô hiệu hóa gửi deal mới.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.2.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-B2B-01</strong>: Bắt buộc tuân thủ giao diện NỀN TRẮNG cho tất cả 6 khối chỉ số và popup dẫn chứng; CẤM NỀN XANH trên giao diện theo chỉ đạo của Ban Điều Hành.</li>
+
+  <li><strong>BR-B2B-02</strong>: Mức hoa hồng kết nối hợp tác phải là số nguyên từ 0% đến 50%.</li>
+
+  <li><strong>BR-B2B-03</strong>: Chỉ có chính tác giả của cơ hội hoặc Super Admin CRM mới có quyền sửa đổi nội dung hoặc đóng trạng thái cơ hội.</li>
+
+  <li><strong>BR-B2B-04</strong>: Khi một cơ hội chuyển sang trạng thái Đã đóng/Hủy, biểu đồ thống kê lập tức loại bỏ bản ghi này, không giữ lại số liệu ảo.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.2.4 Thiết Kế Dữ Liệu Tính Năng</h4>
+
+<ul class="doc-list">
+
+  <li><strong>Bảng CSDL liên quan</strong>: <code class="inline-code">public.opportunities</code>, <code class="inline-code">public.opportunity_deals</code>, <code class="inline-code">public.vione_users</code>.</li>
+
+  <li><strong>Input Parameters</strong>: <code class="inline-code">title (String, 5-200 ký tự)</code>, <code class="inline-code">value (Numeric, >= 0)</code>, <code class="inline-code">images (Array<String>)</code>, <code class="inline-code">commissionRate (Numeric 0-50)</code>, <code class="inline-code">recipientType ('all' | 'departments' | 'friends')</code>, <code class="inline-code">recipientIds (Array<String>)</code>.</li>
+
+  <li><strong>Output Validation</strong>: <code class="inline-code">id (UUID)</code>, <code class="inline-code">status ('open' | 'negotiating' | 'completed' | 'closed')</code>, <code class="inline-code">createdAt (ISO Timestamp)</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.3: Quản Lý Sự Kiện, Diễn Đàn & Điểm Danh Check-in QR 1 Giây (Vé Điện Tử)</h3>
+
+<h4 class="doc-h4">4.3.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Quản lý toàn bộ vòng đời sự kiện của CLB: từ khởi tạo diễn đàn kinh tế, hội thảo chuyên đề, gala dinner, phát hành vé điện tử cho hội viên, gửi thiệp mời trực tuyến đến khâu kiểm soát vé tại cửa bằng camera quét mã QR trong đúng 1 giây (1s Check-in).</p>
+
+<h4 class="doc-h4">4.3.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    ActorAdmin["Ban Tổ Chức Sự Kiện"] --> Create_Event["Tạo Sự Kiện & Cấu Hình Vé"]
+    ActorMember["Hội Viên Doanh Nhân"] --> Reg_Event["Đăng Ký Tham Dự"]
+    Reg_Event --> Gen_Ticket["Sinh Vé Điện Tử & QR Pass Bảo Mật"]
+    
+    ActorMember --> Arrive_Door["Đến Cửa Hội Trường"]
+    ActorChecker["Ban Tiếp Tân Soát Vé"] --> Scan_QR["Quét QR Vé Bằng Điện Thoại/Máy Quét"]
+    Scan_QR --> Check_Valid{"Kiểm Tra Tính Hợp Lệ"}
+    Check_Valid -->|Mã hợp lệ & Chưa check-in| Mark_Success["Điểm danh Thành Công (1s) & Mở Cửa"]
+    Check_Valid -->|Mã đã check-in trước đó| Show_Duplicate["Cảnh báo: Vé đã check-in lúc HH:mm!"]
+    Check_Valid -->|Mã vé không tồn tại| Show_Invalid["Báo lỗi: Vé không hợp lệ!"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Ban Tổ Chức (BTC), Hội viên tham dự, Ban Lễ Tân kiểm soát vé.</li>
+
+  <li><strong>Pre-conditions</strong>: Sự kiện đã được xuất bản trên hệ thống; hội viên đã đăng ký vé thành công.</li>
+
+  <li><strong>Post-conditions</strong>: Trạng thái vé chuyển sang <code class="inline-code">is_checked_in = true</code>, thời gian điểm danh được lưu trữ, số ghế VIP được hiển thị.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Ban Tổ Chức tạo sự kiện trên CRM (<code class="inline-code">/events</code>), cấu hình thời gian, địa điểm, banner, hạn mức vé và lịch trình (Agenda).</p>
+
+<p class="doc-p">2. Hội viên mở App, vào mục "Sự Kiện", xem chi tiết và nhấn "Đăng ký tham dự".</p>
+
+<p class="doc-p">3. Hệ thống tạo bản ghi trong <code class="inline-code">event_registrations</code>, sinh mã vé duy nhất (ví dụ: <code class="inline-code">TICKET-1983-8888</code>) và tạo mã QR Pass bảo mật.</p>
+
+<p class="doc-p">4. Tại ngày diễn ra sự kiện, hội viên mở vé điện tử trên App.</p>
+
+<p class="doc-p">5. Ban Lễ Tân sử dụng tính năng "Quét QR Check-in" trên CRM hoặc App quét mã vé của hội viên.</p>
+
+<p class="doc-p">6. Hệ thống đối soát mã trong cơ sở dữ liệu: Xác nhận đúng người, đúng sự kiện, chưa điểm danh; chuyển trạng thái <code class="inline-code">checked_in = true</code> và phát âm thanh "Tít" thành công trong vòng dưới 1 giây.</p>
+
+<p class="doc-p">7. Màn hình lễ tân hiện thông tin hội viên, tên công ty và số bàn/số ghế được Ban Tổ Chức phân công.</p>
+
+<ul class="doc-list">
+
+  <li><strong>Alternative Flows</strong>:</li>
+
+  <li>Hội viên quên mở App: Lễ tân tra cứu nhanh bằng Số điện thoại hoặc Tên doanh nghiệp trên ô tìm kiếm check-in và nhấn "Điểm danh thủ công".</li>
+
+  <li><strong>Exception Flows</strong>:</li>
+
+  <li>Mã vé đã được check-in trước đó: Hệ thống bật còi báo đỏ "CẢNH BÁO: Vé này đã được check-in vào lúc 18:05:22 bởi người khác!", ngăn chặn tình trạng gian lận vé trùng.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.3.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-EVT-01</strong>: Mỗi mã vé điện tử chỉ được điểm danh thành công duy nhất 01 lần.</li>
+
+  <li><strong>BR-EVT-02</strong>: Khi sự kiện đạt số lượng đăng ký tối đa (<code class="inline-code">max_attendees</code>), hệ thống tự động khóa cổng đăng ký và chuyển sang trạng thái "Hết vé".</li>
+
+  <li><strong>BR-EVT-03</strong>: Tính năng Bốc thăm may mắn (Lucky Draw) chỉ được phép quay thưởng trên danh sách những hội viên ĐÃ CHECK-IN thực tế tại sự kiện.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.3.4 Thiết Kế Dữ Liệu Tính Năng</h4>
+
+<ul class="doc-list">
+
+  <li><strong>Bảng CSDL liên quan</strong>: <code class="inline-code">public.events</code>, <code class="inline-code">public.event_registrations</code>, <code class="inline-code">public.lucky_draw_winners</code>.</li>
+
+  <li><strong>Input Parameters</strong>: <code class="inline-code">eventId (UUID)</code>, <code class="inline-code">userId (UUID)</code>, <code class="inline-code">ticketCode (String)</code>, <code class="inline-code">checkedInBy (UUID)</code>.</li>
+
+  <li><strong>Output Validation</strong>: <code class="inline-code">checkedInAt (TIMESTAMPTZ)</code>, <code class="inline-code">seatAssignment (String)</code>, <code class="inline-code">isLuckyWinner (Boolean)</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.4: Danh Bạ Doanh Nhân 1983 & Kết Nối Bạn Bè 2 Cấp</h3>
+
+<h4 class="doc-h4">4.4.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Danh bạ số thông minh của toàn thể doanh nhân CLB CEO 1983. Hệ thống phân chia thành Bộ lọc 2 cấp: Cấp 1 gồm (Đã kết nối) và (Chưa kết nối). Tab "Đã kết nối" ưu tiên hiển thị Bạn bè lên đầu tiên kèm khối "✨ Vừa kết nối mới nhất", tiếp đến là Lời mời, Đã gửi và Danh thiếp đã lưu. Bộ icon thao tác bạn bè được tối giản 1 màu đồng nhất (Nhắn tin, Profile, Gọi điện) kèm nút Hủy kết nối.</p>
+
+<h4 class="doc-h4">4.4.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    Actor["Hội Viên"] --> Open_Directory["Mở Danh Bạ CEO 1983"]
+    Open_Directory --> Filter_Level1{"Chọn Bộ Lọc Cấp 1"}
+    
+    Filter_Level1 -->|Đã kết nối| Show_Connected["Hiển thị Danh mục Bạn bè lên đầu"]
+    Show_Connected --> Show_Latest["Khối nổi bật: Vừa kết nối mới nhất"]
+    Show_Connected --> Action_Friends["3 Nút Thao Tác: Nhắn tin - Profile - Gọi điện"]
+    
+    Filter_Level1 -->|Chưa kết nối| Show_Unconnected["Hiển thị Toàn bộ Hội viên Chưa kết nối"]
+    Show_Unconnected --> Send_Request["Nhấn Nút Kết Nối"]
+    Send_Request --> State_Pending["Đổi thành Nút 'Hủy Yêu Cầu' & Chuyển vào mục 'Đã gửi'"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Hội viên doanh nhân CEO 1983.</li>
+
+  <li><strong>Pre-conditions</strong>: Người dùng đã đăng nhập vào Mobile App.</li>
+
+  <li><strong>Post-conditions</strong>: Lời mời kết nối được gửi hoặc hủy; danh sách bạn bè được cập nhật realtime.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Hội viên mở tab "Danh bạ" (<code class="inline-code">/association/members</code>).</p>
+
+<p class="doc-p">2. Người dùng chuyển đổi giữa 2 tab lớn: <strong>(Đã kết nối)</strong> và <strong>(Chưa kết nối)</strong>.</p>
+
+<p class="doc-p">3. Tại tab <strong>Đã kết nối</strong>:</p>
+
+<ul class="doc-list">
+
+  <li>Danh mục Bạn bè hiển thị đầu tiên, ngay trên đầu là khối "✨ Vừa kết nối mới nhất" hiển thị người bạn doanh nhân vừa kết nối thành công gần nhất.</li>
+
+  <li>Mỗi thẻ bạn bè chỉ gồm 3 nút thao tác cùng 1 màu tối giản: Nhắn tin (<code class="inline-code">MessageSquare</code>), Xem Profile (<code class="inline-code">User</code>), Gọi điện (<code class="inline-code">PhoneCall</code>) + 1 nút Hủy kết nối (<code class="inline-code">UserX</code>) màu riêng biệt.</li>
+
+  <li>Không bị lỗi lặp tên: Nếu tên người và tên công ty giống nhau, hệ thống tự động ẩn dòng tên phụ bên dưới.</li>
+
+</ul>
+
+<p class="doc-p">4. Tại tab <strong>Chưa kết nối</strong>:</p>
+
+<ul class="doc-list">
+
+  <li>Hiển thị danh sách tất cả các hội viên trong CLB mà tài khoản chưa kết nối.</li>
+
+  <li>Người dùng nhấn nút "Kết nối": Hệ thống gửi thông báo mời kết nối, nút chuyển ngay thành nút "Hủy" (hủy yêu cầu chờ xác nhận), và bản ghi xuất hiện trong mục "Đã gửi".</li>
+
+  <li><strong>Alternative Flows</strong>:</li>
+
+  <li>Đối phương bấm "Đồng ý" lời mời kết nối: Hệ thống kích hoạt event Socket <code class="inline-code">vba:connection_accepted</code>, cập nhật <code class="inline-code">vba_latest_connected_id</code> vào LocalStorage và đưa người đó lên khối "Vừa kết nối mới nhất" của cả hai bên.</li>
+
+  <li><strong>Exception Flows</strong>:</li>
+
+  <li>Người dùng bấm "Hủy yêu cầu": Bản ghi chờ xác nhận bị xóa khỏi CSDL, nút quay lại trạng thái "Kết nối".</li>
+
+</ul>
+
+<h4 class="doc-h4">4.4.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-DIR-01</strong>: Bỏ hoàn toàn nút Xem danh thiếp số và Hẹn gặp 1-1 trên thẻ bạn bè để tối giản giao diện, chỉ giữ 3 nút thao tác cốt lõi.</li>
+
+  <li><strong>BR-DIR-02</strong>: Khi gửi kết nối chờ xác nhận, nút "Chờ xác nhận" phải được thay thế bằng nút "Hủy" để người gửi chủ động rút lại lời mời khi cần.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.4.4 Thiết Kế Dữ Liệu Tính Năng</h4>
+
+<ul class="doc-list">
+
+  <li><strong>Bảng CSDL liên quan</strong>: <code class="inline-code">public.user_connections</code>, <code class="inline-code">public.vione_users</code>.</li>
+
+  <li><strong>Input Parameters</strong>: <code class="inline-code">requesterId (UUID)</code>, <code class="inline-code">receiverId (UUID)</code>, <code class="inline-code">status ('pending' | 'accepted' | 'declined')</code>.</li>
+
+  <li><strong>Output Validation</strong>: <code class="inline-code">connectionId (UUID)</code>, <code class="inline-code">updatedAt (TIMESTAMPTZ)</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.5: Trợ Lý AI Điều Hành Toàn Diện CRM & Xuất Báo Cáo Con</h3>
+
+<h4 class="doc-h4">4.5.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Hệ thống Trí tuệ Nhân tạo phục vụ trực tiếp cho Chủ tịch và Ban Điều Hành tại Cổng Quản trị CRM (<code class="inline-code">/ai-assistant</code>). AI quét và phân tích sâu toàn bộ cơ sở dữ liệu thực tế: hội viên, biến động tài chính, lịch họp ban, giao thương B2B và nhật ký thao tác <code class="inline-code">activity_log</code>. Hỗ trợ xuất báo cáo theo từng chức năng con: Báo cáo thu chi tổng hợp (Excel/PDF) và Xuất Phiếu thu / Hóa đơn điện tử chuẩn mẫu 01-TT của Bộ Tài Chính có mã QR và chữ ký số.</p>
+
+<h4 class="doc-h4">4.5.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    ActorAdmin["Chủ Tịch / Ban Điều Hành"] --> Open_AI_Assistant["Truy Cập Trợ Lý AI (/ai-assistant)"]
+    Open_AI_Assistant --> Action_Select{"Lựa Chọn Tác Vụ"}
+    
+    Action_Select -->|Phân tích Realtime| Scan_DB["AI Quét Toàn Bộ DB & Nhật Ký Thao Tác"]
+    Scan_DB --> Gen_Insights["Sinh Điểm Sức Khỏe (Health Score) & Khuyến Nghị"]
+    
+    Action_Select -->|Xuất Báo Cáo Thu Chi| Gen_Finance_Report["Tổng Hợp Cơ Cấu Thu - Chi - Quỹ Tồn"]
+    Gen_Finance_Report --> Export_Excel["Tải Tệp Excel (.xlsx) / In Báo Cáo"]
+    
+    Action_Select -->|Xuất Phiếu Thu Điện Tử| Fill_Invoice_Form["Nhập Người Nộp, Công Ty, Số Tiền"]
+    Fill_Invoice_Form --> Gen_Receipt["Sinh Phiếu Thu Chuẩn Mẫu 01-TT + QR + Ký Số"]
+    Gen_Receipt --> Print_Receipt["In Trực Tiếp (window.print) / Lưu PDF"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Chủ tịch CLB, Trưởng Ban Tài Chính, Ban Thư Ký.</li>
+
+  <li><strong>Pre-conditions</strong>: Người dùng đăng nhập tài khoản có quyền truy cập CRM (<code class="inline-code">quan_tri</code>, <code class="inline-code">admin</code>, <code class="inline-code">truong_ban_tai_chinh</code>).</li>
+
+  <li><strong>Post-conditions</strong>: Dữ liệu phân tích được cập nhật; tệp Excel báo cáo được tải về hoặc Phiếu thu điện tử được in ra.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Người dùng mở menu "Trợ Lý AI Điều Hành" trên Sidebar CRM.</p>
+
+<p class="doc-p">2. Tab 1 - "Phân Tích Thông Minh CRM": Nhấn nút "Quét & Phân Tích Realtime". AI Engine gọi API <code class="inline-code">GET /api/ai/crm/analyze</code>, tổng hợp số liệu thực tế: Tổng số hội viên, Quỹ thặng dư hiện tại, Số kỳ họp đã tổ chức, Tổng giá trị giao thương B2B và 20 hoạt động mới nhất trong <code class="inline-code">activity_log</code>.</p>
+
+<p class="doc-p">3. Màn hình hiển thị: Điểm số sức khỏe CLB (ví dụ: 94/100), Tóm tắt điều hành (Executive Summary), 4 khối trụ cột, Điểm mạnh nổi bật, Điểm nghẽn cần khắc phục và 3 Khuyến nghị hành động chiến lược.</p>
+
+<p class="doc-p">4. Tab 2 - "Báo Cáo Thu Chi & Ngân Sách": Hiển thị bảng cân đối ngân sách, cơ cấu nguồn thu (hội phí, tài trợ) và cơ cấu khoản chi. Người dùng nhấn "Xuất File Excel", hệ thống tải về tệp <code class="inline-code">.xlsx</code> định dạng chuẩn.</p>
+
+<p class="doc-p">5. Tab 3 - "Xuất Hóa Đơn / Phiếu Thu Điện Tử": Người dùng nhập thông tin người nộp, công ty, mã số thuế, số tiền nộp và lý do. Nhấn "Cập Nhật & Xem Trước".</p>
+
+<p class="doc-p">6. Hệ thống sinh bản in mẫu Phiếu thu tiền điện tử chuẩn Bộ Tài Chính: Đầy đủ Quốc hiệu - Tiêu ngữ, Tên CLB Doanh Nhân CEO 1983 HanoiBA, Số phiếu thu (<code class="inline-code">PT-1983-xxxx</code>), Số tiền bằng chữ, Mã QR tra cứu thanh toán và Con dấu xác thực chữ ký điện tử.</p>
+
+<p class="doc-p">7. Người dùng nhấn "In Phiếu Thu / Lưu PDF" để in trực tiếp qua máy in.</p>
+
+<ul class="doc-list">
+
+  <li><strong>Alternative Flows</strong>:</li>
+
+  <li>Không có kết nối mạng tới Model ngoài: Hệ thống tự động sử dụng bộ phân tích thuật toán nội bộ trên cơ sở dữ liệu PostgreSQL đảm bảo báo cáo không bị gián đoạn.</li>
+
+  <li><strong>Exception Flows</strong>:</li>
+
+  <li>Người dùng không có quyền tài chính: Tab xuất hóa đơn bị ẩn hoặc khóa quyền sửa đổi số tiền.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.5.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-AI-01</strong>: Báo cáo thu chi và phiếu thu tiền điện tử phải làm tròn số tiền chính xác theo VNĐ và tự động chuyển đổi sang chuỗi đọc bằng chữ tiếng Việt không sai sót.</li>
+
+  <li><strong>BR-AI-02</strong>: Mọi yêu cầu phân tích AI và xuất báo cáo đều được ghi nhận vào bảng <code class="inline-code">ai_request_audit</code> để đảm bảo tính minh bạch.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.5.4 Thiết Kế Dữ Liệu Tính Năng</h4>
+
+<ul class="doc-list">
+
+  <li><strong>Bảng CSDL liên quan</strong>: <code class="inline-code">public.income_records</code>, <code class="inline-code">public.expense_records</code>, <code class="inline-code">public.activity_log</code>, <code class="inline-code">public.ai_request_audit</code>.</li>
+
+  <li><strong>API Endpoints</strong>: <code class="inline-code">GET /api/ai/crm/analyze</code>, <code class="inline-code">POST /api/ai/crm/export-report</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.6: Cấu Hình Hệ Thống AI Đa Hãng, Đo Lường Quota Token & Cảnh Báo Sắp Hết Model</h3>
+
+<h4 class="doc-h4">4.6.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Cho phép Quản trị viên cấu hình linh hoạt API Key của nhiều hãng trí tuệ nhân tạo (Google Gemini, OpenAI, Anthropic Claude, DeepSeek, OpenRouter) tại Cài đặt hệ thống CRM (<code class="inline-code">/settings</code>). Hệ thống trang bị thanh đo hạn mức token, tự động tính toán tỷ lệ tiêu thụ trong tháng và phát tín hiệu cảnh báo 3 cấp độ (Xanh - Vàng - Đỏ) để người dùng kịp thời tích hợp API Key của model khác vào dùng tiếp mà không làm gián đoạn CRM.</p>
+
+<h4 class="doc-h4">4.6.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    ActorAdmin["Quản Trị Viên CRM"] --> Open_AI_Config["Mở Tab 'Cấu hình AI & Nhật ký'"]
+    Open_AI_Config --> View_Quota["Xem Đồng Hồ Hạn Mức Token Realtime"]
+    
+    View_Quota --> Check_Status{"Kiểm Tra % Đã Dùng"}
+    Check_Status -->|< 75%| Status_Green["🟢 Xanh: Vận hành an toàn"]
+    Check_Status -->|75% - 90%| Status_Yellow["🟡 Vàng: Cảnh báo sắp chạm ngưỡng"]
+    Check_Status -->|> 90% hoặc Hết| Status_Red["🔴 Đỏ: Báo động khẩn cấp - Yêu cầu đổi Key"]
+    
+    Status_Red --> Input_New_Key["Nhập API Key Hãng Khác (OpenAI/Claude/DeepSeek)"]
+    Input_New_Key --> Test_Key["Nhấn 'Kiểm Tra Kết Nối'"]
+    Test_Key --> Save_Config["Lưu Cấu Hình & Tự Động Kích Hoạt Fallback"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Super Admin hệ thống.</li>
+
+  <li><strong>Pre-conditions</strong>: Người dùng đăng nhập tài khoản có quyền Quản trị cao nhất (<code class="inline-code">quan_tri</code>).</li>
+
+  <li><strong>Post-conditions</strong>: Cấu hình AI được cập nhật trong <code class="inline-code">public.app_settings</code> key <code class="inline-code">crm_ai_system_config</code>.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Admin mở <code class="inline-code">/settings</code>, chọn tab "Cấu hình AI & Nhật ký" (icon <code class="inline-code">Sparkles</code>).</p>
+
+<p class="doc-p">2. Màn hình hiển thị Đồng hồ giám sát token: Tổng số token đã dùng trong tháng, hạn mức tối đa và tỷ lệ phần trăm đã dùng.</p>
+
+<p class="doc-p">3. Nếu tỷ lệ vượt ngưỡng vàng (75%): Hệ thống hiển thị banner cảnh báo nhắc nhở chuẩn bị key dự phòng.</p>
+
+<p class="doc-p">4. Nếu tỷ lệ vượt ngưỡng đỏ (95%): Hệ thống bật banner đỏ báo động khẩn cấp: "Hạn mức Model chính sắp cạn! Hãy tích hợp API Key của model khác ngay bên dưới để hệ thống kích hoạt Fallback liền mạch."</p>
+
+<p class="doc-p">5. Admin chọn Model hoạt động chính (ví dụ Gemini 2.0 Flash) và Model dự phòng tự động (ví dụ OpenAI GPT-4o-mini hoặc DeepSeek V3).</p>
+
+<p class="doc-p">6. Admin nhập API Key tương ứng và nhấn "Kiểm tra kết nối". Hệ thống gọi <code class="inline-code">POST /api/ai/test-connection</code> thử nghiệm độ trễ (latency).</p>
+
+<p class="doc-p">7. Nhấn "Lưu Cấu Hình AI & Dự Phòng". Hệ thống lưu trữ an toàn vào cơ sở dữ liệu.</p>
+
+<p class="doc-p">8. Phía dưới hiển thị bảng Nhật ký AI (Audit Log) ghi nhận chi tiết: thời gian, người gọi, tác vụ, model xử lý, độ trễ và số token tiêu thụ.</p>
+
+<ul class="doc-list">
+
+  <li><strong>Exception Flows</strong>:</li>
+
+  <li>Model chính bị lỗi 429 Quota Exceeded trong quá trình người dùng gọi API: Backend tự động chuyển hướng request sang Model dự phòng (Fallback Model) và ghi nhận <code class="inline-code">used_fallback = true</code> vào nhật ký audit.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.6.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-CONF-01</strong>: API Keys lưu trữ trong cơ sở dữ liệu phải được che dấu (masking) trên giao diện để bảo mật thông tin.</li>
+
+  <li><strong>BR-CONF-02</strong>: Cơ chế chuyển vùng dự phòng (Fallback) phải diễn ra hoàn toàn tự động ở tầng Backend, không hiển thị lỗi gián đoạn ra phía người dùng cuối.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.7: Landing Web Giới Thiệu Chính Thức (<code class="inline-code">/intro</code>) & Đăng Ký Gia Nhập Online</h3>
+
+<h4 class="doc-h4">4.7.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Thay thế đường dẫn cũ <code class="inline-code">/h/ceo1983</code> bằng URL thương hiệu chuẩn mực: <code class="inline-code">https://ceo1983.viconnect.vn/intro</code>. Xây dựng trang Landing Web hoàn chỉnh có Header thanh menu cố định (Trang chủ, Về chúng tôi, 6 Ban chuyên môn, Sự kiện, B2B, Đặc quyền, Đăng ký gia nhập, Tải App), Hero Banner hoành tráng, các section giới thiệu giá trị cốt lõi, cơ cấu ban bệ, form đăng ký gia nhập trực tuyến gửi thẳng về CRM và Footer trang trọng.</p>
+
+<h4 class="doc-h4">4.7.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    Guest["Khách Vãng Lai / Ứng Viên"] --> Visit_Intro["Truy Cập https://ceo1983.viconnect.vn/intro"]
+    Visit_Intro --> Browse_Sections["Cuộn Mượt Qua Các Section: Về CLB, 6 Ban, Sự Kiện, B2B"]
+    
+    Browse_Sections --> Click_Register["Nhấn 'Đăng Ký Gia Nhập' Trên Header"]
+    Click_Register --> Scroll_Form["Tự Động Cuộn Đến Section Form Đăng Ký"]
+    
+    Scroll_Form --> Fill_Form["Điền Họ Tên, SĐT, Email, Tên Doanh Nghiệp, Mã Giới Thiệu"]
+    Fill_Form --> Submit_Form["Nhấn 'Gửi Hồ Sơ Gia Nhập'"]
+    Submit_Form --> Save_Lead["Lưu Vào CRM Để Ban Thư Ký Thẩm Định"]
+    Save_Lead --> Confirm_Screen["Hiển Thị Xác Nhận Thành Công & Mã QR Tải App"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Khách vãng lai, Doanh nhân ứng viên 1983.</li>
+
+  <li><strong>Pre-conditions</strong>: Khách có kết nối Internet và truy cập trình duyệt Web bất kỳ.</li>
+
+  <li><strong>Post-conditions</strong>: Hồ sơ đăng ký được tạo trong bảng <code class="inline-code">membership_applications</code> hoặc <code class="inline-code">vione_users</code> với trạng thái chờ duyệt; Ban Thư Ký nhận thông báo trên CRM.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Khách truy cập <code class="inline-code">https://ceo1983.viconnect.vn/intro</code>.</p>
+
+<p class="doc-p">2. Header cố định hiển thị: Logo HanoiBA & CLB CEO 1983, Menu điều hướng (Trang Chủ, Về Chúng Tôi, 6 Ban Chuyên Môn, Sự Kiện, Sàn B2B, Đặc Quyền, Đăng Ký Gia Nhập), Nút "Đăng Nhập" và "Mở App Hội Viên".</p>
+
+<p class="doc-p">3. Khách khám phá Hero Banner với 4 chỉ số nổi bật (500+ Hội viên, 1.850+ Tỷ giao thương, 60+ Sự kiện, 6 Ban chuyên môn).</p>
+
+<p class="doc-p">4. Khách nhấp vào "Đăng Ký Gia Nhập", trang tự động cuộn mượt đến Section Form đăng ký trực tuyến.</p>
+
+<p class="doc-p">5. Khách điền thông tin: Họ tên, Số điện thoại, Email, Chức vụ, Ngày sinh, Tên công ty, Mã số thuế, Lĩnh vực kinh doanh, Quy mô nhân sự và Mã giới thiệu (nếu có).</p>
+
+<p class="doc-p">6. Nhấn "Gửi Hồ Sơ Gia Nhập". Hệ thống kiểm tra hợp lệ, tải file đính kèm (giấy ĐKKD nếu có) và lưu hồ sơ vào hệ thống CRM.</p>
+
+<p class="doc-p">7. Khách nhận thông báo xác nhận thành công và mã QR liên kết tải App CEO 1983.</p>
+
+<ul class="doc-list">
+
+  <li><strong>Alternative Flows</strong>:</li>
+
+  <li>Người dùng truy cập URL cũ <code class="inline-code">/h/ceo1983</code>: Hệ thống tự động render Landing Web đầy đủ kèm thanh menu thay vì chỉ hiển thị form đơn điệu.</li>
+
+</ul>
+
+<h4 class="doc-h4">4.7.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-LAND-01</strong>: Đường dẫn chính thức của Landing Web là <code class="inline-code">/intro</code>; tất cả các nút copy link trong Cấu hình Landing Page của CRM phải tạo đúng URL này.</li>
+
+  <li><strong>BR-LAND-02</strong>: Form đăng ký phải xác thực số điện thoại hợp lệ theo định dạng mạng viễn thông Việt Nam (10 chữ số).</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.8: Kho Tài Liệu Số Đồng Bộ Google Drive 2 Chiều (CRM & Mobile App)</h3>
+
+<h4 class="doc-h4">4.8.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Liên kết Kho tài liệu nội bộ của Hiệp hội với tài khoản Google Drive cá nhân của từng hội viên. Cung cấp 2 hành động trọng tâm:</p>
+
+<p class="doc-p">1. <strong>Nạp từ Google Drive (Import from Drive)</strong>: Nhập liên kết file hoặc thư mục Google Drive để trích xuất thông tin và lưu ngay vào kho tài liệu hệ thống mà không cần download về máy rồi upload lại.</p>
+
+<p class="doc-p">2. <strong>Đồng bộ về Drive (Sync to Drive)</strong>: Cho phép hội viên bấm nút "Đồng bộ về Drive" trên bất kỳ văn bản/biểu mẫu nào (ở CRM hoặc Mobile App) để chuyển bản sao tài liệu vào Google Drive cá nhân của mình chỉ với 1 cú click.</p>
+
+<h4 class="doc-h4">4.8.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    Actor["Hội Viên / Admin"] --> Open_Docs["Truy Cập Kho Tài Liệu (CRM hoặc App)"]
+    Open_Docs --> Choice{"Lựa Chọn Thao Tác"}
+    
+    Choice -->|Chuyển Tài Liệu Về Drive| Click_Sync["Nhấn Nút 'Đồng Bộ Drive' Trên Văn Bản"]
+    Click_Sync --> Check_Linked{"Đã Liên Kết Drive?"}
+    Check_Linked -->|Chưa liên kết| Open_Link_Modal["Nhập Email & Thư Mục Drive Cá Nhân"]
+    Open_Link_Modal --> Save_Drive_Cfg["Lưu Cấu Hình (LocalStorage / User Profile)"]
+    Save_Drive_Cfg --> Perform_Sync["Tự Động Chuyển Bản Sao Vào Google Drive"]
+    Check_Linked -->|Đã liên kết| Perform_Sync
+    Perform_Sync --> Toast_Success["Thông Báo Thành Công & Mở Thư Mục Drive"]
+    
+    Choice -->|Nạp Tài Liệu Từ Drive| Click_Import["Nhấn Nút 'Nạp Từ Google Drive'"]
+    Click_Import --> Paste_Drive_Link["Dán Link Google Docs/Sheets/PDF"]
+    Paste_Drive_Link --> Extract_Info["Trích Xuất Tên & Dung Lượng File"]
+    Extract_Info --> Save_System_Doc["Lưu Vào Kho Tài Liệu CLB CEO 1983"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Hội viên doanh nhân, Ban Thư Ký.</li>
+
+  <li><strong>Pre-conditions</strong>: Người dùng có tài khoản Google Drive cá nhân.</li>
+
+  <li><strong>Post-conditions</strong>: Tài liệu được chuyển về thư mục Google Drive cá nhân hoặc liên kết Drive được lưu vào kho tài liệu chung.</li>
+
+  <li><strong>Basic Flow (Sync to Drive)</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Người dùng mở Kho tài liệu trên CRM (<code class="inline-code">/documents</code>) hoặc App (<code class="inline-code">/association/library</code>).</p>
+
+<p class="doc-p">2. Trên dòng tài liệu mong muốn, người dùng nhấn nút "Đồng bộ Drive" (icon <code class="inline-code">HardDrive</code>).</p>
+
+<p class="doc-p">3. Modal <code class="inline-code">MemberGoogleDriveSyncModal</code> mở ra. Nếu người dùng chưa cấu hình, hệ thống yêu cầu nhập Email Google Drive và Tên thư mục đích (mặc định: "Tài liệu CLB Doanh Nhân CEO 1983").</p>
+
+<p class="doc-p">4. Người dùng nhấn "Xác nhận chuyển về Drive". Hệ thống tạo bản sao lưu trữ đám mây.</p>
+
+<p class="doc-p">5. Thông báo toast xuất hiện: "Đã chuyển tài liệu [Tên tài liệu] vào Google Drive cá nhân ([Email]) thành công!", kèm nút hành động "Mở Drive" để mở trực tiếp thư mục trên Google Drive.</p>
+
+<ul class="doc-list">
+
+  <li><strong>Basic Flow (Import from Drive)</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Người dùng nhấn "Nạp từ Google Drive" trên thanh công cụ.</p>
+
+<p class="doc-p">2. Người dùng dán liên kết chia sẻ từ Google Drive (<code class="inline-code">https://drive.google.com/file/d/...</code>).</p>
+
+<p class="doc-p">3. Nhập tên hiển thị văn bản và chọn danh mục. Nhấn "Nạp Tài Liệu Vào Kho".</p>
+
+<p class="doc-p">4. Hệ thống lưu tài liệu dạng <code class="inline-code">driveUrl</code>, toàn thể hội viên có quyền xem có thể mở trực tiếp mà không tốn dung lượng máy chủ nội bộ.</p>
+
+<h4 class="doc-h4">4.8.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-DRIVE-01</strong>: Cấu hình Google Drive cá nhân của hội viên được lưu trữ an toàn trong LocalStorage (<code class="inline-code">ceo1983_member_drive_config</code>) và đồng bộ về hồ sơ người dùng.</li>
+
+  <li><strong>BR-DRIVE-02</strong>: Khi mở tài liệu có <code class="inline-code">driveUrl</code>, hệ thống mở liên kết an toàn trên tab mới với cờ <code class="inline-code">noopener noreferrer</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.9: Chia Sẻ Mạng Xã Hội Đa Kênh Với Thẻ OpenGraph Preview Động</h3>
+
+<h4 class="doc-h4">4.9.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Khắc phục triệt để lỗi khi hội viên chia sẻ bài viết, cơ hội, sự kiện, khóa đào tạo lên các nền tảng mạng xã hội (Facebook, Zalo, LinkedIn, Telegram) bị hiển thị ảnh chụp màn hình CRM Dashboard cũ. Hệ thống cung cấp endpoint chuyên trách <code class="inline-code">@Get('api/share/preview')</code> tại Backend NestJS sinh thẻ siêu dữ liệu HTML OpenGraph động chuẩn mực 1200x630px và tự động chuyển hướng người dùng khi nhấp link vào ứng dụng.</p>
+
+<h4 class="doc-h4">4.9.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Member as Hội Viên CEO 1983
+    participant App as Mobile App / Web
+    actor SocialUser as Bạn Bè Trên Facebook / Zalo
+    participant Crawler as Facebook / Zalo Crawler Bot
+    participant Backend as NestJS Server (/api/share/preview)
+    participant Database as PostgreSQL Database
+
+    Member->>App: Nhấn nút "Chia sẻ" cơ hội / sự kiện
+    App->>App: Tạo Link Preview động qua share-helper.ts
+    App->>Member: Mở popup chia sẻ Facebook / Zalo hoặc Copy Link
+    Member->>SocialUser: Đăng link lên Facebook / Zalo Post
+    
+    Crawler->>Backend: Gửi HTTP GET /api/share/preview?type=opportunity&id=...
+    Backend->>Database: Query bảng opportunities lấy Title, Cover Image, Description
+    Database-->>Backend: Trả về dữ liệu chi tiết
+    Backend-->>Crawler: Trả về HTML chứa thẻ meta og:title, og:image (1200x630), og:description
+    Crawler-->>SocialUser: Hiển thị Rich Preview Card tuyệt đẹp với ảnh thật & tiêu đề chuẩn
+    
+    SocialUser->>Backend: Nhấp vào liên kết trên Facebook/Zalo
+    Backend-->>SocialUser: Trả về mã Redirect 0s (<script>window.location.replace</script>)
+    SocialUser->>App: Mở đúng trang chi tiết cơ hội trên App CEO 1983!
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Hội viên chia sẻ, Bot cào dữ liệu mạng xã hội (Crawlers), Người dùng nhấp link.</li>
+
+  <li><strong>Pre-conditions</strong>: Bài viết/cơ hội/sự kiện đang ở trạng thái công khai.</li>
+
+  <li><strong>Post-conditions</strong>: Card mạng xã hội hiển thị hình ảnh đại diện chính thức; người nhấp link được chuyển thẳng vào App.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Hội viên nhấn nút "Chia sẻ" trên thẻ cơ hội hoặc sự kiện.</p>
+
+<p class="doc-p">2. Hàm <code class="inline-code">executeShare</code> trong <code class="inline-code">share-helper.ts</code> tạo URL động: <code class="inline-code">https://ceo1983.viconnect.vn/api/share/preview?type=opportunity&id=...</code>.</p>
+
+<p class="doc-p">3. Hội viên đăng link lên Facebook hoặc Zalo.</p>
+
+<p class="doc-p">4. Facebook/Zalo Crawler gửi request lấy dữ liệu.</p>
+
+<p class="doc-p">5. Endpoint <code class="inline-code">@Get('api/share/preview')</code> của Backend NestJS nhận request, truy vấn cơ sở dữ liệu lấy ảnh thực tế, tiêu đề và mô tả; sinh mã HTML đầy đủ các thẻ <code class="inline-code">og:image</code>, <code class="inline-code">og:title</code>, <code class="inline-code">og:description</code>, <code class="inline-code">og:url</code> và <code class="inline-code">twitter:card</code>.</p>
+
+<p class="doc-p">6. Facebook/Zalo hiển thị ảnh preview chuẩn, sắc nét, mang thương hiệu CEO 1983.</p>
+
+<p class="doc-p">7. Khi người dùng nhấp vào link, thẻ <code class="inline-code"><meta http-equiv="refresh"></code> và script <code class="inline-code">window.location.replace</code> tự động điều hướng người dùng vào đúng trang chi tiết trên Web/App CEO 1983.</p>
+
+<h4 class="doc-h4">4.9.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-SHARE-01</strong>: Tuyệt đối không để lọt URL ảnh chụp màn hình CRM dashboard trong thẻ <code class="inline-code">og:image</code>.</li>
+
+  <li><strong>BR-SHARE-02</strong>: Nếu bản ghi cơ hội hoặc sự kiện không có ảnh đính kèm, hệ thống bắt buộc sử dụng ảnh fallback banner chính thức <code class="inline-code">https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg</code>.</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.10: Quản Lý Tài Chính, Thu Chi & Hội Phí Niên Liễm</h3>
+
+<h4 class="doc-h4">4.10.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Cung cấp giải pháp quản trị tài chính minh bạch cho Ban Tài Chính và Ban Điều Hành. Quản lý việc thu hội phí thường niên, tiền tài trợ sự kiện, các khoản chi thuê hội trường, truyền thông, quà tặng và tính toán số dư quỹ thặng dư thời gian thực.</p>
+
+<h4 class="doc-h4">4.10.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<pre class="mermaid">
+flowchart TD
+    ActorBTC["Ban Tài Chính"] --> Open_Finance["Mở Phân Hệ Tài Chính (/fees, /income, /expenses)"]
+    Open_Finance --> Record_Type{"Loại Nghiệp Vụ"}
+    
+    Record_Type -->|Thu Hội Phí| Scan_Fee["Kiểm Tra Danh Sách Hội Viên Đến Hạn"]
+    Scan_Fee --> Gen_VietQR["Tạo Mã VietQR Đóng Phí Kèm Cú Pháp Tự Động"]
+    Gen_VietQR --> Verify_Paid["Đối Soát & Xác Nhận Đã Đóng Phí"]
+    Verify_Paid --> Active_Member["Gia Hạn Thẻ VIP Số Thêm 1 Năm"]
+    
+    Record_Type -->|Chi Hoạt Động| Create_Expense["Lập Phiếu Chi & Đính Kèm Hóa Đơn"]
+    Create_Expense --> Approve_Expense["Chủ Tịch Duyệt Chi"]
+    Approve_Expense --> Deduct_Fund["Trừ Số Dư Quỹ Ngân Sách Realtime"]
+</pre>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Trưởng Ban Tài Chính, Kế toán CLB, Chủ tịch CLB.</li>
+
+  <li><strong>Pre-conditions</strong>: Người dùng có quyền kế toán hoặc quản trị.</li>
+
+  <li><strong>Post-conditions</strong>: Dòng tiền thu/chi được ghi nhận; số dư quỹ cập nhật tức thời trên báo cáo tài chính.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Ban Tài Chính thiết lập kỳ thu hội phí năm 2026.</p>
+
+<p class="doc-p">2. Hệ thống gửi thông báo nhắc đóng phí kèm mã VietQR tự động qua Zalo OA và App.</p>
+
+<p class="doc-p">3. Khi hội viên chuyển khoản thành công, hệ thống đối soát tự động cập nhật trạng thái <code class="inline-code">paid</code> và tự động gia hạn Thẻ hội viên VIP thêm 365 ngày.</p>
+
+<p class="doc-p">4. Đối với các khoản chi (thuê địa điểm Gala, quà tặng): Ban Tài Chính lập phiếu chi trên CRM, đính kèm chứng từ hóa đơn và trình Chủ tịch phê duyệt.</p>
+
+<p class="doc-p">5. Sau khi Chủ tịch chuẩn y, số dư quỹ thặng dư trên CRM tự động cập nhật.</p>
+
+<h4 class="doc-h4">4.10.3 Quy Tắc Nghiệp Vụ (Business Rules)</h4>
+
+<ul class="doc-list">
+
+  <li><strong>BR-FIN-01</strong>: Mọi khoản thu chi đều phải có mã chứng từ duy nhất (<code class="inline-code">PT-...</code> cho phiếu thu, <code class="inline-code">PC-...</code> cho phiếu chi) và không được phép xóa vật lý (chỉ chuyển trạng thái hủy/void có ghi vết audit log).</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Module 4.11: Quản Trị Cấu Hình Hệ Thống, Tên Miền, Theme Studio & Phân Quyền RBAC</h3>
+
+<h4 class="doc-h4">4.11.1 Mô Tả Tính Năng</h4>
+
+<p class="doc-p">Trung tâm đầu não cấu hình hệ thống dành cho Super Admin tại <code class="inline-code">/settings</code> và <code class="inline-code">/theme-studio</code>. Quản lý tên miền hệ thống, cấu hình logo, màu sắc thương hiệu, ma trận phân quyền 6 Ban chuyên môn và các kênh liên lạc Zalo OA, thanh toán trực tuyến.</p>
+
+<h4 class="doc-h4">4.11.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết</h4>
+
+<ul class="doc-list">
+
+  <li><strong>Actor</strong>: Super Admin.</li>
+
+  <li><strong>Pre-conditions</strong>: Đăng nhập với quyền <code class="inline-code">quan_tri</code>.</li>
+
+  <li><strong>Post-conditions</strong>: Cấu hình mới có hiệu lực ngay lập tức trên toàn hệ thống mà không cần restart server.</li>
+
+  <li><strong>Basic Flow</strong>:</li>
+
+</ul>
+
+<p class="doc-p">1. Admin mở <code class="inline-code">/settings</code>, chọn tab cần điều chỉnh (Thông tin chung, Tên miền, Zalo OA, Thanh toán VNPay/MoMo, Đẩy tin đa kênh, Cấu hình AI).</p>
+
+<p class="doc-p">2. Chỉnh sửa thông số cấu hình và nhấn "Lưu thay đổi".</p>
+
+<p class="doc-p">3. Backend ghi nhận vào bảng <code class="inline-code">public.app_settings</code> và đồng bộ qua cache hệ thống.</p>
+
+<hr class="doc-divider" />
+
+<h2 class="doc-h2">5. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS)</h2>
+
+<h3 class="doc-h3">5.1 Yêu Cầu Về Hiệu Năng (Performance Requirements)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Thời gian phản hồi API (API Response Time)</strong>: Tối đa 300ms đối với các tác vụ đọc/ghi dữ liệu thông thường; tối đa 1.5s đối với các truy vấn tổng hợp báo cáo phức tạp.</li>
+
+  <li><strong>Khả năng chịu tải (Concurrent Users - CCU)</strong>: Hệ thống chịu tải tối thiểu 10,000 người dùng truy cập đồng thời trong các khung giờ cao điểm diễn ra Gala hoặc sự kiện xúc tiến thương mại lớn.</li>
+
+  <li><strong>Tốc độ Check-in sự kiện</strong>: Dưới 1 giây cho 1 lượt quét QR code, đảm bảo hội trường 1,000 khách thông quan trong vòng dưới 20 phút với 3 cửa soát vé.</li>
+
+</ul>
+
+<h3 class="doc-h3">5.2 Yêu Cầu Về An Toàn & Phục Hồi Dữ Liệu (Safety & Disaster Recovery)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Sao lưu tự động (Automated Backup)</strong>: Cơ chế sao lưu toàn bộ cơ sở dữ liệu PostgreSQL (Database Dump) tự động định kỳ mỗi 24 giờ vào lúc 02:00 sáng, lưu trữ bản sao mã hóa tại máy chủ thứ hai độc lập.</li>
+
+  <li><strong>Thời gian phục hồi mục tiêu (RTO - Recovery Time Objective)</strong>: Dưới 30 phút trong trường hợp máy chủ chính gặp sự cố phần cứng.</li>
+
+  <li><strong>Điểm phục hồi mục tiêu (RPO - Recovery Point Objective)</strong>: Tối đa 24 giờ đối với dữ liệu lịch sử và 0 giây đối với các giao dịch tài chính nhờ cơ chế Write-Ahead Logging (WAL).</li>
+
+</ul>
+
+<h3 class="doc-h3">5.3 Yêu Cầu Về Bảo Mật (Security Requirements)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Cơ chế Silent Token Refresh</strong>: Sử dụng bộ đôi Access Token (thời hạn 60 phút) và Refresh Token (thời hạn 7 ngày lưu trữ bảo mật trong HTTP-only Cookie). Khi Access Token hết hạn, client tự động gọi ngầm <code class="inline-code">POST /api/auth/refresh</code> lấy token mới mà không làm văng người dùng ra trang đăng nhập.</li>
+
+  <li><strong>Phân quyền đa tầng RBAC</strong>: Mọi endpoint API đều được bảo vệ bởi <code class="inline-code">JwtAuthGuard</code> và <code class="inline-code">RolesGuard</code>, xác thực quyền hạn theo đúng ma trận phân quyền trước khi thực thi truy vấn.</li>
+
+  <li><strong>Chống các lỗ hổng bảo mật phổ biến</strong>: Tuân thủ tiêu chuẩn OWASP Top 10: Chống SQL Injection bằng Prisma Parameterized Queries, chống Cross-Site Scripting (XSS) bằng HTML sanitization, chống Cross-Site Request Forgery (CSRF).</li>
+
+</ul>
+
+<h3 class="doc-h3">5.4 Thuộc Tính Chất Lượng Phần Mềm (Software Quality Attributes)</h3>
+
+<ul class="doc-list">
+
+  <li><strong>Tính sẵn sàng (Availability)</strong>: Cam kết chỉ số Uptime tối thiểu 99.9% thời gian hoạt động trong năm.</li>
+
+  <li><strong>Tính dễ bảo trì (Maintainability)</strong>: Mã nguồn tuân thủ nghiêm ngặt TypeScript Strict Type-check (0 errors), cấu trúc module hóa NestJS và TanStack Router giúp mở rộng tính năng mới độc lập.</li>
+
+  <li><strong>Tính tương thích (Portability)</strong>: Chạy hoàn hảo trên cả môi trường Web Desktop (Chrome, Edge, Safari, Firefox) lẫn Mobile Native (iOS, Android qua Capacitor).</li>
+
+</ul>
+
+<hr class="doc-divider" />
+
+<h2 class="doc-h2">6. CÁC YÊU CẦU KHÁC & PHỤ LỤC (OTHER REQUIREMENTS & APPENDICES)</h2>
+
+<h3 class="doc-h3">Phụ Lục A: Mô Hình Hóa Dữ Liệu Thực Thể (Data Model / ERD Diagram)</h3>
+
+<pre class="mermaid">
+erDiagram
+    VIONE_USERS ||--o{ BUSINESS_CARDS : "sở hữu"
+    VIONE_USERS ||--o{ OPPORTUNITIES : "đăng tải"
+    VIONE_USERS ||--o{ EVENT_REGISTRATIONS : "đăng ký vé"
+    VIONE_USERS ||--o{ USER_CONNECTIONS : "kết nối bạn bè"
+    VIONE_USERS ||--o{ ACTIVITY_LOG : "thực hiện"
+    VIONE_USERS ||--o{ AI_REQUEST_AUDIT : "gọi tác vụ AI"
+
+    EVENTS ||--o{ EVENT_REGISTRATIONS : "phát hành vé"
+    OPPORTUNITIES ||--o{ OPPORTUNITY_DEALS : "nhận chào deal"
+
+    VIONE_USERS {
+        uuid id PK
+        string email
+        string phone
+        string name
+        string company_name
+        string position
+        string role
+        string status
+        timestamptz created_at
+    }
+
+    BUSINESS_CARDS {
+        uuid id PK
+        uuid user_id FK
+        string card_code
+        string theme_id
+        string qr_url
+        boolean is_active
+    }
+
+    OPPORTUNITIES {
+        uuid id PK
+        uuid author_id FK
+        string title
+        numeric budget
+        string currency
+        text description
+        jsonb images
+        numeric commission_rate
+        string recipient_type
+        string status
+        timestamptz created_at
+    }
+
+    EVENTS {
+        uuid id PK
+        string title
+        text description
+        string cover_image
+        timestamptz start_date
+        string location
+        int max_attendees
+        string status
+    }
+
+    EVENT_REGISTRATIONS {
+        uuid id PK
+        uuid event_id FK
+        uuid user_id FK
+        string ticket_code
+        boolean is_checked_in
+        timestamptz checked_in_at
+        string seat_number
+    }
+
+    AI_REQUEST_AUDIT {
+        uuid id PK
+        uuid user_id FK
+        string capability
+        string provider
+        string model
+        int latency_ms
+        int tokens_estimate
+        boolean used_fallback
+        timestamptz created_at
+    }
+</pre>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Phụ Lục B: Biểu Đồ Trình Tự (Sequence Diagrams) Cho Các Luồng Logic Phức Tạp</h3>
+
+<h4 class="doc-h4">B.1 Luồng Kết Nối B2B & Deal Chào Giá Trực Tiếp</h4>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor MemberA as Hội Viên A (Người Đăng)
+    actor MemberB as Hội Viên B (Người Chào Deal)
+    participant MobileApp as CEO 1983 Mobile App
+    participant Backend as NestJS API Server
+    participant DB as PostgreSQL Database
+    participant Socket as Socket.IO Realtime
+
+    MemberA->>MobileApp: Đăng cơ hội hợp tác B2B (ảnh, giá trị, hoa hồng %)
+    MobileApp->>Backend: POST /api/opportunities
+    Backend->>DB: INSERT INTO opportunities
+    DB-->>Backend: Bản ghi cơ hội mới
+    Backend->>Socket: Emit sự kiện "opportunity:new"
+    Socket-->>MobileApp: Cập nhật sàn cơ hội B2B realtime cho toàn mạng lưới
+
+    MemberB->>MobileApp: Xem sàn B2B, chọn cơ hội của Hội Viên A
+    MemberB->>MobileApp: Nhấn nút "Deal Chào Giá" & nhập báo giá
+    MobileApp->>Backend: POST /api/opportunities/:id/deal
+    Backend->>DB: INSERT INTO opportunity_deals (sender_id, author_id, amount)
+    DB-->>Backend: Xác nhận deal đã tạo
+    Backend->>Socket: Emit "deal:received" tới đúng phòng của Hội Viên A
+    Socket-->>MemberA: Hiển thị Push Notification: "Doanh nhân B vừa gửi deal chào giá cho cơ hội của bạn"
+    MemberA->>MobileApp: Mở xem deal và bắt đầu trao đổi trực tiếp
+</pre>
+
+<h4 class="doc-h4">B.2 Luồng Điểm Danh Check-in Sự Kiện Bằng QR Code Trong 1 Giây</h4>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Attendee as Hội Viên Điểm Danh
+    actor Checker as Lễ Tân Soát Vé
+    participant ScannerApp as App Soát Vé / Máy Quét
+    participant Backend as NestJS Server
+    participant DB as PostgreSQL Database
+
+    Attendee->>Checker: Xuất trình QR Pass trên màn hình điện thoại
+    Checker->>ScannerApp: Hướng camera vào mã QR
+    ScannerApp->>Backend: POST /api/events/checkin { ticketCode: "TICKET-1983-8888" }
+    Backend->>DB: SELECT * FROM event_registrations WHERE ticket_code = $1 FOR UPDATE
+    DB-->>Backend: Trả về thông tin vé & trạng thái
+    alt Vé hợp lệ & Chưa check-in
+        Backend->>DB: UPDATE event_registrations SET is_checked_in = true, checked_in_at = now()
+        DB-->>Backend: Cập nhật thành công
+        Backend-->>ScannerApp: Return 200 OK { attendeeName: "Nguyễn Văn Hùng", seat: "VIP-B12" }
+        ScannerApp-->>Checker: Bật màn hình xanh, phát âm thanh "Tít" (Thời gian: 0.45s)
+    else Vé đã check-in trước đó
+        Backend-->>ScannerApp: Return 400 Bad Request { error: "ALREADY_CHECKED_IN", at: "18:05" }
+        ScannerApp-->>Checker: Bật màn hình đỏ, còi báo động "Vé trùng!"
+    end
+</pre>
+
+<h4 class="doc-h4">B.3 Luồng Trợ Lý AI Phân Tích CRM & Xuất Hóa Đơn / Phiếu Thu Điện Tử</h4>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Admin as Chủ Tịch / Ban Tài Chính
+    participant CRM as Web CRM (/ai-assistant)
+    participant Backend as NestJS AiCrmAnalyticsService
+    participant DB as PostgreSQL Database
+    participant AI as Gemini 2.0 Flash / Fallback Model
+
+    Admin->>CRM: Nhấn "Quét & Phân Tích Realtime"
+    CRM->>Backend: GET /api/ai/crm/analyze
+    Backend->>DB: Quét hội viên, số dư quỹ, sự kiện, cơ hội B2B & activity_log
+    DB-->>Backend: Toàn bộ dữ liệu tổng hợp
+    Backend->>AI: Gửi Context Prompt phân tích sức khỏe & khuyến nghị điều hành
+    AI-->>Backend: Trả về JSON Health Score (94), Strengths, Bottlenecks, Recommendations
+    Backend->>DB: Ghi nhận audit log vào ai_request_audit
+    Backend-->>CRM: Hiển thị Dashboard phân tích AI chiến lược
+
+    Admin->>CRM: Chọn Tab "Xuất Hóa Đơn / Phiếu Thu", nhập thông tin nộp tiền
+    Admin->>CRM: Nhấn "Cập Nhật & Xem Trước"
+    CRM->>Backend: POST /api/ai/crm/export-report { type: 'invoice', options: {...} }
+    Backend-->>CRM: Trả về cấu trúc Phiếu thu điện tử chuẩn mẫu 01-TT
+    CRM-->>Admin: Hiển thị bản in có Quốc hiệu, Tiêu ngữ, Mã QR tra cứu & Ký số
+    Admin->>CRM: Nhấn "In Phiếu Thu" -> Kích hoạt window.print() in ra máy in A4
+</pre>
+
+<h4 class="doc-h4">B.4 Luồng Đồng Bộ Kho Tài Liệu 2 Chiều Với Google Drive Cá Nhân</h4>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Member as Hội Viên Doanh Nhân
+    participant App as App / CRM Thư Viện
+    participant Modal as MemberGoogleDriveSyncModal
+    participant GoogleDrive as Google Drive API / Cloud Storage
+
+    Member->>App: Nhấn nút "Đồng bộ Drive" trên văn bản
+    App->>Modal: Mở popup đồng bộ
+    alt Chưa liên kết Google Drive
+        Modal->>Member: Yêu cầu nhập Email Google Drive & Thư mục đích
+        Member->>Modal: Nhập "ceo.nguyenvanhung@gmail.com", lưu liên kết
+        Modal->>Modal: Lưu vào LocalStorage "ceo1983_member_drive_config"
+    end
+    Modal->>GoogleDrive: Tạo bản sao / xuất shortcut tài liệu vào thư mục Google Drive
+    GoogleDrive-->>Modal: Trả về trạng thái đồng bộ thành công (200 OK)
+    Modal-->>App: Đóng popup, hiển thị toast thông báo
+    App-->>Member: Toast: "Đã chuyển tài liệu vào Google Drive cá nhân thành công!" kèm nút mở Drive
+</pre>
+
+<h4 class="doc-h4">B.5 Luồng Cơ Chế Tự Động Làm Mới Token Nền (Silent Token Refresh)</h4>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as Người Dùng Đang Thao Tác
+    participant Frontend as Frontend fetchNestApi
+    participant Backend as NestJS Auth Guard
+    participant TokenService as JWT Auth Service
+
+    User->>Frontend: Thực hiện một thao tác bất kỳ trên App / CRM
+    Frontend->>Backend: Gửi HTTP Request kèm Access Token (đã hết hạn sau 60p)
+    Backend-->>Frontend: Trả về mã lỗi 401 Unauthorized (TokenExpiredError)
+    Frontend->>Frontend: Chặn request, giữ hàng đợi (Queue), lấy Refresh Token từ Cookie
+    Frontend->>Backend: Gửi POST /api/auth/refresh { refreshToken }
+    Backend->>TokenService: Xác thực Refresh Token còn hạn hợp lệ (7 ngày)
+    TokenService-->>Backend: Cấp cặp Access Token & Refresh Token mới
+    Backend-->>Frontend: Trả về New Access Token
+    Frontend->>Frontend: Cập nhật Access Token mới vào LocalStorage & Cookie
+    Frontend->>Backend: Thực hiện lại ngay request ban đầu với Token mới
+    Backend-->>Frontend: Trả về kết quả 200 OK thành công
+    Frontend-->>User: Giao diện mượt mà, người dùng không hề bị văng ra trang đăng nhập!
+</pre>
+
+<hr class="doc-divider" />
+
+<h3 class="doc-h3">Phụ Lục C: Ma Trận Truy Vết Yêu Cầu (Traceability Matrix)</h3>
+
+<div class="table-container"><table>
+  <tr><th>Nhóm Phân Hệ</th><th>Mã Node ID</th><th>Tên Chức Năng Cốt Lõi</th><th>Thành Phần Frontend</th><th>Controller / Service Backend</th><th>Trạng Thái Kiểm Thử</th></tr>
+  <tr><td><strong>CRM</strong></td><td><code class="inline-code">[NODE-CRM-001]</code></td><td>Tổng quan Dashboard & Thống Kê</td><td><code class="inline-code">routes/index.tsx</code>, <code class="inline-code">routes/analytics.tsx</code></td><td><code class="inline-code">AnalyticsController</code>, <code class="inline-code">AnalyticsService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>CRM</strong></td><td><code class="inline-code">[NODE-CRM-002]</code></td><td>Quản lý Hội viên 360 & Tái tục</td><td><code class="inline-code">routes/members.tsx</code>, <code class="inline-code">routes/renewal.tsx</code></td><td><code class="inline-code">MembersController</code>, <code class="inline-code">MembersService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>CRM</strong></td><td><code class="inline-code">[NODE-CRM-004]</code></td><td>Quản lý Sự kiện & Check-in QR</td><td><code class="inline-code">routes/events.tsx</code>, <code class="inline-code">EventDetailModal.tsx</code></td><td><code class="inline-code">EventsController</code>, <code class="inline-code">EventsService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>CRM</strong></td><td><code class="inline-code">[NODE-CRM-009]</code></td><td>Quản trị Tài chính & Thu chi</td><td><code class="inline-code">routes/fees.tsx</code>, <code class="inline-code">routes/income.tsx</code></td><td><code class="inline-code">PaymentController</code>, <code class="inline-code">PaymentService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>CRM</strong></td><td><code class="inline-code">[NODE-CRM-011]</code></td><td>Cấu hình Hệ thống, AI & Tên miền</td><td><code class="inline-code">routes/settings.tsx</code>, <code class="inline-code">AiConfigSection.tsx</code></td><td><code class="inline-code">AiController</code>, <code class="inline-code">AiCrmAnalyticsService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>CRM</strong></td><td><code class="inline-code">[NODE-CRM-015]</code></td><td>Trợ lý AI Điều Hành & Báo Cáo Con</td><td><code class="inline-code">routes/ai-assistant.tsx</code></td><td><code class="inline-code">AiController</code>, <code class="inline-code">AiCrmAnalyticsService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>App</strong></td><td><code class="inline-code">[NODE-APP-001]</code></td><td>Trang chủ Doanh nhân & Bottom Bar</td><td><code class="inline-code">routes/association.index.tsx</code>, <code class="inline-code">MemberShell.tsx</code></td><td><code class="inline-code">ConnectAppController</code>, <code class="inline-code">ConnectAppService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>App</strong></td><td><code class="inline-code">[NODE-APP-003]</code></td><td>Thẻ Hội viên VIP Số & NFC</td><td><code class="inline-code">routes/association.card.tsx</code>, <code class="inline-code">card.$code.tsx</code></td><td><code class="inline-code">BusinessCardController</code>, <code class="inline-code">BusinessCardService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>App</strong></td><td><code class="inline-code">[NODE-APP-004]</code></td><td>Danh bạ 2 cấp & Bạn bè kết nối</td><td><code class="inline-code">routes/association.members.tsx</code></td><td><code class="inline-code">ConnectAppController</code>, <code class="inline-code">ConnectAppService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>App</strong></td><td><code class="inline-code">[NODE-APP-007]</code></td><td>Sàn Giao thương B2B & Deal chào giá</td><td><code class="inline-code">routes/association.opportunities.tsx</code></td><td><code class="inline-code">ConnectAppController</code>, <code class="inline-code">ConnectAppService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>App</strong></td><td><code class="inline-code">[NODE-APP-010]</code></td><td>Sự kiện & Vé điện tử QR Pass</td><td><code class="inline-code">routes/association.events.tsx</code></td><td><code class="inline-code">EventsController</code>, <code class="inline-code">EventsService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>App</strong></td><td><code class="inline-code">[NODE-APP-012]</code></td><td>Kho Tài liệu Đồng bộ Google Drive</td><td><code class="inline-code">routes/association.library.tsx</code>, <code class="inline-code">documents.index.tsx</code></td><td><code class="inline-code">DocumentsController</code>, <code class="inline-code">DocumentsService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>Core</strong></td><td><code class="inline-code">[NODE-CORE-001]</code></td><td>Xác thực JWT & Silent Token Refresh</td><td><code class="inline-code">routes/association.login.tsx</code>, <code class="inline-code">api-client.ts</code></td><td><code class="inline-code">AuthController</code>, <code class="inline-code">AuthService</code></td><td>✅ Pass (0 errors)</td></tr>
+  <tr><td><strong>Core</strong></td><td><code class="inline-code">[NODE-CORE-002]</code></td><td>Dynamic OpenGraph Preview Endpoint</td><td><code class="inline-code">share-helper.ts</code>, <code class="inline-code">__root.tsx</code></td><td><code class="inline-code">AppController</code> (<code class="inline-code">/api/share/preview</code>)</td><td>✅ Pass (0 errors)</td></tr>
+</table></div>
+
+<hr class="doc-divider" />
+
+<p class="doc-p"><em>Tài liệu Đặc tả Yêu cầu Phần mềm (SRS V7.0) được phê duyệt chính thức bởi Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA). Mọi thay đổi kỹ thuật tiếp theo phải tuân thủ quy trình kiểm soát phiên bản và cập nhật đồng bộ vào Ma trận truy vết.</em></p>
+
+      </div>
+      <div class="inner-footer">
+        <div>Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA) — Bảo mật nội bộ</div>
+        <div>7.0</div>
+      </div>
+    </div>
+
+    <!-- MERMAID SCRIPT LOADER -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#eff6ff",
+          primaryTextColor: "#0f172a",
+          primaryBorderColor: "#2563eb",
+          lineColor: "#475569",
+          secondaryColor: "#f8fafc",
+          tertiaryColor: "#ffffff",
+          fontFamily: "Be Vietnam Pro, Segoe UI, Roboto, sans-serif",
+          fontSize: "12px",
+        },
+        sequence: { diagramMarginX: 12, diagramMarginY: 12, actorMargin: 40, messageMargin: 24 },
+        flowchart: { useMaxWidth: true, htmlLabels: true },
+      });
+      mermaid.run({ querySelector: ".mermaid" });
+    </script>
+  </body>
+</html>
