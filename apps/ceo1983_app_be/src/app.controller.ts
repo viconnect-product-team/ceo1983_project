@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Header } from '@nestjs/common';
+import { Controller, Get, Query, Param, Header } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
 
@@ -15,20 +15,30 @@ export class AppController {
   }
 
   /**
-   * GET /api/share/preview
+   * GET /api/share/preview, /share/preview, /share/:type/:id, /api/share/:type/:id
    * Trả về HTML chứa OpenGraph tags & Twitter Cards động chuẩn mực cho Facebook, Zalo, Telegram.
    * Đồng thời tự động chuyển hướng người dùng khi click link vào đúng trang trên App / Web.
    */
-  @Get('api/share/preview')
+  @Get([
+    'share/preview',
+    'api/share/preview',
+    'share/:type/:id',
+    'api/share/:type/:id',
+  ])
   @Header('Content-Type', 'text/html; charset=utf-8')
   async getSharePreview(
-    @Query('type') type?: string,
-    @Query('id') id?: string,
+    @Query('type') rawQueryType?: string,
+    @Query('id') rawQueryId?: string,
+    @Param('type') rawParamType?: string,
+    @Param('id') rawParamId?: string,
     @Query('title') customTitle?: string,
     @Query('desc') customDesc?: string,
     @Query('image') customImage?: string,
     @Query('target') customTarget?: string,
   ): Promise<string> {
+    const targetType = (rawParamType || rawQueryType || '').toLowerCase();
+    const targetId = rawParamId || rawQueryId || '';
+
     const DEFAULT_IMAGE = 'https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg';
     const SITE_NAME = 'CLB Doanh Nhân CEO 1983 (HanoiBA)';
     const BASE_WEB_URL = 'https://ceo1983.viconnect.vn';
@@ -41,19 +51,33 @@ export class AppController {
     let targetUrl = customTarget || `${BASE_WEB_URL}/intro`;
 
     try {
-      if (type === 'opportunity' && id) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/opportunities?id=${encodeURIComponent(id)}`;
+      if (targetType === 'opportunity' && targetId) {
+        targetUrl = customTarget || `${BASE_WEB_URL}/association/opportunities?id=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, description, images, budget, currency FROM public.opportunities WHERE id::text = $1 LIMIT 1`,
-          id,
+          `SELECT title, description, images, budget, currency, category, contact_name, contact_phone FROM public.opportunities WHERE id::text = $1 LIMIT 1`,
+          targetId,
         ).catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title ? `[Cơ Hội Giao Thương] ${item.title}` : resolvedTitle;
-          if (item.description) {
-            resolvedDesc = item.description.replace(/<[^>]*>?/gm, '').slice(0, 240);
+          let budgetStr = '';
+          if (item.budget && Number(item.budget) > 0) {
+            const num = Number(item.budget);
+            budgetStr = num >= 1e9 ? ` (Quy mô: ${(num / 1e9).toFixed(1)} Tỷ VNĐ)` : ` (Quy mô: ${(num / 1e6).toFixed(0)} Triệu VNĐ)`;
           }
+          resolvedTitle = item.title ? `[Cơ Hội Giao Thương B2B] ${item.title}${budgetStr} — CLB CEO 1983` : resolvedTitle;
+          
+          let descParts: string[] = [];
+          if (item.description) {
+            descParts.push(item.description.replace(/<[^>]*>?/gm, '').trim());
+          }
+          if (item.contact_name) {
+            descParts.push(`Người liên hệ: ${item.contact_name}`);
+          }
+          if (descParts.length > 0) {
+            resolvedDesc = descParts.join(' — ').slice(0, 260);
+          }
+
           let imgList: string[] = [];
           if (Array.isArray(item.images)) {
             imgList = item.images;
@@ -68,52 +92,68 @@ export class AppController {
             resolvedImage = imgList[0];
           }
         }
-      } else if (type === 'event' && id) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/events/${encodeURIComponent(id)}`;
+      } else if (targetType === 'event' && targetId) {
+        targetUrl = customTarget || `${BASE_WEB_URL}/association/events?id=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, description, cover_image, banner_url, location FROM public.events WHERE id::text = $1 LIMIT 1`,
-          id,
+          `SELECT title, description, cover_image, banner_url, location, event_date, category FROM public.events WHERE id::text = $1 LIMIT 1`,
+          targetId,
         ).catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
           resolvedTitle = item.title ? `[Sự Kiện CEO 1983] ${item.title}` : resolvedTitle;
+          let details: string[] = [];
+          if (item.event_date) {
+            try {
+              const d = new Date(item.event_date);
+              details.push(`Thời gian: ${d.toLocaleDateString('vi-VN')}`);
+            } catch {}
+          }
+          if (item.location) {
+            details.push(`Địa điểm: ${item.location}`);
+          }
           if (item.description) {
-            resolvedDesc = item.description.replace(/<[^>]*>?/gm, '').slice(0, 240);
+            details.push(item.description.replace(/<[^>]*>?/gm, '').trim());
+          }
+          if (details.length > 0) {
+            resolvedDesc = details.join(' — ').slice(0, 260);
           }
           if (item.cover_image || item.banner_url) {
             resolvedImage = item.cover_image || item.banner_url;
           }
         }
-      } else if ((type === 'post' || type === 'feed') && id) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/feed?post=${encodeURIComponent(id)}`;
+      } else if ((targetType === 'post' || targetType === 'feed') && targetId) {
+        targetUrl = customTarget || `${BASE_WEB_URL}/association/messages?post=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
           `SELECT content, images, author_name FROM public.feed_posts WHERE id::text = $1 LIMIT 1`,
-          id,
+          targetId,
         ).catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.author_name ? `Bài chia sẻ từ Doanh nhân ${item.author_name}` : 'Bài viết trên Mạng lưới CEO 1983';
+          resolvedTitle = item.author_name ? `Bài chia sẻ từ Doanh nhân ${item.author_name} — Mạng lưới CEO 1983` : 'Bài viết trên Mạng lưới CEO 1983';
           if (item.content) {
-            resolvedDesc = item.content.slice(0, 240);
+            resolvedDesc = item.content.slice(0, 260);
           }
           if (Array.isArray(item.images) && item.images.length > 0) {
             resolvedImage = item.images[0];
           }
         }
-      } else if (type === 'training' && id) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/trainings?id=${encodeURIComponent(id)}`;
+      } else if (targetType === 'training' && targetId) {
+        targetUrl = customTarget || `${BASE_WEB_URL}/association/training?id=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
           `SELECT title, description, cover_image, instructor FROM public.trainings WHERE id::text = $1 LIMIT 1`,
-          id,
+          targetId,
         ).catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title ? `[Khóa Đào Tạo CEO] ${item.title}` : resolvedTitle;
-          if (item.description) {
-            resolvedDesc = item.description.replace(/<[^>]*>?/gm, '').slice(0, 240);
+          resolvedTitle = item.title ? `[Khóa Đào Tạo Doanh Nhân] ${item.title} — CEO 1983` : resolvedTitle;
+          let details: string[] = [];
+          if (item.instructor) details.push(`Giảng viên: ${item.instructor}`);
+          if (item.description) details.push(item.description.replace(/<[^>]*>?/gm, '').trim());
+          if (details.length > 0) {
+            resolvedDesc = details.join(' — ').slice(0, 260);
           }
           if (item.cover_image) {
             resolvedImage = item.cover_image;
@@ -142,7 +182,7 @@ export class AppController {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${safeTitle}</title>
   
-  <!-- OpenGraph Metadata cho Facebook, Zalo, LinkedIn -->
+  <!-- OpenGraph Metadata cho Facebook, Zalo, LinkedIn, Telegram -->
   <meta property="og:site_name" content="${SITE_NAME}" />
   <meta property="og:title" content="${safeTitle}" />
   <meta property="og:description" content="${safeDesc}" />
@@ -150,6 +190,7 @@ export class AppController {
   <meta property="og:image:secure_url" content="${safeImage}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="${safeTitle}" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:url" content="${safeTarget}" />
   <meta property="og:type" content="article" />
@@ -159,6 +200,25 @@ export class AppController {
   <meta name="twitter:title" content="${safeTitle}" />
   <meta name="twitter:description" content="${safeDesc}" />
   <meta name="twitter:image" content="${safeImage}" />
+
+  <!-- Schema.org Microdata -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": "${safeTitle}",
+    "image": ["${safeImage}"],
+    "description": "${safeDesc}",
+    "publisher": {
+      "@type": "Organization",
+      "name": "CLB Doanh Nhân CEO 1983",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://ceo1983.viconnect.vn/logo_ceo_1983_round.png"
+      }
+    }
+  }
+  </script>
 
   <!-- Tự động chuyển hướng trình duyệt của người dùng sang Web / Mobile App -->
   <meta http-equiv="refresh" content="0; url=${safeTarget}" />
@@ -186,20 +246,28 @@ export class AppController {
       padding: 32px 24px;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      max-width: 460px;
+      max-width: 480px;
       width: 100%;
     }
-    .logo {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 16px;
+    .preview-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
       border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      border-radius: 10px;
     }
     .title {
       font-size: 18px;
       font-weight: 700;
       color: #0f172a;
-      margin: 0 0 8px 0;
+      margin: 0 0 10px 0;
+      line-height: 1.4;
     }
     .desc {
       font-size: 14px;
@@ -225,7 +293,7 @@ export class AppController {
 </head>
 <body>
   <div class="card">
-    <img src="https://ceo1983.viconnect.vn/logo_ceo_1983_round.png" alt="CEO 1983" class="logo" onerror="this.style.display='none'" />
+    <img src="${safeImage}" alt="${safeTitle}" class="preview-img" onerror="this.src='${DEFAULT_IMAGE}'" />
     <h2 class="title">${safeTitle}</h2>
     <p class="desc">${safeDesc}</p>
     <a href="${safeTarget}" class="btn">Mở trong Ứng dụng CEO 1983</a>

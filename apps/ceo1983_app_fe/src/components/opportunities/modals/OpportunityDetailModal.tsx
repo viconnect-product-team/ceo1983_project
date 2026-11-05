@@ -24,6 +24,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { buildDynamicShareUrl } from "@/lib/share-helper";
 import type { MyOpportunity } from "@/lib/member-app.functions";
 import { OpportunityMultiMetricChart } from "../OpportunityMultiMetricChart";
 
@@ -508,9 +509,18 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const shareUrl = `${window.location.origin}/share/opportunity/${selectedOpp.id}?source=facebook`;
-                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank");
-                  toast.success("Đang mở chia sẻ Facebook...");
+                  const oppAny = selectedOpp as any;
+                  const oppImg = oppAny?.image || (Array.isArray(oppAny?.images) ? oppAny.images[0] : (typeof oppAny?.images === 'string' && oppAny.images.startsWith('http') ? oppAny.images : undefined));
+                  const dynamicUrl = buildDynamicShareUrl({
+                    type: 'opportunity',
+                    id: selectedOpp.id,
+                    title: `[Cơ Hội Giao Thương B2B] ${selectedOpp.title} — CLB CEO 1983`,
+                    desc: selectedOpp.description || `Cơ hội hợp tác kinh doanh CEO 1983: ${selectedOpp.title}`,
+                    image: oppImg,
+                    targetPath: `/association/opportunities?id=${selectedOpp.id}`,
+                  });
+                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(dynamicUrl)}`, "_blank");
+                  toast.success("Đang mở chia sẻ Facebook với thẻ OpenGraph chuẩn...");
                 }}
                 className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#1877F2] text-white font-bold text-xs shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
               >
@@ -519,9 +529,18 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const shareUrl = `${window.location.origin}/share/opportunity/${selectedOpp.id}?source=zalo`;
-                  window.open(`https://zalo.me/share?url=${encodeURIComponent(shareUrl)}`, "_blank");
-                  toast.success("Đang mở chia sẻ Zalo...");
+                  const oppAny = selectedOpp as any;
+                  const oppImg = oppAny?.image || (Array.isArray(oppAny?.images) ? oppAny.images[0] : (typeof oppAny?.images === 'string' && oppAny.images.startsWith('http') ? oppAny.images : undefined));
+                  const dynamicUrl = buildDynamicShareUrl({
+                    type: 'opportunity',
+                    id: selectedOpp.id,
+                    title: `[Cơ Hội Giao Thương B2B] ${selectedOpp.title} — CLB CEO 1983`,
+                    desc: selectedOpp.description || `Cơ hội hợp tác kinh doanh CEO 1983: ${selectedOpp.title}`,
+                    image: oppImg,
+                    targetPath: `/association/opportunities?id=${selectedOpp.id}`,
+                  });
+                  window.open(`https://zalo.me/share?url=${encodeURIComponent(dynamicUrl)}`, "_blank");
+                  toast.success("Đang mở chia sẻ Zalo với thẻ xem trước chuẩn...");
                 }}
                 className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0068FF] text-white font-bold text-xs shadow-xs hover:brightness-105 active:scale-95 transition cursor-pointer"
               >
@@ -532,10 +551,19 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const shareUrl = `${window.location.origin}/share/opportunity/${selectedOpp.id}`;
-                  navigator.clipboard.writeText(shareUrl);
-                  toast.success("Đã sao chép liên kết chia sẻ public!", {
-                    description: shareUrl,
+                  const oppAny = selectedOpp as any;
+                  const oppImg = oppAny?.image || (Array.isArray(oppAny?.images) ? oppAny.images[0] : (typeof oppAny?.images === 'string' && oppAny.images.startsWith('http') ? oppAny.images : undefined));
+                  const dynamicUrl = buildDynamicShareUrl({
+                    type: 'opportunity',
+                    id: selectedOpp.id,
+                    title: `[Cơ Hội Giao Thương B2B] ${selectedOpp.title} — CLB CEO 1983`,
+                    desc: selectedOpp.description || `Cơ hội hợp tác kinh doanh CEO 1983: ${selectedOpp.title}`,
+                    image: oppImg,
+                    targetPath: `/association/opportunities?id=${selectedOpp.id}`,
+                  });
+                  navigator.clipboard.writeText(dynamicUrl);
+                  toast.success("Đã sao chép liên kết chia sẻ public chuẩn OpenGraph!", {
+                    description: dynamicUrl,
                   });
                 }}
                 className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"

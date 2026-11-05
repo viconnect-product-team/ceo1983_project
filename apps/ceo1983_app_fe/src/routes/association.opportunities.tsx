@@ -1714,7 +1714,7 @@ function OpportunitiesScreen() {
                                   {
                                     type: "opportunity",
                                     id: o.id,
-                                    title: o.title,
+                                    title: `[Cơ Hội Giao Thương B2B] ${o.title} — CLB CEO 1983`,
                                     desc: o.description || `Cơ hội hợp tác kinh doanh CEO 1983: ${o.title} (${formatSmartPrice(o.value)})`,
                                     image: (o as any).images?.[0] || (o as any).image || undefined,
                                     targetPath: `/association/opportunities?id=${o.id}`,

@@ -1,5 +1,43 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 05/11/2026 (v10.42): Sửa Triệt Để Lỗi Share Format Mạng Xã Hội (Facebook, Zalo) & Xây Dựng Giao Diện Chat AI Đỉnh Cao ChatGPT Dùng Model Free Tại Web CRM ([NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-015], [NODE-APP-003], [NODE-APP-004], [NODE-APP-008])**:
+  1. *Khắc Phục Triệt Để Lỗi Chia Sẻ Mạng Xã Hội Mất Format*:
+     - **Nguyên nhân gốc rễ**: Khi bấm nút chia sẻ Facebook / Zalo trong modal chi tiết cơ hội (`OpportunityDetailModal.tsx`), code cũ sinh URL client-side `/share/opportunity/:id`. Khi crawler bot (Facebook, Zalo) truy cập, Nginx chuyển tiếp tới SPA frontend trả về `index.html` với meta tags mặc định (ảnh skyline ban ngày và title chung chung) thay vì nội dung thực tế của cơ hội/sự kiện.
+     - **Sửa Frontend**: Patch `OpportunityDetailModal.tsx` sử dụng chuẩn hàm `buildDynamicShareUrl` trỏ vào `/api/share/preview` kèm đầy đủ loại entity (`opportunity`), id, tiêu đề cơ hội, mô tả tóm tắt, ảnh thật và quy mô ngân sách.
+     - **Nâng Cấp Backend**: Cập nhật `apps/ceo1983_app_be/src/app.controller.ts` với route `@Get(['share/preview', 'api/share/preview', 'share/:type/:id', 'api/share/:type/:id'])`. Đọc dữ liệu thực tế từ PostgreSQL (tiêu đề, mô tả, ảnh, thời gian sự kiện, quy mô ngân sách tỷ/triệu VNĐ của cơ hội) và xuất HTML OpenGraph, Twitter Cards (`summary_large_image`), Schema.org Microdata chuẩn mực 1200x630px.
+     - **Nâng Cấp Hạ Tầng Nginx**: Bổ sung location `/share/` trong `deploy/ssl/nginx.conf` (cả port 443 và port 5445) proxy trực tiếp sang backend container `ceo1983-backend-prod:4000`, đảm bảo bất kỳ crawler bot nào quét link dạng `/share/...` đều nhận trọn vẹn thẻ OpenGraph động.
+  2. *Xây Dựng Giao Diện Chat AI Chuẩn ChatGPT Sử Dụng Model Free*:
+     - **Backend Endpoint Chat**: Thêm method `handleChatAssistant` vào `AiCrmAnalyticsService` và endpoint `@Post('crm/chat')` trong `AiController`. Tự động thu thập Live CRM Context từ database PostgreSQL (Hội viên, Sổ quỹ tài chính thu chi, Sự kiện, Cơ hội B2B, 6 Ban chuyên môn). Hỗ trợ danh mục Model Free: Google Gemini 2.0 Flash (Free Tier), DeepSeek V3 / R1 (Free), Meta Llama 3.3 70B (Groq Free), GPT-4o-mini kèm Intelligent Hybrid Expert Fallback Engine phân tích chuyên sâu.
+     - **Frontend ChatGPT Component (`CrmChatGPTView.tsx`)**:
+       - *Sidebar Lịch sử*: Nút "+ Cuộc trò chuyện mới", danh sách phiên hội thoại lưu trong `localStorage`, đổi tên theo câu hỏi đầu tiên, nút xóa từng phiên và dọn dẹp toàn bộ.
+       - *Header Model Selector*: Dropdown chọn linh hoạt 4 mô hình Free Tier hàng đầu, hiển thị huy hiệu trạng thái Live PostgreSQL.
+       - *Màn hình Khởi đầu*: 4 Quick Prompt Cards (Hội viên, Dòng tiền thu chi, Cơ hội B2B, Kế hoạch sự kiện).
+       - *Khung Tin nhắn*: Thiết kế chuẩn mực ChatGPT với Avatar AI lấp lánh, trình render Markdown thuần an toàn không XSS (tiêu đề h3/h4, in đậm, danh sách, bảng biểu Markdown, thẻ dẫn chứng CSDL, nút Copy to clipboard, latency tracker).
+       - *Thanh Nhập liệu Chân trang*: Floating input bar bo tròn mềm mại, Textarea tự động co giãn chiều cao theo số dòng, phím tắt Enter gửi tin, Shift+Enter xuống dòng, nút Gửi tròn thanh thoát.
+     - **Tích Hợp Web CRM Route**: Đặt tab "Trò Chuyện AI (ChatGPT Style)" làm tab đầu tiên và mặc định tại `apps/ceo1983_app_fe/src/routes/ai-assistant.tsx`.
+  3. *Kiểm Tra & Xác Minh*:
+     - Đạt 0 lỗi cú pháp AST (0 syntax errors) và 0 lỗi TypeScript trên tất cả các file sửa đổi.
+     - Cập nhật `routeTree.gen.ts` đồng bộ chuẩn xác.
+
+- **Bản cập nhật ngày 05/11/2026 (v10.41): Ban Hành Toàn Diện Bộ Tài Liệu BRD V7.0 & SRS V7.0 (Mô Tả Luồng, Use Case Diagrams, 6 Sequence Diagrams Mermaid), Chuẩn Hóa HTML A4 In Ấn & Sửa Triệt Để Lỗi Table Properties Khi Mở File Word DOCX ([NODE-CORE-001], [NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014])**:
+  1. *Ban Hành Tài Liệu SRS V7.0 Theo Chuẩn 6 Phần Bắt Buộc*:
+     - File Markdown: `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.md`.
+     - Bản HTML A4: `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.html` & `apps/ceo1983_app_fe/public/docs/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.html`.
+     - Bản Microsoft Word: `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.docx` & `apps/ceo1983_app_fe/public/docs/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.docx`.
+     - Đầy đủ 6 phần: 1. Giới thiệu (Mục đích, Phạm vi, Thuật ngữ, Tài liệu tham khảo, Tổng quan); 2. Mô tả tổng quan (Góc nhìn hệ thống Context Diagram Mermaid, Chức năng, Người dùng, Ràng buộc, Giả định); 3. Giao diện bên ngoài (UI 3 màu nhận diện, Phần cứng NFC/QR, Phần mềm Multi-LLM/Drive/Zalo, Giao tiếp HTTPS/Socket.IO); 4. Yêu cầu chức năng chi tiết 11 Module (Mỗi module có Use Case Diagram Mermaid, Kịch bản luồng Basic/Alternative/Exception, Quy tắc nghiệp vụ BR-xx, Thiết kế dữ liệu); 5. Phi chức năng (Hiệu năng < 1.5s, Tải 10.000 CCU, Sao lưu 24h, Bảo mật Nghị định 13 & OWASP Top 10); 6. Phụ lục (Mô hình ERD Mermaid, 6 Biểu đồ tuần tự Sequence Diagrams Mermaid, Ma trận truy vết 37 Functional Node ID).
+  2. *Ban Hành Tài Liệu BRD V7.0 Theo Mẫu Chuẩn BRD_BusinessConnect_v1.0.html*:
+     - File Markdown: `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.md`.
+     - Bản HTML A4: `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.html` & `apps/ceo1983_app_fe/public/docs/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.html`.
+     - Bản Microsoft Word: `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.docx` & `apps/ceo1983_app_fe/public/docs/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.docx`.
+     - Thiết kế theo chuẩn A4 của mẫu template: Bìa có Gradient Accent Bar, Mã tài liệu CEO1983/BRD-ALL-V7.0, Mục lục có link neo chuyển trang, Bảng từ viết tắt & thuật ngữ, Tóm tắt điều hành (Bối cảnh, Tầm nhìn, Mục tiêu kinh doanh, Chỉ số đo lường hiệu quả KPIs), Phạm vi In/Out scope, Ma trận phân công trách nhiệm RACI 7 Actors x 11 Phân hệ, Đặc tả 11 phân hệ có Flowchart Mermaid & Business Rules & Exception, Tiêu chí nghiệm thu và Phụ lục.
+  3. *Khắc Phục Triệt Để Lỗi "Table Properties" Trong Microsoft Word*:
+     - Tìm ra nguyên nhân gốc rễ: Các script regex cũ đã ghi đè thuộc tính `gridCol` và `tblW` mà không đồng bộ với chiều rộng `tcW` của từng ô, dẫn đến xung đột OpenXML và kích hoạt hộp thoại "Show Repairs: Table Properties" khi mở trong Microsoft Word.
+     - Sử dụng thư viện `docx` chuẩn hóa chiều rộng tổng bảng (9026 DXA), chiều rộng cột `columnWidths` và chiều rộng từng ô `tcW` khớp nhau 100%. Chạy script kiểm tra `verify_v7_docx_compliance.js` xác nhận 100% các bảng biểu trong cả 2 file `.docx` đạt chuẩn OpenXML ISO/IEC 29500 (0 errors).
+  4. *Đồng Bộ Hóa Vào document/notebooklm/*:
+     - Tạo `document/notebooklm/07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_V7.md` và `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_V7.md`.
+     - Cập nhật mục 4 trong `document/notebooklm/00_TONG_QUAN_VA_MA_TRAN_NODE_HE_THONG.md` dẫn chiếu đầy đủ đến tài liệu V7.0 mới nhất.
+
+
 - **Bản cập nhật ngày 05/11/2026 (v10.40): Khắc Phục Triệt Để 31 Lỗi OpportunityEditModal (Ảnh 2), Sửa Lỗi Share Mạng Xã Hội Hiện Screenshot CRM Bằng Dynamic OpenGraph Preview Endpoint (Ảnh 1), Khắc Phục Lỗi Mất Footer Khi Tìm Kiếm, 6 Chỉ Số Cơ Hội Nền Trắng, Đại Tu Nâng Cấp Hệ Thống AI CRM (Phân Tích Sức Khỏe, Báo Cáo Thu Chi & Hóa Đơn Điện Tử, Giám Sát Quota Đa Model), Sửa Cấu Hình Landing Page Sang /intro Với Full Landing Web & Tích Hợp Kho Tài Liệu Đồng Bộ Google Drive 2 Chiều ([NODE-CRM-001], [NODE-CRM-002], [NODE-CRM-004], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-APP-012], [NODE-CORE-001])**:
   1. *Khắc Phục Toàn Diện 31 Lỗi Code ở Ảnh 2 (apps/ceo1983_app_fe/src/components/opportunities/modals/OpportunityEditModal.tsx)*:
      - Chuyển đổi khai báo component sang named function export function OpportunityEditModal(...) : React.ReactElement | null, triệt tiêu hoàn toàn lỗi suy diễn kiểu Type 'void' is not assignable to type 'ReactNode'.

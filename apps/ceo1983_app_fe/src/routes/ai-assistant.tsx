@@ -29,13 +29,15 @@ import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import { exportToExcel } from "@/lib/excel-export";
+import { CrmChatGPTView } from "@/components/ai/CrmChatGPTView";
+import { MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/ai-assistant")({
   component: AiAssistantPage,
 });
 
 export function AiAssistantPage() {
-  const [activeTab, setActiveTab] = useState<"analysis" | "finance_report" | "invoice" | "activity">("analysis");
+  const [activeTab, setActiveTab] = useState<"chat" | "analysis" | "finance_report" | "invoice" | "activity">("chat");
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
@@ -168,6 +170,21 @@ export function AiAssistantPage() {
         <div className="flex border-b border-border gap-2 overflow-x-auto pb-px">
           <button
             type="button"
+            onClick={() => setActiveTab("chat")}
+            className={`pb-3 px-4 text-xs font-bold transition flex items-center gap-2 border-b-2 cursor-pointer whitespace-nowrap ${
+              activeTab === "chat"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MessageSquare className="size-4 text-primary" />
+            <span>Trò Chuyện AI (ChatGPT Style)</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+              Model Free
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab("analysis")}
             className={`pb-3 px-4 text-xs font-bold transition flex items-center gap-2 border-b-2 cursor-pointer whitespace-nowrap ${
               activeTab === "analysis"
@@ -205,6 +222,12 @@ export function AiAssistantPage() {
         </div>
 
         {/* ── NỘI DUNG TAB 1: PHÂN TÍCH TOÀN BỘ CRM ── */}
+        {activeTab === "chat" && (
+          <div className="space-y-4">
+            <CrmChatGPTView />
+          </div>
+        )}
+
         {activeTab === "analysis" && (
           <div className="space-y-6">
             {/* Tóm tắt điều hành & Điểm sức khỏe */}

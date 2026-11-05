@@ -101,3 +101,16 @@ Hệ thống chuyển đổi số toàn diện của **CLB Doanh Nhân CEO 1983*
 4. **`[NODE-CORE-004]` Triển Khai Độc Lập Mobile App CEO 1983**: Thư mục `deploy/ceo1983/`, Docker Compose Port 5002.
 5. **`[NODE-CORE-005]` Triển Khai Độc Lập Web CRM Quản Trị**: Thư mục `deploy/crm/`, Docker Compose Port 5005.
 6. **`[NODE-CORE-006]` Nginx VPS & Chứng Chỉ SSL Let's Encrypt**: Port 80 & 443 độc quyền trên VPS Nginx host.
+
+---
+
+## 4. TÀI LIỆU CĂN CỨ NGHIỆP VỤ & ĐẶC TẢ KỸ THUẬT PHIÊN BẢN 7.0 (MỚI NHẤT)
+1. **Tài liệu Yêu cầu Nghiệp vụ (BRD V7.0)**:
+   - File Markdown: `document/notebooklm/07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_V7.md` (hoặc `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.md`).
+   - Bản in ấn & Trình duyệt: `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.html` (Khổ A4 chuẩn, Google Font Be Vietnam Pro, biểu đồ Mermaid).
+   - Bản Microsoft Word: `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V7.docx` (Chuẩn OpenXML ISO/IEC 29500, 0 lỗi Table Properties).
+2. **Tài liệu Đặc tả Yêu cầu Phần mềm (SRS V7.0)**:
+   - File Markdown: `document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_V7.md` (hoặc `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.md`).
+   - Bản in ấn & Trình duyệt: `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.html` (Khổ A4, Use Case diagrams, 6 Sequence diagrams, ERD).
+   - Bản Microsoft Word: `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V7.docx` (Khổ A4, bảng biểu chuẩn).
+

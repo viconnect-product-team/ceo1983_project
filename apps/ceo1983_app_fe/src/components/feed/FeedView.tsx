@@ -702,17 +702,17 @@ export function FeedView({
         prev.map((p) => (p.id === post.id ? { ...p, sharesCount: p.sharesCount + 1 } : p))
       );
 
-      const shareUrl = `${window.location.origin}/share/post/${post.id}`;
-      if (navigator.share) {
-        await navigator.share({
-          title: post.title || "Bảng tin CEO 1983",
-          text: post.content.substring(0, 100),
-          url: shareUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success("Đã sao chép liên kết bài viết vào bộ nhớ tạm!");
-      }
+      await executeShare(
+        {
+          type: "post",
+          id: post.id,
+          title: `[Mạng Lưới CEO 1983] ${post.title || `Bài viết từ Doanh nhân ${post.author?.name || "Hội viên"}`}`,
+          desc: post.content?.slice(0, 200),
+          image: post.images?.[0] || undefined,
+          targetPath: `/association/messages?post=${post.id}`,
+        },
+        () => toast.success("Đã sao chép liên kết bài viết!")
+      );
     } catch {
       /* ignore */
     }
