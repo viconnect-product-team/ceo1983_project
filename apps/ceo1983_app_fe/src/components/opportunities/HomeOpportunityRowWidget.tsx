@@ -125,6 +125,24 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
     return sum > 0 ? `${sum.toLocaleString("vi-VN")} đ` : "0 đ";
   }, [opportunities]);
 
+  // Giá trị các cơ hội đang mở (loại trừ đã đóng, hết hạn, đã won/completed - Yêu cầu 4)
+  const calculatedOpenTotalValue = useMemo(() => {
+    let sum = 0;
+    const now = Date.now();
+    opportunities.forEach((o: any) => {
+      const isClosed = o.status === "closed" || o.status === "archived";
+      const isWon = o.status === "won" || o.status === "completed";
+      const isExpired = o.deadline && new Date(o.deadline).getTime() < now;
+      if (!isClosed && !isWon && !isExpired) {
+        const v = Number(o.value || o.amount || 0);
+        if (!isNaN(v) && v > 0) sum += v;
+      }
+    });
+    if (sum >= 1_000_000_000) return `${(sum / 1_000_000_000).toFixed(1)} Tỷ đ`;
+    if (sum >= 1_000_000) return `${(sum / 1_000_000).toFixed(0)} Tr đ`;
+    return sum > 0 ? `${sum.toLocaleString("vi-VN")} đ` : "0 đ";
+  }, [opportunities]);
+
   const calculatedDealValue = useMemo(() => {
     let sum = 0;
     opportunities.forEach((o: any) => {
@@ -141,6 +159,7 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
 
   const displayTotalCount = totalOpportunitiesCount || totalCount;
   const displayTotalValue = totalOpportunitiesValue || calculatedTotalValue;
+  const displayOpenValue = calculatedOpenTotalValue !== "0 đ" ? calculatedOpenTotalValue : displayTotalValue;
   const displayDealValue = totalDealsWonValue || calculatedDealValue;
 
   return (
@@ -169,61 +188,42 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
           </Link>
         </div>
 
-        {/* ── 3 THẺ CHỈ SỐ TỔNG QUAN CƠ HỘI GIAO THƯƠNG (BỎ ẢNH, BỎ BIỂU ĐỒ TRÒN) ── */}
-        <div className="grid grid-cols-3 gap-2 w-full">
-          {/* 1. Tổng chia sẻ */}
+        {/* ── 2 THẺ CHỈ SỐ CƠ HỘI GIAO THƯƠNG: TỔNG SỐ LƯỢNG & TỔNG GIÁ TRỊ ĐANG MỞ (Yêu cầu 4) ── */}
+        <div className="grid grid-cols-2 gap-2.5 w-full">
+          {/* 1. Tổng số lượng cơ hội */}
           <Link
             to="/association/opportunities"
-            className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
+            className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
           >
-            <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
-              <span className="uppercase tracking-wider">Tổng chia sẻ</span>
-              <Coins className="size-3.5 text-amber-500 shrink-0" />
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <span className="uppercase tracking-wider">Tổng số lượng cơ hội</span>
+              <Coins className="size-4 text-amber-500 shrink-0" />
             </div>
-            <div className="mt-1.5">
-              <div className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                {displayTotalCount} <span className="text-[10px] font-medium text-slate-500">tin</span>
+            <div className="mt-2">
+              <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                {displayTotalCount} <span className="text-xs font-semibold text-slate-500">cơ hội</span>
               </div>
-              <div className="text-[10px] font-bold text-[#003B95] dark:text-blue-400 truncate mt-0.5">
-                {displayTotalValue}
+              <div className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 truncate mt-0.5">
+                Toàn hệ thống CEO 1983
               </div>
             </div>
           </Link>
 
-          {/* 2. Deal đã chốt */}
+          {/* 2. Tổng giá trị cơ hội đang mở */}
           <Link
             to="/association/opportunities"
-            className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
+            className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
           >
-            <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
-              <span className="uppercase tracking-wider">Deal đã chốt</span>
-              <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <span className="uppercase tracking-wider">Tổng giá trị đang mở</span>
+              <TrendingUp className="size-4 text-emerald-500 shrink-0" />
             </div>
-            <div className="mt-1.5">
-              <div className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                {segmentedOpps.red.length || segmentedOpps.yellow.length || 0} <span className="text-[10px] font-medium text-slate-500">deal</span>
+            <div className="mt-2">
+              <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-tight">
+                {displayOpenValue}
               </div>
-              <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
-                {displayDealValue}
-              </div>
-            </div>
-          </Link>
-
-          {/* 3. Tôi chia sẻ */}
-          <Link
-            to="/association/opportunities"
-            className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
-          >
-            <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
-              <span className="uppercase tracking-wider">Tôi share đi</span>
-              <Share2 className="size-3.5 text-blue-500 shrink-0" />
-            </div>
-            <div className="mt-1.5">
-              <div className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                {segmentedOpps.green.length} <span className="text-[10px] font-medium text-slate-500">tin</span>
-              </div>
-              <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate mt-0.5">
-                {displayTotalValue}
+              <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                Cơ hội khả dụng giao thương
               </div>
             </div>
           </Link>

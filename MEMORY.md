@@ -1,5 +1,93 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 05/11/2026 (v10.40): Khắc Phục Triệt Để 31 Lỗi OpportunityEditModal (Ảnh 2), Sửa Lỗi Share Mạng Xã Hội Hiện Screenshot CRM Bằng Dynamic OpenGraph Preview Endpoint (Ảnh 1), Khắc Phục Lỗi Mất Footer Khi Tìm Kiếm, 6 Chỉ Số Cơ Hội Nền Trắng, Đại Tu Nâng Cấp Hệ Thống AI CRM (Phân Tích Sức Khỏe, Báo Cáo Thu Chi & Hóa Đơn Điện Tử, Giám Sát Quota Đa Model), Sửa Cấu Hình Landing Page Sang /intro Với Full Landing Web & Tích Hợp Kho Tài Liệu Đồng Bộ Google Drive 2 Chiều ([NODE-CRM-001], [NODE-CRM-002], [NODE-CRM-004], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-APP-012], [NODE-CORE-001])**:
+  1. *Khắc Phục Toàn Diện 31 Lỗi Code ở Ảnh 2 (apps/ceo1983_app_fe/src/components/opportunities/modals/OpportunityEditModal.tsx)*:
+     - Chuyển đổi khai báo component sang named function export function OpportunityEditModal(...) : React.ReactElement | null, triệt tiêu hoàn toàn lỗi suy diễn kiểu Type 'void' is not assignable to type 'ReactNode'.
+     - Loại bỏ và đổi tên các biến bị khai báo trùng lặp trong cùng scope (allDeptIds, toRemoveDeptIds, isDeptMemChecked, isFriendChecked, selectedDept).
+     - Đồng bộ đầy đủ các trường thông tin y hệt tạo mới cơ hội: Upload nhiều ảnh (images), người giới thiệu (referrerName, referrerPhone), mức hoa hồng kết nối (%), đối tượng nhận cơ hội (công khai toàn hệ thống / theo ban chuyên môn / theo danh sách CEO bạn bè kết nối), mô tả chi tiết, liên kết Fanpage/Website.
+  2. *Khắc Phục Lỗi Mất Footer Khi Tìm Kiếm / Nhập Liệu (apps/ceo1983_app_fe/src/styles.css, MemberShell.tsx)*:
+     - Xóa bỏ triệt để quy tắc CSS body:has(input:focus) ... .vba-bottom-bar { display: none !important; } tại dòng 2537 styles.css.
+     - Đảm bảo thanh điều hướng đáy (Bottom Bar) luôn cố định và hiển thị hoàn hảo khi người dùng chạm vào ô tìm kiếm hoặc nhập liệu trên thiết bị di động.
+  3. *Chuẩn Hóa 6 Chỉ Số Chia Sẻ Cơ Hội & Popup Dẫn Chứng Nền Trắng Tuyệt Đối (CẤM NỀN XANH) (apps/ceo1983_app_fe/src/routes/association.opportunities.tsx)*:
+     - 6 khối chỉ số với tone nền trắng (bg-white dark:bg-[#131a26]): 1. Cơ hội đang mở; 2. Tổng giá trị; 3. Tôi đã chia sẻ; 4. Tôi đang deal; 5. Giá trị đã nhận; 6. Deal đã fail.
+     - Khi bấm vào từng ô chỉ số: hiển thị popup xem dữ liệu thật vắn tắt làm dẫn chứng (Cấm nền xanh, tuân thủ nghiêm ngặt nền trắng thanh lịch).
+  4. *Khắc Phục Lỗi Format Khi Share Lên Mạng Xã Hội (Ảnh 1) Bằng Dynamic OpenGraph Endpoint (apps/ceo1983_app_be/src/app.controller.ts, apps/ceo1983_app_fe/src/lib/share-helper.ts)*:
+     - Gỡ bỏ vĩnh viễn URL og:image chụp màn hình dashboard Lovable trong __root.tsx, thay bằng banner thương hiệu chính thức ceo1983_hero_daylight_skyline.jpg.
+     - Xây dựng endpoint @Get('api/share/preview') tại Backend NestJS: Tự động phân tích type (cơ hội, sự kiện, bài viết, đào tạo), truy vấn DB lấy tiêu đề, ảnh cover, mô tả và sinh mã HTML OpenGraph & Twitter Cards chuẩn 1200x630px; tự động chuyển hướng người dùng khi click link vào đúng trang Web / Mobile App.
+     - Viết thư viện share-helper.ts (buildDynamicShareUrl, executeShare) và tích hợp vào các nút chia sẻ cơ hội, sự kiện, đào tạo, thư viện.
+  5. *Đại Tu Nâng Cấp Hệ Thống AI CRM (Trợ Lý AI Điều Hành Toàn Diện) (apps/ceo1983_app_be/src/ai/ai-crm-analytics.service.ts, ai.controller.ts, apps/ceo1983_app_fe/src/routes/ai-assistant.tsx)*:
+     - Backend AiCrmAnalyticsService: Quét toàn bộ dữ liệu thực tế từ database (180+ hội viên, tài chính thặng dư, sự kiện & họp ban, giao thương B2B, nhật ký thao tác activity_log); phân tích chỉ số sức khỏe CLB (Health Score), điểm mạnh, điểm nghẽn và 3 khuyến nghị hành động chiến lược cho Ban Điều Hành.
+     - Endpoint POST /api/ai/crm/export-report: Xuất báo cáo theo từng chức năng con:
+       + Báo cáo thu chi tổng hợp (financial_summary): Cơ cấu nguồn thu, khoản chi, quỹ tồn hiện hữu, hỗ trợ xuất Excel và xem trước/in ấn PDF.
+       + Xuất hóa đơn / Phiếu thu điện tử (invoice / receipt): Chuẩn mẫu 01-TT (Bộ Tài Chính), Quốc hiệu - Tiêu ngữ, Tên Hiệp hội HanoiBA & CLB CEO 1983, Mã phiếu thu, Số tiền bằng số và bằng chữ, Mã QR tra cứu thanh toán, Chữ ký số điện tử của Chủ tịch và Ban Tài chính, hỗ trợ in trực tiếp (window.print()).
+     - Giao diện Trợ lý AI Điều Hành tại route /ai-assistant và tích hợp vào Sidebar CRM.
+  6. *Cấu Hình Hệ Thống AI, Đo Lường Hạn Mức Quota & Cảnh Báo Sắp Hết Model Đa Hãng (apps/ceo1983_app_fe/src/components/dashboard/AiConfigSection.tsx, apps/ceo1983_app_fe/src/routes/settings.tsx)*:
+     - Bổ sung tab "Cấu hình AI & Nhật ký" (ai_config, icon Sparkles) trong Cài đặt hệ thống Web CRM (/settings).
+     - Quản lý đa hãng AI: Google Gemini (2.0 Flash / Pro), OpenAI (GPT-4o, GPT-4o-mini), Anthropic Claude (3.5 Sonnet), DeepSeek (V3, R1), OpenRouter kèm nút kiểm tra kết nối realtime.
+     - Hệ thống cảnh báo hạn mức token 3 cấp độ: Xanh an toàn (< 75%), Vàng cảnh báo (75% - 90%), Đỏ khẩn cấp (> 90% hoặc sắp cạn - báo động đổi key hoặc kích hoạt model dự phòng).
+     - Bảng nhật ký thao tác AI (Audit Trail): Thời gian, Người yêu cầu, Tác vụ, Model phục vụ, Latency (ms), Tokens ước tính, Trạng thái.
+  7. *Sửa Cấu Hình Landing Page Sang URL Chuẩn /intro & Hoàn Thiện Landing Web Đầy Đủ Section (apps/ceo1983_app_fe/src/components/landing/Ceo1983FullLandingWeb.tsx, apps/ceo1983_app_fe/src/routes/intro.tsx, LandingWebManager.tsx)*:
+     - Thay đổi URL mặc định từ /h/ceo1983 thô sơ sang URL thương hiệu chuẩn: https://ceo1983.viconnect.vn/intro.
+     - Xây dựng component Ceo1983FullLandingWeb có Header thanh menu cố định, Hero Section, 4 chỉ số, Về CLB CEO 1983, 6 Ban Chuyên Môn, Form Đăng Ký Gia Nhập Online, Footer chuẩn HanoiBA.
+     - Tạo route /intro và nâng cấp /h/$slug render Landing Web trọn vẹn.
+  8. *Kho Tài Liệu Liên Kết Google Drive Của Hội Viên Cả Web CRM & Mobile App (apps/ceo1983_app_fe/src/components/documents/MemberGoogleDriveSyncModal.tsx, documents.index.tsx, association.library.tsx)*:
+     - Tạo modal dùng chung MemberGoogleDriveSyncModal lưu cấu hình Google Drive cá nhân của hội viên (localStorage key ceo1983_member_drive_config).
+     - Tích hợp 2 chiều: Nạp tài liệu từ Google Drive (Import from Drive) và Đồng bộ / Chuyển tài liệu về Google Drive cá nhân (Sync to Drive) trên cả CRM và App.
+
+- **Bản cập nhật ngày 05/11/2026 (v10.39): Tối Giản Nút Thao Tác Bạn Bè Danh Bạ, Bộ Lọc Cấp 1 (Đã Kết Nối / Chưa Kết Nối) & Hiển Thị Người Mới Kết Nối Nhất, Chu Kỳ Quét QR Bottom Bar 2s, Tinh Gọn 2 Chỉ Số Cơ Hội Trang Chủ & Bỏ 4 Ô KPI Màn Cá Nhân ([NODE-APP-001], [NODE-APP-003], [NODE-APP-005], [NODE-APP-007], [NODE-APP-010])**:
+  1. *Bộ Lọc 2 Cấp Danh Bạ CEO 1983 & Khắc Phục Triệt Để Lỗi Double Tên Hội Viên (apps/ceo1983_app_fe/src/routes/association.members.tsx)*:
+     - Bộ lọc Cấp 1: Bổ sung segmented tab chuyển đổi giữa (Đã kết nối) và (Chưa kết nối).
+     - Tab Đã kết nối: Danh mục sắp xếp chuẩn xác theo yêu cầu: 1. Bạn bè (lên đầu tiên và là mặc định), 2. Lời mời, 3. Đã gửi, 4. Danh thiếp đã lưu.
+     - Tab Chưa kết nối: Hiển thị danh sách toàn bộ các tài khoản hội viên chưa kết nối (discoverMembers), hỗ trợ tìm kiếm theo từ khóa q, xem profile và gửi kết nối/hủy yêu cầu chờ xác nhận.
+     - Khắc phục lỗi double tên hội viên: Xử lý logic so sánh chuẩn hóa: nếu companyDisplayName trùng personDisplayName thì xóa bỏ dòng tên nhỏ bị lặp bên dưới.
+  2. *Tối Giản Bộ Icon Thao Tác Bạn Bè Đã Kết Nối & Hiển Thị Người Mới Kết Nối Nhất (association.members.tsx, MemberShell.tsx)*:
+     - Bộ icon bạn bè: Chỉ giữ đúng 3 nút cùng 1 màu tối giản đồng nhất (Slate/Navy): Nhắn tin (MessageSquare), Xem profile (User), Gọi điện (PhoneCall) + 1 nút Hủy kết nối (UserX) mang tone màu rose riêng biệt. Bỏ hoàn toàn nút Xem danh thiếp số (CreditCard) và Hẹn gặp 1-1 (Handshake).
+     - Hiển thị người mới kết nối nhất:
+       + Bổ sung listener lắng nghe vba:connection_accepted, vba.connection.changed, storage.
+       + Khi kết nối thành công (qua QR, popup socket, hoặc tab lời mời), lưu vba_latest_connected_id vào localStorage và cập nhật state latestConnectedId.
+       + Hiển thị khối nổi bật "✨ Vừa kết nối mới nhất" ngay trên đầu tab Bạn bè kèm badge "Mới kết nối", đầy đủ thông tin và bộ 3 nút thao tác để người dùng thấy ngay trên màn hình điện thoại.
+  3. *Animation Chu Kỳ Quét Nút Tròn QR Tại Bottom Bar (apps/ceo1983_app_fe/src/components/member/MemberShell.tsx)*:
+     - Triển khai state isScanningPhase với timer chu kỳ:
+       + Trong pha quét (2.5 giây): Hiển thị icon hình vuông quét (Scan), thanh ngang laser beam chạy quét dọc từ trên xuống dưới.
+       + Khi thanh ngang quét xong: Ẩn laser beam, hiển thị icon mã QR (QrCode) tĩnh trong đúng 2 giây (2s).
+       + Sau 2 giây: Tự động kích hoạt lại pha quét (hiện icon hình vuông và thanh ngang quét).
+  4. *Tinh Gọn Chia Sẻ Cơ Hội Ở Màn Trang Chủ (apps/ceo1983_app_fe/src/components/opportunities/HomeOpportunityRowWidget.tsx)*:
+     - Bỏ thẻ "Tổng cơ hội tôi đã share" / "Tôi share đi" và thẻ Deal đã chốt.
+     - Chuyển thành lưới 2 cột cân đối (grid grid-cols-2):
+       1. Tổng số lượng cơ hội: displayTotalCount cơ hội (Toàn hệ thống CEO 1983).
+       2. Tổng giá trị cơ hội đang mở: displayOpenValue (Tính toán tự động từ các cơ hội có status mở khả dụng).
+  5. *Màn Cá Nhân: Bỏ 4 Ô Hình Vuông Chỉ Số KPI (apps/ceo1983_app_fe/src/routes/association.profile.tsx)*:
+     - Loại bỏ hoàn toàn khối 4 ô hình vuông (Sự kiện đã tham gia, Cơ hội, Hẹn B2B, Bài viết) ở đầu tab "Tổng quan & Bài viết".
+     - Dành trọn vẹn không gian cho panel Hồ sơ doanh nghiệp (accordion đóng mở) và phần Bài viết đã đăng vào mạng lưới.
+
+- **Bản cập nhật ngày 05/11/2026 (v10.38): Nâng Cấp Hệ Thống Biểu Đồ Thống Kê 4 Cột Đa Mức Zoom (Phút, Giờ, Ngày, Tuần, Tháng, Quý, Năm) Không Dữ Liệu Ảo, Lọc Triệt Để Bản Ghi Đã Đóng Ở Database & Giới Hạn Nhiệm Vụ Thưởng Riêng Cho Danh Mục Giới Thiệu Cả CRM & App ([NODE-CRM-001], [NODE-CRM-009], [NODE-APP-003])**:
+  1. *Cơ Chế Zoom Granularity Thời Gian Thực 7 Cấp Độ (Phút, Giờ, Ngày, Tuần, Tháng, Quý, Năm) (`analytics.service.ts`, `analytics.controller.ts`, `association.analytics.tsx`, `analytics.tsx`)*:
+     - Bổ sung tham số `granularity: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'` cho API `/analytics/overview`.
+     - Phân bổ bucket thời gian thực chính xác: 6 mốc 5 phút (-25p..Hiện tại), 6 mốc 1 giờ, 7 ngày gần nhất, 4 tuần, 6 tháng, 4 quý, 3 năm.
+     - Thanh công cụ điều hướng zoom thời gian trực quan trên cả Web CRM và Mobile App giúp Chủ tịch, Ban Điều Hành và Hội viên theo dõi sát sao biến động: phát sinh cơ hội mới, giá trị tiền giao thương tăng/giảm, lượt hội viên tương tác (bình luận, like, chia sẻ) và hội viên giới thiệu mới theo từng phút, từng giờ.
+  2. *Triệt Tiêu Hoàn Toàn Dữ Liệu Fake & Lọc Nghiêm Ngặt Các Bản Ghi Đã Đóng Trong CSDL*:
+     - Loại bỏ toàn bộ các logic fallback số liệu ảo (18, 28, 36...) trước đây: Khi cơ sở dữ liệu thực tế bằng 0 trong mốc thời gian lọc, biểu đồ trả về chính xác 0 và hiển thị banner trạng thái rỗng ("Chưa có biến động dữ liệu ghi nhận trong mốc thời gian này"), không tự vẽ cột ảo gây hiểu lầm.
+     - Lọc triệt để trạng thái đã đóng / hủy trong cơ sở dữ liệu:
+       + Cơ hội (`opportunities`): `WHERE status::text NOT IN ('closed', 'da_dong', 'dong', 'cancelled', 'huy', 'deleted')`.
+       + Kết nối (`user_connections`): `WHERE status::text NOT IN ('declined', 'rejected', 'cancelled', 'closed', 'deleted')`.
+       + Sự kiện (`event_registrations`): `WHERE status::text NOT IN ('cancelled', 'closed', 'deleted', 'rejected')`.
+       + Cuộc họp (`business_meetings`): `WHERE status::text NOT IN ('cancelled', 'closed', 'deleted')`.
+       + Hội viên (`members`): `WHERE status IS NULL OR status::text NOT IN ('archived', 'deleted', 'rejected', 'closed')`.
+  3. *Chuẩn Hóa Biểu Đồ Nhóm 4 Cột (Grouped 4-Bar) & Đường Timeline Trên Đỉnh Cột Kèm Chú Thích Màu Sắc*:
+     - Mỗi danh mục thể hiện rõ 4 cột đại diện cho 4 chỉ số thực tế:
+       + **Kết nối giao thương (`top_connections`)**: Cột 1 (Xanh Navy `#003B95`): Kết nối 1-on-1; Cột 2 (Xanh Lá `#10B981`): Đã kết nối; Cột 3 (Vàng `#F59E0B`): Chờ phản hồi; Cột 4 (Đỏ `#DC2626`): Cuộc gặp B2B. Đường Timeline cam nối đỉnh cột thể hiện tổng biến động kết nối.
+       + **Cơ hội kinh doanh (`top_opportunities`)**: Cột 1 (Xanh Navy `#003B95`): Cơ hội mở mới; Cột 2 (Xanh Lá `#10B981`): Giá trị tăng (Tỷ VNĐ); Cột 3 (Vàng `#F59E0B`): Giá trị đàm phán; Cột 4 (Tím `#8B5CF6`): Đã chốt / kết nối deal. Đường Timeline đỏ thể hiện tổng luồng cơ hội.
+       + **Sự kiện & cuộc họp (`top_events_meetings`)**: Cột 1 (Xanh Navy): Đăng ký; Cột 2 (Xanh Lá): Điểm danh; Cột 3 (Vàng): Cuộc họp ban; Cột 4 (Cam): Chờ check-in. Đường Timeline đỏ thể hiện tổng lượt sự kiện.
+       + **Phát triển hội viên (`top_referrals`)**: Cột 1 (Xanh Navy): Hội viên mới; Cột 2 (Xanh Lá): Đã kết nạp; Cột 3 (Vàng): Nhiệm vụ thưởng; Cột 4 (Hồng): Điểm thưởng tích lũy (x10). Đường Timeline xanh dương thể hiện tổng kết nạp.
+       + **Gắn kết & Tương tác mạng lưới (`activity_sentiment`)**: Cột 1 (Xanh Navy): Bình luận; Cột 2 (Xanh Dương `#0284C7`): Lượt thích; Cột 3 (Xanh Lá): Chia sẻ ra ngoài; Cột 4 (Vàng): Bài viết mới. Đường Timeline đỏ nối đỉnh cột thể hiện tổng tương tác mạng lưới.
+       + **Click chia sẻ ngoài (`external_shares`)**: Cột 1 (Facebook); Cột 2 (Zalo); Cột 3 (Web); Cột 4 (Chuyển đổi đăng nhập).
+     - Phía dưới biểu đồ: Tích hợp hàng chú thích màu sắc (Legend) chi tiết, đồng nhất bộ nhận diện 3 màu CLB.
+  4. *Loại Bỏ Khối "Chỉ Số Trọng Tâm 4 Danh Mục Cốt Lõi" (`association.analytics.tsx`)*:
+     - Gỡ bỏ hoàn toàn khối 4 ô chỉ số lớn cố định trước đây theo đúng chỉ đạo để dồn không gian cho biểu đồ 4 cột và bảng xếp hạng Top 10 trực quan.
+  5. *Giới Hạn Nhiệm Vụ Thưởng & Mốc Thưởng Duy Nhất Cho Danh Mục Giới Thiệu (`association.analytics.tsx`, `analytics.tsx`)*:
+     - Trên Mobile App: Khối "Tiến trình nhiệm vụ 1 đường ngang chia 3 mốc (Case 6)" và modal thưởng chỉ hiển thị khi `activeCategory === 'top_referrals'`. Khi chuyển sang Kết nối, Cơ hội, Sự kiện hay Click chia sẻ ngoài thì khối này được ẩn hoàn toàn.
+     - Trên Web CRM: Nút "Mốc Thưởng" trên header chỉ kích hoạt và hiển thị khi chọn tab `top_referrals` (Phát triển hội viên).
+
 - **Bản cập nhật ngày 05/11/2026 (v10.37): Triệt Tiêu Lỗi Văng Đăng Nhập Bằng Silent Token Refresh, Chuẩn Hóa Thống Kê Realtime Đích Thực Từ Cơ Sở Dữ Liệu Cả App & Web CRM, Tích Hợp Cấu Hình Đẩy Đa Kênh (Web ceo1983.com, Facebook, Zalo OA) & Đồng Bộ Tự Động Tin Tức Từ Website Hiệp Hội ([NODE-APP-001], [NODE-APP-006], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011], [NODE-CORE-001])**:
   1. *Khắc Phục Triệt Để Lỗi Tự Động Bị Out Khỏi App & Vòng Lặp Đăng Nhập (`apps/ceo1983_app_fe/src/lib/api-client.ts`, `apps/ceo1983_app_fe/src/routes/association.login.tsx`)*:
      - Cơ chế Tự động Làm mới Token Nền (Silent Token Refresh): Khi một request API trả về mã lỗi 401 Unauthorized do Access Token hết hạn (sau 60 phút), hàm `fetchNestApi` tự động chặn lại, dùng `vibe_refresh_token` (hạn 7 ngày) gửi đến `POST /api/auth/refresh` với singleton promise tránh xung đột đa luồng; khi nhận access token mới, tự động cập nhật vào `localStorage` và `document.cookie`, rồi thực hiện lại request ban đầu một cách liền mạch mà không làm ngắt phiên của người dùng.

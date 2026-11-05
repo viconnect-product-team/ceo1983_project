@@ -9,9 +9,14 @@ export class AnalyticsController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('overview')
-  async getOverview(@Request() req: any, @Query('period') period?: 'month' | 'quarter' | 'year') {
+  async getOverview(
+    @Request() req: any,
+    @Query('period') period?: string,
+    @Query('granularity') granularity?: string,
+  ) {
     const userId = req.user?.id || req.user?.sub;
-    return this.analyticsService.getOverview(userId, period);
+    const selectedGranularity = (granularity || period || 'month') as any;
+    return this.analyticsService.getOverview(userId, selectedGranularity);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

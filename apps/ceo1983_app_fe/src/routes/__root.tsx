@@ -158,12 +158,12 @@ export const Route = createRootRoute({
       {
         property: "og:image",
         content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/11601df2-fd5a-495c-904f-bde8bbc684fd/id-preview-179ada85--17365608-e269-4b6f-a8cb-7c9e19a52b0f.lovable.app-1777802264595.png",
+          "https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg",
       },
       {
         name: "twitter:image",
         content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/11601df2-fd5a-495c-904f-bde8bbc684fd/id-preview-179ada85--17365608-e269-4b6f-a8cb-7c9e19a52b0f.lovable.app-1777802264595.png",
+          "https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg",
       },
     ],
     links: [

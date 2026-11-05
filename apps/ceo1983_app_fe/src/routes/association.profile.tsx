@@ -968,33 +968,7 @@ export default function ProfileScreen() {
         {/* ── NHÓM 1: TỔNG QUAN, SỐ LIỆU, HỒ SƠ DOANH NGHIỆP & BÀI VIẾT MẠNG LƯỚI ── */}
         {activeTab === "overview" && (
           <div className="w-full space-y-3 animate-in fade-in duration-200">
-            {/* 4 Số liệu chỉ số tổng hợp (Yêu cầu 1) */}
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Sự kiện</span>
-                <span className="text-base font-black text-[#003B95] dark:text-blue-400 mt-0.5 block">
-                  {participatedEvents.length}
-                </span>
-              </div>
-              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Cơ hội</span>
-                <span className="text-base font-black text-amber-600 dark:text-amber-400 mt-0.5 block">
-                  {connectedOpportunities.length}
-                </span>
-              </div>
-              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Hẹn B2B</span>
-                <span className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
-                  {meetings1on1.length}
-                </span>
-              </div>
-              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Bài viết</span>
-                <span className="text-base font-black text-blue-600 dark:text-blue-400 mt-0.5 block">
-                  {myPosts.length}
-                </span>
-              </div>
-            </div>
+            {/* (Đã bỏ 4 ô hình vuông số liệu sự kiện, cơ hội, hẹn gặp, bài viết theo Yêu cầu 5) */}
 
             {/* Panel Hồ sơ doanh nghiệp (Gộp Giới thiệu & Quy mô, không có nút sửa ở bio, cho phép đóng mở - Yêu cầu 2) */}
             <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">

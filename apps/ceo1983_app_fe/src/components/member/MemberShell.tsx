@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState, useMemo } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, Calendar, MessageSquare, User, QrCode, ChevronLeft, WifiOff, BarChart3 } from "lucide-react";
+import { Home, Calendar, MessageSquare, User, QrCode,
+  Scan, ChevronLeft, WifiOff, BarChart3 } from "lucide-react";
 import { useT, useLang, type TKey } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { fetchNestApi } from "@/lib/api-client";
@@ -128,7 +129,21 @@ export function MemberScreen({ children }: { children: ReactNode }) {
 
         window.dispatchEvent(new CustomEvent("notifications-updated"));
         window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
-        window.dispatchEvent(new CustomEvent("vba:connection_accepted"));
+        // Lưu thông tin người mới kết nối nhất vào localStorage (Yêu cầu 1)
+        if (partnerCode || partnerUserId) {
+          localStorage.setItem("vba_latest_connected_id", partnerCode || partnerUserId);
+          try {
+            localStorage.setItem("vba_latest_connected_info", JSON.stringify({
+              code: partnerCode,
+              userId: partnerUserId,
+              name: partnerName,
+              avatar: data?.acceptorMember?.avatar || data?.acceptorProfile?.avatar_url,
+              time: new Date().toISOString(),
+            }));
+          } catch {}
+        }
+        window.dispatchEvent(new CustomEvent("vba:connection_accepted", { detail: data }));
+        window.dispatchEvent(new CustomEvent("vba.connection.changed"));
       } catch {
         /* ignore */
       }
@@ -515,6 +530,24 @@ function MemberTabBar() {
   const [isMidAutumn, setIsMidAutumn] = useState(false);
   const { user } = useAuth();
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  // Yêu cầu 3: Chu kỳ quét QR (2.5s thanh ngang quét + icon Scan vuông -> 2s hiện mã QR tĩnh)
+  const [isScanningPhase, setIsScanningPhase] = useState(true);
+
+  useEffect(() => {
+    let timer: any;
+    if (isScanningPhase) {
+      // Đang quét 2.5s
+      timer = setTimeout(() => {
+        setIsScanningPhase(false);
+      }, 2500);
+    } else {
+      // Quét xong hiện icon mã QR đúng 2s rồi lặp lại quét
+      timer = setTimeout(() => {
+        setIsScanningPhase(true);
+      }, 2000);
+    }
+    return () => clearTimeout(timer);
+  }, [isScanningPhase]);
 
   // Check if current user is authorized as event QR scanner / check-in staff
   const [canScanQr, setCanScanQr] = useState<boolean>(() => {
@@ -731,7 +764,8 @@ function MemberTabBar() {
   // Automatically hide bottom tab bar when mobile keyboard is open, user is typing,
   // OR when mustChangePassword is required for a new member
   const isMustChangePassword = typeof window !== "undefined" && localStorage.getItem("vba_must_change_password") === "true";
-  if (keyboardOpen || isMustChangePassword) return null;
+  // Bottom tab bar remains persistent so search/input focus never causes footer loss.
+  if (isMustChangePassword) return null;
 
   return (
     <>
@@ -795,7 +829,7 @@ function MemberTabBar() {
                   aria-label="Quét mã QR Check-in"
                   className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none"
                 >
-                  {/* Nút tròn Quét mã QR MoMo-style với laser quét từ trên xuống */}
+                  {/* Nút tròn Quét mã QR: Quét hiện icon hình vuông, quét xong hiện icon QR 2s (Yêu cầu 3) */}
                   <span
                     className="relative grid h-14 w-14 place-items-center rounded-full shadow-lg group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-3"
                     style={{
@@ -804,23 +838,29 @@ function MemberTabBar() {
                       boxShadow: "0 6px 18px rgba(0, 59, 149, 0.4)",
                     }}
                   >
-                    <QrCode className="size-7 text-white stroke-[2.2] relative z-10" />
+                    {isScanningPhase ? (
+                      <Scan className="size-7 text-white stroke-[2.2] relative z-10 animate-pulse" />
+                    ) : (
+                      <QrCode className="size-7 text-white stroke-[2.2] relative z-10 animate-in fade-in zoom-in-95 duration-200" />
+                    )}
 
-                    {/* MoMo-style Continuous Vertical Scanning Laser Beam */}
-                    <div
-                      className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_8px_#38bdf8] pointer-events-none z-20"
-                      style={{
-                        animation: "momoLaserScan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite",
-                      }}
-                    />
-
-                    {/* Subtle scanner glow overlay */}
-                    <div
-                      className="absolute inset-0 bg-cyan-400/10 pointer-events-none z-10"
-                      style={{
-                        animation: "momoLaserPulse 2s ease-in-out infinite",
-                      }}
-                    />
+                    {/* MoMo-style Scanning Laser Beam: Chỉ hiện khi đang trong pha quét (Yêu cầu 3) */}
+                    {isScanningPhase && (
+                      <>
+                        <div
+                          className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_8px_#38bdf8] pointer-events-none z-20"
+                          style={{
+                            animation: "momoLaserScan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+                          }}
+                        />
+                        <div
+                          className="absolute inset-0 bg-cyan-400/10 pointer-events-none z-10"
+                          style={{
+                            animation: "momoLaserPulse 2.5s ease-in-out infinite",
+                          }}
+                        />
+                      </>
+                    )}
 
                     {isMidAutumn && (
                       <span

@@ -33,6 +33,7 @@ import { createDocumentFn } from "@/lib/documents.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { MemberHeader } from "@/components/member/MemberShell";
+import { MemberGoogleDriveSyncModal } from "@/components/documents/MemberGoogleDriveSyncModal";
 import { useServerData } from "@/hooks/use-server-data";
 import { listDocuments, type LibraryDoc } from "@/lib/member-app.functions";
 import { useT, useLang } from "@/lib/i18n";
@@ -68,6 +69,7 @@ function LibraryScreen() {
   const fetchDocs = useServerFn(listDocuments);
   const { data: docs, loading } = useServerData<LibraryDoc[]>(() => fetchDocs(), []);
   const [selectedDoc, setSelectedDoc] = useState<LibraryDoc | null>(null);
+  const [driveSyncDoc, setDriveSyncDoc] = useState<LibraryDoc | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -274,6 +276,11 @@ function LibraryScreen() {
               <X className="h-3.5 w-3.5" />
             </button>
           )}
+      <MemberGoogleDriveSyncModal
+        isOpen={Boolean(driveSyncDoc)}
+        onClose={() => setDriveSyncDoc(null)}
+        targetDoc={driveSyncDoc ? { id: driveSyncDoc.id, name: driveSyncDoc.name, type: driveSyncDoc.type, size: driveSyncDoc.size } : null}
+      />
         </div>
 
         {/* Format Filter & Sort Toggle */}
@@ -555,6 +562,14 @@ function LibraryScreen() {
               )}
               <div className="flex gap-2">
                 <button
+                type="button"
+                onClick={() => setDriveSyncDoc(selectedDoc)}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-bold shadow-sm active:scale-98 transition cursor-pointer mb-2"
+              >
+                <HardDrive className="h-4 w-4" />
+                <span>Đồng bộ về Google Drive cá nhân</span>
+              </button>
+              <button
                   type="button"
                   onClick={() => handleDownload(selectedDoc)}
                   disabled={downloading}
