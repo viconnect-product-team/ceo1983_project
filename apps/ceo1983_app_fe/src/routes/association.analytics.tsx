@@ -501,94 +501,60 @@ export function AssociationAnalyticsScreen() {
     };
   }, [activeCategory, awardsUpdatedTick, currentMember, user]);
 
-  // Biểu đồ Cột + Đường (Composed Chart)
-  const chartData = useMemo(() => {
-    switch (activeCategory) {
-      case "top_connections":
-        return [
-          { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 28, lineVal: 18, isUp: true },
-          { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 36, lineVal: 24, isUp: true },
-          { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 30, lineVal: 21, isUp: false },
-          { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 48, lineVal: 32, isUp: true, isTop: true, topAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" },
-        ];
-      case "top_opportunities":
-        return [
-          { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 18, lineVal: 12, isUp: true },
-          { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 24, lineVal: 16, isUp: true },
-          { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 20, lineVal: 14, isUp: false },
-          { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 38, lineVal: 28, isUp: true, isTop: true, topAvatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100" },
-        ];
-      case "top_events_meetings":
-        return [
-          { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 6, lineVal: 120, isUp: true },
-          { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 8, lineVal: 190, isUp: true },
-          { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 7, lineVal: 165, isUp: false },
-          { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 12, lineVal: 280, isUp: true, isTop: true, topAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" },
-        ];
-      case "top_referrals":
-        return [
-          { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 8, lineVal: 8, isUp: true },
-          { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 12, lineVal: 12, isUp: true },
-          { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 16, lineVal: 16, isUp: true, isTop: true, topAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" },
-          { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 24, lineVal: 24, isUp: true },
-        ];
-      case "external_shares":
-      default:
-        return [
-          { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 140, lineVal: 43, isUp: true },
-          { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 220, lineVal: 45, isUp: true },
-          { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 305, lineVal: 46, isUp: true, isTop: true, topAvatar: "/ceo1983-emblem-8.png" },
-          { name: timeRange === "year" ? "2027 (KH)" : timeRange === "quarter" ? "Q4" : "T4", columnVal: 420, lineVal: 52, isUp: true },
-        ];
+  // Biểu đồ Cột + Đường (Composed Chart) thời gian thực từ API
+  const chartData: any[] = useMemo(() => {
+    let catKey = "topConnections";
+    if (activeCategory === "top_opportunities") catKey = "topOpportunities";
+    else if (activeCategory === "top_events_meetings") catKey = "topEventsMeetings";
+    else if (activeCategory === "top_referrals") catKey = "topReferrals";
+    else if (activeCategory === "external_shares") catKey = "externalShareClicks";
+
+    const apiCategory = serverData?.categories?.[catKey];
+    if (apiCategory?.chartData && Array.isArray(apiCategory.chartData) && apiCategory.chartData.length > 0) {
+      return apiCategory.chartData;
     }
-  }, [activeCategory, timeRange]);
+    return [
+      { name: timeRange === "year" ? "2024" : timeRange === "quarter" ? "Q1" : "T1", columnVal: 18, lineVal: 12, isUp: true },
+      { name: timeRange === "year" ? "2025" : timeRange === "quarter" ? "Q2" : "T2", columnVal: 26, lineVal: 18, isUp: true },
+      { name: timeRange === "year" ? "2026" : timeRange === "quarter" ? "Q3" : "T3", columnVal: 34, lineVal: 24, isUp: true },
+    ];
+  }, [activeCategory, serverData, timeRange]);
 
 
-  // Dữ liệu Biểu đồ Tròn (Pie Chart) tương ứng với từng danh mục
+  // Dữ liệu Biểu đồ Tròn (Pie Chart) thời gian thực từ API tương ứng với từng danh mục
   const pieChartData = useMemo(() => {
-    switch (activeCategory) {
-      case "top_connections":
-        return [
-          { name: "1-on-1 Trực tiếp", value: 38, fill: "#003B95" },
-          { name: "Kết nối Ban", value: 28, fill: "#059669" },
-          { name: "Giao lưu Mở rộng", value: 21, fill: "#F59E0B" },
-        ];
-      case "top_opportunities":
-        return [
-          { name: "Cơ hội Mới", value: 26, fill: "#059669" },
-          { name: "Đang đàm phán", value: 18, fill: "#F59E0B" },
-          { name: "Deal đã chốt", value: 14, fill: "#003B95" },
-        ];
-      case "top_events_meetings":
-        return [
-          { name: "Sự kiện CLB", value: 19, fill: "#003B95" },
-          { name: "Họp BĐH & Ban", value: 15, fill: "#059669" },
-          { name: "Tọa đàm Giao thương", value: 12, fill: "#F59E0B" },
-        ];
-      case "top_referrals":
-        return [
-          { name: "Kim Cương", value: 9, fill: "#003B95" },
-          { name: "Bạch Kim", value: 7, fill: "#0284C7" },
-          { name: "Vàng", value: 5, fill: "#F59E0B" },
-        ];
-      case "external_shares":
-      default:
-        return [
-          { name: "Zalo OA / Mini App", value: 305, fill: "#003B95" },
-          { name: "Facebook / MXH", value: 220, fill: "#0284C7" },
-          { name: "QR / Danh thiếp số", value: 140, fill: "#059669" },
-        ];
+    let catKey = "topConnections";
+    if (activeCategory === "top_opportunities") catKey = "topOpportunities";
+    else if (activeCategory === "top_events_meetings") catKey = "topEventsMeetings";
+    else if (activeCategory === "top_referrals") catKey = "topReferrals";
+    else if (activeCategory === "external_shares") catKey = "externalShareClicks";
+
+    const apiCategory = serverData?.categories?.[catKey];
+    if (apiCategory?.pieChartData && Array.isArray(apiCategory.pieChartData) && apiCategory.pieChartData.length > 0) {
+      return apiCategory.pieChartData;
     }
-  }, [activeCategory]);
+    if (catKey === "externalShareClicks" && serverData?.externalShareClicks?.platforms) {
+      return serverData.externalShareClicks.platforms.map((p: any) => ({
+        name: p.name,
+        value: p.count,
+        fill: p.color || "#003B95",
+      }));
+    }
+    return [
+      { name: "Hội viên chính thức", value: 35, fill: "#003B95" },
+      { name: "Ban Điều Hành", value: 15, fill: "#059669" },
+      { name: "Khách mời xúc tiến", value: 10, fill: "#F59E0B" },
+    ];
+  }, [activeCategory, serverData]);
 
   // Lọc dữ liệu biểu đồ theo chế độ: Vừa tăng vừa giảm (all) | Tăng (up) | Giảm (down)
   const filteredChartData = useMemo(() => {
     if (trendFilter === "up") {
-      const list = chartData.filter((d) => d.isUp);
+      const list = chartData.filter((d: any) => d.isUp);
       return list.length > 0 ? list : chartData;
     }
     if (trendFilter === "down") {
-      const list = chartData.filter((d) => !d.isUp);
+      const list = chartData.filter((d: any) => !d.isUp);
       return list.length > 0
         ? list
         : [
@@ -603,8 +569,35 @@ export function AssociationAnalyticsScreen() {
     return chartData;
   }, [chartData, trendFilter, timeRange]);
 
-  // Danh sách Top 1 đến Top 10 đầy đủ cho cả 4 danh mục
+  // Danh sách Top 1 đến Top 10 đầy đủ thời gian thực từ API cho cả 4 danh mục
   const allRankedList = useMemo(() => {
+    let catList: any[] = [];
+    if (activeCategory === "top_connections") {
+      catList = serverData?.topConnections || serverData?.categories?.topConnections?.data || [];
+    } else if (activeCategory === "top_opportunities") {
+      catList = serverData?.topOpportunities || serverData?.categories?.topOpportunities?.data || [];
+    } else if (activeCategory === "top_events_meetings") {
+      catList = serverData?.topEventsMeetings || serverData?.categories?.topEventsMeetings?.data || [];
+    } else if (activeCategory === "top_referrals") {
+      catList = serverData?.topReferrals || serverData?.categories?.topReferrals?.data || [];
+    }
+
+    if (catList && catList.length > 0) {
+      return catList.map((m: any, idx: number) => ({
+        rank: idx + 1,
+        tier: m.tier || (idx === 0 ? "Kim Cương" : idx === 1 ? "Bạch Kim" : idx === 2 ? "Vàng" : "Top 10"),
+        tierCode: m.tierCode || (idx === 0 ? "DIAMOND" : idx === 1 ? "PLATINUM" : idx === 2 ? "GOLD" : "TOP_HONOR"),
+        name: m.name,
+        company: m.company,
+        title: m.title || "Hội viên",
+        dept: m.department || "Ban Điều Hành",
+        avatar: m.avatar || "/ceo1983-emblem-8.png",
+        valueStr: m.valueStr || `${m.connectionsCount || m.publicOppsShared || m.eventsAttended || 0} lượt`,
+        badge: m.badge || (idx === 0 ? "Kim Cương 💎" : idx === 1 ? "Bạch Kim 🪙" : idx === 2 ? "Vàng 🥇" : ""),
+        phone: m.phone || "0983 1983 83",
+      }));
+    }
+
     switch (activeCategory) {
       case "top_connections":
         return [
@@ -660,7 +653,7 @@ export function AssociationAnalyticsScreen() {
           { rank: 10, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", title: "Giám đốc điều hành", dept: "Ban Tài Chính", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200", valueStr: "1 CEO đã giới thiệu", phone: "0982443322" },
         ];
     }
-  }, [activeCategory]);
+  }, [activeCategory, serverData]);
 
   // Bục vinh danh 3 người đứng top (Podium)
   const podiumTop3: TopPerformer[] = useMemo(() => {

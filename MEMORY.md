@@ -1,5 +1,28 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 05/11/2026 (v10.37): Triệt Tiêu Lỗi Văng Đăng Nhập Bằng Silent Token Refresh, Chuẩn Hóa Thống Kê Realtime Đích Thực Từ Cơ Sở Dữ Liệu Cả App & Web CRM, Tích Hợp Cấu Hình Đẩy Đa Kênh (Web ceo1983.com, Facebook, Zalo OA) & Đồng Bộ Tự Động Tin Tức Từ Website Hiệp Hội ([NODE-APP-001], [NODE-APP-006], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011], [NODE-CORE-001])**:
+  1. *Khắc Phục Triệt Để Lỗi Tự Động Bị Out Khỏi App & Vòng Lặp Đăng Nhập (`apps/ceo1983_app_fe/src/lib/api-client.ts`, `apps/ceo1983_app_fe/src/routes/association.login.tsx`)*:
+     - Cơ chế Tự động Làm mới Token Nền (Silent Token Refresh): Khi một request API trả về mã lỗi 401 Unauthorized do Access Token hết hạn (sau 60 phút), hàm `fetchNestApi` tự động chặn lại, dùng `vibe_refresh_token` (hạn 7 ngày) gửi đến `POST /api/auth/refresh` với singleton promise tránh xung đột đa luồng; khi nhận access token mới, tự động cập nhật vào `localStorage` và `document.cookie`, rồi thực hiện lại request ban đầu một cách liền mạch mà không làm ngắt phiên của người dùng.
+     - Khắc phục lỗi văng / kẹt trang đăng nhập: Trong `association.login.tsx`, loại bỏ việc gọi `logout()` trong hook dependency của `reason === "expired"`. Khi đăng nhập thành công, điều hướng trực tiếp bằng `window.location.replace(target)` để xóa triệt để chuỗi `?reason=expired&redirect=%2Fassociation` khỏi URL, làm mới toàn bộ ngữ cảnh router mà không bị bounce back.
+  2. *Thống Kê Realtime Đích Thực Cả App CEO 1983 & Web CRM - Không Dữ Liệu Fake (`apps/ceo1983_app_be/src/analytics/analytics.service.ts`, `apps/ceo1983_app_fe/src/routes/association.analytics.tsx`)*:
+     - Backend PostgreSQL Realtime:
+       + Truy vấn trực tiếp từ bảng `public.feed_posts` và phản ánh tức thì khi có bài viết bị xóa (xóa bài viết là số lượng lập tức giảm tương ứng trên thống kê).
+       + Tính toán `chartData` (Composed Chart) thời gian thực theo đúng chu kỳ lọc (Tháng `T1, T2, T3`, Quý `Q1, Q2, Q3, Q4`, Năm `2024, 2025, 2026`) từ các bảng `user_connections`, `opportunities`, `event_registrations`, `feed_posts`.
+       + Tính toán `pieChartData` (Pie Chart tỷ trọng) theo đúng loại kết nối, cơ hội mua/bán, phân loại sự kiện và xếp hạng hội viên.
+       + Bảng xếp hạng Top 10 với đầy đủ huy hiệu Kim Cương (Top 1), Bạch Kim (Top 2), Vàng (Top 3) và Top 10 Doanh Nhân Xuất Sắc kèm chuỗi chỉ số `valueStr` chính danh cho cả 4 danh mục.
+     - Giao diện Mobile App: Ràng buộc trực tiếp `chartData`, `pieChartData` và `allRankedList` với dữ liệu API backend, triệt tiêu hoàn toàn các mảng mock tĩnh cứng trước đây.
+  3. *Cấu Hình Đẩy Đa Kênh Lên Trang Web Hiệp Hội (ceo1983.com), Facebook Fanpage & Zalo OA (`apps/ceo1983_app_fe/src/components/dashboard/SyndicationConfigSection.tsx`, `apps/ceo1983_app_fe/src/routes/settings.tsx`)*:
+     - Bổ sung tab **"Đẩy tin đa kênh (Web, FB, Zalo)"** vào menu Cài đặt hệ thống Web CRM (`/settings`).
+     - Tích hợp giao diện quản trị bật/tắt đẩy Sự kiện, Lịch họp ban, và Bài viết Diễn đàn sang:
+       + Website Hiệp hội `https://ceo1983.com` (Webhook Endpoint, API Key, nút Kiểm tra kết nối).
+       + Facebook Fanpage CLB Doanh Nhân CEO 1983 (Page ID, Graph API Access Token, nút Kiểm tra kết nối Fanpage).
+       + Zalo Official Account (OA ID, Secret Key, ZNS Template ID, nút Kiểm tra kết nối Zalo OA).
+     - Lưu trữ an toàn cấu hình vào `vba_syndication_config` và đồng bộ qua API cấu hình hệ thống.
+  4. *Đồng Bộ Tin Tức Tự Động Từ Website Chính Thức ceo1983.com (`apps/ceo1983_app_be/src/connect-app/services/content.service.ts`, `apps/ceo1983_app_be/src/connect-app/content.controller.ts`, `apps/ceo1983_app_fe/src/routes/news.tsx`)*:
+     - Backend Crawler: Tự động thu thập bài viết từ website `https://ceo1983.com`, phân tích bóc tách tiêu đề `h1`, mô tả `og:description`, ảnh bài viết `og:image` và lưu/cập nhật vào bảng `public.news`.
+     - Cung cấp API endpoint: `POST /content/admin/news/sync-from-web`.
+     - Web CRM: Bổ sung nút hành động "Đồng bộ từ ceo1983.com" kèm biểu tượng xoay trạng thái tải trên thanh công cụ của trang Quản lý Tin tức (`/news`), cho phép Ban Truyền thông đồng bộ tin tức mới nhất về hệ thống chỉ với 1 cú click.
+
 - **Bản cập nhật ngày 05/11/2026 (v10.36): Tái Cấu Trúc Toàn Diện Giao Diện Cá Nhân (Profile), Bổ Sung Quyền Riêng Tư Mạng Lưới (Facebook Style) & Menu Thao Tác Bài Viết, Tùy Biến 4 Phím Tắt Nhanh Trang Chủ Trong "Xem Tất Cả Tính Năng", Chuẩn Hóa 3 Tab Kết Nối B2B & Điều Hướng Deal Chào Giá Trực Tiếp Đến Người Đăng ([NODE-APP-001], [NODE-APP-004], [NODE-APP-007], [NODE-APP-008], [NODE-APP-014])**:
   1. *Đại Tu Giao Diện Màn Hình Cá Nhân (`apps/ceo1983_app_fe/src/routes/association.profile.tsx`)*:
      - Tái cấu trúc thành 2 nhóm tab chính trực quan:

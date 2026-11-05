@@ -313,6 +313,55 @@ function cleanUrls(body: any): any {
   return body;
 }
 
+let refreshInProgress: Promise<string | null> | null = null;
+
+async function trySilentRefresh(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const refreshToken = localStorage.getItem("vibe_refresh_token");
+  if (!refreshToken) return null;
+
+  if (refreshInProgress) {
+    return refreshInProgress;
+  }
+
+  refreshInProgress = (async () => {
+    try {
+      const baseUrl = getBaseApiUrl();
+      const res = await fetch(`${baseUrl}/api/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) {
+        return null;
+      }
+      const data = await res.json();
+      if (!data?.access_token) return null;
+
+      localStorage.setItem("vibe_token", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("vibe_refresh_token", data.refresh_token);
+      }
+      const maxAge = data.expires_in ?? 3600;
+      const isHttps = window.location.protocol === "https:";
+      const secure = isHttps ? "; secure" : "";
+      document.cookie = `sb-access-token=${data.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+      document.cookie = `vibe_token=${data.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+      document.cookie = `access_token=${data.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+      if (data.refresh_token) {
+        document.cookie = `sb-refresh-token=${data.refresh_token}; path=/; max-age=604800; SameSite=Lax${secure}`;
+      }
+      return data.access_token;
+    } catch {
+      return null;
+    } finally {
+      refreshInProgress = null;
+    }
+  })();
+
+  return refreshInProgress;
+}
+
 async function handleResponse(response: Response, endpoint = "") {
   if (response.status === 401) {
     const isAuthEndpoint =
@@ -473,12 +522,32 @@ export async function fetchNestApi<T = any>(
     (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
       ? AbortSignal.timeout(15000)
       : undefined);
-  const response = await fetch(`${baseUrl}${mappedEndpoint}`, {
+  let response = await fetch(`${baseUrl}${mappedEndpoint}`, {
     ...options,
     signal,
     body: requestBody,
     headers,
   });
+
+  const isAuthEndpoint =
+    endpoint.includes("/auth/login") ||
+    endpoint.includes("/auth/register") ||
+    endpoint.includes("/auth/refresh") ||
+    endpoint.includes("/auth/reset-password") ||
+    endpoint.includes("/auth/forgot-password");
+
+  if (response.status === 401 && !isAuthEndpoint) {
+    const newAccessToken = await trySilentRefresh();
+    if (newAccessToken) {
+      headers.set("Authorization", `Bearer ${newAccessToken}`);
+      response = await fetch(`${baseUrl}${mappedEndpoint}`, {
+        ...options,
+        signal,
+        body: requestBody,
+        headers,
+      });
+    }
+  }
 
   return handleResponse(response, endpoint);
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Eye, Newspaper, Pencil, Plus, Trash2, Search, Filter, LayoutGrid, List, FileText, CheckCircle2, Clock } from "lucide-react";
+import { Eye, Newspaper, Pencil, Plus, Trash2, Search, Filter, LayoutGrid, List, FileText, CheckCircle2, Clock, RefreshCw } from "lucide-react";
+import { fetchNestApi } from "@/lib/api-client";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -148,6 +149,28 @@ function NewsPage() {
     }
   };
 
+
+  const [syncingWeb, setSyncingWeb] = useState(false);
+
+  const handleSyncFromCeo1983Web = async () => {
+    setSyncingWeb(true);
+    try {
+      const res = await fetchNestApi<any>("/content/admin/news/sync-from-web", {
+        method: "POST",
+      });
+      if (res?.ok) {
+        toast.success(res.message || "Đồng bộ thành công tin tức từ ceo1983.com!");
+        await router.invalidate();
+      } else {
+        toast.error("Không thể đồng bộ tin tức lúc này.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi kết nối khi đồng bộ từ website ceo1983.com");
+    } finally {
+      setSyncingWeb(false);
+    }
+  };
+
   const onDelete = async (n: NewsArticle) => {
     if (!canManageNews) {
       toast.error("Bạn không có quyền xóa bài viết tin tức!");
@@ -172,19 +195,31 @@ function NewsPage() {
         title={t("news.title")}
         subtitle={t("news.subtitle")}
         actions={
-          can(PERMISSIONS.MEDIA_MANAGE) ? (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                setEditing(null);
-                setOpen(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
-              style={{ background: "var(--gradient-primary)" }}
+              type="button"
+              onClick={handleSyncFromCeo1983Web}
+              disabled={syncingWeb}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/40 px-3.5 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer disabled:opacity-50"
+              title="Đồng bộ tự động tin tức từ trang web chính thức ceo1983.com"
             >
-              <Plus className="h-4 w-4" />
-              {t("news.create")}
+              <RefreshCw className={`h-4 w-4 ${syncingWeb ? "animate-spin" : ""}`} />
+              <span>{syncingWeb ? "Đang đồng bộ..." : "Đồng bộ từ ceo1983.com"}</span>
             </button>
-          ) : undefined
+            {can(PERMISSIONS.MEDIA_MANAGE) && (
+              <button
+                onClick={() => {
+                  setEditing(null);
+                  setOpen(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] cursor-pointer"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Plus className="h-4 w-4" />
+                {t("news.create")}
+              </button>
+            )}
+          </div>
         }
       />
 

@@ -110,9 +110,8 @@ function AssociationLoginPage() {
   useEffect(() => {
     if (reason === "expired" && !justLoggedInRef.current) {
       setAuthError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-      logout?.();
     }
-  }, [reason, logout]);
+  }, [reason]);
 
   // Nếu đã có phiên đăng nhập hợp lệ và token tồn tại, tự động chuyển ngay vào App
   useEffect(() => {
@@ -191,7 +190,11 @@ function AssociationLoginPage() {
         const memberWelcomeName = res.user?.name || res.user?.user_metadata?.full_name || cleanId;
         toast.success(`Chào mừng hội viên ${memberWelcomeName} trở lại!`);
         const target = safeRedirect(redirectTo) || "/association";
-        navigate({ to: target as any, replace: true });
+        if (typeof window !== "undefined") {
+          window.location.replace(target);
+        } else {
+          navigate({ to: target as any, replace: true });
+        }
         return;
       }
 

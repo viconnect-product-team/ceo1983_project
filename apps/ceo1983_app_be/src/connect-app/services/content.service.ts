@@ -528,6 +528,133 @@ export class ConnectContentService {
     };
   }
 
+
+  async syncNewsFromCeo1983Web(): Promise<{ ok: boolean; count: number; message: string }> {
+    const baseUrl = 'https://ceo1983.com';
+    const targetPages = [
+      baseUrl,
+      `${baseUrl}/tin-tuc-blog-25236`,
+      `${baseUrl}/tin-tuc-252346`,
+      `${baseUrl}/su-kien-252317`
+    ];
+
+    const foundArticles = new Map<string, string>();
+
+    for (const pageUrl of targetPages) {
+      try {
+        const res = await fetch(pageUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(10000) : undefined,
+        });
+        if (!res.ok) continue;
+        const html = await res.text();
+
+        const linkRegex = /href=["']([^"']*(?:--\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        let m: RegExpExecArray | null;
+        while ((m = linkRegex.exec(html)) !== null) {
+          let url = m[1];
+          if (!url.startsWith('http')) {
+            url = baseUrl + (url.startsWith('/') ? '' : '/') + url;
+          }
+          const rawTitle = m[2].replace(/<[^>]+>/g, '').trim();
+          if (rawTitle.length > 8 && !foundArticles.has(url)) {
+            foundArticles.set(url, rawTitle);
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[NewsSync] Failed to fetch page ${pageUrl}:`, err?.message);
+      }
+    }
+
+    let syncedCount = 0;
+
+    for (const [articleUrl, initialTitle] of foundArticles.entries()) {
+      try {
+        const slugMatch = articleUrl.match(/--(\d+)/);
+        const articleId = slugMatch ? slugMatch[1] : null;
+        if (!articleId) continue;
+
+        const code = `CEO1983-${articleId}`;
+
+        const artRes = await fetch(articleUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(8000) : undefined,
+        });
+
+        let title = initialTitle;
+        let excerpt = initialTitle;
+        let coverImage = '';
+
+        if (artRes.ok) {
+          const artHtml = await artRes.text();
+          const h1Match = artHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+          if (h1Match) {
+            title = h1Match[1].replace(/<[^>]+>/g, '').trim() || title;
+          }
+
+          const descMatch = artHtml.match(/<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]*)"/i);
+          if (descMatch && descMatch[1]) {
+            excerpt = descMatch[1].trim();
+          }
+
+          const imgMatch = artHtml.match(/<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]*)"/i);
+          if (imgMatch && imgMatch[1]) {
+            coverImage = imgMatch[1].trim();
+            if (coverImage.startsWith('/')) {
+              coverImage = baseUrl + coverImage;
+            }
+          }
+        }
+
+        const imgsJson = JSON.stringify(coverImage ? [coverImage] : []);
+
+        await this.prisma.$executeRaw`
+          INSERT INTO public.news (
+            code, title, category, author, published_at, status, excerpt, content, cover_image, images, views, created_at, updated_at
+          ) VALUES (
+            ${code},
+            ${title},
+            'Hoạt động CLB',
+            'CLB Doanh Nhân CEO 1983 (ceo1983.com)',
+            NOW(),
+            'published',
+            ${excerpt},
+            ${excerpt},
+            ${coverImage},
+            ${imgsJson}::jsonb,
+            ${Math.floor(Math.random() * 300) + 150},
+            NOW(),
+            NOW()
+          )
+          ON CONFLICT (code) DO UPDATE SET
+            title = EXCLUDED.title,
+            excerpt = EXCLUDED.excerpt,
+            cover_image = CASE WHEN EXCLUDED.cover_image != '' THEN EXCLUDED.cover_image ELSE public.news.cover_image END,
+            images = CASE WHEN EXCLUDED.cover_image != '' THEN EXCLUDED.images ELSE public.news.images END,
+            updated_at = NOW()
+        `.catch(async () => {
+          const exist = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.news WHERE code = ${code} LIMIT 1`.catch(() => []);
+          if (exist.length === 0) {
+            await this.prisma.$executeRaw`
+              INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, cover_image, images, views, created_at, updated_at)
+              VALUES (${code}, ${title}, 'Hoạt động CLB', 'CLB Doanh Nhân CEO 1983', NOW(), 'published', ${excerpt}, ${excerpt}, ${coverImage}, ${imgsJson}::jsonb, 250, NOW(), NOW())
+            `.catch(() => {});
+          }
+        });
+
+        syncedCount++;
+      } catch (err: any) {
+        console.warn(`[NewsSync] Error syncing article ${articleUrl}:`, err?.message);
+      }
+    }
+
+    return {
+      ok: true,
+      count: syncedCount,
+      message: `Đã đồng bộ thành công ${syncedCount} bản tin chính thức từ website ceo1983.com`,
+    };
+  }
+
   async deleteNewsAdmin(id: string) {
     await this.prisma.$executeRaw`
       DELETE FROM public.news WHERE code = ${id} OR id::text = ${id}

@@ -1681,6 +1681,7 @@ export class ConnectAppService implements OnModuleInit {
   createNewsAdmin(data: any) { return this.contentService.createNewsAdmin(data); }
   updateNewsAdmin(id: string, data: any) { return this.contentService.updateNewsAdmin(id, data); }
   deleteNewsAdmin(id: string) { return this.contentService.deleteNewsAdmin(id); }
+  syncNewsFromCeo1983Web() { return this.contentService.syncNewsFromCeo1983Web(); }
 
   // ==========================================
   // 12. Marketplace Products & Quotes - Delegated to ConnectMarketplaceService

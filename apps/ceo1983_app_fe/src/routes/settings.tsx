@@ -14,7 +14,9 @@ import {
   Shield,
   Smartphone,
   Wallet,
+  Share2,
 } from "lucide-react";
+import { SyndicationConfigSection } from "@/components/dashboard/SyndicationConfigSection";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -39,6 +41,7 @@ const TABS = [
   { key: "traffic", defaultLabel: "Quản lý lượng truy cập", icon: Activity },
   { key: "domain", labelKey: "set.tab.domain", defaultLabel: "Tên miền hệ thống", icon: Globe },
   { key: "templates", defaultLabel: "Mẫu thông báo", icon: Mail },
+  { key: "syndication", defaultLabel: "Đẩy tin đa kênh (Web, FB, Zalo)", icon: Share2 },
   { key: "zalo_oa", defaultLabel: "Cấu hình Zalo OA", icon: MessageSquareText },
   { key: "zalo_miniapp", defaultLabel: "Cấu hình Zalo Mini App", icon: Smartphone },
   { key: "vnpay", defaultLabel: "Thanh toán VNPay", icon: CreditCard },
@@ -209,6 +212,8 @@ function SettingsPage() {
           {tab === "domain" && <AssociationDomainEditor />}
 
           {tab === "templates" && <OmnichannelTemplatesSection />}
+
+          {tab === "syndication" && <SyndicationConfigSection />}
 
           {tab === "zalo_oa" && <ZaloOaConfigSection />}
 

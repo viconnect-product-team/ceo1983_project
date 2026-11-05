@@ -13,6 +13,12 @@ export class ContentController {
     return this.connectAppService.listPublishedNews();
   }
 
+  @Post('admin/news/sync-from-web')
+  @UseGuards(OptionalJwtAuthGuard)
+  async syncNewsFromWeb() {
+    return this.connectAppService.syncNewsFromCeo1983Web();
+  }
+
   @Get('admin/news')
   @UseGuards(OptionalJwtAuthGuard)
   async listAdminNews() {
