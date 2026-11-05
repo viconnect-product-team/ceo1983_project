@@ -697,77 +697,26 @@ export function AssociationAnalyticsScreen() {
         dept: m.department || "Ban Điều Hành",
         avatar: m.avatar || "/ceo1983-emblem-8.png",
         valueStr: m.valueStr || `${m.connectionsCount || m.publicOppsShared || m.eventsAttended || 0} lượt`,
+        score: Number(m.score || m.interactionScore || 100),
         badge: m.badge || (idx === 0 ? "Kim Cương 💎" : idx === 1 ? "Bạch Kim 🪙" : idx === 2 ? "Vàng 🥇" : ""),
         phone: m.phone || "0983 1983 83",
       }));
     }
 
-    switch (activeCategory) {
-      case "top_connections":
-        return [
-          { rank: 1, tier: "Kim Cương", tierCode: "DIAMOND", name: "Phạm Văn Vũ", company: "Tập Đoàn Công Nghệ ViConnect", title: "Chủ Tịch HĐQT", dept: "Ban Công Nghệ", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200", valueStr: "38 Lượt kết nối B2B", badge: "Kim Cương 💎", phone: "0901234567" },
-          { rank: 2, tier: "Bạch Kim", tierCode: "PLATINUM", name: "Nguyễn Thị Mai", company: "Green Farm Group", title: "Tổng Giám Đốc", dept: "Ban Truyền Thông", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200", valueStr: "28 Lượt kết nối B2B", badge: "Bạch Kim 🪙", phone: "0912345678" },
-          { rank: 3, tier: "Vàng", tierCode: "GOLD", name: "Trần Quốc Bảo", company: "Bảo Phát Logistics Quốc Tế", title: "Giám Đốc Điều Hành", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200", valueStr: "21 Lượt kết nối B2B", badge: "Vàng 🥇", phone: "0987654321" },
-          { rank: 4, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", title: "Giám đốc", dept: "Ban Tài Chính", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200", valueStr: "18 Lượt kết nối B2B", phone: "0913222333" },
-          { rank: 5, name: "Hoàng Yến Chi", company: "Truyền thông & Sự kiện YC", title: "Chủ sáng lập", dept: "Ban Sự Kiện", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200", valueStr: "16 Lượt kết nối B2B", phone: "0988776655" },
-          { rank: 6, name: "Đỗ Minh Khang", company: "Khang Land Real Estate", title: "Tổng Giám Đốc", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200", valueStr: "14 Lượt kết nối B2B", phone: "0909988776" },
-          { rank: 7, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", title: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200", valueStr: "13 Lượt kết nối B2B", phone: "0934556677" },
-          { rank: 8, name: "Phan Thanh Hà", company: "Dược phẩm Hà Thành", title: "Tổng Giám đốc", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200", valueStr: "11 Lượt kết nối B2B", phone: "0915889900" },
-          { rank: 9, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", title: "Giám đốc điều hành", dept: "Ban Tài Chính", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200", valueStr: "10 Lượt kết nối B2B", phone: "0982443322" },
-          { rank: 10, name: "Trịnh Thùy Linh", company: "Tư vấn Luật TL Law", title: "Luật sư Trưởng", dept: "Ban Thư Ký", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200", valueStr: "9 Lượt kết nối B2B", phone: "0977123456" },
-        ];
-      case "top_opportunities":
-        return [
-          { rank: 1, tier: "Kim Cương", tierCode: "DIAMOND", name: "Đỗ Minh Khang", company: "Khang Land Real Estate", title: "Tổng Giám Đốc", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200", valueStr: "26 Cơ hội công khai", badge: "Kim Cương 💎", phone: "0909988776" },
-          { rank: 2, tier: "Bạch Kim", tierCode: "PLATINUM", name: "Lê Hoàng Yến", company: "Yến Sào Hoàng Gia Luxury", title: "Chủ Tịch", dept: "Ban Thành Viên", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200", valueStr: "18 Cơ hội công khai", badge: "Bạch Kim 🪙", phone: "0933221100" },
-          { rank: 3, tier: "Vàng", tierCode: "GOLD", name: "Phan Anh Tuấn", company: "Tuấn Phát Tech & Hardware", title: "CEO", dept: "Ban Công Nghệ", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200", valueStr: "14 Cơ hội công khai", badge: "Vàng 🥇", phone: "0977889900" },
-          { rank: 4, name: "Phạm Văn Vũ", company: "Tập Đoàn Công Nghệ ViConnect", title: "Chủ Tịch HĐQT", dept: "Ban Công Nghệ", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200", valueStr: "12 Cơ hội công khai", phone: "0901234567" },
-          { rank: 5, name: "Nguyễn Thị Mai", company: "Green Farm Group", title: "Tổng Giám Đốc", dept: "Ban Truyền Thông", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200", valueStr: "11 Cơ hội công khai", phone: "0912345678" },
-          { rank: 6, name: "Trần Quốc Bảo", company: "Bảo Phát Logistics", title: "Giám Đốc", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200", valueStr: "9 Cơ hội công khai", phone: "0987654321" },
-          { rank: 7, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", title: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200", valueStr: "8 Cơ hội công khai", phone: "0934556677" },
-          { rank: 8, name: "Bùi Thanh Trúc", company: "Trúc Xanh Media & Event", title: "CEO", dept: "Ban Sự Kiện", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200", valueStr: "7 Cơ hội công khai", phone: "0911223344" },
-          { rank: 9, name: "Hoàng Gia Bảo", company: "Gia Bảo Luật & Tư Vấn Thuế", title: "Luật Sư Điều Hành", dept: "Ban Thư Ký", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200", valueStr: "6 Cơ hội công khai", phone: "0944556677" },
-          { rank: 10, name: "Trịnh Thùy Linh", company: "Tư vấn Luật TL Law", title: "Luật sư Trưởng", dept: "Ban Thư Ký", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200", valueStr: "5 Cơ hội công khai", phone: "0977123456" },
-        ];
-      case "top_events_meetings":
-        return [
-          { rank: 1, tier: "Kim Cương", tierCode: "DIAMOND", name: "Phạm Văn Vũ", company: "Tập Đoàn Công Nghệ ViConnect", title: "Chủ Tịch HĐQT", dept: "Ban Công Nghệ", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200", valueStr: "19 Sự kiện & 192 Tương tác", badge: "Kim Cương 💎", phone: "0901234567" },
-          { rank: 2, tier: "Bạch Kim", tierCode: "PLATINUM", name: "Bùi Thanh Trúc", company: "Trúc Xanh Media & Event", title: "CEO", dept: "Ban Sự Kiện", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200", valueStr: "15 Sự kiện & 142 Tương tác", badge: "Bạch Kim 🪙", phone: "0911223344" },
-          { rank: 3, tier: "Vàng", tierCode: "GOLD", name: "Hoàng Gia Bảo", company: "Gia Bảo Luật & Tư Vấn Thuế", title: "Luật Sư Điều Hành", dept: "Ban Thư Ký", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200", valueStr: "12 Sự kiện & 118 Tương tác", badge: "Vàng 🥇", phone: "0944556677" },
-          { rank: 4, name: "Nguyễn Thị Mai", company: "Green Farm Group", title: "Tổng Giám Đốc", dept: "Ban Truyền Thông", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200", valueStr: "11 Sự kiện & 98 Tương tác", phone: "0912345678" },
-          { rank: 5, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", title: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200", valueStr: "10 Sự kiện & 88 Tương tác", phone: "0912345671" },
-          { rank: 6, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", title: "Giám đốc", dept: "Ban Tài Chính", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200", valueStr: "9 Sự kiện & 75 Tương tác", phone: "0913222333" },
-          { rank: 7, name: "Đỗ Minh Khang", company: "Khang Land Real Estate", title: "Tổng Giám Đốc", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200", valueStr: "9 Sự kiện & 72 Tương tác", phone: "0909988776" },
-          { rank: 8, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", title: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200", valueStr: "8 Sự kiện & 64 Tương tác", phone: "0934556677" },
-          { rank: 9, name: "Phan Thanh Hà", company: "Dược phẩm Hà Thành", title: "Tổng Giám đốc", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200", valueStr: "7 Sự kiện & 58 Tương tác", phone: "0915889900" },
-          { rank: 10, name: "Trịnh Thùy Linh", company: "Tư vấn Luật TL Law", title: "Luật sư Trưởng", dept: "Ban Thư Ký", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200", valueStr: "7 Sự kiện & 52 Tương tác", phone: "0977123456" },
-        ];
-      case "top_referrals":
-      default:
-        return [
-          { rank: 1, tier: "Kim Cương", tierCode: "DIAMOND", name: "Nguyễn Hải Long", company: "Tập Đoàn BĐS Thăng Long", title: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200", valueStr: "9 CEO đã giới thiệu", badge: "Kim Cương 💎", phone: "0918888999" },
-          { rank: 2, tier: "Bạch Kim", tierCode: "PLATINUM", name: "Trần Mai Phương", company: "Tập Đoàn Giáo Dục SmartEdu", title: "Tổng Giám Đốc", dept: "Ban Thành Viên", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200", valueStr: "7 CEO đã giới thiệu", badge: "Bạch Kim 🪙", phone: "0903667889" },
-          { rank: 3, tier: "Vàng", tierCode: "GOLD", name: "Phạm Văn Vũ", company: "Tập Đoàn Công Nghệ ViConnect", title: "Chủ Tịch HĐQT", dept: "Ban Công Nghệ", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200", valueStr: "5 CEO đã giới thiệu", badge: "Vàng 🥇", phone: "0901234567" },
-          { rank: 4, name: "Nguyễn Thị Mai", company: "Green Farm Group", title: "Tổng Giám Đốc", dept: "Ban Truyền Thông", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200", valueStr: "4 CEO đã giới thiệu", phone: "0912345678" },
-          { rank: 5, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", title: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200", valueStr: "3 CEO đã giới thiệu", phone: "0912345671" },
-          { rank: 6, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", title: "Giám đốc", dept: "Ban Tài Chính", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200", valueStr: "2 CEO đã giới thiệu", phone: "0913222333" },
-          { rank: 7, name: "Hoàng Yến Chi", company: "Truyền thông & Sự kiện YC", title: "Chủ sáng lập", dept: "Ban Sự Kiện", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200", valueStr: "2 CEO đã giới thiệu", phone: "0988776655" },
-          { rank: 8, name: "Đỗ Quốc Bảo", company: "Bảo Phát Logistics", title: "Chủ tịch", dept: "Ban Xúc Tiến", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200", valueStr: "2 CEO đã giới thiệu", phone: "0987654321" },
-          { rank: 9, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", title: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200", valueStr: "1 CEO đã giới thiệu", phone: "0934556677" },
-          { rank: 10, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", title: "Giám đốc điều hành", dept: "Ban Tài Chính", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200", valueStr: "1 CEO đã giới thiệu", phone: "0982443322" },
-        ];
-    }
+    return [];
   }, [activeCategory, serverData]);
 
   // Bục vinh danh 3 người đứng top (Podium)
   const podiumTop3: TopPerformer[] = useMemo(() => {
+    if (!allRankedList || allRankedList.length === 0) return [];
     const list = allRankedList.slice(0, 3);
     const top1 = list.find((m) => m.rank === 1) || list[0];
-    const top2 = list.find((m) => m.rank === 2) || list[1];
-    const top3 = list.find((m) => m.rank === 3) || list[2];
+    const top2 = list.find((m) => m.rank === 2) || (list.length > 1 ? list[1] : null);
+    const top3 = list.find((m) => m.rank === 3) || (list.length > 2 ? list[2] : null);
 
-    return [
-      {
+    const result: TopPerformer[] = [];
+    if (top2) {
+      result.push({
         rank: 2,
         tier: "Bạch Kim",
         tierCode: "PLATINUM",
@@ -776,11 +725,13 @@ export function AssociationAnalyticsScreen() {
         title: top2.title,
         avatar: top2.avatar,
         valueStr: top2.valueStr,
-        score: 180,
+        score: top2.score || 180,
         badge: "Bạch Kim 🪙",
         phone: top2.phone,
-      },
-      {
+      });
+    }
+    if (top1) {
+      result.push({
         rank: 1, // Ở giữa cao nhất
         tier: "Kim Cương",
         tierCode: "DIAMOND",
@@ -789,11 +740,13 @@ export function AssociationAnalyticsScreen() {
         title: top1.title,
         avatar: top1.avatar,
         valueStr: top1.valueStr,
-        score: 250,
+        score: top1.score || 250,
         badge: "Kim Cương 💎",
         phone: top1.phone,
-      },
-      {
+      });
+    }
+    if (top3) {
+      result.push({
         rank: 3,
         tier: "Vàng",
         tierCode: "GOLD",
@@ -802,11 +755,12 @@ export function AssociationAnalyticsScreen() {
         title: top3.title,
         avatar: top3.avatar,
         valueStr: top3.valueStr,
-        score: 140,
+        score: top3.score || 140,
         badge: "Vàng 🥇",
         phone: top3.phone,
-      },
-    ];
+      });
+    }
+    return result;
   }, [allRankedList]);
 
   // Danh sách những người xếp hạng từ Top 4 đến Top 10
@@ -1279,83 +1233,97 @@ export function AssociationAnalyticsScreen() {
             </p>
           </div>
 
-          {/* Dàn 3 cột chung 1 hàng ngang với bục bậc thang */}
-          <div className="grid grid-cols-3 gap-2 items-end pt-3 pb-1">
-            {podiumTop3.map((performer) => {
-              const isTop1 = performer.rank === 1;
-              const isTop2 = performer.rank === 2;
-              const isTop3 = performer.rank === 3;
+          {/* Dàn 3 cột chung 1 hàng ngang với bục bậc thang hoặc Empty State */}
+          {podiumTop3.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2 items-end pt-3 pb-1">
+              {podiumTop3.map((performer) => {
+                const isTop1 = performer.rank === 1;
+                const isTop2 = performer.rank === 2;
+                const isTop3 = performer.rank === 3;
 
-              return (
-                <div
-                  key={performer.rank}
-                  className={`flex flex-col items-center text-center transition-all ${
-                    isTop1 ? "order-2 -mt-4 z-10" : isTop2 ? "order-1" : "order-3"
-                  }`}
-                >
-                  <div className="relative mb-2 flex flex-col items-center">
-                    <div
-                      className={`relative rounded-full overflow-hidden p-0.5 shadow-sm ${
-                        isTop1
-                          ? "size-15 ring-3 ring-[#003B95] shadow-md"
-                          : isTop2
-                          ? "size-12 ring-2 ring-slate-400"
-                          : "size-12 ring-2 ring-slate-300"
-                      }`}
-                    >
-                      <img
-                        src={performer.avatar}
-                        alt={performer.name}
-                        className="w-full h-full rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/ceo1983-logo.png";
-                        }}
-                      />
-                    </div>
-
-                    <span
-                      className={`absolute -bottom-1 px-2 py-0.5 rounded-full text-[9px] font-black text-white ${
-                        isTop1
-                          ? "bg-[#003B95] border border-white"
-                          : isTop2
-                          ? "bg-slate-700"
-                          : "bg-slate-500"
-                      }`}
-                    >
-                      {isTop1 ? "Hạng 1" : isTop2 ? "Hạng 2" : "Hạng 3"}
-                    </span>
-                  </div>
-
-                  {/* Thông tin đại biểu */}
-                  <h5 className="text-[12px] font-bold text-slate-900 dark:text-white truncate w-full px-1">
-                    {performer.name}
-                  </h5>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate w-full px-1">
-                    {performer.company}
-                  </p>
-                  <p className="text-[10.5px] font-bold text-[#003B95] dark:text-blue-400 truncate w-full px-1 mt-0.5">
-                    {performer.valueStr}
-                  </p>
-
-                  {/* Bục Bậc Thang chuẩn màu */}
+                return (
                   <div
-                    className={`w-full rounded-t-xl flex flex-col items-center justify-center mt-2.5 border-t border-x ${
-                      isTop1
-                        ? "h-24 bg-[#003B95] text-white border-[#002B66] shadow-xs"
-                        : isTop2
-                        ? "h-16 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
-                        : "h-14 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    key={performer.rank}
+                    className={`flex flex-col items-center text-center transition-all ${
+                      isTop1 ? "order-2 -mt-4 z-10" : isTop2 ? "order-1" : "order-3"
                     }`}
                   >
-                    <span className="font-black text-xs text-inherit">
-                      {isTop1 ? "Kim Cương 💎" : isTop2 ? "Bạch Kim 🪙" : "Vàng 🥇"}
-                    </span>
-                    <span className="text-[9px] font-medium opacity-80">#{performer.rank}</span>
+                    <div className="relative mb-2 flex flex-col items-center">
+                      <div
+                        className={`relative rounded-full overflow-hidden p-0.5 shadow-sm ${
+                          isTop1
+                            ? "size-15 ring-3 ring-[#003B95] shadow-md"
+                            : isTop2
+                            ? "size-12 ring-2 ring-slate-400"
+                            : "size-12 ring-2 ring-slate-300"
+                        }`}
+                      >
+                        <img
+                          src={performer.avatar}
+                          alt={performer.name}
+                          className="w-full h-full rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/ceo1983-logo.png";
+                          }}
+                        />
+                      </div>
+
+                      <span
+                        className={`absolute -bottom-1 px-2 py-0.5 rounded-full text-[9px] font-black text-white ${
+                          isTop1
+                            ? "bg-[#003B95] border border-white"
+                            : isTop2
+                            ? "bg-slate-700"
+                            : "bg-slate-500"
+                        }`}
+                      >
+                        {isTop1 ? "Hạng 1" : isTop2 ? "Hạng 2" : "Hạng 3"}
+                      </span>
+                    </div>
+
+                    {/* Thông tin đại biểu */}
+                    <h5 className="text-[12px] font-bold text-slate-900 dark:text-white truncate w-full px-1">
+                      {performer.name}
+                    </h5>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate w-full px-1">
+                      {performer.company}
+                    </p>
+                    <p className="text-[10.5px] font-bold text-[#003B95] dark:text-blue-400 truncate w-full px-1 mt-0.5">
+                      {performer.valueStr}
+                    </p>
+
+                    {/* Bục Bậc Thang chuẩn màu */}
+                    <div
+                      className={`w-full rounded-t-xl flex flex-col items-center justify-center mt-2.5 border-t border-x ${
+                        isTop1
+                          ? "h-24 bg-[#003B95] text-white border-[#002B66] shadow-xs"
+                          : isTop2
+                          ? "h-16 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                          : "h-14 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      <span className="font-black text-xs text-inherit">
+                        {isTop1 ? "Kim Cương 💎" : isTop2 ? "Bạch Kim 🪙" : "Vàng 🥇"}
+                      </span>
+                      <span className="text-[9px] font-medium opacity-80">#{performer.rank}</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <div className="size-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-center mb-2">
+                <Trophy className="size-6 text-amber-500" />
+              </div>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Chưa có dữ liệu vinh danh thực tế trong kỳ này
+              </p>
+              <p className="text-[11px] text-slate-500 max-w-xs mt-0.5">
+                Bảng xếp hạng sẽ tự động hiển thị khi hội viên có số lượng và giá trị giao thương thật trong CSDL.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ── BẢNG XẾP HẠNG TOP 4 - 10: DẠNG THU GỌN ACCORDION (AI THÍCH THÌ BẤM MỞ) ── */}
@@ -1388,58 +1356,64 @@ export function AssociationAnalyticsScreen() {
 
           {showTop10Expanded && (
             <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-white/5 divide-y divide-slate-100 dark:divide-white/5 animate-in fade-in duration-200">
-              {remainingTop4To10.map((member: any) => (
-                <div
-                  key={member.rank}
-                  className="py-2.5 flex items-center justify-between gap-2.5 hover:bg-slate-50 dark:hover:bg-white/5 px-1.5 rounded-xl transition"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[11px] flex items-center justify-center shrink-0">
-                      #{member.rank}
-                    </div>
-                    <div className="size-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="size-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/ceo1983-logo.png";
-                        }}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                        {member.name}
-                      </h5>
-                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
-                        {member.company}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
-                      <div className="text-xs font-black text-[#003B95] dark:text-cyan-400 font-mono">
-                        {member.valueStr}
+              {remainingTop4To10.length > 0 ? (
+                remainingTop4To10.map((member: any) => (
+                  <div
+                    key={member.rank}
+                    className="py-2.5 flex items-center justify-between gap-2.5 hover:bg-slate-50 dark:hover:bg-white/5 px-1.5 rounded-xl transition"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="size-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[11px] flex items-center justify-center shrink-0">
+                        #{member.rank}
                       </div>
-                      <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-semibold">
-                        {member.dept || "CLB CEO 1983"}
+                      <div className="size-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
+                        <img
+                          src={member.avatar}
+                          alt={member.name}
+                          className="size-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/ceo1983-logo.png";
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {member.name}
+                        </h5>
+                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
+                          {member.company}
+                        </p>
                       </div>
                     </div>
 
-                    {member.phone && (
-                      <a
-                        href={`tel:${member.phone}`}
-                        onClick={() => toast.success(`Đang gọi tới ${member.name} (${member.phone})...`)}
-                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
-                        title="Gọi điện"
-                      >
-                        <Phone className="size-3.5" />
-                      </a>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <div className="text-xs font-black text-[#003B95] dark:text-cyan-400 font-mono">
+                          {member.valueStr}
+                        </div>
+                        <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-semibold">
+                          {member.dept || "CLB CEO 1983"}
+                        </div>
+                      </div>
+
+                      {member.phone && (
+                        <a
+                          href={`tel:${member.phone}`}
+                          onClick={() => toast.success(`Đang gọi tới ${member.name} (${member.phone})...`)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+                          title="Gọi điện"
+                        >
+                          <Phone className="size-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-xs text-slate-500">
+                  Chưa có hội viên nào trong danh sách Top 4 - 10 kỳ này.
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

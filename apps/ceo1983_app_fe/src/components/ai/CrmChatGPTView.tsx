@@ -25,9 +25,14 @@ import {
   AlertCircle,
   ArrowUp,
   SlidersHorizontal,
+  Bell,
+  FileText,
+  Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
+
+export type AiPersonaType = "general" | "opportunity" | "events" | "meetings" | "finance" | "documents";
 
 export interface ChatMessage {
   id: string;
@@ -36,7 +41,9 @@ export interface ChatMessage {
   createdAt: string;
   model?: string;
   latencyMs?: number;
+  persona?: AiPersonaType;
   evidence?: Array<{ title: string; countOrVal: string; source: string }>;
+  proactiveAlert?: string;
 }
 
 export interface ChatSession {
@@ -44,9 +51,73 @@ export interface ChatSession {
   title: string;
   createdAt: string;
   messages: ChatMessage[];
+  persona?: AiPersonaType;
 }
 
-const STORAGE_KEY = "ceo1983_crm_chatgpt_sessions_v1";
+const STORAGE_KEY = "ceo1983_crm_chatgpt_sessions_v2";
+
+export const AI_PERSONAS = [
+  {
+    id: "general" as AiPersonaType,
+    name: "Trợ Lý Tổng Thể",
+    roleDesc: "Điều hành & Báo cáo toàn diện CRM",
+    icon: Sparkles,
+    color: "text-amber-500 bg-amber-500/10 border-amber-500/30",
+    activeColor: "bg-amber-500 text-slate-950 font-bold",
+    badge: "Bao quát toàn CLB",
+    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Điều Hành Cấp Cao CEO 1983. Tôi đối soát 100% dữ liệu sống từ CSDL Hiệp hội.",
+  },
+  {
+    id: "opportunity" as AiPersonaType,
+    name: "AI Cơ Hội B2B",
+    roleDesc: "Giám sát & Thông báo cơ hội mới",
+    icon: Handshake,
+    color: "text-orange-500 bg-orange-500/10 border-orange-500/30",
+    activeColor: "bg-orange-500 text-white font-bold",
+    badge: "🔔 Tự động báo cơ hội mới",
+    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Phân Tích Cơ Hội Giao Thương B2B. Tôi luôn theo dõi các cơ hội mới đăng và chủ động thông báo cho Anh/Chị.",
+  },
+  {
+    id: "events" as AiPersonaType,
+    name: "AI Sự Kiện",
+    roleDesc: "Nhắc lịch & Điều phối đại biểu",
+    icon: Calendar,
+    color: "text-rose-500 bg-rose-500/10 border-rose-500/30",
+    activeColor: "bg-rose-500 text-white font-bold",
+    badge: "📅 Nhắc lịch trình & Check-in",
+    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Sự Kiện & Hội Thảo CEO 1983. Tôi chủ động theo dõi lịch trình các sự kiện sắp diễn ra.",
+  },
+  {
+    id: "meetings" as AiPersonaType,
+    name: "AI Cuộc Họp B2B",
+    roleDesc: "Lịch hẹn 1-on-1 & Phòng họp",
+    icon: Users,
+    color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/30",
+    activeColor: "bg-indigo-500 text-white font-bold",
+    badge: "🤝 Nhắc cuộc gặp đối tác",
+    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Cuộc Họp & Lịch Hẹn CEO 1983. Tôi hỗ trợ điều phối các buổi kết nối giao thương giữa các CEO.",
+  },
+  {
+    id: "finance" as AiPersonaType,
+    name: "AI Tài Chính & Quỹ",
+    roleDesc: "Đối soát thu chi & Sổ quỹ thật",
+    icon: TrendingUp,
+    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
+    activeColor: "bg-emerald-500 text-white font-bold",
+    badge: "💰 Minh bạch số dư thật",
+    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Tài Chính & Quỹ Ngân Sách. Tôi đối soát dữ liệu thật từ sổ kế toán (105 triệu VNĐ khả dụng).",
+  },
+  {
+    id: "documents" as AiPersonaType,
+    name: "AI Tài Liệu",
+    roleDesc: "Văn bản, Điều lệ & Quy chế",
+    icon: FileText,
+    color: "text-blue-500 bg-blue-500/10 border-blue-500/30",
+    activeColor: "bg-blue-500 text-white font-bold",
+    badge: "📚 Tra cứu văn bản hiệp hội",
+    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Văn Bản & Tri Thức Hiệp Hội CEO 1983. Tôi quản lý hệ thống văn bản và tài liệu đã ban hành.",
+  },
+];
 
 const FREE_MODELS = [
   {
@@ -89,32 +160,36 @@ const FREE_MODELS = [
 
 const QUICK_PROMPTS = [
   {
-    icon: Users,
-    color: "from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/40",
-    title: "Phân tích Hội viên",
-    desc: "Đánh giá xu hướng tăng trưởng hội viên và đề xuất giải pháp thu hút quý tới",
-    prompt: "Hãy phân tích chi tiết hiện trạng hội viên CLB CEO 1983, đánh giá tỷ lệ tương tác và đề xuất 3 giải pháp trọng tâm để phát triển thêm hội viên chất lượng trong quý tới.",
-  },
-  {
-    icon: TrendingUp,
-    color: "from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/40",
-    title: "Dòng tiền & Tài chính",
-    desc: "Kiểm tra số dư quỹ ngân sách, tình hình thu hội phí và các khoản chi",
-    prompt: "Tổng hợp tình hình tài chính quỹ hiệp hội hiện tại: số dư khả dụng, tỷ lệ hoàn thành thu hội phí, và khuyến nghị quản lý dòng tiền an toàn cho Ban Tài chính.",
-  },
-  {
     icon: Handshake,
-    color: "from-amber-500/10 to-orange-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40",
-    title: "Giao thương B2B",
-    desc: "Tổng hợp cơ hội kinh doanh mở và gợi ý kết nối hội viên",
-    prompt: "Tổng hợp danh sách các cơ hội kết nối giao thương B2B tiêu biểu đang mở tại CLB CEO 1983 và gợi ý kế hoạch matching 1-on-1 giữa các ngành nghề.",
+    color: "from-orange-500/10 to-amber-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900/40",
+    title: "Cơ hội B2B mới nhất",
+    desc: "Kiểm tra cơ hội vừa đăng và ngân sách thực tế trong database",
+    prompt: "Tôi muốn cập nhật các cơ hội giao thương B2B mới nhất vừa được đăng tải trên hệ thống, phân tích quy mô ngân sách và ngành nghề phù hợp.",
+    persona: "opportunity" as AiPersonaType,
   },
   {
     icon: Calendar,
     color: "from-rose-500/10 to-pink-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40",
-    title: "Sự kiện & Thông báo",
-    desc: "Soạn thảo kế hoạch sự kiện và thông báo gửi Ban Chấp Hành",
-    prompt: "Lên kế hoạch tổ chức kỳ sinh hoạt định kỳ tháng tới của CLB CEO 1983 và soạn thảo bản thông báo trang trọng gửi Ban Chấp Hành cùng toàn thể hội viên.",
+    title: "Sự kiện & Hội thảo",
+    desc: "Nhắc nhở lịch trình các sự kiện sắp diễn ra và tình hình đăng ký",
+    prompt: "Nhắc nhở cho tôi lịch trình các sự kiện sắp tới của CLB CEO 1983, địa điểm tổ chức và tiến độ chuẩn bị thẻ đại biểu QR Code.",
+    persona: "events" as AiPersonaType,
+  },
+  {
+    icon: TrendingUp,
+    color: "from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/40",
+    title: "Đối soát Quỹ Ngân Sách",
+    desc: "Trích xuất số dư tài chính thực tế 100% từ sổ kế toán",
+    prompt: "Báo cáo chi tiết số dư quỹ hiệp hội và các giao dịch thực tế từ sổ kế toán, không lấy số liệu giả định.",
+    persona: "finance" as AiPersonaType,
+  },
+  {
+    icon: Users,
+    color: "from-indigo-500/10 to-blue-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/40",
+    title: "Cuộc họp & Kết nối B2B",
+    desc: "Quản lý lịch hẹn 1-on-1 và gửi thông báo cho các bên",
+    prompt: "Kiểm tra tình hình các cuộc hẹn kết nối B2B 1-on-1 giữa các CEO và hướng dẫn tôi lên lịch gặp gỡ đối tác mới.",
+    persona: "meetings" as AiPersonaType,
   },
 ];
 
@@ -201,12 +276,8 @@ function MarkdownRenderer({ content }: { content: string }) {
         .slice(1, -1)
         .map((c) => c.trim());
 
-      // Kiểm tra xem có phải dòng kẻ phân cách |:---|:---|
       const isDivider = cells.every((c) => /^:?-+:?$/.test(c));
-      if (isDivider) {
-        // Dòng kẻ, bỏ qua nội dung
-        return;
-      }
+      if (isDivider) return;
 
       if (!inTable) {
         inTable = true;
@@ -296,9 +367,11 @@ export function CrmChatGPTView() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.0-flash");
+  const [selectedPersona, setSelectedPersona] = useState<AiPersonaType>("general");
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [liveAlert, setLiveAlert] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -312,23 +385,24 @@ export function CrmChatGPTView() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSessions(parsed);
           setCurrentSessionId(parsed[0].id);
+          if (parsed[0].persona) setSelectedPersona(parsed[0].persona);
           return;
         }
       }
     } catch {}
 
-    // Tạo session mặc định ban đầu nếu chưa có
     const initialSession: ChatSession = {
       id: `sess_${Date.now()}`,
       title: "Cuộc trò chuyện mới",
       createdAt: new Date().toISOString(),
       messages: [],
+      persona: "general",
     };
     setSessions([initialSession]);
     setCurrentSessionId(initialSession.id);
   }, []);
 
-  // 2. Lưu sessions vào localStorage mỗi khi thay đổi
+  // 2. Lưu sessions vào localStorage
   useEffect(() => {
     if (sessions.length > 0) {
       try {
@@ -347,20 +421,74 @@ export function CrmChatGPTView() {
   const messages = currentSession?.messages || [];
 
   // Tạo session mới
-  const handleNewChat = () => {
+  const handleNewChat = (personaType?: AiPersonaType) => {
+    const targetPersona = personaType || selectedPersona;
+    const personaObj = AI_PERSONAS.find((p) => p.id === targetPersona);
     const newSession: ChatSession = {
       id: `sess_${Date.now()}`,
-      title: "Cuộc trò chuyện mới",
+      title: `Hội thoại ${personaObj?.name || 'Mới'}`,
       createdAt: new Date().toISOString(),
       messages: [],
+      persona: targetPersona,
     };
     setSessions((prev) => [newSession, ...prev]);
     setCurrentSessionId(newSession.id);
+    setSelectedPersona(targetPersona);
     setInputMessage("");
+    setLiveAlert(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.focus();
     }
+  };
+
+  // Chọn Persona
+  const handleSelectPersona = async (persona: AiPersonaType) => {
+    setSelectedPersona(persona);
+    const personaObj = AI_PERSONAS.find((p) => p.id === persona);
+    toast.info(`Đã chuyển sang vai trò: ${personaObj?.name}`);
+
+    // Tự động kích hoạt câu chào chủ động & thông báo mới nhất từ database
+    try {
+      const res = await fetchNestApi<any>("/api/ai/crm/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: "Xin chào, hãy giới thiệu vai trò của bạn và báo cáo những cập nhật dữ liệu quan trọng nhất gần đây!",
+          model: selectedModel,
+          persona,
+        }),
+      });
+
+      if (res?.ok && res?.reply) {
+        if (res.proactiveAlert) {
+          setLiveAlert(res.proactiveAlert);
+        }
+
+        const autoMsg: ChatMessage = {
+          id: `msg_a_${Date.now()}`,
+          role: "assistant",
+          content: res.reply,
+          createdAt: new Date().toISOString(),
+          model: res.modelUsed || "CEO 1983 AI (Real Data)",
+          persona,
+          evidence: res.evidence || [],
+          proactiveAlert: res.proactiveAlert,
+        };
+
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === currentSessionId
+              ? {
+                  ...s,
+                  title: `${personaObj?.name || 'Trợ Lý'}: ${new Date().toLocaleDateString('vi-VN')}`,
+                  persona,
+                  messages: [...s.messages, autoMsg],
+                }
+              : s
+          )
+        );
+      }
+    } catch {}
   };
 
   // Xóa một session
@@ -374,6 +502,7 @@ export function CrmChatGPTView() {
           title: "Cuộc trò chuyện mới",
           createdAt: new Date().toISOString(),
           messages: [],
+          persona: "general",
         };
         setCurrentSessionId(fallback.id);
         return [fallback];
@@ -394,6 +523,7 @@ export function CrmChatGPTView() {
         title: "Cuộc trò chuyện mới",
         createdAt: new Date().toISOString(),
         messages: [],
+        persona: "general",
       };
       setSessions([fresh]);
       setCurrentSessionId(fresh.id);
@@ -412,18 +542,20 @@ export function CrmChatGPTView() {
   };
 
   // Gửi tin nhắn
-  const handleSendMessage = async (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string, overridePersona?: AiPersonaType) => {
     const messageText = (textToSend || inputMessage).trim();
     if (!messageText || isGenerating || !currentSessionId) return;
+
+    const usePersona = overridePersona || selectedPersona;
 
     const userMsg: ChatMessage = {
       id: `msg_u_${Date.now()}`,
       role: "user",
       content: messageText,
       createdAt: new Date().toISOString(),
+      persona: usePersona,
     };
 
-    // Đổi tên session nếu đây là câu hỏi đầu tiên
     const shouldUpdateTitle = messages.length === 0;
     const newTitle = shouldUpdateTitle ? messageText.slice(0, 32) + (messageText.length > 32 ? "..." : "") : currentSession.title;
 
@@ -433,6 +565,7 @@ export function CrmChatGPTView() {
           ? {
               ...s,
               title: newTitle,
+              persona: usePersona,
               messages: [...s.messages, userMsg],
             }
           : s
@@ -446,23 +579,26 @@ export function CrmChatGPTView() {
     setIsGenerating(true);
 
     try {
-      // Chuẩn bị lịch sử rút gọn
       const historyPayload = messages.slice(-4).map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
-      // Gọi API CRM Chat backend
       const res = await fetchNestApi<any>("/api/ai/crm/chat", {
         method: "POST",
         body: JSON.stringify({
           message: messageText,
           history: historyPayload,
           model: selectedModel,
+          persona: usePersona,
         }),
       });
 
       if (res?.ok && res?.reply) {
+        if (res.proactiveAlert) {
+          setLiveAlert(res.proactiveAlert);
+        }
+
         const assistantMsg: ChatMessage = {
           id: `msg_a_${Date.now()}`,
           role: "assistant",
@@ -470,7 +606,9 @@ export function CrmChatGPTView() {
           createdAt: new Date().toISOString(),
           model: res.modelUsed || "Gemini 2.0 Flash (Free)",
           latencyMs: res.latencyMs || 250,
+          persona: usePersona,
           evidence: res.evidence || [],
+          proactiveAlert: res.proactiveAlert,
         };
 
         setSessions((prev) =>
@@ -493,7 +631,6 @@ export function CrmChatGPTView() {
     }
   };
 
-  // Nhấn Enter để gửi, Shift+Enter xuống dòng
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -501,7 +638,6 @@ export function CrmChatGPTView() {
     }
   };
 
-  // Copy tin nhắn
   const handleCopyMessage = (content: string) => {
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(content);
@@ -511,16 +647,18 @@ export function CrmChatGPTView() {
 
   const activeModelObj = FREE_MODELS.find((m) => m.id === selectedModel) || FREE_MODELS[0];
   const ActiveModelIcon = activeModelObj.icon;
+  const activePersonaObj = AI_PERSONAS.find((p) => p.id === selectedPersona) || AI_PERSONAS[0];
+  const ActivePersonaIcon = activePersonaObj.icon;
 
   return (
-    <div className="flex h-[calc(100vh-14rem)] min-h-[580px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
+    <div className="flex h-[calc(100vh-14rem)] min-h-[620px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
       {/* 1. SIDEBAR PHIÊN HỘI THOẠI (CHATGPT HISTORY) */}
       <div className="w-64 sm:w-72 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 flex flex-col justify-between hidden md:flex">
         {/* Nút Tạo Cuộc Trò Chuyện Mới */}
-        <div className="p-3 border-b border-slate-200 dark:border-slate-800/80">
+        <div className="p-3 border-b border-slate-200 dark:border-slate-800/80 space-y-2">
           <button
             type="button"
-            onClick={handleNewChat}
+            onClick={() => handleNewChat()}
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition shadow-2xs cursor-pointer group"
           >
             <div className="flex items-center gap-2">
@@ -536,14 +674,19 @@ export function CrmChatGPTView() {
         {/* Danh sách Sessions */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           <div className="px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            Lịch sử gần đây
+            Lịch sử theo vai trò
           </div>
           {sessions.map((s) => {
             const isActive = s.id === currentSessionId;
+            const pObj = AI_PERSONAS.find((p) => p.id === s.persona) || AI_PERSONAS[0];
+            const PIcon = pObj.icon;
             return (
               <div
                 key={s.id}
-                onClick={() => setCurrentSessionId(s.id)}
+                onClick={() => {
+                  setCurrentSessionId(s.id);
+                  if (s.persona) setSelectedPersona(s.persona);
+                }}
                 className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition cursor-pointer ${
                   isActive
                     ? "bg-white dark:bg-slate-800 text-primary font-bold shadow-2xs border border-slate-200/80 dark:border-slate-700"
@@ -551,7 +694,7 @@ export function CrmChatGPTView() {
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1 pr-1">
-                  <MessageSquare className={`size-3.5 shrink-0 ${isActive ? "text-primary" : "text-slate-400"}`} />
+                  <PIcon className={`size-3.5 shrink-0 ${isActive ? "text-primary" : "text-slate-400"}`} />
                   <span className="truncate">{s.title || "Cuộc trò chuyện mới"}</span>
                 </div>
                 <button
@@ -572,9 +715,9 @@ export function CrmChatGPTView() {
           <div className="flex items-center justify-between text-[11px]">
             <span className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Free Tier Active</span>
+              <span>100% Real DB Context</span>
             </span>
-            <span className="text-[10px] text-muted-foreground">Không giới hạn</span>
+            <span className="text-[10px] text-muted-foreground font-semibold">PostgreSQL</span>
           </div>
           <button
             type="button"
@@ -589,97 +732,140 @@ export function CrmChatGPTView() {
 
       {/* 2. KHUNG CHAT TRUNG TÂM (CHAT STREAM & INPUT) */}
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-950 min-w-0">
-        {/* Header Bar: Model Selector */}
-        <div className="h-14 px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-950/80 backdrop-blur-xs z-10">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-            >
-              <ActiveModelIcon className={`size-4 ${activeModelObj.color}`} />
-              <span>{activeModelObj.name}</span>
-              <ChevronDown className="size-3.5 text-muted-foreground" />
-            </button>
+        {/* Header Bar: Model Selector + Persona Selector */}
+        <div className="px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xs z-10 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            {/* Model Selector Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <ActiveModelIcon className={`size-4 ${activeModelObj.color}`} />
+                <span>{activeModelObj.name}</span>
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </button>
 
-            {modelDropdownOpen && (
-              <div className="absolute left-0 top-full mt-1.5 w-72 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl z-50 space-y-1">
-                <div className="px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Mô hình miễn phí (Free Tier)
-                </div>
-                {FREE_MODELS.map((m) => {
-                  const Icon = m.icon;
-                  const isSelected = m.id === selectedModel;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedModel(m.id);
-                        setModelDropdownOpen(false);
-                        toast.success(`Đã chuyển sang mô hình: ${m.name}`);
-                      }}
-                      className={`w-full text-left p-2.5 rounded-xl text-xs transition flex items-start gap-2.5 cursor-pointer ${
-                        isSelected
-                          ? "bg-primary/10 text-primary font-bold border border-primary/20"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      <Icon className={`size-4 ${m.color} shrink-0 mt-0.5`} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold">{m.name}</span>
-                          {isSelected && <Check className="size-3.5 text-primary" />}
+              {modelDropdownOpen && (
+                <div className="absolute left-0 top-full mt-1.5 w-72 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl z-50 space-y-1">
+                  <div className="px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Mô hình miễn phí (Free Tier)
+                  </div>
+                  {FREE_MODELS.map((m) => {
+                    const Icon = m.icon;
+                    const isSelected = m.id === selectedModel;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedModel(m.id);
+                          setModelDropdownOpen(false);
+                          toast.success(`Đã chuyển sang mô hình: ${m.name}`);
+                        }}
+                        className={`w-full text-left p-2.5 rounded-xl text-xs transition flex items-start gap-2.5 cursor-pointer ${
+                          isSelected
+                            ? "bg-primary/10 text-primary font-bold border border-primary/20"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        <Icon className={`size-4 ${m.color} shrink-0 mt-0.5`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold">{m.name}</span>
+                            {isSelected && <Check className="size-3.5 text-primary" />}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{m.desc}</p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{m.desc}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                <Database className="size-3" />
+                <span>Không Fake Dữ Liệu (Live DB)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => handleNewChat()}
+                title="Làm mới cuộc trò chuyện"
+                className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer md:hidden"
+              >
+                <Plus className="size-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
-              <Database className="size-3" />
-              <span>Live CRM Context (PostgreSQL)</span>
-            </span>
-            <button
-              type="button"
-              onClick={handleNewChat}
-              title="Làm mới cuộc trò chuyện"
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer md:hidden"
-            >
-              <Plus className="size-4" />
-            </button>
+          {/* Persona Tabs (Thanh chọn vai trò chuyên biệt) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+            {AI_PERSONAS.map((p) => {
+              const Icon = p.icon;
+              const isSelected = selectedPersona === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSelectPersona(p.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition cursor-pointer border ${
+                    isSelected
+                      ? `${p.activeColor} border-transparent shadow-xs scale-102`
+                      : `bg-slate-50 dark:bg-slate-900/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800`
+                  }`}
+                >
+                  <Icon className="size-3.5 shrink-0" />
+                  <span>{p.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {/* Live Proactive Alert Banner (Nếu có) */}
+        {liveAlert && (
+          <div className="mx-4 mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-700 dark:text-amber-300 animate-fade-in">
+            <div className="flex items-center gap-2 min-w-0 pr-2">
+              <Bell className="size-4 text-amber-500 shrink-0 animate-bounce" />
+              <div className="truncate">{liveAlert}</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLiveAlert(null)}
+              className="text-[10px] text-slate-400 hover:text-slate-600 px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              Đóng
+            </button>
+          </div>
+        )}
 
         {/* Message Stream */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           {messages.length === 0 ? (
             // Welcome & Quick Prompts
-            <div className="max-w-2xl mx-auto h-full flex flex-col justify-center py-6 sm:py-10 text-center">
-              <div className="size-14 sm:size-16 rounded-3xl bg-gradient-to-tr from-primary to-amber-500 mx-auto grid place-items-center text-white shadow-lg shadow-primary/20 mb-4 animate-bounce-subtle">
-                <Sparkles className="size-7 sm:size-8" />
+            <div className="max-w-2xl mx-auto h-full flex flex-col justify-center py-6 sm:py-8 text-center">
+              <div className="size-14 sm:size-16 rounded-3xl bg-gradient-to-tr from-primary to-amber-500 mx-auto grid place-items-center text-white shadow-lg shadow-primary/20 mb-3 animate-bounce-subtle">
+                <ActivePersonaIcon className="size-7 sm:size-8" />
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white tracking-tight">
-                Trợ Lý Trí Tuệ Nhân Tạo CEO 1983
+                {activePersonaObj.name}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto leading-relaxed">
-                Hệ thống AI Cấp Cao dành cho Ban Điều Hành. Hỏi đáp và phân tích thời gian thực mọi số liệu hội viên, tài chính, sự kiện và xúc tiến thương mại.
+                {activePersonaObj.roleDesc}. Đối soát và phân tích 100% dữ liệu sống từ CSDL Hiệp hội CEO 1983 (Không bịa đặt số liệu).
               </p>
 
               {/* 4 Thẻ gợi ý bắt đầu nhanh */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-8 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-6 text-left">
                 {QUICK_PROMPTS.map((qp, i) => {
                   const Icon = qp.icon;
                   return (
                     <button
                       key={i}
                       type="button"
-                      onClick={() => handleSendMessage(qp.prompt)}
+                      onClick={() => handleSendMessage(qp.prompt, qp.persona)}
                       className={`p-3.5 rounded-2xl border bg-gradient-to-br transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-left ${qp.color}`}
                     >
                       <div className="flex items-center gap-2 font-bold text-xs">
@@ -699,6 +885,8 @@ export function CrmChatGPTView() {
             <div className="max-w-3xl mx-auto space-y-4">
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
+                const pObj = AI_PERSONAS.find((p) => p.id === msg.persona) || activePersonaObj;
+                const PIcon = pObj.icon;
                 return (
                   <div
                     key={msg.id}
@@ -706,7 +894,7 @@ export function CrmChatGPTView() {
                   >
                     {!isUser && (
                       <div className="size-8 rounded-xl bg-gradient-to-tr from-primary to-amber-500 grid place-items-center text-white shrink-0 shadow-sm mt-0.5">
-                        <Sparkles className="size-4" />
+                        <PIcon className="size-4" />
                       </div>
                     )}
 
@@ -721,6 +909,13 @@ export function CrmChatGPTView() {
                         <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                       ) : (
                         <>
+                          <div className="flex items-center gap-2 pb-1 border-b border-slate-200/50 dark:border-slate-800/50 text-[10px] text-primary font-bold">
+                            <PIcon className="size-3" />
+                            <span>{pObj.name}</span>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <span className="text-muted-foreground font-normal">Real Database Analysis</span>
+                          </div>
+
                           <MarkdownRenderer content={msg.content} />
 
                           {/* Evidence & Action footer */}
@@ -771,7 +966,7 @@ export function CrmChatGPTView() {
                       <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.2s]" />
                       <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.4s]" />
                     </div>
-                    <span>{activeModelObj.name} đang suy nghĩ và đối soát dữ liệu CRM...</span>
+                    <span>{activePersonaObj.name} đang quét và phân tích CSDL PostgreSQL...</span>
                   </div>
                 </div>
               )}
@@ -791,14 +986,14 @@ export function CrmChatGPTView() {
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               disabled={isGenerating}
-              placeholder="Nhắn tin cho Trợ lý CEO 1983 AI... (Shift + Enter để xuống dòng, Enter để gửi)"
+              placeholder={`Hỏi ${activePersonaObj.name}... (Shift + Enter để xuống dòng, Enter để gửi)`}
               className="w-full px-4 py-3 text-xs bg-transparent border-none outline-none resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 max-h-44 min-h-[44px]"
             />
             <div className="flex items-center justify-between px-3 pb-2 pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className="font-semibold text-primary">{activeModelObj.name}</span>
+                <span className="font-semibold text-primary">{activePersonaObj.name}</span>
                 <span className="text-slate-300 dark:text-slate-700">•</span>
-                <span>Free Model</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{activeModelObj.name}</span>
               </div>
 
               <button
@@ -812,11 +1007,10 @@ export function CrmChatGPTView() {
             </div>
           </div>
           <p className="text-[10px] text-center text-slate-400 mt-2">
-            CEO 1983 Trợ lý AI kết nối bảo mật với CSDL Hiệp hội. Mọi câu trả lời đều được kiểm chứng và đối soát trực tiếp.
+            CEO 1983 AI kết nối 100% dữ liệu sống PostgreSQL. Không fake số liệu tài chính hay giá trị cơ hội giao thương.
           </p>
         </div>
       </div>
     </div>
   );
 }
-

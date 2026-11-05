@@ -223,13 +223,14 @@ export class AiController {
   @Post('crm/chat')
   async crmChat(
     @Request() req: any,
-    @Body() body: { message: string; history?: Array<{ role: 'user' | 'assistant'; content: string }>; model?: string }
+    @Body() body: { message: string; history?: Array<{ role: 'user' | 'assistant'; content: string }>; model?: string; persona?: any }
   ) {
     const res = await this.crmAnalytics.handleChatAssistant(
       req.user?.id || 'admin',
       body.message,
       body.history || [],
-      body.model
+      body.model,
+      body.persona
     );
     return res;
   }

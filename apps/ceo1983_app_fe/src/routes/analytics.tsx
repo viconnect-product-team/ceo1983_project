@@ -395,36 +395,25 @@ export function AnalyticsDashboardPage() {
       if (serverData?.topConnections?.length) {
         return mapItems(serverData.topConnections, "Lượt kết nối", "connectionsCount");
       }
-      return [
-        { rank: 1, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "28 Lượt kết nối", metric: 28, phone: "0912 345 671", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-        { rank: 2, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "22 Lượt kết nối", metric: 22, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
-        { rank: 3, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "18 Lượt kết nối", metric: 18, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-      ];
+      return [];
     }
     if (selectedCat === "top_opportunities") {
       if (serverData?.topOpportunities?.length) {
         return mapItems(serverData.topOpportunities, "Cơ hội B2B", "publicOppsShared");
       }
-      return [
-        { rank: 1, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "16 Cơ hội", metric: 16, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
-        { rank: 2, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "12 Cơ hội", metric: 12, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-      ];
+      return [];
     }
     if (selectedCat === "top_events_meetings") {
       if (serverData?.topEventsMeetings?.length) {
         return mapItems(serverData.topEventsMeetings, "Buổi họp & sự kiện", "eventsAttended");
       }
-      return [
-        { rank: 1, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "14 Buổi", metric: 14, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-      ];
+      return [];
     }
     // selectedCat === "top_referrals"
     if (serverData?.topReferrals?.length) {
       return mapItems(serverData.topReferrals, "Hội viên giới thiệu", "referralsCount");
     }
-    return [
-      { rank: 1, name: "Nguyễn Hải Long", company: "Long Phát Land", role: "Chủ tịch", dept: "Ban Thành Viên", score: "9 Hội viên", metric: 9, phone: "0989 112 233", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-    ];
+    return [];
   }, [selectedCat, serverData]);
 
   // Bục Top 3: Cân đối và chuẩn xác
@@ -951,78 +940,92 @@ export function AnalyticsDashboardPage() {
               </div>
 
               {/* Bục 3 Cột: Hạng 2 (Bạch Kim) - Hạng 1 (Quán Quân) - Hạng 3 (Vàng) */}
-              <div className="grid grid-cols-3 gap-3 sm:gap-6 items-end pt-4 max-w-3xl mx-auto">
-                {/* HẠNG 2: BẠCH KIM (BÊN TRÁI) */}
-                {top2 && (
-                  <div className="flex flex-col items-center text-center order-1">
-                    <div className="size-16 sm:size-20 rounded-2xl overflow-hidden border-2 border-slate-400 shadow-sm mb-2 bg-white">
-                      <img src={top2.avatar} alt={top2.name} className="size-full object-cover" />
-                    </div>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
-                      {top2.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{top2.company}</p>
-                    <div className="mt-1 font-mono font-bold text-xs text-[#003B95] dark:text-amber-400">
-                      {top2.score}
-                    </div>
-
-                    <div className="w-full h-28 sm:h-32 mt-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-2">
-                      <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300">
-                        HẠNG 2
-                      </span>
-                      <span className="text-[10px] text-slate-500 mt-0.5">Á Quân 1</span>
-                    </div>
+              {!top1 && !top2 && !top3 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center">
+                  <div className="size-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-center mb-3">
+                    <Trophy className="size-8 text-amber-500" />
                   </div>
-                )}
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Chưa có dữ liệu vinh danh thực tế trong kỳ này
+                  </h4>
+                  <p className="text-xs text-slate-500 max-w-md mt-1">
+                    Bảng xếp hạng sẽ tự động cập nhật ngay khi hội viên có số lượng, giá trị giao thương hoặc lượt tương tác thật được ghi nhận trong cơ sở dữ liệu.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3 sm:gap-6 items-end pt-4 max-w-3xl mx-auto">
+                  {/* HẠNG 2: BẠCH KIM (BÊN TRÁI) */}
+                  {top2 && (
+                    <div className="flex flex-col items-center text-center order-1">
+                      <div className="size-16 sm:size-20 rounded-2xl overflow-hidden border-2 border-slate-400 shadow-sm mb-2 bg-white">
+                        <img src={top2.avatar} alt={top2.name} className="size-full object-cover" />
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
+                        {top2.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 line-clamp-1">{top2.company}</p>
+                      <div className="mt-1 font-mono font-bold text-xs text-[#003B95] dark:text-amber-400">
+                        {top2.score}
+                      </div>
 
-                {/* HẠNG 1: QUÁN QUÂN (GIỮA - CAO NHẤT) */}
-                {top1 && (
-                  <div className="flex flex-col items-center text-center order-2">
-                    <div className="size-20 sm:size-24 rounded-2xl overflow-hidden border-3 border-amber-400 shadow-md mb-2 bg-white">
-                      <img src={top1.avatar} alt={top1.name} className="size-full object-cover" />
+                      <div className="w-full h-28 sm:h-32 mt-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-2">
+                        <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300">
+                          HẠNG 2
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-0.5">Á Quân 1</span>
+                      </div>
                     </div>
-                    <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white line-clamp-1">
-                      {top1.name}
-                    </h4>
-                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold line-clamp-1">
-                      {top1.company}
-                    </p>
-                    <div className="mt-1 font-mono font-black text-sm text-[#003B95] dark:text-amber-400">
-                      {top1.score}
-                    </div>
+                  )}
 
-                    <div className="w-full h-36 sm:h-40 mt-3 rounded-xl bg-[#003B95] text-white border-2 border-amber-400 flex flex-col items-center justify-center p-2 shadow-sm">
-                      <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-300">
-                        HẠNG 1
-                      </span>
-                      <span className="text-[11px] text-white/90 mt-0.5">Quán Quân</span>
-                    </div>
-                  </div>
-                )}
+                  {/* HẠNG 1: QUÁN QUÂN (GIỮA - CAO NHẤT) */}
+                  {top1 && (
+                    <div className="flex flex-col items-center text-center order-2">
+                      <div className="size-20 sm:size-24 rounded-2xl overflow-hidden border-3 border-amber-400 shadow-md mb-2 bg-white">
+                        <img src={top1.avatar} alt={top1.name} className="size-full object-cover" />
+                      </div>
+                      <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white line-clamp-1">
+                        {top1.name}
+                      </h4>
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold line-clamp-1">
+                        {top1.company}
+                      </p>
+                      <div className="mt-1 font-mono font-black text-sm text-[#003B95] dark:text-amber-400">
+                        {top1.score}
+                      </div>
 
-                {/* HẠNG 3: VÀNG (BÊN PHẢI) */}
-                {top3 && (
-                  <div className="flex flex-col items-center text-center order-3">
-                    <div className="size-16 sm:size-20 rounded-2xl overflow-hidden border-2 border-amber-500 shadow-sm mb-2 bg-white">
-                      <img src={top3.avatar} alt={top3.name} className="size-full object-cover" />
+                      <div className="w-full h-36 sm:h-40 mt-3 rounded-xl bg-[#003B95] text-white border-2 border-amber-400 flex flex-col items-center justify-center p-2 shadow-sm">
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-300">
+                          HẠNG 1
+                        </span>
+                        <span className="text-[11px] text-white/90 mt-0.5">Quán Quân</span>
+                      </div>
                     </div>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
-                      {top3.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{top3.company}</p>
-                    <div className="mt-1 font-mono font-bold text-xs text-amber-600 dark:text-amber-400">
-                      {top3.score}
-                    </div>
+                  )}
 
-                    <div className="w-full h-24 sm:h-26 mt-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex flex-col items-center justify-center p-2">
-                      <span className="text-xs font-black uppercase text-amber-800 dark:text-amber-300">
-                        HẠNG 3
-                      </span>
-                      <span className="text-[10px] text-slate-500 mt-0.5">Á Quân 2</span>
+                  {/* HẠNG 3: VÀNG (BÊN PHẢI) */}
+                  {top3 && (
+                    <div className="flex flex-col items-center text-center order-3">
+                      <div className="size-16 sm:size-20 rounded-2xl overflow-hidden border-2 border-amber-500 shadow-sm mb-2 bg-white">
+                        <img src={top3.avatar} alt={top3.name} className="size-full object-cover" />
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">
+                        {top3.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 line-clamp-1">{top3.company}</p>
+                      <div className="mt-1 font-mono font-bold text-xs text-amber-600 dark:text-amber-400">
+                        {top3.score}
+                      </div>
+
+                      <div className="w-full h-24 sm:h-26 mt-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex flex-col items-center justify-center p-2">
+                        <span className="text-xs font-black uppercase text-amber-800 dark:text-amber-300">
+                          HẠNG 3
+                        </span>
+                        <span className="text-[10px] text-slate-500 mt-0.5">Á Quân 2</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Bảng Xếp Hạng Top 4 Đến Top 10 */}
@@ -1041,7 +1044,8 @@ export function AnalyticsDashboardPage() {
                 </span>
               </div>
 
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {remainingTop4To10.length > 0 ? (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {remainingTop4To10.map((item) => (
                   <div
                     key={item.rank}
@@ -1089,7 +1093,12 @@ export function AnalyticsDashboardPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-500">
+                Chưa có hội viên nào trong danh sách Top 4 - 10 kỳ này.
+              </div>
+            )}
+          </div>
           </div>
         )}
 
