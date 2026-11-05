@@ -353,7 +353,7 @@ export function AssociationQrScanModal({
   const handleSendConnection = async () => {
     if (!scannedPartner) return;
     setConnecting(true);
-    const connId = `conn_qr_${Date.now()}`;
+    const connId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0");
     const targetId = scannedPartner.userId || scannedPartner.code;
 
     // Real-time socket relay
@@ -380,6 +380,7 @@ export function AssociationQrScanModal({
       await fetchNestApi("/network/requests", {
         method: "POST",
         body: JSON.stringify({
+          connectionId: connId,
           targetUserId: targetId,
           memberCode: scannedPartner.code,
           message: customNote.trim() || `Chào bạn! Tôi đã quét mã QR danh thiếp của bạn và rất mong được kết nối hợp tác giao thương!`,

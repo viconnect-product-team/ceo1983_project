@@ -637,6 +637,13 @@ export class TasksService {
     }
 
     const changes: string[] = [];
+    if (data.assignee && (data.assignee.name !== current.assignee?.name || data.assignee.id !== current.assignee?.id)) {
+      changes.push(`Giao việc cho: ${data.assignee.name} (${data.assignee.role || 'Phụ trách'})`);
+    }
+    if (data.assignees && data.assignees.length > 0) {
+      const names = data.assignees.map((a: any) => a.name).join(', ');
+      changes.push(`Cập nhật danh sách người xử lý: ${names}`);
+    }
 
     if (data.status && data.status !== current.status) {
       changes.push(`Đổi trạng thái từ ${current.status} sang ${data.status}`);
@@ -683,6 +690,35 @@ export class TasksService {
   /**
    * Bắn thông báo giao việc đến tài khoản PostgreSQL của người được giao việc (business_notifications & member_notifications)
    */
+  
+  async getAllAssignmentHistory(): Promise<any[]> {
+    const list: any[] = [];
+    for (const t of this.tasks) {
+      if (Array.isArray(t.history) && t.history.length > 0) {
+        for (const h of t.history) {
+          list.push({
+            id: h.id || `h-${t.id}-${Math.random()}`,
+            taskId: t.id,
+            taskCode: t.code,
+            taskTitle: t.title,
+            department: t.department,
+            action: h.action,
+            actor: h.actor,
+            timestamp: h.timestamp,
+            assigneeName: t.assignee?.name || (t.assignees && t.assignees[0]?.name) || 'Chưa gán',
+            assigneeRole: t.assignee?.role || 'Phụ trách',
+            assignees: t.assignees || (t.assignee ? [t.assignee] : []),
+            creatorName: (t as any).creator?.name || t.supervisor?.name || 'Ban Quản trị',
+            status: t.status,
+            priority: t.priority,
+            dueDate: t.dueDate,
+          });
+        }
+      }
+    }
+    return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
   async dispatchTaskAssignmentNotification(task: TaskItem, creatorName: string) {
     try {
       const allAssignees = (task.assignees && task.assignees.length > 0)

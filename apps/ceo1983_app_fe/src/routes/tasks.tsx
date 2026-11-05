@@ -48,19 +48,20 @@ import {
   TaskTimelineView,
   TaskStatisticsChartView,
   TaskOrgTreeView,
+  TaskAssignmentHistoryView,
   TaskFormModal,
   TaskDetailDrawer,
 } from '@/features/tasks';
 
 interface TaskSearchParams {
-  view?: 'table' | 'kanban' | 'calendar' | 'timeline' | 'tree';
+  view?: 'table' | 'kanban' | 'calendar' | 'timeline' | 'tree' | 'history';
   filter?: string;
   dept?: string;
 }
 
 export const Route = createFileRoute('/tasks')({
   validateSearch: (search: Record<string, unknown>): TaskSearchParams => {
-    const validViews = ['table', 'kanban', 'calendar', 'timeline', 'tree'];
+    const validViews = ['table', 'kanban', 'calendar', 'timeline', 'tree', 'history'];
     return {
       view: validViews.includes(search.view as string)
         ? (search.view as TaskSearchParams['view'])
@@ -72,7 +73,7 @@ export const Route = createFileRoute('/tasks')({
   component: TasksPage,
 });
 
-type TaskViewMode = 'table' | 'kanban' | 'calendar' | 'timeline' | 'tree';
+type TaskViewMode = 'table' | 'kanban' | 'calendar' | 'timeline' | 'tree' | 'history';
 
 function TasksPage() {
   const navigate = Route.useNavigate();
@@ -697,6 +698,13 @@ function TasksPage() {
             onTaskClick={handleTaskClick}
             onAddTaskToDept={(dept) => handleOpenCreate('TODO', dept)}
             onQuickStatusChange={handleStatusChange}
+          />
+        )}
+
+        {viewMode === 'history' && (
+          <TaskAssignmentHistoryView
+            tasks={filteredTasks}
+            onSelectTask={handleTaskClick}
           />
         )}
 

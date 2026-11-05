@@ -191,6 +191,9 @@ function OpportunitiesScreen() {
   }, []);
 
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "new" | "negotiating" | "won">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [showSearchFilters, setShowSearchFilters] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [selectedOpp, setSelectedOpp] = useState<(MyOpportunity & { description?: string }) | null>(
     null,
@@ -239,10 +242,11 @@ function OpportunitiesScreen() {
     );
   };
 
-  const handleSubmitDeal = () => {
+  const handleSubmitDeal = async () => {
     if (!dealModalOpp) return;
     setSubmittingDeal(true);
     try {
+      const targetUserId = dealModalOpp.posterId || dealModalOpp.userId || dealModalOpp.memberId || dealModalOpp.createdById;
       const dealId = `deal_${Date.now()}`;
       const newDeal = {
         id: dealId,
@@ -253,6 +257,7 @@ function OpportunitiesScreen() {
         partnerPhone: member?.phone || "",
         ownerName: dealModalOpp.contactName || dealModalOpp.company || "Chủ cơ hội",
         ownerCompany: dealModalOpp.company,
+        ownerId: targetUserId,
         price: dealPrice,
         message: dealMessage,
         status: "pending",
@@ -264,7 +269,34 @@ function OpportunitiesScreen() {
       list.unshift(newDeal);
       localStorage.setItem("vba_opp_deals", JSON.stringify(list));
 
-      toast.success("Đã gửi đề xuất Deal chào giá tới chủ cơ hội thành công!");
+      try {
+        await fetchNestApi(`/opportunities/${dealModalOpp.id}/interests`, {
+          method: "POST",
+          body: JSON.stringify({
+            interestLevel: "high",
+            message: `[Deal chào giá: ${Number(dealPrice).toLocaleString("vi-VN")} đ] ${dealMessage || "Đề xuất kết nối giao thương"}`,
+          }),
+        });
+      } catch (e) {
+        console.warn("Express interest deal fallback:", e);
+      }
+
+      const rawNotifs = localStorage.getItem("vba_notifications");
+      const notifs = rawNotifs ? JSON.parse(rawNotifs) : [];
+      notifs.unshift({
+        id: `deal_req_${Date.now()}`,
+        targetUserId: targetUserId,
+        title: "Đề xuất Deal chào giá mới cho cơ hội của bạn!",
+        body: `${member?.name || "Hội viên"} vừa gửi đề xuất deal ${Number(dealPrice).toLocaleString("vi-VN")} đ cho cơ hội "${dealModalOpp.title}": "${dealMessage}"`,
+        createdAt: new Date().toISOString(),
+        unread: true,
+        type: "deal",
+        actionUrl: `/association/opportunities?tab=${encodeURIComponent("Ai đang quan tâm deal cơ hội của tôi")}&oppId=${dealModalOpp.id}`,
+      });
+      localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
+      window.dispatchEvent(new CustomEvent("notifications-updated"));
+
+      toast.success("Đã gửi đề xuất Deal chào giá tới người đăng cơ hội thành công!");
       setDealModalOpp(null);
     } catch {
       toast.error("Không thể gửi deal chào giá.");
@@ -1038,116 +1070,6 @@ function OpportunitiesScreen() {
 
       {/* ── SCROLLABLE CONTENT (ẢNH 2 FIGMA SPEC) ── */}
       <div className="self-stretch px-4 pt-4 pb-28 flex flex-col justify-start items-start gap-5">
-        {/* 1. HORIZONTAL 3-STAT STRIP: Tổng chia sẻ | Deal đã chốt | Tôi share đi (No charts here, charts moved to /association/analytics) */}
-        <div className="w-full bg-gradient-to-br from-[#001438] via-[#002B70] to-[#001844] rounded-3xl p-3.5 sm:p-4 text-white shadow-lg border border-amber-400/30 flex flex-col gap-3">
-          {/* Header Row */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="size-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-400/40 flex items-center justify-center shrink-0">
-                <Handshake className="size-4" />
-              </div>
-              <div className="truncate">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-white">
-                    Cơ Hội Giao Thương
-                  </h3>
-                  <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white font-black text-[9px] uppercase tracking-wider shadow-xs">
-                    Realtime
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-300 truncate">
-                  Tổng hợp đối soát cơ hội toàn CLB CEO 1983
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/association/analytics" })}
-              className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-[11px] inline-flex items-center gap-1 shadow-md transition shrink-0 cursor-pointer"
-            >
-              <BarChart3 className="size-3.5" />
-              <span>Thống kê</span>
-              <ChevronRight className="size-3" />
-            </button>
-          </div>
-
-          {/* 3 Horizontal Primary Metrics Grid - Đồng bộ chuẩn nhận diện Hải quân & Vàng kim CEO 1983 */}
-          <div className="grid grid-cols-3 gap-2">
-            {/* 1. Tổng chia sẻ */}
-            <div
-              onClick={() => navigate({ to: "/association/analytics" })}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-amber-400/25 transition cursor-pointer flex flex-col justify-between text-left shadow-xs"
-            >
-              <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
-                <span className="uppercase tracking-wider">Tổng chia sẻ</span>
-                <Coins className="size-3 text-amber-300 shrink-0" />
-              </div>
-              <div className="mt-1.5">
-                <div className="text-base font-black text-white leading-tight">
-                  {oppReport.summary.totalClubCount || totalOppCount} <span className="text-[10px] font-normal text-slate-300">tin</span>
-                </div>
-                <div className="text-[9.5px] text-amber-200 font-semibold truncate mt-0.5">
-                  {formatSmartPrice(oppReport.summary.totalClubValue || totalOpportunitiesValue)}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Tổng lượt deal được */}
-            <div
-              onClick={() => navigate({ to: "/association/analytics" })}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left shadow-xs"
-            >
-              <div className="flex items-center justify-between text-[10px] font-bold text-emerald-300">
-                <span className="uppercase tracking-wider">Deal đã chốt</span>
-                <CheckCircle2 className="size-3 text-emerald-300 shrink-0" />
-              </div>
-              <div className="mt-1.5">
-                <div className="text-base font-black text-white leading-tight">
-                  {oppReport.summary.totalWonCount || 0} <span className="text-[10px] font-normal text-slate-300">deal</span>
-                </div>
-                <div className="text-[9.5px] text-emerald-200 font-semibold truncate mt-0.5">
-                  {formatSmartPrice(oppReport.summary.totalWonValue || 0)}
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Tổng lượt hội viên đó share đi */}
-            <div
-              onClick={() => navigate({ to: "/association/analytics" })}
-              className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-xs border border-white/15 transition cursor-pointer flex flex-col justify-between text-left shadow-xs"
-            >
-              <div className="flex items-center justify-between text-[10px] font-bold text-amber-200">
-                <span className="uppercase tracking-wider">Tôi share đi</span>
-                <Share2 className="size-3 text-amber-300 shrink-0" />
-              </div>
-              <div className="mt-1.5">
-                <div className="text-base font-black text-white leading-tight">
-                  {oppReport.summary.mySharedCount || 0} <span className="text-[10px] font-normal text-slate-300">tin</span>
-                </div>
-                <div className="text-[9.5px] text-amber-100 font-semibold truncate mt-0.5">
-                  {formatSmartPrice(oppReport.summary.mySharedValue || 0)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sub-footer link leading to Analytics */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10.5px]">
-            <span className="text-slate-300 font-medium truncate">
-              Mọi biểu đồ phân tích chuyên sâu đã được gom về mục Thống kê
-            </span>
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/association/analytics" })}
-              className="text-amber-300 font-bold hover:underline inline-flex items-center gap-0.5 shrink-0 cursor-pointer"
-            >
-              <span>Xem Thống kê</span>
-              <ArrowRight className="size-3" />
-            </button>
-          </div>
-        </div>
-
         {/* 3. SEARCH & CHIPS & BỘ LỌC NGÀNH NGHỀ & % CÓ LỢI NHẤT */}
         <div className="self-stretch flex flex-col gap-2.5">
           <div className="self-stretch px-3 py-2 bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-slate-200 flex justify-start items-center gap-2 shadow-2xs">

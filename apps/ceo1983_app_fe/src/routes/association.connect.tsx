@@ -63,7 +63,7 @@ export function AssociationConnectScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"my_meetings" | "sent_meetings" | "history">("my_meetings");
+  const [activeTab, setActiveTab] = useState<"my_meetings" | "sent_meetings" | "cancelled">("my_meetings");
   const [loading, setLoading] = useState(false);
   const [meetings, setMeetings] = useState<ConnectionMeeting[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -297,29 +297,30 @@ export function AssociationConnectScreen() {
   const myMeetingsList = useMemo(() => {
     return meetings.filter(
       (m) =>
-        m.status === "confirmed" ||
-        m.status === "scheduled" ||
-        m.status === "accepted" ||
-        (!m.isUserHost && m.status === "pending"),
+        m.status !== "cancelled" &&
+        m.status !== "declined" &&
+        (m.status === "confirmed" ||
+          m.status === "scheduled" ||
+          m.status === "accepted" ||
+          (!m.isUserHost && m.status === "pending")),
     );
   }, [meetings]);
 
   const sentMeetingsList = useMemo(() => {
     return meetings.filter(
       (m) =>
-        m.isUserHost ||
-        (m.status === "pending" && !m.isUserInvitee) ||
-        m.status === "draft",
+        m.status !== "cancelled" &&
+        (m.isUserHost ||
+          (m.status === "pending" && !m.isUserInvitee) ||
+          m.status === "draft"),
     );
   }, [meetings]);
 
-  const historyList = useMemo(() => {
+  const cancelledMeetingsList = useMemo(() => {
     return meetings.filter(
       (m) =>
-        m.status === "completed" ||
         m.status === "cancelled" ||
-        m.status === "declined" ||
-        Boolean(m.dealValue),
+        m.status === "declined",
     );
   }, [meetings]);
 
@@ -329,7 +330,7 @@ export function AssociationConnectScreen() {
         ? myMeetingsList
         : activeTab === "sent_meetings"
         ? sentMeetingsList
-        : historyList;
+        : cancelledMeetingsList;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -341,7 +342,7 @@ export function AssociationConnectScreen() {
       );
     }
     return list;
-  }, [activeTab, myMeetingsList, sentMeetingsList, historyList, searchQuery]);
+  }, [activeTab, myMeetingsList, sentMeetingsList, cancelledMeetingsList, searchQuery]);
 
   return (
     <div className="vba-animate pb-24 min-h-screen bg-stone-50 dark:bg-slate-950 font-sans">
@@ -386,9 +387,9 @@ export function AssociationConnectScreen() {
             </div>
           </div>
           <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Lịch sử cuộc gặp</span>
-            <div className="text-base font-black text-emerald-600 mt-0.5">
-              {historyList.length}
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Cuộc gặp đã hủy</span>
+            <div className="text-base font-black text-rose-600 mt-0.5">
+              {cancelledMeetingsList.length}
             </div>
           </div>
         </div>
@@ -434,15 +435,15 @@ export function AssociationConnectScreen() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("history")}
+            onClick={() => setActiveTab("cancelled")}
             className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === "history"
-                ? "bg-[#1F3864] text-white shadow-md shadow-blue-900/20"
+              activeTab === "cancelled"
+                ? "bg-rose-600 text-white shadow-md shadow-rose-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Clock className="size-3.5" />
-            <span>Lịch sử cuộc gặp ({historyList.length})</span>
+            <span>Cuộc gặp đã hủy ({cancelledMeetingsList.length})</span>
           </button>
         </div>
 
@@ -616,6 +617,14 @@ export function AssociationConnectScreen() {
                     >
                       Từ chối
                     </button>
+                  </div>
+                )}
+
+                {/* Notice for Cancelled Meeting */}
+                {activeTab === "cancelled" && (
+                  <div className="pt-1 text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1.5 border-t border-rose-100 dark:border-rose-950">
+                    <XCircle className="size-3.5 shrink-0" />
+                    <span>Cuộc gặp đã hủy. Người được hẹn không còn nhìn thấy cuộc gặp này.</span>
                   </div>
                 )}
 

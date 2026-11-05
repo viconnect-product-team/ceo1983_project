@@ -40,6 +40,7 @@ type RewardCategory = "top_connections" | "top_opportunities" | "top_events_meet
 interface TopRankedMember {
   rank: number;
   id?: string;
+  code?: string;
   name: string;
   company: string;
   role?: string;
@@ -182,10 +183,32 @@ function BenefitsAdminPage() {
         }),
       }).catch(() => {});
 
+      // Ghi nhận audit log thi đua khen thưởng để báo cáo & lưu vết hệ thống
+      await fetchNestApi("/admin/audit-logs", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "reward_awarded",
+          targetType: "member",
+          targetId: rewardingMember.id || (rewardingMember as any).code || rewardingMember.name,
+          metadata: {
+            member: rewardingMember.name,
+            tier: rewardingMember.tier,
+            voucherTitle: rewardVoucherTitle,
+            voucherCode: rewardVoucherCode,
+            voucherValue: rewardVoucherValue,
+            category: selectedRewardCat,
+            period,
+          },
+        }),
+      }).catch(() => {});
+
       toast.success(
         `✓ Đã trao thưởng thành công cho CEO ${rewardingMember.name}! Mẫu quà tặng & mã ưu đãi đã được lưu vào hệ thống.`
       );
       setRewardModalOpen(false);
+      void loadAnalyticsOverview();
+      window.dispatchEvent(new CustomEvent("benefits-updated"));
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
     } catch {
       toast.error("Không thể hoàn tất trao thưởng lúc này");
     }

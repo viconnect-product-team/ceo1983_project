@@ -4,9 +4,11 @@ import {
   ForbiddenException,
   BadRequestException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { ZaloService } from '../zalo/zalo.service';
 import { MembersRepository } from './members.repository';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -38,6 +40,7 @@ export class MembersService {
     private prisma: PrismaService,
     private mailService: MailService,
     private readonly membersRepo: MembersRepository,
+    @Optional() private readonly zaloService?: ZaloService,
   ) {}
 
   private async checkIsPlatformAdmin(userId: string): Promise<boolean> {
@@ -2157,6 +2160,34 @@ export class MembersService {
         });
       } catch (mailErr: any) {
         console.warn(`Failed to dispatch reminder email to ${current.email}:`, mailErr?.message);
+      }
+    }
+
+    // 3. Dispatch Zalo OA reminder message
+    if (this.zaloService && (current.phone || current.zalo_user_id)) {
+      try {
+        const termEndStr = current.term_end
+          ? new Date(current.term_end).toLocaleDateString('vi-VN')
+          : 'Sắp tới hạn';
+        const zaloMsg = `📢 [CLB DOANH NHÂN CEO 1983 - NHẮC NHỞ NIÊN LIỄM]
+Kính gửi Anh/Chị ${current.name} (${current.code || 'M1983'}),
+Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Thời hạn niên liễm sinh hoạt hội viên của Quý Anh/Chị sắp kết thúc vào ngày ${termEndStr}.
+💰 Phí thường niên: 2.000.000 VNĐ / năm.
+📲 Vui lòng mở App Hiệp Hội để gia hạn trực tuyến bằng VNPAY/MoMo hoặc liên hệ Hotline: 0983 1983 83.
+Trân trọng cảm ơn Anh/Chị!`;
+
+        const accessToken = process.env.ZALO_OA_ACCESS_TOKEN || '';
+        this.zaloService.sendMessage({
+          accessToken,
+          userId: current.zalo_user_id || undefined,
+          targetPhone: current.phone || undefined,
+          targetName: current.name,
+          message: zaloMsg,
+        }).catch((err) => {
+          this.logger.warn(`Failed to dispatch Zalo OA message to ${current.name}: ${err?.message}`);
+        });
+      } catch (zaloErr) {
+        this.logger.warn(`Zalo reminder dispatch error: ${zaloErr?.message}`);
       }
     }
 

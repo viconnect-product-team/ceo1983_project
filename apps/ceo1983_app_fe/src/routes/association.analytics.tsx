@@ -22,6 +22,7 @@ import {
   Filter,
   ArrowRight,
   BarChart3,
+  PieChart as PieChartIcon,
   Share2,
   User,
   Activity,
@@ -541,6 +542,44 @@ export function AssociationAnalyticsScreen() {
         ];
     }
   }, [activeCategory, timeRange]);
+
+
+  // Dữ liệu Biểu đồ Tròn (Pie Chart) tương ứng với từng danh mục
+  const pieChartData = useMemo(() => {
+    switch (activeCategory) {
+      case "top_connections":
+        return [
+          { name: "1-on-1 Trực tiếp", value: 38, fill: "#003B95" },
+          { name: "Kết nối Ban", value: 28, fill: "#059669" },
+          { name: "Giao lưu Mở rộng", value: 21, fill: "#F59E0B" },
+        ];
+      case "top_opportunities":
+        return [
+          { name: "Cơ hội Mới", value: 26, fill: "#059669" },
+          { name: "Đang đàm phán", value: 18, fill: "#F59E0B" },
+          { name: "Deal đã chốt", value: 14, fill: "#003B95" },
+        ];
+      case "top_events_meetings":
+        return [
+          { name: "Sự kiện CLB", value: 19, fill: "#003B95" },
+          { name: "Họp BĐH & Ban", value: 15, fill: "#059669" },
+          { name: "Tọa đàm Giao thương", value: 12, fill: "#F59E0B" },
+        ];
+      case "top_referrals":
+        return [
+          { name: "Kim Cương", value: 9, fill: "#003B95" },
+          { name: "Bạch Kim", value: 7, fill: "#0284C7" },
+          { name: "Vàng", value: 5, fill: "#F59E0B" },
+        ];
+      case "external_shares":
+      default:
+        return [
+          { name: "Zalo OA / Mini App", value: 305, fill: "#003B95" },
+          { name: "Facebook / MXH", value: 220, fill: "#0284C7" },
+          { name: "QR / Danh thiếp số", value: 140, fill: "#059669" },
+        ];
+    }
+  }, [activeCategory]);
 
   // Lọc dữ liệu biểu đồ theo chế độ: Vừa tăng vừa giảm (all) | Tăng (up) | Giảm (down)
   const filteredChartData = useMemo(() => {
@@ -1067,7 +1106,7 @@ export function AssociationAnalyticsScreen() {
 
           <div className="grid grid-cols-2 gap-2.5">
             {/* Danh mục 1: Giao Thương B2B */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#003B95] to-[#002B66] text-white shadow-xs space-y-1.5 border border-[#002B66]">
+            <div className="p-3.5 rounded-2xl bg-[#003B95] text-white shadow-xs space-y-1.5 border border-[#002B66]">
               <div className="flex items-center justify-between">
                 <span className="text-[10.5px] font-bold text-blue-100 uppercase tracking-wide flex items-center gap-1">
                   <Sparkles className="size-3 text-white" />
@@ -1126,7 +1165,7 @@ export function AssociationAnalyticsScreen() {
             </div>
 
             {/* Danh mục 4: Tài Chính & Đóng Góp Quỹ */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white shadow-xs space-y-1.5 border border-slate-800">
+            <div className="p-3.5 rounded-2xl bg-[#0F172A] text-white shadow-xs space-y-1.5 border border-slate-800">
               <div className="flex items-center justify-between">
                 <span className="text-[10.5px] font-bold text-slate-200 uppercase tracking-wide flex items-center gap-1">
                   <Coins className="size-3 text-white" />
@@ -1226,7 +1265,7 @@ export function AssociationAnalyticsScreen() {
                     }`}
                   >
                     <span className="font-black text-xs text-inherit">
-                      {isTop1 ? "Quán Quân" : isTop2 ? "Á Quân 1" : "Á Quân 2"}
+                      {isTop1 ? "Kim Cương 💎" : isTop2 ? "Bạch Kim 🪙" : "Vàng 🥇"}
                     </span>
                     <span className="text-[9px] font-medium opacity-80">#{performer.rank}</span>
                   </div>
@@ -1454,7 +1493,7 @@ export function AssociationAnalyticsScreen() {
               setExportAuditTime(new Date().toLocaleString("vi-VN"));
               setReportModalOpen(true);
             }}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-sky-950 via-[#1F3864] to-[#003B95] hover:from-sky-900 hover:to-blue-700 text-white font-black text-xs shadow-md shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#003B95] hover:from-sky-900 hover:to-blue-700 text-white font-black text-xs shadow-md shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer"
           >
             <Download className="size-4 text-amber-400" />
             <span className="uppercase tracking-wider">Trích xuất báo cáo thống kê có xác thực bằng chứng</span>
@@ -1653,7 +1692,7 @@ export function AssociationAnalyticsScreen() {
                     }, 800);
                   }
                 }}
-                className="flex-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                className="flex-2 py-2.5 px-3 rounded-xl bg-[#003B95] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
               >
                 <Download className="size-4" />
                 <span>Xác nhận xuất ({exportFormat.toUpperCase()}) &amp; Lưu bằng chứng</span>
@@ -1692,7 +1731,7 @@ export function AssociationAnalyticsScreen() {
 
             {/* Danh sách các mốc giải thưởng của danh mục hiện tại */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-              <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-900/20 to-amber-500/10 border border-blue-500/20 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-blue-950/40 border border-blue-500/20 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500">Thành tích hiện tại của bạn:</span>
                   <p className="text-base font-black text-[#003B95] dark:text-amber-400">
@@ -1803,7 +1842,7 @@ export function AssociationAnalyticsScreen() {
               <X className="h-4 w-4" />
             </button>
 
-            <div className="size-16 rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#1E3A8A] mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-900/30">
+            <div className="size-16 rounded-2xl bg-[#003B95] mx-auto flex items-center justify-center text-white shadow-lg shadow-blue-900/30">
               <Gift className="size-9 text-white" />
             </div>
 

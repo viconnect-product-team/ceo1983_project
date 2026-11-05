@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AssociationLandingView } from "@/components/landing/AssociationLandingView";
 import { getPublicAssociationFn, type PublicAssociation } from "@/lib/associations.functions";
 import { fetchNestApi } from "@/lib/api-client";
@@ -58,5 +59,30 @@ function NotFound() {
 
 function AssociationLanding() {
   const a = Route.useLoaderData();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const slug = a?.slug || (window.location.pathname.split("/h/")[1] || "ceo1983");
+        const referrer = document.referrer || "Direct";
+        const screenResolution = `${window.screen.width}x${window.screen.height}`;
+        const language = navigator.language || "vi";
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const device = isMobile ? "Mobile" : "Desktop";
+
+        fetchNestApi("/public/track-visitor", {
+          method: "POST",
+          body: {
+            slug,
+            referrer,
+            device,
+            screenResolution,
+            language,
+          },
+        }).catch(() => {});
+      } catch {}
+    }
+  }, [a?.slug]);
+
   return <AssociationLandingView a={a} />;
 }

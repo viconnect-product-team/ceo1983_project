@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  Activity,
   Bell,
   Building2,
   CreditCard,
@@ -20,6 +21,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { AssociationLogoUploader } from "@/components/dashboard/AssociationLogoUploader";
 import { LandingWebManager } from "@/components/dashboard/LandingWebManager";
+import { TrafficManagerSection } from "@/components/dashboard/TrafficManagerSection";
 import { AssociationDomainEditor } from "@/components/dashboard/AssociationDomainEditor";
 import { OmnichannelTemplatesSection } from "@/components/dashboard/OmnichannelTemplatesSection";
 import { ZaloOaConfigSection } from "@/components/dashboard/ZaloOaConfigSection";
@@ -34,6 +36,7 @@ export const Route = createFileRoute("/settings")({ component: SettingsPage });
 const TABS = [
   { key: "general", labelKey: "set.tab.general", defaultLabel: "Thông tin chung", icon: Building2 },
   { key: "landing", labelKey: "set.tab.landing", defaultLabel: "Trang giới thiệu", icon: Layout },
+  { key: "traffic", defaultLabel: "Quản lý lượng truy cập", icon: Activity },
   { key: "domain", labelKey: "set.tab.domain", defaultLabel: "Tên miền hệ thống", icon: Globe },
   { key: "templates", defaultLabel: "Mẫu thông báo", icon: Mail },
   { key: "zalo_oa", defaultLabel: "Cấu hình Zalo OA", icon: MessageSquareText },
@@ -199,7 +202,9 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab === "landing" && <LandingWebManager />}
+          {tab === "landing" && <LandingWebManager onSwitchTab={(newTab) => setTab(newTab as any)} />}
+
+          {tab === "traffic" && <TrafficManagerSection />}
 
           {tab === "domain" && <AssociationDomainEditor />}
 

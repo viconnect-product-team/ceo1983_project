@@ -205,9 +205,10 @@ export class TasksRepository {
 
   async getMembersForAssignment(deptKeyword?: string): Promise<any[]> {
     try {
+      let members: any[] = [];
       if (deptKeyword) {
-        return await this.prisma.$queryRaw<any[]>`
-          SELECT id, name, email, phone, company, position, department, executive_role, avatar_url, user_id
+        members = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, name, email, phone, COALESCE(company_name, '') as company, COALESCE(executive_role, '') as position, department, executive_role, avatar_url, user_id
           FROM public.members
           WHERE (status = 'approved' OR status = 'active' OR status IS NULL) AND (
             department ILIKE '%' || ${deptKeyword} || '%'
@@ -216,12 +217,27 @@ export class TasksRepository {
           ORDER BY name ASC
         `.catch(() => []);
       }
-      return await this.prisma.$queryRaw<any[]>`
-        SELECT id, name, email, phone, company, position, department, executive_role, avatar_url, user_id
-        FROM public.members
-        WHERE (status = 'approved' OR status = 'active' OR status IS NULL)
-        ORDER BY department ASC, name ASC
-      `.catch(() => []);
+      
+      if (!members || members.length === 0) {
+        members = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, name, email, phone, COALESCE(company_name, '') as company, COALESCE(executive_role, '') as position, department, executive_role, avatar_url, user_id
+          FROM public.members
+          WHERE (status = 'approved' OR status = 'active' OR status IS NULL)
+          ORDER BY department ASC, name ASC
+        `.catch(() => []);
+      }
+
+      if (members.length === 0) {
+        // Fallback: load users from vione_users
+        const vUsers = await this.prisma.$queryRaw<any[]>`
+          SELECT id, name, email, phone, avatar_url, 'Ban Điều Hành' as department, 'Hội viên' as position, '' as company, id as user_id
+          FROM public.vione_users
+          LIMIT 100
+        `.catch(() => []);
+        return vUsers;
+      }
+
+      return members;
     } catch (err: any) {
       this.logger.warn(`Could not load members from DB: ${err.message}`);
       return [];

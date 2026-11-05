@@ -122,12 +122,18 @@ export function IncomingConnectionModal() {
   const email = profile.email;
 
   const handleAccept = async () => {
-    if (!incoming.connectionId) return;
+    if (!incoming.connectionId && !profile.userId && !profile.memberCode) return;
     setAccepting(true);
     try {
-      await fetchNestApi(`/network/connections/${encodeURIComponent(incoming.connectionId)}`, {
+      const connId = incoming.connectionId || "pending";
+      await fetchNestApi(`/network/connections/${encodeURIComponent(connId)}`, {
         method: "PATCH",
-        body: JSON.stringify({ status: "accepted" }),
+        body: JSON.stringify({
+          status: "accepted",
+          connectionId: incoming.connectionId,
+          requesterUserId: profile.userId,
+          memberCode: profile.memberCode,
+        }),
       });
 
       // Gửi sự kiện socket 2 chiều nếu có socket kết nối

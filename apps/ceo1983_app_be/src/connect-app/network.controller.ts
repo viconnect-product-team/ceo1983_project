@@ -85,6 +85,26 @@ export class NetworkController {
     return this.connectAppService.sendConnectionRequest(req.user.id, body);
   }
 
+  @Delete('requests/:id')
+  async cancelRequestById(@Request() req: any, @Param('id') id: string) {
+    return this.connectAppService.cancelConnection(req.user.id, { connectionId: id });
+  }
+
+  @Post('requests/:id/cancel')
+  async cancelRequestByIdPost(@Request() req: any, @Param('id') id: string) {
+    return this.connectAppService.cancelConnection(req.user.id, { connectionId: id });
+  }
+
+  @Delete('requests')
+  async cancelRequestQuery(@Request() req: any, @Query() query: any, @Body() body: any) {
+    return this.connectAppService.cancelConnection(req.user.id, { ...query, ...body });
+  }
+
+  @Post('requests/cancel')
+  async cancelRequestPost(@Request() req: any, @Body() body: any) {
+    return this.connectAppService.cancelConnection(req.user.id, body);
+  }
+
   @Patch('connections/:id')
   async updateConnection(@Request() req, @Param('id') id: string, @Body() body: { status: string }) {
     if (body.status === 'accepted') {

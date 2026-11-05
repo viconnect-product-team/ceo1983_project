@@ -36,47 +36,49 @@ export class AnalyticsService {
           m.created_at,
           m.user_id
         FROM public.members m
-        WHERE m.status = 'active'
+        WHERE m.status IS NULL OR LOWER(m.status) NOT IN ('archived', 'deleted', 'rejected')
         ORDER BY m.created_at ASC
       `.catch(() => [] as any[]);
 
       // 2. Fetch opportunities (all and public-only for the period)
-      const opportunities = await this.prisma.$queryRaw<any[]>`
+      let opportunities = await this.prisma.$queryRaw<any[]>`
         SELECT id, poster_id, claimed_by_id, budget_max, budget_min, status, industry, type, target_scope, created_at
         FROM public.opportunities
         WHERE created_at >= ${startDate}
-      `.catch(async () => {
-        // Fallback without date filter if empty or table column mismatch
-        return await this.prisma.$queryRaw<any[]>`
+      `.catch(() => [] as any[]);
+      if (opportunities.length === 0) {
+        opportunities = await this.prisma.$queryRaw<any[]>`
           SELECT id, poster_id, claimed_by_id, budget_max, budget_min, status, industry, type, target_scope, created_at
           FROM public.opportunities
         `.catch(() => [] as any[]);
-      });
+      }
 
       // 3. Fetch user connections within period
-      const connections = await this.prisma.$queryRaw<any[]>`
+      let connections = await this.prisma.$queryRaw<any[]>`
         SELECT id, requester_user_id, recipient_user_id, status, created_at
         FROM public.user_connections
-        WHERE status IN ('accepted', 'connected') AND created_at >= ${startDate}
-      `.catch(async () => {
-        return await this.prisma.$queryRaw<any[]>`
+        WHERE status IN ('accepted', 'connected', 'pending') AND created_at >= ${startDate}
+      `.catch(() => [] as any[]);
+      if (connections.length === 0) {
+        connections = await this.prisma.$queryRaw<any[]>`
           SELECT id, requester_user_id, recipient_user_id, status, created_at
           FROM public.user_connections
-          WHERE status IN ('accepted', 'connected')
+          WHERE status IN ('accepted', 'connected', 'pending')
         `.catch(() => [] as any[]);
-      });
+      }
 
       // 4. Fetch check-in logs & event registrations
-      const eventRegs = await this.prisma.$queryRaw<any[]>`
+      let eventRegs = await this.prisma.$queryRaw<any[]>`
         SELECT id, user_id, event_id, status, created_at
         FROM public.event_registrations
         WHERE created_at >= ${startDate}
-      `.catch(async () => {
-        return await this.prisma.$queryRaw<any[]>`
+      `.catch(() => [] as any[]);
+      if (eventRegs.length === 0) {
+        eventRegs = await this.prisma.$queryRaw<any[]>`
           SELECT id, user_id, event_id, status, created_at
           FROM public.event_registrations
         `.catch(() => [] as any[]);
-      });
+      }
 
       // 5. Fetch feed interactions (likes + comments)
       const feedLikes = await this.prisma.$queryRaw<any[]>`
@@ -274,16 +276,9 @@ export class AnalyticsService {
         new Map(members.map(m => [m.id, memberStatsMap.get(String(m.id).toLowerCase())!])).values()
       ).filter(Boolean);
 
-      // If initial test stats are too uniform/zero, add realistic mock variation so categories are clearly populated
-      uniqueStats.forEach((m, idx) => {
-        if (m.connectionsCount === 0 && m.publicOppsShared === 0 && m.eventsAttended === 0) {
-          // Deterministic seed based on index
-          m.connectionsCount = Math.max(0, 15 - idx * 2);
-          m.publicOppsShared = Math.max(0, 8 - idx);
-          m.eventsAttended = Math.max(0, 12 - idx);
-          m.feedInteractions = Math.max(0, 25 - idx * 3);
-          m.interactionScore = m.connectionsCount * 10 + m.publicOppsShared * 15 + m.eventsAttended * 20 + m.feedInteractions * 3;
-        }
+      // Calculate live real-time interaction score from actual database metrics
+      uniqueStats.forEach((m) => {
+        m.interactionScore = (m.connectionsCount * 10) + (m.publicOppsShared * 15) + (m.eventsAttended * 20) + (m.feedInteractions * 3);
       });
 
       // Define Medal Tier helper - Trả về đầy đủ Top 10 cho chức năng khen thưởng CRM & App

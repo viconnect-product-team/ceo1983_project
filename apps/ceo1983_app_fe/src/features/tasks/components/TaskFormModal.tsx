@@ -332,21 +332,22 @@ export function TaskFormModal({
   // Filter members list by currently selected department (Requirement 1)
   const deptMembers = useMemo(() => {
     return memberList.filter((m) => {
-      if (!department || department === 'ALL') return true;
+      if (memberSearchQuery.trim()) {
+        const q = memberSearchQuery.toLowerCase().trim();
+        return (
+          (m.name || '').toLowerCase().includes(q) ||
+          (m.code || '').toLowerCase().includes(q) ||
+          (m.position || '').toLowerCase().includes(q) ||
+          (m.company || '').toLowerCase().includes(q) ||
+          (m.email || '').toLowerCase().includes(q) ||
+          (m.department || '').toLowerCase().includes(q)
+        );
+      }
+      if (!department || department === 'ALL' || canAssignAll) return true;
       const deptNormalized = department.replace(/^Ban\s+/i, '').toLowerCase().replace(/quản trị/g, 'điều hành').trim();
       const mDept = (m.department || '').toLowerCase().replace(/quản trị/g, 'điều hành');
       const mExec = (m.executive_role || m.executiveRole || '').toLowerCase().replace(/quản trị/g, 'điều hành');
-      const matched = mDept.includes(deptNormalized) || mExec.includes(deptNormalized) || deptNormalized.includes(mDept) || (deptNormalized.includes('thành viên') && mDept.includes('hội viên'));
-      if (!matched && !canAssignAll) return false;
-      if (!memberSearchQuery.trim()) return matched || canAssignAll;
-      const q = memberSearchQuery.toLowerCase().trim();
-      return (
-        (m.name || '').toLowerCase().includes(q) ||
-        (m.code || '').toLowerCase().includes(q) ||
-        (m.position || '').toLowerCase().includes(q) ||
-        (m.company || '').toLowerCase().includes(q) ||
-        (m.email || '').toLowerCase().includes(q)
-      );
+      return mDept.includes(deptNormalized) || mExec.includes(deptNormalized) || deptNormalized.includes(mDept) || (deptNormalized.includes('thành viên') && mDept.includes('hội viên'));
     });
   }, [memberList, department, canAssignAll, memberSearchQuery]);
 

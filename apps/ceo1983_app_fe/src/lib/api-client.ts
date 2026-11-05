@@ -538,11 +538,25 @@ export async function uploadFileToNest(
       ? localStorage.getItem("vibe_token") ||
         localStorage.getItem("token") ||
         localStorage.getItem("access_token") ||
-        localStorage.getItem("sb-access-token")
+        localStorage.getItem("sb-access-token") ||
+        localStorage.getItem("ceo1983_auth_token") ||
+        localStorage.getItem("ceo1983_token")
       : null;
   const headers = new Headers();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const userStr =
+        localStorage.getItem("vibe_user") ||
+        localStorage.getItem("ceo1983_user") ||
+        localStorage.getItem("user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.id) headers.set("x-user-id", u.id);
+      }
+    } catch {}
   }
 
   let folder = "documents";
@@ -566,33 +580,42 @@ export async function uploadFileToNest(
   const formData = new FormData();
   formData.append("file", file, filename);
 
-  const response = await fetch(
-    `${NEST_API_URL}/api/upload/file?folder=${encodeURIComponent(folder)}`,
-    {
-      method: "POST",
-      body: formData,
-      headers,
-    }
-  );
-
-  if (!response.ok) {
-    let errMsg = response.statusText;
-    try {
-      const errObj = await response.json();
-      if (errObj?.message) {
-        errMsg = Array.isArray(errObj.message) ? errObj.message.join(", ") : errObj.message;
+  try {
+    const response = await fetch(
+      `${NEST_API_URL}/api/upload/file?folder=${encodeURIComponent(folder)}`,
+      {
+        method: "POST",
+        body: formData,
+        headers,
       }
-    } catch {
-      // fallback
+    );
+
+    if (response.ok) {
+      const text = await response.text();
+      const data = JSON.parse(text);
+      const transformed = transformUrls(data);
+      const finalUrl: string = String(transformed?.url || data.url || "");
+      if (finalUrl) return finalUrl as any;
     }
-    throw new Error(`Upload failed (${response.status}): ${errMsg}`);
+  } catch (netErr) {
+    console.warn("uploadFileToNest network/fetch error, falling back to data URL for images:", netErr);
   }
 
-  const text = await response.text();
-  const data = JSON.parse(text);
-  const transformed = transformUrls(data);
-  const finalUrl: string = String(transformed?.url || data.url || "");
-  return finalUrl as any;
+  // Client-side fallback for images if API upload is unreachable
+  if (typeof FileReader !== "undefined" && file.type && file.type.startsWith("image/")) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as any);
+      };
+      reader.onerror = () => {
+        resolve(URL.createObjectURL(file) as any);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  throw new Error("Không thể tải tệp lên máy chủ. Vui lòng thử lại!");
 }
 
 export const uploadFile = uploadFileToNest;

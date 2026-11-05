@@ -322,10 +322,16 @@ export function AssociationMemberQrModal({
         }),
       }).catch(() => {});
 
+      const qrConnectionId =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0");
+
       // 2. Real-time handshake: Bắn ngay socket trực tiếp để máy đối tác đóng QR và hiện popup trong <100ms
       try {
         const socket = getConnectAppSocket();
         socket.emit("connection:request", {
+          connectionId: qrConnectionId,
           targetUserId: scannedPartner.userId || scannedPartner.code,
           targetMemberCode: scannedPartner.code,
           requesterProfile: {
@@ -345,6 +351,7 @@ export function AssociationMemberQrModal({
       await fetchNestApi("/network/requests", {
         method: "POST",
         body: JSON.stringify({
+          connectionId: qrConnectionId,
           targetUserId: scannedPartner.userId || scannedPartner.code,
           memberCode: scannedPartner.code,
           message: messageText,
@@ -353,6 +360,7 @@ export function AssociationMemberQrModal({
         return fetchNestApi("/connect-app/network/requests", {
           method: "POST",
           body: JSON.stringify({
+            connectionId: qrConnectionId,
             targetUserId: scannedPartner.userId || scannedPartner.code,
             memberCode: scannedPartner.code,
             message: messageText,

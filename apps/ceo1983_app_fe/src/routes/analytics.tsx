@@ -318,121 +318,110 @@ export function AnalyticsDashboardPage() {
         ];
       case "top_connections": {
         const top1 = serverData?.topConnections?.[0];
+        const totalConns = serverData?.topConnections?.reduce((acc: number, m: any) => acc + (m.connectionsCount || 0), 0) || 0;
+        const totalMems = serverData?.kpi?.totalMembers || (serverData?.topConnections?.length || 1);
+        const connectedCount = serverData?.topConnections?.filter((m: any) => (m.connectionsCount || 0) > 0).length || 0;
+        const connectRate = totalMems > 0 ? Math.round((connectedCount / totalMems) * 100) : 0;
+        const avgConn = totalMems > 0 ? (totalConns / totalMems).toFixed(1) : "0";
         return [
-          { label: "Tổng lượt kết nối", value: "318 lượt", delta: "+24.5%", isUp: true, desc: "Giao lưu 1-on-1 trong kỳ" },
-          { label: "Tỷ lệ hội viên kết nối", value: "92%", delta: "46 / 50 CEO", isUp: true, desc: "Độ phủ mạng lưới giao thương" },
-          { label: "Quán quân kết nối", value: top1?.name || "Trần Hải Nam", delta: `${top1?.connectionsCount || 28} lượt`, isUp: true, desc: "Top 1 kết nối năng động" },
-          { label: "Trung bình mỗi hội viên", value: "6.4 lượt", delta: "+1.2 lượt", isUp: true, desc: "Mức tương tác trung bình" },
+          { label: "Tổng lượt kết nối", value: `${totalConns} lượt`, delta: "Thời gian thực", isUp: true, desc: "Giao lưu 1-on-1 trong kỳ" },
+          { label: "Tỷ lệ hội viên kết nối", value: `${connectRate}%`, delta: `${connectedCount} / ${totalMems} CEO`, isUp: true, desc: "Độ phủ mạng lưới giao thương" },
+          { label: "Quán quân kết nối", value: top1?.name || "Chưa có", delta: `${top1?.connectionsCount || 0} lượt`, isUp: true, desc: "Top 1 kết nối năng động" },
+          { label: "Trung bình mỗi hội viên", value: `${avgConn} lượt`, delta: "Theo CSDL", isUp: true, desc: "Mức tương tác trung bình" },
         ];
       }
       case "top_opportunities": {
         const top1 = serverData?.topOpportunities?.[0];
+        const totalOpps = serverData?.kpi?.totalClubOpportunities ?? (serverData?.topOpportunities?.reduce((acc: number, m: any) => acc + (m.publicOppsShared || 0), 0) || 0);
+        const totalVal = serverData?.kpi?.totalValueContributed || 0;
+        const formattedVal = totalVal >= 1e9 ? `${(totalVal / 1e9).toFixed(1)} tỷ` : `${Math.round(totalVal / 1e6)} tr`;
+        const wonCount = serverData?.kpi?.totalDealsWon || 0;
+        const winRate = totalOpps > 0 ? `${Math.round((wonCount / totalOpps) * 100)}%` : "0%";
         return [
-          { label: "Tổng cơ hội B2B", value: "142 tin", delta: "+18.2%", isUp: true, desc: "Công khai trên toàn mạng lưới" },
-          { label: "Giá trị niêm yết", value: "48.6 tỷ", delta: "+31.0%", isUp: true, desc: "Quy mô gói thầu chào đón" },
-          { label: "Quán quân chia sẻ", value: top1?.name || "Phạm Văn Vũ", delta: `${top1?.publicOppsShared || 16} tin`, isUp: true, desc: "Top 1 chia sẻ cơ hội" },
-          { label: "Tỷ lệ ký kết thành công", value: "38.5%", delta: "+4.2%", isUp: true, desc: "Hợp đồng đã hoàn tất" },
+          { label: "Tổng cơ hội B2B", value: `${totalOpps} tin`, delta: "Thời gian thực", isUp: true, desc: "Công khai trên toàn mạng lưới" },
+          { label: "Giá trị đóng góp", value: formattedVal, delta: "Giao thương thực", isUp: true, desc: "Quy mô gói thầu chào đón" },
+          { label: "Quán quân chia sẻ", value: top1?.name || "Chưa có", delta: `${top1?.publicOppsShared || 0} tin`, isUp: true, desc: "Top 1 chia sẻ cơ hội" },
+          { label: "Thương vụ đã chốt", value: `${wonCount} deal`, delta: winRate, isUp: true, desc: "Hợp đồng đã hoàn tất" },
         ];
       }
       case "top_events_meetings": {
         const top1 = serverData?.topEventsMeetings?.[0];
+        const totalAttended = serverData?.topEventsMeetings?.reduce((acc: number, m: any) => acc + (m.eventsAttended || 0), 0) || 0;
+        const totalFeed = serverData?.topEventsMeetings?.reduce((acc: number, m: any) => acc + (m.feedInteractions || 0), 0) || 0;
+        const activeRate = serverData?.kpi?.activeRatePercent ? `${serverData.kpi.activeRatePercent}%` : "100%";
         return [
-          { label: "Sự kiện & cuộc họp", value: "18 phiên", delta: "+4 phiên", isUp: true, desc: "Tổ chức trong kỳ báo cáo" },
-          { label: "Lượt điểm danh QR", value: "1,240 lượt", delta: "96.4%", isUp: true, desc: "Tỷ lệ tham dự đúng giờ" },
-          { label: "Quán quân tham gia", value: top1?.name || "Nguyễn Thị Mai", delta: `${top1?.eventsAttended || 14} buổi`, isUp: true, desc: "Điểm danh đầy đủ nhất" },
-          { label: "Tương tác nội bộ", value: "3,890 lượt", delta: "+22.0%", isUp: true, desc: "Trao đổi & thảo luận chuyên môn" },
+          { label: "Tổng lượt tham gia", value: `${totalAttended} lượt`, delta: "Điểm danh thực", isUp: true, desc: "Sự kiện & cuộc họp trong kỳ" },
+          { label: "Tương tác nội bộ", value: `${totalFeed} lượt`, delta: "Thảo luận & like", isUp: true, desc: "Tương tác bản tin & diễn đàn" },
+          { label: "Quán quân tham gia", value: top1?.name || "Chưa có", delta: `${top1?.eventsAttended || 0} buổi`, isUp: true, desc: "Điểm danh đầy đủ nhất" },
+          { label: "Tỷ lệ gắn kết", value: activeRate, delta: "Đúng giờ & tích cực", isUp: true, desc: "Trao đổi & sinh hoạt chuyên môn" },
         ];
       }
       case "top_referrals":
       default: {
+        const top1 = serverData?.topReferrals?.[0];
+        const totalRefs = serverData?.topReferrals?.reduce((acc: number, m: any) => acc + (m.referralsCount || 0), 0) || 0;
+        const totalScore = serverData?.topReferrals?.reduce((acc: number, m: any) => acc + (m.interactionScore || 0), 0) || 0;
         return [
-          { label: "Hội viên mới giới thiệu", value: "36 CEO", delta: "+35.5%", isUp: true, desc: "Gia nhập qua mạng lưới hội viên" },
-          { label: "Tỷ lệ thẩm định đạt", value: "88.9%", delta: "32 / 36 CEO", isUp: true, desc: "Qua vòng phê duyệt Ban Điều Hành" },
-          { label: "Quán quân giới thiệu", value: "Nguyễn Hải Long", delta: "9 CEO", isUp: true, desc: "Đại sứ kết nối xuất sắc" },
-          { label: "Điểm đóng góp CLB", value: "2,450 đ", delta: "+410 đ", isUp: true, desc: "Ghi nhận theo quy chế khen thưởng" },
+          { label: "Hội viên mới giới thiệu", value: `${totalRefs} CEO`, delta: "Thời gian thực", isUp: true, desc: "Gia nhập qua mạng lưới hội viên" },
+          { label: "Độ phủ giới thiệu", value: `${serverData?.topReferrals?.length || 0} người`, delta: "Đại sứ kết nối", isUp: true, desc: "Hội viên tham gia kết nạp" },
+          { label: "Quán quân giới thiệu", value: top1?.name || "Chưa có", delta: `${top1?.referralsCount || top1?.connectionsCount || 0} CEO`, isUp: true, desc: "Đại sứ kết nối xuất sắc" },
+          { label: "Điểm thi đua ghi nhận", value: `${totalScore.toLocaleString("vi-VN")} đ`, delta: "Tích lũy", isUp: true, desc: "Ghi nhận theo quy chế khen thưởng" },
         ];
       }
     }
   }, [selectedCat, sentimentStats, serverData]);
 
   // Danh sách Top 1 - 10 theo từng danh mục
-  const allRankedMembers = useMemo<RankedMemberItem[]>(() => {
+    const allRankedMembers = useMemo<RankedMemberItem[]>(() => {
+    const mapItems = (list: any[], scoreSuffix: string, metricKey: string): RankedMemberItem[] => {
+      if (!list || list.length === 0) return [];
+      return list.map((item: any, idx: number) => ({
+        rank: item.rank || idx + 1,
+        name: item.name || "Hội viên",
+        company: item.company || "CLB CEO 1983",
+        role: item.title || item.role || "Hội viên",
+        dept: item.department || item.dept || "Hội viên ceo1983",
+        score: item.score || `${item[metricKey] || 0} ${scoreSuffix}`,
+        metric: item[metricKey] || 0,
+        phone: item.phone || "0983 198 383",
+        avatar: item.avatar || "/ceo1983-emblem-8.png",
+      }));
+    };
+
     if (selectedCat === "top_connections") {
-      return (
-        serverData?.topConnections || [
-          { rank: 1, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "28 Lượt kết nối", metric: 28, phone: "0912 345 671", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-          { rank: 2, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "22 Lượt kết nối", metric: 22, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
-          { rank: 3, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "18 Lượt kết nối", metric: 18, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-          { rank: 4, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", role: "Giám đốc", dept: "Ban Tài Chính", score: "15 Lượt kết nối", metric: 15, phone: "0913 222 333", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" },
-          { rank: 5, name: "Hoàng Yến Chi", company: "Truyền thông & Sự kiện YC", role: "Chủ sáng lập", dept: "Ban Sự Kiện", score: "14 Lượt kết nối", metric: 14, phone: "0988 776 655", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" },
-          { rank: 6, name: "Đỗ Quốc Bảo", company: "Bảo Phát Logistics", role: "Chủ tịch", dept: "Ban Xúc Tiến", score: "12 Lượt kết nối", metric: 12, phone: "0903 112 233", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80" },
-          { rank: 7, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", role: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", score: "11 Lượt kết nối", metric: 11, phone: "0934 556 677", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80" },
-          { rank: 8, name: "Phan Thanh Hà", company: "Dược phẩm Hà Thành", role: "Tổng Giám đốc", dept: "Ban Xúc Tiến", score: "10 Lượt kết nối", metric: 10, phone: "0915 889 900", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" },
-          { rank: 9, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", role: "Giám đốc điều hành", dept: "Ban Tài Chính", score: "9 Lượt kết nối", metric: 9, phone: "0982 443 322", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80" },
-          { rank: 10, name: "Trịnh Thùy Linh", company: "Luật sư & Tư vấn TL Law", role: "Luật sư Trưởng", dept: "Ban Thư Ký", score: "8 Lượt kết nối", metric: 8, phone: "0977 123 456", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80" },
-        ]
-      );
+      if (serverData?.topConnections?.length) {
+        return mapItems(serverData.topConnections, "Lượt kết nối", "connectionsCount");
+      }
+      return [
+        { rank: 1, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "28 Lượt kết nối", metric: 28, phone: "0912 345 671", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
+        { rank: 2, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "22 Lượt kết nối", metric: 22, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
+        { rank: 3, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "18 Lượt kết nối", metric: 18, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
+      ];
     }
     if (selectedCat === "top_opportunities") {
-      return (
-        serverData?.topOpportunities || [
-          { rank: 1, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "16 Cơ hội", metric: 16, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
-          { rank: 2, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "12 Cơ hội", metric: 12, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-          { rank: 3, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", role: "Giám đốc", dept: "Ban Tài Chính", score: "9 Cơ hội", metric: 9, phone: "0913 222 333", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-          { rank: 4, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "8 Cơ hội", metric: 8, phone: "0912 345 671", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-          { rank: 5, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", role: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", score: "7 Cơ hội", metric: 7, phone: "0934 556 677", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80" },
-          { rank: 6, name: "Đỗ Quốc Bảo", company: "Bảo Phát Logistics", role: "Chủ tịch", dept: "Ban Xúc Tiến", score: "6 Cơ hội", metric: 6, phone: "0903 112 233", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80" },
-          { rank: 7, name: "Phan Thanh Hà", company: "Dược phẩm Hà Thành", role: "Tổng Giám đốc", dept: "Ban Xúc Tiến", score: "5 Cơ hội", metric: 5, phone: "0915 889 900", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" },
-          { rank: 8, name: "Hoàng Yến Chi", company: "Truyền thông & Sự kiện YC", role: "Chủ sáng lập", dept: "Ban Sự Kiện", score: "5 Cơ hội", metric: 5, phone: "0988 776 655", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" },
-          { rank: 9, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", role: "Giám đốc điều hành", dept: "Ban Tài Chính", score: "4 Cơ hội", metric: 4, phone: "0982 443 322", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80" },
-          { rank: 10, name: "Trịnh Thùy Linh", company: "Luật sư & Tư vấn TL Law", role: "Luật sư Trưởng", dept: "Ban Thư Ký", score: "3 Cơ hội", metric: 3, phone: "0977 123 456", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80" },
-        ]
-      );
+      if (serverData?.topOpportunities?.length) {
+        return mapItems(serverData.topOpportunities, "Cơ hội B2B", "publicOppsShared");
+      }
+      return [
+        { rank: 1, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "16 Cơ hội", metric: 16, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
+        { rank: 2, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "12 Cơ hội", metric: 12, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
+      ];
     }
     if (selectedCat === "top_events_meetings") {
-      return (
-        serverData?.topEventsMeetings || [
-          { rank: 1, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "14 Buổi họp", metric: 14, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-          { rank: 2, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "12 Buổi họp", metric: 12, phone: "0912 345 671", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-          { rank: 3, name: "Hoàng Yến Chi", company: "Truyền thông & Sự kiện YC", role: "Chủ sáng lập", dept: "Ban Sự Kiện", score: "10 Buổi họp", metric: 10, phone: "0988 776 655", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" },
-          { rank: 4, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "10 Buổi họp", metric: 10, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
-          { rank: 5, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", role: "Giám đốc", dept: "Ban Tài Chính", score: "9 Buổi họp", metric: 9, phone: "0913 222 333", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" },
-          { rank: 6, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", role: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", score: "8 Buổi họp", metric: 8, phone: "0934 556 677", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80" },
-          { rank: 7, name: "Đỗ Quốc Bảo", company: "Bảo Phát Logistics", role: "Chủ tịch", dept: "Ban Xúc Tiến", score: "8 Buổi họp", metric: 8, phone: "0903 112 233", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80" },
-          { rank: 8, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", role: "Giám đốc điều hành", dept: "Ban Tài Chính", score: "7 Buổi họp", metric: 7, phone: "0982 443 322", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80" },
-          { rank: 9, name: "Phan Thanh Hà", company: "Dược phẩm Hà Thành", role: "Tổng Giám đốc", dept: "Ban Xúc Tiến", score: "6 Buổi họp", metric: 6, phone: "0915 889 900", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" },
-          { rank: 10, name: "Trịnh Thùy Linh", company: "Luật sư & Tư vấn TL Law", role: "Luật sư Trưởng", dept: "Ban Thư Ký", score: "6 Buổi họp", metric: 6, phone: "0977 123 456", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80" },
-        ]
-      );
-    }
-    if (selectedCat === "top_referrals") {
+      if (serverData?.topEventsMeetings?.length) {
+        return mapItems(serverData.topEventsMeetings, "Buổi họp & sự kiện", "eventsAttended");
+      }
       return [
-        { rank: 1, name: "Nguyễn Hải Long", company: "Tập Đoàn BĐS Thăng Long", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "9 Hội viên", metric: 9, phone: "0918 888 999", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
-        { rank: 2, name: "Trần Mai Phương", company: "Tập Đoàn Giáo Dục SmartEdu", role: "Tổng Giám đốc", dept: "Ban Thành Viên", score: "7 Hội viên", metric: 7, phone: "0903 667 889", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
-        { rank: 3, name: "Phạm Văn Vũ", company: "Uranus ViConnect", role: "Tổng Giám đốc", dept: "Ban Công Nghệ", score: "5 Hội viên", metric: 5, phone: "0983 198 383", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" },
-        { rank: 4, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "4 Hội viên", metric: 4, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
-        { rank: 5, name: "Trần Hải Nam", company: "Tập Đoàn Tân Á Đông", role: "Chủ tịch HĐQT", dept: "Ban Xúc Tiến", score: "3 Hội viên", metric: 3, phone: "0912 345 671", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80" },
-        { rank: 6, name: "Lê Hoàng Cường", company: "Cơ điện & Tự động hóa HP", role: "Giám đốc", dept: "Ban Tài Chính", score: "2 Hội viên", metric: 2, phone: "0913 222 333", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80" },
-        { rank: 7, name: "Hoàng Yến Chi", company: "Truyền thông & Sự kiện YC", role: "Chủ sáng lập", dept: "Ban Sự Kiện", score: "2 Hội viên", metric: 2, phone: "0988 776 655", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" },
-        { rank: 8, name: "Đỗ Quốc Bảo", company: "Bảo Phát Logistics", role: "Chủ tịch", dept: "Ban Xúc Tiến", score: "2 Hội viên", metric: 2, phone: "0903 112 233", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80" },
-        { rank: 9, name: "Vũ Thành Đạt", company: "Kiến trúc Xanh An Phát", role: "Giám đốc Kỹ thuật", dept: "Ban Thành Viên", score: "1 Hội viên", metric: 1, phone: "0934 556 677", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80" },
-        { rank: 10, name: "Bùi Anh Tuấn", company: "Nội thất Gỗ Hoàng Gia", role: "Giám đốc điều hành", dept: "Ban Tài Chính", score: "1 Hội viên", metric: 1, phone: "0982 443 322", avatar: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80" },
+        { rank: 1, name: "Nguyễn Thị Mai", company: "Green Farm Group", role: "Phó Tổng GĐ", dept: "Ban Truyền Thông", score: "14 Buổi", metric: 14, phone: "0904 567 891", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80" },
       ];
     }
-    if (selectedCat === "external_shares") {
-      const shareData = serverData?.externalShareClicks || serverData?.categories?.externalShareClicks;
-      const fb = shareData?.facebook || 128;
-      const zalo = shareData?.zalo || 94;
-      const web = shareData?.web || 62;
-      const other = shareData?.other || 21;
-      return [
-        { rank: 1, name: "Facebook (Fanpage & Hội nhóm)", company: "Nền tảng chia sẻ Facebook", role: "Kênh Public Ngoài", dept: "Mạng Xã Hội", score: `${fb} Lượt click`, metric: fb, phone: "Facebook Share", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
-        { rank: 2, name: "Zalo (Nhóm B2B & Tin nhắn cá nhân)", company: "Ứng dụng Zalo Doanh Nghiệp", role: "Kênh Giao Thương Nhanh", dept: "Nhóm Chat B2B", score: `${zalo} Lượt click`, metric: zalo, phone: "Zalo Share", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
-        { rank: 3, name: "Trình Duyệt Web Trực Tiếp", company: "Cổng thông tin & Website doanh nghiệp", role: "Kênh Web Công Khai", dept: "Trực Tiếp", score: `${web} Lượt click`, metric: web, phone: "Direct Link", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
-        { rank: 4, name: "Nguồn khác (Email / Quét QR)", company: "Các liên kết ngoài & Email marketing", role: "Kênh Mở Rộng", dept: "Đối Tác Ngoài", score: `${other} Lượt click`, metric: other, phone: "Khác", avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
-      ];
+    // selectedCat === "top_referrals"
+    if (serverData?.topReferrals?.length) {
+      return mapItems(serverData.topReferrals, "Hội viên giới thiệu", "referralsCount");
     }
-    return [];
+    return [
+      { rank: 1, name: "Nguyễn Hải Long", company: "Long Phát Land", role: "Chủ tịch", dept: "Ban Thành Viên", score: "9 Hội viên", metric: 9, phone: "0989 112 233", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80" },
+    ];
   }, [selectedCat, serverData]);
 
   // Bục Top 3: Cân đối và chuẩn xác

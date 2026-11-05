@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
+import { CustomHomeShortcutsModal, DEFAULT_SHORTCUT_IDS } from "./CustomHomeShortcutsModal";
 import {
   getActiveCeo1983ColorTheme,
   COLOR_THEME_EVENT,
@@ -58,6 +59,29 @@ export function AllFeaturesModal({
 }: AllFeaturesModalProps) {
   const navigate = useNavigate();
   const [search, setSearch] = React.useState("");
+  const [customShortcutsOpen, setCustomShortcutsOpen] = React.useState(false);
+  const [selectedShortcuts, setSelectedShortcuts] = React.useState<string[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_SHORTCUT_IDS;
+    try {
+      const saved = localStorage.getItem("ceo1983_home_shortcuts");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_SHORTCUT_IDS;
+  });
+
+  const handleSaveShortcuts = (ids: string[]) => {
+    setSelectedShortcuts(ids);
+    try {
+      localStorage.setItem("ceo1983_home_shortcuts", JSON.stringify(ids));
+      localStorage.setItem("vba_user_custom_shortcuts", JSON.stringify(ids));
+      window.dispatchEvent(new Event("ceo1983_shortcuts_changed"));
+      window.dispatchEvent(new Event("storage"));
+    } catch {}
+    setCustomShortcutsOpen(false);
+  };
   const [brandColorTheme, setBrandColorTheme] = React.useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
 
   React.useEffect(() => {
@@ -333,7 +357,13 @@ export function AllFeaturesModal({
           })}
         </div>
       </div>
-    </div>,
+        <CustomHomeShortcutsModal
+          isOpen={customShortcutsOpen}
+          onClose={() => setCustomShortcutsOpen(false)}
+          selectedIds={selectedShortcuts}
+          onSave={handleSaveShortcuts}
+        />
+      </div>,
     document.body
   );
 }

@@ -205,15 +205,33 @@
   - Trong `sw.js`: Bọc kiểm tra `Notification.permission === 'granted'` và `.catch(() => {})` để tránh uncaught promise rejection.
   - Cầu nối Capacitor WebView điều hướng trơn tru, hỗ trợ mở picker native của thiết bị.
 
-### `[NODE-APP-015]` Phân Hệ Gặp Gỡ & Kết Nối B2B 1-on-1 Độc Lập
+### `[NODE-APP-015]` Phân Hệ Gặp Gỡ & Kết Nối B2B 1-on-1 Độc Lập & Điều Hướng Deal Đích Danh
 - **Route Frontend**: `/association/connect` (`src/routes/association.connect.tsx`).
-- **API Backend**: `GET /b2b-connections/my`, `POST /b2b-connections`, `PUT /b2b-connections/:id/status`, `POST /b2b-connections/:id/deal` (`b2b-connections.service.ts`).
-- **Bảng CSDL**: `b2b_connections`, `opportunities`, `members`.
+- **API Backend**: `GET /meetings/connection-appointments`, `POST /meetings`, `PATCH /meetings/:id`, `POST /meetings/:id/cancel` (`meetings.controller.ts`, `meetings.service.ts`).
+- **Bảng CSDL**: `meetings`, `opportunities`, `members`.
 - **Luồng xử lý**:
-  - Quản lý tập trung 3 tab: Cuộc gặp đã xác nhận, Lời mời nhận, Lời mời gửi.
-  - Modal đặt lịch hẹn gặp 1-on-1 với đối tác thành viên trong CLB (Gặp trực tiếp hoặc Gặp trực tuyến).
-  - Tích hợp phòng họp video trực tuyến bảo mật Jitsi Meet trực tiếp trong ứng dụng.
+  - Quản lý tập trung đúng **3 tab chuẩn hóa**:
+    1. *Cuộc gặp của tôi*: Danh sách cuộc gặp đã xác nhận hoặc lời mời nhận (lọc sạch các cuộc gặp đã bị hủy/từ chối để đối tác không thấy lời mời đã hủy).
+    2. *Cuộc gặp đã gửi*: Danh sách cuộc gặp do mình khởi tạo; các cuộc gặp đang chờ phản hồi có nút "Hủy cuộc gặp" trực quan.
+    3. *Cuộc gặp đã hủy*: Quản lý danh mục các cuộc gặp đã bị hủy hoặc từ chối kèm nhãn cảnh báo đỏ.
+  - Modal đặt lịch hẹn gặp 1-on-1 với đối tác thành viên trong CLB (Gặp trực tiếp hoặc Gặp trực tuyến có phòng Jitsi Meet).
   - Modal ghi nhận Deal thành công sau cuộc gặp, tích lũy doanh số giao thương vào báo cáo chung của CLB.
+  - Gửi Deal Chào Giá Đích Danh: Bấm deal tại Chia sẻ cơ hội (`/association/opportunities`) hoặc Sàn thương mại (`/association/products`) sẽ gửi thông báo và dữ liệu trực tiếp đến đúng người đăng bài.
+  - Loại bỏ hoàn toàn tab "Lịch hẹn" ở Danh bạ hội viên (`/association/members`), chuyển hướng toàn bộ về `/association/connect`.
+
+### `[NODE-APP-017]` Màn Hình Cá Nhân (Profile), Quyền Riêng Tư Mạng Lưới Facebook Style & Quản Lý Bài Viết
+- **Route Frontend**: `/association/profile` (`src/routes/association.profile.tsx`).
+- **Thành phần**: `CreatePostModal.tsx`, `CustomHomeShortcutsModal.tsx`, `CardPreviewModal.tsx`.
+- **API Backend**: `GET /feed?authorId=...`, `PATCH /feed/:id`, `DELETE /feed/:id`, `PATCH /members/me` (`feed.service.ts`, `feed.controller.ts`).
+- **Bảng CSDL**: `members`, `feed_posts`, `users`.
+- **Luồng xử lý**:
+  - **Tái cấu trúc 2 nhóm tab chính**:
+    + *Nhóm 1 (Tổng quan & Bài viết)*: 4 chỉ số KPI tổng thể, Panel "Hồ sơ doanh nghiệp" đóng mở accordion (gộp Giới thiệu doanh nghiệp, nhân lực, quy mô, lĩnh vực), và phần Bài viết mạng lưới đã đăng.
+    + *Nhóm 2 (Giao thương & Sự kiện)*: Lịch sử hoạt động xúc tiến, kết nối B2B và sự kiện tham dự.
+  - **Hàng nút tiện ích dưới Avatar**: 4 nút chuẩn: 1. Danh thiếp, 2. Chia sẻ, 3. Sửa hồ sơ, 4. Cài đặt (Icon Cog mở Cài đặt & Cấu hình hệ thống). Bỏ quét mã QR tại vị trí này.
+  - **Quản lý bài viết mạng lưới**: Mỗi bài viết do hội viên đăng tải có menu `...` hỗ trợ Chỉnh sửa và Xóa bài viết (phân quyền tác giả hoặc Admin).
+  - **Quyền riêng tư chuẩn Facebook**: Hỗ trợ 3 phạm vi: Công khai (🌐), Bạn bè kết nối (👥), Chỉ mình tôi (🔒) lưu trực tiếp vào cột `privacy` của CSDL.
+  - **Tùy biến 4 tính năng nhanh trang chủ**: Bổ sung bộ điều khiển chọn 4 shortcut ghim trang chủ ngay trong modal "Xem tất cả tính năng" (`AllFeaturesModal.tsx`).
 
 ### `[NODE-APP-016]` Phân Hệ Đào Tạo Doanh Nhân & Phòng Họp Trực Tuyến
 - **Route Frontend**: `/association/training` (`src/routes/association.training.tsx`).

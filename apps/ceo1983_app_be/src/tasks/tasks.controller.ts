@@ -21,6 +21,11 @@ import { TaskItem, TaskFilterDto, CreateTaskDto, UpdateTaskDto } from './dto';
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @Get('assignment-history')
+  async getAssignmentHistory() {
+    return this.tasksService.getAllAssignmentHistory();
+  }
+
   @Get('assignable-members')
   async getAssignableMembers(@Request() req: any, @Query('department') department?: string) {
     return this.tasksService.getAssignableMembers(req?.user, department);

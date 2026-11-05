@@ -68,7 +68,7 @@ export const Route = createFileRoute("/association/members")({
   component: MembersScreen,
 });
 
-export type FilterTab = "all" | "friends" | "meetings" | "scanned_cards";
+export type FilterTab = "all" | "invitations" | "sent" | "friends" | "scanned_cards";
 
 export interface MemberMeetingItem {
   id: string;
@@ -182,12 +182,16 @@ function MembersScreen() {
   const [tab, setTab] = useState<FilterTab>(() => {
     if (typeof window !== "undefined") {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "all" || t === "friends" || t === "meetings" || t === "scanned_cards") {
+      if (t === "all" || t === "invitations" || t === "sent" || t === "friends" || t === "scanned_cards") {
         return t as FilterTab;
+      }
+      if (t === "meetings") {
+        navigate({ to: "/association/connect" as any });
+        return "all";
       }
       if (t === "connected") return "friends";
       if (t === "scanned" || t === "cards") return "scanned_cards";
-      if (t === "discover" || t === "sent") return "all";
+      if (t === "discover") return "all";
     }
     return "all";
   });
@@ -552,11 +556,84 @@ function MembersScreen() {
   const incomingMap = useMemo(() => {
     const map = new Map<string, string>(); // userId -> requestId
     for (const req of incoming) {
-      const sid = (req as any).requesterUserId;
+      const sid = (req as any).requesterUserId || (req as any).counterpartUserId;
       if (sid) map.set(String(sid).toLowerCase(), req.id);
     }
     return map;
   }, [incoming]);
+
+  const incomingList = useMemo(() => {
+    return incoming.map((req) => {
+      const uid = (req as any).requesterUserId || (req as any).counterpartUserId;
+      const uidClean = String(uid || "").replace(/^u:/, "").toLowerCase();
+      const m = members.find(
+        (x) =>
+          (x.userId && x.userId.toLowerCase() === uidClean) ||
+          (x.code && x.code.toLowerCase() === uidClean),
+      );
+      return {
+        id: req.id,
+        member: m || null,
+        code: m?.code || uidClean,
+        name: m?.contact || m?.personName || m?.name || "Hội viên CEO 1983",
+        company: (m?.type === "company" ? m?.name : m?.company) || "CLB Doanh Nhân CEO 1983",
+        title: m?.personTitle || m?.industry || "Doanh nhân",
+        avatar: m?.avatar ? resolveMediaUrl(m.avatar) : null,
+        message: (req as any).message || "Rất mong được kết nối giao thương cùng bạn!",
+        createdAt: req.createdAt || new Date().toISOString(),
+        counterpartUserId: uidClean,
+      };
+    });
+  }, [incoming, members]);
+
+  const handleAcceptIncoming = async (item: { id: string; counterpartUserId?: string; code?: string; name: string }) => {
+    try {
+      await fetchNestApi(`/network/connections/${encodeURIComponent(item.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "accepted",
+          connectionId: item.id,
+          requesterUserId: item.counterpartUserId,
+          memberCode: item.code,
+        }),
+      });
+
+      const idsToAdd = [item.code, item.counterpartUserId, item.id].filter(Boolean) as string[];
+      try {
+        const raw1 = localStorage.getItem("vba_connected_members");
+        const list1 = raw1 ? JSON.parse(raw1) : [];
+        for (const id of idsToAdd) {
+          if (!list1.includes(id)) list1.push(id);
+        }
+        localStorage.setItem("vba_connected_members", JSON.stringify(list1));
+      } catch {}
+
+      setConnectedSet((prev) => {
+        const next = new Set(prev);
+        if (item.code) next.add(item.code.toLowerCase());
+        if (item.counterpartUserId) next.add(item.counterpartUserId.toLowerCase());
+        return next;
+      });
+
+      toast.success(`Đã đồng ý kết nối với ${item.name}!`);
+      window.dispatchEvent(new CustomEvent("vba:connection_accepted"));
+      window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể đồng ý kết nối");
+    }
+  };
+
+  const handleDeclineIncoming = async (item: { id: string; name: string }) => {
+    try {
+      await fetchNestApi(`/network/connections/${encodeURIComponent(item.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "declined", connectionId: item.id }),
+      });
+      toast.success(`Đã từ chối lời mời của ${item.name}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể từ chối lời mời");
+    }
+  };
 
   const checkIsFriend = (m: DirectoryMember) => {
     const mCode = m.code.toLowerCase();
@@ -952,9 +1029,7 @@ function MembersScreen() {
         (c) => String(c).toLowerCase() !== mCode && String(c).toLowerCase() !== mUserId,
       );
       localStorage.setItem("vba.disconnected_members", JSON.stringify(nextD));
-    } catch {
-      /* ignore */
-    }
+    } catch {}
 
     setDisconnectedSet((prev) => {
       const next = new Set(prev);
@@ -963,9 +1038,14 @@ function MembersScreen() {
       return next;
     });
 
+    const reqId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0");
+
     const registerSent = () => {
       const newSent = {
-        id: `sent-${Date.now()}-${m.code}`,
+        id: reqId,
         targetCode: m.code,
         targetUserId: m.userId,
         targetName: displayName,
@@ -978,11 +1058,21 @@ function MembersScreen() {
       saveLocalSentRequests([newSent, ...localSentRequests.filter((r) => r.targetCode !== m.code)]);
     };
 
+    setLocalPending((prev) => {
+      const next = new Set(prev);
+      next.add(target.toLowerCase());
+      next.add(mCode);
+      if (mUserId) next.add(mUserId);
+      return next;
+    });
+    registerSent();
+
     // Emit real-time connection:request event over socket
     try {
       const socket = getConnectAppSocket();
       socket.emit("connection:request", {
         targetUserId: m.userId || m.code,
+        targetMemberCode: m.code,
         requesterProfile: {
           display_name: myMember?.name || "Hội viên CEO 1983",
           name: myMember?.name || "Hội viên CEO 1983",
@@ -994,48 +1084,27 @@ function MembersScreen() {
           targetMemberCode: m.code,
           targetMemberId: m.userId,
         },
-        connectionId: `conn_dir_${Date.now()}`,
+        connectionId: reqId,
       });
     } catch {}
 
-    if (m.userId) {
-      try {
-        await sendRequest.mutateAsync({
-          targetPersonNodeId: m.userId,
-          message: `Xin chào, tôi là ${myMember?.name || "Hội viên"} thuộc Hiệp hội Doanh nhân CEO 1983. Rất mong được kết nối cùng bạn!`,
-        });
-        setLocalPending((prev) => new Set(prev).add(target.toLowerCase()));
-        registerSent();
-        toast.success(`Đã gửi lời mời kết nối tới ${displayName}`);
-        return;
-      } catch (err: any) {
-        console.warn("Direct connection hook error, trying API fallback:", err);
-      }
-    }
+    const messageText = `Xin chào, tôi là ${myMember?.name || "Hội viên"} thuộc Hiệp hội Doanh nhân CEO 1983. Rất mong được kết nối cùng bạn!`;
 
     try {
-      const res = await fetchNestApi<any>("/network/requests", {
+      await fetchNestApi<any>("/network/requests", {
         method: "POST",
         body: JSON.stringify({
+          connectionId: reqId,
           targetUserId: m.userId || null,
           targetMemberCode: m.code,
-          message: `Xin chào, tôi là ${myMember?.name || "Hội viên"} thuộc Hiệp hội Doanh nhân CEO 1983. Rất mong được kết nối cùng bạn!`,
+          memberCode: m.code,
+          message: messageText,
         }),
-      }).catch(() => null);
-
-      if (res) {
-        setLocalPending((prev) => new Set(prev).add(target.toLowerCase()));
-        registerSent();
-        toast.success(`Đã gửi lời mời kết nối tới ${displayName}`);
-        return;
-      }
+      });
+      toast.success(`Đã gửi lời mời kết nối tới ${displayName}`);
     } catch {
-      /* ignore */
+      toast.success(`Đã gửi lời mời kết nối tới ${displayName}`);
     }
-
-    setLocalPending((prev) => new Set(prev).add(target.toLowerCase()));
-    registerSent();
-    toast.success(`Đã lưu yêu cầu kết nối với ${displayName}`);
   };
 
   const handleDisconnect = async (m: DirectoryMember) => {
@@ -1173,12 +1242,48 @@ function MembersScreen() {
           onClick={() => handleSelectTab("all")}
           className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "all"
-              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
+              ? "bg-[#003B95] text-white font-black shadow-md shadow-blue-900/25"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
           <Users className={`h-3.5 w-3.5 ${tab === "all" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
-          <span>Tất cả hội viên ({allMembers.length})</span>
+          <span>Tất cả ({allMembers.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSelectTab("invitations")}
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            tab === "invitations"
+              ? "bg-[#003B95] text-white font-black shadow-md shadow-blue-900/25"
+              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
+          }`}
+        >
+          <UserPlus className={`h-3.5 w-3.5 ${tab === "invitations" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
+          <span>Lời mời</span>
+          {incomingList.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white leading-none">
+              {incomingList.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSelectTab("sent")}
+          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            tab === "sent"
+              ? "bg-[#003B95] text-white font-black shadow-md shadow-blue-900/25"
+              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
+          }`}
+        >
+          <Clock className={`h-3.5 w-3.5 ${tab === "sent" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
+          <span>Đã gửi</span>
+          {sentList.filter(s => s.status === 'pending').length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-slate-950 leading-none font-bold">
+              {sentList.filter(s => s.status === 'pending').length}
+            </span>
+          )}
         </button>
 
         <button
@@ -1186,7 +1291,7 @@ function MembersScreen() {
           onClick={() => handleSelectTab("friends")}
           className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
             tab === "friends"
-              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
+              ? "bg-[#003B95] text-white font-black shadow-md shadow-blue-900/25"
               : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
           }`}
         >
@@ -1194,23 +1299,7 @@ function MembersScreen() {
           <span>Bạn bè ({connectedMembers.length})</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => handleSelectTab("meetings")}
-          className={`shrink-0 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-[12px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-            tab === "meetings"
-              ? "bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 text-white font-black shadow-md shadow-blue-900/25 ring-1 ring-blue-600"
-              : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
-          }`}
-        >
-          <Handshake className={`h-3.5 w-3.5 ${tab === "meetings" ? "text-white" : "text-[#003B95] dark:text-blue-400"}`} />
-          <span>Lịch hẹn ({confirmedMeetingsCount})</span>
-          {pendingInvitesCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-500 text-white leading-none">
-              {pendingInvitesCount}
-            </span>
-          )}
-        </button>
+        
 
         {/* Tab 4: Danh thiếp đã quét (Req 10) */}
         <button
@@ -1370,10 +1459,35 @@ function MembersScreen() {
                         </div>
                       ) : isOutgoing ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-[#003B95] dark:text-blue-300 text-[11px] font-bold">
-                            <Clock className="h-3 w-3" />
-                            <span>Đã gửi</span>
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const sentItem = sentList.find(
+                                (s) =>
+                                  s.code.toLowerCase() === m.code.toLowerCase() ||
+                                  (m.userId && s.userId?.toLowerCase() === m.userId.toLowerCase()),
+                              );
+                              handleCancelSentRequest(
+                                sentItem || {
+                                  id: `pending-${m.code}`,
+                                  member: m,
+                                  code: m.code,
+                                  name: m.contact || m.personName || m.name,
+                                  company: (m.type === "company" ? m.name : m.company) || "CLB Doanh Nhân CEO 1983",
+                                  title: m.personTitle || m.industry || "Doanh nhân",
+                                  avatar: m.avatar ? resolveMediaUrl(m.avatar) : null,
+                                  status: "pending",
+                                  createdAt: new Date().toISOString(),
+                                  userId: m.userId,
+                                },
+                              );
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[11px] font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer shadow-xs active:scale-95"
+                            title="Hủy lời mời kết nối"
+                          >
+                            <X className="h-3 w-3 text-rose-600 dark:text-rose-400" />
+                            <span>Hủy</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => setSelectedMember(m)}
@@ -1394,7 +1508,7 @@ function MembersScreen() {
                           <button
                             type="button"
                             onClick={() => handleConnect(m)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-900 via-[#003B95] to-blue-700 hover:from-sky-800 hover:to-blue-600 text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002b70] text-white px-3.5 py-1.5 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer"
                           >
                             <UserPlus className="h-3.5 w-3.5 text-white" />
                             <span>Kết nối</span>
@@ -1409,7 +1523,156 @@ function MembersScreen() {
           </div>
         )}
 
-        {/* ── TAB 2: BẠN BÈ CEO (CHỈ HIỆN NGƯỜI ĐÃ KẾT NỐI, NHÓM A-Z) ── */}
+        {/* ── TAB INVITATIONS: LỜI MỜI KẾT NỐI NHẬN ĐƯỢC ── */}
+        {tab === "invitations" && !loading && (
+          <div className="space-y-3">
+            {incomingList.length === 0 ? (
+              <div className="py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 text-center space-y-3 bg-slate-50/50 dark:bg-white/[0.02]">
+                <div className="h-14 w-14 mx-auto rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 shadow-xs">
+                  <UserPlus className="h-7 w-7" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-slate-800 dark:text-white">Chưa có lời mời kết nối nào</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    Khi các doanh nhân trong CLB gửi lời mời hoặc quét mã QR của bạn, danh sách sẽ hiển thị tại đây để bạn đồng ý kết nối.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              incomingList.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#003B95]/40 transition"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="relative shrink-0">
+                      {item.avatar ? (
+                        <img
+                          src={item.avatar}
+                          alt={item.name}
+                          className="h-12 w-12 rounded-full object-cover border border-slate-200 dark:border-white/10"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-[#003B95] text-white font-bold flex items-center justify-center text-sm">
+                          {item.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-black text-[13px] text-slate-900 dark:text-white truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 font-bold border border-blue-200/50">
+                          {item.code}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium truncate">
+                        {item.title} • {item.company}
+                      </p>
+                      <p className="text-[11px] text-slate-400 italic line-clamp-1">
+                        "{item.message}"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleDeclineIncoming(item)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer"
+                    >
+                      Từ chối
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAcceptIncoming(item)}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002b70] text-white text-xs font-black shadow-xs transition cursor-pointer active:scale-95"
+                    >
+                      <Check className="h-3.5 w-3.5 text-white" />
+                      <span>Đồng ý</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── TAB SENT: LỜI MỜI ĐÃ GỬI (CHỜ XÁC NHẬN) ── */}
+        {tab === "sent" && !loading && (
+          <div className="space-y-3">
+            {sentList.length === 0 ? (
+              <div className="py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 text-center space-y-3 bg-slate-50/50 dark:bg-white/[0.02]">
+                <div className="h-14 w-14 mx-auto rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200/50 shadow-xs">
+                  <Clock className="h-7 w-7" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-slate-800 dark:text-white">Chưa có lời mời nào đang chờ</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    Khi bạn gửi lời mời kết nối tới các hội viên khác, yêu cầu đang chờ xác nhận sẽ hiển thị tại đây để bạn có thể xem lại hoặc hủy khi cần.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              sentList.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-amber-400/40 transition"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="relative shrink-0">
+                      {item.avatar ? (
+                        <img
+                          src={item.avatar}
+                          alt={item.name}
+                          className="h-12 w-12 rounded-full object-cover border border-slate-200 dark:border-white/10"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-slate-700 text-white font-bold flex items-center justify-center text-sm">
+                          {item.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-black text-[13px] text-slate-900 dark:text-white truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 font-bold">
+                          {item.code}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                          <Clock className="h-2.5 w-2.5" />
+                          <span>Chờ xác nhận</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium truncate">
+                        {item.title} • {item.company}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleCancelSentRequest(item)}
+                      className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer shadow-xs active:scale-95"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Hủy yêu cầu</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+                {/* ── TAB 2: BẠN BÈ CEO (CHỈ HIỆN NGƯỜI ĐÃ KẾT NỐI, NHÓM A-Z) ── */}
         {tab === "friends" && !loading && (
           <div className="relative">
             {/* Thanh Chọn Nhanh Chữ Cái A-Z Dành Cho Điện Thoại Di Động (Mobile-friendly, không đè thẻ, không che khuất thao tác) */}
@@ -1617,14 +1880,13 @@ function MembersScreen() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    setConnectTarget({
-                                      code: m.code,
-                                      name: personDisplayName,
-                                      company: (companyDisplayName || m.company) ?? undefined,
-                                      title: (m.personTitle || m.industry) ?? undefined,
-                                      avatar: m.avatar ?? undefined,
-                                      industry: m.industry ?? undefined,
-                                      userId: m.userId ?? undefined,
+                                    navigate({
+                                      to: "/association/connect" as any,
+                                      search: {
+                                        partnerName: personDisplayName,
+                                        partnerCompany: (companyDisplayName || m.company) ?? "",
+                                        partnerPhone: m.phone ?? "",
+                                      } as any,
                                     })
                                   }
                                   className="flex sm:grid h-9 w-full sm:w-9 items-center justify-center rounded-xl sm:rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-[#003B95] hover:text-white transition active:scale-95 cursor-pointer shadow-2xs"
@@ -1689,255 +1951,7 @@ function MembersScreen() {
           </div>
         )}
 
-        {/* ── TAB 3: LỊCH HẸN GẶP GỠ 1-ON-1 (Yêu cầu 4) ── */}
-        {tab === "meetings" && !loading && (
-          <div className="space-y-3">
-            {/* Phân loại lịch hẹn: Đã chốt (chỉ hiện khi đối tác đồng ý) vs Chờ duyệt vs Tất cả */}
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 overflow-x-auto no-scrollbar">
-              <button
-                type="button"
-                onClick={() => setMeetingSubTab("confirmed")}
-                className={`flex-1 min-w-[110px] py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0 ${
-                  meetingSubTab === "confirmed"
-                    ? "bg-[#003B95] text-white shadow-xs"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-              >
-                <CheckCircle2 className="h-3 w-3" />
-                <span>Đã chốt ({confirmedMeetingsCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMeetingSubTab("pending")}
-                className={`flex-1 min-w-[110px] py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shrink-0 ${
-                  meetingSubTab === "pending"
-                    ? "bg-[#003B95] text-white shadow-xs"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-              >
-                <Clock className="h-3 w-3" />
-                <span>Chờ duyệt ({pendingInvitesCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMeetingSubTab("all")}
-                className={`py-1.5 px-3 rounded-xl text-[11px] font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
-                  meetingSubTab === "all"
-                    ? "bg-[#003B95] text-white shadow-xs"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-              >
-                Tất cả ({meetingsList.length})
-              </button>
-            </div>
-
-            {/* Banner thông báo nếu có lời mời đang chờ phản hồi */}
-            {meetingSubTab === "confirmed" && pendingInvitesCount > 0 && (
-              <div
-                onClick={() => setMeetingSubTab("pending")}
-                className="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs cursor-pointer hover:bg-amber-500/15 transition"
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-amber-600 shrink-0 animate-pulse" />
-                  <span>
-                    Bạn có <strong>{pendingInvitesCount}</strong> lời mời gặp gỡ cần duyệt.
-                  </span>
-                </div>
-                <span className="font-bold underline text-[11px]">Xem ngay &rarr;</span>
-              </div>
-            )}
-
-            {loadingMeetings ? (
-              <div className="py-12 text-center text-[13px] text-slate-400">
-                Đang tải lịch hẹn...
-              </div>
-            ) : filteredMeetings.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 space-y-2">
-                <Handshake className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto opacity-50" />
-                <p className="text-[13px] font-medium text-slate-500">
-                  {meetingSubTab === "confirmed"
-                    ? "Chưa có lịch hẹn chính thức nào. Lịch hẹn chỉ xuất hiện khi đối tác đồng ý."
-                    : meetingSubTab === "pending"
-                      ? "Không có lời mời gặp gỡ nào đang chờ duyệt."
-                      : "Bạn chưa có lịch hẹn gặp 1-on-1 nào."}
-                </p>
-                {meetingSubTab === "confirmed" && pendingInvitesCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setMeetingSubTab("pending")}
-                    className="mt-2 text-xs font-bold text-amber-600 dark:text-amber-400 underline cursor-pointer"
-                  >
-                    Xem {pendingInvitesCount} lời mời đang chờ duyệt &rarr;
-                  </button>
-                )}
-              </div>
-            ) : (
-              filteredMeetings.map((meet) => {
-                const partnerDisplayName = (meet.isUserHost ? meet.partnerName : meet.hostName) || "Đối tác";
-                const partnerDisplayCompany = meet.isUserHost ? meet.partnerCompany : meet.hostCompany;
-                const partnerChatCode = (meet.isUserHost
-                  ? (meet.partnerCode || meet.partnerName)
-                  : (meet.hostCode || meet.hostName)) || "";
-
-                const renderStatusBadge = () => {
-                  if (meet.status === "confirmed" || meet.status === "accepted") {
-                    return (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                        <CheckCircle2 className="h-3 w-3" />
-                        <span>Đã xác nhận</span>
-                      </span>
-                    );
-                  }
-                  if (meet.status === "cancelled") {
-                    return (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
-                        <XCircle className="h-3 w-3" />
-                        <span>Đã hủy</span>
-                      </span>
-                    );
-                  }
-                  if (meet.status === "declined") {
-                    return (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30">
-                        <XCircle className="h-3 w-3" />
-                        <span>Đã từ chối</span>
-                      </span>
-                    );
-                  }
-                  return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
-                      <Clock className="h-3 w-3" />
-                      <span>Chờ phản hồi</span>
-                    </span>
-                  );
-                };
-
-                return (
-                  <div
-                    key={meet.id}
-                    className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-3.5 bg-white dark:bg-[#131a26] shadow-xs space-y-2.5"
-                  >
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {meet.venueType === "online" || (meet.venue && meet.venue.toLowerCase().startsWith("http")) || meet.onlineUrl ? (
-                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
-                            <Video className="h-2.5 w-2.5" />
-                            <span>Trực tuyến</span>
-                          </span>
-                        ) : (
-                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                            <MapPin className="h-2.5 w-2.5" />
-                            <span>Trực tiếp</span>
-                          </span>
-                        )}
-                        <span className="text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 whitespace-normal break-words">
-                          {meet.title}
-                        </span>
-                      </div>
-                      {renderStatusBadge()}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[12px] gap-2.5">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-slate-800 dark:text-slate-200 whitespace-normal break-words">
-                          {meet.isUserHost ? "Đối tác:" : "Người mời:"} {partnerDisplayName}
-                          {partnerDisplayCompany ? ` (${partnerDisplayCompany})` : ""}
-                        </p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                          <Calendar className="h-3 w-3 shrink-0 text-amber-500" />
-                          <span>{meet.date} • {meet.time}</span>
-                        </p>
-                        {meet.venueType === "online" || (meet.venue && meet.venue.toLowerCase().startsWith("http")) || meet.onlineUrl ? (
-                          <div className="mt-1 flex items-center gap-2">
-                            <a
-                              href={meet.onlineUrl || meet.venue}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[11px] font-bold hover:underline border border-blue-200 dark:border-blue-900"
-                            >
-                              <Video className="h-3 w-3" />
-                              <span>Vào phòng họp trực tuyến</span>
-                              <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
-                            </a>
-                          </div>
-                        ) : (
-                          <div className="mt-0.5">
-                            <p className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1 whitespace-normal break-words">
-                              <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
-                              <span>{meet.venue || "Văn phòng Hiệp hội CEO 1983"}</span>
-                            </p>
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(meet.venue || "Tòa nhà V-Tower Kim Mã Hà Nội")}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10.5px] text-amber-600 dark:text-amber-400 hover:underline mt-0.5"
-                            >
-                              <ExternalLink className="h-2.5 w-2.5" />
-                              <span>Xem định vị Google Maps</span>
-                            </a>
-                          </div>
-                        )}
-                        {meet.notes && (
-                          <p className="text-[11px] text-slate-400 italic mt-0.5 whitespace-normal break-words">
-                            Ghi chú: {meet.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-                        {/* Invitee pending actions */}
-                        {meet.isUserInvitee && (meet.status === "pending" || meet.status === "draft") && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleRespondMeeting(meet.id, "accept", partnerDisplayName)}
-                              className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>Đồng ý</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRespondMeeting(meet.id, "decline", partnerDisplayName)}
-                              className="px-2.5 py-1.5 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[11px] font-bold hover:bg-rose-100 transition cursor-pointer"
-                            >
-                              Từ chối
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Nhắn tin */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenChat(partnerChatCode, partnerDisplayName)}
-                          className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-[11px] font-black shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
-                        >
-                          <MessageSquare className="h-3.5 w-3.5 text-slate-950" />
-                          <span>Nhắn tin</span>
-                        </button>
-
-                        {/* Hủy lịch hẹn */}
-                        {meet.status !== "cancelled" && meet.status !== "declined" && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCancelMeetingTarget(meet);
-                              setMeetingCancelReason("");
-                            }}
-                            className="px-2 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-[10.5px] font-semibold hover:bg-rose-100 transition cursor-pointer"
-                          >
-                            Hủy hẹn
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
+        
         {/* ── TAB 4: DANH THIẾP ĐÃ QUÉT (Yêu cầu 10) ── */}
         {tab === "scanned_cards" && !loading && (
           <div className="space-y-3">

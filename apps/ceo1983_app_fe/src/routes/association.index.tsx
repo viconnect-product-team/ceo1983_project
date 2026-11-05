@@ -462,6 +462,15 @@ function Home() {
     user?.id ? `vba_opps_${user.id}` : "vba_opps",
     [user?.id]
   );
+  const [allMarketplaceProducts, setAllMarketplaceProducts] = useState<any[]>([]);
+  useEffect(() => {
+    fetchNestApi<any[]>("/products")
+      .then((res) => {
+        if (Array.isArray(res)) setAllMarketplaceProducts(res);
+      })
+      .catch(() => {});
+  }, []);
+
   const { data: products = [] } = useServerData<MyProduct[]>(
     () => fetchProducts(),
     [],
@@ -1572,10 +1581,10 @@ function Home() {
               <div className="absolute inset-x-3 bottom-3 flex items-center justify-between text-white">
                 <div>
                   <div className="text-xs font-bold text-white">
-                    📦 {products.length || 24} sản phẩm &amp; gói thầu niêm yết
+                    📦 {allMarketplaceProducts.length || products.length} sản phẩm &amp; gói thầu niêm yết
                   </div>
                   <div className="text-[11px] text-slate-300">
-                    Tổng giá trị: <span className="font-bold text-emerald-400">{totalProductsValue || "4.8 Tỷ đ"}</span>
+                    Tổng giá trị: <span className="font-bold text-emerald-400">{totalProductsValue || "0 đ"}</span>
                   </div>
                 </div>
               </div>

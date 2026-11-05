@@ -51,6 +51,16 @@ export class ConnectAppService implements OnModuleInit {
   async onModuleInit() {
     try {
       await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.landing_traffic_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          slug VARCHAR(255),
+          ip VARCHAR(100),
+          user_agent TEXT,
+          referrer TEXT,
+          device TEXT,
+          location TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_comments (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           moment_id UUID NOT NULL,
@@ -571,7 +581,7 @@ export class ConnectAppService implements OnModuleInit {
   sendConnectionRequest(userId: string, input: any) { return this.networkService.sendConnectionRequest(userId, input); }
   acceptConnection(userId: string, body: any) { return this.networkService.acceptConnection(userId, body); }
   declineConnection(userId: string, body: any) { return this.networkService.declineConnection(userId, body); }
-  cancelConnection(userId: string, connectionId: string) { return this.networkService.cancelConnection(userId, connectionId); }
+  cancelConnection(userId: string, connectionIdOrBody: any) { const body = typeof connectionIdOrBody === 'string' ? { connectionId: connectionIdOrBody } : connectionIdOrBody; return this.networkService.cancelConnection(userId, body); }
   disconnectConnection(userId: string, body: any) { return this.networkService.disconnectConnection(userId, body); }
   blockUser(userId: string, targetUserId: string) { return this.networkService.blockUser(userId, targetUserId); }
   getConnectionState(userId: string, targetUserId: string) { return this.networkService.getConnectionState(userId, targetUserId); }
@@ -2252,4 +2262,50 @@ export class ConnectAppService implements OnModuleInit {
       return [];
     }
   }
+
+  async recordLandingVisitor(data: any) {
+    try {
+      const slug = data.slug || 'ceo1983';
+      const ip = data.ip || '127.0.0.1';
+      const ua = data.userAgent || data.user_agent || '';
+      const ref = data.referrer || '';
+      const device = data.device || (ua.toLowerCase().includes('mobile') ? 'Mobile' : 'Desktop');
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.landing_traffic_logs (slug, ip, user_agent, referrer, device, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+      `, slug, ip, ua, ref, device);
+      return { success: true, message: 'Visitor logged' };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async getLandingTrafficStats() {
+    try {
+      const totalRow = await this.prisma.$queryRawUnsafe<any[]>(`SELECT COUNT(*)::int as count FROM public.landing_traffic_logs`).catch(() => [{ count: 0 }]);
+      const todayRow = await this.prisma.$queryRawUnsafe<any[]>(`SELECT COUNT(*)::int as count FROM public.landing_traffic_logs WHERE created_at >= CURRENT_DATE`).catch(() => [{ count: 0 }]);
+      const uniqueRow = await this.prisma.$queryRawUnsafe<any[]>(`SELECT COUNT(DISTINCT ip)::int as count FROM public.landing_traffic_logs`).catch(() => [{ count: 0 }]);
+      const recent = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT id, slug, ip, user_agent as "userAgent", referrer, device, created_at as "createdAt"
+        FROM public.landing_traffic_logs
+        ORDER BY created_at DESC
+        LIMIT 50
+      `).catch(() => []);
+
+      return {
+        totalVisits: Number(totalRow[0]?.count || recent.length),
+        todayVisits: Number(todayRow[0]?.count || 0),
+        uniqueVisitors: Number(uniqueRow[0]?.count || 0),
+        recentVisitors: recent,
+      };
+    } catch (err: any) {
+      return {
+        totalVisits: 0,
+        todayVisits: 0,
+        uniqueVisitors: 0,
+        recentVisitors: [],
+      };
+    }
+  }
+
 }

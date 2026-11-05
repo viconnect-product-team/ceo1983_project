@@ -67,6 +67,20 @@ export class PublicController {
   async getActiveTheme() {
     return this.connectAppService.getActiveTheme();
   }
+
+  @Post('track-visitor')
+  async trackVisitor(@Body() body: any, @Request() req: any) {
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+    return this.connectAppService.recordLandingVisitor({
+      ...body,
+      ip: String(clientIp).split(',')[0].trim(),
+      userAgent: req.headers['user-agent'] || '',
+    });
+  }
+
+  @Get('traffic-stats')
+  async getTrafficStats() {
+    return this.connectAppService.getLandingTrafficStats();
+  }
+
 }
-
-

@@ -15,6 +15,7 @@ import {
   Hourglass,
   Tag,
   Coins,
+  Share2,
 } from "lucide-react";
 import { formatDisplayDate } from "@/lib/date-format";
 
@@ -168,136 +169,64 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
           </Link>
         </div>
 
-        {/* CẢ ẢNH CÙNG PHẦN THỐNG KÊ CHUNG 1 HÀNG (ROW LAYOUT) */}
-        <div className="flex items-center gap-2 w-full">
-          {/* Ảnh biểu trưng cơ hội bên trái (gọn gàng, tỉ lệ đẹp) */}
+        {/* ── 3 THẺ CHỈ SỐ TỔNG QUAN CƠ HỘI GIAO THƯƠNG (BỎ ẢNH, BỎ BIỂU ĐỒ TRÒN) ── */}
+        <div className="grid grid-cols-3 gap-2 w-full">
+          {/* 1. Tổng chia sẻ */}
           <Link
             to="/association/opportunities"
-            className="relative size-16 sm:size-20 shrink-0 rounded-2xl overflow-hidden border border-amber-400/40 shadow-xs group cursor-pointer block"
-            title="Đến sàn cơ hội kinh doanh"
+            className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
           >
-            <img
-              src="/ceo1983_hero_cosmos_skyline.jpg"
-              alt="Cơ hội CEO 1983"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              onError={(e) => {
-                // Fallback nếu ảnh không load
-                (e.currentTarget as any).src = "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=200&auto=format&fit=crop&q=80";
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end justify-center pb-1">
-              <span className="text-[9px] font-black text-amber-300 tracking-tight">B2B DEAL</span>
+            <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+              <span className="uppercase tracking-wider">Tổng chia sẻ</span>
+              <Coins className="size-3.5 text-amber-500 shrink-0" />
+            </div>
+            <div className="mt-1.5">
+              <div className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                {displayTotalCount} <span className="text-[10px] font-medium text-slate-500">tin</span>
+              </div>
+              <div className="text-[10px] font-bold text-[#003B95] dark:text-blue-400 truncate mt-0.5">
+                {displayTotalValue}
+              </div>
             </div>
           </Link>
 
-          {/* 3 DẠNG BIỂU ĐỒ TRÒN (MINI DONUT CHARTS) TRÊN CÙNG HÀNG */}
-          <div className="flex-1 grid grid-cols-3 gap-1.5 min-w-0">
-            {/* 1. Biểu đồ tròn: SỐ LƯỢNG CƠ HỘI */}
-            <button
-              type="button"
-              onClick={() => setActiveModal("count")}
-              className="flex flex-col items-center justify-center p-1.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 hover:border-amber-400 transition active:scale-95 cursor-pointer group shadow-2xs"
-            >
-              <div className="relative size-9 sm:size-10 flex items-center justify-center">
-                <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                  {/* Background track */}
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-200 dark:text-slate-700" />
-                  {/* Green segment (Mới) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke="#10B981"
-                    strokeWidth="3.2"
-                    strokeDasharray={`${strokeGreen} ${C}`}
-                    strokeDashoffset="0"
-                  />
-                  {/* Yellow segment (Đang deal) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke="#F59E0B"
-                    strokeWidth="3.2"
-                    strokeDasharray={`${strokeYellow} ${C}`}
-                    strokeDashoffset={`${-strokeGreen}`}
-                  />
-                  {/* Red segment (Đã hết) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke="#EF4444"
-                    strokeWidth="3.2"
-                    strokeDasharray={`${strokeRed} ${C}`}
-                    strokeDashoffset={`${-(strokeGreen + strokeYellow)}`}
-                  />
-                </svg>
-                <span className="absolute text-[11px] sm:text-xs font-black text-slate-900 dark:text-white">
-                  {displayTotalCount}
-                </span>
+          {/* 2. Deal đã chốt */}
+          <Link
+            to="/association/opportunities"
+            className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
+          >
+            <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+              <span className="uppercase tracking-wider">Deal đã chốt</span>
+              <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
+            </div>
+            <div className="mt-1.5">
+              <div className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                {segmentedOpps.red.length || segmentedOpps.yellow.length || 0} <span className="text-[10px] font-medium text-slate-500">deal</span>
               </div>
-              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
-                Số lượng
-              </span>
-            </button>
-
-            {/* 2. Biểu đồ tròn: TỔNG GIÁ TRỊ */}
-            <button
-              type="button"
-              onClick={() => setActiveModal("total_value")}
-              className="flex flex-col items-center justify-center p-1.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 hover:border-amber-400 transition active:scale-95 cursor-pointer group shadow-2xs"
-            >
-              <div className="relative size-9 sm:size-10 flex items-center justify-center">
-                <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-200 dark:text-slate-700" />
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke="#003B95"
-                    strokeWidth="3.2"
-                    strokeDasharray="75 25"
-                    className="text-[#003B95] dark:text-blue-400"
-                  />
-                </svg>
-                <Coins className="absolute size-4 text-[#003B95] dark:text-amber-400" />
-              </div>
-              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
-                {displayTotalValue}
-              </span>
-            </button>
-
-            {/* 3. Biểu đồ tròn: GIÁ TRỊ ĐÃ DEAL */}
-            <button
-              type="button"
-              onClick={() => setActiveModal("deal_value")}
-              className="flex flex-col items-center justify-center p-1.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 hover:border-amber-400 transition active:scale-95 cursor-pointer group shadow-2xs"
-            >
-              <div className="relative size-9 sm:size-10 flex items-center justify-center">
-                <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-200 dark:text-slate-700" />
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke="#10B981"
-                    strokeWidth="3.2"
-                    strokeDasharray="60 40"
-                  />
-                </svg>
-                <CheckCircle2 className="absolute size-4 text-emerald-500" />
-              </div>
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 truncate max-w-full">
+              <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
                 {displayDealValue}
-              </span>
-            </button>
-          </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* 3. Tôi chia sẻ */}
+          <Link
+            to="/association/opportunities"
+            className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 transition cursor-pointer flex flex-col justify-between text-left shadow-2xs group"
+          >
+            <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
+              <span className="uppercase tracking-wider">Tôi share đi</span>
+              <Share2 className="size-3.5 text-blue-500 shrink-0" />
+            </div>
+            <div className="mt-1.5">
+              <div className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                {segmentedOpps.green.length} <span className="text-[10px] font-medium text-slate-500">tin</span>
+              </div>
+              <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate mt-0.5">
+                {displayTotalValue}
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 

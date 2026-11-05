@@ -17,6 +17,8 @@ import {
   Link2,
   ExternalLink,
   Globe,
+  Lock,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest, resolveMediaUrl } from "@/lib/api-client";
@@ -59,6 +61,7 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
   const [category, setCategory] = useState("NEWS");
   const [department, setDepartment] = useState(COMMITTEES[0]);
   const [images, setImages] = useState<string[]>([]);
+  const [privacy, setPrivacy] = useState<"public" | "friends" | "only_me">("public");
   const [uploadingImages, setUploadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -432,6 +435,51 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
               )}
             </div>
           )}
+          {/* Phạm vi hiển thị bài viết (Dạng Facebook: Công khai, Bạn bè kết nối, Chỉ mình tôi) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+              Phạm vi hiển thị <span className="text-blue-600 font-semibold">(như Facebook)</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setPrivacy("public")}
+                className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                  privacy === "public"
+                    ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Globe className="size-4" />
+                <span className="text-[11px]">Công khai</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrivacy("friends")}
+                className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                  privacy === "friends"
+                    ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Users className="size-4" />
+                <span className="text-[11px]">Bạn bè</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrivacy("only_me")}
+                className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                  privacy === "only_me"
+                    ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                <Lock className="size-4" />
+                <span className="text-[11px]">Chỉ mình tôi</span>
+              </button>
+            </div>
+          </div>
+
           {/* Category selection */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">

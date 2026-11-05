@@ -1,9 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FeedService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async checkIsAdmin(userId: string): Promise<boolean> {
+    try {
+      const u = await this.prisma.$queryRaw<any[]>`SELECT role FROM public.vione_users WHERE id::text = ${userId} LIMIT 1`.catch(() => []);
+      if (u.length > 0 && ['admin', 'superadmin', 'platform_admin'].includes(String(u[0].role).toLowerCase())) return true;
+      const m = await this.prisma.$queryRaw<any[]>`SELECT executive_role, department FROM public.members WHERE user_id::text = ${userId} OR id = ${userId} LIMIT 1`.catch(() => []);
+      if (m.length > 0) {
+        const r = String(m[0].executive_role || '').toLowerCase();
+        if (r.includes('admin') || r.includes('chủ tịch') || r.includes('thư ký')) return true;
+      }
+    } catch {}
+    return false;
+  }
 
   private async getAuthorInfo(userId: string) {
     if (!userId || userId === '00000000-0000-0000-0000-000000000000') {
@@ -89,6 +102,7 @@ export class FeedService {
         ALTER TABLE public.feed_comments ADD COLUMN IF NOT EXISTS reaction TEXT;
         ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS external_link TEXT;
         ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS shared_article JSONB;
+        ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS privacy TEXT DEFAULT 'public';
       `).catch(() => {});
 
       const check = await this.prisma.$queryRaw<any[]>`
@@ -244,6 +258,7 @@ export class FeedService {
     category?: string;
     department?: string;
     q?: string;
+    authorId?: string;
     userId?: string;
     page?: number;
     limit?: number;
@@ -270,6 +285,12 @@ export class FeedService {
     if (department) {
       queryStr += ` AND (department ILIKE $${pIdx} OR content ILIKE $${pIdx})`;
       queryParams.push(`%${department}%`);
+      pIdx++;
+    }
+
+    if (params.authorId) {
+      queryStr += ` AND (author_id = ${pIdx} OR author_name ILIKE ${pIdx})`;
+      queryParams.push(params.authorId);
       pIdx++;
     }
 
@@ -317,6 +338,7 @@ export class FeedService {
         content: p.content,
         category: p.category || 'news',
         department: p.department || null,
+        privacy: p.privacy || 'public',
         images: imgs,
         likesCount: Number(p.likes_count || 0),
         commentsCount: Number(p.comments_count || 0),
@@ -336,6 +358,7 @@ export class FeedService {
     category?: string;
     department?: string;
     images?: string[];
+    privacy?: string;
     externalLink?: string;
     sharedArticle?: any;
   }) {
@@ -348,6 +371,7 @@ export class FeedService {
     const department = data.department || null;
     const title = data.title?.trim() || null;
     const content = data.content.trim();
+    const privacy = data.privacy || 'public';
     const imgsJson = JSON.stringify(Array.isArray(data.images) ? data.images : []);
     const externalLink = data.externalLink?.trim() || null;
     const sharedArticleJson = data.sharedArticle ? JSON.stringify(data.sharedArticle) : null;
@@ -355,11 +379,11 @@ export class FeedService {
     const inserted = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.feed_posts (
         author_id, author_name, author_avatar, author_company, author_role,
-        title, content, category, department, images, external_link, shared_article,
+        title, content, category, department, images, privacy, external_link, shared_article,
         likes_count, comments_count, shares_count, created_at, updated_at
       ) VALUES (
         ${author.id}, ${author.name}, ${author.avatar}, ${author.company}, ${author.role},
-        ${title}, ${content}, ${category}, ${department}, ${imgsJson}::jsonb, ${externalLink}, ${sharedArticleJson}::jsonb,
+        ${title}, ${content}, ${category}, ${department}, ${imgsJson}::jsonb, ${privacy}, ${externalLink}, ${sharedArticleJson}::jsonb,
         0, 0, 0, NOW(), NOW()
       )
       RETURNING *
@@ -375,6 +399,7 @@ export class FeedService {
         content: p.content,
         category: p.category,
         department: p.department,
+        privacy: p.privacy || privacy,
         images: data.images || [],
         externalLink: p.external_link,
         sharedArticle: data.sharedArticle || null,
@@ -637,4 +662,58 @@ export class FeedService {
       }
     }
   }
+
+  async updatePost(userId: string, postId: string, data: {
+    title?: string;
+    content?: string;
+    category?: string;
+    department?: string;
+    images?: string[];
+    privacy?: string;
+  }) {
+    if (!postId) throw new BadRequestException('Mã bài viết không hợp lệ.');
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, author_id FROM public.feed_posts WHERE id = ${postId}::uuid LIMIT 1
+    `.catch(() => []);
+    if (existing.length === 0) throw new NotFoundException('Không tìm thấy bài viết này.');
+    const post = existing[0];
+    const isAdmin = await this.checkIsAdmin(userId);
+    if (post.author_id !== userId && !isAdmin) {
+      const authorInfo = await this.getAuthorInfo(userId);
+      if (post.author_id !== authorInfo.id) throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài viết này.');
+    }
+    const imgsJson = data.images !== undefined ? JSON.stringify(data.images) : null;
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.feed_posts
+      SET
+        title = COALESCE($1, title),
+        content = COALESCE($2, content),
+        category = COALESCE($3, category),
+        department = COALESCE($4, department),
+        privacy = COALESCE($5, privacy),
+        images = CASE WHEN $6::text IS NOT NULL THEN $6::jsonb ELSE images END,
+        updated_at = NOW()
+      WHERE id = $7::uuid
+    `, data.title || null, data.content || null, data.category || null, data.department || null, data.privacy || null, imgsJson, postId);
+    return { ok: true, message: 'Đã cập nhật bài viết thành công.' };
+  }
+
+  async deletePost(userId: string, postId: string) {
+    if (!postId) throw new BadRequestException('Mã bài viết không hợp lệ.');
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, author_id FROM public.feed_posts WHERE id = ${postId}::uuid LIMIT 1
+    `.catch(() => []);
+    if (existing.length === 0) throw new NotFoundException('Không tìm thấy bài viết này.');
+    const post = existing[0];
+    const isAdmin = await this.checkIsAdmin(userId);
+    if (post.author_id !== userId && !isAdmin) {
+      const authorInfo = await this.getAuthorInfo(userId);
+      if (post.author_id !== authorInfo.id) throw new ForbiddenException('Bạn không có quyền xóa bài viết này.');
+    }
+    await this.prisma.$executeRaw`DELETE FROM public.feed_comments WHERE post_id = ${postId}::uuid`.catch(() => {});
+    await this.prisma.$executeRaw`DELETE FROM public.feed_likes WHERE post_id = ${postId}::uuid`.catch(() => {});
+    await this.prisma.$executeRaw`DELETE FROM public.feed_posts WHERE id = ${postId}::uuid`.catch(() => {});
+    return { ok: true, message: 'Đã xóa bài viết thành công.' };
+  }
+
 }

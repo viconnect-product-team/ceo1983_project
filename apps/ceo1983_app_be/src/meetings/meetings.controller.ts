@@ -22,7 +22,7 @@ import {
   CancelMeetingDto,
 } from './dto';
 
-@Controller('meetings')
+@Controller(['meetings', 'business-connect/meetings'])
 @UseGuards(AuthGuard)
 export class MeetingsController {
   constructor(private readonly meetingsService: MeetingsService) {}

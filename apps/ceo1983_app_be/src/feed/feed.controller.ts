@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -28,6 +30,7 @@ export class FeedController {
     @Query('category') category?: string,
     @Query('department') department?: string,
     @Query('q') q?: string,
+    @Query('authorId') authorId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -36,6 +39,7 @@ export class FeedController {
       category,
       department,
       q,
+      authorId,
       userId,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 30,
@@ -53,6 +57,7 @@ export class FeedController {
       category?: string;
       department?: string;
       images?: string[];
+      privacy?: string;
     },
   ) {
     const userId = req.user?.id || req.user?.sub || 'system';
@@ -98,4 +103,26 @@ export class FeedController {
   async sharePost(@Param('id') id: string) {
     return this.feedService.sharePost(id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  async updatePost(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    const userId = req.user?.id || req.user?.sub || '';
+    return this.feedService.updatePost(userId, id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async deletePost(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
+    const userId = req.user?.id || req.user?.sub || '';
+    return this.feedService.deletePost(userId, id);
+  }
+
 }

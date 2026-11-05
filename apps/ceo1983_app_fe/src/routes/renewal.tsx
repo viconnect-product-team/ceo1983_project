@@ -298,10 +298,10 @@ function RenewalPage() {
         method: "POST",
         body: JSON.stringify({ isAuto: false }),
       });
-      toast.success(`${t("renewal.toast.reminded")} (Đã gửi email đến ${rec.member.email})`);
+      toast.success(`${t("renewal.toast.reminded")} (Đã bắn thông báo Email & Zalo OA đến ${rec.member.name})`);
     } catch (e: any) {
       await remindFn({ data: { id: cleanId, isAuto: false } });
-      toast.success(`${t("renewal.toast.reminded")} (Đã gửi email đến ${rec.member.email})`);
+      toast.success(`${t("renewal.toast.reminded")} (Đã bắn thông báo Email & Zalo OA đến ${rec.member.name})`);
     }
     await invalidateAll();
   };

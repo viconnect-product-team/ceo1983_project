@@ -1,5 +1,46 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 05/11/2026 (v10.36): Tái Cấu Trúc Toàn Diện Giao Diện Cá Nhân (Profile), Bổ Sung Quyền Riêng Tư Mạng Lưới (Facebook Style) & Menu Thao Tác Bài Viết, Tùy Biến 4 Phím Tắt Nhanh Trang Chủ Trong "Xem Tất Cả Tính Năng", Chuẩn Hóa 3 Tab Kết Nối B2B & Điều Hướng Deal Chào Giá Trực Tiếp Đến Người Đăng ([NODE-APP-001], [NODE-APP-004], [NODE-APP-007], [NODE-APP-008], [NODE-APP-014])**:
+  1. *Đại Tu Giao Diện Màn Hình Cá Nhân (`apps/ceo1983_app_fe/src/routes/association.profile.tsx`)*:
+     - Tái cấu trúc thành 2 nhóm tab chính trực quan:
+       + Nhóm 1: "Tổng quan & Bài viết" (`activeTab === "overview"`) chứa 4 thẻ KPI số liệu (Sự kiện đã tham gia, Cơ hội kết nối, Cuộc gặp B2B, Bài viết mạng lưới), Panel "Hồ sơ doanh nghiệp" đóng mở accordion, và danh sách bài viết mạng lưới do người dùng đăng tải.
+       + Nhóm 2: "Giao thương & Sự kiện" (`activeTab === "activities"`) hiển thị chi tiết các hoạt động kết nối xúc tiến và lịch trình.
+     - Hàng nút thao tác nhanh dưới ảnh đại diện:
+       + Thay thế thành 4 nút chuẩn: 1. Danh thiếp, 2. Chia sẻ, 3. Sửa hồ sơ, 4. Cài đặt (Icon Cog mở Modal "Cài đặt & Cấu hình hệ thống" gồm chủ đề CRM, tài khoản, an toàn, PWA).
+       + Loại bỏ hoàn toàn nút quét mã QR tại vị trí này (chỉ giữ nút QR ở Bottom Bar).
+     - Gộp "Giới thiệu doanh nghiệp & nhân lực" cùng "Quy mô & lĩnh vực kinh doanh" thành một Panel duy nhất mang tên **"Hồ sơ doanh nghiệp"**, hỗ trợ đóng/mở accordion mượt mà, bỏ nút sửa hồ sơ thừa bên trong để tập trung vào nút "Sửa hồ sơ" ở thanh thao tác nhanh.
+  2. *Danh Sách Bài Viết Đã Đăng Vào Mạng Lưới & Menu Thao Tác Sửa/Xóa (`association.profile.tsx`, `feed.service.ts`, `feed.controller.ts`)*:
+     - Đặt ngay bên dưới Panel "Hồ sơ doanh nghiệp" trong Nhóm 1.
+     - Tự động lấy danh sách bài viết do người dùng đăng tải với ngày tạo, hình ảnh đính kèm, tương tác và biểu tượng huy hiệu phạm vi hiển thị.
+     - Mỗi bài viết có nút menu `...` với 2 thao tác: "Chỉnh sửa bài viết" (mở modal chỉnh sửa nội dung/ảnh/phạm vi) và "Xóa bài viết" (xác nhận cảnh báo và xóa tức thời khỏi cơ sở dữ liệu).
+     - Phân quyền Backend an toàn: Chỉ tác giả bài viết hoặc Quản trị viên mới được phép thực hiện `PATCH /feed/:id` và `DELETE /feed/:id`.
+  3. *Quyền Riêng Tư Bài Viết Đăng Mạng Lưới Chuẩn Facebook (`apps/ceo1983_app_fe/src/components/feed/CreatePostModal.tsx`, `feed.service.ts`)*:
+     - Tích hợp bộ chọn phạm vi hiển thị phong cách Facebook:
+       + 🌐 **Công khai**: Mọi hội viên trên toàn bộ mạng lưới CEO 1983 đều nhìn thấy bài viết.
+       + 👥 **Bạn bè kết nối**: Chỉ những hội viên đã kết nối bạn bè thành công mới nhìn thấy.
+       + 🔒 **Chỉ mình tôi**: Bài viết ở chế độ riêng tư lưu trữ cá nhân.
+     - Dữ liệu `privacy` được lưu trữ trực tiếp vào cột `privacy` trong bảng `public.feed_posts` PostgreSQL.
+  4. *Tùy Biến 4 Phím Tắt Nhanh Trang Chủ Trong "Xem Tất Cả Tính Năng" (`apps/ceo1983_app_fe/src/components/member/AllFeaturesModal.tsx`)*:
+     - Bổ sung banner & nút bấm "⚙️ Tùy biến 4 tính năng nhanh hiển thị tại trang chủ" ngay trong Modal "Xem tất cả tính năng".
+     - Tích hợp `CustomHomeShortcutsModal` cho phép hội viên chọn đúng 4 phím tắt yêu thích để ghim trực tiếp lên trang chủ App CEO 1983, lưu vào bộ nhớ cục bộ và cập nhật tức thì.
+  5. *Khắc Phục Lỗi 404 Endpoint Cuộc Gặp B2B (`apps/ceo1983_app_be/src/meetings/meetings.controller.ts`)*:
+     - Định tuyến đa endpoint: `@Controller(['meetings', 'business-connect/meetings'])`, giải quyết triệt để lỗi `GET https://ceo1983.viconnect.vn/api/business-connect/meetings 404 (Not Found)`.
+  6. *Chuẩn Hóa 3 Tab Kết Nối B2B, Hủy Cuộc Gặp & Gửi Deal Chào Giá Đích Danh Người Đăng (`apps/ceo1983_app_fe/src/routes/association.connect.tsx`, `apps/ceo1983_app_fe/src/routes/association.opportunities.tsx`, `apps/ceo1983_app_fe/src/routes/association.products.tsx`)*:
+     - Màn hình B2B Connect (`/association/connect`) cấu hình đúng 3 tab phân loại:
+       + 1. "Cuộc gặp của tôi": Lọc sạch các cuộc gặp đã hủy/từ chối, chỉ hiển thị các cuộc gặp hợp lệ, đã xác nhận hoặc lời mời đang chờ từ đối tác.
+       + 2. "Cuộc gặp đã gửi": Hiển thị các cuộc gặp do người dùng chủ động khởi tạo. Với các cuộc gặp đang chờ phản hồi, cung cấp nút "Hủy cuộc gặp" trực quan.
+       + 3. "Cuộc gặp đã hủy": Quản lý danh sách các cuộc gặp đã bị hủy bỏ hoặc từ chối kèm huy hiệu cảnh báo màu đỏ.
+     - Khi một bên bấm "Hủy cuộc gặp": Trạng thái chuyển thành `cancelled`, người được mời/lên lịch không còn nhìn thấy cuộc gặp này trong danh sách "Cuộc gặp của tôi".
+     - Gửi Deal Chào Giá Đích Danh:
+       + Tại màn hình Chia sẻ Cơ hội (`association.opportunities.tsx`): Bấm "Deal chào giá" sẽ lấy chính xác `posterId` / `userId` của người đăng cơ hội, gọi backend `/opportunities/:id/interests` kèm thông điệp deal và bắn thông báo đích danh đến người đăng.
+       + Tại Sàn Thương Mại (`association.products.tsx`): Bấm "Deal chào giá" sẽ gửi yêu cầu báo giá đến backend `/marketplace/quotes`, hệ thống tự động nhận diện `seller_id` / `seller_user_id` và bắn thông báo trực tiếp đến người đăng sản phẩm.
+  7. *Chuyển Lịch Hẹn Khỏi Danh Bạ Hội Viên (`apps/ceo1983_app_fe/src/routes/association.members.tsx`)*:
+     - Loại bỏ tab "Lịch hẹn" khỏi danh bạ hội viên để tránh trùng lặp tính năng.
+     - Điều hướng nút "Hẹn gặp 1-1" trên thẻ hồ sơ hội viên sang trực tiếp `/association/connect` kèm thông tin đối tác prefilled.
+  8. *Kiểm Thử Chất Lượng (Strict Quality Gate)*:
+     - Backend (`apps/ceo1983_app_be`): `tsc --noEmit` đạt 0 lỗi (Exit Code 0).
+     - Frontend (`apps/ceo1983_app_fe`): Toàn bộ 6 tệp chỉnh sửa vượt qua kiểm tra TypeCheck với 0 lỗi (Exit Code 0).
+
 - **Bản cập nhật ngày 05/11/2026 (v10.35): Đại Tu Toàn Diện 5 Tính Năng Mobile App CEO 1983 - Bộ 3 Màu Sắc Nhận Diện Thương Hiệu, Real-time Handshake Quét QR Kết Nối, Trích Xuất Metadata Bài Viết Chia Sẻ Link Ngoài & Chuẩn Hóa Danh Sách Bạn Bè Cơ Hội B2B ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007], [NODE-APP-014])**:
   1. *Đại Tu Hệ Thống Màu Sắc & Khắc Phục Lỗi Theme Sáng/Tối (`apps/ceo1983_app_fe/src/lib/ceo1983-color-theme.ts`, `apps/ceo1983_app_fe/src/styles.css`)*:
      - Khắc phục lỗi mất chữ (chữ trắng trên nền trắng) khi chọn theme ở chế độ sáng bằng cách loại bỏ triệt để quy tắc recursive `color: #FFFFFF !important` trên toàn bộ selector con (`*`), chỉ áp dụng màu chữ tương phản cho nút bấm solid primary (`button.bg-primary`, `a.bg-primary`, `.vba-btn-primary`).

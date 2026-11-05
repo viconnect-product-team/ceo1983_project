@@ -3139,7 +3139,10 @@ button.bg-\[\#003b95\] *:not([class*="bg-"]) {
   color: #FFFFFF !important;
 }
 
-.text-white,
-[class*="text-white"] {
-  color: #FFFFFF !important;
+.text-white {
+  color: #FFFFFF;
+}
+
+.dark .dark\:text-white {
+  color: #FFFFFF;
 }

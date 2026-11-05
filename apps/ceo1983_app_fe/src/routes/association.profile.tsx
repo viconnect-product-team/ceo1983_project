@@ -2,6 +2,15 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Settings,
+  MoreVertical,
+  Edit3,
+  Trash2,
+  Plus,
+  Heart,
+  MessageCircle,
+  MessageSquare,
+  X,
+  Lock,
   ChevronRight,
   User,
   Building2,
@@ -48,6 +57,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { CardPreviewModal } from "@/components/member/CardPreviewModal";
+import { CreatePostModal } from "@/components/feed/CreatePostModal";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
@@ -146,7 +156,22 @@ export default function ProfileScreen() {
   const hasAdminPrivilege = isSuperAdmin;
 
   // Active tab state: Hồ sơ (about), Giao thương (friends), Cài đặt (posts)
-  const [activeTab, setActiveTab] = useState<"about" | "friends" | "posts">("about");
+  // 2 Nhóm chức năng chính (Yêu cầu 1): Tổng quan & Bài viết (overview) | Hoạt động & Giao thương (activities)
+  const [activeTab, setActiveTab] = useState<"overview" | "activities">("overview");
+  const [systemSettingsOpen, setSystemSettingsOpen] = useState(false);
+
+  // Bài viết mạng lưới của hội viên (Yêu cầu 1, 3)
+  const [myPosts, setMyPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
+
+  // Edit post states
+  const [editingPost, setEditingPost] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editPrivacy, setEditPrivacy] = useState<"public" | "friends" | "only_me">("public");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Modals state
   const [cardPreviewOpen, setCardPreviewOpen] = useState(false);
@@ -158,6 +183,88 @@ export default function ProfileScreen() {
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   // Setup 4 tính năng nhanh trang chủ (Yêu cầu 2)
+  
+  const fetchMyPosts = async () => {
+    if (!user) return;
+    setLoadingPosts(true);
+    try {
+      const res = await fetchNestApi<any[]>("/feed?limit=60").catch(() => []);
+      const allPosts = Array.isArray(res) ? res : (res as any)?.items || [];
+      const currentUserId = String(user.id || (member as any)?.userId || "").toLowerCase();
+      const currentName = String(member?.name || user?.fullName || "").toLowerCase();
+      const currentCode = String(member?.code || "").toLowerCase();
+      const mine = allPosts.filter((p: any) => {
+        const aId = String(p.author?.id || p.authorId || "").toLowerCase();
+        const aName = String(p.author?.name || p.authorName || "").toLowerCase();
+        return (currentUserId && aId === currentUserId) || 
+               (currentCode && aId === currentCode) ||
+               (currentName && aName === currentName);
+      });
+      setMyPosts(mine);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyPosts();
+  }, [user, member]);
+
+  const handleOpenEditPost = (post: any) => {
+    setEditingPost(post);
+    setEditTitle(post.title || "");
+    setEditContent(post.content || "");
+    setEditPrivacy(post.privacy || "public");
+    setActiveMenuPostId(null);
+  };
+
+  const handleSaveEditPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPost) return;
+    setSavingEdit(true);
+    try {
+      await fetchNestApi(`/feed/${editingPost.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          privacy: editPrivacy,
+        }),
+      });
+
+      setMyPosts((prev) =>
+        prev.map((p) =>
+          p.id === editingPost.id
+            ? { ...p, title: editTitle, content: editContent, privacy: editPrivacy }
+            : p
+        )
+      );
+      toast.success("Đã cập nhật bài viết thành công!");
+      setEditingPost(null);
+    } catch {
+      toast.error("Không thể cập nhật bài viết");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này khỏi mạng lưới?")) return;
+    try {
+      await fetchNestApi(`/feed/${postId}`, {
+        method: "DELETE",
+      });
+
+      setMyPosts((prev) => prev.filter((p) => p.id !== postId));
+      setActiveMenuPostId(null);
+      toast.success("Đã xóa bài viết thành công!");
+    } catch {
+      toast.error("Không thể xóa bài viết");
+    }
+  };
+
   const [customShortcutsOpen, setCustomShortcutsOpen] = useState(false);
   const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>(() => {
     if (typeof window === "undefined") return DEFAULT_SHORTCUT_IDS;
@@ -690,13 +797,13 @@ export default function ProfileScreen() {
         {/* ── 2. CARD PROFILE NỔI BẬT: ẢNH BÌA, AVATAR, THÔNG TIN VÀ 4 NÚT HÀNH ĐỘNG TINH GỌN ── */}
         <div className="w-full rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800">
           {/* Ảnh Bìa với Badge Mã và Nút Đổi Bìa */}
-          <div className="relative w-full h-40 sm:h-48 overflow-hidden bg-slate-900">
+          <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-slate-900">
             <img
               src={displayCover}
               alt="Cover Photo"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/30 pointer-events-none" />
+            <div className="absolute inset-0 bg-black/35 pointer-events-none" />
 
             {/* Mã Hội Viên */}
             <div className="absolute top-3 left-3 z-10">
@@ -720,9 +827,9 @@ export default function ProfileScreen() {
           </div>
 
           {/* Khối Thân Profile đè lên ảnh bìa */}
-          <div className="relative -mt-12 px-4 pb-4 pt-0 flex flex-col items-center text-center">
+          <div className="relative -mt-14 px-4 pb-4 pt-0 flex flex-col items-center text-center">
             {/* Avatar Tròn & Nút Đổi Avatar */}
-            <div className="relative -mt-10 sm:-mt-12 mb-2">
+            <div className="relative mb-2">
               <div className="size-22 sm:size-24 rounded-full border-4 border-white dark:border-[#0F172A] shadow-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 {resolvedAvatar && !avatarError ? (
                   <img
@@ -732,7 +839,7 @@ export default function ProfileScreen() {
                     className="size-full object-cover"
                   />
                 ) : (
-                  <div className="size-full bg-gradient-to-br from-[#003B95] to-[#001D4A] flex items-center justify-center text-white text-xl font-black">
+                  <div className="size-full bg-[#003B95] flex items-center justify-center text-white text-xl font-black">
                     {initials(displayName)}
                   </div>
                 )}
@@ -772,8 +879,7 @@ export default function ProfileScreen() {
 
             {/* (ĐÃ BỎ HOÀN TOÀN TEXT & BADGE HỘI VIÊN CHÍNH THỨC PER YÊU CẦU NGƯỜI DÙNG: "ĐÃ ĐĂNG NHẬP RỒI THÌ LÀ HỘI VIÊN RỒI") */}
 
-            {/* ── 4 NÚT HÀNH ĐỘNG TINH GỌN (LÀM NHỎ LẠI, KHÔNG ĐỂ BACKGROUND) ── */}
-            {/* ── 4 NÚT HÀNH ĐỘNG TINH GỌN DƯỚI AVATAR (YÊU CẦU 2): DANH THIẾP, CHIA SẺ, QUÉT MÃ, SỬA HỒ SƠ ── */}
+            {/* ── 4 NÚT HÀNH ĐỘNG TINH GỌN DƯỚI AVATAR (YÊU CẦU 2): DANH THIẾP, CHIA SẺ, SỬA HỒ SƠ, CÀI ĐẶT ── */}
             <div className="grid grid-cols-4 gap-1 w-full mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
               {/* Nút 1: Danh thiếp */}
               <button
@@ -797,18 +903,7 @@ export default function ProfileScreen() {
                 <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Chia sẻ</span>
               </button>
 
-              {/* Nút 3: Quét mã */}
-              <button
-                type="button"
-                onClick={() => setQrModalOpen(true)}
-                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
-                title="Mã QR hội viên"
-              >
-                <QrCode className="size-5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Quét mã</span>
-              </button>
-
-              {/* Nút 4: Sửa hồ sơ */}
+              {/* Nút 3: Sửa hồ sơ */}
               <button
                 type="button"
                 onClick={() => setEditProfileOpen(true)}
@@ -818,136 +913,126 @@ export default function ProfileScreen() {
                 <Pencil className="size-5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform" />
                 <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Sửa hồ sơ</span>
               </button>
+
+              {/* Nút 4: Cài đặt hệ thống (Yêu cầu 2: đưa vào nhóm icon dưới avatar, bỏ quét mã) */}
+              <button
+                type="button"
+                onClick={() => setSystemSettingsOpen(true)}
+                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
+                title="Cài đặt hệ thống"
+              >
+                <Cog className="size-5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Cài đặt</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* ── 3. THANH SEGMENTED TABS: HỒ SƠ | GIAO THƯƠNG | CÀI ĐẶT ── */}
+        {/* ── 3. THANH SEGMENTED TABS: 2 NHÓM CHÍNH (YÊU CẦU 1) ── */}
         <div className="w-full">
-          <div className="grid grid-cols-3 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 gap-1">
+          <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 gap-1">
             <button
               type="button"
-              onClick={() => setActiveTab("about")}
+              onClick={() => setActiveTab("overview")}
               className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "about"
+                activeTab === "overview"
                   ? "bg-[#003B95] text-white shadow-xs font-extrabold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
-              style={activeTab === "about" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
+              style={activeTab === "overview" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
             >
-              <User className={`h-3.5 w-3.5 ${activeTab === "about" ? "text-white" : ""}`} />
-              <span style={activeTab === "about" ? { color: "#ffffff" } : undefined}>Hồ sơ</span>
+              <User className={`h-3.5 w-3.5 ${activeTab === "overview" ? "text-white" : ""}`} />
+              <span style={activeTab === "overview" ? { color: "#ffffff" } : undefined}>Tổng quan &amp; Bài viết</span>
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("friends")}
+              onClick={() => setActiveTab("activities")}
               className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "friends"
+                activeTab === "activities"
                   ? "bg-[#003B95] text-white shadow-xs font-extrabold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
-              style={activeTab === "friends" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
+              style={activeTab === "activities" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
             >
-              <Briefcase className={`h-3.5 w-3.5 ${activeTab === "friends" ? "text-white" : ""}`} />
-              <span style={activeTab === "friends" ? { color: "#ffffff" } : undefined}>Giao thương</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("posts")}
-              className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "posts"
-                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-              style={activeTab === "posts" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
-            >
-              <ShieldCheck className={`h-3.5 w-3.5 ${activeTab === "posts" ? "text-white" : "text-amber-500"}`} />
-              <span style={activeTab === "posts" ? { color: "#ffffff" } : undefined}>Cài đặt &amp; Bảo mật</span>
+              <Briefcase className={`h-3.5 w-3.5 ${activeTab === "activities" ? "text-white" : ""}`} />
+              <span style={activeTab === "activities" ? { color: "#ffffff" } : undefined}>Giao thương &amp; Sự kiện</span>
             </button>
           </div>
         </div>
 
         {/* ── 4. NỘI DUNG THEO TỪNG TAB (TẤT CẢ DẠNG ĐẦU MỤC THU GỌN - BẤM VÀO MỚI MỞ RA) ── */}
 
-        {/* ── TAB 1: HỒ SƠ DOANH NHÂN (ĐÃ BỎ CARD LIÊN HỆ & KẾT NỐI TRỰC TIẾP PER YÊU CẦU 2) ── */}
-        {activeTab === "about" && (
-          <div className="w-full space-y-2.5 animate-in fade-in duration-200">
-            {/* 1.1. Đầu mục: Giới thiệu doanh nhân & năng lực */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("bio")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
-                    <FileText className="size-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Giới thiệu doanh nhân &amp; năng lực
-                    </h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                      Tiểu sử, định hướng hợp tác và tầm nhìn phát triển
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["bio"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
-                  }`}
-                />
-              </button>
+        
+        {/* ── 4. NỘI DUNG 2 NHÓM CHÍNH (YÊU CẦU 1, 2, 3) ── */}
 
-              {expandedSections["bio"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
-                    {displayBio}
-                  </p>
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setEditProfileOpen(true)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-bold transition hover:bg-amber-100 cursor-pointer"
-                    >
-                      <Pencil className="size-3" />
-                      <span>Chỉnh sửa phần giới thiệu</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+        {/* ── NHÓM 1: TỔNG QUAN, SỐ LIỆU, HỒ SƠ DOANH NGHIỆP & BÀI VIẾT MẠNG LƯỚI ── */}
+        {activeTab === "overview" && (
+          <div className="w-full space-y-3 animate-in fade-in duration-200">
+            {/* 4 Số liệu chỉ số tổng hợp (Yêu cầu 1) */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Sự kiện</span>
+                <span className="text-base font-black text-[#003B95] dark:text-blue-400 mt-0.5 block">
+                  {participatedEvents.length}
+                </span>
+              </div>
+              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Cơ hội</span>
+                <span className="text-base font-black text-amber-600 dark:text-amber-400 mt-0.5 block">
+                  {connectedOpportunities.length}
+                </span>
+              </div>
+              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Hẹn B2B</span>
+                <span className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                  {meetings1on1.length}
+                </span>
+              </div>
+              <div className="p-2.5 bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Bài viết</span>
+                <span className="text-base font-black text-blue-600 dark:text-blue-400 mt-0.5 block">
+                  {myPosts.length}
+                </span>
+              </div>
             </div>
 
-            {/* 1.2. Đầu mục: Quy mô & Lĩnh vực kinh doanh */}
+            {/* Panel Hồ sơ doanh nghiệp (Gộp Giới thiệu & Quy mô, không có nút sửa ở bio, cho phép đóng mở - Yêu cầu 2) */}
             <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
               <button
                 type="button"
-                onClick={() => toggleSection("business")}
+                onClick={() => toggleSection("business_profile")}
                 className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                    <Sparkles className="size-4" />
+                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                    <Building2 className="size-4" />
                   </div>
                   <div>
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Quy mô &amp; Lĩnh vực kinh doanh
+                      Hồ sơ doanh nghiệp
                     </h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                      {displayCompanySize} • {displayIndustry}
+                    <p className="text-[10.5px] text-slate-600 dark:text-slate-300 font-medium line-clamp-1">
+                      {displayCompany} • {displayIndustry} • {displayCompanySize}
                     </p>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["business"] ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
+                    expandedSections["business_profile"] !== false ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
                   }`}
                 />
               </button>
 
-              {expandedSections["business"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  <div className="grid grid-cols-2 gap-2">
+              {expandedSections["business_profile"] !== false && (
+                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Giới thiệu năng lực doanh nhân &amp; doanh nghiệp</div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
+                      {displayBio}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
                     <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                       <div className="text-[10px] font-bold text-slate-400 uppercase">Quy mô nhân sự</div>
                       <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
@@ -955,15 +1040,16 @@ export default function ProfileScreen() {
                       </div>
                     </div>
                     <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Lĩnh vực</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Lĩnh vực kinh doanh</div>
                       <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 truncate">
                         {displayIndustry}
                       </div>
                     </div>
                   </div>
+
                   <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Công ty trực thuộc</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Doanh nghiệp trực thuộc</div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white">{displayCompany}</div>
                     </div>
                     <Building2 className="size-4 text-slate-400" />
@@ -985,11 +1071,198 @@ export default function ProfileScreen() {
                 </div>
               )}
             </div>
+
+            {/* Dưới panel hồ sơ doanh nghiệp là phần bài viết đã đăng (Yêu cầu 3) */}
+            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                    <FileText className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                      Bài viết đã đăng vào mạng lưới
+                    </h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {myPosts.length} bài viết chia sẻ trên bảng tin CLB
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCreatePostOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
+                >
+                  <Plus className="size-3.5" />
+                  <span>Đăng bài</span>
+                </button>
+              </div>
+
+              {/* Danh sách bài viết */}
+              {loadingPosts ? (
+                <div className="py-8 flex justify-center text-slate-400">
+                  <span className="text-xs">Đang tải bài viết...</span>
+                </div>
+              ) : myPosts.length === 0 ? (
+                <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                  <FileText className="size-8 mx-auto text-slate-300 dark:text-slate-600" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Bạn chưa đăng bài viết nào vào mạng lưới CEO 1983.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCreatePostOpen(true)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>Đăng bài viết đầu tiên</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3 pt-1">
+                  {myPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2 relative"
+                    >
+                      {/* Post Header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="size-9 rounded-full bg-[#003B95] overflow-hidden shrink-0">
+                            {post.author?.avatar ? (
+                              <img
+                                src={resolveMediaUrl(post.author.avatar) || post.author.avatar}
+                                alt={post.author.name}
+                                className="size-full object-cover"
+                              />
+                            ) : (
+                              <div className="size-full flex items-center justify-center text-white text-xs font-bold">
+                                {initials(post.author?.name || displayName)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                              {post.author?.name || displayName}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                              <span>
+                                {new Date(post.createdAt).toLocaleDateString("vi-VN", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                })}
+                              </span>
+                              <span>•</span>
+                              {/* Privacy Badge (như Facebook - Yêu cầu 1) */}
+                              <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
+                                {post.privacy === "friends" ? (
+                                  <>
+                                    <Users className="size-3 text-blue-500" />
+                                    <span>Bạn bè kết nối</span>
+                                  </>
+                                ) : post.privacy === "only_me" ? (
+                                  <>
+                                    <Lock className="size-3 text-amber-500" />
+                                    <span>Chỉ mình tôi</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Globe className="size-3 text-emerald-500" />
+                                    <span>Công khai</span>
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Menu ... có Chỉnh sửa và Xóa (Yêu cầu 1) */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)
+                            }
+                            className="size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 cursor-pointer transition"
+                            title="Tùy chọn bài viết"
+                          >
+                            <MoreVertical className="size-4" />
+                          </button>
+
+                          {activeMenuPostId === post.id && (
+                            <div
+                              className="absolute right-0 top-8 z-20 w-36 py-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditPost(post)}
+                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Edit3 className="size-3.5 text-blue-600" />
+                                <span>Chỉnh sửa</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePost(post.id)}
+                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Trash2 className="size-3.5" />
+                                <span>Xóa bài viết</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Title & Content */}
+                      {post.title && (
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                          {post.title}
+                        </h4>
+                      )}
+                      <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
+                        {post.content}
+                      </p>
+
+                      {/* Images */}
+                      {Array.isArray(post.images) && post.images.length > 0 && (
+                        <div className={`grid gap-1.5 pt-1 ${post.images.length === 1 ? "grid-cols-1" : post.images.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                          {post.images.slice(0, 3).map((imgUrl: string, i: number) => (
+                            <img
+                              key={i}
+                              src={resolveMediaUrl(imgUrl) || imgUrl}
+                              alt="Post attach"
+                              className="rounded-xl w-full h-28 object-cover border border-slate-200/80 dark:border-slate-700"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Footer Stats */}
+                      <div className="flex items-center gap-4 pt-1.5 text-[11px] text-slate-400 font-medium border-t border-slate-200/60 dark:border-slate-700/60">
+                        <span className="flex items-center gap-1">
+                          <Heart className="size-3 text-rose-500 fill-rose-500" />
+                          <span>{post.likesCount || 0}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="size-3 text-blue-500" />
+                          <span>{post.commentsCount || 0}</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
+        {/* ── NHÓM 2: GIAO THƯƠNG & SỰ KIỆN ── */}
         {/* ── TAB 2: GIAO THƯƠNG B2B (TỐI GIẢN CHUẨN 3 MÀU CEO 1983: ĐỎ BÃ TRẦU - VÀNG KIM - XANH NAVY) ── */}
-        {activeTab === "friends" && (
+        {activeTab === "activities" && (
           <div className="w-full space-y-2.5 animate-in fade-in duration-200">
             {/* 2.1. Đầu mục: Sự kiện đã tham gia */}
             <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-100 dark:border-slate-800/60 overflow-hidden shadow-2xs">
@@ -1427,10 +1700,171 @@ export default function ProfileScreen() {
             </div>
           </div>
         )}
+      </div>
 
-        {/* ── TAB 3: CÀI ĐẶT & BẢO MẬT (CHỦ ĐỀ & 4 TÍNH NĂNG NHANH ĐƯỢC ĐƯA VÀO ĐÂY PER YÊU CẦU 2) ── */}
-        {activeTab === "posts" && (
-          <div className="w-full space-y-2.5 animate-in fade-in duration-200">
+      {/* ── MODAL CHỈNH SỬA BÀI VIẾT (YÊU CẦU 1) ── */}
+      {editingPost && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setEditingPost(null)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">
+                Chỉnh sửa bài viết
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingPost(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPost} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Tiêu đề (tùy chọn)
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Tiêu đề bài viết..."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#003B95]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Nội dung bài viết (*)
+                </label>
+                <textarea
+                  rows={4}
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  placeholder="Nội dung bài viết..."
+                  required
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#003B95] resize-none"
+                />
+              </div>
+
+              {/* Phạm vi hiển thị (Facebook-style) */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Phạm vi hiển thị (như Facebook)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditPrivacy("public")}
+                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                      editPrivacy === "public"
+                        ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
+                        : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <Globe className="size-3.5" />
+                    <span className="text-[10.5px]">Công khai</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPrivacy("friends")}
+                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                      editPrivacy === "friends"
+                        ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
+                        : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <Users className="size-3.5" />
+                    <span className="text-[10.5px]">Bạn bè</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPrivacy("only_me")}
+                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+                      editPrivacy === "only_me"
+                        ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
+                        : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <Lock className="size-3.5" />
+                    <span className="text-[10.5px]">Chỉ mình tôi</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingPost(null)}
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {savingEdit ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL ĐĂNG BÀI VIẾT VÀO MẠNG LƯỚI (YÊU CẦU 1, 3) ── */}
+      <CreatePostModal
+        isOpen={createPostOpen}
+        onClose={() => setCreatePostOpen(false)}
+        onSuccess={(newPost) => {
+          setMyPosts((prev) => [newPost, ...prev]);
+        }}
+      />
+
+      {/* ── MODAL CÀI ĐẶT HỆ THỐNG (ĐƯA VÀO ICON CÀI ĐẶT DƯỚI AVATAR - YÊU CẦU 2) ── */}
+      {systemSettingsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150 overflow-hidden"
+          onClick={() => setSystemSettingsOpen(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[90vh] bg-white dark:bg-[#0F172A] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-gradient-to-r from-blue-50/50 via-white to-amber-50/30 dark:from-slate-900 dark:to-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-xl bg-[#003B95] text-white grid place-items-center shadow-xs">
+                  <Cog className="size-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">
+                    Cài đặt &amp; Cấu hình hệ thống
+                  </h3>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                    Nhận diện thương hiệu, tiện ích và an toàn tài khoản
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSystemSettingsOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Settings Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:none]">
+              
             {/* 3.1. Đầu mục: Chủ đề giao diện CLB (Đồng bộ CRM - Yêu cầu 2) */}
             <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
               <button
@@ -1451,7 +1885,7 @@ export default function ProfileScreen() {
                         ĐỒNG BỘ CRM
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
                       Cấu hình nhận diện thương hiệu bởi Ban Điều Hành
                     </p>
                   </div>
@@ -1465,7 +1899,7 @@ export default function ProfileScreen() {
 
               {expandedSections["theme_crm"] && (
                 <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
-                  <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-50 to-amber-500/5 dark:from-slate-800/40 dark:to-amber-950/20 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="size-9 rounded-lg flex items-center justify-center text-xl bg-white dark:bg-slate-900 shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0">
                         {activeTheme.iconEmoji || "👑"}
@@ -1542,7 +1976,7 @@ export default function ProfileScreen() {
                         {selectedShortcuts.length}/4 CHỌN
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
                       Tùy biến các lối tắt tiện ích hiển thị ở màn hình chính
                     </p>
                   </div>
@@ -1605,7 +2039,7 @@ export default function ProfileScreen() {
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cài đặt hệ thống
                     </h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
                       Ngôn ngữ, Giao diện sáng/tối, Trợ lý AI và Thông báo đẩy
                     </p>
                   </div>
@@ -1781,7 +2215,7 @@ export default function ProfileScreen() {
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cài đặt ứng dụng PWA / Mobile App
                     </h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
                       Cài ứng dụng lên màn hình chính điện thoại
                     </p>
                   </div>
@@ -1798,7 +2232,7 @@ export default function ProfileScreen() {
                   <button
                     type="button"
                     onClick={handleFastInstallApp}
-                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:brightness-105 transition cursor-pointer text-left"
+                    className="w-full p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:brightness-105 transition cursor-pointer text-left"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="size-8 rounded-xl bg-[#003B95] text-white grid place-items-center shrink-0 shadow-xs">
@@ -1834,7 +2268,7 @@ export default function ProfileScreen() {
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                       Hỗ trợ Ban Thư Ký &amp; Cẩm nang App
                     </h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
                       Hotline: 098.333.1983 • banthuky@ceo1983.vn
                     </p>
                   </div>
@@ -1927,7 +2361,7 @@ export default function ProfileScreen() {
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
                       Bảo mật tài khoản &amp; Đổi mật khẩu
                     </h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
                       Quản lý mật khẩu, email và an toàn thông tin
                     </p>
                   </div>
@@ -1958,8 +2392,9 @@ export default function ProfileScreen() {
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
+    )}
 
       {/* Modal Cài đặt 4 tính năng nhanh trang chủ (Yêu cầu 2) */}
       <CustomHomeShortcutsModal

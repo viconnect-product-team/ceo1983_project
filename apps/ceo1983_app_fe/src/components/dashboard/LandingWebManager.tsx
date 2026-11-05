@@ -22,6 +22,8 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Activity,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -52,6 +54,7 @@ export interface LandingBenefitItem {
 export interface LandingWebConfig {
   // 1. Nhận diện & thương hiệu
   customDomain?: string;
+  subdomain?: string;
   showDomainBanner?: boolean;
   watermarkUrl?: string;
   watermarkOpacity?: number; // 0-100%
@@ -116,6 +119,7 @@ export const DEFAULT_LANDING_CONFIG: LandingWebConfig = {
   brandPrimary: "#003B95",
   isPublished: true,
   customDomain: "ceo1983.vn",
+  subdomain: "ceo1983",
   showDomainBanner: true,
   watermarkUrl: "/ceo1983-emblem-8.png",
   watermarkOpacity: 12,
@@ -186,7 +190,7 @@ export const DEFAULT_LANDING_CONFIG: LandingWebConfig = {
   youtubeUrl: "https://youtube.com/@ceo1983",
 };
 
-export function LandingWebManager() {
+export function LandingWebManager({ onSwitchTab }: { onSwitchTab?: (tab: string) => void } = {}) {
   const fetchActive = useServerFn(getActiveAssociationFn);
   const fetchBranding = useServerFn(getAssociationBrandingFn);
   const saveBranding = useServerFn(updateAssociationBrandingFn);
@@ -339,7 +343,7 @@ export function LandingWebManager() {
             <Layout className="size-5 text-[#003B95] dark:text-blue-400" />
             <span>Quản Lý Landing Web (Trang Giới Thiệu Công Khai)</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-700 dark:text-slate-200 mt-1">
             Thiết lập dynamic toàn diện: Hero banner, thông số ấn tượng, quyền lợi hội viên, SEO và thông tin liên hệ.
           </p>
         </div>
@@ -358,7 +362,7 @@ export function LandingWebManager() {
           <button
             type="button"
             onClick={handleReset}
-            className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-600 dark:text-slate-300 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
           >
             <RotateCcw className="size-3.5" />
             <span>Mặc định</span>
@@ -373,6 +377,102 @@ export function LandingWebManager() {
             <Save className="size-3.5 text-slate-950" />
             <span>{saving ? "Đang lưu..." : "Lưu & Xuất Bản"}</span>
           </button>
+        </div>
+      </div>
+
+      
+      {/* ── CẤU HÌNH SUBDOMAIN & LANDING PAGE DYNAMIC ── */}
+      <div className="bg-blue-50/80 dark:bg-slate-900/90 p-5 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#003B95] text-white">
+                Dynamic Subdomain URL
+              </span>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse inline-block" /> Đang hoạt động
+              </span>
+            </div>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+              Cấu hình Tên miền con Landing Page &amp; Tự động định tuyến
+            </h4>
+            <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5 font-medium">
+              Khi khách hàng truy cập vào URL Subdomain, hệ thống tự động nhận diện thiết bị, IP, Referrer và ghi nhận vào <strong className="text-[#003B95] dark:text-blue-400">Quản lý lượng truy cập</strong>.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {onSwitchTab && (
+              <button
+                type="button"
+                onClick={() => onSwitchTab("traffic")}
+                className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 text-[#003B95] dark:text-blue-300 hover:bg-blue-50 text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition"
+              >
+                <Activity className="size-3.5 text-blue-600" />
+                <span>Xem Quản lý lượng truy cập</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800/80 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div>
+            <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1">
+              Định danh Subdomain tùy chỉnh *
+            </label>
+            <div className="flex items-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+              <span className="px-3 text-xs font-semibold text-slate-600 dark:text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 py-2">
+                https://
+              </span>
+              <input
+                type="text"
+                value={config.subdomain || "ceo1983"}
+                onChange={(e) => {
+                  const clean = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                  setConfig({ ...config, subdomain: clean });
+                }}
+                placeholder="ceo1983"
+                className="w-full h-9 px-2 text-xs font-bold text-[#003B95] dark:text-blue-400 bg-transparent outline-none"
+              />
+              <span className="px-3 text-xs font-semibold text-slate-600 dark:text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-l border-slate-300 dark:border-slate-700 py-2">
+                .ceo1983.vn
+              </span>
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1">
+              Đường dẫn truy cập động được tạo tự động
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-9 px-3 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-700 flex items-center overflow-x-auto shadow-xs">
+                <span className="text-[#003B95] dark:text-blue-400">{typeof window !== 'undefined' ? window.location.origin : 'https://ceo1983.vn'}/h/{config.subdomain || 'ceo1983'}</span>
+                <span className="mx-2 text-slate-600 dark:text-slate-300 font-normal">|</span>
+                <span className="text-slate-600 dark:text-slate-600 dark:text-slate-300 font-normal">https://{config.subdomain || 'ceo1983'}.ceo1983.vn</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = (typeof window !== 'undefined' ? window.location.origin : 'https://ceo1983.vn') + '/h/' + (config.subdomain || 'ceo1983');
+                  navigator.clipboard.writeText(url);
+                  toast.success(`Đã sao chép link Landing Page: ${url}`);
+                }}
+                className="px-3 h-9 rounded-xl bg-[#003B95] hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition shadow-xs cursor-pointer"
+              >
+                <Copy className="size-3.5" />
+                <span>Sao chép URL</span>
+              </button>
+              <a
+                href={`/h/${config.subdomain || 'ceo1983'}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 h-9 rounded-xl border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 hover:bg-blue-50 text-[#003B95] dark:text-blue-300 text-xs font-bold flex items-center gap-1.5 shrink-0 transition cursor-pointer"
+              >
+                <ExternalLink className="size-3.5" />
+                <span>Mở Landing Page</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -396,7 +496,7 @@ export function LandingWebManager() {
               className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer ${
                 isSelected
                   ? "bg-[#003B95] text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800"
+                  : "text-slate-600 dark:text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800"
               }`}
             >
               <Icon className="size-3.5" />
@@ -496,7 +596,7 @@ export function LandingWebManager() {
                       <Globe className="size-4 text-[#003B95] dark:text-blue-400" />
                       Gắn Tên Miền Riêng (Custom Domain) &amp; Chứng Chỉ SSL
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-slate-700 dark:text-slate-200">
                       Gắn tên miền định danh thương hiệu độc quyền cho landing web (VD: ceo1983.vn hoặc clbceo1983.hanoiba.vn)
                     </div>
                   </div>
@@ -536,7 +636,7 @@ export function LandingWebManager() {
                     <ImageIcon className="size-4 text-[#003B95] dark:text-blue-400" />
                     Cấu Hình Ảnh Chìm (Watermark / Brand Pattern Phủ Toàn Trang)
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[11px] text-slate-700 dark:text-slate-200">
                     Tự động tạo dấu ấn nhận diện chìm cho landing page bảo vệ bản quyền và nhận diện CLB
                   </div>
                 </div>
@@ -591,7 +691,7 @@ export function LandingWebManager() {
                   <div className="text-xs font-bold text-slate-900 dark:text-white">
                     Trạng Thái Xuất Bản Landing Web
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[11px] text-slate-700 dark:text-slate-200">
                     Bật để cho phép công chúng và khách vãng lai truy cập xem trang giới thiệu CLB
                   </div>
                 </div>
@@ -689,7 +789,7 @@ export function LandingWebManager() {
                         className={`flex-1 h-full rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition ${
                           (config.heroTextAlign || "left") === "left"
                             ? "bg-[#003B95] text-white"
-                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "text-slate-600 dark:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
                       >
                         <AlignLeft className="size-3.5" /> Trái
@@ -700,7 +800,7 @@ export function LandingWebManager() {
                         className={`flex-1 h-full rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition ${
                           config.heroTextAlign === "center"
                             ? "bg-[#003B95] text-white"
-                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "text-slate-600 dark:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
                       >
                         <AlignCenter className="size-3.5" /> Giữa
@@ -711,7 +811,7 @@ export function LandingWebManager() {
                         className={`flex-1 h-full rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition ${
                           config.heroTextAlign === "right"
                             ? "bg-[#003B95] text-white"
-                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "text-slate-600 dark:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
                       >
                         <AlignRight className="size-3.5" /> Phải
@@ -839,7 +939,7 @@ export function LandingWebManager() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-200 mb-1">
                         Giá Trị (VD: 500+)
                       </label>
                       <input
@@ -850,7 +950,7 @@ export function LandingWebManager() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-200 mb-1">
                         Tên Chỉ Số
                       </label>
                       <input
@@ -863,7 +963,7 @@ export function LandingWebManager() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-200 mb-1">
                       Mô Tả Phụ
                     </label>
                     <input
@@ -917,7 +1017,7 @@ export function LandingWebManager() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-200 mb-1">
                       Tiêu Đề Đặc Quyền
                     </label>
                     <input
@@ -929,7 +1029,7 @@ export function LandingWebManager() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-200 mb-1">
                       Mô Tả Chi Tiết Đặc Quyền
                     </label>
                     <textarea

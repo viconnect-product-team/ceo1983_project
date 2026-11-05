@@ -821,22 +821,32 @@ export class ConnectNetworkService {
   }
 
   async sendConnectionRequest(userId: string, body: any) {
-    let targetUserId = body.targetUserId || body.target_user_id || body.targetPersonNodeId || body.memberCode || body.memberId;
+    let targetUserId = body.targetUserId || body.target_user_id || body.targetPersonNodeId || body.memberCode || body.targetMemberCode || body.memberId || body.code;
     if (targetUserId && String(targetUserId).startsWith('u:')) {
       targetUserId = String(targetUserId).substring(2);
     }
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId || ''));
-    if (!isUuid && targetUserId) {
-      const memRows = await this.prisma.$queryRaw<any[]>`
-        SELECT user_id FROM public.members 
-        WHERE LOWER(code) = LOWER(${String(targetUserId)}) 
-           OR LOWER(code) = LOWER(${String(targetUserId).replace(/^CEO1983-/i, '')})
-           OR id::text = ${String(targetUserId)} LIMIT 1
-      `.catch(() => []);
-      if (memRows[0]?.user_id) {
-        targetUserId = memRows[0].user_id;
-      }
+
+    // Resolve targetUserId to true user_id in auth.users
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, user_id FROM public.members 
+      WHERE user_id::text = ${String(targetUserId)} 
+         OR id::text = ${String(targetUserId)} 
+         OR LOWER(code) = LOWER(${String(targetUserId)}) 
+         OR LOWER(code) = LOWER(${String(targetUserId).replace(/^CEO1983-/i, '')})
+      LIMIT 1
+    `.catch(() => []);
+    if (memRows[0]?.user_id) {
+      targetUserId = memRows[0].user_id;
     }
+
+    // Resolve sender userId to true auth.users id
+    const senderRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, user_id FROM public.members WHERE user_id::text = ${String(userId)} OR id::text = ${String(userId)} LIMIT 1
+    `.catch(() => []);
+    if (senderRows[0]?.user_id) {
+      userId = senderRows[0].user_id;
+    }
+
     if (!targetUserId) {
       throw new Error('targetUserId is required');
     }
@@ -1113,50 +1123,137 @@ export class ConnectNetworkService {
 
   async acceptConnection(userId: string, body: any) {
     const now = new Date();
-    const connRows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, requester_user_id FROM public.user_connections
-      WHERE (id = ${body.connectionId}::uuid OR id IN (
-        SELECT source_record_id::uuid FROM public.business_notifications WHERE id = ${body.connectionId}::uuid AND source_record_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-        UNION
-        SELECT ref_id::uuid FROM public.member_notifications WHERE id = ${body.connectionId}::uuid AND ref_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-      )) AND recipient_user_id = ${userId}::uuid
-      LIMIT 1
+    // Resolve recipient userId to auth.users id
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT user_id FROM public.members WHERE user_id::text = ${String(userId)} OR id::text = ${String(userId)} LIMIT 1
     `.catch(() => []);
-    const actualConnId = connRows[0]?.id || body.connectionId;
-    const requesterUserId = connRows[0]?.requester_user_id;
+    const resolvedUserId = memRows[0]?.user_id || userId;
 
-    await this.prisma.$executeRaw`
-      UPDATE public.user_connections
-      SET status = 'accepted'::public.global_connection_status, responded_at = ${now}, updated_at = ${now}
-      WHERE id = ${actualConnId}::uuid AND recipient_user_id = ${userId}::uuid
-    `;
+    const rawConnId = body.connectionId || body.requestId || body.id;
+    let targetUserId = body.requesterUserId || body.targetUserId || body.memberCode;
+    if (targetUserId) {
+      const tRows = await this.prisma.$queryRaw<any[]>`
+        SELECT user_id FROM public.members WHERE user_id::text = ${String(targetUserId)} OR id::text = ${String(targetUserId)} OR LOWER(code) = LOWER(${String(targetUserId)}) LIMIT 1
+      `.catch(() => []);
+      if (tRows[0]?.user_id) targetUserId = tRows[0].user_id;
+    }
 
-    // Cập nhật trạng thái 'accepted' trực tiếp vào thông báo của người nhận
-    await this.prisma.$executeRaw`
-      UPDATE public.business_notifications
-      SET safe_display_data = jsonb_set(
-        COALESCE(safe_display_data, '{}'::jsonb),
-        '{connectionStatus}',
-        '"accepted"'::jsonb
-      ),
-      read_at = COALESCE(read_at, ${now}),
-      updated_at = ${now}
-      WHERE (source_record_id = ${actualConnId}::text OR id = ${body.connectionId}::uuid OR (safe_display_data->>'connectionId') = ${actualConnId}::text)
-        AND recipient_user_id = ${userId}::uuid
-    `.catch(() => {});
+    const isConnUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(rawConnId || ''));
 
-    await this.prisma.$executeRaw`
-      UPDATE public.member_notifications
-      SET read = true
-      WHERE (ref_id = ${actualConnId}::text OR id = ${body.connectionId}::uuid)
-    `.catch(() => {});
+    let connRows: any[] = [];
+    if (isConnUuid) {
+      connRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, requester_user_id, recipient_user_id FROM public.user_connections
+        WHERE id = ${rawConnId}::uuid
+        LIMIT 1
+      `.catch(() => []);
+    }
 
-    // Phát sự kiện realtime cho người nhận (để UI đổi ngay thành Đã kết nối)
+    // Fallback if not found by UUID: search pending request between the two users
+    if (connRows.length === 0 && targetUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId))) {
+      connRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, requester_user_id, recipient_user_id FROM public.user_connections
+        WHERE (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${resolvedUserId}::uuid)
+           OR (requester_user_id = ${resolvedUserId}::uuid AND recipient_user_id = ${targetUserId}::uuid)
+        ORDER BY created_at DESC LIMIT 1
+      `.catch(() => []);
+    }
+
+    // Fallback: search by notification record
+    if (connRows.length === 0 && isConnUuid) {
+      connRows = await this.prisma.$queryRaw<any[]>`
+        SELECT source_record_id as id, recipient_user_id FROM public.business_notifications
+        WHERE id = ${rawConnId}::uuid LIMIT 1
+      `.catch(() => []);
+      if (connRows[0]?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(connRows[0].id))) {
+        connRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, requester_user_id, recipient_user_id FROM public.user_connections WHERE id = ${connRows[0].id}::uuid LIMIT 1
+        `.catch(() => []);
+      }
+    }
+
+    let actualConnId = connRows[0]?.id;
+    let requesterUserId = connRows[0]?.requester_user_id || targetUserId;
+
+    if (!actualConnId) {
+      actualConnId = crypto.randomUUID();
+      if (requesterUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(requesterUserId))) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, responded_at, created_at, updated_at)
+          VALUES (${actualConnId}::uuid, ${requesterUserId}::uuid, ${resolvedUserId}::uuid, 'accepted'::public.global_connection_status, 'qr_scan'::public.global_connection_source_type, ${now}, ${now}, ${now}, ${now})
+          ON CONFLICT (id) DO UPDATE SET status = 'accepted'::public.global_connection_status, responded_at = ${now}, updated_at = ${now}
+        `.catch(() => {});
+      }
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE public.user_connections
+        SET status = 'accepted'::public.global_connection_status, responded_at = ${now}, updated_at = ${now}
+        WHERE id = ${actualConnId}::uuid
+      `;
+    }
+
+    // Safely update business_notifications
+    try {
+      if (actualConnId) {
+        await this.prisma.$executeRaw`
+          UPDATE public.business_notifications
+          SET safe_display_data = jsonb_set(
+            COALESCE(safe_display_data, '{}'::jsonb),
+            '{connectionStatus}',
+            '"accepted"'::jsonb
+          ),
+          read_at = COALESCE(read_at, ${now}),
+          updated_at = ${now}
+          WHERE source_record_id = ${actualConnId}::text
+             OR (safe_display_data->>'connectionId') = ${actualConnId}::text
+        `.catch(() => {});
+      }
+      if (isConnUuid) {
+        await this.prisma.$executeRaw`
+          UPDATE public.business_notifications
+          SET safe_display_data = jsonb_set(
+            COALESCE(safe_display_data, '{}'::jsonb),
+            '{connectionStatus}',
+            '"accepted"'::jsonb
+          ),
+          read_at = COALESCE(read_at, ${now}),
+          updated_at = ${now}
+          WHERE id = ${rawConnId}::uuid
+        `.catch(() => {});
+      }
+    } catch {}
+
+    // Safely update member_notifications
+    try {
+      if (actualConnId) {
+        await this.prisma.$executeRaw`
+          UPDATE public.member_notifications
+          SET read = true
+          WHERE ref_id = ${actualConnId}::text
+        `.catch(() => {});
+      }
+      if (isConnUuid) {
+        await this.prisma.$executeRaw`
+          UPDATE public.member_notifications
+          SET read = true
+          WHERE id = ${rawConnId}::uuid
+        `.catch(() => {});
+      }
+    } catch {}
+
+    // Emit realtime event
     this.gateway.server?.to(`user:${userId}`).emit('notification:updated', {
       connectionId: actualConnId,
       connectionStatus: 'accepted',
       timestamp: now.toISOString(),
     });
+    if (resolvedUserId !== userId) {
+      this.gateway.server?.to(`user:${resolvedUserId}`).emit('notification:updated', {
+        connectionId: actualConnId,
+        connectionStatus: 'accepted',
+        timestamp: now.toISOString(),
+      });
+    }
 
     if (requesterUserId) {
       try {
@@ -1367,30 +1464,59 @@ export class ConnectNetworkService {
   }
 
   async cancelConnection(userId: string, body: any) {
-    const connRows = await this.prisma.$queryRaw<any[]>`
-      SELECT recipient_user_id FROM public.user_connections
-      WHERE id = ${body.connectionId}::uuid AND requester_user_id = ${userId}::uuid
-      LIMIT 1
+    const b = typeof body === 'string' ? { connectionId: body } : (body || {});
+    const connId = b.connectionId || b.requestId || b.id;
+    let targetUserId = b.targetUserId || b.target_user_id || b.counterpartUserId || b.memberCode;
+
+    // Resolve user IDs
+    const senderRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, user_id FROM public.members WHERE user_id::text = ${String(userId)} OR id::text = ${String(userId)} LIMIT 1
     `.catch(() => []);
-    const recipientUserId = connRows[0]?.recipient_user_id;
+    const resolvedUserId = senderRows[0]?.user_id || userId;
 
-    await this.prisma.$executeRaw`
-      DELETE FROM public.user_connections
-      WHERE id = ${body.connectionId}::uuid AND requester_user_id = ${userId}::uuid
-    `;
+    if (targetUserId) {
+      const targetRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, user_id FROM public.members 
+        WHERE user_id::text = ${String(targetUserId)} OR id::text = ${String(targetUserId)} OR LOWER(code) = LOWER(${String(targetUserId)}) LIMIT 1
+      `.catch(() => []);
+      if (targetRows[0]?.user_id) targetUserId = targetRows[0].user_id;
+    }
 
-    // Mark notification as cancelled in public.business_notifications
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(connId || ''));
+
+    let deletedRows: any[] = [];
+    if (isUuid) {
+      deletedRows = await this.prisma.$queryRaw<any[]>`
+        DELETE FROM public.user_connections
+        WHERE id = ${connId}::uuid AND (requester_user_id = ${resolvedUserId}::uuid OR recipient_user_id = ${resolvedUserId}::uuid)
+        RETURNING id, recipient_user_id, requester_user_id
+      `.catch(() => []);
+    }
+
+    if (deletedRows.length === 0 && targetUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId))) {
+      deletedRows = await this.prisma.$queryRaw<any[]>`
+        DELETE FROM public.user_connections
+        WHERE (requester_user_id = ${resolvedUserId}::uuid AND recipient_user_id = ${targetUserId}::uuid AND status = 'pending'::public.global_connection_status)
+           OR (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${resolvedUserId}::uuid AND status = 'pending'::public.global_connection_status)
+        RETURNING id, recipient_user_id, requester_user_id
+      `.catch(() => []);
+    }
+
+    const recipientUserId = deletedRows[0]?.recipient_user_id || targetUserId;
     const now = new Date();
-    await this.prisma.$executeRaw`
-      UPDATE public.business_notifications
-      SET status = 'cancelled', updated_at = ${now}
-      WHERE source_record_id = ${body.connectionId}
-    `.catch(() => {});
+
+    if (isUuid) {
+      await this.prisma.$executeRaw`
+        UPDATE public.business_notifications
+        SET status = 'cancelled', updated_at = ${now}
+        WHERE source_record_id = ${connId}
+      `.catch(() => {});
+    }
 
     if (recipientUserId) {
       try {
         this.gateway.server?.to(`user:${recipientUserId}`).emit('connection:cancelled', {
-          connectionId: body.connectionId,
+          connectionId: connId,
           timestamp: now.toISOString(),
         });
       } catch (e) {
@@ -2171,30 +2297,44 @@ export class ConnectNetworkService {
   }
 
   async listIncomingRequests(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, user_id FROM public.members WHERE user_id::text = ${String(userId)} OR id::text = ${String(userId)} LIMIT 1
+    `.catch(() => []);
+    const resolvedUserId = memRows[0]?.user_id || userId;
+
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, requester_user_id, recipient_user_id as target_user_id, status, created_at
       FROM public.user_connections
-      WHERE recipient_user_id = ${userId}::uuid AND status = 'pending'::public.global_connection_status
+      WHERE recipient_user_id = ${resolvedUserId}::uuid AND status = 'pending'::public.global_connection_status
       ORDER BY created_at DESC
     `.catch(() => []);
     return rows.map(r => ({
       id: r.id,
+      requesterUserId: r.requester_user_id,
       counterpartUserId: r.requester_user_id,
+      recipientUserId: r.target_user_id,
       status: r.status,
       createdAt: r.created_at,
     }));
   }
 
   async listOutgoingRequests(userId: string) {
+    const memRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, user_id FROM public.members WHERE user_id::text = ${String(userId)} OR id::text = ${String(userId)} LIMIT 1
+    `.catch(() => []);
+    const resolvedUserId = memRows[0]?.user_id || userId;
+
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, requester_user_id, recipient_user_id as target_user_id, status, created_at
       FROM public.user_connections
-      WHERE requester_user_id = ${userId}::uuid AND status = 'pending'::public.global_connection_status
+      WHERE requester_user_id = ${resolvedUserId}::uuid AND status = 'pending'::public.global_connection_status
       ORDER BY created_at DESC
     `.catch(() => []);
     return rows.map(r => ({
       id: r.id,
       counterpartUserId: r.target_user_id,
+      recipientUserId: r.target_user_id,
+      requesterUserId: r.requester_user_id,
       status: r.status,
       createdAt: r.created_at,
     }));

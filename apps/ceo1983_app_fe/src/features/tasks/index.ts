@@ -9,3 +9,4 @@ export * from './components/TaskCalendarView';
 export * from './components/TaskTimelineView';
 export * from './components/TaskStatisticsChartView';
 export * from './components/TaskOrgTreeView';
+export * from './components/TaskAssignmentHistoryView';

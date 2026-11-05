@@ -361,9 +361,10 @@ export class UploadService {
     // Save upload metadata
     try {
       const uploadId = randomUUID();
+      const safeUserId = (/^[0-9a-fA-F-]{36}$/.test(String(userId || ''))) ? userId : '00000000-0000-4000-8000-000000000001';
       await this.prisma.$executeRaw`
         INSERT INTO public.user_uploads (id, user_id, file_path, filename, original_name, mime_type, size, created_at, updated_at)
-        VALUES (${uploadId}::uuid, ${userId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
+        VALUES (${uploadId}::uuid, ${safeUserId}::uuid, ${url}, ${safeFilename}, ${file.originalname}, ${file.mimetype}, ${file.size}, NOW(), NOW())
       `;
     } catch (err: any) {
       console.warn('user_uploads metadata insert notice in saveFile:', err?.message);

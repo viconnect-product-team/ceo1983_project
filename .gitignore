@@ -65,3 +65,5 @@ scratch/
 *.pem
 *dump*.json
 ceo1983_accounts_summary.json
+# Office temporary lock files
+~$*

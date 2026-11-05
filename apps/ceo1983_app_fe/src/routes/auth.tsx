@@ -156,10 +156,10 @@ function CrmAdminAuthPage() {
   return (
     <main className="min-h-screen w-full flex flex-col lg:grid lg:grid-cols-12 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* ── LEFT PANEL: HERO & BRANDING BANNER (Per CEO 1983 Ecosystem) ────────── */}
-      <section className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-12 xl:p-16 overflow-hidden bg-gradient-to-br from-[#003B95] via-[#002B70] to-[#0A1A3A] text-white">
-        {/* Ambient subtle glow overlay */}
-        <div className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-blue-500/20 blur-[120px]" />
-        <div className="pointer-events-none absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-sky-400/15 blur-[100px]" />
+      <section
+        style={{ backgroundColor: '#002B70' }}
+        className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-12 xl:p-16 overflow-hidden bg-[#002B70] dark:bg-[#07132B] text-white"
+      >
 
         {/* Top: Brand App Badge */}
         <div className="relative z-10 flex items-center gap-3">
@@ -186,7 +186,7 @@ function CrmAdminAuthPage() {
         </div>
 
         {/* Bottom: Modern Glassmorphism Analytics Card */}
-        <div className="relative z-10 max-w-md rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md shadow-2xl space-y-4">
+        <div className="relative z-10 max-w-md rounded-2xl border border-white/20 bg-[#001D4D] p-5 shadow-2xl space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs xl:text-sm font-semibold text-white/95 tracking-wide">
               Chỉ số kết nối & giao thương hội viên

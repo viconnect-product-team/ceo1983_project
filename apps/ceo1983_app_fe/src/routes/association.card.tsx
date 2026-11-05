@@ -824,7 +824,7 @@ function CardScreen() {
               id="tour-card-qr-scan"
               type="button"
               onClick={() => setScanModalOpen(true)}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] border border-amber-400/40 px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#003B95] border border-amber-400/40 px-4 text-[13px] font-bold text-white shadow-md shadow-[#003B95]/25 hover:opacity-95 transition cursor-pointer"
             >
               <ScanLine className="h-4.5 w-4.5 text-white" />
               <span>Quét QR</span>
@@ -896,7 +896,7 @@ function CardScreen() {
         </div>
 
         {/* ── BẢO MẬT & QUYỀN RIÊNG TƯ: CÔNG TẮC BẬT/TẮT ẨN HIỆN SĐT & EMAIL (Ý KIẾN CUỘC HỌP) ── */}
-        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent dark:from-amber-950/30 p-3.5 shadow-sm space-y-2.5">
+        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 dark:from-amber-950/30 p-3.5 shadow-sm space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-amber-500" />
@@ -1922,7 +1922,7 @@ function EditCardModal({
           <button
             onClick={submit}
             disabled={busy}
-            className="flex-1 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] border border-amber-400/40 hover:opacity-95 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-[#003B95]/30 disabled:opacity-60 transition cursor-pointer flex items-center justify-center gap-2"
+            className="flex-1 rounded-xl bg-[#003B95] border border-amber-400/40 hover:opacity-95 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-[#003B95]/30 disabled:opacity-60 transition cursor-pointer flex items-center justify-center gap-2"
           >
             {busy ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
