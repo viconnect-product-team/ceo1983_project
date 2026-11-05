@@ -11,6 +11,8 @@ import {
   MessageSquareText,
   Save,
   Shield,
+  Smartphone,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,6 +24,8 @@ import { AssociationDomainEditor } from "@/components/dashboard/AssociationDomai
 import { OmnichannelTemplatesSection } from "@/components/dashboard/OmnichannelTemplatesSection";
 import { ZaloOaConfigSection } from "@/components/dashboard/ZaloOaConfigSection";
 import { VNPayConfigSection } from "@/components/dashboard/VNPayConfigSection";
+import { MoMoConfigSection } from "@/components/dashboard/MoMoConfigSection";
+import { ZaloMiniAppConfigSection } from "@/components/dashboard/ZaloMiniAppConfigSection";
 import { getSettingsFn, saveSettingsFn } from "@/lib/settings.functions";
 import { useLang, useT, type TKey } from "@/lib/i18n";
 
@@ -33,7 +37,9 @@ const TABS = [
   { key: "domain", labelKey: "set.tab.domain", defaultLabel: "Tên miền hệ thống", icon: Globe },
   { key: "templates", defaultLabel: "Mẫu thông báo", icon: Mail },
   { key: "zalo_oa", defaultLabel: "Cấu hình Zalo OA", icon: MessageSquareText },
+  { key: "zalo_miniapp", defaultLabel: "Cấu hình Zalo Mini App", icon: Smartphone },
   { key: "vnpay", defaultLabel: "Thanh toán VNPay", icon: CreditCard },
+  { key: "momo", defaultLabel: "Thanh toán MoMo", icon: Wallet },
   { key: "notifications", labelKey: "set.tab.notifications", defaultLabel: "Thông báo hệ thống", icon: Bell },
   { key: "security", labelKey: "set.tab.security", defaultLabel: "Bảo mật & Quyền", icon: Shield },
   { key: "integrations", labelKey: "set.tab.integrations", defaultLabel: "Tích hợp mở rộng", icon: Globe },
@@ -203,6 +209,10 @@ function SettingsPage() {
 
           {tab === "vnpay" && <VNPayConfigSection />}
 
+          {tab === "momo" && <MoMoConfigSection />}
+
+          {tab === "zalo_miniapp" && <ZaloMiniAppConfigSection />}
+
           {tab === "notifications" && (
             <div className="space-y-5">
               <div>
@@ -282,7 +292,7 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab !== "landing" && tab !== "domain" && tab !== "templates" && tab !== "zalo_oa" && tab !== "vnpay" && (
+          {tab !== "landing" && tab !== "domain" && tab !== "templates" && tab !== "zalo_oa" && tab !== "vnpay" && tab !== "momo" && tab !== "zalo_miniapp" && (
             <div className="mt-6 flex justify-end">
               <button
                 onClick={save}

@@ -1,5 +1,27 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 05/11/2026 (v10.34): Tích Hợp Cấu Hình Thanh Toán MoMo Dynamic Trên CRM, Bộ Điều Khiển 1-Click Tự Động Lấy & Gia Hạn Token Zalo OA (Hỗ Trợ Cả OAuth v4 Consent Flow) & Quản Trị Zalo Mini App Trực Quan Trên Web CRM ([NODE-CRM-014], [NODE-CORE-004], [NODE-CORE-005])**:
+  1. *Cấu Hình Thanh Toán MoMo Dynamic Trên Web CRM (`apps/ceo1983_app_fe/src/components/dashboard/MoMoConfigSection.tsx` & `apps/ceo1983_app_fe/src/routes/settings.tsx`)*:
+     - Xây dựng phân hệ Cấu hình MoMo Gateway v2 hoàn chỉnh tại Tab Cài Đặt CRM (`/settings?tab=momo`).
+     - Tùy biến linh hoạt tham số: Partner Code, Access Key, Secret Key (mã hóa HMAC-SHA256, hỗ trợ ẩn/hiện, sao chép), API Endpoint, Return URL, IPN Webhook URL với nút tự nhận diện Host Domain tự động.
+     - Hỗ trợ chuyển đổi nhanh 1-chạm giữa môi trường Sandbox (`https://test-payment.momo.vn/...`) và Production (`https://payment.momo.vn/...`).
+     - Danh mục tùy chọn kích hoạt: Ví MoMo (App & QR), Thẻ ATM Napas, Thẻ Quốc tế Visa/Master, Ví Trả Sau.
+     - Bộ công cụ Thử nghiệm Thanh toán MoMo Sandbox tương tác thời gian thực: Nhập số tiền, nội dung giao dịch, tạo mã QR động và PayUrl/Deeplink thực tế kèm tính năng Giả Lập Xác Nhận Thanh Toán (Simulate IPN Success) trực tiếp trên giao diện.
+     - Lưu trữ động vào `localStorage` (`vba_momo_config`) và đồng bộ hóa với hệ thống.
+  2. *Bộ Điều Khiển & Cấp Quyền Token Zalo OA Tự Động (1-Click) Khi Hết Hạn (`apps/ceo1983_app_fe/src/components/dashboard/ZaloOaConfigSection.tsx`, `apps/ceo1983_app_be/src/zalo/`)*:
+     - Giải quyết dứt điểm vấn đề Access Token hết hạn 25 giờ và Refresh Token hết hạn 90 ngày của Zalo OA:
+       + Phương thức 1 (Tự động gia hạn qua Refresh Token): Nút "⚡ 1-Click Tự Động Gia Hạn Token Mới" gọi API `POST /zalo/refresh-token` trên máy chủ NestJS Backend (Server-to-Server, loại bỏ hoàn toàn lỗi CORS), nhận ngay Access Token mới và cập nhật Refresh Token mới vào hệ thống.
+       + Phương thức 2 (Cấp mới toàn bộ khi Refresh Token hết hạn qua Zalo OAuth 2.0 / v4): Nút "🔑 Mở Cổng Cấp Quyền Zalo OA" mở giao diện Ủy quyền của Zalo, cho phép Quản trị viên cấp quyền chỉ với 1-Click. Hệ thống tự động bắt mã `code` từ URL hoặc hỗ trợ dán mã Authorization Code, gọi backend `POST /zalo/exchange-auth-code` để đổi lấy cả cặp `access_token` và `refresh_token` mới mà không cần can thiệp mã nguồn.
+       + Bổ sung endpoint backend `POST /zalo/check-token` kiểm tra trực tiếp tình trạng token với máy chủ Zalo OpenAPI, hiển thị huy hiệu trạng thái (Xanh - Đang hoạt động / Đỏ - Đã hết giờ cần cấp lại).
+  3. *Phân Hệ Quản Trị Zalo Mini App Trực Quan & Thân Thiện Người Dùng (`apps/ceo1983_app_fe/src/components/dashboard/ZaloMiniAppConfigSection.tsx`)*:
+     - Tạo mới phân hệ Cấu hình Zalo Mini App tại Tab Cài Đặt CRM (`/settings?tab=zalo_miniapp`).
+     - Quản lý đầy đủ thông tin: Mini App ID, Mini App Secret, Tên hiển thị, Liên kết Zalo Official Account, Màu sắc chủ đạo Header (`#003B95`), Tiêu đề Navigation Bar, Môi trường phát hành (Testing vs Production).
+     - Live QR Code Preview: Tự động hiển thị mã QR động dẫn đến `https://zalo.me/s/{miniAppId}/`, cho phép người dùng chỉ cần dùng điện thoại quét mã là mở ngay Mini App trên ứng dụng Zalo.
+     - Bộ Deep Links 1-Chạm: Cung cấp sẵn các liên kết điều hướng trực tiếp đến Trang chủ, Sự kiện & Điểm danh, Quét QR Check-in, B2B Giao thương, Danh bạ Hội viên kèm nút Sao chép 1-Click.
+     - Bộ lệnh CLI nhanh cho đội kỹ thuật (`zmp login`, `zmp start`, `zmp deploy`) và công cụ Kiểm tra sức khỏe kết nối (Health Check).
+  4. *Kiểm Thử & Đảm Bảo Chất Lượng (Strict Quality Gate)*:
+     - TypeScript compiler check đạt 0 lỗi (Exit code 0) trên cả Frontend (`apps/ceo1983_app_fe`) và Backend (`apps/ceo1983_app_be`).
+
 - **Bản cập nhật ngày 04/11/2026 (v10.33): Phục Hồi Chuẩn Giao Diện CRM Tổng Quan (Executive Dashboard) & Đồng Bộ Hóa Toàn Diện Chuẩn Bảng Excel Kéo Dãn Cột (SortHeader), Phân Trang & Đường Kẻ Grid Cột/Hàng Cho Tất Cả Các Phân Hệ Quản Trị ([NODE-CRM-001], [NODE-CRM-002], [NODE-CRM-003], [NODE-CRM-004], [NODE-CRM-005], [NODE-CRM-006])**:
   1. *Phục Hồi Chuẩn Giao Diện CRM Tổng Quan (apps/ceo1983_app_fe/src/components/dashboard/ExecutiveDashboard.tsx)*:
      - Phục hồi lại toàn diện giao diện Tổng quan Ban Điều Hành (Executive Overview Dashboard): Giữ nguyên hệ thống biểu đồ AreaChart tiến độ, các thẻ KPI thống kê tài chính - hội viên - sự kiện, danh sách hoạt động gần đây, sự kiện sắp diễn ra, thông báo và lối tắt thao tác nhanh (Quick Actions).

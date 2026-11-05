@@ -210,6 +210,18 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
 
+  // Trạng thái Token & Kiểm thử Online
+  const [tokenStatus, setTokenStatus] = useState<{
+    checked: boolean;
+    valid: boolean;
+    message: string;
+    oaName?: string;
+  } | null>(null);
+  const [isCheckingToken, setIsCheckingToken] = useState(false);
+  const [isExchangingCode, setIsExchangingCode] = useState(false);
+  const [authCodeInput, setAuthCodeInput] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const [webhookUrl, setWebhookUrl] = useState("https://api.ceo1983.vn/zalo/webhook");
   const [isConnected, setIsConnected] = useState(true);
   const [testingConnection, setTestingConnection] = useState(false);
@@ -456,6 +468,45 @@ export const ZaloOaConfigSection: React.FC = () => {
     if (storedAccess) setAccessToken(storedAccess);
     const storedRefresh = localStorage.getItem("vba_zalo_refresh_token");
     if (storedRefresh) setRefreshToken(storedRefresh);
+
+    // Tự động bắt Authorization Code nếu người dùng vừa được Zalo chuyển hướng về
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCodeFromUrl = urlParams.get("code");
+    if (authCodeFromUrl) {
+      toast.info("Đã phát hiện Authorization Code từ Zalo OA! Đang tự động đổi Access Token & Refresh Token...");
+      const activeAppId = storedAppId || appId;
+      const activeSecret = storedSecret || secretKey;
+      (async () => {
+        try {
+          const res = await fetch(getNestApiUrl("/zalo/exchange-auth-code"), {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              appId: activeAppId.trim(),
+              secretKey: activeSecret.trim(),
+              code: authCodeFromUrl.trim(),
+            }),
+          });
+          const data = await res.json();
+          if (data && data.success && data.accessToken) {
+            setAccessToken(data.accessToken);
+            localStorage.setItem("vba_zalo_access_token", data.accessToken);
+            if (data.refreshToken) {
+              setRefreshToken(data.refreshToken);
+              localStorage.setItem("vba_zalo_refresh_token", data.refreshToken);
+            }
+            setTokenStatus({
+              checked: true,
+              valid: true,
+              message: "Đã cấp mới thành công Access Token (25h) & Refresh Token (90 ngày)!",
+              oaName: "CLB Doanh Nhân CEO 1983",
+            });
+            toast.success("🎉 Đã tự động gọi và lưu cặp Token mới từ Zalo OA thành công 100%!");
+            window.history.replaceState({}, document.title, window.location.pathname + "?tab=zalo_oa");
+          }
+        } catch {}
+      })();
+    }
     // Tải mẫu tin nhắn đã lưu từ máy chủ Backend
     (async () => {
       try {
@@ -534,7 +585,7 @@ export const ZaloOaConfigSection: React.FC = () => {
   // Tự động gia hạn Access Token mới bằng Refresh Token qua Backend NestJS (Zero CORS, Zero Hardcoding)
   const handleAutoRefreshToken = async () => {
     if (!refreshToken.trim()) {
-      toast.error("Vui lòng nhập hoặc dán Refresh Token để gia hạn!");
+      toast.error("Chưa có Refresh Token! Vui lòng bấm 'Cấp Mới Token Từ Zalo OA' để cấp lại quyền.");
       return;
     }
     if (!secretKey.trim() || !appId.trim()) {
@@ -563,14 +614,137 @@ export const ZaloOaConfigSection: React.FC = () => {
           localStorage.setItem("vba_zalo_refresh_token", data.refreshToken);
         }
         localStorage.setItem("vba_zalo_access_token", data.accessToken);
-        toast.success("✅ Đã tự động gia hạn Access Token mới thành công 100%!");
+        setTokenStatus({
+          checked: true,
+          valid: true,
+          message: "Token vừa được gia hạn tự động thành công (25 giờ)!",
+          oaName: "CLB Doanh Nhân CEO 1983",
+        });
+        toast.success("✅ Đã tự động gọi Access Token và Refresh Token mới từ Zalo OA về thành công 100%!");
       } else {
-        toast.error(`Zalo phản hồi: ${data?.message || data?.error_description || "Không thể gia hạn token"}`);
+        const errDetail = data?.message || data?.error_description || "Không thể gia hạn token";
+        toast.error(`Zalo phản hồi: ${errDetail}. Hãy bấm nút 'Cấp Mới Token Từ Zalo OA' để lấy mã ủy quyền mới!`);
       }
     } catch (err: any) {
       toast.error(`Lỗi kết nối máy chủ gia hạn token: ${err.message}`);
     } finally {
       setIsRefreshingToken(false);
+    }
+  };
+
+  // Kiểm tra trực tuyến trạng thái của Token Zalo OA
+  const checkTokenOnlineStatus = async (tokenToCheck?: string) => {
+    const token = (tokenToCheck || accessToken).trim();
+    if (!token) {
+      setTokenStatus({
+        checked: true,
+        valid: false,
+        message: "Chưa có Access Token trong hệ thống. Hãy bấm gia hạn hoặc cấp mới.",
+      });
+      return;
+    }
+
+    setIsCheckingToken(true);
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/check-token"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ accessToken: token }),
+      });
+      const data = await res.json();
+      if (data && data.valid) {
+        setTokenStatus({
+          checked: true,
+          valid: true,
+          message: "Access Token đang hoạt động bình thường (25 giờ)",
+          oaName: data.data?.name || "CLB Doanh Nhân CEO 1983",
+        });
+        setIsConnected(true);
+        toast.success("✅ Access Token Zalo OA đang hoạt động bình thường!");
+      } else {
+        setTokenStatus({
+          checked: true,
+          valid: false,
+          message: data?.message || "Access Token đã hết giờ (Mã lỗi: -216). Bấm nút để gọi token mới!",
+        });
+        toast.warning("⚠️ Access Token Zalo OA đã hết giờ! Vui lòng bấm 'Gia Hạn Token' hoặc 'Cấp Mới'.");
+      }
+    } catch (err: any) {
+      setTokenStatus({
+        checked: true,
+        valid: false,
+        message: `Lỗi kết nối: ${err.message}`,
+      });
+    } finally {
+      setIsCheckingToken(false);
+    }
+  };
+
+  // Mở cửa sổ Zalo OA OAuth cấp quyền mới (khi Refresh Token hết hạn hoặc bắt đầu cấp)
+  const handleOpenOAuthConsent = () => {
+    if (!appId.trim()) {
+      toast.error("Vui lòng cấu hình Zalo App ID!");
+      return;
+    }
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "https://ceo1983.vn";
+    const redirectUri = `${currentOrigin}/settings?tab=zalo_oa`;
+    const consentUrl = `https://oauth.zaloapp.com/v4/oa/permission?app_id=${encodeURIComponent(
+      appId.trim()
+    )}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+    window.open(consentUrl, "_blank", "width=600,height=750");
+    setShowAuthModal(true);
+    toast.info("Đã mở cửa sổ Zalo OAuth Consent! Sau khi chọn OA và bấm 'Cho phép', hãy dán mã code vào đây nếu Zalo chưa tự chuyển.");
+  };
+
+  // Đổi Authorization Code thành cặp Token mới (Access Token + Refresh Token)
+  const handleExchangeAuthCode = async (codeToExchange?: string) => {
+    const code = (codeToExchange || authCodeInput).trim();
+    if (!code) {
+      toast.error("Vui lòng nhập hoặc dán Authorization Code nhận được từ Zalo!");
+      return;
+    }
+    if (!appId.trim() || !secretKey.trim()) {
+      toast.error("Vui lòng điền đủ App ID và Secret Key!");
+      return;
+    }
+
+    setIsExchangingCode(true);
+    try {
+      const res = await fetch(getNestApiUrl("/zalo/exchange-auth-code"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          appId: appId.trim(),
+          secretKey: secretKey.trim(),
+          code,
+        }),
+      });
+
+      const data = await res.json();
+      if (data && data.success && data.accessToken) {
+        setAccessToken(data.accessToken);
+        localStorage.setItem("vba_zalo_access_token", data.accessToken);
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken);
+          localStorage.setItem("vba_zalo_refresh_token", data.refreshToken);
+        }
+        setTokenStatus({
+          checked: true,
+          valid: true,
+          message: "Đã cấp mới thành công Access Token (25h) & Refresh Token (90 ngày)!",
+          oaName: "CLB Doanh Nhân CEO 1983",
+        });
+        setShowAuthModal(false);
+        setAuthCodeInput("");
+        toast.success("🎉 Đã tự động gọi và lưu thành công cặp Token mới từ Zalo OA!");
+      } else {
+        toast.error(`Zalo từ chối đổi mã: ${data?.message || data?.error_description || "Mã code không hợp lệ hoặc đã hết hạn"}`);
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi kết nối máy chủ đổi token: ${err.message}`);
+    } finally {
+      setIsExchangingCode(false);
     }
   };
 
@@ -1022,6 +1196,177 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
             <span>{testingConnection ? "Đang kiểm tra..." : "Kiểm tra kết nối OA"}</span>
           </button>
         </div>
+      </div>
+
+      {/* BỘ ĐIỀU KHIỂN & CẤP QUYỀN TOKEN ZALO OA TỰ ĐỘNG (1-CLICK) */}
+      <div className="p-5 rounded-2xl border-2 border-indigo-500/30 bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-slate-50 dark:from-indigo-950/20 dark:via-slate-900/40 dark:to-slate-900 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-200 dark:border-indigo-900/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-indigo-600 text-white shadow-xs">
+              <KeyRound className="size-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">
+                  Bộ Điều Khiển &amp; Cấp Quyền Token Zalo OA Tự Động (1-Click)
+                </h4>
+                {tokenStatus?.valid ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-[10px] flex items-center gap-1 border border-emerald-500/20">
+                    <CheckCircle2 className="size-3" /> Token Đang Hoạt Động (25h)
+                  </span>
+                ) : tokenStatus && !tokenStatus.valid ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 font-black text-[10px] flex items-center gap-1 border border-red-500/20 animate-pulse">
+                    <AlertCircle className="size-3" /> Token Đã Hết Giờ - Cần Gọi Lại Ngay
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[10px] flex items-center gap-1 border border-amber-500/20">
+                    <Clock className="size-3" /> {accessToken ? "Sẵn sàng kiểm tra" : "Chưa có token"}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Bấm nút bên dưới để hệ thống tự động gọi Access Token và Refresh Token mới từ Zalo OA về tức thì (Không cần sửa code)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => checkTokenOnlineStatus()}
+              disabled={isCheckingToken}
+              className="px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-white dark:hover:bg-slate-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {isCheckingToken ? <RefreshCw className="size-3 animate-spin" /> : <ShieldCheck className="size-3" />}
+              <span>Kiểm Tra Trạng Thái Token</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2 Nút Hành Động Trực Tiếp Gọi Token Từ Zalo */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {/* Nút 1: Tự động gia hạn qua Refresh Token */}
+          <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <RotateCw className="size-3.5 text-blue-600" />
+                  Phương Thức 1: Gia Hạn Tự Động Bằng Refresh Token
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-bold">
+                  Nhanh nhất
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Khi Access Token hết hạn 25 giờ nhưng Refresh Token còn hạn trong 90 ngày. Bấm nút dưới để tự lấy Access Token mới vĩnh viễn.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAutoRefreshToken}
+              disabled={isRefreshingToken}
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {isRefreshingToken ? (
+                <>
+                  <RefreshCw className="size-4 animate-spin" /> Đang gọi Token mới từ Zalo...
+                </>
+              ) : (
+                <>
+                  <RotateCw className="size-4" /> ⚡ 1-Click Tự Động Gia Hạn Token Mới
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Nút 2: Cấp mới Token khi Refresh Token hết hạn (OAuth Consent) */}
+          <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <KeyRound className="size-3.5 text-indigo-600" />
+                  Phương Thức 2: Cấp Mới Toàn Bộ Khi Refresh Token Hết Hạn
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-bold">
+                  Triệt để 100%
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Khi Refresh Token cũng đã quá hạn 90 ngày. Bấm mở cổng cấp quyền Zalo OA, xác nhận để hệ thống nhận lại cả cặp Token mới.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleOpenOAuthConsent}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <ExternalLink className="size-3.5" /> 🔑 Mở Cổng Cấp Quyền Zalo OA
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(!showAuthModal)}
+                className="px-3 py-2.5 rounded-xl border border-border hover:bg-muted text-xs font-bold text-foreground transition cursor-pointer"
+                title="Nhập thủ công mã ủy quyền"
+              >
+                Nhập Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal / Khu vực Đổi Mã Ủy Quyền Zalo OAuth */}
+        {showAuthModal && (
+          <div className="p-4 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/20 space-y-3 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-indigo-600" />
+                <span className="text-xs font-bold text-foreground">
+                  Đổi Authorization Code Nhận Được Từ Zalo Thành Token Mới
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(false)}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                ✕ Đóng
+              </button>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground">
+              Sau khi bấm &quot;Mở Cổng Cấp Quyền Zalo OA&quot; và bấm Cho phép, nếu Zalo chuyển hướng hoặc cung cấp chuỗi mã Authorization Code, hãy dán vào ô dưới để hệ thống tự động đổi lấy Access Token và Refresh Token mới:
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={authCodeInput}
+                onChange={(e) => setAuthCodeInput(e.target.value)}
+                placeholder="Dán Authorization Code từ Zalo vào đây (hoặc để trống nếu URL có param ?code=...)"
+                className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+              <button
+                type="button"
+                onClick={() => handleExchangeAuthCode()}
+                disabled={isExchangingCode}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {isExchangingCode ? (
+                  <>
+                    <RefreshCw className="size-3.5 animate-spin" /> Đang đổi token...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="size-3.5" /> Xác Nhận &amp; Lấy Token Tự Động
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* KHỐI TRỰC CHIẾN: BẮN THÔNG BÁO TEST & THÔNG BÁO PHÍ HỘI VIÊN TỚI ZALO */}

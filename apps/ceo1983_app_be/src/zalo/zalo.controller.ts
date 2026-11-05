@@ -3,6 +3,7 @@ import {
   ZaloService,
   SendZaloMessageDto,
   RefreshZaloTokenDto,
+  ExchangeZaloAuthCodeDto,
   SendBulkZaloMessageDto,
 } from './zalo.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -34,6 +35,18 @@ export class ZaloController {
   @UseGuards(JwtAuthGuard)
   async refreshToken(@Body() dto: RefreshZaloTokenDto) {
     return this.zaloService.refreshToken(dto);
+  }
+
+  @Post('exchange-auth-code')
+  @UseGuards(JwtAuthGuard)
+  async exchangeAuthCode(@Body() dto: ExchangeZaloAuthCodeDto) {
+    return this.zaloService.exchangeAuthCode(dto);
+  }
+
+  @Post('check-token')
+  @UseGuards(JwtAuthGuard)
+  async checkToken(@Body() body: { accessToken: string }) {
+    return this.zaloService.checkTokenStatus(body.accessToken);
   }
 
   @Get('recent-chats')

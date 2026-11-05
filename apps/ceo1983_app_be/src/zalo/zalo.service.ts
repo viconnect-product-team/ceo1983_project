@@ -16,6 +16,13 @@ export class RefreshZaloTokenDto {
   refreshToken!: string;
 }
 
+export class ExchangeZaloAuthCodeDto {
+  appId!: string;
+  secretKey!: string;
+  code!: string;
+  codeVerifier?: string;
+}
+
 export class SendBulkRecipientDto {
   userId?: string;
   phone!: string;
@@ -164,12 +171,25 @@ export class ZaloService {
       params.append('grant_type', 'refresh_token');
       params.append('refresh_token', dto.refreshToken.trim());
 
-      const response = await axios.post('https://oauth.zalo.me/v4/oa/access_token', params.toString(), {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          secret_key: dto.secretKey.trim(),
-        },
-      });
+      let response: any;
+      try {
+        response = await axios.post('https://oauth.zalo.me/v4/oa/access_token', params.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            secret_key: dto.secretKey.trim(),
+          },
+          timeout: 10000,
+        });
+      } catch (err: any) {
+        // Fallback endpoint
+        response = await axios.post('https://oauth.zaloapp.com/v4/oa/access_token', params.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            secret_key: dto.secretKey.trim(),
+          },
+          timeout: 10000,
+        });
+      }
 
       if (response.data && response.data.access_token) {
         return {
@@ -192,6 +212,97 @@ export class ZaloService {
         error.response?.data?.error_description || error.message || 'Lỗi kết nối máy chủ Zalo OAuth',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  /**
+   * Đổi Authorization Code thành Access Token & Refresh Token mới (Zalo OAuth v4 Flow)
+   * Sử dụng khi Refresh Token đã hết hạn 90 ngày hoặc lần đầu cấp quyền Zalo OA
+   */
+  async exchangeAuthCode(dto: ExchangeZaloAuthCodeDto) {
+    try {
+      const params = new URLSearchParams();
+      params.append('app_id', dto.appId.trim());
+      params.append('grant_type', 'authorization_code');
+      params.append('code', dto.code.trim());
+      if (dto.codeVerifier?.trim()) {
+        params.append('code_verifier', dto.codeVerifier.trim());
+      }
+
+      let response: any;
+      try {
+        response = await axios.post('https://oauth.zalo.me/v4/oa/access_token', params.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            secret_key: dto.secretKey.trim(),
+          },
+          timeout: 10000,
+        });
+      } catch (err: any) {
+        response = await axios.post('https://oauth.zaloapp.com/v4/oa/access_token', params.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            secret_key: dto.secretKey.trim(),
+          },
+          timeout: 10000,
+        });
+      }
+
+      if (response.data && response.data.access_token) {
+        return {
+          success: true,
+          accessToken: response.data.access_token,
+          refreshToken: response.data.refresh_token,
+          expiresIn: response.data.expires_in,
+        };
+      }
+
+      this.logger.warn(`Zalo exchange auth code error: ${JSON.stringify(response.data)}`);
+      throw new HttpException(
+        response.data?.error_description || response.data?.message || 'Không thể đổi mã ủy quyền từ Zalo',
+        HttpStatus.BAD_REQUEST,
+      );
+    } catch (error: any) {
+      this.logger.error(`Error exchanging Zalo auth code: ${error.message}`);
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        error.response?.data?.error_description || error.message || 'Lỗi máy chủ Zalo OAuth khi đổi mã ủy quyền',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Kiểm tra trực tiếp tình trạng Access Token với máy chủ Zalo OpenAPI
+   */
+  async checkTokenStatus(accessToken: string) {
+    try {
+      const response = await axios.get('https://openapi.zalo.me/v2.0/oa/getoa', {
+        headers: { access_token: accessToken.trim() },
+        timeout: 8000,
+      });
+
+      if (response.data && response.data.error === 0) {
+        return {
+          success: true,
+          valid: true,
+          data: response.data.data,
+          message: 'Access Token đang hoạt động bình thường',
+        };
+      }
+
+      return {
+        success: false,
+        valid: false,
+        errorCode: response.data?.error,
+        message: response.data?.message || 'Access Token đã hết hạn hoặc không hợp lệ',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        valid: false,
+        message: `Lỗi kiểm tra token: ${err.message}`,
+      };
     }
   }
 
