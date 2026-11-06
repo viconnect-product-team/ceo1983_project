@@ -1,5 +1,27 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 06/11/2026 (v10.50): Khắc Phục Triệt Để Bảng Xếp Hạng Thống Kê (Chỉ Hiển Thị Hội Viên Có Dữ Liệu > 0, Loại Bỏ Toàn Bộ 0 Cơ Hội), Đảm Bảo Cả 2 Bản Mẫu Landing Web Sẵn Sàng Trực Quan Trong CRM, Nâng Cấp Bộ Tài Liệu BRD & SRS Toàn Diện Với 23 Sơ Đồ Mermaid & 60 Use Cases ([NODE-CRM-021], [NODE-APP-006], [NODE-CORE-001])**:
+  1. *Khắc phục triệt để Bảng xếp hạng Thống kê Mobile App (`[NODE-APP-006]`)*:
+     - **Backend (`analytics.service.ts`)**: Cắt bỏ hoàn toàn điều kiện nới lỏng cơ hội nội bộ. Bộ lọc `validOppsList` bắt buộc kiểm tra `(m.publicOppsShared || 0) > 0`. Những tài khoản có `publicOppsShared === 0` tuyệt đối không được đưa vào danh sách `topOpportunities`.
+     - **Frontend (`association.analytics.tsx`)**: Bộ lọc `activeOnly` kiểm tra nghiêm ngặt `Number(m.publicOppsShared || 0) > 0` cho danh mục cơ hội, và các chỉ số tương ứng cho kết nối, sự kiện, giới thiệu. Bất kỳ dữ liệu nào bắt đầu bằng `0 ` hoặc bằng 0 đều bị loại bỏ 100%.
+     - **Bục vinh danh (Podium) & Top 4-10**:
+       * Khi chỉ có 1 hội viên có số liệu (như Administrator với 1 Cơ hội công khai): Bục vinh danh tự động chuyển thành 1 cột căn giữa (`grid-cols-1 max-w-xs mx-auto`), tiêu đề hiển thị: "Vinh Danh Hội Viên Xuất Sắc Nhất" và phụ đề: "Hạng 1 dẫn đầu — Ghi nhận hội viên duy nhất có phát sinh dữ liệu giao thương trong kỳ".
+       * Các hội viên có 0 cơ hội (như Nguyễn Văn Linh, Lê Hoàng Long, Nguyễn Văn Cường, Vũ Thu Trang...) bị loại bỏ hoàn toàn khỏi bục vinh danh và Bảng xếp hạng Top 4-10.
+       * Danh sách Top 4-10 hiển thị đúng thông báo: "Chưa có hội viên nào trong danh sách Top 4 - 10 kỳ này."
+  2. *Đảm bảo sẵn sàng đầy đủ 2 bản mẫu Landing Web trong CRM (`[NODE-CRM-021]`)*:
+     - Trong `apps/ceo1983_app_fe/src/routes/admin.landing-webs.tsx`: Định nghĩa trực tiếp bộ mẫu tĩnh mặc định gồm cả 2 mẫu:
+       * **Mẫu 1**: `Khám Phá Toàn Cầu — Timed Cards Opening` (Pinterest Giulio Cuscito 160088961741878822, tone Vàng Amber `#ecad29`, chuyển thẻ tự động khi cuộn, không nút bấm thừa).
+       * **Mẫu 2**: `Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase` (Pinterest 234398355598861981, Mockup iPhone 16, 4 chỉ số vàng, 3D feature cards, thương hiệu `ceo1983.com`).
+     - Tự động gộp vào danh sách hiển thị `displayLandingWebs` để người dùng luôn thấy cả 2 bản mẫu trực quan, kèm Huy hiệu nhận diện đúng chuẩn ("Startup Mobile Showcase" / "Timed Cards Opening"), số lượng slide, nút Xem Trực Tiếp, Sửa Cấu Hình và Gán Subdomain.
+     - Tổng số Landing Web hiển thị tối thiểu 2 mẫu, giải quyết dứt điểm hiện tượng chỉ thấy 1 mẫu.
+  3. *Nâng cấp toàn diện Bộ Tài liệu BRD & SRS v9.0 Kèm 23 Sơ Đồ & 60 Use Cases*:
+     - **SRS Master (`SRS_CEO1983_MASTER_CHINH_THUC.md` & NotebookLM SRS)**: 15 sơ đồ kỹ thuật (System Architecture, 2 Overview Use Case Diagrams, End-to-End Sequence, 5 Feature Sequences, 3 State Diagrams, ERD, 2 Activity Flowcharts) + 30 Technical Use Cases (`UC-CRM-001..015`, `UC-APP-001..015`) chuẩn IEEE 830.
+     - **BRD Master (`BRD_CEO1983_MASTER_CHINH_THUC.md` & NotebookLM BRD)**: 8 Business Process Flowcharts + 30 Business Use Cases (`BUC-CRM-001..015`, `BUC-APP-001..015`) với 100% ngôn ngữ nghiệp vụ thuần khiết, MoMo QR/VNPay và không dùng từ VIP.
+  4. *Kiểm tra chất lượng mã nguồn bắt buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Giữ nguyên mã nguồn cục bộ, tuân thủ nghiêm ngặt Quy tắc số 1 về Git.
+
 - **Bản cập nhật ngày 06/11/2026 (v10.49): Chuẩn Hóa 2 Danh Mục Màn Sự Kiện & Hoạt Động (Lưu Vết Kỷ Niệm 5 Hạng Mục: Nhà Tài Trợ, Biểu Quyết, Giải Thưởng, Chỗ Ngồi, Google Drive Ảnh RAW; Phân Loại Họp Cố Định Theo Ban vs Họp Bất Thường), Menu Bình Luận 3 Chấm Chuẩn Facebook (Sao Chép, Chỉnh Sửa, Xóa), Lọc Triệt Để Top Bảng Xếp Hạng Loại Bỏ Hội Viên 0 Số Liệu, Giao Diện AI Chào Mừng Không Viền Realtime Theme Sáng, Bổ Sung Bản Mẫu Landing Web Vào CRM & Loại Bỏ Nút Nổi AI ([NODE-CORE-001], [NODE-CRM-023], [NODE-APP-004], [NODE-APP-005], [NODE-APP-006], [NODE-APP-014])**:
   1. *CRM: Bổ Sung Bản Mẫu Landing Web & Gỡ Bỏ Nút Nổi AI Góc Màn Hình (`[NODE-CRM-023]`)*:
      - Trong `apps/ceo1983_app_be/src/landing/landing.service.ts`: Seed tự động đầy đủ 2 bản mẫu chuẩn gồm "Khám Phá Toàn Cầu — Timed Cards Opening" và "Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase" (theo cảm hứng Pinterest 234398355598861981 và cấu trúc `ceo1983.com`).

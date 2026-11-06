@@ -45,6 +45,139 @@ import {
 } from "@/components/landing/TimedCardsOpeningLanding";
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
 
+const DEFAULT_TIMED_CARDS_TEMPLATE: LandingWebConfig = {
+  id: "lw_timed_cards_opening_default",
+  name: "Khám Phá Toàn Cầu — Timed Cards Opening",
+  slug: "kham-pha-toan-cau",
+  subdomain: "khampha",
+  isPublished: true,
+  template: "timed_cards_opening",
+  theme: {
+    primaryColor: "#ecad29",
+    secondaryColor: "#1a1a1a",
+    textColor: "#FFFFFF",
+    backgroundColor: "#111317",
+    fontFamily: "Inter, Oswald, sans-serif",
+  },
+  brand: {
+    logoText: "Globe Express",
+    logoIcon: "globe",
+    contactPhone: "0983.1983.83",
+    contactEmail: "contact@ceo1983.viconnect.vn",
+  },
+  navMenu: [
+    { id: "m1", label: "Địa Điểm", active: true, type: "link", url: "#" },
+    { id: "m2", label: "Thành Viên", type: "link", url: "#" },
+    { id: "m3", label: "Sự Kiện", type: "link", url: "#" },
+    { id: "m4", label: "Hệ Thống", type: "link", url: "#" },
+  ],
+  slides: [
+    {
+      id: "slide-1",
+      place: "Switzerland Alps",
+      title1: "SAINT",
+      title2: "ANTONIEN",
+      description: "Tận hưởng không gian thiên nhiên hùng vĩ của rặng núi Alps tại Thụy Sĩ. Nơi những doanh nhân tìm thấy sự tĩnh tại và cảm hứng sáng tạo vô tận.",
+      image: "https://assets.codepen.io/3685267/timed-cards-1.jpg",
+      ctaText: "Khám Phá Địa Điểm",
+      ctaLink: "#",
+    },
+    {
+      id: "slide-2",
+      place: "Japan Danxia",
+      title1: "NAGANO",
+      title2: "PREFECTURE",
+      description: "Vẻ đẹp thanh bình của xứ sở hoa anh đào qua góc nhìn của kiến trúc truyền thống và công nghệ hiện đại bậc nhất thế giới.",
+      image: "https://assets.codepen.io/3685267/timed-cards-2.jpg",
+      ctaText: "Tìm Hiểu Thêm",
+      ctaLink: "#",
+    },
+    {
+      id: "slide-3",
+      place: "Sahara Desert",
+      title1: "MARRAKECH",
+      title2: "MERZOUGA",
+      description: "Hành trình xuyên qua sa mạc Sahara huyền bí với những đụn cát vàng bất tận dưới bầu trời đêm ngập tràn ánh sao.",
+      image: "https://assets.codepen.io/3685267/timed-cards-3.jpg",
+      ctaText: "Xem Chi Tiết",
+      ctaLink: "#",
+    },
+  ],
+  subScreens: [],
+  apiConfig: {
+    enabled: false,
+    endpointUrl: "",
+    rootPath: "",
+  },
+};
+
+const DEFAULT_STARTUP_MOBILE_TEMPLATE: LandingWebConfig = {
+  id: "lw_startup_mobile_showcase_default",
+  name: "Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase",
+  slug: "app-ceo1983",
+  subdomain: "app",
+  isPublished: true,
+  template: "startup_mobile_showcase",
+  theme: {
+    primaryColor: "#003B95",
+    secondaryColor: "#ecad29",
+    textColor: "#0F172A",
+    backgroundColor: "#F8FAFC",
+    fontFamily: "Inter, Oswald, sans-serif",
+  },
+  brand: {
+    logoText: "CLB Doanh Nhân CEO 1983",
+    logoIcon: "smartphone",
+    contactPhone: "0983.1983.83",
+    contactEmail: "contact@ceo1983.viconnect.vn",
+  },
+  navMenu: [
+    { id: "m1", label: "Trang chủ", url: "#hero" },
+    { id: "m2", label: "Tính năng App", url: "#features" },
+    { id: "m3", label: "Giao thương B2B", url: "#b2b" },
+    { id: "m4", label: "Hội viên tiêu biểu", url: "#members" },
+    { id: "m5", label: "Tải ứng dụng", url: "#download" },
+  ],
+  slides: [
+    {
+      id: "slide-app-1",
+      place: "Hệ Sinh Thái CEO 1983",
+      title1: "KẾT NỐI",
+      title2: "DOANH NHÂN",
+      description: "Ứng dụng chuyên biệt kết nối giao thương nội khối, đặt lịch hẹn 1-on-1, thanh toán hội phí MoMo/VNPay tự động và bảng xếp hạng số minh bạch.",
+      image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80",
+      ctaText: "Khám Phá Tính Năng",
+      ctaLink: "#features",
+    },
+    {
+      id: "slide-app-2",
+      place: "Thương Mại & Đầu Tư",
+      title1: "CƠ HỘI",
+      title2: "GIAO THƯƠNG",
+      description: "Hơn 500+ doanh nghiệp thành viên, cơ hội tiếp cận gói thầu giá trị cao và hỗ trợ pháp lý toàn diện từ Ban Điều Hành.",
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
+      ctaText: "Xem Cơ Hội B2B",
+      ctaLink: "#b2b",
+    },
+    {
+      id: "slide-app-3",
+      place: "Mạng Lưới Thẻ Doanh Nhân",
+      title1: "DANH THIẾP",
+      title2: "ĐIỆN TỬ QR",
+      description: "Chia sẻ danh thiếp chỉ trong 1 giây qua NFC và QR Code, đồng bộ trực tiếp vào danh bạ và lưu vết kết nối trọn đời.",
+      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=80",
+      ctaText: "Trải Nghiệm Thẻ QR",
+      ctaLink: "#card",
+    },
+  ],
+  subScreens: [],
+  apiConfig: {
+    enabled: false,
+    endpointUrl: "",
+    rootPath: "",
+  },
+};
+
 export const Route = createFileRoute("/admin/landing-webs")({
   ssr: false,
   component: AdminLandingWebsPage,
@@ -59,6 +192,18 @@ function AdminLandingWebsPage() {
   const testApiFn = useServerFn(testApiConnectorFn);
 
   const { data: landingWebs = [], loading, reload } = useServerData<LandingWebConfig[]>(() => listFn(), []);
+
+  // Đảm bảo luôn hiển thị đầy đủ cả 2 mẫu thiết kế chuẩn Pinterest trong danh sách
+  const displayLandingWebs = useMemo(() => {
+    const list = [...landingWebs];
+    if (!list.some((w) => w.template === "timed_cards_opening")) {
+      list.unshift(DEFAULT_TIMED_CARDS_TEMPLATE);
+    }
+    if (!list.some((w) => w.template === "startup_mobile_showcase")) {
+      list.push(DEFAULT_STARTUP_MOBILE_TEMPLATE);
+    }
+    return list;
+  }, [landingWebs]);
 
   // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -88,11 +233,11 @@ function AdminLandingWebsPage() {
   // Selected sub-screen for editing in Dynamic Builder
   const [editingSubScreen, setEditingSubScreen] = useState<LandingSubScreen | null>(null);
 
-  // Summary Metrics
-  const totalCount = landingWebs.length;
-  const publishedCount = landingWebs.filter((w) => w.isPublished).length;
-  const subdomainCount = landingWebs.filter((w) => !!w.subdomain).length;
-  const apiIntegratedCount = landingWebs.filter((w) => w.apiConfig?.enabled).length;
+  // Summary Metrics - tính toán trên danh sách đầy đủ
+  const totalCount = displayLandingWebs.length;
+  const publishedCount = displayLandingWebs.filter((w) => w.isPublished).length;
+  const subdomainCount = displayLandingWebs.filter((w) => !!w.subdomain).length;
+  const apiIntegratedCount = displayLandingWebs.filter((w) => w.apiConfig?.enabled).length;
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,7 +433,7 @@ function AdminLandingWebsPage() {
               <div className="size-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin mx-auto" />
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Đang tải danh sách Landing Web...</p>
             </div>
-          ) : landingWebs.length === 0 ? (
+          ) : displayLandingWebs.length === 0 ? (
             <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-900/30 space-y-3">
               <Globe className="size-12 text-slate-400 mx-auto opacity-50" />
               <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Chưa có Landing Web nào được tạo</h3>
@@ -298,9 +443,10 @@ function AdminLandingWebsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {landingWebs.map((web) => {
+              {displayLandingWebs.map((web) => {
                 const firstImg = web.slides?.[0]?.image || "https://assets.codepen.io/3685267/timed-cards-1.jpg";
                 const isTimedCards = web.template === "timed_cards_opening";
+                const isStartupMobile = web.template === "startup_mobile_showcase";
 
                 return (
                   <div
@@ -321,9 +467,16 @@ function AdminLandingWebsPage() {
                         <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
                           <span
                             className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-md"
-                            style={{ backgroundColor: web.theme?.primaryColor || "#ecad29" }}
+                            style={{
+                              backgroundColor:
+                                web.theme?.primaryColor || (isStartupMobile ? "#003B95" : "#ecad29"),
+                            }}
                           >
-                            {isTimedCards ? "Timed Cards Opening" : "CEO 1983 Executive"}
+                            {isStartupMobile
+                              ? "Startup Mobile Showcase"
+                              : isTimedCards
+                              ? "Timed Cards Opening"
+                              : "CEO 1983 Executive"}
                           </span>
 
                           <span

@@ -713,8 +713,8 @@ export function AssociationAnalyticsScreen() {
           return false;
         }
         if (activeCategory === "top_opportunities") {
-          const oppCount = Number(m.publicOppsShared ?? m.allOppsShared ?? 0);
-          return oppCount > 0 || (m.valueStr && !/^0\s+/i.test(m.valueStr.trim()));
+          const oppCount = Number(m.publicOppsShared ?? 0);
+          return oppCount > 0;
         }
         if (activeCategory === "top_connections") {
           return Number(m.connectionsCount ?? 0) > 0;
@@ -723,9 +723,9 @@ export function AssociationAnalyticsScreen() {
           return Number(m.eventsAttended ?? 0) > 0;
         }
         if (activeCategory === "top_referrals") {
-          return Number(m.referralsCount ?? m.connectionsCount ?? 0) > 0;
+          return Number(m.referralsCount ?? 0) > 0;
         }
-        return true;
+        return false;
       });
 
       return activeOnly.map((m: any, idx: number) => ({
@@ -1453,10 +1453,22 @@ export function AssociationAnalyticsScreen() {
         <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-4">
           <div className="text-center">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Vinh Danh Top 3 Xuất Sắc Nhất
+              {podiumTop3.length >= 3
+                ? "Vinh Danh Top 3 Xuất Sắc Nhất"
+                : podiumTop3.length === 2
+                ? "Vinh Danh Top 2 Xuất Sắc Nhất"
+                : podiumTop3.length === 1
+                ? "Vinh Danh Hội Viên Xuất Sắc Nhất"
+                : "Bảng Vinh Danh"}
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Hạng 1 ở giữa cao nhất • Hạng 2 bên trái • Hạng 3 bên phải
+              {podiumTop3.length >= 3
+                ? "Hạng 1 ở giữa cao nhất • Hạng 2 bên trái • Hạng 3 bên phải"
+                : podiumTop3.length === 2
+                ? "Hạng 1 & Hạng 2 dẫn đầu kết quả giao thương kỳ này"
+                : podiumTop3.length === 1
+                ? "Hạng 1 dẫn đầu — Ghi nhận hội viên duy nhất có phát sinh dữ liệu giao thương trong kỳ"
+                : "Chưa ghi nhận hoạt động phát sinh dữ liệu trong kỳ này"}
             </p>
           </div>
 

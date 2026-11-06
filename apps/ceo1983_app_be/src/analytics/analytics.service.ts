@@ -745,10 +745,10 @@ export class AnalyticsService implements OnModuleInit {
         .sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore);
       const topConnections = assignTiers(validConnectionsList, 'connections');
 
-      // Danh mục Cơ hội: BẮT BUỘC chỉ xếp hạng những ai THỰC SỰ đã đăng cơ hội hoặc chốt thương vụ (> 0)
+      // Danh mục Cơ hội: BẮT BUỘC chỉ xếp hạng những ai THỰC SỰ đã đăng cơ hội công khai (> 0)
       const validOppsList = [...uniqueStats]
-        .filter(m => (m.publicOppsShared || 0) > 0 || (m.allOppsShared || 0) > 0 || (m.oppsWon || 0) > 0)
-        .sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.dealsValue - a.dealsValue);
+        .filter(m => (m.publicOppsShared || 0) > 0)
+        .sort((a, b) => (b.publicOppsShared || 0) - (a.publicOppsShared || 0) || (b.dealsValue || 0) - (a.dealsValue || 0));
       const topOpportunities = assignTiers(validOppsList, 'opportunities');
 
       const validEventsList = [...uniqueStats]
