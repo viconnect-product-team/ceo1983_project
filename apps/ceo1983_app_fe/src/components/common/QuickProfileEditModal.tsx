@@ -22,10 +22,15 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { uploadFileToNest, fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { compressImage } from "@/lib/image";
+import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 
 const quickProfileSchema = z.object({
   name: z.string().trim().min(1, "Họ và tên không được phép để trống"),
-  phone: z.string().trim().min(1, "Số điện thoại không được phép để trống"),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Số điện thoại không được phép để trống")
+    .regex(/^(0[3|5|7|8|9])[0-9]{8}$/, "Số điện thoại không hợp lệ (cần đúng 10 số bắt đầu bằng 03, 05, 07, 08, 09)"),
 });
 
 export interface QuickProfileEditModalProps {
@@ -546,12 +551,16 @@ export function QuickProfileEditModal({
                 <Phone className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  maxLength={11}
                   value={phone}
+                  onKeyDown={handleNumericKeyDown}
                   onChange={(e) => {
-                    setPhone(e.target.value);
+                    const cleaned = sanitizePhoneNumber(e.target.value);
+                    setPhone(cleaned);
                     if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
                   }}
-                  placeholder="Số điện thoại / Hotline..."
+                  placeholder="0988 xxx xxx"
                   className={`w-full rounded-xl border bg-slate-50 dark:bg-slate-900 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white outline-none transition ${
                     errors.phone
                       ? "border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30"

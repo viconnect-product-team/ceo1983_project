@@ -158,6 +158,8 @@ export default function ProfileScreen() {
   // Active tab state: Hồ sơ (about), Giao thương (friends), Cài đặt (posts)
   // 2 Nhóm chức năng chính (Yêu cầu 1): Tổng quan & Bài viết (overview) | Hoạt động & Giao thương (activities)
   const [activeTab, setActiveTab] = useState<"overview" | "activities">("overview");
+  const [subTab, setSubTab] = useState<"business" | "posts">("business");
+  const [showLocationEditor, setShowLocationEditor] = useState(false);
   const [systemSettingsOpen, setSystemSettingsOpen] = useState(false);
 
   // Bài viết mạng lưới của hội viên (Yêu cầu 1, 3)
@@ -770,14 +772,30 @@ export default function ProfileScreen() {
 
   return (
     <div className="w-full min-h-screen pb-24 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center font-sans transition-colors duration-300">
-      {/* ── 1. HEADER CHUẨN DI ĐỘNG CEO 1983 (BỎ CÁC ICON CHỨC NĂNG THEO YÊU CẦU 4) ── */}
-      <MemberHeader
-        title={isEn ? "Profile" : "Trang cá nhân"}
-        back
-        right={null}
-      />
+      {/* ── 1. HEADER CHUẨN MOCKUP CEO 1983 ── */}
+      <div data-type="2" className="w-full max-w-lg px-4 pt-2 pb-2 bg-white dark:bg-[#070D1A] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center sticky top-0 z-30">
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/association" })}
+          className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+          title="Quay lại"
+        >
+          <img src="/icons/profile_icons/arrow-left-02.svg" className="size-5" alt="back" />
+        </button>
+        <div className="text-center font-semibold text-base text-slate-900 dark:text-white font-['Inter']">
+          {isEn ? "Profile" : "Hồ sơ cá nhân"}
+        </div>
+        <button
+          type="button"
+          onClick={() => setSystemSettingsOpen(true)}
+          className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+          title="Cài đặt hệ thống"
+        >
+          <img src="/icons/profile_icons/setting-07.svg" className="size-5" alt="settings" />
+        </button>
+      </div>
 
-      <div className="w-full max-w-lg flex flex-col justify-start items-stretch gap-3 px-3 sm:px-4 pt-1">
+      <div className="w-full max-w-lg flex flex-col justify-start items-stretch gap-4 px-3 sm:px-4 pt-3">
         {/* Hidden inputs upload ảnh */}
         <input
           type="file"
@@ -794,260 +812,315 @@ export default function ProfileScreen() {
           onChange={handleAvatarChange}
         />
 
-        {/* ── 2. CARD PROFILE NỔI BẬT: ẢNH BÌA, AVATAR, THÔNG TIN VÀ 4 NÚT HÀNH ĐỘNG TINH GỌN ── */}
-        <div className="w-full rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800">
-          {/* Ảnh Bìa với Badge Mã và Nút Đổi Bìa */}
-          <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-slate-900">
+        {/* ── 2. CARD PROFILE TONE VÀNG CAM NỔI BẬT THEO MOCKUP ── */}
+        <div className="w-full pb-2 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden shadow-xs">
+          {/* Ảnh Bìa */}
+          <div className="w-full h-36 relative bg-linear-to-r from-amber-100 via-amber-50 to-orange-100 dark:from-slate-800 dark:to-slate-900 overflow-hidden">
             <img
-              src={displayCover}
+              src={displayCover || "/icons/profile_icons/Image-2.svg"}
               alt="Cover Photo"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/35 pointer-events-none" />
-
             {/* Mã Hội Viên */}
             <div className="absolute top-3 left-3 z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/20 text-white shadow-sm">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[11px] font-mono font-bold">{memberCode}</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-xs">
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono font-bold">{memberCode}</span>
               </div>
             </div>
-
             {/* Nút Đổi ảnh bìa */}
             <button
               type="button"
               disabled={uploadingCover}
               onClick={() => coverInputRef.current?.click()}
-              className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold transition active:scale-95 cursor-pointer shadow-sm disabled:opacity-50"
+              className="absolute top-3 right-3 p-1.5 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xs rounded-full border border-slate-200 dark:border-slate-700 inline-flex items-center justify-center hover:scale-105 active:scale-95 transition cursor-pointer shadow-xs disabled:opacity-50"
               title="Đổi ảnh bìa"
             >
-              <Camera className="h-3.5 w-3.5 text-amber-300" />
-              <span>{uploadingCover ? "Đang tải..." : "Đổi ảnh bìa"}</span>
+              <img src="/icons/profile_icons/edit-04.svg" className="size-4" alt="edit cover" />
             </button>
           </div>
 
-          {/* Khối Thân Profile đè lên ảnh bìa */}
-          <div className="relative -mt-14 px-4 pb-4 pt-0 flex flex-col items-center text-center">
-            {/* Avatar Tròn & Nút Đổi Avatar */}
-            <div className="relative mb-2">
-              <div className="size-22 sm:size-24 rounded-full border-4 border-white dark:border-[#0F172A] shadow-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+          {/* Avatar & Thông tin Hội viên đè lên ảnh bìa */}
+          <div className="w-full px-4 -mt-12 flex flex-col justify-start items-center z-10">
+            <div className="size-24 relative flex flex-col justify-start items-start mb-1">
+              <div className="size-24 rounded-full outline outline-4 outline-offset-[-4px] outline-white dark:outline-[#0F172A] inline-flex justify-center items-center overflow-hidden bg-Dark-blue-700 shadow-md">
                 {resolvedAvatar && !avatarError ? (
                   <img
                     src={resolvedAvatar}
                     alt={displayName}
                     onError={() => setAvatarError(true)}
-                    className="size-full object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="size-full bg-[#003B95] flex items-center justify-center text-white text-xl font-black">
+                  <div className="w-full h-full bg-[#003B95] flex items-center justify-center text-white text-2xl font-black">
                     {initials(displayName)}
                   </div>
                 )}
               </div>
-
               <button
                 type="button"
                 disabled={uploadingAvatar}
                 onClick={() => avatarInputRef.current?.click()}
-                className="absolute bottom-0 right-0 size-7 rounded-full bg-white dark:bg-slate-800 border-2 border-white dark:border-slate-900 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-[#003B95] hover:scale-110 active:scale-95 transition cursor-pointer"
+                className="size-7 right-0 bottom-0 absolute bg-white dark:bg-slate-800 rounded-full outline outline-1 outline-offset-[-1px] outline-Border-default inline-flex justify-center items-center shadow-xs hover:scale-110 active:scale-95 transition cursor-pointer"
                 title="Đổi ảnh đại diện"
               >
-                <Camera className="size-3.5" />
+                <img src="/icons/profile_icons/user-edit-01.svg" className="size-3.5" alt="edit avatar" />
               </button>
             </div>
 
-            {/* Họ và Tên kèm Tích Xanh Xác Thực */}
-            <div className="flex items-center justify-center gap-1.5">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            {/* Tên Hội viên kèm Tích xác thực */}
+            <div className="inline-flex items-center gap-1.5">
+              <h1 className="text-xl font-semibold text-slate-900 dark:text-white font-['Inter'] leading-6">
                 {displayName}
               </h1>
-              <BadgeCheck className="size-5 text-[#003B95] dark:text-blue-400 fill-[#003B95]/10 shrink-0" />
+              <img src="/icons/profile_icons/new-releases.svg" className="size-4" alt="verified" />
             </div>
 
             {/* Chức vụ & Doanh nghiệp */}
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-xs">
-              <div className="inline-flex items-center gap-1 font-bold text-[#003B95] dark:text-blue-400">
-                <Briefcase className="size-3.5" />
-                <span>{displayTitle}</span>
+            <div className="pt-1 flex flex-col justify-center items-center gap-1">
+              <div className="px-2 py-[3px] bg-Primary-2-50 dark:bg-amber-950/40 rounded-[99px] inline-flex justify-start items-center gap-1.5">
+                <img src="/icons/profile_icons/briefcase-04.svg" className="size-3.5" alt="briefcase" />
+                <span className="text-Text-active text-xs font-medium font-['Inter'] leading-4">
+                  {displayTitle}
+                </span>
               </div>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <div className="inline-flex items-center gap-1 font-medium text-slate-600 dark:text-slate-300">
-                <Building2 className="size-3.5 text-slate-400" />
-                <span>{displayCompany}</span>
-              </div>
+              <p className="text-center text-Text-default text-xs font-normal font-['Inter'] leading-4">
+                {displayCompany}
+              </p>
             </div>
+          </div>
 
-            {/* (ĐÃ BỎ HOÀN TOÀN TEXT & BADGE HỘI VIÊN CHÍNH THỨC PER YÊU CẦU NGƯỜI DÙNG: "ĐÃ ĐĂNG NHẬP RỒI THÌ LÀ HỘI VIÊN RỒI") */}
+          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ */}
+          <div className="self-stretch mt-3 h-16 px-3 pt-1 border-t border-slate-100 dark:border-slate-800 inline-flex justify-center items-start">
+            <button
+              type="button"
+              onClick={() => setCardPreviewOpen(true)}
+              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+            >
+              <img src="/icons/profile_icons/student-card.svg" className="size-5" alt="student-card" />
+              <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+                Danh thiếp
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+            >
+              <img src="/icons/profile_icons/share-01.svg" className="size-5" alt="share" />
+              <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+                Chia sẻ
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditProfileOpen(true)}
+              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+            >
+              <img src="/icons/profile_icons/user-edit-01.svg" className="size-5" alt="user-edit" />
+              <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+                Sửa hồ sơ
+              </div>
+            </button>
+          </div>
+        </div>
 
-            {/* ── 4 NÚT HÀNH ĐỘNG TINH GỌN DƯỚI AVATAR (YÊU CẦU 2): DANH THIẾP, CHIA SẺ, SỬA HỒ SƠ, CÀI ĐẶT ── */}
-            <div className="grid grid-cols-4 gap-1 w-full mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-              {/* Nút 1: Danh thiếp */}
+        {/* ── 3. THANH SEGMENTED TABS THEO MOCKUP (DÒNG 511-531) ── */}
+        <div className="self-stretch flex flex-col justify-start items-start">
+          <div className="self-stretch relative flex flex-col justify-start items-start">
+            <div className="w-full h-0 border-b border-Border-default absolute bottom-0 left-0" />
+            <div className="self-stretch inline-flex justify-start items-end gap-2 overflow-hidden">
               <button
                 type="button"
-                onClick={() => setCardPreviewOpen(true)}
-                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
-                title="Xem danh thiếp số"
+                onClick={() => setActiveTab("overview")}
+                className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
+                  activeTab === "overview"
+                    ? "text-Text-active font-semibold"
+                    : "text-Text-default font-normal hover:text-slate-900 dark:hover:text-white"
+                }`}
               >
-                <CreditCard className="size-5 text-[#003B95] dark:text-blue-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Danh thiếp</span>
+                <span className="text-sm font-['Inter'] leading-5">Tổng quan bài viết</span>
+                {activeTab === "overview" && (
+                  <div className="w-full h-0.5 bg-Border-action absolute bottom-0 left-0" />
+                )}
               </button>
-
-              {/* Nút 2: Chia sẻ */}
               <button
                 type="button"
-                onClick={handleShare}
-                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
-                title="Chia sẻ hồ sơ"
+                onClick={() => setActiveTab("activities")}
+                className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
+                  activeTab === "activities"
+                    ? "text-Text-active font-semibold"
+                    : "text-Text-default font-normal hover:text-slate-900 dark:hover:text-white"
+                }`}
               >
-                <Share2 className="size-5 text-sky-500 dark:text-sky-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Chia sẻ</span>
-              </button>
-
-              {/* Nút 3: Sửa hồ sơ */}
-              <button
-                type="button"
-                onClick={() => setEditProfileOpen(true)}
-                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
-                title="Chỉnh sửa hồ sơ"
-              >
-                <Pencil className="size-5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Sửa hồ sơ</span>
-              </button>
-
-              {/* Nút 4: Cài đặt hệ thống (Yêu cầu 2: đưa vào nhóm icon dưới avatar, bỏ quét mã) */}
-              <button
-                type="button"
-                onClick={() => setSystemSettingsOpen(true)}
-                className="flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition active:scale-95 cursor-pointer group"
-                title="Cài đặt hệ thống"
-              >
-                <Cog className="size-5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span className="text-[10.5px] font-semibold text-slate-700 dark:text-slate-300">Cài đặt</span>
+                <span className="text-sm font-['Inter'] leading-5">Giao thương &amp; Sự kiện</span>
+                {activeTab === "activities" && (
+                  <div className="w-full h-0.5 bg-Border-action absolute bottom-0 left-0" />
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── 3. THANH SEGMENTED TABS: 2 NHÓM CHÍNH (YÊU CẦU 1) ── */}
-        <div className="w-full">
-          <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab("overview")}
-              className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "overview"
-                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-              style={activeTab === "overview" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
-            >
-              <User className={`h-3.5 w-3.5 ${activeTab === "overview" ? "text-white" : ""}`} />
-              <span style={activeTab === "overview" ? { color: "#ffffff" } : undefined}>Tổng quan &amp; Bài viết</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("activities")}
-              className={`py-2 px-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "activities"
-                  ? "bg-[#003B95] text-white shadow-xs font-extrabold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-              style={activeTab === "activities" ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
-            >
-              <Briefcase className={`h-3.5 w-3.5 ${activeTab === "activities" ? "text-white" : ""}`} />
-              <span style={activeTab === "activities" ? { color: "#ffffff" } : undefined}>Giao thương &amp; Sự kiện</span>
-            </button>
-          </div>
-        </div>
-
-        {/* ── 4. NỘI DUNG THEO TỪNG TAB (TẤT CẢ DẠNG ĐẦU MỤC THU GỌN - BẤM VÀO MỚI MỞ RA) ── */}
-
-        
-        {/* ── 4. NỘI DUNG 2 NHÓM CHÍNH (YÊU CẦU 1, 2, 3) ── */}
-
-        {/* ── NHÓM 1: TỔNG QUAN, SỐ LIỆU, HỒ SƠ DOANH NGHIỆP & BÀI VIẾT MẠNG LƯỚI ── */}
+        {/* ── 4. NỘI DUNG THEO TỪNG TAB ── */}
         {activeTab === "overview" && (
-          <div className="w-full space-y-3 animate-in fade-in duration-200">
-            {/* (Đã bỏ 4 ô hình vuông số liệu sự kiện, cơ hội, hẹn gặp, bài viết theo Yêu cầu 5) */}
-
-            {/* Panel Hồ sơ doanh nghiệp (Gộp Giới thiệu & Quy mô, không có nút sửa ở bio, cho phép đóng mở - Yêu cầu 2) */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+          <div className="w-full flex flex-col justify-start items-stretch gap-3 animate-in fade-in duration-150">
+            {/* Sub-pills: Hồ sơ doanh nghiệp / Bài viết của bạn (dòng 533-542) */}
+            <div className="self-stretch inline-flex justify-start items-start gap-2.5">
               <button
                 type="button"
-                onClick={() => toggleSection("business_profile")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                onClick={() => setSubTab("business")}
+                className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
+                  subTab === "business"
+                    ? "bg-Primary-1-50 dark:bg-amber-950/40 outline-Border-action text-Text-active font-semibold"
+                    : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
+                }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
-                    <Building2 className="size-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Hồ sơ doanh nghiệp
-                    </h3>
-                    <p className="text-[10.5px] text-slate-600 dark:text-slate-300 font-medium line-clamp-1">
-                      {displayCompany} • {displayIndustry} • {displayCompanySize}
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["business_profile"] !== false ? "rotate-180 text-[#003B95] dark:text-amber-400" : ""
-                  }`}
-                />
+                <span className="text-sm font-['Inter'] leading-5">Hồ sơ doanh nghiệp</span>
               </button>
-
-              {expandedSections["business_profile"] !== false && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Giới thiệu năng lực doanh nhân &amp; doanh nghiệp</div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
-                      {displayBio}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Quy mô nhân sự</div>
-                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
-                        {displayCompanySize}
-                      </div>
-                    </div>
-                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Lĩnh vực kinh doanh</div>
-                      <div className="text-xs font-black text-slate-900 dark:text-white mt-0.5 truncate">
-                        {displayIndustry}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase">Doanh nghiệp trực thuộc</div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">{displayCompany}</div>
-                    </div>
-                    <Building2 className="size-4 text-slate-400" />
-                  </div>
-
-                  {/* Địa chỉ doanh nghiệp và Bản đồ định vị tương tác */}
-                  <div className="pt-2">
-                    <CeoBusinessLocationPicker
-                      initialAddress={displayAddress}
-                      initialLat={displayLat}
-                      initialLng={displayLng}
-                      companyName={displayCompany}
-                      userId={user?.id}
-                      onAddressSaved={() => {
-                        reloadMember?.();
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setSubTab("posts")}
+                className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
+                  subTab === "posts"
+                    ? "bg-Primary-1-50 dark:bg-amber-950/40 outline-Border-action text-Text-active font-semibold"
+                    : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
+                }`}
+              >
+                <span className="text-sm font-['Inter'] leading-5">Bài viết của bạn</span>
+              </button>
             </div>
 
-            {/* Dưới panel hồ sơ doanh nghiệp là phần bài viết đã đăng (Yêu cầu 3) */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
+            {/* ── KHI CHỌN SUB-TAB: HỒ SƠ DOANH NGHIỆP ── */}
+            {subTab === "business" && (
+              <div className="w-full flex flex-col justify-start items-stretch gap-4">
+                {/* Khối Hồ sơ doanh nghiệp (dòng 545-587) */}
+                <div className="self-stretch bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden shadow-2xs">
+                  <div className="self-stretch px-4 pt-4 pb-2 inline-flex justify-between items-center">
+                    <div className="flex-1 flex justify-start items-center gap-2">
+                      <img src="/icons/profile_icons/profile-02.svg" className="size-5" alt="profile" />
+                      <div className="flex-1 inline-flex flex-col justify-start items-start">
+                        <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
+                          Hồ sơ doanh nghiệp
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="self-stretch px-4 pt-3 pb-4 border-t border-slate-100 dark:border-slate-800 flex flex-col justify-start items-start gap-4">
+                    {/* Giới thiệu năng lực */}
+                    <div className="self-stretch flex flex-col justify-start items-start">
+                      <div className="text-Text-default text-sm font-semibold font-['Inter'] leading-5">
+                        Giới thiệu năng lực doanh nhân &amp; doanh nghiệp
+                      </div>
+                      <div className="pt-1 text-Text-description text-sm font-normal font-['Inter'] leading-5 whitespace-pre-line">
+                        {displayBio || "Hội viên tích cực CLB Doanh Nhân CEO 1983 (HanoiBA). Sẵn sàng giao lưu kết nối, hợp tác kinh doanh và mở rộng chuỗi cung ứng B2B bền vững."}
+                      </div>
+                    </div>
+
+                    {/* Chi tiết thông số doanh nghiệp */}
+                    <div className="self-stretch flex flex-col justify-start items-start gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="self-stretch inline-flex justify-between items-start">
+                        <span className="text-Text-default text-sm font-semibold font-['Inter'] leading-5">
+                          Quy mô nhân sự:
+                        </span>
+                        <span className="text-Text-default text-sm font-normal font-['Inter'] leading-5">
+                          {displayCompanySize}
+                        </span>
+                      </div>
+                      <div className="self-stretch inline-flex justify-between items-start">
+                        <span className="text-Text-default text-sm font-semibold font-['Inter'] leading-5">
+                          Lĩnh vực kinh doanh:
+                        </span>
+                        <span className="text-Text-default text-sm font-normal font-['Inter'] leading-5">
+                          {displayIndustry}
+                        </span>
+                      </div>
+                      <div className="self-stretch inline-flex justify-between items-start gap-2">
+                        <span className="text-Text-default text-sm font-semibold font-['Inter'] leading-5 shrink-0">
+                          Doanh nghiệp trực thuộc:
+                        </span>
+                        <span className="text-right text-slate-900 dark:text-white text-sm font-normal font-['Inter'] leading-5 truncate">
+                          {displayCompany}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Khối Địa chỉ doanh nghiệp & Bản đồ 2D Google (dòng 589-656) */}
+                <div className="self-stretch p-4 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start gap-3 shadow-2xs">
+                  <div className="self-stretch inline-flex justify-between items-center">
+                    <div className="flex-1 flex justify-start items-center gap-2">
+                      <img src="/icons/profile_icons/navigation-05.svg" className="size-5" alt="navigation" />
+                      <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
+                        Địa chỉ doanh nghiệp
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thanh hiển thị địa chỉ với icon search */}
+                  <div className="self-stretch h-9 px-2.5 py-1.5 rounded-lg outline outline-1 outline-offset-[-1px] outline-Border-default inline-flex justify-start items-center gap-2 bg-slate-50 dark:bg-slate-800/50">
+                    <img src="/icons/profile_icons/search-01.svg" className="size-4 shrink-0" alt="search" />
+                    <div className="flex-1 text-slate-900 dark:text-white text-sm font-normal font-['Inter'] leading-5 truncate">
+                      {displayAddress}
+                    </div>
+                  </div>
+
+                  {/* Bản đồ 2D Google chuẩn xác 100% hiển thị trực tiếp */}
+                  <div className="self-stretch h-56 relative rounded-xl outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden bg-slate-100 dark:bg-slate-900">
+                    <iframe
+                      title="Google Map 2D Doanh nghiệp"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}&t=m&z=16&output=embed`}
+                      className="w-full h-full border-0"
+                      loading="lazy"
+                    />
+
+                    {/* Nút hành động nổi trên bản đồ */}
+                    <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowLocationEditor(!showLocationEditor)}
+                        className="px-2.5 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <MapPin className="size-3 text-red-500" />
+                        <span>{showLocationEditor ? "Đóng sửa vị trí" : "Dời ghim / Sửa địa chỉ"}</span>
+                      </button>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1"
+                        title="Mở ứng dụng Google Maps"
+                      >
+                        <ExternalLink className="size-3.5 text-amber-600" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Panel Sửa Vị Trí / Dời Ghim khi bấm mở */}
+                  {showLocationEditor && (
+                    <div className="self-stretch pt-2 animate-in fade-in duration-150">
+                      <CeoBusinessLocationPicker
+                        initialAddress={displayAddress}
+                        initialLat={displayLat}
+                        initialLng={displayLng}
+                        companyName={displayCompany}
+                        userId={user?.id}
+                        onAddressSaved={() => {
+                          reloadMember?.();
+                          setShowLocationEditor(false);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── KHI CHỌN SUB-TAB: BÀI VIẾT CỦA BẠN ── */}
+            {subTab === "posts" && (
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
@@ -1231,8 +1304,9 @@ export default function ProfileScreen() {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
         {/* ── NHÓM 2: GIAO THƯƠNG & SỰ KIỆN ── */}
         {/* ── TAB 2: GIAO THƯƠNG B2B (TỐI GIẢN CHUẨN 3 MÀU CEO 1983: ĐỎ BÃ TRẦU - VÀNG KIM - XANH NAVY) ── */}

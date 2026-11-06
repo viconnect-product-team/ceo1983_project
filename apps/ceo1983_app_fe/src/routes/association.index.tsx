@@ -1165,203 +1165,198 @@ function Home() {
       <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />
       <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
 
-      {/* ── TOP HEADER (Logo + Thông báo chuông đỏ) ── */}
+      {/* ── TOP HEADER (Logo + Xin chào, MemberName + Chuông thông báo) ── */}
       <div className="self-stretch flex flex-col justify-start items-center">
-        <div className="self-stretch h-16 px-4 bg-white dark:bg-slate-900 border-b-2 border-Backgrounds-Secondary dark:border-slate-800 flex justify-between items-center overflow-hidden sticky top-0 z-30 shadow-xs">
-          <img
-            className="h-9 w-auto object-contain"
-            src="/images/ceo1983/logo-ceo-1983.png"
-            alt="Logo CEO 1983"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/ceo1983-logo.png";
-            }}
-          />
+        <div data-type="1" className="self-stretch px-4 pt-2 pb-2 bg-white dark:bg-slate-900 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex justify-start items-center gap-2.5">
+            <div className="w-14 h-9 relative shrink-0">
+              <img
+                className="w-14 h-9 left-0 top-0 absolute object-contain"
+                src="/images/ceo1983/logo-ceo-1983.png"
+                alt="Logo CEO 1983"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/ceo1983-logo.png";
+                }}
+              />
+            </div>
+            <div className="inline-flex flex-col justify-center items-start gap-px">
+              <div className="text-slate-600 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">Xin chào,</div>
+              <div className="text-slate-900 dark:text-white text-sm font-semibold font-['Inter'] leading-5 truncate max-w-[170px]">
+                {displayName || "Trần Tuấn Anh"}
+              </div>
+            </div>
+          </div>
           <Link
             to="/association/notifications"
-            className="size-9 relative bg-amber-50 dark:bg-slate-800 rounded-full border border-amber-300/80 dark:border-amber-500/40 flex justify-center items-center hover:scale-105 active:scale-95 transition-transform shadow-2xs"
+            className="relative p-2 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 inline-flex justify-center items-center hover:scale-105 active:scale-95 transition shadow-xs"
             aria-label="Thông báo"
           >
-            <Bell className="size-5 text-[#003B95] dark:text-slate-300" />
-            {unreadNotifCount > 0 && (
-              <div className="size-4 -right-1 -top-1 absolute bg-rose-500 rounded-full flex justify-center items-center overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900">
-                <span className="text-white text-[9.5px] font-bold font-sans leading-3">{unreadNotifCount > 9 ? "9+" : unreadNotifCount}</span>
+            <img src="/icons/home_icons/notification-01.svg" className="size-5" alt="Thông báo" />
+            <div className="px-1.5 py-0.5 -right-1.5 -top-1.5 absolute bg-[#EF4444] rounded-[100px] inline-flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
+              <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
+                {unreadNotifCount > 9 ? "9+" : (unreadNotifCount || "9+")}
               </div>
-            )}
+            </div>
           </Link>
         </div>
-        <div className="self-stretch h-3.5" />
 
-        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD ── */}
-        <div
-          onClick={() => setProfileSheetOpen(true)}
-          className="w-[calc(100%-2rem)] mx-4 relative rounded-3xl bg-white dark:bg-[#0B132B] border border-amber-500/25 dark:border-amber-400/20 shadow-[0_10px_30px_-8px_rgba(0,34,79,0.15)] flex flex-col justify-start items-start overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group hover:shadow-[0_14px_35px_-8px_rgba(245,158,11,0.22)]"
-        >
-          {/* Cover Banner */}
-          <div className="relative self-stretch h-28 w-full overflow-hidden bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#0A1224]">
-            <img
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
-              alt="Banner"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/banner-ceo.png";
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
-          </div>
-
-          {/* Card Body: Member name, job title, phone number + quick edit at bottom */}
-          <div className="self-stretch px-4 pt-11 pb-3 flex flex-col justify-start items-start gap-1 overflow-hidden relative">
-            <h2 className="text-slate-900 dark:text-white text-base font-extrabold font-sans leading-tight truncate w-full">
-              {displayName || "Trần Tuấn Anh"}
-            </h2>
-
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-xs font-semibold leading-4">
-              <Briefcase className="size-3.5 shrink-0 text-[#003B95] dark:text-blue-400" />
-              <span className="truncate">{displayTitle || "Hội viên Doanh nhân"}</span>
-            </div>
-
-            <div className="self-stretch flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60 mt-0.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold leading-5">
-                <Phone className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-emerald-700 dark:text-emerald-400 font-sans tracking-wide">
-                  {displayPhone || "0901000001"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setQuickEditOpen(true);
-                }}
-                className="size-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-[#003B95] dark:text-slate-300 inline-flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs border border-amber-500/25"
-                title="Chỉnh sửa thông tin"
-                aria-label="Chỉnh sửa thông tin"
-              >
-                <Pencil className="size-3.5 text-[#003B95]" />
-              </button>
-            </div>
-          </div>
-
-          {/* Avatar overlapping cover */}
+        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE VÀNG CAM ── */}
+        <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-2.5">
           <div
-            onClick={(e) => {
-              e.stopPropagation();
-              avatarFileInputRef.current?.click();
-            }}
-            className="size-18 left-4 top-18 absolute rounded-2xl bg-gradient-to-tr from-[#003B95] to-[#001D4A] ring-3 ring-white dark:ring-[#0B132B] shadow-xl inline-flex justify-center items-center overflow-hidden cursor-pointer hover:brightness-105 transition-transform active:scale-95"
-            title="Đổi ảnh đại diện"
+            onClick={() => setProfileSheetOpen(true)}
+            className="self-stretch h-56 relative bg-linear-to-r from-amber-100/90 via-orange-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-[20px] shadow-[0px_4px_13px_0px_rgba(174,113,21,0.12)] border border-amber-300/60 dark:border-amber-500/30 overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group"
           >
-            {displayAvatar && !avatarError ? (
-              <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
-            ) : (
-              <span className="text-white text-xl font-black font-sans leading-none">{initials(displayName)}</span>
-            )}
+            {/* Cover Banner */}
+            <div className="w-full h-24 left-0 top-0 absolute bg-stone-300 dark:bg-slate-800 rounded-tl-2xl rounded-tr-2xl border-b border-amber-200/50 dark:border-slate-700 overflow-hidden">
+              <img
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
+                alt="Banner"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/banner-ceo.png";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+            </div>
+
+            {/* Avatar overlapping cover */}
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                avatarFileInputRef.current?.click();
+              }}
+              className="size-16 left-4 top-[58px] absolute bg-slate-900 dark:bg-slate-950 rounded-full border-[3px] border-white dark:border-slate-900 shadow-md inline-flex justify-center items-center overflow-hidden cursor-pointer"
+            >
+              {displayAvatar && !avatarError ? (
+                <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-linear-to-tr from-[#003B95] to-amber-500 flex items-center justify-center text-white text-base font-black font-sans">
+                  {initials(displayName)}
+                </div>
+              )}
+            </div>
+
+            {/* Member Info: Name & Role Badge */}
+            <div className="left-4 top-[128px] absolute inline-flex flex-col justify-start items-start gap-1 max-w-[240px]">
+              <div className="self-stretch inline-flex justify-start items-center gap-1.5">
+                <div className="text-slate-900 dark:text-white text-lg font-bold font-['Inter'] leading-6 truncate">
+                  {displayName || "Trần Tuấn Anh"}
+                </div>
+                <img src="/icons/home_icons/security-check.svg" className="size-4 shrink-0 text-amber-500" alt="Xác thực" />
+              </div>
+              <div className="px-2 py-[2px] bg-orange-100 dark:bg-amber-950/60 border border-orange-200 dark:border-amber-500/40 rounded-full inline-flex justify-start items-center gap-1.5">
+                <img src="/icons/home_icons/briefcase-04.svg" className="size-3 text-orange-600 dark:text-amber-400" alt="Chức vụ" />
+                <div className="text-orange-600 dark:text-amber-400 text-xs font-semibold font-['Inter'] leading-4">
+                  {displayTitle || "CEO"}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Edit Icon */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setQuickEditOpen(true);
+              }}
+              className="w-8 h-8 p-1.5 right-4 top-[106px] absolute rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 shadow-2xs inline-flex justify-center items-center hover:scale-105 active:scale-95 transition cursor-pointer"
+              title="Chỉnh sửa thông tin"
+            >
+              <img src="/icons/home_icons/edit-04.svg" className="size-4" alt="Chỉnh sửa" />
+            </button>
+
+            {/* Member Phone */}
+            <div className="left-4 top-[188px] absolute inline-flex justify-start items-center gap-1.5">
+              <img src="/icons/home_icons/call-02.svg" className="size-4 text-slate-500 dark:text-slate-400" alt="Điện thoại" />
+              <div className="text-slate-800 dark:text-slate-200 text-sm font-semibold font-['Inter'] leading-5 tracking-wide">
+                {displayPhone || "0393631546"}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* ── 4 TÍNH NĂNG CỐT LÕI (CHO PHÉP HỘI VIÊN TÙY BIẾN THEO MONG MUỐN) ── */}
-        <div id="tour-quick-actions" className="self-stretch px-3 py-3 flex flex-col justify-start items-start gap-2">
-          <div className="w-full flex items-center justify-between px-1">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider font-['Inter']">
+        {/* ── TÍNH NĂNG NHANH THEO MOCKUP JSX & TONE VÀNG CAM ── */}
+        <div id="tour-quick-actions" className="self-stretch flex flex-col justify-start items-start pt-4">
+          <div className="self-stretch px-4 inline-flex justify-between items-center">
+            <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
               Tính năng nhanh
-            </span>
+            </div>
             <button
               type="button"
               onClick={() => setAllFeaturesModalOpen(true)}
-              className="px-2 py-0.5 rounded-full text-[11px] font-bold text-[var(--primary)] dark:text-amber-400 hover:bg-amber-500/10 inline-flex items-center gap-1 transition cursor-pointer"
-              title="Xem tất cả tính năng"
+              className="px-2.5 py-1 rounded-lg border border-orange-200 dark:border-amber-500/30 bg-orange-50/50 dark:bg-amber-950/30 flex justify-start items-center gap-1.5 cursor-pointer hover:bg-orange-100/50 transition"
             >
-              <Sparkles className="size-3 text-[var(--primary)] dark:text-amber-400" />
-              <span>Xem tất cả tính năng</span>
+              <div className="text-orange-600 dark:text-amber-400 text-xs font-semibold font-['Inter'] leading-5">
+                Xem tất cả
+              </div>
+              <img src="/icons/home_icons/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
             </button>
           </div>
-          <div className={`self-stretch grid ${effectiveTheme.layoutGrid === "3" ? "grid-cols-3" : "grid-cols-4"} gap-2.5 items-start`}>
-            {activeShortcutIds.map((id) => {
-              const def = ALL_SHORTCUT_OPTIONS.find((o) => o.id === id) || ALL_SHORTCUT_OPTIONS[0];
-              let badgeVal: string | number | undefined = def.badge;
-              if (id === "events" && displayEvents.length > 0) {
-                badgeVal = displayEvents.length;
-              } else if (id === "members") {
-                badgeVal = directoryMembers.length > 0 ? directoryMembers.length : (member ? "12" : "10");
-              } else if (id === "opportunities" && totalOpportunitiesCount > 0) {
-                badgeVal = totalOpportunitiesCount;
-              }
 
-              const isHash = def.to.startsWith("#");
-              const roundedClass = effectiveTheme.borderRadius || "rounded-2xl";
-              const customThemeIcon = effectiveTheme.actionIcons?.[id];
+          <div className="self-stretch px-4 pt-3.5 pb-2 flex justify-between items-start gap-2">
+            {/* 1. Tin nhắn */}
+            <Link
+              to="/association/messages"
+              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
+            >
+              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
+                <img src="/icons/home_icons/bubble-chat.svg" className="size-6" alt="Tin nhắn" />
+              </div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
+                Tin nhắn
+              </div>
+            </Link>
 
-              const isDarkTheme = isDark;
-              const iconAndBadge = (
-                <div
-                  className={`size-14 relative ${roundedClass} flex justify-center items-center group-hover:scale-105 transition-all shadow-xs`}
-                  style={{
-                    backgroundColor: isDarkTheme ? `${brandColorTheme.primaryColor}22` : brandColorTheme.lightBg,
-                    borderColor: isDarkTheme ? `${brandColorTheme.accentColor}55` : brandColorTheme.lightBorder,
-                    borderWidth: "1.5px",
-                    borderStyle: "solid",
-                    boxShadow: isDarkTheme ? `0 2px 10px ${brandColorTheme.primaryColor}20` : undefined,
-                  }}
-                >
-                  {customThemeIcon ? (
-                    <span className="text-2xl select-none leading-none" role="img" aria-label={def.name}>
-                      {customThemeIcon}
-                    </span>
-                  ) : (
-                    <span style={{ color: isDarkTheme ? brandColorTheme.accentColor : brandColorTheme.primaryColor }}>
-                      {getShortcutIcon(def.iconName, "size-6")}
-                    </span>
-                  )}
-                  {badgeVal && (
-                    <div
-                      className={`px-1.5 py-0.5 right-[-6px] -top-2 absolute rounded-3xl flex justify-start items-start overflow-hidden shadow-xs ring-1 ring-white dark:ring-slate-900`}
-                      style={{
-                        backgroundColor: isDarkTheme ? brandColorTheme.accentColor : brandColorTheme.primaryColor,
-                        color: isDarkTheme ? "#0F172A" : "#FFFFFF",
-                      }}
-                    >
-                      <span className="text-[10px] font-black font-sans leading-3">
-                        {badgeVal}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-
-              if (isHash || id === "connect" || def.to === "#connect") {
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      if (def.to === "#map") setMapModalOpen(true);
-                      else if (def.to === "#alarm") setAlarmModalOpen(true);
-                      else if (def.to === "#connect" || id === "connect") setCreateConnectionModalOpen(true);
-                      else setAllFeaturesModalOpen(true);
-                    }}
-                    className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
-                  >
-                    {iconAndBadge}
-                    <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-bold font-sans leading-4 tracking-tight truncate max-w-full">
-                      {def.name}
-                    </div>
-                  </button>
-                );
-              }
-
-              return (
-                <Link
-                  key={id}
-                  to={def.to}
-                  className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group"
-                >
-                  {iconAndBadge}
-                  <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-bold font-sans leading-4 tracking-tight truncate max-w-full">
-                    {def.name}
+            {/* 2. Danh bạ CEO */}
+            <Link
+              to="/association/members"
+              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
+            >
+              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
+                <img src="/icons/home_icons/contact-book.svg" className="size-6" alt="Danh bạ CEO" />
+                <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
+                  <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
+                    {directoryMembers.length > 0 ? directoryMembers.length : "10"}
                   </div>
-                </Link>
-              );
-            })}
+                </div>
+              </div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
+                Danh bạ CEO
+              </div>
+            </Link>
+
+            {/* 3. Báo cáo */}
+            <Link
+              to="/association/analytics"
+              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
+            >
+              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
+                <img src="/icons/home_icons/chart-breakout-circle.svg" className="size-6" alt="Báo cáo" />
+              </div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
+                Báo cáo
+              </div>
+            </Link>
+
+            {/* 4. Giao thương B2B */}
+            <Link
+              to="/association/opportunities"
+              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
+            >
+              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
+                <img src="/icons/home_icons/briefcase-04.svg" className="size-6" alt="Giao thương B2B" />
+                {totalOpportunitiesCount > 0 && (
+                  <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
+                    <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
+                      {totalOpportunitiesCount}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
+                Giao thương
+              </div>
+            </Link>
           </div>
         </div>
       </div>

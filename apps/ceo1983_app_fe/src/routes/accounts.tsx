@@ -41,6 +41,7 @@ import {
   DepartmentItem,
 } from "@/lib/rbac-permission-helpers";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
+import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 
 export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
@@ -341,6 +342,7 @@ function AccountsPage() {
       // 2. Ghi trực tiếp vào Backend PostgreSQL API cho các tài khoản có thay đổi
       const savePromises = changedAccounts.map(async (acc) => {
         const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
+        if (!targetId) return;
         const payload = {
           executiveRole: acc.role,
           department: acc.department,
@@ -368,12 +370,18 @@ function AccountsPage() {
       await Promise.allSettled(savePromises);
 
       // 3. Cập nhật localStorage snapshot
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-      setInitialAccountsStr(JSON.stringify(accounts));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+        setInitialAccountsStr(JSON.stringify(accounts));
+      } catch (lsErr) {
+        console.warn("Could not save to localStorage:", lsErr);
+      }
 
       // 4. Xóa cache và phát sự kiện đồng bộ toàn hệ thống
       clearMeCache();
-      dispatchPermissionSyncEvent();
+      try {
+        dispatchPermissionSyncEvent();
+      } catch {}
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("role-changed"));
         window.dispatchEvent(new Event("crm_permissions_updated"));
@@ -382,8 +390,9 @@ function AccountsPage() {
       }
 
       toast.success("Đã lưu và đồng bộ phân quyền tài khoản vào CSDL thành công!");
-    } catch {
-      toast.error("Lỗi khi lưu tài khoản vào CSDL!");
+    } catch (err: any) {
+      console.error("Lỗi khi lưu tài khoản:", err);
+      toast.error(err?.message || "Lỗi khi lưu tài khoản vào CSDL!");
     } finally {
       setSaving(false);
     }
@@ -1164,10 +1173,13 @@ function AccountsPage() {
                     Số Điện Thoại
                   </label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
                     value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
+                    onKeyDown={handleNumericKeyDown}
+                    onChange={(e) => setFormPhone(sanitizePhoneNumber(e.target.value))}
                     placeholder="0988 xxx xxx"
+                    maxLength={11}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95]"
                   />
                 </div>

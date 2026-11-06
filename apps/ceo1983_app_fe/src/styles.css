@@ -93,12 +93,33 @@
   background-size: cover;
 }
 
-.dark .bg-crm-system {
-  background-image: linear-gradient(to bottom, rgba(11, 17, 32, 0.15), rgba(11, 17, 32, 0.35)), url('/Background.png');
-  background-repeat: no-repeat;
-  background-position: top center;
-  background-size: cover;
+.dark .bg-crm-system,
+html.dark .bg-crm-system,
+[data-theme="dark"] .bg-crm-system {
+  background-image: none !important;
+  background-color: var(--vba-bg, #070D1A) !important;
 }
+
+/* Figma Brand Design Tokens for CEO1983 Mobile App */
+.bg-Primary-2-50 { background-color: #FFF7ED !important; }
+.dark .bg-Primary-2-50 { background-color: rgba(234, 88, 12, 0.15) !important; }
+.bg-Primary-2-brand { background-color: #EA580C !important; }
+.bg-Primary-1-50 { background-color: #EFF6FF !important; }
+.dark .bg-Primary-1-50 { background-color: rgba(0, 59, 149, 0.25) !important; }
+.bg-Primary-1-brand { background-color: #003B95 !important; }
+.bg-Dark-blue-700 { background-color: #0F172A !important; }
+.bg-Surface-badge { background-color: #EF4444 !important; }
+
+.text-Text-default { color: #1E293B !important; }
+.dark .text-Text-default { color: #F1F5F9 !important; }
+.text-Text-active { color: #EA580C !important; }
+.dark .text-Text-active { color: #FB923C !important; }
+.text-Primary-2-brand { color: #EA580C !important; }
+
+.outline-Primary-2-brand { outline-color: #EA580C !important; }
+.outline-Icon-default { outline-color: #64748B !important; }
+.outline-Icon-active { outline-color: #EA580C !important; }
+.outline-Border-on-action { outline-color: #FFFFFF !important; }
 
 :root {
   --radius: 0.75rem;

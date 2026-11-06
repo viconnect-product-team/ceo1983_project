@@ -1,5 +1,44 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 06/11/2026 (v10.51): Nâng Cấp Toàn Diện Web CRM & CEO 1983 Mobile App — Đồng Bộ Biểu Đồ Analytics, Tải Tài Liệu Thư Mục, Landing Page, Phân Quyền RBAC, Validate SĐT, Nền Dark Theme, Badge Thông Báo Menu, Xóa Fake Data, Giao Diện Trang Chủ & Trang Cá Nhân Vàng Cam Kèm Bản Đồ 2D Google, Đặc Tả API & CSDL ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001], [NODE-APP-006], [NODE-APP-012], [NODE-CORE-001] -> [NODE-CORE-004])**:
+  1. *Web CRM CEO1983 — Khắc phục triệt để 7 yêu cầu nghiệp vụ*:
+     - **Biểu đồ Thống kê Analytics (`[NODE-CRM-002]`)**:
+       * Backend (`analytics.service.ts`): Cân đối các chỉ số (connections, meetings, events, opportunities) thành các thành phần độc lập trong từng bucket thời gian; `timelineVal = connections + meetings + events + opportunities` đảm bảo đường timeline luôn chạy mượt mà ngay trên đỉnh các cột.
+       * Frontend (`analytics.tsx`): Thêm `stackId="metrics"` cho 4 cột `<Bar>`, kết nối `<Line>` tương ứng. Không unmount component biểu đồ khi rỗng (`isChartEmpty`), giúp các bộ lọc phút (`minute`), giờ (`hour`), ngày (`day`) luôn hiển thị đầy đủ trục tọa độ, lưới nền và chú thích.
+     - **Quản lý Tài liệu vào Thư mục (`[NODE-CRM-007]`)**:
+       * Backend (`documents.repository.ts`): Bổ sung hỗ trợ đầy đủ các trường `folder_id`, `is_folder`, `drive_url`, `share_scope` trong CSDL PostgreSQL.
+       * Frontend (`DriveDocumentModal.tsx`, `documents.index.tsx`): Bổ sung dropdown chọn thư mục đích `availableFolders`, truyền chính xác `targetFolderId` khi lưu tài liệu.
+     - **Hiển thị Landing Page trong CRM (`[NODE-CRM-015]`, `[NODE-CRM-021]`)**:
+       * Frontend (`Sidebar.tsx`, `landing.index.tsx`): Mở rộng quyền truy cập `/admin/landing-webs` và `/admin/landing-templates` cho toàn bộ Ban Điều Hành; bổ sung lối tắt "Xem Landing Page" (`/landing`) trực tiếp từ menu Quản trị.
+     - **Lỗi Phân quyền khi Lưu Tài khoản (`[NODE-CRM-006]`)**:
+       * Backend (`members.service.ts`): Bổ sung kiểm tra định dạng `isUuid()` trước mọi thao tác ép kiểu UUID, ngăn chặn triệt để lỗi 500 khi lưu tài khoản.
+       * Frontend (`accounts.tsx`): Bắt lỗi chi tiết, hiển thị thông báo chính xác và xử lý an toàn từng dòng.
+     - **Validation SĐT Số Thuần Túy (`[NODE-CORE-002]`, `[NODE-CRM-003]`)**:
+       * Frontend (`lib/utils.ts`): Xây dựng hàm `sanitizePhoneNumber` và `handleNumericKeyDown` lọc sạch ký tự không phải số (`\D`), chặn ký tự đặc biệt ngay khi gõ, áp dụng đồng bộ trên `accounts.tsx`, `Ceo1983MemberRegistrationForm.tsx`, `QuickProfileEditModal.tsx`.
+     - **Sửa Nền Theme Tối (`[NODE-CORE-005]`)**:
+       * Frontend (`styles.css`): Gỡ bỏ hoàn toàn ảnh nền sáng `/Background.png` trong chế độ `.dark .bg-crm-system`, `html.dark`, giữ nền tối sâu đồng nhất `#070D1A`.
+     - **Badge Số Thông Báo Mới trên Menu CRM (`[NODE-CRM-001]`, `[NODE-CRM-011]`)**:
+       * Frontend (`use-unread-notifications.ts`, `Sidebar.tsx`): Phân loại số lượng thông báo chưa đọc theo từng chuyên mục nghiệp vụ (`/members`, `/renewal`, `/events`, `/meetings`, `/tasks`, `/opportunities`, `/documents`, `/approvals`) và gắn Badge đếm số nổi bật bên cạnh từng mục menu.
+  2. *CEO 1983 Mobile App — Nâng cấp giao diện & dữ liệu thực tế*:
+     - **Thống kê Mobile App 100% Số Liệu Thực CSDL (`[NODE-APP-006]`)**:
+       * Backend (`analytics.service.ts`): Bổ sung `totalConnections`, `totalMeetings`, `totalEvents` vào `kpi`.
+       * Frontend (`association.analytics.tsx`): Cắt bỏ toàn bộ dữ liệu mẫu tĩnh (186 cuộc, 42 deal, 85.6 Tỷ đ, Nguyễn Hải Long,...); liên kết 100% với dữ liệu CSDL thực tế, trả về 0 nếu chưa phát sinh dữ liệu.
+     - **Tái Thiết Kế Trang Chủ Theo Mockup Tone Vàng Cam (`[NODE-APP-001]`)**:
+       * Tích hợp bộ icon chuẩn tại `public/icons/home_icons/` (`bubble-chat.svg`, `contact-book.svg`, `chart-breakout-circle.svg`, `briefcase-04.svg`, `arrow-right-02.svg`, `edit-04.svg`, `call-02.svg`, `security-check.svg`, `notification-01.svg`).
+       * Tái cấu trúc Top bar, Thẻ Hero Hội viên tone Vàng Amber Gradient kèm tích xanh xác thực và 4 nút Tính Năng Nhanh vuông góc bo tròn.
+     - **Tái Thiết Kế Trang Cá Nhân Theo Mockup Kèm Bản Đồ 2D Google (`[NODE-APP-012]`)**:
+       * Tích hợp bộ icon chuẩn tại `public/icons/profile_icons/` (`arrow-left-02.svg`, `setting-07.svg`, `edit-04.svg`, `user-edit-01.svg`, `new-releases.svg`, `briefcase-04.svg`, `student-card.svg`, `share-01.svg`, `profile-02.svg`, `navigation-05.svg`, `search-01.svg`).
+       * Tái cấu trúc Header, Ảnh bìa, Avatar tròn trung tâm với badge sửa hồ sơ, tên hội viên, tích xanh, badge chức vụ `CEO`, doanh nghiệp và 3 nút hành động tinh gọn: "Danh thiếp", "Chia sẻ", "Sửa hồ sơ".
+       * Phân chia 2 Tab chính: "Tổng quan bài viết" và "Giao thương & Sự kiện".
+       * Tab con "Hồ sơ doanh nghiệp" chứa Hồ sơ năng lực và Khối Địa chỉ doanh nghiệp tích hợp **Bản đồ 2D Google Maps chuẩn xác 100%** hiển thị mượt mà, hỗ trợ mở trực tiếp Google Maps và bộ công cụ dời ghim GPS.
+  3. *Tài Liệu Đặc Tả Kỹ Thuật Chuẩn Google NotebookLM*:
+     - Soạn thảo mới tệp `document/notebooklm/09_DAC_TA_API_VA_THIET_KE_CSDL.md` mô tả chi tiết 14 nhóm bảng CSDL PostgreSQL và 50+ REST API Endpoints.
+     - Đồng bộ và liên kết trong `document/SRS_CEO1983_MASTER_CHINH_THUC.md`.
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `nest build` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `build:dev` -> **Exit code 0 (0 errors)**.
+     - Tuyệt đối không chạy `git commit` hay `git push`, bảo toàn mã nguồn cục bộ.
+
 - **Bản cập nhật ngày 06/11/2026 (v10.50): Khắc Phục Triệt Để Bảng Xếp Hạng Thống Kê (Chỉ Hiển Thị Hội Viên Có Dữ Liệu > 0, Loại Bỏ Toàn Bộ 0 Cơ Hội), Đảm Bảo Cả 2 Bản Mẫu Landing Web Sẵn Sàng Trực Quan Trong CRM, Nâng Cấp Bộ Tài Liệu BRD & SRS Toàn Diện Với 23 Sơ Đồ Mermaid & 60 Use Cases ([NODE-CRM-021], [NODE-APP-006], [NODE-CORE-001])**:
   1. *Khắc phục triệt để Bảng xếp hạng Thống kê Mobile App (`[NODE-APP-006]`)*:
      - **Backend (`analytics.service.ts`)**: Cắt bỏ hoàn toàn điều kiện nới lỏng cơ hội nội bộ. Bộ lọc `validOppsList` bắt buộc kiểm tra `(m.publicOppsShared || 0) > 0`. Những tài khoản có `publicOppsShared === 0` tuyệt đối không được đưa vào danh sách `topOpportunities`.

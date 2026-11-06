@@ -57,6 +57,20 @@ export class PrismaService
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
         ALTER TABLE public.members ADD COLUMN IF NOT EXISTS zalo_user_id TEXT;
+        ALTER TABLE public.members ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+        ALTER TABLE public.members ADD COLUMN IF NOT EXISTS business_card_slug TEXT;
+
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS folder_id TEXT;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS is_folder BOOLEAN DEFAULT FALSE;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS drive_url TEXT;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS share_scope TEXT DEFAULT 'public';
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS share_role TEXT DEFAULT 'viewer';
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS shared_with JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS is_starred BOOLEAN DEFAULT FALSE;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS color_tag TEXT;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS description TEXT;
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS doc_scope TEXT DEFAULT 'association';
+        ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS enterprise_name TEXT;
       `).catch(() => {});
     } catch (err: any) {
       this.logger.warn(

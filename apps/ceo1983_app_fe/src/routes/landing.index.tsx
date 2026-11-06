@@ -1,21 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Ceo1983MemberRegistrationForm } from "@/components/landing/Ceo1983MemberRegistrationForm";
+import { Ceo1983FullLandingWeb } from "@/components/landing/Ceo1983FullLandingWeb";
 
 export const Route = createFileRoute("/landing/")({
   head: () => ({
     meta: [
-      { title: "Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983 — ceo1983.com" },
+      { title: "CLB Doanh Nhân CEO 1983 (HanoiBA) — Cổng Thông Tin & Kết Nối Giao Thương" },
       {
         name: "description",
         content:
-          "Đơn đăng ký gia nhập CLB Doanh Nhân CEO 1983. Điền thông tin doanh nghiệp để kết nối giao thương và gia nhập cộng đồng doanh nhân 1983.",
+          "Cổng thông tin chính thức CLB Doanh Nhân CEO 1983 thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA). Nơi quy tụ các chủ doanh nghiệp thế hệ 1983 kết nối giao thương và hợp tác phát triển.",
       },
-      { property: "og:title", content: "Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983" },
+      { property: "og:title", content: "CLB Doanh Nhân CEO 1983 (HanoiBA) — Kết Nối & Đồng Hành" },
+      { property: "og:description", content: "Hệ sinh thái kết nối giao thương B2B dành riêng cho các lãnh đạo doanh nhân sinh năm 1983." },
     ],
   }),
-  component: MemberRegistrationPage,
+  component: LandingPage,
 });
 
-function MemberRegistrationPage() {
-  return <Ceo1983MemberRegistrationForm />;
+function LandingPage() {
+  return <Ceo1983FullLandingWeb />;
 }

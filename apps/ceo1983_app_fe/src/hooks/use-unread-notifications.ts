@@ -34,6 +34,7 @@ export function useUnreadNotifications() {
   const list = useServerFn(listNotificationsFn);
   const pathname = useRouterState({ select: (s) => s?.location?.pathname });
   const [count, setCount] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   function lastSeen(): number {
     try {
@@ -47,11 +48,46 @@ export function useUnreadNotifications() {
     try {
       const items = await list({});
       const seen = lastSeen();
-      const unread = items.filter((n) => {
+      const unreadList = items.filter((n) => {
         const ts = n.sentAt ? new Date(n.sentAt).getTime() : 0;
         return ts > seen && n.status === "sent";
-      }).length;
-      setCount(unread);
+      });
+
+      const catCounts: Record<string, number> = {};
+      unreadList.forEach((n) => {
+        const text = `${n.title || ""} ${n.body || ""}`.toLowerCase();
+
+        if (n.targetRoute) {
+          catCounts[n.targetRoute] = (catCounts[n.targetRoute] || 0) + 1;
+        }
+        if (text.includes("hội viên") || text.includes("kết nạp") || text.includes("gia nhập") || text.includes("đăng ký")) {
+          catCounts["/members"] = (catCounts["/members"] || 0) + 1;
+        }
+        if (text.includes("gia hạn") || text.includes("niên liễm") || text.includes("hội phí")) {
+          catCounts["/renewal"] = (catCounts["/renewal"] || 0) + 1;
+        }
+        if (text.includes("sự kiện") || text.includes("check-in") || text.includes("điểm danh")) {
+          catCounts["/events"] = (catCounts["/events"] || 0) + 1;
+        }
+        if (text.includes("cuộc họp") || text.includes("họp ban") || text.includes("meeting")) {
+          catCounts["/meetings"] = (catCounts["/meetings"] || 0) + 1;
+        }
+        if (text.includes("nhiệm vụ") || text.includes("công việc") || text.includes("task")) {
+          catCounts["/tasks"] = (catCounts["/tasks"] || 0) + 1;
+        }
+        if (text.includes("cơ hội") || text.includes("giao thương") || text.includes("b2b") || text.includes("kết nối")) {
+          catCounts["/opportunities"] = (catCounts["/opportunities"] || 0) + 1;
+        }
+        if (text.includes("tài liệu") || text.includes("văn bản") || text.includes("hồ sơ")) {
+          catCounts["/documents"] = (catCounts["/documents"] || 0) + 1;
+        }
+        if (text.includes("phê duyệt") || text.includes("xét duyệt")) {
+          catCounts["/approvals"] = (catCounts["/approvals"] || 0) + 1;
+        }
+      });
+
+      setCount(unreadList.length);
+      setCategoryCounts(catCounts);
     } catch {
       /* ignore */
     }
@@ -108,5 +144,8 @@ export function useUnreadNotifications() {
     }
   }, [pathname]);
 
-  return count;
+  return {
+    count,
+    categoryCounts,
+  };
 }
