@@ -23,7 +23,7 @@ function isActive(pathname: string, to?: string, exact?: boolean) {
 export function BottomNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const t = useT();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const unread = useUnreadNotifications();
+  const { count: unread } = useUnreadNotifications();
 
   const itemCls = (active: boolean) =>
     `relative flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-all duration-200 ${

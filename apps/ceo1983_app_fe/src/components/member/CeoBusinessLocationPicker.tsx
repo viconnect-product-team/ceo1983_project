@@ -628,40 +628,35 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
         </div>
 
         <div className="relative w-full h-[230px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner bg-slate-100 dark:bg-slate-900">
-          {/* Leaflet Map Layer */}
-          <div
-            ref={mapContainerRef}
-            className={`w-full h-full z-0 transition-opacity duration-300 ${
-              leafletLoaded ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+          {/* Genuine 2D Google Maps Embed (100% Google 2D street map, siêu mượt, tiếng Việt chuẩn xác) */}
+          <iframe
+            title="Google Maps 2D Doanh nghiệp"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(address || `${lat},${lng}` || "Keangnam Landmark 72, Hà Nội")}&t=m&z=${zoomLevel}&output=embed`}
+            className="w-full h-full border-0"
+            loading="lazy"
           />
 
-          {/* Fallback 2D Canvas Map Engine (Hiện 0ms ngay lập tức không phụ thuộc CDN) */}
-          {!leafletLoaded && (
-            <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center">
-              <canvas
-                ref={canvasRef}
-                width={420}
-                height={230}
-                onClick={handleCanvasClick}
-                className="w-full h-full object-cover cursor-crosshair"
-              />
-              <div className="absolute top-2 left-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs px-2 py-1 rounded-lg text-[9px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
-                <Layers className="size-3 text-[#003B95]" />
-                <span>Bản đồ 2D CEO 1983 (Chạm để dời ghim)</span>
-              </div>
-            </div>
-          )}
+          {/* Quick open in Google Maps & Keangnam buttons */}
+          <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
+            <button
+              type="button"
+              onClick={() => updateMapPosition(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, 16)}
+              className="pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2.5 py-1 rounded-xl text-[10px] font-extrabold text-[#003B95] dark:text-amber-400 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 transition cursor-pointer flex items-center gap-1"
+            >
+              <LocateFixed className="size-3 text-red-500" />
+              <span>Về Keangnam 72</span>
+            </button>
 
-          {/* Quick Keangnam button */}
-          <button
-            type="button"
-            onClick={() => updateMapPosition(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, 16)}
-            className="absolute bottom-2 left-2 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2.5 py-1 rounded-xl text-[10px] font-extrabold text-[#003B95] dark:text-amber-400 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 transition cursor-pointer flex items-center gap-1"
-          >
-            <LocateFixed className="size-3 text-red-500" />
-            <span>Về Keangnam 72</span>
-          </button>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || `${lat},${lng}`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2.5 py-1 rounded-xl text-[10px] font-extrabold text-amber-600 dark:text-amber-400 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 transition flex items-center gap-1"
+            >
+              <ExternalLink className="size-3" />
+              <span>Mở Google Maps</span>
+            </a>
+          </div>
         </div>
       </div>
 

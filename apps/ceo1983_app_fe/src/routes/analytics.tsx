@@ -457,19 +457,19 @@ export function AnalyticsDashboardPage() {
   }> = {
     top_connections: {
       unit: "Lượt",
-      col1Label: "Kết nối 1-on-1",
+      col1Label: "Đã kết nối",
       col1Color: "#003B95",
       col1Unit: "Lượt",
-      col2Label: "Đã kết nối",
+      col2Label: "Chờ phản hồi",
       col2Color: "#10B981",
       col2Unit: "Lượt",
-      col3Label: "Chờ phản hồi",
+      col3Label: "Cuộc gặp B2B",
       col3Color: "#F59E0B",
-      col3Unit: "Lượt",
-      col4Label: "Cuộc gặp B2B",
-      col4Color: "#DC2626",
-      col4Unit: "Cuộc",
-      timelineLabel: "Tổng kết nối",
+      col3Unit: "Cuộc",
+      col4Label: "Kết nối khác",
+      col4Color: "#8B5CF6",
+      col4Unit: "Lượt",
+      timelineLabel: "Tổng lượt kết nối",
       timelineColor: "#EA580C",
       timelineUnit: "Lượt",
     },
@@ -478,51 +478,51 @@ export function AnalyticsDashboardPage() {
       col1Label: "Cơ hội mở mới",
       col1Color: "#003B95",
       col1Unit: "Cơ hội",
-      col2Label: "Giá trị tăng (Tỷ)",
+      col2Label: "Đang đàm phán",
       col2Color: "#10B981",
-      col2Unit: "Tỷ VNĐ",
-      col3Label: "Giá trị đàm phán",
+      col2Unit: "Cơ hội",
+      col3Label: "Đã kết nối / chốt",
       col3Color: "#F59E0B",
-      col3Unit: "Tỷ VNĐ",
-      col4Label: "Đã chốt / kết nối",
+      col3Unit: "Cơ hội",
+      col4Label: "Cuộc gặp B2B",
       col4Color: "#8B5CF6",
-      col4Unit: "Cơ hội",
+      col4Unit: "Cuộc",
       timelineLabel: "Tổng luồng cơ hội",
       timelineColor: "#DC2626",
       timelineUnit: "Cơ hội",
     },
     top_events_meetings: {
       unit: "Lượt",
-      col1Label: "Đăng ký tham gia",
+      col1Label: "Điểm danh thực tế",
       col1Color: "#003B95",
       col1Unit: "Lượt",
-      col2Label: "Điểm danh thực tế",
+      col2Label: "Chờ check-in",
       col2Color: "#10B981",
       col2Unit: "Lượt",
       col3Label: "Cuộc họp ban",
       col3Color: "#F59E0B",
       col3Unit: "Cuộc",
-      col4Label: "Chờ check-in",
+      col4Label: "Đăng ký khác",
       col4Color: "#EA580C",
       col4Unit: "Lượt",
-      timelineLabel: "Tổng lượt sự kiện",
+      timelineLabel: "Tổng lượt tham gia",
       timelineColor: "#DC2626",
       timelineUnit: "Lượt",
     },
     top_referrals: {
       unit: "Hội viên",
-      col1Label: "Hội viên giới thiệu",
+      col1Label: "Đã kết nạp chính thức",
       col1Color: "#003B95",
       col1Unit: "Hội viên",
-      col2Label: "Đã kết nạp",
+      col2Label: "Chờ kết nạp",
       col2Color: "#10B981",
       col2Unit: "Hội viên",
-      col3Label: "Nhiệm vụ thưởng",
+      col3Label: "Hội viên giới thiệu",
       col3Color: "#F59E0B",
-      col3Unit: "Mốc",
-      col4Label: "Điểm thưởng (x10)",
+      col3Unit: "Hội viên",
+      col4Label: "Hoàn thành nhiệm vụ",
       col4Color: "#EC4899",
-      col4Unit: "Điểm",
+      col4Unit: "Mốc",
       timelineLabel: "Tổng hội viên mới",
       timelineColor: "#0284C7",
       timelineUnit: "Hội viên",
@@ -831,66 +831,74 @@ export function AnalyticsDashboardPage() {
           <div className="flex flex-col md:flex-row items-stretch gap-4">
             {/* Vùng Vẽ Biểu Đồ */}
             <div className="flex-1 h-80 relative">
-              {isChartEmpty ? (
-                <div className="h-full w-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                  <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 mb-2 shadow-xs">
-                    <TrendingUp className="size-8 text-slate-400" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                    Chưa có biến động dữ liệu ghi nhận trong mốc thời gian này
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                    Cơ sở dữ liệu thực tế bằng 0. Hệ thống tuân thủ nguyên tắc không tự sinh dữ liệu giả định để đảm bảo tính minh bạch cho Ban Điều Hành.
-                  </p>
+              {isChartEmpty && chartMode !== "pie" && (
+                <div className="absolute top-2 right-4 z-10 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-semibold flex items-center gap-1.5 shadow-xs pointer-events-none">
+                  <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span>Chu kỳ {granularity}: Đang chờ biến động mới (Dữ liệu = 0)</span>
                 </div>
-              ) : chartMode === "pie" ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-                    <Pie
-                      data={pieChartData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={95}
-                      paddingAngle={4}
-                    >
-                      {pieChartData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={({ active, payload }: any) => {
-                        if (active && payload && payload.length) {
-                          const d = payload[0].payload;
-                          return (
-                            <div className="p-2.5 rounded-xl bg-slate-900/95 text-white text-xs shadow-xl border border-slate-700 space-y-1">
-                              <p className="font-bold text-slate-200">{d.name}</p>
-                              <p className="text-amber-400 font-black">{d.value}% phân bổ tỷ trọng</p>
-                              {d.raw !== undefined && (
-                                <p className="text-[11px] text-slate-300">Giá trị: {d.raw} {d.unit}</p>
-                              )}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      align="center"
-                      iconType="circle"
-                      wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              )}
+              {chartMode === "pie" ? (
+                isChartEmpty ? (
+                  <div className="h-full w-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 mb-2 shadow-xs">
+                      <TrendingUp className="size-8 text-slate-400" />
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                      Chưa có tỷ trọng dữ liệu ghi nhận trong mốc thời gian này
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+                      Cơ sở dữ liệu thực tế bằng 0. Hệ thống tuân thủ nguyên tắc không tự sinh dữ liệu giả định.
+                    </p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                      <Pie
+                        data={pieChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={95}
+                        paddingAngle={4}
+                      >
+                        {pieChartData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        content={({ active, payload }: any) => {
+                          if (active && payload && payload.length) {
+                            const d = payload[0].payload;
+                            return (
+                              <div className="p-2.5 rounded-xl bg-slate-900/95 text-white text-xs shadow-xl border border-slate-700 space-y-1">
+                                <p className="font-bold text-slate-200">{d.name}</p>
+                                <p className="text-amber-400 font-black">{d.value}% phân bổ tỷ trọng</p>
+                                {d.raw !== undefined && (
+                                  <p className="text-[11px] text-slate-300">Giá trị: {d.raw} {d.unit}</p>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        align="center"
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94a3b8" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, 'auto']} />
+                    <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, isChartEmpty ? 5 : 'auto']} />
                     <Tooltip
                       content={({ active, payload, label }: any) => {
                         if (active && payload && payload.length) {
@@ -927,29 +935,30 @@ export function AnalyticsDashboardPage() {
                       dataKey="col1"
                       name={activeChartMeta.col1Label}
                       fill={activeChartMeta.col1Color}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={20}
+                      stackId="metrics"
+                      maxBarSize={28}
                     />
                     <Bar
                       dataKey="col2"
                       name={activeChartMeta.col2Label}
                       fill={activeChartMeta.col2Color}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={20}
+                      stackId="metrics"
+                      maxBarSize={28}
                     />
                     <Bar
                       dataKey="col3"
                       name={activeChartMeta.col3Label}
                       fill={activeChartMeta.col3Color}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={20}
+                      stackId="metrics"
+                      maxBarSize={28}
                     />
                     <Bar
                       dataKey="col4"
                       name={activeChartMeta.col4Label}
                       fill={activeChartMeta.col4Color}
+                      stackId="metrics"
                       radius={[4, 4, 0, 0]}
-                      maxBarSize={20}
+                      maxBarSize={28}
                     />
                     <Line
                       type="monotone"

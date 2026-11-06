@@ -115,7 +115,7 @@ export class DocumentsRepository {
           uploaded_by = COALESCE(${uploadedBy !== undefined ? uploadedBy : null}, uploaded_by),
           type = COALESCE(${type !== undefined ? type : null}, type),
           file_path = COALESCE(${filePath !== undefined ? filePath : null}, file_path),
-          folder_id = ${folderId !== undefined ? folderId : null},
+          folder_id = CASE WHEN ${folderId !== undefined} THEN ${folderId || null} ELSE folder_id END,
           drive_url = COALESCE(${driveUrl !== undefined ? driveUrl : null}, drive_url),
           is_folder = COALESCE(${isFolder !== undefined ? isFolder : null}, is_folder),
           share_scope = COALESCE(${shareScope !== undefined ? shareScope : null}, share_scope),

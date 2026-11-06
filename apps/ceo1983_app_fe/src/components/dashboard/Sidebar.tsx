@@ -61,6 +61,7 @@ import {
   BarChart3,
   GraduationCap,
   Globe,
+  ExternalLink,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -165,6 +166,12 @@ const system: Item[] = [
     icon: Globe,
     to: "/admin/landing-webs",
     label: "Quản lý Landing Web",
+  },
+  {
+    key: "nav.viewLanding" as TKey,
+    icon: ExternalLink,
+    to: "/landing",
+    label: "Xem Landing Page",
   },
 ];
 const permissionsGroup: Item[] = [
@@ -511,8 +518,11 @@ export function Sidebar({
   const { data: myAssocs, reload } = useServerData<MyAssociation[]>(() => fetchMine(), []);
   const activeAssoc = myAssocs?.find((a) => a.isActive) ?? myAssocs?.[0];
 
-  const unreadNotify = useUnreadNotifications();
-  const badges: Record<string, number> = { "/notifications": unreadNotify };
+  const { count: unreadNotify, categoryCounts: notifBadges } = useUnreadNotifications();
+  const badges: Record<string, number> = {
+    "/notifications": unreadNotify,
+    ...(notifBadges || {}),
+  };
 
   const [overrideBrandName, setOverrideBrandName] = useState<string | null>(null);
   const [overrideBrandLogo, setOverrideBrandLogo] = useState<string | null>(null);
@@ -661,7 +671,8 @@ export function Sidebar({
     if (it.to === "/tasks") return true;
     if (it.to === "/settings") return isPlatformAdmin || isAdmin || isBQT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
     if (it.to === "/activity") return isPlatformAdmin || isAdmin || isBQT || isBTK || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
-    if (it.to === "/admin/landing-templates" || it.to === "/admin/landing-webs") return isPlatformAdmin || isAdmin || isBQT || isBTT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
+    if (it.to === "/landing") return true;
+    if (it.to === "/admin/landing-templates" || it.to === "/admin/landing-webs") return isPlatformAdmin || isAdmin || isBQT || isBTT || isTongThuKy || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh" || srsRole === "chu_tich";
     return true;
   });
 

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { toast } from "sonner";
+import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 
 export function Ceo1983MemberRegistrationForm() {
@@ -98,6 +99,11 @@ export function Ceo1983MemberRegistrationForm() {
 
     if (!fullName.trim() || !phone.trim() || !email.trim() || !companyName.trim()) {
       toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc (*)");
+      return;
+    }
+
+    if (!/^(0[3|5|7|8|9])[0-9]{8}$/.test(phone.trim())) {
+      toast.error("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (ví dụ: 0983xxxxxx, 0912xxxxxx).");
       return;
     }
 
@@ -409,10 +415,13 @@ export function Ceo1983MemberRegistrationForm() {
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                   <input
                     type="tel"
+                    inputMode="numeric"
                     required
+                    maxLength={11}
                     placeholder="0983xxxxxx"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onKeyDown={handleNumericKeyDown}
+                    onChange={(e) => setPhone(sanitizePhoneNumber(e.target.value))}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:border-transparent text-sm bg-slate-50/50"
                   />
                 </div>

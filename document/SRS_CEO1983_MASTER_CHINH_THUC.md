@@ -10,6 +10,7 @@
 * **Cơ quan chủ quản:** Câu Lạc Bộ Doanh Nhân CEO 1983 — Trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)
 * **Đơn vị phát triển giải pháp:** VICONNECT - Đội ngũ Kiến trúc sư Hệ thống & Chuyên gia Phân tích Nghiệp vụ
 * **Phân loại:** Đặc tả Kỹ thuật, Luồng Dữ liệu, Ma trận Use Case & Hệ thống Sơ đồ Mô hình hóa Chi tiết
+* **Tài liệu Kỹ thuật Đi kèm:** `document/notebooklm/09_DAC_TA_API_VA_THIET_KE_CSDL.md` (Đặc tả chi tiết 14 nhóm bảng CSDL PostgreSQL & 50+ REST API Endpoints)
 
 ---
 

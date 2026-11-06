@@ -50,3 +50,41 @@ if (typeof window !== "undefined") {
   }
 }
 
+/**
+ * Chặn toàn bộ ký tự không phải số (digits only) bằng Regex và giới hạn tối đa 11 chữ số
+ */
+export function sanitizePhoneNumber(value: string, maxLength: number = 11): string {
+  if (!value) return "";
+  return value.replace(/\D/g, "").slice(0, maxLength);
+}
+
+/**
+ * Event handler onKeyDown ngăn người dùng gõ ký tự không phải số (cho phép phím điều hướng, xóa, paste)
+ */
+export function handleNumericKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  if (
+    [
+      "Backspace",
+      "Delete",
+      "Tab",
+      "Escape",
+      "Enter",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "Home",
+      "End",
+    ].includes(e.key) ||
+    // Cho phép Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+    e.ctrlKey ||
+    e.metaKey
+  ) {
+    return;
+  }
+  // Nếu không phải chữ số từ 0 đến 9 thì chặn
+  if (!/^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+  }
+}
+

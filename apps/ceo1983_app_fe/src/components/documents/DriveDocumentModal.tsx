@@ -24,6 +24,7 @@ interface DriveDocumentModalProps {
   document: Document | null;
   currentFolderId: string | null;
   currentFolderName?: string;
+  availableFolders?: { id: string; name: string }[];
   categories: string[];
   onAddCategory: (cat: string) => void;
   onSave: (values: any) => Promise<void>;
@@ -36,12 +37,14 @@ export const DriveDocumentModal: React.FC<DriveDocumentModalProps> = ({
   document: doc,
   currentFolderId,
   currentFolderName = "Thư mục gốc",
+  availableFolders = [],
   categories,
   onAddCategory,
   onSave,
   isLeaderOrAdmin,
 }) => {
   const [name, setName] = useState("");
+  const [targetFolderId, setTargetFolderId] = useState<string>("");
   const [category, setCategory] = useState("Biểu mẫu chung");
   const [isAddingNewCat, setIsAddingNewCat] = useState(false);
   const [newCatInput, setNewCatInput] = useState("");
@@ -64,6 +67,7 @@ export const DriveDocumentModal: React.FC<DriveDocumentModalProps> = ({
   useEffect(() => {
     if (doc) {
       setName(doc.name || "");
+      setTargetFolderId(doc.folderId || "");
       setCategory(doc.category || "Biểu mẫu chung");
       setDocScope((doc.docScope as any) || "association");
       setEnterpriseName(doc.enterpriseName || "");
@@ -76,6 +80,7 @@ export const DriveDocumentModal: React.FC<DriveDocumentModalProps> = ({
       setShareRole((doc.shareRole as any) || "viewer");
     } else {
       setName("");
+      setTargetFolderId(currentFolderId || "");
       setCategory(categories[0] || "Biểu mẫu chung");
       setDocScope("association");
       setEnterpriseName("");
@@ -181,7 +186,7 @@ export const DriveDocumentModal: React.FC<DriveDocumentModalProps> = ({
         type: fileType,
         size: fileSize || "—",
         uploadedBy: uploader.trim() || "Thành viên CEO 1983",
-        folderId: doc ? doc.folderId : currentFolderId,
+        folderId: targetFolderId ? targetFolderId : null,
         shareScope,
         shareRole,
         isFolder: false,
@@ -324,6 +329,26 @@ export const DriveDocumentModal: React.FC<DriveDocumentModalProps> = ({
                 />
               </div>
             )}
+          </div>
+
+          {/* Thư mục đích lưu trữ */}
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <Folder className="h-3.5 w-3.5 text-amber-500" />
+              <span>Thư mục lưu trữ đích</span>
+            </label>
+            <select
+              value={targetFolderId}
+              onChange={(e) => setTargetFolderId(e.target.value)}
+              className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none"
+            >
+              <option value="">📁 Thư mục gốc (Mặc định)</option>
+              {availableFolders.map((f) => (
+                <option key={f.id} value={f.id}>
+                  📁 {f.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Tệp đính kèm trực tiếp từ máy (Upload chuẩn) */}

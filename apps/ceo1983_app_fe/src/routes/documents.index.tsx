@@ -1804,6 +1804,7 @@ function DocsPage() {
           document={editing}
           currentFolderId={currentFolderId}
           currentFolderName={currentFolder ? currentFolder.name : "Thư mục gốc"}
+          availableFolders={DOCUMENTS.filter((d) => d.isFolder || d.type === "folder").map((f) => ({ id: f.id, name: f.name }))}
           categories={cats.filter((c) => c !== "all")}
           onAddCategory={onAddCustomCategory}
           onSave={onSaveDoc}

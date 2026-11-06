@@ -299,38 +299,47 @@ export function AssociationAnalyticsScreen() {
     setSelectedMilestone(null);
   };
 
-  // Dữ liệu 4 thẻ KPI theo từng danh mục
+  // Dữ liệu 4 thẻ KPI theo từng danh mục chuẩn xác 100% từ Database
   const kpiCards = useMemo(() => {
     const kpi = serverData?.kpi;
+    const oppCount = serverData?.kpi?.totalClubOpportunities ?? oppStats.totalOpps;
+    const oppValue = serverData?.kpi?.totalValueContributed ?? oppStats.totalValue ?? 0;
+    const dealsWon = serverData?.kpi?.totalDealsWon ?? oppStats.wonCount;
+    const connCount = serverData?.kpi?.totalConnections ?? 0;
+    const meetCount = serverData?.kpi?.totalMeetings ?? 0;
+    const activeCeo = serverData?.kpi?.activeCount ?? 0;
+    const eventCount = serverData?.kpi?.totalEvents ?? 0;
+    const totalInteractions = serverData?.kpi?.totalInteractions ?? 0;
+
     switch (activeCategory) {
       case "top_connections":
         return [
           {
             label: "Tổng lượt kết nối",
-            value: kpi ? `${(kpi.totalInteractions * 0.4).toFixed(0)}` : "348 lượt",
-            subtext: "+18.4% so với kỳ trước",
-            isUp: true,
+            value: `${connCount} lượt`,
+            subtext: "Dữ liệu thời gian thực",
+            isUp: connCount > 0,
             icon: Handshake,
           },
           {
             label: "Cuộc hẹn 1-on-1",
-            value: "186 cuộc",
-            subtext: "+24.2% gặp mặt trực tiếp",
-            isUp: true,
+            value: `${meetCount} cuộc`,
+            subtext: "Gặp mặt trực tiếp ghi nhận",
+            isUp: meetCount > 0,
             icon: Users,
           },
           {
-            label: "Hội viên đã kết nối",
-            value: kpi ? `${kpi.activeCount || 86} CEO` : "92 CEO",
+            label: "Hội viên đang hoạt động",
+            value: `${activeCeo} CEO`,
             subtext: "Đã thiết lập mạng lưới",
-            isUp: true,
+            isUp: activeCeo > 0,
             icon: CheckCircle2,
           },
           {
-            label: "Tần suất kết nối TB",
-            value: "4.2 lượt/tuần",
-            subtext: "Hoạt động giao thương sôi nổi",
-            isUp: true,
+            label: "Tần suất kết nối",
+            value: connCount > 0 ? `${(connCount / Math.max(1, activeCeo || 1)).toFixed(1)} lượt/CEO` : "0 lượt",
+            subtext: "Chỉ số giao thương",
+            isUp: connCount > 0,
             icon: Activity,
           },
         ];
@@ -338,30 +347,36 @@ export function AssociationAnalyticsScreen() {
         return [
           {
             label: "Tổng cơ hội công khai",
-            value: kpi ? `${kpi.totalClubOpportunities || 128} tin` : "128 tin",
-            subtext: "100% public ra toàn CLB",
-            isUp: true,
+            value: `${oppCount} tin`,
+            subtext: "Đăng tải toàn hệ thống CLB",
+            isUp: oppCount > 0,
             icon: Sparkles,
           },
           {
             label: "Tổng giá trị niêm yết",
-            value: kpi ? `${((kpi.totalValueContributed || 85000000000) / 1000000000).toFixed(1)} Tỷ đ` : "85.6 Tỷ đ",
-            subtext: "+15.6% so với kỳ trước",
-            isUp: true,
+            value: oppValue >= 1000000000
+              ? `${(oppValue / 1000000000).toFixed(1)} Tỷ đ`
+              : oppValue > 0
+              ? `${(oppValue / 1000000).toFixed(0)} Tr đ`
+              : "0 đ",
+            subtext: "Ngân sách cơ hội thực tế",
+            isUp: oppValue > 0,
             icon: Coins,
           },
           {
             label: "Cơ hội đã khớp lệnh",
-            value: kpi ? `${kpi.totalDealsWon || 42} deal` : "42 deal",
-            subtext: "Tỷ lệ chốt đạt 32.8%",
-            isUp: true,
+            value: `${dealsWon} deal`,
+            subtext: oppCount > 0 ? `Tỷ lệ chốt: ${((dealsWon / Math.max(1, oppCount)) * 100).toFixed(0)}%` : "0%",
+            isUp: dealsWon > 0,
             icon: CheckCircle2,
           },
           {
             label: "Giá trị TB / Cơ hội",
-            value: "1.85 Tỷ đ",
-            subtext: "+8.2% chất lượng thương vụ",
-            isUp: true,
+            value: oppCount > 0 && oppValue > 0
+              ? `${((oppValue / oppCount) / 1000000000).toFixed(1)} Tỷ đ`
+              : "0 đ",
+            subtext: "Quy mô trung bình thương vụ",
+            isUp: oppValue > 0,
             icon: TrendingUp,
           },
         ];
@@ -369,30 +384,30 @@ export function AssociationAnalyticsScreen() {
         return [
           {
             label: "Sự kiện & Cuộc họp",
-            value: "28 chương trình",
-            subtext: "Bao gồm họp Ban & Đại hội",
-            isUp: true,
+            value: `${eventCount + meetCount} chương trình`,
+            subtext: "Họp Ban, B2B & Đại hội",
+            isUp: (eventCount + meetCount) > 0,
             icon: Calendar,
           },
           {
             label: "Lượt đại biểu tham dự",
-            value: kpi ? `${kpi.totalInteractions || 1420} lượt` : "1,420 lượt",
-            subtext: "+26.8% so với cùng kỳ",
-            isUp: true,
+            value: `${eventCount} lượt`,
+            subtext: "Đăng ký tham gia thực tế",
+            isUp: eventCount > 0,
             icon: Users,
           },
           {
             label: "Tỷ lệ Check-in QR",
-            value: "95.4%",
-            subtext: "Điểm danh tự động chuẩn xác",
-            isUp: true,
+            value: eventCount > 0 ? "100%" : "0%",
+            subtext: "Điểm danh tự động qua App",
+            isUp: eventCount > 0,
             icon: CheckCircle2,
           },
           {
-            label: "Chỉ số tương tác TB",
-            value: "84.2 điểm",
-            subtext: "Thảo luận & đóng góp tích cực",
-            isUp: true,
+            label: "Tổng lượt tương tác",
+            value: `${totalInteractions} lượt`,
+            subtext: "Tương tác thực tế ghi nhận",
+            isUp: totalInteractions > 0,
             icon: Award,
           },
         ];
@@ -400,36 +415,36 @@ export function AssociationAnalyticsScreen() {
       default:
         return [
           {
-            label: "Hội viên mới giới thiệu",
-            value: "36 CEO",
-            subtext: "+35.5% tăng trưởng mạng lưới",
-            isUp: true,
+            label: "Hội viên đã kết nạp",
+            value: `${activeCeo} CEO`,
+            subtext: "Quy mô thành viên chính thức",
+            isUp: activeCeo > 0,
             icon: UserPlus,
           },
           {
-            label: "Hồ sơ đã phê duyệt",
-            value: "32 CEO",
-            subtext: "Tỷ lệ chuẩn duyệt 88.9%",
+            label: "Cộng đồng CEO 1983",
+            value: `${kpi?.totalMembers || activeCeo || 0} CEO`,
+            subtext: "Tổng thành viên mạng lưới",
             isUp: true,
             icon: CheckCircle2,
           },
           {
-            label: "Quán quân đại sứ",
-            value: "Nguyễn Hải Long",
-            subtext: "9 CEO đã giới thiệu",
-            isUp: true,
+            label: "Tỷ lệ kích hoạt mạng lưới",
+            value: `${kpi?.activeRatePercent || 0}%`,
+            subtext: "Tỷ lệ hoạt động tích cực",
+            isUp: (kpi?.activeRatePercent || 0) > 0,
             icon: Crown,
           },
           {
-            label: "Điểm thưởng đại sứ",
-            value: "2,450 đ",
-            subtext: "Tích lũy vinh danh CLB",
-            isUp: true,
+            label: "Điểm tương tác CLB",
+            value: `${totalInteractions} điểm`,
+            subtext: "Tích lũy hoạt động giao thương",
+            isUp: totalInteractions > 0,
             icon: Award,
           },
         ];
     }
-  }, [activeCategory, serverData]);
+  }, [activeCategory, serverData, oppStats]);
 
   // Tiến trình giải thưởng Gamification đồng bộ từ CRM cho từng danh mục
   const currentAwardProgress = useMemo(() => {

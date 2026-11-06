@@ -2874,6 +2874,10 @@ Trân trọng cảm ơn Anh/Chị!`;
       const targetName = data.name || existingUser?.name || 'Hội viên CEO 1983';
       const targetEmail = (data.email || existingUser?.email || `${targetCode.toLowerCase()}@ceo1983.vn`).trim().toLowerCase();
 
+      const isUuid = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      const safeAssocUuid = isUuid(assocId) ? assocId : 'c1983000-0000-4000-8000-000000001983';
+      const safeExistingUserUuid = isUuid(existingUser?.id) ? existingUser.id : null;
+
       await this.prisma.$executeRawUnsafe(`
         INSERT INTO public.members (
           id, code, name, email, user_id, association_id, department, executive_role, status, created_at, updated_at
@@ -2885,17 +2889,18 @@ Trân trọng cảm ơn Anh/Chị!`;
           executive_role = EXCLUDED.executive_role,
           user_id = COALESCE(EXCLUDED.user_id, public.members.user_id),
           updated_at = NOW()
-      `, targetMemberId, targetCode, targetName, targetEmail, existingUser ? existingUser.id : null, assocId, sanitizedDept, sanitizedRole).catch(() => {});
+      `, targetMemberId, targetCode, targetName, targetEmail, safeExistingUserUuid, safeAssocUuid, sanitizedDept, sanitizedRole).catch(() => {});
 
       member = await this.prisma.members.findUnique({ where: { id: targetMemberId } }).catch(() => null);
     }
 
     // Auto-link to vione_users if member exists but user_id is null
     let userId = member?.user_id;
+    const isUuid = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
     if (!userId) {
       const cleanEmail = (data.email || member?.email || '').trim().toLowerCase();
       const cleanCode = (data.code || member?.code || '').trim().toLowerCase();
-      const isCleanIdUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      const isCleanIdUuid = isUuid(cleanId);
       const vUsers = await this.prisma.$queryRaw<any[]>`
         SELECT id, name, email FROM public.vione_users
         WHERE ( ${isCleanIdUuid} AND id = ${cleanId}::uuid )
@@ -2904,7 +2909,7 @@ Trân trọng cảm ơn Anh/Chị!`;
         LIMIT 1
       `.catch(() => []);
 
-      if (vUsers.length > 0 && vUsers[0]?.id) {
+      if (vUsers.length > 0 && vUsers[0]?.id && isUuid(vUsers[0].id)) {
         userId = vUsers[0].id;
         if (member) {
           member.user_id = userId ?? null;
@@ -2915,17 +2920,26 @@ Trân trọng cảm ơn Anh/Chị!`;
       }
     }
 
+    const safeAssocUuid = isUuid(assocId) ? assocId : 'c1983000-0000-4000-8000-000000001983';
+    const safeUserUuid = isUuid(userId) ? userId : null;
+
     if (member) {
-      // 1. Update members table
+      // 1. Update members table safely
       await this.prisma.$executeRawUnsafe(`
         UPDATE public.members
         SET executive_role = $1, department = $2, association_id = $3::uuid, user_id = COALESCE(user_id, $4::uuid), updated_at = NOW()
         WHERE id = $5
-      `, sanitizedRole, sanitizedDept, assocId, userId || null, member.id);
+      `, sanitizedRole, sanitizedDept, safeAssocUuid, safeUserUuid, member.id).catch(async () => {
+        await this.prisma.$executeRawUnsafe(`
+          UPDATE public.members
+          SET executive_role = $1, department = $2, updated_at = NOW()
+          WHERE id = $3
+        `, sanitizedRole, sanitizedDept, member.id).catch(() => {});
+      });
     }
 
     // 2. If user_id is resolved, update memberships and user_roles in PostgreSQL
-    if (userId) {
+    if (safeUserUuid) {
       let isLeadership = false;
       let appRoleValue = 'member';
 

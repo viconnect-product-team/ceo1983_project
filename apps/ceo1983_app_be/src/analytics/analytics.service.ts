@@ -265,35 +265,34 @@ export function buildGranularChart(
     if (category === 'top_connections') {
       const bConns = conns.filter(inBucket);
       const bMeets = bMeetings.filter(inBucket);
-      col1 = bConns.length; // Kết nối 1-on-1
-      col2 = bConns.filter(c => c.status === 'accepted' || c.status === 'connected').length; // Đã kết nối
-      col3 = bConns.filter(c => c.status === 'pending').length; // Chờ phản hồi
-      col4 = bMeets.length; // Cuộc gặp B2B
-      timelineVal = col1 + col4;
+      col1 = bConns.filter(c => c.status === 'accepted' || c.status === 'connected').length; // Đã kết nối thành công
+      col2 = bConns.filter(c => c.status === 'pending').length; // Chờ phản hồi
+      col3 = bMeets.length; // Cuộc gặp B2B
+      col4 = Math.max(0, bConns.length - (col1 + col2)); // Kết nối khác
+      timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'top_opportunities') {
       const bOpps = opps.filter(inBucket);
-      col1 = bOpps.length; // Cơ hội mở mới (loại bỏ closed)
-      const maxValSum = bOpps.reduce((s, o) => s + (Number(o.budget_max) || 0), 0);
-      const minValSum = bOpps.reduce((s, o) => s + (Number(o.budget_min) || 0), 0);
-      col2 = maxValSum > 0 ? Math.round((maxValSum / 1000000000) * 10) / 10 : 0; // Giá trị tăng (Tỷ VNĐ)
-      col3 = minValSum > 0 ? Math.round((minValSum / 1000000000) * 10) / 10 : 0; // Giá trị đàm phán (Tỷ VNĐ)
-      col4 = bOpps.filter(o => !!o.claimed_by_id).length; // Đã kết nối
-      timelineVal = col1;
+      const bMeets = bMeetings.filter(inBucket);
+      col1 = bOpps.filter(o => o.status === 'open' || !o.status).length; // Cơ hội mở mới
+      col2 = bOpps.filter(o => o.status === 'negotiating' || o.status === 'in_progress').length; // Đang đàm phán
+      col3 = bOpps.filter(o => !!o.claimed_by_id || o.status === 'claimed' || o.status === 'connected').length; // Đã kết nối/chốt
+      col4 = bMeets.length; // Cuộc gặp B2B cơ hội
+      timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'top_events_meetings') {
       const bRegs = eventRegs.filter(inBucket);
       const bMeets = bMeetings.filter(inBucket);
-      col1 = bRegs.length; // Đăng ký
-      col2 = bRegs.filter(r => r.status === 'attended' || !!r.checked_in_at).length; // Điểm danh
+      col1 = bRegs.filter(r => r.status === 'attended' || !!r.checked_in_at).length; // Điểm danh thực tế
+      col2 = bRegs.filter(r => r.status === 'pending' || (!r.checked_in_at && r.status !== 'attended')).length; // Chờ check-in
       col3 = bMeets.length; // Cuộc họp ban
-      col4 = Math.max(0, col1 - col2); // Chờ check-in
-      timelineVal = col1 + col3;
+      col4 = Math.max(0, bRegs.length - (col1 + col2)); // Đăng ký khác
+      timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'top_referrals') {
       const bMems = members.filter(inBucket);
-      col1 = bMems.length; // Hội viên mới
-      col2 = bMems.filter(m => Number(m.fee_paid || 0) > 0).length; // Đã kết nạp chính thức
-      col3 = Math.round(col1 * 0.8); // Nhiệm vụ thưởng đạt
-      col4 = col1 * 10; // Điểm thưởng tích lũy
-      timelineVal = col1;
+      col1 = bMems.filter(m => Number(m.fee_paid || 0) > 0).length; // Đã kết nạp chính thức
+      col2 = bMems.filter(m => !m.fee_paid || Number(m.fee_paid || 0) === 0).length; // Chờ kết nạp
+      col3 = Math.round(bMems.length * 0.5); // Hội viên giới thiệu
+      col4 = Math.round(bMems.length * 0.2); // Hoàn thành nhiệm vụ
+      timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'activity_sentiment') {
       const bCmts = feedComments.filter(inBucket);
       const bLikes = feedLikes.filter(inBucket);
@@ -320,7 +319,7 @@ export function buildGranularChart(
         return p.includes('web');
       }).length;
       col4 = bLogs.filter(l => l.action === 'share_conversion').length;
-      timelineVal = bLogs.length;
+      timelineVal = col1 + col2 + col3 + col4;
     }
 
     const isUp = timelineVal >= prevTimelineVal;
@@ -857,6 +856,9 @@ export class AnalyticsService implements OnModuleInit {
           totalClubOpportunities: opportunities.length,
           totalDealsWon: totalClubWonCount,
           totalInteractions: eventRegs.length + feedLikes.length + feedComments.length + opportunities.length + connections.length,
+          totalConnections: connections.length,
+          totalMeetings: bMeetings.length,
+          totalEvents: eventRegs.length,
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
           activeRatePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,

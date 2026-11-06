@@ -257,7 +257,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   const getStats = useServerFn(getDashboardStatsFn);
   const getOpps = useServerFn(listOpportunitiesFn);
   const getActivity = useServerFn(listActivityLogFn);
-  const unread = useUnreadNotifications();
+  const { count: unread } = useUnreadNotifications();
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const statsQ = useQuery({
