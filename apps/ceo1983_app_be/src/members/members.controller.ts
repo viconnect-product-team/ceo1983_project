@@ -315,6 +315,13 @@ export class MembersController {
     return this.membersService.getMemberById(userId, id);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post('bulk-import')
+  async bulkImportMembers(@Request() req: any, @Body() body: { members: any[] }) {
+    const adminUserId = req.user?.id || req.user?.sub || 'system';
+    return this.membersService.bulkImportMembers(adminUserId, body?.members || []);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post()
   async createMember(@Request() req: any, @Body() body: CreateMemberDto) {

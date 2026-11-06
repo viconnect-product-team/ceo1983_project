@@ -18,12 +18,20 @@ import {
   UserPlus,
   Medal,
   Trophy,
+  Upload,
+  PieChart as PieIcon,
+  BarChart3,
+  Coins,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
 import { MilestoneAwardsManagerModal } from "@/components/analytics/MilestoneAwardsManagerModal";
+import { CrmExcelExportModal } from "@/components/analytics/CrmExcelExportModal";
+import { CrmExcelImportModal } from "@/components/analytics/CrmExcelImportModal";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -34,6 +42,9 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 interface SearchParams {
@@ -180,7 +191,10 @@ export function AnalyticsDashboardPage() {
   const [granularity, setGranularity] = useState<"minute" | "hour" | "day" | "week" | "month" | "quarter" | "year">("month");
   const period = granularity;
   const setPeriod = (val: any) => setGranularity(val);
+  const [chartMode, setChartMode] = useState<"composed" | "pie">("composed");
+  const [moneyFilter, setMoneyFilter] = useState<"all" | "under_500m" | "500m_2b" | "2b_10b" | "over_10b">("all");
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showMilestoneAwardsModal, setShowMilestoneAwardsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverData, setServerData] = useState<any>(null);
@@ -422,97 +436,132 @@ export function AnalyticsDashboardPage() {
   const top3 = allRankedMembers.find((p) => p.rank === 3);
   const remainingTop4To10 = allRankedMembers.slice(3, 10);
 
-  // Định nghĩa màu sắc và nhãn 4 cột chuẩn theo từng danh mục
+  // Định nghĩa màu sắc, nhãn và đơn vị chuẩn cho từng chỉ số theo danh mục
   const CRM_CHART_METAS: Record<string, {
     unit: string;
     col1Label: string;
     col1Color: string;
+    col1Unit?: string;
     col2Label: string;
     col2Color: string;
+    col2Unit?: string;
     col3Label: string;
     col3Color: string;
+    col3Unit?: string;
     col4Label: string;
     col4Color: string;
+    col4Unit?: string;
     timelineLabel: string;
     timelineColor: string;
+    timelineUnit?: string;
   }> = {
     top_connections: {
       unit: "Lượt",
       col1Label: "Kết nối 1-on-1",
       col1Color: "#003B95",
+      col1Unit: "Lượt",
       col2Label: "Đã kết nối",
       col2Color: "#10B981",
+      col2Unit: "Lượt",
       col3Label: "Chờ phản hồi",
       col3Color: "#F59E0B",
+      col3Unit: "Lượt",
       col4Label: "Cuộc gặp B2B",
       col4Color: "#DC2626",
+      col4Unit: "Cuộc",
       timelineLabel: "Tổng kết nối",
       timelineColor: "#EA580C",
+      timelineUnit: "Lượt",
     },
     top_opportunities: {
-      unit: "Cơ hội / Tỷ VNĐ",
+      unit: "Cơ hội",
       col1Label: "Cơ hội mở mới",
       col1Color: "#003B95",
+      col1Unit: "Cơ hội",
       col2Label: "Giá trị tăng (Tỷ)",
       col2Color: "#10B981",
+      col2Unit: "Tỷ VNĐ",
       col3Label: "Giá trị đàm phán",
       col3Color: "#F59E0B",
+      col3Unit: "Tỷ VNĐ",
       col4Label: "Đã chốt / kết nối",
       col4Color: "#8B5CF6",
+      col4Unit: "Cơ hội",
       timelineLabel: "Tổng luồng cơ hội",
       timelineColor: "#DC2626",
+      timelineUnit: "Cơ hội",
     },
     top_events_meetings: {
       unit: "Lượt",
       col1Label: "Đăng ký tham gia",
       col1Color: "#003B95",
+      col1Unit: "Lượt",
       col2Label: "Điểm danh thực tế",
       col2Color: "#10B981",
+      col2Unit: "Lượt",
       col3Label: "Cuộc họp ban",
       col3Color: "#F59E0B",
+      col3Unit: "Cuộc",
       col4Label: "Chờ check-in",
       col4Color: "#EA580C",
+      col4Unit: "Lượt",
       timelineLabel: "Tổng lượt sự kiện",
       timelineColor: "#DC2626",
+      timelineUnit: "Lượt",
     },
     top_referrals: {
       unit: "Hội viên",
       col1Label: "Hội viên giới thiệu",
       col1Color: "#003B95",
+      col1Unit: "Hội viên",
       col2Label: "Đã kết nạp",
       col2Color: "#10B981",
+      col2Unit: "Hội viên",
       col3Label: "Nhiệm vụ thưởng",
       col3Color: "#F59E0B",
+      col3Unit: "Mốc",
       col4Label: "Điểm thưởng (x10)",
       col4Color: "#EC4899",
+      col4Unit: "Điểm",
       timelineLabel: "Tổng hội viên mới",
       timelineColor: "#0284C7",
+      timelineUnit: "Hội viên",
     },
     activity_sentiment: {
       unit: "Lượt tương tác",
       col1Label: "Bình luận",
       col1Color: "#003B95",
+      col1Unit: "Lượt",
       col2Label: "Lượt thích",
       col2Color: "#0284C7",
+      col2Unit: "Lượt",
       col3Label: "Chia sẻ ngoài App",
       col3Color: "#10B981",
+      col3Unit: "Lượt",
       col4Label: "Bài viết mới",
       col4Color: "#F59E0B",
+      col4Unit: "Bài",
       timelineLabel: "Tổng tương tác",
       timelineColor: "#DC2626",
+      timelineUnit: "Lượt",
     },
     external_shares: {
       unit: "Lượt click",
       col1Label: "Facebook",
       col1Color: "#1877F2",
+      col1Unit: "Click",
       col2Label: "Zalo",
       col2Color: "#0068FF",
+      col2Unit: "Click",
       col3Label: "Trình duyệt Web",
       col3Color: "#10B981",
+      col3Unit: "Click",
       col4Label: "Chuyển đổi đăng nhập",
       col4Color: "#F59E0B",
+      col4Unit: "Lượt",
       timelineLabel: "Tổng lượt click",
       timelineColor: "#DC2626",
+      timelineUnit: "Click",
     },
   };
 
@@ -554,40 +603,42 @@ export function AnalyticsDashboardPage() {
     );
   }, [chartData]);
 
+  // Dữ liệu Biểu đồ Tròn phân bổ tỷ trọng theo 4 chỉ số
+  const pieChartData = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [];
+    let c1 = 0, c2 = 0, c3 = 0, c4 = 0;
+    chartData.forEach((d: any) => {
+      c1 += Number(d.col1) || 0;
+      c2 += Number(d.col2) || 0;
+      c3 += Number(d.col3) || 0;
+      c4 += Number(d.col4) || 0;
+    });
+    const total = c1 + c2 + c3 + c4;
+    if (total === 0) {
+      return [
+        { name: activeChartMeta.col1Label, value: 25, fill: activeChartMeta.col1Color, raw: 0, unit: activeChartMeta.col1Unit || activeChartMeta.unit },
+        { name: activeChartMeta.col2Label, value: 25, fill: activeChartMeta.col2Color, raw: 0, unit: activeChartMeta.col2Unit || activeChartMeta.unit },
+        { name: activeChartMeta.col3Label, value: 25, fill: activeChartMeta.col3Color, raw: 0, unit: activeChartMeta.col3Unit || activeChartMeta.unit },
+        { name: activeChartMeta.col4Label, value: 25, fill: activeChartMeta.col4Color, raw: 0, unit: activeChartMeta.col4Unit || activeChartMeta.unit },
+      ];
+    }
+    return [
+      { name: activeChartMeta.col1Label, value: Math.round((c1 / total) * 100), fill: activeChartMeta.col1Color, raw: c1, unit: activeChartMeta.col1Unit || activeChartMeta.unit },
+      { name: activeChartMeta.col2Label, value: Math.round((c2 / total) * 100), fill: activeChartMeta.col2Color, raw: c2, unit: activeChartMeta.col2Unit || activeChartMeta.unit },
+      { name: activeChartMeta.col3Label, value: Math.round((c3 / total) * 100), fill: activeChartMeta.col3Color, raw: c3, unit: activeChartMeta.col3Unit || activeChartMeta.unit },
+      { name: activeChartMeta.col4Label, value: Math.round((c4 / total) * 100), fill: activeChartMeta.col4Color, raw: c4, unit: activeChartMeta.col4Unit || activeChartMeta.unit },
+    ];
+  }, [chartData, activeChartMeta]);
+
   return (
     <AppShell>
       <div className="space-y-6 pb-20 font-sans">
-        {/* Header trang tối giản, không icon rườm rà */}
+        {/* Header trang tối giản, hành động báo cáo */}
         <PageHeader
           title="Báo Cáo & Thống Kê Quản Trị"
           subtitle="Tổng hợp chỉ số gắn kết hội viên, kết quả giao thương và xếp hạng hoạt động theo kỳ"
           actions={
             <div className="flex items-center gap-2">
-              {/* Bộ lọc Granularity Thời gian thực: Phút, Giờ, Ngày, Tuần, Tháng, Quý, Năm */}
-              <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs overflow-x-auto max-w-[420px]">
-                {[
-                  { id: "minute", label: "Phút" },
-                  { id: "hour", label: "Giờ" },
-                  { id: "day", label: "Ngày" },
-                  { id: "week", label: "Tuần" },
-                  { id: "month", label: "Tháng" },
-                  { id: "quarter", label: "Quý" },
-                  { id: "year", label: "Năm" },
-                ].map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => setGranularity(g.id as any)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-                      granularity === g.id
-                        ? "bg-[#003B95] text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-
               {/* Mốc Thưởng & Nhiệm Vụ Thưởng: CHỈ HIỂN THỊ Ở DANH MỤC PHÁT TRIỂN HỘI VIÊN */}
               {selectedCat === "top_referrals" && (
                 <button
@@ -602,11 +653,20 @@ export function AnalyticsDashboardPage() {
 
               <button
                 type="button"
+                onClick={() => setShowImportModal(true)}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              >
+                <Upload className="size-4" />
+                <span>Nhập File Excel</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowExportModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
               >
                 <Download className="size-4" />
-                <span>Xuất Báo Cáo</span>
+                <span>Xuất Báo Cáo Excel</span>
               </button>
             </div>
           }
@@ -695,126 +755,269 @@ export function AnalyticsDashboardPage() {
           ))}
         </div>
 
-        {/* Biểu Đồ Thống Kê 4 Cột & Đường Timeline Chuẩn Xác */}
+        {/* Biểu Đồ Thống Kê & Bảng Điều Khiển Chu Kỳ Dọc */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Biểu Đồ Xu Hướng ({activeCategoryMeta.label} - 4 Chỉ Số)
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Mốc thời gian: {granularity === "minute" ? "Theo phút" : granularity === "hour" ? "Theo giờ" : granularity === "day" ? "Theo ngày" : granularity === "week" ? "Theo tuần" : granularity === "month" ? "Theo tháng" : granularity === "quarter" ? "Theo quý" : "Theo năm"} • Đơn vị tính: {activeChartMeta.unit}
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Biểu Đồ Xu Hướng ({activeCategoryMeta.label} - 4 Chỉ Số)
+                </h3>
+                {/* Nút chuyển đổi dạng biểu đồ (Cột/Đường vs Hình Tròn) */}
+                <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setChartMode("composed")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                      chartMode === "composed"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <BarChart3 className="size-3" />
+                    <span>Cột &amp; Xu Hướng</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartMode("pie")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                      chartMode === "pie"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <PieIcon className="size-3" />
+                    <span>Hình Tròn (Tỷ Trọng)</span>
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Chu kỳ: <strong className="text-slate-700 dark:text-slate-300 font-bold">{granularity === "minute" ? "Theo phút" : granularity === "hour" ? "Theo giờ" : granularity === "day" ? "Theo ngày" : granularity === "week" ? "Theo tuần" : granularity === "month" ? "Theo tháng" : granularity === "quarter" ? "Theo quý" : "Theo năm"}</strong> • Dạng hiển thị: {chartMode === "composed" ? "Phân tích 4 cột & Timeline" : "Tỷ trọng phân bổ 100%"}
               </p>
             </div>
 
-            {/* Chú giải 4 cột + đường timeline */}
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-300">
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
-                <span>{activeChartMeta.col1Label}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
-                <span>{activeChartMeta.col2Label}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
-                <span>{activeChartMeta.col3Label}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
-                <span>{activeChartMeta.col4Label}</span>
-              </span>
-              <span className="flex items-center gap-1.5 font-bold" style={{ color: activeChartMeta.timelineColor }}>
-                <span className="w-3.5 h-0.5 rounded-full shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
-                <span>{activeChartMeta.timelineLabel}</span>
-              </span>
-            </div>
+            {/* Bộ lọc giá trị tiền dành cho các danh mục liên quan tới tiền / cơ hội */}
+            {selectedCat === "top_opportunities" && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <Coins className="size-3.5 text-amber-500" />
+                  <span>Quy mô tiền:</span>
+                </span>
+                {[
+                  { id: "all", label: "Tất cả" },
+                  { id: "under_500m", label: "< 500 Tr" },
+                  { id: "500m_2b", label: "500 Tr - 2 Tỷ" },
+                  { id: "2b_10b", label: "2 Tỷ - 10 Tỷ" },
+                  { id: "over_10b", label: "> 10 Tỷ" },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMoneyFilter(m.id as any)}
+                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold transition cursor-pointer ${
+                      moneyFilter === m.id
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="w-full h-80 pt-2 relative">
-            {isChartEmpty ? (
-              <div className="h-full w-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 mb-2 shadow-xs">
-                  <TrendingUp className="size-8 text-slate-400" />
+          {/* Khung Biểu Đồ Kèm Thanh Lọc Chu Kỳ Dọc */}
+          <div className="flex flex-col md:flex-row items-stretch gap-4">
+            {/* Vùng Vẽ Biểu Đồ */}
+            <div className="flex-1 h-80 relative">
+              {isChartEmpty ? (
+                <div className="h-full w-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                  <div className="p-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 mb-2 shadow-xs">
+                    <TrendingUp className="size-8 text-slate-400" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    Chưa có biến động dữ liệu ghi nhận trong mốc thời gian này
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+                    Cơ sở dữ liệu thực tế bằng 0. Hệ thống tuân thủ nguyên tắc không tự sinh dữ liệu giả định để đảm bảo tính minh bạch cho Ban Điều Hành.
+                  </p>
                 </div>
-                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                  Chưa có biến động dữ liệu ghi nhận trong mốc thời gian này
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                  Cơ sở dữ liệu thực tế bằng 0. Hệ thống tuân thủ nguyên tắc không tự sinh dữ liệu giả định để đảm bảo tính minh bạch cho Ban Điều Hành.
-                </p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94a3b8" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, 'auto']} />
-                  <Tooltip
-                    content={({ active, payload, label }: any) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="p-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-xl text-xs space-y-1.5 min-w-[220px]">
-                            <div className="font-bold border-b border-slate-800 pb-1 text-slate-200 flex items-center justify-between">
-                              <span>Mốc: {label}</span>
-                              <span className="text-[10px] text-slate-400 font-normal">Thời gian thực</span>
+              ) : chartMode === "pie" ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                    <Pie
+                      data={pieChartData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={4}
+                    >
+                      {pieChartData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }: any) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0].payload;
+                          return (
+                            <div className="p-2.5 rounded-xl bg-slate-900/95 text-white text-xs shadow-xl border border-slate-700 space-y-1">
+                              <p className="font-bold text-slate-200">{d.name}</p>
+                              <p className="text-amber-400 font-black">{d.value}% phân bổ tỷ trọng</p>
+                              {d.raw !== undefined && (
+                                <p className="text-[11px] text-slate-300">Giá trị: {d.raw} {d.unit}</p>
+                              )}
                             </div>
-                            {payload.map((p: any, idx: number) => (
-                              <div key={idx} className="flex justify-between items-center text-xs">
-                                <span className="flex items-center gap-1.5" style={{ color: p.color || p.fill || p.stroke }}>
-                                  <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.fill || p.stroke }} />
-                                  <span>{p.name}:</span>
-                                </span>
-                                <strong className="text-white">{p.value} {activeChartMeta.unit}</strong>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94a3b8" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, 'auto']} />
+                    <Tooltip
+                      content={({ active, payload, label }: any) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="p-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-xl text-xs space-y-1.5 min-w-[220px]">
+                              <div className="font-bold border-b border-slate-800 pb-1 text-slate-200 flex items-center justify-between">
+                                <span>Mốc: {label}</span>
+                                <span className="text-[10px] text-slate-400 font-normal">Thời gian thực</span>
                               </div>
-                            ))}
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar
-                    dataKey="col1"
-                    name={activeChartMeta.col1Label}
-                    fill={activeChartMeta.col1Color}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={20}
-                  />
-                  <Bar
-                    dataKey="col2"
-                    name={activeChartMeta.col2Label}
-                    fill={activeChartMeta.col2Color}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={20}
-                  />
-                  <Bar
-                    dataKey="col3"
-                    name={activeChartMeta.col3Label}
-                    fill={activeChartMeta.col3Color}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={20}
-                  />
-                  <Bar
-                    dataKey="col4"
-                    name={activeChartMeta.col4Label}
-                    fill={activeChartMeta.col4Color}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={20}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="timelineVal"
-                    name={activeChartMeta.timelineLabel}
-                    stroke={activeChartMeta.timelineColor}
-                    strokeWidth={2.5}
-                    dot={{ r: 4, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 1.5 }}
-                    activeDot={{ r: 6, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 2 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
+                              {payload.map((p: any, idx: number) => {
+                                const itemUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
+                                  : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
+                                  : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
+                                  : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
+                                  : (activeChartMeta.timelineUnit || activeChartMeta.unit);
+
+                                return (
+                                  <div key={idx} className="flex justify-between items-center text-xs">
+                                    <span className="flex items-center gap-1.5" style={{ color: p.color || p.fill || p.stroke }}>
+                                      <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.fill || p.stroke }} />
+                                      <span>{p.name}:</span>
+                                    </span>
+                                    <strong className="text-white">{p.value} {itemUnit}</strong>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar
+                      dataKey="col1"
+                      name={activeChartMeta.col1Label}
+                      fill={activeChartMeta.col1Color}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={20}
+                    />
+                    <Bar
+                      dataKey="col2"
+                      name={activeChartMeta.col2Label}
+                      fill={activeChartMeta.col2Color}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={20}
+                    />
+                    <Bar
+                      dataKey="col3"
+                      name={activeChartMeta.col3Label}
+                      fill={activeChartMeta.col3Color}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={20}
+                    />
+                    <Bar
+                      dataKey="col4"
+                      name={activeChartMeta.col4Label}
+                      fill={activeChartMeta.col4Color}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={20}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="timelineVal"
+                      name={activeChartMeta.timelineLabel}
+                      stroke={activeChartMeta.timelineColor}
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 1.5 }}
+                      activeDot={{ r: 6, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 2 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* Thanh Dọc Chọn Chu Kỳ Thời Gian (Hỗ trợ người dùng chọn nhanh không lẫn lộn) */}
+            <div className="flex md:flex-col items-center justify-between p-2 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shrink-0 w-full md:w-28 gap-1.5 shadow-2xs">
+              <div className="w-full space-y-1">
+                <span className="hidden md:block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 text-center pb-0.5">
+                  Thời Gian
+                </span>
+                {[
+                  { id: "minute", label: "Phút" },
+                  { id: "hour", label: "Giờ" },
+                  { id: "day", label: "Ngày" },
+                ].map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setGranularity(g.id as any)}
+                    className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                      granularity === g.id
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="hidden md:block w-full h-px bg-slate-200 dark:bg-slate-700 my-0.5" />
+
+              <div className="w-full space-y-1">
+                <span className="hidden md:block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 text-center pb-0.5">
+                  Định Kỳ
+                </span>
+                {[
+                  { id: "week", label: "Tuần" },
+                  { id: "month", label: "Tháng" },
+                  { id: "quarter", label: "Quý" },
+                  { id: "year", label: "Năm" },
+                ].map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setGranularity(g.id as any)}
+                    className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                      granularity === g.id
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Màu chú thích dưới biểu đồ */}
@@ -1102,79 +1305,23 @@ export function AnalyticsDashboardPage() {
           </div>
         )}
 
-        {/* Modal Xuất Báo Cáo */}
-        {showExportModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Xuất Báo Cáo Thống Kê
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Danh mục: <strong>{activeCategoryMeta.label}</strong> • Kỳ: <strong>{period.toUpperCase()}</strong>
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowExportModal(false)}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
+        {/* Modal Xuất Báo Cáo Chuyên Sâu (SheetJS XLSX) */}
+        <CrmExcelExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          serverData={serverData}
+          currentPeriod={period}
+          categoryLabel={activeCategoryMeta.label}
+        />
 
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-xs space-y-2 font-mono">
-                <div className="flex justify-between border-b pb-2 font-bold text-slate-900 dark:text-white">
-                  <span>CLB DOANH NHÂN CEO 1983 - HANOIBA</span>
-                  <span>MẪU BC-08/CEO1983</span>
-                </div>
-                <div className="text-center py-2 font-bold text-sm text-[#003B95] dark:text-amber-400">
-                  BÁO CÁO {activeCategoryMeta.label.toUpperCase()}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
-                  <div>Kỳ báo cáo: {period === "month" ? "Tháng này" : period === "quarter" ? "Quý này" : "Năm"}</div>
-                  <div>Ngày xuất: {new Date().toLocaleDateString("vi-VN")}</div>
-                  <div>Đơn vị: {activeCategoryMeta.unit}</div>
-                  <div>Cơ sở dữ liệu: Trực tuyến</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.success("Đang kết xuất tệp Excel (.xlsx)...");
-                    setTimeout(() => {
-                      setShowExportModal(false);
-                      toast.success("Đã tải xuống báo cáo Excel thành công!");
-                    }, 600);
-                  }}
-                  className="p-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition"
-                >
-                  <FileSpreadsheet className="size-4" />
-                  <span>Xuất File Excel (.xlsx)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.print();
-                    setShowExportModal(false);
-                  }}
-                  className="p-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition"
-                >
-                  <Printer className="size-4" />
-                  <span>In / Lưu PDF</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Modal Nhập Dữ Liệu Excel Thông Minh (Tự Bóc Tách Trường) */}
+        <CrmExcelImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            toast.success("Dữ liệu hội viên đã được đồng bộ vào hệ thống!");
+          }}
+        />
 
         {/* Modal Quản lý Giải Thưởng Mốc Thống Kê */}
         <MilestoneAwardsManagerModal

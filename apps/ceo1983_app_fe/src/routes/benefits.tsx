@@ -543,7 +543,7 @@ function BenefitsAdminPage() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenRewardModal(m)}
-                                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                                className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
                               >
                                 <Gift className="size-3.5 text-slate-950" />
                                 <span>Trao Khen Thưởng</span>
@@ -765,7 +765,7 @@ function BenefitsAdminPage() {
               <button
                 type="button"
                 onClick={handleConfirmReward}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
               >
                 <CheckCircle2 className="size-4" />
                 <span>Xác Nhận Trao Thưởng & Phát Thanh</span>

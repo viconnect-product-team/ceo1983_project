@@ -950,7 +950,7 @@ function NotifyPage() {
             <button
               type="button"
               onClick={() => setEventReminderModalOpen(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-amber-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-sm transition cursor-pointer"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] shadow-sm transition cursor-pointer"
             >
               <Calendar className="h-4 w-4" />
               <span>Bắn Tin Nhắc Sự Kiện (Kèm Poster)</span>

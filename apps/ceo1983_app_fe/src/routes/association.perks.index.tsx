@@ -566,7 +566,7 @@ function PerksScreen() {
         <button
           type="button"
           onClick={() => setIsCreatePerkOpen(true)}
-          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-[#B8860B] to-[#003B95] hover:opacity-95 text-white flex items-center justify-between shadow-md shadow-red-900/20 active:scale-[0.99] transition cursor-pointer group"
+          className="w-full py-3 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white flex items-center justify-between shadow-sm active:scale-[0.99] transition cursor-pointer group"
         >
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-white/20 text-white backdrop-blur-sm">

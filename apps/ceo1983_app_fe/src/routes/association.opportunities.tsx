@@ -33,6 +33,8 @@ import {
   Layers,
   XCircle,
   Coins,
+  ShieldCheck,
+  FolderOpen,
   LayoutGrid,
   List,
   Package,
@@ -123,19 +125,75 @@ function normalizeTag(tag: string): string {
   return TAG_VI_MAP[tag.toLowerCase()] || tag;
 }
 
+function parseVnNumber(val: string | number | undefined | null): number {
+  if (val === undefined || val === null || val === "") return 0;
+  if (typeof val === "number") return val;
+  const s = String(val).trim().toLowerCase();
+  if (s === "thỏa thuận b2b" || s === "liên hệ" || s === "thương lượng") return 0;
+  const hasTy = s.includes("tỷ") || s.includes("ty");
+  const hasTr = s.includes("tr") || s.includes("trieu") || s.includes("triệu");
+  let clean = s.replace(/[^\d.,]/g, "");
+  if (clean.includes(".") && clean.includes(",")) {
+    clean = clean.replace(/\./g, "").replace(",", ".");
+  } else if (clean.includes(".")) {
+    const parts = clean.split(".");
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+      clean = clean.replace(/\./g, "");
+    }
+  } else if (clean.includes(",")) {
+    const parts = clean.split(",");
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3 && !hasTy && !hasTr)) {
+      clean = clean.replace(/,/g, "");
+    } else {
+      clean = clean.replace(",", ".");
+    }
+  }
+  const n = parseFloat(clean);
+  if (isNaN(n) || n <= 0) return 0;
+  if (hasTy) return n * 1_000_000_000;
+  if (hasTr) return n * 1_000_000;
+  if (n <= 100 && !s.includes("đ") && !s.includes("vnd")) {
+    return n * 1_000_000_000;
+  }
+  return n;
+}
+
 function formatSmartPrice(val: string | number | undefined | null): string {
-  if (!val) return "Thỏa thuận B2B";
-  const str = String(val).trim();
-  const num = parseFloat(str.replace(/[^\d.-]/g, ""));
-  if (!isNaN(num) && num >= 1_000_000_000) {
+  if (!val || val === "0" || val === 0) return "Thỏa thuận B2B";
+  if (typeof val === "string") {
+    const s = val.trim();
+    if (s.toLowerCase() === "thỏa thuận b2b" || s.toLowerCase() === "thương lượng" || s.toLowerCase() === "liên hệ") {
+      return "Thỏa thuận B2B";
+    }
+    if (s.includes(" - ")) {
+      const parts = s.split(" - ");
+      const p1 = parseVnNumber(parts[0]);
+      const p2 = parseVnNumber(parts[1]);
+      if (p1 > 0 && p2 > 0) {
+        return `${formatSmartPrice(p1)} - ${formatSmartPrice(p2)}`;
+      }
+      return s;
+    }
+    if (s.startsWith("Từ ") || s.startsWith("từ ")) {
+      const p = parseVnNumber(s.replace(/^từ\s+/i, ""));
+      if (p > 0) return `Từ ${formatSmartPrice(p)}`;
+      return s;
+    }
+  }
+  const num = typeof val === "number" ? val : parseVnNumber(val);
+  if (num <= 0) return "Thỏa thuận B2B";
+  if (num > 0 && num <= 100) {
+    return `${num} Tỷ đ`;
+  }
+  if (num >= 1_000_000_000) {
     const b = num / 1_000_000_000;
-    return `${b % 1 === 0 ? b : b.toFixed(1)} Tỷ đ`;
+    return `${b % 1 === 0 ? b : b.toFixed(1).replace(/\.0$/, "")} Tỷ đ`;
   }
-  if (!isNaN(num) && num >= 1_000_000) {
+  if (num >= 1_000_000) {
     const m = num / 1_000_000;
-    return `${m % 1 === 0 ? m : m.toFixed(0)} Tr đ`;
+    return `${m % 1 === 0 ? m : m.toFixed(1).replace(/\.0$/, "")} Tr đ`;
   }
-  return str;
+  return `${num.toLocaleString("vi-VN")} đ`;
 }
 
 function OpportunitiesScreen() {
@@ -153,39 +211,35 @@ function OpportunitiesScreen() {
     reload,
   } = useServerData<MyOpportunity[]>(() => fetchOpps(), []);
 
+  const [localOpps, setLocalOpps] = useState<MyOpportunity[] | null>(null);
+
+  useEffect(() => {
+    if (opportunities) {
+      setLocalOpps(opportunities);
+    }
+  }, [opportunities]);
+
+  const activeOppsList = useMemo(() => {
+    return localOpps !== null ? localOpps : (opportunities || []);
+  }, [localOpps, opportunities]);
+
   const fetchProducts = useServerFn(listMyProducts);
   const { data: products = [] } = useServerData<MyProduct[]>(() => fetchProducts(), []);
 
   // Thống kê Realtime: Tổng số cơ hội, Tổng số sản phẩm, Tổng giá trị (Requirement 3)
-  const totalOppCount = opportunities?.length || 0;
+  const totalOppCount = activeOppsList.length;
   const totalProdCount = products?.length || 0;
   const totalOpportunitiesValue = useMemo(() => {
     let sum = 0;
-    (opportunities || []).forEach((o) => {
-      if (o.budgetMax) {
-        sum += Number(o.budgetMax) || 0;
-      } else if (o.budgetMin) {
-        sum += Number(o.budgetMin) || 0;
-      } else if (o.value) {
-        const str = String(o.value).trim().toLowerCase();
-        const num = parseFloat(str.replace(/[^\d.-]/g, ""));
-        if (!isNaN(num)) {
-          if (str.includes("tỷ") || str.includes("ty")) {
-            sum += num * 1_000_000_000;
-          } else if (str.includes("tr") || str.includes("trieu")) {
-            sum += num * 1_000_000;
-          } else {
-            sum += num;
-          }
-        }
-      }
+    activeOppsList.forEach((o) => {
+      sum += getOppNumericValue(o);
     });
     (products || []).forEach((p) => {
       const price = Number(p.memberPrice || p.price) || 0;
       sum += price;
     });
     return sum;
-  }, [opportunities, products]);
+  }, [activeOppsList, products]);
 
   const [mounted, setMounted] = useState(false);
 
@@ -201,6 +255,29 @@ function OpportunitiesScreen() {
   const [selectedOpp, setSelectedOpp] = useState<(MyOpportunity & { description?: string }) | null>(
     null,
   );
+
+  // Xử lý Deep Link khi người dùng nhấp vào link chia sẻ từ Facebook/Zalo/bên ngoài vào app (?id=... hoặc ?opportunityId=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const targetOppId = sp.get("id") || sp.get("opportunityId") || sp.get("oppId");
+      if (!targetOppId) return;
+
+      const found = activeOppsList.find((o) => String(o.id) === String(targetOppId));
+      if (found) {
+        setSelectedOpp(found as any);
+      } else {
+        fetchNestApi<any>(`/opportunities/${targetOppId}`)
+          .then((res) => {
+            if (res && res.id) {
+              setSelectedOpp(res);
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {}
+  }, [activeOppsList]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [recipientType, setRecipientType] = useState<"all" | "by_department" | "friends">("all");
   const [editingOpp, setEditingOpp] = useState<(MyOpportunity & { description?: string }) | null>(
@@ -617,30 +694,36 @@ function OpportunitiesScreen() {
   // Helper lấy giá trị số của cơ hội
   function getOppNumericValue(o: any): number {
     if (!o) return 0;
-    if (o.budgetMax && Number(o.budgetMax) > 0) return Number(o.budgetMax);
-    if (o.budgetMin && Number(o.budgetMin) > 0) return Number(o.budgetMin);
-    if (o.estimatedValue && Number(o.estimatedValue) > 0) return Number(o.estimatedValue);
+    const bMax = o.budgetMax ?? o.budget_max;
+    if (bMax !== undefined && bMax !== null && Number(bMax) > 0) {
+      const v = Number(bMax);
+      return v <= 100 ? v * 1_000_000_000 : v;
+    }
+    const bMin = o.budgetMin ?? o.budget_min;
+    if (bMin !== undefined && bMin !== null && Number(bMin) > 0) {
+      const v = Number(bMin);
+      return v <= 100 ? v * 1_000_000_000 : v;
+    }
+    const est = o.estimatedValue ?? o.estimated_value;
+    if (est !== undefined && est !== null && Number(est) > 0) {
+      const v = Number(est);
+      return v <= 100 ? v * 1_000_000_000 : v;
+    }
     if (o.value) {
-      const str = String(o.value).trim().toLowerCase();
-      const num = parseFloat(str.replace(/[^\d.-]/g, ""));
-      if (!isNaN(num)) {
-        if (str.includes("tỷ") || str.includes("ty")) return num * 1_000_000_000;
-        if (str.includes("tr") || str.includes("trieu")) return num * 1_000_000;
-        return num;
-      }
+      return parseVnNumber(o.value);
     }
     return 0;
   }
 
   const allOpportunities = useMemo(() => {
-    const arr = [...(opportunities || [])];
+    const arr = [...activeOppsList];
     arr.sort((a, b) => {
       const timeA = a.time ? new Date(a.time).getTime() : 0;
       const timeB = b.time ? new Date(b.time).getTime() : 0;
       return timeB - timeA;
     });
     return arr;
-  }, [opportunities]);
+  }, [activeOppsList]);
 
   // 1. Danh sách cơ hội đang có (đang mở) & Tổng giá trị
   const openOpportunities = useMemo(() => {
@@ -1076,6 +1159,7 @@ function OpportunitiesScreen() {
     try {
       await fetchNestApi(`/opportunities/${id}`, { method: "DELETE" });
       toast.success("Đã xóa cơ hội thành công!");
+      setLocalOpps((prev) => (prev || []).filter((o) => o.id !== id));
       if (selectedOpp?.id === id) {
         setSelectedOpp(null);
       }
@@ -1110,25 +1194,61 @@ function OpportunitiesScreen() {
     const finalImgs = editImages.length > 0 ? editImages : (editImage ? [editImage] : []);
 
     try {
+      const updateData = {
+        title: editTitle.trim(),
+        description: editDesc.trim(),
+        type: editTag,
+        budgetMin: cleanBudgetMin,
+        budgetMax: cleanBudgetMax,
+        region: editRegion,
+        industry: editIndustry,
+        deadline: editDeadline ? new Date(editDeadline).toISOString() : undefined,
+        contactName: editContactName.trim(),
+        contactPhone: editContactPhone.trim(),
+        contactTitle: editContactTitle.trim(),
+        company: editCompany.trim(),
+        image: finalImgs[0] || null,
+        images: finalImgs,
+      };
+
       await fetchNestApi(`/opportunities/${editingOpp.id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          title: editTitle.trim(),
-          description: editDesc.trim(),
-          type: editTag,
-          budgetMin: cleanBudgetMin,
-          budgetMax: cleanBudgetMax,
-          region: editRegion,
-          industry: editIndustry,
-          deadline: editDeadline ? new Date(editDeadline).toISOString() : undefined,
-          contactName: editContactName.trim(),
-          contactPhone: editContactPhone.trim(),
-          contactTitle: editContactTitle.trim(),
-          company: editCompany.trim(),
-          image: finalImgs[0] || null,
-          images: finalImgs,
-        }),
+        body: JSON.stringify(updateData),
       });
+
+      const updatedVal =
+        cleanBudgetMin && cleanBudgetMax && cleanBudgetMin !== cleanBudgetMax
+          ? `${cleanBudgetMin.toLocaleString("vi-VN")} - ${cleanBudgetMax.toLocaleString("vi-VN")} đ`
+          : cleanBudgetMax
+          ? `${cleanBudgetMax.toLocaleString("vi-VN")} đ`
+          : cleanBudgetMin
+          ? `Từ ${cleanBudgetMin.toLocaleString("vi-VN")} đ`
+          : "Thỏa thuận B2B";
+
+      setLocalOpps((prev) =>
+        (prev || []).map((o) =>
+          o.id === editingOpp.id
+            ? {
+                ...o,
+                title: editTitle.trim(),
+                description: editDesc.trim(),
+                tag: editTag,
+                company: editCompany.trim(),
+                contactName: editContactName.trim(),
+                contactPhone: editContactPhone.trim(),
+                contactTitle: editContactTitle.trim(),
+                industry: editIndustry,
+                region: editRegion,
+                budgetMin: cleanBudgetMin || undefined,
+                budgetMax: cleanBudgetMax || undefined,
+                value: updatedVal,
+                image: finalImgs[0] || o.image,
+                images: finalImgs,
+              }
+            : o,
+        ),
+      );
+
       toast.success("Cập nhật cơ hội thành công!");
       setEditingOpp(null);
       if (selectedOpp?.id === editingOpp.id) {
@@ -1177,7 +1297,7 @@ function OpportunitiesScreen() {
     const finalImgs = newImages.length > 0 ? newImages : (newImage ? [newImage] : []);
 
     try {
-      await fetchNestApi("/opportunities", {
+      const createRes = await fetchNestApi<any>("/opportunities", {
         method: "POST",
         body: JSON.stringify({
           title: newTitle.trim(),
@@ -1203,6 +1323,41 @@ function OpportunitiesScreen() {
           targetRecipients: selectedRecipientIds.length > 0 ? selectedRecipientIds : undefined,
         }),
       });
+
+      const newOppVal =
+        cleanBudgetMin && cleanBudgetMax && cleanBudgetMin !== cleanBudgetMax
+          ? `${cleanBudgetMin.toLocaleString("vi-VN")} - ${cleanBudgetMax.toLocaleString("vi-VN")} đ`
+          : cleanBudgetMax
+          ? `${cleanBudgetMax.toLocaleString("vi-VN")} đ`
+          : cleanBudgetMin
+          ? `Từ ${cleanBudgetMin.toLocaleString("vi-VN")} đ`
+          : "Thỏa thuận B2B";
+
+      const createdId = createRes?.id || `opp_${Date.now()}`;
+      const newOppItem: any = {
+        id: String(createdId),
+        title: newTitle.trim(),
+        description: newDesc.trim() || `${finalCompany} - Cơ hội: ${newTitle.trim()}`,
+        tag: newTag,
+        company: finalCompany,
+        contactName: finalContactName,
+        contactPhone: finalContactPhone,
+        contactTitle: newContactTitle.trim() || "Đại diện hợp tác",
+        industry: newIndustry,
+        region: newRegion,
+        budgetMin: cleanBudgetMin || undefined,
+        budgetMax: cleanBudgetMax || undefined,
+        value: newOppVal,
+        time: new Date().toISOString(),
+        image: finalImgs[0] || null,
+        thumbnail: finalImgs[0] || null,
+        images: finalImgs,
+        status: "open",
+        posterId: user?.id || "admin",
+      };
+
+      setLocalOpps((prev) => [newOppItem, ...(prev || [])]);
+
       toast.success("Đã đăng cơ hội thành công lên hệ thống!");
       setCreateModalOpen(false);
       setNewTitle("");
@@ -1703,7 +1858,12 @@ function OpportunitiesScreen() {
                         </div>
                         <div className="self-stretch px-3 py-2 bg-gray-50 border-t border-slate-200 inline-flex justify-between items-center">
                           <div className="justify-start text-blue-900 text-xs font-bold font-['Inter']">
-                            {formatSmartPrice(o.value)}
+                            {formatSmartPrice(
+                              o.value ||
+                              (o.budgetMax ?? (o as any).budget_max) ||
+                              (o.budgetMin ?? (o as any).budget_min) ||
+                              (o.estimatedValue ?? (o as any).estimated_value)
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5">
                             <button
@@ -1769,7 +1929,7 @@ function OpportunitiesScreen() {
                                           } as any,
                                         });
                                       }}
-                                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-md shadow-emerald-600/20"
+                                      className="px-3 py-1.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-xs"
                                     >
                                       <Calendar className="size-3.5" />
                                       <span>Kết nối cuộc gặp</span>
@@ -2077,6 +2237,104 @@ function OpportunitiesScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* POPUP / MODAL MINH CHỨNG DẪN CHỨNG THẬT (CHỈ SỐ GIAO THƯƠNG) */}
+      {evidenceModalType && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#131a26] border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-white/5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-9 rounded-xl bg-[#003B95]/10 dark:bg-blue-500/20 flex items-center justify-center text-[#003B95] dark:text-blue-400 shrink-0">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                    {evidenceModalData.title}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {evidenceModalData.summary}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEvidenceModalType(null)}
+                className="grid size-8 place-items-center rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer shrink-0"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Modal Body: Danh sách minh chứng thật */}
+            <div className="p-3 sm:p-4 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5 space-y-2.5 flex-1">
+              {evidenceModalData.list.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">
+                  <FolderOpen className="size-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs font-semibold">Chưa có dữ liệu minh chứng cho danh mục này</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Dữ liệu thực tế sẽ được cập nhật liên tục từ các hoạt động giao thương.</p>
+                </div>
+              ) : (
+                evidenceModalData.list.map((item: any) => {
+                  const val = getOppNumericValue(item);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedOpp(item);
+                        setEvidenceModalType(null);
+                      }}
+                      className="pt-2.5 first:pt-0 group flex items-start justify-between gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer"
+                    >
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#003B95]/10 text-[#003B95] dark:text-blue-300">
+                            {normalizeTag(item.type || item.tag || "Cơ hội")}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            {item.status === "open" ? "Đang mở" : item.status === "won" ? "Đã chốt" : item.status === "dealing" ? "Đang đàm phán" : "Hoạt động"}
+                          </span>
+                        </div>
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">
+                          {item.title}
+                        </h4>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-wrap">
+                          <span>{item.company || item.contactName || "Doanh nghiệp CEO 1983"}</span>
+                          {item.region && <span>• {item.region}</span>}
+                          {item.industry && <span>• {item.industry}</span>}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono block">
+                          {formatSmartPrice(val)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          {val > 0 ? "Ngân sách" : "Thỏa thuận"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Tổng cộng: <strong className="text-slate-800 dark:text-white font-bold">{evidenceModalData.list.length}</strong> cơ hội minh chứng
+              </span>
+              <button
+                type="button"
+                onClick={() => setEvidenceModalType(null)}
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-white text-xs font-bold transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

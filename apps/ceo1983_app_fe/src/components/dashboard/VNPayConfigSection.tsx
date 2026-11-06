@@ -399,7 +399,7 @@ export const VNPayConfigSection: React.FC = () => {
         <button
           type="button"
           onClick={saveConfig}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#003B95] to-blue-700 text-white text-xs font-bold shadow-md hover:opacity-95 transition cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md hover:opacity-95 transition cursor-pointer"
         >
           <Check className="size-4" />
           <span>Lưu Cấu Hình Cổng Thanh Toán VNPay</span>

@@ -286,7 +286,7 @@ export function GlobalIncomingCallModal() {
                   type="button"
                   onClick={handleAccept}
                   aria-label="Trả lời"
-                  className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 active:scale-95 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(34,197,94,0.6)] animate-bounce transition-all cursor-pointer"
+                  className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(34,197,94,0.6)] animate-bounce transition-all cursor-pointer"
                   style={{ animationDuration: "1.2s" }}
                 >
                   <Phone className="w-6 h-6" />

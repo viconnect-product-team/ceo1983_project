@@ -1167,7 +1167,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+      <div className="p-5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3.5">
           <div className="size-12 rounded-2xl bg-white text-blue-600 flex items-center justify-center font-black text-xl shadow-md shrink-0">
             Zalo
@@ -1266,7 +1266,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               type="button"
               onClick={handleAutoRefreshToken}
               disabled={isRefreshingToken}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isRefreshingToken ? (
                 <>
@@ -1301,7 +1301,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               <button
                 type="button"
                 onClick={handleOpenOAuthConsent}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <ExternalLink className="size-3.5" /> 🔑 Mở Cổng Cấp Quyền Zalo OA
               </button>
@@ -1703,7 +1703,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               onClick={() => setNoticeType("meeting")}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 noticeType === "meeting"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-xs"
+                  ? "bg-[#003B95] hover:bg-[#002B70] text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
@@ -2214,7 +2214,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               type="button"
               onClick={handleSendDirectNotice}
               disabled={sendingFeeNotice}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-60"
             >
               {sendingFeeNotice ? (
                 <RefreshCw className="size-4 animate-spin" />
@@ -2229,7 +2229,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
             <button
               type="button"
               onClick={handleOpenDirectZalo}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
             >
               <ExternalLink className="size-4 text-emerald-300" />
               <span>⚡ MỞ CHAT TRỰC TIẾP TRÊN ZALO (1-CLICK)</span>
@@ -2431,7 +2431,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
               type="button"
               onClick={handleExecuteBulkCampaign}
               disabled={isSendingBulk || selectedMemberIds.length === 0}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#DC2626] via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-red-900/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
+              className="w-full py-4 px-6 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-red-900/20 active:scale-98 transition cursor-pointer disabled:opacity-60"
             >
               {isSendingBulk ? (
                 <RefreshCw className="size-5 animate-spin" />
@@ -2557,7 +2557,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                   type="button"
                   onClick={handleTriggerScheduledNow}
                   disabled={isTriggeringSchedule}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-black shadow-md transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-black shadow-md transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   {isTriggeringSchedule ? <RefreshCw className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5 text-amber-300" />}
                   <span>{isTriggeringSchedule ? "Đang chạy..." : "Kích Hoạt Gửi Chu Kỳ Ngay Bây Giờ (Run Now)"}</span>
@@ -2893,7 +2893,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                 type="button"
                 onClick={handleAutoRefreshToken}
                 disabled={isRefreshingToken}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+                className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
               >
                 {isRefreshingToken ? (
                   <RefreshCw className="size-3.5 animate-spin" />
@@ -3094,7 +3094,7 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
         <button
           type="button"
           onClick={saveZaloConfig}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-xs font-bold shadow-md hover:opacity-95 transition cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md hover:opacity-95 transition cursor-pointer"
         >
           <Check className="size-4" />
           <span>Lưu Cấu Hình Zalo OA &amp; Danh Mục Dynamic</span>

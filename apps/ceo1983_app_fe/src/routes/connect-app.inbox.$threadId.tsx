@@ -1459,7 +1459,7 @@ function ThreadPage() {
                         type="submit"
                         disabled={send.isPending || isUploading}
                         aria-label={t("bc.mobile.inbox.thread.send")}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-black shadow-[0_2px_12px_rgba(216,178,130,0.5)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer mb-0.5"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#003B95] hover:bg-[#002B70] text-white font-black shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer mb-0.5"
                       >
                         {send.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin text-slate-950" aria-hidden="true" />

@@ -35,6 +35,7 @@ import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-clien
 import { executeShare } from "@/lib/share-helper";
 import { useAuth } from "@/context/AuthContext";
 import { CreatePostModal, COMMITTEES } from "./CreatePostModal";
+import { CommentTreeSection } from "./CommentTreeSection";
 
 export const COMMENT_EMOTIONS = [
   { id: "like", emoji: "👍", label: "Thích" },
@@ -542,9 +543,11 @@ export function FeedView({
 
       setPosts(feedItems);
 
-      // Auto-load comments for each post
-      feedItems.forEach((p) => {
-        fetchCommentsForPost(p.id);
+      // Auto-load comments for top posts if not already loaded (tránh spam API khi tìm kiếm)
+      feedItems.slice(0, 10).forEach((p) => {
+        if (!postCommentsMap[p.id]) {
+          fetchCommentsForPost(p.id);
+        }
       });
     } catch {
       toast.error("Không thể tải bảng tin lúc này");
@@ -937,41 +940,60 @@ export function FeedView({
                 </p>
 
                 {/* ── BÀI VIẾT CHIA SẺ TỪ ỨNG DỤNG BÊN NGOÀI (CHUẨN GIAO DIỆN FACEBOOK SHARE CARD) ── */}
-                {post.sharedArticle ? (
-                  <a
-                    href={post.sharedArticle.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-blue-500/60 transition group shadow-xs cursor-pointer"
-                  >
-                    {post.sharedArticle.thumbnailUrl && (
-                      <div className="w-full h-44 sm:h-52 overflow-hidden bg-slate-900 relative">
-                        <img
-                          src={resolveMediaUrl(post.sharedArticle.thumbnailUrl) || post.sharedArticle.thumbnailUrl}
-                          alt={post.sharedArticle.title}
-                          className="w-full h-full object-cover group-hover:scale-103 transition duration-300"
-                        />
-                        <div className="absolute top-2.5 right-2.5 bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
-                          <ExternalLink className="size-3 text-blue-400" />
-                          <span>Xem bài gốc</span>
+                {post.sharedArticle || post.externalLink ? (
+                  (() => {
+                    const art: any = post.sharedArticle || {};
+                    const targetUrl = art.url || post.externalLink || "#";
+                    const thumb = art.thumbnailUrl || (art as any).thumbnail || (art as any).image || (art as any).image_url || (post.images && post.images.length > 0 ? post.images[0] : null);
+                    let domain = art.domain || "";
+                    if (!domain && targetUrl && targetUrl.startsWith("http")) {
+                      try {
+                        domain = new URL(targetUrl).hostname.replace(/^www\./, "").toUpperCase();
+                      } catch {}
+                    }
+                    const artTitle = art.title || post.title || "Xem liên kết bài viết";
+                    const artSnippet = art.snippet || (art as any).excerpt || "Bấm vào để đọc toàn văn bài viết chi tiết từ ứng dụng nguồn.";
+
+                    return (
+                      <a
+                        href={targetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:border-blue-500/60 transition group shadow-xs cursor-pointer"
+                      >
+                        {thumb && (
+                          <div className="w-full h-44 sm:h-52 overflow-hidden bg-slate-900 relative">
+                            <img
+                              src={resolveMediaUrl(thumb) || thumb}
+                              alt={artTitle}
+                              className="w-full h-full object-cover group-hover:scale-103 transition duration-300"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute top-2.5 right-2.5 bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+                              <ExternalLink className="size-3 text-blue-400" />
+                              <span>Xem bài gốc</span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="p-3.5 space-y-1 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+                          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                            <Globe className="size-3 text-blue-600 dark:text-blue-400" />
+                            <span>{domain || "LIÊN KẾT NGOÀI"}</span>
+                          </div>
+                          <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition leading-snug line-clamp-2">
+                            {artTitle}
+                          </h4>
+                          {artSnippet && (
+                            <p className="text-[11.5px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                              {artSnippet}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    )}
-                    <div className="p-3.5 space-y-1 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-                      <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                        <Globe className="size-3 text-blue-600 dark:text-blue-400" />
-                        <span>{post.sharedArticle.domain || "LIÊN KẾT NGOÀI"}</span>
-                      </div>
-                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition leading-snug line-clamp-2">
-                        {post.sharedArticle.title}
-                      </h4>
-                      {post.sharedArticle.snippet && (
-                        <p className="text-[11.5px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                          {post.sharedArticle.snippet}
-                        </p>
-                      )}
-                    </div>
-                  </a>
+                      </a>
+                    );
+                  })()
                 ) : isSharedOpportunity ? (
                   <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/40 hover:border-amber-400/60 transition group cursor-pointer">
                     {post.images && post.images.length > 0 ? (
@@ -1186,322 +1208,19 @@ export function FeedView({
                   </div>
                 </div>
 
-                {/* ── COMMENTS SECTION: 3-LEVEL NESTED REPLIES & THREAD COLLAPSE ── */}
+                {/* ── COMMENTS SECTION: REUSABLE FACEBOOK TREE REPLIES, @MENTION, MỚI NHẤT LÊN ĐẦU ── */}
                 {isCommentsOpen && (
-                  <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold px-1">
-                      <span className="flex items-center gap-1.5">
-                        <MessageCircle className="size-3.5 text-[#1F3864] dark:text-amber-400" />
-                        <span>Tất cả bình luận ({totalCommentsCount})</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleCommentsVisibility(post.id)}
-                        className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-0.5 cursor-pointer"
-                      >
-                        <ChevronUp className="size-3" />
-                        Thu gọn bình luận
-                      </button>
-                    </div>
-
-                    {/* Comment Tree */}
-                    <div className="space-y-2">
-                      {commentTrees.length > 0 ? (
-                        commentTrees.map((rootNode) => (
-                          <RenderCommentNode
-                            key={rootNode.id}
-                            node={rootNode}
-                            postId={post.id}
-                            collapsedMap={collapsedCommentsMap}
-                            onToggleCollapse={toggleCommentCollapse}
-                            onReply={(pId, cId, aName, lvl) =>
-                              setReplyingTo({
-                                postId: pId,
-                                commentId: cId,
-                                authorName: aName,
-                                level: lvl,
-                              })
-                            }
-                            formatTime={formatRelativeTime}
-                            onLightbox={(url) => setLightboxImage(url)}
-                            onReact={handleReactToComment}
-                            activeReactionCommentId={activeReactionCommentId}
-                            setActiveReactionCommentId={setActiveReactionCommentId}
-                          />
-                        ))
-                      ) : (
-                        <p className="text-[11px] text-slate-400 italic py-1 px-1">
-                          Chưa có bình luận nào. Hãy là người đầu tiên kết nối thảo luận!
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Active Reply Banner */}
-                    {replyingTo?.postId === post.id && (
-                      <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 text-[11px]">
-                        <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
-                          <CornerDownRight className="size-3 text-amber-600 dark:text-amber-400" />
-                          <span>
-                            Đang trả lời <b>@{replyingTo.authorName}</b> (Cấp {Math.min(3, (replyingTo.level || 1) + 1)})
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setReplyingTo(null)}
-                          className="p-1 hover:bg-amber-200/50 dark:hover:bg-amber-800/40 rounded-full text-slate-500 cursor-pointer"
-                          title="Huỷ trả lời"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Attached Media / Emotion Preview */}
-                    {(commentMediaMap[post.id] || commentEmotionMap[post.id]) && (
-                      <div className="flex items-center gap-2 p-2 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300/50 text-xs">
-                        {commentMediaMap[post.id] && (
-                          <div className="flex items-center gap-2">
-                            {commentMediaMap[post.id]!.type === "video" ? (
-                              <div className="size-10 rounded-lg bg-black flex items-center justify-center text-white">
-                                <Video className="size-4" />
-                              </div>
-                            ) : (
-                              <img
-                                src={resolveMediaUrl(commentMediaMap[post.id]!.url) || commentMediaMap[post.id]!.url}
-                                alt="Đính kèm"
-                                className="size-10 rounded-lg object-cover border border-amber-300"
-                              />
-                            )}
-                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
-                              {commentMediaMap[post.id]!.type === "video"
-                                ? "Video đính kèm"
-                                : commentMediaMap[post.id]!.type === "gif"
-                                ? "GIF đính kèm"
-                                : "Hình ảnh đính kèm"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setCommentMediaMap((prev) => ({ ...prev, [post.id]: null }))}
-                              className="p-1 text-slate-400 hover:text-rose-500 rounded-full cursor-pointer"
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          </div>
-                        )}
-
-                        {commentEmotionMap[post.id] && (
-                          <div className="flex items-center gap-1.5 ml-auto px-2 py-1 rounded-full bg-white dark:bg-slate-900 border border-amber-300 text-xs">
-                            <span>{COMMENT_EMOTIONS.find((e) => e.id === commentEmotionMap[post.id])?.emoji}</span>
-                            <span className="font-bold text-[10.5px] text-amber-700 dark:text-amber-300">
-                              {COMMENT_EMOTIONS.find((e) => e.id === commentEmotionMap[post.id])?.label}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setCommentEmotionMap((prev) => ({ ...prev, [post.id]: null }))}
-                              className="p-0.5 text-slate-400 hover:text-rose-500 rounded-full cursor-pointer"
-                            >
-                              <X className="size-3" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Inline quick comment input Facebook Style */}
-                    <div className="space-y-1.5 pt-1.5">
-                      <div className="flex items-center gap-2">
-                        {user?.avatar ? (
-                          <img
-                            src={resolveMediaUrl(user.avatar) || user.avatar}
-                            alt={user.name || "Tôi"}
-                            className="size-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
-                            }}
-                          />
-                        ) : (
-                          <div className="size-8 rounded-full shrink-0 bg-gradient-to-br from-[#003B95] to-[#B8860B] text-white font-bold flex items-center justify-center text-xs shadow-2xs">
-                            {((user?.name || "T").trim()[0] || "T").toUpperCase()}
-                          </div>
-                        )}
-
-                        <div className="flex-1 flex items-center gap-1.5 bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-[22px] px-3.5 py-1.5 border-0 focus-within:border-none focus-within:ring-0 shadow-none transition">
-                          <input
-                            type="text"
-                            placeholder={
-                              replyingTo?.postId === post.id
-                                ? `Trả lời @${replyingTo.authorName}...`
-                                : "Viết bình luận công khai..."
-                            }
-                            value={inlineInputText[post.id] || ""}
-                            onChange={(e) =>
-                              setInlineInputText({ ...inlineInputText, [post.id]: e.target.value })
-                            }
-                            onKeyDown={(e) => e.key === "Enter" && handleSendInlineComment(post.id)}
-                            className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-500 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none"
-                            style={{ border: "none", outline: "none", boxShadow: "none" }}
-                          />
-
-                          {inlineInputText[post.id] && (
-                            <button
-                              type="button"
-                              onClick={() => setInlineInputText({ ...inlineInputText, [post.id]: "" })}
-                              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                              title="Xóa trắng"
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          )}
-
-                          {/* Media Toolbar buttons inside capsule */}
-                          <div className="flex items-center gap-0.5 shrink-0 text-slate-500">
-                            {/* Upload Image */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveUploadPostId(post.id);
-                                imageInputRef.current?.click();
-                              }}
-                              disabled={uploadingMediaFor === post.id}
-                              className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-[#003B95] dark:hover:text-blue-400 transition cursor-pointer"
-                              title="Đính kèm ảnh"
-                            >
-                              <ImageIcon className="size-4" />
-                            </button>
-
-                            {/* GIF Picker */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveMediaPickerFor((cur) =>
-                                  cur?.postId === post.id && cur?.type === "gif" ? null : { postId: post.id, type: "gif" }
-                                )
-                              }
-                              className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tracking-wider transition cursor-pointer ${
-                                activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "gif"
-                                  ? "bg-amber-500 text-white"
-                                  : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-[#003B95]"
-                              }`}
-                              title="Chọn GIF"
-                            >
-                              GIF
-                            </button>
-
-                            {/* Emotion Picker */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setActiveMediaPickerFor((cur) =>
-                                  cur?.postId === post.id && cur?.type === "emotion" ? null : { postId: post.id, type: "emotion" }
-                                )
-                              }
-                              className={`p-1.5 rounded-full transition cursor-pointer ${
-                                activeMediaPickerFor?.postId === post.id && activeMediaPickerFor?.type === "emotion"
-                                  ? "bg-amber-500 text-white"
-                                  : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-amber-500"
-                              }`}
-                              title="Thả Cảm Xúc"
-                            >
-                              <Smile className="size-4" />
-                            </button>
-
-                            {/* Send Button */}
-                            <button
-                              type="button"
-                              disabled={
-                                submittingCommentFor === post.id ||
-                                uploadingMediaFor === post.id ||
-                                (!inlineInputText[post.id]?.trim() && !commentMediaMap[post.id] && !commentEmotionMap[post.id])
-                              }
-                              onClick={() => handleSendInlineComment(post.id)}
-                              className={`p-1.5 rounded-full transition cursor-pointer disabled:opacity-30 ${
-                                inlineInputText[post.id]?.trim() || commentMediaMap[post.id] || commentEmotionMap[post.id]
-                                  ? "bg-[#003B95] text-white hover:bg-[#002B70] shadow-2xs"
-                                  : "text-slate-400"
-                              }`}
-                              title="Gửi bình luận"
-                            >
-                              {submittingCommentFor === post.id || uploadingMediaFor === post.id ? (
-                                <Loader2 className="size-3.5 animate-spin" />
-                              ) : (
-                                <Send className="size-3.5" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Active Media Picker Popups */}
-                      {activeMediaPickerFor?.postId === post.id && (
-                        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl space-y-2 animate-in zoom-in-95 duration-100">
-                          {activeMediaPickerFor.type === "emotion" ? (
-                            <div>
-                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">
-                                <span>Bộ Emotion Doanh Nhân CEO 1983</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveMediaPickerFor(null)}
-                                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                                >
-                                  <X className="size-3.5" />
-                                </button>
-                              </div>
-                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                                {COMMENT_EMOTIONS.map((emo) => (
-                                  <button
-                                    key={emo.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setCommentEmotionMap((prev) => ({ ...prev, [post.id]: emo.id }));
-                                      setActiveMediaPickerFor(null);
-                                    }}
-                                    className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-slate-800 border border-transparent hover:border-amber-300 transition cursor-pointer"
-                                  >
-                                    <span className="text-xl">{emo.emoji}</span>
-                                    <span className="text-[9.5px] font-medium text-slate-600 dark:text-slate-300 text-center truncate max-w-full">
-                                      {emo.label}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">
-                                <span>Chọn GIF Doanh nghiệp &amp; Chúc mừng</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveMediaPickerFor(null)}
-                                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                                >
-                                  <X className="size-3.5" />
-                                </button>
-                              </div>
-                              <div className="grid grid-cols-3 gap-2">
-                                {BUSINESS_GIFS.map((gif) => (
-                                  <div
-                                    key={gif.id}
-                                    onClick={() => {
-                                      setCommentMediaMap((prev) => ({
-                                        ...prev,
-                                        [post.id]: { url: gif.url, type: "gif" },
-                                      }));
-                                      setActiveMediaPickerFor(null);
-                                    }}
-                                    className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-amber-400 cursor-pointer transition aspect-4/3 relative group"
-                                  >
-                                    <img src={gif.url} alt={gif.title} className="w-full h-full object-cover" />
-                                    <span className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] font-semibold px-1 py-0.5 truncate text-center opacity-0 group-hover:opacity-100 transition">
-                                      {gif.title}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                  <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800/80">
+                    <CommentTreeSection
+                      postId={post.id}
+                      title="Bình luận bài viết"
+                      defaultOpen={true}
+                      onCommentCountChange={(cnt) => {
+                        setPosts((prev) =>
+                          prev.map((p) => (p.id === post.id ? { ...p, commentsCount: cnt } : p))
+                        );
+                      }}
+                    />
                   </div>
                 )}
               </article>

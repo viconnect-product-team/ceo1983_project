@@ -98,13 +98,19 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
           setTitle((prev: string) => prev || res.title);
         }
         if (res.snippet) setSharedSummary(res.snippet);
-        // CRITICAL: Use REAL thumbnail without unsplash fallback!
+        // Dùng thumbnail thật từ liên kết nguồn
         if (res.thumbnailUrl) {
           setSharedThumbnail(res.thumbnailUrl);
         }
+      } else {
+        // Fallback tối thiểu khi API scraper không lấy được
+        setSharedTitle((prev) => prev || `Liên kết từ ${cleanUrl}`);
+        setSharedSummary((prev) => prev || "Bấm vào để đọc chi tiết từ liên kết bài viết bên ngoài.");
       }
     } catch {
-      // Keep user input if scraper fails
+      // Giữ nguyên thông tin đã nhập, tránh trống nội dung
+      setSharedTitle((prev) => prev || `Liên kết từ ${targetUrl}`);
+      setSharedSummary((prev) => prev || "Bấm vào để đọc chi tiết từ liên kết bài viết bên ngoài.");
     } finally {
       setLoadingMetadata(false);
     }
@@ -112,15 +118,38 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
 
   React.useEffect(() => {
     if (!isOpen) return;
-    if (initialShare?.url) {
-      setPostMode("external");
-      setSharedUrl(initialShare.url);
-      if (initialShare.title) {
-        setSharedTitle(initialShare.title);
-        setTitle(initialShare.title);
+    let url = initialShare?.url || "";
+    let txt = initialShare?.text || "";
+    let ttl = initialShare?.title || "";
+
+    // Tự động bóc tách link URL nếu ứng dụng nguồn đẩy link vào phần text hoặc title
+    if (!url && txt) {
+      const match = txt.match(/https?:\/\/[^\s]+/i);
+      if (match) {
+        url = match[0];
+        txt = txt.replace(match[0], "").trim();
       }
-      if (initialShare.text) setContent(initialShare.text);
-      fetchUrlMetadata(initialShare.url);
+    }
+    if (!url && ttl) {
+      const match = ttl.match(/https?:\/\/[^\s]+/i);
+      if (match) {
+        url = match[0];
+        ttl = ttl.replace(match[0], "").trim();
+      }
+    }
+
+    if (url) {
+      setPostMode("external");
+      setSharedUrl(url);
+      if (ttl) {
+        setSharedTitle(ttl);
+        setTitle(ttl);
+      }
+      if (txt) setContent(txt);
+      fetchUrlMetadata(url);
+    } else {
+      if (ttl) setTitle(ttl);
+      if (txt) setContent(txt);
     }
   }, [isOpen, initialShare]);
 
@@ -193,7 +222,12 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) {
+    let finalContent = content.trim();
+    if (!finalContent && postMode === "external") {
+      finalContent = sharedTitle.trim() || sharedSummary.trim() || title.trim() || "Chia sẻ bài viết liên kết ngoài";
+    }
+
+    if (!finalContent) {
       toast.warning("Vui lòng nhập lời chia sẻ hoặc nội dung bài viết");
       return;
     }
@@ -226,7 +260,7 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
 
       const payload = {
         title: title.trim() || (sharedArticle ? sharedArticle.title : undefined),
-        content: content.trim(),
+        content: finalContent,
         category,
         department: category === "NEWS" || category === "EVENT_MEETING" ? department : undefined,
         images,
@@ -648,7 +682,7 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-red-600 via-amber-600 to-red-600 hover:opacity-95 text-white font-bold text-xs shadow-md active:scale-98 transition inline-flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md active:scale-98 transition inline-flex items-center justify-center gap-2 cursor-pointer"
             >
               {submitting ? (
                 <>

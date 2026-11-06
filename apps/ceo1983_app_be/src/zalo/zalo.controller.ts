@@ -133,5 +133,22 @@ export class ZaloController {
   async saveTemplates(@Req() req: any, @Body() body: { templates: any[] }) {
     return this.zaloService.saveTemplates(body.templates, req.user?.id);
   }
+
+  @Get('miniapp/config')
+  async getMiniAppConfig() {
+    return this.zaloService.getMiniAppConfig();
+  }
+
+  @Post('miniapp/config')
+  @UseGuards(JwtAuthGuard)
+  async saveMiniAppConfig(@Req() req: any, @Body() body: any) {
+    return this.zaloService.saveMiniAppConfig(body, req.user?.id);
+  }
+
+  @Post('miniapp/check-health')
+  @UseGuards(JwtAuthGuard)
+  async checkMiniAppHealth(@Body() body: any) {
+    return this.zaloService.checkMiniAppHealth(body);
+  }
 }
 

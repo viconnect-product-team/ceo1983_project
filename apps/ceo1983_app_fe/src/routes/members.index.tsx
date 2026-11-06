@@ -1424,7 +1424,7 @@ function MembersPage() {
                           <button
                             onClick={() => handleApproveAndSendCredentials(m)}
                             title="Ban Thành Viên thẩm định: Phê duyệt hồ sơ & Gửi email tài khoản"
-                            className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-2.5 py-1.5 text-xs font-black shadow-sm transition-all whitespace-nowrap cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white px-2.5 py-1.5 text-xs font-black shadow-sm transition-all whitespace-nowrap cursor-pointer"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5 text-slate-950" />
                             <span>Duyệt & Gửi Email</span>
@@ -1854,7 +1854,7 @@ function MemberCard({
       {m.status === "pending" && onApprove && (
         <button
           onClick={onApprove}
-          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 px-3 py-2 text-xs font-black shadow-sm transition-all cursor-pointer"
+          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-3 py-2 text-xs font-black shadow-sm transition-all cursor-pointer"
         >
           <CheckCircle2 className="h-4 w-4 text-slate-950" />
           Ban Thành Viên: Phê duyệt & Gửi Email Tài Khoản

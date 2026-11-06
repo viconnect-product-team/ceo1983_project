@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   Loader2,
   MapPin,
+  MessageCircle,
   MessageSquare,
   Newspaper,
   Package,
@@ -100,6 +101,7 @@ import {
 import { getNetworkStateFn } from "@/lib/networking.functions";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { mergeMembersWithAccounts, readManagedAccounts } from "@/lib/committee-accounts";
+import { CommentTreeSection } from "@/components/feed/CommentTreeSection";
 
 /** Map bản ghi /members (DB) → Member cho danh bạ chat. */
 function mapApiMemberRow(r: Record<string, any>): Member | null {
@@ -195,6 +197,13 @@ type NetworkSearch = { peer?: string; product?: string };
 
 export const Route = createFileRoute("/network")({
   ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983" },
+      { property: "og:title", content: "Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983" },
+      { name: "description", content: "Mạng lưới kết nối giao thương B2B, trao đổi hợp tác và bản tin hiệp hội doanh nhân CEO 1983 (HanoiBA)." },
+    ],
+  }),
   validateSearch: (search: Record<string, unknown>): NetworkSearch => {
     const out: NetworkSearch = {};
     if (typeof search.peer === "string") out.peer = search.peer;
@@ -419,8 +428,7 @@ function PrimaryBtn({
     <button
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-glow)] disabled:cursor-not-allowed disabled:opacity-60"
-      style={{ background: "var(--gradient-primary)" }}
+      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white shadow-xs disabled:cursor-not-allowed disabled:opacity-60 bg-[#003B95] hover:bg-[#002B70] transition"
     >
       {loading ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1128,8 +1136,7 @@ function ChatPanel({
         />
         <button
           onClick={submit}
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)]"
-          style={{ background: "var(--gradient-primary)" }}
+          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-xs bg-[#003B95] hover:bg-[#002B70] transition"
         >
           <Send className="h-4 w-4" />
           <span>Gửi</span>
@@ -1460,7 +1467,7 @@ function NewGroupChatDialog({
             type="button"
             onClick={handleCreate}
             disabled={!name.trim() || selectedIds.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-amber-500/20 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer"
           >
             <Users className="h-4 w-4" />
             <span>Tạo Nhóm Trao Đổi ({selectedIds.length})</span>
@@ -1807,6 +1814,8 @@ function FeedCard({
 }) {
   const fmt = useFmt();
   const [expanded, setExpanded] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(item.commentsCount || 0);
 
   return (
     <Card className={`p-5 border bg-card rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${item.status === "hidden" ? "border-dashed border-rose-300 bg-rose-50/20 dark:bg-rose-950/10 opacity-75" : "border-border"
@@ -1817,7 +1826,7 @@ function FeedCard({
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="h-10 w-10 rounded-full font-bold text-white grid place-items-center shrink-0 shadow-xs"
-              style={{ background: "var(--gradient-primary)" }}
+              style={{ background: "#003B95" }}
             >
               {item.authorName.charAt(0).toUpperCase()}
             </div>
@@ -2082,6 +2091,19 @@ function FeedCard({
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => setShowComments(!showComments)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+              showComments
+                ? "bg-[#003B95] text-white border-[#003B95]"
+                : "border-border bg-card hover:bg-muted text-foreground"
+            }`}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            <span>Bình luận ({commentCount})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => onOpenChat(item.authorId)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition cursor-pointer"
           >
@@ -2100,6 +2122,18 @@ function FeedCard({
           )}
         </div>
       </div>
+
+      {/* ── BÌNH LUẬN DẠNG CÂY FACEBOOK, TAG @MENTION HỘI VIÊN KẾT NỐI, MỚI NHẤT LÊN ĐẦU ── */}
+      {showComments && (
+        <div className="pt-3 mt-3 border-t border-border/70">
+          <CommentTreeSection
+            postId={item.id}
+            title="Bình luận bài viết"
+            defaultOpen={true}
+            onCommentCountChange={(cnt) => setCommentCount(cnt)}
+          />
+        </div>
+      )}
     </Card>
   );
 }
@@ -2204,6 +2238,18 @@ function NetworkPage() {
     contextTitle?: string;
   } | null>(null);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    document.title = "Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983";
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
   const [selectedCommittee, setSelectedCommittee] = useState<string>("Tất cả các ban");
   const [showNewChat, setShowNewChat] = useState(false);
   const [showNewGroupChat, setShowNewGroupChat] = useState(false);
@@ -2243,7 +2289,7 @@ function NetworkPage() {
     !q ||
     m.name.toLowerCase().includes(q) ||
     (m.contact ?? "").toLowerCase().includes(q) ||
-    m.code.toLowerCase().includes(query) ||
+    m.code.toLowerCase().includes(q) ||
     t(m.industry).toLowerCase().includes(q) ||
     t(m.region).toLowerCase().includes(q);
 
@@ -2251,22 +2297,22 @@ function NetworkPage() {
     selectedCommittee === "Tất cả các ban" || getMemberCommittee(m) === selectedCommittee;
 
   const filter = (list: Member[]) => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     if (!q) return list;
     return list.filter((m) => matches(m, q));
   };
 
   const filteredConnections = useMemo(() => {
     return filter(connections).filter(committeeMatches);
-  }, [connections, query, selectedCommittee]);
+  }, [connections, debouncedQuery, selectedCommittee]);
 
   const filteredIncoming = useMemo(() => {
     return filter(incoming).filter(committeeMatches);
-  }, [incoming, query, selectedCommittee]);
+  }, [incoming, debouncedQuery, selectedCommittee]);
 
   const filteredOutgoing = useMemo(() => {
     return filter(outgoing).filter(committeeMatches);
-  }, [outgoing, query, selectedCommittee]);
+  }, [outgoing, debouncedQuery, selectedCommittee]);
 
   // Discover / All committee members
   const PER_PAGE = 12;
@@ -2274,7 +2320,7 @@ function NetworkPage() {
   const [page, setPage] = useState(1);
 
   const discoverFiltered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     const list = MEMBERS.filter(
       (m) => matches(m, q) && committeeMatches(m),
     );
@@ -2284,7 +2330,7 @@ function NetworkPage() {
       return sort === "name-desc" ? -cmp : cmp;
     });
     return sorted;
-  }, [query, sort, selectedCommittee]);
+  }, [debouncedQuery, sort, selectedCommittee]);
 
   const discoverPages = Math.max(1, Math.ceil(discoverFiltered.length / PER_PAGE));
   const safePage = Math.min(page, discoverPages);
@@ -2469,8 +2515,8 @@ function NetworkPage() {
     if (feedTypeFilter !== "all") {
       result = result.filter((item) => item.type === feedTypeFilter);
     }
-    if (query.trim()) {
-      const q = query.toLowerCase();
+    if (debouncedQuery.trim()) {
+      const q = debouncedQuery.toLowerCase();
       result = result.filter(
         (item) =>
           item.title.toLowerCase().includes(q) ||
@@ -2481,7 +2527,7 @@ function NetworkPage() {
       );
     }
     return result;
-  }, [feedItems, feedTypeFilter, query, canModerate]);
+  }, [feedItems, feedTypeFilter, debouncedQuery, canModerate]);
 
   const [feedPage, setFeedPage] = useState(1);
   const FEED_PER_PAGE = 8;
@@ -2493,7 +2539,7 @@ function NetworkPage() {
 
   useEffect(() => {
     setFeedPage(1);
-  }, [feedTypeFilter, query]);
+  }, [feedTypeFilter, debouncedQuery]);
 
   const TABS: { key: Tab; label: string; count?: number; icon: React.ReactNode }[] = [
     {

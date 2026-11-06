@@ -521,7 +521,7 @@ export function AssociationMemberQrModal({
               }}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "my_qr"
-                  ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 border border-amber-400/50 shadow-sm"
+                  ? "bg-[#003B95] hover:bg-[#002B70] text-white text-amber-300 border border-amber-400/50 shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:text-amber-500"
               }`}
             >
@@ -533,7 +533,7 @@ export function AssociationMemberQrModal({
               onClick={() => setActiveTab("scan_qr")}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "scan_qr"
-                  ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 border border-amber-400/50 shadow-sm"
+                  ? "bg-[#003B95] hover:bg-[#002B70] text-white text-amber-300 border border-amber-400/50 shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:text-amber-500"
               }`}
             >
@@ -607,7 +607,7 @@ export function AssociationMemberQrModal({
               <button
                 type="button"
                 onClick={handleShare}
-                className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:brightness-110 text-amber-300 text-[11px] font-bold transition active:scale-95 cursor-pointer shadow-xs"
+                className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white border border-amber-400/50 hover:brightness-110 text-amber-300 text-[11px] font-bold transition active:scale-95 cursor-pointer shadow-xs"
               >
                 <Share2 className="h-4 w-4" />
                 <span>Chia sẻ</span>
@@ -740,7 +740,7 @@ export function AssociationMemberQrModal({
                       type="button"
                       onClick={handleSaveContact}
                       disabled={connecting}
-                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:brightness-110 text-amber-300 text-xs font-bold shadow-[0_4px_16px_rgba(245,158,11,0.3)] active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5"
+                      className="w-full py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white border border-amber-400/50 hover:brightness-110 text-amber-300 text-xs font-bold shadow-[0_4px_16px_rgba(245,158,11,0.3)] active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       {connecting ? (
                         <>

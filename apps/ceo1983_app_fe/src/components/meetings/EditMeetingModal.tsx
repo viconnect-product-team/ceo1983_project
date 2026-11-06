@@ -430,7 +430,7 @@ export function EditMeetingModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-black shadow-md shadow-amber-500/20 cursor-pointer transition bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2 text-xs font-black shadow-md shadow-amber-500/20 cursor-pointer transition bg-[#003B95] hover:bg-[#002B70] text-white disabled:opacity-50"
             >
               <Save className="h-3.5 w-3.5 text-slate-950" />
               <span>{loading ? "Đang lưu..." : "Lưu Thay Đổi"}</span>

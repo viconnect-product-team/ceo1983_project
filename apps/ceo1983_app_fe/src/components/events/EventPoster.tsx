@@ -273,7 +273,7 @@ export const EventPoster: React.FC<EventPosterProps> = ({
               <button
                 type="button"
                 onClick={onRegisterClick}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white text-xs font-bold shadow-md hover:brightness-110 cursor-pointer transition"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md cursor-pointer transition"
               >
                 {isRegistered ? "Xem vé tham dự" : "Đăng ký tham dự ngay"}
               </button>

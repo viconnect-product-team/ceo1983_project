@@ -192,7 +192,7 @@ export function CommunityDetail({ communityId }: { communityId: string }) {
                   type="button"
                   onClick={handleJoin}
                   disabled={requestJoin.isPending}
-                  className="inline-flex min-h-[42px] items-center gap-2 rounded-full bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#B88E4C] px-5 text-[13.5px] font-bold text-[#050811] shadow-md hover:brightness-105 active:scale-95 transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+                  className="inline-flex min-h-[42px] items-center gap-2 rounded-full bg-[#003B95] hover:bg-[#002B70] px-5 text-[13.5px] font-bold text-white shadow-md active:scale-95 transition-all disabled:opacity-50 shrink-0 cursor-pointer"
                 >
                   <UserPlus className="h-4 w-4" />
                   {requestJoin.isPending ? "Đang tham gia..." : "Tham gia ngay"}

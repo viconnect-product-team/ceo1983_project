@@ -386,7 +386,7 @@ export function PersonalProfileBottomSheet({
               <button
                 type="button"
                 onClick={onEdit}
-                className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white text-xs font-bold shadow-sm hover:brightness-105 transition active:scale-95 cursor-pointer"
+                className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
                 title="Chỉnh sửa hồ sơ"
               >
                 <Pencil className="h-3.5 w-3.5 shrink-0" />

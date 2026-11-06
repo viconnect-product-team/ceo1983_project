@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { useCalendarNotifications } from "@/hooks/use-calendar-notifications";
 import { CeoFacebookReminderBanner } from "@/components/calendar/CeoFacebookReminderBanner";
 import { Ceo1983ColorThemeModal } from "@/components/member/Ceo1983ColorThemeModal";
+import { FirstDayAiWelcomeModal } from "@/components/member/FirstDayAiWelcomeModal";
+import { ViOneAiTutorGuide } from "@/components/common/ViOneAiTutorGuide";
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
@@ -35,11 +37,17 @@ export function MemberScreen({ children }: { children: ReactNode }) {
 
   // Modal chọn 4 dạng màu tiêu chuẩn CEO 1983 (độc lập với CRM)
   const [colorThemeModalOpen, setColorThemeModalOpen] = useState(false);
+  const [showAiTour, setShowAiTour] = useState(false);
 
   useEffect(() => {
     const handleOpenColorModal = () => setColorThemeModalOpen(true);
+    const handleOpenTour = () => setShowAiTour(true);
     window.addEventListener("ceo1983:open_color_theme_modal", handleOpenColorModal);
-    return () => window.removeEventListener("ceo1983:open_color_theme_modal", handleOpenColorModal);
+    window.addEventListener("vba:open_ai_tour", handleOpenTour);
+    return () => {
+      window.removeEventListener("ceo1983:open_color_theme_modal", handleOpenColorModal);
+      window.removeEventListener("vba:open_ai_tour", handleOpenTour);
+    };
   }, []);
 
   // ── BẢO VỆ ĐIỀU HƯỚNG CHUẨN NATIVE APP (NHƯ MOMO) ──
@@ -328,6 +336,12 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         />
         <IncomingConnectionModal />
         <WelcomeMemberModal />
+        <FirstDayAiWelcomeModal onOpenTour={() => setShowAiTour(true)} />
+        <ViOneAiTutorGuide
+          isOpen={showAiTour}
+          onClose={() => setShowAiTour(false)}
+          systemType="app"
+        />
         <Ceo1983ColorThemeModal
           open={colorThemeModalOpen}
           onClose={() => setColorThemeModalOpen(false)}

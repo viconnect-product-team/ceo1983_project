@@ -278,7 +278,7 @@ export function IosInstallPrompt() {
                   <button
                     type="button"
                     onClick={handleOneTapInstall}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition cursor-pointer hover:brightness-105"
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md active:scale-95 transition cursor-pointer"
                   >
                     <Download className="h-4 w-4" />
                     <span>Cài Đặt Lên Điện Thoại Ngay (1 Chạm)</span>
@@ -457,7 +457,7 @@ export function IosInstallPrompt() {
                 <button
                   type="button"
                   onClick={handleOneTapInstall}
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 px-5 py-2 text-xs font-black text-slate-950 shadow-md transition active:scale-95 cursor-pointer touch-press"
+                  className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 py-2 text-xs font-bold text-white shadow-md transition active:scale-95 cursor-pointer touch-press"
                 >
                   Cài Đặt Ngay (1 Chạm)
                 </button>
@@ -465,7 +465,7 @@ export function IosInstallPrompt() {
                 <button
                   type="button"
                   onClick={handleDismissPrompt}
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 px-5 py-2 text-xs font-bold text-slate-950 shadow-md transition active:scale-95 cursor-pointer touch-press"
+                  className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 py-2 text-xs font-bold text-white shadow-md transition active:scale-95 cursor-pointer touch-press"
                 >
                   Đã hiểu
                 </button>
@@ -535,7 +535,7 @@ export function IosInstallPrompt() {
                 <button
                   type="button"
                   onClick={handleNativeShare}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 px-4 py-2.5 font-bold text-xs shadow-md transition active:scale-95 cursor-pointer touch-press"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white px-4 py-2.5 font-bold text-xs shadow-md transition active:scale-95 cursor-pointer touch-press"
                 >
                   <span>Gửi Qua Zalo / Messenger Ngay</span>
                 </button>

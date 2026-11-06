@@ -244,89 +244,110 @@ export class MeetingsService {
       department || 'Ban Điều Hành'
     ).catch((err) => console.warn('feed_posts meeting sync warning:', err?.message));
 
-    // 5. TRIGGER PUSH NOTIFICATION CHO CUỘC HỌP OFFLINE
-    if (isOffline) {
-      const notifTitle = `[LỊCH HỌP TRỰC TIẾP OFFLINE] ${title}`;
-      const notifBody = `Bạn có lịch hẹn gặp mặt trực tiếp với ${hostName} vào lúc ${time} ngày ${date} tại: ${venue}.${notes ? ` Ghi chú: "${notes}"` : ''}`;
+    // 5. TỰ ĐỘNG BẮN TIN NHẮN TRỰC TIẾP & PUSH NOTIFICATION CHO CẢ 2 BÊN KHI LÊN LỊCH GẶP
+    // Phục vụ đủ 3 case: Tự setup B2B, Từ chia sẻ cơ hội, Từ sàn thương mại
+    const hostMember = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, user_id, name, company_name FROM public.members
+      WHERE user_id::text = ${userId} OR id = ${userId} OR LOWER(code) = LOWER(${userId})
+      LIMIT 1
+    `.catch(() => []);
+    const hostCode = hostMember[0]?.code ? String(hostMember[0].code).toLowerCase() : (userId ? String(userId).toLowerCase() : 'm1983-admin');
+    const finalHostName = hostMember[0]?.name || hostName;
+    const finalHostCompany = hostMember[0]?.company_name || data.hostCompany || 'CLB Doanh Nhân CEO 1983';
 
-      // 5a. Gửi tin nhắn trực tiếp vào hộp thư (public.messages)
-      const directMsg = `[THÔNG BÁO LỊCH HỌP TRỰC TIẾP OFFLINE]\nChào Bạn,\nBạn có lịch hẹn gặp mặt trực tiếp: "${title}".\n- Thời gian: ${time} ngày ${date}\n- Địa điểm: ${venue}\n- Người kết nối: ${hostName}\n- Ghi chú: ${notes || 'Gặp gỡ giao thương kết nối B2B'}`;
-      
-      if (partnerUserId) {
-        await this.prisma.$executeRaw`
-          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), ${userId}, ${partnerUserId}, ${directMsg}, NOW())
-        `.catch(() => {});
-      }
-      if (partnerMemberCode) {
-        await this.prisma.$executeRaw`
-          INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-          VALUES (gen_random_uuid(), ${userId}, ${partnerMemberCode}, ${directMsg}, NOW())
-        `.catch(() => {});
-      }
+    const notifTitle = `[LỊCH HẸN B2B CONNECT] ${title}`;
+    const notifBody = `Bạn có lịch hẹn gặp giao thương với ${finalHostName} (${finalHostCompany}) vào lúc ${time} ngày ${date} tại: ${venue}.${notes ? ` Ghi chú: "${notes}"` : ''}`;
 
-      // Lưu tin nhắn xác nhận cho người tạo
+    // 5a. Gửi tin nhắn trực tiếp cho người nhận cuộc hẹn / người trao cơ hội / đối tác
+    const partnerDirectMsg = `[THÔNG BÁO LỊCH HẸN B2B CONNECT]\nChào Bạn,\nBạn có lịch hẹn gặp mặt kết nối giao thương:\n📌 Cuộc gặp: "${title}"\n⏰ Thời gian: ${time} ngày ${date}\n📍 Địa điểm: ${venue}\n👤 Người kết nối: ${finalHostName} (${finalHostCompany})\n${notes ? `📝 Ghi chú: ${notes}\n` : ''}Rất mong được gặp và xúc tiến hợp tác cùng bạn!`;
+
+    if (partnerMemberCode) {
       await this.prisma.$executeRaw`
         INSERT INTO public.messages (id, from_id, to_id, text, created_at)
-        VALUES (gen_random_uuid(), 'system', ${userId}, ${`[ĐÃ TẠO LỊCH HỌP OFFLINE]\nBạn đã lên lịch gặp trực tiếp với ${partnerName} lúc ${time} ngày ${date} tại ${venue}.`}, NOW())
+        VALUES (gen_random_uuid(), ${hostCode}, ${partnerMemberCode.toLowerCase()}, ${partnerDirectMsg}, NOW())
       `.catch(() => {});
-
-      // 5b. Bắn notification vào chuông thông báo (public.business_notifications & member_notifications)
-      const dedupeKey = `offline_meeting_${meetingId}_${Date.now()}`;
-      if (partnerUserId) {
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.business_notifications (
-            id, recipient_user_id, source_domain, source_record_id, dedupe_key, event_kind, notification_kind,
-            title_key, body_key, safe_display_data, priority, status, app_scope, target_app, created_at, updated_at
-          ) VALUES (
-            gen_random_uuid(), $1::uuid, 'meeting', $2, $3, 'meeting_offline_invite', 'meeting_invite',
-            $4, $5, $6::jsonb, 'urgent', 'delivered', 'all', 'all', NOW(), NOW()
-          )
-        `, partnerUserId, meetingId, dedupeKey, notifTitle, notifBody, JSON.stringify({ meetingId, title, venue, time, date, hostName })).catch(() => {});
-      }
-
-      const recipientCode = partnerMemberCode || partnerUserId || 'M1983-001';
-      await this.prisma.$executeRawUnsafe(`
-        INSERT INTO public.member_notifications (
-          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, false, false, 'meeting', $4, NOW()
-        )
-      `, recipientCode, notifTitle, notifBody, meetingId).catch(() => {});
-
-      // 5b2. Bắn thông báo lên CRM Notification Center (public.notifications)
-      const crmMeetingCode = `NOTIF-MTG-${Date.now().toString().slice(-6)}`;
+    }
+    if (partnerUserId && partnerUserId.toLowerCase() !== (partnerMemberCode || '').toLowerCase()) {
       await this.prisma.$executeRaw`
-        INSERT INTO public.notifications (
-          id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
-        ) VALUES (
-          gen_random_uuid(), ${crmMeetingCode},
-          ${`Cuộc họp mới được tạo: ${title}`},
-          ${notifBody},
-          'all', 'inapp', 'sent', NOW(), 1, null, 'all', 'all', 'admins', true, NOW(), NOW()
-        )
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), ${hostCode}, ${partnerUserId.toLowerCase()}, ${partnerDirectMsg}, NOW())
       `.catch(() => {});
+    }
 
-      // 5c. Phát tín hiệu Push Notification tức thì qua Socket Gateway tới thiết bị Mobile
-      if (this.gateway) {
-        this.gateway.emitToAll('notification:new', {
-          id: meetingId,
-          title: notifTitle,
-          body: notifBody,
-          type: 'meeting',
-          venueType: 'offline',
-          venue,
-          time,
-          date,
-          createdAt: new Date().toISOString(),
-        });
-        this.gateway.emitToAll('member:notification_new', {
-          id: meetingId,
-          title: notifTitle,
-          body: notifBody,
-          refType: 'meeting',
+    // 5b. Gửi tin nhắn xác nhận vào mục tin nhắn của người đã đồng ý lên lịch gặp
+    const creatorConfirmMsg = `[XÁC NHẬN LÊN LỊCH GẶP B2B THÀNH CÔNG]\nBạn đã thiết lập lịch hẹn gặp giao thương với ${partnerName || 'Đối tác'} (${partnerCompany || 'Doanh nghiệp CEO 1983'}):\n📌 Cuộc gặp: "${title}"\n⏰ Thời gian: ${time} ngày ${date}\n📍 Địa điểm: ${venue}\n${notes ? `📝 Ghi chú: ${notes}\n` : ''}Hệ thống đã tự động gửi tin nhắn và thông báo tới đối tác.`;
+
+    await this.prisma.$executeRaw`
+      INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+      VALUES (gen_random_uuid(), 'system', ${hostCode}, ${creatorConfirmMsg}, NOW())
+    `.catch(() => {});
+    if (userId && userId.toLowerCase() !== hostCode) {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at)
+        VALUES (gen_random_uuid(), 'system', ${userId.toLowerCase()}, ${creatorConfirmMsg}, NOW())
+      `.catch(() => {});
+    }
+
+    // 5c. Bắn notification vào chuông thông báo (public.business_notifications & member_notifications)
+    const dedupeKey = `b2b_meeting_${meetingId}_${Date.now()}`;
+    if (partnerUserId) {
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.business_notifications (
+          id, recipient_user_id, source_domain, source_record_id, dedupe_key, event_kind, notification_kind,
+          title_key, body_key, safe_display_data, priority, status, app_scope, target_app, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, 'meeting', $2, $3, 'meeting_b2b_invite', 'meeting_invite',
+          $4, $5, $6::jsonb, 'urgent', 'delivered', 'all', 'all', NOW(), NOW()
+        )
+      `, partnerUserId, meetingId, dedupeKey, notifTitle, notifBody, JSON.stringify({ meetingId, title, venue, time, date, hostName: finalHostName })).catch(() => {});
+    }
+
+    const recipientCode = partnerMemberCode || partnerUserId || 'M1983-001';
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.member_notifications (
+        id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, false, false, 'meeting', $4, NOW()
+      )
+    `, recipientCode, notifTitle, notifBody, meetingId).catch(() => {});
+
+    // Bắn thông báo lên CRM Notification Center (public.notifications)
+    const crmMeetingCode = `NOTIF-MTG-${Date.now().toString().slice(-6)}`;
+    await this.prisma.$executeRaw`
+      INSERT INTO public.notifications (
+        id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), ${crmMeetingCode},
+        ${`Cuộc họp B2B mới được tạo: ${title}`},
+        ${notifBody},
+        'all', 'inapp', 'sent', NOW(), 1, null, 'all', 'all', 'admins', true, NOW(), NOW()
+      )
+    `.catch(() => {});
+
+    // 5d. Phát tín hiệu Push Notification tức thì qua Socket Gateway tới thiết bị Mobile
+    if (this.gateway) {
+      this.gateway.emitToAll('notification:new', {
+        id: meetingId,
+        title: notifTitle,
+        body: notifBody,
+        type: 'meeting',
+        venueType,
+        venue,
+        time,
+        date,
+      });
+      if (partnerUserId) {
+        this.gateway.emitToUser(partnerUserId, 'dm:new_message', {
+          from: hostCode,
+          text: partnerDirectMsg,
+          meetingId,
         });
       }
+      this.gateway.emitToUser(userId, 'dm:new_message', {
+        from: 'system',
+        text: creatorConfirmMsg,
+        meetingId,
+      });
     }
 
     // 6. Gửi email thông báo cuộc họp (Online / Offline) cho hội viên và người tham dự
@@ -1934,6 +1955,29 @@ export class MeetingsService {
       this.gateway.emitToAll('vba.meeting.changed', { id: meetingId, status: 'pending' });
     }
 
+    // 7.1 Tự động gửi tin nhắn trực tiếp vào hộp thoại giữa 2 hội viên (Requirement 3)
+    const msgSender = requesterCode || reqMember?.code || reqMember?.id || String(userId);
+    const msgRecipient = recipientCode || recipientMember?.code || recipientMember?.id || String(recipientUserId || 'admin');
+    const b2bMsgText = `📅 [LỊCH HẸN GẶP KẾT NỐI B2B]:\n- Cuộc hẹn: ${title}\n- Người mời: ${requesterName} (${requesterCompany})\n- Thời gian: ${date} lúc ${time}\n- Hình thức: ${venueType === 'online' ? 'Trực tuyến' : 'Trực tiếp'}\n- Địa điểm: ${venue}\n- Nội dung trao đổi: ${purpose}\n👉 Vui lòng vào mục 'Lịch Gặp Kết Nối B2B' để phản hồi xác nhận.`;
+    const b2bMsgId = crypto.randomUUID();
+
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO public.messages (id, from_id, to_id, text, created_at, association_id)
+      VALUES ($1::uuid, $2, $3, $4, NOW(), 'c1983000-0000-4000-8000-000000001983'::uuid)
+    `, b2bMsgId, String(msgSender).toLowerCase(), String(msgRecipient).toLowerCase(), b2bMsgText).catch(() => {});
+
+    if (this.gateway && (this.gateway as any).server) {
+      try {
+        (this.gateway as any).server.emit('member:message_received', {
+          id: b2bMsgId,
+          fromId: String(msgSender).toLowerCase(),
+          toId: String(msgRecipient).toLowerCase(),
+          text: b2bMsgText,
+          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        });
+      } catch {}
+    }
+
     // 8. Bắn email thông báo lịch hẹn kết nối 1-on-1 cho người nhận lời mời
     if (this.mailService) {
       try {
@@ -2086,6 +2130,31 @@ export class MeetingsService {
         });
 
         this.gateway.emitToAll('vba.meeting.changed', { id: meetingId, status: finalStatus });
+      }
+
+      // 4.1 Tự động gửi tin nhắn xác nhận lịch gặp vào hộp thoại chat giữa 2 hội viên (Requirement 3)
+      const respSender = responder.code || responderMembers[0]?.id || String(userId);
+      const respRecipient = hostMember?.code || hostMembers[0]?.id || String(hostUserId || 'admin');
+      const confirmationText = finalStatus === 'confirmed'
+        ? `✅ [XÁC NHẬN LỊCH GẶP B2B]:\nĐối tác ${responderName} (${responderCompany}) đã ĐỒNG Ý cuộc hẹn kết nối: "${meeting.title}". Cuộc hẹn đã được ghi nhận vào lịch chính thức của CLB CEO 1983!`
+        : `❌ [PHẢN HỒI LỊCH GẶP B2B]:\nĐối tác ${responderName} (${responderCompany}) đã từ chối hoặc bận chưa thể tham gia cuộc hẹn: "${meeting.title}".`;
+      const respMsgId = crypto.randomUUID();
+
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.messages (id, from_id, to_id, text, created_at, association_id)
+        VALUES ($1::uuid, $2, $3, $4, NOW(), 'c1983000-0000-4000-8000-000000001983'::uuid)
+      `, respMsgId, String(respSender).toLowerCase(), String(respRecipient).toLowerCase(), confirmationText).catch(() => {});
+
+      if (this.gateway && (this.gateway as any).server) {
+        try {
+          (this.gateway as any).server.emit('member:message_received', {
+            id: respMsgId,
+            fromId: String(respSender).toLowerCase(),
+            toId: String(respRecipient).toLowerCase(),
+            text: confirmationText,
+            time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          });
+        } catch {}
       }
     }
 

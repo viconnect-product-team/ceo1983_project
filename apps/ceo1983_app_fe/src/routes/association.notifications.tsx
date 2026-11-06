@@ -25,7 +25,7 @@ import {
   QrCode,
   MessageSquare,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchNestApi } from "@/lib/api-client";
@@ -176,6 +176,16 @@ function isConnectionRequestReceived(n: any): boolean {
     t.includes('muốn kết nối') ||
     (n.refType === 'connection')
   );
+}
+
+function getNotifTimeGroup(dateStr: string): { key: string; label: string } {
+  const notifTime = new Date(dateStr).getTime();
+  const diff = Date.now() - notifTime;
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  if (diff <= ONE_DAY) return { key: "today", label: "🌟 Mới nhất (Hôm nay)" };
+  if (diff <= 2 * ONE_DAY) return { key: "yesterday", label: "⏳ 1 ngày trước (Hôm qua)" };
+  if (diff <= 7 * ONE_DAY) return { key: "lastWeek", label: "📅 Tuần trước" };
+  return { key: "older", label: "🗓️ Tháng này & Cũ hơn" };
 }
 
 function getChannelOrPeerForNotif(n: any): string {
@@ -714,10 +724,12 @@ function NotificationsScreen() {
   const search = Route.useSearch();
 
   type NotificationFilter = "all" | "lead" | "unread" | "read" | "dismissed" | "event" | "fee" | "opportunity";
+  type TimeFilterPeriod = "all" | "1day" | "1week" | "1month";
 
   const [filter, setFilter] = useState<NotificationFilter>(
     search.filter as NotificationFilter,
   );
+  const [timeFilter, setTimeFilter] = useState<TimeFilterPeriod>("all");
   const [sort, setSort] = useState<"priority" | "newest">(search.sort);
   const [query, setQuery] = useState(search.q ?? "");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
@@ -941,11 +953,34 @@ function NotificationsScreen() {
       if (filter === "opportunity") return n.type === "opportunity" || n.type === "lead" || (n as any).category === "opportunity";
       if (filter === "unread") return n.unread;
       if (filter === "read") return !n.unread;
+
+      // BỘ LỌC TỰ ĐỘNG THEO THỜI GIAN TRONG DANH MỤC TẤT CẢ (YÊU CẦU 3)
+      if (filter === "all") {
+        const notifTime = new Date(n.createdAt).getTime();
+        const now = Date.now();
+        if (timeFilter === "1day") {
+          // Trong vòng 24 giờ trước (hoặc hôm qua)
+          if (now - notifTime > 24 * 60 * 60 * 1000) return false;
+        } else if (timeFilter === "1week") {
+          // Trong vòng 7 ngày trước (tuần trước)
+          if (now - notifTime > 7 * 24 * 60 * 60 * 1000) return false;
+        } else if (timeFilter === "1month") {
+          // Trong vòng 30 ngày trước (tháng)
+          if (now - notifTime > 30 * 24 * 60 * 60 * 1000) return false;
+        }
+      }
+
       return true;
     })
     .filter((n) => (q ? normalize(n.title).includes(q) || normalize(n.body).includes(q) : true))
     .slice()
     .sort((a, b) => {
+      // Khi chọn bộ lọc thời gian cụ thể (1day, 1week, 1month) hoặc sort === "newest", sắp xếp theo mới nhất
+      if (timeFilter !== "all" || sort === "newest") {
+        const ta = new Date(a.createdAt).getTime();
+        const tb = new Date(b.createdAt).getTime();
+        return tb - ta;
+      }
       if (sort === "priority") {
         const d = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
         if (d !== 0) return d;
@@ -1000,10 +1035,10 @@ function NotificationsScreen() {
               disabled={marking || !hasUnread || filter === "dismissed"}
               aria-label={t("m.notifications.markAllRead")}
               title={t("m.notifications.markAllRead")}
-              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl border border-amber-400/50 bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white transition-all disabled:opacity-30 cursor-pointer shadow-xs active:scale-95"
             >
               {marking ? (
-                <Loader2 className="h-4 w-4 animate-spin text-amber-300" />
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
               ) : (
                 <CheckCheck className="h-4.5 w-4.5 stroke-[2.5]" />
               )}
@@ -1060,7 +1095,7 @@ function NotificationsScreen() {
                 aria-pressed={active}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   active
-                    ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-amber-300 border border-amber-400/50 font-black shadow-md scale-[1.02]"
+                    ? "bg-[#003B95] text-white font-black shadow-md scale-[1.02]"
                     : "text-slate-700 dark:text-slate-200 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -1080,6 +1115,37 @@ function NotificationsScreen() {
             );
           })}
         </div>
+
+        {/* BỘ LỌC TỰ ĐỘNG SẮP XẾP THEO THỜI GIAN TRONG DANH MỤC TẤT CẢ (YÊU CẦU 3) */}
+        {filter === "all" && (
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-slate-200 dark:border-slate-800">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 pl-2 pr-0.5 shrink-0">
+              Thời gian:
+            </span>
+            {[
+              { key: "all", label: "Mới nhất" },
+              { key: "1day", label: "1 ngày trước" },
+              { key: "1week", label: "Tuần trước" },
+              { key: "1month", label: "Tháng" },
+            ].map((item) => {
+              const isActive = timeFilter === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setTimeFilter(item.key as TimeFilterPeriod)}
+                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs transition cursor-pointer text-center font-bold ${
+                    isActive
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Search & Sort Controls */}
         <div className="flex items-center gap-2">
@@ -1150,9 +1216,13 @@ function NotificationsScreen() {
             </p>
           </div>
         )}
-        {visible.map((n: any) => {
+        {visible.map((n: any, idx: number) => {
           const Icon = iconFor(n.type);
           const isLead = n.type === "lead" && !!n.refId;
+
+          const currentGroup = getNotifTimeGroup(n.createdAt);
+          const prevGroup = idx > 0 ? getNotifTimeGroup(visible[idx - 1].createdAt) : null;
+          const showGroupHeader = (filter === "all" && timeFilter === "all") && (!prevGroup || prevGroup.key !== currentGroup.key);
 
           const isFriendReq =
             n.notificationKind === "connection_request_received" ||
@@ -1195,7 +1265,7 @@ function NotificationsScreen() {
               label: "Khách hàng B2B",
             },
             event: {
-              iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
+              iconBg: "bg-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
               badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-bold",
               label: "Sự kiện",
             },
@@ -1205,29 +1275,37 @@ function NotificationsScreen() {
               label: "Hội phí",
             },
             network: {
-              iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
+              iconBg: "bg-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
               badge: "bg-amber-50 text-amber-700 dark:bg-slate-800 dark:text-amber-300 border-amber-500/30 font-bold",
               label: "Kết nối",
             },
             info: {
-              iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
+              iconBg: "bg-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
               badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-bold",
               label: "Hệ thống",
             },
           };
 
           const theme = typeTheme[n.type] || {
-            iconBg: "bg-gradient-to-tr from-[#002B70] to-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
+            iconBg: "bg-[#003B95] text-amber-300 border-amber-500/40 shadow-xs",
             badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-bold",
             label: "Thông báo",
           };
 
           return (
-            <SwipeableNotificationItem
-              key={n.id}
-              onDelete={() => setConfirmDelete(n)}
-              disabled={rowBusy === n.id}
-            >
+            <Fragment key={n.id}>
+              {showGroupHeader && (
+                <div className="flex items-center gap-2 pt-2.5 pb-1">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs">
+                    {currentGroup.label}
+                  </span>
+                  <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+                </div>
+              )}
+              <SwipeableNotificationItem
+                onDelete={() => setConfirmDelete(n)}
+                disabled={rowBusy === n.id}
+              >
               <div
                 role="listitem"
                 onClick={() => {
@@ -1442,7 +1520,7 @@ function NotificationsScreen() {
                                   const targetChannel = getChannelOrPeerForNotif(n);
                                   void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
                                 }}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 px-3 py-1.5 text-[11px] font-bold text-amber-300 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/50 hover:border-amber-400 px-3 py-1.5 text-[11px] font-bold text-amber-300 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                               >
                                 <MessageSquare className="h-3.5 w-3.5 text-amber-400" />
                                 <span>Xem tin nhắn</span>
@@ -1493,8 +1571,9 @@ function NotificationsScreen() {
                 </div>
               </div>
             </SwipeableNotificationItem>
-          );
-        })}
+          </Fragment>
+        );
+      })}
       </div>
 
       {/* Dialog 1: Ẩn thông báo */}
@@ -1532,7 +1611,7 @@ function NotificationsScreen() {
                 if (confirmDismiss) onDismiss(confirmDismiss);
                 setConfirmDismiss(null);
               }}
-              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 text-[13.5px] font-bold shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition cursor-pointer flex items-center justify-center"
+              className="w-full h-11 !m-0 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-amber-400/50 hover:border-amber-400 text-white text-[13.5px] font-bold shadow-md transition cursor-pointer flex items-center justify-center"
             >
               Ẩn ngay
             </AlertDialogAction>
@@ -1575,7 +1654,7 @@ function NotificationsScreen() {
                 if (confirmDelete) onDelete(confirmDelete);
                 setConfirmDelete(null);
               }}
-              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white text-[13.5px] font-bold shadow-md shadow-rose-500/25 transition cursor-pointer flex items-center justify-center"
+              className="w-full h-11 !m-0 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[13.5px] font-bold shadow-md transition cursor-pointer flex items-center justify-center"
             >
               Xóa ngay
             </AlertDialogAction>
@@ -1615,7 +1694,7 @@ function NotificationsScreen() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={executeDismissAll}
-              className="w-full h-11 !m-0 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 text-[13.5px] font-bold shadow-md hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] transition cursor-pointer flex items-center justify-center"
+              className="w-full h-11 !m-0 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[13.5px] font-bold shadow-md transition cursor-pointer flex items-center justify-center"
             >
               Ẩn tất cả
             </AlertDialogAction>
@@ -1651,7 +1730,7 @@ function NotificationsScreen() {
 
             {/* KHỐI CHÚC MỪNG TRÚNG THƯỞNG LUCKY DRAW */}
             {isLuckyDrawNotification(selectedNotif) && (
-              <div className="rounded-2xl bg-gradient-to-br from-amber-500/15 via-amber-500/10 to-transparent border-2 border-amber-500/40 p-4 space-y-3 text-left shadow-sm">
+              <div className="rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-4 space-y-3 text-left shadow-sm">
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black text-sm">
                   <span className="text-xl">🎉</span>
                   <span>CHÚC MỪNG HỘI VIÊN TRÚNG THƯỞNG!</span>
@@ -1709,7 +1788,7 @@ function NotificationsScreen() {
                       setSelectedNotif(null);
                       void navigate({ to: "/association/checkin" });
                     }}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <QrCode className="h-4 w-4 text-white" />
                     <span>Mở Vé & Check-in QR</span>
@@ -1758,7 +1837,7 @@ function NotificationsScreen() {
                     handlePayNotification(n);
                   }}
                   style={{ color: "#ffffff" }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95 animate-pulse"
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                 >
                   <Wallet className="h-4 w-4 text-white" style={{ color: "#ffffff" }} />
                   <span style={{ color: "#ffffff" }}>Thanh toán ngay</span>
@@ -1768,7 +1847,7 @@ function NotificationsScreen() {
 
             {/* KHỐI LỜI MỜI KẾT NỐI B2B / DANH THIẾP */}
             {isConnectionRequestReceived(selectedNotif) && (
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-transparent border-2 border-emerald-500/30 p-4 space-y-3 text-left">
+              <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-500/30 p-4 space-y-3 text-left">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                     <UserCheck className="h-4 w-4 text-emerald-600" />
@@ -1829,7 +1908,7 @@ function NotificationsScreen() {
                     setSelectedNotif(null);
                     void navigate({ to: "/association/members", search: { tab: "meetings" } });
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                   style={{ color: "#ffffff" }}
                 >
                   <Calendar className="h-4 w-4 text-white" />
@@ -1853,7 +1932,7 @@ function NotificationsScreen() {
                     setSelectedNotif(null);
                     void navigate({ to: "/association/checkin" });
                   }}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002766] hover:from-[#002B70] hover:to-[#001D4D] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
                   <QrCode className="h-3.5 w-3.5 text-white" />
                   <span>Mở Vé & Check-in QR</span>

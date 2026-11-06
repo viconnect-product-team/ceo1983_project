@@ -439,9 +439,9 @@ function DepartmentsPage() {
             <button
               type="button"
               onClick={handleOpenAdd}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition cursor-pointer shrink-0"
             >
-              <Plus className="h-4 w-4 text-slate-950" />
+              <Plus className="h-4 w-4 text-white" />
               <span>Thêm Ban Mới</span>
             </button>
           </div>
@@ -937,7 +937,7 @@ function DepartmentsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition cursor-pointer"
                 >
                   {editingDeptId ? "Cập Nhật" : "Lưu Ban Mới"}
                 </button>

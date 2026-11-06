@@ -143,7 +143,7 @@ export function BirthdayCelebrationModal({ member }: BirthdayCelebrationModalPro
                 <Gift className="size-4 text-amber-400" />
                 <span>{policy.giftTitle || "Quà Tặng Tri Ân Doanh Nhân"}</span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] uppercase tracking-wider shadow-xs">
+              <span className="px-2 py-0.5 rounded-md bg-[#003B95] hover:bg-[#002B70] text-white font-black text-[9px] uppercase tracking-wider shadow-xs">
                 VIP GIFT
               </span>
             </div>
@@ -175,7 +175,7 @@ export function BirthdayCelebrationModal({ member }: BirthdayCelebrationModalPro
               <button
                 type="button"
                 onClick={handleCopyCode}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black transition active:scale-95 shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black transition active:scale-95 shadow-xs cursor-pointer"
               >
                 {copied ? <Check className="size-3.5 text-slate-950" /> : <Copy className="size-3.5 text-slate-950" />}
                 <span>{copied ? "Đã chép" : "Sao chép"}</span>

@@ -128,8 +128,8 @@ export class ConnectMarketplaceService {
     const memberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : price;
     const unit = data.unit || 'Gói';
     const currency = data.currency || 'VND';
-    const imageUrls: string[] = safeParseImages(data.imageUrls || (data.imageUrl ? [data.imageUrl] : []));
-    const imageUrl = imageUrls[0] || data.imageUrl || null;
+    const imgArr: string[] = safeParseImages(data.imageUrls || (data.imageUrl ? [data.imageUrl] : []));
+    const imageUrl = imgArr[0] || data.imageUrl || null;
     const videoUrl = data.videoUrl || data.video_url || null;
     const sellerId = String(data.sellerId || userId || 'ceo1983');
     const status = data.status || 'active';
@@ -158,14 +158,17 @@ export class ConnectMarketplaceService {
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.products (
-          custom_id, title, name, description, company, category,
+          id, custom_id, title, name, description, company, category,
           price, original_price, member_price, unit, currency,
           image_url, image_urls, video_url, seller_id, status, views, emoji,
           association_id, created_at, updated_at
         ) VALUES (
-          ${prodId}, ${name}, ${name}, ${description}, ${company}, ${category},
-          ${price}, ${originalPrice}, ${memberPrice}, ${unit}, ${currency},
-          ${imageUrl}, ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
+          ${prodId}, ${prodId}, ${name}, ${name}, ${description}, ${company}, ${category},
+          ${price ? BigInt(price) : BigInt(0)},
+          ${originalPrice ? BigInt(originalPrice) : BigInt(0)},
+          ${memberPrice ? BigInt(memberPrice) : BigInt(0)},
+          ${unit}, ${currency},
+          ${imageUrl}, ${imgArr}::text[], ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
           ${assocId}::uuid, now(), now()
         )
       `;
@@ -173,12 +176,12 @@ export class ConnectMarketplaceService {
       console.warn('createProduct primary insert failed, using fallback:', err?.message);
       await this.prisma.$executeRaw`
         INSERT INTO public.products (
-          custom_id, title, name, description, category, price,
+          id, custom_id, title, name, description, category, price,
           image_urls, video_url, seller_id, status, views, emoji,
           association_id, created_at, updated_at
         ) VALUES (
-          ${prodId}, ${name}, ${name}, ${description}, ${category}, ${price},
-          ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
+          ${prodId}, ${prodId}, ${name}, ${name}, ${description}, ${category}, ${price ? BigInt(price) : BigInt(0)},
+          ${imgArr}::text[], ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
           ${assocId}::uuid, now(), now()
         )
       `;
@@ -191,8 +194,8 @@ export class ConnectMarketplaceService {
     const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? Number(data.price) : null;
     const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : cleanPrice;
     const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : cleanPrice;
-    const imageUrls: string[] | null = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
-    const imageUrl = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
+    const imgArr: string[] | null = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
+    const imageUrl = imgArr && imgArr[0] ? imgArr[0] : (data.imageUrl || null);
     const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
 
     try {
@@ -204,16 +207,16 @@ export class ConnectMarketplaceService {
           description = COALESCE(${data.description}, description),
           company = COALESCE(${data.company}, company),
           category = COALESCE(${data.category}, category),
-          price = COALESCE(${cleanPrice}, price),
-          original_price = COALESCE(${cleanOriginalPrice}, original_price),
-          member_price = COALESCE(${cleanMemberPrice}, member_price),
+          price = COALESCE(${cleanPrice != null ? BigInt(cleanPrice) : null}, price),
+          original_price = COALESCE(${cleanOriginalPrice != null ? BigInt(cleanOriginalPrice) : null}, original_price),
+          member_price = COALESCE(${cleanMemberPrice != null ? BigInt(cleanMemberPrice) : null}, member_price),
           unit = COALESCE(${data.unit}, unit),
           currency = COALESCE(${data.currency}, currency),
           image_url = COALESCE(${imageUrl}, image_url),
-          image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${JSON.stringify(imageUrls || [])}::jsonb ELSE image_urls END,
+          image_urls = CASE WHEN ${imgArr ? true : false} THEN ${imgArr || []}::text[] ELSE image_urls END,
           video_url = COALESCE(${videoUrl}, video_url),
           updated_at = now()
-        WHERE custom_id = ${productId} OR id::text = ${productId}
+        WHERE id = ${productId} OR id::text = ${productId} OR custom_id = ${productId}
       `;
     } catch (err: any) {
       console.warn('updateProduct primary update failed, using fallback:', err?.message);
@@ -222,9 +225,13 @@ export class ConnectMarketplaceService {
         SET
           title = COALESCE(${name}, title),
           description = COALESCE(${data.description}, description),
-          price = COALESCE(${cleanPrice}, price),
+          price = COALESCE(${cleanPrice != null ? BigInt(cleanPrice) : null}, price),
+          original_price = COALESCE(${cleanOriginalPrice != null ? BigInt(cleanOriginalPrice) : null}, original_price),
+          member_price = COALESCE(${cleanMemberPrice != null ? BigInt(cleanMemberPrice) : null}, member_price),
+          image_url = COALESCE(${imageUrl}, image_url),
+          company = COALESCE(${data.company}, company),
           updated_at = now()
-        WHERE custom_id = ${productId} OR id::text = ${productId}
+        WHERE id = ${productId} OR id::text = ${productId} OR custom_id = ${productId}
       `;
     }
     return { ok: true };
@@ -494,9 +501,9 @@ export class ConnectMarketplaceService {
     const imageUrls = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
     const firstImage = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
     const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
-    const cleanPrice = data.price !== undefined ? Number(data.price) : null;
-    const cleanOriginalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : null;
-    const cleanMemberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : null;
+    const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? BigInt(Math.round(Number(data.price))) : null;
+    const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? BigInt(Math.round(Number(data.originalPrice))) : null;
+    const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? BigInt(Math.round(Number(data.memberPrice))) : null;
 
     const rows = await this.prisma.$queryRaw<any[]>`
       UPDATE public.products
@@ -511,7 +518,7 @@ export class ConnectMarketplaceService {
         unit = COALESCE(${data.unit}, unit),
         currency = COALESCE(${data.currency}, currency),
         image_url = COALESCE(${firstImage}, image_url),
-        image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${JSON.stringify(imageUrls || [])}::jsonb ELSE image_urls END,
+        image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${imageUrls || []}::text[] ELSE image_urls END,
         video_url = COALESCE(${videoUrl}, video_url),
         category = COALESCE(${data.category}, category),
         status = COALESCE(${data.status}, status),
@@ -520,7 +527,7 @@ export class ConnectMarketplaceService {
         website_url = COALESCE(${data.websiteUrl}, website_url),
         facebook_url = COALESCE(${data.facebookUrl}, facebook_url),
         updated_at = NOW()
-      WHERE custom_id = ${id} OR id::text = ${id}
+      WHERE custom_id = ${id} OR id::text = ${id} OR id = ${id}
       RETURNING *
     `;
     if (rows.length === 0) return null;

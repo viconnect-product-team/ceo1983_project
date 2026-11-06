@@ -732,9 +732,9 @@ export function BusinessConnectBottomSheet({
             type="submit"
             form="business-connect-form"
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold py-3 text-xs shadow-lg shadow-amber-500/10 active:scale-98 transition cursor-pointer disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold py-3 text-xs shadow-md active:scale-98 transition cursor-pointer disabled:opacity-60"
           >
-            <Send className="h-4 w-4 text-slate-950" />
+            <Send className="h-4 w-4 text-white" />
             <span>{isSubmitting ? "Đang gửi thông điệp..." : "Gửi lời mời hẹn gặp giao thương"}</span>
           </button>
         </div>

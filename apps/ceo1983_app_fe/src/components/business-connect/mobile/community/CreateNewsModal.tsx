@@ -198,16 +198,16 @@ export function CreateNewsModal({
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 py-2.5 sm:py-3 rounded-full font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-[#F6E1C3] via-[#D8B282] to-[#C29B69] text-black shadow-md hover:brightness-105 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 sm:py-3 rounded-full font-bold text-xs uppercase tracking-wider bg-[#003B95] hover:bg-[#002B70] text-white shadow-md disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             {submitting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-black" />
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
                 <span>Đang đăng...</span>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4 text-black" />
+                <CheckCircle2 className="w-4 h-4 text-white" />
                 <span>Xuất bản bài viết</span>
               </>
             )}

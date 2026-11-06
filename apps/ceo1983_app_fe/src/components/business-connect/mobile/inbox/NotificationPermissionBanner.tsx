@@ -51,7 +51,7 @@ export function NotificationPermissionBanner() {
         <button
           type="button"
           onClick={handleRequest}
-          className="rounded-xl bg-gradient-to-r from-[#F7D896] to-[#C49338] px-3 py-1.5 text-[11px] font-extrabold text-slate-950 shadow-sm transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+          className="rounded-xl bg-[#003B95] hover:bg-[#002B70] px-3 py-1.5 text-[11px] font-extrabold text-white shadow-sm transition-transform hover:scale-105 active:scale-95 cursor-pointer"
         >
           Bật ngay
         </button>

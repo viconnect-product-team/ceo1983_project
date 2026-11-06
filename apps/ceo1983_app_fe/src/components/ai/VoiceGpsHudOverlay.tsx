@@ -171,7 +171,7 @@ export function VoiceGpsHudOverlay() {
               {/* Nút Bước tiếp theo / Hoàn thành */}
               <button
                 onClick={nextStep}
-                className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 text-xs font-bold shadow-md flex items-center gap-1.5 transition-all transform active:scale-95"
+                className="px-4 py-1.5 rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white hover:from-amber-600 hover:to-yellow-600 text-slate-950 text-xs font-bold shadow-md flex items-center gap-1.5 transition-all transform active:scale-95"
               >
                 <span>{isLastStep ? "Hoàn tất" : "Bước tiếp"}</span>
                 {isLastStep ? (

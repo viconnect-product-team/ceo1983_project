@@ -127,14 +127,19 @@ export const CHART_METAS: Record<string, {
   unit: string;
   col1Label: string;
   col1Color: string;
+  col1Unit?: string;
   col2Label: string;
   col2Color: string;
+  col2Unit?: string;
   col3Label: string;
   col3Color: string;
+  col3Unit?: string;
   col4Label: string;
   col4Color: string;
+  col4Unit?: string;
   timelineLabel: string;
   timelineColor: string;
+  timelineUnit?: string;
 }> = {
   top_connections: {
     unit: 'Lượt',
@@ -150,17 +155,22 @@ export const CHART_METAS: Record<string, {
     timelineColor: '#EA580C',
   },
   top_opportunities: {
-    unit: 'Cơ hội / Tỷ VNĐ',
+    unit: 'Cơ hội',
     col1Label: 'Cơ hội mở mới',
     col1Color: '#003B95',
+    col1Unit: 'Cơ hội',
     col2Label: 'Giá trị tăng (Tỷ)',
     col2Color: '#10B981',
+    col2Unit: 'Tỷ VNĐ',
     col3Label: 'Giá trị đàm phán',
     col3Color: '#F59E0B',
+    col3Unit: 'Tỷ VNĐ',
     col4Label: 'Đã kết nối / chốt',
     col4Color: '#8B5CF6',
+    col4Unit: 'Cơ hội',
     timelineLabel: 'Tổng luồng cơ hội',
     timelineColor: '#DC2626',
+    timelineUnit: 'Cơ hội',
   },
   top_events_meetings: {
     unit: 'Lượt',

@@ -15,6 +15,7 @@ import {
   ThumbsUp,
   Sparkles,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import {
   calculateRatingStats,
@@ -32,6 +33,7 @@ interface ShopeeProductDetailModalProps {
   product: any;
   onOpenQuote: (product: any) => void;
   onMessageSeller?: (product: any) => void;
+  onScheduleMeeting?: (product: any) => void;
   onViewStore?: (companyName: string) => void;
   isInterested?: boolean;
   onToggleInterest?: () => void;
@@ -43,6 +45,7 @@ export function ShopeeProductDetailModal({
   product,
   onOpenQuote,
   onMessageSeller,
+  onScheduleMeeting,
   onViewStore,
   isInterested = false,
   onToggleInterest,
@@ -436,10 +439,25 @@ export function ShopeeProductDetailModal({
                   </button>
                 )}
 
+                {onScheduleMeeting && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onScheduleMeeting(product);
+                    }}
+                    className="h-11 px-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                    title="Lên lịch hẹn gặp 1-1 B2B với chủ gian hàng"
+                  >
+                    <Calendar className="size-4" />
+                    <span>Lên lịch B2B</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => onOpenQuote(product)}
-                  className="flex-1 h-11 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer"
+                  className="flex-1 h-11 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer"
                 >
                   <FileText className="size-4" />
                   <span>Nhận Báo Giá VIP Ngay</span>

@@ -847,7 +847,7 @@ export class ConnectOpportunityService {
           ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
           'open', 0, ${data.emoji || '💡'},
-          ${oppImage}, ${JSON.stringify(images)}::jsonb, ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
+          ${oppImage}, ${images}::text[], ${contactName}, ${contactPhone || null}, ${contactTitle}, ${company},
           ${targetScope}, ${targetRecipients}::jsonb, ${targetGroups}::jsonb, ${referrer}, ${commissionPercent},
           now(), now()
         )
@@ -857,9 +857,8 @@ export class ConnectOpportunityService {
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
-          budget_min, budget_max, region, industry, deadline, status, views, emoji, images,
-          target_scope, target_recipients, target_groups,
-          created_at, updated_at
+          budget_min, budget_max, region, industry, deadline, status, views, emoji, image,
+          contact_name, company, created_at, updated_at
         ) VALUES (
           ${oppId}, ${assocId}::uuid, ${userId}, ${data.title || 'Cơ hội mới'},
           ${data.description || ''}, ${data.type || 'opp.type.partnership'},
@@ -867,8 +866,8 @@ export class ConnectOpportunityService {
           ${data.budgetMax ? BigInt(data.budgetMax) : BigInt(0)},
           ${data.region || 'Toàn quốc'}, ${data.industry || 'Đa ngành'},
           ${data.deadline ? new Date(data.deadline) : new Date(Date.now() + 30 * 86400000)},
-          'open', 0, ${data.emoji || '💡'}, ${JSON.stringify(images)}::jsonb,
-          ${targetScope}, ${targetRecipients}::jsonb, ${targetGroups}::jsonb,
+          'open', 0, ${data.emoji || '💡'}, ${oppImage},
+          ${contactName}, ${company},
           now(), now()
         )
       `;
@@ -922,9 +921,9 @@ export class ConnectOpportunityService {
         referrer = COALESCE(${data.referrer !== undefined ? data.referrer : null}, referrer),
         commission_percent = COALESCE(${data.commissionPercent !== undefined ? data.commissionPercent : null}, commission_percent),
         image = COALESCE(${oppImage}, image),
-        images = CASE WHEN ${images ? true : false} THEN ${JSON.stringify(images || [])}::jsonb ELSE images END,
+        images = CASE WHEN ${images ? true : false} THEN ${images || []}::text[] ELSE images END,
         updated_at = now()
-      WHERE id = ${opportunityId}
+      WHERE id = ${opportunityId} OR id::text = ${opportunityId}
     `.catch(async () => {
       await this.prisma.$executeRaw`
         UPDATE public.opportunities
@@ -932,8 +931,13 @@ export class ConnectOpportunityService {
           title = COALESCE(${data.title}, title),
           description = COALESCE(${data.description}, description),
           type = COALESCE(${data.type}, type),
+          budget_min = COALESCE(${data.budgetMin ? BigInt(data.budgetMin) : null}, budget_min),
+          budget_max = COALESCE(${data.budgetMax ? BigInt(data.budgetMax) : null}, budget_max),
+          image = COALESCE(${oppImage}, image),
+          contact_name = COALESCE(${data.contactName}, contact_name),
+          company = COALESCE(${data.company}, company),
           updated_at = now()
-        WHERE id = ${opportunityId}
+        WHERE id = ${opportunityId} OR id::text = ${opportunityId}
       `;
     });
     return { ok: true };
@@ -1010,14 +1014,20 @@ export class ConnectOpportunityService {
         const tagVi = TAG_VI_MAP[rawTag.toLowerCase()] || rawTag;
         const bMin = o.budget_min ? Number(o.budget_min) : undefined;
         const bMax = o.budget_max ? Number(o.budget_max) : undefined;
-        let formattedVal = o.value || o.estimated_value || '';
+        const formatValFromNumber = (n: number) => {
+          if (n <= 100) return `${n} Tỷ đ`;
+          if (n >= 1e9) return `${(n / 1e9).toFixed(1).replace(/\.0$/, '')} Tỷ đ`;
+          if (n >= 1e6) return `${(n / 1e6).toFixed(0)} Tr đ`;
+          return `${n.toLocaleString('vi-VN')} đ`;
+        };
+        let formattedVal = o.value || '';
         if (!formattedVal && (bMin || bMax)) {
           if (bMin && bMax && bMin !== bMax) {
-            formattedVal = `${bMin.toLocaleString('vi-VN')} - ${bMax.toLocaleString('vi-VN')} đ`;
+            formattedVal = `${formatValFromNumber(bMin)} - ${formatValFromNumber(bMax)}`;
           } else if (bMax) {
-            formattedVal = `${bMax.toLocaleString('vi-VN')} đ`;
+            formattedVal = formatValFromNumber(bMax);
           } else if (bMin) {
-            formattedVal = `Từ ${bMin.toLocaleString('vi-VN')} đ`;
+            formattedVal = `Từ ${formatValFromNumber(bMin)}`;
           }
         }
         if (!formattedVal) {

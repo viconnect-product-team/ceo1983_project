@@ -1351,7 +1351,7 @@ HƯỚNG DẪN TRẢ LỜI:
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading || quota.isExceeded}
-                className="h-10 w-10 shrink-0 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold flex items-center justify-center shadow-md transition disabled:opacity-40 cursor-pointer active:scale-95"
+                className="h-10 w-10 shrink-0 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold flex items-center justify-center shadow-md transition disabled:opacity-40 cursor-pointer active:scale-95"
                 title="Gửi tin nhắn"
               >
                 <Send className="h-4 w-4" />
