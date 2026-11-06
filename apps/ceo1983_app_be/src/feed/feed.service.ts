@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
 
 @Injectable()
 export class FeedService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly gateway?: ConnectAppGateway,
+  ) {}
 
   private async checkIsAdmin(userId: string): Promise<boolean> {
     try {
@@ -362,18 +366,23 @@ export class FeedService {
     externalLink?: string;
     sharedArticle?: any;
   }) {
-    if (!data.content || !data.content.trim()) {
-      throw new BadRequestException('Nội dung bài viết không được để trống.');
-    }
+    const rawContent = (data.content || '').trim();
+    const effectiveContent =
+      rawContent ||
+      data.title?.trim() ||
+      data.sharedArticle?.title?.trim() ||
+      data.sharedArticle?.snippet?.trim() ||
+      data.externalLink?.trim() ||
+      'Bài viết chia sẻ từ hội viên CEO 1983';
 
     const author = await this.getAuthorInfo(userId);
     const category = data.category || 'news';
     const department = data.department || null;
-    const title = data.title?.trim() || null;
-    const content = data.content.trim();
+    const title = data.title?.trim() || (data.sharedArticle?.title?.trim() ? String(data.sharedArticle.title).trim() : null);
+    const content = effectiveContent;
     const privacy = data.privacy || 'public';
-    const imgsJson = JSON.stringify(Array.isArray(data.images) ? data.images : []);
-    const externalLink = data.externalLink?.trim() || null;
+    const imgArr: string[] = Array.isArray(data.images) ? data.images : [];
+    const externalLink = data.externalLink?.trim() || (data.sharedArticle?.url ? String(data.sharedArticle.url).trim() : null);
     const sharedArticleJson = data.sharedArticle ? JSON.stringify(data.sharedArticle) : null;
 
     const inserted = await this.prisma.$queryRaw<any[]>`
@@ -383,7 +392,7 @@ export class FeedService {
         likes_count, comments_count, shares_count, created_at, updated_at
       ) VALUES (
         ${author.id}, ${author.name}, ${author.avatar}, ${author.company}, ${author.role},
-        ${title}, ${content}, ${category}, ${department}, ${imgsJson}::jsonb, ${privacy}, ${externalLink}, ${sharedArticleJson}::jsonb,
+        ${title}, ${content}, ${category}, ${department}, ${imgArr}::text[], ${privacy}, ${externalLink}, ${sharedArticleJson}::jsonb,
         0, 0, 0, NOW(), NOW()
       )
       RETURNING *
@@ -465,9 +474,12 @@ export class FeedService {
     if (!postId) return [];
     const comments = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.feed_comments
-      WHERE post_id = ${postId}::uuid
+      WHERE post_id::text = ${String(postId)}
       ORDER BY created_at ASC
-    `.catch(() => []);
+    `.catch((err) => {
+      console.error('listComments query error:', err);
+      return [];
+    });
 
     return comments.map((c) => ({
       id: c.id,
@@ -494,7 +506,7 @@ export class FeedService {
   async addComment(userId: string, postId: string, payload: any) {
     const rawContent = typeof payload === 'string' ? payload : payload?.content;
     const text = (rawContent || '').trim();
-    const parentId = payload?.parentId || null;
+    const parentId = payload?.parentId ? String(payload.parentId) : null;
     const level = payload?.level ? Number(payload.level) : 1;
     const replyToAuthorName = payload?.replyToAuthorName || null;
     const mediaUrl = payload?.mediaUrl || null;
@@ -519,19 +531,205 @@ export class FeedService {
         parent_id, level, reply_to_author_name, media_url, media_type, reaction, created_at
       )
       VALUES (
-        ${postId}::uuid, ${author.id}, ${finalAuthorName}, ${finalAuthorAvatar}, ${text},
+        ${String(postId)}, ${author.id}, ${finalAuthorName}, ${finalAuthorAvatar}, ${text},
         ${parentId}, ${level}, ${replyToAuthorName}, ${mediaUrl}, ${mediaType}, ${reaction}, NOW()
       )
       RETURNING *
     `;
 
-    await this.prisma.$executeRaw`
-      UPDATE public.feed_posts
-      SET comments_count = comments_count + 1, updated_at = NOW()
-      WHERE id = ${postId}::uuid
-    `.catch(() => {});
+    const isPostUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId);
+    if (isPostUuid) {
+      await this.prisma.$executeRaw`
+        UPDATE public.feed_posts
+        SET comments_count = comments_count + 1, updated_at = NOW()
+        WHERE id = ${postId}::uuid
+      `.catch(() => {});
+    }
 
     const c = inserted[0];
+
+    // DISPATCH REAL-TIME PUSH NOTIFICATION FOR @MENTIONED USERS & POST AUTHOR
+    try {
+      const rawMentionedIds: string[] = Array.isArray(payload?.mentionedUserIds) ? payload.mentionedUserIds : [];
+      const mentionedUserIds: string[] = [...rawMentionedIds];
+
+      // Auto-extract any @Name if mentionedUserIds was not passed
+      const atMatches = text.match(/@([a-zA-Z0-9À-ỹ_ ]{2,30})/g);
+      if (atMatches && atMatches.length > 0) {
+        for (const rawTag of atMatches) {
+          const cleanName = rawTag.replace(/^@/, '').trim();
+          const matchedMembers = await this.prisma.$queryRaw<any[]>`
+            SELECT user_id, id FROM public.members
+            WHERE user_id IS NOT NULL AND (
+              LOWER(contact) ILIKE ${'%' + cleanName.toLowerCase() + '%'} OR
+              LOWER(name) ILIKE ${'%' + cleanName.toLowerCase() + '%'}
+            )
+            LIMIT 1
+          `.catch(() => []);
+          if (matchedMembers.length > 0 && matchedMembers[0].user_id) {
+            mentionedUserIds.push(String(matchedMembers[0].user_id));
+          }
+        }
+      }
+
+      const uniqueMentionedIds = Array.from(new Set(mentionedUserIds.filter((id) => id && id !== userId)));
+      const snippet = text.length > 90 ? text.substring(0, 90) + '...' : text;
+
+      for (const targetId of uniqueMentionedIds) {
+        // Resolve member details
+        const memberRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, user_id, code, contact, name FROM public.members
+          WHERE user_id::text = ${targetId} OR id::text = ${targetId} OR code::text = ${targetId}
+          LIMIT 1
+        `.catch(() => []);
+
+        const targetUserId = memberRows[0]?.user_id ? String(memberRows[0].user_id) : targetId;
+        const targetMemberId = memberRows[0]?.id ? String(memberRows[0].id) : targetId;
+
+        const notifTitle = 'Bạn được nhắc đến trong một bình luận';
+        const notifBody = `${finalAuthorName} đã nhắc đến bạn trong một bình luận: "${snippet}"`;
+
+        // 1. Insert into member_notifications (App Notification Center)
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+          )
+        `, targetUserId, notifTitle, notifBody, String(postId)).catch(() => {});
+
+        if (targetMemberId && targetMemberId !== targetUserId) {
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.member_notifications (
+              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+            ) VALUES (
+              gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+            )
+          `, targetMemberId, notifTitle, notifBody, String(postId)).catch(() => {});
+        }
+
+        // 2. Insert into business_notifications if valid UUID
+        const isTargetUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId);
+        if (isTargetUuid) {
+          const notifId = require('crypto').randomUUID();
+          const dedupeKey = `mention:${c.id}:${targetUserId}`;
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+            ) VALUES (
+              $1::uuid, $2::uuid, 'feed', $3, 'comment_mention', 'moment_user_mention',
+              $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'ceo1983_app', 'ceo1983_app', NOW(), NOW()
+            )
+          `, notifId, targetUserId, String(postId),
+             notifTitle,
+             snippet,
+             JSON.stringify({ postId, authorName: finalAuthorName, commentSnippet: snippet, url: '/association/messages?tab=feed' }),
+             dedupeKey).catch(() => {});
+        }
+
+        // 3. Emit real-time Socket push notification
+        if (this.gateway) {
+          this.gateway.emitNotification(targetUserId, {
+            id: require('crypto').randomUUID(),
+            title: notifTitle,
+            body: notifBody,
+            type: 'network',
+            refType: 'feed',
+            refId: String(postId),
+            createdAt: new Date().toISOString(),
+          });
+          if (targetMemberId && targetMemberId !== targetUserId) {
+            this.gateway.emitNotification(targetMemberId, {
+              id: require('crypto').randomUUID(),
+              title: notifTitle,
+              body: notifBody,
+              type: 'network',
+              refType: 'feed',
+              refId: String(postId),
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
+
+      // Also notify post author if they are not the commenter and not mentioned
+      let postAuthorId: string | null = null;
+      if (isPostUuid) {
+        const postAuthorRow = await this.prisma.$queryRaw<any[]>`
+          SELECT author_id FROM public.feed_posts WHERE id = ${postId}::uuid LIMIT 1
+        `.catch(() => []);
+        postAuthorId = postAuthorRow[0]?.author_id ? String(postAuthorRow[0].author_id) : null;
+      }
+
+      if (postAuthorId && postAuthorId !== userId && !uniqueMentionedIds.includes(postAuthorId)) {
+        const isPostAuthorUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postAuthorId);
+        if (isPostAuthorUuid) {
+          const postNotifId = require('crypto').randomUUID();
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO public.business_notifications (
+              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+            ) VALUES (
+              $1::uuid, $2::uuid, 'feed', $3, 'post_commented', 'moment_new_comment',
+              $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'ceo1983_app', 'ceo1983_app', NOW(), NOW()
+            )
+          `, postNotifId, postAuthorId, String(postId),
+             `${finalAuthorName} đã bình luận bài viết của bạn`,
+             snippet,
+             JSON.stringify({ postId, authorName: finalAuthorName, commentSnippet: snippet, url: '/association/messages?tab=feed' }),
+             `post_comment:${c.id}:${postAuthorId}`).catch(() => {});
+        }
+
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO public.member_notifications (
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+          )
+        `, postAuthorId,
+           'Bình luận mới về bài viết của bạn',
+           `${finalAuthorName} đã bình luận bài viết của bạn: "${snippet}"`,
+           String(postId)).catch(() => {});
+
+        if (this.gateway) {
+          this.gateway.emitNotification(postAuthorId, {
+            id: require('crypto').randomUUID(),
+            title: `${finalAuthorName} đã bình luận bài viết của bạn`,
+            body: snippet,
+            type: 'network',
+            refType: 'feed',
+            refId: String(postId),
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+
+      // Broadcast new comment event to all connected clients
+      if (this.gateway) {
+        this.gateway.emitToAll('feed:comment:new', {
+          postId: String(postId),
+          comment: {
+            id: c.id,
+            postId: c.post_id,
+            authorId: c.author_id,
+            authorName: c.author_name,
+            authorAvatar: c.author_avatar,
+            content: c.content,
+            parentId: c.parent_id,
+            level: c.level,
+            replyToAuthorName: c.reply_to_author_name,
+            mediaUrl: c.media_url,
+            mediaType: c.media_type,
+            reaction: c.reaction,
+            createdAt: c.created_at ? new Date(c.created_at).toISOString() : new Date().toISOString(),
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error('Comment notification dispatch error:', notifErr);
+    }
+
     return {
       ok: true,
       comment: {
@@ -682,7 +880,7 @@ export class FeedService {
       const authorInfo = await this.getAuthorInfo(userId);
       if (post.author_id !== authorInfo.id) throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài viết này.');
     }
-    const imgsJson = data.images !== undefined ? JSON.stringify(data.images) : null;
+    const imgArr: string[] | null = data.images !== undefined ? (Array.isArray(data.images) ? data.images : []) : null;
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.feed_posts
       SET
@@ -691,10 +889,10 @@ export class FeedService {
         category = COALESCE($3, category),
         department = COALESCE($4, department),
         privacy = COALESCE($5, privacy),
-        images = CASE WHEN $6::text IS NOT NULL THEN $6::jsonb ELSE images END,
+        images = CASE WHEN $6::text[] IS NOT NULL THEN $6::text[] ELSE images END,
         updated_at = NOW()
       WHERE id = $7::uuid
-    `, data.title || null, data.content || null, data.category || null, data.department || null, data.privacy || null, imgsJson, postId);
+    `, data.title || null, data.content || null, data.category || null, data.department || null, data.privacy || null, imgArr, postId);
     return { ok: true, message: 'Đã cập nhật bài viết thành công.' };
   }
 

@@ -6,7 +6,7 @@
 // use-saved-cards hooks (SavedCardSDK). No table access, no server-fn imports.
 // Private notes/tags never enter the URL, telemetry or share surfaces.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Search, LayoutGrid, List as ListIcon, Plus, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -150,6 +150,21 @@ export function SavedCardsLibrary({ search, onPatch, onReset }: SavedCardsLibrar
     [mut],
   );
 
+  const [localQ, setLocalQ] = useState(search.q || "");
+
+  useEffect(() => {
+    setLocalQ(search.q || "");
+  }, [search.q]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localQ !== (search.q || "")) {
+        onPatch({ q: localQ.slice(0, 200) });
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [localQ, onPatch, search.q]);
+
   const resultCount = cards.length;
   const announcement = isFetching
     ? t("sc.sr.saving")
@@ -251,8 +266,8 @@ export function SavedCardsLibrary({ search, onPatch, onReset }: SavedCardsLibrar
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              value={search.q}
-              onChange={(e) => onPatch({ q: e.target.value.slice(0, 200) })}
+              value={localQ}
+              onChange={(e) => setLocalQ(e.target.value)}
               placeholder={t("sc.search.placeholder")}
               aria-label={t("sc.search.label")}
               className="pl-9"

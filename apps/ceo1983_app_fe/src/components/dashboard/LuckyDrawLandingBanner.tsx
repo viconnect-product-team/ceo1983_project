@@ -203,7 +203,7 @@ export function LuckyDrawLandingBanner({
         {/* Top Header Row: Event Selector & Setup Button */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-500/20 pb-6">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-md">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-[#003B95] hover:bg-[#002B70] text-white shadow-md">
               <ClickUpMark size={16} />
               <span>Sự Kiện Bốc Thăm &amp; Trao Giải</span>
             </span>
@@ -302,7 +302,7 @@ export function LuckyDrawLandingBanner({
                   setSpinModalOpen(true);
                 }
               }}
-              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-6 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer flex items-center justify-center gap-2"
             >
               <ClickUpIcon name="Dices" variant="purple" size={18} />
               <span>Bắt Đầu Bốc Thăm Ngay</span>
@@ -935,7 +935,7 @@ function LuckyDrawSetupModal({
                   <button
                     type="submit"
                     disabled={savingPrize}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold transition cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold transition cursor-pointer flex items-center gap-2 shadow-sm disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{savingPrize ? "Đang lưu..." : "Thêm Giải Thưởng"}</span>
@@ -1342,7 +1342,7 @@ function InteractiveLuckyDrawModal({
             <button
               onClick={spin}
               disabled={spinning || candidates.length === 0}
-              className="flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2"
+              className="flex-1 py-3.5 px-6 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-sm uppercase tracking-wider shadow-lg disabled:opacity-50 transition cursor-pointer flex items-center justify-center gap-2"
             >
               <ClickUpIcon name="Dices" variant="purple" size={18} />
               <span>{spinning ? "Đang Quay Số..." : "Quay Số May Mắn"}</span>

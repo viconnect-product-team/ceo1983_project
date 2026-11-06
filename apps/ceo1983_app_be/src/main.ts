@@ -126,7 +126,7 @@ async function bootstrap() {
     next();
   });
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: ['share', 'share/(.*)', 'api/share', 'api/share/(.*)'] });
   // VULN-11 Fix: Khóa chặt chính sách CORS Whitelist theo các tên miền chính thức, ngăn ngừa CSRF & rò rỉ dữ liệu
   const allowedOrigins = [
     'https://ceo1983.viconnect.vn',

@@ -647,9 +647,9 @@ function MeetingsPage() {
             {canCreateMeeting && (
               <button
                 onClick={handleOpenCreate}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 transition shadow-sm shadow-amber-500/20 cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white bg-[#003B95] hover:bg-[#002B70] transition shadow-sm cursor-pointer"
               >
-                <Plus className="h-4 w-4 text-slate-950" />
+                <Plus className="h-4 w-4 text-white" />
                 Tạo Cuộc Họp Ban
               </button>
             )}
@@ -1432,7 +1432,7 @@ function MeetingsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-black text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 transition shadow-sm shadow-amber-500/20 cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold text-white bg-[#003B95] hover:bg-[#002B70] transition shadow-sm cursor-pointer"
                 >
                   {submitting ? "Đang lưu..." : selectedMeeting ? t("common.save") : "Lên Lịch & Phát Thông Báo"}
                 </button>

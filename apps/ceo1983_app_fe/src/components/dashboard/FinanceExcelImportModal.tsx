@@ -880,7 +880,7 @@ export function FinanceExcelImportModal({
               type="button"
               onClick={handleImportSubmit}
               disabled={importing || selectedIndices.size === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white shadow-sm shadow-amber-500/20 transition-all disabled:opacity-50"
             >
               {importing ? (
                 <>

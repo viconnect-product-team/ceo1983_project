@@ -620,7 +620,7 @@ export function PostMomentModal({
             type="button"
             onClick={handlePost}
             disabled={submitting || (!content.trim() && photos.length === 0)}
-            className="w-full py-3 rounded-full font-bold text-sm bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 shadow-[0_4px_20px_rgba(216,178,130,0.4)] hover:opacity-95 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 rounded-full font-bold text-sm bg-[#003B95] hover:bg-[#002B70] text-white shadow-md active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {submitting ? (
               <>

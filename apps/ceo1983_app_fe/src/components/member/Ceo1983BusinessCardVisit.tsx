@@ -205,7 +205,7 @@ export function Ceo1983BusinessCardVisit({
           <button
             type="button"
             onClick={() => setQrModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 transition-all shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#003B95] hover:bg-[#002B70] text-white border border-amber-400/50 hover:border-amber-400 text-amber-300 transition-all shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer"
           >
             <QrCode className="w-3.5 h-3.5 text-amber-400" />
             <span>Mã QR</span>
@@ -226,7 +226,7 @@ export function Ceo1983BusinessCardVisit({
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#002B70] to-[#003B95] border border-amber-400/50 hover:border-amber-400 text-amber-300 transition-all shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#003B95] hover:bg-[#002B70] text-white border border-amber-400/50 hover:border-amber-400 text-amber-300 transition-all shadow-xs hover:shadow-[0_0_12px_rgba(245,158,11,0.35)] active:scale-95 cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5 text-amber-400" />
             <span>Chia Sẻ</span>

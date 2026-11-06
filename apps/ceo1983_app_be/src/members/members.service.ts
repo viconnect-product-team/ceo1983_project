@@ -3684,6 +3684,94 @@ Trân trọng cảm ơn Anh/Chị!`;
     `);
     return { success: true, message: 'Đã cập nhật vị trí bản đồ & địa chỉ doanh nghiệp' };
   }
+
+  async bulkImportMembers(userId: string, membersData: any[]) {
+    if (!this.prisma) {
+      throw new BadRequestException('Database connection not available');
+    }
+    if (!Array.isArray(membersData) || membersData.length === 0) {
+      return { success: true, total: 0, created: 0, updated: 0, skipped: 0, message: 'Không có dữ liệu để nhập' };
+    }
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    const defaultAssocId = 'c1983000-0000-4000-8000-000000001983';
+
+    for (const item of membersData) {
+      const name = String(item.name || item.fullName || item.hoTen || '').trim();
+      const phone = String(item.phone || item.sdt || item.soDienThoai || '').trim();
+      const email = String(item.email || '').trim().toLowerCase();
+      const company = String(item.company || item.companyName || item.congTy || '').trim();
+      const industry = String(item.industry || item.nganhNghe || 'Đa ngành').trim();
+      const title = String(item.title || item.position || item.chucVu || item.executiveRole || 'Hội viên').trim();
+      const address = String(item.address || item.diaChi || '').trim();
+      const department = String(item.department || item.banChuyenMon || 'Ban Thành Viên').trim();
+
+      if (!name) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        let existing: any[] = [];
+        if (email) {
+          existing = await this.prisma.$queryRaw<any[]>`
+            SELECT id, email, phone FROM public.members WHERE LOWER(email) = ${email} LIMIT 1
+          `.catch(() => []);
+        }
+        if (existing.length === 0 && phone) {
+          existing = await this.prisma.$queryRaw<any[]>`
+            SELECT id, email, phone FROM public.members WHERE phone = ${phone} LIMIT 1
+          `.catch(() => []);
+        }
+
+        if (existing.length > 0) {
+          const mId = existing[0].id;
+          await this.prisma.$executeRaw`
+            UPDATE public.members
+            SET name = ${name},
+                contact = ${company || name},
+                industry = ${industry},
+                address = CASE WHEN ${address} != '' THEN ${address} ELSE address END,
+                department = ${department},
+                "executiveRole" = ${title},
+                "updatedAt" = NOW()
+            WHERE id = ${mId}
+          `;
+          updated++;
+        } else {
+          const newId = `MB${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 1000)}`;
+          const code = `CEO1983-${Math.floor(1000 + Math.random() * 9000)}`;
+          await this.prisma.$executeRaw`
+            INSERT INTO public.members (
+              id, name, contact, email, phone, type, level, industry, status,
+              address, "feePaid", "feeYear", "joinedAt", "createdAt", "updatedAt",
+              "associationId", "executiveRole", department, code
+            ) VALUES (
+              ${newId}, ${name}, ${company || name}, ${email || null}, ${phone || null}, 'individual', 'Chính thức', ${industry}, 'active',
+              ${address || null}, true, 2026, NOW()::date::text, NOW(), NOW(),
+              ${defaultAssocId}::uuid, ${title}, ${department}, ${code}
+            )
+          `;
+          created++;
+        }
+      } catch (err) {
+        this.logger.error(`Error importing member ${name}:`, err);
+        skipped++;
+      }
+    }
+
+    return {
+      success: true,
+      total: membersData.length,
+      created,
+      updated,
+      skipped,
+      message: `Đã nhập thành công ${created} hội viên mới, cập nhật ${updated} hội viên. Bỏ qua: ${skipped}.`,
+    };
+  }
 }
 
 

@@ -483,7 +483,7 @@ export function DepartmentManagementSection() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                 >
                   {editingDept ? "Lưu Cập Nhật" : "Tạo Ban"}
                 </button>

@@ -390,7 +390,7 @@ export function CompanyProfileEditModal({
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#003B95] to-[#001D4A] hover:brightness-110 text-white text-xs font-bold shadow-md shadow-blue-900/20 active:scale-95 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white hover:brightness-110 text-white text-xs font-bold shadow-md shadow-blue-900/20 active:scale-95 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save className="size-3.5" />
               <span>{saving ? "Đang lưu..." : "Lưu hồ sơ"}</span>

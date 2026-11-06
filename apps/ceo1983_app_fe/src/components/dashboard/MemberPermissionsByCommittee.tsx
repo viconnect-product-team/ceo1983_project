@@ -1074,7 +1074,7 @@ function CustomMemberPermissionModal({
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer transition"
+              className="px-5 py-2 text-xs font-black rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white shadow-sm shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer transition"
             >
               <Save className="w-3.5 h-3.5 text-slate-950" />
               <span>Lưu Phân Quyền</span>
@@ -1226,7 +1226,7 @@ function MemberPermissionDetailModal({
           <button
             type="button"
             onClick={onEdit}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs shadow-amber-500/20"
+            className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs shadow-amber-500/20"
           >
             <Pencil className="w-3.5 h-3.5 text-slate-950" />
             Chỉnh Sửa Phân Quyền

@@ -93,7 +93,7 @@ class MessagesErrorBoundary extends Component<
               this.setState({ hasError: false });
               window.location.reload();
             }}
-            className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black transition shadow-md shadow-amber-500/20 cursor-pointer"
+            className="mt-4 px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition shadow-sm cursor-pointer active:scale-95"
           >
             Thử lại
           </button>
@@ -146,10 +146,24 @@ function MessagesScreen() {
 
   // State for Network Header: Search & Dropdown Menu
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchCategory, setSearchCategory] = useState<"all" | "opps" | "posts" | "events" | "meetings">("all");
   const [searchFocused, setSearchFocused] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search input: 350ms delay to prevent repeated API calls on keystrokes/spaces
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Set document title chuẩn mực cho Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983
+  useEffect(() => {
+    document.title = "Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983";
+  }, []);
 
   // Close dropdown menu when clicking outside
   useEffect(() => {
@@ -365,8 +379,8 @@ function MessagesScreen() {
                       {menuOpen && (
                         <div className="absolute right-0 top-11 z-50 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 px-1 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150">
                           <div className="px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <span>Danh mục Mạng Lưới</span>
-                            <span className="size-1.5 rounded-full bg-red-500"></span>
+                            <span className="truncate">Mạng Lưới Hội Viên & Bản Tin CEO 1983</span>
+                            <span className="size-1.5 rounded-full bg-red-500 shrink-0"></span>
                           </div>
 
                           {/* 1. Tin tức */}
@@ -489,7 +503,7 @@ function MessagesScreen() {
               </header>
 
               {/* Bảng tin Feed */}
-              <FeedView searchQuery={searchQuery} initialShare={initialShare} />
+              <FeedView searchQuery={debouncedSearchQuery} initialShare={initialShare} />
             </>
           )}
         </div>

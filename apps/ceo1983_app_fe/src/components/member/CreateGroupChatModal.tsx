@@ -308,7 +308,7 @@ export function CreateGroupChatModal({
             disabled={selectedMembers.length === 0 || isSubmitting}
             className={`px-4 py-1.5 rounded-full text-xs font-bold transition active:scale-95 flex items-center gap-1 cursor-pointer ${
               selectedMembers.length > 0
-                ? "bg-gradient-to-r from-[#003B95] to-[#1E40AF] text-white shadow-md shadow-blue-900/20 hover:brightness-110"
+                ? "bg-[#003B95] hover:bg-[#002B70] text-white shadow-md"
                 : "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed"
             }`}
           >
@@ -663,7 +663,7 @@ export function CreateGroupChatModal({
             disabled={selectedMembers.length === 0 || isSubmitting}
             className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider transition active:scale-98 shadow-md flex items-center justify-center gap-2 cursor-pointer ${
               selectedMembers.length > 0
-                ? "bg-gradient-to-r from-[#0052CC] via-[#003B95] to-[#002B70] text-white shadow-blue-900/20 hover:brightness-105"
+                ? "bg-[#003B95] hover:bg-[#002B70] text-white shadow-md"
                 : "bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed"
             }`}
           >

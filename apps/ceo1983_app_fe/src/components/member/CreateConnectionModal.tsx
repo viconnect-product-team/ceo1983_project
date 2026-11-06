@@ -694,7 +694,7 @@ export function CreateConnectionModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-2 py-2.5 rounded-xl bg-gradient-to-r from-[#003B95] via-[#002B70] to-[#001D4A] hover:brightness-110 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/30 transition active:scale-98 cursor-pointer disabled:opacity-50"
+              className="flex-2 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition active:scale-98 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <>

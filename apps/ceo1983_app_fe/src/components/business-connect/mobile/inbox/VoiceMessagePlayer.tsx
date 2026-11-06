@@ -87,7 +87,7 @@ export function VoiceMessagePlayer({ url, duration: initialDuration, fromMe }: V
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all cursor-pointer shadow-md ${
           fromMe
             ? "bg-black text-[#F7D896] hover:bg-black/90 active:scale-95"
-            : "bg-gradient-to-br from-[#F7D896] to-[#C49338] text-slate-950 hover:scale-105 active:scale-95"
+            : "bg-[#003B95] hover:bg-[#002B70] text-white active:scale-95"
         }`}
       >
         {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}

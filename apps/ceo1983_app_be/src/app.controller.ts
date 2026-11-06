@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, Header } from '@nestjs/common';
+import { Controller, Get, Query, Param, Header, Req } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
 
@@ -17,7 +17,7 @@ export class AppController {
   /**
    * GET /api/share/preview, /share/preview, /share/:type/:id, /api/share/:type/:id
    * Trả về HTML chứa OpenGraph tags & Twitter Cards động chuẩn mực cho Facebook, Zalo, Telegram.
-   * Đồng thời tự động chuyển hướng người dùng khi click link vào đúng trang trên App / Web.
+   * Chống hoàn toàn tình trạng Facebook crawler nhảy vào SPA index.html mất nội dung.
    */
   @Get([
     'share/preview',
@@ -27,6 +27,7 @@ export class AppController {
   ])
   @Header('Content-Type', 'text/html; charset=utf-8')
   async getSharePreview(
+    @Req() req: any,
     @Query('type') rawQueryType?: string,
     @Query('id') rawQueryId?: string,
     @Param('type') rawParamType?: string,
@@ -43,6 +44,10 @@ export class AppController {
     const SITE_NAME = 'CLB Doanh Nhân CEO 1983 (HanoiBA)';
     const BASE_WEB_URL = 'https://ceo1983.viconnect.vn';
 
+    // Nhận diện Bot / Web Crawler của Facebook (kể cả Meta mới 2024-2026), Zalo, Twitter, Telegram, LinkedIn
+    const userAgent = (req?.headers?.['user-agent'] || '').toLowerCase();
+    const isCrawler = /facebookexternalhit|facebot|facebookcatalog|meta-externalagent|meta-externaladsagent|zalo|zalopc|twitterbot|linkedinbot|telegrambot|whatsapp|slackbot|googlebot|bingbot|baiduspider|yandex|vkshare/i.test(userAgent);
+
     let resolvedTitle = customTitle || 'CLB Doanh Nhân CEO 1983 — Kết Nối Giao Thương';
     let resolvedDesc =
       customDesc ||
@@ -54,42 +59,81 @@ export class AppController {
       if (targetType === 'opportunity' && targetId) {
         targetUrl = customTarget || `${BASE_WEB_URL}/association/opportunities?id=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, description, images, budget, currency, category, contact_name, contact_phone FROM public.opportunities WHERE id::text = $1 LIMIT 1`,
+          `SELECT title, description, image, images, budget_min, budget_max, industry, company, contact_name, contact_phone FROM public.opportunities WHERE id::text = $1 LIMIT 1`,
           targetId,
         ).catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
           let budgetStr = '';
-          if (item.budget && Number(item.budget) > 0) {
-            const num = Number(item.budget);
-            budgetStr = num >= 1e9 ? ` (Quy mô: ${(num / 1e9).toFixed(1)} Tỷ VNĐ)` : ` (Quy mô: ${(num / 1e6).toFixed(0)} Triệu VNĐ)`;
+          const bMin = item.budget_min != null ? Number(item.budget_min) : 0;
+          const bMax = item.budget_max != null ? Number(item.budget_max) : 0;
+          const bVal = bMax > 0 ? bMax : bMin;
+          if (bVal > 0) {
+            budgetStr = bVal >= 1e9 ? ` (Quy mô: ${(bVal / 1e9).toFixed(1)} Tỷ VNĐ)` : ` (Quy mô: ${(bVal / 1e6).toFixed(0)} Tr VNĐ)`;
           }
-          resolvedTitle = item.title ? `[Cơ Hội Giao Thương B2B] ${item.title}${budgetStr} — CLB CEO 1983` : resolvedTitle;
+          resolvedTitle = item.title ? `[Cơ Hội Giao Thương B2B] ${item.title}${budgetStr} — CLB CEO 1983` : (customTitle || resolvedTitle);
           
           let descParts: string[] = [];
+          if (item.company) {
+            descParts.push(`Doanh nghiệp: ${item.company}`);
+          }
+          if (item.contact_name) {
+            descParts.push(`Đầu mối: ${item.contact_name}`);
+          }
           if (item.description) {
             descParts.push(item.description.replace(/<[^>]*>?/gm, '').trim());
           }
-          if (item.contact_name) {
-            descParts.push(`Người liên hệ: ${item.contact_name}`);
-          }
           if (descParts.length > 0) {
             resolvedDesc = descParts.join(' — ').slice(0, 260);
+          } else if (customDesc) {
+            resolvedDesc = customDesc;
           }
 
-          let imgList: string[] = [];
-          if (Array.isArray(item.images)) {
-            imgList = item.images;
+          if (item.image) {
+            resolvedImage = item.image;
+          } else if (Array.isArray(item.images) && item.images.length > 0) {
+            resolvedImage = item.images[0];
           } else if (typeof item.images === 'string') {
             try {
-              imgList = JSON.parse(item.images);
+              const parsed = JSON.parse(item.images);
+              if (Array.isArray(parsed) && parsed[0]) resolvedImage = parsed[0];
             } catch {
-              if (item.images.startsWith('http')) imgList = [item.images];
+              if (item.images.startsWith('http')) resolvedImage = item.images;
             }
+          } else if (customImage) {
+            resolvedImage = customImage;
           }
-          if (imgList.length > 0 && imgList[0]) {
-            resolvedImage = imgList[0];
+        }
+      } else if ((targetType === 'product' || targetType === 'marketplace') && targetId) {
+        targetUrl = customTarget || `${BASE_WEB_URL}/association/products?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma.$queryRawUnsafe<any[]>(
+          `SELECT id, title, name, description, price, original_price, member_price, unit, currency, image_url, image_urls, company FROM public.products WHERE id::text = $1 OR custom_id = $1 LIMIT 1`,
+          targetId,
+        ).catch(() => [] as any[]);
+
+        if (rows && rows.length > 0) {
+          const item = rows[0];
+          const prodName = item.name || item.title || 'Sản phẩm tiêu biểu';
+          const pVal = item.member_price != null && Number(item.member_price) > 0 
+            ? Number(item.member_price) 
+            : (item.price != null && Number(item.price) > 0 ? Number(item.price) : 0);
+          
+          let priceStr = '';
+          if (pVal > 0) {
+            priceStr = pVal >= 1e9 ? ` (${(pVal / 1e9).toFixed(1)} Tỷ VNĐ)` : ` (${(pVal / 1e6).toFixed(0)} Tr VNĐ)`;
+          }
+          resolvedTitle = `[Sàn Thương Mại B2B CEO 1983] ${prodName}${priceStr}`;
+
+          let descParts: string[] = [];
+          if (item.company) descParts.push(`Cung cấp bởi: ${item.company}`);
+          if (item.description) descParts.push(item.description.replace(/<[^>]*>?/gm, '').trim());
+          if (descParts.length > 0) resolvedDesc = descParts.join(' — ').slice(0, 260);
+
+          if (item.image_url) {
+            resolvedImage = item.image_url;
+          } else if (Array.isArray(item.image_urls) && item.image_urls.length > 0) {
+            resolvedImage = item.image_urls[0];
           }
         }
       } else if (targetType === 'event' && targetId) {
@@ -125,18 +169,29 @@ export class AppController {
       } else if ((targetType === 'post' || targetType === 'feed') && targetId) {
         targetUrl = customTarget || `${BASE_WEB_URL}/association/messages?post=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT content, images, author_name FROM public.feed_posts WHERE id::text = $1 LIMIT 1`,
+          `SELECT title, content, images, author_name, author_company, shared_article FROM public.feed_posts WHERE id::text = $1 LIMIT 1`,
           targetId,
         ).catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.author_name ? `Bài chia sẻ từ Doanh nhân ${item.author_name} — Mạng lưới CEO 1983` : 'Bài viết trên Mạng lưới CEO 1983';
+          resolvedTitle = item.title || (item.author_name ? `Bài chia sẻ từ Doanh nhân ${item.author_name} — Mạng lưới CEO 1983` : 'Bài viết trên Mạng lưới CEO 1983');
           if (item.content) {
             resolvedDesc = item.content.slice(0, 260);
           }
           if (Array.isArray(item.images) && item.images.length > 0) {
             resolvedImage = item.images[0];
+          }
+
+          if (item.shared_article) {
+            try {
+              const art = typeof item.shared_article === 'string' ? JSON.parse(item.shared_article) : item.shared_article;
+              if (art.title) resolvedTitle = `${art.title} — Chia sẻ trên CEO 1983`;
+              if (art.snippet || art.excerpt) resolvedDesc = (art.snippet || art.excerpt).slice(0, 260);
+              if (art.thumbnailUrl || art.thumbnail || art.image) {
+                resolvedImage = art.thumbnailUrl || art.thumbnail || art.image;
+              }
+            } catch {}
           }
         }
       } else if (targetType === 'training' && targetId) {
@@ -175,6 +230,20 @@ export class AppController {
     const safeImage = (resolvedImage || DEFAULT_IMAGE).replace(/"/g, '&quot;');
     const safeTarget = targetUrl.replace(/"/g, '&quot;');
 
+    // URL chuẩn cho og:url: Luôn giữ URL preview hiện tại để Facebook/Zalo không bị redirect sang SPA index.html
+    const canonicalShareUrl = `${BASE_WEB_URL}${req?.originalUrl || `/share/${targetType || 'preview'}/${targetId || ''}`}`.replace(/"/g, '&quot;');
+    const ogCanonicalUrl = canonicalShareUrl;
+
+    // Crawler không nhận meta-refresh để tránh Facebook/Zalo bot follow sang SPA index.html
+    const redirectMetaTags = isCrawler
+      ? ''
+      : `  <meta http-equiv="refresh" content="2; url=${safeTarget}" />
+  <script type="text/javascript">
+    setTimeout(function() {
+      window.location.replace("${safeTarget}");
+    }, 1500);
+  </script>`;
+
     return `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -192,7 +261,7 @@ export class AppController {
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="${safeTitle}" />
   <meta property="og:image:type" content="image/jpeg" />
-  <meta property="og:url" content="${safeTarget}" />
+  <meta property="og:url" content="${ogCanonicalUrl}" />
   <meta property="og:type" content="article" />
   
   <!-- Twitter Card Metadata -->
@@ -220,13 +289,8 @@ export class AppController {
   }
   </script>
 
-  <!-- Tự động chuyển hướng trình duyệt của người dùng sang Web / Mobile App -->
-  <meta http-equiv="refresh" content="0; url=${safeTarget}" />
-  <script type="text/javascript">
-    setTimeout(function() {
-      window.location.replace("${safeTarget}");
-    }, 150);
-  </script>
+  <!-- Chuyển hướng trình duyệt cho người dùng thực -->
+${redirectMetaTags}
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -244,50 +308,47 @@ export class AppController {
     .card {
       background: #ffffff;
       padding: 32px 24px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border-radius: 20px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.08);
       max-width: 480px;
       width: 100%;
+      border: 1px solid #e2e8f0;
     }
     .preview-img {
       width: 100%;
       height: 220px;
       object-fit: cover;
-      border-radius: 12px;
+      border-radius: 14px;
       margin-bottom: 16px;
-    }
-    .logo {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 12px;
-      border-radius: 10px;
+      background: #0f172a;
     }
     .title {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 800;
       color: #0f172a;
       margin: 0 0 10px 0;
       line-height: 1.4;
     }
     .desc {
-      font-size: 14px;
+      font-size: 13.5px;
       color: #64748b;
       margin-bottom: 24px;
       line-height: 1.5;
     }
     .btn {
       display: inline-block;
-      background: #dc2626;
+      background: #003B95;
       color: #ffffff;
       padding: 12px 24px;
-      border-radius: 10px;
+      border-radius: 12px;
       text-decoration: none;
-      font-weight: 600;
-      font-size: 15px;
+      font-weight: 700;
+      font-size: 14px;
       transition: background 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 59, 149, 0.25);
     }
     .btn:hover {
-      background: #b91c1c;
+      background: #002B70;
     }
   </style>
 </head>

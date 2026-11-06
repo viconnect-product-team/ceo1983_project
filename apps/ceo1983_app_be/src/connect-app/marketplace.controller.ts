@@ -43,6 +43,15 @@ export class MarketplaceController {
     return this.connectAppService.updateMarketplaceProduct(req.user.id, id, body);
   }
 
+  @Patch('products/:id')
+  async updateProductPatch(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.updateMarketplaceProduct(req.user.id, id, body);
+  }
+
   @Delete('products/:id')
   async deleteProduct(@Request() req: any, @Param('id') id: string) {
     return this.connectAppService.deleteMarketplaceProduct(req.user.id, id);

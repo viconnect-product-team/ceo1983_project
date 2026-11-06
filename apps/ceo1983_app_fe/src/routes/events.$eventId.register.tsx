@@ -885,7 +885,7 @@ function GuestEventRegistrationPage() {
             <button
               type="submit"
               disabled={submitting || isFull}
-              className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm sm:text-base shadow-xl hover:shadow-2xl shadow-amber-500/25 transition-all disabled:opacity-50 cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-sm sm:text-base shadow-md transition-all disabled:opacity-50 cursor-pointer"
             >
               {submitting ? (
                 <>Đang gửi thông tin đăng ký...</>
@@ -893,7 +893,7 @@ function GuestEventRegistrationPage() {
                 <>Sự Kiện Đã Đủ Số Lượng Đại Biểu (Hết Chỗ)</>
               ) : (
                 <>
-                  <Send className="w-4 h-4 text-slate-950" />
+                  <Send className="w-4 h-4 text-white" />
                   {isFree
                     ? "Gửi Bản Đăng Ký & Nhận Vé Điện Tử E-Ticket (0đ)"
                     : `Gửi Bản Đăng Ký & Nhận Mã VNPAY-QR (${new Intl.NumberFormat("vi-VN").format(

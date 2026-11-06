@@ -1029,7 +1029,7 @@ function CheckinScreen() {
                 type="button"
                 onClick={toggleScan}
                 disabled={submitting}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-black text-slate-950 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 border border-amber-500 active:scale-[0.99] transition-all shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-60"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[14px] font-bold text-white bg-[#003B95] hover:bg-[#002B70] active:scale-[0.99] transition-all shadow-md cursor-pointer disabled:opacity-60"
               >
                 <ScanLine className="h-4 w-4 text-white" />
                 <span className="text-white">
@@ -1188,7 +1188,7 @@ function CheckinScreen() {
                 <button
                   type="button"
                   onClick={() => setMainTab("event_qr")}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs sm:text-sm shadow-xs transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <QrCode className="w-4 h-4 text-amber-300" />
                   <span>Chuyển Sang Mã QR Sự Kiện</span>
@@ -1406,7 +1406,7 @@ function CheckinScreen() {
                 <div className="mt-4">
                   <Link
                     to="/association/events"
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] text-white font-bold text-xs shadow-md transition active:scale-95 inline-flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-xs transition active:scale-95 inline-flex items-center justify-center gap-2"
                   >
                     <Calendar className="w-4 h-4" />
                     <span>Đăng Ký Tham Dự Sự Kiện</span>

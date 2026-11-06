@@ -285,7 +285,7 @@ function PermissionsPage() {
                 type="button"
                 onClick={handleSaveAndProceed}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5 text-slate-950" />
                 <span>{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>

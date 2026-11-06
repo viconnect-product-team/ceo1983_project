@@ -478,7 +478,7 @@ export function AssociationQrScanModal({
                   <button
                     type="button"
                     onClick={() => cameraInputRef.current?.click()}
-                    className="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] text-white font-bold text-xs shadow-md active:scale-95 transition cursor-pointer flex items-center gap-1.5"
+                    className="mt-1 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-white font-bold text-xs shadow-md active:scale-95 transition cursor-pointer flex items-center gap-1.5"
                   >
                     <Camera className="h-4 w-4 text-amber-400" />
                     <span>Mở Máy Ảnh Chụp QR</span>
@@ -734,7 +734,7 @@ export function AssociationQrScanModal({
                     type="button"
                     onClick={handleSendConnection}
                     disabled={connecting}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] text-white py-3 text-[13px] font-bold shadow-md shadow-[#003B95]/30 hover:brightness-110 active:scale-98 transition cursor-pointer disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-white py-3 text-[13px] font-bold shadow-md shadow-[#003B95]/30 hover:brightness-110 active:scale-98 transition cursor-pointer disabled:opacity-50"
                   >
                     <Send className="h-4 w-4 text-amber-300" />
                     <span>{connecting ? "Đang gửi..." : `Kết Nối Ngay Với CEO ${scannedPartner.name}`}</span>
@@ -759,7 +759,7 @@ export function AssociationQrScanModal({
                       toast.success("Đã sao chép liên kết hồ sơ danh thiếp!");
                     }
                   }}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 py-2.5 text-xs font-black shadow-xs transition active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white hover:from-amber-600 hover:to-yellow-600 text-slate-950 py-2.5 text-xs font-black shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <Share2 className="h-3.5 w-3.5" />
                   <span>Chia sẻ hồ sơ</span>

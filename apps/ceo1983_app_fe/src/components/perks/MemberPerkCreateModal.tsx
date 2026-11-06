@@ -541,7 +541,7 @@ export const MemberPerkCreateModal: React.FC<MemberPerkCreateModalProps> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#DC2626] to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-bold shadow-md shadow-red-500/25 cursor-pointer disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md shadow-red-500/25 cursor-pointer disabled:opacity-50 transition"
             >
               <Check className="size-4" />
               <span>{submitting ? "Đang đăng ưu đãi..." : "Phát Hành Ưu Đãi B2B"}</span>

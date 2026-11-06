@@ -301,22 +301,22 @@ export function AssociationAppSignIn({
             </Link>
           </div>
 
-          {/* Submit Button (Deep Navy with Amber Gold Accent) */}
+          {/* Submit Button (Solid Navy CEO 1983 Blue #003B95) */}
           <button
             type="submit"
             disabled={loading}
-            className="relative flex h-11 w-full items-center justify-center rounded-xl text-[15px] font-bold text-amber-300 border border-amber-400/50 transition-all shadow-[0_4px_20px_rgba(245,158,11,0.25)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.4)] hover:brightness-105 active:scale-[0.99] disabled:opacity-60 cursor-pointer bg-gradient-to-r from-[#002B70] via-[#003B95] to-[#002B70] mt-1.5"
+            className="relative flex h-11 w-full items-center justify-center rounded-xl text-[15px] font-bold text-white border border-[#002B70] transition-all shadow-md hover:bg-[#002B70] active:scale-[0.99] disabled:opacity-60 cursor-pointer bg-[#003B95] mt-1.5"
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-amber-300" /> {lang === "en" ? "Verifying..." : "Đang xác thực..."}
+                <Loader2 className="h-4 w-4 animate-spin text-white" /> {lang === "en" ? "Verifying..." : "Đang xác thực..."}
               </span>
             ) : (
               lang === "en" ? "Sign in" : "Đăng nhập"
             )}
             {!loading && (
               <ArrowRight
-                className="absolute right-4 h-4 w-4 text-amber-300"
+                className="absolute right-4 h-4 w-4 text-white"
                 aria-hidden="true"
               />
             )}

@@ -314,7 +314,7 @@ export function ScannedTicketDetailModal({
               type="button"
               disabled={submitting}
               onClick={handleConfirm}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 transition-all cursor-pointer disabled:opacity-60"
+              className="w-full py-3 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all cursor-pointer disabled:opacity-60"
             >
               <UserCheck className="h-4 w-4 text-slate-950" />
               <span>{submitting ? "Đang xác nhận..." : "Xác Nhận Check-In Đại Biểu"}</span>

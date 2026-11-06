@@ -1133,7 +1133,7 @@ function LuckyDrawModal({ onClose }: { onClose: () => void }) {
             <button
               onClick={spin}
               disabled={spinning}
-              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="mt-2 inline-flex items-center gap-2 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white hover:from-blue-700 hover:to-indigo-800 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Sparkles className="h-4 w-4" />
               {spinning ? "Đang quay số..." : "QUAY SỐ NGẪU NHIÊN"}

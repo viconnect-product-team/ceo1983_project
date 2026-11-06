@@ -192,7 +192,7 @@ export function CompanyProfile3DTemplate({
               type="button"
               onClick={handleDownloadPdf}
               disabled={downloading}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#003B95] to-[#1E40AF] hover:from-[#002b70] hover:to-[#173082] text-white text-[11.5px] font-bold shadow-md shadow-blue-900/25 active:scale-95 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              className="px-3.5 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white hover:from-[#002b70] hover:to-[#173082] text-white text-[11.5px] font-bold shadow-md shadow-blue-900/25 active:scale-95 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
               <Download className="size-3.5 text-amber-400" />
               <span>{downloading ? "Đang tải..." : "Tải Profile"}</span>

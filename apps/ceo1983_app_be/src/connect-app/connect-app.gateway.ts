@@ -412,6 +412,11 @@ export class ConnectAppGateway implements OnGatewayConnection, OnGatewayDisconne
     this.server.to(`user:${userId}`).emit('notification:new', notification);
   }
 
+  emitToUser(userId: string, event: string, payload: any) {
+    if (!this.server) return;
+    this.server.to(`user:${userId}`).emit(event, payload);
+  }
+
   emitUnreadNotificationCount(userId: string, unreadCount: number) {
     if (!this.server) return;
     this.server.to(`user:${userId}`).emit('notification:unread_count', { unreadCount });

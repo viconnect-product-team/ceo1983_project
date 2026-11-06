@@ -750,7 +750,7 @@ export function AssociationCardCaptureModal({
                     type="button"
                     onClick={handleSaveToDigitalContacts}
                     disabled={savingContact}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
                   >
                     {savingContact ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />

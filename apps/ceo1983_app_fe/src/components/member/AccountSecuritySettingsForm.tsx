@@ -351,7 +351,7 @@ export function AccountSecuritySettingsForm({
           <button
             type="submit"
             disabled={passwordLoading}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#003B95] to-[#001D4A] hover:brightness-110 py-3 text-xs font-bold text-white shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#003B95] hover:bg-[#002B70] py-3 text-xs font-bold text-white shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
           >
             {passwordLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-white" />
@@ -410,7 +410,7 @@ export function AccountSecuritySettingsForm({
               type="button"
               onClick={handleFinalConfirmActivation}
               disabled={confirmActivatingLoading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {confirmActivatingLoading ? (
                 <Loader2 className="size-4 animate-spin text-slate-950" />

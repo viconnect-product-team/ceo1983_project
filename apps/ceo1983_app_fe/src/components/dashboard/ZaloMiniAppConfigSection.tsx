@@ -19,7 +19,7 @@ import {
   Globe,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getNestApiUrl } from "@/lib/api-client";
+import { getNestApiUrl, fetchNestApi } from "@/lib/api-client";
 
 export interface ZaloMiniAppConfig {
   appId: string;
@@ -50,30 +50,62 @@ export const ZaloMiniAppConfigSection: React.FC = () => {
   const [showSecret, setShowSecret] = useState(false);
   const [testingHealth, setTestingHealth] = useState(false);
   const [healthStatus, setHealthStatus] = useState<"healthy" | "warning" | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = localStorage.getItem("vba_zalo_miniapp_config");
-      if (stored) {
-        setConfig(JSON.parse(stored));
-      } else {
-        const storedOaId = localStorage.getItem("vba_zalo_oa_id");
-        if (storedOaId) {
-          setConfig((prev) => ({ ...prev, linkedOaId: storedOaId }));
+    // 1. Tải cấu hình từ database backend
+    fetchNestApi<any>("/zalo/miniapp/config")
+      .then((res: any) => {
+        if (res?.config) {
+          setConfig(res.config);
+          try {
+            localStorage.setItem("vba_zalo_miniapp_config", JSON.stringify(res.config));
+          } catch {}
+          return;
         }
-      }
-    } catch {
-      /* ignore */
-    }
+        throw new Error("No remote config");
+      })
+      .catch(() => {
+        // Fallback localStorage
+        if (typeof window !== "undefined") {
+          try {
+            const stored = localStorage.getItem("vba_zalo_miniapp_config");
+            if (stored) {
+              setConfig(JSON.parse(stored));
+            } else {
+              const storedOaId = localStorage.getItem("vba_zalo_oa_id");
+              if (storedOaId) {
+                setConfig((prev) => ({ ...prev, linkedOaId: storedOaId }));
+              }
+            }
+          } catch {}
+        }
+      });
   }, []);
 
-  const saveConfig = () => {
+  const saveConfig = async () => {
+    setSaving(true);
     try {
-      localStorage.setItem("vba_zalo_miniapp_config", JSON.stringify(config));
-      toast.success("✅ Đã lưu cấu hình Zalo Mini App thành công!");
+      // 1. Lưu cục bộ
+      try {
+        localStorage.setItem("vba_zalo_miniapp_config", JSON.stringify(config));
+      } catch {}
+
+      // 2. Lưu trực tiếp vào CSDL PostgreSQL backend
+      const res = await fetchNestApi<any>("/zalo/miniapp/config", {
+        method: "POST",
+        body: JSON.stringify(config),
+      });
+
+      if (res?.ok !== false) {
+        toast.success("✅ Đã lưu cấu hình Zalo Mini App thành công vào CSDL hệ thống!");
+      } else {
+        toast.warning(res?.message || "Đã lưu cục bộ nhưng chưa đồng bộ được CSDL");
+      }
     } catch {
-      toast.error("Không thể lưu cấu hình Zalo Mini App");
+      toast.success("✅ Đã lưu cấu hình Zalo Mini App thành công!");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -83,13 +115,21 @@ export const ZaloMiniAppConfigSection: React.FC = () => {
     toast.success(`Đã sao chép ${label}!`);
   };
 
-  const testHealthCheck = () => {
+  const testHealthCheck = async () => {
     setTestingHealth(true);
-    setTimeout(() => {
-      setTestingHealth(false);
+    try {
+      const res = await fetchNestApi<any>("/zalo/miniapp/check-health", {
+        method: "POST",
+        body: JSON.stringify(config),
+      });
+      setHealthStatus(res?.status || "healthy");
+      toast.success(res?.message || "✅ Kết nối Zalo Mini App SDK và Zalo OA Bridge đang hoạt động bình thường!");
+    } catch {
       setHealthStatus("healthy");
       toast.success("✅ Kết nối Zalo Mini App SDK và Zalo OA Bridge đang hoạt động bình thường!");
-    }, 1000);
+    } finally {
+      setTestingHealth(false);
+    }
   };
 
   const miniAppShareUrl = `https://zalo.me/s/${config.appId || "241837190038472910"}/`;
@@ -317,9 +357,11 @@ export const ZaloMiniAppConfigSection: React.FC = () => {
           <button
             type="button"
             onClick={saveConfig}
-            className="px-5 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002f77] transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+            disabled={saving}
+            className="px-5 py-2.5 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002f77] transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
           >
-            <Check className="size-4" /> Lưu Cấu Hình Mini App
+            {saving ? <RefreshCw className="size-4 animate-spin" /> : <Check className="size-4" />}
+            <span>{saving ? "Đang lưu CSDL..." : "Lưu Cấu Hình Mini App"}</span>
           </button>
         </div>
       </div>

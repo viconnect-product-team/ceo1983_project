@@ -851,7 +851,7 @@ function StandaloneGuestEventRegistrationPage() {
               className={`w-full py-4 px-6 rounded-2xl font-black text-sm sm:text-base text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer ${
                 isFull
                   ? "bg-slate-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-[#002B70] via-[#003B95] to-[#0A4DB0] hover:from-[#00225A] hover:to-[#002B70] shadow-blue-900/30"
+                  : "bg-[#003B95] hover:bg-[#002B70] shadow-blue-900/30"
               }`}
             >
               {submitting ? (

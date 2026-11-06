@@ -52,7 +52,7 @@ export function Ceo1983ColorThemeModal({ open, onClose }: Ceo1983ColorThemeModal
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-xs shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md hover:brightness-105 active:scale-95 transition cursor-pointer"
           >
             Hoàn tất
           </button>

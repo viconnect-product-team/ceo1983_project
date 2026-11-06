@@ -1,5 +1,62 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 06/11/2026 (v10.45): Nâng Cấp Hệ Thống Bình Luận Chuẩn Facebook (Cây Phân Cấp, Tag Tên @ Kèm Thông Báo Đẩy, Đưa Lên Đầu Khi Có Phản Hồi Mới), Đồng Bộ Bình Luận Thống Kê, Xóa Bỏ Toàn Bộ Nút Gradient Chuyển Chuẩn Xanh Navy CEO 1983, Bộ Lọc & Phân Đoạn Thời Gian Thông Báo (Hôm Nay, 1 Ngày Trước, Tuần Trước, Tháng), Fix Triệt Để OpenGraph Share FB/Zalo & Deep Linking, Hoàn Tất Lên Lịch Gặp B2B 3 Case ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007], [NODE-APP-009], [NODE-APP-010])**:
+  1. *Nâng Cấp Hệ Thống Bình Luận Chuẩn Facebook & Tag Tên @ Kèm Push Notification (`[NODE-APP-003]`, `[NODE-APP-009]`)*:
+     - **Cấu trúc phân cấp Threaded Tree (`CommentTreeSection.tsx`)**: Hỗ trợ hiển thị xem tất cả bình luận, chia tầng phân cấp phản hồi (cha - con) với đường kẻ chỉ dẫn trực quan giống Facebook.
+     - **Thuật toán đẩy bình luận lên đầu**: Bình luận mới nhất hoặc luồng thảo luận có tương tác mới được tự động đẩy lên đầu danh sách (`timeB - timeA`).
+     - **Tính năng Tag tên @ Hội viên**: Tự động nhận diện ký tự `@` trên ô nhập liệu, kích hoạt popup gợi ý hội viên gọi API `/members/directory?connectedOnly=true` (danh sách đã kết nối) kèm fallback thông minh từ danh bạ CLB; tag tên được highlight màu xanh thương hiệu; tự động gửi bản ghi thông báo đẩy thời gian thực (`member_notifications`, `business_notifications` và Socket.IO) tới tài khoản được nhắc tên.
+     - **Đồng bộ hóa 100% giữa Mạng lưới & Thống kê**: Tích hợp `CommentTreeSection` vào `association.analytics.tsx` giúp hội viên thảo luận và tương tác trên từng chỉ số thống kê với trải nghiệm tương đồng với mạng lưới bản tin.
+  2. *Triệt Tiêu Hoàn Toàn Nút Bấm Gradient - Chuẩn Hóa Màu Thương Hiệu Xanh Navy CEO 1983*:
+     - Quét toàn bộ mã nguồn frontend, xóa bỏ toàn bộ các lớp `bg-gradient-to-...` trên các nút bấm thao tác (`<button>`, `<Button>`).
+     - Chuyển đổi đồng nhất 100% sang màu Xanh Navy nhận diện chuẩn của CLB Doanh Nhân CEO 1983 (`bg-[#003B95] hover:bg-[#002B70] text-white shadow-xs`), đảm bảo tính sang trọng, nghiêm túc và đúng bộ nhận diện thương hiệu.
+  3. *Bộ Lọc Tự Động & Phân Nhóm Thời Gian Màn Hình Thông Báo (`[NODE-APP-010]`)*:
+     - Trang bị thanh chọn thời gian trong danh mục "Tất cả": `[Mới nhất | 1 ngày trước | Tuần trước | Tháng]`.
+     - Phân nhóm trực quan bằng các nhãn mốc thời gian rõ ràng: `🌟 Mới nhất (Hôm nay)`, `⏳ 1 ngày trước (Hôm qua)`, `📅 Tuần trước`, `🗓️ Tháng này & Cũ hơn`.
+  4. *Khắc Phục Lỗi Chia Sẻ Mạng Xã Hội (Facebook, Zalo) & Deep Linking Ngoài Vào Trong*:
+     - Sửa cấu hình Global Prefix của NestJS tại `main.ts` loại trừ cả `api/share` và `share`, đảm bảo Facebook bot crawler truy cập đúng dynamic HTML thẻ OpenGraph tại `app.controller.ts` với đầy đủ tiêu đề, mô tả và hình ảnh thực tế của cơ hội/sản phẩm.
+     - Tích hợp hook lắng nghe tham số URL (`?id=`, `?opportunityId=`, `?productId=`) tại `association.opportunities.tsx` và `association.products.tsx` để tự động mở bung popup chi tiết khi hội viên bấm từ Facebook/Zalo vào App.
+  5. *Chuẩn Hóa Chỉ Số Thống Kê, Đơn Vị Biểu Đồ & Minh Chứng Giao Thương*:
+     - Tách bạch đơn vị tooltip biểu đồ: chỉ số số lượng hiển thị `"Cơ hội"` / `"Lượt"`, chỉ số tài chính hiển thị `"Tỷ VNĐ"`, chấm dứt hoàn toàn tình trạng hiển thị gộp sai lệch `"Cơ hội / Tỷ VNĐ"`.
+     - Chạm vào từng ô chỉ số giao thương để mở Modal minh chứng giao thương minh bạch (`ProofModal`).
+     - Bổ sung bộ lọc quy mô tài chính (`< 500 Tr`, `500 Tr - 2 Tỷ`, `2 Tỷ - 10 Tỷ`, `> 10 Tỷ`), nút chuyển đổi biểu đồ tròn Donut Chart và thanh chọn chu kỳ thời gian dọc (`Phút`, `Giờ`, `Ngày`).
+  6. *Hoàn Thiện Luồng Đặt Lịch Hẹn B2B (3 Case) & Giá Tiền Sản Phẩm*:
+     - Case 1 (Kết nối B2B), Case 2 (Từ chia sẻ cơ hội), Case 3 (Từ gian hàng sàn thương mại): Nút "Lên lịch B2B" trên thẻ sản phẩm và modal chi tiết `ShopeeProductDetailModal.tsx` kích hoạt `BusinessConnectBottomSheet`, lưu lịch hẹn và tự động nhắn tin tới đối tác.
+     - Sửa lỗi định dạng giá tiền (ví dụ `2` -> `2 Tỷ đ`). Sửa ép kiểu `BigInt` cho trường `price` trong `marketplace.service.ts` để tương thích hoàn toàn CSDL PostgreSQL.
+  7. *Tối Ưu Debounce Tìm Kiếm (300-350ms) & Chuẩn Hóa Tiêu Đề Mạng Lưới*:
+     - Ngăn chặn triệt để tình trạng spam API liên tục khi gõ từng ký tự hoặc phím khoảng trắng trên thanh tìm kiếm tại `network.tsx` và `SavedCardsLibrary.tsx`.
+     - Cập nhật tiêu đề mạng lưới: *"Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983"*.
+  8. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ quy tắc không tự ý commit hoặc push Git (Strict Rule 1).
+
+- **Bản cập nhật ngày 06/11/2026 (v10.44): Hoàn Tất Toàn Diện 12 Yêu Cầu Nâng Cấp Web CRM & Mobile App CEO 1983, 3 Chế Độ Xuất Excel & Nhập Thông Minh Tự Bóc Tách Trường, Tích Hợp Đa Kênh FB/Zalo/Web 1-Click Auto Post, Trợ Lý AI Hướng Dẫn Thao Tác Chuẩn Ngân Hàng ("Giáo Viên Đứng Cạnh Bảng"), Dọn Dẹp CSDL Giữ Duy Nhất Admin & Ban Hành Bộ Tài Liệu BRD/SRS V8.0 Đa Phân Hệ ([NODE-CORE-001], [NODE-CORE-002], [NODE-CRM-001] đến [NODE-CRM-021], [NODE-APP-001] đến [NODE-APP-016])**:
+  1. *Hoàn Thiện Toàn Diện Phân Hệ Mobile App CEO 1983*:
+     - **OpenGraph & Chia Sẻ Hai Chiều**: Khắc phục triệt để lỗi mất format khi share ra Facebook/Zalo qua dynamic OpenGraph endpoint tại `app.controller.ts`; hiển thị trọn vẹn thẻ xem trước Facebook Share Card khi dán link ngoài vào App tại `FeedView.tsx`; sửa ép kiểu `text[]` cho `image_urls` trong `feed.service.ts` tránh lỗi PostgreSQL `42804`.
+     - **Chỉ Số Giao Thương & Dẫn Chứng Minh Bạch**: Bổ sung modal xem chi tiết dẫn chứng khi chạm ô chỉ số tại `association.opportunities.tsx`. Sửa tooltip biểu đồ thống nhất đơn vị hiển thị, bổ sung bộ lọc khoảng tiền tệ và nút chuyển đổi biểu đồ tròn (Donut Chart) tại `association.analytics.tsx`.
+     - **Tự Động Gửi Tin Nhắn Cuộc Hẹn B2B (3 Case)**: Tự động gửi tin nhắn vào hộp thư khi: (1) Kết nối B2B, (2) Chia sẻ cơ hội, (3) Sàn sản phẩm thương mại. Tự động bắn tin nhắn xác nhận lịch gặp khi đối tác bấm đồng ý cuộc hẹn (`meetings.service.ts`).
+     - **Tối Ưu Tìm Kiếm & Chặn Spam API**: Áp dụng Debounce 350ms trên ô tìm kiếm tại `association.messages.tsx`, ngắt hoàn toàn tình trạng gọi API liên tục khi gõ từng ký tự hoặc phím Space; tối ưu hóa Comment Caching trong `FeedView.tsx`.
+     - **Sửa Lỗi Parse Tiền Tệ & Phản Hồi Tức Thì**: Khắc phục lỗi dấu chấm phân tách hàng nghìn (`2.000.000.000 đ`) với `parseVnNumber()` và `parseVnProductNumber()`; trang bị reactive state `localOpps` và `localProducts` cập nhật UI tức thì khi Sửa/Xóa/Tạo mới; bổ sung alias `@Patch('products/:id')` và `@Put(':id')`.
+     - **Chuẩn Hóa Tiêu Đề**: Đặt tiêu đề hiển thị chuẩn xác: *"Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983"*.
+  2. *Hoàn Thiện Toàn Diện Phân Hệ Cổng Quản Trị Web CRM CEO 1983*:
+     - **Cấu Hình Zalo Mini App**: Kết nối trực tiếp CSDL PostgreSQL qua API `GET /zalo/miniapp/config`, `POST /zalo/miniapp/config` và kiểm tra sức khỏe `POST /zalo/miniapp/check-health` tại `ZaloMiniAppConfigSection.tsx`.
+     - **Thống Kê Chuyên Sâu CRM & 3 Chế Độ Xuất Excel**: Triển khai `CrmExcelExportModal.tsx` với 3 chế độ: (1) Xuất toàn bộ theo thời gian (Tháng/Quý/Năm) có dòng tổng cộng, (2) Xuất chi tiết theo từng hội viên thành các sheet riêng biệt, (3) Xuất phân tích biến động (Delta %) và phân loại hội viên.
+     - **Nhập Dữ Liệu Excel Thông Minh (Smart Import)**: Triển khai `CrmExcelImportModal.tsx` kéo thả tệp Excel, tự động bóc tách và ánh xạ thông minh các cột (Họ tên, SĐT, Email, Công ty, Chức vụ, Ngành nghề, Ban); Live Preview kiểm tra dữ liệu hợp lệ; tải mẫu chuẩn `.xlsx`; lưu CSDL qua API `POST /members/bulk-import`.
+     - **Tích Hợp Đa Nền Tảng (FB, Zalo, Web) & Đăng Bài 1-Click**: Cấu hình link Hội nhóm Facebook, Fanpage, Nhóm Zalo, Website tại `SyndicationConfigSection.tsx`; xây dựng module Backend `SyndicationModule` (`syndication.controller.ts`, `syndication.service.ts`); cung cấp modal đăng bài 1-click tự động phát hành Sự kiện, Cuộc họp lên tất cả các kênh và trả về link xem trực tiếp.
+  3. *Trợ Lý Cố Vấn Số AI & Trải Nghiệm Onboarding Chuẩn Ngân Hàng*:
+     - **Mô Hình "Giáo Viên Đứng Cạnh Bảng" (`ViOneAiTutorGuide.tsx`)**: Avatar AI bên trái, khung bảng lớp học bên phải chứa chỉ dẫn thao tác, lời khuyên thực chiến, khung hỏi đáp với AI và các nút "Tiếp tục" / "Tôi đã hiểu". Bao phủ đầy đủ các Use Case (UC) trọng yếu của CRM và Mobile App.
+     - **Modal Chào Mừng Ngày Đầu Tiên Đăng Nhập (`FirstDayAiWelcomeModal.tsx`)**: Tự động nhận diện lần đầu đăng nhập, chào hỏi thân mật, điểm qua lịch hẹn 14:30 và sự kiện sắp tới.
+  4. *Dọn Dẹp CSDL Giữ Duy Nhất Tài Khoản Admin*:
+     - Thực thi an toàn kịch bản `cleanup_database_except_admin.js`, làm sạch toàn bộ các bảng nghiệp vụ, bảo toàn 100% tài khoản Quản trị viên tối cao `admin@connect.vn` (`00000000-0000-4000-8000-000000000002`) và hồ sơ hội viên đại diện.
+  5. *Ban Hành Bộ Tài Liệu BRD & SRS V8.0 Toàn Diện*:
+     - Master BRD V8.0: `document/BRD_CEO1983_HE_THONG_TOAN_DIEN_V8.md` & `document/notebooklm/07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_V8.md`.
+     - Master SRS V8.0: `document/SRS_CEO1983_HE_THONG_TOAN_DIEN_V8.md` & `document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_V8.md`.
+     - 6 Tài liệu đặc tả phân hệ chi tiết: `BRD_SRS_SUB_01` đến `BRD_SRS_SUB_06` trong thư mục `document/sub_specs/`.
+  6. *Kiểm Tra Chất Lượng Mã Nguồn (Strict Type Check)*:
+     - `npx tsc --noEmit` tại `apps/ceo1983_app_be` -> Exit code 0 (0 errors).
+     - `npx tsc --noEmit` tại `apps/ceo1983_app_fe` -> Exit code 0 (0 errors).
+     - Tuyệt đối không tự ý chạy `git commit` hay `git push` (Strict Rule 1).
+
 - **Bản cập nhật ngày 05/11/2026 (v10.43): Triệt Tiêu Dữ Liệu Fake Chức Năng AI CRM & Nâng Cấp Multi-Persona Proactive Alert Trợ Lý Thực Thụ, Xóa Bỏ Bục Vinh Danh & Top Giả Khi Chưa Có Dữ Liệu Thật (CRM & App), Kiểm Thử Hoàn Tất Giới Hạn Sàn Thương Mại B2B Tối Đa 5 Sản Phẩm & Lên Lịch Hẹn Kết Nối Mua Hàng ([NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-015], [NODE-CRM-016], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-010])**:
   1. *Triệt tiêu toàn diện dữ liệu Fake trong chức năng AI CRM & Triển khai Trợ lý Chuyên biệt Đa Persona (Proactive Alert)*:
      - **Triệt tiêu số liệu giả**: Khắc phục lỗi SQL `column "budget" does not exist` trong bảng `public.opportunities` (chuyển sang `coalesce(budget_max, budget_min, 0)`), sửa truy vấn bảng tài chính trỏ chuẩn xác 100% vào `public.transactions` (số dư thực tế 105.000.000 VNĐ, 5 giao dịch thu, 0 giao dịch chi). Loại bỏ vĩnh viễn các con số hardcode 420 triệu, 185 triệu và 18.5 tỷ.

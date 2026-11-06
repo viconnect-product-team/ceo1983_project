@@ -117,6 +117,7 @@ function ConnectAppNotificationsPage() {
   const { lang } = useLang();
   const locale = lang === "en" ? "en-GB" : "vi-VN";
   const [tab, setTab] = useState<Tab>("unread");
+  const [timeFilter, setTimeFilter] = useState<"all" | "1day" | "1week" | "1month">("all");
   const [actionStates, setActionStates] = useState<Record<string, "accepted" | "declined">>({});
   const [votedPolls, setVotedPolls] = useState<Record<string, string>>({});
 
@@ -140,6 +141,21 @@ function ConnectAppNotificationsPage() {
 
   const items: NotificationDTO[] = useMemo(() => query.data?.items ?? [], [query.data]);
   const unreadItems = items.filter((n) => n.readAt === null);
+
+  const displayItems = useMemo(() => {
+    let list = items;
+    if (tab === "all") {
+      const now = Date.now();
+      if (timeFilter === "1day") {
+        list = list.filter((n) => now - new Date(n.createdAt).getTime() <= 24 * 60 * 60 * 1000);
+      } else if (timeFilter === "1week") {
+        list = list.filter((n) => now - new Date(n.createdAt).getTime() <= 7 * 24 * 60 * 60 * 1000);
+      } else if (timeFilter === "1month") {
+        list = list.filter((n) => now - new Date(n.createdAt).getTime() <= 30 * 24 * 60 * 60 * 1000);
+      }
+    }
+    return list.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [items, tab, timeFilter]);
   const busy = markRead.isPending || markUnread.isPending || deleteNotif.isPending;
 
   const tabs: Array<{ value: Tab; text: string }> = [
@@ -237,6 +253,37 @@ function ConnectAppNotificationsPage() {
           })}
         </div>
 
+        {/* BỘ LỌC TỰ ĐỘNG SẮP XẾP THEO THỜI GIAN TRONG DANH MỤC TẤT CẢ (YÊU CẦU 3) */}
+        {tab === "all" && (
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-[#121926] border border-slate-200/80 dark:border-[#243042]">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 pl-2 pr-0.5 shrink-0">
+              Thời gian:
+            </span>
+            {[
+              { key: "all", label: "Mới nhất" },
+              { key: "1day", label: "1 ngày trước" },
+              { key: "1week", label: "Tuần trước" },
+              { key: "1month", label: "Tháng" },
+            ].map((item) => {
+              const isActive = timeFilter === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setTimeFilter(item.key as any)}
+                  className={`flex-1 py-1 px-2 rounded-lg text-xs font-semibold transition cursor-pointer text-center ${
+                    isActive
+                      ? "bg-[#003B95] text-white shadow-xs font-bold"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {unreadItems.length > 0 ? (
           <button
             type="button"
@@ -278,7 +325,7 @@ function ConnectAppNotificationsPage() {
               {t("bc.mobile.notifications.page.retry")}
             </button>
           </section>
-        ) : items.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <section className="flex flex-col items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-[#243042] bg-white dark:bg-[#0c121d] px-6 py-12 text-center shadow-xs">
             <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-[#D8B282]">
               <Bell className="size-6" strokeWidth={1.8} aria-hidden />
@@ -298,7 +345,7 @@ function ConnectAppNotificationsPage() {
             className="grid gap-3"
             data-testid="bc-notifications-list"
           >
-            {items.map((n: any) => {
+            {displayItems.map((n: any) => {
               const unread = n.readAt === null;
               const isConnectionNotification =
                 n.notificationKind === "connection_request_received" ||

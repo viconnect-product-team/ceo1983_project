@@ -124,10 +124,17 @@ function PublicSharePage() {
     async function loadItem() {
       setLoading(true);
       try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const qTitle = searchParams.get("title");
+        const qDesc = searchParams.get("desc") || searchParams.get("snippet");
+        const qImage = searchParams.get("image");
+        const qCompany = searchParams.get("company");
+        const qPrice = searchParams.get("price") || searchParams.get("value");
+
         if (type === "event") {
-          // Thử tải event từ backend hoặc mock
-          const events = await fetchNestApi<any[]>("/events").catch(() => []);
-          const found = Array.isArray(events) ? events.find((e: any) => String(e.id) === String(id)) : null;
+          // Thử tải event từ backend
+          const single = await fetchNestApi<any>(`/events/${id}`).catch(() => null);
+          const found = single || (await fetchNestApi<any[]>("/events").catch(() => [])).find((e: any) => String(e.id) === String(id));
           if (found && isMounted) {
             setItem({
               id: found.id,
@@ -135,18 +142,18 @@ function PublicSharePage() {
               title: found.title,
               subtitle: found.category || "Sự kiện CLB CEO 1983",
               content: found.description || found.content || "Chương trình sự kiện trọng điểm của CLB CEO 1983 - HanoiBA.",
-              image: found.image || "/skyline_perspective_dark.jpg",
-              date: found.date,
+              image: found.cover_image || found.banner_url || found.image || "/skyline_perspective_dark.jpg",
+              date: found.event_date || found.date,
               time: found.time,
-              place: found.place || found.location,
+              place: found.location || found.place,
               externalLink: found.fanpageUrl || found.webArticleUrl,
             });
             recordExternalShareClick(found.id, "event", found.title, platform, false);
             return;
           }
         } else if (type === "opportunity") {
-          const opps = await fetchNestApi<any[]>("/opportunities").catch(() => []);
-          const found = Array.isArray(opps) ? opps.find((o: any) => String(o.id) === String(id)) : null;
+          const single = await fetchNestApi<any>(`/opportunities/${id}`).catch(() => null);
+          const found = single || (await fetchNestApi<any[]>("/opportunities").catch(() => [])).find((o: any) => String(o.id) === String(id));
           if (found && isMounted) {
             setItem({
               id: found.id,
@@ -154,18 +161,35 @@ function PublicSharePage() {
               title: found.title,
               subtitle: found.industry || "Cơ hội giao thương B2B",
               content: found.description || found.desc || "Cơ hội kinh doanh và tìm kiếm đối tác cung ứng trong hiệp hội.",
-              image: found.image,
-              authorName: found.posterName || found.authorName,
+              image: found.image || (Array.isArray(found.images) ? found.images[0] : undefined),
+              authorName: found.contact_name || found.posterName || found.authorName,
               authorCompany: found.company,
-              value: found.budgetMax || found.value,
+              value: Number(found.budget_max || found.budgetMax || found.budget_min || found.value) || undefined,
               externalLink: found.externalLink || found.fanpageUrl,
             });
             recordExternalShareClick(found.id, "opportunity", found.title, platform, false);
             return;
           }
-        } else if (type === "post") {
-          const posts = await fetchNestApi<any[]>("/feed").catch(() => []);
-          const found = Array.isArray(posts) ? posts.find((p: any) => String(p.id) === String(id)) : null;
+        } else if (type === "product" || (type as string) === "marketplace") {
+          const single = await fetchNestApi<any>(`/products/${id}`).catch(() => null);
+          const found = single || (await fetchNestApi<any[]>("/products").catch(() => [])).find((p: any) => String(p.id) === String(id));
+          if (found && isMounted) {
+            setItem({
+              id: found.id,
+              type: "opportunity",
+              title: found.name || found.title || "Sản phẩm B2B",
+              subtitle: found.category || "Sàn Thương Mại CEO 1983",
+              content: found.description || "Sản phẩm / Dịch vụ tiêu biểu từ Hội viên Doanh nhân CEO 1983.",
+              image: found.image_url || found.imageUrl || (Array.isArray(found.image_urls) ? found.image_urls[0] : undefined),
+              authorCompany: found.company,
+              value: Number(found.member_price || found.price) || undefined,
+            });
+            recordExternalShareClick(found.id, "product", found.name || found.title, platform, false);
+            return;
+          }
+        } else if (type === "post" || (type as string) === "feed") {
+          const single = await fetchNestApi<any>(`/feed/${id}`).catch(() => null);
+          const found = single || (await fetchNestApi<any[]>("/feed").catch(() => [])).find((p: any) => String(p.id) === String(id));
           if (found && isMounted) {
             setItem({
               id: found.id,
@@ -176,7 +200,7 @@ function PublicSharePage() {
               image: Array.isArray(found.images) && found.images.length > 0 ? found.images[0] : undefined,
               authorName: found.authorName,
               authorAvatar: found.authorAvatar,
-              authorCompany: found.department,
+              authorCompany: found.department || found.authorCompany,
               externalLink: found.externalLink,
             });
             recordExternalShareClick(found.id, "post", found.title || found.content.slice(0, 30), platform, false);
@@ -184,7 +208,23 @@ function PublicSharePage() {
           }
         }
 
-        // Fallback demo data
+        // Nếu có query params truyền từ link share, ưu tiên render ngay lập tức
+        if (qTitle && isMounted) {
+          setItem({
+            id,
+            type: (type as any) || "opportunity",
+            title: qTitle,
+            subtitle: qCompany ? `Doanh nghiệp: ${qCompany}` : "Hệ Sinh Thái Doanh Nhân CEO 1983",
+            content: qDesc || "Bấm vào để xem chi tiết và kết nối trực tiếp với hội viên CEO 1983.",
+            image: qImage || undefined,
+            authorCompany: qCompany || undefined,
+            value: qPrice ? Number(qPrice) : undefined,
+          });
+          recordExternalShareClick(id, type, qTitle, platform, false);
+          return;
+        }
+
+        // Fallback demo data nếu không có bất kỳ thông tin nào
         if (isMounted) {
           const fallbackTitle =
             type === "event"
@@ -398,7 +438,7 @@ function PublicSharePage() {
                 <button
                   type="button"
                   onClick={handleNavigateToLogin}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/20 hover:brightness-105 active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-sm shadow-xl active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Xem Chi Tiết Bài Viết (Đăng Nhập)</span>
                   <ArrowRight className="size-4 stroke-[2.5]" />

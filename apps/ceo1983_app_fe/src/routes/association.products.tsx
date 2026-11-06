@@ -55,6 +55,7 @@ import {
 import { exportProductsToExcel, type ParsedProductItem } from "@/lib/marketplace-excel";
 import { ProductExcelModal } from "@/components/dashboard/ProductExcelModal";
 import { ShopeeProductDetailModal } from "@/components/marketplace/ShopeeProductDetailModal";
+import { BusinessConnectBottomSheet, type BusinessConnectTarget } from "@/components/common/BusinessConnectBottomSheet";
 import {
   ProductPostModal,
   ProductQuoteModal,
@@ -124,22 +125,68 @@ function formatCurrencyInput(val: string | number): string {
   return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+function parseVnProductNumber(val: string | number | undefined | null): number {
+  if (val === undefined || val === null || val === "") return 0;
+  if (typeof val === "number") return val;
+  const s = String(val).trim().toLowerCase();
+  if (s === "liên hệ" || s === "thương lượng" || s === "thỏa thuận") return 0;
+  const hasTy = s.includes("tỷ") || s.includes("ty");
+  const hasTr = s.includes("tr") || s.includes("trieu") || s.includes("triệu");
+  let clean = s.replace(/[^\d.,]/g, "");
+  if (clean.includes(".") && clean.includes(",")) {
+    clean = clean.replace(/\./g, "").replace(",", ".");
+  } else if (clean.includes(".")) {
+    const parts = clean.split(".");
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+      clean = clean.replace(/\./g, "");
+    }
+  } else if (clean.includes(",")) {
+    const parts = clean.split(",");
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3 && !hasTy && !hasTr)) {
+      clean = clean.replace(/,/g, "");
+    } else {
+      clean = clean.replace(",", ".");
+    }
+  }
+  const n = parseFloat(clean);
+  if (isNaN(n) || n <= 0) return 0;
+  if (hasTy) return n * 1_000_000_000;
+  if (hasTr) return n * 1_000_000;
+  if (n <= 100 && !s.includes("đ") && !s.includes("vnd")) {
+    return n * 1_000_000_000;
+  }
+  return n;
+}
+
 function formatSmartProductPrice(rawPrice: string | number | undefined | null): string {
   if (!rawPrice) return "Liên hệ";
   if (typeof rawPrice === "string") {
-    if (rawPrice.includes("Tỷ") || rawPrice.includes("Tr") || rawPrice.toLowerCase().includes("thương lượng") || rawPrice.toLowerCase().includes("liên hệ")) {
-      return rawPrice;
+    const s = rawPrice.trim();
+    if (s.toLowerCase().includes("thương lượng") || s.toLowerCase().includes("liên hệ") || s.toLowerCase().includes("thỏa thuận")) {
+      return "Liên hệ";
+    }
+    if (s.includes(" - ")) {
+      const parts = s.split(" - ");
+      const p1 = parseVnProductNumber(parts[0]);
+      const p2 = parseVnProductNumber(parts[1]);
+      if (p1 > 0 && p2 > 0) {
+        return `${formatSmartProductPrice(p1)} - ${formatSmartProductPrice(p2)}`;
+      }
+      return s;
     }
   }
-  const num = typeof rawPrice === "number" ? rawPrice : Number(String(rawPrice).replace(/\D/g, ""));
-  if (isNaN(num) || num <= 0) return typeof rawPrice === "string" && rawPrice.trim() ? rawPrice : "Liên hệ";
+  const num = typeof rawPrice === "number" ? rawPrice : parseVnProductNumber(rawPrice);
+  if (isNaN(num) || num <= 0) return "Liên hệ";
+  if (num > 0 && num <= 100) {
+    return `${num} Tỷ đ`;
+  }
   if (num >= 1_000_000_000) {
     const billions = num / 1_000_000_000;
-    return `${billions % 1 === 0 ? billions : billions.toFixed(1).replace(".0", "")} Tỷ đ`;
+    return `${billions % 1 === 0 ? billions : billions.toFixed(1).replace(/\.0$/, "")} Tỷ đ`;
   }
   if (num >= 1_000_000) {
     const millions = num / 1_000_000;
-    return `${millions % 1 === 0 ? millions : millions.toFixed(1).replace(".0", "")} Tr đ`;
+    return `${millions % 1 === 0 ? millions : millions.toFixed(1).replace(/\.0$/, "")} Tr đ`;
   }
   return `${num.toLocaleString("vi-VN")} đ`;
 }
@@ -172,6 +219,16 @@ function ProductsScreen() {
   const { data: initialProducts, loading, reload } = useServerData<MyProduct[]>(() => fetchProducts(), []);
   const { data: member } = useServerData<MyMember | null>(() => fetchMember(), null);
 
+  const [localProducts, setLocalProducts] = useState<MyProduct[] | null>(null);
+
+  useEffect(() => {
+    if (initialProducts) {
+      setLocalProducts(initialProducts);
+    }
+  }, [initialProducts]);
+
+  const activeProductsSource = localProducts !== null ? localProducts : (initialProducts || []);
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -195,6 +252,41 @@ function ProductsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [selectedDetailProduct, setSelectedDetailProduct] = useState<MyProduct | null>(null);
+  const [meetingTarget, setMeetingTarget] = useState<BusinessConnectTarget | null>(null);
+
+  // Deep Link xử lý khi nhấp từ link chia sẻ bên ngoài vào app (?id=... hoặc ?productId=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const targetProdId = sp.get("id") || sp.get("productId") || sp.get("prodId");
+      if (!targetProdId) return;
+
+      const found = activeProductsSource.find((p) => String(p.id) === String(targetProdId));
+      if (found) {
+        setSelectedDetailProduct(found);
+      } else {
+        fetchNestApi<any>(`/products/${targetProdId}`)
+          .then((res) => {
+            if (res && res.id) {
+              setSelectedDetailProduct(res);
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {}
+  }, [activeProductsSource]);
+
+  const handleScheduleMeetingWithSeller = (p: MyProduct) => {
+    setMeetingTarget({
+      code: p.sellerId || (p as any).userId || "seller",
+      name: p.sellerName || p.company || "Chủ gian hàng",
+      company: p.company || "CLB Doanh Nhân CEO 1983",
+      avatar: p.sellerAvatar || "/ceo1983-emblem-8.png",
+      title: "Chủ gian hàng",
+      userId: p.sellerId || (p as any).userId,
+    });
+  };
 
   // Recent Categories (Shopee style - dưới tìm kiếm là danh mục gần đây đã chọn)
   const [recentCategories, setRecentCategories] = useState<string[]>(() => {
@@ -788,7 +880,7 @@ function ProductsScreen() {
   const [updatingProduct, setUpdatingProduct] = useState(false);
 
   const allProducts = useMemo(() => {
-    const arr = (initialProducts || []).map((p) => {
+    const arr = (activeProductsSource || []).map((p) => {
       if (checkIsProductOwner(p) && resolvedProfileCompany && resolvedProfileCompany !== "CLB Doanh Nhân CEO 1983") {
         return { ...p, company: resolvedProfileCompany };
       }
@@ -1119,6 +1211,7 @@ function ProductsScreen() {
       );
       toast.success("Đã xóa sản phẩm thành công!");
       removeDeletedProductFromHistory(id);
+      setLocalProducts((prev) => (prev || []).filter((p) => p.id !== id));
       if (editingProduct?.id === id) setEditingProduct(null);
       reload();
     } catch {
@@ -1140,6 +1233,9 @@ function ProductsScreen() {
     try {
       await fetchNestApi(`/marketplace/products/${id}/toggle-sold`, { method: "PATCH" });
       toast.success(isSoldNow ? "Đã đánh dấu sản phẩm là đã bán!" : "Đã mở bán lại sản phẩm thành công!");
+      setLocalProducts((prev) =>
+        (prev || []).map((p) => (p.id === id ? { ...p, status: isSoldNow ? "sold" : "active" } : p))
+      );
       reload();
     } catch {
       toast.error("Không thể cập nhật trạng thái sản phẩm. Vui lòng thử lại!");
@@ -1184,6 +1280,34 @@ function ProductsScreen() {
           body: JSON.stringify(updatePayload),
         })
       );
+
+      const formattedP = cleanPrice > 0 ? `${cleanPrice.toLocaleString("vi-VN")} đ` : "Thỏa thuận";
+      const formattedOrigP = cleanOriginalPrice > 0 ? `${cleanOriginalPrice.toLocaleString("vi-VN")} đ` : undefined;
+
+      setLocalProducts((prev) =>
+        (prev || []).map((p) =>
+          p.id === editingProduct.id
+            ? {
+                ...p,
+                name: editName.trim(),
+                title: editName.trim(),
+                description: editDesc.trim(),
+                price: formattedP,
+                priceNumber: cleanPrice,
+                originalPrice: formattedOrigP,
+                memberPrice: formattedP,
+                category: editCategory,
+                imageUrl: finalPhotos[0] || editPhoto || undefined,
+                imageUrls: finalPhotos,
+                videoUrl: editVideoUrl.trim() || undefined,
+                company: editCompany.trim() || p.company,
+                unit: editUnit,
+                currency: editCurrency,
+              }
+            : p
+        )
+      );
+
       toast.success("Đã cập nhật thông tin sản phẩm thành công!");
       setEditingProduct(null);
       reload();
@@ -1235,18 +1359,48 @@ function ProductsScreen() {
     };
 
     try {
+      let createdRes: any = null;
       try {
-        await fetchNestApi("/products", {
+        createdRes = await fetchNestApi("/products", {
           method: "POST",
           body: JSON.stringify(payload),
         });
       } catch (err1: any) {
         console.warn("POST /products error, trying /marketplace/products fallback:", err1?.message);
-        await fetchNestApi("/marketplace/products", {
+        createdRes = await fetchNestApi("/marketplace/products", {
           method: "POST",
           body: JSON.stringify(payload),
         });
       }
+
+      const formattedP = cleanPrice > 0 ? `${cleanPrice.toLocaleString("vi-VN")} đ` : "Thỏa thuận";
+      const formattedOrigP = cleanOriginalPrice > 0 ? `${cleanOriginalPrice.toLocaleString("vi-VN")} đ` : undefined;
+
+      const newProd: any = {
+        id: String(createdRes?.id || `prod_${Date.now()}`),
+        name: formName.trim(),
+        title: formName.trim(),
+        description: formDesc.trim(),
+        price: formattedP,
+        priceNumber: cleanPrice,
+        originalPrice: formattedOrigP,
+        memberPrice: formattedP,
+        unit: formUnit,
+        currency: formCurrency,
+        category: formCategory,
+        status: "active",
+        imageUrl: finalPhotos[0] || formPhoto || null,
+        imageUrls: finalPhotos,
+        videoUrl: formVideoUrl.trim() || undefined,
+        company: formCompany.trim() || resolvedProfileCompany || "CLB Doanh Nhân CEO 1983",
+        time: new Date().toISOString(),
+        views: 0,
+        likes: 0,
+        sellerId: user?.id || "ceo1983",
+      };
+
+      setLocalProducts((prev) => [newProd, ...(prev || [])]);
+
       toast.success(isEn ? "Product posted successfully!" : "Đã đăng sản phẩm thành công lên sàn!");
       setPostModalOpen(false);
       setFormPhoto("");
@@ -1539,7 +1693,7 @@ function ProductsScreen() {
                         } as any,
                       });
                     }}
-                    className="flex-1 h-8.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+                    className="flex-1 h-8.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
                   >
                     <Calendar className="size-3.5" />
                     <span>Kết nối cuộc gặp</span>
@@ -1937,6 +2091,18 @@ function ProductsScreen() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                handleScheduleMeetingWithSeller(p);
+                              }}
+                              className="h-9 px-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-[#003B95] text-[#003B95] hover:text-white dark:text-blue-300 dark:hover:text-white flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer border border-blue-200 dark:border-blue-800 text-xs font-bold shrink-0"
+                              title="Lên lịch hẹn 1-1 B2B với người bán"
+                            >
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>Lên lịch B2B</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 handleMessageSeller(p);
                               }}
                               className="h-9 px-3 rounded-xl bg-slate-100 hover:bg-[#003B95] hover:text-white dark:bg-slate-800 dark:hover:bg-[#003B95] dark:hover:text-white text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700 text-xs font-bold shrink-0"
@@ -2112,7 +2278,7 @@ function ProductsScreen() {
                   <button
                     type="button"
                     onClick={() => handleOpenPostModal()}
-                    className="mt-2 px-4 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/20 active:scale-95"
+                    className="mt-2 px-4 py-2 bg-[#003B95] hover:bg-[#002B70] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
                   >
                     <Plus className="size-4 text-slate-950" />
                     <span>Đăng sản phẩm ngay</span>
@@ -3051,6 +3217,17 @@ function ProductsScreen() {
           }}
           isInterested={interestedIds.includes(selectedDetailProduct.id)}
           onToggleInterest={() => toggleInterest(selectedDetailProduct.id)}
+          onScheduleMeeting={handleScheduleMeetingWithSeller}
+        />
+      )}
+
+      {/* ── BOTTOM SHEET LÊN LỊCH HẸN 1-1 B2B VỚI CHỦ GIAN HÀNG SÀN THƯƠNG MẠI (CASE 3) ── */}
+      {meetingTarget && (
+        <BusinessConnectBottomSheet
+          target={meetingTarget}
+          isOpen={Boolean(meetingTarget)}
+          onClose={() => setMeetingTarget(null)}
+          initialPurpose={`Hẹn gặp 1-1 xúc tiến thương vụ sản phẩm: ${selectedDetailProduct?.name || "Sản phẩm"}`}
         />
       )}
     </div>

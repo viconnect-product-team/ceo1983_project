@@ -31,7 +31,7 @@ export function buildDynamicShareUrl(options: ShareOptions): string {
     params.set('target', fullTarget);
   }
 
-  return `${origin}/api/share/preview?${params.toString()}`;
+  return `${origin}/share/preview?${params.toString()}`;
 }
 
 /**

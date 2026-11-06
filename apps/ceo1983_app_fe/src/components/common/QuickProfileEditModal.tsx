@@ -768,7 +768,7 @@ export function QuickProfileEditModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-md transition active:scale-95 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md transition active:scale-95 cursor-pointer disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 stroke-[3]" />}
               <span>{saving ? "Đang lưu..." : "Lưu thay đổi"}</span>

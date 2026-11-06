@@ -797,7 +797,7 @@ export function ViOneVoiceAssistant() {
               <button
                 type="submit"
                 disabled={!inputText.trim()}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-[#C29B69] via-[#F6E1C3] to-[#D8B282] text-[#130F0F] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-105 transition cursor-pointer"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                 title="Gửi câu hỏi"
               >
                 <Send className="h-4 w-4" />

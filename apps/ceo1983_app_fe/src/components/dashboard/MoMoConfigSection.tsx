@@ -491,7 +491,7 @@ export const MoMoConfigSection: React.FC = () => {
               type="button"
               onClick={handleGenerateTestUrl}
               disabled={isGenerating}
-              className="w-full h-10 rounded-xl bg-gradient-to-r from-[#A50064] to-[#D82D8B] text-white text-xs font-bold hover:opacity-95 transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full h-10 rounded-xl bg-[#A50064] hover:bg-[#850050] text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isGenerating ? (
                 <>

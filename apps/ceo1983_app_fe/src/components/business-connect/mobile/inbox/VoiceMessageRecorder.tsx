@@ -230,7 +230,7 @@ export function VoiceMessageRecorder({ onSendVoice, onCancel }: VoiceMessageReco
           disabled={isProcessing || recordingTime < 1}
           onClick={handleStopAndSend}
           aria-label="Gửi tin nhắn thoại"
-          className="flex h-8.5 px-3.5 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#F7D896] via-[#E2B755] to-[#C49338] text-slate-950 font-bold text-xs shadow-[0_2px_12px_rgba(216,178,130,0.4)] hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer transition-all"
+          className="flex h-8.5 px-3.5 items-center justify-center gap-1.5 rounded-full bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md active:scale-95 disabled:opacity-50 cursor-pointer transition-all"
         >
           {isProcessing ? (
             <>

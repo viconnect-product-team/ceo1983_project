@@ -2033,7 +2033,7 @@ export function RbacPermissionMatrix({
                 <button
                   type="button"
                   onClick={handleScanNewFeatures}
-                  className="px-2.5 py-1 text-xs font-black rounded-lg bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition flex items-center gap-1 shadow-xs shadow-amber-500/20"
+                  className="px-2.5 py-1 text-xs font-black rounded-lg bg-[#003B95] hover:bg-[#002B70] text-white transition flex items-center gap-1 shadow-xs shadow-amber-500/20"
                 >
                   <RefreshCw className="h-3 w-3 text-slate-950" />
                   Quét ngay
@@ -2127,7 +2127,7 @@ export function RbacPermissionMatrix({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black transition shadow-xs shadow-amber-500/20 flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-black transition shadow-xs shadow-amber-500/20 flex items-center gap-1.5"
                 >
                   <Save className="h-3.5 w-3.5 text-slate-950" />
                   Thêm & Lưu Vào Cơ Sở Dữ Liệu

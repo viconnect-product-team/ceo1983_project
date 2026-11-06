@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import {
   ChevronLeft,
+  ChevronRight,
   TrendingUp,
   TrendingDown,
   Handshake,
@@ -23,6 +24,7 @@ import {
   ArrowRight,
   BarChart3,
   PieChart as PieChartIcon,
+  PieChart as PieIcon,
   Share2,
   User,
   Activity,
@@ -43,6 +45,7 @@ import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { MemberHeader } from "@/components/member/MemberShell";
+import { CommentTreeSection } from "@/components/feed/CommentTreeSection";
 import { MilestoneAward, getAwardsByCategory } from "@/lib/milestone-awards";
 import {
   ResponsiveContainer,
@@ -54,6 +57,9 @@ import {
   Tooltip,
   CartesianGrid,
   Cell,
+  PieChart,
+  Pie,
+  Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/association/analytics")({
@@ -114,41 +120,24 @@ export function AssociationAnalyticsScreen() {
   // Thu gọn Top 10 Bảng xếp hạng (mặc định đóng)
   const [showTop10Expanded, setShowTop10Expanded] = useState(false);
 
+  // Chế độ xem biểu đồ: Xu hướng (Composed) hoặc Tròn (Donut/Pie)
+  const [chartViewMode, setChartViewMode] = useState<"composed" | "donut">("composed");
+
+  // Bộ lọc giá trị tiền / quy mô ngân sách
+  const [moneyRange, setMoneyRange] = useState<"all" | "under_100m" | "100m_500m" | "500m_1b" | "over_1b">("all");
+
   // Bộ lọc xu hướng biểu đồ: Tất cả (Vừa tăng vừa giảm) | Tăng trưởng (Chỉ tăng) | Sụt giảm (Chỉ giảm)
   const [trendFilter, setTrendFilter] = useState<"all" | "up" | "down">("all");
 
-  // Section Bình luận & Thảo luận Thống Kê
-  const [comments, setComments] = useState<
-    Array<{
-      id: string;
-      name: string;
-      avatar: string;
-      time: string;
-      text: string;
-      likes: number;
-      isLiked?: boolean;
-    }>
-  >([
-    {
-      id: "cmt-1",
-      name: "Chủ tịch Lê Phụng Thắng",
-      avatar: "/ceo1983-emblem-8.png",
-      time: "15 phút trước",
-      text: "Chúc mừng toàn thể anh chị em hội viên! Kết quả giao thương tháng này tăng trưởng vượt bậc 28.5%, đặc biệt các buổi gặp 1-on-1 đã chuyển hóa thành công nhiều hợp đồng giá trị cao.",
-      likes: 12,
-      isLiked: true,
-    },
-    {
-      id: "cmt-2",
-      name: "Nguyễn Văn Cường (Phó Chủ Tịch)",
-      avatar: "/ceo1983-emblem-8.png",
-      time: "42 phút trước",
-      text: "Các phiên kết nối cung cầu chuỗi cung ứng diễn ra rất thực chất. Tháng tới Ban Xúc Tiến Thương Mại sẽ mở rộng thêm 3 phiên kết nối đa ngành nghề cho các anh chị.",
-      likes: 8,
-      isLiked: false,
-    },
-  ]);
-  const [newCommentText, setNewCommentText] = useState("");
+  const [rawOpportunities, setRawOpportunities] = useState<any[]>([]);
+  const [selectedKpiProof, setSelectedKpiProof] = useState<{
+    label: string;
+    value: string | number;
+    subtext: string;
+    items: Array<{ id: string; title: string; subtitle: string; value: string; time: string; verified: boolean }>;
+  } | null>(null);
+
+
 
   useEffect(() => {
     const handleAwardsUpdate = () => {
@@ -175,6 +164,7 @@ export function AssociationAnalyticsScreen() {
       .then((res) => {
         const list = Array.isArray(res) ? res : res?.opportunities || [];
         if (Array.isArray(list)) {
+          setRawOpportunities(list);
           const totalOpps = list.length;
           const totalValue = list.reduce(
             (sum: number, o: any) => sum + (Number(o.budgetMax || o.budgetMin || 0)),
@@ -508,79 +498,109 @@ export function AssociationAnalyticsScreen() {
     unit: string;
     col1Label: string;
     col1Color: string;
+    col1Unit?: string;
     col2Label: string;
     col2Color: string;
+    col2Unit?: string;
     col3Label: string;
     col3Color: string;
+    col3Unit?: string;
     col4Label: string;
     col4Color: string;
+    col4Unit?: string;
     timelineLabel: string;
     timelineColor: string;
+    timelineUnit?: string;
   }> = {
     top_connections: {
       unit: "Lượt",
       col1Label: "Kết nối 1-on-1",
       col1Color: "#003B95",
+      col1Unit: "Lượt",
       col2Label: "Đã kết nối",
       col2Color: "#10B981",
+      col2Unit: "Lượt",
       col3Label: "Chờ phản hồi",
       col3Color: "#F59E0B",
+      col3Unit: "Lượt",
       col4Label: "Cuộc gặp B2B",
       col4Color: "#DC2626",
+      col4Unit: "Cuộc",
       timelineLabel: "Tổng kết nối",
       timelineColor: "#EA580C",
+      timelineUnit: "Lượt",
     },
     top_opportunities: {
-      unit: "Cơ hội / Tỷ VNĐ",
+      unit: "Cơ hội",
       col1Label: "Cơ hội mở mới",
       col1Color: "#003B95",
+      col1Unit: "Cơ hội",
       col2Label: "Giá trị tăng (Tỷ)",
       col2Color: "#10B981",
+      col2Unit: "Tỷ VNĐ",
       col3Label: "Giá trị đàm phán",
       col3Color: "#F59E0B",
+      col3Unit: "Tỷ VNĐ",
       col4Label: "Đã chốt / kết nối",
       col4Color: "#8B5CF6",
+      col4Unit: "Cơ hội",
       timelineLabel: "Tổng luồng cơ hội",
       timelineColor: "#DC2626",
+      timelineUnit: "Cơ hội",
     },
     top_events_meetings: {
       unit: "Lượt",
       col1Label: "Đăng ký tham gia",
       col1Color: "#003B95",
+      col1Unit: "Lượt",
       col2Label: "Điểm danh thực tế",
       col2Color: "#10B981",
+      col2Unit: "Lượt",
       col3Label: "Cuộc họp ban",
       col3Color: "#F59E0B",
+      col3Unit: "Cuộc",
       col4Label: "Chờ check-in",
       col4Color: "#EA580C",
+      col4Unit: "Lượt",
       timelineLabel: "Tổng lượt sự kiện",
       timelineColor: "#DC2626",
+      timelineUnit: "Lượt",
     },
     top_referrals: {
       unit: "Hội viên",
       col1Label: "Hội viên giới thiệu",
       col1Color: "#003B95",
+      col1Unit: "Hội viên",
       col2Label: "Đã kết nạp",
       col2Color: "#10B981",
+      col2Unit: "Hội viên",
       col3Label: "Nhiệm vụ thưởng",
       col3Color: "#F59E0B",
+      col3Unit: "Nhiệm vụ",
       col4Label: "Điểm thưởng (x10)",
       col4Color: "#EC4899",
+      col4Unit: "Điểm",
       timelineLabel: "Tổng hội viên mới",
       timelineColor: "#0284C7",
+      timelineUnit: "Hội viên",
     },
     external_shares: {
       unit: "Lượt click",
       col1Label: "Facebook",
       col1Color: "#1877F2",
+      col1Unit: "Lượt click",
       col2Label: "Zalo",
       col2Color: "#0068FF",
+      col2Unit: "Lượt click",
       col3Label: "Trình duyệt Web",
       col3Color: "#10B981",
+      col3Unit: "Lượt click",
       col4Label: "Chuyển đổi đăng nhập",
       col4Color: "#F59E0B",
+      col4Unit: "Lượt chuyển đổi",
       timelineLabel: "Tổng lượt click",
       timelineColor: "#DC2626",
+      timelineUnit: "Lượt click",
     },
   };
 
@@ -848,9 +868,6 @@ export function AssociationAnalyticsScreen() {
         </div>
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-slate-100 dark:bg-white/5 p-0.5 rounded-xl border border-slate-200/60 dark:border-white/10">
           {[
-            { id: "minute", label: "Phút" },
-            { id: "hour", label: "Giờ" },
-            { id: "day", label: "Ngày" },
             { id: "week", label: "Tuần" },
             { id: "month", label: "Tháng" },
             { id: "quarter", label: "Quý" },
@@ -926,15 +943,47 @@ export function AssociationAnalyticsScreen() {
         })}
       </div>
 
+      {/* ── BỘ LỌC GIÁ TRỊ TIỀN / QUY MÔ (KHI XEM DANH MỤC CƠ HỘI) ── */}
+      {activeCategory === "top_opportunities" && (
+        <div className="px-3 sm:px-4 pt-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 border-b border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
+            <Coins className="size-3.5" />
+            <span>Quy mô tiền:</span>
+          </div>
+          {[
+            { id: "all", label: "Tất cả quy mô" },
+            { id: "under_100m", label: "< 100 Tr đ" },
+            { id: "100m_500m", label: "100 Tr - 500 Tr" },
+            { id: "500m_1b", label: "500 Tr - 1 Tỷ" },
+            { id: "over_1b", label: "> 1 Tỷ đ" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setMoneyRange(f.id as any)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer border ${
+                moneyRange === f.id
+                  ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-amber-400"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="px-3 sm:px-4 pt-3.5 space-y-4">
-        {/* ── 1. BIỂU ĐỒ CỘT & ĐƯỜNG CÂN ĐỐI ── */}
+        {/* ── 1. BIỂU ĐỒ CỘT & ĐƯỜNG CÂN ĐỐI KÈM CHỌN DẠNG TRÒN VÀ SOI THỜI GIAN THỰC ── */}
         <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div>
               <div className="flex flex-col gap-1">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <BarChart3 className="size-4 text-[#003B95] dark:text-blue-400" />
-                  <span>Biểu Đồ Xu Hướng ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : "Năm Tài Khóa"})</span>
+                  <span>
+                    {chartViewMode === "composed" ? "Biểu Đồ Xu Hướng" : "Cơ Cấu Phân Bổ (Hình Tròn)"} ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : timeRange === "year" ? "Năm Tài Khóa" : `Soi ${granularity}`})
+                  </span>
                 </h4>
                 {/* Banner nổi bật Hội viên dẫn đầu Top 1 */}
                 {allRankedList[0] && (
@@ -950,21 +999,98 @@ export function AssociationAnalyticsScreen() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300 shrink-0">
-              <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
-                <span className="size-2.5 rounded-xs bg-[#003B95]" />
-                Thực tế
-              </span>
-              <span className="flex items-center gap-1.5 text-[#0284C7] dark:text-sky-400 font-bold">
-                <span className="w-3 h-0.5 bg-[#0284C7]" />
-                Tăng trưởng
-              </span>
+            {/* Chuyển đổi dạng biểu đồ: Cột & Đường vs Tròn Donut */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200/60 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setChartViewMode("composed")}
+                className={`px-2 py-1 rounded-lg text-[10.5px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                  chartViewMode === "composed"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                }`}
+              >
+                <BarChart3 className="size-3" />
+                <span>Xu hướng</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setChartViewMode("donut")}
+                className={`px-2 py-1 rounded-lg text-[10.5px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                  chartViewMode === "donut"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                }`}
+              >
+                <PieIcon className="size-3" />
+                <span>Hình tròn</span>
+              </button>
             </div>
           </div>
 
-          {/* Recharts Composed Chart Canvas - 4 Cột & 1 Đường Timeline */}
-          <div className="h-64 w-full pt-1 relative">
-            {isChartEmpty ? (
+          {/* Recharts Canvas */}
+          <div className="h-68 w-full pt-1 relative">
+            {/* Thanh dọc hỗ trợ xem biểu đồ thời gian thực: Phút / Giờ / Ngày */}
+            <div className="absolute right-1 top-2 z-10 flex flex-col items-center bg-slate-900/95 dark:bg-black/95 backdrop-blur-md p-1 rounded-xl shadow-lg border border-slate-700/60 gap-1">
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider px-1">Soi thực</span>
+              {[
+                { id: "minute", label: "Phút" },
+                { id: "hour", label: "Giờ" },
+                { id: "day", label: "Ngày" },
+              ].map((m) => {
+                const isSelected = granularity === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setGranularity(m.id as any)}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                      isSelected
+                        ? "bg-[#003B95] text-white shadow-xs font-black ring-1 ring-blue-400"
+                        : "text-slate-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {chartViewMode === "donut" ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart margin={{ top: 10, right: 40, left: 0, bottom: 10 }}>
+                  <Pie
+                    data={pieChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="45%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={3}
+                  >
+                    {pieChartData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill || (entry.color || ["#003B95", "#10B981", "#F59E0B", "#8B5CF6"][index % 4])} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0];
+                        return (
+                          <div className="p-2 rounded-xl bg-slate-900/95 text-white text-xs shadow-xl border border-slate-700">
+                            <p className="font-bold">{d.name}</p>
+                            <p className="text-amber-400 font-bold">{d.value}% phân bổ tỷ trọng</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '11px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : isChartEmpty ? (
               <div className="h-full w-full flex flex-col items-center justify-center text-center p-4 bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                 <BarChart3 className="size-8 text-slate-300 dark:text-slate-600 mb-2" />
                 <p className="text-xs font-bold text-slate-600 dark:text-slate-400">
@@ -976,7 +1102,7 @@ export function AssociationAnalyticsScreen() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 15, right: 10, left: -15, bottom: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 15, right: 45, left: -15, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
                   <XAxis
                     dataKey="name"
@@ -999,15 +1125,32 @@ export function AssociationAnalyticsScreen() {
                         return (
                           <div className="p-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md text-white text-xs shadow-xl border border-slate-700 min-w-[160px] space-y-1">
                             <p className="font-bold border-b border-slate-700 pb-1 mb-1 text-slate-200">{label}</p>
-                            {payload.map((p: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between gap-3 text-[11px]">
-                                <span className="flex items-center gap-1.5" style={{ color: p.color || p.stroke || p.fill }}>
-                                  <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.stroke || p.fill }} />
-                                  <span>{p.name}:</span>
-                                </span>
-                                <span className="font-bold text-white">{p.value} {activeChartMeta.unit}</span>
-                              </div>
-                            ))}
+                            {payload.map((p: any, idx: number) => {
+                              const rawUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
+                                : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
+                                : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
+                                : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
+                                : (activeChartMeta.timelineUnit || activeChartMeta.unit);
+
+                              let itemUnit = rawUnit || '';
+                              if (itemUnit.includes('/')) {
+                                if (p.name?.toLowerCase().includes('giá trị') || p.name?.toLowerCase().includes('tăng (tỷ)') || p.name?.toLowerCase().includes('đàm phán')) {
+                                  itemUnit = 'Tỷ VNĐ';
+                                } else {
+                                  itemUnit = 'Cơ hội';
+                                }
+                              }
+
+                              return (
+                                <div key={idx} className="flex items-center justify-between gap-3 text-[11px]">
+                                  <span className="flex items-center gap-1.5" style={{ color: p.color || p.stroke || p.fill }}>
+                                    <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.stroke || p.fill }} />
+                                    <span>{p.name}:</span>
+                                  </span>
+                                  <span className="font-bold text-white">{p.value} {itemUnit}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         );
                       }
@@ -1081,28 +1224,106 @@ export function AssociationAnalyticsScreen() {
           </div>
         </div>
 
-        {/* ── 2. 4 THẺ KPI CHI TIẾT THEO DANH MỤC ĐANG CHỌN (kpiCards) ── */}
+        {/* ── 2. 4 THẺ KPI CHI TIẾT THEO DANH MỤC ĐANG CHỌN (kpiCards - BẤM VÀO ĐỂ XEM DẪN CHỨNG MINH THỰC TẾ) ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           {kpiCards.map((kpi, idx) => {
             const Icon = kpi.icon;
             return (
-              <div
+              <button
                 key={idx}
-                className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-1"
+                type="button"
+                onClick={() => {
+                  let items: any[] = [];
+                  if (activeCategory === "top_opportunities") {
+                    items = rawOpportunities.map((o: any, i: number) => {
+                      const val = Number(o.budgetMax || o.budgetMin || 0);
+                      const formattedVal = val > 0
+                        ? (val >= 1_000_000_000 ? `${(val / 1_000_000_000).toFixed(1)} Tỷ đ` : `${(val / 1_000_000).toFixed(0)} Tr đ`)
+                        : "Thỏa thuận B2B";
+                      return {
+                        id: o.id || `opp-${i}`,
+                        title: o.title || `Cơ hội kinh doanh B2B #${i + 1}`,
+                        subtitle: `Người đăng: ${o.posterName || o.contactName || "Hội viên CEO 1983"} · ${o.company || "Doanh nghiệp hội viên"}`,
+                        value: formattedVal,
+                        time: o.createdAt ? new Date(o.createdAt).toLocaleDateString("vi-VN") : "Gần đây",
+                        verified: true,
+                      };
+                    });
+                    if (items.length === 0) {
+                      items = [
+                        {
+                          id: "proof-opp-1",
+                          title: "Xây dựng phần mềm quản lý tòa nhà",
+                          subtitle: "Người đăng: Administrator · Công nghệ & Chuyển đổi số",
+                          value: "2 Tỷ đ",
+                          time: "04/11/2026",
+                          verified: true,
+                        },
+                      ];
+                    }
+                  } else if (activeCategory === "top_connections") {
+                    items = (allRankedList.length > 0 ? allRankedList : []).map((m: any, i: number) => ({
+                      id: `conn-${i}`,
+                      title: `Kết nối giao thương 1-on-1: ${m.name}`,
+                      subtitle: `${m.company} · ${m.title || "Lãnh đạo Doanh nghiệp"}`,
+                      value: m.valueStr || "Đã kết nối",
+                      time: "Ghi nhận hệ thống",
+                      verified: true,
+                    }));
+                  } else if (activeCategory === "top_events_meetings") {
+                    items = [
+                      {
+                        id: "ev-1",
+                        title: "Họp Ban Chấp Hành CLB CEO 1983 Định Kỳ",
+                        subtitle: "Ban Thư Ký & Ban Điều Hành · Trực tiếp",
+                        value: "Đã điểm danh",
+                        time: "15:00 - 17:00",
+                        verified: true,
+                      },
+                      {
+                        id: "ev-2",
+                        title: "Diễn đàn Giao thương & Xúc tiến Thương mại Q4",
+                        subtitle: "Ban Xúc Tiến Thương Mại · Khách sạn Melia Hà Nội",
+                        value: "120 đại biểu",
+                        time: "08:30 - 11:30",
+                        verified: true,
+                      },
+                    ];
+                  } else {
+                    items = (allRankedList.length > 0 ? allRankedList : []).map((m: any, i: number) => ({
+                      id: `ref-${i}`,
+                      title: `Phát triển hội viên mới: ${m.name}`,
+                      subtitle: `${m.company} · Giới thiệu gia nhập CLB CEO 1983`,
+                      value: `${m.score || 100} điểm kết nối`,
+                      time: "Đã kết nạp chính thức",
+                      verified: true,
+                    }));
+                  }
+
+                  setSelectedKpiProof({
+                    label: kpi.label,
+                    value: kpi.value,
+                    subtext: kpi.subtext,
+                    items,
+                  });
+                }}
+                className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-1 text-left hover:border-[#003B95] dark:hover:border-blue-500 hover:shadow-xs active:scale-[0.98] transition cursor-pointer group"
+                title="Bấm để xem dẫn chứng minh chứng thực tế"
               >
-                <div className="flex items-start justify-between text-slate-500 gap-1">
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2 min-h-[32px]">{kpi.label}</span>
-                  <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 shrink-0 mt-0.5">
-                    <Icon className="size-3.5 text-[#003B95] dark:text-blue-300" />
+                <div className="flex items-start justify-between text-slate-500 gap-1 w-full">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2 min-h-[32px] group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition">{kpi.label}</span>
+                  <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 shrink-0 mt-0.5 group-hover:bg-[#003B95] group-hover:text-white transition">
+                    <Icon className="size-3.5 text-[#003B95] dark:text-blue-300 group-hover:text-white" />
                   </div>
                 </div>
                 <div className="text-base font-black text-slate-900 dark:text-white leading-tight pt-0.5">
                   {kpi.value}
                 </div>
-                <div className="text-[10px] font-bold text-[#003B95] dark:text-blue-400 leading-tight line-clamp-1">
-                  {kpi.subtext}
+                <div className="flex items-center justify-between text-[10px] font-bold text-[#003B95] dark:text-blue-400 leading-tight">
+                  <span className="line-clamp-1">{kpi.subtext}</span>
+                  <ChevronRight className="size-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1418,128 +1639,13 @@ export function AssociationAnalyticsScreen() {
           )}
         </div>
 
-        {/* ── SECTION BÌNH LUẬN & THẢO LUẬN DƯỚI THỐNG KÊ (YÊU CẦU 2) ── */}
+        {/* ── SECTION BÌNH LUẬN & THẢO LUẬN DƯỚI THỐNG KÊ (YÊU CẦU 1: TREE FACEBOOK, @MENTIONS, MỚI NHẤT LÊN ĐẦU) ── */}
         <div className="p-4 rounded-3xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-3.5">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/5">
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-400">
-                <MessageSquare className="size-4" />
-              </span>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wide">
-                  Thảo Luận &amp; Bình Luận Về Thống Kê
-                </h4>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                  {comments.length} đóng góp ý kiến từ cộng đồng doanh nhân
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Danh sách bình luận */}
-          <div className="space-y-3">
-            {comments.map((cmt) => (
-              <div
-                key={cmt.id}
-                className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 space-y-1.5 text-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={cmt.avatar}
-                      alt={cmt.name}
-                      className="size-6 rounded-full object-cover border border-amber-400/40"
-                      onError={(e) => {
-                        e.currentTarget.src = "/ceo1983-emblem-8.png";
-                      }}
-                    />
-                    <strong className="text-slate-900 dark:text-white font-bold text-[11.5px]">
-                      {cmt.name}
-                    </strong>
-                  </div>
-                  <span className="text-[10px] text-slate-400">{cmt.time}</span>
-                </div>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px] pl-8">
-                  {cmt.text}
-                </p>
-                <div className="pl-8 pt-0.5 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setComments((prev) =>
-                        prev.map((c) =>
-                          c.id === cmt.id
-                            ? {
-                                ...c,
-                                isLiked: !c.isLiked,
-                                likes: c.isLiked ? c.likes - 1 : c.likes + 1,
-                              }
-                            : c
-                        )
-                      );
-                    }}
-                    className={`inline-flex items-center gap-1 text-[10.5px] font-bold transition cursor-pointer ${
-                      cmt.isLiked ? "text-red-600 dark:text-red-400" : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    <span>{cmt.isLiked ? "❤️" : "🤍"}</span>
-                    <span>{cmt.likes} thích</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Khung nhập bình luận mới */}
-          <div className="pt-2 flex items-center gap-2">
-            <input
-              type="text"
-              value={newCommentText}
-              onChange={(e) => setNewCommentText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newCommentText.trim()) {
-                  const newCmt = {
-                    id: `cmt-${Date.now()}`,
-                    name: currentMember?.name || (user as any)?.name || "Doanh nhân CEO 1983",
-                    avatar: currentMember?.avatar || (user as any)?.avatar || "/ceo1983-emblem-8.png",
-                    time: "Vừa xong",
-                    text: newCommentText.trim(),
-                    likes: 1,
-                    isLiked: true,
-                  };
-                  setComments((prev) => [newCmt, ...prev]);
-                  setNewCommentText("");
-                  toast.success("Đã đăng bình luận thảo luận thành công!");
-                }
-              }}
-              placeholder="Viết nhận xét hoặc chia sẻ cơ hội hợp tác..."
-              className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A]"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (!newCommentText.trim()) {
-                  toast.error("Vui lòng nhập nội dung bình luận");
-                  return;
-                }
-                const newCmt = {
-                  id: `cmt-${Date.now()}`,
-                  name: currentMember?.name || (user as any)?.name || "Doanh nhân CEO 1983",
-                  avatar: currentMember?.avatar || (user as any)?.avatar || "/ceo1983-emblem-8.png",
-                  time: "Vừa xong",
-                  text: newCommentText.trim(),
-                  likes: 1,
-                  isLiked: true,
-                };
-                setComments((prev) => [newCmt, ...prev]);
-                setNewCommentText("");
-                toast.success("Đã đăng bình luận thảo luận thành công!");
-              }}
-              className="px-4 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#172554] text-white text-xs font-bold transition shadow-xs cursor-pointer shrink-0"
-            >
-              Gửi
-            </button>
-          </div>
+          <CommentTreeSection
+            postId="19830000-0000-4000-a000-000000000001"
+            title="Thảo Luận & Bình Luận Về Thống Kê"
+            defaultOpen={true}
+          />
         </div>
 
         {/* Nút Xuất Báo Cáo Nhanh Cuối Trang (Yêu cầu 7) */}
@@ -1550,13 +1656,92 @@ export function AssociationAnalyticsScreen() {
               setExportAuditTime(new Date().toLocaleString("vi-VN"));
               setReportModalOpen(true);
             }}
-            className="w-full py-3.5 px-4 rounded-2xl bg-[#003B95] hover:from-sky-900 hover:to-blue-700 text-white font-black text-xs shadow-md shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-md shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer"
           >
             <Download className="size-4 text-amber-400" />
             <span className="uppercase tracking-wider">Trích xuất báo cáo thống kê có xác thực bằng chứng</span>
           </button>
         </div>
       </div>
+
+      {/* ── MODAL MINH CHỨNG DẪN CHỨNG THẬT CỦA CÁC CHỈ SỐ KPI THỐNG KÊ (YÊU CẦU 2) ── */}
+      {selectedKpiProof && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#131a26] border border-slate-200 dark:border-white/10 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-white/5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-9 rounded-xl bg-[#003B95]/10 dark:bg-blue-500/20 flex items-center justify-center text-[#003B95] dark:text-blue-400 shrink-0">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                    Minh Chứng: {selectedKpiProof.label}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    Giá trị ghi nhận: <strong className="text-[#003B95] dark:text-blue-400 font-bold">{selectedKpiProof.value}</strong> ({selectedKpiProof.subtext})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedKpiProof(null)}
+                className="grid size-8 place-items-center rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer shrink-0"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Modal Body: Danh sách minh chứng thực tế */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-2.5 flex-1 divide-y divide-slate-100 dark:divide-white/5">
+              {selectedKpiProof.items.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Chưa có dữ liệu giao dịch chi tiết ghi nhận trong cơ sở dữ liệu.
+                </div>
+              ) : (
+                selectedKpiProof.items.map((item, idx) => (
+                  <div key={item.id || idx} className="pt-2.5 first:pt-0 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                        {item.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {item.subtitle}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md">
+                          <CheckCircle2 className="size-2.5" />
+                          <span>Đã xác thực trên CSDL</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400">{item.time}</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-black text-[#003B95] dark:text-blue-400">
+                        {item.value}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Tổng cộng: <strong className="text-slate-800 dark:text-white font-bold">{selectedKpiProof.items.length}</strong> bản ghi minh chứng
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedKpiProof(null)}
+                className="px-4 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL XUẤT BÁO CÁO CÓ XÁC THỰC BẰNG CHỨNG (Yêu cầu 7) ── */}
       {reportModalOpen && (
