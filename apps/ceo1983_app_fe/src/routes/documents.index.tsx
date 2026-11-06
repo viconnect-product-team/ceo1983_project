@@ -44,6 +44,7 @@ import { DriveShareModal } from "@/components/documents/DriveShareModal";
 import { DriveMoveModal } from "@/components/documents/DriveMoveModal";
 import { DriveDocumentModal } from "@/components/documents/DriveDocumentModal";
 import { MemberGoogleDriveSyncModal } from "@/components/documents/MemberGoogleDriveSyncModal";
+import { UniversalDocumentViewerModal } from "@/components/documents/UniversalDocumentViewerModal";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
@@ -1981,126 +1982,12 @@ function DocsPage() {
           onMove={onMoveDoc}
         />
 
-        {/* Modal Xem Trước & Thao Tác Tệp Chuẩn Google Drive */}
-        {previewDoc && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-            <div className="bg-card w-full max-w-xl rounded-3xl border border-border shadow-2xl p-6 space-y-4 animate-in zoom-in-95">
-              <div className="flex items-start justify-between border-b border-border pb-3">
-                <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <FileText className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-base text-foreground truncate" title={previewDoc.name}>
-                      {previewDoc.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                      <span className="font-semibold uppercase text-amber-600 dark:text-amber-400">
-                        {previewDoc.type}
-                      </span>
-                      <span>•</span>
-                      <span>{previewDoc.size || "—"}</span>
-                      <span>•</span>
-                      <span>{fmt.date(previewDoc.uploadedAt)}</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewDoc(null)}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Thông tin chi tiết */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="rounded-xl bg-muted/50 p-2.5">
-                  <span className="text-muted-foreground block text-[11px]">Danh mục:</span>
-                  <span className="font-bold text-foreground truncate block mt-0.5">{previewDoc.category}</span>
-                </div>
-                <div className="rounded-xl bg-muted/50 p-2.5">
-                  <span className="text-muted-foreground block text-[11px]">Người tải lên:</span>
-                  <span className="font-bold text-foreground truncate block mt-0.5">{previewDoc.uploadedBy || "Hiệp hội"}</span>
-                </div>
-                <div className="rounded-xl bg-muted/50 p-2.5">
-                  <span className="text-muted-foreground block text-[11px]">Phân loại quyền:</span>
-                  <span className="font-bold text-foreground block mt-0.5">
-                    {previewDoc.docScope === "enterprise" ? "🏢 Doanh nghiệp" : "🏛️ Hiệp hội"}
-                  </span>
-                </div>
-                <div className="rounded-xl bg-muted/50 p-2.5">
-                  <span className="text-muted-foreground block text-[11px]">Chế độ chia sẻ:</span>
-                  <span className="font-bold text-foreground block mt-0.5">
-                    {previewDoc.shareScope === "public" ? "🌐 Công khai" : "🔒 Nội bộ"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Preview preview content if image */}
-              {previewDoc.filePath && (previewDoc.type === "png" || previewDoc.type === "jpg" || previewDoc.type === "jpeg") ? (
-                <div className="rounded-2xl border border-border overflow-hidden bg-black/5 max-h-64 flex items-center justify-center p-2">
-                  <img
-                    src={previewDoc.filePath.startsWith("http") ? previewDoc.filePath : previewDoc.filePath}
-                    alt={previewDoc.name}
-                    className="max-h-60 object-contain rounded-lg"
-                  />
-                </div>
-              ) : null}
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-border">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShareModalDoc(previewDoc);
-                      setPreviewDoc(null);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                  >
-                    <Share2 className="h-4 w-4" />
-                    <span>Chia sẻ</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMoveModalDoc(previewDoc);
-                      setPreviewDoc(null);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-                  >
-                    <Move className="h-4 w-4" />
-                    <span>Di chuyển</span>
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {previewDoc.driveUrl && (
-                    <a
-                      href={previewDoc.driveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      <span>Mở Google Drive</span>
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => void onDownload(previewDoc)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>Tải về máy</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Modal Xem Chi Tiết & Mở Đọc Tài Liệu Đa Định Dạng (Word, Excel, PDF, Image, Code) */}
+        <UniversalDocumentViewerModal
+          isOpen={Boolean(previewDoc)}
+          onClose={() => setPreviewDoc(null)}
+          document={previewDoc}
+        />
 
         {/* Drag & Drop Visual Indicator Overlay */}
         {isDraggingOver && (

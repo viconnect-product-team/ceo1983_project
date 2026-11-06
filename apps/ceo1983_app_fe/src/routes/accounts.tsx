@@ -8,6 +8,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  Shield,
   ShieldCheck,
   ShieldAlert,
   Building2,
@@ -331,10 +332,14 @@ function AccountsPage() {
         );
       });
 
-      const targetsToSave = changedAccounts.length > 0 ? changedAccounts : accounts;
+      if (changedAccounts.length === 0) {
+        toast.info("Không có thay đổi nào cần lưu.");
+        setSaving(false);
+        return;
+      }
 
-      // 2. Ghi trực tiếp vào Backend PostgreSQL API
-      const savePromises = targetsToSave.map(async (acc) => {
+      // 2. Ghi trực tiếp vào Backend PostgreSQL API cho các tài khoản có thay đổi
+      const savePromises = changedAccounts.map(async (acc) => {
         const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
         const payload = {
           executiveRole: acc.role,
@@ -951,20 +956,12 @@ function AccountsPage() {
                       </div>
                     </td>
 
-                    {/* VAI TRÒ */}
+                    {/* VAI TRÒ (HIỂN THỊ DẠNG BADGE KHÔNG CHO SELECT TRỰC TIẾP TRÊN BẢNG) */}
                     <td className="px-4 border-r border-slate-200">
-                      <select
-                        value={acc.role}
-                        onChange={(e) => handleInlineRoleChange(acc.id, e.target.value)}
-                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[6px] outline outline-1 outline-slate-200 dark:outline-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold cursor-pointer transition max-w-[140px] truncate"
-                        title="Thay đổi vai trò tài khoản (tự động lưu vào CSDL)"
-                      >
-                        {allRoleOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200/80 dark:border-slate-700">
+                        <Shield className="size-3 text-[#003B95] dark:text-blue-400" />
+                        <span>{getRoleLabel(acc.role)}</span>
+                      </div>
                     </td>
 
                     {/* THAO TÁC */}

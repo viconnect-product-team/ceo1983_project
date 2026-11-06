@@ -60,6 +60,7 @@ import {
   Palette,
   BarChart3,
   GraduationCap,
+  Globe,
 } from "lucide-react";
 import type { TKey } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
@@ -158,6 +159,12 @@ const system: Item[] = [
     icon: Palette,
     to: "/admin/landing-templates",
     label: "Quản lý chủ đề",
+  },
+  {
+    key: "nav.landingWebs" as TKey,
+    icon: Globe,
+    to: "/admin/landing-webs",
+    label: "Quản lý Landing Web",
   },
 ];
 const permissionsGroup: Item[] = [
@@ -654,7 +661,7 @@ export function Sidebar({
     if (it.to === "/tasks") return true;
     if (it.to === "/settings") return isPlatformAdmin || isAdmin || isBQT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
     if (it.to === "/activity") return isPlatformAdmin || isAdmin || isBQT || isBTK || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
-    if (it.to === "/admin/landing-templates") return isPlatformAdmin || isAdmin || isBQT || isBTT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
+    if (it.to === "/admin/landing-templates" || it.to === "/admin/landing-webs") return isPlatformAdmin || isAdmin || isBQT || isBTT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
     return true;
   });
 

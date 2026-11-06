@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Body,
@@ -97,6 +98,27 @@ export class FeedController {
   ) {
     const userId = req.user?.id || req.user?.sub || 'anonymous';
     return this.feedService.reactToComment(userId, commentId, body?.reaction);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('comments/:commentId')
+  async updateComment(
+    @Request() req: any,
+    @Param('commentId') commentId: string,
+    @Body() body: { content: string },
+  ) {
+    const userId = req.user?.id || req.user?.sub || 'anonymous';
+    return this.feedService.updateComment(userId, commentId, body?.content);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('comments/:commentId')
+  async deleteComment(
+    @Request() req: any,
+    @Param('commentId') commentId: string,
+  ) {
+    const userId = req.user?.id || req.user?.sub || 'anonymous';
+    return this.feedService.deleteComment(userId, commentId);
   }
 
   @Post(':id/share')

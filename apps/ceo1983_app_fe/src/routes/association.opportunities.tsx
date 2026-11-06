@@ -121,8 +121,10 @@ const OPPORTUNITY_INDUSTRIES = [
   { id: "service", label: "Dịch vụ & Đào tạo" },
 ];
 
-function normalizeTag(tag: string): string {
-  return TAG_VI_MAP[tag.toLowerCase()] || tag;
+function normalizeTag(tag: any): string {
+  if (!tag) return "Cơ hội";
+  const str = typeof tag === "string" ? tag : String(tag?.label || tag?.name || tag?.id || tag || "Cơ hội");
+  return TAG_VI_MAP[str.toLowerCase()] || str;
 }
 
 function parseVnNumber(val: string | number | undefined | null): number {
@@ -183,15 +185,15 @@ function formatSmartPrice(val: string | number | undefined | null): string {
   const num = typeof val === "number" ? val : parseVnNumber(val);
   if (num <= 0) return "Thỏa thuận B2B";
   if (num > 0 && num <= 100) {
-    return `${num} Tỷ đ`;
+    return `${num} Tỷ VNĐ`;
   }
   if (num >= 1_000_000_000) {
     const b = num / 1_000_000_000;
-    return `${b % 1 === 0 ? b : b.toFixed(1).replace(/\.0$/, "")} Tỷ đ`;
+    return `${b % 1 === 0 ? b : b.toFixed(1).replace(/\.0$/, "")} Tỷ VNĐ`;
   }
   if (num >= 1_000_000) {
     const m = num / 1_000_000;
-    return `${m % 1 === 0 ? m : m.toFixed(1).replace(/\.0$/, "")} Tr đ`;
+    return `${m % 1 === 0 ? m : m.toFixed(1).replace(/\.0$/, "")} Tr VNĐ`;
   }
   return `${num.toLocaleString("vi-VN")} đ`;
 }

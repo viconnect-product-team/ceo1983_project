@@ -771,6 +771,59 @@ export class FeedService {
     };
   }
 
+  async updateComment(userId: string, commentId: string, content: string) {
+    if (!commentId || !content?.trim()) {
+      throw new BadRequestException('ID bình luận hoặc nội dung cập nhật không hợp lệ');
+    }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(commentId);
+    if (isUuid) {
+      await this.prisma.$executeRaw`
+        UPDATE public.feed_comments
+        SET content = ${content.trim()}, updated_at = NOW()
+        WHERE id = ${commentId}::uuid
+      `;
+    } else {
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE public.feed_comments
+        SET content = $1, updated_at = NOW()
+        WHERE id::text = $2
+      `, content.trim(), commentId);
+    }
+    return { ok: true, id: commentId, content: content.trim() };
+  }
+
+  async deleteComment(userId: string, commentId: string) {
+    if (!commentId) {
+      throw new BadRequestException('ID bình luận không hợp lệ');
+    }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(commentId);
+    let postId: string | null = null;
+    try {
+      const cRows = isUuid
+        ? await this.prisma.$queryRaw<any[]>`SELECT post_id FROM public.feed_comments WHERE id = ${commentId}::uuid LIMIT 1`
+        : await this.prisma.$queryRawUnsafe<any[]>(`SELECT post_id FROM public.feed_comments WHERE id::text = $1 LIMIT 1`, commentId);
+      postId = cRows[0]?.post_id ? String(cRows[0].post_id) : null;
+    } catch {}
+
+    if (isUuid) {
+      await this.prisma.$executeRaw`DELETE FROM public.feed_comments WHERE id = ${commentId}::uuid`.catch(() => {});
+    } else {
+      await this.prisma.$executeRawUnsafe(`DELETE FROM public.feed_comments WHERE id::text = $1`, commentId).catch(() => {});
+    }
+
+    if (postId) {
+      const isPostUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId);
+      if (isPostUuid) {
+        await this.prisma.$executeRaw`
+          UPDATE public.feed_posts
+          SET comments_count = GREATEST(0, comments_count - 1), updated_at = NOW()
+          WHERE id = ${postId}::uuid
+        `.catch(() => {});
+      }
+    }
+    return { ok: true, id: commentId };
+  }
+
   async sharePost(postId: string) {
     await this.prisma.$executeRaw`
       UPDATE public.feed_posts

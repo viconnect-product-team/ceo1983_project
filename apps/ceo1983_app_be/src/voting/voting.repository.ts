@@ -14,8 +14,29 @@ function toValidUuid(id: string | null | undefined): string | null {
 export class VotingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private static seededOnce = false;
+
   async ensureSeedPolls(): Promise<void> {
+    if (VotingRepository.seededOnce) return;
     try {
+      // Đảm bảo có bảng cờ hệ thống để ghi nhận đã khởi tạo seed 1 lần duy nhất
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.app_system_flags (
+          key VARCHAR(100) PRIMARY KEY,
+          value TEXT,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `).catch(() => {});
+
+      const flag = await this.prisma.$queryRaw<any[]>`
+        SELECT value FROM public.app_system_flags WHERE key = 'polls_seeded' LIMIT 1
+      `.catch(() => []);
+
+      if (flag && flag.length > 0 && flag[0]?.value === 'true') {
+        VotingRepository.seededOnce = true;
+        return;
+      }
+
       const count = await this.prisma.$queryRaw<any[]>`
         SELECT COUNT(*)::int as cnt FROM public.polls
       `.catch(() => [{ cnt: 0 }]);
@@ -75,6 +96,13 @@ export class VotingRepository {
           }
         }
       }
+
+      // Đánh dấu cờ polls_seeded = 'true' vĩnh viễn để khi người dùng xóa hết biểu quyết (count = 0), không bị tự động sinh lại
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.app_system_flags (key, value) VALUES ('polls_seeded', 'true')
+        ON CONFLICT (key) DO UPDATE SET value = 'true'
+      `).catch(() => {});
+      VotingRepository.seededOnce = true;
     } catch (e: any) {
       console.warn('ensureSeedPolls warning:', e?.message);
     }

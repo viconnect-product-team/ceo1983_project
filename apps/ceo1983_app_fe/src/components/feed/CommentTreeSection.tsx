@@ -15,6 +15,9 @@ import {
   CornerDownRight,
   Maximize2,
   Filter,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
@@ -144,6 +147,10 @@ export function CommentTreeNodeItem({
   activeReactionCommentId,
   setActiveReactionCommentId,
   onImagePreview,
+  onEdit,
+  onDelete,
+  currentUserId,
+  isAdmin,
 }: {
   node: CommentNode;
   postId: string;
@@ -152,12 +159,39 @@ export function CommentTreeNodeItem({
   activeReactionCommentId: string | null;
   setActiveReactionCommentId: (id: string | null) => void;
   onImagePreview: (url: string) => void;
+  onEdit: (commentId: string, content: string) => void;
+  onDelete: (commentId: string) => void;
+  currentUserId?: string;
+  isAdmin?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(node.content);
+  const longPressTimerRef = useRef<any>(null);
+
   const hasChildren = node.children && node.children.length > 0;
   const isReactionPickerOpen = activeReactionCommentId === node.id;
   const matchedEmotion = COMMENT_EMOTIONS.find((e) => e.id === node.reaction);
   const level = node.level || 1;
+
+  const isAuthor = Boolean(
+    (currentUserId && (node.authorId === currentUserId || (node.author as any)?.id === currentUserId)) ||
+    isAdmin
+  );
+
+  const handlePointerDown = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      setShowMenu(true);
+    }, 550);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
 
   return (
     <div className={`space-y-1.5 ${level > 1 ? "ml-4 sm:ml-7 pl-3 border-l-2 border-blue-200/80 dark:border-blue-900/60 relative before:absolute before:left-[-2px] before:top-4 before:w-2.5 before:h-px before:bg-blue-300 dark:before:bg-blue-700" : ""}`}>
@@ -173,8 +207,13 @@ export function CommentTreeNodeItem({
         />
 
         <div className="flex-1 min-w-0">
-          {/* Bong bóng bình luận kiểu Facebook */}
-          <div className="relative inline-block max-w-[94%] bg-slate-100 dark:bg-slate-800/80 rounded-2xl px-3 py-2 text-xs border border-slate-200/60 dark:border-slate-700/60 shadow-xs">
+          {/* Bong bóng bình luận kiểu Facebook + Hỗ trợ giữ lâu (long press) */}
+          <div
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            className="relative inline-block max-w-[94%] bg-slate-100 dark:bg-slate-800/80 rounded-2xl px-3 py-2 text-xs border border-slate-200/60 dark:border-slate-700/60 shadow-xs transition select-none"
+          >
             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
               <span className="font-bold text-slate-900 dark:text-white text-[12px] truncate">
                 {node.authorName || "Hội viên CEO 1983"}
@@ -188,10 +227,43 @@ export function CommentTreeNodeItem({
               )}
             </div>
 
-            {/* Nội dung text với highlight @mention */}
-            <div className="text-slate-800 dark:text-slate-200 leading-relaxed text-[12px] break-words whitespace-pre-wrap">
-              {renderMentionableText(node.content)}
-            </div>
+            {/* Nội dung text hoặc chế độ chỉnh sửa inline */}
+            {isEditing ? (
+              <div className="mt-1 space-y-1.5">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full p-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-[#003B95] outline-none text-slate-900 dark:text-white"
+                  rows={2}
+                  autoFocus
+                />
+                <div className="flex items-center justify-end gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-2.5 py-1 text-[11px] rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-300 transition cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editContent.trim()) {
+                        onEdit(node.id, editContent.trim());
+                        setIsEditing(false);
+                      }
+                    }}
+                    className="px-2.5 py-1 text-[11px] rounded-lg bg-[#003B95] text-white font-bold hover:bg-[#002B70] transition cursor-pointer"
+                  >
+                    Lưu
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-slate-800 dark:text-slate-200 leading-relaxed text-[12px] break-words whitespace-pre-wrap">
+                {renderMentionableText(node.content)}
+              </div>
+            )}
 
             {/* Ảnh đính kèm nếu có */}
             {node.mediaUrl && (
@@ -217,7 +289,7 @@ export function CommentTreeNodeItem({
             )}
           </div>
 
-          {/* Thanh tương tác dưới bình luận (Thích, Phản hồi, Thời gian) */}
+          {/* Thanh tương tác dưới bình luận (Thích, Phản hồi, ..., Thời gian) */}
           <div className="flex items-center gap-3 pt-1 pl-1 text-[11px] text-slate-500 font-medium">
             {/* Popover chọn Reaction Facebook */}
             <div className="relative">
@@ -264,6 +336,66 @@ export function CommentTreeNodeItem({
               Phản hồi
             </button>
 
+            {/* Nút 3 chấm ... (MoreHorizontal) thao tác Sửa / Xóa bình luận */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowMenu(!showMenu)}
+                title="Tùy chọn bình luận"
+                className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition cursor-pointer"
+              >
+                <MoreHorizontal className="size-3.5" />
+              </button>
+
+              {showMenu && (
+                <div
+                  className="absolute left-0 top-5 z-40 w-36 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1 text-xs animate-in zoom-in-95 duration-100"
+                  onMouseLeave={() => setShowMenu(false)}
+                >
+                  {isAuthor && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(true);
+                        setEditContent(node.content);
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                    >
+                      <Pencil className="size-3 text-blue-600" />
+                      <span>Chỉnh sửa</span>
+                    </button>
+                  )}
+                  {isAuthor && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) {
+                          onDelete(node.id);
+                        }
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                    >
+                      <Trash2 className="size-3" />
+                      <span>Xóa bình luận</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onReply(node.id, node.authorName, level + 1);
+                      setShowMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    <Reply className="size-3 text-[#003B95]" />
+                    <span>Phản hồi</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Thời gian */}
             <span className="text-[10px] text-slate-400">{formatCommentTime(node.createdAt)}</span>
           </div>
@@ -304,6 +436,10 @@ export function CommentTreeNodeItem({
                   activeReactionCommentId={activeReactionCommentId}
                   setActiveReactionCommentId={setActiveReactionCommentId}
                   onImagePreview={onImagePreview}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  currentUserId={currentUserId}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>
@@ -356,48 +492,23 @@ export function CommentTreeSection({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [activeReactionCommentId, setActiveReactionCommentId] = useState<string | null>(null);
 
-  // @Mention Connected Members State
+  // @Mention Connected Members State (Chỉ lấy hội viên ĐÃ KẾT NỐI 1-on-1, không lấy toàn bộ hệ thống)
   const [connectedMembers, setConnectedMembers] = useState<ConnectedMemberSummary[]>([]);
+  const [taggedMembers, setTaggedMembers] = useState<ConnectedMemberSummary[]>([]);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Tải danh sách hội viên đã kết nối để phục vụ @mention
+  // Tải danh sách hội viên ĐÃ KẾT NỐI để phục vụ @mention (Tuyệt đối không fallback toàn bộ danh bạ hay mock data)
   useEffect(() => {
     let isMounted = true;
     async function loadConnectedMembers() {
       try {
-        // Thử lấy danh sách hội viên đã kết nối trước
         const res = await fetchNestApi<any>("/members/directory?connectedOnly=true");
         let list: any[] = [];
         if (Array.isArray(res)) list = res;
         else if (res && Array.isArray(res.items)) list = res.items;
-
-        // Nếu danh bạ kết nối trống (hoặc môi trường dev chưa kết nối nhiều), fallback sang danh bạ hội viên chung
-        if (list.length === 0) {
-          const fallbackRes = await fetchNestApi<any>("/members/directory");
-          if (Array.isArray(fallbackRes)) list = fallbackRes;
-          else if (fallbackRes && Array.isArray(fallbackRes.items)) list = fallbackRes.items;
-        }
-
-        // Tích hợp danh sách hội viên CLB CEO 1983 để đảm bảo gõ @ luôn có danh sách gợi ý phong phú
-        if (list.length <= 1 && Array.isArray(MEMBERS) && MEMBERS.length > 0) {
-          const clubMembers = MEMBERS.map((m) => ({
-            id: m.id || m.code,
-            userId: m.id,
-            name: m.name,
-            company: m.contact || "CLB Doanh Nhân CEO 1983",
-            avatarUrl: (m as any).avatar || "/ceo1983-emblem-8.png",
-            role: m.department || "Ban Điều Hành",
-          }));
-          const existingIds = new Set(list.map((m) => m.id || m.userId || m.code));
-          for (const cm of clubMembers) {
-            if (!existingIds.has(cm.id)) {
-              list.push(cm);
-            }
-          }
-        }
 
         if (isMounted) {
           const formatted: ConnectedMemberSummary[] = list.map((m: any) => ({
@@ -411,7 +522,7 @@ export function CommentTreeSection({
           setConnectedMembers(formatted);
         }
       } catch {
-        // Safe fallback
+        if (isMounted) setConnectedMembers([]);
       }
     }
     loadConnectedMembers();
@@ -482,7 +593,7 @@ export function CommentTreeSection({
     setShowMentionPicker(false);
   };
 
-  // Chọn hội viên từ gợi ý @mention
+  // Chọn hội viên từ gợi ý @mention và thêm vào danh sách chip đã gắn thẻ
   const handleSelectMention = (member: ConnectedMemberSummary) => {
     const cursorPos = inputRef.current?.selectionStart || inputText.length;
     const textBeforeCursor = inputText.substring(0, cursorPos);
@@ -502,6 +613,12 @@ export function CommentTreeSection({
     setMentionQuery(null);
     setShowMentionPicker(false);
 
+    // Thêm vào danh sách chip gắn thẻ đa thành viên
+    setTaggedMembers((prev) => {
+      if (prev.some((m) => (m.userId || m.id) === (member.userId || member.id))) return prev;
+      return [...prev, member];
+    });
+
     // Ghi nhận target userId để backend bắn thông báo đẩy
     const targetUserId = member.userId || member.id;
     if (targetUserId && !mentionedUserIds.includes(targetUserId)) {
@@ -512,6 +629,43 @@ export function CommentTreeSection({
     setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
+  };
+
+  // Xóa nhanh một thẻ hội viên khỏi danh sách tag
+  const handleRemoveTaggedMember = (memberId: string, memberName: string) => {
+    setTaggedMembers((prev) => prev.filter((m) => m.id !== memberId && m.userId !== memberId));
+    setMentionedUserIds((prev) => prev.filter((id) => id !== memberId));
+    setInputText((prev) => prev.replace(new RegExp(`@${memberName}\\s*`, "g"), "").trim());
+  };
+
+  // Cập nhật nội dung bình luận qua API
+  const handleUpdateComment = async (commentId: string, content: string) => {
+    try {
+      await fetchNestApi(`/feed/comments/${commentId}`, {
+        method: "PUT",
+        body: JSON.stringify({ content }),
+      });
+      setComments((prev) =>
+        prev.map((c) => (c.id === commentId ? { ...c, content } : c))
+      );
+      toast.success("Đã cập nhật bình luận!");
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể cập nhật bình luận");
+    }
+  };
+
+  // Xóa bình luận qua API
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await fetchNestApi(`/feed/comments/${commentId}`, {
+        method: "DELETE",
+      });
+      setComments((prev) => prev.filter((c) => c.id !== commentId && c.parentId !== commentId));
+      if (onCommentCountChange) onCommentCountChange(Math.max(0, comments.length - 1));
+      toast.success("Đã xóa bình luận!");
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể xóa bình luận");
+    }
   };
 
   // Thả cảm xúc cho bình luận
@@ -663,40 +817,6 @@ export function CommentTreeSection({
 
       {isOpen && (
         <div className="space-y-3">
-          {/* LỌC CHẾ ĐỘ BÌNH LUẬN KIỂU FACEBOOK: MỚI NHẤT / XEM TẤT CẢ */}
-          {comments.length > 0 && (
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold px-0.5 pt-0.5">
-              <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-                <Filter className="size-3 text-[#003B95] dark:text-blue-400" />
-                <span>Hiển thị bình luận:</span>
-              </span>
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setSortMode("newest")}
-                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition cursor-pointer ${
-                    sortMode === "newest"
-                      ? "bg-[#003B95] text-white shadow-2xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-                  }`}
-                >
-                  Mới nhất
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSortMode("all")}
-                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition cursor-pointer ${
-                    sortMode === "all"
-                      ? "bg-[#003B95] text-white shadow-2xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-                  }`}
-                >
-                  Xem tất cả ({comments.length})
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* CÂY BÌNH LUẬN FACEBOOK HIERARCHICAL TREE */}
           {loading ? (
             <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
@@ -724,6 +844,10 @@ export function CommentTreeSection({
                   activeReactionCommentId={activeReactionCommentId}
                   setActiveReactionCommentId={setActiveReactionCommentId}
                   onImagePreview={(url) => setPreviewImage(url)}
+                  onEdit={handleUpdateComment}
+                  onDelete={handleDeleteComment}
+                  currentUserId={user?.id}
+                  isAdmin={user?.role === "ADMIN" || (user as any)?.role === "SUPER_ADMIN"}
                 />
               ))}
             </div>
@@ -765,13 +889,36 @@ export function CommentTreeSection({
 
           {/* KHUNG NHẬP BÌNH LUẬN KIỂU FACEBOOK + AUTOCOMPLETE @MENTION */}
           <div className="relative pt-1">
+            {/* DANH SÁCH HỘI VIÊN ĐÃ GẮN THẺ ĐA THÀNH VIÊN KÈM NÚT XÓA NHANH X */}
+            {taggedMembers.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 px-1 pb-1.5 animate-in fade-in duration-100">
+                <span className="text-[10.5px] font-bold text-slate-400">Đã gắn thẻ:</span>
+                {taggedMembers.map((tm) => (
+                  <span
+                    key={tm.id}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/80 text-[11px] font-bold text-[#003B95] dark:text-blue-300 shadow-2xs"
+                  >
+                    <span>@{tm.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTaggedMember(tm.id, tm.name)}
+                      className="p-0.5 rounded-full hover:bg-blue-200/60 dark:hover:bg-blue-800/60 transition cursor-pointer text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                      title={`Xóa @${tm.name}`}
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* DROPDOWN GỢI Ý @MENTION HỘI VIÊN ĐÃ KẾT NỐI */}
-            {showMentionPicker && filteredMentionMembers.length > 0 && (
+            {showMentionPicker && (
               <div className="absolute bottom-full left-0 right-0 mb-2 max-h-56 overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl z-40 p-1.5 space-y-1 animate-in fade-in-50 zoom-in-95 duration-100">
                 <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                   <span className="flex items-center gap-1 text-[#003B95] dark:text-blue-400">
                     <AtSign className="size-3" />
-                    <span>Nhắc tên hội viên kết nối</span>
+                    <span>Hội viên đã kết nối 1-on-1</span>
                   </span>
                   <button
                     type="button"
@@ -781,40 +928,46 @@ export function CommentTreeSection({
                     <X className="size-3" />
                   </button>
                 </div>
-                {filteredMentionMembers.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => handleSelectMention(m)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left hover:bg-blue-50/80 dark:hover:bg-slate-800/80 transition cursor-pointer"
-                  >
-                    <img
-                      src={m.avatarUrl || "/ceo1983-emblem-8.png"}
-                      alt={m.name}
-                      className="size-7 rounded-full object-cover border border-amber-400/40 shrink-0"
-                      onError={(e) => {
-                        e.currentTarget.src = "/ceo1983-emblem-8.png";
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                        {m.name}
-                      </p>
-                      {m.company && (
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                          {m.company}
+                {filteredMentionMembers.length === 0 ? (
+                  <div className="py-3 px-2 text-center text-xs text-slate-500 dark:text-slate-400">
+                    Chưa có hội viên trong mạng lưới kết nối 1-on-1. Hãy kết nối thêm hội viên để gắn thẻ @.
+                  </div>
+                ) : (
+                  filteredMentionMembers.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => handleSelectMention(m)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left hover:bg-blue-50/80 dark:hover:bg-slate-800/80 transition cursor-pointer"
+                    >
+                      <img
+                        src={m.avatarUrl || "/ceo1983-emblem-8.png"}
+                        alt={m.name}
+                        className="size-7 rounded-full object-cover border border-amber-400/40 shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.src = "/ceo1983-emblem-8.png";
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {m.name}
                         </p>
-                      )}
-                    </div>
-                    <span className="text-[9.5px] px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-[#003B95] dark:text-blue-300 font-bold shrink-0">
-                      Gắn thẻ @
-                    </span>
-                  </button>
-                ))}
+                        {m.company && (
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                            {m.company}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[9.5px] px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-[#003B95] dark:text-blue-300 font-bold shrink-0">
+                        Gắn thẻ @
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
             )}
 
-            {/* Input bar */}
+            {/* Input bar: Bỏ viền khi nhập, người dùng tự gõ @, không có icon @ trùng lặp */}
             <div className="flex items-center gap-2">
               <img
                 src={user?.avatar || (user as any)?.avatarUrl || "/ceo1983-emblem-8.png"}
@@ -825,7 +978,7 @@ export function CommentTreeSection({
                 }}
               />
 
-              <div className="flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 focus-within:border-[#003B95] focus-within:ring-1 focus-within:ring-[#003B95] transition">
+              <div className="flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border-0 outline-none focus-within:ring-0 shadow-none transition">
                 <input
                   ref={inputRef}
                   type="text"
@@ -845,22 +998,8 @@ export function CommentTreeSection({
                       ? `Phản hồi @${replyingTo.authorName}...`
                       : "Viết bình luận công khai, gõ @ để nhắc tên hội viên..."
                   }
-                  className="flex-1 bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none py-1"
+                  className="flex-1 bg-transparent text-xs text-slate-900 dark:text-white placeholder:text-slate-400 outline-none py-1 border-none focus:outline-none focus:ring-0"
                 />
-
-                {/* Phím tắt mở danh bạ @mention */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMentionPicker(!showMentionPicker);
-                    setMentionQuery("");
-                    inputRef.current?.focus();
-                  }}
-                  title="Gắn thẻ @ hội viên đã kết nối"
-                  className="p-1 rounded-lg text-slate-400 hover:text-[#003B95] dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition"
-                >
-                  <AtSign className="size-4" />
-                </button>
 
                 {/* Đính kèm ảnh */}
                 <button

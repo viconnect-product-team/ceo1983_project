@@ -28,9 +28,11 @@ import {
   Bell,
   FileText,
   Briefcase,
+  Bot,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
+import { ViOneAiTutorGuide } from "../common/ViOneAiTutorGuide";
 
 export type AiPersonaType = "general" | "opportunity" | "events" | "meetings" | "finance" | "documents";
 
@@ -65,7 +67,7 @@ export const AI_PERSONAS = [
     color: "text-amber-500 bg-amber-500/10 border-amber-500/30",
     activeColor: "bg-amber-500 text-slate-950 font-bold",
     badge: "Bao quát toàn CLB",
-    greeting: "Chào Anh/Chị! Tôi là Trợ Lý Điều Hành Cấp Cao CEO 1983. Tôi đối soát 100% dữ liệu sống từ CSDL Hiệp hội.",
+    greeting: "Kính chào Quý Lãnh đạo! Tôi là Trợ Lý Điều Hành Cấp Cao CEO 1983. Tôi sẵn sàng hỗ trợ phân tích và cố vấn hoạt động hiệp hội.",
   },
   {
     id: "opportunity" as AiPersonaType,
@@ -372,6 +374,7 @@ export function CrmChatGPTView() {
   const [inputMessage, setInputMessage] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [liveAlert, setLiveAlert] = useState<string | null>(null);
+  const [isTutorOpen, setIsTutorOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -715,9 +718,9 @@ export function CrmChatGPTView() {
           <div className="flex items-center justify-between text-[11px]">
             <span className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>100% Real DB Context</span>
+              <span>Dữ liệu điều hành cập nhật</span>
             </span>
-            <span className="text-[10px] text-muted-foreground font-semibold">PostgreSQL</span>
+            <span className="text-[10px] text-muted-foreground font-semibold">Thời gian thực</span>
           </div>
           <button
             type="button"
@@ -786,9 +789,18 @@ export function CrmChatGPTView() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+              <button
+                type="button"
+                onClick={() => setIsTutorOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs cursor-pointer transition active:scale-95"
+                title="Mở hướng dẫn thao tác CRM tương tác từng bước"
+              >
+                <Bot className="size-3.5" />
+                <span>AI Hướng Dẫn Thao Tác</span>
+              </button>
+              <span className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
                 <Database className="size-3" />
-                <span>Không Fake Dữ Liệu (Live DB)</span>
+                <span>Dữ Liệu Chuẩn Xác</span>
               </span>
               <button
                 type="button"
@@ -854,7 +866,7 @@ export function CrmChatGPTView() {
                 {activePersonaObj.name}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto leading-relaxed">
-                {activePersonaObj.roleDesc}. Đối soát và phân tích 100% dữ liệu sống từ CSDL Hiệp hội CEO 1983 (Không bịa đặt số liệu).
+                {activePersonaObj.roleDesc}. Phân tích và cố vấn số liệu thực tế của Hiệp hội Doanh nhân CEO 1983.
               </p>
 
               {/* 4 Thẻ gợi ý bắt đầu nhanh */}
@@ -966,7 +978,7 @@ export function CrmChatGPTView() {
                       <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.2s]" />
                       <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.4s]" />
                     </div>
-                    <span>{activePersonaObj.name} đang quét và phân tích CSDL PostgreSQL...</span>
+                    <span>{activePersonaObj.name} đang tổng hợp và phân tích dữ liệu điều hành...</span>
                   </div>
                 </div>
               )}
@@ -1007,10 +1019,17 @@ export function CrmChatGPTView() {
             </div>
           </div>
           <p className="text-[10px] text-center text-slate-400 mt-2">
-            CEO 1983 AI kết nối 100% dữ liệu sống PostgreSQL. Không fake số liệu tài chính hay giá trị cơ hội giao thương.
+            CEO 1983 AI — Nền tảng Trợ lý Điều hành & Cố vấn Chuyên sâu Hiệp hội Doanh nhân CEO 1983.
           </p>
         </div>
       </div>
+
+      {/* MODAL HƯỚNG DẪN THAO TÁC CRM TƯƠNG TÁC TỪNG BƯỚC */}
+      <ViOneAiTutorGuide
+        isOpen={isTutorOpen}
+        onClose={() => setIsTutorOpen(false)}
+        systemType="crm"
+      />
     </div>
   );
 }

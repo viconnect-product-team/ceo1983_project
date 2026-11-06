@@ -39,6 +39,7 @@ export const CATEGORIES = [
   { id: "OPPORTUNITY", label: "Cơ hội chia sẻ", icon: Handshake, color: "text-red-600 bg-red-50" },
   { id: "EVENT_MEETING", label: "Sự kiện & Họp ban", icon: Calendar, color: "text-amber-600 bg-amber-50" },
   { id: "MARKETPLACE", label: "Sản phẩm Marketplace", icon: ShoppingBag, color: "text-emerald-600 bg-emerald-50" },
+  { id: "OTHER", label: "Khác", icon: Sparkles, color: "text-purple-600 bg-purple-50" },
 ];
 
 interface CreatePostModalProps {

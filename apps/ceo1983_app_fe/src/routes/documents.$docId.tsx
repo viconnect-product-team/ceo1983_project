@@ -8,16 +8,20 @@ import {
   Calendar,
   Download,
   FileText,
+  FileSpreadsheet,
   FolderOpen,
   Pencil,
   Tag,
   Trash2,
   User,
   Weight,
+  Eye,
+  Maximize2,
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { EmptyState } from "@/components/dashboard/StateKit";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
+import { UniversalDocumentViewerModal } from "@/components/documents/UniversalDocumentViewerModal";
 import { useRole } from "@/hooks/use-role";
 import { useFmt, useT } from "@/lib/i18n";
 import {
@@ -121,6 +125,7 @@ function DocDetailPage() {
   const updateFn = useServerFn(updateDocumentFn);
   const deleteFn = useServerFn(deleteDocumentFn);
   const [open, setOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -217,8 +222,14 @@ function DocDetailPage() {
       {/* Desktop actions */}
       <div className="mb-5 hidden flex-wrap items-center gap-2 sm:flex">
         <button
-          className="inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          style={{ background: "var(--gradient-primary)" }}
+          onClick={() => setViewerOpen(true)}
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] px-5 text-sm font-semibold text-white shadow-md transition cursor-pointer"
+        >
+          <Eye className="h-4 w-4" aria-hidden="true" />
+          <span>Xem trực tiếp tài liệu</span>
+        </button>
+        <button
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
         >
           <Download className="h-4 w-4" aria-hidden="true" />
           {t("common.download")}
@@ -227,7 +238,7 @@ function DocDetailPage() {
           <>
             <button
               onClick={() => setOpen(true)}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
               {t("doc.edit")}
@@ -235,7 +246,7 @@ function DocDetailPage() {
             <button
               onClick={onDelete}
               disabled={deleting}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
               {t("doc.delete")}
@@ -248,15 +259,55 @@ function DocDetailPage() {
       <div className="grid grid-cols-1 gap-5 pb-24 sm:pb-0 lg:grid-cols-3">
         {/* Preview */}
         <div className="lg:col-span-2">
-          <section className="rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-            <div className="border-b border-border px-5 py-3">
-              <h2 className="text-base font-semibold text-foreground">{t("doc.preview.title")}</h2>
+          <section className="rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
+            <div className="border-b border-border px-5 py-3 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Eye className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+                <span>Trình Xem Tài Liệu Trực Quan</span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setViewerOpen(true)}
+                className="text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Mở toàn màn hình</span>
+                <Maximize2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <EmptyState
-              title={t("doc.preview.unavailable")}
-              description={t("doc.preview.unavailableDesc")}
-              icon={<FileText className="h-6 w-6" />}
-            />
+            
+            <div className="p-8 text-center space-y-4 bg-muted/10">
+              <div
+                className="size-16 rounded-2xl mx-auto flex items-center justify-center text-white shadow-lg"
+                style={{ background: TYPE_COLOR[doc.type] || "#003B95" }}
+              >
+                {doc.type === "xlsx" || doc.type === "xls" || doc.type === "csv" ? (
+                  <FileSpreadsheet className="size-8" />
+                ) : (
+                  <FileText className="size-8" />
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-foreground">{doc.name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  Định dạng: <strong className="uppercase font-mono text-foreground">{doc.type}</strong> • Dung lượng: {doc.size || "Tiêu chuẩn"}
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
+                  ✓ Hỗ trợ xem trực quan tương tác 100% định dạng Word (.docx), Excel (.xlsx, .csv) &amp; PDF
+                </p>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setViewerOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shadow-md transition cursor-pointer"
+                >
+                  <Eye className="size-4" />
+                  <span>Bật Trình Xem Tài Liệu Universal</span>
+                </button>
+              </div>
+            </div>
           </section>
         </div>
 
@@ -282,18 +333,23 @@ function DocDetailPage() {
       {/* Mobile sticky action bar */}
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-border bg-card/95 p-3 backdrop-blur sm:hidden">
         <button
-          className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          style={{ background: "var(--gradient-primary)" }}
+          onClick={() => setViewerOpen(true)}
+          className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#003B95] text-sm font-semibold text-white shadow-md cursor-pointer"
+        >
+          <Eye className="h-4 w-4" aria-hidden="true" />
+          <span>Xem tài liệu</span>
+        </button>
+        <button
+          className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
         >
           <Download className="h-4 w-4" aria-hidden="true" />
-          {t("common.download")}
         </button>
         {canWrite && (
           <>
             <button
               onClick={() => setOpen(true)}
               aria-label={t("doc.edit")}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -301,13 +357,19 @@ function DocDetailPage() {
               onClick={onDelete}
               disabled={deleting}
               aria-label={t("doc.delete")}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </>
         )}
       </div>
+
+      <UniversalDocumentViewerModal
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        document={doc}
+      />
 
       <CrudModal
         open={open}

@@ -27,6 +27,7 @@ import { TrainingsModule } from './trainings/trainings.module';
 import { ZaloModule } from './zalo/zalo.module';
 import { PaymentModule } from './payment/payment.module';
 import { SyndicationModule } from './syndication/syndication.module';
+import { LandingModule } from './landing/landing.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { SyndicationModule } from './syndication/syndication.module';
     ZaloModule,
     PaymentModule,
     SyndicationModule,
+    LandingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

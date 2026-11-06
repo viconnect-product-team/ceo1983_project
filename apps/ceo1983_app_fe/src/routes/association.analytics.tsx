@@ -106,8 +106,8 @@ export function AssociationAnalyticsScreen() {
     wonCount: 0,
   });
 
-  // 7 Mức Granularity Thời gian thực: Phút, Giờ, Ngày, Tuần, Tháng, Quý, Năm
-  const [granularity, setGranularity] = useState<"minute" | "hour" | "day" | "week" | "month" | "quarter" | "year">("month");
+  // 5 Mức Granularity Thời gian: Ngày, Tuần, Tháng, Quý, Năm
+  const [granularity, setGranularity] = useState<"day" | "week" | "month" | "quarter" | "year">("month");
   const timeRange = granularity;
   const setTimeRange = (val: any) => setGranularity(val);
   const [loading, setLoading] = useState(false);
@@ -505,8 +505,8 @@ export function AssociationAnalyticsScreen() {
     col3Label: string;
     col3Color: string;
     col3Unit?: string;
-    col4Label: string;
-    col4Color: string;
+    col4Label?: string;
+    col4Color?: string;
     col4Unit?: string;
     timelineLabel: string;
     timelineColor: string;
@@ -541,9 +541,9 @@ export function AssociationAnalyticsScreen() {
       col3Label: "Giá trị đàm phán",
       col3Color: "#F59E0B",
       col3Unit: "Tỷ VNĐ",
-      col4Label: "Đã chốt / kết nối",
-      col4Color: "#8B5CF6",
-      col4Unit: "Cơ hội",
+      col4Label: undefined,
+      col4Color: undefined,
+      col4Unit: undefined,
       timelineLabel: "Tổng luồng cơ hội",
       timelineColor: "#DC2626",
       timelineUnit: "Cơ hội",
@@ -858,7 +858,7 @@ export function AssociationAnalyticsScreen() {
         back
       />
 
-      {/* ── BỘ LỌC GRANULARITY THỜI GIAN THỰC: PHÚT / GIỜ / NGÀY / TUẦN / THÁNG / QUÝ / NĂM ── */}
+      {/* ── BỘ LỌC GRANULARITY 5 DẠNG: NGÀY / TUẦN / THÁNG / QUÝ / NĂM ── */}
       <div className="px-3 sm:px-4 pt-3 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
         <div className="flex items-center gap-1 shrink-0">
           <Clock className="size-3.5 text-[#003B95] dark:text-blue-400" />
@@ -868,6 +868,7 @@ export function AssociationAnalyticsScreen() {
         </div>
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-slate-100 dark:bg-white/5 p-0.5 rounded-xl border border-slate-200/60 dark:border-white/10">
           {[
+            { id: "day", label: "Ngày" },
             { id: "week", label: "Tuần" },
             { id: "month", label: "Tháng" },
             { id: "quarter", label: "Quý" },
@@ -1030,32 +1031,6 @@ export function AssociationAnalyticsScreen() {
 
           {/* Recharts Canvas */}
           <div className="h-68 w-full pt-1 relative">
-            {/* Thanh dọc hỗ trợ xem biểu đồ thời gian thực: Phút / Giờ / Ngày */}
-            <div className="absolute right-1 top-2 z-10 flex flex-col items-center bg-slate-900/95 dark:bg-black/95 backdrop-blur-md p-1 rounded-xl shadow-lg border border-slate-700/60 gap-1">
-              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider px-1">Soi thực</span>
-              {[
-                { id: "minute", label: "Phút" },
-                { id: "hour", label: "Giờ" },
-                { id: "day", label: "Ngày" },
-              ].map((m) => {
-                const isSelected = granularity === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setGranularity(m.id as any)}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
-                      isSelected
-                        ? "bg-[#003B95] text-white shadow-xs font-black ring-1 ring-blue-400"
-                        : "text-slate-300 hover:text-white hover:bg-white/10"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
-
             {chartViewMode === "donut" ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart margin={{ top: 10, right: 40, left: 0, bottom: 10 }}>
@@ -1078,9 +1053,9 @@ export function AssociationAnalyticsScreen() {
                       if (active && payload && payload.length) {
                         const d = payload[0];
                         return (
-                          <div className="p-2 rounded-xl bg-slate-900/95 text-white text-xs shadow-xl border border-slate-700">
-                            <p className="font-bold">{d.name}</p>
-                            <p className="text-amber-400 font-bold">{d.value}% phân bổ tỷ trọng</p>
+                          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-xs shadow-xl border border-slate-200 dark:border-slate-800">
+                            <p className="font-bold text-slate-900 dark:text-white">{d.name}</p>
+                            <p className="text-[#003B95] dark:text-amber-400 font-bold">{d.value}% phân bổ tỷ trọng</p>
                           </div>
                         );
                       }
@@ -1102,7 +1077,7 @@ export function AssociationAnalyticsScreen() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 15, right: 45, left: -15, bottom: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 15, right: 25, left: -15, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
                   <XAxis
                     dataKey="name"
@@ -1110,6 +1085,12 @@ export function AssociationAnalyticsScreen() {
                     fontSize={10}
                     tickLine={false}
                     axisLine={{ stroke: "rgba(150,150,150,0.2)" }}
+                    angle={-35}
+                    textAnchor="end"
+                    height={45}
+                    interval={0}
+                    dx={-4}
+                    dy={4}
                   />
                   <YAxis
                     stroke="#888888"
@@ -1123,31 +1104,32 @@ export function AssociationAnalyticsScreen() {
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="p-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md text-white text-xs shadow-xl border border-slate-700 min-w-[160px] space-y-1">
-                            <p className="font-bold border-b border-slate-700 pb-1 mb-1 text-slate-200">{label}</p>
+                          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-xs shadow-xl border border-slate-200 dark:border-slate-800 min-w-[170px] space-y-1.5 z-50">
+                            <p className="font-bold border-b border-slate-100 dark:border-slate-800 pb-1 mb-1 text-slate-900 dark:text-slate-100">{label}</p>
                             {payload.map((p: any, idx: number) => {
-                              const rawUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
-                                : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
-                                : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
-                                : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
-                                : (activeChartMeta.timelineUnit || activeChartMeta.unit);
-
-                              let itemUnit = rawUnit || '';
-                              if (itemUnit.includes('/')) {
-                                if (p.name?.toLowerCase().includes('giá trị') || p.name?.toLowerCase().includes('tăng (tỷ)') || p.name?.toLowerCase().includes('đàm phán')) {
-                                  itemUnit = 'Tỷ VNĐ';
-                                } else {
-                                  itemUnit = 'Cơ hội';
+                              let itemUnit = "";
+                              if (activeCategory === "top_opportunities") {
+                                if (p.dataKey === "col1" || p.dataKey === "timelineVal") {
+                                  itemUnit = "Cơ hội";
+                                } else if (p.dataKey === "col2" || p.dataKey === "col3") {
+                                  itemUnit = "Tỷ VNĐ";
                                 }
+                              } else {
+                                const rawUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
+                                  : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
+                                  : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
+                                  : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
+                                  : (activeChartMeta.timelineUnit || activeChartMeta.unit);
+                                itemUnit = rawUnit || "";
                               }
 
                               return (
                                 <div key={idx} className="flex items-center justify-between gap-3 text-[11px]">
                                   <span className="flex items-center gap-1.5" style={{ color: p.color || p.stroke || p.fill }}>
                                     <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.stroke || p.fill }} />
-                                    <span>{p.name}:</span>
+                                    <span className="text-slate-600 dark:text-slate-300">{p.name}:</span>
                                   </span>
-                                  <span className="font-bold text-white">{p.value} {itemUnit}</span>
+                                  <span className="font-bold text-slate-900 dark:text-white">{p.value} {itemUnit}</span>
                                 </div>
                               );
                             })}
@@ -1178,13 +1160,15 @@ export function AssociationAnalyticsScreen() {
                     radius={[3, 3, 0, 0]}
                     maxBarSize={12}
                   />
-                  <Bar
-                    dataKey="col4"
-                    name={activeChartMeta.col4Label}
-                    fill={activeChartMeta.col4Color}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={12}
-                  />
+                  {activeChartMeta.col4Label && (
+                    <Bar
+                      dataKey="col4"
+                      name={activeChartMeta.col4Label}
+                      fill={activeChartMeta.col4Color}
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="timelineVal"
@@ -1199,7 +1183,7 @@ export function AssociationAnalyticsScreen() {
             )}
           </div>
 
-          {/* Màu chú thích dưới biểu đồ: 4 cột + 1 đường Timeline */}
+          {/* Màu chú thích dưới biểu đồ: Các cột + 1 đường Timeline */}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[11px]">
             <div className="flex items-center gap-1">
               <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
@@ -1213,10 +1197,12 @@ export function AssociationAnalyticsScreen() {
               <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
               <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col3Label}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
-              <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col4Label}</span>
-            </div>
+            {activeChartMeta.col4Label && (
+              <div className="flex items-center gap-1">
+                <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
+                <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col4Label}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <span className="w-3.5 h-0.5 shrink-0 rounded-full" style={{ backgroundColor: activeChartMeta.timelineColor }} />
               <span className="text-slate-700 dark:text-slate-300 font-bold">{activeChartMeta.timelineLabel}</span>

@@ -110,6 +110,7 @@ import { Route as MEventsRouteImport } from './routes/m.events'
 import { Route as MCheckinRouteImport } from './routes/m.checkin'
 import { Route as MCardRouteImport } from './routes/m.card'
 import { Route as MBusinessCardsRouteImport } from './routes/m.business-cards'
+import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as HSlugRouteImport } from './routes/h.$slug'
 import { Route as GuestEventRegisterEventIdRouteImport } from './routes/guest-event-register.$eventId'
 import { Route as FeesInvoiceIdRouteImport } from './routes/fees.$invoiceId'
@@ -168,6 +169,7 @@ import { Route as AssociationCalendarRouteImport } from './routes/association.ca
 import { Route as AssociationBusinessCardsRouteImport } from './routes/association.business-cards'
 import { Route as AssociationBenefitsRouteImport } from './routes/association.benefits'
 import { Route as AssociationAnalyticsRouteImport } from './routes/association.analytics'
+import { Route as AdminLandingWebsRouteImport } from './routes/admin.landing-webs'
 import { Route as AdminLandingTemplatesRouteImport } from './routes/admin.landing-templates'
 import { Route as AdminDemoLeadsRouteImport } from './routes/admin.demo-leads'
 import { Route as AdminCtaAnalyticsRouteImport } from './routes/admin.cta-analytics'
@@ -757,6 +759,11 @@ const MBusinessCardsRoute = MBusinessCardsRouteImport.update({
   path: '/business-cards',
   getParentRoute: () => MRoute,
 } as any)
+const LandingSlugRoute = LandingSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LandingRoute,
+} as any)
 const HSlugRoute = HSlugRouteImport.update({
   id: '/h/$slug',
   path: '/h/$slug',
@@ -1054,6 +1061,11 @@ const AssociationAnalyticsRoute = AssociationAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => AssociationRoute,
+} as any)
+const AdminLandingWebsRoute = AdminLandingWebsRouteImport.update({
+  id: '/admin/landing-webs',
+  path: '/admin/landing-webs',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminLandingTemplatesRoute = AdminLandingTemplatesRouteImport.update({
   id: '/admin/landing-templates',
@@ -1572,6 +1584,7 @@ export interface FileRoutesByFullPath {
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/admin/landing-templates': typeof AdminLandingTemplatesRoute
+  '/admin/landing-webs': typeof AdminLandingWebsRoute
   '/association/analytics': typeof AssociationAnalyticsRoute
   '/association/benefits': typeof AssociationBenefitsRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
@@ -1630,6 +1643,7 @@ export interface FileRoutesByFullPath {
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/guest-event-register/$eventId': typeof GuestEventRegisterEventIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/$slug': typeof LandingSlugRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -1802,6 +1816,7 @@ export interface FileRoutesByTo {
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/admin/landing-templates': typeof AdminLandingTemplatesRoute
+  '/admin/landing-webs': typeof AdminLandingWebsRoute
   '/association/analytics': typeof AssociationAnalyticsRoute
   '/association/benefits': typeof AssociationBenefitsRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
@@ -1849,6 +1864,7 @@ export interface FileRoutesByTo {
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/guest-event-register/$eventId': typeof GuestEventRegisterEventIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/$slug': typeof LandingSlugRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -2028,6 +2044,7 @@ export interface FileRoutesById {
   '/admin/cta-analytics': typeof AdminCtaAnalyticsRoute
   '/admin/demo-leads': typeof AdminDemoLeadsRoute
   '/admin/landing-templates': typeof AdminLandingTemplatesRoute
+  '/admin/landing-webs': typeof AdminLandingWebsRoute
   '/association/analytics': typeof AssociationAnalyticsRoute
   '/association/benefits': typeof AssociationBenefitsRoute
   '/association/business-cards': typeof AssociationBusinessCardsRoute
@@ -2086,6 +2103,7 @@ export interface FileRoutesById {
   '/fees/$invoiceId': typeof FeesInvoiceIdRoute
   '/guest-event-register/$eventId': typeof GuestEventRegisterEventIdRoute
   '/h/$slug': typeof HSlugRoute
+  '/landing/$slug': typeof LandingSlugRoute
   '/m/business-cards': typeof MBusinessCardsRoute
   '/m/card': typeof MCardRoute
   '/m/checkin': typeof MCheckinRoute
@@ -2273,6 +2291,7 @@ export interface FileRouteTypes {
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/admin/landing-templates'
+    | '/admin/landing-webs'
     | '/association/analytics'
     | '/association/benefits'
     | '/association/business-cards'
@@ -2331,6 +2350,7 @@ export interface FileRouteTypes {
     | '/fees/$invoiceId'
     | '/guest-event-register/$eventId'
     | '/h/$slug'
+    | '/landing/$slug'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2503,6 +2523,7 @@ export interface FileRouteTypes {
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/admin/landing-templates'
+    | '/admin/landing-webs'
     | '/association/analytics'
     | '/association/benefits'
     | '/association/business-cards'
@@ -2550,6 +2571,7 @@ export interface FileRouteTypes {
     | '/fees/$invoiceId'
     | '/guest-event-register/$eventId'
     | '/h/$slug'
+    | '/landing/$slug'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2728,6 +2750,7 @@ export interface FileRouteTypes {
     | '/admin/cta-analytics'
     | '/admin/demo-leads'
     | '/admin/landing-templates'
+    | '/admin/landing-webs'
     | '/association/analytics'
     | '/association/benefits'
     | '/association/business-cards'
@@ -2786,6 +2809,7 @@ export interface FileRouteTypes {
     | '/fees/$invoiceId'
     | '/guest-event-register/$eventId'
     | '/h/$slug'
+    | '/landing/$slug'
     | '/m/business-cards'
     | '/m/card'
     | '/m/checkin'
@@ -2971,6 +2995,7 @@ export interface RootRouteChildren {
   AdminCtaAnalyticsRoute: typeof AdminCtaAnalyticsRoute
   AdminDemoLeadsRoute: typeof AdminDemoLeadsRoute
   AdminLandingTemplatesRoute: typeof AdminLandingTemplatesRoute
+  AdminLandingWebsRoute: typeof AdminLandingWebsRoute
   BSlugRoute: typeof BSlugRoute
   CTokenRoute: typeof CTokenRoute
   CardCodeRoute: typeof CardCodeRoute
@@ -3707,6 +3732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MBusinessCardsRouteImport
       parentRoute: typeof MRoute
     }
+    '/landing/$slug': {
+      id: '/landing/$slug'
+      path: '/$slug'
+      fullPath: '/landing/$slug'
+      preLoaderRoute: typeof LandingSlugRouteImport
+      parentRoute: typeof LandingRoute
+    }
     '/h/$slug': {
       id: '/h/$slug'
       path: '/h/$slug'
@@ -4112,6 +4144,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/association/analytics'
       preLoaderRoute: typeof AssociationAnalyticsRouteImport
       parentRoute: typeof AssociationRoute
+    }
+    '/admin/landing-webs': {
+      id: '/admin/landing-webs'
+      path: '/admin/landing-webs'
+      fullPath: '/admin/landing-webs'
+      preLoaderRoute: typeof AdminLandingWebsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/landing-templates': {
       id: '/admin/landing-templates'
@@ -5229,10 +5268,12 @@ const FeesRouteChildren: FeesRouteChildren = {
 const FeesRouteWithChildren = FeesRoute._addFileChildren(FeesRouteChildren)
 
 interface LandingRouteChildren {
+  LandingSlugRoute: typeof LandingSlugRoute
   LandingIndexRoute: typeof LandingIndexRoute
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
+  LandingSlugRoute: LandingSlugRoute,
   LandingIndexRoute: LandingIndexRoute,
 }
 
@@ -5433,6 +5474,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCtaAnalyticsRoute: AdminCtaAnalyticsRoute,
   AdminDemoLeadsRoute: AdminDemoLeadsRoute,
   AdminLandingTemplatesRoute: AdminLandingTemplatesRoute,
+  AdminLandingWebsRoute: AdminLandingWebsRoute,
   BSlugRoute: BSlugRoute,
   CTokenRoute: CTokenRoute,
   CardCodeRoute: CardCodeRoute,

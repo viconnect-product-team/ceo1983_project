@@ -13,7 +13,7 @@
 # ------------------------------------------------------------------------------
 # [BẮT BUỘC BƯỚC 1] Xác định phân hệ: Web CRM Quản trị (Desktop PC, Sidebar) vs CEO 1983 Mobile App (Hội viên, Bottom Nav).
 # [BẮT BUỘC BƯỚC 2] Tra cứu Functional Node ID từ file `.agents/rules/node-matrix.md`:
-#   - Nhóm CRM: [NODE-CRM-001] -> [NODE-CRM-021]
+#   - Nhóm CRM: [NODE-CRM-001] -> [NODE-CRM-023]
 #   - Nhóm Mobile: [NODE-APP-001] -> [NODE-APP-016]
 #   - Nhóm Core / DevOps: [NODE-CORE-001] -> [NODE-CORE-006]
 # [BẮT BUỘC BƯỚC 3] Đọc file quy tắc chuyên biệt và file nguồn trước khi sửa:
@@ -23,6 +23,8 @@
 # [BẮT BUỘC BƯỚC 4] Sửa đúng file được liệt kê trong Node. Tuân thủ 3 màu thương hiệu (Đỏ ưu tiên 1, Vàng ưu tiên 2, Xanh ưu tiên 3).
 #   * QUY TẮC NÚT BẤM (STRICT): TUYỆT ĐỐI KHÔNG DÙNG NÚT BẤM MÀU ĐỎ (bg-red-*, from-red-*). TUYỆT ĐỐI KHÔNG DÙNG MÀU GRADIENT TRÊN NÚT BẤM (bg-gradient-to-*, from-*, to-*). Toàn bộ nút bấm hành động chính phải sử dụng màu Xanh Navy nguyên khối nhận diện chuẩn của CLB Doanh Nhân CEO 1983 (bg-[#003B95] hover:bg-[#002B70] text-white shadow-xs), nút nổi bật/kêu gọi hành động dùng Vàng Kim (#B8860B / amber-500), nút thành công dùng Emerald (emerald-600), nút hủy/thoát dùng Slate (slate-100 / slate-800).
 #   * QUY TẮC BÌNH LUẬN & MENTION (STRICT): Hệ thống bình luận phải tổ chức dạng cây phân cấp (Threaded Comment Tree) hiển thị tất cả bình luận; bình luận mới nhất hoặc luồng thảo luận có tương tác mới phải được tự động đẩy lên đầu; hỗ trợ tag tên @ hội viên (lấy từ danh sách kết nối connectedOnly=true) kèm gửi thông báo đẩy (push notification) thời gian thực tới người được nhắc tên. Đồng bộ hóa 100% trải nghiệm bình luận giữa Mạng lưới và Thống kê.
+#   * QUY CHUẨN TRÌNH XEM TÀI LIỆU TOÀN NĂNG ([NODE-CRM-014]): Mọi tính năng mở tệp tài liệu CLB BẮT BUỘC hỗ trợ xem chi tiết tối thiểu 3 định dạng Word (.docx, .doc theo layout giấy in A4 chuẩn hoặc Office/Google Docs), Excel (.xlsx, .xls, .csv phân tích đa sheet bằng SheetJS kèm bộ lọc tìm kiếm dòng) và PDF (.pdf nhúng điều hướng zoom in/out, in ấn).
+#   * QUY CHUẨN LANDING WEB DYNAMIC ([NODE-CRM-023]): Cổng quản trị Web CRM hỗ trợ tạo, quản lý và áp dụng Landing Web theo mẫu Timed Cards Opening (Pinterest Giulio Cuscito). Hệ thống cho phép người dùng tự do thêm/sửa menu cây phân cấp đa tầng (Tree Menu) kích hoạt Sub-screen modal (bài viết, thư viện ảnh, form liên hệ), kết nối API động (Dynamic API Connector) với tính năng Test API Live, và gán Subdomain (*.ceo1983.viconnect.vn).
 # [BẮT BUỘC BƯỚC 5] Kiểm tra lỗi: Chạy `npx tsc --noEmit` exit code 0 trên cả BE và FE. Cập nhật `MEMORY.md`, `.cursorrules`, và tài liệu NotebookLM.
 # [QUY TẮC CẬP NHẬT TÀI LIỆU SRS/ĐẶC TẢ]: Khi có yêu cầu mới hoặc nâng cấp chức năng, BẮT BUỘC tra cứu, tìm đúng mục Use Case / Chức năng đã mô tả trong tài liệu để sửa và cập nhật cục bộ theo phong cách giới thiệu tổng quan nghiệp vụ. TUYỆT ĐỐI KHÔNG xóa sạch (clear) file để viết lại từ đầu.
 # TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`.
