@@ -394,7 +394,7 @@ export class AiCrmAnalyticsService {
       expenseBreakdown: totalExpense > 0 ? [
         { category: 'Chi phí vận hành & hoạt động sự kiện', amount: totalExpense, percentage: 100 },
       ] : [],
-      verifiedDatabase: 'public.transactions (PostgreSQL Live)',
+      verifiedDatabase: 'Hệ thống Quản trị Tài chính CEO 1983',
     };
   }
 

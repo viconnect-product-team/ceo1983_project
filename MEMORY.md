@@ -1,5 +1,81 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 06/11/2026 (v10.47): Nâng Cấp Bản Mẫu Landing Web Startup Mobile Showcase (Pinterest 234398355598861981 - iPhone 16 Mockup, 4 Chỉ Số Vàng, 3D Cards, Chuẩn ceo1983.com), Tự Động Scroll Chuyển Section Cho Mẫu Cũ, Xóa Bỏ Biểu Quyết Triệt Để Không Bị Seed Lại, Tối Ưu Quản Lý Tài Khoản (Không Select Vai Trò Trên Cột, Sửa Nút Lưu Quyền), Khắc Phục Hoàn Toàn Tooltip Nền Trắng & Đơn Vị Thống Kê, Tối Ưu Tương Tác Bình Luận App (Long-press, Menu 3 Chấm, Multi-Tag Hội Viên Kết Nối Chuẩn Xác) ([NODE-CORE-001], [NODE-CRM-008], [NODE-CRM-011], [NODE-CRM-017], [NODE-CRM-023], [NODE-APP-003], [NODE-APP-006], [NODE-APP-009])**:
+  1. *Nâng Cấp CRM: Xây Dựng Bản Mẫu Landing Web Mới "Startup Mobile Showcase" (`[NODE-CRM-023]`)*:
+     - **Tái hiện 100% cảm hứng thiết kế Pinterest 234398355598861981 (`StartupMobileShowcaseLanding.tsx`)**:
+       - Bố cục phong cách Startup/Mobile Showcase với tông màu chuẩn nhận diện CLB CEO 1983: Xanh Navy `#003B95` và Vàng Gold `#ecad29`.
+       - Header tích hợp Logo chính thức `/ceo1983-emblem-8.png`, slogan "Trực thuộc HanoiBA", hệ thống Dynamic Tree Menu, nút "Đăng Nhập CRM" và "Tải App Hội Viên".
+       - Khung mô phỏng Smartphone iPhone 16 Pro với Dynamic Island, hiển thị màn hình thực tế của App CEO 1983: Lời chào Doanh nhân, Thẻ hội viên số VIP, 4 thẻ tính năng tương tác (Sàn B2B, Đặt lịch 1-on-1, Thẻ QR, Chỉ số giao thương) và thanh điều hướng Bottom Nav.
+       - Các huy hiệu nổi (floating metric badges) chuyển động mềm mại xung quanh smartphone: 100+ Tỷ VNĐ Giao thương B2B, 100% Xác thực Doanh nghiệp, 4.9/5 ★★★★★ Tín nhiệm.
+       - **Dải Ruy Băng 4 Chỉ Số Vàng (Signature Navy Stats Ribbon)**: Tái hiện dải xanh Navy đặc trưng: 4+ Năm Hành Trình Kiến Tạo, 1.983+ Hội Viên Doanh Nhân, 500+ Doanh Nghiệp Tiêu Biểu, 100+ Tỷ Giá Trị Giao Thương B2B.
+       - **Lưới 6 Trụ Cột Tính Năng 3D**: Sàn Thương Mại B2B Nội Khối, Đặt Lịch Hẹn & Giao Thương 1-on-1, Thẻ Hội Viên Điện Tử & QR Check-in, Báo Cáo & Chỉ Số Giao Thương, Trợ Lý AI Doanh Nghiệp 24/7, Mạng Lưới & Biểu Quyết Đại Hội.
+       - **Tiếng Nói Lãnh Đạo & Ban Điều Hành**: Trích dẫn thông điệp truyền cảm hứng từ Chị Lê Thị Dung (Chủ tịch CLB CEO 1983), các Phó Chủ tịch và Ban Thư ký.
+       - **Khung Hỏi Đáp Phổ Biến (FAQ Accordion)**: Giải đáp chi tiết điều kiện gia nhập, hỗ trợ nền tảng, niêm yết sản phẩm và cơ chế bảo mật.
+       - **Banner Kêu Gọi Tải App & Footer Chuẩn Thương Hiệu**: Tích hợp địa chỉ Cung Tri Thức - Số 1 Tôn Thất Thuyết, hotline, email, liên kết website chính thức `ceo1983.com` và `ceo1983.viconnect.vn`.
+     - **Tối ưu hóa Mẫu Cũ (Timed Cards Opening)**:
+       - Loại bỏ hoàn toàn các nút mũi tên trái/phải thủ công.
+       - Tích hợp bộ lắng nghe sự kiện lăn chuột (`onWheel`) và vuốt cảm ứng trên thiết bị di động (`onTouchStart` / `onTouchEnd`) kèm bộ đệm chống dội (cooldown debounce 500ms) giúp tự động chuyển section mượt mà.
+     - **Cập Nhật Cổng Quản Lý CRM (`admin.landing-webs.tsx`) & Public Route (`landing.$slug.tsx`)**:
+       - Bổ sung tùy chọn bản mẫu thứ 3 "Startup Mobile Showcase" vào modal tạo mới Landing Web.
+       - Live Preview hỗ trợ xem trực tiếp và chuyển đổi qua lại giữa cả 2 phong cách giao diện.
+  2. *Sửa Triệt Để Lỗi Infinite Re-seed Biểu Quyết Khi Xóa Hết (`[NODE-CRM-008]`)*:
+     - Phát hiện nguyên nhân: hàm `ensureSeedPolls()` trong `voting.repository.ts` tự động kiểm tra `COUNT(*) === 0` mỗi khi lấy danh sách, dẫn tới khi người dùng xóa hết các biểu quyết thì hệ thống lại tự động chèn lại 4 bản ghi mẫu mặc định.
+     - Khắc phục: Thiết lập bảng cờ hệ thống `public.app_system_flags` lưu trữ khóa `polls_seeded = 'true'`. Một khi đã được khởi tạo lần đầu, hệ thống sẽ vĩnh viễn không tự ý chèn lại dữ liệu mẫu khi người dùng chủ động xóa hết, đảm bảo quyền kiểm soát tuyệt đối cho quản trị viên.
+  3. *Tối Ưu Quản Lý Tài Khoản CRM (`accounts.tsx` - `[NODE-CRM-011]`)*:
+     - Thay thế thẻ `<select>` trực tiếp trên cột "VAI TRÒ" bằng huy hiệu Badge đọc chuẩn xác kèm biểu tượng `Shield`, loại bỏ hoàn toàn tình trạng vô tình bấm nhầm phân quyền trực tiếp trên bảng dữ liệu.
+     - Sửa lỗi nút "Lưu Quyền": Chỉ thực hiện gọi API cập nhật đối với những tài khoản thực sự có thay đổi (`changedAccounts`), hiển thị thông báo toast thân thiện khi không có thay đổi nào cần lưu, ngăn ngừa việc gửi hàng loạt request rỗng gây lỗi mạng.
+  4. *Khắc Phục Hoàn Toàn Tooltip & Định Dạng Số Liệu Thống Kê App CEO 1983 (`[NODE-APP-006]`)*:
+     - Chuyển đổi toàn bộ nền Tooltip biểu đồ từ màu tối sang thẻ Card nền trắng trang nhã (`bg-white dark:bg-slate-900 border-slate-200 shadow-xl`), tương thích hoàn hảo với giao diện Light Theme của ứng dụng.
+     - Chuẩn hóa tách biệt đơn vị hiển thị: Số lượng cơ hội hiển thị rõ ràng `"Cơ hội"`, giá trị tiền tệ hiển thị rõ ràng `"Tỷ VNĐ"`, triệt tiêu hoàn toàn chuỗi nhãn gộp gây hiểu nhầm `"Cơ hội / Tỷ VNĐ"`.
+     - Xóa bỏ vĩnh viễn cột tím "Đã kết nối / chốt" (`col4`) theo đúng chỉ đạo của người dùng.
+     - Tinh giản bộ lọc thời gian về đúng 5 mốc chuẩn mực: **Ngày, Tuần, Tháng, Quý, Năm**; nghiêng nhãn trục X một góc 35 độ (`angle={-35}`) giúp chống tràn chữ và dễ đọc.
+     - Sửa hàm `formatSmartPrice`: Quy đổi chính xác các giá trị số nhỏ (như `2`) thành `2 Tỷ VNĐ` thay vì hiển thị số `2` trơ trọi trên ô "Chỉ số giao thương & dẫn chứng".
+  5. *Nâng Cấp Hệ Thống Bình Luận & Danh Mục Bài Đăng Mobile App (`[NODE-APP-003]`, `[NODE-APP-009]`)*:
+     - Bổ sung thao tác nhấn giữ (Long-press) và menu 3 chấm (`...`) cho phép chỉnh sửa (Edit) hoặc Xóa (Delete) bình luận trực tiếp trong `CommentTreeSection.tsx`.
+     - Loại bỏ nút lọc chế độ "Mới nhất / Xem tất cả" và nút `@` trùng lặp trên thanh công cụ; loại bỏ viền border khi nhập liệu giúp khung chat thanh thoát, hiện đại.
+     - Tối ưu danh sách gợi ý `@`: Chỉ tải danh sách hội viên **đã kết nối thực tế** (`/members/directory?connectedOnly=true`), hiển thị trạng thái hướng dẫn nếu chưa có kết nối nào, tuyệt đối không rò rỉ toàn bộ danh bạ hội viên khi chưa kết nối; hỗ trợ tag nhiều người với chip xóa nhanh (`X`).
+     - Bổ sung danh mục bài đăng "Khác" (`OTHER`) với biểu tượng `Sparkles` trong modal tạo bài viết (`CreatePostModal.tsx`) và bộ lọc bài viết (`FeedView.tsx`).
+     - Bỏ qua các từ ngữ kỹ thuật ("PostgreSQL", "Live DB", "100% dữ liệu sống") trên toàn bộ CRM và Trợ lý AI.
+  6. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` hay `git push` (Strict Rule 1).
+
+- **Bản cập nhật ngày 06/11/2026 (v10.46): Nâng Cấp Quản Lý Landing Web Dynamic Chuẩn Giulio Cuscito Timed Cards Opening (Pinterest) Kèm Subdomain & API Connector, Trình Xem Tài Liệu Toàn Năng Universal Document Viewer (Word A4/Office/Google, SheetJS Excel Tabs, PDF Embed) ([NODE-CORE-001], [NODE-CRM-014], [NODE-CRM-021], [NODE-CRM-023])**:
+  1. *Nâng Cấp CRM: Quản Lý Landing Web Dynamic Tái Hiện Chuẩn Xác Pinterest Timed Cards Opening (`[NODE-CRM-021]`, `[NODE-CRM-023]`)*:
+     - **Tái hiện 100% phong cách thiết kế & animation (`TimedCardsOpeningLanding.tsx`)**: Dựa trên thiết kế Timed Cards Opening (Giulio Cuscito trên Pinterest `https://www.pinterest.com/pin/160088961741878822/`):
+       - Slide toàn màn hình sắc nét với lớp phủ tương phản sang trọng.
+       - Thanh chạy tiến trình tự động 5s phía trên màn hình (tự động chuyển slide tuần hoàn, tự động tạm dừng khi rê chuột).
+       - Bố cục Typography kép cỡ lớn (72px Split Headline phong cách Oswald/Inter), nhãn huy hiệu địa danh/chủ đề, mô tả tinh tế, nút Bookmark vàng Gold `#ecad29` và nút CTA "Khám phá địa danh" / "Liên hệ ngay".
+       - Băng chuyền thẻ thu nhỏ góc dưới bên phải xếp chồng động preview các slide tiếp theo, click vào thẻ chuyển slide ngay tức thì.
+       - Bảng điều khiển góc dưới bên trái: nút prev/next, thanh phân đoạn slide và bộ đếm tiến trình `01 / 06`.
+     - **Độ Dynamic & Khả Năng Tùy Biến Đỉnh Cao Cho Quản Trị Viên CRM**:
+       - Tự do biên tập từng slide: Tiêu đề dòng 1 & 2, nhãn địa danh, hình ảnh nền, mô tả tóm tắt, màu sắc chủ đạo, nút hành động CTA và liên kết.
+       - **Header Menu dạng cây phân cấp đa tầng (Hierarchical Tree Dropdown)**: Cho phép thêm các mục menu cha và menu con đa cấp độ (depth > 0) với huy hiệu trạng thái, biểu tượng và cơ chế điều hướng linh hoạt.
+       - **Màn con (Sub-screens / Dynamic Modals) tự cấu hình**: Khi click vào mục menu dạng tree, hệ thống kích hoạt màn con tương ứng với 3 kiểu hiển thị chuyên biệt: Bài viết chi tiết nội dung phong phú, Thư viện ảnh ấn tượng, hoặc Form liên hệ & thu thập thông tin hội viên tương tác cao.
+       - **Trình kết nối API động (Dynamic API Connector)**: Người dùng có thể cấu hình endpoint lấy dữ liệu slide tự động từ hệ thống nội bộ (như `/api/opportunities`, `/api/products`, `/api/events`) hoặc từ bất kỳ REST API bên ngoài nào; tự do thiết lập tiêu đề Authentication Header, ánh xạ linh hoạt các trường (`titleField`, `imageField`, `tagField`, `linkField`, `descriptionField`) và kiểm tra kết nối Live (Test API Live) nhận kết quả trực tiếp ngay trên CRM.
+       - **Gán & Kích Hoạt Subdomain Riêng Biệt**: Cho phép áp dụng cấu hình Landing Web vào từng tên miền con (subdomain, ví dụ: `gala2026.ceo1983.viconnect.vn`, `b2b.ceo1983.viconnect.vn`).
+     - **Kiến Trúc Backend & Định Tuyến Public**:
+       - Module NestJS `LandingModule` (`landing.service.ts`, `landing.controller.ts`, `landing.module.ts`, `landing.dto.ts`) quản lý và cung cấp API cấu hình landing web.
+       - Tuyến đường public `apps/ceo1983_app_fe/src/routes/landing.$slug.tsx` tự động giải quyết slug hoặc subdomain để render landing page công khai.
+       - Màn hình Quản trị Web CRM tại `apps/ceo1983_app_fe/src/routes/admin.landing-webs.tsx` với 5 tab cấu hình chuyên sâu và modal xem trước thời gian thực (Live Preview).
+       - Bổ sung menu "Quản lý Landing Web" vào Sidebar Cổng Quản trị CRM (`Sidebar.tsx`).
+  2. *Nâng Cấp Trình Xem Tài Liệu Toàn Năng (Universal Document Viewer - `[NODE-CRM-014]`)*:
+     - Khắc phục triệt để lỗi không mở xem được chi tiết tài liệu tải lên, hỗ trợ tương tác trực tiếp với tối thiểu 3 định dạng bắt buộc:
+       - **Microsoft Word (`.docx`, `.doc`)**: Tích hợp bộ đọc tài liệu nội địa dựng bố cục trang giấy in A4 chuẩn mực, tiêu đề cơ quan CLB CEO 1983, số hóa lưu hành; kèm nút chuyển đổi tức thì sang chế độ xem Microsoft Office Online Viewer hoặc Google Docs Viewer.
+       - **Microsoft Excel (`.xlsx`, `.xls`, `.csv`)**: Tích hợp thư viện SheetJS phân tích dữ liệu trực tiếp, hiển thị bảng tính tương tác trực quan với thanh cuộn, chọn nhiều Sheet (Sheet Tabs), ô tìm kiếm lọc nhanh dữ liệu trong bảng và thanh thông tin dòng/cột.
+       - **Tệp PDF (`.pdf`)**: Trình đọc nhúng PDF tương tác cao với thanh công cụ điều hướng trang, phóng to/thu nhỏ (`zoomLevel`), in ấn và tải về máy chủ.
+       - **Tệp Ảnh & Văn Bản Thuần (`.png`, `.jpg`, `.jpeg`, `.txt`)**: Trình xem ảnh Lightbox hỗ trợ xoay góc, phóng to thu nhỏ và bộ đọc văn bản có thanh cuộn mượt mà.
+     - Tích hợp đồng bộ cả trong danh sách tài liệu (`documents.index.tsx`) và trang chi tiết tài liệu (`documents.$docId.tsx`), thay thế hoàn toàn thông báo "Không hỗ trợ xem trước".
+  3. *Sửa Lỗi Gốc Chia Sẻ Facebook / Zalo OpenGraph Crawler*:
+     - Phát hiện nguyên nhân link chia sẻ `/share/preview` trước đây bị Nginx đẩy về SPA frontend nên crawler bot nhận meta tags mặc định.
+     - Sửa `share-helper.ts` trỏ chính xác về `/api/share/preview` (gọi thẳng backend NestJS trả về HTML OpenGraph động với đầy đủ tiêu đề, mô tả và hình ảnh thực tế của cơ hội/sản phẩm), tự động fallback domain chuẩn `https://ceo1983.viconnect.vn` ngay cả khi chia sẻ từ môi trường di động hoặc localhost.
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Đảm bảo 100% không có biến chưa khai báo, lỗi cú pháp hoặc gạch chân đỏ trong toàn bộ dự án.
+     - Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` hay `git push` (Strict Rule 1).
+
 - **Bản cập nhật ngày 06/11/2026 (v10.45): Nâng Cấp Hệ Thống Bình Luận Chuẩn Facebook (Cây Phân Cấp, Tag Tên @ Kèm Thông Báo Đẩy, Đưa Lên Đầu Khi Có Phản Hồi Mới), Đồng Bộ Bình Luận Thống Kê, Xóa Bỏ Toàn Bộ Nút Gradient Chuyển Chuẩn Xanh Navy CEO 1983, Bộ Lọc & Phân Đoạn Thời Gian Thông Báo (Hôm Nay, 1 Ngày Trước, Tuần Trước, Tháng), Fix Triệt Để OpenGraph Share FB/Zalo & Deep Linking, Hoàn Tất Lên Lịch Gặp B2B 3 Case ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007], [NODE-APP-009], [NODE-APP-010])**:
   1. *Nâng Cấp Hệ Thống Bình Luận Chuẩn Facebook & Tag Tên @ Kèm Push Notification (`[NODE-APP-003]`, `[NODE-APP-009]`)*:
      - **Cấu trúc phân cấp Threaded Tree (`CommentTreeSection.tsx`)**: Hỗ trợ hiển thị xem tất cả bình luận, chia tầng phân cấp phản hồi (cha - con) với đường kẻ chỉ dẫn trực quan giống Facebook.

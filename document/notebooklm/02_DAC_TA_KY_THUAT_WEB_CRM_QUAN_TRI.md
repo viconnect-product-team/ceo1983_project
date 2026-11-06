@@ -160,12 +160,18 @@
   - Quản lý các gói tài trợ: Kim Cương, Vàng, Bạc, Đồng.
   - Cấu hình banner nhà tài trợ xuất hiện trên Poster sự kiện và Sàn giao thương B2B di động.
 
-### `[NODE-CRM-014]` Kho Tài Liệu CLB & Mẫu Email
-- **Route Frontend**: `/documents` (`src/routes/documents.tsx`).
-- **Thành phần**: `MailTemplateManager.tsx`.
-- **API Backend**: `GET /documents`, `GET /admin/mail-templates` (`documents.service.ts`, `mail.service.ts`).
+### `[NODE-CRM-014]` Kho Tài Liệu CLB, Trình Xem Tài Liệu Toàn Năng (Universal Document Viewer) & Mẫu Email
+- **Route Frontend**: `/documents` (`src/routes/documents.index.tsx`, `src/routes/documents.$docId.tsx`).
+- **Thành phần**: `UniversalDocumentViewerModal.tsx`, `MailTemplateManager.tsx`.
+- **API Backend**: `GET /documents`, `GET /documents/:id`, `GET /admin/mail-templates` (`documents.service.ts`, `mail.service.ts`).
 - **Bảng CSDL**: `documents`, `mail_templates`.
 - **Luồng xử lý**:
+  - **Trình Xem Tài Liệu Toàn Năng (Universal Document Viewer)**: Khắc phục triệt để lỗi không mở xem được tài liệu tải lên, hỗ trợ tương tác trực tiếp tối thiểu 3 định dạng:
+    + **Microsoft Word (`.docx`, `.doc`)**: Phân tích nội dung hiển thị chuẩn bố cục trang in A4 chính thức của CLB CEO 1983, kèm công tắc chuyển đổi sang Microsoft Office Online Viewer hoặc Google Docs Viewer.
+    + **Microsoft Excel (`.xlsx`, `.xls`, `.csv`)**: Tích hợp SheetJS hiển thị bảng tính tương tác trực tiếp, hỗ trợ chuyển đổi linh hoạt giữa các Sheet, thanh tìm kiếm lọc dòng dữ liệu và thanh thống kê số dòng/cột.
+    + **Tệp PDF (`.pdf`)**: Trình đọc nhúng PDF tương tác cao hỗ trợ thanh điều hướng trang, zoom in/out, in ấn và tải về máy tính.
+    + **Tệp Ảnh & Mã Nguồn (`.png`, `.jpg`, `.jpeg`, `.txt`)**: Trình xem ảnh Lightbox xoay góc, phóng to thu nhỏ và bộ đọc văn bản có thanh cuộn mượt mà.
+  - Tích hợp đồng bộ cả trong danh sách tài liệu (`documents.index.tsx`) và trang chi tiết tài liệu (`documents.$docId.tsx`).
   - Trình soạn thảo mẫu email v3 bền vững, thay thế các biến raw thành thẻ thân thiện `[Mã hội viên]`, `[Tên hội viên]`.
   - Email có mã QR thanh toán hoặc vé QR BẮT BUỘC đính kèm MIME Inline CID (`cid:vietqr_payment_qr`) để không bị Google Image Proxy chặn.
 
@@ -274,5 +280,26 @@
     + Bảng dữ liệu chuẩn `CustomTable` với tính năng sắp xếp 3 trạng thái.
     + Phím tắt thao tác nhanh (Quick Action): Duyệt hồ sơ (`/members?status=pending`), Xử lý thu phí/gia hạn (`/renewal`), Xem sự kiện (`/events`), Đưa vào kênh tin nhắn Hiệp hội.
     + Cho phép chuyển đổi linh hoạt giữa giao diện Bảng (`table`) và giao diện Thẻ chi tiết (`cards`).
+
+### `[NODE-CRM-023]` Quản Trị Landing Web Động & Mẫu Timed Cards Opening (Pinterest) Kèm Subdomain & API Connector
+- **Route Frontend**: `/admin/landing-webs` (`src/routes/admin.landing-webs.tsx`), `/landing/$slug` (`src/routes/landing.$slug.tsx`).
+- **Menu Sidebar**: `Sidebar.tsx` (Menu "Quản lý Landing Web", Icon `Globe`).
+- **Thành phần**: `TimedCardsOpeningLanding.tsx`, `LandingWebModal`, `SubdomainModal`, `TreeMenuEditor`, `ApiConnectorEditor`, `SubScreensEditor`.
+- **API Backend**: `GET /admin/landing-webs`, `POST /admin/landing-webs`, `PUT /admin/landing-webs/:id`, `DELETE /admin/landing-webs/:id`, `POST /admin/landing-webs/:id/apply-subdomain`, `POST /admin/landing-webs/test-api`, `GET /public/landing-webs/:slugOrSubdomain` (`landing.service.ts`, `landing.controller.ts`).
+- **Bảng CSDL**: `landing_webs` (in-memory & PostgreSQL schema).
+- **Luồng xử lý**:
+  - **Tái hiện 100% video demo Timed Cards Opening (Pinterest - Giulio Cuscito)**:
+    + Hiệu ứng chuyển động chạy slide toàn màn hình sắc nét với lớp phủ gradient tương phản.
+    + Thanh chạy tiến trình 5s phía trên màn hình tự động chuyển slide tuần hoàn, tự động tạm dừng khi hover chuột.
+    + Bố cục Typography kép cỡ lớn (72px Split Headline phong cách Oswald/Inter), nhãn huy hiệu địa danh/chủ đề, mô tả tóm tắt, nút Bookmark vàng Gold `#ecad29` và nút CTA "Khám phá địa danh" / "Liên hệ ngay".
+    + Băng chuyền thẻ thu nhỏ góc dưới bên phải xếp chồng động preview các slide tiếp theo, click vào thẻ chuyển slide ngay tức thì.
+    + Bảng điều khiển góc dưới bên trái: nút prev/next, thanh phân đoạn slide và bộ đếm tiến trình `01 / 06`.
+  - **Khả năng tùy biến Dynamic toàn diện**:
+    + Người dùng tự do thêm/sửa slide, tiêu đề, ảnh nền, huy hiệu và liên kết.
+    + **Header Menu dạng cây phân cấp đa tầng (Hierarchical Tree Dropdown)**: Cho phép thêm menu cha, menu con cấp 1, cấp 2 với badge trạng thái và cơ chế kích hoạt màn con.
+    + **Màn con (Sub-screens / Dynamic Modals) tự định nghĩa**: Khi click vào mục menu dạng tree, hệ thống kích hoạt màn con tương ứng (Bài viết chi tiết phong phú, Thư viện ảnh ấn tượng, hoặc Form liên hệ & thu thập thông tin hội viên tương tác cao).
+    + **Trình kết nối API động (Dynamic API Connector)**: Người dùng có thể cấu hình endpoint lấy dữ liệu slide tự động từ hệ thống nội bộ (như `/api/opportunities`, `/api/products`, `/api/events`) hoặc từ bất kỳ REST API bên ngoài nào; tự do thiết lập Authentication Header, ánh xạ linh hoạt các trường (`titleField`, `imageField`, `tagField`, `linkField`, `descriptionField`) và kiểm tra kết nối Live (Test API Live) nhận kết quả trực tiếp ngay trên CRM.
+    + **Gán & Kích Hoạt Subdomain Riêng Biệt**: Cho phép áp dụng cấu hình Landing Web vào từng tên miền con (subdomain, ví dụ: `gala2026.ceo1983.viconnect.vn`, `b2b.ceo1983.viconnect.vn`).
+
 
 

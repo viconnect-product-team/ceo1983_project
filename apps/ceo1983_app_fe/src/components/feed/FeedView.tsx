@@ -68,7 +68,7 @@ interface FeedPost {
   authorAvatar?: string;
   authorTitle?: string;
   department?: string;
-  category: "NEWS" | "OPPORTUNITY" | "EVENT_MEETING" | "MARKETPLACE" | "TRAINING";
+  category: "NEWS" | "OPPORTUNITY" | "EVENT_MEETING" | "MARKETPLACE" | "TRAINING" | "OTHER";
   title?: string;
   content: string;
   images: string[];
@@ -389,6 +389,7 @@ const CATEGORY_TABS = [
   { id: "TRAINING", label: "Ban Đào Tạo" },
   { id: "OPPORTUNITY", label: "Cơ hội chia sẻ" },
   { id: "MARKETPLACE", label: "Sàn B2B" },
+  { id: "OTHER", label: "Khác" },
 ];
 
 export function FeedView({
@@ -762,6 +763,12 @@ export function FeedView({
             Sàn B2B
           </span>
         );
+      case "OTHER":
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-600 text-white shadow-xs shrink-0 whitespace-nowrap">
+            Khác
+          </span>
+        );
       default:
         return (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1F3864] text-white shadow-xs shrink-0 whitespace-nowrap">
@@ -942,7 +949,18 @@ export function FeedView({
                 {/* ── BÀI VIẾT CHIA SẺ TỪ ỨNG DỤNG BÊN NGOÀI (CHUẨN GIAO DIỆN FACEBOOK SHARE CARD) ── */}
                 {post.sharedArticle || post.externalLink ? (
                   (() => {
-                    const art: any = post.sharedArticle || {};
+                    let art: any = {};
+                    if (post.sharedArticle) {
+                      if (typeof post.sharedArticle === "string") {
+                        try {
+                          art = JSON.parse(post.sharedArticle);
+                        } catch {
+                          art = {};
+                        }
+                      } else {
+                        art = post.sharedArticle;
+                      }
+                    }
                     const targetUrl = art.url || post.externalLink || "#";
                     const thumb = art.thumbnailUrl || (art as any).thumbnail || (art as any).image || (art as any).image_url || (post.images && post.images.length > 0 ? post.images[0] : null);
                     let domain = art.domain || "";

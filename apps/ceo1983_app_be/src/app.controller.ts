@@ -234,14 +234,15 @@ export class AppController {
     const canonicalShareUrl = `${BASE_WEB_URL}${req?.originalUrl || `/share/${targetType || 'preview'}/${targetId || ''}`}`.replace(/"/g, '&quot;');
     const ogCanonicalUrl = canonicalShareUrl;
 
-    // Crawler không nhận meta-refresh để tránh Facebook/Zalo bot follow sang SPA index.html
-    const redirectMetaTags = isCrawler
+    // Tuyệt đối không dùng <meta http-equiv="refresh"> vì Facebook/Meta scraper sẽ follow redirect và scrape nhầm SPA index.html
+    const redirectScript = isCrawler
       ? ''
-      : `  <meta http-equiv="refresh" content="2; url=${safeTarget}" />
-  <script type="text/javascript">
-    setTimeout(function() {
-      window.location.replace("${safeTarget}");
-    }, 1500);
+      : `  <script type="text/javascript">
+    if (!navigator.userAgent.match(/bot|spider|crawl|facebook|meta|zalo|telegram|twitter|linkedin/i)) {
+      setTimeout(function() {
+        window.location.replace("${safeTarget}");
+      }, 1200);
+    }
   </script>`;
 
     return `<!DOCTYPE html>
@@ -250,6 +251,8 @@ export class AppController {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${safeTitle}</title>
+  <link rel="canonical" href="${ogCanonicalUrl}" />
+  ${redirectScript}
   
   <!-- OpenGraph Metadata cho Facebook, Zalo, LinkedIn, Telegram -->
   <meta property="og:site_name" content="${SITE_NAME}" />
@@ -289,8 +292,7 @@ export class AppController {
   }
   </script>
 
-  <!-- Chuyển hướng trình duyệt cho người dùng thực -->
-${redirectMetaTags}
+  <!-- Chuyển hướng trình duyệt an toàn cho người dùng thực thông qua JS (không dùng meta-refresh) -->
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

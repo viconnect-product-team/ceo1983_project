@@ -18,6 +18,11 @@ export function buildDynamicShareUrl(options: ShareOptions): string {
     ? window.location.origin
     : 'https://ceo1983.viconnect.vn';
 
+  // Khi chạy trong môi trường Mobile Capacitor hoặc Localhost, các crawler bên ngoài (Facebook, Zalo)
+  // không thể truy cập localhost hay capacitor://, do đó bắt buộc fallback về domain chính thức có SSL:
+  const isLocalOrCapacitor = !origin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.startsWith('capacitor:') || origin.startsWith('file:');
+  const baseDomain = isLocalOrCapacitor ? 'https://ceo1983.viconnect.vn' : origin;
+
   const params = new URLSearchParams();
   if (options.type) params.set('type', options.type);
   if (options.id) params.set('id', options.id);
@@ -27,11 +32,11 @@ export function buildDynamicShareUrl(options: ShareOptions): string {
   if (options.targetPath) {
     const fullTarget = options.targetPath.startsWith('http')
       ? options.targetPath
-      : `${origin}${options.targetPath.startsWith('/') ? '' : '/'}${options.targetPath}`;
+      : `${baseDomain}${options.targetPath.startsWith('/') ? '' : '/'}${options.targetPath}`;
     params.set('target', fullTarget);
   }
 
-  return `${origin}/share/preview?${params.toString()}`;
+  return `${baseDomain}/share/preview?${params.toString()}`;
 }
 
 /**
