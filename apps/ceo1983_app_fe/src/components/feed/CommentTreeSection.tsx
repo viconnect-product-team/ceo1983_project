@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
@@ -349,49 +350,81 @@ export function CommentTreeNodeItem({
 
               {showMenu && (
                 <div
-                  className="absolute left-0 top-5 z-40 w-36 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1 text-xs animate-in zoom-in-95 duration-100"
+                  className="absolute left-0 top-5 z-40 w-38 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1 text-xs animate-in zoom-in-95 duration-100 divide-y divide-slate-100 dark:divide-slate-800"
                   onMouseLeave={() => setShowMenu(false)}
                 >
-                  {isAuthor && (
+                  <div className="py-0.5">
+                    {/* Với chính tác giả: Chỉnh sửa & Xóa */}
+                    {isAuthor && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditing(true);
+                          setEditContent(node.content);
+                          setShowMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      >
+                        <Pencil className="size-3 text-blue-600" />
+                        <span>Chỉnh sửa</span>
+                      </button>
+                    )}
+                    {isAuthor && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) {
+                            onDelete(node.id);
+                          }
+                          setShowMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                      >
+                        <Trash2 className="size-3" />
+                        <span>Xóa bình luận</span>
+                      </button>
+                    )}
+
+                    {/* Sao chép nội dung bình luận (Facebook-style: Dành cho cả chính mình và người khác) */}
                     <button
                       type="button"
                       onClick={() => {
-                        setIsEditing(true);
-                        setEditContent(node.content);
+                        try {
+                          if (navigator?.clipboard?.writeText) {
+                            navigator.clipboard.writeText(node.content);
+                          } else {
+                            const textarea = document.createElement("textarea");
+                            textarea.value = node.content;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand("copy");
+                            document.body.removeChild(textarea);
+                          }
+                          toast.success("Đã sao chép nội dung bình luận");
+                        } catch {
+                          toast.error("Không thể sao chép");
+                        }
                         setShowMenu(false);
                       }}
                       className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                     >
-                      <Pencil className="size-3 text-blue-600" />
-                      <span>Chỉnh sửa</span>
+                      <Copy className="size-3 text-slate-500" />
+                      <span>Sao chép</span>
                     </button>
-                  )}
-                  {isAuthor && (
+
+                    {/* Phản hồi bình luận */}
                     <button
                       type="button"
                       onClick={() => {
-                        if (window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) {
-                          onDelete(node.id);
-                        }
+                        onReply(node.id, node.authorName, level + 1);
                         setShowMenu(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                     >
-                      <Trash2 className="size-3" />
-                      <span>Xóa bình luận</span>
+                      <Reply className="size-3 text-[#003B95]" />
+                      <span>Phản hồi</span>
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onReply(node.id, node.authorName, level + 1);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                  >
-                    <Reply className="size-3 text-[#003B95]" />
-                    <span>Phản hồi</span>
-                  </button>
+                  </div>
                 </div>
               )}
             </div>

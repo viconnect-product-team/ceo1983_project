@@ -19,11 +19,14 @@ import {
   FolderOpen,
   Globe,
   Share2,
+  History,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 import { EventPosterModal } from "@/components/events/EventPosterModal";
+import { EventHistoryRecapModal } from "./EventHistoryRecapModal";
 import { isEventFull } from "@/lib/member-app.functions";
 import { buildDynamicShareUrl } from "@/lib/share-helper";
 
@@ -80,7 +83,22 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   busy,
 }) => {
   const [posterOpen, setPosterOpen] = React.useState(false);
+  const [historyRecapOpen, setHistoryRecapOpen] = React.useState(false);
   if (!selectedEvent) return null;
+
+  const isPastEvent = React.useMemo(() => {
+    if (!selectedEvent) return false;
+    if (selectedEvent.isPast !== undefined) return Boolean(selectedEvent.isPast);
+    if (selectedEvent.status === "ended" || selectedEvent.status === "completed" || selectedEvent.status === "cancelled") return true;
+    if (!selectedEvent.date) return false;
+    const d = new Date(selectedEvent.date);
+    if (isNaN(d.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDay = new Date(d);
+    eventDay.setHours(23, 59, 59, 999);
+    return eventDay < today;
+  }, [selectedEvent]);
 
   const selectedIndex = events.findIndex((x: any) => x.id === selectedEvent.id);
   const rawSelImg = (selectedEvent as any).image;
@@ -216,6 +234,32 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </div>
             </div>
 
+            {/* LƯU VẾT & KỶ NIỆM SỰ KIỆN NẾU SỰ KIỆN ĐÃ KẾT THÚC */}
+            {isPastEvent && (
+              <div className="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase text-[#003B95] dark:text-blue-300 flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5" />
+                    Lưu Vết Kỷ Niệm Sự Kiện (Đã Kết Thúc)
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                    Tổng kết &amp; Kỷ niệm
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Xem lại danh sách <strong>Nhà tài trợ</strong>, <strong>Biểu quyết</strong>, <strong>Giải thưởng &amp; Vinh danh</strong>, <strong>Sơ đồ chỗ ngồi</strong> và <strong>Link Google Drive tải ảnh</strong>.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setHistoryRecapOpen(true)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <Trophy className="w-4 h-4 text-amber-300" />
+                  <span>Xem Chi Tiết Lịch Sử &amp; Kỷ Niệm Sự Kiện</span>
+                </button>
+              </div>
+            )}
+
             {/* ĐẶC BIỆT: Trường Tên Nhà Tài Trợ (Hiển thị khi sự kiện có nhà tài trợ) */}
             {sponsorList.length > 0 && (
               <div className="space-y-2 text-[12.5px] bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 dark:bg-amber-950/30 p-3.5 rounded-2xl border border-amber-500/30">
@@ -300,7 +344,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                     href={validDriveUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
                   >
                     <Camera className="size-4 text-amber-300" />
                     <span>Xem kho ảnh sự kiện (Google Drive) →</span>
@@ -549,7 +593,16 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             </a>
           ) : null}
 
-          {isRegistered(selectedEvent) ? (
+          {isPastEvent ? (
+            <button
+              type="button"
+              onClick={() => setHistoryRecapOpen(true)}
+              className="w-full flex-1 py-3 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[13px] font-bold shadow-md transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <History className="h-4 w-4 text-amber-300" />
+              <span>Xem Lịch Sử Tham Gia &amp; Kỷ Niệm Sự Kiện</span>
+            </button>
+          ) : isRegistered(selectedEvent) ? (
             <div className="flex w-full flex-1 gap-2">
               <button
                 type="button"
@@ -580,9 +633,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             <button
               type="button"
               onClick={(evt) => onOpenRegister(selectedEvent, evt)}
-              className="w-full flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 border border-amber-300/60 text-slate-950 text-[13px] font-black shadow-lg shadow-amber-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full flex-1 py-3 px-4 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[13px] font-black shadow-md transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Ticket className="h-4 w-4 text-slate-950" />
+              <Ticket className="h-4 w-4 text-amber-300" />
               <span>Đăng ký tham gia ngay</span>
             </button>
           )}
@@ -592,6 +645,12 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       <EventPosterModal
         open={posterOpen}
         onClose={() => setPosterOpen(false)}
+        event={selectedEvent}
+      />
+
+      <EventHistoryRecapModal
+        open={historyRecapOpen}
+        onClose={() => setHistoryRecapOpen(false)}
         event={selectedEvent}
       />
     </Dialog>

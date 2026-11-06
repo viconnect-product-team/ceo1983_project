@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { sanitizeHtml } from '../../lib/sanitize';
 import {
   Globe,
   Search,
@@ -793,7 +794,7 @@ export const TimedCardsOpeningLanding: React.FC<TimedCardsOpeningLandingProps> =
               {activeSubScreen.contentHtml && (
                 <div
                   className="prose prose-invert prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: activeSubScreen.contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSubScreen.contentHtml) }}
                 />
               )}
 

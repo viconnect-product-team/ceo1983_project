@@ -63,6 +63,7 @@ import {
   EventRegistrationModal,
   EventSuccessNoticeModal,
   EventTicketPassModal,
+  EventHistoryRecapModal,
 } from "@/components/events/modals";
 import { RegisteredEventsQrSlider } from "@/components/events/RegisteredEventsQrSlider";
 
@@ -378,6 +379,7 @@ function EventPosterCard({
   price,
   isPast = false,
   onUnregister,
+  onOpenRecap,
   variant = "default",
 }: {
   event: MyEvent;
@@ -390,6 +392,7 @@ function EventPosterCard({
   price: number;
   isPast?: boolean;
   onUnregister?: (e: MyEvent, evt: React.MouseEvent) => void;
+  onOpenRecap?: (e: MyEvent) => void;
   variant?: "hero" | "grid" | "default";
 }) {
   const rawImg = (event as any).image;
@@ -589,10 +592,26 @@ function EventPosterCard({
                 <span>Hủy vé</span>
               </button>
             )}
-            <div className="flex justify-start items-center gap-1 text-[#003B95] hover:text-amber-700 dark:text-[#003B95] font-bold text-xs font-sans group cursor-pointer">
-              <span>{isPast ? "Xem kỷ yếu" : registered ? "Xem vé" : isFull ? "Xem chi tiết" : "Đăng ký vé"}</span>
-              <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
-            </div>
+            {isPast ? (
+              <button
+                type="button"
+                onClick={(evt) => {
+                  evt.stopPropagation();
+                  if (onOpenRecap) onOpenRecap(event);
+                  else onSelect(event);
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[11px] font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                title="Xem biên bản, nhà tài trợ, biểu quyết, giải thưởng, chỗ ngồi & ảnh drive"
+              >
+                <Trophy className="size-3 text-amber-300" />
+                <span>Biên bản & Kỷ niệm</span>
+              </button>
+            ) : (
+              <div className="flex justify-start items-center gap-1 text-[#003B95] hover:text-amber-700 dark:text-[#003B95] font-bold text-xs font-sans group cursor-pointer">
+                <span>{registered ? "Xem vé" : isFull ? "Xem chi tiết" : "Đăng ký vé"}</span>
+                <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -841,13 +860,15 @@ function EventsScreen() {
         if (Array.isArray(res) && res.length > 0) {
           setMeetingsList(res);
         } else {
-          // Default meetings following YBA Sài Gòn specification
+          // Default meetings following YBA Sài Gòn & CEO 1983 specification (2 phân loại: Họp cố định theo ban & Họp bất thường)
           setMeetingsList([
             {
               id: "meet-bdh-14",
-              title: "Kỳ họp Ban Điều Hành CLB CEO 1983 Lần thứ 14",
+              title: "Kỳ họp Ban Điều Hành CLB CEO 1983 Định Kỳ Lần Thứ 14",
               convener: "Chủ tịch CLB & Ban Thường Trực",
               meetingType: "Họp Ban Điều Hành",
+              category: "fixed_committee",
+              isExtraordinary: false,
               date: "2026-10-25T14:00:00Z",
               time: "14:00 - 17:00",
               location: "Trực tuyến qua Jitsi Meet & Phòng họp Trụ sở HanoiBA",
@@ -859,9 +880,11 @@ function EventsScreen() {
             },
             {
               id: "meet-bxt-thang10",
-              title: "Họp Ban Xúc Tiến Thương Mại: Điều phối Deal B2B Tháng 10",
+              title: "Kỳ họp Ban Xúc Tiến Thương Mại Định Kỳ Tháng 10: Điều Phối Deal B2B",
               convener: "Trưởng ban Xúc tiến Thương mại",
               meetingType: "Họp Ban Chuyên Môn",
+              category: "fixed_committee",
+              isExtraordinary: false,
               date: "2026-10-28T09:00:00Z",
               time: "09:00 - 11:30",
               location: "Trực tuyến qua Jitsi Meet",
@@ -873,16 +896,50 @@ function EventsScreen() {
             },
             {
               id: "meet-btv-ketnap",
-              title: "Gặp mặt Thẩm định & Kết nạp Hội viên Mới Đợt 4/2026",
+              title: "Kỳ họp Ban Thành Viên Định Kỳ: Thẩm Định & Kết Nạp Hội Viên Mới",
               convener: "Trưởng ban Thành viên",
               meetingType: "Gặp mặt Chi hội",
+              category: "fixed_committee",
+              isExtraordinary: false,
               date: "2026-11-05T15:00:00Z",
               time: "15:00 - 17:30",
-              location: "Hà Nội VIP Club & Online Hybrid",
+              location: "Trụ sở CLB CEO 1983 & Online Hybrid",
               isOnline: true,
               meetingLink: "https://meet.jit.si/CEO1983_MEET_BAN_THANH_VIEN",
               attendeesRequired: "Ban Thành viên & 12 Doanh nhân ứng viên",
               documents: ["Hồ sơ doanh nghiệp thẩm định", "Điều lệ CLB CEO 1983"],
+              confirmed: false,
+            },
+            {
+              id: "meet-emergency-bch-01",
+              title: "Cuộc Họp Bất Thường Ban Thường Trực: Phê Chuẩn Ngân Sách Cứu Trợ Bão Lũ Khẩn Cấp",
+              convener: "Chủ tịch CLB CEO 1983",
+              meetingType: "Họp Bất Thường",
+              category: "extraordinary",
+              isExtraordinary: true,
+              date: "2026-10-29T20:00:00Z",
+              time: "20:00 - 21:30",
+              location: "Trực tuyến qua Jitsi Meet (Họp khẩn trực tuyến)",
+              isOnline: true,
+              meetingLink: "https://meet.jit.si/CEO1983_MEET_KHAN_CAP",
+              attendeesRequired: "Thường trực Ban Điều Hành & Ban Thiện Nguyện",
+              documents: ["Tờ trình cứu trợ khẩn cấp số 09/TTr-CEO1983", "Danh mục nhu yếu phẩm & địa bàn tiếp cận"],
+              confirmed: true,
+            },
+            {
+              id: "meet-emergency-b2b-02",
+              title: "Cuộc Họp Bất Thường Ban Xúc Tiến: Hiệp Thương Liên Minh Thầu Dự Án Smart City 50 Tỷ",
+              convener: "Trưởng ban Xúc tiến Thương mại",
+              meetingType: "Họp Bất Thường",
+              category: "extraordinary",
+              isExtraordinary: true,
+              date: "2026-11-02T19:30:00Z",
+              time: "19:30 - 21:00",
+              location: "Trực tuyến qua Jitsi Meet (Phòng bảo mật B2B)",
+              isOnline: true,
+              meetingLink: "https://meet.jit.si/CEO1983_MEET_HIEP_THUONG_B2B",
+              attendeesRequired: "7 Doanh nghiệp Hội viên nộp hồ sơ liên danh thầu",
+              documents: ["Hồ sơ mời thầu dự án Smart City", "Thỏa thuận liên danh bảo mật NDA"],
               confirmed: false,
             },
           ]);
@@ -894,6 +951,8 @@ function EventsScreen() {
 
   // Category & bookmark state
   const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked" | "history">("all");
+  const [activityFilter, setActivityFilter] = useState<"all" | "fixed_committee" | "extraordinary">("all");
+  const [recapModalEvent, setRecapModalEvent] = useState<MyEvent | any | null>(null);
   const [eventsPage, setEventsPage] = useState(1);
   const EVENTS_PER_PAGE = 4;
   const [cancellingEvent, setCancellingEvent] = useState<MyEvent | null>(null);
@@ -1028,6 +1087,16 @@ function EventsScreen() {
       : eventCategory === "history"
       ? pastEvents
       : upcomingEvents;
+
+  const filteredMeetings = useMemo(() => {
+    if (activityFilter === "fixed_committee") {
+      return meetingsList.filter((m: any) => m.category === "fixed_committee" || !m.isExtraordinary);
+    }
+    if (activityFilter === "extraordinary") {
+      return meetingsList.filter((m: any) => m.category === "extraordinary" || m.isExtraordinary);
+    }
+    return meetingsList;
+  }, [meetingsList, activityFilter]);
 
   // Open registration modal with auto prefilled user profile
   function handleOpenRegister(e: MyEvent, evt?: React.MouseEvent) {
@@ -1422,7 +1491,7 @@ function EventsScreen() {
         }
       />
 
-      {/* ── 2 PRIMARY STYLES (CHUẨN YBA SÀI GÒN): 1. SỰ KIỆN CLB - 2. CUỘC HỌP GẶP MẶT ── */}
+      {/* ── 2 DANH MỤC CHÍNH: 1. SỰ KIỆN - 2. HOẠT ĐỘNG (THEO BAN & BẤT THƯỜNG) ── */}
       <div className="px-4 pt-2">
         <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
           <button
@@ -1430,12 +1499,12 @@ function EventsScreen() {
             onClick={() => setMainTab("events")}
             className={`py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
               mainTab === "events"
-                ? "bg-[#1F3864] text-white shadow-xs"
+                ? "bg-[#003B95] text-white shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Calendar className="size-3.5 text-[#003B95]" />
-            <span>Sự Kiện CLB ({events.length})</span>
+            <Calendar className="size-3.5 text-amber-300" />
+            <span>Sự Kiện ({events.length})</span>
           </button>
 
           <button
@@ -1443,116 +1512,176 @@ function EventsScreen() {
             onClick={() => setMainTab("meetings")}
             className={`py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
               mainTab === "meetings"
-                ? "bg-[#1F3864] text-white shadow-xs"
+                ? "bg-[#003B95] text-white shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Users className="size-3.5 text-emerald-400" />
-            <span>Cuộc Họp & Gặp Mặt ({meetingsList.length})</span>
+            <Users className="size-3.5 text-amber-300" />
+            <span>Hoạt Động ({meetingsList.length})</span>
           </button>
         </div>
       </div>
 
-      {/* ── NẾU CHỌN TAB CUỘC HỌP & GẶP MẶT (YBA SAIGON STANDARD) ── */}
+      {/* ── NẾU CHỌN TAB HOẠT ĐỘNG (HỌP CỐ ĐỊNH THEO BAN & HỌP BẤT THƯỜNG) ── */}
       {mainTab === "meetings" && (
         <div className="px-4 pt-4 space-y-4 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
             <h2 className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-emerald-500" />
-              <span>Các Kỳ Họp Ban Điều Hành & Gặp Mặt Chi Hội</span>
+              <Users className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
+              <span>Hoạt Động &amp; Các Cuộc Họp CLB CEO 1983</span>
             </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-              Chuẩn điều hành YBA
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-[#003B95] dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+              Điều Hành Trực Tuyến &amp; Trực Tiếp
             </span>
+          </div>
+
+          {/* Sub-filter chips: Tất cả, Cuộc họp cố định theo ban, Cuộc họp bất thường */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {[
+              { id: "all", label: "Tất cả hoạt động", count: meetingsList.length },
+              {
+                id: "fixed_committee",
+                label: "Họp cố định theo ban",
+                count: meetingsList.filter((m: any) => m.category === "fixed_committee" || !m.isExtraordinary).length,
+              },
+              {
+                id: "extraordinary",
+                label: "Họp bất thường / Đột xuất",
+                count: meetingsList.filter((m: any) => m.category === "extraordinary" || m.isExtraordinary).length,
+              },
+            ].map((sub) => {
+              const active = activityFilter === sub.id;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => setActivityFilter(sub.id as any)}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    active
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}
+                >
+                  <span>{sub.label}</span>
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                      active ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    {sub.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {loadingMeetings ? (
             <div className="py-16 text-center text-xs text-slate-400">Đang tải lịch họp...</div>
-          ) : meetingsList.length === 0 ? (
-            <div className="py-16 text-center text-xs text-slate-400">Chưa có lịch họp gặp mặt nào sắp tới</div>
+          ) : filteredMeetings.length === 0 ? (
+            <div className="py-16 text-center text-xs text-slate-400">Chưa có lịch họp nào trong danh mục này</div>
           ) : (
             <div className="space-y-4">
-              {meetingsList.map((m: any) => (
-                <div
-                  key={m.id}
-                  className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-[#1F3864]/10 text-[#1F3864] dark:bg-blue-950 dark:text-blue-300">
-                      {m.meetingType || "Kỳ họp Ban"}
-                    </span>
-                    <span className="text-[11px] font-mono font-bold text-[#003B95] dark:text-[#003B95]">
-                      {m.time}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                      {m.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Cơ quan triệu tập: <strong className="text-slate-700 dark:text-slate-200">{m.convener || "Chủ tịch CLB"}</strong>
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="size-3.5 text-[#003B95] shrink-0" />
-                      <span className="truncate">{m.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="size-3.5 text-blue-500 shrink-0" />
-                      <span className="truncate">Thành phần: {m.attendeesRequired || "Hội viên được triệu tập"}</span>
-                    </div>
-                  </div>
-
-                  {/* Meeting documents preview */}
-                  {Array.isArray(m.documents) && m.documents.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <FileText className="size-3 text-slate-400" />
-                      <span className="text-[10px] text-slate-400 font-semibold">Tài liệu:</span>
-                      {m.documents.map((doc: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                        >
-                          {doc}
+              {filteredMeetings.map((m: any) => {
+                const isExtraordinary = m.category === "extraordinary" || m.isExtraordinary;
+                return (
+                  <div
+                    key={m.id}
+                    className={`p-4 rounded-2xl bg-white dark:bg-slate-900 border shadow-sm space-y-3 ${
+                      isExtraordinary
+                        ? "border-amber-400/80 dark:border-amber-500/60"
+                        : "border-slate-200 dark:border-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {isExtraordinary ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white flex items-center gap-1 shadow-2xs">
+                            <AlertTriangle className="size-3 text-white" />
+                            <span>Cuộc họp xảy ra bất thường</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#003B95] text-white flex items-center gap-1 shadow-2xs">
+                            <Calendar className="size-3 text-amber-300" />
+                            <span>Cuộc họp cố định theo ban</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                          {m.meetingType}
                         </span>
-                      ))}
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-[#003B95] dark:text-blue-400 shrink-0">
+                        {m.time}
+                      </span>
                     </div>
-                  )}
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    {m.isOnline && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveMeetingRoom({
-                            title: m.title,
-                            link: m.meetingLink || "https://meet.jit.si/CEO1983_MEET_BAN_DIEU_HANH_14",
-                          })
-                        }
-                        className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
-                      >
-                        <Phone className="size-3.5" />
-                        <span>Vào Phòng Họp Ngay</span>
-                      </button>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                        {m.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Cơ quan triệu tập: <strong className="text-slate-700 dark:text-slate-200">{m.convener || "Chủ tịch CLB"}</strong>
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="size-3.5 text-[#003B95] shrink-0" />
+                        <span className="truncate">{m.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="size-3.5 text-blue-500 shrink-0" />
+                        <span className="truncate">Thành phần: {m.attendeesRequired || "Hội viên được triệu tập"}</span>
+                      </div>
+                    </div>
+
+                    {/* Meeting documents preview */}
+                    {Array.isArray(m.documents) && m.documents.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <FileText className="size-3 text-slate-400" />
+                        <span className="text-[10px] text-slate-400 font-semibold">Tài liệu:</span>
+                        {m.documents.map((doc: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          >
+                            {doc}
+                          </span>
+                        ))}
+                      </div>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        toast.success(`Đã xác nhận tham dự kỳ họp: ${m.title}`);
-                      }}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
-                    >
-                      <Check className="size-3.5" />
-                      <span>Xác Nhận Tham Dự</span>
-                    </button>
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      {m.isOnline && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveMeetingRoom({
+                              title: m.title,
+                              link: m.meetingLink || "https://meet.jit.si/CEO1983_MEET_BAN_DIEU_HANH_14",
+                            })
+                          }
+                          className="flex-1 py-2 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
+                        >
+                          <Phone className="size-3.5 text-amber-300" />
+                          <span>Vào Phòng Họp Ngay</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          toast.success(`Đã xác nhận tham dự cuộc họp: ${m.title}`);
+                        }}
+                        className="flex-1 py-2 px-3 rounded-xl border border-[#003B95] text-[#003B95] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 font-bold text-xs inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Check className="size-3.5" />
+                        <span>Xác Nhận Tham Dự</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1720,6 +1849,7 @@ function EventsScreen() {
                   price={getEventPrice(e)}
                   isPast={isEventPast(e)}
                   onUnregister={(evtObj, evt) => handleOpenCancelModal(evtObj, evt)}
+                  onOpenRecap={(ev) => setRecapModalEvent(ev)}
                   variant="default"
                 />
               );
@@ -2114,6 +2244,12 @@ function EventsScreen() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <EventHistoryRecapModal
+        open={!!recapModalEvent}
+        onClose={() => setRecapModalEvent(null)}
+        event={recapModalEvent}
+      />
     </div>
   );
 }

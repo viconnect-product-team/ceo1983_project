@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { sanitizeHtml } from "../../lib/sanitize";
 import {
   X,
   Download,
@@ -605,7 +606,7 @@ export function UniversalDocumentViewerModal({
                 {/* Nội dung tài liệu Word */}
                 <div
                   className="prose dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed font-serif"
-                  dangerouslySetInnerHTML={{ __html: docxHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(docxHtml) }}
                 />
 
                 {/* Chân trang tài liệu */}

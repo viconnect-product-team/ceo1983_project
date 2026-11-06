@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { sanitizeHtml } from "../../lib/sanitize";
 import {
   Smartphone,
   ShieldCheck,
@@ -974,7 +975,7 @@ export function StartupMobileShowcaseLanding({
               {activeSubScreen.contentHtml ? (
                 <div
                   className="prose prose-sm max-w-none text-slate-700"
-                  dangerouslySetInnerHTML={{ __html: activeSubScreen.contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeSubScreen.contentHtml) }}
                 />
               ) : (
                 <p>Nội dung chi tiết cho phân hệ đang được đồng bộ hóa từ hệ thống quản trị.</p>

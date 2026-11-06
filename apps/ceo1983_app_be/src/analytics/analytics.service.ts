@@ -745,14 +745,15 @@ export class AnalyticsService implements OnModuleInit {
         .sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore);
       const topConnections = assignTiers(validConnectionsList, 'connections');
 
+      // Danh mục Cơ hội: BẮT BUỘC chỉ xếp hạng những ai THỰC SỰ đã đăng cơ hội hoặc chốt thương vụ (> 0)
       const validOppsList = [...uniqueStats]
-        .filter(m => (m.publicOppsShared || 0) > 0 || (m.totalValueVnd || 0) > 0)
-        .sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.totalValueVnd - a.totalValueVnd);
+        .filter(m => (m.publicOppsShared || 0) > 0 || (m.allOppsShared || 0) > 0 || (m.oppsWon || 0) > 0)
+        .sort((a, b) => b.publicOppsShared - a.publicOppsShared || b.dealsValue - a.dealsValue);
       const topOpportunities = assignTiers(validOppsList, 'opportunities');
 
       const validEventsList = [...uniqueStats]
-        .filter(m => (m.eventsAttended || 0) > 0 || (m.feedInteractions || 0) > 0)
-        .sort((a, b) => (b.eventsAttended * 2 + b.feedInteractions) - (a.eventsAttended * 2 + a.feedInteractions));
+        .filter(m => (m.eventsAttended || 0) > 0)
+        .sort((a, b) => b.eventsAttended - a.eventsAttended || b.feedInteractions - a.feedInteractions);
       const topEventsMeetings = assignTiers(validEventsList, 'events');
 
       const validReferralsList = [...uniqueStats]
