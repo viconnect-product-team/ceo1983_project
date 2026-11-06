@@ -55,6 +55,97 @@ export interface LandingApiConfig {
   };
 }
 
+export interface StartupMobileTemplateConfig {
+  hero: {
+    headline: string;
+    subheadline: string;
+    underlineAccent: string;
+    sunburstText?: string;
+    handPhoneImage?: string;
+    ctaPrimaryText: string;
+    ctaPrimaryLink: string;
+    ctaSecondaryText: string;
+    videoUrl?: string;
+    floatingBadge1: {
+      title: string;
+      subtitle: string;
+    };
+    floatingBadge2: {
+      title: string;
+      subtitle: string;
+    };
+  };
+  ribbonStats: Array<{
+    value: string;
+    label: string;
+    desc: string;
+  }>;
+  appTabs: {
+    b2b: {
+      title: string;
+      desc: string;
+      stat: string;
+      items: Array<{ name: string; price: string; author: string }>;
+    };
+    connect: {
+      title: string;
+      desc: string;
+      stat: string;
+      items: Array<{ name: string; price: string; author: string }>;
+    };
+    card: {
+      title: string;
+      desc: string;
+      stat: string;
+      items: Array<{ name: string; price: string; author: string }>;
+    };
+    analytics: {
+      title: string;
+      desc: string;
+      stat: string;
+      items: Array<{ name: string; price: string; author: string }>;
+    };
+  };
+  mapChapterPins: Array<{
+    id: string;
+    name: string;
+    count: string;
+    desc: string;
+    x: string;
+    y: string;
+  }>;
+  communityAvatars: Array<{
+    id: string;
+    name: string;
+    role: string;
+    quote: string;
+    avatar: string;
+    badge: 'Zalo' | 'LinkedIn' | 'TikTok';
+    x: string;
+    y: string;
+  }>;
+  testimonials: Array<{
+    id?: string;
+    quote: string;
+    author: string;
+    role: string;
+    company: string;
+    rating: number;
+    avatar: string;
+  }>;
+  faqs: Array<{
+    question: string;
+    answer: string;
+  }>;
+  footer: {
+    headline: string;
+    description: string;
+    contactPhone: string;
+    contactEmail: string;
+    address: string;
+  };
+}
+
 export interface LandingWebConfig {
   id: string;
   name: string;
@@ -72,6 +163,7 @@ export interface LandingWebConfig {
   brand: {
     logoText: string;
     logoIcon?: string;
+    logoUrl?: string;
     contactPhone?: string;
     contactEmail?: string;
   };
@@ -79,9 +171,188 @@ export interface LandingWebConfig {
   slides: LandingSlide[];
   subScreens: LandingSubScreen[];
   apiConfig: LandingApiConfig;
+  startupConfig?: StartupMobileTemplateConfig;
   createdAt: string;
   updatedAt: string;
 }
+
+export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
+  hero: {
+    headline: 'Kết Nối Doanh Nhân\nKiến Tạo Giá Trị',
+    subheadline: 'Ứng dụng độc quyền kết nối xúc tiến giao thương B2B, trao đổi cơ hội hợp tác và bảo chứng tín nhiệm cho cộng đồng doanh nhân sinh năm 1983 trực thuộc HanoiBA.',
+    underlineAccent: 'Đồng Hành Bứt Phá!',
+    sunburstText: 'CEO 1983 ECOSYSTEM',
+    handPhoneImage: '/images/landing/hand_holding_phone_transparent.png',
+    ctaPrimaryText: 'Tải Ứng Dụng Ngay',
+    ctaPrimaryLink: '#download',
+    ctaSecondaryText: 'Xem Video Giới Thiệu',
+    videoUrl: 'https://v1.pinimg.com/videos/iht/expMp4/v2/92/8a/ca/928aca8b8e476ade2d17a603c7e62015_720w.mp4',
+    floatingBadge1: {
+      title: '500+ Doanh Nghiệp',
+      subtitle: 'Hội viên chính thức',
+    },
+    floatingBadge2: {
+      title: '+105.8 Tỷ VNĐ',
+      subtitle: 'Giao thương B2B hoàn tất',
+    },
+  },
+  ribbonStats: [
+    { value: '15+', label: 'Năm Gắn Kết', desc: 'Trực thuộc HanoiBA' },
+    { value: '1.983+', label: 'Hội Viên', desc: 'Doanh nhân 1983 toàn quốc' },
+    { value: '100+ Tỷ', label: 'VNĐ Giao Thương', desc: 'Giá trị kết nối hoàn tất' },
+    { value: '98%', label: 'Tín Nhiệm', desc: 'Đánh giá hài lòng định kỳ' },
+  ],
+  appTabs: {
+    b2b: {
+      title: 'Sàn Thương Mại B2B',
+      desc: 'Niêm yết hơn 500+ sản phẩm & dịch vụ độc quyền từ các doanh nghiệp hội viên',
+      stat: '500+ Sản phẩm B2B',
+      items: [
+        { name: 'Phần mềm ERP Quản trị Doanh nghiệp', price: '120.000.000 đ', author: 'ViConnect Tech' },
+        { name: 'Gói thầu thiết kế nội thất trụ sở CEO', price: '850.000.000 đ', author: 'An Cường Interior' },
+        { name: 'Dịch vụ tư vấn pháp lý M&A', price: '45.000.000 đ', author: 'Luật Hà Nội' },
+      ],
+    },
+    connect: {
+      title: 'Lịch Gặp & Kết Nối 1-on-1',
+      desc: 'Chủ động đặt lịch giao lưu, cố vấn chiến lược và thảo luận cơ hội hợp tác',
+      stat: '240+ Buổi hẹn/tháng',
+      items: [
+        { name: 'Cố vấn chiến lược gọi vốn Series A', price: 'Đặt lịch ngay', author: 'Chủ tịch Lê Thị Dung' },
+        { name: 'Trao đổi hợp tác phân phối độc quyền', price: 'Thứ Năm, 14:00', author: 'Phó CT Nguyễn Hoàng Long' },
+        { name: 'Cà phê kết nối Doanh nhân 1983', price: 'Sáng Thứ Bảy', author: 'Ban Xúc Tiến Giao Thương' },
+      ],
+    },
+    card: {
+      title: 'Thẻ Doanh Nhân Số & QR',
+      desc: 'Trao danh thiếp thông minh, quét mã định danh xác thực hội viên chính thức',
+      stat: 'Định danh Chuẩn',
+      items: [
+        { name: 'Doanh nhân: Trần Tuấn Anh', price: 'Hội viên Vàng', author: 'ViConnect Group' },
+        { name: 'Chức vụ: Tổng Giám Đốc', price: 'Đã xác thực', author: 'Mã số: CEO1983-0089' },
+        { name: 'Lĩnh vực: Công nghệ thông tin & AI', price: 'Kết nối ngay', author: 'Trụ sở: Hà Nội' },
+      ],
+    },
+    analytics: {
+      title: 'Thống Kê Giao Thương',
+      desc: 'Minh bạch mọi chỉ số cơ hội, ngân sách và dòng tiền giao dịch thành công',
+      stat: '100+ Tỷ VNĐ',
+      items: [
+        { name: 'Tổng cơ hội giao thương đã mở', price: '128 cơ hội', author: 'Toàn hệ thống' },
+        { name: 'Doanh số giao dịch hoàn tất', price: '105.8 Tỷ VNĐ', author: 'Quý 1/2026' },
+        { name: 'Tỷ lệ kết nối thành công', price: '89.4%', author: 'Chỉ số tín nhiệm' },
+      ],
+    },
+  },
+  mapChapterPins: [
+    { id: 'hanoi', name: 'Hà Nội — Trụ Sở Chính', count: '1.250+ Hội viên', desc: 'Cung Tri Thức, Số 1 Tôn Thất Thuyết, Cầu Giấy', x: '48%', y: '22%' },
+    { id: 'haiphong', name: 'Hải Phòng & Quảng Ninh', count: '210+ Hội viên', desc: 'Cụm Công nghiệp & Cảng biển Logistics Đông Bắc', x: '55%', y: '27%' },
+    { id: 'danang', name: 'Đà Nẵng & Miền Trung', count: '185+ Hội viên', desc: 'Trung tâm xúc tiến đầu tư Du lịch & Dịch vụ', x: '57%', y: '48%' },
+    { id: 'hcm', name: 'TP. Hồ Chí Minh', count: '320+ Hội viên', desc: 'VP Đại diện Phía Nam & Kết nối thị trường tài chính', x: '52%', y: '78%' },
+    { id: 'cantho', name: 'Cần Thơ & ĐBSCL', count: '95+ Hội viên', desc: 'Mạng lưới kết nối Nông sản & Xuất khẩu', x: '46%', y: '85%' },
+  ],
+  communityAvatars: [
+    {
+      id: 'dung-le',
+      name: 'Lê Thị Dung',
+      role: 'Chủ tịch CLB Doanh Nhân CEO 1983',
+      quote: 'Tiên phong đổi mới - Kết nối bền vững',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+      badge: 'LinkedIn',
+      x: '18%',
+      y: '25%',
+    },
+    {
+      id: 'tuan-anh',
+      name: 'Trần Tuấn Anh',
+      role: 'CEO ViConnect Tech',
+      quote: 'Số hóa quản trị - Tăng tốc quy mô',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      badge: 'Zalo',
+      x: '75%',
+      y: '22%',
+    },
+    {
+      id: 'hoang-long',
+      name: 'Nguyễn Hoàng Long',
+      role: 'Phó Chủ Tịch Thường Trực HanoiBA',
+      quote: 'Lan tỏa giá trị tri thức doanh nhân',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+      badge: 'LinkedIn',
+      x: '25%',
+      y: '65%',
+    },
+    {
+      id: 'minh-tri',
+      name: 'Hoàng Minh Trí',
+      role: 'Tổng Giám Đốc An Cường Interior',
+      quote: 'Chất lượng tạo dựng niềm tin thương hiệu',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+      badge: 'TikTok',
+      x: '80%',
+      y: '68%',
+    },
+  ],
+  testimonials: [
+    {
+      quote: 'Thanks to CEO 1983 I can now realize my business expansion dream across Vietnam. Nền tảng kết nối xúc tiến giao thương B2B thiết thực nhất mà tôi từng trải nghiệm, giúp doanh nghiệp tôi ký kết 3 gói thầu hơn 12 tỷ VNĐ.',
+      author: 'Trần Tuấn Anh',
+      role: 'CEO ViConnect Tech',
+      company: 'Ban Điều Hành',
+      rating: 5,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    },
+    {
+      quote: 'I think this is the best business leadership community I have ever experienced and I recommend it to all entrepreneurs. Cơ chế đặt lịch 1-on-1 và Thẻ QR định danh giúp kết nối nhanh chóng và chuẩn mực.',
+      author: 'Lê Thị Dung',
+      role: 'Chủ tịch CLB Doanh Nhân CEO 1983',
+      company: 'DGroup',
+      rating: 5,
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    },
+    {
+      quote: 'CEO 1983 helps me a lot in finding trusted strategic business partners. Một câu lạc bộ tràn đầy năng lượng của những nhà lãnh đạo sinh năm 1983 tiên phong đổi mới trực thuộc HanoiBA.',
+      author: 'Nguyễn Hoàng Long',
+      role: 'Phó Chủ Tịch Thường Trực',
+      company: 'HanoiBA',
+      rating: 5,
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    },
+    {
+      quote: 'Fun, professional and highly effective. Các sự kiện Gala, Đại hội và xúc tiến B2B được tổ chức quy mô chuẩn quốc tế với công nghệ số hóa hiện đại.',
+      author: 'Hoàng Minh Trí',
+      role: 'Tổng Giám Đốc',
+      company: 'An Cường Interior',
+      rating: 5,
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    },
+  ],
+  faqs: [
+    {
+      question: 'CLB Doanh Nhân CEO 1983 là tổ chức gì và trực thuộc đơn vị nào?',
+      answer: 'CLB Doanh Nhân CEO 1983 là tổ chức liên kết các doanh nhân, nhà sáng lập sinh năm Quý Hợi (1983), hoạt động chính thức trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).',
+    },
+    {
+      question: 'Làm thế nào để doanh nghiệp tôi có thể niêm yết sản phẩm trên Sàn B2B?',
+      answer: 'Sau khi hoàn tất đăng ký hội viên chính thức và được Ban Thẩm định hồ sơ thông qua, doanh nghiệp được cấp tài khoản định danh để tự động đăng tải sản phẩm/dịch vụ lên Sàn B2B.',
+    },
+    {
+      question: 'Ứng dụng CEO 1983 có hỗ trợ trên các nền tảng nào?',
+      answer: 'Ứng dụng hỗ trợ đa nền tảng: iOS (App Store), Android (Google Play) và phiên bản Web App tương thích mọi kích thước màn hình điện thoại và máy tính.',
+    },
+    {
+      question: 'Chi phí tham gia và quyền lợi hội viên bao gồm những gì?',
+      answer: 'Hội viên được hưởng toàn bộ hệ sinh thái: Thẻ QR doanh nhân số, kết nối ghép đôi 1-on-1, tham dự Gala thường niên, xúc tiến đầu tư và quảng bá trên các kênh truyền thông chính thống của CLB.',
+    },
+  ],
+  footer: {
+    headline: 'CLB DOANH NHÂN CEO 1983 — HANOIBA',
+    description: 'Nền tảng công nghệ số hóa xúc tiến giao thương, kết nối tinh hoa lãnh đạo và đồng hành phát triển bền vững.',
+    contactPhone: '0983.1983.83',
+    contactEmail: 'contact@ceo1983.viconnect.vn',
+    address: 'Cung Tri Thức, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội',
+  },
+};
 
 const DEFAULT_TIMED_CARDS_SLIDES: LandingSlide[] = [
   {
@@ -247,28 +518,46 @@ export class LandingService {
     }
 
     let modified = false;
-    // Đảm bảo luôn có Mẫu 1: Timed Cards Opening (Pinterest Giulio Cuscito)
-    if (!list.some((w) => w.template === 'timed_cards_opening')) {
+    // Đảm bảo luôn có Mẫu 1: Timed Cards Opening (Pinterest Giulio Cuscito - crm.ceo1983.viconnect.vn/landing/web-v1)
+    const t1Idx = list.findIndex((w) => w.template === 'timed_cards_opening');
+    if (t1Idx === -1) {
       const t1 = this.generateDefaultTemplate(
         'timed_cards_opening',
-        'Khám Phá Toàn Cầu — Timed Cards Opening',
-        'kham-pha-toan-cau',
-        'khampha',
+        'Khám Phá Toàn Cầu — Timed Cards Opening (Mẫu 1)',
+        'web-v1',
       );
       list.unshift(t1);
       modified = true;
+    } else {
+      // Cập nhật slug về chuẩn path-based domain web-v1 nếu còn để slug cũ
+      if (!list[t1Idx].slug || list[t1Idx].slug === 'kham-pha-toan-cau') {
+        list[t1Idx].slug = 'web-v1';
+        list[t1Idx].name = 'Khám Phá Toàn Cầu — Timed Cards Opening (Mẫu 1)';
+        modified = true;
+      }
     }
 
-    // Đảm bảo luôn có Mẫu 2: Startup Mobile Showcase (Pinterest 234398355598861981 - Chuẩn ceo1983.com)
-    if (!list.some((w) => w.template === 'startup_mobile_showcase')) {
+    // Đảm bảo luôn có Mẫu 2: Startup Mobile Showcase (Pinterest 234398355598861981 - crm.ceo1983.viconnect.vn/landing/web-v2)
+    const t2Idx = list.findIndex((w) => w.template === 'startup_mobile_showcase');
+    if (t2Idx === -1) {
       const t2 = this.generateDefaultTemplate(
         'startup_mobile_showcase',
-        'Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase',
-        'app-ceo1983',
-        'app',
+        'Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase (Mẫu 2)',
+        'web-v2',
       );
       list.push(t2);
       modified = true;
+    } else {
+      // Cập nhật slug về chuẩn path-based domain web-v2 nếu còn để slug cũ
+      if (!list[t2Idx].slug || list[t2Idx].slug === 'app-ceo1983' || list[t2Idx].slug === 'startup-mobile-showcase') {
+        list[t2Idx].slug = 'web-v2';
+        list[t2Idx].name = 'Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase (Mẫu 2)';
+        modified = true;
+      }
+      if (!list[t2Idx].startupConfig) {
+        list[t2Idx].startupConfig = JSON.parse(JSON.stringify(DEFAULT_STARTUP_MOBILE_CONFIG));
+        modified = true;
+      }
     }
 
     if (modified || list.length === 0) {
@@ -413,9 +702,20 @@ export class LandingService {
     const list = await this.getAllLandingWebs();
     const target = (slugOrSubdomain || '').toLowerCase().trim();
 
-    const matched = list.find(
+    let matched = list.find(
       (w) => (w.slug && w.slug.toLowerCase() === target) || (w.subdomain && w.subdomain.toLowerCase() === target),
     );
+
+    // Hỗ trợ alias cho đường dẫn path domain crm.ceo1983.viconnect.vn/landing/web-v1 và web-v2
+    if (!matched) {
+      if (['web-v1', 'web1', 'web-1', 'v1', 'kham-pha-toan-cau'].includes(target)) {
+        matched = list.find((w) => w.template === 'timed_cards_opening') ||
+          this.generateDefaultTemplate('timed_cards_opening', 'Khám Phá Toàn Cầu — Timed Cards Opening (Mẫu 1)', 'web-v1');
+      } else if (['web-v2', 'web2', 'web-2', 'v2', 'app-ceo1983', 'startup-mobile-showcase'].includes(target)) {
+        matched = list.find((w) => w.template === 'startup_mobile_showcase') ||
+          this.generateDefaultTemplate('startup_mobile_showcase', 'Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase (Mẫu 2)', 'web-v2');
+      }
+    }
 
     if (!matched) {
       throw new NotFoundException(`Không tìm thấy trang Landing Web với định danh: ${slugOrSubdomain}`);
@@ -551,8 +851,8 @@ export class LandingService {
     return {
       id,
       name,
-      slug: slug || (isStartupMobile ? 'startup-mobile-showcase' : 'kham-pha-toan-cau'),
-      subdomain: subdomain || (isStartupMobile ? 'mobile' : 'khampha'),
+      slug: slug || (isStartupMobile ? 'web-v2' : 'web-v1'),
+      subdomain: subdomain || (isStartupMobile ? 'web-v2' : 'web-v1'),
       isPublished: true,
       template,
       theme: {
@@ -670,6 +970,7 @@ export class LandingService {
           ctaText: 'ctaText',
         },
       },
+      startupConfig: isStartupMobile ? JSON.parse(JSON.stringify(DEFAULT_STARTUP_MOBILE_CONFIG)) : undefined,
       createdAt: now,
       updatedAt: now,
     };
