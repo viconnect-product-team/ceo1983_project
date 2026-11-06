@@ -239,16 +239,43 @@ export class LandingService {
       SELECT value FROM public.app_settings WHERE key = ${SETTINGS_KEY} LIMIT 1
     `.catch(() => []);
 
+    let list: LandingWebConfig[] = [];
     if (rows && rows.length > 0 && rows[0]?.value) {
       const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
-      if (Array.isArray(val)) return val;
-      if (val && typeof val === 'object') return Object.values(val);
+      if (Array.isArray(val)) list = val;
+      else if (val && typeof val === 'object') list = Object.values(val);
     }
 
-    // Khởi tạo mẫu mặc định nếu chưa có
-    const initialConfig = this.generateDefaultTemplate('timed_cards_opening', 'Khám Phá Toàn Cầu — Timed Cards Opening');
-    await this.saveAllLandingWebs([initialConfig]);
-    return [initialConfig];
+    let modified = false;
+    // Đảm bảo luôn có Mẫu 1: Timed Cards Opening (Pinterest Giulio Cuscito)
+    if (!list.some((w) => w.template === 'timed_cards_opening')) {
+      const t1 = this.generateDefaultTemplate(
+        'timed_cards_opening',
+        'Khám Phá Toàn Cầu — Timed Cards Opening',
+        'kham-pha-toan-cau',
+        'khampha',
+      );
+      list.unshift(t1);
+      modified = true;
+    }
+
+    // Đảm bảo luôn có Mẫu 2: Startup Mobile Showcase (Pinterest 234398355598861981 - Chuẩn ceo1983.com)
+    if (!list.some((w) => w.template === 'startup_mobile_showcase')) {
+      const t2 = this.generateDefaultTemplate(
+        'startup_mobile_showcase',
+        'Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase',
+        'app-ceo1983',
+        'app',
+      );
+      list.push(t2);
+      modified = true;
+    }
+
+    if (modified || list.length === 0) {
+      await this.saveAllLandingWebs(list);
+    }
+
+    return list;
   }
 
   /**

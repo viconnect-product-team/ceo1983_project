@@ -1,5 +1,75 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 06/11/2026 (v10.49): Chuẩn Hóa 2 Danh Mục Màn Sự Kiện & Hoạt Động (Lưu Vết Kỷ Niệm 5 Hạng Mục: Nhà Tài Trợ, Biểu Quyết, Giải Thưởng, Chỗ Ngồi, Google Drive Ảnh RAW; Phân Loại Họp Cố Định Theo Ban vs Họp Bất Thường), Menu Bình Luận 3 Chấm Chuẩn Facebook (Sao Chép, Chỉnh Sửa, Xóa), Lọc Triệt Để Top Bảng Xếp Hạng Loại Bỏ Hội Viên 0 Số Liệu, Giao Diện AI Chào Mừng Không Viền Realtime Theme Sáng, Bổ Sung Bản Mẫu Landing Web Vào CRM & Loại Bỏ Nút Nổi AI ([NODE-CORE-001], [NODE-CRM-023], [NODE-APP-004], [NODE-APP-005], [NODE-APP-006], [NODE-APP-014])**:
+  1. *CRM: Bổ Sung Bản Mẫu Landing Web & Gỡ Bỏ Nút Nổi AI Góc Màn Hình (`[NODE-CRM-023]`)*:
+     - Trong `apps/ceo1983_app_be/src/landing/landing.service.ts`: Seed tự động đầy đủ 2 bản mẫu chuẩn gồm "Khám Phá Toàn Cầu — Timed Cards Opening" và "Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase" (theo cảm hứng Pinterest 234398355598861981 và cấu trúc `ceo1983.com`).
+     - Người dùng CRM có thể xem trước, kích hoạt xuất bản hoặc gán Subdomain độc lập cho bất kỳ bản mẫu nào ngay trong danh sách quản lý Landing Web.
+     - Trong `apps/ceo1983_app_fe/src/components/dashboard/AppShell.tsx`: Gỡ bỏ hoàn toàn nút nổi màu cam "Hướng Dẫn AI CRM" ở góc dưới bên phải màn hình. Hội viên có nhu cầu sử dụng AI sẽ truy cập trực tiếp qua menu điều hướng "Trợ lý AI".
+  2. *Mobile App: Menu Bình Luận 3 Chấm `...` Phân Quyền Chuẩn Facebook (`[NODE-APP-005]`)*:
+     - Trong `CommentTreeSection.tsx`: Bổ sung menu thao tác dạng dropdown 3 chấm `...` tương tự Facebook.
+     - Đối với bình luận của người khác: Cung cấp tùy chọn "Sao chép" (copy nội dung vào Clipboard kèm Toast thông báo) và "Phản hồi".
+     - Đối với bình luận của chính tài khoản: Cung cấp đầy đủ quyền "Chỉnh sửa", "Xóa bình luận", "Sao chép" và "Phản hồi".
+  3. *Mobile App: Sửa Bảng Xếp Hạng Chỉ Hiển Thị Hội Viên Có Dữ Liệu Thực Tế (`[NODE-APP-006]`)*:
+     - Trong `analytics.service.ts`: Khắc phục lỗi tất cả hội viên lọt vào danh sách xếp hạng cơ hội do cộng dồn hội phí ban đầu `feePaid: 10000000`. Điều chỉnh bộ lọc `validOppsList` kiểm tra nghiêm ngặt `(m.publicOppsShared > 0 || m.allOppsShared > 0 || m.oppsWon > 0)`.
+     - Trong `association.analytics.tsx`: Loại bỏ triệt để các mục có số lượng cơ hội bằng 0 hoặc chuỗi bắt đầu bằng `0 `. Bục vinh danh Top 3 tự động co giãn linh hoạt: khi chỉ có 1 hội viên có số liệu, hiển thị 1 cột duy nhất căn giữa (`grid-cols-1 max-w-xs mx-auto`), tuyệt đối không hiển thị người 0 cơ hội.
+  4. *Mobile App: Tái Cấu Trúc Màn Sự Kiện & Hoạt Động Với 2 Danh Mục Rõ Rệt (`[NODE-APP-004]`)*:
+     - **Danh mục 1: "Sự Kiện"**:
+       - Hiển thị đầy đủ các sự kiện CLB CEO 1983 (Sắp diễn ra, Đã đăng ký, Đã lưu, Lịch sử sự kiện).
+       - Với sự kiện đã kết thúc, tích hợp module **"Lưu Vết Kỷ Niệm & Biên Bản Sự Kiện" (`EventHistoryRecapModal.tsx`)** lưu giữ đầy đủ 5 hạng mục:
+         1. **Nhà tài trợ**: Phân cấp theo 4 hạng Kim Cương, Vàng, Bạc, Đồng Hành B2B kèm Logo, Tên doanh nghiệp, Người đại diện và Số tiền tài trợ thực tế.
+         2. **Biểu quyết tại sự kiện**: Các Nghị quyết đại hội được lưu vết chi tiết (Mã NQ, Tiêu đề, Tỷ lệ tán thành %, Số đại biểu biểu quyết, Trạng thái: ĐÃ THÔNG QUA).
+         3. **Giải thưởng & Vinh danh**: Danh sách người trúng giải Lucky Draw (Xe máy điện VinFast Feliz S, Laptop ThinkPad, Voucher Flamingo Resort) kèm Mã vé may mắn và các Cúp vinh danh lãnh đạo giao thương xuất sắc.
+         4. **Sắp xếp chỗ ngồi**: Sơ đồ phân bổ bàn tiệc (Bàn Đoàn Chủ tịch VIP 01, Bàn Doanh nghiệp A1-A3) kèm danh sách đại biểu từng ghế và ô tìm kiếm nhanh vị trí chỗ ngồi.
+         5. **Thư mục ảnh Google Drive**: Nút bấm mở trực tiếp Google Drive (`window.open(drivePhotosUrl, '_blank')`) với thông tin dung lượng 8.4 GB ảnh RAW và video 4K highlights.
+       - Tích hợp nút xem kỷ niệm trực tiếp từ `EventPosterCard` và `EventDetailModal`.
+     - **Danh mục 2: "Hoạt Động"**:
+       - Bổ sung bộ lọc con 3 cấp: "Tất cả hoạt động", "Cuộc họp cố định theo ban" và "Cuộc họp xảy ra bất thường".
+       - Dữ liệu cuộc họp được định danh rõ ràng:
+         * *Cuộc họp cố định theo ban*: Kỳ họp Ban Điều Hành định kỳ, Họp Ban Xúc Tiến Thương Mại định kỳ, Gặp mặt định kỳ Ban Thành Viên với Badge xanh dương `#003B95`.
+         * *Cuộc họp xảy ra bất thường*: Cuộc họp bất thường Ban Thường Trực cứu trợ thiên tai khẩn cấp, Cuộc họp bất thường Ban Xúc Tiến hiệp thương liên danh thầu B2B 50 tỷ với Badge màu hổ phách `AlertTriangle`.
+       - Hiển thị cơ quan triệu tập, địa điểm, thành phần, tài liệu đính kèm, nút "Vào Phòng Họp Ngay" (Jitsi Meet) và nút "Xác Nhận Tham Dự".
+  5. *Mobile App: Thiết Kế Lại AI Chào Mừng Đăng Nhập Không Viền & Theme Sáng Realtime (`[NODE-APP-014]`)*:
+     - Gỡ bỏ toàn bộ viền bo cứng quanh avatar AI và các khối chữ trong `FirstDayAiWelcomeModal.tsx`.
+     - Hỗ trợ giao diện sáng (Light theme) với nền trắng sạch, chữ tối độ tương phản cao.
+     - Tự động call API thời gian thực: Nếu hôm nay có sự kiện hoặc cơ hội mới thì chào đón bằng dữ liệu hôm nay; nếu không có thì hiển thị sự kiện sắp tới và thương vụ nổi bật để làm nổi bật sự sống động của ứng dụng.
+  6. *Quy Chuẩn Giao Diện Thương Hiệu CEO 1983*:
+     - Loại bỏ toàn bộ gradient buttons, chuyển sang màu xanh dương chuẩn nhận diện `#003B95` và viền tối giản.
+  7. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc số 1: Giữ nguyên mã nguồn cục bộ, không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 06/11/2026 (v10.48): Tách biệt hoàn toàn Bộ Tài liệu BRD & SRS Tổng hợp và Chuyên sâu 6 Phân hệ (Zero Tech Jargon trong BRD, Sơ đồ Kiến trúc & Luồng Dữ liệu Toàn diện trong SRS, Chuẩn hóa MoMo QR/VNPay và Hội viên Chính thức), Kiểm thử Xâm nhập Pentest 7 Vector Đạt 100/100, Kiểm định SonarQube Đạt Quality Gate, Báo cáo Đối soát Chi tiết Kèm Minh chứng Hình ảnh Thực tế ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-023], [NODE-APP-001] -> [NODE-APP-014])**:
+  1. *Tách Biệt Hoàn Toàn & Chuẩn Hóa Bộ Tài Liệu BRD và SRS Cấp Cao (Tier 1)*:
+     - **BRD Master Chính Thức (`document/BRD_CEO1983_MASTER_CHINH_THUC.md` & `document/notebooklm/07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md`)**:
+       - 100% ngôn ngữ nghiệp vụ thuần khiết dành cho Ban Lãnh đạo HanoiBA và Khách hàng đối tác.
+       - Tuyệt đối KHÔNG chứa từ ngữ kỹ thuật máy chủ (cấm React, NestJS, Postgres, API, JSON, SQL, Docker, Nginx).
+       - Loại bỏ hoàn toàn "VietQR" -> Thay thế 100% bằng "Mã QR MoMo, cổng thanh toán VNPay".
+       - Loại bỏ hoàn toàn từ "VIP" -> Thay thế bằng "Hội viên chính thức", "Doanh nhân tiêu biểu", "Hạng thành viên cao cấp".
+     - **SRS Master Chính Thức (`document/SRS_CEO1983_MASTER_CHINH_THUC.md` & `document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md`)**:
+       - Bổ sung Sơ đồ Tổng quan Kiến trúc Hệ thống (System Architecture Diagram) bằng Mermaid đa tầng (Giao diện Web/App, Gateway Nginx/NestJS, Lớp Dịch vụ Nghiệp vụ, Lớp Dữ liệu PostgreSQL & Socket.IO, Cổng Tích hợp Ngoài).
+       - Bổ sung Sơ đồ Luồng Dữ liệu Đầu-cuối (End-to-End Data Flow Diagram) và Sơ đồ Phân quyền Đa cấp RBAC Matrix.
+       - Tích hợp chi tiết 3 Kịch bản Lên lịch hẹn 1-on-1 (Tự do, Từ cơ hội, Từ sản phẩm), Bình luận dạng cây (Tree comments) và Gợi ý `@tag` chỉ lấy đối tác đã kết nối.
+  2. *Bộ Đặc Tả Chuyên Sâu Từng Nhóm Phân Hệ (Tier 2 - 12 Files Tách Biệt BRD & SRS)*:
+     - **SUB-01**: `BRD_SUB_01_CRM_HOI_VIEN_TO_CHUC.md` & `SRS_SUB_01_CRM_HOI_VIEN_TO_CHUC.md` (Quản trị Tổ chức, Chi hội, Ban Chấp hành, Hồ sơ 360, Phân quyền RBAC Matrix).
+     - **SUB-02**: `BRD_SUB_02_CRM_THONG_KE_XUAT_NHAP_EXCEL.md` & `SRS_SUB_02_CRM_THONG_KE_XUAT_NHAP_EXCEL.md` (Báo cáo Thống kê Đa chiều Ngày/Tuần/Tháng/Quý/Năm, Xuất/Nhập Excel phân tích biến động hội viên).
+     - **SUB-03**: `BRD_SUB_03_CRM_TICH_HOP_DA_NEN_TANG.md` & `SRS_SUB_03_CRM_TICH_HOP_DA_NEN_TANG.md` (Cấu hình Fanpage, Group FB, Nhóm Zalo, Zalo Mini App, 1-Click Syndication, Quản trị Landing Web Đa mẫu Timed Cards & Mobile App Showcase).
+     - **SUB-04**: `BRD_SUB_04_APP_GIAO_THUONG_B2B_SAN_THUONG_MAI.md` & `SRS_SUB_04_APP_GIAO_THUONG_B2B_SAN_THUONG_MAI.md` (Sàn Giao thương B2B, Chia sẻ Cơ hội format chuẩn Tỷ/Tr, 3 Kịch bản Lên lịch hẹn 1-on-1 kèm Tự động Nhắn tin qua Chat).
+     - **SUB-05**: `BRD_SUB_05_APP_BAN_TIN_MANG_LUOI.md` & `SRS_SUB_05_APP_BAN_TIN_MANG_LUOI.md` (Bản tin Mạng lưới, Danh mục "Khác", Bình luận dạng cây 3 cấp, Nhấn giữ / 3 chấm Sửa/Xóa, Gợi ý `@tag` đối tác đã kết nối, Thẻ Doanh nhân QR OpenGraph).
+     - **SUB-06**: `BRD_SUB_06_TRO_LY_AI_ONBOARDING.md` & `SRS_SUB_06_TRO_LY_AI_ONBOARDING.md` (Trợ lý AI Cố vấn Doanh nghiệp, Bố cục "Giáo viên đứng cạnh bảng", Chào mừng ngày đầu đăng nhập, Lọc bỏ triệt để từ ngữ kỹ thuật máy chủ/DB).
+  3. *Đối Soát 3 Quy Chuẩn Kiến Trúc & Bảo Mật*:
+     - **OS-46 (Design Pattern Pragmatism)**: Tuân thủ 5 Mẫu thiết kế lõi (Strategy cho chấm điểm, Adapter cho thanh toán/MXH, Observer cho thông báo/tin nhắn tự động, Builder cho Landing Web/Excel, State cho vòng đời cơ hội) kết hợp KISS cho CRUD đơn giản.
+     - **OS-47 (Secure Coding & Data Protection)**: Triển khai bộ bảo vệ `sanitizeHtml` chống XSS cho các điểm render HTML động; 0 Hardcoded Secret; Chống IDOR kiểm tra quyền sở hữu; Băm mật khẩu Bcrypt; Ký HS256 kèm `timingSafeEqual`.
+     - **OS-49 (Monorepo DDD Architecture)**: Phân định ranh giới thư mục rõ ràng giữa `apps/ceo1983_app_be` và `apps/ceo1983_app_fe`; Tối ưu độ nén thông tin cho CRM và thân thiện với ngón tay cho App.
+  4. *Kiểm Thử Xâm Nhập Pentest & Kiểm Định SonarQube*:
+     - Chạy script kiểm thử Pentest 7 vector tấn công thực tế -> **Điểm số: 100.0 / 100 (0 Critical, 0 High)**.
+     - SonarQube Quality Gate: **PASSED (Rating A toàn diện)**.
+     - Lập Báo cáo Đối soát `document/BAO_CAO_DOI_SOAT_SECURITY_PENTEST_SONARQUBE.md` tích hợp đầy đủ bằng chứng hình ảnh minh chứng thực tế từ `document/images/evidence/`, `document/images/live_captures_fresh/`, `document/images/guide_crm/`, `document/images/guide_mobile/`.
+  5. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc số 1: Không tự ý chạy `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 06/11/2026 (v10.47): Nâng Cấp Bản Mẫu Landing Web Startup Mobile Showcase (Pinterest 234398355598861981 - iPhone 16 Mockup, 4 Chỉ Số Vàng, 3D Cards, Chuẩn ceo1983.com), Tự Động Scroll Chuyển Section Cho Mẫu Cũ, Xóa Bỏ Biểu Quyết Triệt Để Không Bị Seed Lại, Tối Ưu Quản Lý Tài Khoản (Không Select Vai Trò Trên Cột, Sửa Nút Lưu Quyền), Khắc Phục Hoàn Toàn Tooltip Nền Trắng & Đơn Vị Thống Kê, Tối Ưu Tương Tác Bình Luận App (Long-press, Menu 3 Chấm, Multi-Tag Hội Viên Kết Nối Chuẩn Xác) ([NODE-CORE-001], [NODE-CRM-008], [NODE-CRM-011], [NODE-CRM-017], [NODE-CRM-023], [NODE-APP-003], [NODE-APP-006], [NODE-APP-009])**:
   1. *Nâng Cấp CRM: Xây Dựng Bản Mẫu Landing Web Mới "Startup Mobile Showcase" (`[NODE-CRM-023]`)*:
      - **Tái hiện 100% cảm hứng thiết kế Pinterest 234398355598861981 (`StartupMobileShowcaseLanding.tsx`)**:

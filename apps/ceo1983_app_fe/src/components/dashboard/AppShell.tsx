@@ -32,22 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BottomNav onMenuClick={() => setMobileOpen(true)} />
         </div>
 
-        {/* Nút Floating Cố Vấn Số AI Hướng Dẫn Thao Tác CRM */}
-        <div className="fixed bottom-6 right-6 z-40 hidden sm:flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowAiTour(true)}
-            className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold text-xs shadow-xl shadow-amber-500/25 hover:scale-105 transition cursor-pointer border border-amber-300"
-            title="Mở Trợ lý Hướng dẫn Thao tác CRM (AI Tutor)"
-          >
-            <div className="size-5 rounded-full bg-slate-950 text-amber-400 flex items-center justify-center">
-              <Bot className="size-3.5" />
-            </div>
-            <span>Hướng Dẫn AI CRM</span>
-          </button>
-        </div>
-
-        {/* Modal Hướng Dẫn Tương Tác Chuẩn Ngân Hàng ("Giáo Viên Đứng Cạnh Bảng") */}
+        {/* Modal Hướng Dẫn Tương Tác Chuẩn Ngân Hàng (khi người dùng mở từ menu/chức năng AI) */}
         <ViOneAiTutorGuide
           isOpen={showAiTour}
           onClose={() => setShowAiTour(false)}

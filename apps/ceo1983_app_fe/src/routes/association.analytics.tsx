@@ -707,7 +707,28 @@ export function AssociationAnalyticsScreen() {
     }
 
     if (catList && catList.length > 0) {
-      return catList.map((m: any, idx: number) => ({
+      // LOẠI BỎ TRIỆT ĐỂ CÁC HỘI VIÊN CÓ DỮ LIỆU BẰNG 0 (CHỈ XẾP HẠNG KHI CÓ DỮ LIỆU THỰC TẾ PHÁT SINH)
+      const activeOnly = catList.filter((m: any) => {
+        if (m.valueStr && typeof m.valueStr === "string" && /^0\s+/i.test(m.valueStr.trim())) {
+          return false;
+        }
+        if (activeCategory === "top_opportunities") {
+          const oppCount = Number(m.publicOppsShared ?? m.allOppsShared ?? 0);
+          return oppCount > 0 || (m.valueStr && !/^0\s+/i.test(m.valueStr.trim()));
+        }
+        if (activeCategory === "top_connections") {
+          return Number(m.connectionsCount ?? 0) > 0;
+        }
+        if (activeCategory === "top_events_meetings") {
+          return Number(m.eventsAttended ?? 0) > 0;
+        }
+        if (activeCategory === "top_referrals") {
+          return Number(m.referralsCount ?? m.connectionsCount ?? 0) > 0;
+        }
+        return true;
+      });
+
+      return activeOnly.map((m: any, idx: number) => ({
         rank: idx + 1,
         tier: m.tier || (idx === 0 ? "Kim Cương" : idx === 1 ? "Bạch Kim" : idx === 2 ? "Vàng" : "Top 10"),
         tierCode: m.tierCode || (idx === 0 ? "DIAMOND" : idx === 1 ? "PLATINUM" : idx === 2 ? "GOLD" : "TOP_HONOR"),
@@ -726,13 +747,12 @@ export function AssociationAnalyticsScreen() {
     return [];
   }, [activeCategory, serverData]);
 
-  // Bục vinh danh 3 người đứng top (Podium)
+  // Bục vinh danh 3 người đứng top (Podium) - Chỉ hiển thị những ai có dữ liệu > 0
   const podiumTop3: TopPerformer[] = useMemo(() => {
     if (!allRankedList || allRankedList.length === 0) return [];
-    const list = allRankedList.slice(0, 3);
-    const top1 = list.find((m) => m.rank === 1) || list[0];
-    const top2 = list.find((m) => m.rank === 2) || (list.length > 1 ? list[1] : null);
-    const top3 = list.find((m) => m.rank === 3) || (list.length > 2 ? list[2] : null);
+    const top1 = allRankedList[0];
+    const top2 = allRankedList.length > 1 ? allRankedList[1] : null;
+    const top3 = allRankedList.length > 2 ? allRankedList[2] : null;
 
     const result: TopPerformer[] = [];
     if (top2) {
@@ -1440,9 +1460,17 @@ export function AssociationAnalyticsScreen() {
             </p>
           </div>
 
-          {/* Dàn 3 cột chung 1 hàng ngang với bục bậc thang hoặc Empty State */}
+          {/* Dàn cột hiển thị theo số lượng người thực tế có dữ liệu hoặc Empty State */}
           {podiumTop3.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2 items-end pt-3 pb-1">
+            <div
+              className={`grid ${
+                podiumTop3.length === 1
+                  ? "grid-cols-1 max-w-xs mx-auto"
+                  : podiumTop3.length === 2
+                  ? "grid-cols-2 max-w-md mx-auto"
+                  : "grid-cols-3"
+              } gap-2 items-end pt-3 pb-1`}
+            >
               {podiumTop3.map((performer) => {
                 const isTop1 = performer.rank === 1;
                 const isTop2 = performer.rank === 2;
@@ -1452,7 +1480,13 @@ export function AssociationAnalyticsScreen() {
                   <div
                     key={performer.rank}
                     className={`flex flex-col items-center text-center transition-all ${
-                      isTop1 ? "order-2 -mt-4 z-10" : isTop2 ? "order-1" : "order-3"
+                      podiumTop3.length === 3
+                        ? isTop1
+                          ? "order-2 -mt-4 z-10"
+                          : isTop2
+                          ? "order-1"
+                          : "order-3"
+                        : "order-1"
                     }`}
                   >
                     <div className="relative mb-2 flex flex-col items-center">
