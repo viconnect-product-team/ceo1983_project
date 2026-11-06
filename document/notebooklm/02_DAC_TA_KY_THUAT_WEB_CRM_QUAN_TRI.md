@@ -281,25 +281,31 @@
     + Phím tắt thao tác nhanh (Quick Action): Duyệt hồ sơ (`/members?status=pending`), Xử lý thu phí/gia hạn (`/renewal`), Xem sự kiện (`/events`), Đưa vào kênh tin nhắn Hiệp hội.
     + Cho phép chuyển đổi linh hoạt giữa giao diện Bảng (`table`) và giao diện Thẻ chi tiết (`cards`).
 
-### `[NODE-CRM-023]` Quản Trị Landing Web Động & Mẫu Timed Cards Opening (Pinterest) Kèm Subdomain & API Connector
+### `[NODE-CRM-023]` Quản Trị Landing Web Động (Mẫu 1: Timed Cards Opening & Mẫu 2: Startup Mobile Showcase Pinterest) Kèm Đường Dẫn Domain Path & Tải Ảnh Trực Tiếp
 - **Route Frontend**: `/admin/landing-webs` (`src/routes/admin.landing-webs.tsx`), `/landing/$slug` (`src/routes/landing.$slug.tsx`).
 - **Menu Sidebar**: `Sidebar.tsx` (Menu "Quản lý Landing Web", Icon `Globe`).
-- **Thành phần**: `TimedCardsOpeningLanding.tsx`, `LandingWebModal`, `SubdomainModal`, `TreeMenuEditor`, `ApiConnectorEditor`, `SubScreensEditor`.
-- **API Backend**: `GET /admin/landing-webs`, `POST /admin/landing-webs`, `PUT /admin/landing-webs/:id`, `DELETE /admin/landing-webs/:id`, `POST /admin/landing-webs/:id/apply-subdomain`, `POST /admin/landing-webs/test-api`, `GET /public/landing-webs/:slugOrSubdomain` (`landing.service.ts`, `landing.controller.ts`).
+- **Thành phần**: `TimedCardsOpeningLanding.tsx`, `StartupMobileShowcaseLanding.tsx`, `LandingWebModal`, `TreeMenuEditor`, `ApiConnectorEditor`, `SubScreensEditor`, `LandingImageUploadField`.
+- **API Backend**: `GET /admin/landing-webs`, `POST /admin/landing-webs`, `PUT /admin/landing-webs/:id`, `DELETE /admin/landing-webs/:id`, `POST /admin/landing-webs/test-api`, `GET /public/landing-webs/:slugOrSubdomain` (`landing.service.ts`, `landing.controller.ts`).
 - **Bảng CSDL**: `landing_webs` (in-memory & PostgreSQL schema).
 - **Luồng xử lý**:
-  - **Tái hiện 100% video demo Timed Cards Opening (Pinterest - Giulio Cuscito)**:
-    + Hiệu ứng chuyển động chạy slide toàn màn hình sắc nét với lớp phủ gradient tương phản.
-    + Thanh chạy tiến trình 5s phía trên màn hình tự động chuyển slide tuần hoàn, tự động tạm dừng khi hover chuột.
-    + Bố cục Typography kép cỡ lớn (72px Split Headline phong cách Oswald/Inter), nhãn huy hiệu địa danh/chủ đề, mô tả tóm tắt, nút Bookmark vàng Gold `#ecad29` và nút CTA "Khám phá địa danh" / "Liên hệ ngay".
-    + Băng chuyền thẻ thu nhỏ góc dưới bên phải xếp chồng động preview các slide tiếp theo, click vào thẻ chuyển slide ngay tức thì.
-    + Bảng điều khiển góc dưới bên trái: nút prev/next, thanh phân đoạn slide và bộ đếm tiến trình `01 / 06`.
-  - **Khả năng tùy biến Dynamic toàn diện**:
-    + Người dùng tự do thêm/sửa slide, tiêu đề, ảnh nền, huy hiệu và liên kết.
-    + **Header Menu dạng cây phân cấp đa tầng (Hierarchical Tree Dropdown)**: Cho phép thêm menu cha, menu con cấp 1, cấp 2 với badge trạng thái và cơ chế kích hoạt màn con.
-    + **Màn con (Sub-screens / Dynamic Modals) tự định nghĩa**: Khi click vào mục menu dạng tree, hệ thống kích hoạt màn con tương ứng (Bài viết chi tiết phong phú, Thư viện ảnh ấn tượng, hoặc Form liên hệ & thu thập thông tin hội viên tương tác cao).
-    + **Trình kết nối API động (Dynamic API Connector)**: Người dùng có thể cấu hình endpoint lấy dữ liệu slide tự động từ hệ thống nội bộ (như `/api/opportunities`, `/api/products`, `/api/events`) hoặc từ bất kỳ REST API bên ngoài nào; tự do thiết lập Authentication Header, ánh xạ linh hoạt các trường (`titleField`, `imageField`, `tagField`, `linkField`, `descriptionField`) và kiểm tra kết nối Live (Test API Live) nhận kết quả trực tiếp ngay trên CRM.
-    + **Gán & Kích Hoạt Subdomain Riêng Biệt**: Cho phép áp dụng cấu hình Landing Web vào từng tên miền con (subdomain, ví dụ: `gala2026.ceo1983.viconnect.vn`, `b2b.ceo1983.viconnect.vn`).
+  - **Tách biệt hoàn toàn luồng thiết lập Dynamic cho từng mẫu ("Mỗi mẫu 1 dạng setup không chung nhau")**:
+    + **Mẫu 1 (Timed Cards Opening - Pinterest Giulio Cuscito)**:
+      * 5 tab cấu hình riêng biệt: Thương hiệu & Logo, Cây menu phân cấp, Thẻ trình diễn bung ảnh nền toàn màn hình kèm hiệu ứng chữ kép (Title 1, Title 2), Trình kết nối API động (Dynamic API Connector) tự động đồng bộ sự kiện/cơ hội, và Danh sách màn con chi tiết (Sub-screens).
+    + **Mẫu 2 (Startup Mobile Showcase - Pinterest Pin 234398355598861981)**:
+      * 5 tab cấu hình chuyên sâu:
+        - `m2_hero`: Tiêu đề chính nhiều dòng, chữ gạch chân nét vẽ (`heroUnderline`), phụ đề, nút tải trực tiếp ảnh bàn tay cầm điện thoại 3D, 2 huy hiệu nổi 3D (Badge 1 & Badge 2), nút CTA chính & phụ, URL video giới thiệu Pinterest/YouTube.
+        - `m2_ribbon_tabs`: Dải ruy-băng thống kê xanh hoàng gia (`bg-[#003B95]`) 4 chỉ số, dữ liệu cho 4 tab app thực tế (Sàn B2B, Lịch Gặp 1-on-1, Thẻ QR Doanh Nhân, Thống Kê & Báo Cáo).
+        - `m2_map`: Mạng lưới điểm cầu bản đồ Việt Nam (tọa độ x/y, tên điểm cầu, quy mô kết nối, mô tả).
+        - `m2_avatars`: 8 avatar doanh nhân bay 3D quanh điện thoại (tải ảnh avatar, họ tên, chức vụ, vị trí top/left, độ trễ animation).
+        - `m2_testimonials_faq`: Băng chuyền đánh giá từ các CEO (tải ảnh avatar, họ tên, chức danh, công ty, nhận xét, số sao), danh sách câu hỏi FAQ Accordion và Chân trang Footer.
+  - **Tích Hợp Tải Ảnh Trực Tiếp Từ Máy Tính Toàn Diện (`LandingImageUploadField`)**:
+    + Cho phép người dùng tải tệp ảnh trực tiếp từ máy tính lên hệ thống thông qua API NestJS `/api/upload/file?folder=landing` (`uploadFileToNest`).
+    + Hiển thị khung xem trước ảnh tức thì (Live Preview Thumbnail), chỉ báo tải lên (loading spinner), hỗ trợ fallback base64 an toàn, nút xóa nhanh hoặc chuyển đổi nhập URL ngoài.
+    + Áp dụng đồng bộ cho: Logo thương hiệu, Ảnh thẻ slide (Mẫu 1), Banner màn con (Mẫu 1), Ảnh bàn tay cầm điện thoại 3D (Mẫu 2), 8 Avatar doanh nhân 3D (Mẫu 2), và Ảnh đại diện CEO Testimonials (Mẫu 2).
+  - **Chuẩn Hóa Domain Thành Đường Dẫn Path-Based Thay Vì Subdomain**:
+    + Mẫu 1: `crm.ceo1983.viconnect.vn/landing/web-v1`
+    + Mẫu 2: `crm.ceo1983.viconnect.vn/landing/web-v2`
+    + Hỗ trợ alias linh hoạt (`web-v1`, `web-v2`, `web1`, `web2`, `v1`, `v2`, v.v.), hoạt động đồng nhất dưới tên miền chính của CRM.
 
 
 

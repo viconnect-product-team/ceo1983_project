@@ -1,5 +1,89 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 07/11/2026 (v10.53): Chuẩn Hóa Cấu Trúc Thiết Lập Dynamic Tách Biệt Độc Lập Cho Từng Mẫu Landing Web (Mẫu 1 & Mẫu 2) Kèm Hệ Thống Tải Ảnh Trực Tiếp Từ Máy Tính (Direct Image Upload & Local Preview) ([NODE-CRM-021], [NODE-CRM-023])**:
+  1. *Tách Biệt Hoàn Toàn Giao Diện & Bộ Cấu Hình Dynamic Cho Từng Mẫu ("Mỗi Mẫu 1 Dạng Setup Không Chung Nhau")*:
+     - **Mẫu 1: Khám Phá Toàn Cầu (Timed Cards Opening)**:
+       * Hệ thống 5 tab cấu hình riêng biệt: `general` (1. Thương Hiệu & Logo), `nav` (2. Cây Menu Phân Cấp), `slides` (3. Thẻ Trình Diễn Slide bung toàn màn hình), `api` (4. Tích Hợp API Động), `sub_screens` (5. Màn Con Chi Tiết).
+     - **Mẫu 2: Startup Mobile Showcase (Chuẩn Video Pinterest Pin 234398355598861981)**:
+       * Hệ thống 5 tab chuyên sâu hoàn toàn tách biệt:
+         - `m2_hero` (1. Hero & Bàn Tay Cầm Điện Thoại 3D): Cấu hình Tiêu đề chính nhiều dòng, Chữ gạch chân nét vẽ (`heroUnderline`), Phụ đề, Tải trực tiếp ảnh Bàn tay cầm điện thoại 3D, 2 Huy hiệu nổi 3D (Badge 1 & Badge 2 gồm Số lượng, Nhãn mô tả, Ảnh icon), Nút CTA chính & phụ, URL Video giới thiệu Pinterest/YouTube.
+         - `m2_ribbon_tabs` (2. Dải Ruy-băng Thống Kê & 4 Tab App): 4 chỉ số thống kê nền xanh hoàng gia (`bg-[#003B95]`), Dữ liệu cho 4 tab app (Sàn B2B, Lịch Gặp 1-on-1, Thẻ QR Doanh Nhân, Thống Kê & Báo Cáo).
+         - `m2_map` (3. Mạng Lưới Điểm Cầu Bản Đồ): Danh sách các điểm cầu chi hội trên bản đồ Việt Nam (Tọa độ x/y, Tên điểm cầu, Quy mô kết nối, Mô tả chi tiết).
+         - `m2_avatars` (4. Cộng Đồng Avatars 3D): Cấu hình 8 avatar doanh nhân bay 3D quanh điện thoại (Tải ảnh avatar trực tiếp, Họ tên, Chức vụ/Ngành nghề, Tọa độ bay top/left, Độ trễ animation).
+         - `m2_testimonials_faq` (5. Băng Chuyền Đánh Giá & FAQ): Quản lý đánh giá từ các CEO (Tải ảnh avatar, Họ tên, Chức danh, Doanh nghiệp, Đánh giá, Số sao), Danh sách FAQ Accordion và Chân trang Footer.
+  2. *Hệ Thống Tải Ảnh Trực Tiếp Từ Máy Tính Toàn Diện (`LandingImageUploadField`)*:
+     - Tích hợp component tải ảnh đa năng hỗ trợ nút chọn tệp từ máy tính, thanh chỉ báo tải lên (loading spinner), gọi trực tiếp API NestJS `/api/upload/file?folder=landing` qua `uploadFileToNest`, fallback client-side an toàn, nút xóa nhanh, ô nhập URL thủ công và khung xem trước (Live Preview Thumbnail) với tỷ lệ chuẩn (vuông/tròn/chữ nhật/16:9).
+     - Áp dụng trên toàn bộ các vị trí ảnh của hệ thống:
+       * Logo thương hiệu (Mẫu 1 & Mẫu 2)
+       * Ảnh nền thẻ trình diễn Slide Cards (Mẫu 1)
+       * Ảnh minh họa màn con Subscreens (Mẫu 1)
+       * Ảnh bàn tay cầm điện thoại 3D (Mẫu 2)
+       * Ảnh avatar cho 8 doanh nhân cộng đồng 3D (Mẫu 2)
+       * Ảnh chân dung CEO trong băng chuyền Testimonials (Mẫu 2)
+  3. *Đồng Bộ Hóa Dữ Liệu Dynamic Lên Landing Page*:
+     - Toàn bộ tham số cấu hình lưu trong CRM Admin (`LandingWebConfig.startupConfig`) được truyền thẳng và render thời gian thực tại `StartupMobileShowcaseLanding.tsx` và `TimedCardsOpeningLanding.tsx`, tự động phân giải đường dẫn media qua `resolveMediaUrl`.
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 06/11/2026 (v10.52): Tái Thiết Kế Chuẩn Pinterest Pin 234398355598861981 Cho Mẫu 2 Landing Web (Startup Mobile Showcase) & Chuẩn Hóa Domain Thành Đường Dẫn Path-Based (crm.ceo1983.viconnect.vn/landing/web-v1, web-v2, Loại Bỏ Hoàn Toàn Subdomain) ([NODE-CRM-021], [NODE-CRM-023])**:
+  1. *Tái thiết kế Mẫu 2 Landing Web (Startup Mobile Showcase) chuẩn xác 100% theo Pinterest Pin `234398355598861981`*:
+     - **Thẩm mỹ, Typography & Màu sắc**:
+       * Sử dụng nền sáng thanh thoát kết hợp dải gradient ánh xanh dịu nhẹ `bg-gradient-to-b from-[#F3F8FF] via-white to-[#F0F5FF]`, chữ đậm nét chuẩn thiết kế hiện đại.
+       * Tích hợp các chi tiết vẽ tay hoạt họa (doodle accents) chuẩn Pinterest: tia nắng doodle xanh dương trên tiêu đề, chim hải âu bay lượn trên góc phải, mũi tên cong chỉ vào màn hình điện thoại, và nét gạch lượn sóng màu san hô / đỏ cam (`#F05252`) uốn lượn dưới cụm từ *"Đồng Hành Bứt Phá!"*.
+     - **Header / Thanh điều hướng**:
+       * Nền trắng kính mờ `bg-white/95 backdrop-blur-md`, logo CEO 1983 bên trái kèm badge `HanoiBA`.
+       * Menu giữa tinh giản với chỉ báo điểm tròn/thanh màu xanh dương (`#003B95`) dưới mục đang chọn.
+       * Hai nút hành động chuẩn Pinterest: Nút bo tròn màu đen than "Đăng Nhập CRM" (`bg-slate-900 text-white rounded-full`) và Nút viền bo tròn "Đăng Ký Hội Viên" (`border border-slate-300 text-slate-800 rounded-full`).
+     - **Mô hình Khung Thiết Bị Di Động Cầm Tay (Hand Holding iPhone Mockup)**:
+       * Khung iPhone 16 Pro viền Titanium đặt thẳng đứng với Dynamic Island và thanh trạng thái thời gian thực 9:41, 5G.
+       * Giao diện bên trong màn hình hiển thị sống động:
+         - Lời chào: Avatar + "Xin chào Doanh nhân, Trần Tuấn Anh" + Thanh tìm kiếm.
+         - Tiêu đề màn hình: *"Khám Phá Cơ Hội Kinh Doanh Độc Quyền"*.
+         - Mục "Được Đề Xuất" (Recommended cards cuộn ngang): Gói giải pháp ERP Doanh nghiệp & Tòa nhà Thông minh (ViConnect Tech, 2.0 Tỷ VNĐ) và Hệ thống Thiết bị IoT (Rạng Đông Smart, 850 Tr VNĐ).
+         - Mục "Lịch Hoạt Động & Gặp 1-on-1" (My Schedule): Lịch gặp Chị Lê Thị Dung — Chủ Tịch CLB (Thứ 4, 14:00 • Trụ sở HanoiBA) có badge "Đã xác nhận".
+         - Thanh Bottom Nav 5 biểu tượng (Trang chủ, Sàn B2B, Check-in QR ở vòng tròn xanh nổi bật, Tin nhắn, Hội viên).
+       * Hai thẻ thống kê nổi hai bên điện thoại: *"500+ Doanh Nghiệp Hội Viên (5 sao)"* và *"+105.8 Tỷ VNĐ Giao thương B2B hoàn tất"*.
+     - **Dải Băng Thống Kê Xanh Hoàng Gia (Signature Royal Blue Stats Ribbon)**:
+       * Banner xanh dương đậm rực rỡ `bg-[#003B95]` trải dài toàn màn hình với 4 cột phân cách vạch mờ: `15+ Năm Gắn Kết`, `1.983+ Hội Viên`, `100+ Tỷ VNĐ Giao Thương`, `98% Tín Nhiệm Hài Lòng`.
+     - **3 Cột Giá Trị Khác Biệt Kèm Icon 3D ("That The Way To Camp!" -> "Giá Trị Khác Biệt Tại CEO 1983!")**:
+       * Cột 1 (Quả địa cầu 3D): Sàn Thương Mại B2B (Ưu đãi nội khối 15-30%).
+       * Cột 2 (La bàn 3D): Lãnh Đạo & Cố Vấn 1-on-1 (Đặt lịch trực tiếp cùng Chủ tịch và BĐH).
+       * Cột 3 (Thẻ vé 3D): Thẻ Doanh Nhân Số & Check-in QR (Định danh NFC & QR 1 chạm).
+     - **Chòm Sao Mạng Lưới Hội Viên (Member Constellation Network)**:
+       * Lưới danh thiếp hội viên kèm bộ lọc đa ngành (Công nghệ, Bất động sản, Sản xuất, F&B, Logistics).
+     - **Băng Chuyền Đánh Giá Hội Viên (Testimonials Carousel)**:
+       * Khối trích dẫn dấu ngoặc kép lớn `“` kèm 5 sao vàng và nút chuyển `<` `>`: Chị Lê Thị Dung (Chủ tịch CLB), Anh Trần Tuấn Anh (CEO ViConnect Tech), Anh Nguyễn Hoàng Long (Phó Chủ Tịch HanoiBA).
+     - **Hỏi Đáp FAQ Cột Trái Vẽ Tay / Cột Phải Accordion**:
+       * Cột trái: Form nhập câu hỏi nhanh kèm trường SĐT đã tích hợp Regex lọc số tự động (`replace(/[^0-9]/g, "")`).
+       * Cột phải: Danh sách câu hỏi thường gặp đóng/mở mượt mà.
+     - **Chân Trang Màu Xanh Hoàng Gia (`bg-[#003B95]`)**:
+       * Đồng bộ màu xanh dương đậm với dải stats ribbon, đầy đủ thông tin trụ sở, hotline 0983.1983.83, liên kết hệ thống và bản quyền 2026.
+     - **Modal Đăng Ký & Video Giới Thiệu**:
+       * Modal đăng ký gia nhập CLB với validation số điện thoại nghiêm ngặt.
+  2. *Chuẩn hóa Domain thành Đường dẫn Path-Based (crm.ceo1983.viconnect.vn/landing/web-v1, web-v2, Không dùng Subdomain)*:
+     - **Yêu cầu người dùng**: *"và phần domain thì sẽ làm phần domain với crm.ceo1983.viconnect.vn/landing/web v1 v2 chứ không là sub domain"*.
+     - **Backend (`apps/ceo1983_app_be/src/landing/landing.service.ts`)**:
+       * Mẫu 1 (Timed Cards Opening): Cấu hình mặc định slug = `web-v1`, name = `Khám Phá Toàn Cầu — Timed Cards Opening (Mẫu 1)`.
+       * Mẫu 2 (Startup Mobile Showcase): Cấu hình mặc định slug = `web-v2`, name = `Ứng Dụng Di Động CEO 1983 — Startup Mobile Showcase (Mẫu 2)`.
+       * Phương thức `getPublicLandingWeb(slugOrSubdomain)`: Bổ sung cơ chế alias linh hoạt:
+         - `web-v1`, `web1`, `web-1`, `v1`, `kham-pha-toan-cau` -> Trả về Mẫu 1.
+         - `web-v2`, `web2`, `web-2`, `v2`, `app-ceo1983`, `startup-mobile-showcase` -> Trả về Mẫu 2.
+     - **Frontend Router (`apps/ceo1983_app_fe/src/routes/landing.$slug.tsx`)**:
+       * Tiếp nhận tham số đường dẫn `$slug`.
+       * Cung cấp cơ chế fallback an toàn: Khi người dùng truy cập `crm.ceo1983.viconnect.vn/landing/web-v1` hoặc `web-v2`, hệ thống luôn render trực tiếp bản mẫu tương ứng ngay tức thì kể cả khi mạng chậm.
+     - **Web CRM Quản Lý Landing Web (`apps/ceo1983_app_fe/src/routes/admin.landing-webs.tsx`)**:
+       * Tiêu đề & Subtitle: Đổi thành *"Quản Lý Landing Web & Đường Dẫn Tên Miền (Domain Path)"* — Hoạt động trực tiếp dưới domain chính `crm.ceo1983.viconnect.vn/landing/web-v1` và `web-v2` (loại bỏ toàn bộ nhầm lẫn về subdomain riêng).
+       * Thẻ Landing Web: Hiển thị banner link `crm.ceo1983.viconnect.vn/landing/{slug}`, nút Sao chép liên kết copy thẳng URL đầy đủ `https://crm.ceo1983.viconnect.vn/landing/{slug}`.
+       * Nút hành động: Đổi nút "Domain" thành nút "Path" (Cấu hình Slug URL đường dẫn chính).
+       * Modal cấu hình: Chuyển đổi thành *"Cấu Hình Đường Dẫn Domain"* với tiền tố cố định `crm.ceo1983.viconnect.vn/landing/` và ô nhập slug (ví dụ: `web-v1`, `web-v2`, `b2b-connect`), cho phép lưu trực tiếp vào CSDL.
+       * Modal Live Preview: Bổ sung nút *"Mở URL Tab Mới"* mở trực tiếp `/landing/{slug}` trên tab trình duyệt riêng.
+  3. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Không tự ý chạy `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 06/11/2026 (v10.51): Nâng Cấp Toàn Diện Web CRM & CEO 1983 Mobile App — Đồng Bộ Biểu Đồ Analytics, Tải Tài Liệu Thư Mục, Landing Page, Phân Quyền RBAC, Validate SĐT, Nền Dark Theme, Badge Thông Báo Menu, Xóa Fake Data, Giao Diện Trang Chủ & Trang Cá Nhân Vàng Cam Kèm Bản Đồ 2D Google, Đặc Tả API & CSDL ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001], [NODE-APP-006], [NODE-APP-012], [NODE-CORE-001] -> [NODE-CORE-004])**:
   1. *Web CRM CEO1983 — Khắc phục triệt để 7 yêu cầu nghiệp vụ*:
      - **Biểu đồ Thống kê Analytics (`[NODE-CRM-002]`)**:
