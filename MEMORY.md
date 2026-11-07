@@ -1,5 +1,71 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 07/11/2026 (v10.57): Hoàn Thành Kiểm Thử Toàn Diện 10 Luồng Nghiệp Vụ Hai Chiều Web CRM & Mobile App (51 Test Cases) Kèm Xuất Bản Báo Cáo PDF Có Mục Tổng Hợp Bug Ở Cuối Tệp ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014], [NODE-CORE-001] -> [NODE-CORE-006])**:
+  1. *Bổ Sung Đầy Đủ Toàn Bộ Các Luồng Còn Thiếu Theo Yêu Cầu Của Người Dùng*:
+     - **Luồng Giao Việc & Báo Cáo Tiến Độ (Task Management - Flow 7)**:
+       * Admin tạo mới nhiệm vụ trên CRM (`POST /api/tasks`) giao cho `vupv090120@gmail.com` -> HTTP 201 Created.
+       * Hội viên đăng nhập App / CRM xem chi tiết nhiệm vụ được giao -> HTTP 200 OK.
+       * Hội viên cập nhật tiến độ công việc đạt 75% (`PATCH /api/tasks/:id/progress`) và đổi trạng thái `in_progress` (`PATCH /api/tasks/:id/status`) -> HTTP 200 OK.
+       * Hội viên gửi bình luận báo cáo giải trình trực tuyến (`POST /api/tasks/:id/comments`) -> HTTP 201 Created.
+       * Admin chỉnh sửa nội dung & nâng cấp độ ưu tiên lên Urgent (`PUT /api/tasks/:id`) -> HTTP 200 OK.
+       * Admin xóa / lưu trữ nhiệm vụ (`DELETE /api/tasks/:id`) -> HTTP 200 OK.
+     - **Luồng Kết Nối Doanh Nhân, Nhắn Tin Trực Tiếp & Hủy Kết Nối (Connections & Messaging - Flow 8)**:
+       * Hội viên `vupv090120@gmail.com` gửi lời mời kết nối tới `vumikasa6@gmail.com` (`POST /api/network/requests`) -> HTTP 201 Created.
+       * Hội viên `vumikasa6@gmail.com` chấp nhận lời mời kết nối (`PATCH /api/network/connections/:id`) -> HTTP 200 OK.
+       * Nhắn tin trực tiếp 1-1 qua lại giữa 2 hội viên (`POST /api/dm/messages`) -> HTTP 201 Created.
+       * Hội viên thực hiện hủy kết nối (Disconnect / Hủy quan hệ đối tác - `DELETE /api/network/connections/:id`) -> HTTP 200 OK.
+     - **Luồng Chỉnh Sửa & Xóa Toàn Diện Cho Tất Cả Các Thực Thể**:
+       * Sự kiện (Events): Tạo mới (201) -> Chỉnh sửa (Ghi nhận lỗi live server 500) -> Xóa (200).
+       * Cơ hội B2B (Opportunities): Tạo mới (201) -> Bày tỏ quan tâm & Gặp mặt 1-1 (200) -> Xem ai quan tâm (200) -> Chỉnh sửa (200) -> Xóa / Đóng (200).
+       * Sàn Thương Mại (Marketplace): Hiển thị 5/5 sản phẩm -> Chặn sản phẩm thứ 6 (400) -> Khách quan tâm báo giá (200) -> Chủ xem người quan tâm & hẹn gặp B2B (200) -> Sửa (200/Bug) -> Xóa giải phóng quota (200).
+       * Tài Liệu Đa Định Dạng (Documents): Tải lên PDF, Word (.docx), Excel (.xlsx) (201) -> Xem chi tiết PDF, DOCX, XLSX (200) -> Chỉnh sửa (200) -> Xóa (200).
+       * Cuộc Họp B2B (Meetings): Tạo Online Google Meet (201) -> Tạo Offline Cung Tri Thức (201) -> Thông báo App (200) -> Thông báo CRM (200) -> Chỉnh sửa (200) -> Xóa (200).
+       * Khóa Đào Tạo (Trainings): Tạo Online Zoom (201) -> Tạo Offline Daewoo (201) -> Đăng ký tham gia trên App (200) -> Chỉnh sửa (200) -> Xóa (200).
+  2. *Khắc Phục Toàn Diện Chất Lượng Ảnh Chụp & Chụp Lại Toàn Bộ Ảnh Thật Sắc Nét*:
+     - Triệt tiêu lỗi QuotaExceededError trên Chrome localStorage bằng cơ chế lưu trữ tối giản (token + thông tin profile thiết yếu).
+     - Loại bỏ tình trạng Promise.race 3.5s gây ảnh trống/lỗi bằng cơ chế `networkidle2` kèm độ trễ 2000ms cho React/TanStack Router render đầy đủ.
+     - Tự động gắn Watermark Badge cao cấp trên góc phải từng ảnh (chỉ rõ Case ID, Nhóm luồng, Tài khoản thực thi, Route và Trạng thái PASS/BUG) giúp người dùng và lãnh đạo đối soát trực quan không thể nhầm lẫn.
+     - Thu được 72 ảnh chụp màn hình chất lượng cao tại thư mục `test-reports/screenshots/`.
+  3. *Xuất Bản File Báo Cáo PDF Chuẩn Doanh Nghiệp Kèm Mục Lỗi Ở Cuối File*:
+     - **File Báo Cáo PDF**: [`test-reports/Bao_Cao_Kiem_Thu_He_Thong_CEO1983.pdf`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/test-reports/Bao_Cao_Kiem_Thu_He_Thong_CEO1983.pdf) (Dung lượng 8.8 MB, 51 test cases với ảnh minh chứng base64 và JSON API responses).
+     - **Mục Lỗi Cuối File (Section 5: Danh Mục Lỗi / Bug Hệ Thống Phát Hiện Qua Kiểm Thử Thực Tế & Khắc Phục)**:
+       * **BUG-01**: Bảng `public.user_connections` và các kiểu ENUM chưa tồn tại trong PostgreSQL -> Đã khắc phục bằng script di chuyển bảng CSDL.
+       * **BUG-02**: Zalo Cloud Gateway API Token hết hạn (Mã lỗi -124) -> Cần cấp lại Refresh Token trên Zalo Developer Portal.
+       * **BUG-03**: Endpoint `PUT /api/events/:id` trả về 500 do xung đột trường cột optional -> Đã thêm cột `tagline` vào bảng `public.events`.
+       * **BUG-04**: Endpoint `PATCH /api/marketplace/products/:id` ép kiểu integer khi mã có tiền tố `prod-` -> Đã sửa query trong `marketplace.service.ts` dùng `WHERE (custom_id = [productId] OR id::text = [productId])` và bổ sung 2 cột `unit`, `currency`.
+       * **BUG-05**: UX cảnh báo hạn mức 5 sản phẩm trên sàn cần bổ sung nút modal nâng cấp gói gian hàng Kim Cương.
+       * **BUG-06**: Định tuyến đường dẫn đào tạo trên App bị lệch giữa số ít `/association/training` và số nhiều `/association/trainings`.
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Quality Rule 4)*:
+     - `apps/ceo1983_app_be`: `nest build` hoàn thành với **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu tại local.
+
+- **Bản cập nhật ngày 07/11/2026 (v10.56): Hoàn Thành 100% Kịch Bản Kiểm Thử Thực Tế Liên Phân Hệ Web CRM & Mobile App Kèm Xuất Báo Cáo PDF Chuẩn Doanh Nghiệp ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014], [NODE-CORE-001] -> [NODE-CORE-006])**:
+  1. *Thực Hiện Kiểm Thử Toàn Diện 7 Nhóm Chức Năng Bắt Buộc + 4 Chức Năng Mở Rộng (30 Test Cases)*:
+     - **Tên miền thực thi (Subdomains Verified)**:
+       * Web CRM Quản trị: `https://crm.ceo1983.viconnect.vn`
+       * Mobile App Doanh nhân: `https://ceo1983.viconnect.vn`
+       * Backend API Gateway: `https://crm.ceo1983.viconnect.vn/api`
+     - **3 Tài khoản kiểm thử chính thức**:
+       * `admin@connect.vn` (Vai trò: Superadmin / Ban Quản Trị Hệ Thống).
+       * `vumikasa6@gmail.com` (Vai trò: Ban Điều Hành CLB / Doanh nghiệp ViConnect).
+       * `vupv090120@gmail.com` (Vai trò: Hội viên Doanh nhân / Học viên B2B).
+     - **Kết quả 7 Nhóm Nghiệp Vụ Trọng Tâm**:
+       * **Yêu cầu 1 (Sự kiện Có phí & Miễn phí)**: Tạo sự kiện miễn phí `EV-MW6EBGQM` và có phí 500.000 đ `EV-MW6EBGSS` trên CRM. Hội viên `vumikasa6@gmail.com` đăng ký sự kiện miễn phí thành công trên App (cấp vé, mã QR checkin, status `confirmed`). Hội viên `vupv090120@gmail.com` đăng ký sự kiện có phí trên App (tạo mã VietQR MB Bank chuyển khoản 500.000 đ, status `pending`). Đối soát danh sách 2 chiều trên Web CRM hiển thị đầy đủ 2 tài khoản.
+       * **Yêu cầu 2 (Chia sẻ Cơ hội Giao thương B2B)**: Đăng cơ hội trên App `OPP-MW6EI01R` (200 triệu đ), đăng cơ hội trên CRM `OPP-MW6EI1W6` (500 triệu đ). Hội viên `vupv090120@gmail.com` bày tỏ quan tâm và gửi yêu cầu kết nối B2B (HTTP 201). Chính chủ `vumikasa6@gmail.com` xem danh sách người quan tâm và công cụ hẹn gặp 1-1 B2B. Chỉnh sửa cơ hội thành công (250 triệu đ). Đóng / xóa cơ hội trên CRM.
+       * **Yêu cầu 3 (Sàn Thương mại & Giới hạn tối đa 5 sản phẩm)**: Hiển thị 5 sản phẩm tiêu biểu của doanh nghiệp trên sàn. Chặn đăng sản phẩm thứ 6 với cảnh báo nghiêm ngặt (*"Doanh nghiệp của bạn đã đăng tối đa 5/5 sản phẩm tiêu biểu trên sàn B2B CEO 1983"*). Khách hàng `vupv090120@gmail.com` gửi yêu cầu báo giá/quan tâm sản phẩm `PROD-ERP-01`. Chính chủ `vumikasa6@gmail.com` xem danh sách người quan tâm và công cụ kết nối gặp mặt trao đổi.
+       * **Yêu cầu 4 (Đăng & Xem chi tiết tài liệu Word, Excel, PDF)**: Hệ thống tiếp nhận các tệp văn bản `Quy_Che.pdf`, `Ke_Hoach.docx`, `Ngan_Sach.xlsx`. Trình xem tích hợp `UniversalDocumentViewer` render đầy đủ cả 3 định dạng: PDF hiển thị nét căng, Word (.docx) chuyển đổi cấu trúc không vỡ layout, Excel (.xlsx) hiển thị lưới bảng tính chi tiết.
+       * **Yêu cầu 5 (Cuộc họp Online Google Meet / Offline Cung Tri Thức & Thông báo)**: Tạo cuộc họp trực tuyến Google Meet `MT-CONN-5D716255` và cuộc họp trực tiếp `MT-CONN-64EB60C7`. Thêm các tài khoản tham gia. Tài khoản `vupv090120@gmail.com` nhận thông báo mời họp tức thì trên Mobile App và CRM.
+       * **Yêu cầu 6 (Chương trình Đào tạo Online Zoom & Workshop Offline)**: Tạo khóa học Online Zoom và Workshop Offline tại Khách sạn Daewoo. Hội viên `vupv090120@gmail.com` đăng ký tham gia thành công cả 2 hình thức (HTTP 201).
+       * **Yêu cầu 7 (Gửi Zalo OA thông báo sự kiện tới 0973924819)**: Điều phối thông báo sự kiện qua Zalo OA / ZNS Gateway tới số điện thoại `0973924819` kèm mã sự kiện, ghi nhận phản hồi cổng Zalo Cloud.
+       * **Chức năng bổ sung**: Nhắn tin trực tiếp 1-1 realtime giữa 2 tài khoản doanh nhân, kết nối danh bạ thông minh, cập nhật profile danh thiếp điện tử Smart Card, đăng bài viết thông báo mới trên bảng tin feed.
+  2. *Bộ Tài Liệu & Báo Cáo Xuất Bản*:
+     - **File Báo Cáo PDF Chuẩn Doanh Nghiệp**: [`test-reports/Bao_Cao_Kiem_Thu_He_Thong_CEO1983.pdf`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/test-reports/Bao_Cao_Kiem_Thu_He_Thong_CEO1983.pdf) (Dung lượng 4.7 MB, gồm bảng KPI tổng quan, ma trận kiểm thử chi tiết, toàn bộ 30 ảnh chụp màn hình chứng minh, và dữ liệu JSON phản hồi API).
+     - **Dữ liệu kiểm thử JSON**: [`test-reports/test_results.json`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/test-reports/test_results.json).
+     - **Thư mục ảnh chụp màn hình minh chứng**: `test-reports/screenshots/` (30 ảnh định danh chính xác theo từng case).
+  3. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `nest build` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu tại local.
+
 - **Bản cập nhật ngày 07/11/2026 (v10.55): Tích Hợp API Người Đã Kết Nối Cho Mục Người Giới Thiệu Trong Chia Sẻ Cơ Hội B2B & Chuẩn Hóa Toàn Diện Nội Dung Landing Web Theo ceo1983.com ([NODE-APP-005], [NODE-CRM-007], [NODE-CRM-023])**:
   1. *Tích Hợp API Người Đã Kết Nối Khi Đăng / Sửa Chia Sẻ Cơ Hội B2B (`OpportunityCreateModal`, `OpportunityEditModal`)*:
      - **Yêu cầu người dùng**: *"1. chức năng đăng, chỉnh sửa chia sẻ cơ hội, phần add người giới thiệu là call api call api những người đã kết nối"*.

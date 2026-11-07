@@ -118,75 +118,8 @@ export class ConnectMarketplaceService {
   }
 
   async createProduct(userId: string, data: any) {
-    const prodId = data.id || `PROD-${Date.now().toString(36).toUpperCase()}`;
-    const name = (data.name || data.title || 'Sản phẩm mới').trim();
-    const description = (data.description || '').trim();
-    const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
-    const category = (data.category || 'Sản phẩm & Dịch vụ').trim();
-    const price = Number(data.price || 0);
-    const originalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : price;
-    const memberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : price;
-    const unit = data.unit || 'Gói';
-    const currency = data.currency || 'VND';
-    const imgArr: string[] = safeParseImages(data.imageUrls || (data.imageUrl ? [data.imageUrl] : []));
-    const imageUrl = imgArr[0] || data.imageUrl || null;
-    const videoUrl = data.videoUrl || data.video_url || null;
-    const sellerId = String(data.sellerId || userId || 'ceo1983');
-    const status = data.status || 'active';
-    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
-
-    // B2B Marketplace Policy: Giới hạn tối đa 5 sản phẩm/doanh nghiệp tiêu biểu
-    try {
-      const countRes = await this.prisma.$queryRaw<any[]>`
-        SELECT count(*)::int as cnt
-        FROM public.products
-        WHERE status != 'archived'
-          AND (
-            seller_id = ${sellerId}
-            OR (NULLIF(${company}, '') IS NOT NULL AND company = ${company} AND company != 'CLB Doanh Nhân CEO 1983')
-          )
-      `;
-      const currentCount = Number(countRes?.[0]?.cnt || 0);
-      if (currentCount >= 5) {
-        throw new BadRequestException('Mỗi doanh nghiệp chỉ được đăng tối đa 5 sản phẩm/dịch vụ tiêu biểu trên sàn B2B CEO 1983 (tránh spam, đảm bảo chất lượng sàn).');
-      }
-    } catch (err: any) {
-      if (err instanceof BadRequestException) throw err;
-      // non-blocking fallback if query error
-    }
-
-    try {
-      await this.prisma.$executeRaw`
-        INSERT INTO public.products (
-          id, custom_id, title, name, description, company, category,
-          price, original_price, member_price, unit, currency,
-          image_url, image_urls, video_url, seller_id, status, views, emoji,
-          association_id, created_at, updated_at
-        ) VALUES (
-          ${prodId}, ${prodId}, ${name}, ${name}, ${description}, ${company}, ${category},
-          ${price ? BigInt(price) : BigInt(0)},
-          ${originalPrice ? BigInt(originalPrice) : BigInt(0)},
-          ${memberPrice ? BigInt(memberPrice) : BigInt(0)},
-          ${unit}, ${currency},
-          ${imageUrl}, ${imgArr}::text[], ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
-          ${assocId}::uuid, now(), now()
-        )
-      `;
-    } catch (err: any) {
-      console.warn('createProduct primary insert failed, using fallback:', err?.message);
-      await this.prisma.$executeRaw`
-        INSERT INTO public.products (
-          id, custom_id, title, name, description, category, price,
-          image_urls, video_url, seller_id, status, views, emoji,
-          association_id, created_at, updated_at
-        ) VALUES (
-          ${prodId}, ${prodId}, ${name}, ${name}, ${description}, ${category}, ${price ? BigInt(price) : BigInt(0)},
-          ${imgArr}::text[], ${videoUrl}, ${sellerId}, ${status}, 0, '🛍️',
-          ${assocId}::uuid, now(), now()
-        )
-      `;
-    }
-    return { ok: true, id: prodId };
+    const res = await this.createMarketplaceProduct(userId, data);
+    return { ok: true, id: res.id, product: res };
   }
 
   async updateProduct(userId: string, productId: string, data: any) {
@@ -213,10 +146,10 @@ export class ConnectMarketplaceService {
           unit = COALESCE(${data.unit}, unit),
           currency = COALESCE(${data.currency}, currency),
           image_url = COALESCE(${imageUrl}, image_url),
-          image_urls = CASE WHEN ${imgArr ? true : false} THEN ${imgArr || []}::text[] ELSE image_urls END,
+          image_urls = CASE WHEN ${imgArr ? true : false} THEN ${JSON.stringify(imgArr || [])}::jsonb ELSE image_urls END,
           video_url = COALESCE(${videoUrl}, video_url),
           updated_at = now()
-        WHERE id = ${productId} OR id::text = ${productId} OR custom_id = ${productId}
+        WHERE (custom_id = ${productId} OR id::text = ${productId})
       `;
     } catch (err: any) {
       console.warn('updateProduct primary update failed, using fallback:', err?.message);
@@ -231,7 +164,7 @@ export class ConnectMarketplaceService {
           image_url = COALESCE(${imageUrl}, image_url),
           company = COALESCE(${data.company}, company),
           updated_at = now()
-        WHERE id = ${productId} OR id::text = ${productId} OR custom_id = ${productId}
+        WHERE (custom_id = ${productId} OR id::text = ${productId})
       `;
     }
     return { ok: true };
@@ -442,29 +375,48 @@ export class ConnectMarketplaceService {
     const currency = data.currency || 'VND';
     const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
 
+    // B2B Marketplace Policy: Giới hạn tối đa 5 sản phẩm/doanh nghiệp tiêu biểu
+    try {
+      const countRes = await this.prisma.$queryRaw<any[]>`
+        SELECT count(*)::int as cnt
+        FROM public.products
+        WHERE status != 'archived'
+          AND (
+            seller_id = ${sellerId}
+            OR (NULLIF(${company}, '') IS NOT NULL AND company = ${company} AND company != 'CLB Doanh Nhân CEO 1983')
+          )
+      `;
+      const currentCount = Number(countRes?.[0]?.cnt || 0);
+      if (currentCount >= 5) {
+        throw new BadRequestException('Mỗi doanh nghiệp chỉ được đăng tối đa 5 sản phẩm/dịch vụ tiêu biểu trên sàn B2B CEO 1983 (tránh spam, đảm bảo chất lượng sàn). Vui lòng quản lý hoặc xóa sản phẩm cũ để đăng mới!');
+      }
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+    }
+
     const rows = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.products (
-        custom_id, seller_id, title, name, description, price, original_price, member_price, unit, currency,
-        category, status, views, emoji, pdf_url, image_urls, image_url, video_url, company, website_url, facebook_url,
-        association_id, created_at, updated_at
+        custom_id, seller_id, title, name, description, price, original_price, member_price,
+        category, status, views, emoji, pdf_url, image_urls, image_url, video_url, company, website_url, facebookurl,
+        created_at, updated_at
       ) VALUES (
         ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
-        ${originalPrice}, ${memberPrice}, ${unit}, ${currency},
+        ${originalPrice}, ${memberPrice},
         ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
         ${data.pdfUrl ?? ''}, ${JSON.stringify(imageUrls)}::jsonb, ${firstImage}, ${videoUrl}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
-        ${assocId}::uuid, NOW(), NOW()
+        NOW(), NOW()
       )
       RETURNING *
     `.catch(async (err) => {
       console.warn('createMarketplaceProduct primary insert failed, using fallback:', err?.message);
       return this.prisma.$queryRaw<any[]>`
         INSERT INTO public.products (
-          custom_id, seller_id, title, description, price, category, status, views, emoji, pdf_url, image_urls, video_url, website_url, facebook_url, association_id, created_at, updated_at
+          custom_id, seller_id, title, name, description, price, category, status, views, emoji, pdf_url, image_urls, video_url, website_url, facebookurl, created_at, updated_at
         ) VALUES (
-          ${id}, ${sellerId}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+          ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
           ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
           ${data.pdfUrl ?? ''}, ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
-          ${assocId}::uuid, NOW(), NOW()
+          NOW(), NOW()
         )
         RETURNING *
       `.catch(() => [] as any[]);
