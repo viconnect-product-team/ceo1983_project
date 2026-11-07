@@ -24,9 +24,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // CẤU HÌNH LIVE SERVER: Mở trực tiếp App Hiệp Hội CEO 1983 chuẩn
 const USE_REMOTE_SERVER = true;
 
-// URL Cổng Web chính thức của Phân hệ Hiệp hội CLB Doanh Nhân CEO 1983 (100% HTTPS Cổng 5444)
-export const REMOTE_URL = 'https://14.225.217.232:5444/association';
-export const WEB_PORTAL_URL = 'https://14.225.217.232:5444/association';
+// URL Cổng Web chính thức của Phân hệ Hiệp hội CLB Doanh Nhân CEO 1983 (100% HTTPS có SSL Domain chính thức)
+export const REMOTE_URL = 'https://ceo1983.viconnect.vn/association';
+export const WEB_PORTAL_URL = 'https://ceo1983.viconnect.vn/association';
 
 // Chạy 100% bảo mật HTTPS
 const CLEARTEXT = false;

@@ -662,46 +662,65 @@ export class FeedService {
         postAuthorId = postAuthorRow[0]?.author_id ? String(postAuthorRow[0].author_id) : null;
       }
 
-      if (postAuthorId && postAuthorId !== userId && !uniqueMentionedIds.includes(postAuthorId)) {
-        const isPostAuthorUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postAuthorId);
-        if (isPostAuthorUuid) {
-          const postNotifId = require('crypto').randomUUID();
-          await this.prisma.$executeRawUnsafe(`
-            INSERT INTO public.business_notifications (
-              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
-              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
-            ) VALUES (
-              $1::uuid, $2::uuid, 'feed', $3, 'post_commented', 'moment_new_comment',
-              $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'ceo1983_app', 'ceo1983_app', NOW(), NOW()
-            )
-          `, postNotifId, postAuthorId, String(postId),
-             `${finalAuthorName} đã bình luận bài viết của bạn`,
-             snippet,
-             JSON.stringify({ postId, authorName: finalAuthorName, commentSnippet: snippet, url: '/association/messages?tab=feed' }),
-             `post_comment:${c.id}:${postAuthorId}`).catch(() => {});
-        }
+      if (postAuthorId) {
+        const authorMemberRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, user_id, code FROM public.members
+          WHERE id::text = ${postAuthorId} OR user_id::text = ${postAuthorId} OR code::text = ${postAuthorId}
+          LIMIT 1
+        `.catch(() => []);
 
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO public.member_notifications (
-            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
-          )
-        `, postAuthorId,
-           'Bình luận mới về bài viết của bạn',
-           `${finalAuthorName} đã bình luận bài viết của bạn: "${snippet}"`,
-           String(postId)).catch(() => {});
+        const authorUserId = authorMemberRows[0]?.user_id ? String(authorMemberRows[0].user_id) : postAuthorId;
+        const authorMemberId = authorMemberRows[0]?.id ? String(authorMemberRows[0].id) : postAuthorId;
+        const authorCode = authorMemberRows[0]?.code ? String(authorMemberRows[0].code) : null;
 
-        if (this.gateway) {
-          this.gateway.emitNotification(postAuthorId, {
-            id: require('crypto').randomUUID(),
-            title: `${finalAuthorName} đã bình luận bài viết của bạn`,
-            body: snippet,
-            type: 'network',
-            refType: 'feed',
-            refId: String(postId),
-            createdAt: new Date().toISOString(),
-          });
+        const isSelfComment = [authorUserId, authorMemberId, authorCode].filter(Boolean).some(id => String(id).toLowerCase() === String(userId).toLowerCase());
+
+        if (!isSelfComment && !uniqueMentionedIds.includes(authorUserId) && !uniqueMentionedIds.includes(authorMemberId)) {
+          const notifTitle = 'Bình luận mới về bài viết của bạn';
+          const notifBody = `${finalAuthorName} đã bình luận bài viết của bạn: "${snippet}"`;
+
+          const targets = Array.from(new Set([authorUserId, authorMemberId, authorCode].filter(Boolean)));
+          for (const tgt of targets) {
+            await this.prisma.$executeRawUnsafe(`
+              INSERT INTO public.member_notifications (
+                id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+              ) VALUES (
+                gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+              )
+            `, tgt, notifTitle, notifBody, String(postId)).catch(() => {});
+          }
+
+          const isTargetUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(authorUserId);
+          if (isTargetUuid) {
+            const postNotifId = require('crypto').randomUUID();
+            await this.prisma.$executeRawUnsafe(`
+              INSERT INTO public.business_notifications (
+                id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+                title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+              ) VALUES (
+                $1::uuid, $2::uuid, 'feed', $3, 'post_commented', 'moment_new_comment',
+                $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'all', 'all', NOW(), NOW()
+              )
+            `, postNotifId, authorUserId, String(postId),
+               notifTitle,
+               snippet,
+               JSON.stringify({ postId, authorName: finalAuthorName, commentSnippet: snippet, url: '/association/messages?tab=feed' }),
+               `post_comment:${c.id}:${authorUserId}`).catch(() => {});
+          }
+
+          if (this.gateway) {
+            for (const tgt of targets) {
+              this.gateway.emitNotification(String(tgt), {
+                id: require('crypto').randomUUID(),
+                title: notifTitle,
+                body: notifBody,
+                type: 'network',
+                refType: 'feed',
+                refId: String(postId),
+                createdAt: new Date().toISOString(),
+              });
+            }
+          }
         }
       }
 
@@ -965,6 +984,32 @@ export class FeedService {
     await this.prisma.$executeRaw`DELETE FROM public.feed_likes WHERE post_id = ${postId}::uuid`.catch(() => {});
     await this.prisma.$executeRaw`DELETE FROM public.feed_posts WHERE id = ${postId}::uuid`.catch(() => {});
     return { ok: true, message: 'Đã xóa bài viết thành công.' };
+  }
+
+  async listAllCommentsForModeration(search?: string, postId?: string) {
+    let whereClause = '';
+    const params: any[] = [];
+    if (postId) {
+      params.push(postId);
+      whereClause += ` WHERE c.post_id::text = $${params.length}`;
+    }
+    if (search) {
+      params.push(`%${search.trim()}%`);
+      whereClause += (whereClause ? ' AND ' : ' WHERE ') + `(c.content ILIKE $${params.length} OR c.author_name ILIKE $${params.length} OR p.title ILIKE $${params.length})`;
+    }
+
+    const query = `
+      SELECT 
+        c.id, c.post_id, c.author_id, c.author_name, c.author_avatar, c.content, c.created_at,
+        p.title as post_title, p.category as post_category
+      FROM public.feed_comments c
+      LEFT JOIN public.feed_posts p ON p.id = c.post_id
+      ${whereClause}
+      ORDER BY c.created_at DESC
+      LIMIT 100
+    `;
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(query, ...params).catch(() => []);
+    return rows;
   }
 
 }

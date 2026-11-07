@@ -30,6 +30,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/PageKit";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { fetchNestApi } from "@/lib/api-client";
+import { getQrUrl } from "@/lib/qr";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   addEventAttendeeFn,
@@ -1253,9 +1254,10 @@ function RegPage() {
 
             <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-2xl border-2 border-primary/20 bg-white p-3 shadow-inner">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                src={getQrUrl(
                   qrReg.qrPayload || JSON.stringify({ id: qrReg.id, name: qrReg.memberName, seat: qrReg.seatAssignment }),
-                )}`}
+                  240
+                )}
                 alt="QR Checkin"
                 className="h-full w-full object-contain"
               />

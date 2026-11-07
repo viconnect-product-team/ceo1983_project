@@ -247,7 +247,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
       { key: "event_location", label: "Địa điểm tổ chức", example: "Khách Sạn Melia Hà Nội - 44 Lý Thường Kiệt" },
       { key: "seat_assignment", label: "Vị trí chỗ ngồi / Bàn tiệc", example: "Bàn VIP 02 - Ghế 05" },
       { key: "ticket_type", label: "Hạng vé", example: "VIP Pass" },
-      { key: "qr_code_url", label: "Ảnh mã QR Check-in", example: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=TICKET-CEO1983-M016" },
+      { key: "qr_code_url", label: "Ảnh mã QR Check-in", example: "https://ceo1983.viconnect.vn/api/events/qr?data=TICKET-CEO1983-M016&size=250" },
     ],
     updatedAt: "2026-10-01",
     htmlBody: `

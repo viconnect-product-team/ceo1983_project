@@ -54,17 +54,6 @@ export function isSelfUser(
   if (myMemberId && candidateCode && candidateCode === myMemberId) return true;
   if (myEmail && candidateCode && candidateCode === myEmail) return true;
   if (myUsername && candidateCode && candidateCode === myUsername) return true;
-  if (myName && candidateName && candidateName === myName) return true;
-
-  // Check stored custom profile name
-  try {
-    const rawCustom = localStorage.getItem("vba_custom_profile");
-    if (rawCustom) {
-      const custom = JSON.parse(rawCustom);
-      if (custom?.name && candidateName && custom.name.trim().toLowerCase() === candidateName)
-        return true;
-    }
-  } catch {}
 
   return false;
 }

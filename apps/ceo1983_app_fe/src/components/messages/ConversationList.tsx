@@ -358,7 +358,21 @@ export function ConversationList({
     [],
     "vba_directory_members",
   );
-  const members = propMembers && propMembers.length > 0 ? propMembers : fetchedMembers;
+  const [directMembers, setDirectMembers] = useState<DirectoryMember[]>([]);
+
+  useEffect(() => {
+    fetchNestApi<any[]>("/members")
+      .then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          setDirectMembers(res);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const members = (propMembers && propMembers.length > 0)
+    ? propMembers
+    : ((fetchedMembers && fetchedMembers.length > 0) ? fetchedMembers : directMembers);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
   const [searchTerm, setSearchTerm] = useState("");

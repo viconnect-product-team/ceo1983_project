@@ -19,6 +19,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getQrUrl } from "@/lib/qr";
 import { type EventItem } from "@/lib/events.functions";
 import { resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
 import { formatDisplayDate } from "@/lib/date-format";
@@ -179,7 +180,7 @@ export const EventPoster: React.FC<EventPosterProps> = ({
     return `${origin}/association/checkin?eventId=${event?.id || ""}`;
   }, [event?.checkinQr, event?.id]);
 
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkinUrl)}`;
+  const qrImageUrl = getQrUrl(checkinUrl, 300);
 
   // Handle banner upload
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

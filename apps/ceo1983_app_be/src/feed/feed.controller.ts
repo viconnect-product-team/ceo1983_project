@@ -14,10 +14,22 @@ import {
 import { FeedService } from './feed.service';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('feed')
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_truyen_thong', 'member')
+  @Get('moderation/comments')
+  async listAllCommentsForModeration(
+    @Query('search') search?: string,
+    @Query('postId') postId?: string,
+  ) {
+    return this.feedService.listAllCommentsForModeration(search, postId);
+  }
 
   @Get('url-metadata')
   async extractUrlMetadata(@Query('url') url: string) {

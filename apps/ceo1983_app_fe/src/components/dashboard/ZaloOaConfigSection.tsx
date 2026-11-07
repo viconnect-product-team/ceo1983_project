@@ -387,7 +387,9 @@ export const ZaloOaConfigSection: React.FC = () => {
 
   // Dynamic Event Check-in QR Payload & URL
   const eventQrData = `CEO1983_EVENT_CHECKIN|EVENT:${encodeURIComponent(eventName)}|MEMBER:${targetMemberCode}|TICKET:${eventTicketCode}|PHONE:${targetPhone}`;
-  const eventQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(eventQrData)}`;
+  const eventQrUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/api/events/qr?data=${encodeURIComponent(eventQrData)}&size=320`
+    : `https://ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(eventQrData)}&size=320`;
 
   // Danh sách hội viên tương tác gần đây từ Zalo OA (để lấy User ID chính xác 100%)
   const [recentChats, setRecentChats] = useState<{

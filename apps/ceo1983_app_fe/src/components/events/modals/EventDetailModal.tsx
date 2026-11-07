@@ -23,6 +23,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getQrUrl } from "@/lib/qr";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 import { EventPosterModal } from "@/components/events/EventPosterModal";
@@ -364,7 +365,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </p>
               <div className="mx-auto w-40 h-40 p-2 bg-white rounded-2xl border border-amber-300/80 shadow-sm flex items-center justify-center">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(guestRegUrl)}`}
+                  src={getQrUrl(guestRegUrl, 300)}
                   alt="Mã QR Đăng Ký Khách Mời"
                   className="w-full h-full object-contain"
                 />

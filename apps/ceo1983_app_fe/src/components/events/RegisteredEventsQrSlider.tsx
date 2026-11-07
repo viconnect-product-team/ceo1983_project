@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 import { Calendar, MapPin, ChevronRight, Ticket } from "lucide-react";
 
+import { getQrUrl } from "@/lib/qr";
+
 export interface RegisteredEventsQrSliderProps {
   isEn?: boolean;
   registeredEvents: any[];
@@ -52,7 +54,7 @@ export const RegisteredEventsQrSlider: React.FC<RegisteredEventsQrSliderProps> =
     const photoGalleryUrl = regEvt.photoGalleryUrl || (regEvt as any).driveUrl || "";
 
     // Mã QR vé check-in TRÙNG KHỚP 100% với mã QR từ Ban Truyền Thông (chính là canonical regId)
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoiceCode)}`;
+    const qrUrl = getQrUrl(invoiceCode, 320);
 
     return {
       eventTitle: regEvt.title,

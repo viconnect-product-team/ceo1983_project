@@ -43,6 +43,7 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyEvents, registerForEvent, cancelEventRegistration, getMyMember, isEventFull, type MyEvent, type MyMember } from "@/lib/member-app.functions";
 import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
+import { getQrUrl } from "@/lib/qr";
 import { formatDisplayDate } from "@/lib/date-format";
 import { executeShare } from "@/lib/share-helper";
 import { saveCalendarItem } from "@/lib/calendar-reminder";
@@ -326,7 +327,7 @@ export function makeTicketQrUrl(ticketData: {
   ticketCount?: number;
 }) {
   // Mã QR check-in sự kiện chuẩn xác phải mã hóa trực tiếp ticketCode (registrationId) để máy quét nhận diện ngay
-  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(ticketData.ticketCode)}`;
+  return getQrUrl(ticketData.ticketCode, 320);
 }
 
 export const SECTIONS_CONFIG = [
@@ -1182,7 +1183,7 @@ function EventsScreen() {
       const luckyNum = (res as any)?.luckyNumber || (res as any)?.lucky_number || `#${Math.floor(1000 + Math.random() * 9000)}`;
       const resolvedInvNo = (res as any)?.registrationId || (res as any)?.regId || (res as any)?.invoiceNo || tempInvNo;
       const resolvedQrUrl = isFree
-        ? ((res as any)?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(resolvedInvNo)}`)
+        ? ((res as any)?.qrCodeUrl || getQrUrl(resolvedInvNo, 320))
         : "";
 
       // Quy định xếp chỗ: Không tự động xếp chỗ từ hệ thống. Xếp chỗ chỉ khi Ban Truyền Thông tự xếp trên CRM.
@@ -1273,7 +1274,7 @@ function EventsScreen() {
 
       const fallbackLuckyNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
       const fallbackQr = isFree
-        ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tempInvNo)}`
+        ? getQrUrl(tempInvNo, 320)
         : "";
       setRegisteredSuccessInfo({
         eventTitle: registeringEvent.title,

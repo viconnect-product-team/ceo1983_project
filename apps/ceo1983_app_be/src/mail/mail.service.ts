@@ -600,12 +600,13 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
+    let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string; contentDisposition: string } | null = null;
     let qrDataUrl = '';
+    const backendQrUrl = `${process.env.APP_URL || DEFAULT_APP_URL}/api/events/qr?data=${encodeURIComponent(registrationId)}&size=360`;
     if (isConfirmedTicket) {
       try {
         const qrBuffer = await QRCode.toBuffer(String(registrationId), {
-          width: 300,
+          width: 320,
           margin: 1,
           color: {
             dark: '#003B95',
@@ -617,6 +618,7 @@ export class MailService {
           content: qrBuffer,
           cid: 'event_ticket_qr',
           contentType: 'image/png',
+          contentDisposition: 'inline',
         };
         qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
       } catch (qrErr) {
@@ -625,15 +627,18 @@ export class MailService {
     }
 
     const vietQrUrlStr = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
-    let vietQrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
+    let vietQrAttachment: { filename: string; content: Buffer; cid: string; contentType: string; contentDisposition?: string } | null = null;
     if (!isConfirmedTicket) {
       vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_payment_qr', `vietqr-${registrationId}.png`);
+      if (vietQrAttachment) {
+        vietQrAttachment.contentDisposition = 'inline';
+      }
     }
 
     const appEventsUrl = `${DEFAULT_APP_URL}/association/events`;
     const qrSrc = qrAttachment
       ? 'cid:event_ticket_qr'
-      : (qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`);
+      : (qrCodeUrl || qrDataUrl || backendQrUrl);
     const vietQrSrc = vietQrAttachment ? 'cid:vietqr_payment_qr' : vietQrUrlStr;
 
     const subject = paymentConfirmed
@@ -740,6 +745,9 @@ export class MailService {
           <img src="${qrSrc}" alt="Mã QR Check-in" class="qr-img" />
           <div class="qr-caption">MÃ VÉ: ${registrationId}</div>
           <div class="qr-hint">Xuất trình mã QR này tại bàn tiếp đón để Ban Tổ Chức quét check-in vào cửa</div>
+          <div style="margin-top: 10px;">
+            <a href="${backendQrUrl}" target="_blank" style="font-size: 11.5px; color: #003B95; text-decoration: underline; font-weight: 700;">[Bấm vào đây để mở trực tiếp hoặc tải mã QR về máy]</a>
+          </div>
         </div>
         `}
 

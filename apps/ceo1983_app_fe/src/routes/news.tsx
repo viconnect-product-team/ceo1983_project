@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Eye, Newspaper, Pencil, Plus, Trash2, Search, Filter, LayoutGrid, List, FileText, CheckCircle2, Clock, RefreshCw } from "lucide-react";
+import { Eye, Newspaper, Pencil, Plus, Trash2, Search, Filter, LayoutGrid, List, FileText, CheckCircle2, Clock, RefreshCw, MessageSquare, ShieldAlert, Check } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -59,6 +59,50 @@ function NewsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filters & View Mode
+  const [activeTab, setActiveTab] = useState<"articles" | "comments">("articles");
+  const [comments, setComments] = useState<any[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentSearch, setCommentSearch] = useState("");
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  const loadComments = () => {
+    setLoadingComments(true);
+    fetchNestApi<any[]>("/feed/moderation/comments")
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setComments(data);
+        }
+      })
+      .catch((err) => {
+        toast.error("Không thể tải danh sách bình luận: " + (err?.message || "Lỗi mạng"));
+      })
+      .finally(() => setLoadingComments(false));
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bình luận này khỏi hệ thống không?")) return;
+    setDeletingCommentId(commentId);
+    try {
+      await fetchNestApi(`/feed/comments/${commentId}`, { method: "DELETE" });
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      toast.success("Đã xóa bình luận vi phạm thành công!");
+    } catch (err: any) {
+      toast.error("Lỗi khi xóa bình luận: " + (err?.message || "Thử lại sau"));
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
+  const filteredComments = useMemo(() => {
+    if (!commentSearch.trim()) return comments;
+    const q = commentSearch.toLowerCase();
+    return comments.filter((c) =>
+      (c.content || "").toLowerCase().includes(q) ||
+      (c.author_name || "").toLowerCase().includes(q) ||
+      (c.post_title || "").toLowerCase().includes(q)
+    );
+  }, [comments, commentSearch]);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "scheduled" | "draft">("all");
   const [catFilter, setCatFilter] = useState("all");
@@ -223,6 +267,160 @@ function NewsPage() {
         }
       />
 
+      {/* ── TAB CHUYỂN ĐỔI: BÀI VIẾT vs KIỂM DUYỆT BÌNH LUẬN ── */}
+      <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("articles")}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition cursor-pointer ${
+            activeTab === "articles"
+              ? "bg-[#003B95] text-white shadow-sm"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          }`}
+        >
+          <Newspaper className="h-4 w-4" />
+          <span>Quản lý Bản Tin ({NEWS.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("comments");
+            loadComments();
+          }}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition cursor-pointer ${
+            activeTab === "comments"
+              ? "bg-[#003B95] text-white shadow-sm"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Kiểm duyệt Bình Luận {comments.length > 0 ? `(${comments.length})` : ""}</span>
+        </button>
+      </div>
+
+      {activeTab === "comments" ? (
+        <div className="space-y-4">
+          {/* Header & Filter bar for comments */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-xs">
+            <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                type="text"
+                value={commentSearch}
+                onChange={(e) => setCommentSearch(e.target.value)}
+                placeholder="Tìm bình luận theo nội dung, tác giả hoặc bài viết..."
+                className="w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+              />
+              {commentSearch && (
+                <button
+                  type="button"
+                  onClick={() => setCommentSearch("")}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Xóa
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={loadComments}
+              disabled={loadingComments}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loadingComments ? "animate-spin" : ""}`} />
+              <span>Làm mới</span>
+            </button>
+          </div>
+
+          {/* Comment list table */}
+          <Card className="overflow-hidden p-0 border border-border shadow-xs">
+            {loadingComments ? (
+              <div className="p-12 text-center text-sm text-muted-foreground">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
+                Đang tải danh sách bình luận...
+              </div>
+            ) : filteredComments.length === 0 ? (
+              <div className="p-12 text-center text-sm text-muted-foreground">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground/60" />
+                {commentSearch ? "Không tìm thấy bình luận nào khớp với tìm kiếm." : "Chưa có bình luận nào trên các bài viết tin tức."}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <th className="py-3 px-4">Tác giả bình luận</th>
+                      <th className="py-3 px-4">Bài viết liên quan</th>
+                      <th className="py-3 px-4">Nội dung bình luận</th>
+                      <th className="py-3 px-4">Thời gian</th>
+                      <th className="py-3 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredComments.map((c) => (
+                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={c.author_avatar || "/ceo1983-emblem-8.png"}
+                              alt={c.author_name}
+                              className="size-8 rounded-full object-cover border border-border"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = "/ceo1983-emblem-8.png";
+                              }}
+                            />
+                            <div>
+                              <div className="font-bold text-foreground text-xs leading-tight">
+                                {c.author_name || "Hội viên"}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground font-mono">
+                                ID: {String(c.author_id || "").slice(-6)}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 max-w-[240px]">
+                          <div className="font-semibold text-foreground text-xs line-clamp-2">
+                            {c.post_title || "Bản tin CEO 1983"}
+                          </div>
+                          {c.post_category && (
+                            <span className="text-[10px] text-primary font-bold">
+                              {c.post_category}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 max-w-[320px]">
+                          <div className="text-xs text-foreground/90 whitespace-pre-wrap break-words bg-muted/40 p-2 rounded-lg border border-border/60">
+                            {c.content}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                          {c.created_at ? new Date(c.created_at).toLocaleString("vi-VN") : "Gần đây"}
+                        </td>
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(c.id)}
+                            disabled={deletingCommentId === c.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                            title="Xóa bình luận vi phạm này"
+                          >
+                            <Trash2 className="size-3.5" />
+                            <span>{deletingCommentId === c.id ? "Đang xóa..." : "Xóa"}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </div>
+      ) : (
+        <>
       {/* 4 Đồng bộ thẻ KPI Metric Cards */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -549,6 +747,8 @@ function NewsPage() {
           pageSizeOptions={[6, 9, 15, 30]}
         />
       </div>
+      </>
+      )}
 
       <CrudModal
         open={open}

@@ -36,6 +36,7 @@ import { EventAgenda } from "@/components/dashboard/EventAgenda";
 import { EventSponsors } from "@/components/dashboard/EventSponsors";
 import { EventFeed } from "@/components/dashboard/EventFeed";
 import { EventQrConfigModal } from "@/components/dashboard/EventQrConfigModal";
+import { getQrUrl } from "@/lib/qr";
 import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
 import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
 import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
@@ -703,11 +704,12 @@ function EventDetailPage() {
             </p>
             <div className="mx-auto w-44 h-44 p-2 bg-white rounded-2xl border border-amber-300 shadow-sm flex items-center justify-center">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                src={getQrUrl(
                   typeof window !== "undefined"
                     ? `${window.location.origin}/guest-event-register/${event.id}`
-                    : `https://crm.ceo1983.viconnect.vn/guest-event-register/${event.id}`
-                )}`}
+                    : `https://crm.ceo1983.viconnect.vn/guest-event-register/${event.id}`,
+                  300
+                )}
                 alt="Mã QR Đăng Ký Khách Mời"
                 className="w-full h-full object-contain"
               />

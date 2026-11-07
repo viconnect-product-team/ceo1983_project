@@ -48,6 +48,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/lib/i18n";
 import { extractScanCode } from "@/lib/scan";
+import { getQrUrl } from "@/lib/qr";
 import { useQrScanner } from "@/hooks/use-qr-scanner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -831,7 +832,7 @@ function CheckinScreen() {
       ? myTicketCode
       : `REG-EV-${(myRealRegistration?.id || attendeeMemberCode).replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase()}`);
   const myQrPayload = `event_ticket:${currentDisplayEvent?.id || "EVT-1983"}:${attendeeMemberCode}:${encodeURIComponent(attendeeSeat)}:${encodeURIComponent(attendeeLucky)}`;
-  const myQrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(myQrPayload)}`;
+  const myQrImageUrl = getQrUrl(myQrPayload, 260);
   const isChecked = Boolean(myRealRegistration?.checkedInAt) || Boolean(getCheckedInRegistry()[myTicketCode]);
 
   const guestRegUrl = useMemo(() => {
@@ -840,7 +841,7 @@ function CheckinScreen() {
     return `${origin}/guest-event-register/${eId}`;
   }, [currentDisplayEvent, activeEvent]);
 
-  const guestQrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(guestRegUrl)}`;
+  const guestQrImageUrl = getQrUrl(guestRegUrl, 260);
 
   const handleCopyLink = (text: string) => {
     if (navigator?.clipboard?.writeText) {
