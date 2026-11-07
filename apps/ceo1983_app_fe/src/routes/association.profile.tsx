@@ -1071,7 +1071,11 @@ export default function ProfileScreen() {
                   <div className="self-stretch h-56 relative rounded-xl outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden bg-slate-100 dark:bg-slate-900">
                     <iframe
                       title="Google Map 2D Doanh nghiệp"
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}&t=m&z=16&output=embed`}
+                      src={
+                        displayLat && displayLng && !isNaN(displayLat) && !isNaN(displayLng)
+                          ? `https://maps.google.com/maps?q=${displayLat},${displayLng}&t=m&z=16&output=embed`
+                          : `https://maps.google.com/maps?q=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}&t=m&z=16&output=embed`
+                      }
                       className="w-full h-full border-0"
                       loading="lazy"
                     />
@@ -1087,7 +1091,11 @@ export default function ProfileScreen() {
                         <span>{showLocationEditor ? "Đóng sửa vị trí" : "Dời ghim / Sửa địa chỉ"}</span>
                       </button>
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}`}
+                        href={
+                          displayLat && displayLng && !isNaN(displayLat) && !isNaN(displayLng)
+                            ? `https://www.google.com/maps/search/?api=1&query=${displayLat},${displayLng}`
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}`
+                        }
                         target="_blank"
                         rel="noreferrer"
                         className="p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1"

@@ -247,18 +247,40 @@ export function UniversalDocumentViewerModal({
     window.print();
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!fileUrl) {
       toast.error("Không tìm thấy đường dẫn tệp để tải về");
       return;
     }
-    const a = window.document.createElement("a");
-    a.href = fileUrl;
-    a.download = doc.name;
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
-    toast.success(`Đang tải tệp: ${doc.name}`);
+    const fileName = doc.name.toLowerCase().endsWith(`.${doc.type?.toLowerCase()}`)
+      ? doc.name
+      : `${doc.name}.${doc.type || "pdf"}`;
+    toast.loading(`Đang tải xuống "${fileName}"...`, { id: "doc-modal-download" });
+
+    try {
+      const res = await fetch(fileUrl);
+      if (!res.ok) throw new Error("Fetch failed");
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = window.document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+      toast.success(`Đã tải xuống "${fileName}" thành công!`, { id: "doc-modal-download" });
+    } catch {
+      const a = window.document.createElement("a");
+      a.href = fileUrl;
+      a.download = fileName;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      toast.success(`Đang mở tệp "${fileName}"`, { id: "doc-modal-download" });
+    }
   };
 
   // Google Docs & Microsoft Office online embed URLs

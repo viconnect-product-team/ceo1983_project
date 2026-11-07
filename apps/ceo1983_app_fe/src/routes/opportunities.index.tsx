@@ -757,7 +757,7 @@ function InterestModal({ opp, onClose }: { opp: Opportunity; onClose: () => void
   );
 }
 
-type Tab = "browse" | "mine" | "closed" | "interests";
+type Tab = "browse" | "mine" | "my_interests" | "closed" | "interests";
 
 function OpportunitiesPage() {
   const t = useT();
@@ -791,6 +791,8 @@ function OpportunitiesPage() {
     let base = all;
     if (tab === "mine") {
       base = base.filter((o) => o.posterId === CURRENT_USER_ID);
+    } else if (tab === "my_interests") {
+      base = base.filter((o) => (o as any).interested || countFor(o.id) > 0);
     } else if (tab === "closed") {
       base = base.filter((o) => o.status === "closed");
     }
@@ -904,6 +906,16 @@ function OpportunitiesPage() {
           }`}
         >
           {t("opp.tab.mine")} ({myOpps.length})
+        </button>
+        <button
+          onClick={() => setTab("my_interests")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+            tab === "my_interests"
+              ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+              : "border border-border bg-card hover:bg-secondary"
+          }`}
+        >
+          Cơ hội tôi quan tâm
         </button>
         <button
           onClick={() => setTab("closed")}

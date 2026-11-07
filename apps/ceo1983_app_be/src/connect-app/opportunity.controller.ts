@@ -66,9 +66,24 @@ export class OpportunityController {
     );
   }
 
+  @Delete(':id/interests')
+  async withdrawInterestById(@Request() req: any, @Param('id') id: string) {
+    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, '', id);
+  }
+
+  @Post(':id/uninterest')
+  async uninterestById(@Request() req: any, @Param('id') id: string) {
+    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, '', id);
+  }
+
   @Post('express-interest')
   async expressInterest(@Request() req: any, @Body() body: { opportunityId: string; message?: string }) {
     return this.connectAppService.expressOpportunityInterest(req.user.id, body.opportunityId, body.message);
+  }
+
+  @Post('express-uninterest')
+  async expressUninterest(@Request() req: any, @Body() body: { opportunityId: string }) {
+    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, '', body.opportunityId);
   }
 
   @Post(':id/view')
