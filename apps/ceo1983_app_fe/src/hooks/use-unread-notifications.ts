@@ -53,34 +53,87 @@ export function useUnreadNotifications() {
         return ts > seen && n.status === "sent";
       });
 
-      const catCounts: Record<string, number> = {};
+      const catCounts: Record<string, number> = {
+        "/notifications": unreadList.length,
+      };
+
       unreadList.forEach((n) => {
         const text = `${n.title || ""} ${n.body || ""}`.toLowerCase();
 
         if (n.targetRoute) {
           catCounts[n.targetRoute] = (catCounts[n.targetRoute] || 0) + 1;
         }
-        if (text.includes("hội viên") || text.includes("kết nạp") || text.includes("gia nhập") || text.includes("đăng ký")) {
+
+        // 1. Hội viên mới gia nhập / nộp hồ sơ
+        if (
+          text.includes("hội viên") ||
+          text.includes("kết nạp") ||
+          text.includes("gia nhập") ||
+          text.includes("đăng ký") ||
+          text.includes("hồ sơ") ||
+          text.includes("hội viên mới")
+        ) {
           catCounts["/members"] = (catCounts["/members"] || 0) + 1;
+          catCounts["/notifications?filter=new_members"] = (catCounts["/notifications?filter=new_members"] || 0) + 1;
         }
-        if (text.includes("gia hạn") || text.includes("niên liễm") || text.includes("hội phí")) {
+
+        // 2. Hội phí & niên liễm
+        if (
+          text.includes("gia hạn") ||
+          text.includes("niên liễm") ||
+          text.includes("hội phí") ||
+          text.includes("phí") ||
+          text.includes("quá hạn")
+        ) {
           catCounts["/renewal"] = (catCounts["/renewal"] || 0) + 1;
+          catCounts["/finance"] = (catCounts["/finance"] || 0) + 1;
+          catCounts["/notifications?filter=fee_alerts"] = (catCounts["/notifications?filter=fee_alerts"] || 0) + 1;
         }
-        if (text.includes("sự kiện") || text.includes("check-in") || text.includes("điểm danh")) {
+
+        // 3. Ban Điều Hành & Quản Trị Hệ Thống
+        if (
+          text.includes("ban điều hành") ||
+          text.includes("quản trị") ||
+          text.includes("hệ thống") ||
+          text.includes("phân quyền") ||
+          text.includes("tài khoản") ||
+          text.includes("landing")
+        ) {
+          catCounts["/accounts"] = (catCounts["/accounts"] || 0) + 1;
+          catCounts["/settings"] = (catCounts["/settings"] || 0) + 1;
+          catCounts["/notifications?filter=admin_system"] = (catCounts["/notifications?filter=admin_system"] || 0) + 1;
+        }
+
+        // 4. Sự kiện & Cuộc họp
+        if (
+          text.includes("sự kiện") ||
+          text.includes("check-in") ||
+          text.includes("điểm danh") ||
+          text.includes("cuộc họp") ||
+          text.includes("họp ban") ||
+          text.includes("meeting")
+        ) {
           catCounts["/events"] = (catCounts["/events"] || 0) + 1;
-        }
-        if (text.includes("cuộc họp") || text.includes("họp ban") || text.includes("meeting")) {
           catCounts["/meetings"] = (catCounts["/meetings"] || 0) + 1;
+          catCounts["/notifications?filter=events_meetings"] = (catCounts["/notifications?filter=events_meetings"] || 0) + 1;
         }
+
+        // 5. Nhiệm vụ & công việc
         if (text.includes("nhiệm vụ") || text.includes("công việc") || text.includes("task")) {
           catCounts["/tasks"] = (catCounts["/tasks"] || 0) + 1;
         }
+
+        // 6. Cơ hội giao thương B2B
         if (text.includes("cơ hội") || text.includes("giao thương") || text.includes("b2b") || text.includes("kết nối")) {
           catCounts["/opportunities"] = (catCounts["/opportunities"] || 0) + 1;
         }
-        if (text.includes("tài liệu") || text.includes("văn bản") || text.includes("hồ sơ")) {
+
+        // 7. Tài liệu & biểu mẫu
+        if (text.includes("tài liệu") || text.includes("văn bản") || text.includes("hồ sơ biểu mẫu")) {
           catCounts["/documents"] = (catCounts["/documents"] || 0) + 1;
         }
+
+        // 8. Phê duyệt xét duyệt
         if (text.includes("phê duyệt") || text.includes("xét duyệt")) {
           catCounts["/approvals"] = (catCounts["/approvals"] || 0) + 1;
         }

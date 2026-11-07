@@ -55,7 +55,7 @@ import {
 } from "@/components/landing/TimedCardsOpeningLanding";
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
 
-const DEFAULT_TIMED_CARDS_TEMPLATE: LandingWebConfig = {
+export const DEFAULT_TIMED_CARDS_TEMPLATE: LandingWebConfig = {
   id: "lw_timed_cards_opening_default",
   name: "Mẫu 1: Timed Cards Opening — Khám Phá Toàn Cầu (Pinterest Giulio Cuscito)",
   slug: "web-v1",
@@ -121,7 +121,7 @@ const DEFAULT_TIMED_CARDS_TEMPLATE: LandingWebConfig = {
   },
 };
 
-const DEFAULT_STARTUP_MOBILE_TEMPLATE: LandingWebConfig = {
+export const DEFAULT_STARTUP_MOBILE_TEMPLATE: LandingWebConfig = {
   id: "lw_startup_mobile_showcase_default",
   name: "Mẫu 2: Startup Mobile Showcase — Ứng Dụng Di Động CEO 1983 (Pinterest 234398355598861981)",
   slug: "web-v2",
@@ -886,7 +886,7 @@ function AdminLandingWebsPage() {
 
       {/* ================= MODAL XEM TRỰC TIẾP (LIVE PREVIEW) ================= */}
       {previewItem && (
-        <div className="fixed inset-0 z-90 bg-white">
+        <div className="fixed inset-0 z-90 bg-white light [color-scheme:light]">
           {previewItem.template === "startup_mobile_showcase" ? (
             <div className="relative w-full h-full overflow-y-auto">
               <div className="fixed top-4 right-4 z-[999] flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700 shadow-2xl">

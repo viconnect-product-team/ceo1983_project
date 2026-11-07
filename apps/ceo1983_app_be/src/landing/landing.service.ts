@@ -178,10 +178,10 @@ export interface LandingWebConfig {
 
 export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
   hero: {
-    headline: 'Kết Nối Doanh Nhân\nKiến Tạo Giá Trị',
-    subheadline: 'Ứng dụng độc quyền kết nối xúc tiến giao thương B2B, trao đổi cơ hội hợp tác và bảo chứng tín nhiệm cho cộng đồng doanh nhân sinh năm 1983 trực thuộc HanoiBA.',
-    underlineAccent: 'Đồng Hành Bứt Phá!',
-    sunburstText: 'CEO 1983 ECOSYSTEM',
+    headline: 'Gắn Kết Đồng Niên\nNâng Tầm Doanh Nghiệp',
+    subheadline: 'Cộng đồng kết nối xúc tiến giao thương, nâng tầm quản trị thực chiến và bảo chứng tín nhiệm dành riêng cho các chủ doanh nghiệp sinh năm 1983 (Quý Hợi) trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA).',
+    underlineAccent: 'Kết Nối – Chia Sẻ – Bứt Phá!',
+    sunburstText: 'CLB DOANH NHÂN CEO 1983',
     handPhoneImage: '/images/landing/hand_holding_phone_transparent.png',
     ctaPrimaryText: 'Tải Ứng Dụng Ngay',
     ctaPrimaryLink: '#download',
@@ -189,7 +189,7 @@ export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
     videoUrl: 'https://v1.pinimg.com/videos/iht/expMp4/v2/92/8a/ca/928aca8b8e476ade2d17a603c7e62015_720w.mp4',
     floatingBadge1: {
       title: '500+ Doanh Nghiệp',
-      subtitle: 'Hội viên chính thức',
+      subtitle: 'Hội viên chính thức HanoiBA',
     },
     floatingBadge2: {
       title: '+105.8 Tỷ VNĐ',
@@ -197,10 +197,10 @@ export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
     },
   },
   ribbonStats: [
-    { value: '15+', label: 'Năm Gắn Kết', desc: 'Trực thuộc HanoiBA' },
-    { value: '1.983+', label: 'Hội Viên', desc: 'Doanh nhân 1983 toàn quốc' },
-    { value: '100+ Tỷ', label: 'VNĐ Giao Thương', desc: 'Giá trị kết nối hoàn tất' },
-    { value: '98%', label: 'Tín Nhiệm', desc: 'Đánh giá hài lòng định kỳ' },
+    { value: '1.983+', label: 'Hội Viên Doanh Nhân', desc: 'Doanh nhân 1983 toàn quốc' },
+    { value: '500+', label: 'Doanh Nghiệp Thành Viên', desc: 'Hội viên chính thức HanoiBA' },
+    { value: '100+ Tỷ', label: 'VNĐ Giao Thương B2B', desc: 'Giá trị kết nối hoàn tất' },
+    { value: '98%', label: 'Tín Nhiệm Hài Lòng', desc: 'Đánh giá giao thương thực chất' },
   ],
   appTabs: {
     b2b: {
@@ -295,34 +295,34 @@ export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
   ],
   testimonials: [
     {
-      quote: 'Thanks to CEO 1983 I can now realize my business expansion dream across Vietnam. Nền tảng kết nối xúc tiến giao thương B2B thiết thực nhất mà tôi từng trải nghiệm, giúp doanh nghiệp tôi ký kết 3 gói thầu hơn 12 tỷ VNĐ.',
+      quote: 'Nền tảng số hóa của CLB giúp các hội viên trao đổi cơ hội kinh doanh chỉ trong 1 chạm. Qua các phiên Business Matching và chia sẻ cơ hội B2B, doanh nghiệp tôi đã kết nối thành công nhiều hợp đồng chiến lược giá trị cao.',
       author: 'Trần Tuấn Anh',
-      role: 'CEO ViConnect Tech',
-      company: 'Ban Điều Hành',
+      role: 'Phó Chủ Tịch CLB, CEO ViConnect Tech',
+      company: 'Ban Điều Hành CEO 1983',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     },
     {
-      quote: 'I think this is the best business leadership community I have ever experienced and I recommend it to all entrepreneurs. Cơ chế đặt lịch 1-on-1 và Thẻ QR định danh giúp kết nối nhanh chóng và chuẩn mực.',
+      quote: 'CLB Doanh nhân CEO 1983 là ngôi nhà chung gắn kết tình đồng niên chân thành, nơi chúng tôi cùng học hỏi, nâng tầm năng lực quản trị thực chiến và trao nhau cơ hội hợp tác kinh doanh thực chất, cùng vững bước vươn tầm.',
       author: 'Lê Thị Dung',
       role: 'Chủ tịch CLB Doanh Nhân CEO 1983',
-      company: 'DGroup',
+      company: 'Tổng Giám Đốc DGroup, Viện trưởng Viện Doanh Trí',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
     },
     {
-      quote: 'CEO 1983 helps me a lot in finding trusted strategic business partners. Một câu lạc bộ tràn đầy năng lượng của những nhà lãnh đạo sinh năm 1983 tiên phong đổi mới trực thuộc HanoiBA.',
+      quote: 'CEO 1983 là một trong những câu lạc bộ đồng niên năng động và đoàn kết nhất của HanoiBA. Các anh chị doanh nhân Quý Hợi luôn tràn đầy nhiệt huyết, bản lĩnh và tinh thần trách nhiệm vì cộng đồng.',
       author: 'Nguyễn Hoàng Long',
-      role: 'Phó Chủ Tịch Thường Trực',
-      company: 'HanoiBA',
+      role: 'Phó Chủ Tịch HanoiBA',
+      company: 'Hội Doanh nghiệp Trẻ Hà Nội',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     },
     {
-      quote: 'Fun, professional and highly effective. Các sự kiện Gala, Đại hội và xúc tiến B2B được tổ chức quy mô chuẩn quốc tế với công nghệ số hóa hiện đại.',
-      author: 'Hoàng Minh Trí',
-      role: 'Tổng Giám Đốc',
-      company: 'An Cường Interior',
+      quote: 'Các chương trình CEO Talk, Business Tour và tọa đàm chuyên đề mang lại giá trị tri thức thực chiến vô cùng quý báu, giúp các doanh nghiệp hội viên tự tin tháo gỡ điểm nghẽn và bứt phá mạnh mẽ.',
+      author: 'Đỗ Minh Đức',
+      role: 'Trưởng Ban Đào Tạo & Doanh Trí',
+      company: 'Ban Chuyên Môn CEO 1983',
       rating: 5,
       avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
     },
@@ -330,27 +330,31 @@ export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
   faqs: [
     {
       question: 'CLB Doanh Nhân CEO 1983 là tổ chức gì và trực thuộc đơn vị nào?',
-      answer: 'CLB Doanh Nhân CEO 1983 là tổ chức liên kết các doanh nhân, nhà sáng lập sinh năm Quý Hợi (1983), hoạt động chính thức trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).',
+      answer: 'CLB Doanh nhân CEO 1983 là cộng đồng quy tụ các chủ doanh nghiệp, nhà sáng lập sinh năm Quý Hợi (1983), hoạt động chính thức trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA). CLB hoạt động với phương châm "Gắn kết đồng niên - Nâng tầm doanh nghiệp", gắn kết tình thân đồng niên và thúc đẩy hợp tác kinh doanh thực chất.',
+    },
+    {
+      question: 'Sứ mệnh và các hoạt động trọng tâm của CLB bao gồm những gì?',
+      answer: 'Sứ mệnh của CLB là kiến tạo cộng đồng doanh nhân bản lĩnh, trí tuệ và nhân văn. Các hoạt động cốt lõi gồm: Xúc tiến giao thương B2B (Business Matching & Business Tour), Đào tạo nâng tầm quản trị (CEO Talk & CEO Exchange), Đặt lịch hẹn 1-on-1 giữa các lãnh đạo và các hoạt động trách nhiệm xã hội CSR (Áo ấm vùng cao, xây nhà tình nghĩa).',
+    },
+    {
+      question: 'Điều kiện để gia nhập trở thành Hội viên chính thức của CLB?',
+      answer: 'Hội viên là các Doanh nhân, Chủ tịch HĐQT, CEO, Tổng giám đốc hoặc Cấp quản lý doanh nghiệp sinh năm 1983 (Quý Hợi). Hồ sơ gia nhập sẽ được Ban Thẩm định và Ban Điều hành phê duyệt theo đúng quy chế hiệp hội của HanoiBA.',
+    },
+    {
+      question: 'Ứng dụng di động CEO 1983 mang lại những lợi ích gì cho hội viên?',
+      answer: 'Ứng dụng cung cấp trọn vẹn giải pháp số hóa: Thẻ Doanh nhân số & mã QR định danh cá nhân, Sàn thương mại B2B niêm yết sản phẩm/dịch vụ ưu đãi nội khối 15-30%, công cụ đặt lịch hẹn kết nối 1-on-1 trực tiếp, biểu đồ thống kê cơ hội minh bạch và thông báo đẩy lịch sự kiện thời gian thực.',
     },
     {
       question: 'Làm thế nào để doanh nghiệp tôi có thể niêm yết sản phẩm trên Sàn B2B?',
       answer: 'Sau khi hoàn tất đăng ký hội viên chính thức và được Ban Thẩm định hồ sơ thông qua, doanh nghiệp được cấp tài khoản định danh để tự động đăng tải sản phẩm/dịch vụ lên Sàn B2B.',
     },
-    {
-      question: 'Ứng dụng CEO 1983 có hỗ trợ trên các nền tảng nào?',
-      answer: 'Ứng dụng hỗ trợ đa nền tảng: iOS (App Store), Android (Google Play) và phiên bản Web App tương thích mọi kích thước màn hình điện thoại và máy tính.',
-    },
-    {
-      question: 'Chi phí tham gia và quyền lợi hội viên bao gồm những gì?',
-      answer: 'Hội viên được hưởng toàn bộ hệ sinh thái: Thẻ QR doanh nhân số, kết nối ghép đôi 1-on-1, tham dự Gala thường niên, xúc tiến đầu tư và quảng bá trên các kênh truyền thông chính thống của CLB.',
-    },
   ],
   footer: {
     headline: 'CLB DOANH NHÂN CEO 1983 — HANOIBA',
-    description: 'Nền tảng công nghệ số hóa xúc tiến giao thương, kết nối tinh hoa lãnh đạo và đồng hành phát triển bền vững.',
+    description: 'Cộng đồng kết nối giao thương, nâng tầm tri thức quản trị thực chiến và lan tỏa giá trị nhân văn cho các doanh nhân sinh năm 1983 trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA).',
     contactPhone: '0983.1983.83',
-    contactEmail: 'contact@ceo1983.viconnect.vn',
-    address: 'Cung Tri Thức, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội',
+    contactEmail: 'contact@ceo1983.com',
+    address: 'Cung Tri Thức Thành Phố, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội',
   },
 };
 

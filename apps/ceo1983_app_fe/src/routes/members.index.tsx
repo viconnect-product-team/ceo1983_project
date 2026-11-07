@@ -551,20 +551,23 @@ function MembersPage() {
           feePaid: newStatus !== "unpaid",
         }),
       });
-      qc.setQueryData(["members"], (old: Member[] | undefined) =>
-        old
-          ? old.map((item) =>
-              item.id === m.id
-                ? {
-                    ...item,
-                    feePaid: newStatus !== "unpaid",
-                    payment_status: newStatus,
-                    paymentStatus: newStatus,
-                  }
-                : item,
-            )
-          : [],
-      );
+      qc.setQueryData(["members"], (old: Member[] | undefined) => {
+        if (!old) return [];
+        const target = old.find((item) => item.id === m.id);
+        const updatedItem = target
+          ? {
+              ...target,
+              feePaid: newStatus !== "unpaid",
+              payment_status: newStatus,
+              paymentStatus: newStatus,
+              updatedAt: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          : null;
+        if (!updatedItem) return old;
+        // Đưa bản ghi vừa cập nhật lên đầu danh sách (STT 1)
+        return [updatedItem, ...old.filter((item) => item.id !== m.id)];
+      });
       await qc.invalidateQueries({ queryKey: ["members"] });
       await qc.invalidateQueries({ queryKey: ["renewals"] });
       await refetch();
@@ -666,8 +669,12 @@ function MembersPage() {
     copy.sort((a, b) => {
       switch (sort) {
         case "newest": {
-          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.joinedAt ? new Date(a.joinedAt).getTime() : 0);
-          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.joinedAt ? new Date(b.joinedAt).getTime() : 0);
+          const timeA = (a as any).updatedAt || (a as any).updated_at
+            ? new Date((a as any).updatedAt || (a as any).updated_at).getTime()
+            : (a.createdAt ? new Date(a.createdAt).getTime() : (a.joinedAt ? new Date(a.joinedAt).getTime() : 0));
+          const timeB = (b as any).updatedAt || (b as any).updated_at
+            ? new Date((b as any).updatedAt || (b as any).updated_at).getTime()
+            : (b.createdAt ? new Date(b.createdAt).getTime() : (b.joinedAt ? new Date(b.joinedAt).getTime() : 0));
           if (timeB !== timeA) return timeB - timeA;
           return (b.joinedAt || "").localeCompare(a.joinedAt || "");
         }
@@ -699,7 +706,7 @@ function MembersPage() {
       type: (m) => m.type,
       status: (m) => m.status,
       payment: (m) => (m as any).payment_status || (m as any).paymentStatus || (m.feePaid ? "paid" : "unpaid"),
-      joined: (m) => m.createdAt || m.joinedAt,
+      joined: (m) => (m as any).updatedAt || (m as any).updated_at || m.createdAt || m.joinedAt,
     },
     { initialPageSize: 24, initialSortKey: "joined", initialSortDir: "desc" },
   );

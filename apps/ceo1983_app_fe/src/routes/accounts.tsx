@@ -126,10 +126,11 @@ function AccountsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Dirty state tracking (Unsaved changes)
+  // Dirty state tracking (Unsaved changes) with explicit boolean flag
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isDirty = useMemo(() => {
-    return JSON.stringify(accounts) !== initialAccountsStr;
-  }, [accounts, initialAccountsStr]);
+    return hasUnsavedChanges || JSON.stringify(accounts) !== initialAccountsStr;
+  }, [hasUnsavedChanges, accounts, initialAccountsStr]);
 
   // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -266,8 +267,11 @@ function AccountsPage() {
     const acc = accounts.find((a) => a.id === accId);
     if (!acc) return;
 
-    const next = accounts.map((a) => (a.id === accId ? { ...a, role: newRole } : a));
+    // Đưa bản ghi vừa cập nhật lên đầu danh sách
+    const updatedAcc = { ...acc, role: newRole };
+    const next = [updatedAcc, ...accounts.filter((a) => a.id !== accId)];
     setAccounts(next);
+    setCurrentPage(1);
 
     const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
     const payload = {
@@ -290,8 +294,10 @@ function AccountsPage() {
       );
 
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        setInitialAccountsStr(JSON.stringify(next));
+        const nextStr = JSON.stringify(next);
+        localStorage.setItem(STORAGE_KEY, nextStr);
+        setInitialAccountsStr(nextStr);
+        setHasUnsavedChanges(false);
       } catch {}
 
       clearMeCache();
@@ -333,49 +339,47 @@ function AccountsPage() {
         );
       });
 
-      if (changedAccounts.length === 0) {
-        toast.info("Không có thay đổi nào cần lưu.");
-        setSaving(false);
-        return;
-      }
-
       // 2. Ghi trực tiếp vào Backend PostgreSQL API cho các tài khoản có thay đổi
-      const savePromises = changedAccounts.map(async (acc) => {
-        const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
-        if (!targetId) return;
-        const payload = {
-          executiveRole: acc.role,
-          department: acc.department,
-          email: acc.email,
-          code: acc.code,
-          name: acc.name,
-        };
-        try {
-          await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
-            method: "PATCH",
-            body: JSON.stringify(payload),
-          });
-        } catch {
+      if (changedAccounts.length > 0) {
+        const savePromises = changedAccounts.map(async (acc) => {
+          const targetId = acc.dbMemberId || (acc.id ? acc.id.replace(/^acc_/, "") : acc.code);
+          if (!targetId) return;
+          const payload = {
+            executiveRole: acc.role,
+            department: acc.department,
+            email: acc.email,
+            code: acc.code,
+            name: acc.name,
+          };
           try {
             await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
-              method: "POST",
+              method: "PATCH",
               body: JSON.stringify(payload),
             });
-          } catch (e2) {
-            console.warn(`Lưu phân quyền cho ${acc.name} thất bại:`, e2);
+          } catch {
+            try {
+              await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+                method: "POST",
+                body: JSON.stringify(payload),
+              });
+            } catch (e2) {
+              console.warn(`Lưu phân quyền cho ${acc.name} thất bại:`, e2);
+            }
           }
-        }
-      });
+        });
 
-      await Promise.allSettled(savePromises);
+        await Promise.allSettled(savePromises);
+      }
 
-      // 3. Cập nhật localStorage snapshot
+      // 3. Cập nhật localStorage snapshot & dập tắt trạng thái dirty
+      const savedAccountsStr = JSON.stringify(accounts);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-        setInitialAccountsStr(JSON.stringify(accounts));
+        localStorage.setItem(STORAGE_KEY, savedAccountsStr);
+        setInitialAccountsStr(savedAccountsStr);
       } catch (lsErr) {
         console.warn("Could not save to localStorage:", lsErr);
       }
+      setHasUnsavedChanges(false);
 
       // 4. Xóa cache và phát sự kiện đồng bộ toàn hệ thống
       clearMeCache();
@@ -404,8 +408,11 @@ function AccountsPage() {
       try {
         const restored = JSON.parse(initialAccountsStr);
         setAccounts(restored);
+        setHasUnsavedChanges(false);
         toast.info("Đã hoàn tác toàn bộ thay đổi tài khoản chưa lưu.");
       } catch {}
+    } else {
+      setHasUnsavedChanges(false);
     }
   };
 
@@ -461,10 +468,14 @@ function AccountsPage() {
       department: formDepartment,
       role: formRole,
       status: formStatus,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const next = [newAcc, ...accounts];
     setAccounts(next);
+    setHasUnsavedChanges(true);
+    setCurrentPage(1);
     toast.success(`Đã thêm mới tài khoản "${newAcc.name}". Bấm 'Lưu Thay Đổi' để đồng bộ vào CSDL.`);
     setIsAddOpen(false);
   };
@@ -473,23 +484,23 @@ function AccountsPage() {
     e.preventDefault();
     if (!selectedAccount) return;
 
-    const next = accounts.map((a) =>
-      a.id === selectedAccount.id
-        ? {
-            ...a,
-            name: formName.trim(),
-            code: formCode.trim().toUpperCase(),
-            email: formEmail.trim().toLowerCase(),
-            phone: formPhone.trim(),
-            companyName: formCompany.trim(),
-            department: formDepartment,
-            role: formRole,
-            status: formStatus,
-          }
-        : a
-    );
+    const updatedAcc: UserAccountItem = {
+      ...selectedAccount,
+      name: formName.trim(),
+      code: formCode.trim().toUpperCase(),
+      email: formEmail.trim().toLowerCase(),
+      phone: formPhone.trim(),
+      companyName: formCompany.trim(),
+      department: formDepartment,
+      role: formRole,
+      status: formStatus,
+      updatedAt: new Date().toISOString(),
+    };
 
+    // Đưa bản ghi vừa cập nhật lên đầu danh sách (STT 1)
+    const next = [updatedAcc, ...accounts.filter((a) => a.id !== selectedAccount.id)];
     setAccounts(next);
+    setCurrentPage(1);
 
     // Tự động lưu ngay lập tức vào CSDL
     const targetId =
@@ -527,11 +538,13 @@ function AccountsPage() {
     }
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      setInitialAccountsStr(JSON.stringify(next));
+      const nextStr = JSON.stringify(next);
+      localStorage.setItem(STORAGE_KEY, nextStr);
+      setInitialAccountsStr(nextStr);
+      setHasUnsavedChanges(false);
     } catch {}
 
-    toast.success(`Đã cập nhật phân quyền "${formRole}" cho "${formName}" vào CSDL thành công.`);
+    toast.success(`Đã cập nhật phân quyền "${getRoleLabel(formRole)}" cho "${formName}" vào CSDL thành công.`);
     setIsEditOpen(false);
   };
 
@@ -585,9 +598,9 @@ function AccountsPage() {
     });
   }, [accounts, searchQuery, selectedDeptFilter, selectedRoleFilter]);
 
-  // Sắp xếp cột 3 trạng thái & phân trang đồng nhất
-  const [sortKey, setSortKey] = useState<string | null>("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc" | null>("asc");
+  // Sắp xếp cột 3 trạng thái & phân trang đồng nhất (mặc định null để bản ghi mới / vừa sửa luôn ở đầu)
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null);
 
   const handleSort = (key: string) => {
     if (sortKey !== key) {

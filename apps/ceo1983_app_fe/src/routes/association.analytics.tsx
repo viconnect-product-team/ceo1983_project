@@ -48,6 +48,11 @@ import { MemberHeader } from "@/components/member/MemberShell";
 import { CommentTreeSection } from "@/components/feed/CommentTreeSection";
 import { MilestoneAward, getAwardsByCategory } from "@/lib/milestone-awards";
 import {
+  getActiveCeo1983ColorTheme,
+  COLOR_THEME_EVENT,
+  type Ceo1983ColorTheme,
+} from "@/lib/ceo1983-color-theme";
+import {
   ResponsiveContainer,
   ComposedChart,
   Bar,
@@ -90,6 +95,17 @@ export interface TopPerformer {
 export function AssociationAnalyticsScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Đồng bộ theme màu sắc thời gian thực (Cam Tiên Phong / Xanh Doanh Nhân / Đỏ Nhiệt Huyết)
+  const [colorTheme, setColorTheme] = useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
+  useEffect(() => {
+    const handleThemeChange = (e: any) => {
+      if (e?.detail) setColorTheme(e.detail);
+      else setColorTheme(getActiveCeo1983ColorTheme());
+    };
+    window.addEventListener(COLOR_THEME_EVENT, handleThemeChange);
+    return () => window.removeEventListener(COLOR_THEME_EVENT, handleThemeChange);
+  }, []);
 
   // ── 3 DANH MỤC THỐNG KÊ CHUẨN YÊU CẦU ──
   // 1. 3 thành viên kết nối nhiều nhất (tháng, quý, năm)
@@ -530,7 +546,7 @@ export function AssociationAnalyticsScreen() {
     top_connections: {
       unit: "Lượt",
       col1Label: "Kết nối 1-on-1",
-      col1Color: "#003B95",
+      col1Color: colorTheme.primaryColor,
       col1Unit: "Lượt",
       col2Label: "Đã kết nối",
       col2Color: "#10B981",
@@ -548,7 +564,7 @@ export function AssociationAnalyticsScreen() {
     top_opportunities: {
       unit: "Cơ hội",
       col1Label: "Cơ hội mở mới",
-      col1Color: "#003B95",
+      col1Color: colorTheme.primaryColor,
       col1Unit: "Cơ hội",
       col2Label: "Giá trị tăng (Tỷ)",
       col2Color: "#10B981",
@@ -566,7 +582,7 @@ export function AssociationAnalyticsScreen() {
     top_events_meetings: {
       unit: "Lượt",
       col1Label: "Đăng ký tham gia",
-      col1Color: "#003B95",
+      col1Color: colorTheme.primaryColor,
       col1Unit: "Lượt",
       col2Label: "Điểm danh thực tế",
       col2Color: "#10B981",
@@ -584,7 +600,7 @@ export function AssociationAnalyticsScreen() {
     top_referrals: {
       unit: "Hội viên",
       col1Label: "Hội viên giới thiệu",
-      col1Color: "#003B95",
+      col1Color: colorTheme.primaryColor,
       col1Unit: "Hội viên",
       col2Label: "Đã kết nạp",
       col2Color: "#10B981",
@@ -831,10 +847,10 @@ export function AssociationAnalyticsScreen() {
       const avatarUrl = payload?.topAvatar || topMember?.avatar || "/ceo1983-emblem-8.png";
       return (
         <g key={`dot-${index}`}>
-          {/* Vầng hào quang xanh nhẹ xung quanh avatar Top 1 */}
-          <circle cx={cx} cy={cy} r={20} fill="#003B95" opacity={0.15} />
+          {/* Vầng hào quang nhẹ theo theme xung quanh avatar Top 1 */}
+          <circle cx={cx} cy={cy} r={20} fill={colorTheme.primaryColor} opacity={0.15} />
           {/* Vòng viền avatar chuẩn CEO 1983 */}
-          <circle cx={cx} cy={cy} r={15} fill="#003B95" stroke="#FFFFFF" strokeWidth={2.5} />
+          <circle cx={cx} cy={cy} r={15} fill={colorTheme.primaryColor} stroke="#FFFFFF" strokeWidth={2.5} />
           <clipPath id={`avatar-clip-${index}`}>
             <circle cx={cx} cy={cy} r={13} />
           </clipPath>
@@ -855,7 +871,7 @@ export function AssociationAnalyticsScreen() {
               width={68}
               height={18}
               rx={9}
-              fill="#003B95"
+              fill={colorTheme.primaryColor}
               stroke="#FFFFFF"
               strokeWidth={1.5}
             />
@@ -879,7 +895,7 @@ export function AssociationAnalyticsScreen() {
         cx={cx}
         cy={cy}
         r={4}
-        fill="#003B95"
+        fill={colorTheme.primaryColor}
         stroke="#ffffff"
         strokeWidth={2}
       />
@@ -917,10 +933,10 @@ export function AssociationAnalyticsScreen() {
                 onClick={() => setGranularity(item.id as any)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? "bg-[#003B95] text-white shadow-xs font-black ring-1 ring-[#002B66]"
+                    ? "text-white shadow-xs font-black"
                     : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                 }`}
-                style={isSelected ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
+                style={isSelected ? { backgroundColor: colorTheme.primaryColor, color: "#ffffff" } : undefined}
               >
                 <span>{item.label}</span>
               </button>
@@ -967,12 +983,15 @@ export function AssociationAnalyticsScreen() {
               onClick={() => setActiveCategory(tab.id as AnalyticsCategory)}
               className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isActive
-                  ? "bg-[#003B95] text-white shadow-xs font-extrabold border border-[#002B66]"
+                  ? "text-white shadow-xs font-extrabold"
                   : "bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-200"
               }`}
-              style={isActive ? { backgroundColor: "#003B95", color: "#ffffff" } : undefined}
+              style={isActive ? { backgroundColor: colorTheme.primaryColor, color: "#ffffff" } : undefined}
             >
-              <Icon className={`size-3.5 ${isActive ? "text-white" : "text-[#003B95] dark:text-slate-300"}`} />
+              <Icon
+                className={`size-3.5 ${isActive ? "text-white" : "dark:text-slate-300"}`}
+                style={!isActive ? { color: colorTheme.primaryColor } : undefined}
+              />
               <span style={isActive ? { color: "#ffffff" } : undefined}>{tab.shortLabel}</span>
             </button>
           );
