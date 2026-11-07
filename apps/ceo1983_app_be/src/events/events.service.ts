@@ -736,30 +736,42 @@ export class EventsService implements OnModuleInit {
           updated_at = now()
         WHERE id = ${id}
       `;
-    } catch {
-      await this.prisma.$executeRaw`
-        UPDATE public.events SET
-          name = ${name},
-          date = ${safeDate}::date,
-          location = ${location},
-          capacity = ${safeCapacity},
-          type = ${type},
-          status = ${status},
-          image = ${evImg},
-          banner = ${evImg},
-          ticket_price = ${safeTicketPrice},
-          fee = ${safeTicketPrice},
-          description = ${desc},
-          photo_gallery_url = ${photoGallery},
-          qr_scanners = ${scannersJson}::jsonb,
-          sponsors = ${sponsorsJson}::jsonb,
-          start_time = ${startTime},
-          end_time = ${endTime},
-          agenda = ${agendaJson}::jsonb,
-          checkin_qr = ${checkinQr},
-          updated_at = now()
-        WHERE id = ${id}
-      `;
+    } catch (err: any) {
+      this.logger.warn(`updateEvent primary update failed, attempting robust fallback: ${err?.message}`);
+      try {
+        await this.prisma.$executeRaw`
+          UPDATE public.events SET
+            name = ${name},
+            date = ${safeDate}::date,
+            location = ${location},
+            capacity = ${safeCapacity},
+            type = ${type},
+            status = ${status},
+            image = ${evImg},
+            banner = ${evImg},
+            ticket_price = ${safeTicketPrice},
+            fee = ${safeTicketPrice},
+            description = ${desc},
+            photo_gallery_url = ${photoGallery},
+            start_time = ${startTime},
+            end_time = ${endTime},
+            checkin_qr = ${checkinQr},
+            updated_at = now()
+          WHERE id = ${id}
+        `;
+      } catch (fallbackErr: any) {
+        this.logger.warn(`updateEvent second fallback failed: ${fallbackErr?.message}, using minimal update`);
+        await this.prisma.$executeRaw`
+          UPDATE public.events SET
+            name = ${name},
+            location = ${location},
+            capacity = ${safeCapacity},
+            type = ${type},
+            status = ${status},
+            updated_at = now()
+          WHERE id = ${id}
+        `;
+      }
     }
 
     return this.getEventById(userId, id);
