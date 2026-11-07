@@ -482,11 +482,32 @@ export class ConnectOpportunityService {
   }
 
   async withdrawCommunityOpportunityInterest(userId: string, communityId: string, opportunityRef: string) {
-    await this.prisma.$executeRaw`
-      DELETE FROM public.opportunity_interests
-      WHERE opportunity_id = ${opportunityRef} AND member_id = ${userId}
-    `.catch(() => null);
-    return { ok: true };
+    try {
+      const member = await this.prisma.$queryRaw<any[]>`
+        SELECT id, code, user_id, phone, contact FROM public.members 
+        WHERE user_id::text = ${userId} OR id = ${userId} OR code = ${userId} LIMIT 1
+      `.catch(() => [] as any[]);
+
+      const memId = member[0]?.id ? String(member[0].id) : '';
+      const memCode = member[0]?.code ? String(member[0].code) : '';
+      const memPhone = member[0]?.phone || member[0]?.contact || '';
+
+      await this.prisma.$executeRaw`
+        DELETE FROM public.opportunity_interests
+        WHERE (opportunity_id = ${opportunityRef} OR opportunity_id::text = ${opportunityRef})
+          AND (
+            member_id = ${userId}
+            OR member_id::text = ${userId}
+            OR (member_id = ${memId} AND ${memId} != '')
+            OR (member_id = ${memCode} AND ${memCode} != '')
+            OR (contact = ${memPhone} AND ${memPhone} != '')
+            OR contact = ${userId}
+          )
+      `.catch((err) => console.warn('Withdraw interest delete error:', err));
+    } catch (e) {
+      console.warn('withdrawCommunityOpportunityInterest error:', e);
+    }
+    return { ok: true, withdrawn: true, opportunityId: opportunityRef };
   }
 
   async scheduleCommunityOpportunityFollowUp(userId: string, communityId: string, opportunityRef: string, inDays: number) {

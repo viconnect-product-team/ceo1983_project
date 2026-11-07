@@ -22,6 +22,7 @@ import {
   Share2,
   Copy,
   ExternalLink,
+  HeartOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { buildDynamicShareUrl } from "@/lib/share-helper";
@@ -56,6 +57,7 @@ export interface OpportunityDetailModalProps {
   onNegotiate: (opp: any) => void;
   interestedIds: string[];
   onInterest: (id: string) => void;
+  onUninterest?: (id: string) => void;
 }
 
 export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
@@ -78,6 +80,7 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
   onNegotiate,
   interestedIds,
   onInterest,
+  onUninterest,
 }) => {
   const [activeImgIdx, setActiveImgIdx] = React.useState(0);
 
@@ -650,10 +653,17 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
               </button>
 
               {selectedOpp.interested || interestedIds.includes(selectedOpp.id) ? (
-                <div className="flex items-center justify-center gap-1 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-3 py-2.5 text-[12px] font-bold">
-                  <Check className="h-3.5 w-3.5" />
-                  Đã quan tâm
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onUninterest) onUninterest(selectedOpp.id);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 py-2.5 text-[12.5px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition cursor-pointer"
+                  title="Bấm để hủy quan tâm cơ hội này"
+                >
+                  <HeartOff className="h-4 w-4 text-rose-500" />
+                  Bỏ quan tâm
+                </button>
               ) : (
                 <button
                   type="button"

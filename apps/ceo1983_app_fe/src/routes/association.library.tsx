@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useRole } from "@/hooks/use-role";
 import { uploadChatAttachment } from "@/lib/upload-media";
+import { resolveMediaUrl } from "@/lib/api-client";
 import { createDocumentFn } from "@/lib/documents.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -95,15 +96,44 @@ function LibraryScreen() {
     setMounted(true);
   }, []);
 
-  const handleDownload = (doc: LibraryDoc) => {
+  const handleDownload = async (doc: LibraryDoc) => {
     setDownloading(true);
-    setTimeout(() => {
-      setDownloading(false);
-      toast.success(isEn ? `Downloading "${doc.name}"` : `Đang tải xuống tài liệu "${doc.name}"`);
-      if (doc.url) {
-        window.open(doc.url, "_blank");
+    const fileName = doc.name.toLowerCase().endsWith(`.${doc.type?.toLowerCase()}`)
+      ? doc.name
+      : `${doc.name}.${doc.type || "pdf"}`;
+    toast.loading(`Đang tải xuống "${fileName}"...`, { id: "lib-download" });
+
+    try {
+      const targetUrl = resolveMediaUrl(doc.url) || doc.url || "/documents/mau_bieu_ceo1983.pdf";
+      try {
+        const res = await fetch(targetUrl);
+        if (!res.ok) throw new Error("Fetch failed");
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        toast.success(`Đã tải xuống "${fileName}" thành công!`, { id: "lib-download" });
+      } catch {
+        const link = document.createElement("a");
+        link.href = targetUrl;
+        link.download = fileName;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`Đang mở tệp "${fileName}"`, { id: "lib-download" });
       }
-    }, 600);
+    } catch (err: any) {
+      toast.error(err?.message || "Tải tài liệu thất bại!", { id: "lib-download" });
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleShare = (doc: LibraryDoc) => {

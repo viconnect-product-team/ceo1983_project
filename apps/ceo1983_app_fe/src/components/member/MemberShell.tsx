@@ -847,9 +847,9 @@ function MemberTabBar() {
                   <span
                     className="relative grid h-14 w-14 place-items-center rounded-full shadow-lg group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-3"
                     style={{
-                      background: "var(--theme-primary-gradient, linear-gradient(135deg, #003B95 0%, #1E3A8A 100%))",
-                      border: "3px solid #FFFFFF",
-                      boxShadow: "0 6px 18px rgba(0, 59, 149, 0.4)",
+                      background: "var(--theme-primary-gradient, linear-gradient(135deg, #001D4A 0%, #003B95 50%, #002B70 100%))",
+                      border: "3px solid #F59E0B",
+                      boxShadow: "0 6px 18px rgba(0, 59, 149, 0.45)",
                     }}
                   >
                     {isScanningPhase ? (

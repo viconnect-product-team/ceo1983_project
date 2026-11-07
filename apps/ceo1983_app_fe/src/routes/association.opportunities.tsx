@@ -45,6 +45,7 @@ import {
   ArrowUpDown,
   BarChart3,
   Heart,
+  HeartOff,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -623,6 +624,7 @@ function OpportunitiesScreen() {
 
   const allTab = "Tất cả cơ hội";
   const myOppsTab = "Cơ hội của tôi";
+  const myInterestedTab = "Cơ hội tôi quan tâm";
   const myWonTab = "Cơ hội tôi đã chốt được";
   const myDealingTab = "Cơ hội đang deal";
   const myClosedTab = "Cơ hội đã đóng của tôi";
@@ -951,6 +953,7 @@ function OpportunitiesScreen() {
     return [
       allTab,
       myOppsTab,
+      myInterestedTab,
       myWonTab,
       myDealingTab,
       myClosedTab,
@@ -959,8 +962,8 @@ function OpportunitiesScreen() {
     ];
   }, []);
   const [tab, setTab] = useState(allTab);
-
   const [industryFilter, setIndustryFilter] = useState<string>("all");
+  const [interestedIds, setInterestedIds] = useState<string[]>([]);
 
   const list = useMemo(() => {
     const currentUserId = user?.id || (member as any)?.userId || (member as any)?.id;
@@ -975,6 +978,20 @@ function OpportunitiesScreen() {
         matchTab = true;
       } else if (tab === myOppsTab) {
         matchTab = Boolean(isMine);
+      } else if (tab === myInterestedTab) {
+        // Cơ hội tôi quan tâm (không phải do tôi đăng, và tôi đã bấm quan tâm)
+        const isInterested =
+          !isMine &&
+          (Boolean((o as any).interested) ||
+            interestedIds.includes(o.id) ||
+            (Array.isArray((o as any).interests) &&
+              (o as any).interests.some(
+                (int: any) =>
+                  String(int.memberId) === String(currentUserId) ||
+                  String(int.contact) === String(currentUserId) ||
+                  (currentMemberCode && String(int.memberCode) === String(currentMemberCode)),
+              )));
+        matchTab = Boolean(isInterested);
       } else if (tab === myWonTab) {
         // Cơ hội tôi đã chốt được (Req 3)
         const isWon =
@@ -1067,12 +1084,11 @@ function OpportunitiesScreen() {
     }
 
     return filtered;
-  }, [allOpportunities, tab, q, member, industryFilter, benefitSort, user?.id]);
+  }, [allOpportunities, tab, q, member, industryFilter, benefitSort, user?.id, interestedIds]);
 
   const [pageOpps, setPageOpps] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [savedOppIds, setSavedOppIds] = useState<string[]>([]);
-  const [interestedIds, setInterestedIds] = useState<string[]>([]);
   const OPP_PAGE_SIZE = 12;
 
   const toggleSave = (id: string) => {
@@ -1093,15 +1109,34 @@ function OpportunitiesScreen() {
     setBusy(id);
     try {
       await doInterest({ data: { opportunityId: id } });
-      setInterestedIds((prev) => [...prev, id]);
+      setInterestedIds((prev) => Array.from(new Set([...prev, id])));
+      toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
       reload();
     } catch (e) {
-      setInterestedIds((prev) => [...prev, id]);
+      setInterestedIds((prev) => Array.from(new Set([...prev, id])));
+      toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
     } finally {
       setBusy(null);
     }
+  }
 
-    toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
+  async function uninterest(id: string, targetOpp?: any) {
+    setBusy(id);
+    try {
+      await fetchNestApi(`/opportunities/${id}/interests`, {
+        method: "DELETE",
+      }).catch(() => {
+        return fetchNestApi(`/opportunities/${id}/uninterest`, { method: "POST" });
+      });
+      setInterestedIds((prev) => prev.filter((x) => x !== id));
+      toast.success("Đã hủy quan tâm cơ hội!");
+      reload();
+    } catch (e) {
+      setInterestedIds((prev) => prev.filter((x) => x !== id));
+      toast.success("Đã hủy quan tâm cơ hội!");
+    } finally {
+      setBusy(null);
+    }
   }
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
@@ -1939,24 +1974,34 @@ function OpportunitiesScreen() {
                                   </div>
                                 ) : (
                                   <>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        interest(o.id, o);
-                                      }}
-                                      disabled={busy === o.id}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs ${
-                                        o.interested || interestedIds.includes(o.id)
-                                          ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-300"
-                                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200"
-                                      }`}
-                                    >
-                                      <Heart
-                                        className={`size-3 ${o.interested || interestedIds.includes(o.id) ? "fill-emerald-600 text-emerald-600" : ""}`}
-                                      />
-                                      <span>{o.interested || interestedIds.includes(o.id) ? "Đã quan tâm" : "Quan tâm"}</span>
-                                    </button>
+                                    {o.interested || interestedIds.includes(o.id) ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          uninterest(o.id, o);
+                                        }}
+                                        disabled={busy === o.id}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                                        title="Bấm để hủy quan tâm cơ hội này"
+                                      >
+                                        <HeartOff className="size-3 text-rose-500" />
+                                        <span>Bỏ quan tâm</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          interest(o.id, o);
+                                        }}
+                                        disabled={busy === o.id}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                                      >
+                                        <Heart className="size-3" />
+                                        <span>Quan tâm</span>
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -2026,6 +2071,7 @@ function OpportunitiesScreen() {
         onNegotiate={handleNegotiate}
         interestedIds={interestedIds}
         onInterest={interest}
+        onUninterest={uninterest}
       />
 
       <OpportunityCreateModal

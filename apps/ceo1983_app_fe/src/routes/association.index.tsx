@@ -1628,7 +1628,7 @@ function Home() {
           </div>
         </div>
 
-        {/* TIN TỨC CÂU LẠC BỘ */}
+        {/* TIN TỨC CÂU LẠC BỘ: 1 TIN TIÊU ĐIỂM + SLIDE BẢN TIN TIẾP THEO (CHUẨN FIGMA) */}
         <div className="self-stretch flex flex-col justify-start items-start gap-3">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
@@ -1652,78 +1652,139 @@ function Home() {
             </div>
           </div>
 
-          <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-3 pb-1">
-            {(combinedNews.length > 0 ? combinedNews.slice(0, 5) : [
+          {/* 1. Tin tiêu điểm số 1 dạng Hero Banner nổi bật */}
+          {(() => {
+            const newsList = combinedNews.length > 0 ? combinedNews : [
               {
                 id: "1",
                 title: "Hội nghị Xúc tiến Thương mại & Kết nối Đầu tư Quốc tế Quý 3/2026",
                 author: "Ban Thư Ký",
                 time: "2026-09-20",
+                image: "/images/ceo1983/Rectangle 6-1.png",
               },
               {
                 id: "2",
                 title: "Chương trình Caravan Thiện nguyện & Giao thương Doanh nhân 2026",
                 author: "Ban Truyền Thông",
                 time: "2026-09-18",
+                image: "/images/ceo1983/Rectangle 6-1.png",
               },
-            ]).map((item, i) => (
-              <Link
-                key={item.id || i}
-                to="/association/news"
-                search={{ articleId: String(item.id) }}
-                className="w-64 relative bg-white dark:bg-slate-900 rounded-2xl outline outline-1 outline-offset-[-1px] outline-Backgrounds-Secondary dark:outline-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-amber-400 transition"
-              >
-                <div className="relative w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                  <img
-                    className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
-                    src={(item as any).image || (item as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
-                    alt={item.title}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
-                    }}
-                  />
-                  <div className="px-2 py-0.5 right-2 top-2 absolute bg-sky-500 text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold">
-                    <span className="size-1 bg-white rounded-full" />
-                    <span>Mới</span>
+            ];
+            const heroNews = newsList[0];
+            const slideNews = newsList.slice(1);
+
+            return (
+              <div className="self-stretch flex flex-col gap-2.5">
+                {heroNews && (
+                  <Link
+                    to="/association/news"
+                    search={{ articleId: String(heroNews.id) }}
+                    className="self-stretch relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-sm hover:border-[#003B95] dark:hover:border-amber-400 transition-all group flex flex-col"
+                  >
+                    <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
+                      <img
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        src={(heroNews as any).image || (heroNews as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
+                        alt={heroNews.title}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
+                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                          <Sparkles className="size-3" />
+                          TIN TIÊU ĐIỂM
+                        </span>
+                      </div>
+                      <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                        <span className="text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                          {(heroNews as any).category || "BẢN TIN HOẠT ĐỘNG CLB"}
+                        </span>
+                        <h3 className="text-white text-sm sm:text-base font-extrabold leading-snug line-clamp-2 mt-0.5 group-hover:text-amber-200 transition-colors">
+                          {heroNews.title}
+                        </h3>
+                        <div className="flex items-center justify-between text-[10px] text-slate-300 mt-1.5 border-t border-white/10 pt-1">
+                          <span className="font-medium text-slate-300">{heroNews.author || "Ban Truyền Thông"}</span>
+                          <span className="inline-flex items-center gap-1 font-mono text-amber-200">
+                            <Clock className="size-3 text-amber-300" />
+                            {formatNewsDate(heroNews.time)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+
+                {/* 2. Sau đó là Slide các tin tiếp theo */}
+                {slideNews.length > 0 && (
+                  <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-3 pt-0.5 pb-1">
+                    {slideNews.map((item, i) => (
+                      <Link
+                        key={item.id || i}
+                        to="/association/news"
+                        search={{ articleId: String(item.id) }}
+                        className="w-60 relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-[#003B95] dark:hover:border-amber-400 transition"
+                      >
+                        <div className="relative w-full h-28 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                          <img
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            src={(item as any).image || (item as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
+                            alt={item.title}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
+                            }}
+                          />
+                          <div className="px-2 py-0.5 right-2 top-2 absolute bg-[#003B95] text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold">
+                            <span className="size-1 bg-amber-400 rounded-full" />
+                            <span>Mới</span>
+                          </div>
+                        </div>
+                        <div className="self-stretch p-2.5 flex flex-col justify-start items-start gap-1">
+                          <span className="text-[#003B95] dark:text-blue-400 text-[9.5px] font-bold uppercase truncate w-full">
+                            {(item as any).category || "BẢN TIN BAN CHẤP HÀNH"}
+                          </span>
+                          <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-[#003B95] transition-colors">
+                            {item.title}
+                          </span>
+                          <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-0.5" />
+                          <div className="self-stretch inline-flex justify-between items-center text-[10px]">
+                            <span className="text-slate-500 dark:text-slate-400 font-medium truncate max-w-[110px]">
+                              {item.author || "Ban Thư Ký"}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold font-mono">
+                              <Clock className="size-3 text-[#003B95] shrink-0" />
+                              {formatNewsDate(item.time)}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </div>
-                <div className="self-stretch p-3 flex flex-col justify-start items-start gap-1">
-                  <span className="text-blue-800 dark:text-blue-400 text-[10px] font-bold uppercase">THÔNG BÁO BAN CHẤP HÀNH</span>
-                  <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {item.title}
-                  </span>
-                  <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-1" />
-                  <div className="self-stretch inline-flex justify-between items-center text-[10px]">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">{item.author || "Ban Thư Ký"}</span>
-                    <span className="inline-flex items-center gap-1 text-slate-600 dark:text-white font-semibold font-mono">
-                      <Clock className="size-3 text-[#003B95] shrink-0" />
-                      {formatNewsDate(item.time)}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Quét mã QR Check-in sự kiện */}
+        {/* Quét mã QR Check-in sự kiện (Chuẩn Gradient Thương hiệu CEO 1983: Navy Hoàng gia + Amber Gold) */}
         {canScanEventQr && (
-          <div className="self-stretch p-4 bg-gradient-to-r from-sky-950 via-blue-900 to-sky-950 rounded-[19px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-md border border-white/10 mt-1">
-            <div className="size-11 bg-cyan-800/80 rounded-2xl outline outline-1 outline-slate-500 flex justify-center items-center shrink-0">
-              <QrCode className="size-6 text-white" />
+          <div className="self-stretch p-4 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] rounded-[20px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-lg shadow-[#003B95]/25 border border-amber-400/40 mt-1">
+            <div className="size-12 bg-white/10 backdrop-blur-xs rounded-2xl border border-amber-400/50 flex justify-center items-center shrink-0 text-amber-300 shadow-inner">
+              <QrCode className="size-6.5 text-amber-300" />
             </div>
             <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 overflow-hidden min-w-0">
-              <span className="text-white text-xs font-bold leading-4">
-                Quét mã QR Check-in<br />sự kiện
+              <span className="text-white text-xs font-extrabold leading-4">
+                Quét mã QR Check-in<br />sự kiện & điểm danh
               </span>
-              <div className="px-2 py-0.5 bg-[#003B95] rounded-3xl inline-flex justify-start items-center gap-1">
-                <ShieldCheck className="size-3 text-sky-950" />
-                <span className="text-white text-[9.5px] font-bold">BAN SOÁT VÉ SỰ KIỆN</span>
+              <div className="px-2 py-0.5 bg-gradient-to-r from-[#D97706] to-[#F59E0B] rounded-3xl inline-flex justify-start items-center gap-1 shadow-xs">
+                <ShieldCheck className="size-3 text-white" />
+                <span className="text-white text-[9.5px] font-black tracking-wide">BAN SOÁT VÉ CLB</span>
               </div>
             </div>
             <Link
               to="/association/checkin"
-              className="px-3.5 py-2 bg-[#003B95] hover:bg-[#002B70] text-white rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md active:scale-95 transition"
+              className="px-4 py-2.5 bg-gradient-to-r from-[#D97706] to-[#F59E0B] hover:brightness-110 text-white rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md shadow-amber-500/25 active:scale-95 transition"
             >
               <span className="text-white text-xs font-bold">Quét ngay</span>
               <ChevronRight className="size-3.5 text-white stroke-[2.5]" />

@@ -31,6 +31,7 @@ import {
   Globe,
   Users,
   Palette,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,6 +46,7 @@ import { DriveMoveModal } from "@/components/documents/DriveMoveModal";
 import { DriveDocumentModal } from "@/components/documents/DriveDocumentModal";
 import { MemberGoogleDriveSyncModal } from "@/components/documents/MemberGoogleDriveSyncModal";
 import { UniversalDocumentViewerModal } from "@/components/documents/UniversalDocumentViewerModal";
+import { SendDocumentToMessageModal } from "@/components/documents/SendDocumentToMessageModal";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useRole, PERMISSIONS } from "@/hooks/use-role";
@@ -259,6 +261,7 @@ function DocsPage() {
   const [driveSyncModalDoc, setDriveSyncModalDoc] = useState<Document | null>(null);
   const [openDriveModal, setOpenDriveModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [sendMessageDoc, setSendMessageDoc] = useState<Document | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const onSaveDoc = async (payload: any) => {
@@ -812,25 +815,47 @@ function DocsPage() {
               Mở thư mục
             </button>
           ) : (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                void onDownload(d);
-              }}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-            >
-              {d.driveUrl ? (
-                <>
-                  <ExternalLink className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Mở Google Drive</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>{t("common.download")}</span>
-                </>
+            <>
+              {d.driveUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (d.driveUrl) {
+                      window.open(d.driveUrl, "_blank", "noopener");
+                    }
+                  }}
+                  className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 px-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 cursor-pointer"
+                  title="Mở Google Drive"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
               )}
-            </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void onDownload(d);
+                }}
+                className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                title="Tải xuống tài liệu"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{t("common.download")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSendMessageDoc(d);
+                }}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 px-2.5 text-xs font-semibold text-[#003B95] dark:text-blue-400 hover:bg-blue-100 cursor-pointer"
+                title="Gửi tài liệu vào tin nhắn CRM"
+              >
+                <Send className="h-3.5 w-3.5 text-amber-500" />
+                <span>Gửi</span>
+              </button>
+            </>
           )}
           {(() => {
             const isAssoc = d.docScope === "association" || !d.docScope;
@@ -1721,6 +1746,15 @@ function DocsPage() {
                                     </button>
                                     <button
                                       type="button"
+                                      onClick={() => setSendMessageDoc(d)}
+                                      title="Gửi tài liệu vào tin nhắn CRM"
+                                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#003B95] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                                    >
+                                      <Send className="h-3.5 w-3.5 text-amber-500" />
+                                      <span className="hidden xl:inline">Gửi tin nhắn</span>
+                                    </button>
+                                    <button
+                                      type="button"
                                       onClick={() => setDriveSyncModalDoc(d)}
                                       title="Đồng bộ / Chuyển về Google Drive cá nhân"
                                       className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
@@ -1988,6 +2022,13 @@ function DocsPage() {
           isOpen={Boolean(previewDoc)}
           onClose={() => setPreviewDoc(null)}
           document={previewDoc}
+        />
+
+        {/* Modal Gửi Tài Liệu Vào Tin Nhắn CRM / Hội Viên */}
+        <SendDocumentToMessageModal
+          isOpen={Boolean(sendMessageDoc)}
+          onClose={() => setSendMessageDoc(null)}
+          documentItem={sendMessageDoc}
         />
 
         {/* Drag & Drop Visual Indicator Overlay */}

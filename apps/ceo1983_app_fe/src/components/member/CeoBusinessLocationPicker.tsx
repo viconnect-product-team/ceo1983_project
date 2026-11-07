@@ -108,15 +108,43 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
   // Reverse Geocoding helper (Lấy địa chỉ từ tọa độ lat/lng)
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=vi`
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data && data.display_name) {
-        setAddress(data.display_name);
+      // 1. Thử gọi qua Backend API proxy
+      const apiRes = await fetchNestApi<any>(
+        `/members/reverse-geocode?lat=${latitude}&lng=${longitude}`
+      ).catch(() => null);
+
+      if (apiRes && apiRes.ok && apiRes.address) {
+        setAddress(apiRes.address);
         setHasChanged(true);
         toast.info("Đã cập nhật địa chỉ theo vị trí ghim mới!", { duration: 2500 });
+        return;
+      }
+
+      // 2. Fallback trực tiếp sang Photon Komoot OpenStreetMap
+      const res = await fetch(
+        `https://photon.komoot.io/reverse?lat=${latitude}&lon=${longitude}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data?.features?.[0];
+        if (feat?.properties) {
+          const p = feat.properties;
+          const parts = [
+            p.name && p.name !== p.street ? p.name : null,
+            p.housenumber ? `Số ${p.housenumber}` : null,
+            p.street,
+            p.district,
+            p.city,
+            p.country || "Việt Nam",
+          ].filter(Boolean);
+          const fullAddr = parts.join(", ");
+          if (fullAddr) {
+            setAddress(fullAddr);
+            setHasChanged(true);
+            toast.info("Đã cập nhật địa chỉ theo vị trí ghim mới!", { duration: 2500 });
+            return;
+          }
+        }
       }
     } catch {
       // Ignored if network blocked
@@ -441,23 +469,41 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
     }
     setIsSearching(true);
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          address.trim()
-        )}&limit=1&accept-language=vi`
-      );
-      if (!res.ok) throw new Error("Search failed");
-      const list = await res.json();
-      if (!list || list.length === 0) {
-        toast.error("Không tìm thấy tọa độ cho địa chỉ này. Hãy thử nhập địa chỉ rõ ràng hơn!");
+      // 1. Thử gọi qua Backend API proxy
+      const apiRes = await fetchNestApi<any>(
+        `/members/geocode?address=${encodeURIComponent(address.trim())}`
+      ).catch(() => null);
+
+      if (apiRes && apiRes.ok && apiRes.lat && apiRes.lng) {
+        updateMapPosition(apiRes.lat, apiRes.lng, 16);
+        setHasChanged(true);
+        if (apiRes.formattedAddress) {
+          setAddress(apiRes.formattedAddress);
+        }
+        toast.success("Đã định vị địa chỉ thành công trên bản đồ!");
         return;
       }
-      const item = list[0];
-      const parsedLat = parseFloat(item.lat);
-      const parsedLng = parseFloat(item.lon);
-      updateMapPosition(parsedLat, parsedLng, 16);
-      setHasChanged(true);
-      toast.success("Đã định vị địa chỉ thành công trên bản đồ!");
+
+      // 2. Fallback sang Photon Komoot OpenStreetMap
+      const res = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(address.trim())}&limit=1`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data?.features?.[0];
+        if (feat && feat.geometry && Array.isArray(feat.geometry.coordinates)) {
+          const [lon, lat] = feat.geometry.coordinates;
+          const p = feat.properties || {};
+          const formatted = [p.name, p.street, p.district, p.city, p.country].filter(Boolean).join(", ");
+          updateMapPosition(Number(lat), Number(lon), 16);
+          setHasChanged(true);
+          if (formatted) setAddress(formatted);
+          toast.success("Đã định vị địa chỉ thành công trên bản đồ!");
+          return;
+        }
+      }
+
+      toast.error("Không tìm thấy tọa độ cho địa chỉ này. Hãy thử nhập địa chỉ rõ ràng hơn!");
     } catch {
       toast.error("Không thể tìm kiếm địa chỉ lúc này. Vui lòng thử lại!");
     } finally {

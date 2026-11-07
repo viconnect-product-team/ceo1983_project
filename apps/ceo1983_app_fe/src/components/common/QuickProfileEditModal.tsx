@@ -242,12 +242,30 @@ export function QuickProfileEditModal({
 
     setSaving(true);
     try {
+      let geoLat: number | undefined;
+      let geoLng: number | undefined;
+      if (address.trim()) {
+        try {
+          const geoRes = await fetchNestApi<any>(
+            `/members/geocode?address=${encodeURIComponent(address.trim())}`
+          ).catch(() => null);
+          if (geoRes?.ok && geoRes.lat && geoRes.lng) {
+            geoLat = Number(geoRes.lat);
+            geoLng = Number(geoRes.lng);
+          }
+        } catch {
+          // ignore geocode error
+        }
+      }
+
       const updatedData = {
         name: name.trim(),
         phone: phone.trim(),
         company: company.trim(),
         title: title.trim(),
         address: address.trim(),
+        latitude: geoLat,
+        longitude: geoLng,
         companySize: companySize.trim(),
         industry: industry.trim(),
         bio: bio.trim(),
@@ -343,6 +361,8 @@ export function QuickProfileEditModal({
         company: company.trim(),
         title: title.trim(),
         address: address.trim(),
+        latitude: geoLat,
+        longitude: geoLng,
         website: website.trim(),
         companySize: companySize.trim(),
         industry: industry.trim(),
@@ -351,6 +371,18 @@ export function QuickProfileEditModal({
         coverUrl: cover,
         companyLogoUrl: companyLogo,
       };
+
+      if (geoLat && geoLng) {
+        fetchNestApi("/members/my-location", {
+          method: "PUT",
+          body: JSON.stringify({
+            latitude: geoLat,
+            longitude: geoLng,
+            address: address.trim(),
+            isSharing: true,
+          }),
+        }).catch(() => null);
+      }
 
       fetchNestApi("/members/me", {
         method: "PATCH",

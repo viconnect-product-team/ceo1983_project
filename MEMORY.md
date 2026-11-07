@@ -1,5 +1,36 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.59): Hoàn Thiện 4 Hạng Mục Nâng Cấp Trọng Yếu (Danh Mục Cơ Hội Quan Tâm & Bỏ Quan Tâm, Đồng Bộ Tọa Độ Map Trang Cá Nhân, Giao Diện Tin Tức Slide & Gradient Quét Mã Thương Hiệu, Tải Xuống Tài Liệu & Gửi Tài Liệu Vào Tin Nhắn CRM) ([NODE-APP-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-009], [NODE-CRM-002], [NODE-CRM-003], [NODE-CRM-007], [NODE-CORE-001])**:
+  1. *Hạng Mục 1: Danh Mục \"Cơ Hội Tôi Quan Tâm\" & Nút \"Bỏ Quan Tâm\" Hai Chiều (App & CRM)*:
+     - **Backend**:
+       * Bổ sung các endpoint `@Delete(':id/interests')`, `@Post(':id/uninterest')` và `@Post('express-uninterest')` tại `apps/ceo1983_app_be/src/connect-app/opportunity.controller.ts`.
+       * Bổ sung phương thức `withdrawCommunityOpportunityInterest` trong `apps/ceo1983_app_be/src/connect-app/services/opportunity.service.ts` xóa triệt để bản ghi quan tâm cơ hội trong bảng `public.opportunity_interests` đối soát đồng thời qua user UUID, member ID, member code và số điện thoại.
+     - **Frontend**:
+       * Thêm tab \"Cơ hội tôi quan tâm\" trên Mobile App (`association.opportunities.tsx`) và CRM Quản trị (`opportunities.index.tsx`).
+       * Tích hợp nút \"Bỏ quan tâm\" / \"Quan tâm\" trực tiếp trên Card cơ hội và trong `OpportunityDetailModal.tsx` với thông báo toast phản hồi tức thì.
+  2. *Hạng Mục 2: Đồng Bộ Tự Động Địa Chỉ Và Tọa Độ Bản Đồ Trang Cá Nhân*:
+     - **Backend**:
+       * Bổ sung 2 endpoint geocoding `@Get('geocode')` và `@Get('reverse-geocode')` tại `apps/ceo1983_app_be/src/members/members.controller.ts` & `apps/ceo1983_app_be/src/members/members.service.ts`. Sử dụng dịch vụ Photon Komoot / OSM kèm fallback an toàn về tọa độ trụ sở CEO 1983 tại Keangnam Landmark 72 Hà Nội (`21.016987, 105.784013`).
+     - **Frontend**:
+       * `CeoBusinessLocationPicker.tsx` và `QuickProfileEditModal.tsx` tự động gọi reverse-geocode cập nhật ô nhập địa chỉ ngay khi di chuyển con trỏ bản đồ; đồng thời geocode địa chỉ thành `latitude`, `longitude` khi gõ địa chỉ hoặc bấm Lưu thông tin.
+       * Cập nhật `association.profile.tsx` nhúng iframe bản đồ Google Maps và nút mở bản đồ bên ngoài ưu tiên tọa độ kinh độ/vĩ độ chính xác.
+  3. *Hạng Mục 3: Giao Diện Tin Tức App Dạng 1 Tin Tiêu Điểm + Slide Carousel (Chuẩn Figma) & Gradient Quét Mã Nhận Diện Thương Hiệu*:
+     - **Tin tức Mobile App**:
+       * Tái cấu trúc `apps/ceo1983_app_fe/src/routes/association.news.tsx` và `association.index.tsx` theo chuẩn Figma: Hiển thị 1 bài viết tiêu điểm nổi bật (Hero Card) khổ lớn kèm badge \"TIN NỔI BẬT NHẤT\", theo sau là Slide Carousel trượt ngang mượt mà hiển thị các tin tiêu điểm tiếp theo trước khi đến danh sách tin dạng lưới.
+     - **Màu sắc giao diện Quét Mã**:
+       * Khắc phục màu gradient xanh cyan/sky bị sai lệch, thay thế bằng bộ nhận diện 3 màu thương hiệu HanoiBA CEO 1983: Xanh Navy đậm (`#001D4A` -> `#003B95` -> `#002B70`), điểm xuyết viền ánh vàng Hoàng Kim Amber Gold (`#F59E0B` / `#D97706`).
+       * Áp dụng đồng bộ tại banner quét mã `association.index.tsx` và nút bấm quét mã nổi tại `MemberShell.tsx`.
+  4. *Hạng Mục 4: Tải Xuống Tài Liệu Thực Tế (Word, Excel, PDF) & Gửi Tài Liệu Vào Tin Nhắn CRM*:
+     - **Tải xuống tài liệu thực tế**:
+       * Viết lại hàm `handleDownload` tại `association.library.tsx`, `UniversalDocumentViewerModal.tsx` và `documents.index.tsx` sử dụng cơ chế tải Blob nhị phân (`fetch -> res.blob() -> window.URL.createObjectURL`), tự động chuẩn hóa đuôi mở rộng tệp (.pdf, .docx, .xlsx), triệt tiêu hoàn toàn vấn đề trình duyệt chặn download link cross-origin.
+     - **Gửi tài liệu vào tin nhắn CRM**:
+       * Xây dựng mới hoàn toàn component [`SendDocumentToMessageModal.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/documents/SendDocumentToMessageModal.tsx) cho phép chọn hội viên nhận, tìm kiếm theo tên/công ty, soạn nội dung kèm xem trước thông tin tệp.
+       * Tích hợp nút \"Gửi\" trên cả giao diện Bảng (Table View) và giao diện Lưới (Grid View) của `apps/ceo1983_app_fe/src/routes/documents.index.tsx`, điều phối tin nhắn tệp định dạng `[file:url|name|size]` qua API `/api/dm/member/messages`.
+  5. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi bảo toàn tại local nhánh `dev`.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.58): Khắc Phục Triệt Để 4 Nhóm Lỗi Lớn (Mã QR Check-in Sự Kiện, Định Dạng Chia Sẻ Bài Viết, Giao Diện & Tin Nhắn Mobile, Thông Báo & Kiểm Duyệt Bình Luận Tin Tức CRM) ([NODE-CRM-005], [NODE-CRM-010], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CORE-001], [NODE-CORE-005])**:
   1. *Lỗi 1: Mã QR Vé Check-in Sự Kiện Không Hiển Thị Trên Email và Zalo*:
      - **Nguyên nhân**: Email dùng CID inline attachment nhưng thiếu `contentDisposition: 'inline'`, khiến Gmail và Webmail mobile chặn hiển thị. Ngoài ra, mã QR trước đó gọi dịch vụ ngoài `api.qrserver.com` bị nghẽn mạng/timeout (>30s) tại Việt Nam.

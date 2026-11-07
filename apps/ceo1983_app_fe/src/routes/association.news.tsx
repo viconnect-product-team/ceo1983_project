@@ -20,6 +20,7 @@ import {
   BookOpen,
   Pencil,
   Trash2,
+  Clock,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -641,6 +642,97 @@ export default function NewsScreen() {
             )}
           </div>
         )}
+
+        {/* TOP FEATURED NEWS: 1 TIN NỔI BẬT + SLIDE CAROUSEL (CHUẨN FIGMA) */}
+        {!newsLoading && !searchQuery && activeTab === "all" && displayedNews.length > 0 && (() => {
+          const hero = displayedNews[0];
+          const slides = displayedNews.slice(1, 5);
+          return (
+            <div className="space-y-3 mb-4">
+              {/* 1. Tin tiêu điểm số 1 */}
+              <div
+                onClick={() => handleOpenArticle(hero)}
+                className="group relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131a27] shadow-sm hover:border-[#003B95] dark:hover:border-amber-400 transition cursor-pointer"
+              >
+                <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-950">
+                  <img
+                    src={resolveMediaUrl(hero.image) || hero.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80"}
+                    alt={hero.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
+                  <div className="absolute top-2.5 left-2.5">
+                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                      <Sparkles className="size-3" />
+                      TIN NỔI BẬT NHẤT
+                    </span>
+                  </div>
+                  <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                    <span className="text-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                      {hero.category || "BẢN TIN HOẠT ĐỘNG"}
+                    </span>
+                    <h2 className="text-white text-sm sm:text-base font-extrabold leading-snug line-clamp-2 mt-0.5 group-hover:text-amber-200 transition-colors">
+                      {hero.title}
+                    </h2>
+                    <div className="flex items-center justify-between text-[10px] text-slate-300 mt-1.5 border-t border-white/10 pt-1">
+                      <span className="font-medium">{hero.author || "Ban Truyền Thông"}</span>
+                      <span className="inline-flex items-center gap-1 font-mono text-amber-200">
+                        <Clock className="size-3 text-amber-300" />
+                        {fmt.rel(hero.time) || hero.time || "Mới đây"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Sau đó là Slide các tin tiếp theo */}
+              {slides.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                      <Sparkles className="size-3.5 text-amber-500" />
+                      Bản tin tiêu điểm
+                    </span>
+                    <span className="text-[10px] text-slate-400">Vuốt ngang xem thêm</span>
+                  </div>
+                  <div className="overflow-x-auto no-scrollbar flex items-start gap-2.5 pb-1">
+                    {slides.map((sn) => (
+                      <div
+                        key={sn.id}
+                        onClick={() => handleOpenArticle(sn)}
+                        className="w-56 shrink-0 group rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#131a27] p-2 hover:border-[#003B95] dark:hover:border-amber-400 transition cursor-pointer shadow-2xs"
+                      >
+                        <div className="relative w-full h-24 rounded-lg overflow-hidden bg-slate-900 mb-1.5">
+                          <img
+                            src={resolveMediaUrl(sn.image) || sn.image || "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80"}
+                            alt={sn.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.2 bg-[#003B95] text-white text-[8px] font-bold rounded">
+                            {sn.category || "TIN MỚI"}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight group-hover:text-[#003B95] transition-colors">
+                          {sn.title}
+                        </h4>
+                        <div className="mt-1 flex items-center justify-between text-[9.5px] text-slate-400">
+                          <span className="truncate max-w-[100px]">{sn.author || "Ban Thư Ký"}</span>
+                          <span>{fmt.rel(sn.time) || "Mới"}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-1">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Tất cả bài viết ({displayedNews.length})
+                </span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* News Cards: "kiểu có ảnh cùng 1,2 dòng thông tin" */}
         {displayedNews.map((n) => {

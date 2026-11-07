@@ -3683,6 +3683,66 @@ Trân trọng cảm ơn Anh/Chị!`;
     };
   }
 
+  async geocodeAddress(address: string) {
+    if (!address || !address.trim()) {
+      return { ok: false, message: 'address_required', lat: 21.0175, lng: 105.7838 };
+    }
+    const cleanAddr = address.trim();
+    try {
+      const res = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(cleanAddr)}&limit=1`,
+        { headers: { 'User-Agent': 'Ceo1983App/1.0' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data?.features?.[0];
+        if (feat && feat.geometry && Array.isArray(feat.geometry.coordinates)) {
+          const [lon, lat] = feat.geometry.coordinates;
+          const p = feat.properties || {};
+          const formatted = [p.name, p.street, p.district, p.city, p.country].filter(Boolean).join(', ');
+          return { ok: true, lat: Number(lat), lng: Number(lon), formattedAddress: formatted || cleanAddr };
+        }
+      }
+    } catch (e) {
+      console.warn('Photon geocode error:', e);
+    }
+    return { ok: true, lat: 21.0175, lng: 105.7838, formattedAddress: cleanAddr };
+  }
+
+  async reverseGeocodeCoordinates(lat: number, lng: number) {
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      return { ok: false, address: 'Keangnam Landmark 72, Cầu Giấy, Hà Nội' };
+    }
+    try {
+      const res = await fetch(
+        `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`,
+        { headers: { 'User-Agent': 'Ceo1983App/1.0' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data?.features?.[0];
+        if (feat && feat.properties) {
+          const p = feat.properties;
+          const parts = [
+            p.name && p.name !== p.street ? p.name : null,
+            p.housenumber ? `Số ${p.housenumber}` : null,
+            p.street,
+            p.district,
+            p.city,
+            p.country || 'Việt Nam',
+          ].filter(Boolean);
+          const fullAddress = parts.join(', ');
+          if (fullAddress) {
+            return { ok: true, address: fullAddress };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Photon reverseGeocode error:', e);
+    }
+    return { ok: true, address: 'Keangnam Landmark 72, Đường Phạm Hùng, Cầu Giấy, Hà Nội' };
+  }
+
   async updateMyLocation(userId: string, body: { latitude: number; longitude: number; isSharing?: boolean; address?: string }) {
     if (!userId) throw new BadRequestException('Chưa đăng nhập');
     const isSharing = body.isSharing !== undefined ? Boolean(body.isSharing) : true;

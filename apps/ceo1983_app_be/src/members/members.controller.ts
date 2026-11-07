@@ -78,6 +78,19 @@ export class MembersController {
     return this.membersService.getMemberLocations();
   }
 
+  @Get('geocode')
+  async geocodeAddress(@Query('address') address: string) {
+    return this.membersService.geocodeAddress(address);
+  }
+
+  @Get('reverse-geocode')
+  async reverseGeocodeCoordinates(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+  ) {
+    return this.membersService.reverseGeocodeCoordinates(Number(lat), Number(lng));
+  }
+
   @UseGuards(JwtAuthGuard)
   @Put('my-location')
   async updateMyLocation(
