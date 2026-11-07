@@ -825,28 +825,25 @@ export class ConnectAppService implements OnModuleInit {
         SELECT id, code, full_name, email, dues_status, membership_tier, renewal_date
         FROM public.members
         WHERE user_id = ${userId}::uuid
-           OR LOWER(email) IN (SELECT LOWER(email) FROM public.users WHERE id = ${userId}::uuid)
+           OR LOWER(email) IN (SELECT LOWER(email) FROM public.vione_users WHERE id = ${userId}::uuid)
       `.catch(() => []);
 
-      const memberIds = members.map(m => m.id);
-      const memberCodes = members.map(m => m.code).filter(Boolean);
+      const memberCodes: string[] = members.map(m => String(m.code)).filter(Boolean);
+      const memberKeys: string[] = [userId, userId.toLowerCase()];
+      for (const m of members) {
+        if (m.id) memberKeys.push(String(m.id), String(m.id).toLowerCase());
+        if (m.code) memberKeys.push(String(m.code), String(m.code).toLowerCase(), String(m.code).toUpperCase());
+        if (m.email) memberKeys.push(String(m.email).toLowerCase());
+      }
 
       // 1. Lấy thông báo cá nhân từ hiệp hội (public.member_notifications)
-      const memNotifs = memberIds.length > 0
-        ? await this.prisma.$queryRaw<any[]>`
-            SELECT id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-            FROM public.member_notifications
-            WHERE recipient_id::text = ANY(${memberIds}::text[]) OR recipient_id::text = ${userId}::text
-            ORDER BY created_at DESC
-            LIMIT 30
-          `.catch(() => [])
-        : await this.prisma.$queryRaw<any[]>`
-            SELECT id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-            FROM public.member_notifications
-            WHERE recipient_id::text = ${userId}::text
-            ORDER BY created_at DESC
-            LIMIT 30
-          `.catch(() => []);
+      const memNotifs = await this.prisma.$queryRaw<any[]>`
+        SELECT id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        FROM public.member_notifications
+        WHERE recipient_id::text = ANY(${memberKeys}::text[])
+        ORDER BY created_at DESC
+        LIMIT 40
+      `.catch(() => []);
 
       for (const mn of memNotifs) {
         if (mn.dismissed) continue;
@@ -1197,23 +1194,31 @@ export class ConnectAppService implements OnModuleInit {
 
   async listMyMemberNotifications(userId: string, personalOnly = false) {
     const users = await this.prisma.$queryRaw<any[]>`
-      SELECT id, email, phone, created_at FROM public.users WHERE id = ${userId}::uuid LIMIT 1
+      SELECT id, email, created_at FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
     const userEmail = users[0]?.email || '';
-    const userPhone = users[0]?.phone || '';
     const userCreatedAt = users[0]?.created_at ? new Date(users[0].created_at).getTime() : Date.now();
 
     const members = await this.prisma.$queryRaw<any[]>`
-      SELECT id, code FROM public.members
+      SELECT id, code, email, phone FROM public.members
       WHERE user_id = ${userId}::uuid
          OR (email IS NOT NULL AND LOWER(email) = LOWER(${userEmail}))
-         OR (phone IS NOT NULL AND phone = ${userPhone})
     `.catch(() => []);
 
-    const recipientKeys: string[] = [userId];
+    const recipientKeys: string[] = [userId, userId.toLowerCase()];
+    if (userEmail) {
+      recipientKeys.push(userEmail.toLowerCase());
+    }
     for (const m of members) {
-      if (m.id) recipientKeys.push(String(m.id));
-      if (m.code) recipientKeys.push(String(m.code));
+      if (m.id) {
+        recipientKeys.push(String(m.id), String(m.id).toLowerCase());
+      }
+      if (m.code) {
+        recipientKeys.push(String(m.code), String(m.code).toLowerCase(), String(m.code).toUpperCase());
+      }
+      if (m.email) {
+        recipientKeys.push(String(m.email).toLowerCase());
+      }
     }
 
     const broadcastPromise = personalOnly

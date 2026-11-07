@@ -1,5 +1,42 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.58): Khắc Phục Triệt Để 4 Nhóm Lỗi Lớn (Mã QR Check-in Sự Kiện, Định Dạng Chia Sẻ Bài Viết, Giao Diện & Tin Nhắn Mobile, Thông Báo & Kiểm Duyệt Bình Luận Tin Tức CRM) ([NODE-CRM-005], [NODE-CRM-010], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CORE-001], [NODE-CORE-005])**:
+  1. *Lỗi 1: Mã QR Vé Check-in Sự Kiện Không Hiển Thị Trên Email và Zalo*:
+     - **Nguyên nhân**: Email dùng CID inline attachment nhưng thiếu `contentDisposition: 'inline'`, khiến Gmail và Webmail mobile chặn hiển thị. Ngoài ra, mã QR trước đó gọi dịch vụ ngoài `api.qrserver.com` bị nghẽn mạng/timeout (>30s) tại Việt Nam.
+     - **Khắc phục**:
+       * Thêm endpoint sinh mã QR PNG native cục bộ siêu tốc (<5ms) `@Get('events/qr')` tại `apps/ceo1983_app_be/src/events/events.controller.ts` sinh buffer PNG sắc nét bằng thư viện `qrcode`.
+       * Bổ sung `contentDisposition: 'inline'` cho cả `qrAttachment` và `vietQrAttachment` trong `apps/ceo1983_app_be/src/mail/mail.service.ts`, kèm fallback link trực tiếp đến endpoint cục bộ.
+       * Cung cấp tiện ích chia sẻ `apps/ceo1983_app_fe/src/lib/qr.ts` (`getQrUrl`, `getAbsoluteQrUrl`) thay thế toàn bộ các liên kết `api.qrserver.com` trên cả CRM và Mobile App (ZaloOaConfigSection, EventGuestQrPresenterModal, EventPoster, EventDetailModal, RegisteredEventsQrSlider, EventRegistrations, v.v.).
+  2. *Lỗi 2: Chia Sẻ Bài Viết Ra Bên Ngoài Nền Tảng (Facebook/Zalo/Web) Bị Mất Format Nội Dung & Ảnh*:
+     - **Nguyên nhân**: `app.controller.ts` (`@Get('share/preview')` / `@Get('api/share/preview')`) chỉ lấy 1 ảnh đầu tiên, cắt gọt nội dung xuống 260 ký tự không xuống dòng, và áp dụng script redirect cưỡng bức khiến người nhận không đọc được bài viết đầy đủ.
+     - **Khắc phục**:
+       * Truy vấn dữ liệu đầy đủ từ `public.feed_posts` và `public.news` bao gồm: Tiêu đề, Nội dung, Danh sách ảnh đầy đủ, Tác giả, Avatar, Doanh nghiệp, Vai trò, Ngày đăng, Lượt thích, Bình luận, và Bài viết trích dẫn.
+       * Giữ nguyên 100% định dạng: Đoạn văn (`<p>`), ngắt dòng (`<br/>`), liên kết web và thẻ hashtag `#` nổi bật.
+       * Thiết kế layout ảnh thông minh tương ứng như trên App CEO 1983 (1 ảnh toàn khổ, 2 ảnh 50/50, 3 ảnh bố cục 1-2, 4+ ảnh lưới 2x2 kèm overlay `+N ảnh`).
+       * Tích hợp thanh Header thương hiệu CLB CEO 1983 (HanoiBA), thông tin tác giả có tích xanh và thanh điều hướng mở ứng dụng.
+  3. *Lỗi 3: Ứng Dụng Mobile Bị Vỡ Giao Diện & Mất Danh Sách Người Nhắn Tin So Với Bản Web Máy Tính*:
+     - **Nguyên nhân 1 (Vỡ giao diện)**: `apps/mobile_ceo1983/capacitor.config.ts` trỏ `REMOTE_URL` vào địa chỉ IP thô `https://14.225.217.232:5444/association` có chứng chỉ SSL không hợp lệ, khiến Android WebView chặn tải tài nguyên và rơi về bundle cũ trong `www/`.
+     - **Khắc phục 1**: Cập nhật `REMOTE_URL` và `WEB_PORTAL_URL` thành domain chính thức có SSL hợp lệ `https://ceo1983.viconnect.vn/association`.
+     - **Nguyên nhân 2 (Tin nhắn không hiện)**:
+       * Bảng `public.messages` trong PostgreSQL chưa được khởi tạo, khiến `messenger.service.ts` gọi `SELECT ... FROM public.messages` bị lỗi quan hệ CSDL và trả về `[]`.
+       * Hàm `isSelfUser` trong `message-utils.ts` so sánh tên hiển thị (`candidateName === myName`), khiến các tài khoản có tên trùng hoặc tên mặc định "Hội viên CEO 1983" bị loại bỏ nhầm khỏi danh sách chat.
+     - **Khắc phục 2**:
+       * Đã tạo bảng `public.messages` cùng các chỉ mục tối ưu `idx_messages_from_to` và `idx_messages_to_from` trong PostgreSQL.
+       * Sửa hàm `isSelfUser` chỉ so sánh các định danh duy nhất (`code`, `userId`, `memberId`, `email`, `username`), triệt tiêu việc loại trừ nhầm theo tên.
+       * Bổ sung cơ chế fallback tải danh bạ hội viên trực tiếp qua API NestJS `/members` trong `ConversationList.tsx` cho môi trường APK.
+  4. *Lỗi 4: Thông Báo Không Đến Đúng Tài Khoản (Cuộc Họp, Cuộc Gặp, Tin Nhắn, Bình Luận) & Quản Lý Bình Luận Tin Tức CRM*:
+     - **Nguyên nhân 1 (Mất thông báo)**: `connect-app.service.ts` truy vấn bảng không tồn tại `public.users` thay vì `public.vione_users`, dẫn đến `recipientKeys` chỉ chứa UUID của tài khoản mà thiếu toàn bộ `member.id`, `member.code` (VD: `M1983-001`, `M1983-002`), làm mất thông báo cuộc họp, cuộc gặp B2B và tin nhắn mới.
+     - **Khắc phục 1**: Sửa thành `public.vione_users` và mở rộng `recipientKeys` bao gồm đầy đủ UUID, email, ID hội viên và mã hội viên (viết thường + viết hoa).
+     - **Nguyên nhân 2 (Bình luận bài viết không thông báo)**: `feed.service.ts` trước đây chỉ gửi thông báo khi có `@mention`, bỏ sót việc thông báo cho tác giả chính chủ của bài viết.
+     - **Khắc phục 2**: Bổ sung tự động phát hiện tác giả bài viết (`postAuthorId`), giải quyết thông tin hội viên và bắn thông báo `member_notifications`, `business_notifications` cùng Socket real-time.
+     - **Nguyên nhân 3 (Kiểm duyệt bình luận tin tức CRM)**: Cổng CRM quản trị chưa có giao diện quản lý bình luận trên các bài viết tin tức.
+     - **Khắc phục 3**:
+       * Backend: Bổ sung endpoint `@Get('moderation/comments')` tại `feed.controller.ts` và hàm `listAllCommentsForModeration` tại `feed.service.ts`.
+       * Frontend: Bổ sung Tab "Kiểm duyệt Bình Luận" trong `apps/ceo1983_app_fe/src/routes/news.tsx` cho phép xem người bình luận, bài viết liên quan, nội dung chi tiết, tìm kiếm và xóa bỏ bình luận vi phạm trực tiếp.
+  5. *Kiểm Tra Chất Lượng Mã Nguồn*:
+     - `apps/ceo1983_app_be`: `tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+
 - **Bản cập nhật ngày 07/11/2026 (v10.57): Hoàn Thành Kiểm Thử Toàn Diện 10 Luồng Nghiệp Vụ Hai Chiều Web CRM & Mobile App (51 Test Cases) Kèm Xuất Bản Báo Cáo PDF Có Mục Tổng Hợp Bug Ở Cuối Tệp ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014], [NODE-CORE-001] -> [NODE-CORE-006])**:
   1. *Bổ Sung Đầy Đủ Toàn Bộ Các Luồng Còn Thiếu Theo Yêu Cầu Của Người Dùng*:
      - **Luồng Giao Việc & Báo Cáo Tiến Độ (Task Management - Flow 7)**:

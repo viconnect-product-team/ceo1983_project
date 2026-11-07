@@ -35,6 +35,7 @@ import { getMyHistory, type MyHistory } from "@/lib/member-app.functions";
 import { useT } from "@/lib/i18n";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
+import { getQrUrl } from "@/lib/qr";
 import {
   Dialog,
   DialogContent,
@@ -836,14 +837,15 @@ function HistoryScreen() {
                 <img
                   src={
                     selectedTicket.qrCodeUrl ||
-                    `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+                    getQrUrl(
                       JSON.stringify({
                         ticketCode: selectedTicket.ticketCode,
                         event: selectedTicket.name,
                         date: selectedTicket.date,
                         luckyNumber: selectedTicket.luckyNumber,
-                      })
-                    )}`
+                      }),
+                      240
+                    )
                   }
                   alt="Ticket QR"
                   className="w-40 h-40 object-contain mx-auto"

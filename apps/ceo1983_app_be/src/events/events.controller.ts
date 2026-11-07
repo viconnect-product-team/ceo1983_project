@@ -8,9 +8,12 @@ import {
   Param,
   Query,
   Request,
+  Response,
+  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import * as QRCode from 'qrcode';
 import { EventsService } from './events.service';
 import { CreateEventDto, UpdateEventDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -23,6 +26,32 @@ import { DataScope } from '../auth/data-scope.decorator';
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
+
+  @Get('qr')
+  async getQrImage(
+    @Query('data') data: string,
+    @Query('regId') regId: string,
+    @Query('size') size: string,
+    @Res() res: any,
+  ) {
+    const rawData = data || regId || 'CEO1983-EVENT-TICKET';
+    const parsedSize = Math.min(Math.max(parseInt(size || '320', 10) || 320, 100), 800);
+    try {
+      const buffer = await QRCode.toBuffer(String(rawData), {
+        width: parsedSize,
+        margin: 1,
+        color: {
+          dark: '#003B95',
+          light: '#FFFFFF',
+        },
+      });
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+      return res.end(buffer);
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to generate QR code', message: err?.message });
+    }
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('my-events')

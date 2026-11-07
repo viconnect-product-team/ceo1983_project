@@ -27,6 +27,8 @@ interface EventGuestQrPresenterModalProps {
   };
 }
 
+import { getAbsoluteQrUrl } from "@/lib/qr";
+
 export function EventGuestQrPresenterModal({
   open,
   onClose,
@@ -36,9 +38,9 @@ export function EventGuestQrPresenterModal({
 
   if (!open) return null;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://14.225.217.232:5444";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://ceo1983.viconnect.vn";
   const guestRegUrl = `${origin}/events/${event.id}/register`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(guestRegUrl)}`;
+  const qrImageUrl = getAbsoluteQrUrl(guestRegUrl, 400);
 
   const ticketPrice = Number(event.ticketPrice || event.fee || 0);
   const isFree = ticketPrice === 0;

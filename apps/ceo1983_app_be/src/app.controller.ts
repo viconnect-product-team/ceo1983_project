@@ -54,6 +54,18 @@ export class AppController {
       'Mạng lưới giao thương B2B, chia sẻ cơ hội kinh doanh và kết nối doanh nhân CEO 1983 trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA).';
     let resolvedImage = customImage || DEFAULT_IMAGE;
     let targetUrl = customTarget || `${BASE_WEB_URL}/intro`;
+    let richPostData: {
+      authorName?: string;
+      authorCompany?: string;
+      authorRole?: string;
+      authorAvatar?: string;
+      createdAt?: string;
+      contentFormattedHtml?: string;
+      images: string[];
+      likesCount?: number;
+      commentsCount?: number;
+      articleSnippet?: any;
+    } | null = null;
 
     try {
       if (targetType === 'opportunity' && targetId) {
@@ -169,7 +181,7 @@ export class AppController {
       } else if ((targetType === 'post' || targetType === 'feed') && targetId) {
         targetUrl = customTarget || `${BASE_WEB_URL}/association/messages?post=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, content, images, author_name, author_company, shared_article FROM public.feed_posts WHERE id::text = $1 LIMIT 1`,
+          `SELECT title, content, images, author_name, author_company, author_role, author_avatar, shared_article, created_at, likes_count, comments_count FROM public.feed_posts WHERE id::text = $1 LIMIT 1`,
           targetId,
         ).catch(() => [] as any[]);
 
@@ -179,20 +191,101 @@ export class AppController {
           if (item.content) {
             resolvedDesc = item.content.slice(0, 260);
           }
-          if (Array.isArray(item.images) && item.images.length > 0) {
-            resolvedImage = item.images[0];
+          
+          let parsedImages: string[] = [];
+          if (Array.isArray(item.images)) {
+            parsedImages = item.images;
+          } else if (typeof item.images === 'string') {
+            try {
+              const parsed = JSON.parse(item.images);
+              if (Array.isArray(parsed)) parsedImages = parsed;
+              else if (item.images.startsWith('http')) parsedImages = [item.images];
+            } catch {
+              if (item.images.startsWith('http')) parsedImages = [item.images];
+            }
           }
 
+          parsedImages = parsedImages.map(img => img.startsWith('http') ? img : `${BASE_WEB_URL}${img.startsWith('/') ? '' : '/'}${img}`);
+
+          if (parsedImages.length > 0) {
+            resolvedImage = parsedImages[0];
+          }
+
+          const rawContent = item.content || '';
+          const escapedContent = rawContent
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          
+          const formattedHtml = escapedContent
+            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #003B95; text-decoration: underline;">$1</a>')
+            .replace(/#([\w\u00C0-\u024F\u1E00-\u1EFF]+)/g, '<span style="color: #D97706; font-weight: 700;">#$1</span>')
+            .split('\n\n')
+            .map((p: string) => `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`)
+            .join('');
+
+          let parsedArticle: any = null;
           if (item.shared_article) {
             try {
-              const art = typeof item.shared_article === 'string' ? JSON.parse(item.shared_article) : item.shared_article;
-              if (art.title) resolvedTitle = `${art.title} — Chia sẻ trên CEO 1983`;
-              if (art.snippet || art.excerpt) resolvedDesc = (art.snippet || art.excerpt).slice(0, 260);
-              if (art.thumbnailUrl || art.thumbnail || art.image) {
-                resolvedImage = art.thumbnailUrl || art.thumbnail || art.image;
+              parsedArticle = typeof item.shared_article === 'string' ? JSON.parse(item.shared_article) : item.shared_article;
+              if (parsedArticle?.title) resolvedTitle = `${parsedArticle.title} — Chia sẻ trên CEO 1983`;
+              if (parsedArticle?.snippet || parsedArticle?.excerpt) resolvedDesc = (parsedArticle.snippet || parsedArticle.excerpt).slice(0, 260);
+              if (parsedArticle?.thumbnailUrl || parsedArticle?.thumbnail || parsedArticle?.image) {
+                resolvedImage = parsedArticle.thumbnailUrl || parsedArticle.thumbnail || parsedArticle.image;
               }
             } catch {}
           }
+
+          richPostData = {
+            authorName: item.author_name || 'Doanh nhân CEO 1983',
+            authorCompany: item.author_company || 'CLB Doanh Nhân CEO 1983',
+            authorRole: item.author_role || 'Hội viên chính thức',
+            authorAvatar: item.author_avatar ? (item.author_avatar.startsWith('http') ? item.author_avatar : `${BASE_WEB_URL}${item.author_avatar.startsWith('/') ? '' : '/'}${item.author_avatar}`) : 'https://ceo1983.viconnect.vn/logo_ceo_1983_round.png',
+            createdAt: item.created_at ? new Date(item.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '',
+            contentFormattedHtml: formattedHtml,
+            images: parsedImages,
+            likesCount: Number(item.likes_count || 0),
+            commentsCount: Number(item.comments_count || 0),
+            articleSnippet: parsedArticle,
+          };
+        }
+      } else if ((targetType === 'news' || targetType === 'article') && targetId) {
+        targetUrl = customTarget || `${BASE_WEB_URL}/association/news?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma.$queryRawUnsafe<any[]>(
+          `SELECT title, excerpt, content, cover_image, author, published_at, category FROM public.news WHERE id::text = $1 OR code = $1 LIMIT 1`,
+          targetId,
+        ).catch(() => [] as any[]);
+
+        if (rows && rows.length > 0) {
+          const item = rows[0];
+          resolvedTitle = item.title ? `[Tin Tức CEO 1983] ${item.title}` : resolvedTitle;
+          if (item.excerpt) resolvedDesc = item.excerpt.slice(0, 260);
+          else if (item.content) resolvedDesc = item.content.replace(/<[^>]*>?/gm, '').slice(0, 260);
+
+          if (item.cover_image) {
+            resolvedImage = item.cover_image;
+          }
+
+          const rawContent = item.content || item.excerpt || '';
+          const escapedContent = rawContent.startsWith('<') ? rawContent : rawContent
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .split('\n\n')
+            .map((p: string) => `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`)
+            .join('');
+
+          richPostData = {
+            authorName: item.author || 'Ban Truyền Thông CEO 1983',
+            authorCompany: 'CLB Doanh Nhân CEO 1983 (HanoiBA)',
+            authorRole: item.category || 'Tin tức nội bộ',
+            authorAvatar: 'https://ceo1983.viconnect.vn/logo_ceo_1983_round.png',
+            createdAt: item.published_at ? new Date(item.published_at).toLocaleDateString('vi-VN') : '',
+            contentFormattedHtml: escapedContent,
+            images: resolvedImage ? [resolvedImage] : [],
+            likesCount: 0,
+            commentsCount: 0,
+          };
         }
       } else if (targetType === 'training' && targetId) {
         targetUrl = customTarget || `${BASE_WEB_URL}/association/training?id=${encodeURIComponent(targetId)}`;
@@ -234,16 +327,112 @@ export class AppController {
     const canonicalShareUrl = `${BASE_WEB_URL}${req?.originalUrl || `/share/${targetType || 'preview'}/${targetId || ''}`}`.replace(/"/g, '&quot;');
     const ogCanonicalUrl = canonicalShareUrl;
 
-    // Tuyệt đối không dùng <meta http-equiv="refresh"> vì Facebook/Meta scraper sẽ follow redirect và scrape nhầm SPA index.html
-    const redirectScript = isCrawler
-      ? ''
-      : `  <script type="text/javascript">
-    if (!navigator.userAgent.match(/bot|spider|crawl|facebook|meta|zalo|telegram|twitter|linkedin/i)) {
-      setTimeout(function() {
-        window.location.replace("${safeTarget}");
-      }, 1200);
+    // Xây dựng giao diện xem bài viết trực quan giữ nguyên 100% format & layout ảnh như app CEO 1983
+    let bodyContentHtml = '';
+    if (richPostData) {
+      let imagesHtml = '';
+      const imgs = richPostData.images || [];
+      if (imgs.length === 1) {
+        imagesHtml = `<div class="image-single"><img src="${imgs[0]}" alt="Ảnh bài đăng" onerror="this.style.display='none'" /></div>`;
+      } else if (imgs.length === 2) {
+        imagesHtml = `<div class="image-grid grid-2">
+          <img src="${imgs[0]}" alt="Ảnh 1" onerror="this.style.display='none'" />
+          <img src="${imgs[1]}" alt="Ảnh 2" onerror="this.style.display='none'" />
+        </div>`;
+      } else if (imgs.length === 3) {
+        imagesHtml = `<div class="image-grid grid-3">
+          <div class="col-main"><img src="${imgs[0]}" alt="Ảnh 1" onerror="this.style.display='none'" /></div>
+          <div class="col-sub">
+            <img src="${imgs[1]}" alt="Ảnh 2" onerror="this.style.display='none'" />
+            <img src="${imgs[2]}" alt="Ảnh 3" onerror="this.style.display='none'" />
+          </div>
+        </div>`;
+      } else if (imgs.length >= 4) {
+        const remaining = imgs.length - 4;
+        imagesHtml = `<div class="image-grid grid-4">
+          <img src="${imgs[0]}" alt="Ảnh 1" onerror="this.style.display='none'" />
+          <img src="${imgs[1]}" alt="Ảnh 2" onerror="this.style.display='none'" />
+          <img src="${imgs[2]}" alt="Ảnh 3" onerror="this.style.display='none'" />
+          <div class="more-wrap">
+            <img src="${imgs[3]}" alt="Ảnh 4" onerror="this.style.display='none'" />
+            ${remaining > 0 ? `<div class="more-overlay">+${remaining}</div>` : ''}
+          </div>
+        </div>`;
+      }
+
+      let articleCardHtml = '';
+      if (richPostData.articleSnippet) {
+        const art = richPostData.articleSnippet;
+        articleCardHtml = `
+          <div class="shared-article-card">
+            ${art.thumbnailUrl || art.image ? `<img src="${art.thumbnailUrl || art.image}" class="shared-art-thumb" alt="Thumbnail" />` : ''}
+            <div class="shared-art-info">
+              <div class="shared-art-source">${art.source || 'CEO 1983 BẢN TIN'}</div>
+              <div class="shared-art-title">${art.title || ''}</div>
+              <div class="shared-art-snippet">${art.snippet || art.excerpt || ''}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      bodyContentHtml = `
+        <div class="post-card">
+          <div class="brand-bar">
+            <div class="brand-logo-wrap">
+              <img src="https://ceo1983.viconnect.vn/logo_ceo_1983_round.png" alt="CEO 1983" class="brand-logo" />
+              <div>
+                <div class="brand-name">CLB DOANH NHÂN CEO 1983</div>
+                <div class="brand-sub">Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</div>
+              </div>
+            </div>
+            <a href="${safeTarget}" class="btn-open-app">Mở App</a>
+          </div>
+
+          <div class="author-header">
+            <img src="${richPostData.authorAvatar}" alt="${richPostData.authorName}" class="author-avatar" onerror="this.src='https://ceo1983.viconnect.vn/logo_ceo_1983_round.png'" />
+            <div class="author-meta">
+              <div class="author-name-row">
+                <span class="author-name">${richPostData.authorName}</span>
+                <span class="verified-badge">✓</span>
+              </div>
+              <div class="author-sub">${richPostData.authorCompany ? `${richPostData.authorCompany} · ` : ''}${richPostData.authorRole || 'Hội viên chính thức'}</div>
+              ${richPostData.createdAt ? `<div class="post-time">🕒 ${richPostData.createdAt}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="post-body">
+            ${richPostData.contentFormattedHtml || `<p>${safeDesc}</p>`}
+          </div>
+
+          ${imagesHtml}
+
+          ${articleCardHtml}
+
+          <div class="post-stats">
+            <span>👍 ${richPostData.likesCount || 0} lượt thích</span>
+            <span>💬 ${richPostData.commentsCount || 0} bình luận</span>
+          </div>
+
+          <div class="bottom-actions">
+            <a href="${safeTarget}" class="action-btn">
+              <span>💬 Bình luận trên App</span>
+            </a>
+            <a href="${safeTarget}" class="action-btn primary">
+              <span>🚀 Mở App CEO 1983</span>
+            </a>
+          </div>
+        </div>
+      `;
+    } else {
+      bodyContentHtml = `
+        <div class="card">
+          <img src="${safeImage}" alt="${safeTitle}" class="preview-img" onerror="this.src='${DEFAULT_IMAGE}'" />
+          <h2 class="title">${safeTitle}</h2>
+          <p class="desc">${safeDesc}</p>
+          <a href="${safeTarget}" class="btn">Mở trong Ứng dụng CEO 1983</a>
+        </div>
+      `;
     }
-  </script>`;
 
     return `<!DOCTYPE html>
 <html lang="vi">
@@ -252,7 +441,6 @@ export class AppController {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${safeTitle}</title>
   <link rel="canonical" href="${ogCanonicalUrl}" />
-  ${redirectScript}
   
   <!-- OpenGraph Metadata cho Facebook, Zalo, LinkedIn, Telegram -->
   <meta property="og:site_name" content="${SITE_NAME}" />
@@ -292,20 +480,262 @@ export class AppController {
   }
   </script>
 
-  <!-- Chuyển hướng trình duyệt an toàn cho người dùng thực thông qua JS (không dùng meta-refresh) -->
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #f8fafc;
-      color: #334155;
+      background: #f1f5f9;
+      color: #1e293b;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px 12px 40px;
+    }
+    .post-card {
+      background: #ffffff;
+      max-width: 620px;
+      width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #001A4D 0%, #003B95 100%);
+      color: #ffffff;
+    }
+    .brand-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #ffffff;
+      padding: 2px;
+    }
+    .brand-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #FCD34D;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    .btn-open-app {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid #F59E0B;
+      color: #FCD34D;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .author-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px 10px;
+    }
+    .author-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #e2e8f0;
+    }
+    .author-meta { flex: 1; }
+    .author-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .author-name {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      background: #003B95;
+      color: #ffffff;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .author-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 1px;
+    }
+    .post-time {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .post-body {
+      padding: 12px 18px 14px;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #1e293b;
+      word-break: break-word;
+    }
+    .image-single {
+      width: 100%;
+      max-height: 520px;
+      overflow: hidden;
+      background: #0f172a;
+    }
+    .image-single img {
+      width: 100%;
+      height: 100%;
+      max-height: 520px;
+      object-fit: cover;
+      display: block;
+    }
+    .image-grid {
+      display: grid;
+      gap: 4px;
+      width: 100%;
+      background: #f1f5f9;
+    }
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+      height: 280px;
+    }
+    .grid-2 img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .grid-3 {
+      grid-template-columns: 1.4fr 1fr;
+      height: 320px;
+    }
+    .grid-3 .col-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .grid-3 .col-sub {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 4px;
+      height: 100%;
+    }
+    .grid-3 .col-sub img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .grid-4 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 160px 160px;
+    }
+    .grid-4 img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .more-wrap {
+      position: relative;
+      height: 100%;
+    }
+    .more-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      color: #ffffff;
+      font-size: 26px;
+      font-weight: 800;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 16px;
-      box-sizing: border-box;
+    }
+    .shared-article-card {
+      margin: 14px 18px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .shared-art-thumb {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+    .shared-art-info {
+      padding: 12px 14px;
+    }
+    .shared-art-source {
+      font-size: 11px;
+      font-weight: 700;
+      color: #003B95;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .shared-art-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 4px 0;
+    }
+    .shared-art-snippet {
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .post-stats {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-top: 1px solid #f1f5f9;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12.5px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .bottom-actions {
+      display: flex;
+      gap: 10px;
+      padding: 14px 18px;
+      background: #ffffff;
+    }
+    .action-btn {
+      flex: 1;
       text-align: center;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      background: #f8fafc;
+      transition: all 0.2s;
+    }
+    .action-btn.primary {
+      background: linear-gradient(135deg, #003B95 0%, #001A4D 100%);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 4px 14px rgba(0, 59, 149, 0.25);
     }
     .card {
       background: #ffffff;
@@ -315,6 +745,7 @@ export class AppController {
       max-width: 480px;
       width: 100%;
       border: 1px solid #e2e8f0;
+      text-align: center;
     }
     .preview-img {
       width: 100%;
@@ -349,18 +780,10 @@ export class AppController {
       transition: background 0.2s;
       box-shadow: 0 4px 12px rgba(0, 59, 149, 0.25);
     }
-    .btn:hover {
-      background: #002B70;
-    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <img src="${safeImage}" alt="${safeTitle}" class="preview-img" onerror="this.src='${DEFAULT_IMAGE}'" />
-    <h2 class="title">${safeTitle}</h2>
-    <p class="desc">${safeDesc}</p>
-    <a href="${safeTarget}" class="btn">Mở trong Ứng dụng CEO 1983</a>
-  </div>
+  ${bodyContentHtml}
 </body>
 </html>`;
   }

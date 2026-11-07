@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
+import { getQrUrl } from "@/lib/qr";
 
 export const Route = createFileRoute("/guest-event-register/$eventId")({
   ssr: false,
@@ -180,12 +181,8 @@ function StandaloneGuestEventRegistrationPage() {
       const fallbackVnpayPayload = `VNPAYQR|00020101021238540010A00000072701240006970422011019830000000208QRIBFTTA520460115303704540${totalAmount}5802VN62${encodeURIComponent(`${fallbackInvoice} ${phone.trim()}`)}6304`;
       const fallbackVnpayQrUrl = isFree
         ? ""
-        : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-          fallbackVnpayPayload
-        )}`;
-      const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-        fallbackRegId
-      )}`;
+        : getQrUrl(fallbackVnpayPayload, 300);
+      const fallbackQrCodeUrl = getQrUrl(fallbackRegId, 300);
 
       const clientResult = {
         ok: true,
@@ -385,9 +382,7 @@ function StandaloneGuestEventRegistrationPage() {
                     src={
                       result.vnpayQrUrl ||
                       result.qrCodeUrl ||
-                      `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                        `VNPAYQR|CEO1983|EV${result.registrationId}|${result.totalAmount}|${result.phone}`
-                      )}`
+                      getQrUrl(`VNPAYQR|CEO1983|EV${result.registrationId}|${result.totalAmount}|${result.phone}`, 300)
                     }
                     alt="VNPAY-QR Thanh Toán Phí Sự Kiện"
                     className="w-full h-full object-contain"
@@ -471,9 +466,7 @@ function StandaloneGuestEventRegistrationPage() {
                   <img
                     src={
                       result.qrCodeUrl ||
-                      `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                        result.registrationId
-                      )}`
+                      getQrUrl(result.registrationId, 300)
                     }
                     alt="Mã QR Check-in Sự Kiện"
                     className="w-full h-full object-contain"
