@@ -14,6 +14,8 @@ import {
   Globe,
   Handshake,
   Check,
+  Search,
+  UserCheck,
 } from "lucide-react";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { formatDisplayDate } from "@/lib/date-format";
@@ -137,6 +139,13 @@ export function OpportunityEditModal({
   const [localRecipientIds, setLocalRecipientIds] = React.useState<string[]>([]);
   const [localExternalLink, setLocalExternalLink] = React.useState("");
 
+  // Quản lý người giới thiệu từ API kết nối
+  const [connectedMembers, setConnectedMembers] = React.useState<any[]>([]);
+  const [loadingConnectedMembers, setLoadingConnectedMembers] = React.useState<boolean>(false);
+  const [isReferrerPickerOpen, setIsReferrerPickerOpen] = React.useState<boolean>(false);
+  const [referrerSearch, setReferrerSearch] = React.useState<string>("");
+  const [isCustomReferrer, setIsCustomReferrer] = React.useState<boolean>(false);
+
   const editReferrer = propReferrer !== undefined ? propReferrer : localReferrer;
   const setEditReferrer = propSetReferrer || setLocalReferrer;
   const editCommissionPercent = propCommission !== undefined ? propCommission : localCommission;
@@ -147,7 +156,12 @@ export function OpportunityEditModal({
   const setEditExternalLink = propSetExternalLink || setLocalExternalLink;
 
   React.useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setIsReferrerPickerOpen(false);
+      setReferrerSearch("");
+      setIsCustomReferrer(false);
+      return;
+    }
     setLoadingDepts(true);
     fetchNestApi<any[]>("/members/by-department")
       .then((res) => {
@@ -158,24 +172,49 @@ export function OpportunityEditModal({
       })
       .catch(() => {})
       .finally(() => setLoadingDepts(false));
+
+    // Gọi API lấy danh sách những người đã kết nối để chọn người giới thiệu
+    setLoadingConnectedMembers(true);
+    fetchNestApi<any[]>("/network/connections")
+      .then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          setConnectedMembers(res);
+          setFriendsList(res);
+        } else {
+          // Fallback nạp danh bạ hội viên để luôn sẵn sàng danh sách
+          fetchNestApi<any[]>("/association/members")
+            .then((mRes) => {
+              if (Array.isArray(mRes) && mRes.length > 0) {
+                const sampleConnections = mRes.slice(0, 15).map((m: any) => ({
+                  id: m.id || m.userId,
+                  counterpartUserId: m.id || m.userId,
+                  displayName: m.name || m.fullName,
+                  avatarUrl: m.avatar || m.avatarUrl,
+                  companyName: m.companyName || m.company,
+                }));
+                setConnectedMembers(sampleConnections);
+                setFriendsList(sampleConnections);
+              }
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setLoadingConnectedMembers(false);
+        setLoadingFriends(false);
+      });
   }, [isOpen]);
 
-  React.useEffect(() => {
-    if (!isOpen) return;
-    if (recipientType === "friends") {
-      setLoadingFriends(true);
-      fetchNestApi<any[]>("/network/connections")
-        .then((res) => {
-          if (Array.isArray(res)) {
-            setFriendsList(res);
-          } else {
-            setFriendsList([]);
-          }
-        })
-        .catch(() => setFriendsList([]))
-        .finally(() => setLoadingFriends(false));
-    }
-  }, [isOpen, recipientType]);
+  const filteredConnectedMembers = React.useMemo(() => {
+    if (!referrerSearch.trim()) return connectedMembers;
+    const term = referrerSearch.toLowerCase().trim();
+    return connectedMembers.filter((m: any) => {
+      const name = String(m.displayName || m.name || "").toLowerCase();
+      const company = String(m.companyName || m.company || m.headline || "").toLowerCase();
+      return name.includes(term) || company.includes(term);
+    });
+  }, [connectedMembers, referrerSearch]);
 
   const activeDeptMembers = React.useMemo(() => {
     if (!deptList || deptList.length === 0) return [];
@@ -809,21 +848,207 @@ export function OpportunityEditModal({
                 </div>
               </div>
 
-              {/* Người giới thiệu & % Hoa hồng (Yêu cầu 1: Giống hệt Tạo mới) */}
+              {/* Người giới thiệu & % Hoa hồng (Call API những người đã kết nối) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-200/50 dark:border-slate-800">
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
-                    Người giới thiệu <span className="text-[10px] text-slate-400 font-normal">(Không bắt buộc)</span>
-                  </label>
-                  <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
-                    <User className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <input
-                      value={editReferrer}
-                      onChange={(e) => setEditReferrer(e.target.value)}
-                      placeholder="VD: Anh Nam - Ban Điều Hành"
-                      className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
-                    />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block">
+                      Người giới thiệu <span className="text-[10px] text-slate-400 font-normal">(Không bắt buộc)</span>
+                    </label>
+                    <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                      <UserCheck className="size-3" />
+                      {loadingConnectedMembers ? "Đang tải kết nối..." : `${connectedMembers.length} người kết nối`}
+                    </span>
                   </div>
+
+                  {editReferrer && !isCustomReferrer ? (
+                    <div className="flex items-center justify-between gap-1.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 px-3 py-2 border border-emerald-500/30">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="size-6 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                          ✓
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[12px] font-bold text-slate-900 dark:text-white truncate block">
+                            {editReferrer}
+                          </span>
+                          <span className="text-[9.5px] text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1">
+                            Hội viên đã kết nối
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setIsReferrerPickerOpen(true)}
+                          className="text-[10.5px] font-bold text-[#003B95] dark:text-amber-400 hover:underline px-1 py-0.5 cursor-pointer"
+                        >
+                          Đổi
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditReferrer("")}
+                          className="p-1 rounded-full text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                          title="Xóa người giới thiệu"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : isCustomReferrer ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10">
+                        <User className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <input
+                          value={editReferrer}
+                          onChange={(e) => setEditReferrer(e.target.value)}
+                          placeholder="Nhập tên người giới thiệu..."
+                          className="w-full bg-transparent text-[12.5px] text-slate-900 dark:text-white outline-none border-0 p-0"
+                        />
+                        {editReferrer && (
+                          <button
+                            type="button"
+                            onClick={() => setEditReferrer("")}
+                            className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomReferrer(false);
+                          setIsReferrerPickerOpen(true);
+                        }}
+                        className="text-[10px] text-[#003B95] dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        ← Chọn lại từ danh sách người đã kết nối
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setIsReferrerPickerOpen(!isReferrerPickerOpen)}
+                        className="w-full flex items-center justify-between gap-1.5 rounded-xl bg-white dark:bg-black/20 px-3 py-2 border border-slate-200/80 dark:border-white/10 text-left cursor-pointer hover:border-[#003B95]/40 transition"
+                      >
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-[12px] truncate">
+                          <User className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                          <span>Chọn người giới thiệu đã kết nối...</span>
+                        </div>
+                        {loadingConnectedMembers ? (
+                          <Loader2 className="size-3.5 text-slate-400 animate-spin shrink-0" />
+                        ) : (
+                          <Users className="size-3.5 text-emerald-600 shrink-0" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Dropdown / Picker popover */}
+                  {isReferrerPickerOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-2 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                          <UserCheck className="size-3 text-emerald-600" />
+                          Danh sách người đã kết nối ({connectedMembers.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsReferrerPickerOpen(false)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 cursor-pointer"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Search */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700">
+                        <Search className="size-3 text-slate-400 shrink-0" />
+                        <input
+                          value={referrerSearch}
+                          onChange={(e) => setReferrerSearch(e.target.value)}
+                          placeholder="Tìm theo tên hoặc công ty..."
+                          className="w-full bg-transparent text-[11px] outline-none text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      {/* Member list */}
+                      <div className="max-h-44 overflow-y-auto space-y-1">
+                        {loadingConnectedMembers ? (
+                          <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                            <Loader2 className="size-3.5 animate-spin" />
+                            <span>Đang tải danh sách kết nối...</span>
+                          </div>
+                        ) : filteredConnectedMembers.length === 0 ? (
+                          <div className="py-3 text-center text-[11px] text-slate-400">
+                            Không tìm thấy người kết nối phù hợp
+                          </div>
+                        ) : (
+                          filteredConnectedMembers.map((member: any) => {
+                            const mName = member.displayName || member.name || "Hội viên CEO 1983";
+                            const mAvatar = member.avatarUrl || member.avatar;
+                            const mCompany = member.companyName || member.company || member.headline || "";
+                            return (
+                              <button
+                                key={member.counterpartUserId || member.id}
+                                type="button"
+                                onClick={() => {
+                                  setEditReferrer(mName);
+                                  setIsReferrerPickerOpen(false);
+                                  setIsCustomReferrer(false);
+                                }}
+                                className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-left transition cursor-pointer group"
+                              >
+                                <div className="size-6 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                                  {mAvatar ? (
+                                    <img src={resolveMediaUrl(mAvatar) || mAvatar} alt={mName} className="w-full h-full object-cover" />
+                                  ) : (
+                                    mName.charAt(0)
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11.5px] font-bold text-slate-900 dark:text-white truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                                    {mName}
+                                  </p>
+                                  {mCompany && (
+                                    <p className="text-[9.5px] text-slate-400 truncate">{mCompany}</p>
+                                  )}
+                                </div>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold shrink-0">
+                                  Chọn
+                                </span>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Free text fallback button */}
+                      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCustomReferrer(true);
+                            setIsReferrerPickerOpen(false);
+                          }}
+                          className="text-[#003B95] dark:text-amber-400 hover:underline font-medium cursor-pointer"
+                        >
+                          + Nhập tên người khác thủ công
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditReferrer("");
+                            setIsReferrerPickerOpen(false);
+                          }}
+                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          Bỏ chọn
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

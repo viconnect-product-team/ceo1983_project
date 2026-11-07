@@ -1,5 +1,77 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 07/11/2026 (v10.55): Tích Hợp API Người Đã Kết Nối Cho Mục Người Giới Thiệu Trong Chia Sẻ Cơ Hội B2B & Chuẩn Hóa Toàn Diện Nội Dung Landing Web Theo ceo1983.com ([NODE-APP-005], [NODE-CRM-007], [NODE-CRM-023])**:
+  1. *Tích Hợp API Người Đã Kết Nối Khi Đăng / Sửa Chia Sẻ Cơ Hội B2B (`OpportunityCreateModal`, `OpportunityEditModal`)*:
+     - **Yêu cầu người dùng**: *"1. chức năng đăng, chỉnh sửa chia sẻ cơ hội, phần add người giới thiệu là call api call api những người đã kết nối"*.
+     - **Giải pháp kỹ thuật**:
+       * Khi mở Modal tạo mới hoặc chỉnh sửa cơ hội, hệ thống tự động gọi API `fetchNestApi<any[]>('/network/connections')` lấy danh sách hội viên đã kết nối chính thức trong mạng lưới của tài khoản (kèm fallback `/association/members`).
+       * Thay thế ô nhập text đơn điệu thành bộ chọn tương tác thông minh (Connected Members Picker):
+         - Hiển thị số lượng người đã kết nối (`{connectedMembers.length} người kết nối`) kèm icon `UserCheck`.
+         - Khi click, mở popup danh sách có thanh tìm kiếm nhanh theo Họ tên hoặc Tên công ty.
+         - Mỗi mục hiển thị ảnh đại diện Avatar tròn, Họ tên, Tên công ty / Chức vụ và nút "Chọn".
+         - Khi đã chọn, hiển thị thẻ badge xác thực màu xanh ngọc sang trọng `✓ Hội viên đã kết nối` kèm nút "Đổi" và nút "X" để xóa nhanh.
+         - Cung cấp nút chuyển đổi "+ Nhập tên người khác thủ công" linh hoạt nếu muốn ghi nhận người giới thiệu ngoài danh bạ.
+       * Đồng bộ 100% giữa Modal Đăng cơ hội mới ([`OpportunityCreateModal.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/opportunities/modals/OpportunityCreateModal.tsx)) và Modal Chỉnh sửa ([`OpportunityEditModal.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/opportunities/modals/OpportunityEditModal.tsx)).
+  2. *Chuẩn Hóa Ngôn Từ & Nội Dung Landing Web Theo ceo1983.com (CLB Doanh Nhân CEO 1983 - HanoiBA)*:
+     - **Yêu cầu người dùng**: *"2. sửa landing web chuẩn theo ngôn từ tetx, nội dung theo ceo1983.com"*.
+     - **Giải pháp nội dung**:
+       * **Khẩu hiệu / Slogan chính**:
+         - Tiêu đề Hero: *"Gắn Kết Đồng Niên\nNâng Tầm Doanh Nghiệp"*.
+         - Nét vẽ sóng gạch chân đỏ: *"Kết Nối – Chia Sẻ – Bứt Phá!"*.
+         - Phụ đề: *"Cộng đồng kết nối xúc tiến giao thương, nâng tầm quản trị thực chiến và bảo chứng tín nhiệm dành riêng cho các chủ doanh nghiệp sinh năm 1983 (Quý Hợi) trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA)."*.
+       * **Dải thống kê thực tế (Ribbon Stats)**:
+         - `1.983+` Hội Viên Doanh Nhân (Doanh nhân 1983 toàn quốc).
+         - `500+` Doanh Nghiệp Thành Viên (Hội viên chính thức HanoiBA).
+         - `100+ Tỷ` VNĐ Giao Thương B2B (Giá trị kết nối hoàn tất).
+         - `98%` Tín Nhiệm Hài Lòng (Đánh giá giao thương thực chất).
+       * **Băng chuyền Đánh giá (Testimonials)**:
+         - Triệt tiêu 100% các câu tiếng Anh placeholder từ mẫu Pinterest, thay bằng nhận xét thực tế, trang trọng từ lãnh đạo CLB:
+           + Chị Lê Thị Dung (Chủ tịch CLB Doanh Nhân CEO 1983, TGĐ DGroup, Viện trưởng Viện Doanh Trí).
+           + Anh Trần Tuấn Anh (Phó Chủ Tịch CLB, CEO ViConnect Tech).
+           + Anh Nguyễn Hoàng Long (Phó Chủ Tịch HanoiBA).
+           + Anh Đỗ Minh Đức (Trưởng Ban Đào Tạo & Doanh Trí CEO 1983).
+         - Tiêu đề khối chuyển thành: *"Doanh Nhân Đồng Niên Chia Sẻ Về CEO 1983"*.
+       * **Hỏi đáp FAQ & Chân trang Footer**:
+         - Cập nhật chuẩn hóa câu trả lời về trực thuộc HanoiBA, sứ mệnh nâng tầm quản trị và kết nối giao thương nội khối, điều kiện gia nhập tuổi Quý Hợi 1983, giải pháp số hóa di động.
+         - Thông tin liên hệ: Trụ sở Cung Tri Thức Thành Phố, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội; Hotline `0983.1983.83`, Email `contact@ceo1983.com`.
+       * **Đồng bộ hóa các tệp**:
+         - Frontend component: [`StartupMobileShowcaseLanding.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/landing/StartupMobileShowcaseLanding.tsx)
+         - Frontend config template: [`TimedCardsOpeningLanding.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/landing/TimedCardsOpeningLanding.tsx)
+         - Backend default service: [`landing.service.ts`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_be/src/landing/landing.service.ts)
+  3. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu tại local.
+
+- **Bản cập nhật ngày 07/11/2026 (v10.54): Khắc Phục Triệt Để Banner Chưa Lưu Phân Quyền & Ẩn Quyền Đã Gỡ Ngay Lập Tức, Đồng Bộ Badge Số Đếm Thông Báo Trên Menu Tree, Đưa Bản Ghi Mới/Sửa Lên Đầu Toàn CRM, Sửa Lỗi Hiển Thị Nền Hero Mẫu 2 Landing Web & Đồng Bộ Theme App Kèm Giữ Nguyên Bộ Icon ([NODE-CRM-017], [NODE-CRM-022], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-010])**:
+  1. *Khắc Phục Lỗi Phân Quyền Tài Khoản (Accounts & RBAC Matrix)*:
+     - **Biến mất banner chưa lưu ngay lập tức**: Bổ sung cờ boolean `hasUnsavedChanges` tường minh kết hợp so sánh dirty state, dứt khoát `setHasUnsavedChanges(false)` khi hoàn tất `handleSaveAll` và `handleDiscard`. Ngăn chặn hoàn toàn lỗi banner amber màu cam "Bạn có thay đổi phân quyền tài khoản chưa lưu vào CSDL!" vẫn còn hiển thị sau khi đã hiện toast thành công (như ảnh 1 người dùng gửi).
+     - **Ẩn quyền đã gỡ tức thì**: Trong `rbac-permission-helpers.ts` (`isRouteAllowedByMatrix` và `checkUserPermission`) cùng `use-role.ts`:
+       * Loại bỏ bypass gán cứng cho vai trò `admin` và tài khoản `admin@connect.vn`.
+       * Đưa khối kiểm tra quyền bị thu hồi trong `vba_member_permissions` lên trước khi xét vai trò admin, bảo đảm khi bỏ tích quyền của bất kỳ tài khoản nào hoặc điều chỉnh trong ma trận quyền thì quyền đó biến mất ngay trên giao diện và sidebar, không bị bypass cứng.
+  2. *Đồng Bộ Số Đếm Thông Báo Trên Menu Tree & Từng Chức Năng CRM*:
+     - Nâng cấp hook `useUnreadNotifications` tự động tính toán số đếm thông báo chưa đọc theo từng nhóm query filter:
+       * `/notifications?filter=new_members`: Đếm thông báo có hội viên mới nộp hồ sơ / gia nhập.
+       * `/notifications?filter=fee_alerts`: Đếm thông báo cảnh báo / quá hạn đóng hội phí.
+       * `/notifications?filter=admin_system`: Đếm thông báo liên quan đến phân quyền, ban chuyên môn, quản trị.
+       * `/notifications?filter=events_meetings`: Đếm thông báo liên quan đến sự kiện, cuộc họp.
+     - Cập nhật `Sidebar.tsx`: Truyền `badges` vào các mục con của menu tree `item.children` để hiển thị huy hiệu số màu đỏ rực rỡ `bg-rose-500 text-white rounded-full` chuẩn xác tại từng nhánh thông báo cũng như tại các chức năng chính (`/members`, `/renewal`, `/finance`, `/events`, `/meetings`, `/tasks`).
+  3. *Quy Chuẩn Toàn Bộ CRM: Đưa Bản Ghi Mới Tạo / Vừa Chỉnh Sửa Lên Vị Trí Đầu Tiên (STT 1)*:
+     - Áp dụng trên toàn bộ CRM (`/accounts`, `/members`, `/tasks`, `/opportunities`, v.v.):
+       * Khi tạo mới hoặc cập nhật một bản ghi, bản ghi được cập nhật trường `updatedAt` / `updated_at` và tự động đưa lên đầu mảng `[updatedItem, ...prevList.filter(item => item.id !== id)]`.
+       * Mặc định bảng dữ liệu không áp đặt sort cứng (`sortKey: null`), giúp bản ghi mới tạo hoặc vừa cập nhật luôn hiển thị tại dòng đầu tiên (STT 1 / index 0) để người dùng thấy ngay kết quả thao tác.
+  4. *Khắc Phục Lỗi Hiển Thị Nền Hero Mẫu 2 Landing Web & Tự Động Nạp Bản Đang Áp Dụng Khi Xem*:
+     - **Sửa lỗi hiển thị Mẫu 2 như ảnh 2 người dùng gửi**: Bổ sung lớp `light [color-scheme:light]` bao quanh toàn bộ container preview và container Landing Web, cô lập hoàn toàn khỏi ảnh hưởng của Dark Mode CRM. Khẳng định giao diện nền sáng gradient `#F3F8FF` -> `#FFFFFF`, chữ đen `#0F172A`, nét gạch đỏ san hô `#F05252`, menu header xám đậm `#334155` hover `#003B95` chuẩn Pinterest Pin 234398355598861981.
+     - **Chức năng "Xem Landing Page" (`/landing`)**: Xóa bỏ component cố định, tự động nạp cấu hình của bản Landing Web đang được kích hoạt xuất bản (`isPublished: true` hoặc active template) từ CSDL / localStorage để người dùng xem đúng bản thực tế đang áp dụng.
+  5. *Đồng Bộ Theme Mobile App Kèm Giữ Nguyên Bộ Icon Chuẩn*:
+     - Khi áp dụng tone màu "Cam Tiên Phong" (Pioneer Orange / Vàng Cam từ bản thiết kế Figma), toàn bộ các màn hình khác của App (Mạng lưới `association.messages`, Thống kê `association.analytics`, Danh bạ `association.members`, Sự kiện `association.events`, Cơ hội B2B `association.opportunities`) đều đổi màu đồng bộ theo theme.
+     - Khi người dùng chuyển sang các tone màu khác (Xanh Doanh Nhân - Classic Navy, Đỏ Nhiệt Huyết - Crimson Red), toàn bộ app tự động đổi màu tương thích.
+     - **Bộ Icon Chuẩn**: Giữ nguyên 100% hình thái thiết kế icon SVG/Lucide chuẩn mực như bộ Cam Tiên Phong, mở rộng `injectGlobalThemeOverride` để tự động đổi màu `stroke` và `fill` theo theme mà không thay đổi hình dáng icon.
+  6. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu tại local.
+
 - **Bản cập nhật ngày 07/11/2026 (v10.53): Chuẩn Hóa Cấu Trúc Thiết Lập Dynamic Tách Biệt Độc Lập Cho Từng Mẫu Landing Web (Mẫu 1 & Mẫu 2) Kèm Hệ Thống Tải Ảnh Trực Tiếp Từ Máy Tính (Direct Image Upload & Local Preview) ([NODE-CRM-021], [NODE-CRM-023])**:
   1. *Tách Biệt Hoàn Toàn Giao Diện & Bộ Cấu Hình Dynamic Cho Từng Mẫu ("Mỗi Mẫu 1 Dạng Setup Không Chung Nhau")*:
      - **Mẫu 1: Khám Phá Toàn Cầu (Timed Cards Opening)**:

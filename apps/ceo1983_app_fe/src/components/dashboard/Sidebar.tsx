@@ -228,6 +228,7 @@ function NavItem({
   collapsed,
   onNavigate,
   badge,
+  badges,
   getLabel,
 }: {
   item: Item;
@@ -236,6 +237,7 @@ function NavItem({
   collapsed: boolean;
   onNavigate?: () => void;
   badge?: number;
+  badges?: Record<string, number>;
   getLabel?: (it: { to?: string; key?: string; label?: string }, fallback?: string) => string;
 }) {
   const t = useT();
@@ -340,21 +342,30 @@ function NavItem({
         <div className="ml-5 pl-2.5 my-1 border-l-2 border-sidebar-border/60 space-y-0.5 animate-in fade-in-50 duration-150">
           {item.children!.map((child) => {
             const childActive = isActive(pathname, child.to, searchStr);
+            const childBadge = child.to ? badges?.[child.to] : undefined;
+            const hasChildBadge = !!childBadge && childBadge > 0;
             return (
               <Link
                 key={child.to}
                 to={child.to}
                 onClick={onNavigate}
-                className={`group flex items-center gap-2 rounded-lg py-1.5 px-2.5 text-[12px] font-medium transition-[background-color,color] ${childActive
+                className={`group flex items-center justify-between gap-2 rounded-lg py-1.5 px-2.5 text-[12px] font-medium transition-[background-color,color] ${childActive
                     ? "bg-sidebar-accent text-sidebar-primary font-bold shadow-2xs"
                     : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   }`}
               >
-                <span
-                  className={`size-1.5 rounded-full transition-transform ${childActive ? "bg-sidebar-primary scale-125" : "bg-sidebar-foreground/35 group-hover:bg-sidebar-foreground/60"
-                    }`}
-                />
-                <span className="truncate">{child.label}</span>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span
+                    className={`size-1.5 rounded-full shrink-0 transition-transform ${childActive ? "bg-sidebar-primary scale-125" : "bg-sidebar-foreground/35 group-hover:bg-sidebar-foreground/60"
+                      }`}
+                  />
+                  <span className="truncate">{child.label}</span>
+                </div>
+                {hasChildBadge && (
+                  <span className="vba-badge-pop shrink-0 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-extrabold text-white shadow-xs">
+                    {childBadge > 99 ? "99+" : childBadge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -405,6 +416,7 @@ function Group({
             collapsed={collapsed}
             onNavigate={onNavigate}
             badge={it.to ? badges?.[it.to] : undefined}
+            badges={badges}
             getLabel={getLabel}
           />
         ))}
@@ -756,6 +768,7 @@ export function Sidebar({
           searchStr={searchStr}
           collapsed={isCollapsed}
           onNavigate={onNavigate}
+          badges={badges}
         />
         {canViewMembers && (
           <Group
@@ -765,6 +778,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {canViewEvents && (
@@ -775,6 +789,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {canViewSponsors && (
@@ -785,6 +800,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {canViewFinance && (
@@ -795,6 +811,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {canViewComm && (
@@ -816,6 +833,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {canViewSystem && (
@@ -826,6 +844,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {filteredAdmin.length > 0 && (
@@ -836,6 +855,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
         {filteredPermissions.length > 0 && (
@@ -846,6 +866,7 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
+            badges={badges}
           />
         )}
       </div>

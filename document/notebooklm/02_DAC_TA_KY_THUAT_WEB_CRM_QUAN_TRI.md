@@ -302,10 +302,36 @@
     + Cho phép người dùng tải tệp ảnh trực tiếp từ máy tính lên hệ thống thông qua API NestJS `/api/upload/file?folder=landing` (`uploadFileToNest`).
     + Hiển thị khung xem trước ảnh tức thì (Live Preview Thumbnail), chỉ báo tải lên (loading spinner), hỗ trợ fallback base64 an toàn, nút xóa nhanh hoặc chuyển đổi nhập URL ngoài.
     + Áp dụng đồng bộ cho: Logo thương hiệu, Ảnh thẻ slide (Mẫu 1), Banner màn con (Mẫu 1), Ảnh bàn tay cầm điện thoại 3D (Mẫu 2), 8 Avatar doanh nhân 3D (Mẫu 2), và Ảnh đại diện CEO Testimonials (Mẫu 2).
+  - **Chuẩn Hóa Ngôn Từ & Nội Dung Toàn Bộ Landing Web Theo ceo1983.com (CLB Doanh Nhân CEO 1983 - HanoiBA)**:
+    + Cập nhật khẩu hiệu chính thức: *"Gắn Kết Đồng Niên - Nâng Tầm Doanh Nghiệp"*, phương châm *"Kết Nối – Chia Sẻ – Bứt Phá!"*.
+    + Khẳng định số liệu dải Ribbon Stats thực tế: 1.983+ Hội viên doanh nhân toàn quốc, 500+ Doanh nghiệp thành viên HanoiBA, 100+ Tỷ VNĐ giao thương B2B, 98% Tín nhiệm hài lòng.
+    + Thay thế toàn bộ nội dung tiếng Anh placeholder trong Testimonials bằng nhận xét thực chiến từ lãnh đạo CLB: Chị Lê Thị Dung (Chủ tịch CLB), Anh Trần Tuấn Anh (Phó Chủ Tịch CLB), Anh Nguyễn Hoàng Long (Phó Chủ Tịch HanoiBA), Anh Đỗ Minh Đức (Trưởng Ban Đào Tạo & Doanh Trí).
+    + Hệ thống câu hỏi FAQ và chân trang Footer chuẩn mực hiệp hội trực thuộc HanoiBA tại Cung Tri Thức Thành Phố, Cầu Giấy, Hà Nội.
   - **Chuẩn Hóa Domain Thành Đường Dẫn Path-Based Thay Vì Subdomain**:
     + Mẫu 1: `crm.ceo1983.viconnect.vn/landing/web-v1`
     + Mẫu 2: `crm.ceo1983.viconnect.vn/landing/web-v2`
     + Hỗ trợ alias linh hoạt (`web-v1`, `web-v2`, `web1`, `web2`, `v1`, `v2`, v.v.), hoạt động đồng nhất dưới tên miền chính của CRM.
+  - **Liên Kết Xem Landing Page Đang Áp Dụng (`/landing`)**:
+    + Nút "Xem Landing Page" trên Sidebar tự động nạp cấu hình của bản Landing Web đang được kích hoạt xuất bản (`isPublished: true` hoặc active template) từ CSDL / localStorage thay vì hiển thị component cố định.
+    + Đảm bảo chế độ Light Theme (`light [color-scheme:light]`) cô lập trên container Landing Web để giao diện Hero và Header luôn giữ nguyên chuẩn sắc nét theo thiết kế Pinterest kể cả khi CRM đang bật Dark Mode.
+
+### `[NODE-CRM-024]` Quy Chuẩn Toàn Hệ Thống: Đẩy Bản Ghi Mới Tạo / Chỉnh Sửa Lên Đầu Danh Sách & Số Đếm Thông Báo Từng Chức Năng
+- **Phân hệ**: Toàn bộ CRM (`/accounts`, `/members`, `/tasks`, `/opportunities`, `/finance`, `/documents`, v.v.).
+- **Luồng xử lý**:
+  - **Quy tắc Sắp Xếp Bản Ghi (Record Ordering Standard)**:
+    + Khi tạo mới một bản ghi hoặc vừa chỉnh sửa thành công một bản ghi bất kỳ, bản ghi đó BẮT BUỘC được đưa lên vị trí đầu tiên của bảng danh sách (STT 1 / index 0) để người dùng thấy ngay kết quả thao tác mà không cần cuộn trang.
+    + Cơ chế: Cập nhật trường `updatedAt` / `updated_at` và sắp xếp danh sách ưu tiên `updatedAt` giảm dần khi ở chế độ hiển thị mặc định (`sortKey === null` hoặc `sort = newest`).
+  - **Hệ Thống Badge Số Đếm Thông Báo Trên Menu Tree & Từng Chức Năng**:
+    + Hook `useUnreadNotifications` phân tích toàn bộ thông báo chưa đọc theo từng nhóm chuyên môn (`new_members`, `fee_alerts`, `admin_system`, `events_meetings`).
+    + Sidebar tự động hiển thị huy hiệu số đếm (`bg-rose-500 text-white rounded-full`) tại các mục menu tree tương ứng:
+      - Khi có hội viên mới nộp hồ sơ: Hiện badge tại `/notifications?filter=new_members` và `/members`.
+      - Khi có cảnh báo hội phí: Hiện badge tại `/notifications?filter=fee_alerts` và `/renewal` / `/finance`.
+      - Khi có sự kiện / cuộc họp: Hiện badge tại `/notifications?filter=events_meetings` và `/events` / `/meetings`.
+      - Khi có công việc mới: Hiện badge tại `/tasks`.
+  - **Quy Chuẩn Phân Quyền & Lưu Quyền Tức Thì**:
+    + Khi người dùng bấm nút "Lưu Thay Đổi" phân quyền, cờ `hasUnsavedChanges` lập tức được reset về `false` và banner cảnh báo màu cam biến mất ngay.
+    + Khi gỡ quyền hoặc thay đổi quyền của một tài khoản trong ma trận quyền, giao diện lập tức phản ánh trạng thái mới, không bypass cứng cho tài khoản admin và quyền bị thu hồi có hiệu lực tức thì.
+
 
 
 

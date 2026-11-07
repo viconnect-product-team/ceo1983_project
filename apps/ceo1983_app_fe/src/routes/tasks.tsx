@@ -247,7 +247,7 @@ function TasksPage() {
     try {
       if (editingTask) {
         const updated = await updateTask(editingTask.id, data);
-        setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+        setTasks((prev) => [updated, ...prev.filter((t) => t.id !== updated.id)]);
         if (selectedTask?.id === updated.id) setSelectedTask(updated);
         toast.success('Cập nhật công việc thành công');
       } else {
@@ -263,7 +263,7 @@ function TasksPage() {
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
       const updated = await updateTaskStatus(taskId, newStatus);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setTasks((prev) => [updated, ...prev.filter((t) => t.id !== taskId)]);
       if (selectedTask?.id === taskId) setSelectedTask(updated);
       toast.success(`Đã cập nhật trạng thái: ${TASK_STATUS_CONFIG[newStatus]?.label}`);
     } catch {
@@ -274,7 +274,7 @@ function TasksPage() {
   const handleProgressChange = async (taskId: string, progress: number) => {
     try {
       const updated = await updateTaskProgress(taskId, progress);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setTasks((prev) => [updated, ...prev.filter((t) => t.id !== taskId)]);
       if (selectedTask?.id === taskId) setSelectedTask(updated);
     } catch {
       toast.error('Không thể cập nhật tiến độ');
@@ -284,7 +284,7 @@ function TasksPage() {
   const handleToggleSubtask = async (taskId: string, subtaskId: string) => {
     try {
       const updated = await toggleSubtask(taskId, subtaskId);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setTasks((prev) => [updated, ...prev.filter((t) => t.id !== taskId)]);
       if (selectedTask?.id === taskId) setSelectedTask(updated);
     } catch {
       toast.error('Không thể cập nhật mục con');
@@ -294,7 +294,7 @@ function TasksPage() {
   const handleAddComment = async (taskId: string, content: string) => {
     try {
       const updated = await addCommentToTask(taskId, content);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      setTasks((prev) => [updated, ...prev.filter((t) => t.id !== taskId)]);
       if (selectedTask?.id === taskId) setSelectedTask(updated);
       toast.success('Đã gửi phản hồi');
     } catch {
@@ -735,7 +735,7 @@ function TasksPage() {
           onAddComment={handleAddComment}
           onTaskUpdated={(updated) => {
             setSelectedTask(updated);
-            setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+            setTasks((prev) => [updated, ...prev.filter((t) => t.id !== updated.id)]);
             loadData();
           }}
         />

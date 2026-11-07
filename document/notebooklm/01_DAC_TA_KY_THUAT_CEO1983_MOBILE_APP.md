@@ -14,7 +14,14 @@
   4. Mạng lưới (`/association/messages`) - Biểu tượng mạng lưới cộng đồng `FooterSocialNetworkIcon`
   5. Cá nhân (`/association/profile`)
 - **Hệ thống màu thương hiệu & Quy chuẩn nút bấm (Strict UI Rules)**:
-  - **Màu sắc thương hiệu**: Deep Cobalt Navy (`#1F3864`), Vàng Hoàng Gia Amber Gold (`#B8860B`), Xanh Ngọc Emerald (`#059669`).
+  - **Màu sắc thương hiệu & Bộ Theme Đa Dạng**: 
+    + *Cam Tiên Phong (Pioneer Orange)*: Tone màu vàng cam hiện đại từ bản thiết kế Figma (`#EA580C`, `#F97316`).
+    + *Xanh Doanh Nhân (Classic Navy)*: Tone màu xanh Navy truyền thống của Hiệp hội (`#1F3864`, `#003B95`).
+    + *Đỏ Nhiệt Huyết (Crimson Red)*: Tone màu đỏ nhiệt huyết doanh nhân (`#DC2626`).
+    + *Vàng Hoàng Gia Amber Gold* (`#B8860B`), *Xanh Ngọc Emerald* (`#059669`).
+  - **Quy Chuẩn Đồng Bộ Theme Toàn Bộ Màn Hình (Theme System Sync)**:
+    + Khi người dùng lựa chọn chuyển đổi theme màu, hệ thống tự động đổi màu đồng bộ trên toàn bộ các màn hình của App (Trang chủ, Mạng lưới Feed, Thống kê biểu đồ, Danh bạ, Sự kiện, B2B Opportunities, Tin nhắn).
+    + **Bộ Icon Chuẩn**: Toàn bộ icon SVG / Lucide giữ nguyên 100% hình thái thiết kế chuẩn mực như bộ Cam Tiên Phong, chỉ tự động đổi màu sắc `stroke` và `fill` tương thích với theme màu được lựa chọn.
   - **QUY CHUẨN NÚT BẤM (STRICT NO RED BUTTONS)**: Tuyệt đối không dùng nút bấm màu đỏ trên toàn bộ hệ thống. Nút chính dùng Navy hoặc Emerald, nút điểm nhấn/kêu gọi hành động dùng Amber Gold, nút đóng/hủy dùng Slate.
 
 ---
@@ -75,6 +82,10 @@
 - **Bảng CSDL**: `opportunities`, `opportunity_deals`, `members`.
 - **Luồng xử lý**:
   - **Loại Bỏ Bộ Lọc Cũ "Bên Mua - Bên Bán"**: Xóa bỏ hoàn toàn khái niệm phân chia mua/bán gây chia tách luồng giao thương.
+  - **Tích Hợp API Người Đã Kết Nối Khi Đăng & Sửa Cơ Hội (Referrer Connection API)**:
+    + Tại Modal Đăng mới (`OpportunityCreateModal`) và Chỉnh sửa (`OpportunityEditModal`), mục "Người giới thiệu" tự động gọi API `GET /network/connections` để nạp danh sách các hội viên đã kết nối chính thức trong mạng lưới của tài khoản.
+    + Cung cấp bộ chọn tương tác trực quan (Connected Members Picker): tìm kiếm nhanh theo tên/công ty, hiển thị avatar, tên, đơn vị công tác và huy hiệu `✓ Hội viên đã kết nối`.
+    + Cho phép chọn nhanh chỉ với 1 chạm hoặc chuyển đổi sang chế độ nhập thủ công linh hoạt.
   - **4 Trạng Thái Cơ Hội Của Tôi Chuẩn Hóa**: Thay thế bằng hệ thống danh mục trực diện:
     1. *Cơ hội của tôi*: Toàn bộ cơ hội do chính tôi khởi tạo.
     2. *Cơ hội tôi đã chốt được*: Các thương vụ đã ký kết hợp đồng, ghi nhận doanh số thành công.

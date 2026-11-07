@@ -243,20 +243,24 @@ export function useRole(): RoleState {
 
     // 7. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
     if (
-      primaryRole === "admin" ||
-      primaryRole === "quan_tri" ||
-      primaryRole === "platform_admin" ||
-      primaryRole === "superadmin" ||
       execRole === "admin" ||
       execRole === "quan_tri" ||
       execRole === "platform_admin" ||
       execRole === "superadmin" ||
       execRole.includes("quản trị") ||
+      primaryRole === "admin" ||
+      primaryRole === "quan_tri" ||
+      primaryRole === "platform_admin" ||
+      primaryRole === "superadmin" ||
       rList.includes("admin") ||
       rList.includes("platform_admin") ||
       rList.includes("quan_tri") ||
       rList.includes("superadmin")
     ) {
+      // Nếu tài khoản được phân vai trò rõ ràng là hội viên thường thì ưu tiên HVT
+      if (execRole === "member" || execRole === "hoi_vien") {
+        return "HVT";
+      }
       return "admin";
     }
 
@@ -267,9 +271,11 @@ export function useRole(): RoleState {
 
     // 9. Fallback mặc định cho tài khoản admin root/seed khi chưa cấu hình vai trò cụ thể
     if (
-      userEmail === "admin@connect.vn" ||
+      (userEmail === "admin@connect.vn" ||
       userEmail === "admin1@connect.vn" ||
-      userEmail.startsWith("admin")
+      userEmail.startsWith("admin")) &&
+      execRole !== "member" &&
+      execRole !== "hoi_vien"
     ) {
       return "admin";
     }
@@ -322,6 +328,23 @@ export function useRole(): RoleState {
               // Chỉ sử dụng cached member nếu userId khớp với tài khoản hiện tại
               if (!me?.id || !parsedMem?.userId || parsedMem.userId === me.id) {
                 member = parsedMem;
+              }
+            }
+
+            // Đồng bộ trực tiếp vai trò từ danh sách tài khoản đã quản lý (vba_managed_accounts_v2)
+            const rawAccounts = localStorage.getItem("vba_managed_accounts_v2");
+            if (rawAccounts) {
+              const accList = JSON.parse(rawAccounts);
+              if (Array.isArray(accList)) {
+                const found = accList.find(
+                  (a: any) =>
+                    (a.email && me?.email && a.email.toLowerCase() === me.email.toLowerCase()) ||
+                    (a.code && member?.code && a.code.toUpperCase() === member.code.toUpperCase()) ||
+                    (a.id && me?.id && (a.id === me.id || a.id === `acc_${me.id}`))
+                );
+                if (found && found.role) {
+                  member = { ...(member || {}), executiveRole: found.role, department: found.department };
+                }
               }
             }
           } catch (err) {
@@ -514,34 +537,7 @@ export function useRole(): RoleState {
 
   const can = useCallback(
     (permission: Permission | string): boolean => {
-      // 0. Toàn quyền tối cao cho Quản trị viên (quan_tri / admin / platform_admin) và Chủ tịch (chu_tich / president)
-      const userEmail = String(user?.email || "").toLowerCase();
-      const roleStr = String(srsRole || "");
-      const isRoleAdmin =
-        isPlatformAdmin ||
-        isAdmin ||
-        isPresident ||
-        isChuTich ||
-        roleStr === "quan_tri" ||
-        roleStr === "admin" ||
-        roleStr === "chu_tich" ||
-        roleStr === "president" ||
-        roleStr === "BQT" ||
-        roleStr === "ADM" ||
-        roles.includes("admin") ||
-        roles.includes("platform_admin") ||
-        user?.permissions?.includes("*") ||
-        user?.permissions?.includes("admin:full_access");
-
-      if (
-        isRoleAdmin ||
-        ((userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
-          (!roleStr || roleStr === "admin" || roleStr === "quan_tri" || roleStr === "ADM"))
-      ) {
-        return true;
-      }
-
-      // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions:
+      // 1. Kiểm tra trực tiếp phân quyền từng hội viên từ vba_member_permissions (ưu tiên cao nhất nếu bị thu hồi):
       // Nếu Admin đã bỏ chọn (false), lập tức thu hồi quyền và ẩn chức năng trên giao diện
       if (memberPermProfile) {
         if (memberPermProfile.canView === false && (permission.includes(":view") || permission.endsWith("_VIEW") || permission.endsWith(":read"))) {
@@ -600,6 +596,33 @@ export function useRole(): RoleState {
           const denied = memberPermProfile.deniedCodes.map((c: string) => c.toUpperCase());
           if (denied.includes(permission.toUpperCase())) return false;
         }
+      }
+
+      // 0. Toàn quyền tối cao cho Quản trị viên (quan_tri / admin / platform_admin) và Chủ tịch (chu_tich / president)
+      const userEmail = String(user?.email || "").toLowerCase();
+      const roleStr = String(srsRole || "");
+      const isRoleAdmin =
+        isPlatformAdmin ||
+        isAdmin ||
+        isPresident ||
+        isChuTich ||
+        roleStr === "quan_tri" ||
+        roleStr === "admin" ||
+        roleStr === "chu_tich" ||
+        roleStr === "president" ||
+        roleStr === "BQT" ||
+        roleStr === "ADM" ||
+        roles.includes("admin") ||
+        roles.includes("platform_admin") ||
+        user?.permissions?.includes("*") ||
+        user?.permissions?.includes("admin:full_access");
+
+      if (
+        isRoleAdmin ||
+        ((userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
+          (!roleStr || roleStr === "admin" || roleStr === "quan_tri" || roleStr === "ADM"))
+      ) {
+        return true;
       }
 
       // 2. Kiểm tra trực tiếp Ma Trận Quyền CSDL/localStorage:

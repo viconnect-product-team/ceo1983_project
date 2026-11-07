@@ -256,11 +256,21 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
       --tw-ring-color: ${primary} !important;
     }
 
-    /* 5. Recolor SVG Fills and Strokes */
+    /* 5. Recolor SVG Fills and Strokes across all charts, gauges and icons */
     svg[stroke="#003B95" i],
     svg[stroke="#002B66" i],
-    svg[stroke="#1E3A8A" i] {
+    svg[stroke="#1E3A8A" i],
+    circle[stroke="#003B95" i],
+    rect[stroke="#003B95" i],
+    path[stroke="#003B95" i] {
       stroke: ${primary} !important;
+    }
+    svg[fill="#003B95" i],
+    svg[fill="#002B66" i],
+    circle[fill="#003B95" i],
+    rect[fill="#003B95" i],
+    path[fill="#003B95" i] {
+      fill: ${primary} !important;
     }
 
     /* 6. Recolor Soft Tints in Light Mode */

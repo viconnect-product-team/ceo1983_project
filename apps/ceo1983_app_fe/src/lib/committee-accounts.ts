@@ -19,6 +19,7 @@ export interface UserAccountItem {
   avatar?: string;
   status: "active" | "inactive" | "locked";
   createdAt?: string;
+  updatedAt?: string;
   dbMemberId?: string;
 }
 

@@ -494,13 +494,35 @@ export function normalizeActionRoles(action: {
  * Kiểm tra 1 route có được phép hiển thị trên Sidebar/CRM theo vai trò người dùng hay không
  */
 export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): boolean {
-  // Quản trị (Super Admin), Admin và Chủ tịch luôn có toàn quyền xem tất cả chức năng CRM
-  if (roleKey === "quan_tri" || roleKey === "admin" || roleKey === "chu_tich") return true;
+  // Quản trị viên cấp cao nhất (Super Admin) luôn có quyền xem toàn bộ để tránh bị khóa hệ thống
+  if (roleKey === "quan_tri") return true;
 
   // Làm sạch route (bỏ query parameters & hash fragment: ví dụ /permissions?tab=matrix -> /permissions)
   const cleanRoute = (route || "").split("?")[0].split("#")[0];
 
   if (typeof window === "undefined") return true;
+
+  // 1. Kiểm tra quyền riêng của tài khoản hiện tại từ vba_member_permissions nếu có
+  try {
+    const rawUserPerms = localStorage.getItem("vba_member_permissions");
+    const rawMyMem = localStorage.getItem("vba_my_member");
+    if (rawUserPerms && rawMyMem) {
+      const myMem = JSON.parse(rawMyMem);
+      const mCode = myMem?.code;
+      if (mCode) {
+        const userMap = JSON.parse(rawUserPerms);
+        const userProfile = userMap[mCode] || userMap[mCode.toUpperCase()] || userMap[mCode.toLowerCase()];
+        if (userProfile) {
+          if (userProfile.canView === false) return false;
+          if (cleanRoute === "/members" && userProfile.canManageMembers === false) return false;
+          if (cleanRoute === "/events" && userProfile.canManageEvents === false) return false;
+          if ((cleanRoute === "/finance" || cleanRoute === "/renewal") && userProfile.canManageFinance === false) return false;
+          if (cleanRoute === "/news" && userProfile.canManageNews === false) return false;
+          if ((cleanRoute === "/opportunities" || cleanRoute === "/marketplace") && userProfile.canManageMarketplace === false) return false;
+        }
+      }
+    }
+  } catch {}
 
   try {
     const raw = localStorage.getItem(RBAC_MATRIX_STORAGE_KEY);
@@ -652,23 +674,7 @@ export function isActionAllowedByMatrix(
   if (typeof window === "undefined") return true;
 
   try {
-    // 0. Toàn quyền cho Quản trị viên (quan_tri / admin) và Chủ tịch (chu_tich / president)
-    const normRole = (roleKey || "").toLowerCase().trim();
-    if (
-      normRole === "quan_tri" ||
-      normRole === "chu_tich" ||
-      normRole === "admin" ||
-      normRole === "adm" ||
-      normRole === "president" ||
-      normRole === "platform_admin" ||
-      normRole === "superadmin" ||
-      normRole.includes("quản trị") ||
-      normRole.includes("chủ tịch")
-    ) {
-      return true;
-    }
-
-    // 1. Kiểm tra ghi đè trực tiếp của tài khoản hội viên nếu có
+    // 1. Kiểm tra ghi đè trực tiếp của tài khoản hội viên từ vba_member_permissions nếu có (ưu tiên hàng đầu)
     if (memberCode) {
       const rawUserPerms = localStorage.getItem("vba_member_permissions");
       if (rawUserPerms) {
@@ -709,6 +715,16 @@ export function isActionAllowedByMatrix(
           }
         }
       }
+    }
+
+    // 2. Toàn quyền cho Quản trị viên cấp cao nhất (Super Admin gốc quan_tri)
+    const normRole = (roleKey || "").toLowerCase().trim();
+    if (
+      normRole === "quan_tri" ||
+      normRole === "platform_admin" ||
+      normRole === "superadmin"
+    ) {
+      return true;
     }
 
     const raw = localStorage.getItem(RBAC_MATRIX_STORAGE_KEY);
