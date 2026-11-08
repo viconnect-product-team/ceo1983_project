@@ -1642,6 +1642,7 @@ export class ConnectAppService implements OnModuleInit {
   scheduleCommunityOpportunityFollowUp(userId: string, communityId: string, oppId: string, inDays: number) { return this.opportunityService.scheduleCommunityOpportunityFollowUp(userId, communityId, oppId, inDays); }
   updateCommunityOpportunityFollowUp(userId: string, communityId: string, oppId: string, data: any) { return this.opportunityService.updateCommunityOpportunityFollowUp(userId, communityId, oppId, data); }
   saveCommunityOpportunityProgress(userId: string, communityId: string, oppId: string, progress: string, note: string) { return this.opportunityService.saveCommunityOpportunityProgress(userId, communityId, oppId, progress, note); }
+  updateOpportunityDealStatus(userId: string, oppId: string, status: string, note?: string) { return this.opportunityService.updateOpportunityDealStatus(userId, oppId, status, note); }
   addCommunityOpportunityAttachment(userId: string, input: any) { return this.opportunityService.addCommunityOpportunityAttachment(userId, input); }
   removeCommunityOpportunityAttachment(userId: string, attachmentId: string) { return this.opportunityService.removeCommunityOpportunityAttachment(userId, attachmentId); }
   listAllOpportunities(userId: string) { return this.opportunityService.listAllOpportunities(userId); }

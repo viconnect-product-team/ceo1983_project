@@ -57,6 +57,13 @@ export class TrainingsController {
     return this.trainingsService.joinTraining(id, memberId, req.user?.id);
   }
 
+  @Post('trainings/:id/register')
+  @UseGuards(JwtAuthGuard)
+  async registerTraining(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    const memberId = body.memberId || req.user?.id;
+    return this.trainingsService.joinTraining(id, memberId, req.user?.id);
+  }
+
   @Post('association/trainings/:id/join')
   @UseGuards(JwtAuthGuard)
   async joinAssociationTraining(@Param('id') id: string, @Request() req: any, @Body() body: any) {

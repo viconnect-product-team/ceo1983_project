@@ -35,9 +35,18 @@ async function generatePdf() {
 
   // Pre-load all images as base64
   const testCasesWithImages = testResults.map(t => {
-    const base64 = getBase64Image(t.screenshotFile);
+    const shotFilename = t.screenshotFile || (t.output ? t.output.screenshotFile : null);
+    const base64 = getBase64Image(shotFilename);
+    const expected = t.expected || (t.input ? `[API: ${t.input.method} ${t.input.endpoint}] -> CSDL: ${t.input.expectedDb}` : 'Hoàn thành chuẩn nghiệp vụ');
+    const actual = t.actual || (t.output ? `HTTP ${t.output.httpStatus} | CSDL: ${t.output.dbVerified ? 'Khớp 100% bản ghi' : 'Chưa đối soát'} | Ảnh: ${shotFilename}` : 'Đạt yêu cầu');
+    const responseData = t.responseData || (t.output ? t.output.response : null);
+
     return {
       ...t,
+      expected,
+      actual,
+      responseData,
+      screenshotFile: shotFilename,
       imageBase64: base64
     };
   });

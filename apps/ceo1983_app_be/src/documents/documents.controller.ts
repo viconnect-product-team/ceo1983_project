@@ -80,4 +80,9 @@ export class DocumentsController {
   async getUrl(@Param('id') id: string) {
     return this.documentsService.getUrl(id);
   }
+
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    return this.documentsService.getById(id);
+  }
 }

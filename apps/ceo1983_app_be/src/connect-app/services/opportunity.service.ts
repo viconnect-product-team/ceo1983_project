@@ -539,6 +539,26 @@ export class ConnectOpportunityService {
     return { ok: true };
   }
 
+  async updateOpportunityDealStatus(userId: string, opportunityId: string, status: string, note?: string) {
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE public.opportunities
+      SET status = $1, updated_at = NOW()
+      WHERE id = $2 OR id::text = $2
+    `, status, opportunityId).catch(() => {});
+
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT * FROM public.opportunities WHERE id = $1 LIMIT 1
+    `, opportunityId).catch(() => []);
+
+    return {
+      success: true,
+      opportunityId,
+      status,
+      note: note || '',
+      opportunity: rows[0] || null,
+    };
+  }
+
   async saveCommunityOpportunityProgress(userId: string, communityId: string, opportunityRef: string, progress: string, note: string) {
     const now = new Date();
     await this.prisma.$executeRaw`

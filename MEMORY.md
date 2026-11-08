@@ -1,5 +1,37 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.60): Hoàn Thành Kiểm Thử Toàn Diện 10 Nhóm Luồng CRUD & Giao Dịch Hai Chiều (App & CRM), Đối Soát CSDL PostgreSQL, Tự Động Sửa Lỗi Triệt Để & Xuất Báo Cáo PDF Doanh Nghiệp ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014], [NODE-CORE-001] -> [NODE-CORE-006])**:
+  1. *Thực Hiện Kiểm Thử Thực Tế 10 Nhóm Luồng Theo Yêu Cầu Người Dùng*:
+     - **Tài khoản kiểm thử**: `admin@connect.vn` (Superadmin CRM), `vumikasa6@gmail.com` (Ban Điều Hành / Seller / Đối tác), `vupv090120@gmail.com` (Hội viên Doanh nhân / Buyer).
+     - **Luồng 1 - Sự kiện (Events)**: Tạo sự kiện Miễn Phí (201) & Có Phí 500k (201); Hội viên đăng ký vé Miễn Phí & Có Phí (201, sinh QR check-in & gửi mail xác nhận vé); Đối soát danh sách đăng ký hai chiều trên CRM (200); Xem chi tiết sự kiện (200); Chỉnh sửa sự kiện (200); Xóa sự kiện thử nghiệm (200).
+     - **Luồng 2 - Nhà tài trợ, Gói tài trợ & Ưu đãi (Sponsors, Packages & Perks)**: Tạo gói tài trợ Kim Cương (201); Xem chi tiết gói tài trợ (200); Chỉnh sửa gói (200); Xóa gói (200); Tạo nhà tài trợ mới (201); Xem chi tiết nhà tài trợ (200); Chỉnh sửa nhà tài trợ (200); Xóa nhà tài trợ (200); Tạo ưu đãi hội viên mới (201); Xem, sửa & xóa ưu đãi (200).
+     - **Luồng 3 - Cuộc gặp 1-1 & Cuộc họp Ban (Meetings)**: Thiết lập lịch hẹn gặp 1-1 (201); Xem chi tiết cuộc hẹn 1-1 (200); Đối tác xác nhận gặp mặt (200); Hủy lịch hẹn gặp với lý do rõ ràng (200); Tạo cuộc họp online Jitsi/Meet kèm danh sách tham dự (201); Tạo cuộc họp trực tiếp tại Cung Tri Thức (201); Xem chi tiết & sửa nghị trình cuộc họp (200); Xóa cuộc họp (200).
+     - **Luồng 4 - Sàn thương mại B2B (Marketplace Products)**: Đăng sản phẩm từ App (201) & từ CRM (201); Xem chi tiết sản phẩm & giá ưu đãi hội viên (200); Hệ thống kích hoạt chặn sản phẩm thứ 6 (400 - Quota 5 sản phẩm); Chỉnh sửa giá & thông tin sản phẩm (200); Xóa sản phẩm giải phóng hạn mức (200).
+     - **Luồng 5 - Cơ hội giao thương B2B (Opportunities)**: Đăng cơ hội mua sắm/hợp tác từ App (201) & từ CRM (201); Xem chi tiết cơ hội (200); Bày tỏ quan tâm cơ hội (201); Chủ cơ hội nhận deal & cập nhật tiến độ hợp tác (200); Chỉnh sửa cơ hội (200); Xóa / Đóng cơ hội (200).
+     - **Luồng 6 - Kết nối B2B gặp mặt**: Kết nối gặp mặt 1-1 xuất phát từ cơ hội kinh doanh (201); Kết nối gặp mặt xuất phát từ case xem sản phẩm thương mại (200).
+     - **Luồng 7 - Đào tạo & Diễn đàn gặp mặt (Trainings: Online / Offline)**: Tạo khóa đào tạo online Jitsi (201); Tạo diễn đàn / workshop gặp mặt offline tại Daewoo (201); Hội viên đăng ký tham gia đào tạo (200); Xóa khóa đào tạo thử nghiệm (200).
+     - **Luồng 8 - Tài liệu & Thư viện số (Documents & Messaging)**: Tải lên PDF, DOCX, XLSX (201); Xem chi tiết tài liệu (200); Gửi tài liệu trực tiếp vào tin nhắn kết nối CRM (201); Chỉnh sửa & xóa tài liệu (200).
+     - **Luồng 9 - Nhắc nhở & Báo lịch**: Nhắc hội phí thường niên tới hội viên (201); Nhắc báo lịch sự kiện sắp diễn ra (201); Nhắc có cuộc gặp 1-1 rõ giờ, địa điểm, online/offline (200); Nhắc cuộc họp Ban / Hội đồng (200).
+     - **Luồng 10 - Phân quyền RBAC động theo vai trò**: Superadmin UI (200), Ban Điều Hành UI (200), Hội viên Doanh nhân UI (200).
+  2. *Danh Mục Lỗi Phát Hiện Qua Kiểm Thử Thực Tế & Tự Động Khắc Phục Triệt Để (Self-Fixing)*:
+     - **Bug 1 (createMeeting thiếu đối số SQL Prepared Statement)**: Câu lệnh SQL INSERT vào `public.meetings` có 13 tham số (`$1..$13`) nhưng truyền thiếu `cancelReason` (chỉ có 12 tham số). Đã bổ sung `cancelReason` đầy đủ trong `apps/ceo1983_app_be/src/meetings/meetings.service.ts`.
+     - **Bug 2 (createConnectionAppointment & Đồng bộ trạng thái 1-on-1)**: `createConnectionAppointment` sinh UUID ngẫu nhiên thay vì dùng `meetingId`, và các phương thức `respondConnectionAppointment` / `cancelConnectionAppointment` chưa đồng bộ cập nhật sang `public.meetings`. Đã sửa để lưu `id = meetingId` và đồng bộ trạng thái `confirmed` / `cancelled` vào `public.meetings`.
+     - **Bug 3 (Thiếu API Xem chi tiết tài liệu `GET /documents/:id`)**: Bổ sung `findDocumentById(id)` tại `documents.repository.ts`, `getById(id)` tại `documents.service.ts`, và `@Get(':id')` tại `documents.controller.ts`.
+     - **Bug 4 (Thiếu API cập nhật tiến độ deal cơ hội `@Post(':id/deal-status')`)**: Bổ sung `updateOpportunityDealStatus` tại `opportunity.service.ts`, `connect-app.service.ts`, và `@Post(':id/deal-status')` tại `opportunity.controller.ts`.
+     - **Bug 5 (Lỗi ép kiểu nguyên trong tìm kiếm sản phẩm & Thiếu bảng `quote_requests`)**: Chuyển so sánh `WHERE (p.custom_id = ${id} OR p.id::text = ${id})` trong `marketplace.service.ts` và khởi tạo bảng `public.quote_requests` trong PostgreSQL. Thêm alias `@Post('inquiries')` tại `marketplace.controller.ts`.
+     - **Bug 6 (Thiếu alias đăng ký đào tạo `@Post('trainings/:id/register')`)**: Thêm alias vào `trainings.controller.ts` chuyển tiếp đến `joinTraining`.
+     - **Bug 7 (Đảo thứ tự route trong `sponsors.controller.ts`)**: Đặt các route tĩnh `@Get('prizes')`, `@Post('prizes')`, v.v. lên trước `@Get(':id')`.
+     - **Bug 8 (Khởi tạo các bảng PostgreSQL phục vụ lưu vết)**: Đã tạo bảng `public.messages`, `public.invoice_reminders`, và `public.quote_requests` trên database PostgreSQL `14.225.217.232:5436/ceo1983_project`.
+     - **Bug 9 (Cảnh báo trùng lịch đăng ký sự kiện)**: Bổ sung cờ `confirmOverlap: true` trong payload đăng ký giúp xác nhận ghi danh an toàn khi trùng ngày sự kiện.
+  3. *Xuất Bản Báo Cáo Kiểm Thử Doanh Nghiệp (PDF Report)*:
+     - **Tệp báo cáo PDF**: [`test-reports/Bao_Cao_Kiem_Thu_He_Thong_CEO1983.pdf`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/test-reports/Bao_Cao_Kiem_Thu_He_Thong_CEO1983.pdf) (Kích thước 8.7 MB, 50 ca kiểm thử chi tiết, tích hợp đầy đủ bảng dữ liệu Input, Output, mã phản hồi HTTP, bản ghi đối soát CSDL PostgreSQL và ảnh chụp màn hình minh chứng kèm Watermark).
+     - **Tệp danh sách lỗi (Bug Log)**: [`test-reports/BUG_LOG.md`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/test-reports/BUG_LOG.md).
+     - **Tệp dữ liệu kiểm thử (JSON)**: [`test-reports/test_results.json`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/test-reports/test_results.json).
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi bảo toàn tại local.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.59): Hoàn Thiện 4 Hạng Mục Nâng Cấp Trọng Yếu (Danh Mục Cơ Hội Quan Tâm & Bỏ Quan Tâm, Đồng Bộ Tọa Độ Map Trang Cá Nhân, Giao Diện Tin Tức Slide & Gradient Quét Mã Thương Hiệu, Tải Xuống Tài Liệu & Gửi Tài Liệu Vào Tin Nhắn CRM) ([NODE-APP-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-009], [NODE-CRM-002], [NODE-CRM-003], [NODE-CRM-007], [NODE-CORE-001])**:
   1. *Hạng Mục 1: Danh Mục \"Cơ Hội Tôi Quan Tâm\" & Nút \"Bỏ Quan Tâm\" Hai Chiều (App & CRM)*:
      - **Backend**:

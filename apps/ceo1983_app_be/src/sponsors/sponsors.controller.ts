@@ -60,52 +60,7 @@ export class SponsorsController {
     return this.sponsorsService.deletePackage(id);
   }
 
-  // ── SPONSORS ────────────────────────────────────────────────────────────────
-
-  @Get()
-  @UseInterceptors(DataScopeInterceptor)
-  @DataScope('sponsor')
-  async listSponsors() {
-    return this.sponsorsService.listSponsors();
-  }
-
-  @Get(':id')
-  @UseInterceptors(DataScopeInterceptor)
-  @DataScope('sponsor')
-  async getSponsorById(@Param('id') id: string) {
-    return this.sponsorsService.getSponsorById(id);
-  }
-
-  @Post()
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
-  async createSponsor(@Body() body: CreateSponsorDto) {
-    return this.sponsorsService.createSponsor(body);
-  }
-
-  @Put(':id')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
-  async updateSponsor(@Param('id') id: string, @Body() body: Partial<CreateSponsorDto>) {
-    return this.sponsorsService.updateSponsor(id, body);
-  }
-
-  @Delete(':id')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc')
-  async deleteSponsor(@Param('id') id: string) {
-    return this.sponsorsService.deleteSponsor(id);
-  }
-
-  @Post(':id/send-thank-you-email')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
-  async sendThankYouEmail(@Param('id') id: string) {
-    return this.sponsorsService.sendSponsorThankYouEmailById(id);
-  }
-
-  @Post('onboard')
-  async onboardSponsor(@Body() body: OnboardSponsorDto) {
-    return this.sponsorsService.onboardSponsor(body);
-  }
-
-  // ── EVENT PRIZES / AWARDS ──────────────────────────────────────────────────
+  // ── EVENT PRIZES / AWARDS (PRIORITIZED BEFORE PARAMETERIZED :id ROUTES) ─────
 
   @Get('prizes')
   async listPrizes(@Query('eventId') eventId?: string) {
@@ -133,5 +88,50 @@ export class SponsorsController {
   @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
   async deletePrize(@Param('id') id: string) {
     return this.sponsorsService.deletePrize(id);
+  }
+
+  // ── SPONSORS ────────────────────────────────────────────────────────────────
+
+  @Get()
+  @UseInterceptors(DataScopeInterceptor)
+  @DataScope('sponsor')
+  async listSponsors() {
+    return this.sponsorsService.listSponsors();
+  }
+
+  @Post()
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  async createSponsor(@Body() body: CreateSponsorDto) {
+    return this.sponsorsService.createSponsor(body);
+  }
+
+  @Post('onboard')
+  async onboardSponsor(@Body() body: OnboardSponsorDto) {
+    return this.sponsorsService.onboardSponsor(body);
+  }
+
+  @Get(':id')
+  @UseInterceptors(DataScopeInterceptor)
+  @DataScope('sponsor')
+  async getSponsorById(@Param('id') id: string) {
+    return this.sponsorsService.getSponsorById(id);
+  }
+
+  @Put(':id')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  async updateSponsor(@Param('id') id: string, @Body() body: Partial<CreateSponsorDto>) {
+    return this.sponsorsService.updateSponsor(id, body);
+  }
+
+  @Delete(':id')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc')
+  async deleteSponsor(@Param('id') id: string) {
+    return this.sponsorsService.deleteSponsor(id);
+  }
+
+  @Post(':id/send-thank-you-email')
+  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
+  async sendThankYouEmail(@Param('id') id: string) {
+    return this.sponsorsService.sendSponsorThankYouEmailById(id);
   }
 }
