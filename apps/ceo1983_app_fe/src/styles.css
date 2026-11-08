@@ -109,17 +109,35 @@ html.dark .bg-crm-system,
 .bg-Primary-1-brand { background-color: #003B95 !important; }
 .bg-Dark-blue-700 { background-color: #0F172A !important; }
 .bg-Surface-badge { background-color: #EF4444 !important; }
+.bg-Neutral-white { background-color: #FFFFFF !important; }
+.dark .bg-Neutral-white { background-color: #0F172A !important; }
+.bg-Surface-default { background-color: #FFFFFF !important; }
+.dark .bg-Surface-default { background-color: #0F172A !important; }
+.bg-Surface-action { background-color: #EA580C !important; }
+.bg-Primary-2-100 { background-color: #FFEDD5 !important; }
+.dark .bg-Primary-2-100 { background-color: rgba(234, 88, 12, 0.25) !important; }
 
 .text-Text-default { color: #1E293B !important; }
 .dark .text-Text-default { color: #F1F5F9 !important; }
 .text-Text-active { color: #EA580C !important; }
 .dark .text-Text-active { color: #FB923C !important; }
+.text-Text-description { color: #64748B !important; }
+.dark .text-Text-description { color: #94A3B8 !important; }
 .text-Primary-2-brand { color: #EA580C !important; }
 
 .outline-Primary-2-brand { outline-color: #EA580C !important; }
 .outline-Icon-default { outline-color: #64748B !important; }
 .outline-Icon-active { outline-color: #EA580C !important; }
+.outline-Icon-information { outline-color: #EA580C !important; }
+.outline-Icon-inactive { outline-color: #94A3B8 !important; }
 .outline-Border-on-action { outline-color: #FFFFFF !important; }
+.outline-Border-default { outline-color: #E2E8F0 !important; }
+.dark .outline-Border-default { outline-color: #334155 !important; }
+.border-Border-default { border-color: #E2E8F0 !important; }
+.dark .border-Border-default { border-color: #334155 !important; }
+.outline-Border-action { outline-color: #EA580C !important; }
+.border-Border-action { border-color: #EA580C !important; }
+.outline-Orange-700 { outline-color: #C2410C !important; }
 
 :root {
   --radius: 0.75rem;

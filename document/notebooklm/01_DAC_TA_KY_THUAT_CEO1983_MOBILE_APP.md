@@ -28,13 +28,15 @@
 
 ## 2. ĐẶC TẢ CHI TIẾT THEO TỪNG NODE CHỨC NĂNG
 
-### `[NODE-APP-001]` Trang Chủ Hội Viên, Thẻ Hội Viên VIP Đồng Bộ & Icon Chỉnh Sửa Tối Giản
+### `[NODE-APP-001]` Trang Chủ Hội Viên, Thẻ Hội Viên VIP Đồng Bộ & Giao Diện Figma Theme Cam Tiên Phong
 - **Route Frontend**: `/association` (`src/routes/association.index.tsx`).
 - **Thành phần**: `CustomHomeShortcutsModal.tsx`, `WelcomeMemberModal.tsx`, `SeasonalEventHeader.tsx`, `OpportunityCandleWidget.tsx`.
 - **API Backend**: `GET /association/home-feed`, `GET /association/home-stats`, `PATCH /members/me` (`feed.service.ts`, `opportunity.service.ts`, `members.service.ts`).
 - **Bảng CSDL**: `feed_posts`, `events`, `opportunities`, `products`, `members`.
-- **Luồng xử lý**:
-  - **Nút Chỉnh Sửa Trên Thẻ Hội Viên Tối Giản**: Nút chỉnh sửa thông tin trên Thẻ Hội Viên chỉ hiển thị biểu tượng icon bút chì (`Pencil`), loại bỏ hoàn toàn chữ text "Chỉnh sửa" để tối ưu không gian thẻ VIP sang trọng.
+- **Luồng xử lý & Thiết kế Chuẩn Figma**:
+  - **Giao Diện Chuẩn Figma Tone Cam Tiên Phong**: Toàn bộ thẻ Doanh Nhân Hero Card, khối Tính Năng Nhanh, Banner Sự Kiện, Tin Tức CLB và Quét Mã Check-in QR áp dụng chuẩn tone màu cam (`#EA580C`, `#F97316`, `orange-500`, `orange-600`) kết hợp dải gradient chuyển màu dịu mắt và bóng đổ cam nhẹ.
+  - **Hệ Thống Icon SVG Độc Quyền Cục Bộ**: Tích hợp trực tiếp bộ SVG từ `/icons/home/` gồm chuông thông báo (`notification-01.svg`), khiên xác thực doanh nhân (`security-check.svg`), nút chỉnh sửa (`edit-04.svg`), hotline (`call-02.svg`), 4 phím tắt nhanh (Tin nhắn `bubble-chat.svg`, Danh bạ CEO `contact-book.svg`, Báo cáo `chart-breakout-circle.svg`, Giao thương B2B `briefcase-04.svg`) và đồng hồ đếm ngược sự kiện (`Clock.svg`).
+  - **Nút Chỉnh Sửa Trên Thẻ Hội Viên Tối Giản**: Nút chỉnh sửa thông tin trên Thẻ Hội Viên chỉ hiển thị biểu tượng icon bút chì bo viền (`edit-04.svg`), loại bỏ hoàn toàn chữ text để tối ưu không gian thẻ VIP sang trọng.
   - **Cơ Chế Đồng Bộ Avatar & Ảnh Bìa Realtime**: Khi thay đổi Avatar hoặc Ảnh bìa tại màn Cá nhân (`/association/profile`), hệ thống cập nhật đồng thời lên CSDL qua `PATCH /members/me` và phát sự kiện `profile-updated` / `vba_member_avatar_updated`. Trang chủ lập tức lắng nghe và phản ánh Avatar cùng Ảnh bìa mới nhất trên Thẻ Hội Viên mà không cần tải lại toàn bộ trang.
   - Dải Cơ Hội Kinh Doanh Kéo Full-Width: Tích hợp widget Biểu đồ nến Candlestick thời gian thực biểu thị biến động giao thương theo từng khung giờ trong ngày (Open, High, Low, Close, Volume).
   - Khối Sàn Giao Thương B2B được đẩy xuống ngay bên dưới dạng thẻ full-width card dễ quan sát.
@@ -172,14 +174,16 @@
   - Gắn thẻ đại biểu tham dự cuộc họp/sự kiện: Hiển thị danh sách hội viên tham dự dưới dạng thẻ `@HọTên [✓ Đã Check-in]`.
   - Tiếp nhận sự kiện & đào tạo bắn từ CRM kèm Mã QR Điểm Danh (Check-in QR).
 
-### `[NODE-APP-011]` Hồ Sơ Cá Nhân & Quản Trị Nhận Diện Thương Hiệu
+### `[NODE-APP-011]` Hồ Sơ Cá Nhân & Quản Trị Nhận Diện Thương Hiệu Chuẩn Figma Tone Cam
 - **Route Frontend**: `/association/profile` (`src/routes/association.profile.tsx`).
 - **Thành phần**: `QuickProfileEditModal.tsx`.
 - **API Backend**: `GET /association/profile`, `PATCH /members/me`, `PATCH /members/me/cover` (`members.service.ts`).
 - **Bảng CSDL**: `members`, `vione_users`.
-- **Luồng xử lý**:
+- **Luồng xử lý & Thiết kế Chuẩn Figma**:
+  - **Giao Diện Chuẩn Figma Tone Cam Tiên Phong**: Toàn bộ trang hồ sơ cá nhân đồng bộ dải màu cam ấm áp (`#EA580C`, `#F97316`, `orange-500`, `orange-600`), bao gồm thẻ Hero Card, cụm tab phân đoạn "Tổng quan bài viết" vs "Giao thương & Sự kiện", các sub-pills lựa chọn, khối địa chỉ bản đồ và thẻ thông tin doanh nghiệp.
+  - **Hệ Thống Icon SVG Độc Quyền Cục Bộ**: Tích hợp trực tiếp bộ SVG từ `/icons/profile/` gồm nút quay lại (`arrow-left-02.svg`), cài đặt tài khoản (`setting-07.svg`), sửa ảnh bìa (`edit-04.svg`), đổi avatar (`user-edit-01.svg`), xác minh chính danh (`check-verified-02.svg`), chức danh (`briefcase-04.svg`), 3 nút hành động chính (Danh thiếp `student-card.svg`, Chia sẻ `share-01.svg`, Sửa hồ sơ `user-edit-01.svg`), icon khối hồ sơ (`profile-02.svg`), định vị bản đồ (`navigation-05.svg`), tìm kiếm (`search-01.svg`).
+  - **Bản Đồ Doanh Nghiệp 2D Tương Tác**: Nhúng iframe Google Maps với marker đỏ cam chính tâm (`bg-orange-100` với pin `bg-orange-600`), nút "Chỉ đường" và "Mở bản đồ lớn" tone cam.
   - Tải lên và cập nhật Avatar cùng Ảnh bìa: Lập tức gọi API lưu CSDL máy chủ, lưu bộ nhớ cục bộ đồng bộ và phát tín hiệu broadcast để Thẻ Hội Viên tại Trang Chủ và Trang Thẻ cập nhật ngay lập tức.
-  - Tối giản hóa Header: Loại bỏ hoàn toàn các icon chức năng thừa ở góc phải Header (`right={null}`), giúp giao diện thanh thoát, sang trọng.
   - Thẻ trạng thái đồng bộ Theme CRM thời gian thực: Hiển thị thẻ viền vàng thông báo tên chủ đề lễ hội đang kích hoạt.
   - Xem thông tin lãnh đạo, công ty, điều lệ và hợp đồng hội viên.
 
