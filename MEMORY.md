@@ -1,5 +1,51 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.61): Tối Ưu Hóa & Tái Thiết Kế Toàn Diện Giao Diện Mobile Trang Chủ ([NODE-APP-001]) & Trang Cá Nhân ([NODE-APP-009]) Theo Chuẩn Figma Tone Màu Cam Tiên Phong Kèm Tích Hợp Trực Tiếp Bộ Icon SVG Độc Quyền**:
+  1. *Trang Chủ Mobile App (`association.index.tsx` / `[NODE-APP-001]`)*:
+     - **Thẻ Doanh Nhân Hero Member Card**:
+       * Nền dải chuyển màu gradient `from-orange-100/90 via-amber-50 to-white`, đường viền `border-orange-300/80`, đổ bóng thương hiệu `shadow-[0px_4px_14px_0px_rgba(234,88,12,0.15)]`.
+       * Tích hợp huy hiệu xác thực doanh nhân chính danh với icon `/icons/home/security-check.svg`.
+       * Nút chỉnh sửa hồ sơ bo góc với icon `/icons/home/edit-04.svg`.
+       * Hiển thị số điện thoại liên hệ doanh nhân kèm icon `/icons/home/call-02.svg`.
+       * Nhãn vai trò thành viên tone cam `bg-orange-100 text-orange-600 border-orange-200`.
+     - **Thanh Header Lời Chào & Thông Báo**:
+       * Nút chuông thông báo bo viền cam tinh tế với huy hiệu đếm số lượng thông báo thực tế `/icons/home/notification-01.svg`.
+     - **Khối "Tính Năng Nhanh" (Quick Actions)**:
+       * Thiết kế 4 cột hành động bo góc nền cam `bg-orange-50 border-orange-200/80 text-orange-600`:
+         - Tin nhắn (`/icons/home/bubble-chat.svg`).
+         - Danh bạ CEO (`/icons/home/contact-book.svg` kèm số đếm hội viên biến thiên thời gian thực).
+         - Báo cáo (`/icons/home/chart-breakout-circle.svg`).
+         - Giao thương B2B (`/icons/home/briefcase-04.svg` kèm số lượng giao thương hoạt động).
+     - **Sự Kiện Sắp Tới, Sàn B2B, Doanh Nghiệp Mới & Tin Tức**:
+       * Banner đếm ngược thời gian sự kiện với icon `/icons/home/Clock.svg`, nút xem chi tiết `bg-orange-500 hover:bg-orange-600`.
+       * Sàn thương mại & Doanh nghiệp mới gia nhập: đồng bộ viền và avatar cam rực rỡ.
+       * Tin tức CLB: huy hiệu "+5 TIN MỚI", nhãn "TIN TIÊU ĐIỂM" gradient `from-orange-500 to-amber-500`.
+       * Banner Check-in QR: chuyển sang dải màu cam nhận diện thương hiệu `bg-gradient-to-r from-orange-600 via-amber-600 to-amber-700` viền `border-orange-300/40`.
+  2. *Trang Cá Nhân Mobile App (`association.profile.tsx` / `[NODE-APP-009]`)*:
+     - **Header**: Nút quay lại (`/icons/profile/arrow-left-02.svg`), nút cài đặt tài khoản (`/icons/profile/setting-07.svg`).
+     - **Thẻ Hồ Sơ Doanh Nhân Hero Card**:
+       * Ảnh bìa viền cam với nút đổi ảnh bìa `/icons/profile/edit-04.svg`.
+       * Camera đổi avatar `/icons/profile/user-edit-01.svg`.
+       * Tích xanh xác minh doanh nghiệp `/icons/profile/check-verified-02.svg`.
+       * Nhãn chức danh kèm `/icons/profile/briefcase-04.svg`.
+       * 3 nút hành động chính: Danh thiếp (`/icons/profile/student-card.svg`), Chia sẻ (`/icons/profile/share-01.svg`), Sửa hồ sơ (`/icons/profile/user-edit-01.svg`).
+     - **Cụm Tab Phân Đoạn & Sub-Pills**:
+       * "Tổng quan bài viết" vs "Giao thương & Sự kiện" với chỉ báo gạch chân cam `border-b-2 border-orange-500 text-orange-600`.
+       * Sub-pills: "Hồ sơ doanh nghiệp" vs "Bài viết của bạn" viền cam `bg-orange-100 text-orange-600 border-orange-400 font-semibold`.
+     - **Khối Hồ Sơ Doanh Nghiệp & Địa Chỉ Bản Đồ**:
+       * Khối thông tin: header icon `/icons/profile/profile-02.svg`, hiển thị thông tin giới thiệu, chức vụ, quy mô nhân sự, lĩnh vực kinh doanh, doanh nghiệp trực thuộc.
+       * Khối địa chỉ bản đồ: header icon `/icons/profile/navigation-05.svg`, thanh tìm kiếm với `/icons/profile/search-01.svg`, Google Maps tương tác với marker trung tâm nền cam `bg-orange-100 rounded-2xl` kèm pin đỏ cam `bg-orange-600`, nút "Chỉ đường" và "Mở bản đồ lớn" tone cam.
+     - **Bài Viết & Hoạt Động Giao Thương / Sự Kiện**:
+       * Nút "Đăng bài" cam `bg-orange-500`.
+       * Danh sách sự kiện, cuộc họp Ban, lịch hẹn 1-1, cơ hội kinh doanh chuyển đổi đồng bộ sang tone màu cam ấm áp.
+  3. *Tích Hợp Toàn Bộ Icon SVG Độc Quyền & Design Tokens*:
+     - Giải nén và đồng bộ 100% tài nguyên SVG từ 2 tệp lưu trữ `CEO1983_icon (2).zip` và `CEO1983_icon (3).zip` vào `/icons/home/` và `/icons/profile/`.
+     - Bổ sung bộ tokens màu Figma trong `apps/ceo1983_app_fe/src/styles.css`: `.bg-Neutral-white`, `.bg-Surface-default`, `.bg-Surface-action`, `.bg-Primary-2-100`, `.text-Text-description`, `.outline-Icon-information`, `.outline-Icon-inactive`, `.outline-Border-default`, `.border-Border-default`, `.outline-Border-action`, `.border-Border-action`, `.outline-Orange-700`.
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi bảo toàn tại local nhánh `dev`.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.60): Hoàn Thành Kiểm Thử Toàn Diện 10 Nhóm Luồng CRUD & Giao Dịch Hai Chiều (App & CRM), Đối Soát CSDL PostgreSQL, Tự Động Sửa Lỗi Triệt Để & Xuất Báo Cáo PDF Doanh Nghiệp ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014], [NODE-CORE-001] -> [NODE-CORE-006])**:
   1. *Thực Hiện Kiểm Thử Thực Tế 10 Nhóm Luồng Theo Yêu Cầu Người Dùng*:
      - **Tài khoản kiểm thử**: `admin@connect.vn` (Superadmin CRM), `vumikasa6@gmail.com` (Ban Điều Hành / Seller / Đối tác), `vupv090120@gmail.com` (Hội viên Doanh nhân / Buyer).

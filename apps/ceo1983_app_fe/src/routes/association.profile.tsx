@@ -772,15 +772,15 @@ export default function ProfileScreen() {
 
   return (
     <div className="w-full min-h-screen pb-24 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center font-sans transition-colors duration-300">
-      {/* ── 1. HEADER CHUẨN MOCKUP CEO 1983 ── */}
+      {/* ── 1. HEADER CHUẨN MOCKUP CEO 1983 TONE CAM ── */}
       <div data-type="2" className="w-full max-w-lg px-4 pt-2 pb-2 bg-white dark:bg-[#070D1A] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center sticky top-0 z-30">
         <button
           type="button"
           onClick={() => navigate({ to: "/association" })}
-          className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+          className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-orange-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
           title="Quay lại"
         >
-          <img src="/icons/profile_icons/arrow-left-02.svg" className="size-5" alt="back" />
+          <img src="/icons/profile/arrow-left-02.svg" className="size-5" alt="back" />
         </button>
         <div className="text-center font-semibold text-base text-slate-900 dark:text-white font-['Inter']">
           {isEn ? "Profile" : "Hồ sơ cá nhân"}
@@ -788,10 +788,10 @@ export default function ProfileScreen() {
         <button
           type="button"
           onClick={() => setSystemSettingsOpen(true)}
-          className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
+          className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-orange-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
           title="Cài đặt hệ thống"
         >
-          <img src="/icons/profile_icons/setting-07.svg" className="size-5" alt="settings" />
+          <img src="/icons/profile/setting-07.svg" className="size-5" alt="settings" />
         </button>
       </div>
 
@@ -812,19 +812,19 @@ export default function ProfileScreen() {
           onChange={handleAvatarChange}
         />
 
-        {/* ── 2. CARD PROFILE TONE VÀNG CAM NỔI BẬT THEO MOCKUP ── */}
-        <div className="w-full pb-2 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        {/* ── 2. CARD PROFILE TONE MÀU CAM NỔI BẬT THEO MOCKUP ── */}
+        <div className="w-full pb-2 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 flex flex-col justify-start items-start overflow-hidden shadow-xs">
           {/* Ảnh Bìa */}
-          <div className="w-full h-36 relative bg-linear-to-r from-amber-100 via-amber-50 to-orange-100 dark:from-slate-800 dark:to-slate-900 overflow-hidden">
+          <div className="w-full h-36 relative bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-slate-800 dark:to-slate-900 overflow-hidden">
             <img
-              src={displayCover || "/icons/profile_icons/Image-2.svg"}
+              src={displayCover || "/icons/profile/Image-2.svg"}
               alt="Cover Photo"
               className="w-full h-full object-cover"
             />
             {/* Mã Hội Viên */}
             <div className="absolute top-3 left-3 z-10">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-xs">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="size-1.5 rounded-full bg-orange-400 animate-pulse" />
                 <span className="text-[10px] font-mono font-bold">{memberCode}</span>
               </div>
             </div>
@@ -833,17 +833,17 @@ export default function ProfileScreen() {
               type="button"
               disabled={uploadingCover}
               onClick={() => coverInputRef.current?.click()}
-              className="absolute top-3 right-3 p-1.5 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xs rounded-full border border-slate-200 dark:border-slate-700 inline-flex items-center justify-center hover:scale-105 active:scale-95 transition cursor-pointer shadow-xs disabled:opacity-50"
+              className="absolute top-3 right-3 p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs rounded-full border border-orange-200 dark:border-slate-700 inline-flex items-center justify-center hover:scale-105 active:scale-95 transition cursor-pointer shadow-xs disabled:opacity-50"
               title="Đổi ảnh bìa"
             >
-              <img src="/icons/profile_icons/edit-04.svg" className="size-4" alt="edit cover" />
+              <img src="/icons/profile/edit-04.svg" className="size-4" alt="edit cover" />
             </button>
           </div>
 
           {/* Avatar & Thông tin Hội viên đè lên ảnh bìa */}
           <div className="w-full px-4 -mt-12 flex flex-col justify-start items-center z-10">
             <div className="size-24 relative flex flex-col justify-start items-start mb-1">
-              <div className="size-24 rounded-full outline outline-4 outline-offset-[-4px] outline-white dark:outline-[#0F172A] inline-flex justify-center items-center overflow-hidden bg-Dark-blue-700 shadow-md">
+              <div className="size-24 rounded-full outline outline-4 outline-offset-[-4px] outline-white dark:outline-[#0F172A] inline-flex justify-center items-center overflow-hidden bg-slate-900 shadow-md">
                 {resolvedAvatar && !avatarError ? (
                   <img
                     src={resolvedAvatar}
@@ -852,7 +852,7 @@ export default function ProfileScreen() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-[#003B95] flex items-center justify-center text-white text-2xl font-black">
+                  <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-2xl font-black">
                     {initials(displayName)}
                   </div>
                 )}
@@ -861,10 +861,10 @@ export default function ProfileScreen() {
                 type="button"
                 disabled={uploadingAvatar}
                 onClick={() => avatarInputRef.current?.click()}
-                className="size-7 right-0 bottom-0 absolute bg-white dark:bg-slate-800 rounded-full outline outline-1 outline-offset-[-1px] outline-Border-default inline-flex justify-center items-center shadow-xs hover:scale-110 active:scale-95 transition cursor-pointer"
+                className="size-7 right-0 bottom-0 absolute bg-white dark:bg-slate-800 rounded-full outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 inline-flex justify-center items-center shadow-xs hover:scale-110 active:scale-95 transition cursor-pointer"
                 title="Đổi ảnh đại diện"
               >
-                <img src="/icons/profile_icons/user-edit-01.svg" className="size-3.5" alt="edit avatar" />
+                <img src="/icons/profile/user-edit-01.svg" className="size-3.5" alt="edit avatar" />
               </button>
             </div>
 
@@ -873,18 +873,18 @@ export default function ProfileScreen() {
               <h1 className="text-xl font-semibold text-slate-900 dark:text-white font-['Inter'] leading-6">
                 {displayName}
               </h1>
-              <img src="/icons/profile_icons/new-releases.svg" className="size-4" alt="verified" />
+              <img src="/icons/profile/check-verified-02.svg" className="size-4 text-orange-500" alt="verified" />
             </div>
 
             {/* Chức vụ & Doanh nghiệp */}
             <div className="pt-1 flex flex-col justify-center items-center gap-1">
-              <div className="px-2 py-[3px] bg-Primary-2-50 dark:bg-amber-950/40 rounded-[99px] inline-flex justify-start items-center gap-1.5">
-                <img src="/icons/profile_icons/briefcase-04.svg" className="size-3.5" alt="briefcase" />
-                <span className="text-Text-active text-xs font-medium font-['Inter'] leading-4">
+              <div className="px-2.5 py-[3px] bg-orange-100 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-500/30 rounded-full inline-flex justify-start items-center gap-1.5">
+                <img src="/icons/profile/briefcase-04.svg" className="size-3.5 text-orange-600 dark:text-orange-400" alt="briefcase" />
+                <span className="text-orange-600 dark:text-orange-400 text-xs font-semibold font-['Inter'] leading-4">
                   {displayTitle}
                 </span>
               </div>
-              <p className="text-center text-Text-default text-xs font-normal font-['Inter'] leading-4">
+              <p className="text-center text-slate-700 dark:text-slate-300 text-xs font-normal font-['Inter'] leading-4">
                 {displayCompany}
               </p>
             </div>
@@ -895,9 +895,9 @@ export default function ProfileScreen() {
             <button
               type="button"
               onClick={() => setCardPreviewOpen(true)}
-              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
-              <img src="/icons/profile_icons/student-card.svg" className="size-5" alt="student-card" />
+              <img src="/icons/profile/student-card.svg" className="size-5" alt="student-card" />
               <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
                 Danh thiếp
               </div>
@@ -905,9 +905,9 @@ export default function ProfileScreen() {
             <button
               type="button"
               onClick={handleShare}
-              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
-              <img src="/icons/profile_icons/share-01.svg" className="size-5" alt="share" />
+              <img src="/icons/profile/share-01.svg" className="size-5" alt="share" />
               <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
                 Chia sẻ
               </div>
@@ -915,9 +915,9 @@ export default function ProfileScreen() {
             <button
               type="button"
               onClick={() => setEditProfileOpen(true)}
-              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
-              <img src="/icons/profile_icons/user-edit-01.svg" className="size-5" alt="user-edit" />
+              <img src="/icons/profile/user-edit-01.svg" className="size-5" alt="user-edit" />
               <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
                 Sửa hồ sơ
               </div>
@@ -935,13 +935,13 @@ export default function ProfileScreen() {
                 onClick={() => setActiveTab("overview")}
                 className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
                   activeTab === "overview"
-                    ? "text-Text-active font-semibold"
-                    : "text-Text-default font-normal hover:text-slate-900 dark:hover:text-white"
+                    ? "text-orange-600 dark:text-orange-400 font-semibold"
+                    : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 <span className="text-sm font-['Inter'] leading-5">Tổng quan bài viết</span>
                 {activeTab === "overview" && (
-                  <div className="w-full h-0.5 bg-Border-action absolute bottom-0 left-0" />
+                  <div className="w-full h-0.5 bg-orange-500 absolute bottom-0 left-0" />
                 )}
               </button>
               <button
@@ -949,13 +949,13 @@ export default function ProfileScreen() {
                 onClick={() => setActiveTab("activities")}
                 className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
                   activeTab === "activities"
-                    ? "text-Text-active font-semibold"
-                    : "text-Text-default font-normal hover:text-slate-900 dark:hover:text-white"
+                    ? "text-orange-600 dark:text-orange-400 font-semibold"
+                    : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 <span className="text-sm font-['Inter'] leading-5">Giao thương &amp; Sự kiện</span>
                 {activeTab === "activities" && (
-                  <div className="w-full h-0.5 bg-Border-action absolute bottom-0 left-0" />
+                  <div className="w-full h-0.5 bg-orange-500 absolute bottom-0 left-0" />
                 )}
               </button>
             </div>
@@ -972,7 +972,7 @@ export default function ProfileScreen() {
                 onClick={() => setSubTab("business")}
                 className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
                   subTab === "business"
-                    ? "bg-Primary-1-50 dark:bg-amber-950/40 outline-Border-action text-Text-active font-semibold"
+                    ? "bg-orange-100 dark:bg-orange-950/60 outline-orange-400 text-orange-600 dark:text-orange-400 font-semibold shadow-2xs"
                     : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
                 }`}
               >
@@ -983,7 +983,7 @@ export default function ProfileScreen() {
                 onClick={() => setSubTab("posts")}
                 className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
                   subTab === "posts"
-                    ? "bg-Primary-1-50 dark:bg-amber-950/40 outline-Border-action text-Text-active font-semibold"
+                    ? "bg-orange-100 dark:bg-orange-950/60 outline-orange-400 text-orange-600 dark:text-orange-400 font-semibold shadow-2xs"
                     : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
                 }`}
               >
@@ -998,7 +998,7 @@ export default function ProfileScreen() {
                 <div className="self-stretch bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden shadow-2xs">
                   <div className="self-stretch px-4 pt-4 pb-2 inline-flex justify-between items-center">
                     <div className="flex-1 flex justify-start items-center gap-2">
-                      <img src="/icons/profile_icons/profile-02.svg" className="size-5" alt="profile" />
+                      <img src="/icons/profile/profile-02.svg" className="size-5" alt="profile" />
                       <div className="flex-1 inline-flex flex-col justify-start items-start">
                         <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
                           Hồ sơ doanh nghiệp
@@ -1052,7 +1052,7 @@ export default function ProfileScreen() {
                 <div className="self-stretch p-4 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start gap-3 shadow-2xs">
                   <div className="self-stretch inline-flex justify-between items-center">
                     <div className="flex-1 flex justify-start items-center gap-2">
-                      <img src="/icons/profile_icons/navigation-05.svg" className="size-5" alt="navigation" />
+                      <img src="/icons/profile/navigation-05.svg" className="size-5" alt="navigation" />
                       <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
                         Địa chỉ doanh nghiệp
                       </div>
@@ -1061,13 +1061,13 @@ export default function ProfileScreen() {
 
                   {/* Thanh hiển thị địa chỉ với icon search */}
                   <div className="self-stretch h-9 px-2.5 py-1.5 rounded-lg outline outline-1 outline-offset-[-1px] outline-Border-default inline-flex justify-start items-center gap-2 bg-slate-50 dark:bg-slate-800/50">
-                    <img src="/icons/profile_icons/search-01.svg" className="size-4 shrink-0" alt="search" />
+                    <img src="/icons/profile/search-01.svg" className="size-4 shrink-0" alt="search" />
                     <div className="flex-1 text-slate-900 dark:text-white text-sm font-normal font-['Inter'] leading-5 truncate">
                       {displayAddress}
                     </div>
                   </div>
 
-                  {/* Bản đồ 2D Google chuẩn xác 100% hiển thị trực tiếp */}
+                  {/* Bản đồ 2D Google chuẩn xác 100% hiển thị trực tiếp với overlay Pin Marker tone cam */}
                   <div className="self-stretch h-56 relative rounded-xl outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden bg-slate-100 dark:bg-slate-900">
                     <iframe
                       title="Google Map 2D Doanh nghiệp"
@@ -1080,14 +1080,23 @@ export default function ProfileScreen() {
                       loading="lazy"
                     />
 
+                    {/* Center Pin Marker theo chuẩn Figma snippet (tone màu cam) */}
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center -mt-3 z-10">
+                      <div className="size-9 bg-orange-100/90 rounded-2xl flex items-center justify-center shadow-md border border-white/60">
+                        <div className="size-7 bg-orange-600 rounded-xl outline outline-2 outline-white flex items-center justify-center shadow-xs">
+                          <MapPin className="size-3.5 text-white fill-white" />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Nút hành động nổi trên bản đồ */}
                     <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setShowLocationEditor(!showLocationEditor)}
-                        className="px-2.5 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-orange-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-orange-50 transition flex items-center gap-1 cursor-pointer"
                       >
-                        <MapPin className="size-3 text-red-500" />
+                        <MapPin className="size-3 text-orange-600" />
                         <span>{showLocationEditor ? "Đóng sửa vị trí" : "Dời ghim / Sửa địa chỉ"}</span>
                       </button>
                       <a
@@ -1098,10 +1107,10 @@ export default function ProfileScreen() {
                         }
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1"
+                        className="p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-orange-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-orange-50 transition flex items-center gap-1"
                         title="Mở ứng dụng Google Maps"
                       >
-                        <ExternalLink className="size-3.5 text-amber-600" />
+                        <ExternalLink className="size-3.5 text-orange-600" />
                       </a>
                     </div>
                   </div>
@@ -1131,7 +1140,7 @@ export default function ProfileScreen() {
               <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <FileText className="size-4" />
                   </div>
                   <div>
@@ -1147,7 +1156,7 @@ export default function ProfileScreen() {
                 <button
                   type="button"
                   onClick={() => setCreatePostOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <Plus className="size-3.5" />
                   <span>Đăng bài</span>
@@ -1168,7 +1177,7 @@ export default function ProfileScreen() {
                   <button
                     type="button"
                     onClick={() => setCreatePostOpen(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
                   >
                     <Plus className="size-3.5" />
                     <span>Đăng bài viết đầu tiên</span>
@@ -1184,7 +1193,7 @@ export default function ProfileScreen() {
                       {/* Post Header */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="size-9 rounded-full bg-[#003B95] overflow-hidden shrink-0">
+                          <div className="size-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 overflow-hidden shrink-0">
                             {post.author?.avatar ? (
                               <img
                                 src={resolveMediaUrl(post.author.avatar) || post.author.avatar}
@@ -1214,7 +1223,7 @@ export default function ProfileScreen() {
                               <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
                                 {post.privacy === "friends" ? (
                                   <>
-                                    <Users className="size-3 text-blue-500" />
+                                    <Users className="size-3 text-orange-500" />
                                     <span>Bạn bè kết nối</span>
                                   </>
                                 ) : post.privacy === "only_me" ? (
@@ -1256,7 +1265,7 @@ export default function ProfileScreen() {
                                 onClick={() => handleOpenEditPost(post)}
                                 className="w-full px-3 py-1.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
                               >
-                                <Edit3 className="size-3.5 text-blue-600" />
+                                <Edit3 className="size-3.5 text-orange-600" />
                                 <span>Chỉnh sửa</span>
                               </button>
                               <button
@@ -1303,7 +1312,7 @@ export default function ProfileScreen() {
                           <span>{post.likesCount || 0}</span>
                         </span>
                         <span className="flex items-center gap-1">
-                          <MessageSquare className="size-3 text-blue-500" />
+                          <MessageSquare className="size-3 text-orange-500" />
                           <span>{post.commentsCount || 0}</span>
                         </span>
                       </div>
@@ -1316,8 +1325,7 @@ export default function ProfileScreen() {
         </div>
       )}
 
-        {/* ── NHÓM 2: GIAO THƯƠNG & SỰ KIỆN ── */}
-        {/* ── TAB 2: GIAO THƯƠNG B2B (TỐI GIẢN CHUẨN 3 MÀU CEO 1983: ĐỎ BÃ TRẦU - VÀNG KIM - XANH NAVY) ── */}
+        {/* ── NHÓM 2: GIAO THƯƠNG & SỰ KIỆN TONE CAM ── */}
         {activeTab === "activities" && (
           <div className="w-full space-y-2.5 animate-in fade-in duration-200">
             {/* 2.1. Đầu mục: Sự kiện đã tham gia */}
@@ -1325,24 +1333,24 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => toggleSection("events")}
-                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-orange-50/40 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <Calendar className="size-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Sự kiện đã tham gia
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-300 text-[10px] font-black border border-blue-100 dark:border-blue-900">
+                    <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[10px] font-black border border-orange-200 dark:border-orange-900">
                       {participatedEvents.length}
                     </span>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["events"] ? "rotate-180 text-[#1E3A8A] dark:text-amber-400" : ""
+                    expandedSections["events"] ? "rotate-180 text-orange-600 dark:text-amber-400" : ""
                   }`}
                 />
               </button>
@@ -1356,7 +1364,7 @@ export default function ProfileScreen() {
                       </p>
                       <Link
                         to="/association/events"
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#1E3A8A] dark:text-blue-400 hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline"
                       >
                         <span>Khám phá lịch sự kiện CLB</span>
                         <ChevronRight className="size-3.5" />
@@ -1369,15 +1377,15 @@ export default function ProfileScreen() {
                           key={ev.id}
                           to="/events/$eventId"
                           params={{ eventId: ev.id } as any}
-                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
+                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-orange-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="size-10 rounded-xl bg-[#1E3A8A] text-white flex flex-col items-center justify-center shrink-0 leading-tight">
+                            <div className="size-10 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex flex-col items-center justify-center shrink-0 leading-tight">
                               <span className="text-[10px] font-black">{ev.day || "EV"}</span>
                               <span className="text-[8px] font-bold uppercase">{ev.month || "CEO"}</span>
                             </div>
                             <div className="min-w-0">
-                              <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#1E3A8A] dark:group-hover:text-blue-400 transition">
+                              <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 transition">
                                 {ev.title}
                               </h5>
                               <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
@@ -1385,7 +1393,7 @@ export default function ProfileScreen() {
                               </p>
                             </div>
                           </div>
-                          <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-300 text-[10px] font-extrabold shrink-0 border border-blue-200">
+                          <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[10px] font-extrabold shrink-0 border border-orange-200">
                             Đã đăng ký
                           </span>
                         </Link>
@@ -1401,24 +1409,24 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => toggleSection("committee_meetings")}
-                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-orange-50/40 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <Building2 className="size-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cuộc họp ban
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#1E3A8A] dark:text-blue-300 text-[10px] font-black border border-blue-100 dark:border-blue-900">
+                    <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[10px] font-black border border-orange-200 dark:border-orange-900">
                       {committeeMeetings.length}
                     </span>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["committee_meetings"] ? "rotate-180 text-[#1E3A8A] dark:text-blue-400" : ""
+                    expandedSections["committee_meetings"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
                   }`}
                 />
               </button>
@@ -1431,7 +1439,7 @@ export default function ProfileScreen() {
                       className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E3A8A] dark:text-blue-300 text-[9.5px] font-extrabold uppercase">
+                        <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[9.5px] font-extrabold uppercase">
                           {m.department}
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9.5px] font-extrabold">
@@ -1457,9 +1465,9 @@ export default function ProfileScreen() {
                             href={m.zoomUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-[#1E3A8A] text-white text-[11px] font-bold shadow-2xs hover:bg-[#172554] transition cursor-pointer"
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-orange-500 text-white text-[11px] font-bold shadow-2xs hover:bg-orange-600 transition cursor-pointer"
                           >
-                            <Video className="size-3 text-amber-300" />
+                            <Video className="size-3 text-amber-200" />
                             <span>Vào phòng họp</span>
                           </a>
                           <span className="text-[10px] text-slate-400 italic">Được cấp bởi Ban Thư Ký</span>
@@ -1476,24 +1484,24 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => toggleSection("meetings_1on1")}
-                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-orange-50/40 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <Handshake className="size-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cuộc gặp giao thương 1-on-1
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-black border border-blue-200 dark:border-blue-900">
+                    <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[10px] font-black border border-orange-200 dark:border-orange-900">
                       {meetings1on1.length}
                     </span>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["meetings_1on1"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                    expandedSections["meetings_1on1"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
                   }`}
                 />
               </button>
@@ -1506,10 +1514,10 @@ export default function ProfileScreen() {
                       className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-xs text-[#003B95] dark:text-blue-400">
+                        <span className="font-bold text-xs text-orange-600 dark:text-orange-400">
                           {meet.partnerName}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[9.5px] font-extrabold border border-blue-200">
+                        <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[9.5px] font-extrabold border border-orange-200">
                           {meet.status}
                         </span>
                       </div>
@@ -1521,7 +1529,7 @@ export default function ProfileScreen() {
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
                         <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                          <Clock className="size-3 text-[#003B95] dark:text-blue-400" />
+                          <Clock className="size-3 text-orange-500" />
                           <span>{meet.time} ngày {meet.date}</span>
                         </span>
                         <span className="flex items-center gap-1 truncate max-w-full">
@@ -1534,15 +1542,15 @@ export default function ProfileScreen() {
                           href={`https://zalo.me/${meet.phone}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-[#003B95] dark:text-blue-300 text-[10.5px] font-bold hover:bg-blue-100 transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-[10.5px] font-bold hover:bg-orange-100 transition cursor-pointer"
                         >
                           <span>Nhắn Zalo đối tác</span>
                         </a>
                         <a
                           href={`tel:${meet.phone}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-[#003B95] dark:text-blue-300 text-[10.5px] font-bold hover:bg-blue-100 transition cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-[10.5px] font-bold hover:bg-orange-100 transition cursor-pointer"
                         >
-                          <Phone className="size-3 text-[#003B95]" />
+                          <Phone className="size-3 text-orange-600" />
                           <span>Gọi điện</span>
                         </a>
                       </div>
@@ -1557,24 +1565,24 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => toggleSection("opportunities")}
-                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-orange-50/40 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <TrendingUp className="size-4" />
                   </div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Cơ hội giao thương B2B
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-black border border-blue-200 dark:border-blue-900">
+                    <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[10px] font-black border border-orange-200 dark:border-orange-900">
                       {connectedOpportunities.length}
                     </span>
                   </div>
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["opportunities"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                    expandedSections["opportunities"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
                   }`}
                 />
               </button>
@@ -1588,7 +1596,7 @@ export default function ProfileScreen() {
                       </p>
                       <Link
                         to="/association/opportunities"
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline"
                       >
                         <span>Khám phá cơ hội hợp tác B2B</span>
                         <ChevronRight className="size-3.5" />
@@ -1600,17 +1608,17 @@ export default function ProfileScreen() {
                         <Link
                           key={opp.id}
                           to="/association/opportunities"
-                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-blue-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
+                          className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-orange-400/60 transition flex items-center justify-between gap-3 group cursor-pointer"
                         >
                           <div className="min-w-0">
-                            <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#003B95] transition">
+                            <h5 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-orange-600 transition">
                               {opp.title}
                             </h5>
                             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
                               {opp.company || "Hội viên CLB"} • {opp.value || "Thỏa thuận B2B"}
                             </p>
                           </div>
-                          <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 text-[10px] font-extrabold shrink-0 border border-blue-200">
+                          <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[10px] font-extrabold shrink-0 border border-orange-200">
                             {opp.interested ? "Đã quan tâm" : "Đã đăng"}
                           </span>
                         </Link>
@@ -1626,10 +1634,10 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => toggleSection("marketplace")}
-                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-orange-50/40 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <Package className="size-4" />
                   </div>
                   <div>
@@ -1640,7 +1648,7 @@ export default function ProfileScreen() {
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["marketplace"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                    expandedSections["marketplace"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
                   }`}
                 />
               </button>
@@ -1650,10 +1658,10 @@ export default function ProfileScreen() {
                   <Link
                     to="/association/products"
                     search={undefined as any}
-                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-blue-400 transition cursor-pointer"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-orange-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                      <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                         <Package className="size-4" />
                       </div>
                       <div className="min-w-0">
@@ -1666,10 +1674,10 @@ export default function ProfileScreen() {
 
                   <Link
                     to="/association/members"
-                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-blue-400 transition cursor-pointer"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-orange-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                      <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                         <Users className="size-4" />
                       </div>
                       <div className="min-w-0">
@@ -1682,23 +1690,23 @@ export default function ProfileScreen() {
 
                   <Link
                     to="/association/calendar"
-                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-blue-400 transition cursor-pointer"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-orange-400 transition cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                      <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                         <Calendar className="size-4" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                           <h5 className="text-xs font-bold text-slate-900 dark:text-white">Lịch hoạt động &amp; Nhắc hẹn</h5>
-                          <span className="px-1.5 py-0.2 rounded-md bg-[#003B95] text-white text-[8.5px] font-bold uppercase">
+                          <span className="px-1.5 py-0.2 rounded-md bg-orange-500 text-white text-[8.5px] font-bold uppercase">
                             Nhắc lịch
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400">Xem sự kiện, họp ban, cuộc gặp &amp; cài thông báo nhắc</p>
                       </div>
                     </div>
-                    <ChevronRight className="size-4 text-[#003B95] shrink-0" />
+                    <ChevronRight className="size-4 text-orange-500 shrink-0" />
                   </Link>
                 </div>
               )}
@@ -1709,10 +1717,10 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => toggleSection("audit_history")}
-                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                className="w-full p-3.5 flex items-center justify-between text-left hover:bg-orange-50/40 dark:hover:bg-slate-800/40 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                  <div className="size-8.5 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
                     <History className="size-4" />
                   </div>
                   <div>
@@ -1723,7 +1731,7 @@ export default function ProfileScreen() {
                 </div>
                 <ChevronDown
                   className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["audit_history"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                    expandedSections["audit_history"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
                   }`}
                 />
               </button>
@@ -1736,7 +1744,7 @@ export default function ProfileScreen() {
                       className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-3 text-xs"
                     >
                       <div className="min-w-0 flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-[#1E3A8A] dark:bg-amber-400 shrink-0" />
+                        <span className="size-2 rounded-full bg-orange-500 dark:bg-amber-400 shrink-0" />
                         <span className="text-slate-800 dark:text-slate-200 font-medium truncate">
                           {act.title}
                         </span>

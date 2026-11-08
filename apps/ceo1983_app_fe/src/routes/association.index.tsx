@@ -1188,10 +1188,10 @@ function Home() {
           </div>
           <Link
             to="/association/notifications"
-            className="relative p-2 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 inline-flex justify-center items-center hover:scale-105 active:scale-95 transition shadow-xs"
+            className="relative p-2 rounded-xl border border-orange-200 dark:border-orange-500/30 bg-orange-50/50 dark:bg-slate-800 inline-flex justify-center items-center hover:scale-105 active:scale-95 transition shadow-xs"
             aria-label="Thông báo"
           >
-            <img src="/icons/home_icons/notification-01.svg" className="size-5" alt="Thông báo" />
+            <img src="/icons/home/notification-01.svg" className="size-5" alt="Thông báo" />
             <div className="px-1.5 py-0.5 -right-1.5 -top-1.5 absolute bg-[#EF4444] rounded-[100px] inline-flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
               <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
                 {unreadNotifCount > 9 ? "9+" : (unreadNotifCount || "9+")}
@@ -1200,14 +1200,14 @@ function Home() {
           </Link>
         </div>
 
-        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE VÀNG CAM ── */}
+        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE MÀU CAM ── */}
         <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-2.5">
           <div
             onClick={() => setProfileSheetOpen(true)}
-            className="self-stretch h-56 relative bg-linear-to-r from-amber-100/90 via-orange-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-[20px] shadow-[0px_4px_13px_0px_rgba(174,113,21,0.12)] border border-amber-300/60 dark:border-amber-500/30 overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group"
+            className="self-stretch h-56 relative bg-gradient-to-r from-orange-100/90 via-amber-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-[20px] shadow-[0px_4px_14px_0px_rgba(234,88,12,0.15)] border border-orange-300/80 dark:border-orange-500/40 overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group"
           >
             {/* Cover Banner */}
-            <div className="w-full h-24 left-0 top-0 absolute bg-stone-300 dark:bg-slate-800 rounded-tl-2xl rounded-tr-2xl border-b border-amber-200/50 dark:border-slate-700 overflow-hidden">
+            <div className="w-full h-24 left-0 top-0 absolute bg-stone-300 dark:bg-slate-800 rounded-tl-2xl rounded-tr-2xl border-b border-orange-200/60 dark:border-slate-700 overflow-hidden">
               <img
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
@@ -1230,7 +1230,7 @@ function Home() {
               {displayAvatar && !avatarError ? (
                 <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-linear-to-tr from-[#003B95] to-amber-500 flex items-center justify-center text-white text-base font-black font-sans">
+                <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-base font-black font-sans">
                   {initials(displayName)}
                 </div>
               )}
@@ -1242,11 +1242,11 @@ function Home() {
                 <div className="text-slate-900 dark:text-white text-lg font-bold font-['Inter'] leading-6 truncate">
                   {displayName || "Trần Tuấn Anh"}
                 </div>
-                <img src="/icons/home_icons/security-check.svg" className="size-4 shrink-0 text-amber-500" alt="Xác thực" />
+                <img src="/icons/home/security-check.svg" className="size-4 shrink-0 text-orange-500" alt="Xác thực" />
               </div>
-              <div className="px-2 py-[2px] bg-orange-100 dark:bg-amber-950/60 border border-orange-200 dark:border-amber-500/40 rounded-full inline-flex justify-start items-center gap-1.5">
-                <img src="/icons/home_icons/briefcase-04.svg" className="size-3 text-orange-600 dark:text-amber-400" alt="Chức vụ" />
-                <div className="text-orange-600 dark:text-amber-400 text-xs font-semibold font-['Inter'] leading-4">
+              <div className="px-2 py-[2px] bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-500/40 rounded-full inline-flex justify-start items-center gap-1.5">
+                <img src="/icons/home/briefcase-04.svg" className="size-3 text-orange-600 dark:text-orange-400" alt="Chức vụ" />
+                <div className="text-orange-600 dark:text-orange-400 text-xs font-semibold font-['Inter'] leading-4">
                   {displayTitle || "CEO"}
                 </div>
               </div>
@@ -1259,15 +1259,15 @@ function Home() {
                 e.stopPropagation();
                 setQuickEditOpen(true);
               }}
-              className="w-8 h-8 p-1.5 right-4 top-[106px] absolute rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 shadow-2xs inline-flex justify-center items-center hover:scale-105 active:scale-95 transition cursor-pointer"
+              className="w-8 h-8 p-1.5 right-4 top-[106px] absolute rounded-xl border border-orange-200 dark:border-orange-500/30 bg-white/95 dark:bg-slate-800/90 shadow-2xs inline-flex justify-center items-center hover:scale-105 active:scale-95 transition cursor-pointer"
               title="Chỉnh sửa thông tin"
             >
-              <img src="/icons/home_icons/edit-04.svg" className="size-4" alt="Chỉnh sửa" />
+              <img src="/icons/home/edit-04.svg" className="size-4" alt="Chỉnh sửa" />
             </button>
 
             {/* Member Phone */}
             <div className="left-4 top-[188px] absolute inline-flex justify-start items-center gap-1.5">
-              <img src="/icons/home_icons/call-02.svg" className="size-4 text-slate-500 dark:text-slate-400" alt="Điện thoại" />
+              <img src="/icons/home/call-02.svg" className="size-4 text-orange-600 dark:text-orange-400" alt="Điện thoại" />
               <div className="text-slate-800 dark:text-slate-200 text-sm font-semibold font-['Inter'] leading-5 tracking-wide">
                 {displayPhone || "0393631546"}
               </div>
@@ -1284,12 +1284,12 @@ function Home() {
             <button
               type="button"
               onClick={() => setAllFeaturesModalOpen(true)}
-              className="px-2.5 py-1 rounded-lg border border-orange-200 dark:border-amber-500/30 bg-orange-50/50 dark:bg-amber-950/30 flex justify-start items-center gap-1.5 cursor-pointer hover:bg-orange-100/50 transition"
+              className="px-2.5 py-1 rounded-lg border border-orange-200 dark:border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/30 flex justify-start items-center gap-1.5 cursor-pointer hover:bg-orange-100/50 transition"
             >
-              <div className="text-orange-600 dark:text-amber-400 text-xs font-semibold font-['Inter'] leading-5">
+              <div className="text-orange-600 dark:text-orange-400 text-xs font-semibold font-['Inter'] leading-5">
                 Xem tất cả
               </div>
-              <img src="/icons/home_icons/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
+              <img src="/icons/home/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
             </button>
           </div>
 
@@ -1299,8 +1299,8 @@ function Home() {
               to="/association/messages"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
             >
-              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
-                <img src="/icons/home_icons/bubble-chat.svg" className="size-6" alt="Tin nhắn" />
+              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
+                <img src="/icons/home/bubble-chat.svg" className="size-6" alt="Tin nhắn" />
               </div>
               <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
                 Tin nhắn
@@ -1312,8 +1312,8 @@ function Home() {
               to="/association/members"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
             >
-              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
-                <img src="/icons/home_icons/contact-book.svg" className="size-6" alt="Danh bạ CEO" />
+              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
+                <img src="/icons/home/contact-book.svg" className="size-6" alt="Danh bạ CEO" />
                 <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
                   <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
                     {directoryMembers.length > 0 ? directoryMembers.length : "10"}
@@ -1330,8 +1330,8 @@ function Home() {
               to="/association/analytics"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
             >
-              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
-                <img src="/icons/home_icons/chart-breakout-circle.svg" className="size-6" alt="Báo cáo" />
+              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
+                <img src="/icons/home/chart-breakout-circle.svg" className="size-6" alt="Báo cáo" />
               </div>
               <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
                 Báo cáo
@@ -1343,8 +1343,8 @@ function Home() {
               to="/association/opportunities"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
             >
-              <div className="size-14 bg-orange-50 dark:bg-amber-950/40 border border-orange-200/80 dark:border-amber-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
-                <img src="/icons/home_icons/briefcase-04.svg" className="size-6" alt="Giao thương B2B" />
+              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
+                <img src="/icons/home/briefcase-04.svg" className="size-6" alt="Giao thương B2B" />
                 {totalOpportunitiesCount > 0 && (
                   <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
                     <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
@@ -1363,20 +1363,20 @@ function Home() {
 
       {/* ── NỘI DUNG CHÍNH (SỰ KIỆN, ƯU ĐÃI, CƠ HỘI, SÀN TM, TIN TỨC) ── */}
       <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-4">
-        {/* ── 1. SỰ KIỆN SẮP TỚI: BANNER POSTER THEO CHUẨN CEO 1983 ── */}
+        {/* ── 1. SỰ KIỆN SẮP TỚI: BANNER POSTER THEO CHUẨN CEO 1983 TONE CAM ── */}
         <div className="w-full">
           <div className="mb-3 flex items-center justify-between">
             <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-              <span className="grid h-6 w-6 place-items-center rounded-lg bg-[var(--primary)] text-white text-xs border border-white/20 shadow-xs">
+              <span className="grid h-6 w-6 place-items-center rounded-lg bg-orange-500 text-white text-xs border border-white/20 shadow-xs">
                 <Calendar className="size-3.5 text-white" />
               </span>
-              <h2 className="text-[14px] font-black tracking-tight text-[var(--vba-text)] group-hover:text-[var(--primary)] transition-colors flex items-center gap-1">
+              <h2 className="text-[14px] font-black tracking-tight text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors flex items-center gap-1">
                 <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
-                <Sparkles className="h-3.5 w-3.5 text-[var(--primary)] fill-[var(--primary)]/20" />
+                <Sparkles className="h-3.5 w-3.5 text-orange-500 fill-orange-500/20" />
                 <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </h2>
             </Link>
-            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-[var(--primary)] dark:text-amber-400 hover:underline p-1">
+            <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-orange-600 dark:text-orange-400 hover:underline p-1">
               <span>{isEn ? "See all" : "Xem tất cả"}</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
@@ -1384,8 +1384,8 @@ function Home() {
 
           {/* Poster Grid: Hiển thị đúng số sự kiện thực tế từ database CRM, tối đa 5 sự kiện */}
           {displayEvents.length === 0 ? (
-            <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-slate-300 dark:border-slate-700">
-              <Calendar className="mx-auto h-7 w-7 text-[#003B95]/50 mb-1.5" />
+            <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-orange-200 dark:border-slate-700 bg-orange-50/30 dark:bg-slate-900/50">
+              <Calendar className="mx-auto h-7 w-7 text-orange-500/60 mb-1.5" />
               <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                 {isEn ? "No upcoming events scheduled" : "Chưa có sự kiện mới được lên lịch"}
               </p>
@@ -1420,7 +1420,7 @@ function Home() {
                   <Link
                     to="/association/events"
                     search={{ eventId: currentEv.id }}
-                    className="relative block w-full h-[185px] sm:h-[210px] rounded-3xl overflow-hidden shadow-lg border border-amber-500/40 bg-slate-900 group"
+                    className="relative block w-full h-[185px] sm:h-[210px] rounded-3xl overflow-hidden shadow-lg border border-orange-400/40 bg-slate-900 group"
                   >
                     <img
                       src={realImg}
@@ -1445,20 +1445,20 @@ function Home() {
 
                     {/* Bottom information */}
                     <div className="absolute inset-x-3.5 bottom-3.5 z-10 flex flex-col gap-1.5">
-                      <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-white transition-colors">
+                      <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-amber-200 transition-colors">
                         {realTitle}
                       </h3>
                       <div className="flex items-center justify-between text-xs text-slate-200">
                         <div className="flex items-center gap-2">
                           <span className="inline-flex items-center gap-1 font-medium text-white">
-                            <Clock className="size-3.5 text-slate-300 shrink-0" />
+                            <Clock className="size-3.5 text-orange-400 shrink-0" />
                             {currentEv.time || "08:30 - 11:30"}
                           </span>
                           <span className="truncate max-w-[150px] text-slate-300 text-[11px]">
                             {(currentEv as any).location || (currentEv as any).place || (currentEv as any).venue || "Hà Nội"}
                           </span>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#003B95] text-white font-bold text-[11px] shadow-sm">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-[11px] shadow-sm transition">
                           <span>Chi tiết</span>
                           <ChevronRight className="size-3 stroke-[3]" />
                         </span>
@@ -1508,7 +1508,7 @@ function Home() {
                       onClick={() => setEventSlideIndex(idx)}
                       className={`transition-all duration-300 rounded-full cursor-pointer ${
                         eventSlideIndex % displayEvents.length === idx
-                          ? "w-6 h-1.5 bg-[#003B95] dark:bg-amber-500"
+                          ? "w-6 h-1.5 bg-orange-500"
                           : "w-1.5 h-1.5 bg-slate-300 dark:bg-slate-700"
                       }`}
                       title={`Sự kiện ${idx + 1}`}
@@ -1543,11 +1543,11 @@ function Home() {
         <div className="w-full flex flex-col gap-3">
           <Link
             to="/association/products"
-            className="w-full p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-[0px_4px_16px_0px_rgba(31,56,100,0.08)] border border-slate-200 dark:border-slate-800 flex flex-col gap-3 group hover:border-amber-400 transition"
+            className="w-full p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-[0px_4px_16px_0px_rgba(234,88,12,0.08)] border border-slate-200 dark:border-slate-800 flex flex-col gap-3 group hover:border-orange-400 transition"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1F3864] dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                <span className="p-2 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                   <Package className="size-5" />
                 </span>
                 <div>
@@ -1559,7 +1559,7 @@ function Home() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-xs font-bold text-[#1F3864] dark:text-slate-300 group-hover:translate-x-0.5 transition-transform">
+              <div className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 group-hover:translate-x-0.5 transition-transform">
                 <span>Gian hàng</span>
                 <ChevronRight className="size-3.5" />
               </div>
@@ -1591,11 +1591,11 @@ function Home() {
         <div className="self-stretch flex flex-col justify-start items-start gap-2">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
-              <img src="/icons/ceo1983/briefcase-business.svg" alt="Building" className="size-5 shrink-0" />
+              <img src="/icons/home/briefcase-04.svg" alt="Building" className="size-5 shrink-0" />
               <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">DOANH NGHIỆP MỚI GIA NHẬP</span>
             </div>
-            <Link to="/association/members" className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center hover:bg-slate-200 transition">
-              <img src="/icons/ceo1983/chevron-right.svg" alt="More" className="size-4" />
+            <Link to="/association/members" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
+              <img src="/icons/home/arrow-right-02.svg" alt="More" className="size-4" />
             </Link>
           </div>
 
@@ -1612,10 +1612,10 @@ function Home() {
                   type="button"
                   key={(m as any).id || (m as any).code || i}
                   onClick={() => setSelectedMemberForProfile(m)}
-                  className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-sm outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-[#003B95] dark:hover:border-blue-500 hover:shadow-md transition cursor-pointer text-left"
+                  className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-xs outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-orange-500 dark:hover:border-orange-500 hover:shadow-md transition cursor-pointer text-left"
                   title={`Xem hồ sơ chi tiết của ${pName}`}
                 >
-                  <div className="size-9 bg-[#003B95] rounded-xl outline outline-1 outline-blue-400 flex justify-center items-center shrink-0 shadow-2xs">
+                  <div className="size-9 bg-orange-500 rounded-xl outline outline-1 outline-orange-300 flex justify-center items-center shrink-0 shadow-2xs">
                     <span className="text-white text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(pName)}</span>
                   </div>
                   <div className="inline-flex flex-col justify-start items-start min-w-0">
@@ -1633,21 +1633,18 @@ function Home() {
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
               <img
-                src="/icons/ceo1983/newspaper-fold--Streamline-Ultimate.svg"
+                src="/icons/home/new-releases.svg"
                 alt="News"
                 className="size-5 shrink-0"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/icons/ceo1983/calendar.svg";
-                }}
               />
               <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">TIN TỨC CÂU LẠC BỘ</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 rounded-full outline outline-1 outline-blue-200 dark:outline-blue-800 text-blue-800 dark:text-blue-300 text-[10px] font-bold">
+              <span className="px-2 py-0.5 bg-orange-50 dark:bg-orange-950/60 rounded-full outline outline-1 outline-orange-200 dark:outline-orange-800 text-orange-700 dark:text-orange-300 text-[10px] font-bold">
                 +{combinedNews.length || 5} TIN MỚI
               </span>
-              <Link to="/association/news" className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center hover:bg-slate-200 transition">
-                <img src="/icons/ceo1983/chevron-right.svg" alt="More" className="size-4" />
+              <Link to="/association/news" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
+                <img src="/icons/home/arrow-right-02.svg" alt="More" className="size-4" />
               </Link>
             </div>
           </div>
@@ -1679,7 +1676,7 @@ function Home() {
                   <Link
                     to="/association/news"
                     search={{ articleId: String(heroNews.id) }}
-                    className="self-stretch relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-sm hover:border-[#003B95] dark:hover:border-amber-400 transition-all group flex flex-col"
+                    className="self-stretch relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-sm hover:border-orange-500 dark:hover:border-orange-400 transition-all group flex flex-col"
                   >
                     <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
                       <img
@@ -1692,7 +1689,7 @@ function Home() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
                       <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                        <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#D97706] to-[#F59E0B] text-white text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                        <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1">
                           <Sparkles className="size-3" />
                           TIN TIÊU ĐIỂM
                         </span>
@@ -1724,7 +1721,7 @@ function Home() {
                         key={item.id || i}
                         to="/association/news"
                         search={{ articleId: String(item.id) }}
-                        className="w-60 relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-[#003B95] dark:hover:border-amber-400 transition"
+                        className="w-60 relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-orange-500 dark:hover:border-orange-400 transition"
                       >
                         <div className="relative w-full h-28 overflow-hidden bg-slate-100 dark:bg-slate-800">
                           <img
@@ -1735,16 +1732,16 @@ function Home() {
                               (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
                             }}
                           />
-                          <div className="px-2 py-0.5 right-2 top-2 absolute bg-[#003B95] text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold">
-                            <span className="size-1 bg-amber-400 rounded-full" />
+                          <div className="px-2 py-0.5 right-2 top-2 absolute bg-orange-500 text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold shadow-xs">
+                            <span className="size-1 bg-white rounded-full" />
                             <span>Mới</span>
                           </div>
                         </div>
                         <div className="self-stretch p-2.5 flex flex-col justify-start items-start gap-1">
-                          <span className="text-[#003B95] dark:text-blue-400 text-[9.5px] font-bold uppercase truncate w-full">
+                          <span className="text-orange-600 dark:text-orange-400 text-[9.5px] font-bold uppercase truncate w-full">
                             {(item as any).category || "BẢN TIN BAN CHẤP HÀNH"}
                           </span>
-                          <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-[#003B95] transition-colors">
+                          <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-orange-600 transition-colors">
                             {item.title}
                           </span>
                           <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-0.5" />
@@ -1753,7 +1750,7 @@ function Home() {
                               {item.author || "Ban Thư Ký"}
                             </span>
                             <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold font-mono">
-                              <Clock className="size-3 text-[#003B95] shrink-0" />
+                              <Clock className="size-3 text-orange-500 shrink-0" />
                               {formatNewsDate(item.time)}
                             </span>
                           </div>
@@ -1767,27 +1764,27 @@ function Home() {
           })()}
         </div>
 
-        {/* Quét mã QR Check-in sự kiện (Chuẩn Gradient Thương hiệu CEO 1983: Navy Hoàng gia + Amber Gold) */}
+        {/* Quét mã QR Check-in sự kiện (Chuẩn Gradient Thương hiệu Tone Cam & Gold) */}
         {canScanEventQr && (
-          <div className="self-stretch p-4 bg-gradient-to-r from-[#001D4A] via-[#003B95] to-[#002B70] rounded-[20px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-lg shadow-[#003B95]/25 border border-amber-400/40 mt-1">
-            <div className="size-12 bg-white/10 backdrop-blur-xs rounded-2xl border border-amber-400/50 flex justify-center items-center shrink-0 text-amber-300 shadow-inner">
-              <QrCode className="size-6.5 text-amber-300" />
+          <div className="self-stretch p-4 bg-gradient-to-r from-orange-600 via-amber-600 to-amber-700 rounded-[20px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-lg shadow-orange-500/25 border border-orange-300/40 mt-1">
+            <div className="size-12 bg-white/15 backdrop-blur-xs rounded-2xl border border-white/40 flex justify-center items-center shrink-0 text-white shadow-inner">
+              <QrCode className="size-6.5 text-white" />
             </div>
             <div className="flex-1 inline-flex flex-col justify-start items-start gap-1 overflow-hidden min-w-0">
               <span className="text-white text-xs font-extrabold leading-4">
                 Quét mã QR Check-in<br />sự kiện & điểm danh
               </span>
-              <div className="px-2 py-0.5 bg-gradient-to-r from-[#D97706] to-[#F59E0B] rounded-3xl inline-flex justify-start items-center gap-1 shadow-xs">
+              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-xs rounded-3xl inline-flex justify-start items-center gap-1 shadow-xs border border-white/30">
                 <ShieldCheck className="size-3 text-white" />
                 <span className="text-white text-[9.5px] font-black tracking-wide">BAN SOÁT VÉ CLB</span>
               </div>
             </div>
             <Link
               to="/association/checkin"
-              className="px-4 py-2.5 bg-gradient-to-r from-[#D97706] to-[#F59E0B] hover:brightness-110 text-white rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md shadow-amber-500/25 active:scale-95 transition"
+              className="px-4 py-2.5 bg-white text-orange-600 font-bold hover:bg-orange-50 rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md shadow-black/10 active:scale-95 transition"
             >
-              <span className="text-white text-xs font-bold">Quét ngay</span>
-              <ChevronRight className="size-3.5 text-white stroke-[2.5]" />
+              <span className="text-xs font-bold">Quét ngay</span>
+              <ChevronRight className="size-3.5 text-orange-600 stroke-[2.5]" />
             </Link>
           </div>
         )}
