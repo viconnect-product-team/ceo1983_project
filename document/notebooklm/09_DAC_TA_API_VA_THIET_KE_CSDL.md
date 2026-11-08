@@ -248,6 +248,60 @@
 
 ---
 
+### 9. Phân Hệ Tin Nhắn Trực Tiếp & Cuộc Trò Chuyện B2B (`public.messages`)
+| Tên cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Khóa chính tin nhắn |
+| `from_id` | `VARCHAR(100)` | `NOT NULL` | Định danh người gửi (UUID / Member ID / Code) |
+| `to_id` | `VARCHAR(100)` | `NOT NULL` | Định danh người nhận (UUID / Member ID / Code) |
+| `content` | `TEXT` | `NOT NULL` | Nội dung tin nhắn (văn bản thường hoặc thẻ [file:...], [meeting:...]) |
+| `file_metadata` | `JSONB` | `DEFAULT '{}'` | Metadata tệp tin đính kèm (URL, tên tệp, kích thước, mimeType) |
+| `is_read` | `BOOLEAN` | `DEFAULT FALSE` | Trạng thái đã xem tin nhắn hay chưa |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Thời điểm gửi tin nhắn |
+
+*Chỉ mục tối ưu:* `CREATE INDEX idx_messages_from_to ON public.messages(from_id, to_id);`, `CREATE INDEX idx_messages_to_from ON public.messages(to_id, from_id);`
+
+---
+
+### 10. Phân Hệ Quan Tâm Cơ Hội B2B & Yêu Cầu Báo Giá (`public.opportunity_interests`, `public.quote_requests`)
+- `public.opportunity_interests`:
+  | Tên cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+  | :--- | :--- | :--- | :--- |
+  | `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Khóa chính bản ghi quan tâm |
+  | `opportunity_id` | `UUID` | `FOREIGN KEY -> opportunities(id), ON DELETE CASCADE` | Khóa ngoại cơ hội kinh doanh |
+  | `user_id` | `UUID` | `NULL` | Khóa ngoại tài khoản người dùng |
+  | `member_id` | `VARCHAR(100)` | `NULL` | ID định danh hội viên bày tỏ quan tâm |
+  | `member_code` | `VARCHAR(50)` | `NULL` | Mã số hội viên (VD: CEO-83001) |
+  | `phone` | `VARCHAR(20)` | `NULL` | SĐT người quan tâm để liên hệ tức thời |
+  | `notes` | `TEXT` | `NULL` | Ghi chú nhu cầu hợp tác ban đầu |
+  | `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Thời điểm bày tỏ quan tâm |
+
+- `public.quote_requests`:
+  | Tên cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+  | :--- | :--- | :--- | :--- |
+  | `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Khóa chính yêu cầu báo giá |
+  | `product_id` | `VARCHAR(100)` | `NOT NULL` | ID sản phẩm trên sàn B2B |
+  | `buyer_id` | `VARCHAR(100)` | `NOT NULL` | ID hội viên gửi yêu cầu báo giá |
+  | `quantity` | `INTEGER` | `DEFAULT 1` | Số lượng hàng hóa/dịch vụ cần mua |
+  | `notes` | `TEXT` | `NULL` | Yêu cầu kỹ thuật và thời gian giao hàng |
+  | `status` | `VARCHAR(50)` | `DEFAULT 'pending'` | Trạng thái: pending, quoted, ordered, rejected |
+  | `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Thời điểm gửi yêu cầu |
+
+---
+
+### 11. Phân Hệ Cấu Hình Trang Đích Dynamic (`public.landing_web_configs`)
+| Tên cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Khóa chính cấu hình landing |
+| `template_id` | `VARCHAR(100)` | `UNIQUE, NOT NULL` | Mã bản mẫu: `timed_cards`, `startup_mobile` |
+| `title` | `VARCHAR(255)` | `NOT NULL` | Tiêu đề trang đích |
+| `slug` | `VARCHAR(100)` | `NOT NULL` | Đường dẫn path-based (VD: web-v1, web-v2) |
+| `is_published` | `BOOLEAN` | `DEFAULT TRUE` | Trạng thái xuất bản công khai |
+| `config` | `JSONB` | `DEFAULT '{}'` | Cấu hình dynamic 5 tab (hero, ribbon, map, avatars, testimonials) |
+| `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Thời điểm cập nhật cuối cùng |
+
+---
+
 ## PHẦN III: ĐẶC TẢ CHI TIẾT REST API ENDPOINTS
 
 ### 1. Phân Hệ Xác Thực & Phiên Làm Việc (Authentication & Session)
@@ -491,6 +545,81 @@
   }
   ```
 - **Response `200 OK`**: Trả về dữ liệu vị trí đã được lưu an toàn vào PostgreSQL.
+
+#### 6.2. `GET /members/geocode` & `GET /members/reverse-geocode`
+- **Mục đích**: Chuyển đổi hai chiều giữa địa chỉ chuỗi ký tự và tọa độ kinh độ/vĩ độ (Geocoding API).
+- **Query Params (Geocode)**: `address=...` -> Trả về `{ lat, lng, displayName }`.
+- **Query Params (Reverse Geocode)**: `lat=...&lng=...` -> Trả về `{ address, street, district, city }`.
+
+---
+
+### 7. Phân Hệ Cơ Hội B2B & Quản Trị Quan Tâm (Opportunities & Interests)
+
+#### 7.1. `POST /community/opportunities/:id/interest`
+- **Mục đích**: Hội viên bày tỏ quan tâm đến một cơ hội giao thương B2B.
+- **Request Body**:
+  ```json
+  {
+    "notes": "Công ty chúng tôi có năng lực cung ứng 500 tấn nhôm định hình tiêu chuẩn ISO."
+  }
+  ```
+- **Response `201 Created`**: Ghi nhận vào `opportunity_interests` và gửi push notification tới chủ cơ hội.
+
+#### 7.2. `DELETE /opportunities/:id/interests` & `POST /community/opportunities/:id/uninterest`
+- **Mục đích**: Hội viên rút/bỏ quan tâm cơ hội kinh doanh.
+- **Response `200 OK`**: Xóa triệt để bản ghi quan tâm đối soát qua UUID, mã hội viên và số điện thoại.
+
+#### 7.3. `POST /community/opportunities/:id/deal-status`
+- **Mục đích**: Chủ cơ hội cập nhật trạng thái tiến độ đàm phán (`negotiating`, `won`, `closed`).
+- **Request Body**:
+  ```json
+  {
+    "status": "won",
+    "actualValue": 2500000000,
+    "partnerId": "7b04f762-c840-410a-8a5f-141a0e101419"
+  }
+  ```
+- **Response `200 OK`**: Cập nhật trạng thái deal và cộng dồn giá trị vào thống kê giao thương.
+
+---
+
+### 8. Phân Hệ Tin Nhắn Trực Tiếp & Giao Tiếp B2B (Direct Messaging)
+
+#### 8.1. `POST /dm/member/messages`
+- **Mục đích**: Gửi tin nhắn trao đổi hoặc gửi tệp văn bản giữa hai hội viên.
+- **Request Body**:
+  ```json
+  {
+    "toId": "M1983-002",
+    "content": "Kính gửi anh Tuấn Anh hồ sơ năng lực [file:https://storage.ceo1983.vn/docs/profile.pdf|Profile_ViOne.pdf|2.4MB]"
+  }
+  ```
+- **Response `201 Created`**: Lưu vào bảng `messages` và phát sóng Socket.IO tới người nhận.
+
+#### 8.2. `GET /dm/member/messages`
+- **Mục đích**: Lấy lịch sử hội thoại tin nhắn phân trang giữa hai hội viên.
+- **Query Params**: `partnerId=M1983-002&limit=50&before=...`.
+
+---
+
+### 9. Phân Hệ Sinh Mã QR Vé Sự Kiện Nội Bộ Siêu Tốc (Native QR Ticket)
+
+#### 9.1. `GET /events/qr`
+- **Mục đích**: Sinh mã QR vé mời check-in hoặc thanh toán MoMo định dạng PNG sắc nét nội bộ dưới 5 mili-giây.
+- **Query Params**: `code=TIC-CEO1983-2026-X89A&size=300`.
+- **Response `200 OK`**: Trả về `image/png` trực tiếp kèm header `Cache-Control: public, max-age=86400`.
+
+---
+
+### 10. Phân Hệ Kiểm Duyệt Bình Luận Tin Tức CRM (News Moderation)
+
+#### 10.1. `GET /moderation/comments`
+- **Mục đích**: Cán bộ CRM tải danh sách toàn bộ bình luận trên các bài viết tin tức để kiểm duyệt.
+- **Response `200 OK`**: Trả về mảng bình luận kèm thông tin tác giả, bài viết gốc và cờ trạng thái.
+
+#### 10.2. `DELETE /moderation/comments/:id`
+- **Mục đích**: Ban Truyền Thông xóa bỏ bình luận vi phạm điều lệ CLB.
+- **Response `200 OK`**: Đánh dấu xóa hoặc xóa vĩnh viễn khỏi CSDL và ghi nhận audit log.
 
 ---
 

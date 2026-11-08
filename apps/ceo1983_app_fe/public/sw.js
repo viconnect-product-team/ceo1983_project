@@ -206,21 +206,24 @@ setInterval(async () => {
       }
     }
 
-    // 2. Kiểm tra thông báo mới
-    const notifRes = await fetch("/api/me/notifications?limit=2&unreadOnly=true", { headers }).catch(() => null);
+    // 2. Kiểm tra thông báo mới từ hệ thống CLB Doanh Nhân CEO 1983
+    let notifRes = await fetch("/connect-app/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
+    if (!notifRes || !notifRes.ok) {
+      notifRes = await fetch("/api/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
+    }
     if (notifRes && notifRes.ok) {
       const notifData = await notifRes.json().catch(() => null);
       const list = Array.isArray(notifData) ? notifData : notifData?.data || [];
       for (const item of list) {
-        const notifId = item.id || `${item.title}-${item.created_at || Date.now()}`;
-        if (!seenNotificationIds.has(notifId) && !item.is_read) {
+        const notifId = item.id || `${item.title}-${item.created_at || item.createdAt || Date.now()}`;
+        if (!seenNotificationIds.has(notifId) && (item.is_read === false || item.unread === true)) {
           seenNotificationIds.add(notifId);
-          safeShowNotification(item.title || "CEO 1983", {
-            body: item.body || item.message || "Bạn có thông báo mới từ Hiệp hội CEO 1983",
-            icon: item.icon || "/app-icon.png",
+          safeShowNotification(item.title || "CLB Doanh Nhân CEO 1983", {
+            body: item.body || item.message || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
+            icon: item.icon || "/ceo1983-emblem-8.png",
             badge: "/favicon.png",
             tag: `notif-${notifId}`,
-            data: item.action_url || item.url || "/association",
+            data: item.action_url || item.url || item.targetRoute || "/association/notifications",
             vibrate: [200, 100, 200],
             renotify: true,
           }).catch(() => {});

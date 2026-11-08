@@ -205,12 +205,21 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
       --vba-surface-2: ${darkSurface2} !important;
     }
 
-    /* 1. Recolor All Primary Buttons & Interactive Badges */
+    /* 1. Recolor All Primary Buttons & Interactive Badges across all 3 brand colors */
     [class*="bg-[#003B95]" i],
     [class*="bg-[#002B66]" i],
+    [class*="bg-[#002d73]" i],
     [class*="bg-[#0052CC]" i],
     [class*="bg-[#1E3A8A]" i],
     [class*="bg-[#1F3864]" i],
+    [class*="bg-[#EA580C]" i],
+    [class*="bg-[#C2410C]" i],
+    [class*="bg-[#9A3412]" i],
+    [class*="bg-[#F97316]" i],
+    [class*="bg-[#DC2626]" i],
+    [class*="bg-[#B91C1C]" i],
+    [class*="bg-[#7F1D1D]" i],
+    [class*="bg-[#EF4444]" i],
     .bg-primary,
     .vba-btn-primary,
     .vba-active-tab {
@@ -221,74 +230,112 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
     /* Chỉ ép text trắng trên các nút bấm hoặc thẻ pill thực sự có nền primary */
     button[class*="bg-[#003B95]" i],
     button[class*="bg-[#002B66]" i],
-    button[class*="bg-[#1E3A8A]" i],
+    button[class*="bg-[#002d73]" i],
+    button[class*="bg-[#EA580C]" i],
+    button[class*="bg-[#DC2626]" i],
     button.bg-primary,
     a.bg-primary,
     .vba-btn-primary {
       color: #FFFFFF !important;
     }
 
-    /* 2. Recolor All Primary Texts */
+    /* 2. Recolor All Primary Texts across all 3 brand colors */
     [class*="text-[#003B95]" i],
     [class*="text-[#002B66]" i],
+    [class*="text-[#002d73]" i],
     [class*="text-[#0052CC]" i],
     [class*="text-[#1E3A8A]" i],
     [class*="text-[#1F3864]" i],
+    [class*="text-[#EA580C]" i],
+    [class*="text-[#C2410C]" i],
+    [class*="text-[#9A3412]" i],
+    [class*="text-[#F97316]" i],
+    [class*="text-[#DC2626]" i],
+    [class*="text-[#B91C1C]" i],
+    [class*="text-[#7F1D1D]" i],
+    [class*="text-[#EF4444]" i],
     .text-primary {
       color: ${primary} !important;
     }
 
-    /* 3. Recolor All Borders */
+    /* 3. Recolor All Borders across all 3 brand colors */
     [class*="border-[#003B95]" i],
     [class*="border-[#002B66]" i],
+    [class*="border-[#002d73]" i],
     [class*="border-[#0052CC]" i],
     [class*="border-[#1E3A8A]" i],
     [class*="border-[#1F3864]" i],
+    [class*="border-[#EA580C]" i],
+    [class*="border-[#C2410C]" i],
+    [class*="border-[#9A3412]" i],
+    [class*="border-[#F97316]" i],
+    [class*="border-[#DC2626]" i],
+    [class*="border-[#B91C1C]" i],
+    [class*="border-[#7F1D1D]" i],
+    [class*="border-[#EF4444]" i],
     .border-primary {
       border-color: ${primary} !important;
     }
 
     /* 4. Recolor Rings & Outlines */
     [class*="ring-[#003B95]" i],
-    [class*="ring-[#002B66]" i],
-    [class*="ring-[#1E3A8A]" i],
+    [class*="ring-[#EA580C]" i],
+    [class*="ring-[#DC2626]" i],
+    [class*="outline-[#003B95]" i],
+    [class*="outline-[#EA580C]" i],
+    [class*="outline-[#DC2626]" i],
     .ring-primary {
       --tw-ring-color: ${primary} !important;
     }
 
     /* 5. Recolor SVG Fills and Strokes across all charts, gauges and icons */
     svg[stroke="#003B95" i],
-    svg[stroke="#002B66" i],
-    svg[stroke="#1E3A8A" i],
+    svg[stroke="#EA580C" i],
+    svg[stroke="#DC2626" i],
     circle[stroke="#003B95" i],
-    rect[stroke="#003B95" i],
-    path[stroke="#003B95" i] {
+    circle[stroke="#EA580C" i],
+    circle[stroke="#DC2626" i],
+    path[stroke="#003B95" i],
+    path[stroke="#EA580C" i],
+    path[stroke="#DC2626" i] {
       stroke: ${primary} !important;
     }
     svg[fill="#003B95" i],
-    svg[fill="#002B66" i],
+    svg[fill="#EA580C" i],
+    svg[fill="#DC2626" i],
     circle[fill="#003B95" i],
-    rect[fill="#003B95" i],
-    path[fill="#003B95" i] {
+    circle[fill="#EA580C" i],
+    circle[fill="#DC2626" i],
+    path[fill="#003B95" i],
+    path[fill="#EA580C" i],
+    path[fill="#DC2626" i] {
       fill: ${primary} !important;
     }
 
     /* 6. Recolor Soft Tints in Light Mode */
-    html:not(.dark) [class*="bg-blue-50"] {
+    html:not(.dark) [class*="bg-blue-50"],
+    html:not(.dark) [class*="bg-orange-50"],
+    html:not(.dark) [class*="bg-red-50"] {
       background-color: ${lightBg} !important;
     }
     html:not(.dark) [class*="border-blue-200"],
-    html:not(.dark) [class*="border-blue-100"] {
+    html:not(.dark) [class*="border-blue-100"],
+    html:not(.dark) [class*="border-orange-200"],
+    html:not(.dark) [class*="border-red-200"] {
       border-color: ${lightBorder} !important;
     }
 
     /* 7. Recolor Gradients */
-    [class*="from-[#003B95]" i] {
+    [class*="from-[#003B95]" i],
+    [class*="from-[#EA580C]" i],
+    [class*="from-[#DC2626]" i] {
       --tw-gradient-from: ${primary} var(--tw-gradient-from-position) !important;
       --tw-gradient-to: ${primaryDeep} var(--tw-gradient-to-position) !important;
       --tw-gradient-stops: var(--tw-gradient-from), ${primaryDeep} var(--tw-gradient-to-position) !important;
     }
-    [class*="to-[#003B95]" i] {
+    [class*="to-[#003B95]" i],
+    [class*="to-[#EA580C]" i],
+    [class*="to-[#DC2626]" i] {
       --tw-gradient-to: ${primary} var(--tw-gradient-to-position) !important;
     }
 
@@ -355,7 +402,13 @@ export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
 
   try {
     localStorage.setItem(COLOR_THEME_STORAGE_KEY, theme.id);
+    localStorage.setItem("vba.theme.color", theme.id);
+    localStorage.setItem("vba_theme_color", theme.id);
+    localStorage.setItem("ceo1983_active_theme", theme.id);
+    localStorage.setItem("vba_active_color_theme", theme.id);
     window.dispatchEvent(new CustomEvent(COLOR_THEME_EVENT, { detail: theme }));
+    window.dispatchEvent(new CustomEvent("theme-color-changed", { detail: theme.id }));
+    window.dispatchEvent(new Event("storage"));
   } catch {
     /* ignore */
   }

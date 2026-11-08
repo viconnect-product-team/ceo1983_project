@@ -1,5 +1,43 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.63): Sửa Bug Toàn Diện Hệ Thống Web CRM & CEO 1983 Mobile App Theo Danh Mục Người Dùng Yêu Cầu ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Phần 1: Sửa Bug Web CRM Quản Trị*:
+     - **Mục 1 (Tổng quát thông báo & Số đếm menu tree)**: Khắc phục lỗi 404 trang xem tổng quát thông báo bằng cách tạo route `/admin/notifications/overview` và `/admin/notifications`, liên kết trực tiếp component `AdminNotificationsOverview`. Cập nhật menu tree sidebar hiển thị số đếm thông báo thực tế theo thời gian thực tại cả node cha "Thông báo" và node con "Tổng quan thông báo".
+     - **Mục 2 (Popup chúc mừng sinh nhật Poster Pinterest)**: Nâng cấp modal chúc mừng sinh nhật hội viên dạng Poster Hoàng Gia sang trọng lấy cảm hứng từ Pinterest URL `https://www.pinterest.com/pin/826199494162835959/`. Tự động lấy avatar hội viên, khung viền vàng kim vương miện, pháo hoa bay lượn, họ tên, công ty, chức vụ và lời chúc chúc mừng sinh nhật trang trọng từ Ban Chấp Hành CLB CEO 1983.
+     - **Mục 3 (Quản Lý Check-in Độc Lập)**: Xây dựng riêng tính năng Quản Lý Check-in Độc Lập trên Web CRM (`/admin/checkin` và `/checkin`) với đầy đủ 3 nghiệp vụ chuyên sâu: Check-in sự kiện, Diễn đàn gặp mặt / Đào tạo, và Quản lý người tham gia cuộc họp. Hỗ trợ lọc theo loại hình, tìm kiếm hội viên, quét mã QR camera và xác nhận điểm danh tức thì.
+     - **Mục 4 (Chia Sẻ Cơ Hội B2B & Sắp Xếp Deal Lời Nhất)**: Sửa lỗi cơ hội không hiển thị; Phân quyền bảo mật (chỉ hiển thị những cơ hội public hoặc người được chỉ định cụ thể trong `targetRecipients`, bạn bè, admin hoặc người đăng). Mở rộng CSDL PostgreSQL `public.opportunity_interests` bổ sung 2 cột `deal_value` (VNĐ) và `deal_percent` (%). Tự động tính tỷ lệ % ngân sách và sắp xếp danh sách quan tâm theo giá trị deal lời nhất cho người đăng cơ hội (`ORDER BY oi.deal_value DESC, oi.created_at DESC`).
+     - **Mục 5 (Zalo OA Token Tự Động Refresh Mỗi 6 Tiếng)**: Giải quyết triệt để lỗi mất Access Token/Refresh Token Zalo OA sau 1 ngày bằng background service tự động chạy định kỳ mỗi 6 tiếng (`zalo.service.ts`). Lưu trữ cấu hình token bền vững vào CSDL `public.app_settings` key `zalo_oa_config`, đồng thời cung cấp giao diện quản trị hiển thị trạng thái token và nút kích hoạt refresh thủ công tức thì.
+  2. *Phần 2: Sửa Bug CEO 1983 Mobile App*:
+     - **Mục 1 (Gỡ bỏ 4 phím tắt khỏi Cài đặt hệ thống)**: Gỡ bỏ hoàn toàn khối 3.2 "Cài đặt 4 tính năng nhanh trang chủ" khỏi màn hình `association.profile.tsx`, đưa tính năng cấu hình 4 phím tắt này vào popup "TẤT CẢ TÍNH NĂNG CEO 1983" (`AllFeaturesModal.tsx`).
+     - **Mục 2 (Đổi màu giao diện hiển thị chuẩn màu đã setup)**: Nâng cấp `injectGlobalThemeOverride` trong `ceo1983-color-theme.ts` hỗ trợ toàn diện cả 3 dải màu thương hiệu chuẩn mực: Xanh Doanh Nhân (`#003B95`), Cam Tiên Phong (`#EA580C`), Đỏ Nhiệt Huyết (`#DC2626`) trên background, text, border, outline, ring, SVG icons, gradients. Đồng bộ qua nhiều khóa LocalStorage và tự động áp dụng khi khởi chạy `MemberShell`.
+     - **Mục 3 (Mã QR Cuộc Họp Mạng Lưới & Form Đăng Ký Tham Gia)**: Các bài đăng cuộc họp, diễn đàn, đào tạo trên màn Mạng Lưới (`FeedView.tsx`) bắt buộc hiển thị trực tiếp mã QR Code to rõ nét (`QrCanvas` 108px kèm logo CLB). Bấm vào mã QR hoặc nút "Đăng Ký Tham Gia" sẽ mở ngay `QuickRegisterMeetingModal`. Đồng thời nâng cấp `AssociationQrScanModal.tsx` để khi camera quét trúng mã QR cuộc họp này sẽ tự động nhận diện và hiển thị ngay form đăng ký tham gia điểm danh.
+     - **Mục 4 (Thông Báo Sắp Xếp Chuẩn Lần Lượt & Bắn Ra Ngoài App Khi Thoát App)**: Sửa lỗi thông báo bị xáo trộn lộn xộn: Chuyển sort mặc định thành `"newest"`, sắp xếp giảm dần tuần tự theo thời gian tạo (`tb - ta`), phân nhóm thời gian chuẩn xác (Hôm nay -> Hôm qua -> Tuần này -> Tháng này & Cũ hơn). Tích hợp Web Notifications API & Service Worker (`sw.js`, `web-notifications.ts`, `notification-permissions.ts`, `MemberShell.tsx`) để tự động bắn thông báo hệ thống ra màn hình ngoài app khi hội viên thoát app hoặc tab đang chạy nền, kèm Banner một chạm bật thông báo trên trang thông báo.
+  3. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi bảo toàn tại local nhánh `dev`.
+
+- **Bản cập nhật ngày 08/11/2026 (v10.62): Chuẩn Hóa Toàn Diện Bộ Tài Liệu BRD, SRS, Thiết Kế Cơ Sở Dữ Liệu & Đặc Tả REST API Theo Chuẩn Doanh Nghiệp Quốc Tế (IEEE 830), Đặc Tả Chi Tiết 30 Use Cases Kèm 30 Biểu Đồ Use Case Mermaid Độc Lập ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016], [NODE-CORE-001] -> [NODE-CORE-006])**:
+  1. *Tài Liệu Yêu Cầu Nghiệp Vụ BRD (`07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md` & `BRD_CEO1983_MASTER_CHINH_THUC.md`)*:
+     - Chuẩn hóa bối cảnh hoạt động CLB Doanh Nhân CEO 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).
+     - 8 Sơ đồ luồng quy trình kinh doanh (Business Flowcharts) bằng Mermaid.
+     - Ma trận 30 Business Use Cases (15 BUC Quản trị CRM + 15 BUC Mobile App hội viên) chi tiết mục tiêu, đơn vị phụ trách và giá trị nghiệp vụ thực chiến.
+     - Bổ sung các quy chuẩn mới nhất: Theme Cam Tiên Phong chuẩn Figma, định vị bản đồ doanh nghiệp 2D Google Maps & reverse-geocoding, cơ chế bày tỏ quan tâm và rút quan tâm cơ hội B2B, quản trị và gửi tài liệu trực tiếp vào tin nhắn CRM, kiểm duyệt bình luận tin tức CRM, và quy chuẩn sinh mã QR vé sự kiện nội bộ siêu tốc (<5ms).
+  2. *Tài Liệu Đặc Tả Yêu Cầu Phần Mềm SRS (`08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md` & `SRS_CEO1983_MASTER_CHINH_THUC.md`)*:
+     - Mở rộng dung lượng tài liệu lên 128.7 KB chuẩn cấu trúc IEEE 830.
+     - Đặc tả chi tiết 100% toàn bộ 30 Use Cases:
+       * 15 Use Cases Quản Trị Web CRM (`UC-CRM-001` đến `UC-CRM-015`).
+       * 15 Use Cases Ứng Dụng Di Động Mobile App (`UC-APP-001` đến `UC-APP-015`).
+     - **Tất cả 30 Use Cases đều được tích hợp Biểu Đồ Use Case Diagram độc lập** bằng cú pháp Mermaid chuẩn (`flowchart LR` / `flowchart TD`) mô tả trực quan tương tác giữa Tác nhân -> Giao diện UI -> Backend Services -> PostgreSQL & Đối tác bên thứ ba.
+     - Mỗi Use Case bao gồm: Primary Actor, Secondary Actors, Goal, Description, Preconditions, Postconditions, Main Flow từng bước, Alternative & Exception Flows, Business Rules (BR-01 đến BR-57), và Technical Mapping (UI component, API endpoints, PostgreSQL tables).
+  3. *Tài Liệu Thiết Kế CSDL & Đặc Tả REST API (`09_DAC_TA_API_VA_THIET_KE_CSDL.md` & `03_DAC_TA_BACKEND_API_VA_CO_SO_DU_LIEU_POSTGRESQL.md`)*:
+     - Hoàn thiện sơ đồ quan hệ thực thể ERD và đặc tả 11 phân hệ bảng dữ liệu PostgreSQL `ceo1983_project` (bổ sung chi tiết `messages`, `opportunity_interests`, `quote_requests`, `landing_web_configs`).
+     - Đặc tả chi tiết 50+ REST API Endpoints chuẩn hóa với Method, Path, Auth Header, Request Body JSON, Response JSON mẫu, mã trạng thái HTTP và chiến lược đánh chỉ mục indexes tối ưu phản hồi dưới 50ms.
+  4. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi bảo toàn tại local nhánh `dev`.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.61): Tối Ưu Hóa & Tái Thiết Kế Toàn Diện Giao Diện Mobile Trang Chủ ([NODE-APP-001]) & Trang Cá Nhân ([NODE-APP-009]) Theo Chuẩn Figma Tone Màu Cam Tiên Phong Kèm Tích Hợp Trực Tiếp Bộ Icon SVG Độc Quyền**:
   1. *Trang Chủ Mobile App (`association.index.tsx` / `[NODE-APP-001]`)*:
      - **Thẻ Doanh Nhân Hero Member Card**:

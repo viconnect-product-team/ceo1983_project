@@ -123,8 +123,9 @@ export interface AppSession {
 
 type AuthStatus = 'loading' | 'in' | 'out';
 
-type AuthContextType = {
+export type AuthContextType = {
   user: AppUser | null;
+  member?: any;
   status: AuthStatus;
   session: AppSession | null;
   logout: () => void;
@@ -541,7 +542,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, status, session, logout, setAuthData, hasPermission }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        member: user?.member || (user as any) || null,
+        status,
+        session,
+        logout,
+        setAuthData,
+        hasPermission,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

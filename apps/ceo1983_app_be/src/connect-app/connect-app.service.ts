@@ -1637,7 +1637,7 @@ export class ConnectAppService implements OnModuleInit {
   createCommunityOpportunity(userId: string, communityId: string, data: any) { return this.opportunityService.createCommunityOpportunity(userId, communityId, data); }
   createCommunityNews(userId: string, communityId: string, data: any) { return this.opportunityService.createCommunityNews(userId, communityId, data); }
   claimCommunityOpportunity(userId: string, communityId: string, oppId: string) { return this.opportunityService.claimCommunityOpportunity(userId, communityId, oppId); }
-  expressCommunityOpportunityInterest(userId: string, communityId: string, oppId: string, data: any) { return this.opportunityService.expressCommunityOpportunityInterest(userId, communityId, oppId, data); }
+  expressCommunityOpportunityInterest(userId: string, communityId: string, oppId: string, data: any, dealValue?: number, message?: string) { return this.opportunityService.expressCommunityOpportunityInterest(userId, communityId, oppId, typeof data === 'string' ? data : (data?.interestLevel || 'high'), dealValue ?? data?.dealValue, message ?? data?.message); }
   withdrawCommunityOpportunityInterest(userId: string, communityId: string, oppId: string) { return this.opportunityService.withdrawCommunityOpportunityInterest(userId, communityId, oppId); }
   scheduleCommunityOpportunityFollowUp(userId: string, communityId: string, oppId: string, inDays: number) { return this.opportunityService.scheduleCommunityOpportunityFollowUp(userId, communityId, oppId, inDays); }
   updateCommunityOpportunityFollowUp(userId: string, communityId: string, oppId: string, data: any) { return this.opportunityService.updateCommunityOpportunityFollowUp(userId, communityId, oppId, data); }
@@ -1653,7 +1653,7 @@ export class ConnectAppService implements OnModuleInit {
   toggleOpportunityStatus(userId: string, id: string) { return this.opportunityService.toggleOpportunityStatus(userId, id); }
   listMyOpportunities(userId: string) { return this.opportunityService.listMyOpportunities(userId); }
   getOpportunityReport(userId: string) { return this.opportunityService.getOpportunityReport(userId); }
-  expressOpportunityInterest(userId: string, oppId: string, message?: string) { return this.opportunityService.expressOpportunityInterest(userId, oppId, message); }
+  expressOpportunityInterest(userId: string, oppId: string, message?: string, dealValue?: number, interestLevel?: string) { return this.opportunityService.expressOpportunityInterest(userId, oppId, message, dealValue, interestLevel); }
   incrementOpportunityView(id: string) { return this.opportunityService.incrementOpportunityView(id); }
   getOpportunityInterestedMembers(id: string) { return this.opportunityService.getOpportunityInterestedMembers(id); }
 

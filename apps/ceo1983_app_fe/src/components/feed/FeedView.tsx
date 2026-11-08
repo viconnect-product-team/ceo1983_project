@@ -36,6 +36,8 @@ import { executeShare } from "@/lib/share-helper";
 import { useAuth } from "@/context/AuthContext";
 import { CreatePostModal, COMMITTEES } from "./CreatePostModal";
 import { CommentTreeSection } from "./CommentTreeSection";
+import { QuickRegisterMeetingModal } from "./QuickRegisterMeetingModal";
+import { QrCanvas } from "../member/QrCanvas";
 
 export const COMMENT_EMOTIONS = [
   { id: "like", emoji: "👍", label: "Thích" },
@@ -435,6 +437,18 @@ export function FeedView({
 
   // Lightbox state for image preview
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  // Quick Register Modal state for meetings / forums in Feed
+  const [registeringMeeting, setRegisteringMeeting] = useState<{
+    id: string;
+    title: string;
+    time?: string;
+    location?: string;
+    isOnline?: boolean;
+    department?: string;
+    posterName?: string;
+    qrCodeUrl?: string;
+  } | null>(null);
 
   // Media & Emotion states for inline comments
   const [commentMediaMap, setCommentMediaMap] = useState<
@@ -1149,32 +1163,113 @@ export function FeedView({
                         </div>
                       </div>
 
-                      {/* Poster & Mã QR Check-in đính kèm khi CRM bắn xuống */}
-                      <div className="p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-300/40 dark:border-amber-800/40 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="size-11 rounded-xl bg-white dark:bg-slate-800 border border-amber-400/50 flex items-center justify-center p-1.5 shrink-0 shadow-xs">
-                            <QrCode className="size-full text-[#1F3864] dark:text-amber-400" />
+                      {/* ── BẮT BUỘC HIỂN THỊ MÃ QR TRỰC TIẾP LÊN MẠNG LƯỚI & FORM ĐĂNG KÝ (YÊU CẦU 3) ── */}
+                      {(() => {
+                        const meetingQrValue =
+                          post.qrCodeUrl ||
+                          `https://app.ceo1983.vn/register-meeting?id=${post.id}&title=${encodeURIComponent(
+                            (post.content || "").slice(0, 50)
+                          )}&time=${encodeURIComponent(post.meetingTime || "")}&location=${encodeURIComponent(
+                            post.meetingLocation || ""
+                          )}`;
+
+                        return (
+                          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-blue-900/10 dark:from-amber-950/30 dark:to-blue-950/20 border border-amber-300/60 dark:border-amber-700/60 shadow-xs space-y-3">
+                            <div className="flex flex-col sm:flex-row items-center gap-3.5">
+                              {/* QR Code Canvas hiển thị TRỰC TIẾP to rõ nét */}
+                              <div
+                                onClick={() =>
+                                  setRegisteringMeeting({
+                                    id: post.id,
+                                    title: (post.content || "Cuộc họp / Diễn đàn CLB CEO 1983").slice(0, 80),
+                                    time: post.meetingTime,
+                                    location: post.meetingLocation,
+                                    isOnline: post.isOnline,
+                                    department: post.department,
+                                    posterName: post.authorName,
+                                    qrCodeUrl: post.qrCodeUrl,
+                                  })
+                                }
+                                className="group relative p-2 rounded-2xl bg-white dark:bg-slate-900 border-2 border-amber-400/60 shadow-md flex flex-col items-center justify-center shrink-0 cursor-pointer hover:border-[#003B95] dark:hover:border-amber-400 transition"
+                                title="Chạm để mở form đăng ký tham gia"
+                              >
+                                <QrCanvas
+                                  value={meetingQrValue}
+                                  size={108}
+                                  logoUrl="/ceo1983-emblem-8.png"
+                                  className="rounded-xl shadow-xs"
+                                />
+                                <span className="mt-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 tracking-wider flex items-center gap-1 group-hover:text-[#003B95]">
+                                  <QrCode className="size-2.5" />
+                                  CHẠM ĐỂ QUÉT
+                                </span>
+                              </div>
+
+                              {/* Thông tin cuộc họp & nút đăng ký */}
+                              <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
+                                <div className="flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
+                                  <span className="px-2 py-0.5 rounded-full text-[9.5px] font-extrabold bg-[#003B95] text-white shadow-2xs">
+                                    MÃ QR THAM GIA
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-amber-500 text-slate-950">
+                                    ĐIỂM DANH TỰ ĐỘNG
+                                  </span>
+                                  {post.isOnline && (
+                                    <span className="px-1.5 py-0.5 rounded-full text-[9.5px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                      ZOOM ONLINE
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                                    {post.content ? post.content.split("\n")[0] : "Cuộc Họp & Gặp Mặt Doanh Nhân"}
+                                  </p>
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                                    {post.meetingLocation || "Trụ sở CLB CEO 1983 (HanoiBA)"}
+                                    {post.meetingTime ? ` • ${post.meetingTime}` : ""}
+                                  </p>
+                                </div>
+
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                                  Hội viên quét QR bằng camera hoặc bấm nút dưới để hiện form đăng ký tham gia ngay.
+                                </p>
+
+                                <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setRegisteringMeeting({
+                                        id: post.id,
+                                        title: (post.content || "Cuộc họp / Diễn đàn CLB CEO 1983").slice(0, 80),
+                                        time: post.meetingTime,
+                                        location: post.meetingLocation,
+                                        isOnline: post.isOnline,
+                                        department: post.department,
+                                        posterName: post.authorName,
+                                        qrCodeUrl: post.qrCodeUrl,
+                                      })
+                                    }
+                                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#003B95] to-[#152747] hover:from-[#002B70] hover:to-[#0f1d36] text-white text-xs font-bold shadow-sm active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="size-3.5 text-amber-400" />
+                                    <span>Đăng Ký Tham Gia</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setLightboxImage(post.qrCodeUrl || post.posterUrl || "/ceo1983-emblem-8.png")
+                                    }
+                                    className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
+                                  >
+                                    Phóng to QR
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                              <span>Mã QR Điểm Danh & Check-in</span>
-                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-amber-500 text-slate-950">
-                                QR CODE
-                              </span>
-                            </p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                              Quét tại hội trường hoặc phòng họp để xác nhận có mặt
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setLightboxImage(post.qrCodeUrl || post.posterUrl || "/ceo1983-emblem-8.png")}
-                          className="px-3 py-1.5 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-[11px] font-bold shrink-0 transition shadow-xs cursor-pointer"
-                        >
-                          Xem mã QR
-                        </button>
-                      </div>
+                        );
+                      })()}
                     </div>
                   );
                 })()}
@@ -1284,6 +1379,43 @@ export function FeedView({
           e.target.value = "";
         }}
       />
+
+      {/* ── QUICK REGISTER MEETING MODAL (YÊU CẦU 3: HIỆN FORM ĐĂNG KÝ THAM GIA TẠI CHÍNH CUỘC HỌP MẠNG LƯỚI) ── */}
+      {registeringMeeting && (
+        <QuickRegisterMeetingModal
+          isOpen={Boolean(registeringMeeting)}
+          meeting={registeringMeeting}
+          onClose={() => setRegisteringMeeting(null)}
+          onRegisterSuccess={(attendee) => {
+            setPosts((prev) =>
+              prev.map((p) => {
+                if (p.id === registeringMeeting.id) {
+                  const currentAttendees = p.attendees || [];
+                  const exists = currentAttendees.some(
+                    (a) => a.name.toLowerCase() === attendee.name.toLowerCase()
+                  );
+                  if (!exists) {
+                    return {
+                      ...p,
+                      attendees: [
+                        ...currentAttendees,
+                        {
+                          id: `att-${Date.now()}`,
+                          name: attendee.name,
+                          avatar: attendee.avatar,
+                          checkedIn: true,
+                          checkInTime: new Date().toLocaleTimeString("vi-VN"),
+                        },
+                      ],
+                    };
+                  }
+                }
+                return p;
+              })
+            );
+          }}
+        />
+      )}
 
       {/* ── LIGHTBOX IMAGE VIEWER ── */}
       {lightboxImage && (

@@ -38,6 +38,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import heroImg from "@/assets/vba-hero.jpg";
 import { CompanyProfile3DTemplate } from "@/components/member/CompanyProfile3DTemplate";
+import { QuickRegisterMeetingModal } from "@/components/feed/QuickRegisterMeetingModal";
 
 export interface ScannedPartner {
   code: string;
@@ -142,6 +143,14 @@ export function AssociationQrScanModal({
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [scannedPartner, setScannedPartner] = useState<ScannedPartner | null>(null);
   const [nonCeoPartner, setNonCeoPartner] = useState<NonCeoPartner | null>(null);
+  const [scannedMeeting, setScannedMeeting] = useState<{
+    id: string;
+    title: string;
+    time?: string;
+    location?: string;
+    isOnline?: boolean;
+    department?: string;
+  } | null>(null);
   const [isDecodingFile, setIsDecodingFile] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -152,7 +161,7 @@ export function AssociationQrScanModal({
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { videoRef, status, hasTorch, scanImageFile } = useQrScanner({
-    active: open && !scannedPartner && !nonCeoPartner,
+    active: open && !scannedPartner && !nonCeoPartner && !scannedMeeting,
     torch,
     facingMode,
     onDetect: (value) => {
@@ -164,6 +173,7 @@ export function AssociationQrScanModal({
     if (!open) {
       setScannedPartner(null);
       setNonCeoPartner(null);
+      setScannedMeeting(null);
       setConnected(false);
       setErrorMsg(null);
       setTorch(false);
@@ -172,7 +182,7 @@ export function AssociationQrScanModal({
 
   // Support Web NFC Tap detection on devices with NFC support
   useEffect(() => {
-    if (!open || scannedPartner || nonCeoPartner) return;
+    if (!open || scannedPartner || nonCeoPartner || scannedMeeting) return;
 
     let abortController: AbortController | null = null;
     if (typeof window !== "undefined" && "NDEFReader" in window) {
@@ -214,6 +224,55 @@ export function AssociationQrScanModal({
   const handleQrValue = async (raw: string) => {
     if (!raw) return;
     setErrorMsg(null);
+
+    // 0. Quét mã QR Cuộc Họp, Diễn Đàn, Sự Kiện, Đào Tạo trên App & Mạng Lưới (Yêu Cầu 3)
+    if (
+      raw.includes("CEO1983:MEETING_REGISTER:") ||
+      raw.includes("CEO1983:MEETING:") ||
+      raw.includes("register-meeting") ||
+      raw.includes("CEO1983:CHECKIN:")
+    ) {
+      let meetingId = "";
+      let title = "Cuộc Họp & Diễn Đàn Gặp Mặt CEO 1983";
+      let time = "09:00 - 11:30";
+      let location = "Trụ sở CLB Doanh Nhân CEO 1983 (HanoiBA)";
+      let isOnline = false;
+
+      if (raw.includes("register-meeting")) {
+        try {
+          const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://app.ceo1983.vn");
+          meetingId = url.searchParams.get("id") || url.searchParams.get("meetingId") || "";
+          if (url.searchParams.get("title")) title = decodeURIComponent(url.searchParams.get("title")!);
+          if (url.searchParams.get("time")) time = decodeURIComponent(url.searchParams.get("time")!);
+          if (url.searchParams.get("location")) location = decodeURIComponent(url.searchParams.get("location")!);
+          if (url.searchParams.get("isOnline")) isOnline = url.searchParams.get("isOnline") === "true";
+        } catch {
+          meetingId = raw;
+        }
+      } else if (raw.includes("CEO1983:CHECKIN:")) {
+        const parts = raw.split(":");
+        meetingId = parts[2] || `meet-${Date.now()}`;
+        title = "Điểm danh Sự kiện / Cuộc họp CEO 1983";
+      } else {
+        const payload = raw.replace(/^CEO1983:MEETING(?:_REGISTER)?:/, "").trim();
+        const parts = payload.split("|");
+        meetingId = parts[0] || `meeting-${Date.now()}`;
+        if (parts[1]) title = decodeURIComponent(parts[1]);
+        if (parts[2]) time = decodeURIComponent(parts[2]);
+        if (parts[3]) location = decodeURIComponent(parts[3]);
+      }
+
+      setScannedPartner(null);
+      setNonCeoPartner(null);
+      setScannedMeeting({
+        id: meetingId || `meet-${Date.now()}`,
+        title,
+        time,
+        location,
+        isOnline,
+      });
+      return;
+    }
 
     // 1. If it's a vCard text:
     if (raw.includes("BEGIN:VCARD")) {
@@ -918,6 +977,22 @@ export function AssociationQrScanModal({
               </button>
             </div>
           </div>
+        )}
+        {/* Form đăng ký tham gia cuộc họp khi quét mã QR cuộc họp / sự kiện trên mạng lưới */}
+        {scannedMeeting && (
+          <QuickRegisterMeetingModal
+            isOpen={Boolean(scannedMeeting)}
+            meeting={scannedMeeting}
+            onClose={() => {
+              setScannedMeeting(null);
+              onClose();
+            }}
+            onRegisterSuccess={() => {
+              setScannedMeeting(null);
+              toast.success("Đã ghi nhận đăng ký tham gia cuộc họp thành công!");
+              onClose();
+            }}
+          />
         )}
       </div>
     </div>

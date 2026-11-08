@@ -48,9 +48,19 @@ export function useUnreadNotifications() {
     try {
       const items = await list({});
       const seen = lastSeen();
+      // Lấy danh sách ID đã đọc cá nhân từ localStorage nếu có
+      let readIds = new Set<string>();
+      try {
+        const raw = localStorage.getItem("vba_crm_read_notif_ids");
+        if (raw) readIds = new Set(JSON.parse(raw));
+      } catch {}
+
       const unreadList = items.filter((n) => {
+        if (n.id && readIds.has(String(n.id))) return false;
         const ts = n.sentAt ? new Date(n.sentAt).getTime() : 0;
-        return ts > seen && n.status === "sent";
+        // Chưa đọc nếu gửi sau lastSeen HOẶC trong vòng 7 ngày gần nhất chưa bị mark read
+        const isRecent = Date.now() - ts < 7 * 86400000;
+        return (ts > seen || isRecent) && n.status === "sent";
       });
 
       const catCounts: Record<string, number> = {
@@ -184,17 +194,9 @@ export function useUnreadNotifications() {
   }, []);
 
 
-  // Mark as seen when the user opens the notifications page.
+  // Re-sync notifications when route changes
   useEffect(() => {
-    if (pathname === "/notifications") {
-      try {
-        localStorage.setItem(SEEN_KEY, String(Date.now()));
-      } catch {
-        /* ignore */
-      }
-      setCount(0);
-      window.dispatchEvent(new Event("notifications-seen"));
-    }
+    void refresh();
   }, [pathname]);
 
   return {

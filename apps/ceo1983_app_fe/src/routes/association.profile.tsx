@@ -2020,75 +2020,7 @@ export default function ProfileScreen() {
               )}
             </div>
 
-            {/* 3.2. Đầu mục: Cài đặt hiển thị 4 tính năng nhanh trang chủ (Yêu cầu 2) */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("home_shortcuts")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
-                    <LayoutDashboard className="size-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                        Cài đặt 4 tính năng nhanh trang chủ
-                      </h4>
-                      <span className="px-2 py-0.2 rounded-full text-[9px] font-black bg-blue-500/15 text-[#003B95] dark:text-blue-300">
-                        {selectedShortcuts.length}/4 CHỌN
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
-                      Tùy biến các lối tắt tiện ích hiển thị ở màn hình chính
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["home_shortcuts"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
-                  }`}
-                />
-              </button>
-
-              {expandedSections["home_shortcuts"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
-                    4 tính năng nhanh được hiển thị trên Trang chủ của bạn:
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedShortcuts.map((id) => {
-                      const item = ALL_SHORTCUT_OPTIONS.find((s) => s.id === id);
-                      if (!item) return null;
-                      return (
-                        <div
-                          key={id}
-                          className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700"
-                        >
-                          <div className="size-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-[#003B95] dark:text-blue-300 grid place-items-center shrink-0">
-                            {getShortcutIcon(item.iconName, "size-4")}
-                          </div>
-                          <span className="text-xs font-bold text-slate-800 dark:text-white truncate">
-                            {item.name}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setCustomShortcutsOpen(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <LayoutDashboard className="size-4 text-amber-300" />
-                    <span>Tùy biến lại 4 tính năng hiển thị</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* 3.3. Đầu mục: Cài đặt hệ thống (Ngôn ngữ, Giao diện, AI Bot, Thông báo) */}
+            {/* 3.2. Đầu mục: Cài đặt hệ thống (Ngôn ngữ, Giao diện, AI Bot, Thông báo) */}
             <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
               <button
                 type="button"
@@ -2459,14 +2391,6 @@ export default function ProfileScreen() {
         </div>
       </div>
     )}
-
-      {/* Modal Cài đặt 4 tính năng nhanh trang chủ (Yêu cầu 2) */}
-      <CustomHomeShortcutsModal
-        isOpen={customShortcutsOpen}
-        onClose={() => setCustomShortcutsOpen(false)}
-        selectedIds={selectedShortcuts}
-        onSave={handleSaveShortcuts}
-      />
 
       {/* ── 5. MODALS (DANH THIẾP, SỬA HỒ SƠ, QR CODE, HƯỚNG DẪN SỬ DỤNG) ── */}
 

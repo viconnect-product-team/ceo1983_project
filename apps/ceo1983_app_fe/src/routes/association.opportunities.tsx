@@ -357,6 +357,7 @@ function OpportunitiesScreen() {
           method: "POST",
           body: JSON.stringify({
             interestLevel: "high",
+            dealValue: Number(dealPrice),
             message: `[Deal chào giá: ${Number(dealPrice).toLocaleString("vi-VN")} đ] ${dealMessage || "Đề xuất kết nối giao thương"}`,
           }),
         });
