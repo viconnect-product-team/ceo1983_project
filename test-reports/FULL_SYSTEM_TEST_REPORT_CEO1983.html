@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Báo Cáo Kiểm Thử Toàn Hệ Thống CEO 1983 (HanoiBA)</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 24px; font-size: 13.5px; }
+    .container { max-width: 1400px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    h1 { color: #003B95; font-size: 24px; margin-top: 0; margin-bottom: 8px; }
+    .subtitle { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .card { background: #f1f5f9; padding: 16px; border-radius: 8px; text-align: center; }
+    .card-num { font-size: 28px; font-weight: 800; color: #003B95; }
+    .card-label { font-size: 12px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th { background: #003B95; color: #ffffff; text-align: left; padding: 10px 12px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    tr:hover td { background: #f8fafc; }
+    .badge-api { background: #0284c7; color: #ffffff; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-pass { background: #16a34a; color: #ffffff; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+    .view-link { color: #2563eb; text-decoration: none; font-weight: 600; }
+    .view-link:hover { text-decoration: underline; }
+    code { background: #f1f5f9; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>BÁO CÁO KẾT QUẢ KIỂM THỬ TOÀN HỆ THỐNG CLB DOANH NHÂN CEO 1983</h1>
+    <div class="subtitle">Đặc tả chi tiết từng Case CRUD, Add Quyền RBAC, Assign Giao Việc, Nhắn Tin B2B, Sự Kiện, Cơ Hội, Sàn TMĐT & Ảnh minh chứng thực tế</div>
+
+    <div class="summary-cards">
+      <div class="card">
+        <div class="card-num">50</div>
+        <div class="card-label">Tổng Số Test Cases</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #16a34a;">50</div>
+        <div class="card-label">Ca Thành Công (PASS)</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #ef4444;">0</div>
+        <div class="card-label">Ca Thất Bại (FAIL)</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #d97706;">100%</div>
+        <div class="card-label">Độ Bao Phủ 15 Phân Hệ</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Mã TC</th>
+          <th>Phân Hệ</th>
+          <th>Tên Kịch Bản</th>
+          <th>Tài Khoản</th>
+          <th>API Endpoint</th>
+          <th>HTTP</th>
+          <th>Trạng Thái</th>
+          <th>Minh Chứng</th>
+          <th>Ghi Chú Nghiệp Vụ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+      <td style="font-weight:bold;text-align:center;">TC-01</td>
+      <td><b>Auth & Identity</b></td>
+      <td>Xác thực tài khoản Admin & lấy thông tin Me</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/users/me</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_01_auth_admin_me.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Trả về thông tin Superadmin thành công</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-02</td>
+      <td><b>Auth & Identity</b></td>
+      <td>Xác thực tài khoản Ban Điều Hành vumikasa6</td>
+      <td><code>vumikasa6@gmail.com (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/users/me</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_02_auth_vumikasa_me.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Xác thực phiên làm việc Ban Thư Ký</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-03</td>
+      <td><b>Auth & Identity</b></td>
+      <td>Hội viên đăng nhập Mobile App CEO 1983</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">GET</span> <code>/users/me</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_03_auth_vupv_app_home.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Mở trang chủ di động hội viên thành công</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-04</td>
+      <td><b>RBAC & Add Quyền</b></td>
+      <td>Tra cứu Ma Trận Phân Quyền 6 Ban Chuyên Môn</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/permission-matrix</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_04_rbac_permission_matrix.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Lấy cấu trúc quyền 6 Ban</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-05</td>
+      <td><b>RBAC & Add Quyền</b></td>
+      <td>Cập nhật gán thêm quyền cho Chuyên Ban (Add Quyền)</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">PUT</span> <code>/admin/permission-matrix</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_05_rbac_add_permissions.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Gán thành công ma trận quyền 6 Ban</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-06</td>
+      <td><b>RBAC & Add Quyền</b></td>
+      <td>Kiểm tra quyền hạn tác nghiệp của Hội viên</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/member-permissions</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_06_rbac_member_permissions.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tra cứu danh mục quyền hội viên</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-07</td>
+      <td><b>RBAC & Add Quyền</b></td>
+      <td>Truy vết nhật ký Audit Log bảo mật hệ thống</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/audit-logs</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_07_rbac_audit_logs.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Ghi nhận lịch sử thao tác hệ thống</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-08</td>
+      <td><b>Assign Giao Việc</b></td>
+      <td>Khởi tạo Công việc / Nhiệm vụ mới trên CRM</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/tasks</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_08_task_create.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tạo công việc thành công, ID: task-1983-1794146852903</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-09</td>
+      <td><b>Assign Giao Việc</b></td>
+      <td>Gán người thực hiện công việc (Assignee)</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">PUT</span> <code>/tasks/task-1983-1794146852903</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_09_task_assign_member.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Giao việc cho tài khoản vupv090120@gmail.com</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-10</td>
+      <td><b>Assign Giao Việc</b></td>
+      <td>Hội viên tiếp nhận & cập nhật tiến độ công việc</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">PATCH</span> <code>/tasks/task-1983-1794146852903/status</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_10_task_status_progress.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Chuyển trạng thái task sang in_progress</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-11</td>
+      <td><b>Assign Giao Việc</b></td>
+      <td>Xem Bảng điều phối công việc Kanban toàn diện</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/tasks</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_11_task_kanban_board.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Hiển thị các cột Todo, In Progress, Completed</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-12</td>
+      <td><b>Nhắn Tin & Chat</b></td>
+      <td>Lấy danh sách các cuộc hội thoại tin nhắn</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/dm/member/conversations</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_12_dm_list_conversations.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tải danh sách phòng chat hội viên</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-13</td>
+      <td><b>Nhắn Tin & Chat</b></td>
+      <td>Admin gửi tin nhắn trao đổi B2B cho Hội viên</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/dm/member/messages</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_13_dm_send_admin.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Phát tin nhắn 1-1 thành công</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-14</td>
+      <td><b>Nhắn Tin & Chat</b></td>
+      <td>Hội viên trả lời tin nhắn trực tiếp trên Mobile App</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">POST</span> <code>/dm/member/messages</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_14_dm_reply_member.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Gửi phản hồi tin nhắn thành công</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-15</td>
+      <td><b>Nhắn Tin & Chat</b></td>
+      <td>Xem luồng hội thoại tin nhắn trên Web CRM</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/dm/threads</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_15_dm_threads_crm.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Quản trị viên đồng bộ luồng chat</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-16</td>
+      <td><b>Hội Viên 360</b></td>
+      <td>Truy vấn Danh sách Hội viên CLB Doanh Nhân CEO 1983</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/members</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_16_members_list_crm.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tìm thấy 12 hội viên chính thức</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-17</td>
+      <td><b>Hội Viên 360</b></td>
+      <td>Xem Hồ sơ 360 độ Hội viên & Năng lực Doanh nghiệp</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/members/a59c1ee6-2ec1-4d8c-9ff0-3eb8bcc118fd</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_17_member_detail_360.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Hiển thị đầy đủ thông tin pháp lý và MST</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-18</td>
+      <td><b>Hội Viên 360</b></td>
+      <td>Lọc danh sách hồ sơ ứng viên đang chờ phê duyệt kết nạp</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/members?status=pending</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_18_members_pending.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Ban Thành Viên thẩm định hồ sơ 1983</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-19</td>
+      <td><b>Hội Viên 360</b></td>
+      <td>Hội viên tra cứu Danh bạ Đồng niên trên Mobile App</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">GET</span> <code>/members</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_19_members_app_directory.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Lọc ngành nghề và tìm kiếm đồng niên</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-20</td>
+      <td><b>Sự Kiện & QR Gate</b></td>
+      <td>Tạo Sự Kiện Gala Thường Niên có thu phí trên CRM</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/events</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_20_event_create_gala.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Khởi tạo Gala thành công, ID: EV-MW7WQAUZ</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-21</td>
+      <td><b>Sự Kiện & QR Gate</b></td>
+      <td>Hội viên đăng ký vé sự kiện & sinh vé E-Ticket</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">POST</span> <code>/events/EV-MW7WQAUZ/register</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_21_event_member_registered.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Sinh vé điện tử và gán số bàn</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-22</td>
+      <td><b>Sự Kiện & QR Gate</b></td>
+      <td>Vận hành Trạm Soát Vé QR Gate tốc độ cao (<0.3s)</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/checkin/state</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_22_checkin_gate_terminal.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Trạm quét vé trực tuyến sẵn sàng</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-23</td>
+      <td><b>Sự Kiện & QR Gate</b></td>
+      <td>Xem trước danh sách khách & Sơ đồ bàn tiệc Cinema</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/events/EV-MW7WQAUZ/attendees-preview</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_23_event_cinema_seating.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Định vị vị trí ghế đại biểu VIP</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-24</td>
+      <td><b>Cuộc Họp Ban</b></td>
+      <td>Triệu tập Cuộc Họp Ban Thường Trực Cố Định</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/meetings</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_24_meeting_create.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tạo phiên họp thành công, ID: 77d21be3-27c3-4339-b98a-b5a32766b2ce</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-25</td>
+      <td><b>Cuộc Họp Ban</b></td>
+      <td>Tổng hợp Lịch công tác & Điểm danh họp Ban Điều Hành</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/meetings/workspace/summary</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_25_meeting_workspace_summary.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Báo cáo chỉ số tham gia họp ban</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-26</td>
+      <td><b>Cuộc Họp Ban</b></td>
+      <td>Hội viên xem lịch họp & Quét mã QR tham gia cuộc họp</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">GET</span> <code>/meetings</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_26_meetings_mobile_app.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Quét mã QR cuộc họp xác nhận có mặt</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-27</td>
+      <td><b>Cơ Hội B2B & Deal</b></td>
+      <td>Đăng tin Cơ hội Giao thương Công Khai (Public)</td>
+      <td><code>vumikasa6@gmail.com (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/opportunities</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_27_opp_create_public.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Đăng cơ hội công khai thành công, ID: OPP-MW7WQR5I</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-28</td>
+      <td><b>Cơ Hội B2B & Deal</b></td>
+      <td>Đăng tin Cơ hội B2B Chỉ Định Đích Danh (Assigned Security)</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/opportunities</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_28_opp_create_assigned.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Bảo mật cơ hội, chỉ tài khoản được gán mới thấy</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-29</td>
+      <td><b>Cơ Hội B2B & Deal</b></td>
+      <td>Gửi đề xuất Deal với Số tiền giao dịch & Tính % lợi nhuận</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">POST</span> <code>/opportunities/OPP-MW7WQR5I/interests</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_29_opp_submit_deal_margin.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tính toán tỷ lệ sinh lời 10% cho người đăng</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-30</td>
+      <td><b>Cơ Hội B2B & Deal</b></td>
+      <td>Bảng đối soát Deal tự động sắp xếp theo % lời nhất</td>
+      <td><code>vumikasa6@gmail.com (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/opportunities</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_30_opp_deals_ranked_profit.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Sắp xếp deal có lợi nhuận cao nhất lên đầu</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-31</td>
+      <td><b>Sàn TMĐT Sản Phẩm</b></td>
+      <td>Hội viên đăng tải sản phẩm/dịch vụ lên Sàn TMĐT</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">POST</span> <code>/marketplace/products</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_31_product_create_app.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tạo sản phẩm thành công, ID: prod-1794146910856</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-32</td>
+      <td><b>Sàn TMĐT Sản Phẩm</b></td>
+      <td>Duyệt danh mục gian hàng Sàn Thương Mại Nội Khối</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/marketplace/products</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_32_marketplace_grid_app.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Hiển thị lưới sản phẩm và giá ưu đãi hội viên</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-33</td>
+      <td><b>Sàn TMĐT Sản Phẩm</b></td>
+      <td>Kiểm duyệt sản phẩm gian hàng trên Web CRM</td>
+      <td><code>vumikasa6@gmail.com (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/marketplace/products</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_33_marketplace_crm_manage.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Ban Giao Thương kiểm soát chất lượng sản phẩm</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-34</td>
+      <td><b>Bảng Tin Mạng Lưới</b></td>
+      <td>Đăng bài viết Bảng tin mạng lưới kèm Mã QR Họp mặt</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/feed</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_34_feed_post_created.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Đăng bài thành công, ID: 8a26be9e-4406-4c21-81ed-8248714ba95c</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-35</td>
+      <td><b>Bảng Tin Mạng Lưới</b></td>
+      <td>Hội viên Thích (Like/React) bài viết trên mạng lưới</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">POST</span> <code>/feed/8a26be9e-4406-4c21-81ed-8248714ba95c/like</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_35_feed_post_liked.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tăng tương tác kết nối mạng xã hội nội bộ</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-36</td>
+      <td><b>Bảng Tin Mạng Lưới</b></td>
+      <td>Bình luận bài viết & Gắn thẻ Tag @ Đối tác kết nối</td>
+      <td><code>vumikasa6@gmail.com (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/feed/8a26be9e-4406-4c21-81ed-8248714ba95c/comments</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_36_feed_comment_tagged.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Phát thông báo nhắc tên đối tác tức thời</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-37</td>
+      <td><b>Bảng Tin Mạng Lưới</b></td>
+      <td>Lấy cây bình luận phân cấp 3 tầng (Comment Tree)</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/feed/8a26be9e-4406-4c21-81ed-8248714ba95c/comments</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_37_feed_comments_tree.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Cấu trúc cây phản hồi chuẩn Facebook</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-38</td>
+      <td><b>Tài Chính & Thu Phí</b></td>
+      <td>Tạo phiếu thu Hội phí Niên Liễm cho Hội viên</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/admin/invoices</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_38_finance_create_invoice.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tạo phiếu thu niên liễm 5.000.000 VNĐ</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-39</td>
+      <td><b>Tài Chính & Thu Phí</b></td>
+      <td>Khởi tạo cổng thanh toán điện tử VietQR Napas247</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">POST</span> <code>/payment/create-fee-checkout</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_39_finance_vietqr_checkout.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Sinh mã VietQR động chuẩn EMVCo kèm nội dung tự sinh</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-40</td>
+      <td><b>Tài Chính & Thu Phí</b></td>
+      <td>Ghi nhận phiếu chi Sổ quỹ CLB Doanh Nhân CEO 1983</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/admin/transactions</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_40_finance_cashbook_create.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Ghi nhận chi phí minh bạch quỹ</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-41</td>
+      <td><b>Tài Chính & Thu Phí</b></td>
+      <td>Tra cứu Sổ Quỹ & Lịch sử Giao dịch Thu - Chi</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/transactions</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_41_finance_transactions_list.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Báo cáo tổng kết quỹ khả dụng</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-42</td>
+      <td><b>Quản Trị Tài Liệu</b></td>
+      <td>Lưu trữ Văn bản Quy chế & Tài liệu số CLB</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/documents</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_42_document_create.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Ban Thư Ký số hóa kho văn kiện</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-43</td>
+      <td><b>Quản Trị Tài Liệu</b></td>
+      <td>Xem Danh mục Thư viện Văn kiện & Biểu mẫu CLB</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/documents</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_43_documents_list.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Truy cập tài liệu nội bộ an toàn</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-44</td>
+      <td><b>Tích Hợp Zalo OA</b></td>
+      <td>Kiểm tra trạng thái cấu hình & Hạn dùng Token Zalo OA</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/zalo/oa-config</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_44_zalo_oa_status.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Hiển thị thời hạn token và trạng thái kết nối</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-45</td>
+      <td><b>Tích Hợp Zalo OA</b></td>
+      <td>Kích hoạt lệnh Làm Mới Token Zalo OA Tự Động (Cron 6h)</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">POST</span> <code>/zalo/auto-refresh-now</code></td>
+      <td style="text-align:center;font-weight:bold;">201</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_45_zalo_refresh_token_now.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Gia hạn token thành công, tránh hết hạn qua ngày</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-46</td>
+      <td><b>Thống Kê BI</b></td>
+      <td>Bảng điều khiển Trung tâm & Chỉ số KPI Hiệp hội</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/demo-leads</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_46_analytics_dashboard_kpi.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Tổng hợp doanh số, số hội viên và sự kiện</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-47</td>
+      <td><b>Thống Kê BI</b></td>
+      <td>Biểu đồ Thống kê Giao thương Chuẩn hóa 2 Cột (Số lượng & Giá trị)</td>
+      <td><code>vupv090120@gmail.com (Member)</code></td>
+      <td><span class="badge-api">GET</span> <code>/association/analytics</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_47_analytics_2_column_trends.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Khớp đúng 2 cột Số lượng và Giá trị thực tế</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-48</td>
+      <td><b>Cài Đặt Hệ Thống</b></td>
+      <td>Lấy cấu hình Theme Nhận Diện Thương Hiệu 3 Màu</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/active-theme</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_48_admin_active_theme.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Màu Đỏ, Vàng, Xanh và Cam Tiên Phong</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-49</td>
+      <td><b>Cài Đặt Hệ Thống</b></td>
+      <td>Tùy biến bảng màu giao diện hệ thống trực tuyến</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">PUT</span> <code>/admin/active-theme</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_49_admin_update_theme.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Lưu theme màu thành công</td>
+    </tr><tr>
+      <td style="font-weight:bold;text-align:center;">TC-50</td>
+      <td><b>Cài Đặt Hệ Thống</b></td>
+      <td>Tổng quan Hệ Thống Thông Báo Đa Kênh & Số Đếm Menu Tree</td>
+      <td><code>admin@connect.vn (Admin)</code></td>
+      <td><span class="badge-api">GET</span> <code>/admin/notifications</code></td>
+      <td style="text-align:center;font-weight:bold;">200</td>
+      <td style="text-align:center;"><span class="badge-pass">PASS</span></td>
+      <td><a href="screenshots/tc_50_admin_notifications_overview.png" target="_blank" class="view-link">📷 Xem ảnh</a></td>
+      <td style="font-size:12px;color:#475569;">Số đếm thông báo hiển thị chuẩn xác thời gian thực</td>
+    </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
