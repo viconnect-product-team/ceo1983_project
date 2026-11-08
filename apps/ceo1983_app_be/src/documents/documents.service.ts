@@ -146,6 +146,14 @@ export class DocumentsService {
     return { ok };
   }
 
+  async getById(id: string) {
+    const row = await this.documentsRepo.findDocumentById(id);
+    if (!row) {
+      throw new NotFoundException('Không tìm thấy tài liệu');
+    }
+    return this.mapRow(row);
+  }
+
   async getUrl(id: string) {
     const found = await this.documentsRepo.findFilePath(id);
     if (!found || !found.filePath) return null;

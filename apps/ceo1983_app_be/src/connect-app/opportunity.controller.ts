@@ -52,6 +52,16 @@ export class OpportunityController {
     return this.connectAppService.claimCommunityOpportunity(req.user.id, '', id);
   }
 
+  @Post(':id/deal-status')
+  async updateDealStatus(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    const status = body?.dealStatus || body?.status || 'in_progress';
+    return this.connectAppService.updateOpportunityDealStatus(req.user.id, id, status, body?.note);
+  }
+
   @Post(':id/interests')
   async expressInterestById(
     @Request() req: any,

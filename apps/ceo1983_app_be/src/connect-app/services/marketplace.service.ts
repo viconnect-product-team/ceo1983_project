@@ -123,7 +123,12 @@ export class ConnectMarketplaceService {
   }
 
   async updateProduct(userId: string, productId: string, data: any) {
-    const name = data.name || data.title;
+    const name = data.name || data.title || null;
+    const desc = data.description !== undefined ? data.description : null;
+    const company = data.company !== undefined ? data.company : null;
+    const category = data.category !== undefined ? data.category : null;
+    const unit = data.unit !== undefined ? data.unit : null;
+    const currency = data.currency !== undefined ? data.currency : null;
     const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? Number(data.price) : null;
     const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : cleanPrice;
     const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : cleanPrice;
@@ -137,14 +142,14 @@ export class ConnectMarketplaceService {
         SET
           title = COALESCE(${name}, title),
           name = COALESCE(${name}, name),
-          description = COALESCE(${data.description}, description),
-          company = COALESCE(${data.company}, company),
-          category = COALESCE(${data.category}, category),
+          description = COALESCE(${desc}, description),
+          company = COALESCE(${company}, company),
+          category = COALESCE(${category}, category),
           price = COALESCE(${cleanPrice != null ? BigInt(cleanPrice) : null}, price),
           original_price = COALESCE(${cleanOriginalPrice != null ? BigInt(cleanOriginalPrice) : null}, original_price),
           member_price = COALESCE(${cleanMemberPrice != null ? BigInt(cleanMemberPrice) : null}, member_price),
-          unit = COALESCE(${data.unit}, unit),
-          currency = COALESCE(${data.currency}, currency),
+          unit = COALESCE(${unit}, unit),
+          currency = COALESCE(${currency}, currency),
           image_url = COALESCE(${imageUrl}, image_url),
           image_urls = CASE WHEN ${imgArr ? true : false} THEN ${JSON.stringify(imgArr || [])}::jsonb ELSE image_urls END,
           video_url = COALESCE(${videoUrl}, video_url),
@@ -157,12 +162,12 @@ export class ConnectMarketplaceService {
         UPDATE public.products
         SET
           title = COALESCE(${name}, title),
-          description = COALESCE(${data.description}, description),
+          description = COALESCE(${desc}, description),
           price = COALESCE(${cleanPrice != null ? BigInt(cleanPrice) : null}, price),
           original_price = COALESCE(${cleanOriginalPrice != null ? BigInt(cleanOriginalPrice) : null}, original_price),
           member_price = COALESCE(${cleanMemberPrice != null ? BigInt(cleanMemberPrice) : null}, member_price),
           image_url = COALESCE(${imageUrl}, image_url),
-          company = COALESCE(${data.company}, company),
+          company = COALESCE(${company}, company),
           updated_at = now()
         WHERE (custom_id = ${productId} OR id::text = ${productId})
       `;
@@ -449,7 +454,18 @@ export class ConnectMarketplaceService {
   }
 
   async updateMarketplaceProduct(userId: string, id: string, data: any) {
-    const title = data.title || data.name;
+    const title = data.title || data.name || null;
+    const desc = data.description !== undefined ? data.description : null;
+    const company = data.company !== undefined ? data.company : null;
+    const unit = data.unit !== undefined ? data.unit : null;
+    const currency = data.currency !== undefined ? data.currency : null;
+    const category = data.category !== undefined ? data.category : null;
+    const status = data.status !== undefined ? data.status : null;
+    const emoji = data.emoji !== undefined ? data.emoji : null;
+    const pdfUrl = data.pdfUrl !== undefined ? data.pdfUrl : null;
+    const websiteUrl = data.websiteUrl !== undefined ? data.websiteUrl : null;
+    const facebookUrl = data.facebookUrl !== undefined ? data.facebookUrl : null;
+
     const imageUrls = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
     const firstImage = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
     const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
@@ -462,24 +478,24 @@ export class ConnectMarketplaceService {
       SET
         title = COALESCE(${title}, title),
         name = COALESCE(${title}, name),
-        description = COALESCE(${data.description}, description),
+        description = COALESCE(${desc}, description),
         price = COALESCE(${cleanPrice}, price),
         original_price = COALESCE(${cleanOriginalPrice}, original_price),
         member_price = COALESCE(${cleanMemberPrice}, member_price),
-        company = COALESCE(${data.company}, company),
-        unit = COALESCE(${data.unit}, unit),
-        currency = COALESCE(${data.currency}, currency),
+        company = COALESCE(${company}, company),
+        unit = COALESCE(${unit}, unit),
+        currency = COALESCE(${currency}, currency),
         image_url = COALESCE(${firstImage}, image_url),
-        image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${imageUrls || []}::text[] ELSE image_urls END,
+        image_urls = CASE WHEN ${imageUrls ? true : false} THEN ${JSON.stringify(imageUrls || [])}::jsonb ELSE image_urls END,
         video_url = COALESCE(${videoUrl}, video_url),
-        category = COALESCE(${data.category}, category),
-        status = COALESCE(${data.status}, status),
-        emoji = COALESCE(${data.emoji}, emoji),
-        pdf_url = COALESCE(${data.pdfUrl}, pdf_url),
-        website_url = COALESCE(${data.websiteUrl}, website_url),
-        facebook_url = COALESCE(${data.facebookUrl}, facebook_url),
+        category = COALESCE(${category}, category),
+        status = COALESCE(${status}, status),
+        emoji = COALESCE(${emoji}, emoji),
+        pdf_url = COALESCE(${pdfUrl}, pdf_url),
+        website_url = COALESCE(${websiteUrl}, website_url),
+        facebookurl = COALESCE(${facebookUrl}, facebookurl),
         updated_at = NOW()
-      WHERE custom_id = ${id} OR id::text = ${id} OR id = ${id}
+      WHERE custom_id = ${id} OR id::text = ${id}
       RETURNING *
     `;
     if (rows.length === 0) return null;
@@ -564,7 +580,7 @@ export class ConnectMarketplaceService {
         SELECT p.title, p.seller_id, p.association_id, m.user_id as seller_user_id, m.id as member_id, m.code as member_code
         FROM public.products p
         LEFT JOIN public.members m ON (m.user_id::text = p.seller_id::text OR m.id::text = p.seller_id::text OR m.code::text = p.seller_id::text)
-        WHERE p.id = ${data.productId} LIMIT 1
+        WHERE (p.custom_id = ${String(data.productId)} OR p.id::text = ${String(data.productId)}) LIMIT 1
       `.catch((err) => {
         console.warn('Error querying product for quote ownership check:', err?.message);
         return [];
@@ -605,7 +621,7 @@ export class ConnectMarketplaceService {
         INSERT INTO public.quote_requests (
           id, product_id, buyer_id, quantity, message, contact, status, reminder_count, created_at, updated_at
         ) VALUES (
-          ${id}, ${data.productId}, ${userId}::uuid, ${Number(data.quantity ?? 1)},
+          ${id}, ${String(data.productId)}, ${String(userId)}, ${Number(data.quantity ?? 1)},
           ${data.message ?? ''}, ${data.contact ?? ''}, 'sent', 0, NOW(), NOW()
         )
         RETURNING *

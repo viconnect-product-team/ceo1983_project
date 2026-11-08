@@ -203,6 +203,18 @@ export class DocumentsRepository {
     return true;
   }
 
+  async findDocumentById(id: string): Promise<any | null> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, folder_id, drive_url, is_folder,
+             share_scope, share_role, shared_with, is_starred, color_tag, description, doc_scope, enterprise_name
+      FROM public.documents
+      WHERE code = ${id} OR (${isUuid}::boolean AND id = ${id}::uuid)
+      LIMIT 1
+    `.catch(() => []);
+    return rows[0] || null;
+  }
+
   async findFilePath(id: string): Promise<{ filePath: string | null; name: string } | null> {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT file_path, name FROM public.documents WHERE code = ${id} LIMIT 1

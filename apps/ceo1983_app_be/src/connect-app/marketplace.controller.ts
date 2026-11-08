@@ -72,6 +72,11 @@ export class MarketplaceController {
     return this.connectAppService.requestProductQuote(req.user.id, body);
   }
 
+  @Post('inquiries')
+  async requestInquiryAlias(@Request() req: any, @Body() body: any) {
+    return this.connectAppService.requestProductQuote(req.user.id, body);
+  }
+
   @Post('products/quote')
   async requestProductQuoteAlias(@Request() req: any, @Body() body: any) {
     return this.connectAppService.requestProductQuote(req.user.id, body);

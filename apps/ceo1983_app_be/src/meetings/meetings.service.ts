@@ -222,6 +222,7 @@ export class MeetingsService {
       department,
       JSON.stringify(targetMembers),
       zoomUrl,
+      cancelReason,
     ).catch((err) => console.warn('meetings sync warning:', err?.message));
 
     // 4c. Đồng bộ lên Bảng tin CLB (public.feed_posts) với danh mục EVENT_MEETING (Requirement 4)
@@ -1872,9 +1873,13 @@ export class MeetingsService {
       INSERT INTO public.meetings (
         id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, association_id, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, 'general', $3::date, $4, $5, 2, 'upcoming', 'Hẹn gặp kết nối 1-1', $6::jsonb, $7, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
-      ) ON CONFLICT DO NOTHING
+        $1::uuid, $2, $3, 'general', $4::date, $5, $6, 2, 'upcoming', 'Hẹn gặp kết nối 1-1', $7::jsonb, $8, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
+      ) ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        status = EXCLUDED.status,
+        updated_at = NOW()
     `,
+      meetingId,
       crmMeetingCode,
       title,
       date,
@@ -2025,18 +2030,33 @@ export class MeetingsService {
     const now = new Date();
     const finalStatus = status === 'accepted' || status === 'confirmed' ? 'confirmed' : 'declined';
 
-    // 1. Tìm cuộc gặp
-    const meetings = await this.prisma.$queryRawUnsafe<any[]>(`
+    // 1. Tìm cuộc gặp trong business_meetings hoặc CRM public.meetings
+    let meetings = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT m.id, m.title, m.created_by_user_id, m.organizer_user_id, m.scheduled_start_at
       FROM public.business_meetings m
       WHERE m.id = $1::uuid
       LIMIT 1
     `, meetingId).catch(() => []);
 
-    if (meetings.length === 0) {
-      throw new NotFoundException('Không tìm thấy cuộc gặp này');
+    let meeting: any = meetings[0];
+    if (!meeting) {
+      const crmCode = `MT-CONN-${meetingId.slice(0, 8).toUpperCase()}`;
+      const crmRows = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT id, title, code, status, target_members
+        FROM public.meetings
+        WHERE id::text = $1 OR code = $1 OR code = $2
+        LIMIT 1
+      `, meetingId, crmCode).catch(() => []);
+      if (crmRows.length === 0) {
+        throw new NotFoundException('Không tìm thấy cuộc gặp này');
+      }
+      meeting = {
+        id: crmRows[0].id,
+        title: crmRows[0].title,
+        created_by_user_id: userId,
+        organizer_user_id: userId,
+      };
     }
-    const meeting = meetings[0];
     const hostUserId = meeting.created_by_user_id || meeting.organizer_user_id;
 
     // 2. Cập nhật status cuộc gặp trong public.business_meetings
@@ -2044,7 +2064,7 @@ export class MeetingsService {
       UPDATE public.business_meetings
       SET status = $1::public.business_meeting_status, updated_at = $2::timestamptz
       WHERE id = $3::uuid
-    `, finalStatus, now, meetingId);
+    `, finalStatus, now, meetingId).catch(() => {});
 
     // Cập nhật response_status của participant
     await this.prisma.$executeRawUnsafe(`
@@ -2058,8 +2078,8 @@ export class MeetingsService {
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.meetings
       SET status = $1, updated_at = NOW()
-      WHERE code = $2 OR code LIKE '%' || $3 || '%' OR title = $4
-    `, finalStatus === 'confirmed' ? 'upcoming' : 'cancelled', crmCode, meetingId.slice(0, 8), meeting.title).catch(() => {});
+      WHERE id::text = $2 OR code = $2 OR code = $3 OR code LIKE '%' || $4 || '%' OR title = $5
+    `, finalStatus === 'confirmed' ? 'confirmed' : 'cancelled', meetingId, crmCode, meetingId.slice(0, 8), meeting.title).catch(() => {});
 
     // Đánh dấu đã đọc notification của cuộc gặp này
     await this.prisma.$executeRawUnsafe(`
@@ -2240,8 +2260,8 @@ export class MeetingsService {
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.meetings
       SET status = 'cancelled', cancel_reason = $1, updated_at = NOW()
-      WHERE code = $2 OR code LIKE '%' || $3 || '%' OR title = $4
-    `, cancelReason, crmCode, meetingId.slice(0, 8), meetingTitle).catch(() => {});
+      WHERE id::text = $2 OR code = $2 OR code = $3 OR code LIKE '%' || $4 || '%' OR title = $5
+    `, cancelReason, meetingId, crmCode, meetingId.slice(0, 8), meetingTitle).catch(() => {});
 
     // 4. Bắn thông báo cho đối tác
     const parts = await this.prisma.$queryRawUnsafe<any[]>(`
