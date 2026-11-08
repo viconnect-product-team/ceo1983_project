@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Opportunity, OpportunityInterest, OpportunityTypeKey } from "./opportunities-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 type Row = Record<string, unknown>;
@@ -43,6 +43,11 @@ function mapOpportunity(r: Row): Opportunity {
     claimedAt: ((r.claimed_at || r.claimedAt) as string) ?? undefined,
     claimedPhone: ((r.claimed_phone || r.claimedPhone) as string) ?? undefined,
     claimedCompany: ((r.claimed_company || r.claimedCompany) as string) ?? undefined,
+    targetScope: ((r.target_scope || r.targetScope) as string) ?? "all",
+    targetRecipients: ((r.target_recipients || r.targetRecipients) as string[]) ?? [],
+    targetGroups: ((r.target_groups || r.targetGroups) as string[]) ?? [],
+    referrer: ((r.referrer || r.referrer) as string) ?? undefined,
+    commissionPercent: r.commission_percent != null ? Number(r.commission_percent) : undefined,
   };
 }
 
@@ -51,14 +56,22 @@ function mapInterest(r: Row): OpportunityInterest {
     id: r.id as string,
     opportunityId: (r.opportunity_id || r.opportunityId) as string,
     memberId: (r.member_id || r.memberId) as string,
+    memberName: ((r.member_name || r.memberName) as string) ?? undefined,
+    memberAvatar: ((r.member_avatar || r.memberAvatar) as string) ?? undefined,
+    memberPhone: ((r.member_phone || r.memberPhone) as string) ?? undefined,
+    memberEmail: ((r.member_email || r.memberEmail) as string) ?? undefined,
+    memberCompany: ((r.member_company || r.memberCompany) as string) ?? undefined,
     message: ((r.message as string) ?? ""),
     contact: ((r.contact as string) ?? ""),
+    interestLevel: ((r.interest_level || r.interestLevel) as string) ?? "high",
+    dealValue: r.deal_value != null ? Number(r.deal_value) : r.dealValue != null ? Number(r.dealValue) : 0,
+    dealPercent: r.deal_percent != null ? Number(r.deal_percent) : r.dealPercent != null ? Number(r.dealPercent) : 0,
     createdAt: (r.created_at || r.createdAt) as string,
   };
 }
 
 export const listOpportunitiesFn = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .handler(
     async ({
       context,
@@ -252,13 +265,14 @@ export const toggleOpportunityStatusFn = createServerFn({ method: "POST" })
   });
 
 export const expressInterestFn = createServerFn({ method: "POST" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
         opportunityId: z.string().min(1).max(128),
         message: z.string().min(1).max(4000),
         contact: z.string().min(1).max(300),
+        dealValue: z.number().optional(),
       })
       .parse(d),
   )
@@ -266,7 +280,7 @@ export const expressInterestFn = createServerFn({ method: "POST" })
     const token = (context as any)?.token;
     await fetchNestApiFromServer(`/opportunities/${encodeURIComponent(data.opportunityId)}/interests`, token, {
       method: "POST",
-      body: JSON.stringify({ message: data.message, contact: data.contact, interestLevel: "high" }),
+      body: JSON.stringify({ message: data.message, contact: data.contact, interestLevel: "high", dealValue: data.dealValue }),
     });
     return {
       id: `int-${Date.now()}`,
@@ -274,6 +288,7 @@ export const expressInterestFn = createServerFn({ method: "POST" })
       memberId: (context as any)?.userId || "",
       message: data.message,
       contact: data.contact,
+      dealValue: data.dealValue || 0,
       createdAt: new Date().toISOString(),
     };
   });

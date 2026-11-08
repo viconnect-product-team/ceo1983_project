@@ -245,10 +245,18 @@ function NavItem({
   const active = isActive(pathname, item.to, searchStr);
   const defaultLabel = item.label || t(item.key);
   const label = getLabel ? getLabel(item, defaultLabel) : defaultLabel;
-  const showBadge = !!badge && badge > 0;
-  const badgeText = badge && badge > 99 ? "99+" : String(badge ?? 0);
 
   const hasChildren = Boolean(item.children && item.children.length > 0);
+  const totalChildrenBadge = hasChildren
+    ? item.children!.reduce((acc, child) => {
+        const cBadge = child.to ? (badges?.[child.to] ?? 0) : 0;
+        return acc + cBadge;
+      }, 0)
+    : 0;
+  const effectiveBadge = (badge && badge > 0 ? badge : 0) || totalChildrenBadge;
+  const showBadge = effectiveBadge > 0;
+  const badgeText = effectiveBadge > 99 ? "99+" : String(effectiveBadge);
+
   const isParentActive = Boolean(item.to && pathname && (pathname === item.to || pathname.startsWith(item.to + "/")));
 
   const [expanded, setExpanded] = useState<boolean>(() => {
@@ -268,9 +276,9 @@ function NavItem({
     }`;
   const badgeEl = showBadge ? (
     collapsed ? (
-      <span className="vba-badge-pop absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar" />
+      <span className="vba-badge-pop absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-sidebar" />
     ) : (
-      <span className="vba-badge-pop ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+      <span className="vba-badge-pop inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-extrabold text-white shadow-xs">
         {badgeText}
       </span>
     )
@@ -289,22 +297,24 @@ function NavItem({
         strokeWidth={active ? 2.4 : 1.9}
       />
       {!collapsed && <span className="flex-1 truncate text-left font-medium">{label}</span>}
-      {badgeEl}
-      {!collapsed && hasChildren && (
-        <span
-          role="button"
-          tabIndex={0}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setExpanded((prev) => !prev);
-          }}
-          className="ml-auto p-1 rounded hover:bg-sidebar-accent/80 text-sidebar-foreground/60 transition cursor-pointer"
-          title={expanded ? "Thu gọn menu" : "Mở rộng menu"}
-        >
-          {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-        </span>
-      )}
+      <div className="ml-auto flex items-center gap-1.5 shrink-0">
+        {badgeEl}
+        {!collapsed && hasChildren && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setExpanded((prev) => !prev);
+            }}
+            className="p-1 rounded hover:bg-sidebar-accent/80 text-sidebar-foreground/60 transition cursor-pointer"
+            title={expanded ? "Thu gọn menu" : "Mở rộng menu"}
+          >
+            {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          </span>
+        )}
+      </div>
     </>
   );
 
@@ -657,10 +667,11 @@ export function Sidebar({
 
   const filteredEvents = events.filter((it) => {
     if (!isAllowed(it.to)) return false;
-    if (it.to === "/checkin" || it.to === "/checkin-qr") {
-      // 1. Quản trị, Chủ tịch, Admin luôn hiển thị
+    if (it.to === "/checkin") {
+      return true; // Quản lý điểm danh mở cho tất cả thành viên ban điều hành & cán bộ sự kiện CRM
+    }
+    if (it.to === "/checkin-qr") {
       if (isPrivilegedAdminOrPresident(user)) return true;
-      // 2. Ngoài các role trên, BẮT BUỘC phải là Ban Truyền Thông
       if (!isMediaDepartmentMember(user)) return false;
       return canScanQR;
     }

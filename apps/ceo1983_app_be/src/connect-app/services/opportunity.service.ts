@@ -396,7 +396,9 @@ export class ConnectOpportunityService {
     userId: string,
     communityId: string,
     opportunityRef: string,
-    interestLevel?: string
+    interestLevel?: string,
+    dealValue?: number,
+    message?: string,
   ) {
     const now = new Date();
     const intId = `INT-${Date.now().toString(36).toUpperCase()}`;
@@ -408,9 +410,9 @@ export class ConnectOpportunityService {
     const claimantName = member[0]?.name || 'Hội viên CEO 1983';
     const claimantCompany = member[0]?.company || '';
 
-    // Fetch opp title, poster & association
+    // Fetch opp title, poster, budget & association
     const oppRow = await this.prisma.$queryRaw<any[]>`
-      SELECT id, title, poster_id, association_id FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
+      SELECT id, title, poster_id, association_id, budget_min, budget_max FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
     `.catch(() => [] as any[]);
     if (!oppRow || oppRow.length === 0) {
       throw new NotFoundException('Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!');
@@ -422,15 +424,30 @@ export class ConnectOpportunityService {
     const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
     const assocId = (communityId && communityId.trim().length > 10) ? communityId.trim() : (oppRow[0]?.association_id || null);
 
+    const bMax = oppRow[0]?.budget_max ? Number(oppRow[0].budget_max) : 0;
+    const dVal = dealValue != null ? Number(dealValue) : 0;
+    let dealPercent = 0;
+    if (bMax > 0 && dVal > 0) {
+      dealPercent = Math.round((dVal / bMax) * 100);
+    } else if (dVal > 0) {
+      dealPercent = 100;
+    }
+
+    const defaultMsg = dVal > 0 
+      ? `Đề xuất deal: ${new Intl.NumberFormat('vi-VN').format(dVal)} VNĐ (${dealPercent}% so với ngân sách)`
+      : (interestLevel === 'high' ? 'Quan tâm cao cơ hội này' : 'Quan tâm thấp cơ hội này');
+
     await this.prisma.$executeRaw`
       INSERT INTO public.opportunity_interests (
-        id, opportunity_id, member_id, message, contact, interest_level, created_at, association_id
+        id, opportunity_id, member_id, message, contact, interest_level, deal_value, deal_percent, created_at, association_id
       ) VALUES (
-        ${intId}, ${opportunityRef}, ${userId}, ${interestLevel === 'high' ? 'Quan tâm cao cơ hội này' : 'Quan tâm thấp cơ hội này'}, ${contact}, ${interestLevel || 'high'}, ${now}, ${assocId}::uuid
+        ${intId}, ${opportunityRef}, ${userId}, ${message || defaultMsg}, ${contact}, ${interestLevel || 'high'}, ${dVal}, ${dealPercent}, ${now}, ${assocId}::uuid
       )
       ON CONFLICT (id) DO UPDATE SET
         interest_level = EXCLUDED.interest_level,
-        message = EXCLUDED.message
+        message = EXCLUDED.message,
+        deal_value = EXCLUDED.deal_value,
+        deal_percent = EXCLUDED.deal_percent
     `.catch((err) => console.warn('Express interest insert error:', err));
 
     // Save notification for user
@@ -602,6 +619,23 @@ export class ConnectOpportunityService {
   // ── CRM & Full System Opportunity CRUD ─────────────────────────────────────
   async listAllOpportunities(userId: string) {
     try {
+      // 1. Phân quyền và thông tin người dùng hiện tại
+      let isPlatformAdmin = false;
+      let memberId: string | null = null;
+      let memberCode: string | null = null;
+      if (userId) {
+        const roles = await this.prisma.user_roles.findMany({ where: { user_id: userId } }).catch(() => []) as any[];
+        isPlatformAdmin = roles.some((r: any) => r.role === 'platform_admin' || r.role === 'admin');
+
+        const memberRows = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId} LIMIT 1
+        `.catch(() => []);
+        if (memberRows && memberRows.length > 0) {
+          memberId = memberRows[0].id;
+          memberCode = memberRows[0].code;
+        }
+      }
+
       const opps = await this.prisma.$queryRaw<any[]>`
         SELECT o.id, o.poster_id, o.title, o.description, o.type, o.budget_min, o.budget_max, o.region, o.industry, o.deadline, o.status, o.views, o.emoji, o.created_at, o.updated_at,
                o.claimed_by_id, o.claimed_by_name, o.claimed_at, o.claimed_phone, o.claimed_company, o.association_id,
@@ -624,7 +658,7 @@ export class ConnectOpportunityService {
       `.catch(() => []);
 
       const interests = await this.prisma.$queryRaw<any[]>`
-        SELECT oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
+        SELECT oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.deal_value, oi.deal_percent, oi.created_at,
                COALESCE(m.contact, m.name, u.name, oi.contact, 'Hội viên') as member_name,
                COALESCE(m.cover_url, u.avatar_url, '') as member_avatar,
                COALESCE(m.phone, oi.contact, '') as member_phone,
@@ -634,7 +668,7 @@ export class ConnectOpportunityService {
         LEFT JOIN public.members m ON (oi.member_id = m.user_id::text OR oi.member_id = m.id OR oi.member_id = m.code)
         LEFT JOIN public.vione_users u ON (oi.member_id = u.id::text)
         LEFT JOIN public.business_identities bi ON (oi.member_id = bi.owner_user_id::text)
-        ORDER BY oi.created_at DESC
+        ORDER BY oi.deal_value DESC, oi.created_at DESC
       `.catch(() => []);
 
       const interestCounts: Record<string, number> = {};
@@ -656,18 +690,30 @@ export class ConnectOpportunityService {
 
       const visibleOpps = opps.filter(o => {
         const posterId = String(o.poster_id || '');
-        if (posterId === String(userId)) return true;
-        const scope = o.target_scope || 'all';
-        if (scope === 'all') return true;
+        if (isPlatformAdmin) return true;
+        if (posterId === String(userId) || (memberId && posterId === String(memberId)) || (memberCode && posterId === String(memberCode))) return true;
+
+        const scope = (o.target_scope || 'all').toLowerCase();
+        const recips: string[] = Array.isArray(o.target_recipients)
+          ? o.target_recipients.map(String)
+          : (typeof o.target_recipients === 'string' ? JSON.parse(o.target_recipients || '[]') : []);
+
+        // Nếu cơ hội assign cụ thể từng người (target_scope là 'assigned', 'specific', 'private' hoặc có danh sách target_recipients)
+        if (scope === 'assigned' || scope === 'specific' || scope === 'private' || (recips.length > 0 && scope !== 'public' && scope !== 'all')) {
+          return recips.some(r => r === String(userId) || (memberId && r === String(memberId)) || (memberCode && r === String(memberCode)));
+        }
+
+        // Nếu chia sẻ cho bạn bè kết nối
         if (scope === 'friends') {
-          const recips: string[] = Array.isArray(o.target_recipients)
-            ? o.target_recipients.map(String)
-            : (typeof o.target_recipients === 'string' ? JSON.parse(o.target_recipients || '[]') : []);
-          if (recips.length > 0) {
-            return recips.includes(String(userId));
-          }
+          if (recips.some(r => r === String(userId) || (memberId && r === String(memberId)) || (memberCode && r === String(memberCode)))) return true;
           return connectedUserIds.includes(posterId);
         }
+
+        // Cơ hội public / all
+        if (scope === 'all' || scope === 'public') {
+          return true;
+        }
+
         return true;
       });
 
@@ -725,6 +771,8 @@ export class ConnectOpportunityService {
           message: it.message || '',
           contact: it.contact || it.member_phone || '',
           interestLevel: it.interest_level || 'high',
+          dealValue: it.deal_value != null ? Number(it.deal_value) : 0,
+          dealPercent: it.deal_percent != null ? Number(it.deal_percent) : 0,
           createdAt: it.created_at ? new Date(it.created_at).toISOString() : new Date().toISOString(),
         })),
         interestCounts,
@@ -1124,8 +1172,8 @@ export class ConnectOpportunityService {
     }
   }
 
-  async expressOpportunityInterest(userId: string, opportunityId: string, message?: string) {
-    return this.expressCommunityOpportunityInterest(userId, '', opportunityId, 'high');
+  async expressOpportunityInterest(userId: string, opportunityId: string, message?: string, dealValue?: number, interestLevel?: string) {
+    return this.expressCommunityOpportunityInterest(userId, '', opportunityId, interestLevel || 'high', dealValue, message);
   }
 
   async incrementOpportunityView(opportunityId: string) {
@@ -1146,7 +1194,7 @@ export class ConnectOpportunityService {
     try {
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT 
-          oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
+          oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.deal_value, oi.deal_percent, oi.created_at,
           COALESCE(m.contact, m.name, u.name, 'Hội viên CLB') as name,
           COALESCE(m.name, bi.company_name, '') as company,
           COALESCE(m.phone, oi.contact, '') as phone,
@@ -1157,7 +1205,7 @@ export class ConnectOpportunityService {
         LEFT JOIN public.vione_users u ON (oi.member_id = u.id::text)
         LEFT JOIN public.business_identities bi ON (oi.member_id = bi.owner_user_id::text)
         WHERE oi.opportunity_id = ${opportunityId}
-        ORDER BY oi.created_at DESC
+        ORDER BY oi.deal_value DESC, oi.created_at DESC
       `;
       return rows.map((r) => ({
         id: r.id,
@@ -1170,6 +1218,8 @@ export class ConnectOpportunityService {
         contact: r.contact || r.phone,
         message: r.message,
         interestLevel: r.interest_level || 'high',
+        dealValue: r.deal_value != null ? Number(r.deal_value) : 0,
+        dealPercent: r.deal_percent != null ? Number(r.deal_percent) : 0,
         createdAt: r.created_at,
       }));
     } catch (err) {

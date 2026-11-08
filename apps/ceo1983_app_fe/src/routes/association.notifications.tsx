@@ -51,6 +51,13 @@ import {
 } from "@/lib/member-app.functions";
 import { processLeadWorkflowFn } from "@/lib/business-card.functions";
 import { useT, useFmt, type TKey } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  registerNativePushUser,
+  sendExternalNotification,
+} from "@/lib/notification-permissions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,7 +83,7 @@ const notificationsSearchSchema = z.object({
     z.enum(["all", "lead", "unread", "read", "dismissed", "event", "fee", "opportunity"]),
     "all",
   ).default("all"),
-  sort: fallback(z.enum(["priority", "newest"]), "priority").default("priority"),
+  sort: fallback(z.enum(["priority", "newest"]), "newest").default("newest"),
   q: fallback(z.string(), "").default(""),
 });
 
@@ -179,12 +186,30 @@ function isConnectionRequestReceived(n: any): boolean {
 }
 
 function getNotifTimeGroup(dateStr: string): { key: string; label: string } {
-  const notifTime = new Date(dateStr).getTime();
-  const diff = Date.now() - notifTime;
+  const d = new Date(dateStr);
+  const now = new Date();
+
+  // Kiểm tra Hôm nay
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+  if (isToday) return { key: "today", label: "🌟 Mới nhất (Hôm nay)" };
+
+  // Kiểm tra Hôm qua
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear();
+  if (isYesterday) return { key: "yesterday", label: "⏳ 1 ngày trước (Hôm qua)" };
+
+  // Kiểm tra Tuần này (trong vòng 7 ngày)
+  const diffMs = now.getTime() - d.getTime();
   const ONE_DAY = 24 * 60 * 60 * 1000;
-  if (diff <= ONE_DAY) return { key: "today", label: "🌟 Mới nhất (Hôm nay)" };
-  if (diff <= 2 * ONE_DAY) return { key: "yesterday", label: "⏳ 1 ngày trước (Hôm qua)" };
-  if (diff <= 7 * ONE_DAY) return { key: "lastWeek", label: "📅 Tuần trước" };
+  if (diffMs <= 7 * ONE_DAY) return { key: "lastWeek", label: "📅 Tuần này" };
+
   return { key: "older", label: "🗓️ Tháng này & Cũ hơn" };
 }
 
@@ -726,14 +751,43 @@ function NotificationsScreen() {
   type NotificationFilter = "all" | "lead" | "unread" | "read" | "dismissed" | "event" | "fee" | "opportunity";
   type TimeFilterPeriod = "all" | "1day" | "1week" | "1month";
 
+  const { user } = useAuth();
   const [filter, setFilter] = useState<NotificationFilter>(
     search.filter as NotificationFilter,
   );
   const [timeFilter, setTimeFilter] = useState<TimeFilterPeriod>("all");
-  const [sort, setSort] = useState<"priority" | "newest">(search.sort);
+  const [sort, setSort] = useState<"priority" | "newest">("newest");
   const [query, setQuery] = useState(search.q ?? "");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<MyNotification | null>(null);
+
+  // Trạng thái quyền thông báo hệ thống ngoài app (Yêu cầu 4)
+  const [notifPermission, setNotifPermission] = useState<string>(() => {
+    return getNotificationPermission();
+  });
+
+  useEffect(() => {
+    if (getNotificationPermission() === "granted" && user?.id) {
+      registerNativePushUser(user.id);
+    }
+  }, [user?.id]);
+
+  const handleEnablePushNotifications = async () => {
+    const res = await requestNotificationPermission();
+    setNotifPermission(res);
+    if (res === "granted") {
+      toast.success("Đã bật thông báo thiết bị thành công!");
+      if (user?.id) {
+        registerNativePushUser(user.id);
+      }
+      sendExternalNotification("CLB Doanh Nhân CEO 1983", {
+        body: "Bạn sẽ nhận được thông báo quan trọng ngay cả khi thoát app!",
+        icon: "/ceo1983-emblem-8.png",
+      });
+    } else if (res === "denied") {
+      toast.error("Quyền thông báo đã bị chặn trong cài đặt thiết bị / trình duyệt.");
+    }
+  };
 
   const [pushedMessageIds, setPushedMessageIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -1064,6 +1118,32 @@ function NotificationsScreen() {
       />
 
       <div className="mt-3 space-y-3 px-4">
+        {/* Banner Kích Hoạt Thông Báo Ngoài Màn Hình Thiết Bị (Yêu cầu 4) */}
+        {notifPermission !== "granted" && (
+          <div className="p-3 rounded-2xl bg-gradient-to-r from-[#003B95]/10 via-amber-500/10 to-[#003B95]/10 dark:from-blue-950/40 dark:to-amber-950/30 border border-amber-400/50 shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="size-9 rounded-xl bg-[#003B95] text-amber-300 flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  Bật thông báo khi thoát app
+                </p>
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">
+                  Nhận tin nhắn, lịch họp và cơ hội kinh doanh tức thì
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleEnablePushNotifications}
+              className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold shrink-0 shadow-xs transition active:scale-95 cursor-pointer"
+            >
+              Bật ngay
+            </button>
+          </div>
+        )}
+
         {/* Segmented Filter Control */}
         <div
           className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar"

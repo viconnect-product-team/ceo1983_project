@@ -1,4 +1,4 @@
-import { Injectable, Logger, HttpException, HttpStatus, Optional } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, Optional, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -48,14 +48,152 @@ export class SendBulkZaloMessageDto {
 }
 
 @Injectable()
-export class ZaloService {
+export class ZaloService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ZaloService.name);
+  private autoRefreshTimer: NodeJS.Timeout | null = null;
   private readonly webhookInteractions = new Map<
     string,
     { userId: string; displayName: string; avatar: string; lastMessage: string; time: number }
   >();
 
   constructor(@Optional() private readonly prisma?: PrismaService) {}
+
+  onModuleInit() {
+    this.logger.log('Khởi chạy tiến trình Zalo OA Auto-Token Manager (chu kỳ 6 tiếng)...');
+    // Chạy kiểm tra sau 15 giây khi server sẵn sàng
+    setTimeout(() => {
+      this.checkAndAutoRefreshTokenOnStartup();
+    }, 15000);
+
+    // Chu kỳ 6 tiếng = 6 * 60 * 60 * 1000 = 21,600,000 ms
+    this.autoRefreshTimer = setInterval(() => {
+      this.performAutoRefreshToken();
+    }, 6 * 60 * 60 * 1000);
+  }
+
+  onModuleDestroy() {
+    if (this.autoRefreshTimer) {
+      clearInterval(this.autoRefreshTimer);
+      this.autoRefreshTimer = null;
+    }
+  }
+
+  private async checkAndAutoRefreshTokenOnStartup() {
+    try {
+      const cfg = await this.getOaConfig();
+      if (!cfg || !cfg.refreshToken || !cfg.appId || !cfg.secretKey) {
+        this.logger.log('[Zalo Auto-Refresh] Chưa có cấu hình Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL.');
+        return;
+      }
+
+      const lastRef = cfg.lastRefreshedAt ? new Date(cfg.lastRefreshedAt).getTime() : 0;
+      const now = Date.now();
+      const sixHoursMs = 6 * 60 * 60 * 1000;
+
+      // Nếu đã hơn 6 tiếng chưa refresh hoặc chưa từng refresh -> thực hiện ngay
+      if (now - lastRef >= sixHoursMs) {
+        this.logger.log('[Zalo Auto-Refresh Startup] Đã quá 6 tiếng chưa làm mới token Zalo OA, tự động thực thi ngay...');
+        await this.performAutoRefreshToken();
+      } else {
+        const nextInMinutes = Math.round((sixHoursMs - (now - lastRef)) / 60000);
+        this.logger.log(`[Zalo Auto-Refresh Startup] Token Zalo OA còn hiệu lực tốt (lần refresh kế tiếp sau khoảng ${nextInMinutes} phút).`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`checkAndAutoRefreshTokenOnStartup warning: ${err?.message}`);
+    }
+  }
+
+  /**
+   * Đọc cấu hình Zalo OA từ bảng public.app_settings
+   */
+  async getOaConfig(): Promise<any> {
+    if (!this.prisma) return null;
+    try {
+      const row = await this.prisma.$queryRawUnsafe<any[]>(`
+        SELECT value FROM public.app_settings WHERE key = 'zalo_oa_config' LIMIT 1
+      `);
+      if (row.length > 0 && row[0]?.value) {
+        return typeof row[0].value === 'string' ? JSON.parse(row[0].value) : row[0].value;
+      }
+      return null;
+    } catch (err: any) {
+      this.logger.warn(`getOaConfig error: ${err?.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Lưu cấu hình Zalo OA vào bảng public.app_settings
+   */
+  async saveOaConfig(config: any, userId?: string): Promise<{ ok: boolean; message: string; data?: any }> {
+    if (!this.prisma) return { ok: true, message: 'No prisma' };
+    try {
+      const validUserId = userId && userId.length === 36 ? userId : null;
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+        VALUES ('zalo_oa_config', $1::jsonb, now(), $2::uuid)
+        ON CONFLICT (key) DO UPDATE
+        SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
+      `, JSON.stringify(config), validUserId);
+      return { ok: true, message: 'Đã lưu cấu hình Zalo OA vào CSDL thành công', data: config };
+    } catch (err: any) {
+      this.logger.warn(`saveOaConfig error: ${err?.message}`);
+      return { ok: false, message: err?.message || 'Lỗi lưu cấu hình Zalo OA' };
+    }
+  }
+
+  /**
+   * Thực hiện làm mới Access Token Zalo OA tự động (Cứ 6 tiếng hoặc kích hoạt tức thì)
+   */
+  async performAutoRefreshToken(): Promise<{ ok: boolean; message: string; data?: any }> {
+    try {
+      this.logger.log('[Zalo Auto-Refresh 6h] Bắt đầu kiểm tra và làm mới token Zalo OA...');
+      const cfg = await this.getOaConfig();
+      if (!cfg || !cfg.refreshToken || !cfg.appId || !cfg.secretKey) {
+        this.logger.warn('[Zalo Auto-Refresh 6h] Bỏ qua: Chưa cấu hình đủ appId, secretKey hoặc refreshToken trong CSDL');
+        return { ok: false, message: 'Chưa cấu hình đủ thông tin Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL' };
+      }
+
+      const res = await this.refreshToken({
+        appId: cfg.appId,
+        secretKey: cfg.secretKey,
+        refreshToken: cfg.refreshToken,
+      });
+
+      if (res && res.accessToken) {
+        const updatedConfig = {
+          ...cfg,
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken || cfg.refreshToken,
+          expiresIn: res.expiresIn,
+          lastRefreshedAt: new Date().toISOString(),
+          lastRefreshStatus: 'success',
+          lastRefreshError: null,
+        };
+
+        await this.saveOaConfig(updatedConfig);
+        this.logger.log(`[Zalo Auto-Refresh 6h] ĐÃ TỰ ĐỘNG LÀM MỚI TOKEN THÀNH CÔNG! Token mới hiệu lực thêm ${res.expiresIn}s.`);
+        return { ok: true, message: 'Làm mới token thành công và đã đồng bộ lưu vào CSDL', data: updatedConfig };
+      }
+
+      return { ok: false, message: 'Không nhận được access_token mới từ máy chủ Zalo OAuth' };
+    } catch (err: any) {
+      const errMsg = err?.message || 'Lỗi không xác định khi làm mới token';
+      this.logger.error(`[Zalo Auto-Refresh 6h] LỖI LÀM MỚI TOKEN: ${errMsg}`);
+      try {
+        const cfg = await this.getOaConfig();
+        if (cfg) {
+          await this.saveOaConfig({
+            ...cfg,
+            lastRefreshStatus: 'error',
+            lastRefreshError: errMsg,
+            lastAttemptAt: new Date().toISOString(),
+          });
+        }
+      } catch {}
+      return { ok: false, message: errMsg };
+    }
+  }
 
   /**
    * Tiếp nhận sự kiện Webhook thời gian thực từ Zalo OA (user_send_text, follow, v.v.)
@@ -192,10 +330,27 @@ export class ZaloService {
       }
 
       if (response.data && response.data.access_token) {
+        const newRefreshToken = response.data.refresh_token || dto.refreshToken;
+        // Tự động lưu bền vững vào CSDL
+        try {
+          const currentCfg = (await this.getOaConfig()) || {};
+          await this.saveOaConfig({
+            ...currentCfg,
+            appId: dto.appId.trim(),
+            secretKey: dto.secretKey.trim(),
+            accessToken: response.data.access_token,
+            refreshToken: newRefreshToken,
+            expiresIn: response.data.expires_in,
+            lastRefreshedAt: new Date().toISOString(),
+            lastRefreshStatus: 'success',
+            lastRefreshError: null,
+          });
+        } catch {}
+
         return {
           success: true,
           accessToken: response.data.access_token,
-          refreshToken: response.data.refresh_token || dto.refreshToken,
+          refreshToken: newRefreshToken,
           expiresIn: response.data.expires_in,
         };
       }
@@ -249,6 +404,22 @@ export class ZaloService {
       }
 
       if (response.data && response.data.access_token) {
+        // Tự động lưu bền vững vào CSDL
+        try {
+          const currentCfg = (await this.getOaConfig()) || {};
+          await this.saveOaConfig({
+            ...currentCfg,
+            appId: dto.appId.trim(),
+            secretKey: dto.secretKey.trim(),
+            accessToken: response.data.access_token,
+            refreshToken: response.data.refresh_token,
+            expiresIn: response.data.expires_in,
+            lastRefreshedAt: new Date().toISOString(),
+            lastRefreshStatus: 'success',
+            lastRefreshError: null,
+          });
+        } catch {}
+
         return {
           success: true,
           accessToken: response.data.access_token,

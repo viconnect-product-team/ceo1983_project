@@ -38,14 +38,27 @@ export type Opportunity = {
   claimedAt?: string;
   claimedPhone?: string;
   claimedCompany?: string;
+  targetScope?: string;
+  targetRecipients?: string[];
+  targetGroups?: string[];
+  referrer?: string;
+  commissionPercent?: number;
 };
 
 export type OpportunityInterest = {
   id: string;
   opportunityId: string;
   memberId: string;
+  memberName?: string;
+  memberAvatar?: string;
+  memberPhone?: string;
+  memberEmail?: string;
+  memberCompany?: string;
   message: string;
   contact: string;
+  interestLevel?: string;
+  dealValue?: number;
+  dealPercent?: number;
   createdAt: string;
 };
 

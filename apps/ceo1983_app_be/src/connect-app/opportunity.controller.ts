@@ -66,13 +66,31 @@ export class OpportunityController {
   async expressInterestById(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { interestLevel?: 'high' | 'low'; message?: string },
+    @Body() body: { interestLevel?: 'high' | 'low'; message?: string; dealValue?: number },
   ) {
     return this.connectAppService.expressCommunityOpportunityInterest(
       req.user.id,
       '',
       id,
       body?.interestLevel || 'high',
+      body?.dealValue,
+      body?.message,
+    );
+  }
+
+  @Post(':id/deal')
+  async dealOpportunity(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { dealValue: number; message?: string },
+  ) {
+    return this.connectAppService.expressCommunityOpportunityInterest(
+      req.user.id,
+      '',
+      id,
+      'high',
+      body?.dealValue,
+      body?.message,
     );
   }
 
@@ -87,8 +105,8 @@ export class OpportunityController {
   }
 
   @Post('express-interest')
-  async expressInterest(@Request() req: any, @Body() body: { opportunityId: string; message?: string }) {
-    return this.connectAppService.expressOpportunityInterest(req.user.id, body.opportunityId, body.message);
+  async expressInterest(@Request() req: any, @Body() body: { opportunityId: string; message?: string; dealValue?: number; interestLevel?: string }) {
+    return this.connectAppService.expressOpportunityInterest(req.user.id, body.opportunityId, body.message, body.dealValue, body.interestLevel);
   }
 
   @Post('express-uninterest')

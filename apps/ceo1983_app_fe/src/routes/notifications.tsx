@@ -33,6 +33,7 @@ import type { Notification } from "@/lib/extra-data";
 import { CrudModal, type CrudField, type CrudValues } from "@/components/dashboard/CrudModal";
 import { EventReminderPosterModal } from "@/components/dashboard/EventReminderPosterModal";
 import { getLastSeen, markNotificationsSeen } from "@/hooks/use-unread-notifications";
+import { fetchNestApi } from "@/lib/api-client";
 import {
   createNotificationFn,
   deleteNotificationFn,
@@ -60,7 +61,14 @@ export const Route = createFileRoute("/notifications")({
   validateSearch: (search: Record<string, unknown>): NotificationSearchParams => ({
     filter: typeof search.filter === "string" ? search.filter : undefined,
   }),
-  loader: () => listNotificationsFn(),
+  loader: async () => {
+    try {
+      const res = await listNotificationsFn();
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  },
   component: NotifyPage,
 });
 
@@ -222,7 +230,19 @@ function NotifyPage() {
   const searchParams = Route.useSearch();
   const activeSubFilter = (searchParams.filter || "all") as SubFilterType;
 
-  const items = Route.useLoaderData() as Notification[];
+  const loaderItems = (Route.useLoaderData() as Notification[]) || [];
+  const [items, setItems] = useState<Notification[]>(loaderItems);
+
+  useEffect(() => {
+    if (loaderItems.length > 0) {
+      setItems(loaderItems);
+    } else {
+      void fetchNestApi<Notification[]>("/admin/notifications").then((res) => {
+        if (Array.isArray(res) && res.length > 0) setItems(res);
+      }).catch(() => {});
+    }
+  }, [loaderItems]);
+
   const sent = items.filter((n) => n.status === "sent");
 
   const rel = useCallback(

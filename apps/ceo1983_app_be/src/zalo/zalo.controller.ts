@@ -37,6 +37,25 @@ export class ZaloController {
     return this.zaloService.refreshToken(dto);
   }
 
+  @Get('oa-config')
+  @UseGuards(JwtAuthGuard)
+  async getOaConfig() {
+    const config = await this.zaloService.getOaConfig();
+    return { ok: true, config };
+  }
+
+  @Post('oa-config')
+  @UseGuards(JwtAuthGuard)
+  async saveOaConfig(@Req() req: any, @Body() body: any) {
+    return this.zaloService.saveOaConfig(body, req.user?.id);
+  }
+
+  @Post('auto-refresh-now')
+  @UseGuards(JwtAuthGuard)
+  async autoRefreshNow() {
+    return this.zaloService.performAutoRefreshToken();
+  }
+
   @Post('exchange-auth-code')
   @UseGuards(JwtAuthGuard)
   async exchangeAuthCode(@Body() dto: ExchangeZaloAuthCodeDto) {

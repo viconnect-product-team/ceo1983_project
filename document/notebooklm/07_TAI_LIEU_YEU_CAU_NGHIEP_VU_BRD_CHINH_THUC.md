@@ -386,6 +386,47 @@ Nhằm phục vụ công tác điều hành chuẩn mực theo mô hình các hi
 
 ---
 
+### 5.4. Nghiệp Vụ Giao Thương B2B, Hạn Mức Sàn TMĐT & Danh Mục Cơ Hội Quan Tâm
+* **Hạn Mức Niêm Yết Sàn B2B Nội Khối (Quota 5 Sản Phẩm/Doanh Nghiệp):** Mỗi doanh nghiệp hội viên được niêm yết tối đa 5 sản phẩm/dịch vụ tiêu biểu nhất. Cơ chế tự động kiểm tra số lượng hiện có, ngăn chặn tình trạng spam rác, đảm bảo chất lượng hàng hóa tinh hoa của CLB.
+* **Quy Trình Quan Tâm & Rút Quan Tâm Cơ Hội (B2B Express Interest & Uninterest):**
+  - Khi xem bài đăng cơ hội kinh doanh (mua sắm / hợp tác đầu tư), hội viên bấm "Tôi quan tâm" -> Hệ thống ghi nhận vào bảng `public.opportunity_interests` và bắn thông báo tới chủ cơ hội.
+  - Hội viên có thể chủ động bấm "Bỏ quan tâm" bất kỳ lúc nào trên cả Mobile App và Cổng Quản Trị CRM. Hệ thống cập nhật đối soát xóa bản ghi qua UUID, mã hội viên và SĐT, phản hồi tức thời.
+  - Phân hệ hỗ trợ tab riêng "Cơ hội tôi quan tâm" giúp các CEO dễ dàng quản lý danh mục theo dõi.
+
+---
+
+### 5.5. Nghiệp Vụ Quản Trị Thư Viện Tài Liệu Toàn Năng & Gửi Tài Liệu Vào Tin Nhắn CRM
+* **Xem Trực Tiếp Đa Định Dạng (Universal Document Viewer):**
+  - Tệp Word (.docx, .doc): Hiển thị chuẩn layout trang in văn bản hành chính A4 có căn lề, tiêu đề và điều lệ.
+  - Tệp Excel (.xlsx, .xls, .csv): Đọc và phân tích nhị phân đa sheet bằng SheetJS, hỗ trợ chuyển tab và bộ lọc tìm kiếm dòng trực tiếp trên trình duyệt.
+  - Tệp PDF (.pdf): Nhúng trình xem tài liệu đầy đủ chức năng phóng to/thu nhỏ, xoay trang và in ấn.
+* **Gửi Tài Liệu Trực Tiếp Vào Tin Nhắn Kết Nối CRM (`SendDocumentToMessageModal`):**
+  - Cán bộ CRM hoặc hội viên có thể chọn trực tiếp tệp tài liệu trong kho lưu trữ để gửi nhanh vào cuộc hội thoại kết nối B2B của hội viên nhận.
+  - Hệ thống tự động đóng gói tin nhắn dạng `[file:url|filename|size]`, cho phép người nhận tải về hoặc xem ngay tức thì.
+
+---
+
+### 5.6. Nghiệp Vụ Bản Đồ Doanh Nghiệp 2D Google Maps & Tự Động Định Vị Tọa Độ
+* **Bản Đồ Doanh Nghiệp 2D Chuẩn Mực:** Khắc phục tình trạng phụ thuộc CDN bản đồ không ổn định, hệ thống chuyển sang sử dụng iframe nhúng Google Maps 2D chuẩn nét cao, hỗ trợ hiển thị địa chỉ đường phố tiếng Việt 100%.
+* **Tự Động Chuyển Đổi Địa Chỉ & Tọa Độ (Geocoding & Reverse-Geocoding):**
+  - Khi hội viên di chuyển con trỏ bản đồ trên giao diện sửa hồ sơ, hệ thống tự động gọi API reverse-geocode để cập nhật địa chỉ dạng chữ.
+  - Ngược lại, khi gõ địa chỉ văn phòng, hệ thống tự động tìm kiếm kinh độ / vĩ độ tương ứng và cập nhật vị trí ghim bản đồ, fallback an toàn về tọa độ trụ sở CLB tại Hà Nội (`21.016987, 105.784013`).
+
+---
+
+### 5.7. Nghiệp Vụ Kiểm Duyệt & Quản Trị Bình Luận Tin Tức CRM
+* **Tab Kiểm Duyệt Bình Luận Chuyên Biệt:** Cung cấp cho Ban Truyền Thông và Quản trị viên cổng giám sát toàn diện mọi thảo luận trên các bài viết tin tức CLB.
+* **Quy Trình Kiểm Duyệt:** Cho phép tra cứu theo người bình luận, nội dung bài viết, thời gian gửi, và hỗ trợ nút bấm xóa bỏ vi phạm ngay lập tức nhằm bảo vệ không gian văn hóa chuẩn mực của hiệp hội.
+
+---
+
+### 5.8. Quy Chuẩn Nhận Diện Thương Hiệu: Theme Cam Tiên Phong Mobile App & Bộ Biểu Tượng SVG
+* **Chủ Đề Màu Cam Tiên Phong (Pioneer Orange):** Mobile App hội viên triển khai đồng bộ tone màu vàng cam ấm áp (`#EA580C`, `#F97316`, `orange-500`, `orange-600`) từ bản thiết kế Figma: áp dụng trên Thẻ Doanh Nhân Hero Card, Quick Actions 4 cột, thanh Tab điều hướng và thẻ thông tin doanh nghiệp.
+* **Tích Hợp Trực Tiếp Bộ Biểu Tượng SVG Cục Bộ:** 100% các icon chức năng được nạp từ bộ SVG vector nội bộ tại `/icons/home/` và `/icons/profile/`, đảm bảo hiển thị sắc nét trên mọi mật độ điểm ảnh của smartphone.
+* **Quy Tắc Tuyệt Đối Không Dùng Nút Màu Đỏ & Nút Gradient:** Nút hành động chính tuân thủ màu nguyên khối nhận diện (Navy hoặc Vàng Kim), tuyệt đối không dùng nút màu đỏ hay gradient gây rối mắt.
+
+---
+
 ## CHƯƠNG 6: QUY ĐỊNH PHƯƠNG THỨC THANH TOÁN (MÃ QR MOMO & CỔNG VNPAY)
 
 Tài liệu và hệ thống phần mềm tuân thủ nghiêm ngặt quy định không đề cập hoặc sử dụng dịch vụ VietQR, chuyển sang tích hợp trực tiếp 2 phương thức thanh toán điện tử độc lập:

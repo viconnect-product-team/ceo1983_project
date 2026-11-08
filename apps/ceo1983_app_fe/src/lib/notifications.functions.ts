@@ -5,11 +5,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Notification } from "@/lib/extra-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { optionalNestAuth, requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 export const listNotificationsFn = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .inputValidator((d: unknown) => (d ? z.object({ appScope: z.string().optional(), associationId: z.string().optional() }).optional().parse(d) : undefined))
   .handler(async ({ data, context }): Promise<Notification[]> => {
     try {
@@ -17,7 +17,7 @@ export const listNotificationsFn = createServerFn({ method: "GET" })
       if (data?.appScope) params.set("appScope", data.appScope);
       if (data?.associationId) params.set("associationId", data.associationId);
       const query = params.toString() ? `?${params.toString()}` : "";
-      const res = await fetchNestApiFromServer<Notification[]>(`/admin/notifications${query}`, context.token);
+      const res = await fetchNestApiFromServer<Notification[]>(`/admin/notifications${query}`, (context as any)?.token);
       return Array.isArray(res) ? res : [];
     } catch (err) {
       console.warn("[listNotificationsFn] Error fetching notifications from Nest API:", err);

@@ -28,6 +28,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Search,
+  Sliders,
 } from "lucide-react";
 
 export interface AllFeaturesModalProps {
@@ -304,6 +305,36 @@ export function AllFeaturesModal({
               className="w-full bg-transparent text-xs text-slate-900 dark:text-white outline-hidden"
             />
           </div>
+        </div>
+
+        {/* Tùy biến 4 phím tắt nhanh Trang Chủ (Đưa vào popup Tất cả tính năng) */}
+        <div className="mx-3 mt-3 p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-amber-50/50 dark:from-slate-900 dark:to-amber-950/20 border border-blue-200/80 dark:border-amber-500/30 flex items-center justify-between gap-2.5 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="size-8 rounded-xl bg-[#003B95] text-amber-300 grid place-items-center shrink-0 shadow-xs">
+              <Sliders className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">
+                  4 Phím Tắt Trang Chủ
+                </h4>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-[#003B95] text-amber-300">
+                  {selectedShortcuts.length}/4
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Tùy biến các lối tắt tiện ích hiển thị ở màn hình chính
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCustomShortcutsOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs font-bold shrink-0 transition active:scale-95 shadow-xs cursor-pointer flex items-center gap-1"
+          >
+            <span>Cài đặt</span>
+            <ChevronRight className="size-3.5" />
+          </button>
         </div>
 
         {/* Scrollable Features List by Category */}

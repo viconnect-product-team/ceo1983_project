@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { REVIEW_SEARCH_RESET } from "@/lib/review-search";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   CalendarClock,
@@ -22,8 +22,10 @@ import {
   UserCheck,
   Users,
   X,
+  TrendingUp,
+  Award,
 } from "lucide-react";
-import { resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
+import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader, StatCard, Card, Pill } from "@/components/dashboard/PageKit";
@@ -95,7 +97,7 @@ function OpportunityCard({
   const t = useT();
   const fmt = useFmt();
   const poster = getPoster(opp.posterId);
-  const isOwner = canManage ?? (opp.posterId === CURRENT_USER_ID);
+  const isOwner = canManage ?? false;
 
   const budget =
     opp.budgetMin && opp.budgetMax
@@ -681,38 +683,84 @@ function InterestModal({ opp, onClose }: { opp: Opportunity; onClose: () => void
   const express = useServerFn(expressInterestFn);
   const [message, setMessage] = useState("");
   const [contact, setContact] = useState("");
+  const [dealValueStr, setDealValueStr] = useState(opp.budgetMax ? String(opp.budgetMax) : "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const numericDealValue = dealValueStr.replace(/\D/g, "") ? Number(dealValueStr.replace(/\D/g, "")) : undefined;
+  const budgetRef = opp.budgetMax || opp.budgetMin || 0;
+  const dealPercent = budgetRef > 0 && numericDealValue ? Math.round((numericDealValue / budgetRef) * 100) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!message.trim() || !contact.trim()) return;
-    await express({ data: { opportunityId: opp.id, message, contact } });
-    await router.invalidate();
-    toast.success(t("opp.toast.interest"));
-    onClose();
-    // Open chat with poster
-    navigate({ to: "/network", search: { peer: opp.posterId } });
+    if (!contact.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const finalMsg = message.trim() || (numericDealValue ? `Đề xuất deal: ${new Intl.NumberFormat('vi-VN').format(numericDealValue)} VNĐ (${dealPercent || 100}% ngân sách)` : "Quan tâm hợp tác cơ hội này");
+      await express({ data: { opportunityId: opp.id, message: finalMsg, contact, dealValue: numericDealValue } });
+      await router.invalidate();
+      toast.success("Đã gửi đề xuất deal cơ hội thành công!");
+      onClose();
+      // Open chat with poster
+      navigate({ to: "/network", search: { peer: opp.posterId } });
+    } catch (err: any) {
+      toast.error("Không thể gửi yêu cầu deal: " + (err?.message || "Vui lòng thử lại"));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-card shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl bg-card shadow-2xl border border-border">
         <div className="flex items-center justify-between border-b border-border p-5">
-          <h3 className="flex items-center gap-2 text-lg font-bold">
+          <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Send className="h-5 w-5 text-primary" />
-            {t("opp.interest.title")}
+            Bày tỏ quan tâm & Đề xuất Deal
           </h3>
           <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary">
             <X className="h-4 w-4" />
           </button>
         </div>
         <form onSubmit={submit} className="space-y-4 p-5">
-          <div className="rounded-lg bg-secondary/50 p-3 text-xs">
-            <div className="text-muted-foreground">{t("opp.interest.about")}</div>
-            <div className="font-semibold text-foreground">{opp.title}</div>
+          <div className="rounded-xl bg-secondary/50 p-3.5 text-xs border border-border/50">
+            <div className="text-muted-foreground font-medium">Cơ hội mục tiêu:</div>
+            <div className="font-bold text-foreground text-sm mt-0.5">{opp.title}</div>
+            {budgetRef > 0 && (
+              <div className="mt-1 flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
+                <span>Ngân sách kỳ vọng:</span>
+                <span>{new Intl.NumberFormat('vi-VN').format(budgetRef)} VNĐ</span>
+              </div>
+            )}
           </div>
+
           <div>
-            <label className="mb-1.5 block text-xs font-semibold">
-              {t("opp.interest.contact")}
+            <label className="mb-1.5 flex items-center justify-between text-xs font-semibold text-foreground">
+              <span>Giá trị Deal đề xuất (VNĐ)</span>
+              {dealPercent !== null && (
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  dealPercent >= 100 
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                }`}>
+                  {dealPercent}% ngân sách ({dealPercent >= 100 ? `+${dealPercent - 100}% lời` : `${dealPercent - 100}%`})
+                </span>
+              )}
+            </label>
+            <input
+              type="text"
+              value={dealValueStr ? new Intl.NumberFormat('vi-VN').format(Number(dealValueStr.replace(/\D/g, ""))) : ""}
+              onChange={(e) => setDealValueStr(e.target.value.replace(/\D/g, ""))}
+              placeholder="Nhập số tiền deal (VNĐ) ví dụ: 50.000.000"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-primary"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              * Mức deal này sẽ được xếp hạng theo tỷ lệ sinh lời tốt nhất cho người đăng cơ hội.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
+              {t("opp.interest.contact")} <span className="text-destructive">*</span>
             </label>
             <input
               value={contact}
@@ -722,33 +770,36 @@ function InterestModal({ opp, onClose }: { opp: Opportunity; onClose: () => void
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
+
           <div>
-            <label className="mb-1.5 block text-xs font-semibold">
+            <label className="mb-1.5 block text-xs font-semibold text-foreground">
               {t("opp.interest.message")}
             </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-              required
-              placeholder={t("opp.interest.messagePh")}
+              rows={3}
+              placeholder="Mô tả phương án hợp tác, đề xuất giá hoặc năng lực thực thi..."
               className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
+
           <div className="flex justify-end gap-2 border-t border-border pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+              disabled={isSubmitting}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary cursor-pointer"
             >
               {t("opp.form.cancel")}
             </button>
             <button
               type="submit"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground"
+              disabled={isSubmitting}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm cursor-pointer disabled:opacity-50"
               style={{ background: "var(--gradient-primary)" }}
             >
-              {t("opp.interest.submit")}
+              {isSubmitting ? "Đang gửi..." : "Gửi Đề Xuất Deal"}
             </button>
           </div>
         </form>
@@ -763,17 +814,37 @@ function OpportunitiesPage() {
   const t = useT();
   const fmt = useFmt();
   const router = useRouter();
+  const { user } = useAuth();
+  const member = (user as any)?.member || user;
   const { can, isAdmin, isSuperAdmin, isPresident, isChuTich, isPlatformAdmin } = useRole();
   const isMasterAdmin = isPlatformAdmin || isAdmin || isPresident || isChuTich || isSuperAdmin;
-  const {
-    opportunities: all,
-    interests,
-    interestCounts,
-  } = Route.useLoaderData() as {
+  const currentUserId = user?.id || member?.id || CURRENT_USER_ID;
+
+  const loaderData = Route.useLoaderData() as {
     opportunities: Opportunity[];
     interests: OpportunityInterest[];
     interestCounts: Record<string, number>;
   };
+  const [dataState, setDataState] = useState(loaderData);
+  const all = dataState?.opportunities || [];
+  const interests = dataState?.interests || [];
+  const interestCounts = dataState?.interestCounts || {};
+
+  // Client-side fallback fetch nếu SSR loader trả về mảng rỗng
+  useEffect(() => {
+    fetchNestApi<{ opportunities: Opportunity[]; interests: OpportunityInterest[]; interestCounts: Record<string, number> }>("/opportunities")
+      .then((res) => {
+        if (res && Array.isArray(res.opportunities)) {
+          setDataState({
+            opportunities: res.opportunities,
+            interests: res.interests || [],
+            interestCounts: res.interestCounts || {},
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const deleteOpp = useServerFn(deleteOpportunityFn);
   const toggleOpp = useServerFn(toggleOpportunityStatusFn);
   const [tab, setTab] = useState<Tab>("browse");
@@ -786,11 +857,17 @@ function OpportunitiesPage() {
 
   const countFor = (id: string) => interestCounts[id] ?? 0;
 
+  const isOwnerOpp = (o: Opportunity) =>
+    o.posterId === currentUserId ||
+    (member?.id && o.posterId === member.id) ||
+    (user?.id && o.posterId === user.id) ||
+    o.posterId === CURRENT_USER_ID;
+
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     let base = all;
     if (tab === "mine") {
-      base = base.filter((o) => o.posterId === CURRENT_USER_ID);
+      base = base.filter((o) => isOwnerOpp(o));
     } else if (tab === "my_interests") {
       base = base.filter((o) => (o as any).interested || countFor(o.id) > 0);
     } else if (tab === "closed") {
@@ -810,7 +887,7 @@ function OpportunitiesPage() {
       );
     }
     return base;
-  }, [all, q, tab, typeFilter, statusFilter]);
+  }, [all, q, tab, typeFilter, statusFilter, currentUserId, member?.id, user?.id]);
 
   const tc = useTableControls<Opportunity>(
     filtered,
@@ -824,15 +901,26 @@ function OpportunitiesPage() {
     { initialSortKey: "createdAt", initialSortDir: "desc", initialPageSize: 9 },
   );
 
-  const myOpps = useMemo(() => all.filter((o) => o.posterId === CURRENT_USER_ID), [all]);
+  const myOpps = useMemo(() => all.filter((o) => isOwnerOpp(o)), [all, currentUserId, member?.id, user?.id]);
   const closedOpps = useMemo(() => all.filter((o) => o.status === "closed"), [all]);
+  
+  // Sắp xếp các đề xuất deal theo giá trị lời nhất cho người đăng cơ hội (deal_value cao nhất lên đầu)
   const myInterests = useMemo(
     () =>
       myOpps
-        .map((o) => ({
-          opp: o,
-          items: interests.filter((it) => it.opportunityId === o.id),
-        }))
+        .map((o) => {
+          const rawItems = interests.filter((it) => it.opportunityId === o.id);
+          const sortedItems = [...rawItems].sort((a, b) => {
+            const valA = Number(a.dealValue || 0);
+            const valB = Number(b.dealValue || 0);
+            if (valB !== valA) return valB - valA; // Xếp deal lời nhất lên đầu
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+          return {
+            opp: o,
+            items: sortedItems,
+          };
+        })
         .filter((x: any) => x.items.length > 0),
     [myOpps, interests],
   );
@@ -1003,46 +1091,120 @@ function OpportunitiesPage() {
       )}
 
       {tab === "interests" ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {myInterests.length === 0 ? (
             <Card className="p-12 text-center text-sm text-muted-foreground">
               {t("opp.empty.interests")}
             </Card>
           ) : (
             myInterests.map(({ opp, items }) => (
-              <Card key={opp.id} className="p-5">
-                <div className="mb-4 flex items-start justify-between gap-3">
+              <Card key={opp.id} className="p-6 border border-border shadow-sm">
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
                   <div>
-                    <Pill color="primary">{t(opp.type)}</Pill>
-                    <h4 className="mt-2 text-base font-semibold">{opp.title}</h4>
+                    <div className="flex items-center gap-2">
+                      <Pill color="primary">{t(opp.type)}</Pill>
+                      {opp.budgetMax ? (
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200">
+                          Ngân sách kỳ vọng: {new Intl.NumberFormat('vi-VN').format(opp.budgetMax)} VNĐ
+                        </span>
+                      ) : null}
+                    </div>
+                    <h4 className="mt-2 text-lg font-bold text-foreground">{opp.title}</h4>
+                    {opp.description && (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{opp.description}</p>
+                    )}
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {items.length} {t("opp.interest.count")}
+                  <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+                    {items.length} đối tác đang quan tâm / đề xuất deal
                   </span>
                 </div>
-                <div className="space-y-3">
-                  {items.map((it) => {
+
+                <div className="space-y-3.5">
+                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                    Bảng xếp hạng đề xuất Deal (Sắp xếp theo giá trị lời nhất cho bạn):
+                  </div>
+
+                  {items.map((it, idx) => {
                     const m = getPoster(it.memberId);
+                    const isTop1 = idx === 0 && (it.dealValue || 0) > 0;
                     return (
                       <div
                         key={it.id}
-                        className="rounded-lg border border-border bg-secondary/30 p-3 text-sm"
+                        className={`rounded-xl border p-4 text-sm transition-all ${
+                          isTop1
+                            ? "border-amber-300 bg-amber-50/50 dark:border-amber-700/60 dark:bg-amber-950/20 shadow-xs"
+                            : "border-border bg-card hover:bg-secondary/40"
+                        }`}
                       >
-                        <div className="mb-1 flex items-center justify-between">
-                          <Link
-                            to="/members/$memberId"
-                            params={{ memberId: it.memberId }}
-                            search={REVIEW_SEARCH_RESET}
-                            className="font-semibold text-primary hover:underline"
-                          >
-                            {(it as any).memberName || (it as any).name || m?.name || it.contact || it.memberId}
-                          </Link>
-                          <span className="text-[11px] text-muted-foreground">
-                            {fmt.date(it.createdAt)}
-                          </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center justify-center h-6 min-w-6 px-1.5 rounded-full text-xs font-extrabold ${
+                              isTop1
+                                ? "bg-amber-500 text-white shadow-xs"
+                                : idx === 1
+                                ? "bg-slate-400 text-white"
+                                : "bg-secondary text-muted-foreground"
+                            }`}>
+                              #{idx + 1}
+                            </span>
+                            <Link
+                              to="/members/$memberId"
+                              params={{ memberId: it.memberId }}
+                              search={REVIEW_SEARCH_RESET}
+                              className="font-bold text-foreground hover:text-primary hover:underline text-sm flex items-center gap-1.5"
+                            >
+                              {(it as any).memberName || (it as any).name || m?.name || it.contact || it.memberId}
+                              {(it as any).memberCompany && (
+                                <span className="text-xs font-normal text-muted-foreground">({(it as any).memberCompany})</span>
+                              )}
+                            </Link>
+                            {isTop1 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
+                                <Award className="h-3 w-3 text-amber-600 dark:text-amber-300" />
+                                Deal Lời Nhất
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {it.dealValue && it.dealValue > 0 ? (
+                              <div className="text-right">
+                                <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+                                  {new Intl.NumberFormat('vi-VN').format(it.dealValue)} VNĐ
+                                </div>
+                                {it.dealPercent ? (
+                                  <div className="text-[11px] font-bold text-muted-foreground">
+                                    Tỷ lệ: {it.dealPercent}% ngân sách {it.dealPercent >= 100 ? `(+${it.dealPercent - 100}% lời)` : ''}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">Quan tâm kết nối</span>
+                            )}
+
+                            <span className="text-[11px] text-muted-foreground">
+                              {fmt.date(it.createdAt)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">{it.contact}</div>
-                        <p className="mt-1.5 text-sm text-foreground">{it.message}</p>
+
+                        <div className="rounded-lg bg-secondary/50 p-2.5 text-xs text-foreground mb-3 flex items-start justify-between gap-3">
+                          <p className="flex-1 font-medium">{it.message}</p>
+                          <span className="text-muted-foreground font-mono shrink-0">{it.contact}</span>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <Link
+                            to="/network"
+                            search={{ peer: it.memberId }}
+                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:opacity-95 cursor-pointer"
+                            style={{ background: "var(--gradient-primary)" }}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Nhắn tin chốt Deal B2B
+                          </Link>
+                        </div>
                       </div>
                     );
                   })}
@@ -1138,7 +1300,7 @@ function OpportunitiesPage() {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                 {tc.pageRows.map((opp, idx) => {
                   const poster = getPoster(opp.posterId);
-                  const isOwner = opp.posterId === CURRENT_USER_ID;
+                  const isOwner = isOwnerOpp(opp);
                   const canManage = isOwner || isMasterAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE);
                   const budget =
                     opp.budgetMin && opp.budgetMax
@@ -1396,7 +1558,7 @@ function OpportunitiesPage() {
                 key={opp.id}
                 opp={opp}
                 interestCount={countFor(opp.id)}
-                canManage={opp.posterId === CURRENT_USER_ID || isMasterAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE)}
+                canManage={isOwnerOpp(opp) || isMasterAdmin || can(PERMISSIONS.OPPORTUNITY_MANAGE)}
                 onInterest={() => setInterestOpp(opp)}
                 onDelete={async () => {
                   if (confirm(t("opp.confirmDelete"))) {

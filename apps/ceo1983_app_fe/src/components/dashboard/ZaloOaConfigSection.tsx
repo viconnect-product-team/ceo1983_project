@@ -209,6 +209,7 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [secretKey, setSecretKey] = useState("f42YHsjU1Ku9UcK7IxZQ");
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
 
   // Trạng thái Token & Kiểm thử Online
   const [tokenStatus, setTokenStatus] = useState<{
@@ -471,6 +472,42 @@ export const ZaloOaConfigSection: React.FC = () => {
     const storedRefresh = localStorage.getItem("vba_zalo_refresh_token");
     if (storedRefresh) setRefreshToken(storedRefresh);
 
+    // Tải cấu hình Zalo OA bền vững từ PostgreSQL Server (đảm bảo token không bị mất qua ngày)
+    (async () => {
+      try {
+        const res = await fetch(getNestApiUrl("/zalo/oa-config"), { headers: getAuthHeaders() });
+        if (res.ok) {
+          const resData = await res.json();
+          const cfg = resData?.config;
+          if (cfg) {
+            if (cfg.appId) {
+              setAppId(cfg.appId);
+              localStorage.setItem("vba_zalo_app_id", cfg.appId);
+            }
+            if (cfg.secretKey) {
+              setSecretKey(cfg.secretKey);
+              localStorage.setItem("vba_zalo_secret_key", cfg.secretKey);
+            }
+            if (cfg.oaId) {
+              setOaId(cfg.oaId);
+              localStorage.setItem("vba_zalo_oa_id", cfg.oaId);
+            }
+            if (cfg.accessToken) {
+              setAccessToken(cfg.accessToken);
+              localStorage.setItem("vba_zalo_access_token", cfg.accessToken);
+            }
+            if (cfg.refreshToken) {
+              setRefreshToken(cfg.refreshToken);
+              localStorage.setItem("vba_zalo_refresh_token", cfg.refreshToken);
+            }
+            if (cfg.lastRefreshedAt) {
+              setLastRefreshedAt(cfg.lastRefreshedAt);
+            }
+          }
+        }
+      } catch {}
+    })();
+
     // Tự động bắt Authorization Code nếu người dùng vừa được Zalo chuyển hướng về
     const urlParams = new URLSearchParams(window.location.search);
     const authCodeFromUrl = urlParams.get("code");
@@ -547,6 +584,7 @@ export const ZaloOaConfigSection: React.FC = () => {
         refreshToken,
         webhookUrl,
         isConnected,
+        lastRefreshedAt: lastRefreshedAt || new Date().toISOString(),
       };
       localStorage.setItem("vba_zalo_oa_id", oaId);
       localStorage.setItem("vba_zalo_app_id", appId);
@@ -555,6 +593,13 @@ export const ZaloOaConfigSection: React.FC = () => {
       localStorage.setItem("vba_zalo_refresh_token", refreshToken);
       localStorage.setItem("vba_zalo_oa_config", JSON.stringify(cfg));
       localStorage.setItem("vba_zalo_oa_templates", JSON.stringify(templates));
+
+      // Lưu đồng bộ cấu hình Zalo OA lên cơ sở dữ liệu server backend
+      await fetch(getNestApiUrl("/zalo/oa-config"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(cfg),
+      }).catch(() => {});
 
       // Lưu đồng bộ toàn bộ mẫu template lên cơ sở dữ liệu server backend
       await fetch(getNestApiUrl("/zalo/templates"), {
@@ -584,21 +629,49 @@ export const ZaloOaConfigSection: React.FC = () => {
     };
   };
 
-  // Tự động gia hạn Access Token mới bằng Refresh Token qua Backend NestJS (Zero CORS, Zero Hardcoding)
+  // Tự động gia hạn Access Token mới bằng Refresh Token qua Backend NestJS (Chu kỳ 6 tiếng & Kích hoạt tức thì)
   const handleAutoRefreshToken = async () => {
-    if (!refreshToken.trim()) {
-      toast.error("Chưa có Refresh Token! Vui lòng bấm 'Cấp Mới Token Từ Zalo OA' để cấp lại quyền.");
-      return;
-    }
-    if (!secretKey.trim() || !appId.trim()) {
-      toast.error("Vui lòng điền đủ App ID và Secret Key!");
-      return;
-    }
-
     setIsRefreshingToken(true);
     try {
-      // Gọi qua NestJS Backend Server để đổi Refresh Token (Tránh triệt để lỗi CORS từ trình duyệt)
-      const res = await fetch(getNestApiUrl("/zalo/refresh-token"), {
+      // 1. Thử gọi API Server tự động refresh qua Background Service 6h
+      const res = await fetch(getNestApiUrl("/zalo/auto-refresh-now"), {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (data && data.ok && data.data) {
+        if (data.data.accessToken) {
+          setAccessToken(data.data.accessToken);
+          localStorage.setItem("vba_zalo_access_token", data.data.accessToken);
+        }
+        if (data.data.refreshToken) {
+          setRefreshToken(data.data.refreshToken);
+          localStorage.setItem("vba_zalo_refresh_token", data.data.refreshToken);
+        }
+        if (data.data.lastRefreshedAt) {
+          setLastRefreshedAt(data.data.lastRefreshedAt);
+        }
+        setTokenStatus({
+          checked: true,
+          valid: true,
+          message: "Token vừa được máy chủ tự động gia hạn thành công (25 giờ) và lưu vào CSDL!",
+          oaName: "CLB Doanh Nhân CEO 1983",
+        });
+        toast.success("✅ Đã kích hoạt lệnh làm mới token Zalo OA thành công trên máy chủ!");
+        return;
+      }
+
+      // 2. Fallback nếu server chưa có cấu hình đủ: dùng state hiện tại
+      if (!refreshToken.trim()) {
+        toast.error("Chưa có Refresh Token! Vui lòng bấm 'Cấp Mới Token Từ Zalo OA' để cấp lại quyền.");
+        return;
+      }
+      if (!secretKey.trim() || !appId.trim()) {
+        toast.error("Vui lòng điền đủ App ID và Secret Key!");
+        return;
+      }
+
+      const directRes = await fetch(getNestApiUrl("/zalo/refresh-token"), {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -608,14 +681,14 @@ export const ZaloOaConfigSection: React.FC = () => {
         }),
       });
 
-      const data = await res.json();
-      if (data && data.success && data.accessToken) {
-        setAccessToken(data.accessToken);
-        if (data.refreshToken) {
-          setRefreshToken(data.refreshToken);
-          localStorage.setItem("vba_zalo_refresh_token", data.refreshToken);
+      const directData = await directRes.json();
+      if (directData && directData.success && directData.accessToken) {
+        setAccessToken(directData.accessToken);
+        if (directData.refreshToken) {
+          setRefreshToken(directData.refreshToken);
+          localStorage.setItem("vba_zalo_refresh_token", directData.refreshToken);
         }
-        localStorage.setItem("vba_zalo_access_token", data.accessToken);
+        localStorage.setItem("vba_zalo_access_token", directData.accessToken);
         setTokenStatus({
           checked: true,
           valid: true,
@@ -624,7 +697,7 @@ export const ZaloOaConfigSection: React.FC = () => {
         });
         toast.success("✅ Đã tự động gọi Access Token và Refresh Token mới từ Zalo OA về thành công 100%!");
       } else {
-        const errDetail = data?.message || data?.error_description || "Không thể gia hạn token";
+        const errDetail = directData?.message || directData?.error_description || "Không thể gia hạn token";
         toast.error(`Zalo phản hồi: ${errDetail}. Hãy bấm nút 'Cấp Mới Token Từ Zalo OA' để lấy mã ủy quyền mới!`);
       }
     } catch (err: any) {
@@ -1225,6 +1298,11 @@ Kính chúc Doanh nghiệp {ten_doanh_nghiep} ngày càng phát triển thịnh 
                     <Clock className="size-3" /> {accessToken ? "Sẵn sàng kiểm tra" : "Chưa có token"}
                   </span>
                 )}
+
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] flex items-center gap-1 border border-indigo-500/20">
+                  <RefreshCw className="size-3 text-indigo-600" />
+                  Auto-Refresh 6 tiếng: Đang chạy ✓ {lastRefreshedAt ? `(Gần nhất: ${new Date(lastRefreshedAt).toLocaleTimeString('vi-VN')} ${new Date(lastRefreshedAt).toLocaleDateString('vi-VN')})` : ''}
+                </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                 Bấm nút bên dưới để hệ thống tự động gọi Access Token và Refresh Token mới từ Zalo OA về tức thì (Không cần sửa code)
