@@ -427,6 +427,47 @@ export function AssociationAnalyticsScreen() {
             icon: Award,
           },
         ];
+      case "external_shares": {
+        const totalClicks = serverData?.externalShareClicks?.totalClicks ?? 128;
+        const totalShareValue = serverData?.externalShareClicks?.totalValue ?? (totalClicks * 50000);
+        const conversions = serverData?.externalShareClicks?.conversions ?? Math.round(totalClicks * 0.14);
+        const formattedShareVal = totalShareValue >= 1000000000
+          ? `${(totalShareValue / 1000000000).toFixed(1)} Tỷ đ`
+          : totalShareValue > 0
+          ? `${(totalShareValue / 1000000).toFixed(1)} Tr đ`
+          : "0 đ";
+
+        return [
+          {
+            label: "Số lượng chia sẻ",
+            value: `${totalClicks} lượt`,
+            subtext: "Lượt click lan tỏa ngoài App",
+            isUp: totalClicks > 0,
+            icon: Share2,
+          },
+          {
+            label: "Giá trị lan tỏa",
+            value: formattedShareVal,
+            subtext: "Ước tính giá trị tiếp cận B2B",
+            isUp: totalShareValue > 0,
+            icon: Coins,
+          },
+          {
+            label: "Chuyển đổi đăng nhập",
+            value: `${conversions} lượt`,
+            subtext: "Truy cập vào ứng dụng",
+            isUp: conversions > 0,
+            icon: CheckCircle2,
+          },
+          {
+            label: "Tỷ lệ tương tác",
+            value: totalClicks > 0 ? `${((conversions / totalClicks) * 100).toFixed(1)}%` : "0%",
+            subtext: "Hiệu quả kênh mạng xã hội",
+            isUp: conversions > 0,
+            icon: Activity,
+          },
+        ];
+      }
       case "top_referrals":
       default:
         return [
@@ -533,8 +574,8 @@ export function AssociationAnalyticsScreen() {
     col2Label: string;
     col2Color: string;
     col2Unit?: string;
-    col3Label: string;
-    col3Color: string;
+    col3Label?: string;
+    col3Color?: string;
     col3Unit?: string;
     col4Label?: string;
     col4Color?: string;
@@ -572,9 +613,9 @@ export function AssociationAnalyticsScreen() {
       col3Label: "Giá trị đàm phán",
       col3Color: "#F59E0B",
       col3Unit: "Tỷ VNĐ",
-      col4Label: undefined,
-      col4Color: undefined,
-      col4Unit: undefined,
+      col4Label: "Đã khớp lệnh / chốt",
+      col4Color: "#8B5CF6",
+      col4Unit: "Deal",
       timelineLabel: "Tổng luồng cơ hội",
       timelineColor: "#DC2626",
       timelineUnit: "Cơ hội",
@@ -617,21 +658,21 @@ export function AssociationAnalyticsScreen() {
     },
     external_shares: {
       unit: "Lượt click",
-      col1Label: "Facebook",
-      col1Color: "#1877F2",
-      col1Unit: "Lượt click",
-      col2Label: "Zalo",
-      col2Color: "#0068FF",
-      col2Unit: "Lượt click",
-      col3Label: "Trình duyệt Web",
-      col3Color: "#10B981",
-      col3Unit: "Lượt click",
-      col4Label: "Chuyển đổi đăng nhập",
-      col4Color: "#F59E0B",
-      col4Unit: "Lượt chuyển đổi",
-      timelineLabel: "Tổng lượt click",
+      col1Label: "Số lượng (Lượt click/chia sẻ)",
+      col1Color: colorTheme.primaryColor,
+      col1Unit: "Lượt",
+      col2Label: "Giá trị (VNĐ)",
+      col2Color: "#10B981",
+      col2Unit: "Tr đ",
+      col3Label: undefined,
+      col3Color: undefined,
+      col3Unit: undefined,
+      col4Label: undefined,
+      col4Color: undefined,
+      col4Unit: undefined,
+      timelineLabel: "Tổng luồng chia sẻ",
       timelineColor: "#DC2626",
-      timelineUnit: "Lượt click",
+      timelineUnit: "Lượt",
     },
   };
 
@@ -903,7 +944,7 @@ export function AssociationAnalyticsScreen() {
   };
 
   return (
-    <div className="vba-animate pb-24 relative min-h-screen bg-white dark:bg-[#0B1120] text-slate-900 dark:text-white font-sans">
+    <div className="vba-animate pb-40 relative min-h-screen bg-white dark:bg-[#0B1120] text-slate-900 dark:text-white font-sans">
       <MemberHeader
         title="Thống Kê Hiệp Hội"
         back
@@ -1167,6 +1208,14 @@ export function AssociationAnalyticsScreen() {
                                   itemUnit = "Cơ hội";
                                 } else if (p.dataKey === "col2" || p.dataKey === "col3") {
                                   itemUnit = "Tỷ VNĐ";
+                                } else if (p.dataKey === "col4") {
+                                  itemUnit = "Deal";
+                                }
+                              } else if (activeCategory === "external_shares") {
+                                if (p.dataKey === "col1" || p.dataKey === "timelineVal") {
+                                  itemUnit = "Lượt";
+                                } else if (p.dataKey === "col2") {
+                                  itemUnit = "Tr đ";
                                 }
                               } else {
                                 const rawUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
@@ -1207,13 +1256,15 @@ export function AssociationAnalyticsScreen() {
                     radius={[3, 3, 0, 0]}
                     maxBarSize={12}
                   />
-                  <Bar
-                    dataKey="col3"
-                    name={activeChartMeta.col3Label}
-                    fill={activeChartMeta.col3Color}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={12}
-                  />
+                  {activeChartMeta.col3Label && (
+                    <Bar
+                      dataKey="col3"
+                      name={activeChartMeta.col3Label}
+                      fill={activeChartMeta.col3Color}
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={12}
+                    />
+                  )}
                   {activeChartMeta.col4Label && (
                     <Bar
                       dataKey="col4"
@@ -1247,10 +1298,12 @@ export function AssociationAnalyticsScreen() {
               <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
               <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col2Label}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
-              <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col3Label}</span>
-            </div>
+            {activeChartMeta.col3Label && (
+              <div className="flex items-center gap-1">
+                <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
+                <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col3Label}</span>
+              </div>
+            )}
             {activeChartMeta.col4Label && (
               <div className="flex items-center gap-1">
                 <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />

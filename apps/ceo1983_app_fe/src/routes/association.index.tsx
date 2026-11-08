@@ -741,6 +741,11 @@ function Home() {
   const [eventSlideIndex, setEventSlideIndex] = useState(0);
   const [isEventHovered, setIsEventHovered] = useState(false);
   const eventTouchStartXRef = useRef<number | null>(null);
+
+  // News carousel slide state (Yêu cầu 3: 1 tin tức duy nhất full màn hình kèm slide chuyển tin liên tục)
+  const [newsSlideIndex, setNewsSlideIndex] = useState(0);
+  const [isNewsHovered, setIsNewsHovered] = useState(false);
+  const newsTouchStartXRef = useRef<number | null>(null);
   const [companyLogo, setCompanyLogo] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const uId = user?.id;
@@ -1094,6 +1099,16 @@ function Home() {
     return () => clearInterval(timer);
   }, [isEventHovered, displayEvents.length]);
 
+  // Auto-play timer cho Slide Tin tức CLB (Yêu cầu 3: 1 tin tức full width chuyển tin liên tục mỗi 4.5s)
+  useEffect(() => {
+    const listLen = combinedNews.length > 0 ? combinedNews.length : 1;
+    if (isNewsHovered || listLen <= 1) return;
+    const timer = setInterval(() => {
+      setNewsSlideIndex((prev) => (prev + 1) % listLen);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [isNewsHovered, combinedNews.length]);
+
   const totalOpportunitiesCount = opportunities.length;
   const totalProductsCount = products.length;
 
@@ -1297,6 +1312,7 @@ function Home() {
             {/* 1. Tin nhắn */}
             <Link
               to="/association/messages"
+              search={{ tab: "messages" }}
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
             >
               <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
@@ -1628,7 +1644,7 @@ function Home() {
           </div>
         </div>
 
-        {/* TIN TỨC CÂU LẠC BỘ: 1 TIN TIÊU ĐIỂM + SLIDE BẢN TIN TIẾP THEO (CHUẨN FIGMA) */}
+        {/* TIN TỨC CÂU LẠC BỘ: CHỈ HIỆN 1 TIN TỨC ĐỘ RỘNG NGANG FULL MÀN HÌNH VÀ SLIDE CHUYỂN LIÊN TỤC (YÊU CẦU 3) */}
         <div className="self-stretch flex flex-col justify-start items-start gap-3">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
@@ -1641,7 +1657,7 @@ function Home() {
             </div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-orange-50 dark:bg-orange-950/60 rounded-full outline outline-1 outline-orange-200 dark:outline-orange-800 text-orange-700 dark:text-orange-300 text-[10px] font-bold">
-                +{combinedNews.length || 5} TIN MỚI
+                +{combinedNews.length || 5} BẢN TIN
               </span>
               <Link to="/association/news" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
                 <img src="/icons/home/arrow-right-02.svg" alt="More" className="size-4" />
@@ -1649,7 +1665,7 @@ function Home() {
             </div>
           </div>
 
-          {/* 1. Tin tiêu điểm số 1 dạng Hero Banner nổi bật */}
+          {/* 1 TIN TỨC DUY NHẤT FULL CHIỀU RỘNG MÀN HÌNH VỚI AUTO-SLIDE CAROUSEL */}
           {(() => {
             const newsList = combinedNews.length > 0 ? combinedNews : [
               {
@@ -1658,6 +1674,7 @@ function Home() {
                 author: "Ban Thư Ký",
                 time: "2026-09-20",
                 image: "/images/ceo1983/Rectangle 6-1.png",
+                category: "BẢN TIN HOẠT ĐỘNG CLB",
               },
               {
                 id: "2",
@@ -1665,97 +1682,139 @@ function Home() {
                 author: "Ban Truyền Thông",
                 time: "2026-09-18",
                 image: "/images/ceo1983/Rectangle 6-1.png",
+                category: "KẾT NỐI DOANH NHÂN",
+              },
+              {
+                id: "3",
+                title: "Lễ Ký kết Hợp tác Chiến lược & Phát triển Hệ sinh thái CEO 1983",
+                author: "Ban Điều Hành",
+                time: "2026-09-15",
+                image: "/images/ceo1983/Rectangle 6-1.png",
+                category: "XÚC TIẾN THƯƠNG MẠI",
               },
             ];
-            const heroNews = newsList[0];
-            const slideNews = newsList.slice(1);
+
+            const currentIndex = newsSlideIndex % newsList.length;
+            const currentNews = newsList[currentIndex] || newsList[0];
+            const rawImg = (currentNews as any).image || (currentNews as any).cover;
+            const fallbackImg = DEFAULT_NEWS_THUMBNAILS[currentIndex % DEFAULT_NEWS_THUMBNAILS.length] || "/images/ceo1983/Rectangle 6-1.png";
+            const realImg = rawImg ? resolveMediaUrl(rawImg) || rawImg : fallbackImg;
 
             return (
-              <div className="self-stretch flex flex-col gap-2.5">
-                {heroNews && (
-                  <Link
-                    to="/association/news"
-                    search={{ articleId: String(heroNews.id) }}
-                    className="self-stretch relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-sm hover:border-orange-500 dark:hover:border-orange-400 transition-all group flex flex-col"
-                  >
-                    <div className="relative w-full h-44 sm:h-52 overflow-hidden bg-slate-900">
-                      <img
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={(heroNews as any).image || (heroNews as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
-                        alt={heroNews.title}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
-                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                        <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9.5px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1">
-                          <Sparkles className="size-3" />
-                          TIN TIÊU ĐIỂM
+              <div
+                className="relative w-full overflow-hidden rounded-3xl select-none group"
+                onMouseEnter={() => setIsNewsHovered(true)}
+                onMouseLeave={() => setIsNewsHovered(false)}
+                onTouchStart={(e) => {
+                  newsTouchStartXRef.current = e.touches[0].clientX;
+                }}
+                onTouchEnd={(e) => {
+                  if (newsTouchStartXRef.current === null) return;
+                  const diff = newsTouchStartXRef.current - e.changedTouches[0].clientX;
+                  if (diff > 45) {
+                    setNewsSlideIndex((prev) => (prev + 1) % newsList.length);
+                  } else if (diff < -45) {
+                    setNewsSlideIndex((prev) => (prev === 0 ? newsList.length - 1 : prev - 1));
+                  }
+                  newsTouchStartXRef.current = null;
+                }}
+              >
+                {/* 1 Tin tức Full Width duy nhất */}
+                <Link
+                  to="/association/news"
+                  search={{ articleId: String(currentNews.id) }}
+                  className="relative block w-full h-52 sm:h-60 rounded-3xl overflow-hidden shadow-lg border border-orange-300/80 dark:border-orange-500/30 bg-slate-900 group"
+                >
+                  <img
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    src={realImg}
+                    alt={currentNews.title}
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = fallbackImg;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/20 pointer-events-none" />
+
+                  {/* Header badges: Tag chuyên mục + Vị trí Slide */}
+                  <div className="absolute top-3 inset-x-3.5 flex items-center justify-between z-10">
+                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1">
+                      <Sparkles className="size-3" />
+                      <span>{(currentNews as any).category || "BẢN TIN HOẠT ĐỘNG"}</span>
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-mono font-bold text-white border border-white/20">
+                      {currentIndex + 1} / {newsList.length}
+                    </span>
+                  </div>
+
+                  {/* Bottom info banner */}
+                  <div className="absolute inset-x-3.5 bottom-3.5 z-10 flex flex-col gap-1.5">
+                    <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] line-clamp-2 group-hover:text-amber-200 transition-colors">
+                      {currentNews.title}
+                    </h3>
+                    <div className="flex items-center justify-between text-xs text-slate-200 pt-1 border-t border-white/10">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-300 text-[11px] truncate max-w-[130px]">
+                          {currentNews.author || "Ban Truyền Thông"}
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-mono text-amber-300 text-[11px]">
+                          <Clock className="size-3 text-amber-300 shrink-0" />
+                          {formatNewsDate(currentNews.time)}
                         </span>
                       </div>
-                      <div className="absolute bottom-2.5 left-3 right-3 text-white">
-                        <span className="text-amber-300 text-[10px] font-bold uppercase tracking-wider">
-                          {(heroNews as any).category || "BẢN TIN HOẠT ĐỘNG CLB"}
-                        </span>
-                        <h3 className="text-white text-sm sm:text-base font-extrabold leading-snug line-clamp-2 mt-0.5 group-hover:text-amber-200 transition-colors">
-                          {heroNews.title}
-                        </h3>
-                        <div className="flex items-center justify-between text-[10px] text-slate-300 mt-1.5 border-t border-white/10 pt-1">
-                          <span className="font-medium text-slate-300">{heroNews.author || "Ban Truyền Thông"}</span>
-                          <span className="inline-flex items-center gap-1 font-mono text-amber-200">
-                            <Clock className="size-3 text-amber-300" />
-                            {formatNewsDate(heroNews.time)}
-                          </span>
-                        </div>
-                      </div>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-[11px] shadow-sm transition">
+                        <span>Đọc tiếp</span>
+                        <ChevronRight className="size-3 stroke-[3]" />
+                      </span>
                     </div>
-                  </Link>
+                  </div>
+                </Link>
+
+                {/* Nút Điều Hướng Trái / Phải nếu có nhiều hơn 1 tin */}
+                {newsList.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setNewsSlideIndex((prev) => (prev === 0 ? newsList.length - 1 : prev - 1));
+                      }}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 size-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-md cursor-pointer transition active:scale-95"
+                      title="Tin tức trước"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setNewsSlideIndex((prev) => (prev + 1) % newsList.length);
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 size-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-md cursor-pointer transition active:scale-95"
+                      title="Tin tức tiếp theo"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </>
                 )}
 
-                {/* 2. Sau đó là Slide các tin tiếp theo */}
-                {slideNews.length > 0 && (
-                  <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-3 pt-0.5 pb-1">
-                    {slideNews.map((item, i) => (
-                      <Link
-                        key={item.id || i}
-                        to="/association/news"
-                        search={{ articleId: String(item.id) }}
-                        className="w-60 relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 inline-flex flex-col justify-start items-start overflow-hidden shrink-0 shadow-sm group hover:border-orange-500 dark:hover:border-orange-400 transition"
-                      >
-                        <div className="relative w-full h-28 overflow-hidden bg-slate-100 dark:bg-slate-800">
-                          <img
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            src={(item as any).image || (item as any).cover || "/images/ceo1983/Rectangle 6-1.png"}
-                            alt={item.title}
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/Rectangle 6-1.png";
-                            }}
-                          />
-                          <div className="px-2 py-0.5 right-2 top-2 absolute bg-orange-500 text-white rounded-full inline-flex items-center gap-1 text-[9px] font-bold shadow-xs">
-                            <span className="size-1 bg-white rounded-full" />
-                            <span>Mới</span>
-                          </div>
-                        </div>
-                        <div className="self-stretch p-2.5 flex flex-col justify-start items-start gap-1">
-                          <span className="text-orange-600 dark:text-orange-400 text-[9.5px] font-bold uppercase truncate w-full">
-                            {(item as any).category || "BẢN TIN BAN CHẤP HÀNH"}
-                          </span>
-                          <span className="text-slate-800 dark:text-white text-xs font-bold leading-4 line-clamp-2 group-hover:text-orange-600 transition-colors">
-                            {item.title}
-                          </span>
-                          <div className="self-stretch h-px bg-slate-100 dark:bg-slate-800 my-0.5" />
-                          <div className="self-stretch inline-flex justify-between items-center text-[10px]">
-                            <span className="text-slate-500 dark:text-slate-400 font-medium truncate max-w-[110px]">
-                              {item.author || "Ban Thư Ký"}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold font-mono">
-                              <Clock className="size-3 text-orange-500 shrink-0" />
-                              {formatNewsDate(item.time)}
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
+                {/* Dots indicator */}
+                {newsList.length > 1 && (
+                  <div className="flex items-center justify-center gap-1.5 mt-2.5">
+                    {newsList.slice(0, 8).map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setNewsSlideIndex(idx)}
+                        className={`transition-all duration-300 rounded-full cursor-pointer ${
+                          currentIndex === idx
+                            ? "w-6 h-1.5 bg-orange-500"
+                            : "w-1.5 h-1.5 bg-slate-300 dark:bg-slate-700"
+                        }`}
+                        title={`Bản tin ${idx + 1}`}
+                      />
                     ))}
                   </div>
                 )}

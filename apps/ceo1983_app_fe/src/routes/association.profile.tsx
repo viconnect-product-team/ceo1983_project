@@ -470,11 +470,22 @@ export default function ProfileScreen() {
 
   // Cài đặt ứng dụng nhanh 1 chạm (PWA Native Prompt / Hướng dẫn iOS Safari & Android Chrome)
   const handleFastInstallApp = async () => {
-    // 1. Nếu có prompt PWA từ trình duyệt (Chrome/Edge/Samsung Internet): Kích hoạt hộp thoại cài đặt ngay lập tức!
+    // 1. Kiểm tra nếu đã cài đặt chạy dạng App độc lập (Standalone PWA hoặc Capacitor)
+    const isStandalone =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true);
+
+    if (isStandalone) {
+      toast.success("Ứng dụng CEO 1983 đã được cài đặt và đang chạy sẵn sàng trên thiết bị của bạn!");
+      return;
+    }
+
+    // 2. Nếu có prompt PWA từ trình duyệt (Android Chrome/Edge/Samsung Internet): Kích hoạt hộp thoại cài đặt ngay lập tức!
     const p = (window as any).__pwaInstallPrompt;
     if (p && typeof p.prompt === "function") {
       try {
-        p.prompt();
+        await p.prompt();
         const choice = await p.userChoice;
         if (choice?.outcome === "accepted") {
           toast.success("Ứng dụng đang được tự động cài đặt lên màn hình chính!");
@@ -486,8 +497,9 @@ export default function ProfileScreen() {
       }
     }
 
-    // 2. Mở bảng điều khiển cài đặt ứng dụng chuyên biệt hỗ trợ cả iPhone (iOS) và Android
+    // 3. Mở bảng điều khiển cài đặt ứng dụng chuyên biệt hỗ trợ cả iPhone (iOS) và Android
     window.dispatchEvent(new CustomEvent("open-install-prompt"));
+    window.dispatchEvent(new CustomEvent("open-ios-install-guide"));
   };
 
   // Đăng xuất phiên an toàn
@@ -1764,6 +1776,18 @@ export default function ProfileScreen() {
             </div>
           </div>
         )}
+
+        {/* ── NÚT ĐĂNG XUẤT CỐ ĐỊNH Ở FOOTER MÀN HÌNH CÁ NHÂN (YÊU CẦU 6) ── */}
+        <div className="pt-4 pb-8 w-full">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full py-3.5 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs"
+          >
+            <LogOut className="size-4 text-rose-500" />
+            <span>Đăng xuất khỏi ứng dụng</span>
+          </button>
+        </div>
       </div>
 
       {/* ── MODAL CHỈNH SỬA BÀI VIẾT (YÊU CẦU 1) ── */}
