@@ -24,6 +24,7 @@ export function IosInstallPrompt() {
   const [copiedShare, setCopiedShare] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<"ios" | "android">("ios");
+  const [isManuallyOpened, setIsManuallyOpened] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -86,6 +87,7 @@ export function IosInstallPrompt() {
 
     // Global listeners
     const handleOpenGuide = () => {
+      setIsManuallyOpened(true);
       setShowPrompt(true);
     };
     const handleOpenShare = () => {
@@ -94,6 +96,7 @@ export function IosInstallPrompt() {
 
     // 1-TAP ACTION TRIGGER
     const handleTriggerPrompt = async () => {
+      setIsManuallyOpened(true);
       const promptToUse = deferredPrompt || (window as any).__pwaInstallPrompt;
       if (promptToUse) {
         try {
@@ -128,6 +131,7 @@ export function IosInstallPrompt() {
   const handleDismissPrompt = () => {
     setShowPrompt(false);
     setShowShareModal(false);
+    setIsManuallyOpened(false);
     try {
       localStorage.setItem("ceo1983_ios_prompt_dismissed", "true");
       sessionStorage.setItem("ceo1983_ios_prompt_dismissed", "true");
@@ -204,8 +208,8 @@ export function IosInstallPrompt() {
     }
   };
 
-  // Không hiển thị nếu đã cài đặt chạy dạng standalone PWA
-  if (isStandalone) return null;
+  // Không tự động hiển thị nếu đã cài đặt chạy dạng standalone PWA (trừ khi người dùng chủ động mở từ cài đặt)
+  if (isStandalone && !isManuallyOpened) return null;
 
   return (
     <>

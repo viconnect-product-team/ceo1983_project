@@ -126,10 +126,17 @@ function MessagesScreen() {
 
   const [mainTab, setMainTab] = useState<"feed" | "messages">(() => {
     if (hasShare) return "feed";
-    if (search.peerCode) return "messages";
-    if (search.tab === "messages") return "messages";
-    return "feed";
+    if (search.tab === "feed") return "feed";
+    return "messages";
   });
+
+  useEffect(() => {
+    if (search.tab === "feed") {
+      setMainTab("feed");
+    } else if (search.tab === "messages" || search.peerCode) {
+      setMainTab("messages");
+    }
+  }, [search.tab, search.peerCode]);
 
   const [active, setActive] = useState<MyConversation | null>(() => {
     if (search.peerCode) {

@@ -212,16 +212,18 @@ export const CHART_METAS: Record<string, {
     timelineColor: '#DC2626',
   },
   external_shares: {
-    unit: 'Lượt click',
-    col1Label: 'Facebook',
-    col1Color: '#1877F2',
-    col2Label: 'Zalo',
-    col2Color: '#0068FF',
-    col3Label: 'Trình duyệt Web',
-    col3Color: '#10B981',
-    col4Label: 'Chuyển đổi đăng nhập',
-    col4Color: '#F59E0B',
-    timelineLabel: 'Tổng lượt click công khai',
+    unit: 'Lượt',
+    col1Label: 'Số lượng',
+    col1Color: '#003B95',
+    col1Unit: 'Lượt',
+    col2Label: 'Giá trị (Tr đ)',
+    col2Color: '#10B981',
+    col2Unit: 'Tr đ',
+    col3Label: undefined as any,
+    col3Color: undefined as any,
+    col4Label: undefined as any,
+    col4Color: undefined as any,
+    timelineLabel: 'Tổng lượt tương tác',
     timelineColor: '#DC2626',
   },
 };
@@ -304,22 +306,14 @@ export function buildGranularChart(
       col4 = bPosts.length; // Bài viết mới
       timelineVal = col1 + col2 + col3 + col4;
     } else {
-      // external_shares
+      // external_shares: Đúng 2 cột: Số lượng (Lượt click/chia sẻ) và Giá trị (Tr đ quy đổi)
       const bLogs = shareLogs.filter(inBucket);
-      col1 = bLogs.filter(l => {
-        const p = String(l?.metadata?.platform || '').toLowerCase();
-        return p.includes('fb') || p.includes('facebook');
-      }).length;
-      col2 = bLogs.filter(l => {
-        const p = String(l?.metadata?.platform || '').toLowerCase();
-        return p.includes('zalo');
-      }).length;
-      col3 = bLogs.filter(l => {
-        const p = String(l?.metadata?.platform || '').toLowerCase();
-        return p.includes('web');
-      }).length;
-      col4 = bLogs.filter(l => l.action === 'share_conversion').length;
-      timelineVal = col1 + col2 + col3 + col4;
+      col1 = bLogs.length; // Số lượng
+      // Giá trị quy đổi: 50.000 VNĐ / lượt tương tác lan tỏa (đơn vị: Triệu VNĐ)
+      col2 = Number(((col1 * 50000) / 1000000).toFixed(1)); // Giá trị
+      col3 = 0;
+      col4 = 0;
+      timelineVal = col1;
     }
 
     const isUp = timelineVal >= prevTimelineVal;

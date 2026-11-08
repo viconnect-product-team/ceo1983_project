@@ -1,5 +1,36 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.64): Tối Ưu Hóa & Hoàn Thiện 6 Hạng Mục CEO 1983 Mobile App Theo Phản Hồi Người Dùng ([NODE-APP-001], [NODE-APP-009], [NODE-APP-012], [NODE-APP-014])**:
+  1. *Hạng mục 1: Thống Kê Các Danh Mục & Chia Sẻ Thống Kê 2 Cột ([NODE-APP-012])*:
+     - **Bổ sung cột chỉ số thứ 4 cho Cơ hội kinh doanh**: Đã cập nhật `APP_CHART_METAS.top_opportunities` bổ sung `col4Label: "Đã khớp lệnh / chốt"`, `col4Color: "#8B5CF6"`, `col4Unit: "Deal"`, đảm bảo các danh mục có đầy đủ các cột chỉ số và khớp hoàn toàn dữ liệu Backend.
+     - **Quy chuẩn chia sẻ thống kê đúng 2 cột**: Với danh mục `external_shares` (Click chia sẻ ngoài), biểu đồ ComposedChart và bảng chỉ số được định dạng chuẩn xác đúng **2 cột**: **Số lượng** (Lượt click/chia sẻ) và **Giá trị** (Tr đ quy đổi). Bổ sung case `external_shares` cho thẻ `kpiCards` hiển thị 4 thông số: Tổng lượt chia sẻ, Giá trị lan tỏa, Chuyển đổi đăng nhập, và Tỷ lệ tương tác.
+     - **Khắc phục lỗi cắt mép thẻ KPI**: Tăng khoảng cách `pb-40` ở container chính giúp người dùng cuộn xem trọn vẹn toàn bộ 4 thẻ KPI, Bục vinh danh Top 3 và Bảng xếp hạng Top 4-10 mà không bị thanh BottomNavigation che khuất.
+  2. *Hạng mục 2: Kích Hoạt Cài Đặt 1 Chạm Tự Động Lên Thiết Bị Android & iOS ([NODE-APP-009])*:
+     - Cập nhật hàm `handleFastInstallApp` trong `association.profile.tsx` và component `IosInstallPrompt.tsx`.
+     - Nếu đã chạy ở chế độ Standalone App: Thông báo Toast trạng thái ứng dụng đã cài đặt và đang hoạt động sẵn sàng.
+     - Nếu có PWA Install Prompt từ trình duyệt (Android Chrome/Edge/Samsung Internet): Kích hoạt `prompt()` ngay lập tức để người dùng cài đặt 1 chạm tự động lên màn hình chính.
+     - Nếu là iOS Safari hoặc trình duyệt cần hướng dẫn: Mở BottomSheet/Modal hướng dẫn 1 chạm trực quan (Nút Share Safari -> Chọn "Thêm vào MH chính" / Add to Home Screen) kèm nút sao chép link và nút chia sẻ Native Share Sheet.
+  3. *Hạng mục 3: Tin Tức Trang Chủ 1 Tin Duy Nhất Full Màn Hình & Auto-Slide Chuyển Tin Liên Tục ([NODE-APP-001])*:
+     - Thiết kế lại khối Tin tức CLB: Loại bỏ hoàn toàn khối danh sách cuộn ngang nhiều thẻ nhỏ ở dưới, thay thế bằng **1 tin tức duy nhất có độ rộng ngang full màn hình (`w-full`)** dạng Hero Card cao cấp.
+     - Tích hợp Auto-play timer (`setInterval` 4.5 giây) tự động chuyển tin liên tục kèm tạm dừng khi người dùng hover/chạm.
+     - Hỗ trợ vuốt tay (touch swipe) trái/phải, nút điều hướng Prev/Next và dãy chấm tròn (dots) định vị số thứ tự bản tin `[1 / N]`.
+  4. *Hạng mục 4: Refactor Cài Đặt Bảo Mật Rõ Ràng & Thân Thiện Doanh Nhân ([NODE-APP-009])*:
+     - Tái cấu trúc toàn diện `AccountSecuritySettingsForm.tsx` thành 4 khối chức năng trực quan, ngôn từ doanh nhân dễ hiểu:
+       1. **Đổi mật khẩu đăng nhập**: Nhập mật khẩu hiện tại, mật khẩu mới, xác nhận mật khẩu mới và lưu trực tiếp với phản hồi Toast tức thì, loại bỏ modal kích hoạt email gây rối rắm.
+       2. **Khóa sinh trắc học (FaceID / Vân tay)**: Công tắc toggle bật/tắt mở khóa nhanh bằng sinh trắc học trên điện thoại.
+       3. **Quyền riêng tư danh thiếp số**: Công tắc kiểm soát ẩn/hiện Số điện thoại và Email doanh nghiệp khi người khác quét mã QR danh thiếp.
+       4. **Quản lý thiết bị đăng nhập**: Kiểm tra tình trạng thiết bị hiện tại và nút "Đăng xuất khỏi tất cả thiết bị khác" bảo vệ an toàn tài khoản.
+  5. *Hạng mục 5: Sửa Điều Hướng Nút Tin Nhắn Đi Đúng Màn Tin Nhắn ([NODE-APP-001], [NODE-APP-014])*:
+     - Sửa phím tắt "Tin nhắn" ở khối Tính năng nhanh trang chủ (`association.index.tsx`): trỏ chính xác về `/association/messages?tab=messages`.
+     - Cập nhật router `association.messages.tsx`: Mặc định mở tab `"messages"` khi truy cập trang tin nhắn, đồng thời bổ sung `useEffect` đồng bộ `mainTab` khi URL thay đổi query parameter `tab`.
+  6. *Hạng mục 6: Nút Đăng Xuất Luôn Ở Footer & Chọn Màu Chỉ Hiện Màu Không Kèm Text ([NODE-APP-009])*:
+     - **Nút Đăng xuất ở Footer**: Bổ sung nút "Đăng xuất khỏi ứng dụng" cố định ở chân trang (Footer ngoài cùng dưới đáy màn hình Profile), màu đỏ rose sang trọng, nổi bật và luôn luôn hiển thị cho người dùng dù đang ở bất kỳ tab nào.
+     - **Chọn màu chỉ hiện màu**: Refactor `Ceo1983ColorThemeSelector.tsx` thành các ô tròn màu (Color Swatches) gradient đại diện cho nhận diện thương hiệu CEO 1983 với viền ring active khi chọn, loại bỏ toàn bộ text tiêu đề, subtitle, mã hex và mô tả dài dòng rườm rà.
+  7. *Kiểm Tra Chất Lượng Mã Nguồn Bắt Buộc (Strict Type-Check Rule 4)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi bảo toàn tại local nhánh `dev`.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.63): Sửa Bug Toàn Diện Hệ Thống Web CRM & CEO 1983 Mobile App Theo Danh Mục Người Dùng Yêu Cầu ([NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
   1. *Phần 1: Sửa Bug Web CRM Quản Trị*:
      - **Mục 1 (Tổng quát thông báo & Số đếm menu tree)**: Khắc phục lỗi 404 trang xem tổng quát thông báo bằng cách tạo route `/admin/notifications/overview` và `/admin/notifications`, liên kết trực tiếp component `AdminNotificationsOverview`. Cập nhật menu tree sidebar hiển thị số đếm thông báo thực tế theo thời gian thực tại cả node cha "Thông báo" và node con "Tổng quan thông báo".
