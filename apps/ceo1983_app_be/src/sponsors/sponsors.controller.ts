@@ -50,7 +50,10 @@ export class SponsorsController {
 
   @Put('packages/:id')
   @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc')
-  async updatePackage(@Param('id') id: string, @Body() body: UpdateSponsorPackageDto) {
+  async updatePackage(
+    @Param('id') id: string,
+    @Body() body: UpdateSponsorPackageDto,
+  ) {
     return this.sponsorsService.updatePackage(id, body);
   }
 
@@ -73,19 +76,67 @@ export class SponsorsController {
   }
 
   @Post('prizes')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'quan_tri',
+    'chu_tich',
+    'president',
+    'bqt',
+    'btc',
+    'btt',
+    'ban_dieu_hanh',
+    'tong_thu_ky',
+    'truong_ban',
+    'member',
+  )
   async createPrize(@Body() body: CreateEventPrizeDto) {
     return this.sponsorsService.createPrize(body);
   }
 
   @Put('prizes/:id')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
-  async updatePrize(@Param('id') id: string, @Body() body: UpdateEventPrizeDto) {
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'quan_tri',
+    'chu_tich',
+    'president',
+    'bqt',
+    'btc',
+    'btt',
+    'ban_dieu_hanh',
+    'tong_thu_ky',
+    'truong_ban',
+    'member',
+  )
+  async updatePrize(
+    @Param('id') id: string,
+    @Body() body: UpdateEventPrizeDto,
+  ) {
     return this.sponsorsService.updatePrize(id, body);
   }
 
   @Delete('prizes/:id')
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'quan_tri', 'chu_tich', 'president', 'bqt', 'btc', 'btt', 'ban_dieu_hanh', 'tong_thu_ky', 'truong_ban', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'quan_tri',
+    'chu_tich',
+    'president',
+    'bqt',
+    'btc',
+    'btt',
+    'ban_dieu_hanh',
+    'tong_thu_ky',
+    'truong_ban',
+    'member',
+  )
   async deletePrize(@Param('id') id: string) {
     return this.sponsorsService.deletePrize(id);
   }
@@ -119,7 +170,10 @@ export class SponsorsController {
 
   @Put(':id')
   @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc', 'btt')
-  async updateSponsor(@Param('id') id: string, @Body() body: Partial<CreateSponsorDto>) {
+  async updateSponsor(
+    @Param('id') id: string,
+    @Body() body: Partial<CreateSponsorDto>,
+  ) {
     return this.sponsorsService.updateSponsor(id, body);
   }
 

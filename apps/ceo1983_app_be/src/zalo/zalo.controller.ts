@@ -1,4 +1,15 @@
-import { Controller, Post, Get, Body, Query, Headers, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Query,
+  Headers,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import {
   ZaloService,
   SendZaloMessageDto,
@@ -170,4 +181,3 @@ export class ZaloController {
     return this.zaloService.checkMiniAppHealth(body);
   }
 }
-

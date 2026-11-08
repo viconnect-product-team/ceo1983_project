@@ -20,10 +20,13 @@ export class PrismaService
   async onModuleInit() {
     try {
       await this.$connect();
-      this.logger.log('✅ [PrismaService] Kết nối cơ sở dữ liệu Prisma thành công.');
+      this.logger.log(
+        '✅ [PrismaService] Kết nối cơ sở dữ liệu Prisma thành công.',
+      );
 
       // Đảm bảo bảng app_settings luôn sẵn sàng cho RBAC Ma trận phân quyền và cấu hình hệ thống
-      await this.$executeRawUnsafe(`
+      await this.$executeRawUnsafe(
+        `
         CREATE TABLE IF NOT EXISTS public.app_settings (
           key TEXT PRIMARY KEY,
           value JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -31,10 +34,12 @@ export class PrismaService
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
-      `).catch(() => {});
+      `,
+      ).catch(() => {});
 
       // Đảm bảo các bảng lưu trữ tương tác Zalo OA và mapping hội viên luôn sẵn sàng
-      await this.$executeRawUnsafe(`
+      await this.$executeRawUnsafe(
+        `
         CREATE TABLE IF NOT EXISTS public.zalo_subscribers (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           zalo_user_id TEXT UNIQUE NOT NULL,
@@ -71,7 +76,8 @@ export class PrismaService
         ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS description TEXT;
         ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS doc_scope TEXT DEFAULT 'association';
         ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS enterprise_name TEXT;
-      `).catch(() => {});
+      `,
+      ).catch(() => {});
     } catch (err: any) {
       this.logger.warn(
         `⚠️ [PrismaService] Chưa thể kết nối cơ sở dữ liệu khi khởi động (${err?.message || err}). Tiến trình sẽ tiếp tục chạy và tự động tái kết nối khi CSDL sẵn sàng.`,

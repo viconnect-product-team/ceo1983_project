@@ -41,36 +41,54 @@ export class MembersController {
    */
   @UseGuards(JwtAuthGuard)
   @Post(':id/approve-and-send-credentials')
-  async approveMemberAndSendCredentials(@Request() req: any, @Param('id') id: string) {
+  async approveMemberAndSendCredentials(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
     const adminUserId = req.user?.id || req.user?.sub || 'system';
     return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id/approve-and-send-credentials')
-  async approveMemberAndSendCredentialsPatch(@Request() req: any, @Param('id') id: string) {
+  async approveMemberAndSendCredentialsPatch(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
     const adminUserId = req.user?.id || req.user?.sub || 'system';
     return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/approve-with-credentials')
-  async approveMemberWithCredentialsPost(@Request() req: any, @Param('id') id: string) {
+  async approveMemberWithCredentialsPost(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
     const adminUserId = req.user?.id || req.user?.sub || 'system';
     return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id/approve-with-credentials')
-  async approveMemberWithCredentialsPatch(@Request() req: any, @Param('id') id: string) {
+  async approveMemberWithCredentialsPatch(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
     const adminUserId = req.user?.id || req.user?.sub || 'system';
     return this.membersService.approveMemberAndSendCredentials(adminUserId, id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('directory')
-  async listDirectory(@Request() req: any, @Query('connectedOnly') connectedOnly?: string) {
-    return this.membersService.listDirectory(req.user.id, connectedOnly === 'true');
+  async listDirectory(
+    @Request() req: any,
+    @Query('connectedOnly') connectedOnly?: string,
+  ) {
+    return this.membersService.listDirectory(
+      req.user.id,
+      connectedOnly === 'true',
+    );
   }
 
   @Get('locations')
@@ -88,14 +106,23 @@ export class MembersController {
     @Query('lat') lat: string,
     @Query('lng') lng: string,
   ) {
-    return this.membersService.reverseGeocodeCoordinates(Number(lat), Number(lng));
+    return this.membersService.reverseGeocodeCoordinates(
+      Number(lat),
+      Number(lng),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Put('my-location')
   async updateMyLocation(
     @Request() req: any,
-    @Body() body: { latitude: number; longitude: number; isSharing?: boolean; address?: string },
+    @Body()
+    body: {
+      latitude: number;
+      longitude: number;
+      isSharing?: boolean;
+      address?: string;
+    },
   ) {
     return this.membersService.updateMyLocation(req.user.id, body);
   }
@@ -104,7 +131,13 @@ export class MembersController {
   @Post('my-location')
   async updateMyLocationPost(
     @Request() req: any,
-    @Body() body: { latitude: number; longitude: number; isSharing?: boolean; address?: string },
+    @Body()
+    body: {
+      latitude: number;
+      longitude: number;
+      isSharing?: boolean;
+      address?: string;
+    },
   ) {
     return this.membersService.updateMyLocation(req.user.id, body);
   }
@@ -113,7 +146,13 @@ export class MembersController {
   @Patch('my-location')
   async updateMyLocationPatch(
     @Request() req: any,
-    @Body() body: { latitude: number; longitude: number; isSharing?: boolean; address?: string },
+    @Body()
+    body: {
+      latitude: number;
+      longitude: number;
+      isSharing?: boolean;
+      address?: string;
+    },
   ) {
     return this.membersService.updateMyLocation(req.user.id, body);
   }
@@ -131,7 +170,9 @@ export class MembersController {
       return this.membersService.updateMyCover(req.user.id, body.coverUrl);
     }
     if (body.coverUrl) {
-      await this.membersService.updateMyCover(req.user.id, body.coverUrl).catch(() => null);
+      await this.membersService
+        .updateMyCover(req.user.id, body.coverUrl)
+        .catch(() => null);
     }
     return this.membersService.updateMyProfile(req.user.id, body);
   }
@@ -144,13 +185,19 @@ export class MembersController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me/cover')
-  async updateMyCoverPatch(@Request() req: any, @Body() body: { coverUrl: string }) {
+  async updateMyCoverPatch(
+    @Request() req: any,
+    @Body() body: { coverUrl: string },
+  ) {
     return this.membersService.updateMyCover(req.user.id, body.coverUrl);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('me/cover')
-  async updateMyCoverPost(@Request() req: any, @Body() body: { coverUrl: string }) {
+  async updateMyCoverPost(
+    @Request() req: any,
+    @Body() body: { coverUrl: string },
+  ) {
     return this.membersService.updateMyCover(req.user.id, body.coverUrl);
   }
 
@@ -216,13 +263,19 @@ export class MembersController {
 
   @UseGuards(JwtAuthGuard)
   @Post('me/link')
-  async linkMyMemberProfile(@Request() req: any, @Body('memberId') memberId: string) {
+  async linkMyMemberProfile(
+    @Request() req: any,
+    @Body('memberId') memberId: string,
+  ) {
     return this.membersService.linkMyMemberProfile(req.user.id, memberId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('me/unlink')
-  async unlinkMyMemberProfile(@Request() req: any, @Body('memberId') memberId: string) {
+  async unlinkMyMemberProfile(
+    @Request() req: any,
+    @Body('memberId') memberId: string,
+  ) {
     return this.membersService.unlinkMyMemberProfile(req.user.id, memberId);
   }
 
@@ -252,7 +305,11 @@ export class MembersController {
 
   @UseGuards(JwtAuthGuard)
   @Put('benefits/admin/:id')
-  async updateBenefit(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  async updateBenefit(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.membersService.updateBenefit(req.user.id, id, body);
   }
 
@@ -317,7 +374,11 @@ export class MembersController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/personnel')
-  async addCompanyPersonnel(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  async addCompanyPersonnel(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.membersService.addCompanyPersonnel(req.user.id, id, body);
   }
 
@@ -330,9 +391,15 @@ export class MembersController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Post('bulk-import')
-  async bulkImportMembers(@Request() req: any, @Body() body: { members: any[] }) {
+  async bulkImportMembers(
+    @Request() req: any,
+    @Body() body: { members: any[] },
+  ) {
     const adminUserId = req.user?.id || req.user?.sub || 'system';
-    return this.membersService.bulkImportMembers(adminUserId, body?.members || []);
+    return this.membersService.bulkImportMembers(
+      adminUserId,
+      body?.members || [],
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -366,7 +433,15 @@ export class MembersController {
   async updateMemberRoleDept(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { executiveRole: string; department: string; associationId?: string; email?: string; code?: string; name?: string },
+    @Body()
+    body: {
+      executiveRole: string;
+      department: string;
+      associationId?: string;
+      email?: string;
+      code?: string;
+      name?: string;
+    },
   ) {
     return this.membersService.updateMemberRoleDept(req.user?.id, id, body);
   }
@@ -376,7 +451,15 @@ export class MembersController {
   async updateMemberRoleDeptPost(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { executiveRole: string; department: string; associationId?: string; email?: string; code?: string; name?: string },
+    @Body()
+    body: {
+      executiveRole: string;
+      department: string;
+      associationId?: string;
+      email?: string;
+      code?: string;
+      name?: string;
+    },
   ) {
     return this.membersService.updateMemberRoleDept(req.user?.id, id, body);
   }
@@ -398,7 +481,8 @@ export class MembersController {
   async updatePaymentStatus(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
+    @Body()
+    body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
   ) {
     return this.membersService.updatePaymentStatus(req.user.id, id, body);
   }
@@ -408,27 +492,47 @@ export class MembersController {
   async updatePaymentStatusPost(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
+    @Body()
+    body: { paymentStatus: string; feePaid?: boolean; feeYear?: number },
   ) {
     return this.membersService.updatePaymentStatus(req.user.id, id, body);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id/remind')
-  async sendReminder(@Request() req: any, @Param('id') id: string, @Body() body?: { isAuto?: boolean }) {
-    return this.membersService.sendRenewalReminder(req.user.id, id, Boolean(body?.isAuto));
+  async sendReminder(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body?: { isAuto?: boolean },
+  ) {
+    return this.membersService.sendRenewalReminder(
+      req.user.id,
+      id,
+      Boolean(body?.isAuto),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/remind')
-  async sendReminderPost(@Request() req: any, @Param('id') id: string, @Body() body?: { isAuto?: boolean }) {
-    return this.membersService.sendRenewalReminder(req.user.id, id, Boolean(body?.isAuto));
+  async sendReminderPost(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body?: { isAuto?: boolean },
+  ) {
+    return this.membersService.sendRenewalReminder(
+      req.user.id,
+      id,
+      Boolean(body?.isAuto),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async deleteMember(@Request() req: any, @Param('id') id: string, @Query('mode') mode?: 'company_only' | 'all') {
+  async deleteMember(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Query('mode') mode?: 'company_only' | 'all',
+  ) {
     return this.membersService.deleteMember(req.user.id, id, mode);
   }
 }
-

@@ -9,14 +9,21 @@ import { Request, Response } from 'express';
 
 // Từ điển dịch lỗi mặc định sang tiếng Việt thân thiện
 const DEFAULT_ERROR_MESSAGES: Record<number, string> = {
-  [HttpStatus.BAD_REQUEST]: 'Dữ liệu yêu cầu không hợp lệ. Vui lòng kiểm tra lại các trường thông tin!',
-  [HttpStatus.UNAUTHORIZED]: 'Phiên đăng nhập đã hết hạn hoặc thông tin đăng nhập không chính xác. Vui lòng đăng nhập lại!',
-  [HttpStatus.FORBIDDEN]: 'Bạn không có quyền thực hiện thao tác này trên hệ thống!',
-  [HttpStatus.NOT_FOUND]: 'Không tìm thấy dữ liệu hoặc tài nguyên yêu cầu trên hệ thống.',
+  [HttpStatus.BAD_REQUEST]:
+    'Dữ liệu yêu cầu không hợp lệ. Vui lòng kiểm tra lại các trường thông tin!',
+  [HttpStatus.UNAUTHORIZED]:
+    'Phiên đăng nhập đã hết hạn hoặc thông tin đăng nhập không chính xác. Vui lòng đăng nhập lại!',
+  [HttpStatus.FORBIDDEN]:
+    'Bạn không có quyền thực hiện thao tác này trên hệ thống!',
+  [HttpStatus.NOT_FOUND]:
+    'Không tìm thấy dữ liệu hoặc tài nguyên yêu cầu trên hệ thống.',
   [HttpStatus.METHOD_NOT_ALLOWED]: 'Phương thức xử lý không được hỗ trợ.',
-  [HttpStatus.CONFLICT]: 'Dữ liệu bị trùng lặp hoặc xung đột với trạng thái hiện tại của hệ thống.',
-  [HttpStatus.UNPROCESSABLE_ENTITY]: 'Dữ liệu không thể xử lý. Vui lòng kiểm tra định dạng dữ liệu!',
-  [HttpStatus.INTERNAL_SERVER_ERROR]: 'Máy chủ đang bận hoặc xảy ra lỗi xử lý nội bộ. Vui lòng thử lại sau ít phút!',
+  [HttpStatus.CONFLICT]:
+    'Dữ liệu bị trùng lặp hoặc xung đột với trạng thái hiện tại của hệ thống.',
+  [HttpStatus.UNPROCESSABLE_ENTITY]:
+    'Dữ liệu không thể xử lý. Vui lòng kiểm tra định dạng dữ liệu!',
+  [HttpStatus.INTERNAL_SERVER_ERROR]:
+    'Máy chủ đang bận hoặc xảy ra lỗi xử lý nội bộ. Vui lòng thử lại sau ít phút!',
 };
 
 @Catch()
@@ -41,7 +48,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Hệ thống đang bận hoặc xảy ra lỗi không xác định. Vui lòng thử lại sau!';
+    let message =
+      'Hệ thống đang bận hoặc xảy ra lỗi không xác định. Vui lòng thử lại sau!';
     let errors: Record<string, string> | undefined = undefined;
 
     if (exception instanceof HttpException) {
@@ -60,9 +68,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
             errors = anyRes.errors;
           }
         } else if (typeof anyRes.message === 'string') {
-          message = this.translateEnglishMessage(anyRes.message, status, request.url);
+          message = this.translateEnglishMessage(
+            anyRes.message,
+            status,
+            request.url,
+          );
         } else {
-          message = DEFAULT_ERROR_MESSAGES[status] || 'Đã xảy ra lỗi khi xử lý yêu cầu.';
+          message =
+            DEFAULT_ERROR_MESSAGES[status] ||
+            'Đã xảy ra lỗi khi xử lý yêu cầu.';
         }
 
         if (anyRes.errors && !errors) {
@@ -71,15 +85,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       console.error('[UnhandledException]', exception.message, exception.stack);
-      message = 'Đã xảy ra lỗi trong quá trình xử lý máy chủ. Vui lòng thử lại sau!';
+      message =
+        'Đã xảy ra lỗi trong quá trình xử lý máy chủ. Vui lòng thử lại sau!';
     }
 
-      message = this.redactInfrastructure(message);
-      if (errors) {
-        for (const k of Object.keys(errors)) {
-          errors[k] = this.redactInfrastructure(errors[k]);
-        }
+    message = this.redactInfrastructure(message);
+    if (errors) {
+      for (const k of Object.keys(errors)) {
+        errors[k] = this.redactInfrastructure(errors[k]);
       }
+    }
 
     response.status(status).json({
       statusCode: status,
@@ -94,19 +109,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private redactInfrastructure(text: string): string {
     if (!text || typeof text !== 'string') return text;
     return text
-      .replace(/postgresql:\/\/[^@]+@([^\/:]+)(?::\d+)?\/[^\s?]*/gi, 'postgresql://[REDACTED]')
+      .replace(
+        /postgresql:\/\/[^@]+@([^\/:]+)(?::\d+)?\/[^\s?]*/gi,
+        'postgresql://[REDACTED]',
+      )
       .replace(/14\.225\.217\.232(:\d+)?/g, '[REDACTED_HOST]')
       .replace(/ceo1983-postgres-prod(:\d+)?/g, '[REDACTED_DB_HOST]')
       .replace(/113\.20\.107\.184(:\d+)?/g, '[REDACTED_HOST]');
   }
 
-  private translateEnglishMessage(raw: string, status: number, path?: string): string {
+  private translateEnglishMessage(
+    raw: string,
+    status: number,
+    path?: string,
+  ): string {
     const trimmed = raw.trim();
     const lower = trimmed.toLowerCase();
 
     // Dịch các lỗi phổ biến
     if (lower === 'unauthorized' || lower.includes('invalid credentials')) {
-      if (path && (path.includes('/auth/login') || path.includes('/auth/local'))) {
+      if (
+        path &&
+        (path.includes('/auth/login') || path.includes('/auth/local'))
+      ) {
         return 'Email đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!';
       }
       return 'Phiên đăng nhập đã hết hạn hoặc bạn chưa được cấp quyền thao tác. Vui lòng đăng nhập lại!';
@@ -117,10 +142,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (lower === 'forbidden' || lower.includes('forbidden resource')) {
       return DEFAULT_ERROR_MESSAGES[HttpStatus.FORBIDDEN];
     }
-    if (lower === 'not found' || lower.includes('cannot get') || lower.includes('cannot post')) {
+    if (
+      lower === 'not found' ||
+      lower.includes('cannot get') ||
+      lower.includes('cannot post')
+    ) {
       return DEFAULT_ERROR_MESSAGES[HttpStatus.NOT_FOUND];
     }
-    if (lower.includes('username already exists') || lower.includes('user already exists')) {
+    if (
+      lower.includes('username already exists') ||
+      lower.includes('user already exists')
+    ) {
       return 'Tên đăng nhập hoặc địa chỉ email này đã tồn tại trên hệ thống. Vui lòng sử dụng thông tin khác!';
     }
     if (lower.includes('jwt expired') || lower.includes('token expired')) {

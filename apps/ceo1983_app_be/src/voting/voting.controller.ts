@@ -20,8 +20,14 @@ export class VotingController {
   constructor(private readonly votingService: VotingService) {}
 
   @Get('polls')
-  async listPolls(@Request() req: any, @Query('associationId') associationId?: string) {
-    return this.votingService.listPolls(req.user.id || req.user.sub, associationId);
+  async listPolls(
+    @Request() req: any,
+    @Query('associationId') associationId?: string,
+  ) {
+    return this.votingService.listPolls(
+      req.user.id || req.user.sub,
+      associationId,
+    );
   }
 
   @Get('polls/:id')
@@ -35,7 +41,11 @@ export class VotingController {
   }
 
   @Put('polls/:id')
-  async updatePoll(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  async updatePoll(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.votingService.updatePoll(req.user.id || req.user.sub, id, body);
   }
 
@@ -77,6 +87,9 @@ export class VotingController {
       eventId?: string;
     },
   ) {
-    return this.votingService.notifyLuckyDrawWinner(req.user.id || req.user.sub, body);
+    return this.votingService.notifyLuckyDrawWinner(
+      req.user.id || req.user.sub,
+      body,
+    );
   }
 }

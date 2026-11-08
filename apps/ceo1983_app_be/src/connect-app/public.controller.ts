@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ConnectAppService } from './connect-app.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -39,12 +48,17 @@ export class PublicController {
   }
 
   @Get('club-registration/status')
-  async getClubRegistrationStatus(@Query('phone') phone?: string, @Query('email') email?: string) {
+  async getClubRegistrationStatus(
+    @Query('phone') phone?: string,
+    @Query('email') email?: string,
+  ) {
     return this.connectAppService.checkClubRegistrationStatus({ phone, email });
   }
 
   @Post('club-registration/status')
-  async checkClubRegistrationStatusPost(@Body() body: { phone?: string; email?: string }) {
+  async checkClubRegistrationStatusPost(
+    @Body() body: { phone?: string; email?: string },
+  ) {
     return this.connectAppService.checkClubRegistrationStatus(body);
   }
 
@@ -70,7 +84,11 @@ export class PublicController {
 
   @Post('track-visitor')
   async trackVisitor(@Body() body: any, @Request() req: any) {
-    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+    const clientIp =
+      req.headers['x-forwarded-for'] ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      '127.0.0.1';
     return this.connectAppService.recordLandingVisitor({
       ...body,
       ip: String(clientIp).split(',')[0].trim(),
@@ -82,5 +100,4 @@ export class PublicController {
   async getTrafficStats() {
     return this.connectAppService.getLandingTrafficStats();
   }
-
 }

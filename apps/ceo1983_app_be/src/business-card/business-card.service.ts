@@ -5,7 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessCardRepository } from './business-card.repository';
-import { SaveCardDto, CardSettingsDto, CardExchangeDto, CardAiHistoryDto } from './dto';
+import {
+  SaveCardDto,
+  CardSettingsDto,
+  CardExchangeDto,
+  CardAiHistoryDto,
+} from './dto';
 
 export { SaveCardDto, CardSettingsDto, CardExchangeDto, CardAiHistoryDto };
 
@@ -17,24 +22,29 @@ export class BusinessCardService {
   ) {}
 
   async listMyCards(userId: string) {
-    let cards = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC`,
-      userId,
-    ).catch(() => []);
+    let cards = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC`, userId)
+      .catch(() => []);
 
     // If the user has 0 cards, auto-provision real Primary and Secondary cards
     if (cards.length === 0) {
-      const mems = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT m.*, u.name as user_full_name, COALESCE(m.phone, '') as user_phone, u.email as user_email, u.avatar_url as user_avatar
+      const mems = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT m.*, u.name as user_full_name, COALESCE(m.phone, '') as user_phone, u.email as user_email, u.avatar_url as user_avatar
          FROM public.members m
          LEFT JOIN public.vione_users u ON m.user_id = u.id
          WHERE m.user_id = $1::uuid OR m.id::text = $1
          LIMIT 1`,
-        userId,
-      ).catch(() => []);
+          userId,
+        )
+        .catch(() => []);
 
       const m = mems[0] || {};
-      const baseCode = (m.code || userId.slice(0, 8) || 'ceo1983').toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const baseCode = (m.code || userId.slice(0, 8) || 'ceo1983')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-');
       const name = m.name || m.user_full_name || 'Hội viên CLB CEO 1983';
       const phone = m.phone || m.user_phone || null;
       const email = m.email || m.user_email || null;
@@ -53,8 +63,9 @@ export class BusinessCardService {
 
       // Insert primary card
       const primarySlug = `card-${baseCode}-primary`;
-      await this.prisma.$executeRawUnsafe(
-        `INSERT INTO public.member_business_cards (
+      await this.prisma
+        .$executeRawUnsafe(
+          `INSERT INTO public.member_business_cards (
           slug, card_kind, status, public_mode, display_name, professional_title,
           company_name, avatar_url, work_phone, work_email, address, website, bio,
           visibility_settings, owner_user_id, member_id, updated_at
@@ -63,18 +74,29 @@ export class BusinessCardService {
           $4, $5, $6, $7, $8, $9, $10,
           $11::jsonb, $12::uuid, $13, NOW()
         )`,
-        primarySlug, name, m.executive_role || m.department || 'Hội viên chính thức CLB CEO 1983',
-        'CLB Doanh Nhân CEO 1983', avatar, phone, email,
-        m.address || 'Trụ sở CLB Doanh Nhân CEO 1983, Hà Nội',
-        m.website || 'https://ceo1983club.com',
-        m.about || 'Hội viên chính thức CLB Doanh Nhân CEO 1983',
-        defaultVis, userId, m.id ? m.id : null,
-      ).catch(() => null);
+          primarySlug,
+          name,
+          m.executive_role ||
+            m.department ||
+            'Hội viên chính thức CLB CEO 1983',
+          'CLB Doanh Nhân CEO 1983',
+          avatar,
+          phone,
+          email,
+          m.address || 'Trụ sở CLB Doanh Nhân CEO 1983, Hà Nội',
+          m.website || 'https://ceo1983club.com',
+          m.about || 'Hội viên chính thức CLB Doanh Nhân CEO 1983',
+          defaultVis,
+          userId,
+          m.id ? m.id : null,
+        )
+        .catch(() => null);
 
       // Insert secondary card
       const secondarySlug = `card-${baseCode}-business`;
-      await this.prisma.$executeRawUnsafe(
-        `INSERT INTO public.member_business_cards (
+      await this.prisma
+        .$executeRawUnsafe(
+          `INSERT INTO public.member_business_cards (
           slug, card_kind, status, public_mode, display_name, professional_title,
           company_name, avatar_url, work_phone, work_email, address, website, bio,
           visibility_settings, owner_user_id, member_id, updated_at
@@ -83,25 +105,37 @@ export class BusinessCardService {
           $4, $5, $6, $7, $8, $9, $10,
           $11::jsonb, $12::uuid, $13, NOW()
         )`,
-        secondarySlug, name, 'Giám đốc / Chủ Doanh Nghiệp',
-        m.industry || m.about || 'Doanh nghiệp cá nhân', avatar, phone, email,
-        m.address || 'Hà Nội, Việt Nam',
-        m.website || 'https://ceo1983club.com',
-        'Danh thiếp kết nối đối tác & phát triển kinh doanh cá nhân.',
-        defaultVis, userId, m.id ? m.id : null,
-      ).catch(() => null);
+          secondarySlug,
+          name,
+          'Giám đốc / Chủ Doanh Nghiệp',
+          m.industry || m.about || 'Doanh nghiệp cá nhân',
+          avatar,
+          phone,
+          email,
+          m.address || 'Hà Nội, Việt Nam',
+          m.website || 'https://ceo1983club.com',
+          'Danh thiếp kết nối đối tác & phát triển kinh doanh cá nhân.',
+          defaultVis,
+          userId,
+          m.id ? m.id : null,
+        )
+        .catch(() => null);
 
-      cards = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC`,
-        userId,
-      ).catch(() => []);
+      cards = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT * FROM public.member_business_cards WHERE owner_user_id = $1::uuid ORDER BY (CASE WHEN card_kind = 'primary' THEN 0 ELSE 1 END), updated_at DESC`, userId)
+        .catch(() => []);
     }
 
     return cards;
   }
 
   async getMyCard(userId: string, id: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
     let cards: any[] = [];
     if (isUuid) {
       cards = await this.prisma.$queryRawUnsafe<any[]>(
@@ -111,7 +145,8 @@ export class BusinessCardService {
     } else {
       cards = await this.prisma.$queryRawUnsafe<any[]>(
         `SELECT * FROM public.member_business_cards WHERE (slug = $1 OR id::text = $1) AND owner_user_id = $2::uuid`,
-        id, userId,
+        id,
+        userId,
       );
     }
 
@@ -122,20 +157,23 @@ export class BusinessCardService {
 
     const realId = card.id;
 
-    const skills = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      realId,
-    ).catch(() => []);
+    const skills = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`, realId)
+      .catch(() => []);
 
-    const services = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      realId,
-    ).catch(() => []);
+    const services = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`, realId)
+      .catch(() => []);
 
-    const needs = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      realId,
-    ).catch(() => []);
+    const needs = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`, realId)
+      .catch(() => []);
 
     return { ...card, skills, services, needs };
   }
@@ -149,20 +187,23 @@ export class BusinessCardService {
     const card = cards[0];
     const id = card.id;
 
-    const skills = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      id,
-    ).catch(() => []);
+    const skills = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.business_card_skills WHERE card_id = $1::uuid ORDER BY sort_order ASC`, id)
+      .catch(() => []);
 
-    const services = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      id,
-    ).catch(() => []);
+    const services = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.business_card_services WHERE card_id = $1::uuid ORDER BY sort_order ASC`, id)
+      .catch(() => []);
 
-    const needs = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`,
-      id,
-    ).catch(() => []);
+    const needs = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.business_card_needs WHERE card_id = $1::uuid ORDER BY sort_order ASC`, id)
+      .catch(() => []);
 
     return { ...card, skills, services, needs };
   }
@@ -174,7 +215,8 @@ export class BusinessCardService {
     const publicMode = data.public_mode || data.publicMode || 'members_only';
     const status = data.status || 'published';
     const displayName = data.display_name ?? data.displayName ?? null;
-    const professionalTitle = data.professional_title ?? data.professionalTitle ?? null;
+    const professionalTitle =
+      data.professional_title ?? data.professionalTitle ?? null;
     const companyName = data.company_name ?? data.companyName ?? null;
     const companyLogoUrl = data.company_logo_url ?? data.companyLogoUrl ?? null;
     const avatarUrl = data.avatar_url ?? data.avatarUrl ?? null;
@@ -192,17 +234,28 @@ export class BusinessCardService {
     const address = data.address ?? null;
     const mapUrl = data.map_url ?? data.mapUrl ?? null;
     const themeId = data.theme_id ?? data.themeId ?? null;
-    const customBrandColor = data.custom_brand_color ?? data.customBrandColor ?? null;
-    const visibilitySettings = JSON.stringify(data.visibility_settings || data.visibilitySettings || {});
-    const qrOptions = data.qr_options || data.qrOptions ? JSON.stringify(data.qr_options || data.qrOptions) : null;
+    const customBrandColor =
+      data.custom_brand_color ?? data.customBrandColor ?? null;
+    const visibilitySettings = JSON.stringify(
+      data.visibility_settings || data.visibilitySettings || {},
+    );
+    const qrOptions =
+      data.qr_options || data.qrOptions
+        ? JSON.stringify(data.qr_options || data.qrOptions)
+        : null;
     const displayNameEn = data.display_name_en ?? data.displayNameEn ?? null;
-    const professionalTitleEn = data.professional_title_en ?? data.professionalTitleEn ?? null;
+    const professionalTitleEn =
+      data.professional_title_en ?? data.professionalTitleEn ?? null;
     const companyNameEn = data.company_name_en ?? data.companyNameEn ?? null;
     const headlineEn = data.headline_en ?? data.headlineEn ?? null;
     const bioEn = data.bio_en ?? data.bioEn ?? null;
 
     let targetId = id;
-    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUuid =
+      id &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
 
     if (isUuid) {
       const existing = await this.prisma.$queryRawUnsafe<any[]>(
@@ -247,12 +300,36 @@ export class BusinessCardService {
           bio_en = $30,
           updated_at = NOW()
         WHERE id = $31::uuid`,
-        slug, cardKind, publicMode, displayName, professionalTitle,
-        companyName, companyLogoUrl, avatarUrl, coverUrl, headline,
-        bio, website, workEmail, workPhone, zaloUrl,
-        linkedinUrl, facebookUrl, youtubeUrl, tiktokUrl, address,
-        mapUrl, themeId, customBrandColor, visibilitySettings, qrOptions,
-        displayNameEn, professionalTitleEn, companyNameEn, headlineEn, bioEn,
+        slug,
+        cardKind,
+        publicMode,
+        displayName,
+        professionalTitle,
+        companyName,
+        companyLogoUrl,
+        avatarUrl,
+        coverUrl,
+        headline,
+        bio,
+        website,
+        workEmail,
+        workPhone,
+        zaloUrl,
+        linkedinUrl,
+        facebookUrl,
+        youtubeUrl,
+        tiktokUrl,
+        address,
+        mapUrl,
+        themeId,
+        customBrandColor,
+        visibilitySettings,
+        qrOptions,
+        displayNameEn,
+        professionalTitleEn,
+        companyNameEn,
+        headlineEn,
+        bioEn,
         id,
       );
     } else {
@@ -272,40 +349,76 @@ export class BusinessCardService {
           $25::jsonb, $26::jsonb, $27, $28,
           $29, $30, $31, $32::uuid, NOW()
         ) RETURNING id`,
-        slug, cardKind, status, publicMode, displayName, professionalTitle,
-        companyName, companyLogoUrl, avatarUrl, coverUrl, headline, bio,
-        website, workEmail, workPhone, zaloUrl, linkedinUrl, facebookUrl,
-        youtubeUrl, tiktokUrl, address, mapUrl, themeId, customBrandColor,
-        visibilitySettings, qrOptions, displayNameEn, professionalTitleEn,
-        companyNameEn, headlineEn, bioEn, userId,
+        slug,
+        cardKind,
+        status,
+        publicMode,
+        displayName,
+        professionalTitle,
+        companyName,
+        companyLogoUrl,
+        avatarUrl,
+        coverUrl,
+        headline,
+        bio,
+        website,
+        workEmail,
+        workPhone,
+        zaloUrl,
+        linkedinUrl,
+        facebookUrl,
+        youtubeUrl,
+        tiktokUrl,
+        address,
+        mapUrl,
+        themeId,
+        customBrandColor,
+        visibilitySettings,
+        qrOptions,
+        displayNameEn,
+        professionalTitleEn,
+        companyNameEn,
+        headlineEn,
+        bioEn,
+        userId,
       );
       targetId = inserted[0]?.id;
     }
 
     // Sync skills, services, needs
     if (targetId) {
-      await this.prisma.$executeRawUnsafe(
-        `DELETE FROM public.business_card_skills WHERE card_id = $1::uuid`,
-        targetId,
-      ).catch(() => null);
-      await this.prisma.$executeRawUnsafe(
-        `DELETE FROM public.business_card_services WHERE card_id = $1::uuid`,
-        targetId,
-      ).catch(() => null);
-      await this.prisma.$executeRawUnsafe(
-        `DELETE FROM public.business_card_needs WHERE card_id = $1::uuid`,
-        targetId,
-      ).catch(() => null);
+      await this.prisma
+        .$executeRawUnsafe(
+          `DELETE FROM public.business_card_skills WHERE card_id = $1::uuid`,
+          targetId,
+        )
+        .catch(() => null);
+      await this.prisma
+        .$executeRawUnsafe(
+          `DELETE FROM public.business_card_services WHERE card_id = $1::uuid`,
+          targetId,
+        )
+        .catch(() => null);
+      await this.prisma
+        .$executeRawUnsafe(
+          `DELETE FROM public.business_card_needs WHERE card_id = $1::uuid`,
+          targetId,
+        )
+        .catch(() => null);
 
       const skills = data.skills || [];
       for (let i = 0; i < skills.length; i++) {
         const s = skills[i];
         const label = typeof s === 'string' ? s : s?.label;
         if (label) {
-          await this.prisma.$executeRawUnsafe(
-            `INSERT INTO public.business_card_skills (card_id, label, sort_order) VALUES ($1::uuid, $2, $3)`,
-            targetId, label, i,
-          ).catch(() => null);
+          await this.prisma
+            .$executeRawUnsafe(
+              `INSERT INTO public.business_card_skills (card_id, label, sort_order) VALUES ($1::uuid, $2, $3)`,
+              targetId,
+              label,
+              i,
+            )
+            .catch(() => null);
         }
       }
 
@@ -313,10 +426,16 @@ export class BusinessCardService {
       for (let i = 0; i < services.length; i++) {
         const s = services[i];
         if (s?.title) {
-          await this.prisma.$executeRawUnsafe(
-            `INSERT INTO public.business_card_services (card_id, title, description, category, sort_order) VALUES ($1::uuid, $2, $3, $4, $5)`,
-            targetId, s.title, s.description || null, s.category || null, i,
-          ).catch(() => null);
+          await this.prisma
+            .$executeRawUnsafe(
+              `INSERT INTO public.business_card_services (card_id, title, description, category, sort_order) VALUES ($1::uuid, $2, $3, $4, $5)`,
+              targetId,
+              s.title,
+              s.description || null,
+              s.category || null,
+              i,
+            )
+            .catch(() => null);
         }
       }
 
@@ -324,10 +443,16 @@ export class BusinessCardService {
       for (let i = 0; i < needs.length; i++) {
         const n = needs[i];
         if (n?.title) {
-          await this.prisma.$executeRawUnsafe(
-            `INSERT INTO public.business_card_needs (card_id, title, description, category, sort_order) VALUES ($1::uuid, $2, $3, $4, $5)`,
-            targetId, n.title, n.description || null, n.category || null, i,
-          ).catch(() => null);
+          await this.prisma
+            .$executeRawUnsafe(
+              `INSERT INTO public.business_card_needs (card_id, title, description, category, sort_order) VALUES ($1::uuid, $2, $3, $4, $5)`,
+              targetId,
+              n.title,
+              n.description || null,
+              n.category || null,
+              i,
+            )
+            .catch(() => null);
         }
       }
     }
@@ -336,13 +461,17 @@ export class BusinessCardService {
   }
 
   async setStatus(userId: string, id: string, status: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
     let targetCardId = id;
     if (!isUuid) {
-      const match = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND (slug = $2 OR id::text = $2) LIMIT 1`,
-        userId, id,
-      ).catch(() => []);
+      const match = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND (slug = $2 OR id::text = $2) LIMIT 1`, userId, id)
+        .catch(() => []);
       if (match.length > 0) targetCardId = match[0].id;
     }
 
@@ -356,7 +485,8 @@ export class BusinessCardService {
 
     await this.prisma.$executeRawUnsafe(
       `UPDATE public.member_business_cards SET status = $1, updated_at = NOW() WHERE id = $2::uuid`,
-      status, targetCardId,
+      status,
+      targetCardId,
     );
     return { ok: true };
   }
@@ -371,27 +501,34 @@ export class BusinessCardService {
     );
     return cards.map((c) => ({
       slug: c.slug,
-      updatedAt: c.updated_at ? new Date(c.updated_at).toISOString() : new Date().toISOString(),
+      updatedAt: c.updated_at
+        ? new Date(c.updated_at).toISOString()
+        : new Date().toISOString(),
     }));
   }
 
   async setPrimary(userId: string, id: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
     let targetCardId = id;
 
     if (!isUuid) {
       // Find card by slug or virtual id
-      const match = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND (slug = $2 OR id::text = $2) LIMIT 1`,
-        userId, id,
-      ).catch(() => []);
+      const match = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND (slug = $2 OR id::text = $2) LIMIT 1`, userId, id)
+        .catch(() => []);
       if (match.length > 0) {
         targetCardId = match[0].id;
       } else {
-        const sec = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND card_kind = 'secondary' LIMIT 1`,
-          userId,
-        ).catch(() => []);
+        const sec = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT id FROM public.member_business_cards WHERE owner_user_id = $1::uuid AND card_kind = 'secondary' LIMIT 1`, userId)
+          .catch(() => []);
         if (sec.length > 0) {
           targetCardId = sec[0].id;
         } else {
@@ -399,10 +536,11 @@ export class BusinessCardService {
         }
       }
     } else {
-      const existing = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT * FROM public.member_business_cards WHERE id = $1::uuid`,
-        targetCardId,
-      ).catch(() => []);
+      const existing = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT * FROM public.member_business_cards WHERE id = $1::uuid`, targetCardId)
+        .catch(() => []);
       if (!existing.length || existing[0].owner_user_id !== userId) {
         throw new UnauthorizedException('Not authorized');
       }
@@ -411,13 +549,15 @@ export class BusinessCardService {
     // Demote all other cards owned by this user to secondary
     await this.prisma.$executeRawUnsafe(
       `UPDATE public.member_business_cards SET card_kind = 'secondary', updated_at = NOW() WHERE owner_user_id = $1::uuid AND id != $2::uuid`,
-      userId, targetCardId,
+      userId,
+      targetCardId,
     );
 
     // Promote target card to primary
     await this.prisma.$executeRawUnsafe(
       `UPDATE public.member_business_cards SET card_kind = 'primary', updated_at = NOW() WHERE id = $1::uuid AND owner_user_id = $2::uuid`,
-      targetCardId, userId,
+      targetCardId,
+      userId,
     );
 
     return { ok: true, primaryId: targetCardId };
@@ -526,45 +666,58 @@ export class BusinessCardService {
     const memberIds = memberRows.map((m) => m.id);
     const searchOwnerIds = [userId, ...memberIds];
 
-    const leads = await this.prisma.business_card_leads.findMany({
-      where: {
-        owner_member_id: { in: searchOwnerIds },
-        created_at: { gte: sinceDate },
-      },
-      select: { status: true, created_at: true },
-    }).catch(() => []);
+    const leads = await this.prisma.business_card_leads
+      .findMany({
+        where: {
+          owner_member_id: { in: searchOwnerIds },
+          created_at: { gte: sinceDate },
+        },
+        select: { status: true, created_at: true },
+      })
+      .catch(() => []);
 
-    const myCards = await this.prisma.member_business_cards.findMany({
-      where: {
-        OR: [
-          { owner_user_id: userId },
-          { member_id: { in: memberIds } }
-        ]
-      },
-      select: { id: true },
-    }).catch(() => []);
+    const myCards = await this.prisma.member_business_cards
+      .findMany({
+        where: {
+          OR: [{ owner_user_id: userId }, { member_id: { in: memberIds } }],
+        },
+        select: { id: true },
+      })
+      .catch(() => []);
     const cardIds = myCards.map((c) => c.id);
 
     let interactions: { interaction_type: string; created_at: Date }[] = [];
     if (cardIds.length > 0) {
-      interactions = await this.prisma.business_card_interactions.findMany({
-        where: {
-          card_id: { in: cardIds },
-          created_at: { gte: sinceDate },
-        },
-        select: { interaction_type: true, created_at: true },
-      }).catch(() => []);
+      interactions = await this.prisma.business_card_interactions
+        .findMany({
+          where: {
+            card_id: { in: cardIds },
+            created_at: { gte: sinceDate },
+          },
+          select: { interaction_type: true, created_at: true },
+        })
+        .catch(() => []);
     }
 
     // Build status breakdown
-    const allStatuses = ['new', 'read', 'contacting', 'responded', 'won', 'lost', 'archived'];
+    const allStatuses = [
+      'new',
+      'read',
+      'contacting',
+      'responded',
+      'won',
+      'lost',
+      'archived',
+    ];
     const statusCounts: Record<string, number> = {};
     for (const s of allStatuses) statusCounts[s] = 0;
     for (const l of leads) {
       if (statusCounts[l.status] !== undefined) statusCounts[l.status]++;
       else statusCounts[l.status] = 1;
     }
-    const statusBreakdown = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+    const statusBreakdown = Object.entries(statusCounts).map(
+      ([status, count]) => ({ status, count }),
+    );
 
     // Build daily trend
     const dailyMap = new Map<string, { leads: number; interactions: number }>();
@@ -575,13 +728,17 @@ export class BusinessCardService {
       dailyMap.set(key, { leads: 0, interactions: 0 });
     }
     for (const l of leads) {
-      const key = l.created_at ? new Date(l.created_at).toISOString().slice(0, 10) : '';
+      const key = l.created_at
+        ? new Date(l.created_at).toISOString().slice(0, 10)
+        : '';
       if (dailyMap.has(key)) {
         dailyMap.get(key)!.leads++;
       }
     }
     for (const it of interactions) {
-      const key = it.created_at ? new Date(it.created_at).toISOString().slice(0, 10) : '';
+      const key = it.created_at
+        ? new Date(it.created_at).toISOString().slice(0, 10)
+        : '';
       if (dailyMap.has(key)) {
         dailyMap.get(key)!.interactions++;
       }
@@ -594,8 +751,12 @@ export class BusinessCardService {
 
     const totalLeads = leads.length;
     const totalInteractions = interactions.length;
-    const uniqueViews = (interactions as any[]).filter((it: any) => it.interaction_type === 'view').length;
-    const respondedCount = (leads as any[]).filter((l: any) => l.status === 'responded' || l.status === 'won').length;
+    const uniqueViews = (interactions as any[]).filter(
+      (it: any) => it.interaction_type === 'view',
+    ).length;
+    const respondedCount = (leads as any[]).filter(
+      (l: any) => l.status === 'responded' || l.status === 'won',
+    ).length;
     const responseRate = totalLeads > 0 ? respondedCount / totalLeads : 0;
 
     return {
@@ -647,7 +808,8 @@ export class BusinessCardService {
     const data = rows[0];
     return {
       displayName: data.display_name ?? m?.name ?? null,
-      displayCompany: data.display_company ?? m?.company_name ?? m?.about ?? null,
+      displayCompany:
+        data.display_company ?? m?.company_name ?? m?.about ?? null,
       photoUrl: data.photo_url ?? m?.avatar ?? null,
       companyLogoUrl: data.company_logo_url ?? m?.company_logo_url ?? null,
       showName: data.show_name !== false,
@@ -695,7 +857,11 @@ export class BusinessCardService {
       console.warn('saveCardSettings insert/update notice:', err?.message);
     });
 
-    if (data.displayName && typeof data.displayName === 'string' && data.displayName.trim()) {
+    if (
+      data.displayName &&
+      typeof data.displayName === 'string' &&
+      data.displayName.trim()
+    ) {
       const newName = data.displayName.trim();
       await this.prisma.$executeRaw`
         UPDATE public.members SET name = ${newName}, updated_at = now()
@@ -715,7 +881,11 @@ export class BusinessCardService {
       `.catch(() => null);
     }
 
-    if (data.photoUrl && typeof data.photoUrl === 'string' && data.photoUrl.trim()) {
+    if (
+      data.photoUrl &&
+      typeof data.photoUrl === 'string' &&
+      data.photoUrl.trim()
+    ) {
       const newPhoto = data.photoUrl.trim();
       await this.prisma.$executeRaw`
         UPDATE public.members SET avatar = ${newPhoto}, updated_at = now()
@@ -735,7 +905,11 @@ export class BusinessCardService {
       `.catch(() => null);
     }
 
-    if (data.companyLogoUrl && typeof data.companyLogoUrl === 'string' && data.companyLogoUrl.trim()) {
+    if (
+      data.companyLogoUrl &&
+      typeof data.companyLogoUrl === 'string' &&
+      data.companyLogoUrl.trim()
+    ) {
       const newLogo = data.companyLogoUrl.trim();
       await this.prisma.$executeRaw`
         UPDATE public.members SET company_logo_url = ${newLogo}, updated_at = now()
@@ -755,7 +929,11 @@ export class BusinessCardService {
       `.catch(() => null);
     }
 
-    if (data.displayCompany && typeof data.displayCompany === 'string' && data.displayCompany.trim()) {
+    if (
+      data.displayCompany &&
+      typeof data.displayCompany === 'string' &&
+      data.displayCompany.trim()
+    ) {
       const newCompany = data.displayCompany.trim();
       await this.prisma.$executeRaw`
         UPDATE public.products
@@ -851,10 +1029,10 @@ export class BusinessCardService {
       return {
         found: false,
         code,
-        name: "",
-        company: "",
-        type: "company",
-        status: "",
+        name: '',
+        company: '',
+        type: 'company',
+        status: '',
         verified: false,
         validUntil: null,
         joinedAt: null,
@@ -910,45 +1088,61 @@ export class BusinessCardService {
     }
 
     // Parse visibility settings from the specific card (Primary or chosen card)
-    const cardVis = (typeof cardRow?.visibility_settings === 'string'
-      ? JSON.parse(cardRow.visibility_settings)
-      : cardRow?.visibility_settings) || {};
+    const cardVis =
+      (typeof cardRow?.visibility_settings === 'string'
+        ? JSON.parse(cardRow.visibility_settings)
+        : cardRow?.visibility_settings) || {};
 
     const showContact = cardVis.showContact !== false;
     const showSocial = cardVis.showSocial !== false;
-    const showName = cardVis.showName !== false && (settings ? settings.show_name !== false : true);
-    const showCompany = cardVis.showCompany !== false && (settings ? settings.show_company !== false : true);
-    const showPhoto = cardVis.showPhoto !== false && (settings ? settings.show_photo !== false : true);
-    const showPhone = showContact && cardVis.showPhone !== false && (settings ? settings.show_phone !== false : true);
-    const showEmail = showContact && cardVis.showEmail !== false && (settings ? settings.show_email !== false : true);
-    const showAddress = showContact && cardVis.showAddress !== false && (settings ? settings.show_address !== false : true);
+    const showName =
+      cardVis.showName !== false &&
+      (settings ? settings.show_name !== false : true);
+    const showCompany =
+      cardVis.showCompany !== false &&
+      (settings ? settings.show_company !== false : true);
+    const showPhoto =
+      cardVis.showPhoto !== false &&
+      (settings ? settings.show_photo !== false : true);
+    const showPhone =
+      showContact &&
+      cardVis.showPhone !== false &&
+      (settings ? settings.show_phone !== false : true);
+    const showEmail =
+      showContact &&
+      cardVis.showEmail !== false &&
+      (settings ? settings.show_email !== false : true);
+    const showAddress =
+      showContact &&
+      cardVis.showAddress !== false &&
+      (settings ? settings.show_address !== false : true);
 
     // Resolve Name
     let resolvedPersonName =
       cardRow?.display_name ||
       settings?.display_name ||
-      (m.type === "individual" ? m.name : m.contact) ||
+      (m.type === 'individual' ? m.name : m.contact) ||
       m.contact ||
       userRow?.name ||
       userRow?.full_name ||
       m.name ||
-      "";
+      '';
 
     if (
       !resolvedPersonName ||
-      resolvedPersonName.toLowerCase() === "admin" ||
-      resolvedPersonName.toLowerCase() === "platform administrator"
+      resolvedPersonName.toLowerCase() === 'admin' ||
+      resolvedPersonName.toLowerCase() === 'platform administrator'
     ) {
       resolvedPersonName =
         userRow?.full_name ||
         userRow?.name ||
-        (m.type === "individual" ? m.name : m.contact) ||
-        "Hội viên CLB Doanh Nhân CEO 1983";
+        (m.type === 'individual' ? m.name : m.contact) ||
+        'Hội viên CLB Doanh Nhân CEO 1983';
       if (
-        resolvedPersonName.toLowerCase() === "admin" ||
-        resolvedPersonName.toLowerCase() === "platform administrator"
+        resolvedPersonName.toLowerCase() === 'admin' ||
+        resolvedPersonName.toLowerCase() === 'platform administrator'
       ) {
-        resolvedPersonName = "Hội viên CLB Doanh Nhân CEO 1983";
+        resolvedPersonName = 'Hội viên CLB Doanh Nhân CEO 1983';
       }
     }
 
@@ -956,11 +1150,13 @@ export class BusinessCardService {
     let resolvedCompanyName =
       cardRow?.company_name ||
       settings?.display_company ||
-      (m.type === "individual" ? (m.about || "CLB Doanh Nhân CEO 1983") : m.name) ||
-      "CLB Doanh Nhân CEO 1983";
+      (m.type === 'individual'
+        ? m.about || 'CLB Doanh Nhân CEO 1983'
+        : m.name) ||
+      'CLB Doanh Nhân CEO 1983';
 
-    if (!resolvedCompanyName || resolvedCompanyName.trim() === "") {
-      resolvedCompanyName = "CLB Doanh Nhân CEO 1983";
+    if (!resolvedCompanyName || resolvedCompanyName.trim() === '') {
+      resolvedCompanyName = 'CLB Doanh Nhân CEO 1983';
     }
 
     // Resolve Title
@@ -968,11 +1164,17 @@ export class BusinessCardService {
       cardRow?.professional_title ||
       m.executive_role ||
       m.department ||
-      (m.type === "company" ? "Đại diện Doanh nghiệp Hội viên" : "Lãnh đạo Doanh nghiệp Hội viên");
+      (m.type === 'company'
+        ? 'Đại diện Doanh nghiệp Hội viên'
+        : 'Lãnh đạo Doanh nghiệp Hội viên');
 
     // Resolve Photo
     const resolvedPhoto = showPhoto
-      ? (cardRow?.avatar_url || settings?.photo_url || m.avatar || userRow?.avatar_url || null)
+      ? cardRow?.avatar_url ||
+        settings?.photo_url ||
+        m.avatar ||
+        userRow?.avatar_url ||
+        null
       : null;
 
     // Resolve Company Logo
@@ -984,31 +1186,36 @@ export class BusinessCardService {
 
     // Resolve Phone & Email
     const resolvedPhone = showPhone
-      ? (cardRow?.work_phone || m.phone || userRow?.phone || null)
+      ? cardRow?.work_phone || m.phone || userRow?.phone || null
       : null;
 
     const resolvedEmail = showEmail
-      ? (cardRow?.work_email || m.email || userRow?.email || null)
+      ? cardRow?.work_email || m.email || userRow?.email || null
       : null;
 
     const resolvedWebsite = showCompany
-      ? (cardRow?.website || m.website || "https://ceo1983club.com")
+      ? cardRow?.website || m.website || 'https://ceo1983club.com'
       : null;
 
     const resolvedAddress = showAddress
-      ? (cardRow?.address || m.address || "Trụ sở CLB Doanh Nhân CEO 1983, Hà Nội")
-      : "Đã ẩn theo cài đặt riêng tư";
+      ? cardRow?.address ||
+        m.address ||
+        'Trụ sở CLB Doanh Nhân CEO 1983, Hà Nội'
+      : 'Đã ẩn theo cài đặt riêng tư';
 
-    const isActive = m.status === 'active' || m.status === 'memberStatus.active' || !m.status;
+    const isActive =
+      m.status === 'active' || m.status === 'memberStatus.active' || !m.status;
 
     return {
       found: true,
       code: m.code || cardRow?.slug || code,
-      cardKind: cardRow?.card_kind || "primary",
-      name: showName ? resolvedPersonName : "Hội viên CLB Doanh Nhân CEO 1983",
-      company: showCompany ? resolvedCompanyName : "Đã ẩn theo cài đặt riêng tư",
-      type: m.type || "company",
-      status: m.status || "active",
+      cardKind: cardRow?.card_kind || 'primary',
+      name: showName ? resolvedPersonName : 'Hội viên CLB Doanh Nhân CEO 1983',
+      company: showCompany
+        ? resolvedCompanyName
+        : 'Đã ẩn theo cài đặt riêng tư',
+      type: m.type || 'company',
+      status: m.status || 'active',
       verified: isActive,
       validUntil: m.term_end ? new Date(m.term_end).toISOString() : null,
       joinedAt: m.joined_at ? new Date(m.joined_at).toISOString() : null,
@@ -1016,8 +1223,12 @@ export class BusinessCardService {
       email: resolvedEmail,
       phone: resolvedPhone,
       taxCode: null,
-      industry: showCompany ? (m.industry || cardRow?.headline || "Công nghệ thông tin & Đổi mới sáng tạo") : "Đã ẩn",
-      region: showCompany ? (m.region || "Miền Bắc (Hà Nội)") : null,
+      industry: showCompany
+        ? m.industry ||
+          cardRow?.headline ||
+          'Công nghệ thông tin & Đổi mới sáng tạo'
+        : 'Đã ẩn',
+      region: showCompany ? m.region || 'Miền Bắc (Hà Nội)' : null,
       address: resolvedAddress,
       website: resolvedWebsite,
       photoUrl: resolvedPhoto,
@@ -1025,9 +1236,14 @@ export class BusinessCardService {
       userId: userId,
       headline: cardRow?.headline || null,
       bio: cardRow?.bio || null,
-      zaloUrl: showSocial ? (cardRow?.zalo_url || (resolvedPhone ? `https://zalo.me/${resolvedPhone.replace(/\D/g, '')}` : null)) : null,
-      linkedinUrl: showSocial ? (cardRow?.linkedin_url || null) : null,
-      facebookUrl: showSocial ? (cardRow?.facebook_url || null) : null,
+      zaloUrl: showSocial
+        ? cardRow?.zalo_url ||
+          (resolvedPhone
+            ? `https://zalo.me/${resolvedPhone.replace(/\D/g, '')}`
+            : null)
+        : null,
+      linkedinUrl: showSocial ? cardRow?.linkedin_url || null : null,
+      facebookUrl: showSocial ? cardRow?.facebook_url || null : null,
       visibilitySettings: cardVis,
       privacySettings: {
         showPhoto,
@@ -1080,7 +1296,9 @@ export class BusinessCardService {
       qrBackground: r.qr_background,
       appliedAt: r.applied_at ? new Date(r.applied_at).toISOString() : null,
       note: r.note,
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
     };
   }
 
@@ -1100,7 +1318,9 @@ export class BusinessCardService {
       qrBackground: r.qr_background,
       appliedAt: r.applied_at ? new Date(r.applied_at).toISOString() : null,
       note: r.note,
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
     }));
   }
 
@@ -1113,7 +1333,9 @@ export class BusinessCardService {
   }
 
   async getBcAdminLevel(userId: string): Promise<string> {
-    const roles = await this.prisma.user_roles.findMany({ where: { user_id: userId } }).catch(() => []) as any[];
+    const roles = (await this.prisma.user_roles
+      .findMany({ where: { user_id: userId } })
+      .catch(() => [])) as any[];
     if (roles.some((r: any) => r.role === 'platform_admin')) return 'full';
 
     const memberships = await this.prisma.$queryRaw<any[]>`
@@ -1149,8 +1371,12 @@ export class BusinessCardService {
       professionalTitle: r.professional_title || null,
       companyName: r.company_name || null,
       avatarUrl: r.avatar_url || null,
-      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      updatedAt: r.updated_at
+        ? new Date(r.updated_at).toISOString()
+        : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
       memberId: r.member_id || '',
       memberName: r.member_name || null,
       memberCode: r.member_code || null,

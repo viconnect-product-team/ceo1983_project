@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
 
@@ -28,20 +33,26 @@ export class ConnectIdentityService {
     `.catch(() => []);
     const member = memberRows[0] || null;
 
-    const user = await this.prisma.vione_users.findUnique({
-      where: { id: userId },
-    }).catch(() => null);
+    const user = await this.prisma.vione_users
+      .findUnique({
+        where: { id: userId },
+      })
+      .catch(() => null);
 
     if (!profile && !member && !user) return null;
 
-    const displayName = profile?.display_name || member?.name || user?.name || '';
+    const displayName =
+      profile?.display_name || member?.name || user?.name || '';
     const phone = member?.phone || '';
-    const professionalTitle = profile?.professional_title || member?.executive_role || '';
+    const professionalTitle =
+      profile?.professional_title || member?.executive_role || '';
     const companyName = profile?.company_name || member?.company_name || '';
     const region = profile?.region || member?.region || member?.address || '';
     const bio = profile?.bio || member?.about || '';
-    const avatarUrl = profile?.avatar_url || member?.avatar || user?.avatar_url || '';
-    const companyLogoUrl = profile?.company_logo_url || member?.company_logo_url || '';
+    const avatarUrl =
+      profile?.avatar_url || member?.avatar || user?.avatar_url || '';
+    const companyLogoUrl =
+      profile?.company_logo_url || member?.company_logo_url || '';
 
     return {
       user_id: userId,
@@ -68,14 +79,24 @@ export class ConnectIdentityService {
   async updateMyProfile(userId: string, data: any) {
     const onboardingStatus = data.onboarding_status || 'completed';
     const accountStatus = data.account_status || 'active';
-    const displayName = (data.display_name || data.name || data.full_name || '').trim();
+    const displayName = (
+      data.display_name ||
+      data.name ||
+      data.full_name ||
+      ''
+    ).trim();
     const phone = (data.phone || '').trim();
-    const professionalTitle = (data.professional_title || data.title || '').trim();
+    const professionalTitle = (
+      data.professional_title ||
+      data.title ||
+      ''
+    ).trim();
     const companyName = (data.company_name || data.company || '').trim();
     const region = (data.region || data.location || '').trim();
     const bio = (data.bio || '').trim();
     const avatarUrl = (data.avatar_url || data.avatar || '').trim() || null;
-    const companyLogoUrl = (data.company_logo_url || data.companyLogo || '').trim() || null;
+    const companyLogoUrl =
+      (data.company_logo_url || data.companyLogo || '').trim() || null;
 
     // 1. user_profiles
     await this.prisma.$executeRaw`
@@ -120,10 +141,12 @@ export class ConnectIdentityService {
       const vioneUpdate: any = { updated_at: new Date() };
       if (displayName) vioneUpdate.name = displayName;
       if (avatarUrl) vioneUpdate.avatar_url = avatarUrl;
-      await this.prisma.vione_users.update({
-        where: { id: userId },
-        data: vioneUpdate,
-      }).catch(() => null);
+      await this.prisma.vione_users
+        .update({
+          where: { id: userId },
+          data: vioneUpdate,
+        })
+        .catch(() => null);
     } catch {}
 
     // 3. members (App Hiệp hội CEO 1983)
@@ -202,7 +225,10 @@ export class ConnectIdentityService {
         identity = {
           id: profile?.id || userId,
           owner_user_id: userId,
-          display_name: profile?.display_name || userEmail?.split('@')[0] || 'Hội viên CEO 1983',
+          display_name:
+            profile?.display_name ||
+            userEmail?.split('@')[0] ||
+            'Hội viên CEO 1983',
           headline: profile?.professional_title || null,
           job_title: profile?.professional_title || null,
           company_name: profile?.company_name || null,
@@ -251,27 +277,29 @@ export class ConnectIdentityService {
     }
 
     return {
-      identity: identity ? {
-        id: identity.id,
-        ownerUserId: identity.owner_user_id,
-        displayName: identity.display_name,
-        headline: identity.headline,
-        jobTitle: identity.job_title,
-        companyName: identity.company_name,
-        bio: identity.bio,
-        avatarUrl: identity.avatar_url,
-        primaryEmail: identity.primary_email,
-        primaryPhone: identity.primary_phone,
-        website: identity.website,
-        linkedinUrl: identity.linkedin_url,
-        address: identity.address,
-        city: identity.city,
-        countryCode: identity.country_code,
-        preferredLocale: identity.preferred_locale,
-        status: identity.status,
-        createdAt: identity.created_at,
-        updatedAt: identity.updated_at,
-      } : null,
+      identity: identity
+        ? {
+            id: identity.id,
+            ownerUserId: identity.owner_user_id,
+            displayName: identity.display_name,
+            headline: identity.headline,
+            jobTitle: identity.job_title,
+            companyName: identity.company_name,
+            bio: identity.bio,
+            avatarUrl: identity.avatar_url,
+            primaryEmail: identity.primary_email,
+            primaryPhone: identity.primary_phone,
+            website: identity.website,
+            linkedinUrl: identity.linkedin_url,
+            address: identity.address,
+            city: identity.city,
+            countryCode: identity.country_code,
+            preferredLocale: identity.preferred_locale,
+            status: identity.status,
+            createdAt: identity.created_at,
+            updatedAt: identity.updated_at,
+          }
+        : null,
       visibility,
     };
   }
@@ -329,20 +357,44 @@ export class ConnectIdentityService {
     } else {
       const existing = existingRows[0];
       const finalData = {
-        display_name: input.displayName !== undefined ? input.displayName : existing.display_name,
-        headline: input.headline !== undefined ? input.headline : existing.headline,
-        job_title: input.jobTitle !== undefined ? input.jobTitle : existing.job_title,
-        company_name: input.companyName !== undefined ? input.companyName : existing.company_name,
+        display_name:
+          input.displayName !== undefined
+            ? input.displayName
+            : existing.display_name,
+        headline:
+          input.headline !== undefined ? input.headline : existing.headline,
+        job_title:
+          input.jobTitle !== undefined ? input.jobTitle : existing.job_title,
+        company_name:
+          input.companyName !== undefined
+            ? input.companyName
+            : existing.company_name,
         bio: input.bio !== undefined ? input.bio : existing.bio,
-        avatar_url: input.avatarUrl !== undefined ? input.avatarUrl : existing.avatar_url,
-        primary_email: input.primaryEmail !== undefined ? input.primaryEmail : existing.primary_email,
-        primary_phone: input.primaryPhone !== undefined ? input.primaryPhone : existing.primary_phone,
+        avatar_url:
+          input.avatarUrl !== undefined ? input.avatarUrl : existing.avatar_url,
+        primary_email:
+          input.primaryEmail !== undefined
+            ? input.primaryEmail
+            : existing.primary_email,
+        primary_phone:
+          input.primaryPhone !== undefined
+            ? input.primaryPhone
+            : existing.primary_phone,
         website: input.website !== undefined ? input.website : existing.website,
-        linkedin_url: input.linkedinUrl !== undefined ? input.linkedinUrl : existing.linkedin_url,
+        linkedin_url:
+          input.linkedinUrl !== undefined
+            ? input.linkedinUrl
+            : existing.linkedin_url,
         address: input.address !== undefined ? input.address : existing.address,
         city: input.city !== undefined ? input.city : existing.city,
-        country_code: input.countryCode !== undefined ? input.countryCode : existing.country_code,
-        preferred_locale: input.preferredLocale !== undefined ? input.preferredLocale : existing.preferred_locale,
+        country_code:
+          input.countryCode !== undefined
+            ? input.countryCode
+            : existing.country_code,
+        preferred_locale:
+          input.preferredLocale !== undefined
+            ? input.preferredLocale
+            : existing.preferred_locale,
       };
 
       await this.prisma.$executeRaw`
@@ -380,7 +432,7 @@ export class ConnectIdentityService {
       SELECT id FROM public.business_identities WHERE owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
     if (identityRows.length === 0) {
-      throw new Error("identity_not_found");
+      throw new Error('identity_not_found');
     }
     const identityId = identityRows[0].id;
     const now = new Date();
@@ -537,24 +589,34 @@ export class ConnectIdentityService {
       state: 'public',
       card: {
         id: identity.id,
-        displayName: isFieldVisible('displayName') ? identity.display_name : null,
+        displayName: isFieldVisible('displayName')
+          ? identity.display_name
+          : null,
         headline: isFieldVisible('headline') ? identity.headline : null,
         jobTitle: isFieldVisible('jobTitle') ? identity.job_title : null,
-        companyName: isFieldVisible('companyName') ? identity.company_name : null,
+        companyName: isFieldVisible('companyName')
+          ? identity.company_name
+          : null,
         bio: isFieldVisible('bio') ? identity.bio : null,
         avatarUrl: isFieldVisible('avatarUrl') ? identity.avatar_url : null,
-        primaryEmail: isFieldVisible('primaryEmail') ? identity.primary_email : null,
-        primaryPhone: isFieldVisible('primaryPhone') ? identity.primary_phone : null,
+        primaryEmail: isFieldVisible('primaryEmail')
+          ? identity.primary_email
+          : null,
+        primaryPhone: isFieldVisible('primaryPhone')
+          ? identity.primary_phone
+          : null,
         website: isFieldVisible('website') ? identity.website : null,
-        linkedinUrl: isFieldVisible('linkedinUrl') ? identity.linkedin_url : null,
+        linkedinUrl: isFieldVisible('linkedinUrl')
+          ? identity.linkedin_url
+          : null,
         address: isFieldVisible('address') ? identity.address : null,
         city: isFieldVisible('city') ? identity.city : null,
-        countryCode: isFieldVisible('countryCode') ? identity.country_code : null,
-      }
+        countryCode: isFieldVisible('countryCode')
+          ? identity.country_code
+          : null,
+      },
     };
   }
-
-
 
   async getMyShowcase(userId: string) {
     const items = await this.prisma.$queryRaw<any[]>`

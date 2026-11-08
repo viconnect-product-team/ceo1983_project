@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
@@ -91,4 +101,3 @@ export class ContentController {
     return this.connectAppService.getPerkById(id);
   }
 }
-

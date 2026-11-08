@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
 import * as crypto from 'crypto';
@@ -12,7 +17,16 @@ export class ConnectMomentsService {
   ) {}
 
   async prepareMoment(userId: string, input: any) {
-    const { personId, occurredAt, eventName, placeLabel, note, photoCount, clientToken, visibility = 'friends' } = input;
+    const {
+      personId,
+      occurredAt,
+      eventName,
+      placeLabel,
+      note,
+      photoCount,
+      clientToken,
+      visibility = 'friends',
+    } = input;
 
     const m = /^([ucg]):([0-9a-fA-F-]{36})$/.exec(personId);
     if (!m) throw new ForbiddenException('relationship_not_authorized');
@@ -25,7 +39,8 @@ export class ConnectMomentsService {
     let targetGuestId: string | null = null;
 
     if (namespace === 'u') {
-      if (targetId === userId) throw new ForbiddenException('relationship_not_authorized');
+      if (targetId === userId)
+        throw new ForbiddenException('relationship_not_authorized');
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT id FROM public.user_connections
         WHERE status = 'accepted'::public.global_connection_status
@@ -33,7 +48,8 @@ export class ConnectMomentsService {
             OR (requester_user_id = ${targetId}::uuid AND recipient_user_id = ${userId}::uuid))
         LIMIT 1
       `.catch(() => []);
-      if (rows.length === 0) throw new ForbiddenException('relationship_not_authorized');
+      if (rows.length === 0)
+        throw new ForbiddenException('relationship_not_authorized');
       targetKind = 'connection';
       targetUserId = targetId;
     } else if (namespace === 'g') {
@@ -42,7 +58,8 @@ export class ConnectMomentsService {
         WHERE owner_user_id = ${userId}::uuid AND id = ${targetId}::uuid
         LIMIT 1
       `.catch(() => []);
-      if (rows.length === 0) throw new ForbiddenException('relationship_not_authorized');
+      if (rows.length === 0)
+        throw new ForbiddenException('relationship_not_authorized');
       targetKind = 'guest_contact';
       targetGuestId = targetId;
     } else {
@@ -51,7 +68,8 @@ export class ConnectMomentsService {
         WHERE owner_user_id = ${userId}::uuid AND target_card_id = ${targetId}::uuid AND archived = false
         LIMIT 1
       `.catch(() => []);
-      if (rows.length === 0) throw new ForbiddenException('relationship_not_authorized');
+      if (rows.length === 0)
+        throw new ForbiddenException('relationship_not_authorized');
       targetKind = 'saved_card';
       targetCardId = targetId;
     }
@@ -183,12 +201,18 @@ export class ConnectMomentsService {
       `.catch(() => []);
 
       const activeMoment = activeMomentRows[0];
-      const taggedId = activeMoment?.target_user_id ? String(activeMoment.target_user_id) : null;
+      const taggedId = activeMoment?.target_user_id
+        ? String(activeMoment.target_user_id)
+        : null;
       if (taggedId && taggedId.toLowerCase() !== userId.toLowerCase()) {
         void this.notifyMomentTags(userId, {
           momentId,
           taggedUserIds: [taggedId],
-          content: activeMoment.note || activeMoment.event_name || activeMoment.place_label || '',
+          content:
+            activeMoment.note ||
+            activeMoment.event_name ||
+            activeMoment.place_label ||
+            '',
         });
       }
     } catch {
@@ -235,7 +259,11 @@ export class ConnectMomentsService {
       } else if (raw.startsWith('g:')) {
         targetKind = 'guest_contact';
         targetGuestId = raw.slice(2);
-      } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {
+      } else if (
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          raw,
+        )
+      ) {
         targetKind = 'connection';
         targetUserId = raw;
       }
@@ -346,7 +374,7 @@ export class ConnectMomentsService {
       ORDER BY c.created_at ASC
     `.catch(() => [] as any[]);
 
-    const commentIds = rawComments.map(c => c.id);
+    const commentIds = rawComments.map((c) => c.id);
     let likesRows: any[] = [];
     if (commentIds.length > 0) {
       likesRows = await this.prisma.$queryRaw<any[]>`
@@ -358,18 +386,22 @@ export class ConnectMomentsService {
     const likesCountMap = new Map<string, number>();
     const userLikedSet = new Set<string>();
     for (const l of likesRows) {
-      likesCountMap.set(l.comment_id, (likesCountMap.get(l.comment_id) || 0) + 1);
+      likesCountMap.set(
+        l.comment_id,
+        (likesCountMap.get(l.comment_id) || 0) + 1,
+      );
       if (l.user_id === viewerUserId) {
         userLikedSet.add(l.comment_id);
       }
     }
 
-    const formattedList: any[] = rawComments.map(c => {
+    const formattedList: any[] = rawComments.map((c) => {
       const displayName = c.display_name || 'Hội viên CEO 1983';
       const words = displayName.trim().split(/\s+/).filter(Boolean);
-      const initials = words.length > 1
-        ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
-        : (words[0]?.[0] || 'HV').toUpperCase();
+      const initials =
+        words.length > 1
+          ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
+          : (words[0]?.[0] || 'HV').toUpperCase();
 
       return {
         id: c.id,
@@ -378,8 +410,14 @@ export class ConnectMomentsService {
         parentId: c.parent_id || null,
         content: c.content,
         photoUrl: c.photo_url || null,
-        mentions: Array.isArray(c.mentions) ? c.mentions : (typeof c.mentions === 'string' ? JSON.parse(c.mentions || '[]') : []),
-        createdAt: c.created_at ? new Date(c.created_at).toISOString() : new Date().toISOString(),
+        mentions: Array.isArray(c.mentions)
+          ? c.mentions
+          : typeof c.mentions === 'string'
+            ? JSON.parse(c.mentions || '[]')
+            : [],
+        createdAt: c.created_at
+          ? new Date(c.created_at).toISOString()
+          : new Date().toISOString(),
         author: {
           userId: c.user_id,
           displayName,
@@ -425,7 +463,12 @@ export class ConnectMomentsService {
   async createMomentComment(
     userId: string,
     momentId: string,
-    input: { parentId?: string | null; content: string; photoUrl?: string | null; mentions?: any[] },
+    input: {
+      parentId?: string | null;
+      content: string;
+      photoUrl?: string | null;
+      mentions?: any[];
+    },
   ) {
     const { parentId, content, photoUrl = null, mentions = [] } = input;
     if ((!content || !content.trim()) && !photoUrl) {
@@ -459,9 +502,10 @@ export class ConnectMomentsService {
     const author = authorProfiles[0] || {};
     const displayName = author.display_name || 'Hội viên CEO 1983';
     const words = displayName.trim().split(/\s+/).filter(Boolean);
-    const initials = words.length > 1
-      ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
-      : (words[0]?.[0] || 'HV').toUpperCase();
+    const initials =
+      words.length > 1
+        ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
+        : (words[0]?.[0] || 'HV').toUpperCase();
 
     const commentPayload = {
       id: commentId,
@@ -501,19 +545,31 @@ export class ConnectMomentsService {
     ]);
 
     const momentOwnerId = momentRows[0]?.owner_user_id;
-    const mutedUserIds = new Set(mutedRows.map(r => String(r.user_id).toLowerCase()));
+    const mutedUserIds = new Set(
+      mutedRows.map((r) => String(r.user_id).toLowerCase()),
+    );
 
     // 3. Create notifications
     try {
       // 3a. Notify moment owner (if not the commenter and not muted)
-      if (momentOwnerId && momentOwnerId !== userId && !mutedUserIds.has(String(momentOwnerId).toLowerCase())) {
+      if (
+        momentOwnerId &&
+        momentOwnerId !== userId &&
+        !mutedUserIds.has(String(momentOwnerId).toLowerCase())
+      ) {
         const notifId = crypto.randomUUID();
         const safeData = JSON.stringify({
           commenterName: displayName,
-          momentTitle: momentRows[0]?.event_name || momentRows[0]?.place_label || 'khoảnh khắc',
+          momentTitle:
+            momentRows[0]?.event_name ||
+            momentRows[0]?.place_label ||
+            'khoảnh khắc',
           content: content.substring(0, 100),
         });
-        const actionTarget = JSON.stringify({ route: '/connect-app', momentId });
+        const actionTarget = JSON.stringify({
+          route: '/connect-app',
+          momentId,
+        });
         const dedupeKey = `moment_comment:${notifId}`;
         await this.prisma.$executeRaw`
           INSERT INTO public.business_notifications (
@@ -555,7 +611,10 @@ export class ConnectMomentsService {
             commenterName: displayName,
             content: content.substring(0, 100),
           });
-          const actionTarget = JSON.stringify({ route: '/connect-app', momentId });
+          const actionTarget = JSON.stringify({
+            route: '/connect-app',
+            momentId,
+          });
           const dedupeKey = `moment_reply:${notifId}`;
           await this.prisma.$executeRaw`
             INSERT INTO public.business_notifications (
@@ -596,7 +655,10 @@ export class ConnectMomentsService {
               mentionerName: displayName,
               content: content.substring(0, 100),
             });
-            const actionTarget = JSON.stringify({ route: '/connect-app', momentId });
+            const actionTarget = JSON.stringify({
+              route: '/connect-app',
+              momentId,
+            });
             const dedupeKey = `moment_mention:${notifId}`;
             await this.prisma.$executeRaw`
               INSERT INTO public.business_notifications (
@@ -661,13 +723,18 @@ export class ConnectMomentsService {
     return { ok: true, isMuted: existing.length > 0 };
   }
 
-  async deleteMomentComment(userId: string, momentId: string, commentId: string) {
+  async deleteMomentComment(
+    userId: string,
+    momentId: string,
+    commentId: string,
+  ) {
     const commentRows = await this.prisma.$queryRaw<any[]>`
       SELECT user_id, moment_id FROM public.business_relationship_moment_comments
       WHERE id = ${commentId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
-    if (commentRows.length === 0) throw new NotFoundException('comment_not_found');
+    if (commentRows.length === 0)
+      throw new NotFoundException('comment_not_found');
 
     const momentRows = await this.prisma.$queryRaw<any[]>`
       SELECT owner_user_id FROM public.business_relationship_moments WHERE id = ${momentId}::uuid LIMIT 1
@@ -691,7 +758,7 @@ export class ConnectMomentsService {
       SELECT id FROM comment_tree;
     `.catch(() => [{ id: commentId }]);
 
-    const allIds = childComments.map(c => c.id);
+    const allIds = childComments.map((c) => c.id);
     if (allIds.length > 0) {
       await this.prisma.$executeRaw`
         DELETE FROM public.business_relationship_moment_comment_likes WHERE comment_id = ANY(${allIds}::uuid[])
@@ -705,7 +772,11 @@ export class ConnectMomentsService {
     return { ok: true, commentId };
   }
 
-  async toggleMomentCommentLike(userId: string, momentId: string, commentId: string) {
+  async toggleMomentCommentLike(
+    userId: string,
+    momentId: string,
+    commentId: string,
+  ) {
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.business_relationship_moment_comment_likes
       WHERE comment_id = ${commentId}::uuid AND user_id = ${userId}::uuid
@@ -734,7 +805,13 @@ export class ConnectMomentsService {
     `.catch(() => [{ count: 0 }]);
 
     const likesCount = Number(countRows[0]?.count || 0);
-    this.gateway.emitMomentCommentLiked(momentId, commentId, likesCount, userId, liked);
+    this.gateway.emitMomentCommentLiked(
+      momentId,
+      commentId,
+      likesCount,
+      userId,
+      liked,
+    );
 
     return { ok: true, commentId, liked, likesCount };
   }
@@ -800,7 +877,8 @@ export class ConnectMomentsService {
   }
 
   async listMomentPhotos(userId: string, momentId: string) {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(momentId)) {
       return {
         ok: true,
@@ -841,11 +919,13 @@ export class ConnectMomentsService {
         storagePath: s.storage_path,
         sortOrder: s.sort_order,
         url: s.storage_path
-          ? (s.storage_path.startsWith('http') || s.storage_path.startsWith('data:') || s.storage_path.startsWith('blob:')
+          ? s.storage_path.startsWith('http') ||
+            s.storage_path.startsWith('data:') ||
+            s.storage_path.startsWith('blob:')
+            ? s.storage_path
+            : s.storage_path.startsWith('/')
               ? s.storage_path
-              : s.storage_path.startsWith('/')
-                ? s.storage_path
-                : `/uploads/${s.storage_path.replace(/^\/+/, '')}`)
+              : `/uploads/${s.storage_path.replace(/^\/+/, '')}`
           : null,
       })),
     };
@@ -869,7 +949,10 @@ export class ConnectMomentsService {
       throw new BadRequestException('photo_count');
     }
 
-    const startSort = existing.reduce((max, s) => Math.max(max, s.sort_order + 1), 0);
+    const startSort = existing.reduce(
+      (max, s) => Math.max(max, s.sort_order + 1),
+      0,
+    );
     const photos: any[] = [];
     for (let i = 0; i < count; i++) {
       const mediaId = crypto.randomUUID();
@@ -919,7 +1002,9 @@ export class ConnectMomentsService {
     `.catch(() => [] as any[]);
 
     const uploaded = new Set(uploadedMediaIds);
-    const drop = slots.filter((s: any) => addedMediaIds.includes(s.id) && !uploaded.has(s.id));
+    const drop = slots.filter(
+      (s: any) => addedMediaIds.includes(s.id) && !uploaded.has(s.id),
+    );
     if (drop.length > 0) {
       const dropIds = drop.map((s) => s.id);
       await this.prisma.$executeRaw`
@@ -950,7 +1035,12 @@ export class ConnectMomentsService {
 
   // --- Reminders ---
 
-  async listMomentReminders(userId: string, momentId: string | null, includeDone: boolean, limit: number) {
+  async listMomentReminders(
+    userId: string,
+    momentId: string | null,
+    includeDone: boolean,
+    limit: number,
+  ) {
     let query;
     if (momentId) {
       if (includeDone) {
@@ -999,12 +1089,19 @@ export class ConnectMomentsService {
         remindAt: r.remind_at ? new Date(r.remind_at).toISOString() : null,
         label: r.label,
         status: r.status,
-        completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
+        completedAt: r.completed_at
+          ? new Date(r.completed_at).toISOString()
+          : null,
       })),
     };
   }
 
-  async createMomentReminder(userId: string, momentId: string, remindAt: string, label: string | null) {
+  async createMomentReminder(
+    userId: string,
+    momentId: string,
+    remindAt: string,
+    label: string | null,
+  ) {
     const countRow = await this.prisma.$queryRaw<any[]>`
       SELECT COUNT(id)::int as count FROM public.business_relationship_moment_reminders
       WHERE owner_user_id = ${userId}::uuid AND moment_id = ${momentId}::uuid AND status = 'pending'
@@ -1037,7 +1134,11 @@ export class ConnectMomentsService {
     };
   }
 
-  async setMomentReminderStatus(userId: string, reminderId: string, status: string) {
+  async setMomentReminderStatus(
+    userId: string,
+    reminderId: string,
+    status: string,
+  ) {
     const completedAt = status === 'done' ? new Date() : null;
 
     const rowBefore = await this.prisma.$queryRaw<any[]>`
@@ -1071,7 +1172,9 @@ export class ConnectMomentsService {
         remindAt: r.remind_at ? new Date(r.remind_at).toISOString() : null,
         label: r.label,
         status: r.status,
-        completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
+        completedAt: r.completed_at
+          ? new Date(r.completed_at).toISOString()
+          : null,
       },
     };
   }
@@ -1084,7 +1187,10 @@ export class ConnectMomentsService {
     return { ok: true, reminderId };
   }
 
-  async notifyMomentTags(userId: string, input: { momentId: string; taggedUserIds: string[]; content?: string }) {
+  async notifyMomentTags(
+    userId: string,
+    input: { momentId: string; taggedUserIds: string[]; content?: string },
+  ) {
     const { momentId, taggedUserIds = [], content = '' } = input;
     if (taggedUserIds.length === 0) return { ok: true, count: 0 };
 
@@ -1093,7 +1199,8 @@ export class ConnectMomentsService {
       WHERE owner_user_id = ${userId}::uuid AND status = 'active'
       LIMIT 1
     `.catch(() => [] as any[]);
-    const displayName = authorProfiles[0]?.display_name || 'Đối tác trong mạng lưới';
+    const displayName =
+      authorProfiles[0]?.display_name || 'Đối tác trong mạng lưới';
     const now = new Date();
 
     for (const targetId of taggedUserIds) {
@@ -1103,7 +1210,9 @@ export class ConnectMomentsService {
       const safeData = JSON.stringify({
         authorName: displayName,
         title: `${displayName} đã gắn thẻ bạn trong một khoảnh khắc`,
-        body: content ? content.slice(0, 100) : `${displayName} vừa gắn thẻ bạn trong bài viết mới`,
+        body: content
+          ? content.slice(0, 100)
+          : `${displayName} vừa gắn thẻ bạn trong bài viết mới`,
         content: content ? content.slice(0, 100) : '',
         targetRoute: '/connect-app',
       });

@@ -68,7 +68,9 @@ export class MembershipCertificateBuilder {
 
   getResult(): DigitalCertificateOutput {
     if (!this.header || !this.member || !this.terms) {
-      throw new Error('Chưa thể xuất chứng thư: Thiếu các khối dữ liệu bắt buộc (Header, Member, hoặc Terms).');
+      throw new Error(
+        'Chưa thể xuất chứng thư: Thiếu các khối dữ liệu bắt buộc (Header, Member, hoặc Terms).',
+      );
     }
 
     const verificationQrUrl = `https://ceo1983.viconnect.vn/verify-certificate/${this.header.certificateNumber}`;
@@ -85,4 +87,3 @@ export class MembershipCertificateBuilder {
     };
   }
 }
-

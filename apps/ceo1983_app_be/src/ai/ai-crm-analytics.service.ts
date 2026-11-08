@@ -21,7 +21,13 @@ export interface AiSystemConfigDto {
   lastUpdated: string;
 }
 
-export type AiPersonaType = 'general' | 'opportunity' | 'events' | 'meetings' | 'finance' | 'documents';
+export type AiPersonaType =
+  | 'general'
+  | 'opportunity'
+  | 'events'
+  | 'meetings'
+  | 'finance'
+  | 'documents';
 
 @Injectable()
 export class AiCrmAnalyticsService {
@@ -39,11 +45,16 @@ export class AiCrmAnalyticsService {
 
     let stored: any = {};
     try {
-      const rows = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT value FROM public.app_settings WHERE key = 'crm_ai_system_config' LIMIT 1`
-      ).catch(() => [] as any[]);
+      const rows = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT value FROM public.app_settings WHERE key = 'crm_ai_system_config' LIMIT 1`)
+        .catch(() => [] as any[]);
       if (rows && rows.length > 0 && rows[0].value) {
-        stored = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+        stored =
+          typeof rows[0].value === 'string'
+            ? JSON.parse(rows[0].value)
+            : rows[0].value;
       }
     } catch (e: any) {
       this.logger.warn(`Failed to read crm_ai_system_config: ${e?.message}`);
@@ -52,18 +63,26 @@ export class AiCrmAnalyticsService {
     // Đếm token ước tính sử dụng trong 30 ngày qua
     let estimatedTokensUsed = 45200;
     try {
-      const auditCount = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT count(*)::int as count FROM public.ai_request_audit WHERE created_at >= now() - interval '30 days'`
-      ).catch(() => [{ count: 0 }]);
+      const auditCount = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT count(*)::int as count FROM public.ai_request_audit WHERE created_at >= now() - interval '30 days'`)
+        .catch(() => [{ count: 0 }]);
       const reqCount = auditCount[0]?.count || 0;
       estimatedTokensUsed = Math.max(reqCount * 850, 45200);
     } catch {}
 
-    const monthlyLimit = Number(stored.monthlyTokensLimit) || defaultMonthlyLimit;
-    const usedPercent = Math.min(100, Math.round((estimatedTokensUsed / monthlyLimit) * 100));
+    const monthlyLimit =
+      Number(stored.monthlyTokensLimit) || defaultMonthlyLimit;
+    const usedPercent = Math.min(
+      100,
+      Math.round((estimatedTokensUsed / monthlyLimit) * 100),
+    );
 
-    const warningThreshold = Number(stored.warningThresholdPercent) || defaultThreshold;
-    const criticalThreshold = Number(stored.criticalThresholdPercent) || defaultCritical;
+    const warningThreshold =
+      Number(stored.warningThresholdPercent) || defaultThreshold;
+    const criticalThreshold =
+      Number(stored.criticalThresholdPercent) || defaultCritical;
 
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
     if (usedPercent >= criticalThreshold) {
@@ -87,7 +106,8 @@ export class AiCrmAnalyticsService {
       openaiKeyConfigured: envOpenai || Boolean(stored.openaiApiKey),
       claudeKeyConfigured: envClaude || Boolean(stored.claudeApiKey),
       deepseekKeyConfigured: envDeepseek || Boolean(stored.deepseekApiKey),
-      openrouterKeyConfigured: envOpenrouter || Boolean(stored.openrouterApiKey),
+      openrouterKeyConfigured:
+        envOpenrouter || Boolean(stored.openrouterApiKey),
       warningThresholdPercent: warningThreshold,
       criticalThresholdPercent: criticalThreshold,
       monthlyTokensUsed: estimatedTokensUsed,
@@ -102,7 +122,10 @@ export class AiCrmAnalyticsService {
   /**
    * Lưu cấu hình AI hệ thống vào app_settings
    */
-  async saveSystemConfig(payload: any, userId?: string): Promise<{ ok: boolean; message: string }> {
+  async saveSystemConfig(
+    payload: any,
+    userId?: string,
+  ): Promise<{ ok: boolean; message: string }> {
     try {
       const existing = await this.getSystemConfig();
 
@@ -111,14 +134,28 @@ export class AiCrmAnalyticsService {
         activeModel: payload.activeModel || existing.activeModel,
         fallbackProvider: payload.fallbackProvider || existing.fallbackProvider,
         fallbackModel: payload.fallbackModel || existing.fallbackModel,
-        geminiApiKey: payload.geminiApiKey !== undefined ? payload.geminiApiKey : undefined,
-        openaiApiKey: payload.openaiApiKey !== undefined ? payload.openaiApiKey : undefined,
-        claudeApiKey: payload.claudeApiKey !== undefined ? payload.claudeApiKey : undefined,
-        deepseekApiKey: payload.deepseekApiKey !== undefined ? payload.deepseekApiKey : undefined,
-        openrouterApiKey: payload.openrouterApiKey !== undefined ? payload.openrouterApiKey : undefined,
-        warningThresholdPercent: Number(payload.warningThresholdPercent) || existing.warningThresholdPercent,
-        criticalThresholdPercent: Number(payload.criticalThresholdPercent) || existing.criticalThresholdPercent,
-        monthlyTokensLimit: Number(payload.monthlyTokensLimit) || existing.monthlyTokensLimit,
+        geminiApiKey:
+          payload.geminiApiKey !== undefined ? payload.geminiApiKey : undefined,
+        openaiApiKey:
+          payload.openaiApiKey !== undefined ? payload.openaiApiKey : undefined,
+        claudeApiKey:
+          payload.claudeApiKey !== undefined ? payload.claudeApiKey : undefined,
+        deepseekApiKey:
+          payload.deepseekApiKey !== undefined
+            ? payload.deepseekApiKey
+            : undefined,
+        openrouterApiKey:
+          payload.openrouterApiKey !== undefined
+            ? payload.openrouterApiKey
+            : undefined,
+        warningThresholdPercent:
+          Number(payload.warningThresholdPercent) ||
+          existing.warningThresholdPercent,
+        criticalThresholdPercent:
+          Number(payload.criticalThresholdPercent) ||
+          existing.criticalThresholdPercent,
+        monthlyTokensLimit:
+          Number(payload.monthlyTokensLimit) || existing.monthlyTokensLimit,
         alertEmail: payload.alertEmail || existing.alertEmail,
         lastUpdated: new Date().toISOString(),
         updatedBy: userId || 'admin',
@@ -128,7 +165,7 @@ export class AiCrmAnalyticsService {
         `INSERT INTO public.app_settings (key, value, updated_at)
          VALUES ('crm_ai_system_config', $1::jsonb, now())
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
-        JSON.stringify(toSave)
+        JSON.stringify(toSave),
       );
 
       return { ok: true, message: 'Lưu cấu hình hệ thống AI thành công!' };
@@ -141,7 +178,11 @@ export class AiCrmAnalyticsService {
   /**
    * Test kết nối tới Model / Provider
    */
-  async testConnection(provider: string, apiKey?: string, model?: string): Promise<{
+  async testConnection(
+    provider: string,
+    apiKey?: string,
+    model?: string,
+  ): Promise<{
     ok: boolean;
     latencyMs: number;
     message: string;
@@ -172,16 +213,18 @@ export class AiCrmAnalyticsService {
    */
   async getSystemLogs(limit = 100): Promise<any[]> {
     try {
-      const logs = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT a.id, a.request_id, a.capability, a.permission_level, a.provider,
+      const logs = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT a.id, a.request_id, a.capability, a.permission_level, a.provider,
                 a.model, a.used_fallback, a.fallback_reason, a.provider_latency_ms,
                 a.total_latency_ms, a.created_at, u.name as user_name, u.email as user_email
          FROM public.ai_request_audit a
          LEFT JOIN public.vione_users u ON a.user_id = u.id
          ORDER BY a.created_at DESC
          LIMIT $1`,
-        limit
-      ).catch(() => [] as any[]);
+          limit,
+        )
+        .catch(() => [] as any[]);
 
       if (logs && logs.length > 0) {
         return logs.map((l) => ({
@@ -194,7 +237,9 @@ export class AiCrmAnalyticsService {
           latencyMs: Number(l.total_latency_ms || l.provider_latency_ms || 180),
           usedFallback: Boolean(l.used_fallback),
           tokensEstimate: Math.floor(Math.random() * 600) + 300,
-          createdAt: l.created_at ? new Date(l.created_at).toISOString() : new Date().toISOString(),
+          createdAt: l.created_at
+            ? new Date(l.created_at).toISOString()
+            : new Date().toISOString(),
           status: l.used_fallback ? 'fallback' : 'success',
         }));
       }
@@ -221,23 +266,51 @@ export class AiCrmAnalyticsService {
       docsCountRaw,
       recentActivityRaw,
     ] = await Promise.all([
-      this.prisma.$queryRawUnsafe<any[]>(`SELECT count(*)::int as count FROM public.vione_users`).catch(() => [{ count: 0 }]),
-      this.prisma.$queryRawUnsafe<any[]>(`SELECT count(*)::int as count FROM public.events`).catch(() => [{ count: 0 }]),
-      this.prisma.$queryRawUnsafe<any[]>(`
+      this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT count(*)::int as count FROM public.vione_users`)
+        .catch(() => [{ count: 0 }]),
+      this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT count(*)::int as count FROM public.events`)
+        .catch(() => [{ count: 0 }]),
+      this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT count(*)::int as count,
                coalesce(sum(coalesce(budget_max, budget_min, 0)), 0)::numeric as total_budget
         FROM public.opportunities
         WHERE status != 'closed'
-      `).catch(() => [{ count: 0, total_budget: 0 }]),
-      this.prisma.$queryRawUnsafe<any[]>(`
+      `,
+        )
+        .catch(() => [{ count: 0, total_budget: 0 }]),
+      this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT count(*)::int as count,
                coalesce(sum(case when amount > 0 then amount else 0 end), 0)::numeric as total_income,
                coalesce(sum(case when amount < 0 then abs(amount) else 0 end), 0)::numeric as total_expense
         FROM public.transactions
-      `).catch(() => [{ count: 0, total_income: 0, total_expense: 0 }]),
-      this.prisma.$queryRawUnsafe<any[]>(`SELECT count(*)::int as count FROM public.business_meetings`).catch(() => [{ count: 0 }]),
-      this.prisma.$queryRawUnsafe<any[]>(`SELECT count(*)::int as count FROM public.documents`).catch(() => [{ count: 0 }]),
-      this.prisma.$queryRawUnsafe<any[]>(`SELECT action, target, category, created_at FROM public.activity_log ORDER BY created_at DESC LIMIT 15`).catch(() => []),
+      `,
+        )
+        .catch(() => [{ count: 0, total_income: 0, total_expense: 0 }]),
+      this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT count(*)::int as count FROM public.business_meetings`)
+        .catch(() => [{ count: 0 }]),
+      this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT count(*)::int as count FROM public.documents`)
+        .catch(() => [{ count: 0 }]),
+      this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT action, target, category, created_at FROM public.activity_log ORDER BY created_at DESC LIMIT 15`)
+        .catch(() => []),
     ]);
 
     const totalMembers = Number(membersCountRaw[0]?.count || 0);
@@ -251,7 +324,10 @@ export class AiCrmAnalyticsService {
     const totalDocs = Number(docsCountRaw[0]?.count || 0);
 
     const oppValueBillions = (totalOppValue / 1e9).toFixed(2);
-    const surplusFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(surplusFund);
+    const surplusFormatted = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(surplusFund);
 
     // 2. Thuật toán đánh giá sức khỏe hệ sinh thái (Health Score Algorithm dựa trên dữ liệu thật)
     let computedHealthScore = 70;
@@ -313,13 +389,20 @@ export class AiCrmAnalyticsService {
   /**
    * Xuất báo cáo theo chức năng con (thu chi thật từ database, phiếu thu)
    */
-  async exportSubReport(userId: string, type: 'financial_summary' | 'invoice' | 'receipt' | 'events_report', options?: any): Promise<any> {
+  async exportSubReport(
+    userId: string,
+    type: 'financial_summary' | 'invoice' | 'receipt' | 'events_report',
+    options?: any,
+  ): Promise<any> {
     if (type === 'invoice' || type === 'receipt') {
       const receiptNo = `PT-1983-${Date.now().toString().slice(-6)}`;
       const amount = Number(options?.amount || 5000000);
       const payerName = options?.payerName || 'Doanh Nhân Hội Viên CEO 1983';
-      const companyName = options?.companyName || 'Doanh nghiệp Hội viên CLB CEO 1983';
-      const reason = options?.reason || 'Đóng hội phí thường niên năm 2026 - CLB Doanh Nhân CEO 1983 (HanoiBA)';
+      const companyName =
+        options?.companyName || 'Doanh nghiệp Hội viên CLB CEO 1983';
+      const reason =
+        options?.reason ||
+        'Đóng hội phí thường niên năm 2026 - CLB Doanh Nhân CEO 1983 (HanoiBA)';
 
       return {
         ok: true,
@@ -329,7 +412,8 @@ export class AiCrmAnalyticsService {
         issuer: {
           name: 'CLB DOANH NHÂN CEO 1983 (HANOIBA)',
           unit: 'Hội Doanh Nghiệp Trẻ Hà Nội',
-          address: 'Tầng 5, Tòa nhà Cung Trí Thức Hà Nội, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội',
+          address:
+            'Tầng 5, Tòa nhà Cung Trí Thức Hà Nội, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội',
           taxCode: '0101234567-1983',
           phone: '024.3755.1983',
           accountNo: '198388889999 - Ngân hàng MB Bank (Chi nhánh Ba Đình)',
@@ -342,7 +426,10 @@ export class AiCrmAnalyticsService {
         },
         paymentDetails: {
           amount,
-          amountFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount),
+          amountFormatted: new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(amount),
           amountInWords: 'Năm triệu đồng chẵn.',
           reason,
           paymentMethod: options?.paymentMethod || 'Chuyển khoản QR Ngân Hàng',
@@ -379,7 +466,8 @@ export class AiCrmAnalyticsService {
     return {
       ok: true,
       type: 'financial_summary',
-      reportTitle: 'BÁO CÁO THU CHI & QUỸ NGÂN SÁCH THỰC TẾ CLB DOANH NHÂN CEO 1983',
+      reportTitle:
+        'BÁO CÁO THU CHI & QUỸ NGÂN SÁCH THỰC TẾ CLB DOANH NHÂN CEO 1983',
       period: options?.period || 'Năm tài chính 2026',
       generatedDate: new Date().toLocaleDateString('vi-VN'),
       summary: {
@@ -389,11 +477,22 @@ export class AiCrmAnalyticsService {
         transactionCount: txCount,
       },
       incomeBreakdown: [
-        { category: 'Hội phí niên liễm đã ghi nhận', amount: totalIncome, percentage: 100 },
+        {
+          category: 'Hội phí niên liễm đã ghi nhận',
+          amount: totalIncome,
+          percentage: 100,
+        },
       ],
-      expenseBreakdown: totalExpense > 0 ? [
-        { category: 'Chi phí vận hành & hoạt động sự kiện', amount: totalExpense, percentage: 100 },
-      ] : [],
+      expenseBreakdown:
+        totalExpense > 0
+          ? [
+              {
+                category: 'Chi phí vận hành & hoạt động sự kiện',
+                amount: totalExpense,
+                percentage: 100,
+              },
+            ]
+          : [],
       verifiedDatabase: 'Hệ thống Quản trị Tài chính CEO 1983',
     };
   }
@@ -407,7 +506,7 @@ export class AiCrmAnalyticsService {
     message: string,
     history: Array<{ role: string; content: string }> = [],
     model = 'gemini-2.0-flash',
-    persona: AiPersonaType = 'general'
+    persona: AiPersonaType = 'general',
   ): Promise<{
     ok: boolean;
     reply: string;
@@ -431,27 +530,63 @@ export class AiCrmAnalyticsService {
     let totalExpense = 0;
 
     try {
-      const [membersRaw, eventsRaw, oppsRaw, oppSumRaw, meetingsRaw, docsRaw, txRaw] = await Promise.all([
-        this.prisma.$queryRawUnsafe<any[]>(`SELECT count(*)::int as count FROM public.vione_users`).catch(() => [{ count: 0 }]),
-        this.prisma.$queryRawUnsafe<any[]>(`SELECT id, name, date, location, status FROM public.events ORDER BY date DESC LIMIT 5`).catch(() => []),
-        this.prisma.$queryRawUnsafe<any[]>(`
+      const [
+        membersRaw,
+        eventsRaw,
+        oppsRaw,
+        oppSumRaw,
+        meetingsRaw,
+        docsRaw,
+        txRaw,
+      ] = await Promise.all([
+        this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT count(*)::int as count FROM public.vione_users`)
+          .catch(() => [{ count: 0 }]),
+        this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT id, name, date, location, status FROM public.events ORDER BY date DESC LIMIT 5`)
+          .catch(() => []),
+        this.prisma
+          .$queryRawUnsafe<any[]>(
+            `
           SELECT id, title, budget_min, budget_max, company, contact_name, created_at, status
           FROM public.opportunities
           ORDER BY created_at DESC LIMIT 5
-        `).catch(() => []),
-        this.prisma.$queryRawUnsafe<any[]>(`
+        `,
+          )
+          .catch(() => []),
+        this.prisma
+          .$queryRawUnsafe<any[]>(
+            `
           SELECT coalesce(sum(coalesce(budget_max, budget_min, 0)), 0)::numeric as total_budget
           FROM public.opportunities
           WHERE status != 'closed'
-        `).catch(() => [{ total_budget: 0 }]),
-        this.prisma.$queryRawUnsafe<any[]>(`SELECT id, title, scheduled_at, location, status FROM public.business_meetings ORDER BY created_at DESC LIMIT 5`).catch(() => []),
-        this.prisma.$queryRawUnsafe<any[]>(`SELECT count(*)::int as count FROM public.documents`).catch(() => [{ count: 0 }]),
-        this.prisma.$queryRawUnsafe<any[]>(`
+        `,
+          )
+          .catch(() => [{ total_budget: 0 }]),
+        this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT id, title, scheduled_at, location, status FROM public.business_meetings ORDER BY created_at DESC LIMIT 5`)
+          .catch(() => []),
+        this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT count(*)::int as count FROM public.documents`)
+          .catch(() => [{ count: 0 }]),
+        this.prisma
+          .$queryRawUnsafe<any[]>(
+            `
           SELECT count(*)::int as count,
                  coalesce(sum(case when amount > 0 then amount else 0 end), 0)::numeric as total_income,
                  coalesce(sum(case when amount < 0 then abs(amount) else 0 end), 0)::numeric as total_expense
           FROM public.transactions
-        `).catch(() => [{ count: 0, total_income: 0, total_expense: 0 }]),
+        `,
+          )
+          .catch(() => [{ count: 0, total_income: 0, total_expense: 0 }]),
       ]);
 
       membersCount = Number(membersRaw[0]?.count || 0);
@@ -468,34 +603,60 @@ export class AiCrmAnalyticsService {
 
     const financialBalance = totalIncome - totalExpense;
     const oppBudgetFormatted = (totalOppBudget / 1e9).toFixed(2);
-    const balanceFormatted = new Intl.NumberFormat('vi-VN').format(financialBalance);
+    const balanceFormatted = new Intl.NumberFormat('vi-VN').format(
+      financialBalance,
+    );
 
     // 2. Bằng chứng số liệu thực tế (Evidence)
     const evidence = [
-      { title: 'Cơ hội B2B thực tế', countOrVal: `${oppsList.length} cơ hội (${oppBudgetFormatted} Tỷ VNĐ)`, source: 'CSDL public.opportunities' },
-      { title: 'Sự kiện sắp diễn ra', countOrVal: `${eventsList.length} sự kiện`, source: 'CSDL public.events' },
-      { title: 'Số dư quỹ Kế toán', countOrVal: `${balanceFormatted} VNĐ`, source: 'CSDL public.transactions' },
-      { title: 'Tài liệu Hiệp hội', countOrVal: `${docsCount} văn bản`, source: 'CSDL public.documents' },
+      {
+        title: 'Cơ hội B2B thực tế',
+        countOrVal: `${oppsList.length} cơ hội (${oppBudgetFormatted} Tỷ VNĐ)`,
+        source: 'CSDL public.opportunities',
+      },
+      {
+        title: 'Sự kiện sắp diễn ra',
+        countOrVal: `${eventsList.length} sự kiện`,
+        source: 'CSDL public.events',
+      },
+      {
+        title: 'Số dư quỹ Kế toán',
+        countOrVal: `${balanceFormatted} VNĐ`,
+        source: 'CSDL public.transactions',
+      },
+      {
+        title: 'Tài liệu Hiệp hội',
+        countOrVal: `${docsCount} văn bản`,
+        source: 'CSDL public.documents',
+      },
     ];
 
     // 3. Định danh Trợ lý chuyên biệt & tạo tin nhắn chủ động (Proactive Alert)
     let personaName = 'Trợ Lý Điều Hành Cấp Cao CEO 1983';
-    let personaGreeting = 'Kính chào Anh/Chị! Tôi là Trợ Lý Trí Tuệ Nhân Tạo của CLB Doanh Nhân CEO 1983.';
+    const personaGreeting =
+      'Kính chào Anh/Chị! Tôi là Trợ Lý Trí Tuệ Nhân Tạo của CLB Doanh Nhân CEO 1983.';
     let proactiveAlert = '';
 
     if (persona === 'opportunity') {
       personaName = 'Trợ Lý Phân Tích Cơ Hội & Giao Thương B2B';
       const newestOpp = oppsList[0];
       if (newestOpp) {
-        const oppVal = Number(newestOpp.budget_max || newestOpp.budget_min || 0);
-        const oppValStr = oppVal >= 1e9 ? `${(oppVal / 1e9).toFixed(1)} Tỷ VNĐ` : `${(oppVal / 1e6).toFixed(0)} Triệu VNĐ`;
+        const oppVal = Number(
+          newestOpp.budget_max || newestOpp.budget_min || 0,
+        );
+        const oppValStr =
+          oppVal >= 1e9
+            ? `${(oppVal / 1e9).toFixed(1)} Tỷ VNĐ`
+            : `${(oppVal / 1e6).toFixed(0)} Triệu VNĐ`;
         proactiveAlert = `🔔 **THÔNG BÁO CƠ HỘI MỚI:** Tôi vừa ghi nhận có 1 cơ hội B2B mới đăng: **"${newestOpp.title}"** (Ngân sách: **${oppValStr}**, Người đăng: **${newestOpp.contact_name || newestOpp.company || 'Hội viên CLB'}**). Tôi sẵn sàng kết nối ngay cho Anh/Chị!`;
       }
     } else if (persona === 'events') {
       personaName = 'Trợ Lý Điều Phối Sự Kiện & Hội Thảo';
       if (eventsList.length > 0) {
         const ev = eventsList[0];
-        const dateStr = ev.date ? new Date(ev.date).toLocaleDateString('vi-VN') : 'Sắp diễn ra';
+        const dateStr = ev.date
+          ? new Date(ev.date).toLocaleDateString('vi-VN')
+          : 'Sắp diễn ra';
         proactiveAlert = `📅 **NHẮC LỊCH SỰ KIỆN:** CLB có sự kiện trọng điểm: **"${ev.name}"** vào ngày **${dateStr}** tại **${ev.location || 'Hà Nội'}**. Hãy kiểm tra danh sách đại biểu check-in QR Code.`;
       }
     } else if (persona === 'meetings') {
@@ -517,8 +678,10 @@ export class AiCrmAnalyticsService {
     // Thử gọi remote model nếu có cấu hình key
     try {
       const config = await this.getSystemConfig();
-      const geminiKey = process.env.GEMINI_API_KEY || (config as any).geminiApiKey;
-      const openrouterKey = process.env.OPENROUTER_API_KEY || (config as any).openrouterApiKey;
+      const geminiKey =
+        process.env.GEMINI_API_KEY || (config as any).geminiApiKey;
+      const openrouterKey =
+        process.env.OPENROUTER_API_KEY || (config as any).openrouterApiKey;
 
       const personaSystemInstruction = `Bạn là ${personaName}, một người trợ lý thực thụ, tận tâm, trung thực, có cảm xúc và chuyên nghiệp cao của Ban Điều Hành CLB Doanh Nhân CEO 1983 (HanoiBA).
 Quy tắc trả lời:
@@ -526,8 +689,8 @@ Quy tắc trả lời:
 - TUYỆT ĐỐI KHÔNG BỊA ĐẶT DỮ LIỆU HOẶC CON SỐ FAKE. Chỉ dùng các số liệu thực tế được cung cấp bên dưới:
   + Hội viên thật: ${membersCount} tài khoản.
   + Cơ hội B2B thật: ${oppsList.length} cơ hội với tổng ngân sách ${oppBudgetFormatted} Tỷ VNĐ.
-    Danh sách cơ hội thật: ${oppsList.map(o => `"${o.title}" (Ngân sách: ${Number(o.budget_max || o.budget_min || 0).toLocaleString('vi-VN')} đ, Người đăng: ${o.contact_name || o.company})`).join('; ')}.
-  + Sự kiện thật: ${eventsList.map(e => `"${e.name}" (${e.location})`).join('; ')}.
+    Danh sách cơ hội thật: ${oppsList.map((o) => `"${o.title}" (Ngân sách: ${Number(o.budget_max || o.budget_min || 0).toLocaleString('vi-VN')} đ, Người đăng: ${o.contact_name || o.company})`).join('; ')}.
+  + Sự kiện thật: ${eventsList.map((e) => `"${e.name}" (${e.location})`).join('; ')}.
   + Tài chính thật: Tổng thu ${totalIncome.toLocaleString('vi-VN')} đ, Tổng chi ${totalExpense.toLocaleString('vi-VN')} đ, Số dư quỹ ${financialBalance.toLocaleString('vi-VN')} đ.
   + Tài liệu thật: ${docsCount} văn bản.
 - Trình bày Markdown đẹp mắt: tiêu đề h3 (###), in đậm (**), bảng biểu khi so sánh, bullet rõ ràng.
@@ -541,41 +704,52 @@ Quy tắc trả lời:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [
-              { role: 'user', parts: [{ text: `${personaSystemInstruction}\n\nTin nhắn của người dùng: ${message}` }] }
+              {
+                role: 'user',
+                parts: [
+                  {
+                    text: `${personaSystemInstruction}\n\nTin nhắn của người dùng: ${message}`,
+                  },
+                ],
+              },
             ],
           }),
         });
         if (res.ok) {
           const json = await res.json();
-          generatedReply = json?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+          generatedReply =
+            json?.candidates?.[0]?.content?.parts?.[0]?.text || null;
         }
       } else if (openrouterKey) {
         const orModel = model.includes('deepseek')
           ? 'deepseek/deepseek-chat-v3-0324:free'
           : model.includes('llama')
-          ? 'meta-llama/llama-3.3-70b-instruct:free'
-          : 'google/gemini-2.0-flash-exp:free';
+            ? 'meta-llama/llama-3.3-70b-instruct:free'
+            : 'google/gemini-2.0-flash-exp:free';
         modelLabel = `${orModel.split('/')[1]?.split(':')[0]?.toUpperCase() || model} (Free)`;
 
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${openrouterKey}`,
-            'HTTP-Referer': 'https://ceo1983.viconnect.vn',
-            'X-Title': 'CEO 1983 CRM Multi-Agent AI',
+        const res = await fetch(
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${openrouterKey}`,
+              'HTTP-Referer': 'https://ceo1983.viconnect.vn',
+              'X-Title': 'CEO 1983 CRM Multi-Agent AI',
+            },
+            body: JSON.stringify({
+              model: orModel,
+              messages: [
+                { role: 'system', content: personaSystemInstruction },
+                ...history.slice(-4),
+                { role: 'user', content: message },
+              ],
+              temperature: 0.7,
+              max_tokens: 1500,
+            }),
           },
-          body: JSON.stringify({
-            model: orModel,
-            messages: [
-              { role: 'system', content: personaSystemInstruction },
-              ...history.slice(-4),
-              { role: 'user', content: message },
-            ],
-            temperature: 0.7,
-            max_tokens: 1500,
-          }),
-        });
+        );
         if (res.ok) {
           const json = await res.json();
           generatedReply = json?.choices?.[0]?.message?.content || null;
@@ -589,7 +763,12 @@ Quy tắc trả lời:
     if (!generatedReply) {
       modelLabel = `CEO 1983 ${personaName} (Thuật Toán Thực Tế)`;
 
-      if (persona === 'opportunity' || lower.includes('cơ hội') || lower.includes('b2b') || lower.includes('giao thương')) {
+      if (
+        persona === 'opportunity' ||
+        lower.includes('cơ hội') ||
+        lower.includes('b2b') ||
+        lower.includes('giao thương')
+      ) {
         generatedReply = `### 💼 Báo Cáo Phân Tích Cơ Hội Giao Thương B2B Thực Tế
 
 Kính thưa Anh/Chị, tôi xin phép cập nhật tình hình cơ hội kinh doanh thực tế được đối soát trực tiếp từ CSDL Hiệp hội:
@@ -598,33 +777,55 @@ Kính thưa Anh/Chị, tôi xin phép cập nhật tình hình cơ hội kinh do
 - **Tổng quy mô giá trị ngân sách**: **${oppBudgetFormatted} Tỷ VNĐ** (chính xác: ${totalOppBudget.toLocaleString('vi-VN')} đ).
 
 #### 📋 Danh sách cơ hội nổi bật vừa được đăng tải:
-${oppsList.map((o, idx) => {
-  const val = Number(o.budget_max || o.budget_min || 0);
-  const valStr = val >= 1e9 ? `${(val / 1e9).toFixed(1)} Tỷ VNĐ` : (val > 0 ? `${(val / 1e6).toFixed(0)} Triệu VNĐ` : 'Thương lượng');
-  return `${idx + 1}. **${o.title}**
+${oppsList
+  .map((o, idx) => {
+    const val = Number(o.budget_max || o.budget_min || 0);
+    const valStr =
+      val >= 1e9
+        ? `${(val / 1e9).toFixed(1)} Tỷ VNĐ`
+        : val > 0
+          ? `${(val / 1e6).toFixed(0)} Triệu VNĐ`
+          : 'Thương lượng';
+    return `${idx + 1}. **${o.title}**
    - 🏢 Doanh nghiệp: *${o.company || 'Doanh nghiệp Hội viên'}* (Liên hệ: **${o.contact_name || 'Đại diện'}**)
    - 💰 Quy mô ngân sách: **${valStr}**
    - 📌 Trạng thái: *${o.status === 'open' ? 'Đang mở kết nối' : 'Đang xử lý'}*`;
-}).join('\n\n')}
+  })
+  .join('\n\n')}
 
 💡 **Đề xuất hành động từ Trợ lý:**
 - Tôi thấy cơ hội **"${oppsList[0]?.title || 'Mới nhất'}"** rất phù hợp để Ban Xúc Tiến Thương Mại ưu tiên matching 1-on-1 trong tuần này. Anh/Chị có muốn tôi hỗ trợ thông báo đến các doanh nghiệp cùng ngành không?`;
-      } else if (persona === 'events' || lower.includes('sự kiện') || lower.includes('gala') || lower.includes('hội thảo')) {
+      } else if (
+        persona === 'events' ||
+        lower.includes('sự kiện') ||
+        lower.includes('gala') ||
+        lower.includes('hội thảo')
+      ) {
         generatedReply = `### 📅 Báo Cáo Điều Phối Sự Kiện & Hội Thảo CEO 1983
 
 Kính thưa Anh/Chị, tôi xin gửi báo cáo tiến độ các sự kiện trọng điểm hiện có trên hệ thống:
 
 - **Tổng số chương trình đang triển khai**: **${eventsList.length} sự kiện**.
 
-${eventsList.map((e, idx) => `${idx + 1}. **${e.name}**
+${eventsList
+  .map(
+    (e, idx) => `${idx + 1}. **${e.name}**
    - 📍 Địa điểm: **${e.location || 'Hà Nội'}**
    - 🕒 Thời gian: **${e.date ? new Date(e.date).toLocaleDateString('vi-VN') : 'Đang cập nhật'}**
-   - 📌 Tiến độ: Đang tiếp nhận đăng ký đại biểu và phát hành vé điện tử QR Code`).join('\n\n')}
+   - 📌 Tiến độ: Đang tiếp nhận đăng ký đại biểu và phát hành vé điện tử QR Code`,
+  )
+  .join('\n\n')}
 
 📋 **Nhiệm vụ Ban Lễ Tân & Sự Kiện cần lưu ý:**
 1. Tiến hành rà soát danh sách khách mời VIP và các Nhà tài trợ kim cương.
 2. Kiểm tra máy quét QR Code check-in tại cổng đón tiếp của địa điểm tổ chức.`;
-      } else if (persona === 'finance' || lower.includes('tài chính') || lower.includes('quỹ') || lower.includes('tiền') || lower.includes('hội phí')) {
+      } else if (
+        persona === 'finance' ||
+        lower.includes('tài chính') ||
+        lower.includes('quỹ') ||
+        lower.includes('tiền') ||
+        lower.includes('hội phí')
+      ) {
         generatedReply = `### 💰 Báo Cáo Tài Chính & Quỹ Ngân Sách Thực Tế
 
 Kính gửi Anh/Chị, số liệu tài chính được trích xuất minh bạch và chính xác 100% từ bảng giao dịch kế toán:
@@ -641,7 +842,12 @@ Kính gửi Anh/Chị, số liệu tài chính được trích xuất minh bạc
 
 📌 **Ý kiến tư vấn từ Trợ lý:**
 - Nguồn quỹ hiện tại hoàn toàn lành mạnh và minh bạch. Anh/Chị có thể bấm sang tab **"Báo Cáo Thu Chi"** hoặc **"Hóa Đơn / Phiếu Thu"** để xuất văn bản có mộc đỏ điện tử của CLB.`;
-      } else if (persona === 'meetings' || lower.includes('họp') || lower.includes('lịch hẹn') || lower.includes('gặp')) {
+      } else if (
+        persona === 'meetings' ||
+        lower.includes('họp') ||
+        lower.includes('lịch hẹn') ||
+        lower.includes('gặp')
+      ) {
         generatedReply = `### 🤝 Quản Trị Lịch Họp & Kết Nối Giao Thương 1-on-1
 
 Kính thưa Anh/Chị, tôi là Trợ lý Lịch họp CEO 1983:
@@ -672,20 +878,22 @@ Anh/Chị có thể chọn nhanh vai trò trợ lý chuyên biệt ở thanh cô
     const latencyMs = Date.now() - startTime;
 
     // Ghi audit log
-    this.prisma.$executeRawUnsafe(
-      `INSERT INTO public.ai_request_audit (
+    this.prisma
+      .$executeRawUnsafe(
+        `INSERT INTO public.ai_request_audit (
         id, request_id, user_id, capability, permission_level, provider, model,
         used_fallback, provider_latency_ms, total_latency_ms, created_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, 'admin', 'google-gemini', $4,
         false, $5, $5, now()
       )`,
-      `req_${Date.now()}`,
-      userId,
-      `crm_chat_${persona}`,
-      modelLabel,
-      latencyMs
-    ).catch(() => {});
+        `req_${Date.now()}`,
+        userId,
+        `crm_chat_${persona}`,
+        modelLabel,
+        latencyMs,
+      )
+      .catch(() => {});
 
     return {
       ok: true,
@@ -696,9 +904,15 @@ Anh/Chị có thể chọn nhanh vai trò trợ lý chuyên biệt ở thanh cô
       evidence,
       proactiveAlert: proactiveAlert || undefined,
       suggestedFollowUps: [
-        persona === 'opportunity' ? 'Chi tiết cơ hội mới nhất' : 'Phân tích cơ hội B2B',
-        persona === 'events' ? 'Danh sách sự kiện sắp tới' : 'Lịch trình sự kiện',
-        persona === 'finance' ? 'Chi tiết các khoản thu chi' : 'Báo cáo quỹ ngân sách',
+        persona === 'opportunity'
+          ? 'Chi tiết cơ hội mới nhất'
+          : 'Phân tích cơ hội B2B',
+        persona === 'events'
+          ? 'Danh sách sự kiện sắp tới'
+          : 'Lịch trình sự kiện',
+        persona === 'finance'
+          ? 'Chi tiết các khoản thu chi'
+          : 'Báo cáo quỹ ngân sách',
         'Đề xuất chiến lược tuần này',
       ],
     };

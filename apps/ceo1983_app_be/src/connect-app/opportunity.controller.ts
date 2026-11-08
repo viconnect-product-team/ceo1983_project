@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -38,7 +48,11 @@ export class OpportunityController {
   }
 
   @Patch(':id')
-  async update(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  async update(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.connectAppService.updateOpportunity(req.user.id, id, body);
   }
 
@@ -49,7 +63,11 @@ export class OpportunityController {
 
   @Post(':id/claim')
   async claim(@Request() req: any, @Param('id') id: string) {
-    return this.connectAppService.claimCommunityOpportunity(req.user.id, '', id);
+    return this.connectAppService.claimCommunityOpportunity(
+      req.user.id,
+      '',
+      id,
+    );
   }
 
   @Post(':id/deal-status')
@@ -59,14 +77,24 @@ export class OpportunityController {
     @Body() body: any,
   ) {
     const status = body?.dealStatus || body?.status || 'in_progress';
-    return this.connectAppService.updateOpportunityDealStatus(req.user.id, id, status, body?.note);
+    return this.connectAppService.updateOpportunityDealStatus(
+      req.user.id,
+      id,
+      status,
+      body?.note,
+    );
   }
 
   @Post(':id/interests')
   async expressInterestById(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() body: { interestLevel?: 'high' | 'low'; message?: string; dealValue?: number },
+    @Body()
+    body: {
+      interestLevel?: 'high' | 'low';
+      message?: string;
+      dealValue?: number;
+    },
   ) {
     return this.connectAppService.expressCommunityOpportunityInterest(
       req.user.id,
@@ -96,22 +124,52 @@ export class OpportunityController {
 
   @Delete(':id/interests')
   async withdrawInterestById(@Request() req: any, @Param('id') id: string) {
-    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, '', id);
+    return this.connectAppService.withdrawCommunityOpportunityInterest(
+      req.user.id,
+      '',
+      id,
+    );
   }
 
   @Post(':id/uninterest')
   async uninterestById(@Request() req: any, @Param('id') id: string) {
-    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, '', id);
+    return this.connectAppService.withdrawCommunityOpportunityInterest(
+      req.user.id,
+      '',
+      id,
+    );
   }
 
   @Post('express-interest')
-  async expressInterest(@Request() req: any, @Body() body: { opportunityId: string; message?: string; dealValue?: number; interestLevel?: string }) {
-    return this.connectAppService.expressOpportunityInterest(req.user.id, body.opportunityId, body.message, body.dealValue, body.interestLevel);
+  async expressInterest(
+    @Request() req: any,
+    @Body()
+    body: {
+      opportunityId: string;
+      message?: string;
+      dealValue?: number;
+      interestLevel?: string;
+    },
+  ) {
+    return this.connectAppService.expressOpportunityInterest(
+      req.user.id,
+      body.opportunityId,
+      body.message,
+      body.dealValue,
+      body.interestLevel,
+    );
   }
 
   @Post('express-uninterest')
-  async expressUninterest(@Request() req: any, @Body() body: { opportunityId: string }) {
-    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, '', body.opportunityId);
+  async expressUninterest(
+    @Request() req: any,
+    @Body() body: { opportunityId: string },
+  ) {
+    return this.connectAppService.withdrawCommunityOpportunityInterest(
+      req.user.id,
+      '',
+      body.opportunityId,
+    );
   }
 
   @Post(':id/view')
@@ -121,7 +179,8 @@ export class OpportunityController {
 
   @Get(':id/interests')
   async getOpportunityInterests(@Param('id') id: string) {
-    const list = await this.connectAppService.getOpportunityInterestedMembers(id);
+    const list =
+      await this.connectAppService.getOpportunityInterestedMembers(id);
     return { ok: true, interests: list };
   }
 }

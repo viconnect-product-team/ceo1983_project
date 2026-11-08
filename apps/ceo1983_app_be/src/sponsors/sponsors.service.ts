@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SponsorsRepository } from './sponsors.repository';
 import { MailService } from '../mail/mail.service';
 import {
@@ -14,12 +18,7 @@ import {
   UpdateEventPrizeDto,
 } from './dto';
 
-export type {
-  SponsorTier,
-  SponsorType,
-  PackageType,
-  PrizeTargetType,
-};
+export type { SponsorTier, SponsorType, PackageType, PrizeTargetType };
 export {
   CreateSponsorPackageDto,
   UpdateSponsorPackageDto,
@@ -49,18 +48,20 @@ export class SponsorsService {
     try {
       const rows = await this.sponsorsRepo.listPackagesRaw();
       const tierOrder = ['platinum', 'gold', 'silver', 'bronze'];
-      return (rows || []).map((r) => ({
-        id: r.id,
-        tier: r.tier || 'bronze',
-        price: Number(r.price ?? 0),
-        benefits: Array.isArray(r.benefits) ? r.benefits : [],
-        available: Number(r.available ?? 0),
-        sold: Number(r.sold ?? 0),
-        packageType: (r.package_type || 'bank_transfer') as PackageType,
-        inKindDescription: r.in_kind_description || '',
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-      })).sort((a, b) => tierOrder.indexOf(a.tier) - tierOrder.indexOf(b.tier));
+      return (rows || [])
+        .map((r) => ({
+          id: r.id,
+          tier: r.tier || 'bronze',
+          price: Number(r.price ?? 0),
+          benefits: Array.isArray(r.benefits) ? r.benefits : [],
+          available: Number(r.available ?? 0),
+          sold: Number(r.sold ?? 0),
+          packageType: (r.package_type || 'bank_transfer') as PackageType,
+          inKindDescription: r.in_kind_description || '',
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }))
+        .sort((a, b) => tierOrder.indexOf(a.tier) - tierOrder.indexOf(b.tier));
     } catch (err: any) {
       console.error('[SponsorsService] listPackages error:', err);
       return [];
@@ -87,11 +88,14 @@ export class SponsorsService {
     };
   }
 
-  async createPackage(dto: CreateSponsorPackageDto & { associationId?: string }) {
+  async createPackage(
+    dto: CreateSponsorPackageDto & { associationId?: string },
+  ) {
     const lastPkg = await this.sponsorsRepo.getLastPackageId();
-    const id = lastPkg.length > 0 && lastPkg[0]?.id && !isNaN(Number(lastPkg[0].id))
-      ? (BigInt(lastPkg[0].id) + 1n).toString()
-      : '30001';
+    const id =
+      lastPkg.length > 0 && lastPkg[0]?.id && !isNaN(Number(lastPkg[0].id))
+        ? (BigInt(lastPkg[0].id) + 1n).toString()
+        : '30001';
     const tier = dto.tier || 'bronze';
     const price = BigInt(Math.round(dto.price || 0));
     const benefits = dto.benefits || [];
@@ -101,21 +105,47 @@ export class SponsorsService {
     const inKindDescription = dto.inKindDescription || null;
     const associationId = await this.resolveAssociationId(dto.associationId);
 
-    await this.sponsorsRepo.insertPackage(id, tier, price, benefits, available, sold, associationId, packageType, inKindDescription);
+    await this.sponsorsRepo.insertPackage(
+      id,
+      tier,
+      price,
+      benefits,
+      available,
+      sold,
+      associationId,
+      packageType,
+      inKindDescription,
+    );
     return this.getPackageById(id);
   }
 
   async updatePackage(id: string, dto: UpdateSponsorPackageDto) {
     const existing = await this.getPackageById(id);
     const tier = dto.tier ?? existing.tier;
-    const price = BigInt(Math.round(dto.price !== undefined ? dto.price : existing.price));
+    const price = BigInt(
+      Math.round(dto.price !== undefined ? dto.price : existing.price),
+    );
     const benefits = dto.benefits ?? existing.benefits;
-    const available = Math.round(dto.available !== undefined ? dto.available : existing.available);
+    const available = Math.round(
+      dto.available !== undefined ? dto.available : existing.available,
+    );
     const sold = Math.round(dto.sold !== undefined ? dto.sold : existing.sold);
     const packageType = dto.packageType ?? existing.packageType;
-    const inKindDescription = dto.inKindDescription !== undefined ? dto.inKindDescription : existing.inKindDescription;
+    const inKindDescription =
+      dto.inKindDescription !== undefined
+        ? dto.inKindDescription
+        : existing.inKindDescription;
 
-    await this.sponsorsRepo.updatePackageRaw(id, tier, price, benefits, available, sold, packageType, inKindDescription);
+    await this.sponsorsRepo.updatePackageRaw(
+      id,
+      tier,
+      price,
+      benefits,
+      available,
+      sold,
+      packageType,
+      inKindDescription,
+    );
     return this.getPackageById(id);
   }
 
@@ -151,14 +181,20 @@ export class SponsorsService {
               (s: any) =>
                 s.sponsorId === r.id ||
                 s.id === r.id ||
-                (s.sponsorName && s.sponsorName.trim().toLowerCase() === r.name?.trim().toLowerCase()) ||
-                (s.name && s.name.trim().toLowerCase() === r.name?.trim().toLowerCase()),
+                (s.sponsorName &&
+                  s.sponsorName.trim().toLowerCase() ===
+                    r.name?.trim().toLowerCase()) ||
+                (s.name &&
+                  s.name.trim().toLowerCase() === r.name?.trim().toLowerCase()),
             );
             if (found) {
               assignedEvent = {
                 id: evt.id,
                 name: evt.name,
-                date: evt.date instanceof Date ? evt.date.toISOString().slice(0, 10) : String(evt.date || '').slice(0, 10),
+                date:
+                  evt.date instanceof Date
+                    ? evt.date.toISOString().slice(0, 10)
+                    : String(evt.date || '').slice(0, 10),
                 status: evt.status || 'upcoming',
                 packageId: found.packageId || null,
                 packageName: found.packageName || null,
@@ -182,8 +218,13 @@ export class SponsorsService {
           email: r.email || '',
           phone: r.phone || '',
           amount: Number(r.amount ?? 0),
-          events: assignedEvent ? Math.max(Number(r.events ?? 0), 1) : Number(r.events ?? 0),
-          since: r.since instanceof Date ? r.since.toISOString().slice(0, 10) : String(r.since || ''),
+          events: assignedEvent
+            ? Math.max(Number(r.events ?? 0), 1)
+            : Number(r.events ?? 0),
+          since:
+            r.since instanceof Date
+              ? r.since.toISOString().slice(0, 10)
+              : String(r.since || ''),
           status: r.status || 'active',
           assignedEvent,
           isAssigned: Boolean(assignedEvent),
@@ -215,7 +256,10 @@ export class SponsorsService {
       phone: r.phone || '',
       amount: Number(r.amount ?? 0),
       events: Number(r.events ?? 0),
-      since: r.since instanceof Date ? r.since.toISOString().slice(0, 10) : String(r.since || ''),
+      since:
+        r.since instanceof Date
+          ? r.since.toISOString().slice(0, 10)
+          : String(r.since || ''),
       status: r.status || 'active',
       createdAt: r.created_at,
       updatedAt: r.updated_at,
@@ -224,9 +268,10 @@ export class SponsorsService {
 
   async createSponsor(dto: CreateSponsorDto) {
     const lastSp = await this.sponsorsRepo.getLastSponsorId();
-    const id = lastSp.length > 0 && lastSp[0]?.id && !isNaN(Number(lastSp[0].id))
-      ? (BigInt(lastSp[0].id) + 1n).toString()
-      : '20001';
+    const id =
+      lastSp.length > 0 && lastSp[0]?.id && !isNaN(Number(lastSp[0].id))
+        ? (BigInt(lastSp[0].id) + 1n).toString()
+        : '20001';
     const name = dto.name;
     const tier = dto.tier || 'bronze';
     const sponsorType = dto.sponsorType || 'new';
@@ -242,11 +287,25 @@ export class SponsorsService {
       safeSince = new Date().toISOString().slice(0, 10);
     }
     const status = dto.status || 'active';
-    const associationId = await this.resolveAssociationId((dto as any).associationId);
+    const associationId = await this.resolveAssociationId(
+      (dto as any).associationId,
+    );
 
     await this.sponsorsRepo.insertSponsor(
-      id, name, tier, sponsorType, packageType, inKindDescription,
-      contact, email, phone, amount, events, safeSince, status, associationId,
+      id,
+      name,
+      tier,
+      sponsorType,
+      packageType,
+      inKindDescription,
+      contact,
+      email,
+      phone,
+      amount,
+      events,
+      safeSince,
+      status,
+      associationId,
     );
 
     const createdSponsor = await this.getSponsorById(id);
@@ -254,7 +313,10 @@ export class SponsorsService {
     // Tự động gửi email tri ân tới Nhà tài trợ nếu có địa chỉ email
     if (createdSponsor.email && createdSponsor.email.includes('@')) {
       this.sendSponsorThankYouEmail(createdSponsor).catch((err) => {
-        console.error(`[SponsorsService] Auto send thank-you email failed for sponsor ${id} (${createdSponsor.email}):`, err);
+        console.error(
+          `[SponsorsService] Auto send thank-you email failed for sponsor ${id} (${createdSponsor.email}):`,
+          err,
+        );
       });
     }
 
@@ -267,18 +329,36 @@ export class SponsorsService {
     const tier = dto.tier ?? existing.tier;
     const sponsorType = dto.sponsorType ?? existing.sponsorType;
     const packageType = dto.packageType ?? existing.packageType;
-    const inKindDescription = dto.inKindDescription !== undefined ? dto.inKindDescription : existing.inKindDescription;
+    const inKindDescription =
+      dto.inKindDescription !== undefined
+        ? dto.inKindDescription
+        : existing.inKindDescription;
     const contact = dto.contact ?? existing.contact;
     const email = dto.email ?? existing.email;
     const phone = dto.phone ?? existing.phone;
-    const amount = BigInt(Math.round(dto.amount !== undefined ? dto.amount : existing.amount));
-    const events = Math.round(dto.events !== undefined ? dto.events : existing.events);
+    const amount = BigInt(
+      Math.round(dto.amount !== undefined ? dto.amount : existing.amount),
+    );
+    const events = Math.round(
+      dto.events !== undefined ? dto.events : existing.events,
+    );
     const since = dto.since ?? existing.since;
     const status = dto.status ?? existing.status;
 
     await this.sponsorsRepo.updateSponsorRaw(
-      id, name, tier, sponsorType, packageType, inKindDescription,
-      contact, email, phone, amount, events, since, status,
+      id,
+      name,
+      tier,
+      sponsorType,
+      packageType,
+      inKindDescription,
+      contact,
+      email,
+      phone,
+      amount,
+      events,
+      since,
+      status,
     );
 
     return this.getSponsorById(id);
@@ -327,7 +407,11 @@ export class SponsorsService {
         eventId: r.event_id,
         rankName: r.rank_name,
         title: r.title || r.prod_name || 'Giải thưởng sự kiện',
-        value: r.value || (r.amount ? `${Number(r.amount).toLocaleString('vi-VN')} VNĐ` : 'Giá trị liên hệ'),
+        value:
+          r.value ||
+          (r.amount
+            ? `${Number(r.amount).toLocaleString('vi-VN')} VNĐ`
+            : 'Giá trị liên hệ'),
         amount: Number(r.amount ?? r.prod_price ?? r.pkg_price ?? 0),
         quantity: Number(r.quantity ?? 1),
         targetType: (r.target_type || 'PRODUCT') as PrizeTargetType,
@@ -359,7 +443,11 @@ export class SponsorsService {
       eventId: r.event_id,
       rankName: r.rank_name,
       title: r.title || r.prod_name,
-      value: r.value || (r.amount ? `${Number(r.amount).toLocaleString('vi-VN')} VNĐ` : 'Giá trị liên hệ'),
+      value:
+        r.value ||
+        (r.amount
+          ? `${Number(r.amount).toLocaleString('vi-VN')} VNĐ`
+          : 'Giá trị liên hệ'),
       amount: Number(r.amount ?? r.prod_price ?? 0),
       quantity: Number(r.quantity ?? 1),
       targetType: (r.target_type || 'PRODUCT') as PrizeTargetType,
@@ -386,7 +474,9 @@ export class SponsorsService {
     let description = dto.description?.trim() || '';
 
     if (dto.targetType === 'PRODUCT' && dto.targetId) {
-      const prodRows = await this.sponsorsRepo.findProductForPrize(dto.targetId);
+      const prodRows = await this.sponsorsRepo.findProductForPrize(
+        dto.targetId,
+      );
       if (prodRows.length > 0) {
         const prod = prodRows[0];
         if (!title) title = prod.name || prod.title;
@@ -406,7 +496,11 @@ export class SponsorsService {
     }
 
     const rankName = dto.rankName?.trim() || 'Giải Thưởng';
-    const value = dto.value?.trim() || (amount > 0n ? `${Number(amount).toLocaleString('vi-VN')} VNĐ` : 'Đang cập nhật');
+    const value =
+      dto.value?.trim() ||
+      (amount > 0n
+        ? `${Number(amount).toLocaleString('vi-VN')} VNĐ`
+        : 'Đang cập nhật');
     const quantity = Math.max(1, Math.round(dto.quantity ?? 1));
     const targetType = dto.targetType || 'PRODUCT';
     const targetId = dto.targetId || null;
@@ -415,9 +509,21 @@ export class SponsorsService {
     const highlightColor = dto.highlightColor || 'from-amber-500 to-yellow-600';
 
     await this.sponsorsRepo.insertPrize(
-      id, eventId, rankName, title || 'Giải thưởng sự kiện', value, amount, quantity,
-      targetType, targetId, sponsorName || 'Nhà tài trợ CEO 1983', sponsorPackageId,
-      description, iconName, imageUrl, highlightColor,
+      id,
+      eventId,
+      rankName,
+      title || 'Giải thưởng sự kiện',
+      value,
+      amount,
+      quantity,
+      targetType,
+      targetId,
+      sponsorName || 'Nhà tài trợ CEO 1983',
+      sponsorPackageId,
+      description,
+      iconName,
+      imageUrl,
+      highlightColor,
     );
 
     return this.getPrizeById(id);
@@ -429,22 +535,46 @@ export class SponsorsService {
     const rankName = dto.rankName ?? existing.rankName;
     const title = dto.title ?? existing.title;
     const value = dto.value ?? existing.value;
-    const amount = BigInt(Math.round(dto.amount !== undefined ? dto.amount : existing.amount));
-    const quantity = Math.round(dto.quantity !== undefined ? dto.quantity : existing.quantity);
+    const amount = BigInt(
+      Math.round(dto.amount !== undefined ? dto.amount : existing.amount),
+    );
+    const quantity = Math.round(
+      dto.quantity !== undefined ? dto.quantity : existing.quantity,
+    );
     const targetType = dto.targetType ?? existing.targetType;
-    const targetId = dto.targetId !== undefined ? dto.targetId : existing.targetId;
-    const sponsorName = dto.sponsorName !== undefined ? dto.sponsorName : existing.sponsorName;
-    const sponsorPackageId = dto.sponsorPackageId !== undefined ? dto.sponsorPackageId : existing.sponsorPackageId;
-    const description = dto.description !== undefined ? dto.description : existing.description;
+    const targetId =
+      dto.targetId !== undefined ? dto.targetId : existing.targetId;
+    const sponsorName =
+      dto.sponsorName !== undefined ? dto.sponsorName : existing.sponsorName;
+    const sponsorPackageId =
+      dto.sponsorPackageId !== undefined
+        ? dto.sponsorPackageId
+        : existing.sponsorPackageId;
+    const description =
+      dto.description !== undefined ? dto.description : existing.description;
     const iconName = dto.iconName ?? existing.iconName;
-    const imageUrl = dto.imageUrl !== undefined ? dto.imageUrl : existing.imageUrl;
+    const imageUrl =
+      dto.imageUrl !== undefined ? dto.imageUrl : existing.imageUrl;
     const highlightColor = dto.highlightColor ?? existing.highlightColor;
     const status = dto.status ?? existing.status;
 
     await this.sponsorsRepo.updatePrizeRaw(
-      id, eventId, rankName, title, value, amount, quantity,
-      targetType, targetId, sponsorName, sponsorPackageId,
-      description, iconName, imageUrl, highlightColor, status,
+      id,
+      eventId,
+      rankName,
+      title,
+      value,
+      amount,
+      quantity,
+      targetType,
+      targetId,
+      sponsorName,
+      sponsorPackageId,
+      description,
+      iconName,
+      imageUrl,
+      highlightColor,
+      status,
     );
 
     return this.getPrizeById(id);
@@ -460,7 +590,9 @@ export class SponsorsService {
   async sendSponsorThankYouEmailById(id: string) {
     const sponsor = await this.getSponsorById(id);
     if (!sponsor.email || !sponsor.email.includes('@')) {
-      throw new BadRequestException('Nhà tài trợ chưa có thông tin email hợp lệ để nhận thư tri ân.');
+      throw new BadRequestException(
+        'Nhà tài trợ chưa có thông tin email hợp lệ để nhận thư tri ân.',
+      );
     }
     return this.sendSponsorThankYouEmail(sponsor);
   }
@@ -482,27 +614,70 @@ export class SponsorsService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const tierLabels: Record<string, { label: string; color: string; bg: string; border: string }> = {
-      diamond: { label: 'KIM CƯƠNG', color: '#4338ca', bg: '#e0e7ff', border: '#a5b4fc' },
-      platinum: { label: 'BẠCH KIM', color: '#0369a1', bg: '#e0f2fe', border: '#7dd3fc' },
-      gold: { label: 'VÀNG (GOLD)', color: '#b45309', bg: '#fef3c7', border: '#fcd34d' },
-      silver: { label: 'BẠC (SILVER)', color: '#475569', bg: '#f1f5f9', border: '#cbd5e1' },
-      bronze: { label: 'ĐỒNG (BRONZE)', color: '#9a3412', bg: '#ffedd5', border: '#fdba74' },
+    const tierLabels: Record<
+      string,
+      { label: string; color: string; bg: string; border: string }
+    > = {
+      diamond: {
+        label: 'KIM CƯƠNG',
+        color: '#4338ca',
+        bg: '#e0e7ff',
+        border: '#a5b4fc',
+      },
+      platinum: {
+        label: 'BẠCH KIM',
+        color: '#0369a1',
+        bg: '#e0f2fe',
+        border: '#7dd3fc',
+      },
+      gold: {
+        label: 'VÀNG (GOLD)',
+        color: '#b45309',
+        bg: '#fef3c7',
+        border: '#fcd34d',
+      },
+      silver: {
+        label: 'BẠC (SILVER)',
+        color: '#475569',
+        bg: '#f1f5f9',
+        border: '#cbd5e1',
+      },
+      bronze: {
+        label: 'ĐỒNG (BRONZE)',
+        color: '#9a3412',
+        bg: '#ffedd5',
+        border: '#fdba74',
+      },
     };
-    const currentTier = tierLabels[sponsor.tier?.toLowerCase() || 'bronze'] || tierLabels.bronze;
+    const currentTier =
+      tierLabels[sponsor.tier?.toLowerCase() || 'bronze'] || tierLabels.bronze;
 
-    const formattedAmount = Number(sponsor.amount || 0) > 0
-      ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(sponsor.amount))
-      : (sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật' : '0 đ');
+    const formattedAmount =
+      Number(sponsor.amount || 0) > 0
+        ? new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(Number(sponsor.amount))
+        : sponsor.packageType === 'in_kind'
+          ? 'Tài trợ Hiện vật'
+          : '0 đ';
 
     const packageTypeLabels: Record<string, string> = {
       bank_transfer: 'Tài trợ Chuyển khoản (VNPAY-QR / Ngân hàng)',
       cash: 'Tài trợ Tiền mặt (Trực tiếp)',
       in_kind: 'Tài trợ Hiện vật / Sản phẩm dịch vụ',
     };
-    const packageTypeLabel = packageTypeLabels[sponsor.packageType || 'bank_transfer'] || (sponsor.packageType === 'in_kind' ? 'Tài trợ Hiện vật' : 'Tài trợ Chuyển khoản');
-    const safeSince = sponsor.since ? String(sponsor.since).slice(0, 10) : new Date().toISOString().slice(0, 10);
-    const greetingName = sponsor.contact ? `${sponsor.contact} (Đại diện ${sponsor.name})` : sponsor.name;
+    const packageTypeLabel =
+      packageTypeLabels[sponsor.packageType || 'bank_transfer'] ||
+      (sponsor.packageType === 'in_kind'
+        ? 'Tài trợ Hiện vật'
+        : 'Tài trợ Chuyển khoản');
+    const safeSince = sponsor.since
+      ? String(sponsor.since).slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+    const greetingName = sponsor.contact
+      ? `${sponsor.contact} (Đại diện ${sponsor.name})`
+      : sponsor.name;
 
     const numAmount = Number(sponsor.amount || 0);
     const bankAccount = '1983000000';
@@ -662,12 +837,16 @@ export class SponsorsService {
             <td class="info-label">Hình thức:</td>
             <td class="info-val">${packageTypeLabel}</td>
           </tr>
-          ${sponsor.packageType === 'in_kind' && sponsor.inKindDescription ? `
+          ${
+            sponsor.packageType === 'in_kind' && sponsor.inKindDescription
+              ? `
           <tr>
             <td class="info-label">Mô tả hiện vật:</td>
             <td class="info-val">${sponsor.inKindDescription}</td>
           </tr>
-          ` : ''}
+          `
+              : ''
+          }
           <tr>
             <td class="info-label">Giá trị tài trợ:</td>
             <td class="info-val" style="color: #001B54; font-size: 15px; font-weight: 800;">${formattedAmount}</td>

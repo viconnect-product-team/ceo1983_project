@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
 
@@ -20,7 +25,11 @@ function safeParseImages(val: any): string[] {
         // fallback
       }
     }
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+    if (
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('/')
+    ) {
       return [trimmed];
     }
   }
@@ -30,62 +39,80 @@ function safeParseImages(val: any): string[] {
 const DEFAULT_OFFICIAL_NEWS = [
   {
     code: 'NEWS-001',
-    title: 'Hiệp hội CEO 1983 phát động chương trình Xúc tiến Thương mại & Kết nối Giao thương Toàn diện 2026',
+    title:
+      'Hiệp hội CEO 1983 phát động chương trình Xúc tiến Thương mại & Kết nối Giao thương Toàn diện 2026',
     category: 'Giao thương B2B',
     author: 'Ban Thư ký & Ban Truyền thông',
     published_at: '2026-09-20',
-    excerpt: 'Chương trình trọng điểm quy tụ hơn 200+ doanh nghiệp hội viên cùng các phiên kết nối 1-1, ký kết thỏa thuận hợp tác thương mại đa ngành và mở rộng chuỗi cung ứng nội khối.',
-    cover_image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80',
+    excerpt:
+      'Chương trình trọng điểm quy tụ hơn 200+ doanh nghiệp hội viên cùng các phiên kết nối 1-1, ký kết thỏa thuận hợp tác thương mại đa ngành và mở rộng chuỗi cung ứng nội khối.',
+    cover_image:
+      'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80',
     views: 428,
   },
   {
     code: 'NEWS-002',
-    title: 'Đại hội Hội viên thường niên CLB CEO 1983: Bầu cử Ban Chấp Hành nhiệm kỳ 2026 - 2029',
+    title:
+      'Đại hội Hội viên thường niên CLB CEO 1983: Bầu cử Ban Chấp Hành nhiệm kỳ 2026 - 2029',
     category: 'Hoạt động CLB',
     author: 'Ban Chấp Hành CLB',
     published_at: '2026-09-18',
-    excerpt: 'Đánh giá kết quả hoạt động năm qua và thông qua nghị quyết nhiệm kỳ mới với nhiều chính sách hỗ trợ tăng trưởng doanh thu và bảo trợ thương hiệu cho hội viên.',
-    cover_image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80',
+    excerpt:
+      'Đánh giá kết quả hoạt động năm qua và thông qua nghị quyết nhiệm kỳ mới với nhiều chính sách hỗ trợ tăng trưởng doanh thu và bảo trợ thương hiệu cho hội viên.',
+    cover_image:
+      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80',
     views: 315,
   },
   {
     code: 'NEWS-003',
-    title: 'Chương trình Caravan Thiện nguyện 2026: Trao 200 suất học bổng cho học sinh nghèo vượt khó',
+    title:
+      'Chương trình Caravan Thiện nguyện 2026: Trao 200 suất học bổng cho học sinh nghèo vượt khó',
     category: 'Thiện nguyện',
     author: 'Ban Thiện nguyện',
     published_at: '2026-09-15',
-    excerpt: 'Hành trình lan tỏa yêu thương của cộng đồng doanh nhân tuổi Hợi 1983, mang hơi ấm và cơ hội học tập phát triển tài năng đến các điểm trường vùng cao.',
-    cover_image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80',
+    excerpt:
+      'Hành trình lan tỏa yêu thương của cộng đồng doanh nhân tuổi Hợi 1983, mang hơi ấm và cơ hội học tập phát triển tài năng đến các điểm trường vùng cao.',
+    cover_image:
+      'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80',
     views: 289,
   },
   {
     code: 'NEWS-004',
-    title: 'Diễn đàn Kinh tế & Chuyển đổi số Doanh nghiệp: Tối ưu hóa chuỗi cung ứng bằng Trí tuệ Nhân tạo',
+    title:
+      'Diễn đàn Kinh tế & Chuyển đổi số Doanh nghiệp: Tối ưu hóa chuỗi cung ứng bằng Trí tuệ Nhân tạo',
     category: 'Tin doanh nghiệp',
     author: 'Ban Xúc tiến Thương mại',
     published_at: '2026-09-12',
-    excerpt: 'Chuyên gia công nghệ hàng đầu chia sẻ giải pháp tự động hóa vận hành, quản trị khách hàng CRM và giải pháp phân tích dữ liệu chuyên sâu cho lãnh đạo CEO.',
-    cover_image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80',
+    excerpt:
+      'Chuyên gia công nghệ hàng đầu chia sẻ giải pháp tự động hóa vận hành, quản trị khách hàng CRM và giải pháp phân tích dữ liệu chuyên sâu cho lãnh đạo CEO.',
+    cover_image:
+      'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&auto=format&fit=crop&q=80',
     views: 512,
   },
   {
     code: 'NEWS-005',
-    title: 'Giải Golf Doanh nhân CEO 1983 Championship: Giao lưu thể thao & kết nối đối tác chiến lược',
+    title:
+      'Giải Golf Doanh nhân CEO 1983 Championship: Giao lưu thể thao & kết nối đối tác chiến lược',
     category: 'Hoạt động CLB',
     author: 'Ban Thể thao & Sự kiện',
     published_at: '2026-09-10',
-    excerpt: 'Sân chơi thể thao đẳng cấp kết hợp dạ tiệc Gala vinh danh các tay golf xuất sắc và tạo điều kiện xúc tiến các thương vụ đầu tư quy mô lớn.',
-    cover_image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&auto=format&fit=crop&q=80',
+    excerpt:
+      'Sân chơi thể thao đẳng cấp kết hợp dạ tiệc Gala vinh danh các tay golf xuất sắc và tạo điều kiện xúc tiến các thương vụ đầu tư quy mô lớn.',
+    cover_image:
+      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&auto=format&fit=crop&q=80',
     views: 376,
   },
   {
     code: 'NEWS-006',
-    title: 'Doanh nghiệp thành viên CEO 1983 ra mắt dòng sản phẩm tiêu chuẩn xuất khẩu sang thị trường Châu Âu',
+    title:
+      'Doanh nghiệp thành viên CEO 1983 ra mắt dòng sản phẩm tiêu chuẩn xuất khẩu sang thị trường Châu Âu',
     category: 'Tin doanh nghiệp',
     author: 'Ban Truyền thông',
     published_at: '2026-09-05',
-    excerpt: 'Khẳng định chất lượng sản phẩm thương hiệu Việt trên bản đồ quốc tế, mở ra cơ hội hợp tác phân phối độc quyền và gia công liên kết cho các hội viên CLB.',
-    cover_image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
+    excerpt:
+      'Khẳng định chất lượng sản phẩm thương hiệu Việt trên bản đồ quốc tế, mở ra cơ hội hợp tác phân phối độc quyền và gia công liên kết cho các hội viên CLB.',
+    cover_image:
+      'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80',
     views: 640,
   },
 ];
@@ -138,7 +165,9 @@ export class ConnectContentService {
     `.catch(() => []);
 
     return rows.map((n) => {
-      const imgList = safeParseImages(n.images || (n.cover_image ? [n.cover_image] : []));
+      const imgList = safeParseImages(
+        n.images || (n.cover_image ? [n.cover_image] : []),
+      );
       const firstImg = imgList[0] || n.cover_image || '';
       return {
         id: n.id,
@@ -164,69 +193,81 @@ export class ConnectContentService {
 
       const seedData = [
         {
-          title: "Voucher Nghỉ Dưỡng Vinpearl 5 Sao Trị Giá 10.000.000đ",
-          category: "Golf & Nghỉ dưỡng",
-          partner: "Vinpearl Resort & Spa",
-          summary: "Áp dụng nghỉ dưỡng tại toàn bộ hệ thống resort và villa Vinpearl trên toàn quốc dành cho Hội viên chính thức.",
-          description: "Voucher bao gồm phòng hướng biển, buffet sáng cho 2 người lớn và 2 trẻ em, miễn phí vé vui chơi VinWonders và Safari.",
-          discount: "10.000.000đ",
-          icon: "hotel",
-          link: "https://vinpearl.com",
+          title: 'Voucher Nghỉ Dưỡng Vinpearl 5 Sao Trị Giá 10.000.000đ',
+          category: 'Golf & Nghỉ dưỡng',
+          partner: 'Vinpearl Resort & Spa',
+          summary:
+            'Áp dụng nghỉ dưỡng tại toàn bộ hệ thống resort và villa Vinpearl trên toàn quốc dành cho Hội viên chính thức.',
+          description:
+            'Voucher bao gồm phòng hướng biển, buffet sáng cho 2 người lớn và 2 trẻ em, miễn phí vé vui chơi VinWonders và Safari.',
+          discount: '10.000.000đ',
+          icon: 'hotel',
+          link: 'https://vinpearl.com',
           sort_order: 1,
         },
         {
-          title: "Ưu đãi 30% Đặt Sân Golf BRG Kings Island & FLC Quy Nhơn",
-          category: "Golf & Nghỉ dưỡng",
-          partner: "BRG Golf & FLC Group",
-          summary: "Đặc quyền đặt tee-time ưu tiên kèm giảm giá green fee 30% tại các sân golf hàng đầu Việt Nam.",
-          description: "Áp dụng vào cả các ngày trong tuần và cuối tuần cho hội viên CLB Doanh Nhân CEO 1983.",
-          discount: "30%",
-          icon: "trophy",
-          link: "https://brggolf.vn",
+          title: 'Ưu đãi 30% Đặt Sân Golf BRG Kings Island & FLC Quy Nhơn',
+          category: 'Golf & Nghỉ dưỡng',
+          partner: 'BRG Golf & FLC Group',
+          summary:
+            'Đặc quyền đặt tee-time ưu tiên kèm giảm giá green fee 30% tại các sân golf hàng đầu Việt Nam.',
+          description:
+            'Áp dụng vào cả các ngày trong tuần và cuối tuần cho hội viên CLB Doanh Nhân CEO 1983.',
+          discount: '30%',
+          icon: 'trophy',
+          link: 'https://brggolf.vn',
           sort_order: 2,
         },
         {
-          title: "Gói Tư Vấn Luật Doanh Nghiệp & M&A Miễn Phí 6 Tháng",
-          category: "Dịch vụ Doanh nghiệp",
-          partner: "Hãng Luật Quốc Tế & Ban Pháp Chế CEO 1983",
-          summary: "Hỗ trợ rà soát hợp đồng thương mại, tư vấn pháp lý quản trị công ty và hỗ trợ xúc tiến M&A.",
-          description: "Được hỗ trợ trực tiếp bởi đội ngũ luật sư cao cấp và chuyên gia thẩm định pháp lý thành viên CLB.",
-          discount: "Miễn phí 100%",
-          icon: "scale",
-          link: "/association/documents",
+          title: 'Gói Tư Vấn Luật Doanh Nghiệp & M&A Miễn Phí 6 Tháng',
+          category: 'Dịch vụ Doanh nghiệp',
+          partner: 'Hãng Luật Quốc Tế & Ban Pháp Chế CEO 1983',
+          summary:
+            'Hỗ trợ rà soát hợp đồng thương mại, tư vấn pháp lý quản trị công ty và hỗ trợ xúc tiến M&A.',
+          description:
+            'Được hỗ trợ trực tiếp bởi đội ngũ luật sư cao cấp và chuyên gia thẩm định pháp lý thành viên CLB.',
+          discount: 'Miễn phí 100%',
+          icon: 'scale',
+          link: '/association/documents',
           sort_order: 3,
         },
         {
-          title: "Gói Kiểm Toán Báo Cáo Tài Chính & Tối Ưu Thuế Doanh Nghiệp",
-          category: "Dịch vụ Doanh nghiệp",
-          partner: "Ban Tài Chính & Đối Tác Kiểm Toán",
-          summary: "Hỗ trợ soát xét sổ sách kế toán, lập kế hoạch thuế và bảo vệ số liệu trước cơ quan kiểm toán.",
-          description: "Áp dụng cho doanh nghiệp của hội viên CEO 1983 có quy mô doanh thu từ 10 tỷ đến 500 tỷ.",
-          discount: "-25%",
-          icon: "calculator",
-          link: "/finance-report",
+          title: 'Gói Kiểm Toán Báo Cáo Tài Chính & Tối Ưu Thuế Doanh Nghiệp',
+          category: 'Dịch vụ Doanh nghiệp',
+          partner: 'Ban Tài Chính & Đối Tác Kiểm Toán',
+          summary:
+            'Hỗ trợ soát xét sổ sách kế toán, lập kế hoạch thuế và bảo vệ số liệu trước cơ quan kiểm toán.',
+          description:
+            'Áp dụng cho doanh nghiệp của hội viên CEO 1983 có quy mô doanh thu từ 10 tỷ đến 500 tỷ.',
+          discount: '-25%',
+          icon: 'calculator',
+          link: '/finance-report',
           sort_order: 4,
         },
         {
-          title: "Thẻ Danh Thiếp Điện Tử Thông Minh CEO 1983 Smart NFC Mạ Vàng",
-          category: "Đặc quyền Hội viên",
-          partner: "Ban Chuyển Đổi Số CEO 1983",
-          summary: "Thẻ NFC kim loại đen bóng viền mạ vàng sang trọng tích hợp công nghệ chạm danh thiếp 1 chạm.",
-          description: "Mỗi hội viên chính thức được cấp phát 01 thẻ danh thiếp thông minh đồng bộ hồ sơ kết nối giao thương.",
-          discount: "Miễn Phí 100%",
-          icon: "gift",
-          link: "/association/card",
+          title: 'Thẻ Danh Thiếp Điện Tử Thông Minh CEO 1983 Smart NFC Mạ Vàng',
+          category: 'Đặc quyền Hội viên',
+          partner: 'Ban Chuyển Đổi Số CEO 1983',
+          summary:
+            'Thẻ NFC kim loại đen bóng viền mạ vàng sang trọng tích hợp công nghệ chạm danh thiếp 1 chạm.',
+          description:
+            'Mỗi hội viên chính thức được cấp phát 01 thẻ danh thiếp thông minh đồng bộ hồ sơ kết nối giao thương.',
+          discount: 'Miễn Phí 100%',
+          icon: 'gift',
+          link: '/association/card',
           sort_order: 5,
         },
         {
-          title: "Ưu đãi Đặt Tiệc Chiêu Đãi & Hội Nghị Khách Sạn Daewoo Hà Nội",
-          category: "Ẩm thực & Tiếp khách",
-          partner: "Khách Sạn Daewoo Hà Nội",
-          summary: "Giảm 20% toàn bộ dịch vụ phòng tiệc, hội thảo và thực đơn tiệc chiêu đãi đối tác B2B.",
-          description: "Miễn phí âm thanh ánh sáng tiêu chuẩn và màn hình LED cho các sự kiện từ 50 khách trở lên.",
-          discount: "20%",
-          icon: "coffee",
-          link: "https://daewoohotel.com",
+          title: 'Ưu đãi Đặt Tiệc Chiêu Đãi & Hội Nghị Khách Sạn Daewoo Hà Nội',
+          category: 'Ẩm thực & Tiếp khách',
+          partner: 'Khách Sạn Daewoo Hà Nội',
+          summary:
+            'Giảm 20% toàn bộ dịch vụ phòng tiệc, hội thảo và thực đơn tiệc chiêu đãi đối tác B2B.',
+          description:
+            'Miễn phí âm thanh ánh sáng tiêu chuẩn và màn hình LED cho các sự kiện từ 50 khách trở lên.',
+          discount: '20%',
+          icon: 'coffee',
+          link: 'https://daewoohotel.com',
           sort_order: 6,
         },
       ];
@@ -242,7 +283,7 @@ export class ConnectContentService {
         `.catch(() => {});
       }
     } catch (err: any) {
-      console.warn("Failed to seed perks:", err?.message);
+      console.warn('Failed to seed perks:', err?.message);
     }
   }
 
@@ -264,7 +305,11 @@ export class ConnectContentService {
       discount: p.discount ?? '',
       icon: p.icon ?? 'Gift',
       link: p.link ?? '',
-      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : null,
+      validUntil: p.valid_until
+        ? p.valid_until instanceof Date
+          ? p.valid_until.toISOString().slice(0, 10)
+          : String(p.valid_until).slice(0, 10)
+        : null,
     }));
   }
 
@@ -288,7 +333,11 @@ export class ConnectContentService {
       discount: p.discount ?? '',
       icon: p.icon ?? 'Gift',
       link: p.link ?? '',
-      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : null,
+      validUntil: p.valid_until
+        ? p.valid_until instanceof Date
+          ? p.valid_until.toISOString().slice(0, 10)
+          : String(p.valid_until).slice(0, 10)
+        : null,
     };
   }
 
@@ -312,7 +361,11 @@ export class ConnectContentService {
       discount: p.discount ?? '',
       icon: p.icon ?? 'Gift',
       link: p.link ?? '',
-      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : '',
+      validUntil: p.valid_until
+        ? p.valid_until instanceof Date
+          ? p.valid_until.toISOString().slice(0, 10)
+          : String(p.valid_until).slice(0, 10)
+        : '',
       sortOrder: Number(p.sort_order ?? 0),
       status: p.status === 'inactive' ? 'inactive' : 'active',
     }));
@@ -347,7 +400,11 @@ export class ConnectContentService {
       discount: p.discount ?? '',
       icon: p.icon ?? 'Gift',
       link: p.link ?? '',
-      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : '',
+      validUntil: p.valid_until
+        ? p.valid_until instanceof Date
+          ? p.valid_until.toISOString().slice(0, 10)
+          : String(p.valid_until).slice(0, 10)
+        : '',
       sortOrder: Number(p.sort_order ?? 0),
       status: p.status ?? 'active',
     };
@@ -384,7 +441,11 @@ export class ConnectContentService {
       discount: p.discount ?? '',
       icon: p.icon ?? 'Gift',
       link: p.link ?? '',
-      validUntil: p.valid_until ? (p.valid_until instanceof Date ? p.valid_until.toISOString().slice(0, 10) : String(p.valid_until).slice(0, 10)) : '',
+      validUntil: p.valid_until
+        ? p.valid_until instanceof Date
+          ? p.valid_until.toISOString().slice(0, 10)
+          : String(p.valid_until).slice(0, 10)
+        : '',
       sortOrder: Number(p.sort_order ?? 0),
       status: p.status ?? 'active',
     };
@@ -396,7 +457,6 @@ export class ConnectContentService {
     `;
     return { ok: true };
   }
-
 
   // ---------------------------------------------------------------------------
   // Settings
@@ -414,7 +474,9 @@ export class ConnectContentService {
     });
 
     return rows.map((n) => {
-      const imgList = safeParseImages(n.images || (n.cover_image ? [n.cover_image] : []));
+      const imgList = safeParseImages(
+        n.images || (n.cover_image ? [n.cover_image] : []),
+      );
       const firstImg = imgList[0] || n.cover_image || '';
       return {
         id: n.code || n.id,
@@ -422,7 +484,11 @@ export class ConnectContentService {
         title: n.title,
         category: n.category ?? '',
         author: n.author ?? '',
-        publishedAt: n.published_at ? (n.published_at instanceof Date ? n.published_at.toISOString().slice(0, 10) : String(n.published_at).slice(0, 10)) : '—',
+        publishedAt: n.published_at
+          ? n.published_at instanceof Date
+            ? n.published_at.toISOString().slice(0, 10)
+            : String(n.published_at).slice(0, 10)
+          : '—',
         views: Number(n.views ?? 0),
         status: n.status ?? 'draft',
         excerpt: n.excerpt ?? '',
@@ -439,8 +505,12 @@ export class ConnectContentService {
 
   async createNewsAdmin(data: any) {
     const code = data.code || `NEWS-${Date.now().toString().slice(-6)}`;
-    const imgList = safeParseImages(data.images || (data.image ? [data.image] : (data.coverImage ? [data.coverImage] : [])));
-    const firstImg = imgList[0] || data.image || data.coverImage || data.cover_image || null;
+    const imgList = safeParseImages(
+      data.images ||
+        (data.image ? [data.image] : data.coverImage ? [data.coverImage] : []),
+    );
+    const firstImg =
+      imgList[0] || data.image || data.coverImage || data.cover_image || null;
     const imagesJson = JSON.stringify(imgList);
 
     const rows = await this.prisma.$queryRaw<any[]>`
@@ -464,14 +534,20 @@ export class ConnectContentService {
       RETURNING *
     `;
     const n = rows[0];
-    const resImgs = safeParseImages(n.images || (n.cover_image ? [n.cover_image] : []));
+    const resImgs = safeParseImages(
+      n.images || (n.cover_image ? [n.cover_image] : []),
+    );
     return {
       id: n.code || n.id,
       code: n.code,
       title: n.title,
       category: n.category ?? '',
       author: n.author ?? '',
-      publishedAt: n.published_at ? (n.published_at instanceof Date ? n.published_at.toISOString().slice(0, 10) : String(n.published_at).slice(0, 10)) : '—',
+      publishedAt: n.published_at
+        ? n.published_at instanceof Date
+          ? n.published_at.toISOString().slice(0, 10)
+          : String(n.published_at).slice(0, 10)
+        : '—',
       views: Number(n.views ?? 0),
       status: n.status ?? 'published',
       excerpt: n.excerpt ?? '',
@@ -485,8 +561,16 @@ export class ConnectContentService {
   }
 
   async updateNewsAdmin(id: string, data: any) {
-    const imgList = data.images !== undefined ? safeParseImages(data.images) : null;
-    const singleImg = data.image !== undefined ? data.image : (data.coverImage !== undefined ? data.coverImage : (data.cover_image !== undefined ? data.cover_image : null));
+    const imgList =
+      data.images !== undefined ? safeParseImages(data.images) : null;
+    const singleImg =
+      data.image !== undefined
+        ? data.image
+        : data.coverImage !== undefined
+          ? data.coverImage
+          : data.cover_image !== undefined
+            ? data.cover_image
+            : null;
     const firstImg = imgList && imgList.length > 0 ? imgList[0] : singleImg;
     const imagesJson = imgList ? JSON.stringify(imgList) : null;
 
@@ -508,14 +592,20 @@ export class ConnectContentService {
     `;
     if (rows.length === 0) return null;
     const n = rows[0];
-    const resImgs = safeParseImages(n.images || (n.cover_image ? [n.cover_image] : []));
+    const resImgs = safeParseImages(
+      n.images || (n.cover_image ? [n.cover_image] : []),
+    );
     return {
       id: n.code || n.id,
       code: n.code,
       title: n.title,
       category: n.category ?? '',
       author: n.author ?? '',
-      publishedAt: n.published_at ? (n.published_at instanceof Date ? n.published_at.toISOString().slice(0, 10) : String(n.published_at).slice(0, 10)) : '—',
+      publishedAt: n.published_at
+        ? n.published_at instanceof Date
+          ? n.published_at.toISOString().slice(0, 10)
+          : String(n.published_at).slice(0, 10)
+        : '—',
       views: Number(n.views ?? 0),
       status: n.status ?? 'published',
       excerpt: n.excerpt ?? '',
@@ -528,14 +618,17 @@ export class ConnectContentService {
     };
   }
 
-
-  async syncNewsFromCeo1983Web(): Promise<{ ok: boolean; count: number; message: string }> {
+  async syncNewsFromCeo1983Web(): Promise<{
+    ok: boolean;
+    count: number;
+    message: string;
+  }> {
     const baseUrl = 'https://ceo1983.com';
     const targetPages = [
       baseUrl,
       `${baseUrl}/tin-tuc-blog-25236`,
       `${baseUrl}/tin-tuc-252346`,
-      `${baseUrl}/su-kien-252317`
+      `${baseUrl}/su-kien-252317`,
     ];
 
     const foundArticles = new Map<string, string>();
@@ -543,13 +636,19 @@ export class ConnectContentService {
     for (const pageUrl of targetPages) {
       try {
         const res = await fetch(pageUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(10000) : undefined,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          },
+          signal:
+            typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
+              ? AbortSignal.timeout(10000)
+              : undefined,
         });
         if (!res.ok) continue;
         const html = await res.text();
 
-        const linkRegex = /href=["']([^"']*(?:--\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        const linkRegex =
+          /href=["']([^"']*(?:--\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
         let m: RegExpExecArray | null;
         while ((m = linkRegex.exec(html)) !== null) {
           let url = m[1];
@@ -562,7 +661,10 @@ export class ConnectContentService {
           }
         }
       } catch (err: any) {
-        console.warn(`[NewsSync] Failed to fetch page ${pageUrl}:`, err?.message);
+        console.warn(
+          `[NewsSync] Failed to fetch page ${pageUrl}:`,
+          err?.message,
+        );
       }
     }
 
@@ -577,8 +679,13 @@ export class ConnectContentService {
         const code = `CEO1983-${articleId}`;
 
         const artRes = await fetch(articleUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(8000) : undefined,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          },
+          signal:
+            typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
+              ? AbortSignal.timeout(8000)
+              : undefined,
         });
 
         let title = initialTitle;
@@ -592,12 +699,16 @@ export class ConnectContentService {
             title = h1Match[1].replace(/<[^>]+>/g, '').trim() || title;
           }
 
-          const descMatch = artHtml.match(/<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]*)"/i);
+          const descMatch = artHtml.match(
+            /<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]*)"/i,
+          );
           if (descMatch && descMatch[1]) {
             excerpt = descMatch[1].trim();
           }
 
-          const imgMatch = artHtml.match(/<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]*)"/i);
+          const imgMatch = artHtml.match(
+            /<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]*)"/i,
+          );
           if (imgMatch && imgMatch[1]) {
             coverImage = imgMatch[1].trim();
             if (coverImage.startsWith('/')) {
@@ -633,7 +744,11 @@ export class ConnectContentService {
             images = CASE WHEN EXCLUDED.cover_image != '' THEN EXCLUDED.images ELSE public.news.images END,
             updated_at = NOW()
         `.catch(async () => {
-          const exist = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.news WHERE code = ${code} LIMIT 1`.catch(() => []);
+          const exist = await this.prisma.$queryRaw<
+            any[]
+          >`SELECT id FROM public.news WHERE code = ${code} LIMIT 1`.catch(
+            () => [],
+          );
           if (exist.length === 0) {
             await this.prisma.$executeRaw`
               INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, cover_image, images, views, created_at, updated_at)
@@ -644,7 +759,10 @@ export class ConnectContentService {
 
         syncedCount++;
       } catch (err: any) {
-        console.warn(`[NewsSync] Error syncing article ${articleUrl}:`, err?.message);
+        console.warn(
+          `[NewsSync] Error syncing article ${articleUrl}:`,
+          err?.message,
+        );
       }
     }
 
@@ -662,4 +780,3 @@ export class ConnectContentService {
     return { ok: true };
   }
 }
-

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Delete, Body, Request, UseGuards, Param, Query, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Request,
+  UseGuards,
+  Param,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 import { SendMemberMessageDto } from './dto';
@@ -15,19 +26,30 @@ export class DmController {
   }
 
   @Get('member/messages')
-  async listMemberMessages(@Request() req, @Query('peerCode') peerCode: string) {
+  async listMemberMessages(
+    @Request() req,
+    @Query('peerCode') peerCode: string,
+  ) {
     if (!peerCode) throw new BadRequestException('peerCode_required');
     return this.connectAppService.listMemberMessages(req.user.id, peerCode);
   }
 
   @Post('member/messages')
   async sendMemberMessage(@Request() req, @Body() data: SendMemberMessageDto) {
-    if (!data?.peerCode || !data?.text) throw new BadRequestException('peerCode_and_text_required');
-    return this.connectAppService.sendMemberMessage(req.user.id, data.peerCode, data.text);
+    if (!data?.peerCode || !data?.text)
+      throw new BadRequestException('peerCode_and_text_required');
+    return this.connectAppService.sendMemberMessage(
+      req.user.id,
+      data.peerCode,
+      data.text,
+    );
   }
 
   @Delete('member/messages/:messageId')
-  async retractMemberMessage(@Request() req, @Param('messageId') messageId: string) {
+  async retractMemberMessage(
+    @Request() req,
+    @Param('messageId') messageId: string,
+  ) {
     return this.connectAppService.retractMemberMessage(req.user.id, messageId);
   }
 
@@ -53,7 +75,10 @@ export class DmController {
   }
 
   @Get('threads/:threadId')
-  async getMyDmThreadDetail(@Request() req, @Param('threadId') threadId: string) {
+  async getMyDmThreadDetail(
+    @Request() req,
+    @Param('threadId') threadId: string,
+  ) {
     return this.connectAppService.getMyDmThreadDetail(req.user.id, threadId);
   }
 
@@ -67,12 +92,18 @@ export class DmController {
   }
 
   @Post('threads/:threadId/read')
-  async markMyDmThreadRead(@Request() req, @Param('threadId') threadId: string) {
+  async markMyDmThreadRead(
+    @Request() req,
+    @Param('threadId') threadId: string,
+  ) {
     return this.connectAppService.markMyDmThreadRead(req.user.id, threadId);
   }
 
   @Delete('messages/:messageId')
-  async retractMyDmMessage(@Request() req, @Param('messageId') messageId: string) {
+  async retractMyDmMessage(
+    @Request() req,
+    @Param('messageId') messageId: string,
+  ) {
     return this.connectAppService.retractMyDmMessage(req.user.id, messageId);
   }
 
@@ -83,6 +114,10 @@ export class DmController {
     @Body('emoji') emoji: string,
   ) {
     if (!emoji) throw new BadRequestException('emoji_required');
-    return this.connectAppService.reactToDmMessage(req.user.id, messageId, emoji);
+    return this.connectAppService.reactToDmMessage(
+      req.user.id,
+      messageId,
+      emoji,
+    );
   }
 }

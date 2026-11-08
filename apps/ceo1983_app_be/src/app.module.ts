@@ -65,4 +65,3 @@ import { LandingModule } from './landing/landing.module';
   providers: [AppService],
 })
 export class AppModule {}
-

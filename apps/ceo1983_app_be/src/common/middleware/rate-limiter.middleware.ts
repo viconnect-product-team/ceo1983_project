@@ -30,10 +30,17 @@ export function resetLoginFailures(ip: string): void {
   loginIpFailures.delete(ip);
 }
 
-export function isLoginBlocked(ip: string): { blocked: boolean; retryAfter: number } {
+export function isLoginBlocked(ip: string): {
+  blocked: boolean;
+  retryAfter: number;
+} {
   const now = Date.now();
   const existing = loginIpFailures.get(ip);
-  if (existing && now <= existing.resetTime && existing.count >= LOGIN_MAX_FAILS) {
+  if (
+    existing &&
+    now <= existing.resetTime &&
+    existing.count >= LOGIN_MAX_FAILS
+  ) {
     const retryAfter = Math.ceil((existing.resetTime - now) / 1000);
     return { blocked: true, retryAfter: Math.max(1, retryAfter) };
   }
@@ -87,4 +94,3 @@ export class RateLimiterMiddleware implements NestMiddleware {
     next();
   }
 }
-

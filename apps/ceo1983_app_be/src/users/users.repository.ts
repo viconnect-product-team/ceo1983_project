@@ -35,12 +35,14 @@ export class UsersRepository {
       }
 
       // Check public.members
-      const memberRows: any[] = (await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT user_id, email FROM public.members 
+      const memberRows: any[] = (await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT user_id, email FROM public.members 
          WHERE regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = ANY($1::text[]) 
          LIMIT 1`,
-        phoneVariants
-      ).catch(() => [])) as any[];
+          phoneVariants,
+        )
+        .catch(() => [])) as any[];
 
       if (memberRows.length > 0) {
         if (memberRows[0].user_id) {
@@ -54,13 +56,15 @@ export class UsersRepository {
       }
 
       // Check public.user_profiles
-      const profileRows: any[] = (await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT user_id FROM public.user_profiles 
+      const profileRows: any[] = (await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT user_id FROM public.user_profiles 
          WHERE regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = ANY($1::text[]) 
            AND user_id IS NOT NULL 
          LIMIT 1`,
-        phoneVariants
-      ).catch(() => [])) as any[];
+          phoneVariants,
+        )
+        .catch(() => [])) as any[];
 
       if (profileRows.length > 0 && profileRows[0]?.user_id) {
         return this.findById(profileRows[0].user_id);
@@ -73,7 +77,11 @@ export class UsersRepository {
   async findById(id: string): Promise<vione_users | null> {
     if (!id || typeof id !== 'string') return null;
     const clean = id.trim();
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean)) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        clean,
+      )
+    ) {
       return null;
     }
     return this.prisma.vione_users
@@ -136,16 +144,22 @@ export class UsersRepository {
   }
 
   async syncToAuthUsers(id: string, email: string): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `INSERT INTO auth.users (id, email, role) VALUES ($1::uuid, $2, 'authenticated') ON CONFLICT (id) DO NOTHING`,
-      id,
-      email,
-    ).catch((err) => {
-      console.error('Failed to sync user to auth.users:', err);
-    });
+    await this.prisma
+      .$executeRawUnsafe(
+        `INSERT INTO auth.users (id, email, role) VALUES ($1::uuid, $2, 'authenticated') ON CONFLICT (id) DO NOTHING`,
+        id,
+        email,
+      )
+      .catch((err) => {
+        console.error('Failed to sync user to auth.users:', err);
+      });
   }
 
-  async autoLinkMember(userId: string, cleanPhone: string, userEmail: string): Promise<void> {
+  async autoLinkMember(
+    userId: string,
+    cleanPhone: string,
+    userEmail: string,
+  ): Promise<void> {
     if (cleanPhone || userEmail) {
       await this.prisma.$executeRaw`
         UPDATE public.members
@@ -159,7 +173,10 @@ export class UsersRepository {
     }
   }
 
-  async updateUser(id: string, data: Partial<vione_users>): Promise<vione_users> {
+  async updateUser(
+    id: string,
+    data: Partial<vione_users>,
+  ): Promise<vione_users> {
     return this.prisma.vione_users.update({
       where: { id },
       data: {
@@ -170,9 +187,11 @@ export class UsersRepository {
   }
 
   async getUserRoles(userId: string): Promise<any[]> {
-    return this.prisma.user_roles.findMany({
-      where: { user_id: userId },
-    }).catch(() => []);
+    return this.prisma.user_roles
+      .findMany({
+        where: { user_id: userId },
+      })
+      .catch(() => []);
   }
 
   async getMemberships(userId: string): Promise<any[]> {
@@ -182,15 +201,22 @@ export class UsersRepository {
   }
 
   async getUserProfile(userId: string): Promise<any> {
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.user_profiles WHERE user_id = $1::uuid LIMIT 1`,
-      userId,
-    ).catch(() => []);
+    const rows = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.user_profiles WHERE user_id = $1::uuid LIMIT 1`, userId)
+      .catch(() => []);
     return rows?.[0] || null;
   }
 
-  async getMemberInfo(userId: string, email?: string | null): Promise<any | null> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+  async getMemberInfo(
+    userId: string,
+    email?: string | null,
+  ): Promise<any | null> {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        userId,
+      );
     const cleanEmail = (email || '').trim().toLowerCase();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, code, executive_role, department, association_id, about, notes, name, contact, phone FROM public.members 
@@ -202,17 +228,27 @@ export class UsersRepository {
     return rows?.[0] || null;
   }
 
-  async upsertProfile(userId: string, createData: any, updateData: any): Promise<any> {
+  async upsertProfile(
+    userId: string,
+    createData: any,
+    updateData: any,
+  ): Promise<any> {
     try {
-      const displayName = createData?.display_name || updateData?.display_name || null;
-      const compName = createData?.company_name || updateData?.company_name || null;
-      const title = createData?.professional_title || updateData?.professional_title || null;
+      const displayName =
+        createData?.display_name || updateData?.display_name || null;
+      const compName =
+        createData?.company_name || updateData?.company_name || null;
+      const title =
+        createData?.professional_title ||
+        updateData?.professional_title ||
+        null;
       const ind = createData?.industry || updateData?.industry || null;
       const reg = createData?.region || updateData?.region || null;
       const bio = createData?.bio || updateData?.bio || null;
 
-      await this.prisma.$executeRawUnsafe(
-        `INSERT INTO public.user_profiles (user_id, display_name, company_name, professional_title, industry, region, bio, updated_at)
+      await this.prisma
+        .$executeRawUnsafe(
+          `INSERT INTO public.user_profiles (user_id, display_name, company_name, professional_title, industry, region, bio, updated_at)
          VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, NOW())
          ON CONFLICT (user_id) DO UPDATE SET
            display_name = COALESCE(EXCLUDED.display_name, public.user_profiles.display_name),
@@ -222,21 +258,33 @@ export class UsersRepository {
            region = COALESCE(EXCLUDED.region, public.user_profiles.region),
            bio = COALESCE(EXCLUDED.bio, public.user_profiles.bio),
            updated_at = NOW()`,
-        userId,
-        displayName,
-        compName,
-        title,
-        ind,
-        reg,
-        bio,
-      ).catch(() => {});
+          userId,
+          displayName,
+          compName,
+          title,
+          ind,
+          reg,
+          bio,
+        )
+        .catch(() => {});
     } catch {}
     return this.getUserProfile(userId);
   }
 
-  async syncMemberDetails(userId: string, data: { name?: string | null; avatar?: string | null; email?: string | null; industry?: string | null; region?: string | null; phone?: string | null }): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE public.members 
+  async syncMemberDetails(
+    userId: string,
+    data: {
+      name?: string | null;
+      avatar?: string | null;
+      email?: string | null;
+      industry?: string | null;
+      region?: string | null;
+      phone?: string | null;
+    },
+  ): Promise<void> {
+    await this.prisma
+      .$executeRawUnsafe(
+        `UPDATE public.members 
        SET name = COALESCE($1, name),
            contact = COALESCE($1, contact),
            avatar = COALESCE($2, avatar),
@@ -246,19 +294,30 @@ export class UsersRepository {
            phone = COALESCE($6, phone),
            updated_at = NOW()
        WHERE user_id = $7::uuid OR id = $7::text`,
-      data.name || null,
-      data.avatar || null,
-      data.email || null,
-      data.industry || null,
-      data.region || null,
-      data.phone || null,
-      userId,
-    ).catch(() => {});
+        data.name || null,
+        data.avatar || null,
+        data.email || null,
+        data.industry || null,
+        data.region || null,
+        data.phone || null,
+        userId,
+      )
+      .catch(() => {});
   }
 
-  async syncCardsDetails(userId: string, data: { name?: string | null; avatar?: string | null; professional_title?: string | null; company_name?: string | null; bio?: string | null }): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE public.member_business_cards
+  async syncCardsDetails(
+    userId: string,
+    data: {
+      name?: string | null;
+      avatar?: string | null;
+      professional_title?: string | null;
+      company_name?: string | null;
+      bio?: string | null;
+    },
+  ): Promise<void> {
+    await this.prisma
+      .$executeRawUnsafe(
+        `UPDATE public.member_business_cards
        SET display_name = COALESCE($1, display_name),
            avatar_url = COALESCE($2, avatar_url),
            professional_title = COALESCE($3, professional_title),
@@ -266,42 +325,52 @@ export class UsersRepository {
            bio = COALESCE($5, bio),
            updated_at = NOW()
        WHERE owner_user_id = $6::uuid`,
-      data.name || null,
-      data.avatar || null,
-      data.professional_title || null,
-      data.company_name || null,
-      data.bio || null,
-      userId,
-    ).catch(() => {});
+        data.name || null,
+        data.avatar || null,
+        data.professional_title || null,
+        data.company_name || null,
+        data.bio || null,
+        userId,
+      )
+      .catch(() => {});
 
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE public.card_settings
+    await this.prisma
+      .$executeRawUnsafe(
+        `UPDATE public.card_settings
        SET display_name = COALESCE($1, display_name),
            photo_url = COALESCE($2, photo_url),
            company_name = COALESCE($3, company_name),
            updated_at = NOW()
        WHERE user_id = $4::uuid`,
-      data.name || null,
-      data.avatar || null,
-      data.company_name || null,
-      userId,
-    ).catch(() => {});
+        data.name || null,
+        data.avatar || null,
+        data.company_name || null,
+        userId,
+      )
+      .catch(() => {});
   }
 
   async syncAuthUserEmail(userId: string, email: string): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE auth.users SET email = $1 WHERE id = $2::uuid`,
-      email,
-      userId,
-    ).catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `UPDATE auth.users SET email = $1 WHERE id = $2::uuid`,
+        email,
+        userId,
+      )
+      .catch(() => {});
   }
 
-  async syncAuthUserPassword(userId: string, hashedPassword: string): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE auth.users SET encrypted_password = $1 WHERE id = $2::uuid`,
-      hashedPassword,
-      userId,
-    ).catch(() => {});
+  async syncAuthUserPassword(
+    userId: string,
+    hashedPassword: string,
+  ): Promise<void> {
+    await this.prisma
+      .$executeRawUnsafe(
+        `UPDATE auth.users SET encrypted_password = $1 WHERE id = $2::uuid`,
+        hashedPassword,
+        userId,
+      )
+      .catch(() => {});
   }
 
   async completeOnboardingStatus(userId: string): Promise<void> {
@@ -340,7 +409,10 @@ export class UsersRepository {
         LIMIT 1
       `.catch(() => []);
       const user = userRows?.[0];
-      if (user?.email === 'admin@connect.vn' || user?.username === 'admin@connect.vn') {
+      if (
+        user?.email === 'admin@connect.vn' ||
+        user?.username === 'admin@connect.vn'
+      ) {
         return false;
       }
       if (user?.must_change_password === true) {
@@ -353,7 +425,10 @@ export class UsersRepository {
         LIMIT 1
       `.catch(() => []);
       const profile = profileRows?.[0];
-      if (profile?.must_change_password === true || profile?.onboarding_status === 'new') {
+      if (
+        profile?.must_change_password === true ||
+        profile?.onboarding_status === 'new'
+      ) {
         return true;
       }
       return false;
@@ -366,7 +441,11 @@ export class UsersRepository {
     return this.prisma.vione_users.count({ where });
   }
 
-  async findUsers(where: any, skip: number, take: number): Promise<vione_users[]> {
+  async findUsers(
+    where: any,
+    skip: number,
+    take: number,
+  ): Promise<vione_users[]> {
     return this.prisma.vione_users.findMany({
       where,
       skip,
@@ -377,72 +456,89 @@ export class UsersRepository {
 
   async findProfilesByUserIds(userIds: string[]): Promise<any[]> {
     if (!userIds || userIds.length === 0) return [];
-    return this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.user_profiles WHERE user_id = ANY($1::uuid[])`,
-      userIds,
-    ).catch(() => []);
+    return this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.user_profiles WHERE user_id = ANY($1::uuid[])`, userIds)
+      .catch(() => []);
   }
 
   async findRolesByUserIds(userIds: string[]): Promise<any[]> {
-    return this.prisma.user_roles.findMany({
-      where: { user_id: { in: userIds } },
-    }).catch(() => []);
+    return this.prisma.user_roles
+      .findMany({
+        where: { user_id: { in: userIds } },
+      })
+      .catch(() => []);
   }
 
   async getAllProfileStatuses(): Promise<{ account_status: any }[]> {
-    return this.prisma.$queryRawUnsafe<{ account_status: any }[]>(
-      `SELECT account_status FROM public.user_profiles`,
-    ).catch(() => []);
+    return this.prisma
+      .$queryRawUnsafe<
+        { account_status: any }[]
+      >(`SELECT account_status FROM public.user_profiles`)
+      .catch(() => []);
   }
 
   async getAllRoles(): Promise<{ role: any }[]> {
-    return this.prisma.user_roles.findMany({
-      select: { role: true },
-    }).catch(() => []);
+    return this.prisma.user_roles
+      .findMany({
+        select: { role: true },
+      })
+      .catch(() => []);
   }
 
   async createUserRole(userId: string, role: app_role): Promise<void> {
-    await this.prisma.user_roles.create({
-      data: {
-        user_id: userId,
-        role,
-      },
-    }).catch(() => {});
+    await this.prisma.user_roles
+      .create({
+        data: {
+          user_id: userId,
+          role,
+        },
+      })
+      .catch(() => {});
   }
 
   async deleteUserRoles(userId: string): Promise<void> {
-    await this.prisma.user_roles.deleteMany({
-      where: { user_id: userId },
-    }).catch(() => {});
+    await this.prisma.user_roles
+      .deleteMany({
+        where: { user_id: userId },
+      })
+      .catch(() => {});
   }
 
   async deleteUserProfile(userId: string): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `DELETE FROM public.user_profiles WHERE user_id = $1::uuid`,
-      userId,
-    ).catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `DELETE FROM public.user_profiles WHERE user_id = $1::uuid`,
+        userId,
+      )
+      .catch(() => {});
   }
 
   async deleteUser(id: string): Promise<void> {
-    await this.prisma.vione_users.delete({
-      where: { id },
-    }).catch(() => {});
+    await this.prisma.vione_users
+      .delete({
+        where: { id },
+      })
+      .catch(() => {});
   }
 
   async deleteAuthUser(id: string): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `DELETE FROM auth.users WHERE id = $1::uuid`,
-      id,
-    ).catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(`DELETE FROM auth.users WHERE id = $1::uuid`, id)
+      .catch(() => {});
   }
 
-  async getRawMemberNotesAndAbout(userId: string, email: string): Promise<string> {
+  async getRawMemberNotesAndAbout(
+    userId: string,
+    email: string,
+  ): Promise<string> {
     try {
-      const rows: any[] = await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT about, notes FROM public.members WHERE user_id = $1::uuid OR email = $2 OR contact_email = $2 LIMIT 1`,
-        userId,
-        email,
-      ).catch(() => []);
+      const rows: any[] = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT about, notes FROM public.members WHERE user_id = $1::uuid OR email = $2 OR contact_email = $2 LIMIT 1`, userId, email)
+        .catch(() => []);
       if (rows.length > 0) {
         return `${rows[0].about || ''} ${rows[0].notes || ''}`.trim();
       }

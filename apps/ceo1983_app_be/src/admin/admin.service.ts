@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  OnModuleInit,
+  Optional,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
 import { AdminRepository } from './admin.repository';
@@ -14,7 +21,9 @@ export const DEMO_LEAD_STATUSES = [
 
 function isValidUuid(val: any): boolean {
   if (!val || typeof val !== 'string') return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    val,
+  );
 }
 
 @Injectable()
@@ -40,30 +49,36 @@ export class AdminService implements OnModuleInit {
     from?: string;
     to?: string;
   }) {
-    let whereConditions: string[] = ['1=1'];
+    const whereConditions: string[] = ['1=1'];
 
     if (query.status && query.status !== 'all') {
       whereConditions.push(`status = '${query.status}'`);
     }
 
     if (query.from) {
-      whereConditions.push(`created_at >= '${query.from}T00:00:00Z'::timestamptz`);
+      whereConditions.push(
+        `created_at >= '${query.from}T00:00:00Z'::timestamptz`,
+      );
     }
 
     if (query.to) {
-      whereConditions.push(`created_at <= '${query.to}T23:59:59Z'::timestamptz`);
+      whereConditions.push(
+        `created_at <= '${query.to}T23:59:59Z'::timestamptz`,
+      );
     }
 
     if (query.search?.trim()) {
       const s = query.search.trim().replace(/'/g, "''");
       whereConditions.push(
-        `(name ILIKE '%${s}%' OR email ILIKE '%${s}%' OR organization ILIKE '%${s}%')`
+        `(name ILIKE '%${s}%' OR email ILIKE '%${s}%' OR organization ILIKE '%${s}%')`,
       );
     }
 
     const whereClause = whereConditions.join(' AND ');
 
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+    const rows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT 
         id, name, email, organization, phone, job_title, preferred_date,
         preferred_slot, timezone, notes, locale, status, admin_notes,
@@ -72,7 +87,9 @@ export class AdminService implements OnModuleInit {
       WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT 500
-    `).catch(() => []);
+    `,
+      )
+      .catch(() => []);
 
     const leads = rows.map((r) => ({
       id: r.id,
@@ -82,7 +99,9 @@ export class AdminService implements OnModuleInit {
       phone: r.phone,
       jobTitle: r.job_title,
       preferredDate: r.preferred_date,
-      preferredSlot: r.preferred_slot ? String(r.preferred_slot).slice(0, 5) : null,
+      preferredSlot: r.preferred_slot
+        ? String(r.preferred_slot).slice(0, 5)
+        : null,
       timezone: r.timezone,
       notes: r.notes,
       locale: r.locale,
@@ -100,7 +119,10 @@ export class AdminService implements OnModuleInit {
     return { leads, counts };
   }
 
-  async updateDemoLead(id: string, data: { status?: string; adminNotes?: string | null }) {
+  async updateDemoLead(
+    id: string,
+    data: { status?: string; adminNotes?: string | null },
+  ) {
     const updates: string[] = ['updated_at = now()'];
 
     if (data.status) {
@@ -152,14 +174,25 @@ export class AdminService implements OnModuleInit {
   // ── INVOICES / FEES MANAGEMENT ──────────────────────────────────────────────
 
   private mapInvoiceRow(r: any) {
-    const dueDate = r.due_date instanceof Date ? r.due_date.toISOString().slice(0, 10) : String(r.due_date || '');
-    const paidAt = r.paid_at ? (r.paid_at instanceof Date ? r.paid_at.toISOString().slice(0, 10) : String(r.paid_at).slice(0, 10)) : null;
+    const dueDate =
+      r.due_date instanceof Date
+        ? r.due_date.toISOString().slice(0, 10)
+        : String(r.due_date || '');
+    const paidAt = r.paid_at
+      ? r.paid_at instanceof Date
+        ? r.paid_at.toISOString().slice(0, 10)
+        : String(r.paid_at).slice(0, 10)
+      : null;
 
     let member: any = null;
     if (r.member_id || r.member_name || r.member_code) {
       member = {
         id: r.member_id || '',
-        code: r.member_code || (r.member_id ? `MB-${String(r.member_id).slice(0, 6).toUpperCase()}` : 'MB-CHUA-CO'),
+        code:
+          r.member_code ||
+          (r.member_id
+            ? `MB-${String(r.member_id).slice(0, 6).toUpperCase()}`
+            : 'MB-CHUA-CO'),
         name: r.member_name || r.member_contact || r.member_email || 'Hội viên',
         contact: r.member_contact || r.member_name || '',
         email: r.member_email || '',
@@ -297,7 +330,10 @@ export class AdminService implements OnModuleInit {
     };
   }
 
-  async markInvoicePaid(id: string, method: 'bank' | 'card' | 'cash' | 'ewallet' = 'bank') {
+  async markInvoicePaid(
+    id: string,
+    method: 'bank' | 'card' | 'cash' | 'ewallet' = 'bank',
+  ) {
     const today = new Date().toISOString().slice(0, 10);
     const existing = await this.getInvoiceById(id);
 
@@ -321,7 +357,7 @@ export class AdminService implements OnModuleInit {
         const targetUserId = memRows[0]?.user_id;
         if (targetUserId) {
           const notifTitle = 'Xác nhận thanh toán thành công';
-          const notifBody = `Hóa đơn #${existing.invoice.invoiceNo || id} trị giá ${(Number(existing.invoice.amount || 0)).toLocaleString('vi-VN')} đ đã được xác nhận thanh toán thành công qua phương thức ${method}.`;
+          const notifBody = `Hóa đơn #${existing.invoice.invoiceNo || id} trị giá ${Number(existing.invoice.amount || 0).toLocaleString('vi-VN')} đ đã được xác nhận thanh toán thành công qua phương thức ${method}.`;
           const notifId = require('crypto').randomUUID();
           const dedupeKey = `invoice-paid-${id}-${Date.now()}`;
           const safeData = JSON.stringify({
@@ -335,7 +371,9 @@ export class AdminService implements OnModuleInit {
             targetRoute: `/fees/${id}`,
           });
 
-          await this.prisma.$executeRawUnsafe(`
+          await this.prisma
+            .$executeRawUnsafe(
+              `
             INSERT INTO public.business_notifications (
               id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
               title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -343,42 +381,83 @@ export class AdminService implements OnModuleInit {
               $1::uuid, $2::uuid, 'finance', $3, 'invoice_paid', 'payment_success',
               $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
             )
-          `, notifId, targetUserId, id, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+          `,
+              notifId,
+              targetUserId,
+              id,
+              notifTitle,
+              notifBody,
+              safeData,
+              dedupeKey,
+            )
+            .catch(() => {});
 
-          await this.prisma.$executeRawUnsafe(`
+          await this.prisma
+            .$executeRawUnsafe(
+              `
             INSERT INTO public.member_notifications (
               id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
             ) VALUES (
               gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
             )
-          `, memRows[0]?.id || targetUserId, notifTitle, notifBody, id).catch(() => {});
+          `,
+              memRows[0]?.id || targetUserId,
+              notifTitle,
+              notifBody,
+              id,
+            )
+            .catch(() => {});
         }
       } catch (e: any) {
-        console.warn('[payInvoice] Failed to dispatch payment notification:', e?.message);
+        console.warn(
+          '[payInvoice] Failed to dispatch payment notification:',
+          e?.message,
+        );
       }
     }
 
     if (this.mailService) {
-      const methodLabel = method === 'bank' ? 'Chuyển khoản VNPAY' : method === 'cash' ? 'Tiền mặt' : method === 'card' ? 'Thẻ ngân hàng' : 'Ví điện tử';
-      const recipientEmail = (existing.invoice.member?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const methodLabel =
+        method === 'bank'
+          ? 'Chuyển khoản VNPAY'
+          : method === 'cash'
+            ? 'Tiền mặt'
+            : method === 'card'
+              ? 'Thẻ ngân hàng'
+              : 'Ví điện tử';
+      const recipientEmail = (
+        existing.invoice.member?.email ||
+        process.env.ADMIN_NOTIFY_EMAIL ||
+        'vupv090120@gmail.com'
+      ).trim();
       const memberName = existing.invoice.member?.name || 'Quý Hội viên';
 
-      this.mailService.sendMembershipFeeSuccessEmail({
-        to: recipientEmail,
-        memberName,
-        invoiceNo: existing.invoice.invoiceNo || id,
-        year: existing.invoice.year || new Date().getFullYear(),
-        amount: Number(existing.invoice.amount || 0),
-        paidDate: today,
-        paymentMethod: methodLabel,
-      }).catch((err) => console.warn('[markInvoicePaid] sendMembershipFeeSuccessEmail error:', err?.message));
+      this.mailService
+        .sendMembershipFeeSuccessEmail({
+          to: recipientEmail,
+          memberName,
+          invoiceNo: existing.invoice.invoiceNo || id,
+          year: existing.invoice.year || new Date().getFullYear(),
+          amount: Number(existing.invoice.amount || 0),
+          paidDate: today,
+          paymentMethod: methodLabel,
+        })
+        .catch((err) =>
+          console.warn(
+            '[markInvoicePaid] sendMembershipFeeSuccessEmail error:',
+            err?.message,
+          ),
+        );
     }
 
     const updated = await this.getInvoiceById(id);
     return updated.invoice;
   }
 
-  async updateInvoiceMethod(id: string, method: 'bank' | 'card' | 'cash' | 'ewallet') {
+  async updateInvoiceMethod(
+    id: string,
+    method: 'bank' | 'card' | 'cash' | 'ewallet',
+  ) {
     await this.prisma.$executeRaw`
       UPDATE public.invoices
       SET method = ${method}, updated_at = NOW()
@@ -388,7 +467,10 @@ export class AdminService implements OnModuleInit {
     return updated.invoice;
   }
 
-  async addInvoiceReminder(id: string, data: { channel: string; byName?: string; note?: string }) {
+  async addInvoiceReminder(
+    id: string,
+    data: { channel: string; byName?: string; note?: string },
+  ) {
     const byName = data.byName || 'Hệ thống';
     const channel = data.channel || 'email';
     const note = data.note || '';
@@ -414,7 +496,9 @@ export class AdminService implements OnModuleInit {
 
         const targetUserId = memberRows[0]?.user_id;
         if (targetUserId) {
-          const formattedAmount = Number(existing.invoice.amount || 0).toLocaleString('vi-VN');
+          const formattedAmount = Number(
+            existing.invoice.amount || 0,
+          ).toLocaleString('vi-VN');
           const notifTitle = `[Nhắc nhở] Quá hạn thanh toán hội phí`;
           const notifBody = `Hóa đơn ${existing.invoice.invoiceNo || id} (Số tiền: ${formattedAmount} đ) của Quý hội viên đã quá hạn thanh toán ngày ${existing.invoice.dueDate || 'gần nhất'}. Vui lòng kiểm tra và hoàn tất thanh toán.`;
           const dedupeKey = `reminder-${id}-${Date.now()}`;
@@ -430,7 +514,9 @@ export class AdminService implements OnModuleInit {
           });
 
           // 1. Business notifications (Priority 'critical' satisfies DB check constraint)
-          await this.prisma.$executeRawUnsafe(`
+          await this.prisma
+            .$executeRawUnsafe(
+              `
             INSERT INTO public.business_notifications (
               id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
               title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -438,30 +524,57 @@ export class AdminService implements OnModuleInit {
               gen_random_uuid(), $1, 'finance', $2, 'invoice_reminder', 'overdue_payment_reminder',
               $3, $4, $5::jsonb, 'critical', 'delivered', $6, 'all', 'all', NOW(), NOW()
             )
-          `, targetUserId, id, notifTitle, notifBody, safeDisplayData, dedupeKey).catch((err) => {
-            console.warn('[addInvoiceReminder] Failed to insert business_notifications:', err?.message);
-          });
+          `,
+              targetUserId,
+              id,
+              notifTitle,
+              notifBody,
+              safeDisplayData,
+              dedupeKey,
+            )
+            .catch((err) => {
+              console.warn(
+                '[addInvoiceReminder] Failed to insert business_notifications:',
+                err?.message,
+              );
+            });
 
           // 2. Association member_notifications (insert by memberId and targetUserId so both portals receive it)
           const memberDbId = memberRows[0]?.id;
           const memberCode = memberRows[0]?.code;
           if (memberDbId) {
-            await this.prisma.$executeRawUnsafe(`
+            await this.prisma
+              .$executeRawUnsafe(
+                `
               INSERT INTO public.member_notifications (
                 id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
               ) VALUES (
                 gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
               )
-            `, String(memberDbId), notifTitle, notifBody, id).catch(() => {});
+            `,
+                String(memberDbId),
+                notifTitle,
+                notifBody,
+                id,
+              )
+              .catch(() => {});
           }
           if (targetUserId) {
-            await this.prisma.$executeRawUnsafe(`
+            await this.prisma
+              .$executeRawUnsafe(
+                `
               INSERT INTO public.member_notifications (
                 id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
               ) VALUES (
                 gen_random_uuid(), $1, $2, $3, false, false, 'invoice', $4, NOW()
               )
-            `, String(targetUserId), notifTitle, notifBody, id).catch(() => {});
+            `,
+                String(targetUserId),
+                notifTitle,
+                notifBody,
+                id,
+              )
+              .catch(() => {});
           }
 
           // 3. Đẩy template tin nhắn tương tác (Actionable template) kèm VNPAY-QR trực tiếp vào tin nhắn
@@ -478,40 +591,65 @@ export class AdminService implements OnModuleInit {
           }
 
           if (this.mailService) {
-            const recipientEmail = (existing.invoice.member?.email || memberRows[0]?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
-            const memberName = existing.invoice.member?.name || memberRows[0]?.name || 'Quý Hội viên';
+            const recipientEmail = (
+              existing.invoice.member?.email ||
+              memberRows[0]?.email ||
+              process.env.ADMIN_NOTIFY_EMAIL ||
+              'vupv090120@gmail.com'
+            ).trim();
+            const memberName =
+              existing.invoice.member?.name ||
+              memberRows[0]?.name ||
+              'Quý Hội viên';
 
-            this.mailService.sendMembershipFeeNotificationEmail({
-              to: recipientEmail,
-              memberName,
-              invoiceNo,
-              year: existing.invoice.year || new Date().getFullYear(),
-              amount: invoiceAmount,
-              dueDate: existing.invoice.dueDate || 'Hôm nay',
-              vietQrUrl: vnpayQrUrl,
-              bankAccount: '0988888888',
-              bankOwner: 'CLB DOANH NHAN CEO 1983',
-              bankName: 'MB Bank',
-              reminderCount: (existing.invoice.member?.reminderCount || 0) + 1,
-            }).catch((err) => console.warn('[addInvoiceReminder] sendMembershipFeeNotificationEmail error:', err?.message));
+            this.mailService
+              .sendMembershipFeeNotificationEmail({
+                to: recipientEmail,
+                memberName,
+                invoiceNo,
+                year: existing.invoice.year || new Date().getFullYear(),
+                amount: invoiceAmount,
+                dueDate: existing.invoice.dueDate || 'Hôm nay',
+                vietQrUrl: vnpayQrUrl,
+                bankAccount: '0988888888',
+                bankOwner: 'CLB DOANH NHAN CEO 1983',
+                bankName: 'MB Bank',
+                reminderCount:
+                  (existing.invoice.member?.reminderCount || 0) + 1,
+              })
+              .catch((err) =>
+                console.warn(
+                  '[addInvoiceReminder] sendMembershipFeeNotificationEmail error:',
+                  err?.message,
+                ),
+              );
           }
         }
       } catch (e: any) {
-        console.warn('[addInvoiceReminder] Failed to push notifications:', e?.message);
+        console.warn(
+          '[addInvoiceReminder] Failed to push notifications:',
+          e?.message,
+        );
       }
     }
 
     return this.getInvoiceById(id);
   }
 
-  async createInvoice(data: { memberId: string; year?: number; amount?: number; dueDate?: string }) {
+  async createInvoice(data: {
+    memberId: string;
+    year?: number;
+    amount?: number;
+    dueDate?: string;
+  }) {
     const year = data.year || new Date().getFullYear();
     const amount = BigInt(Math.round(data.amount || 15000000));
     const dueDate = data.dueDate || `${year}-12-31`;
     const lastInv = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.invoices WHERE id ~ '^[0-9]+$' ORDER BY CAST(id AS BIGINT) DESC LIMIT 1
     `.catch(() => []);
-    const id = lastInv.length > 0 ? (BigInt(lastInv[0].id) + 1n).toString() : '50001';
+    const id =
+      lastInv.length > 0 ? (BigInt(lastInv[0].id) + 1n).toString() : '50001';
 
     await this.prisma.$executeRaw`
       INSERT INTO public.invoices (id, member_id, invoice_no, year, amount, due_date, status, created_at, updated_at)
@@ -524,22 +662,33 @@ export class AdminService implements OnModuleInit {
       const invoiceAmount = Number(created.invoice.amount || 0);
       const invoiceNo = created.invoice.invoiceNo || id;
       const vnpayQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|FEE|${invoiceNo}|${invoiceAmount}`)}`;
-      const recipientEmail = (created.invoice.member?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const recipientEmail = (
+        created.invoice.member?.email ||
+        process.env.ADMIN_NOTIFY_EMAIL ||
+        'vupv090120@gmail.com'
+      ).trim();
       const memberName = created.invoice.member?.name || 'Quý Hội viên';
 
-      this.mailService.sendMembershipFeeNotificationEmail({
-        to: recipientEmail,
-        memberName,
-        invoiceNo,
-        year: created.invoice.year || new Date().getFullYear(),
-        amount: invoiceAmount,
-        dueDate: created.invoice.dueDate || `${year}-12-31`,
-        vietQrUrl: vnpayQrUrl,
-        bankAccount: '0988888888',
-        bankOwner: 'CLB DOANH NHAN CEO 1983',
-        bankName: 'MB Bank',
-        reminderCount: 0,
-      }).catch((err) => console.warn('[createInvoice] sendMembershipFeeNotificationEmail error:', err?.message));
+      this.mailService
+        .sendMembershipFeeNotificationEmail({
+          to: recipientEmail,
+          memberName,
+          invoiceNo,
+          year: created.invoice.year || new Date().getFullYear(),
+          amount: invoiceAmount,
+          dueDate: created.invoice.dueDate || `${year}-12-31`,
+          vietQrUrl: vnpayQrUrl,
+          bankAccount: '0988888888',
+          bankOwner: 'CLB DOANH NHAN CEO 1983',
+          bankName: 'MB Bank',
+          reminderCount: 0,
+        })
+        .catch((err) =>
+          console.warn(
+            '[createInvoice] sendMembershipFeeNotificationEmail error:',
+            err?.message,
+          ),
+        );
     }
 
     return created.invoice;
@@ -557,13 +706,23 @@ export class AdminService implements OnModuleInit {
 
   async checkIsAdmin(userId: string, assocId?: string): Promise<boolean> {
     if (!userId) return false;
-    if (userId === 'mock-admin-id' || userId === '00000000-0000-0000-0000-000000000000') {
+    if (
+      userId === 'mock-admin-id' ||
+      userId === '00000000-0000-0000-0000-000000000000'
+    ) {
       return true;
     }
     const roles = await this.prisma.user_roles
       .findMany({ where: { user_id: userId } })
       .catch(() => [] as any[]);
-    if (roles.some((r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin' || r.role === 'admin')) {
+    if (
+      roles.some(
+        (r: any) =>
+          r.role === 'platform_admin' ||
+          r.role === 'tenant_admin' ||
+          r.role === 'admin',
+      )
+    ) {
       return true;
     }
     try {
@@ -580,7 +739,10 @@ export class AdminService implements OnModuleInit {
         `;
       }
       return mems.some(
-        (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
+        (m: any) =>
+          m.role === 'admin' ||
+          m.role === 'association_admin' ||
+          m.role === 'owner',
       );
     } catch {
       return false;
@@ -614,23 +776,35 @@ export class AdminService implements OnModuleInit {
         const notifTitle = `👤 [Hồ sơ hội viên mới] Đăng ký: ${company}`;
         const notifBody = `Hội viên ${m.name} (${company}) vừa nộp đơn đăng ký gia nhập CLB CEO 1983 và đang chờ Ban Quản Trị phê duyệt.`;
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.notifications (
             id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, 'staff', 'inapp', 'sent', NOW(), 1, $4::uuid, 'crm', 'crm', 'admins', false, NOW(), NOW()
           ) ON CONFLICT (code) DO NOTHING
-        `, notifCode, notifTitle, notifBody, m.association_id || validAssocId || null).catch(() => {});
+        `,
+            notifCode,
+            notifTitle,
+            notifBody,
+            m.association_id || validAssocId || null,
+          )
+          .catch(() => {});
       }
 
       // Xóa thông báo pending cho các hội viên đã được duyệt hoặc từ chối
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         DELETE FROM public.notifications
         WHERE code LIKE 'NOTIF-MBR-PENDING-%'
           AND substring(code from 19) IN (
             SELECT id FROM public.members WHERE status != 'pending'
           )
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
 
       // 2. Quét hội viên quá hạn hội phí
       const overdueMembers = await this.prisma.$queryRaw<any[]>`
@@ -647,27 +821,41 @@ export class AdminService implements OnModuleInit {
       for (const m of overdueMembers) {
         const notifCode = `NOTIF-FEE-OVERDUE-${m.id}`;
         const company = m.company_name || m.code || 'Hội viên';
-        const dateStr = m.term_end ? new Date(m.term_end).toLocaleDateString('vi-VN') : 'kỳ trước';
+        const dateStr = m.term_end
+          ? new Date(m.term_end).toLocaleDateString('vi-VN')
+          : 'kỳ trước';
         const notifTitle = `⚠️ [Quá hạn hội phí] ${m.name} (${company})`;
         const notifBody = `Hội viên ${m.name} (${company}) đã quá hạn đóng phí niên liễm (Hạn đóng: ${dateStr}). Đề nghị Ban Thư Ký & Kế toán kiểm tra và đôn đốc thu phí.`;
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.notifications (
             id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, 'staff', 'inapp', 'sent', NOW(), 1, $4::uuid, 'crm', 'crm', 'admins', false, NOW(), NOW()
           ) ON CONFLICT (code) DO NOTHING
-        `, notifCode, notifTitle, notifBody, m.association_id || validAssocId || null).catch(() => {});
+        `,
+            notifCode,
+            notifTitle,
+            notifBody,
+            m.association_id || validAssocId || null,
+          )
+          .catch(() => {});
       }
 
       // Xóa thông báo quá hạn nếu hội viên đã hoàn thành đóng phí
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         DELETE FROM public.notifications
         WHERE code LIKE 'NOTIF-FEE-OVERDUE-%'
           AND substring(code from 19) IN (
             SELECT id FROM public.members WHERE fee_paid = true AND (payment_status = 'paid' OR payment_status IS NULL)
           )
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
 
       // 3. Quét hội viên sắp đến hạn hội phí trong 30 ngày
       const soonExpiringMembers = await this.prisma.$queryRaw<any[]>`
@@ -686,27 +874,41 @@ export class AdminService implements OnModuleInit {
         const notifCode = `NOTIF-FEE-SOON-${m.id}`;
         const company = m.company_name || m.code || 'Hội viên';
         const days = Math.max(1, Number(m.days_left || 0));
-        const dateStr = m.term_end ? new Date(m.term_end).toLocaleDateString('vi-VN') : '';
+        const dateStr = m.term_end
+          ? new Date(m.term_end).toLocaleDateString('vi-VN')
+          : '';
         const notifTitle = `⏳ [Cảnh báo sắp hết hạn hội phí] ${m.name}`;
         const notifBody = `Hội viên ${m.name} (${company}) sắp đến hạn đóng phí thường niên (còn ${days} ngày nữa, hạn: ${dateStr}). Đề nghị phát thông báo gia hạn hội phí.`;
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.notifications (
             id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, 'staff', 'inapp', 'sent', NOW(), 1, $4::uuid, 'crm', 'crm', 'admins', false, NOW(), NOW()
           ) ON CONFLICT (code) DO NOTHING
-        `, notifCode, notifTitle, notifBody, m.association_id || validAssocId || null).catch(() => {});
+        `,
+            notifCode,
+            notifTitle,
+            notifBody,
+            m.association_id || validAssocId || null,
+          )
+          .catch(() => {});
       }
 
       // Xóa thông báo sắp đến hạn nếu hội viên đã hoàn thành đóng phí
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         DELETE FROM public.notifications
         WHERE code LIKE 'NOTIF-FEE-SOON-%'
           AND substring(code from 16) IN (
             SELECT id FROM public.members WHERE fee_paid = true AND (payment_status = 'paid' OR payment_status IS NULL)
           )
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
     } catch (err: any) {
       console.warn('[syncSystemAlertNotifications] Error:', err?.message);
     }
@@ -714,7 +916,11 @@ export class AdminService implements OnModuleInit {
 
   // ── CRM NOTIFICATIONS ────────────────────────────────────────────────────────
 
-  async listNotifications(userId: string, associationId?: string, appScope?: string) {
+  async listNotifications(
+    userId: string,
+    associationId?: string,
+    appScope?: string,
+  ) {
     const notifs: any[] = [];
     const seenMap = new Set<string>();
     const filterScope = appScope && appScope !== 'all' ? appScope : null;
@@ -726,9 +932,13 @@ export class AdminService implements OnModuleInit {
 
     const dismissedIds = new Set<string>(this.dismissedNotifIds);
     try {
-      const dRows = await this.prisma.$queryRawUnsafe<any[]>(`
+      const dRows = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT id FROM public.dismissed_notifications LIMIT 1000
-      `).catch(() => []);
+      `,
+        )
+        .catch(() => []);
       for (const d of dRows) {
         if (d.id) dismissedIds.add(String(d.id));
       }
@@ -783,7 +993,11 @@ export class AdminService implements OnModuleInit {
         }
 
         const notifId = r.code || r.id;
-        if (dismissedIds.has(String(notifId)) || dismissedIds.has(String(r.id)) || (r.code && dismissedIds.has(String(r.code)))) {
+        if (
+          dismissedIds.has(String(notifId)) ||
+          dismissedIds.has(String(r.id)) ||
+          (r.code && dismissedIds.has(String(r.code)))
+        ) {
           continue;
         }
 
@@ -798,8 +1012,15 @@ export class AdminService implements OnModuleInit {
           appScope: r.app_scope || r.target_app || 'crm',
           targetApp: r.target_app || r.app_scope || 'crm',
           targetChannel: r.target_channel || null,
-          pushedToMessages: Boolean(r.pushed_to_messages || (r.target_channel && r.target_channel !== 'none')),
-          sentAt: r.sent_at ? new Date(r.sent_at).toISOString() : (r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()),
+          pushedToMessages: Boolean(
+            r.pushed_to_messages ||
+            (r.target_channel && r.target_channel !== 'none'),
+          ),
+          sentAt: r.sent_at
+            ? new Date(r.sent_at).toISOString()
+            : r.created_at
+              ? new Date(r.created_at).toISOString()
+              : new Date().toISOString(),
           reach: r.reach || 0,
           status: r.status || 'sent',
         };
@@ -820,14 +1041,16 @@ export class AdminService implements OnModuleInit {
         let bzRows: any[] = [];
         if (isAdmin) {
           if (filterScope) {
-            bzRows = validUserId ? await this.prisma.$queryRaw<any[]>`
+            bzRows = validUserId
+              ? await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
               WHERE (recipient_user_id = ${validUserId}::uuid OR source_domain = 'association')
                 AND (app_scope = ${filterScope} OR target_app = ${filterScope})
               ORDER BY created_at DESC
               LIMIT 40
-            `.catch(() => []) : await this.prisma.$queryRaw<any[]>`
+            `.catch(() => [])
+              : await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
               WHERE source_domain = 'association'
@@ -836,13 +1059,15 @@ export class AdminService implements OnModuleInit {
               LIMIT 40
             `.catch(() => []);
           } else {
-            bzRows = validUserId ? await this.prisma.$queryRaw<any[]>`
+            bzRows = validUserId
+              ? await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
               WHERE (recipient_user_id = ${validUserId}::uuid OR source_domain = 'association')
               ORDER BY created_at DESC
               LIMIT 40
-            `.catch(() => []) : await this.prisma.$queryRaw<any[]>`
+            `.catch(() => [])
+              : await this.prisma.$queryRaw<any[]>`
               SELECT id, title_key, body_key, safe_display_data, action_kind, action_target, created_at, status, app_scope, target_app
               FROM public.business_notifications
               WHERE source_domain = 'association'
@@ -880,7 +1105,10 @@ export class AdminService implements OnModuleInit {
           const title = safe.title || bz.title_key || 'Thông báo';
           const body = safe.body || bz.body_key || '';
           const key = `${title}:${body}`;
-          const scope = bz.app_scope || bz.target_app || (bz.source_domain === 'association' ? 'crm' : 'association_app');
+          const scope =
+            bz.app_scope ||
+            bz.target_app ||
+            (bz.source_domain === 'association' ? 'crm' : 'association_app');
           if (!seenMap.has(key)) {
             seenMap.add(key);
             notifs.push({
@@ -891,10 +1119,15 @@ export class AdminService implements OnModuleInit {
               channel: 'inapp',
               appScope: scope,
               targetApp: scope,
-              sentAt: bz.created_at ? new Date(bz.created_at).toISOString() : new Date().toISOString(),
+              sentAt: bz.created_at
+                ? new Date(bz.created_at).toISOString()
+                : new Date().toISOString(),
               reach: 1,
               status: 'sent',
-              targetRoute: bz.action_target?.route || bz.action_target?.targetRoute || '/notifications',
+              targetRoute:
+                bz.action_target?.route ||
+                bz.action_target?.targetRoute ||
+                '/notifications',
             });
           }
         }
@@ -916,7 +1149,8 @@ export class AdminService implements OnModuleInit {
 
         for (const m of pendingMembers) {
           const pendingId = `PENDING-MB-${m.id}`;
-          if (dismissedIds.has(pendingId) || dismissedIds.has(String(m.id))) continue;
+          if (dismissedIds.has(pendingId) || dismissedIds.has(String(m.id)))
+            continue;
           const title = `Đăng ký hội viên mới: ${m.contact || m.name} - ${m.name}`;
           const body = `Ứng viên ${m.contact || m.name} (${m.phone || m.email || 'CLB CEO 1983'}) vừa nộp hồ sơ xin gia nhập. Bấm để duyệt ngay.`;
           const key = `${title}:${body}`;
@@ -930,7 +1164,11 @@ export class AdminService implements OnModuleInit {
               channel: 'inapp',
               appScope: 'crm',
               targetApp: 'crm',
-              sentAt: m.created_at ? new Date(m.created_at).toISOString() : (m.joined_at ? new Date(m.joined_at).toISOString() : new Date().toISOString()),
+              sentAt: m.created_at
+                ? new Date(m.created_at).toISOString()
+                : m.joined_at
+                  ? new Date(m.joined_at).toISOString()
+                  : new Date().toISOString(),
               reach: 1,
               status: 'sent',
               targetRoute: '/members?status=pending',
@@ -943,7 +1181,10 @@ export class AdminService implements OnModuleInit {
     }
 
     // 4. Sort all notifications by sentAt DESC
-    return notifs.sort((a, b) => new Date(b.sentAt || 0).getTime() - new Date(a.sentAt || 0).getTime());
+    return notifs.sort(
+      (a, b) =>
+        new Date(b.sentAt || 0).getTime() - new Date(a.sentAt || 0).getTime(),
+    );
   }
 
   async createNotification(userId: string, data: any) {
@@ -957,19 +1198,39 @@ export class AdminService implements OnModuleInit {
     const status = String(data.status || 'sent');
     const assocId = data.associationId || null;
     const targetUserId = data.targetUserId || data.userId || null;
-    const department = String(data.department || data.committee || data.channelCode || '').trim();
-    const targetChannel = String(data.targetChatChannel || data.targetChannel || '').trim();
-    const pushedToMessages = Boolean(data.pushedToMessages || (targetChannel && targetChannel !== 'none'));
+    const department = String(
+      data.department || data.committee || data.channelCode || '',
+    ).trim();
+    const targetChannel = String(
+      data.targetChatChannel || data.targetChannel || '',
+    ).trim();
+    const pushedToMessages = Boolean(
+      data.pushedToMessages || (targetChannel && targetChannel !== 'none'),
+    );
 
     const sentAtStr = status === 'sent' ? now.toISOString() : null;
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       INSERT INTO public.notifications (
         id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, target_channel, pushed_to_messages, created_at, updated_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10, $11, $12, NOW(), NOW()
       )
-    `, code, title, body, audience, channel, status, sentAtStr, assocId, appScope, appScope, targetChannel || null, pushedToMessages);
+    `,
+      code,
+      title,
+      body,
+      audience,
+      channel,
+      status,
+      sentAtStr,
+      assocId,
+      appScope,
+      appScope,
+      targetChannel || null,
+      pushedToMessages,
+    );
 
     if (status === 'sent') {
       try {
@@ -1025,16 +1286,44 @@ export class AdminService implements OnModuleInit {
     let channelLabel = 'Ban Truyền Thông & Sự Kiện';
     const deptLower = `${department || ''} ${audience || ''}`.toLowerCase();
 
-    if (deptLower.includes('thu_ky') || deptLower.includes('secretariat') || deptLower.includes('dieu_hanh') || deptLower.includes('bch') || deptLower.includes('cuoc_hop') || deptLower.includes('hop_bch')) {
+    if (
+      deptLower.includes('thu_ky') ||
+      deptLower.includes('secretariat') ||
+      deptLower.includes('dieu_hanh') ||
+      deptLower.includes('bch') ||
+      deptLower.includes('cuoc_hop') ||
+      deptLower.includes('hop_bch')
+    ) {
       targetChannel = 'channel_secretariat';
       channelLabel = 'Ban Thư Ký & Ban Điều Hành';
-    } else if (deptLower.includes('thanh_vien') || deptLower.includes('membership') || deptLower.includes('hoi_vien') || deptLower.includes('member') || deptLower.includes('gia_han') || deptLower.includes('ket_nap')) {
+    } else if (
+      deptLower.includes('thanh_vien') ||
+      deptLower.includes('membership') ||
+      deptLower.includes('hoi_vien') ||
+      deptLower.includes('member') ||
+      deptLower.includes('gia_han') ||
+      deptLower.includes('ket_nap')
+    ) {
       targetChannel = 'channel_membership';
       channelLabel = 'Ban Thành Viên & Hội Viên';
-    } else if (deptLower.includes('xuc_tien') || deptLower.includes('promotion') || deptLower.includes('marketplace') || deptLower.includes('co_hoi') || deptLower.includes('deal') || deptLower.includes('b2b')) {
+    } else if (
+      deptLower.includes('xuc_tien') ||
+      deptLower.includes('promotion') ||
+      deptLower.includes('marketplace') ||
+      deptLower.includes('co_hoi') ||
+      deptLower.includes('deal') ||
+      deptLower.includes('b2b')
+    ) {
       targetChannel = 'channel_promotion';
       channelLabel = 'Ban Xúc Tiến Thương Mại & Marketplace';
-    } else if (deptLower.includes('truyen_thong') || deptLower.includes('media') || deptLower.includes('event') || deptLower.includes('su_kien') || deptLower.includes('hoi_nghi') || deptLower.includes('kho_anh')) {
+    } else if (
+      deptLower.includes('truyen_thong') ||
+      deptLower.includes('media') ||
+      deptLower.includes('event') ||
+      deptLower.includes('su_kien') ||
+      deptLower.includes('hoi_nghi') ||
+      deptLower.includes('kho_anh')
+    ) {
       targetChannel = 'channel_media';
       channelLabel = 'Ban Truyền Thông & Sự Kiện';
     }
@@ -1057,16 +1346,28 @@ export class AdminService implements OnModuleInit {
       const directMsgText = `🔔 [THÔNG BÁO HỆ THỐNG] ${title}\n\n${body}`;
 
       // Bắn trực tiếp vào public.messages của user
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.messages (id, from_id, to_id, text, created_at)
         VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
-      `, targetUserId, directMsgText).catch(() => {});
+      `,
+          targetUserId,
+          directMsgText,
+        )
+        .catch(() => {});
 
       if (memCode && memCode !== targetUserId) {
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.messages (id, from_id, to_id, text, created_at)
           VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
-        `, String(memCode).toLowerCase(), directMsgText).catch(() => {});
+        `,
+            String(memCode).toLowerCase(),
+            directMsgText,
+          )
+          .catch(() => {});
       }
 
       // Realtime push notification & message event
@@ -1089,16 +1390,27 @@ export class AdminService implements OnModuleInit {
       const broadcastMsgText = `📢 [${channelLabel.toUpperCase()}] ${title}\n\n${body}`;
 
       // Ghi vào kênh chuyên trách trong public.messages
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.messages (id, from_id, to_id, text, created_at)
         VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
-      `, targetChannel, broadcastMsgText).catch(() => {});
+      `,
+          targetChannel,
+          broadcastMsgText,
+        )
+        .catch(() => {});
 
       // Ghi thêm vào kênh chung group_ceo1983_broadcast
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.messages (id, from_id, to_id, text, created_at)
         VALUES (gen_random_uuid(), 'admin', 'group_ceo1983_broadcast', $1, NOW())
-      `, broadcastMsgText).catch(() => {});
+      `,
+          broadcastMsgText,
+        )
+        .catch(() => {});
 
       // Phát realtime socket cho toàn bộ app
       this.gateway.emitToAll('dm:message_received', {
@@ -1154,20 +1466,30 @@ export class AdminService implements OnModuleInit {
     // Insert into member_notifications for association members
     if (appScope === 'association_app' || appScope === 'all') {
       for (const recipientId of memberRecipientIds) {
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'system', $4, NOW()
           )
-        `, recipientId, title, body, code).catch(() => {});
+        `,
+            recipientId,
+            title,
+            body,
+            code,
+          )
+          .catch(() => {});
       }
     }
 
     // Insert into business_notifications for all targeted user IDs
     for (const uId of userIdsSet) {
       const dedupeKey = `crm-notif-${code}-${uId}`;
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.business_notifications (
           id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
           title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -1175,7 +1497,22 @@ export class AdminService implements OnModuleInit {
           gen_random_uuid(), $1::uuid, 'crm', $2, 'crm_broadcast', 'system_broadcast',
           $3, $4, $5::jsonb, 'normal', 'delivered', $6, $7, $8, NOW(), NOW()
         ) ON CONFLICT (dedupe_key) DO NOTHING
-      `, uId, code, title, body, JSON.stringify({ title, body, crmNotificationCode: code, channel: targetChannel }), dedupeKey, appScope, appScope).catch(() => {});
+      `,
+          uId,
+          code,
+          title,
+          body,
+          JSON.stringify({
+            title,
+            body,
+            crmNotificationCode: code,
+            channel: targetChannel,
+          }),
+          dedupeKey,
+          appScope,
+          appScope,
+        )
+        .catch(() => {});
     }
 
     this.gateway.emitToAll('notification:new', {
@@ -1201,8 +1538,10 @@ export class AdminService implements OnModuleInit {
 
   async updateNotification(id: string, data: any) {
     const updates: string[] = ['updated_at = NOW()'];
-    if (data.title) updates.push(`title = '${String(data.title).replace(/'/g, "''")}'`);
-    if (data.body !== undefined) updates.push(`body = '${String(data.body || '').replace(/'/g, "''")}'`);
+    if (data.title)
+      updates.push(`title = '${String(data.title).replace(/'/g, "''")}'`);
+    if (data.body !== undefined)
+      updates.push(`body = '${String(data.body || '').replace(/'/g, "''")}'`);
     if (data.audience) updates.push(`audience = '${String(data.audience)}'`);
     if (data.channel) updates.push(`channel = '${String(data.channel)}'`);
     if (data.appScope || data.targetApp) {
@@ -1226,18 +1565,26 @@ export class AdminService implements OnModuleInit {
 
   async sendNotification(id: string) {
     const now = new Date();
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       UPDATE public.notifications
       SET status = 'sent', sent_at = NOW(), updated_at = NOW()
       WHERE code = $1 OR id::text = $1
-    `, id);
+    `,
+      id,
+    );
 
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+    const rows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app
       FROM public.notifications
       WHERE code = $1 OR id::text = $1
       LIMIT 1
-    `, id).catch(() => []);
+    `,
+        id,
+      )
+      .catch(() => []);
 
     const notif = rows[0] || { id, status: 'sent', sentAt: now.toISOString() };
     const appScope = notif.app_scope || notif.target_app || 'crm';
@@ -1279,36 +1626,61 @@ export class AdminService implements OnModuleInit {
     this.dismissedNotifIds.add(id);
 
     try {
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.dismissed_notifications (
           id text PRIMARY KEY,
           dismissed_at timestamptz DEFAULT NOW()
         )
-      `).catch(() => null);
+      `,
+        )
+        .catch(() => null);
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.dismissed_notifications (id) VALUES ($1)
         ON CONFLICT (id) DO NOTHING
-      `, id).catch(() => null);
+      `,
+          id,
+        )
+        .catch(() => null);
     } catch {}
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       DELETE FROM public.notifications
       WHERE code = $1 OR id::text = $1
-    `, id).catch(() => null);
+    `,
+        id,
+      )
+      .catch(() => null);
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       DELETE FROM public.business_notifications
       WHERE id::text = $1
-    `, id).catch(() => null);
+    `,
+        id,
+      )
+      .catch(() => null);
 
     return { ok: true };
   }
 
-  async pushNotificationToMessages(userId: string, id: string, channelCode?: string) {
+  async pushNotificationToMessages(
+    userId: string,
+    id: string,
+    channelCode?: string,
+  ) {
     const isAdmin = await this.checkIsAdmin(userId);
     if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền đẩy thông báo vào tin nhắn');
+      throw new ForbiddenException(
+        'Chỉ quản trị viên mới có quyền đẩy thông báo vào tin nhắn',
+      );
     }
     const targetChannel = channelCode || 'channel_media';
 
@@ -1329,18 +1701,29 @@ export class AdminService implements OnModuleInit {
     }
 
     // Update notifications table
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       UPDATE public.notifications
       SET pushed_to_messages = true, target_channel = $1, updated_at = NOW()
       WHERE id::text = $2 OR code = $2
-    `, targetChannel, id).catch(() => {});
+    `,
+        targetChannel,
+        id,
+      )
+      .catch(() => {});
 
     // Also update business_notifications if matching
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       UPDATE public.business_notifications
       SET pushed_to_messages = true, updated_at = NOW()
       WHERE id::text = $1 OR source_record_id = $1
-    `, id).catch(() => {});
+    `,
+        id,
+      )
+      .catch(() => {});
 
     // Post to public.messages
     const channelLabelMap: Record<string, string> = {
@@ -1351,18 +1734,30 @@ export class AdminService implements OnModuleInit {
       channel_deals: 'Kênh Cơ Hội & Deal B2B',
       channel_events: 'Kênh Sự Kiện & Hội Nghị',
     };
-    const channelLabel = channelLabelMap[targetChannel] || 'Ban Điều Hành Hiệp Hội CEO 1983';
+    const channelLabel =
+      channelLabelMap[targetChannel] || 'Ban Điều Hành Hiệp Hội CEO 1983';
     const broadcastMsgText = `📢 [${channelLabel.toUpperCase()}] ${title}\n\n${body}`;
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.messages (id, from_id, to_id, text, created_at)
       VALUES (gen_random_uuid(), 'admin', $1, $2, NOW())
-    `, targetChannel, broadcastMsgText).catch(() => {});
+    `,
+        targetChannel,
+        broadcastMsgText,
+      )
+      .catch(() => {});
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.messages (id, from_id, to_id, text, created_at)
       VALUES (gen_random_uuid(), 'admin', 'group_ceo1983_broadcast', $1, NOW())
-    `, broadcastMsgText).catch(() => {});
+    `,
+        broadcastMsgText,
+      )
+      .catch(() => {});
 
     const nowIso = new Date().toISOString();
     this.gateway.emitToAll('dm:message_received', {
@@ -1391,7 +1786,8 @@ export class AdminService implements OnModuleInit {
     if (!eventId) throw new BadRequestException('eventId is required');
 
     // 1. Lấy thông tin sự kiện
-    const eventRows: any[] = (await this.prisma.$queryRaw<any[]>`
+    const eventRows: any[] =
+      (await this.prisma.$queryRaw<any[]>`
       SELECT id, name, title, date, location, banner_url, poster_url, capacity, ticket_price, status
       FROM public.events
       WHERE id::text = ${eventId}
@@ -1404,7 +1800,8 @@ export class AdminService implements OnModuleInit {
     }
 
     // 2. Lấy danh sách hội viên / đại biểu đã đăng ký sự kiện này
-    const attendees: any[] = (await this.prisma.$queryRaw<any[]>`
+    const attendees: any[] =
+      (await this.prisma.$queryRaw<any[]>`
       SELECT 
         er.id,
         er.event_id,
@@ -1429,7 +1826,10 @@ export class AdminService implements OnModuleInit {
     `.catch(() => [])) || [];
 
     const confirmedCount = attendees.filter(
-      (a: any) => a.status === 'confirmed' || a.payment_status === 'paid' || a.payment_status === 'free',
+      (a: any) =>
+        a.status === 'confirmed' ||
+        a.payment_status === 'paid' ||
+        a.payment_status === 'free',
     ).length;
 
     return {
@@ -1474,9 +1874,16 @@ export class AdminService implements OnModuleInit {
       channel?: string;
     },
   ) {
-    const { eventId, title, body, posterUrl, targetFilter = 'all_registered' } = data;
+    const {
+      eventId,
+      title,
+      body,
+      posterUrl,
+      targetFilter = 'all_registered',
+    } = data;
     if (!eventId) throw new BadRequestException('eventId is required');
-    if (!title || !title.trim()) throw new BadRequestException('title is required');
+    if (!title || !title.trim())
+      throw new BadRequestException('title is required');
 
     // 1. Lấy thông tin sự kiện
     const eventRows = await this.prisma.$queryRaw<any[]>`
@@ -1497,7 +1904,8 @@ export class AdminService implements OnModuleInit {
       hour: '2-digit',
       minute: '2-digit',
     });
-    const finalPosterUrl = posterUrl?.trim() || ev?.poster_url || ev?.banner_url || null;
+    const finalPosterUrl =
+      posterUrl?.trim() || ev?.poster_url || ev?.banner_url || null;
 
     // 2. Lấy danh sách hội viên thỏa mãn bộ lọc
     let filterCondition = `er.event_id = '${eventId}' AND er.status != 'cancelled'`;
@@ -1507,7 +1915,10 @@ export class AdminService implements OnModuleInit {
       filterCondition += ` AND (er.payment_status = 'unpaid' OR er.payment_status = 'pending')`;
     }
 
-    const attendees: any[] = (await this.prisma.$queryRawUnsafe<any[]>(`
+    const attendees: any[] =
+      (await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
       SELECT 
         er.id,
         COALESCE(er.member_name, m.name, 'Hội viên CEO') as name,
@@ -1523,13 +1934,17 @@ export class AdminService implements OnModuleInit {
       WHERE ${filterCondition}
       ORDER BY er.created_at DESC
       LIMIT 1000
-    `).catch(() => [])) || [];
+    `,
+        )
+        .catch(() => [])) || [];
 
     const notifCode = `NTF-EVT-${Date.now().toString(36).toUpperCase()}`;
     const nowIso = new Date().toISOString();
 
     // 3. Lưu thông báo tổng quát vào public.notifications
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.notifications (
         id, code, title, body, audience, channel, status, sent_at, reach,
         association_id, app_scope, target_app, target_channel, poster_url, event_id,
@@ -1539,14 +1954,24 @@ export class AdminService implements OnModuleInit {
         null, 'association_app', 'association_app', 'channel_media', $5, $6,
         NOW(), NOW()
       )
-    `, notifCode, title, body, attendees.length, finalPosterUrl, eventId).catch(() => {});
+    `,
+        notifCode,
+        title,
+        body,
+        attendees.length,
+        finalPosterUrl,
+        eventId,
+      )
+      .catch(() => {});
 
     // 4. Bắn tin nhắn và gửi thông báo trực tiếp tới từng hội viên đã đăng ký
     for (const att of attendees) {
       const targetUserId = att.user_id;
       const targetMemberCode = att.code;
       const attendeeName = att.name || 'Quý Hội viên';
-      const seatInfo = att.seat_assignment ? `Ghế/Bàn: ${att.seat_assignment}` : '';
+      const seatInfo = att.seat_assignment
+        ? `Ghế/Bàn: ${att.seat_assignment}`
+        : '';
       const ticketInfo = att.ticket_code ? `Mã vé: #${att.ticket_code}` : '';
 
       // Nội dung tin nhắn kèm chi tiết sự kiện
@@ -1557,28 +1982,51 @@ export class AdminService implements OnModuleInit {
 
       // A. Ghi vào public.messages của hội viên (Direct Chat Message)
       if (targetUserId) {
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.messages (id, from_id, to_id, text, image_url, created_at)
           VALUES (gen_random_uuid(), 'admin', $1, $2, $3, NOW())
-        `, String(targetUserId), directMsgText, finalPosterUrl).catch(() => {});
+        `,
+            String(targetUserId),
+            directMsgText,
+            finalPosterUrl,
+          )
+          .catch(() => {});
       }
       if (targetMemberCode && targetMemberCode !== targetUserId) {
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.messages (id, from_id, to_id, text, image_url, created_at)
           VALUES (gen_random_uuid(), 'admin', $1, $2, $3, NOW())
-        `, String(targetMemberCode).toLowerCase(), directMsgText, finalPosterUrl).catch(() => {});
+        `,
+            String(targetMemberCode).toLowerCase(),
+            directMsgText,
+            finalPosterUrl,
+          )
+          .catch(() => {});
       }
 
       // B. Ghi vào public.member_notifications cho App Hiệp Hội
       const memberRecipientId = targetMemberCode || targetUserId || att.id;
       if (memberRecipientId) {
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, poster_url, image_url, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'event', $4, $5, $5, NOW()
           )
-        `, String(memberRecipientId), title, body, eventId, finalPosterUrl).catch(() => {});
+        `,
+            String(memberRecipientId),
+            title,
+            body,
+            eventId,
+            finalPosterUrl,
+          )
+          .catch(() => {});
       }
 
       // C. Ghi vào public.business_notifications
@@ -1596,7 +2044,9 @@ export class AdminService implements OnModuleInit {
           ticketCode: att.ticket_code,
           crmNotificationCode: notifCode,
         });
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
             title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -1604,7 +2054,15 @@ export class AdminService implements OnModuleInit {
             gen_random_uuid(), $1::uuid, 'event', $2, 'event_reminder', 'event_reminder',
             $3, $4, $5::jsonb, 'high', 'delivered', $6, 'association_app', 'association_app', NOW(), NOW()
           ) ON CONFLICT (dedupe_key) DO NOTHING
-        `, targetUserId, eventId, title, body, displayData, dedupeKey).catch(() => {});
+        `,
+            targetUserId,
+            eventId,
+            title,
+            body,
+            displayData,
+            dedupeKey,
+          )
+          .catch(() => {});
       }
 
       // D. Phát realtime Socket tới phòng của người dùng
@@ -1668,17 +2126,25 @@ export class AdminService implements OnModuleInit {
       sent: Number(c.sent || 0),
       opened: Number(c.opened || 0),
       clicked: Number(c.clicked || 0),
-      sentAt: c.sent_at ? (c.sent_at instanceof Date ? c.sent_at.toISOString().slice(0, 10) : String(c.sent_at).slice(0, 10)) : '—',
+      sentAt: c.sent_at
+        ? c.sent_at instanceof Date
+          ? c.sent_at.toISOString().slice(0, 10)
+          : String(c.sent_at).slice(0, 10)
+        : '—',
       status: c.status || 'draft',
     }));
   }
 
   async createCampaign(data: any) {
     const code = `CMP-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const sentAt = data.time || (data.status === 'sent' ? new Date().toISOString().slice(0, 10) : null);
-    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
+    const sentAt =
+      data.time ||
+      (data.status === 'sent' ? new Date().toISOString().slice(0, 10) : null);
+    const assocId =
+      data.associationId || 'c1983000-0000-4000-8000-000000001983';
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma.$executeRawUnsafe(
+      `
       INSERT INTO public.email_campaigns (
         id, code, name, subject, audience, status, sent_at, sent, opened, clicked, association_id, created_at, updated_at
       ) VALUES (
@@ -1983,16 +2449,26 @@ export class AdminService implements OnModuleInit {
 
     if (rows.length && rows[0]?.value) {
       const val = rows[0].value;
-      if (val?.categories && Array.isArray(val.categories) && val.categories.length > 0) return val;
-      if (Array.isArray(val) && val.length > 0) return { rows: val, categories: val };
-      if (val?.rows && Array.isArray(val.rows) && val.rows.length > 0) return val;
+      if (
+        val?.categories &&
+        Array.isArray(val.categories) &&
+        val.categories.length > 0
+      )
+        return val;
+      if (Array.isArray(val) && val.length > 0)
+        return { rows: val, categories: val };
+      if (val?.rows && Array.isArray(val.rows) && val.rows.length > 0)
+        return val;
     }
 
     // Default 8-role permission matrix if not configured in DB
     return {
       rows: [
         {
-          feature: { vi: 'Quản trị hệ thống & Cấu hình nền tảng', en: 'Platform & system management' },
+          feature: {
+            vi: 'Quản trị hệ thống & Cấu hình nền tảng',
+            en: 'Platform & system management',
+          },
           platform_admin: 'full',
           admin: 'scoped',
           tong_thu_ky: 'none',
@@ -2005,7 +2481,10 @@ export class AdminService implements OnModuleInit {
           member: 'none',
         },
         {
-          feature: { vi: 'Họp phòng ban & Lịch Zoom', en: 'Department meetings & Zoom' },
+          feature: {
+            vi: 'Họp phòng ban & Lịch Zoom',
+            en: 'Department meetings & Zoom',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'full',
@@ -2018,7 +2497,10 @@ export class AdminService implements OnModuleInit {
           member: 'own',
         },
         {
-          feature: { vi: 'Quản lý hội viên & Phân ban', en: 'Members & committee assignment' },
+          feature: {
+            vi: 'Quản lý hội viên & Phân ban',
+            en: 'Members & committee assignment',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'scoped',
@@ -2031,7 +2513,10 @@ export class AdminService implements OnModuleInit {
           member: 'own',
         },
         {
-          feature: { vi: 'Thu chi, Tạm ứng & Hóa đơn', en: 'Finance, advances & invoices' },
+          feature: {
+            vi: 'Thu chi, Tạm ứng & Hóa đơn',
+            en: 'Finance, advances & invoices',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'scoped',
@@ -2044,7 +2529,10 @@ export class AdminService implements OnModuleInit {
           member: 'own',
         },
         {
-          feature: { vi: 'Sự kiện, Điểm danh QR & Xếp chỗ VIP', en: 'Events, check-in QR & VIP seating' },
+          feature: {
+            vi: 'Sự kiện, Điểm danh QR & Xếp chỗ VIP',
+            en: 'Events, check-in QR & VIP seating',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'scoped',
@@ -2057,7 +2545,10 @@ export class AdminService implements OnModuleInit {
           member: 'own',
         },
         {
-          feature: { vi: 'Sàn cơ hội kinh doanh & Matching', en: 'Opportunities marketplace & matching' },
+          feature: {
+            vi: 'Sàn cơ hội kinh doanh & Matching',
+            en: 'Opportunities marketplace & matching',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'scoped',
@@ -2070,7 +2561,10 @@ export class AdminService implements OnModuleInit {
           member: 'own',
         },
         {
-          feature: { vi: 'Biểu quyết & Bốc thăm trúng thưởng', en: 'Voting & Lucky draw' },
+          feature: {
+            vi: 'Biểu quyết & Bốc thăm trúng thưởng',
+            en: 'Voting & Lucky draw',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'full',
@@ -2083,7 +2577,10 @@ export class AdminService implements OnModuleInit {
           member: 'own',
         },
         {
-          feature: { vi: 'Thiện nguyện & An sinh xã hội', en: 'Charity & social welfare' },
+          feature: {
+            vi: 'Thiện nguyện & An sinh xã hội',
+            en: 'Charity & social welfare',
+          },
           platform_admin: 'full',
           admin: 'full',
           tong_thu_ky: 'scoped',
@@ -2101,7 +2598,9 @@ export class AdminService implements OnModuleInit {
 
   private isUuid(val?: string): boolean {
     if (!val) return false;
-    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+      val,
+    );
   }
 
   async recordAudit(
@@ -2113,25 +2612,30 @@ export class AdminService implements OnModuleInit {
     ipAddress?: string,
   ) {
     try {
-      const validActor = this.isUuid(actorUserId) ? `'${actorUserId}'::uuid` : 'NULL';
+      const validActor = this.isUuid(actorUserId)
+        ? `'${actorUserId}'::uuid`
+        : 'NULL';
       const metaJson = JSON.stringify(metadata || {});
-      await this.prisma.$executeRawUnsafe(
-        `
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.audit_logs (id, actor_user_id, action, target_type, target_id, ip_address, user_agent, metadata, created_at)
         VALUES (gen_random_uuid(), ${validActor}, $1, $2, $3, $4, $5, $6::jsonb, NOW())
       `,
-        action || 'ACTION',
-        targetType || 'SYSTEM',
-        targetId || 'GLOBAL',
-        ipAddress || '127.0.0.1',
-        'Web CRM',
-        metaJson,
-      ).catch(() => {});
+          action || 'ACTION',
+          targetType || 'SYSTEM',
+          targetId || 'GLOBAL',
+          ipAddress || '127.0.0.1',
+          'Web CRM',
+          metaJson,
+        )
+        .catch(() => {});
     } catch {}
   }
 
   async savePermissionMatrix(payload: any, userId?: string) {
-    const categories = payload?.categories || (Array.isArray(payload) ? payload : payload?.rows);
+    const categories =
+      payload?.categories || (Array.isArray(payload) ? payload : payload?.rows);
     if (!Array.isArray(categories) || categories.length === 0) {
       throw new BadRequestException('Ma trận phân quyền không hợp lệ');
     }
@@ -2160,7 +2664,10 @@ export class AdminService implements OnModuleInit {
       'UPDATE_PERMISSION_MATRIX',
       'RBAC',
       'crm_permission_matrix',
-      { categoryCount: categories.length, note: 'Quản trị viên cập nhật Ma Trận Phân Quyền CRM Web & App Mobile' },
+      {
+        categoryCount: categories.length,
+        note: 'Quản trị viên cập nhật Ma Trận Phân Quyền CRM Web & App Mobile',
+      },
     );
 
     return {
@@ -2178,10 +2685,13 @@ export class AdminService implements OnModuleInit {
     `.catch(() => []);
 
     if (rows.length > 0 && rows[0].value) {
-      const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+      const val =
+        typeof rows[0].value === 'string'
+          ? JSON.parse(rows[0].value)
+          : rows[0].value;
       const isEnabled = val.enabled === true && val.themeId !== 'none';
       return {
-        themeId: isEnabled ? (val.themeId || 'classic') : 'none',
+        themeId: isEnabled ? val.themeId || 'classic' : 'none',
         enabled: isEnabled,
         updatedAt: val.updatedAt || null,
       };
@@ -2195,8 +2705,11 @@ export class AdminService implements OnModuleInit {
   }
 
   async saveActiveTheme(payload: any, userId?: string) {
-    const isExplicitlyDisabled = payload?.enabled === false || payload?.themeId === 'none';
-    const themeId = isExplicitlyDisabled ? 'none' : (payload?.themeId || 'classic');
+    const isExplicitlyDisabled =
+      payload?.enabled === false || payload?.themeId === 'none';
+    const themeId = isExplicitlyDisabled
+      ? 'none'
+      : payload?.themeId || 'classic';
     const enabled = !isExplicitlyDisabled;
     const jsonValue = JSON.stringify({
       themeId,
@@ -2232,7 +2745,8 @@ export class AdminService implements OnModuleInit {
 
       if (rows.length && rows[0]?.value) {
         const val = rows[0].value;
-        const labels = typeof val === 'string' ? JSON.parse(val) : (val.labels || val);
+        const labels =
+          typeof val === 'string' ? JSON.parse(val) : val.labels || val;
         return { ok: true, labels: labels || {} };
       }
 
@@ -2277,7 +2791,8 @@ export class AdminService implements OnModuleInit {
 
     if (rows.length && rows[0]?.value) {
       const val = rows[0].value;
-      const map = typeof val === 'string' ? JSON.parse(val) : (val.permissionsMap || val);
+      const map =
+        typeof val === 'string' ? JSON.parse(val) : val.permissionsMap || val;
       return { permissionsMap: map || {} };
     }
 
@@ -2350,15 +2865,35 @@ export class AdminService implements OnModuleInit {
 
         const targetEventId = eventRows[0].id;
         const ranks = [
-          { rank: 'Giải Đặc Biệt', icon: 'Crown', color: 'from-amber-500 via-yellow-400 to-amber-600' },
-          { rank: 'Giải Nhất', icon: 'Trophy', color: 'from-blue-600 via-indigo-600 to-purple-700' },
-          { rank: 'Giải Nhì', icon: 'Award', color: 'from-emerald-600 to-teal-700' },
-          { rank: 'Giải Ba', icon: 'Sparkles', color: 'from-rose-600 to-pink-700' },
+          {
+            rank: 'Giải Đặc Biệt',
+            icon: 'Crown',
+            color: 'from-amber-500 via-yellow-400 to-amber-600',
+          },
+          {
+            rank: 'Giải Nhất',
+            icon: 'Trophy',
+            color: 'from-blue-600 via-indigo-600 to-purple-700',
+          },
+          {
+            rank: 'Giải Nhì',
+            icon: 'Award',
+            color: 'from-emerald-600 to-teal-700',
+          },
+          {
+            rank: 'Giải Ba',
+            icon: 'Sparkles',
+            color: 'from-rose-600 to-pink-700',
+          },
         ];
 
         for (let i = 0; i < prodRows.length; i++) {
           const prod = prodRows[i];
-          const rk = ranks[i] || { rank: `Giải ${i + 1}`, icon: 'Gift', color: 'from-slate-700 to-slate-900' };
+          const rk = ranks[i] || {
+            rank: `Giải ${i + 1}`,
+            icon: 'Gift',
+            color: 'from-slate-700 to-slate-900',
+          };
           const pId = `PRZ-INIT-${i + 1}-${Date.now().toString(36)}`;
           const title = prod.name || prod.title || 'Phần thưởng doanh nhân';
           const amt = BigInt(prod.price || 50000000);
@@ -2395,10 +2930,19 @@ export class AdminService implements OnModuleInit {
             id: p.id,
             rankName: p.rank_name,
             title: p.title || p.prod_name,
-            value: p.value || (p.amount ? `${Number(p.amount).toLocaleString('vi-VN')} VNĐ` : 'Giá trị liên hệ'),
+            value:
+              p.value ||
+              (p.amount
+                ? `${Number(p.amount).toLocaleString('vi-VN')} VNĐ`
+                : 'Giá trị liên hệ'),
             amount: Number(p.amount ?? p.prod_price ?? 0),
-            sponsor: p.sponsor_name || p.prod_company || 'Ban Quản Trị & HanoiBA Sponsor Club',
-            description: p.description || 'Ưu đãi và phần thưởng giá trị trao tặng trực tiếp tại sự kiện',
+            sponsor:
+              p.sponsor_name ||
+              p.prod_company ||
+              'Ban Quản Trị & HanoiBA Sponsor Club',
+            description:
+              p.description ||
+              'Ưu đãi và phần thưởng giá trị trao tặng trực tiếp tại sự kiện',
             iconName: p.icon_name || 'Gift',
             highlightColor: p.highlight_color || 'from-amber-500 to-yellow-600',
             quantity: Number(p.quantity ?? 1),
@@ -2409,10 +2953,14 @@ export class AdminService implements OnModuleInit {
           }));
 
           // Calculate total prize value
-          const totalValNumber = prizes.reduce((acc, p) => acc + (p.amount * (p.quantity || 1)), 0);
-          const totalPrizeValue = totalValNumber > 0
-            ? `${totalValNumber.toLocaleString('vi-VN')} VNĐ`
-            : '500.000.000 VNĐ';
+          const totalValNumber = prizes.reduce(
+            (acc, p) => acc + p.amount * (p.quantity || 1),
+            0,
+          );
+          const totalPrizeValue =
+            totalValNumber > 0
+              ? `${totalValNumber.toLocaleString('vi-VN')} VNĐ`
+              : '500.000.000 VNĐ';
 
           // 1. Fetch real checked-in attendees for this event
           const checkedInCandidates = await this.prisma.$queryRaw<any[]>`
@@ -2433,7 +2981,11 @@ export class AdminService implements OnModuleInit {
           let candidates = checkedInCandidates.map((c) => ({
             name: c.name || 'Hội viên CEO',
             company: c.company || 'Doanh nghiệp CEO 1983',
-            code: c.code ? (String(c.code).startsWith('#') ? String(c.code) : `#${c.code}`) : `#${Math.floor(1000 + Math.random() * 9000)}`,
+            code: c.code
+              ? String(c.code).startsWith('#')
+                ? String(c.code)
+                : `#${c.code}`
+              : `#${Math.floor(1000 + Math.random() * 9000)}`,
             seat: c.seat || 'Khu vực VIP',
             phone: c.phone || '',
           }));
@@ -2457,7 +3009,11 @@ export class AdminService implements OnModuleInit {
             candidates = regCandidates.map((c) => ({
               name: c.name || 'Hội viên CEO',
               company: c.company || 'Doanh nghiệp CEO 1983',
-              code: c.code ? (String(c.code).startsWith('#') ? String(c.code) : `#${c.code}`) : `#${Math.floor(1000 + Math.random() * 9000)}`,
+              code: c.code
+                ? String(c.code).startsWith('#')
+                  ? String(c.code)
+                  : `#${c.code}`
+                : `#${Math.floor(1000 + Math.random() * 9000)}`,
               seat: c.seat || 'Khu vực VIP',
               phone: c.phone || '',
             }));
@@ -2482,25 +3038,40 @@ export class AdminService implements OnModuleInit {
           }
 
           const evDate = ev.date ? new Date(ev.date) : new Date();
-          const dateStr = evDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          const dateStr = evDate.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          });
 
-          const bannerThemes = ['gala_luxury', 'business_summit', 'night_party', 'gold_anniversary'];
+          const bannerThemes = [
+            'gala_luxury',
+            'business_summit',
+            'night_party',
+            'gold_anniversary',
+          ];
           const bannerTheme = bannerThemes[idx % bannerThemes.length];
 
           return {
             id: ev.id,
             name: ev.name,
-            subtitle: ev.description || 'Đêm vinh danh tinh hoa doanh nhân — Bốc thăm trao tặng các phần quà đặc sắc',
+            subtitle:
+              ev.description ||
+              'Đêm vinh danh tinh hoa doanh nhân — Bốc thăm trao tặng các phần quà đặc sắc',
             date: dateStr,
             time: '18:00 - 22:00',
-            location: ev.location || 'Trung Tâm Hội Nghị Quốc Gia (NCC), Hà Nội',
+            location:
+              ev.location || 'Trung Tâm Hội Nghị Quốc Gia (NCC), Hà Nội',
             bannerTheme,
-            coverUrl: ev.banner || ev.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1600&q=80',
+            coverUrl:
+              ev.banner ||
+              ev.image ||
+              'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1600&q=80',
             totalPrizeValue,
             prizes,
             candidates,
           };
-        })
+        }),
       );
 
       return {
@@ -2528,15 +3099,24 @@ export class AdminService implements OnModuleInit {
             const evId = String(ev.id);
             const rankName = String(prz.rankName || 'Giải Thưởng');
             const title = String(prz.title);
-            const value = String(prz.value || (amount > 0n ? `${Number(amount).toLocaleString('vi-VN')} VNĐ` : 'Đang cập nhật'));
+            const value = String(
+              prz.value ||
+                (amount > 0n
+                  ? `${Number(amount).toLocaleString('vi-VN')} VNĐ`
+                  : 'Đang cập nhật'),
+            );
             const quantity = Math.max(1, Math.round(Number(prz.quantity) || 1));
             const targetType = String(prz.targetType || 'PRODUCT');
             const targetId = prz.targetId ? String(prz.targetId) : null;
-            const sponsorName = String(prz.sponsor || prz.sponsorName || 'Nhà tài trợ CEO 1983');
+            const sponsorName = String(
+              prz.sponsor || prz.sponsorName || 'Nhà tài trợ CEO 1983',
+            );
             const description = String(prz.description || '');
             const iconName = String(prz.iconName || 'Gift');
             const imageUrl = prz.imageUrl ? String(prz.imageUrl) : null;
-            const highlightColor = String(prz.highlightColor || 'from-amber-500 to-yellow-600');
+            const highlightColor = String(
+              prz.highlightColor || 'from-amber-500 to-yellow-600',
+            );
 
             await this.prisma.$executeRaw`
               INSERT INTO public.event_prizes (
@@ -2569,7 +3149,11 @@ export class AdminService implements OnModuleInit {
                   status = 'active',
                   updated_at = NOW()
             `.catch((e: any) => {
-              console.error('[saveLuckyDrawConfig] Failed to upsert prize:', przId, e?.message);
+              console.error(
+                '[saveLuckyDrawConfig] Failed to upsert prize:',
+                przId,
+                e?.message,
+              );
             });
           }
         }
@@ -2581,23 +3165,33 @@ export class AdminService implements OnModuleInit {
       updatedAt: new Date().toISOString(),
     });
 
-    const isUuid = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const isUuid =
+      userId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        userId,
+      );
 
-    await this.prisma.$executeRawUnsafe(
-      `
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.app_settings (key, value, updated_at, updated_by)
       VALUES ('crm_lucky_draw_config', $1::jsonb, NOW(), ${isUuid ? `'${userId}'::uuid` : 'NULL'})
       ON CONFLICT (key) DO UPDATE
       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
     `,
-      jsonValue,
-    ).catch((err: any) => {
-      console.error('[saveLuckyDrawConfig] Error updating app_settings:', err?.message);
-    });
+        jsonValue,
+      )
+      .catch((err: any) => {
+        console.error(
+          '[saveLuckyDrawConfig] Error updating app_settings:',
+          err?.message,
+        );
+      });
 
     return {
       success: true,
-      message: 'Cập nhật cấu hình bốc thăm trúng thưởng & giải thưởng database thành công',
+      message:
+        'Cập nhật cấu hình bốc thăm trúng thưởng & giải thưởng database thành công',
       config,
       updatedAt: new Date().toISOString(),
     };
@@ -2633,29 +3227,47 @@ export class AdminService implements OnModuleInit {
     const limit = Math.min(params.limit || 50, 200);
     const offset = params.offset || 0;
 
-    const countRes = await this.prisma.$queryRawUnsafe<any[]>(`
+    const countRes = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT COUNT(*)::int as total
       FROM public.audit_logs a
       LEFT JOIN public.members m ON (m.user_id = a.actor_user_id)
       LEFT JOIN public.vione_users vu ON (vu.id = a.actor_user_id)
       WHERE ${where};
-    `).catch(() => [{ total: 0 }]);
+    `,
+      )
+      .catch(() => [{ total: 0 }]);
 
-    const loginsTodayRes = await this.prisma.$queryRawUnsafe<any[]>(`
+    const loginsTodayRes = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT COUNT(*)::int as count FROM public.audit_logs 
       WHERE action ILIKE '%LOGIN%' AND created_at >= CURRENT_DATE;
-    `).catch(() => [{ count: 0 }]);
+    `,
+      )
+      .catch(() => [{ count: 0 }]);
 
-    const oppsRes = await this.prisma.$queryRawUnsafe<any[]>(`
+    const oppsRes = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT COUNT(*)::int as count FROM public.audit_logs 
       WHERE (action ILIKE '%OPPORTUNITY%' OR action ILIKE '%CREATE%' OR action ILIKE '%DEAL%');
-    `).catch(() => [{ count: 0 }]);
+    `,
+      )
+      .catch(() => [{ count: 0 }]);
 
-    const actorsRes = await this.prisma.$queryRawUnsafe<any[]>(`
+    const actorsRes = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT COUNT(DISTINCT actor_user_id)::int as count FROM public.audit_logs;
-    `).catch(() => [{ count: 0 }]);
+    `,
+      )
+      .catch(() => [{ count: 0 }]);
 
-    const items = await this.prisma.$queryRawUnsafe<any[]>(`
+    const items = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT 
         a.id,
         a.actor_user_id,
@@ -2679,10 +3291,12 @@ export class AdminService implements OnModuleInit {
       WHERE ${where}
       ORDER BY a.created_at DESC
       LIMIT ${limit} OFFSET ${offset};
-    `).catch((err) => {
-      console.warn(`listAuditLogs query error: ${err?.message || err}`);
-      return [];
-    });
+    `,
+      )
+      .catch((err) => {
+        console.warn(`listAuditLogs query error: ${err?.message || err}`);
+        return [];
+      });
 
     return {
       success: true,
@@ -2695,13 +3309,13 @@ export class AdminService implements OnModuleInit {
       },
       limit,
       offset,
-      items: items.map(i => ({
+      items: items.map((i) => ({
         ...i,
-        metadata: typeof i.metadata === 'string' ? JSON.parse(i.metadata) : (i.metadata || {})
-      }))
+        metadata:
+          typeof i.metadata === 'string'
+            ? JSON.parse(i.metadata)
+            : i.metadata || {},
+      })),
     };
   }
 }
-
-
-

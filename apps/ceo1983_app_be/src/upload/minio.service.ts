@@ -1,4 +1,8 @@
-import { Injectable, OnModuleInit, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as Minio from 'minio';
 
 @Injectable()
@@ -10,10 +14,13 @@ export class MinioService implements OnModuleInit {
     const accessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
     const secretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
     const envEndpoint = process.env.MINIO_ENDPOINT;
-    const envPort = process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT, 10) : undefined;
+    const envPort = process.env.MINIO_PORT
+      ? parseInt(process.env.MINIO_PORT, 10)
+      : undefined;
     const useSSL = process.env.MINIO_USE_SSL === 'true';
 
-    const candidateConfigs: { name: string; endPoint: string; port: number }[] = [];
+    const candidateConfigs: { name: string; endPoint: string; port: number }[] =
+      [];
 
     // 1. Env configured endpoint
     if (envEndpoint) {
@@ -44,7 +51,10 @@ export class MinioService implements OnModuleInit {
     });
 
     // 4. Docker container aliases only in Linux/Docker environment (never on Windows host to avoid DNS resolution hangs)
-    const isInsideDocker = process.platform === 'linux' && (Boolean(process.env.DOCKER_CONTAINER) || Boolean(process.env.KUBERNETES_SERVICE_HOST));
+    const isInsideDocker =
+      process.platform === 'linux' &&
+      (Boolean(process.env.DOCKER_CONTAINER) ||
+        Boolean(process.env.KUBERNETES_SERVICE_HOST));
     if (isInsideDocker) {
       candidateConfigs.push({
         name: 'docker-alias(association-minio-prod:9000)',
@@ -91,7 +101,10 @@ export class MinioService implements OnModuleInit {
       try {
         const bucketCheck = entry.client.bucketExists(this.bucketName);
         const timeoutPromise = new Promise<boolean>((_, reject) =>
-          setTimeout(() => reject(new Error('MinIO bucketExists timed out')), 1500),
+          setTimeout(
+            () => reject(new Error('MinIO bucketExists timed out')),
+            1500,
+          ),
         );
         const exists = await Promise.race([bucketCheck, timeoutPromise]);
         if (!exists) {
@@ -107,7 +120,10 @@ export class MinioService implements OnModuleInit {
               },
             ],
           };
-          await entry.client.setBucketPolicy(this.bucketName, JSON.stringify(policy));
+          await entry.client.setBucketPolicy(
+            this.bucketName,
+            JSON.stringify(policy),
+          );
         }
         break;
       } catch {
@@ -116,7 +132,11 @@ export class MinioService implements OnModuleInit {
     }
   }
 
-  async uploadFile(filename: string, fileBuffer: Buffer, mimeType: string): Promise<string | null> {
+  async uploadFile(
+    filename: string,
+    fileBuffer: Buffer,
+    mimeType: string,
+  ): Promise<string | null> {
     let lastErr: any = null;
 
     for (let i = 0; i < this.clients.length; i++) {
@@ -130,7 +150,10 @@ export class MinioService implements OnModuleInit {
           { 'Content-Type': mimeType },
         );
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`MinIO putObject timeout on ${entry.name}`)), 2000),
+          setTimeout(
+            () => reject(new Error(`MinIO putObject timeout on ${entry.name}`)),
+            2000,
+          ),
         );
         await Promise.race([putPromise, timeoutPromise]);
 
@@ -145,12 +168,18 @@ export class MinioService implements OnModuleInit {
       }
     }
 
-    console.warn(`MinIO upload unreachable or failed across all endpoints (${lastErr?.message || 'Unreachable'}). Falling back to local disk storage.`);
+    console.warn(
+      `MinIO upload unreachable or failed across all endpoints (${lastErr?.message || 'Unreachable'}). Falling back to local disk storage.`,
+    );
     return null;
   }
 
   async getFileStream(filename: string): Promise<any> {
-    const candidateBuckets = [this.bucketName, 'vione-bucket', 'vione-standalone-bucket'];
+    const candidateBuckets = [
+      this.bucketName,
+      'vione-bucket',
+      'vione-standalone-bucket',
+    ];
     for (const bucket of candidateBuckets) {
       for (let i = 0; i < this.clients.length; i++) {
         const entry = this.clients[i];
@@ -159,7 +188,11 @@ export class MinioService implements OnModuleInit {
           await entry.client.statObject(bucket, filename);
           const getPromise = entry.client.getObject(bucket, filename);
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error(`MinIO getObject timeout on ${entry.name}`)), 3000),
+            setTimeout(
+              () =>
+                reject(new Error(`MinIO getObject timeout on ${entry.name}`)),
+              3000,
+            ),
           );
           const stream = await Promise.race([getPromise, timeoutPromise]);
           if (stream) {

@@ -66,7 +66,11 @@ export class AdvertisementsRepository {
         ORDER BY created_at DESC
       `;
     } catch (err: any) {
-      if (err?.code === 'P2010' || err?.meta?.code === '42P01' || err?.message?.includes('does not exist')) {
+      if (
+        err?.code === 'P2010' ||
+        err?.meta?.code === '42P01' ||
+        err?.message?.includes('does not exist')
+      ) {
         await this.ensureTables().catch(() => {});
         return [];
       }
@@ -81,7 +85,11 @@ export class AdvertisementsRepository {
       `;
       return rows[0] || null;
     } catch (err: any) {
-      if (err?.code === 'P2010' || err?.meta?.code === '42P01' || err?.message?.includes('does not exist')) {
+      if (
+        err?.code === 'P2010' ||
+        err?.meta?.code === '42P01' ||
+        err?.message?.includes('does not exist')
+      ) {
         await this.ensureTables().catch(() => {});
         return null;
       }
@@ -169,7 +177,11 @@ export class AdvertisementsRepository {
         SELECT * FROM public.ad_requests ORDER BY created_at DESC
       `;
     } catch (err: any) {
-      if (err?.code === 'P2010' || err?.meta?.code === '42P01' || err?.message?.includes('does not exist')) {
+      if (
+        err?.code === 'P2010' ||
+        err?.meta?.code === '42P01' ||
+        err?.message?.includes('does not exist')
+      ) {
         await this.ensureTables().catch(() => {});
         return [];
       }

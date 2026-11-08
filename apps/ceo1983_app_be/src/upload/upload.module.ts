@@ -12,4 +12,3 @@ import { PrismaModule } from '../prisma/prisma.module';
   exports: [UploadService, MinioService],
 })
 export class UploadModule {}
-

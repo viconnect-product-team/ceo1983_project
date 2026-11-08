@@ -26,13 +26,18 @@ export class ReviewsController {
     @Query('productId') productId?: string,
     @Query('companyName') companyName?: string,
   ) {
-    return this.reviewsService.listReviews({ sellerId, productId, companyName });
+    return this.reviewsService.listReviews({
+      sellerId,
+      productId,
+      companyName,
+    });
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   async addReview(@Request() req: any, @Body() body: CreateReviewDto) {
-    const userId = req.user?.id || req.user?.sub || '00000000-0000-4000-8000-000000000002';
+    const userId =
+      req.user?.id || req.user?.sub || '00000000-0000-4000-8000-000000000002';
     return this.reviewsService.addReview(userId, body);
   }
 
@@ -42,7 +47,11 @@ export class ReviewsController {
     @Param('id') id: string,
     @Body() body: UpdateReviewDto,
   ) {
-    return this.reviewsService.updateReview(req.user.id || req.user.sub, id, body);
+    return this.reviewsService.updateReview(
+      req.user.id || req.user.sub,
+      id,
+      body,
+    );
   }
 
   @Delete(':id')

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
 import * as crypto from 'crypto';
@@ -22,7 +27,11 @@ function safeParseImages(val: any): string[] {
         // fallback
       }
     }
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+    if (
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('/')
+    ) {
       return [trimmed];
     }
   }
@@ -31,7 +40,9 @@ function safeParseImages(val: any): string[] {
 
 function isValidUuid(val: any): boolean {
   if (!val || typeof val !== 'string') return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    val,
+  );
 }
 
 @Injectable()
@@ -41,7 +52,10 @@ export class ConnectOpportunityService {
     private gateway: ConnectAppGateway,
   ) {}
 
-  private async checkCommunityMembership(userId: string, communityId: string): Promise<boolean> {
+  private async checkCommunityMembership(
+    userId: string,
+    communityId: string,
+  ): Promise<boolean> {
     const mem = await this.prisma.$queryRaw<any[]>`
       SELECT association_id FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
@@ -52,15 +66,27 @@ export class ConnectOpportunityService {
     `.catch(() => [] as any[]);
     if (mem.length > 0) return true;
 
-    const roles = await this.prisma.user_roles.findMany({ where: { user_id: userId } }).catch(() => []) as any[];
-    const isPlatformAdmin = roles.some((r: any) => r.role === 'platform_admin' || r.role === 'admin');
+    const roles = (await this.prisma.user_roles
+      .findMany({ where: { user_id: userId } })
+      .catch(() => [])) as any[];
+    const isPlatformAdmin = roles.some(
+      (r: any) => r.role === 'platform_admin' || r.role === 'admin',
+    );
     if (isPlatformAdmin) return true;
 
     return false;
   }
 
-  async listCommunityOpportunities(userId: string, communityId: string, query: string, offset: number) {
-    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+  async listCommunityOpportunities(
+    userId: string,
+    communityId: string,
+    query: string,
+    offset: number,
+  ) {
+    const hasMembership = await this.checkCommunityMembership(
+      userId,
+      communityId,
+    );
 
     const limit = 10;
     const opportunities = await this.prisma.$queryRaw<any[]>`
@@ -71,28 +97,32 @@ export class ConnectOpportunityService {
       OFFSET ${offset} LIMIT ${limit}
     `.catch(() => [] as any[]);
 
-    const oppIds = opportunities.map(o => o.id);
-    let interestMap = new Map<string, string>();
+    const oppIds = opportunities.map((o) => o.id);
+    const interestMap = new Map<string, string>();
     if (oppIds.length > 0) {
       const interests = await this.prisma.$queryRaw<any[]>`
         SELECT opportunity_id FROM public.opportunity_interests
         WHERE member_id = ${userId} AND opportunity_id = ANY(${oppIds})
       `.catch(() => [] as any[]);
-      interests.forEach(i => interestMap.set(i.opportunity_id, 'high'));
+      interests.forEach((i) => interestMap.set(i.opportunity_id, 'high'));
     }
 
     const totalCount = opportunities.length;
     const now = Date.now();
-    const items = opportunities.map(o => {
+    const items = opportunities.map((o) => {
       const deadlineMs = o.deadline ? new Date(o.deadline).getTime() : null;
-      const daysLeft = deadlineMs ? Math.max(0, Math.ceil((deadlineMs - now) / (1000 * 60 * 60 * 24))) : null;
+      const daysLeft = deadlineMs
+        ? Math.max(0, Math.ceil((deadlineMs - now) / (1000 * 60 * 60 * 24)))
+        : null;
       return {
         opportunityRef: o.id,
         title: o.title,
         summary: o.description || null,
         endsAt: o.deadline ? new Date(o.deadline).toISOString() : null,
         daysLeft,
-        valLabel: o.budget_max ? `${o.budget_min ? o.budget_min + ' - ' : ''}${o.budget_max}` : (o.region || o.industry || null),
+        valLabel: o.budget_max
+          ? `${o.budget_min ? o.budget_min + ' - ' : ''}${o.budget_max}`
+          : o.region || o.industry || null,
         status: o.status,
         interested: interestMap.has(o.id),
         interestLevel: interestMap.get(o.id) || null,
@@ -108,8 +138,15 @@ export class ConnectOpportunityService {
     };
   }
 
-  async getCommunityOpportunityDetail(userId: string, communityId: string, opportunityRef: string) {
-    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+  async getCommunityOpportunityDetail(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+  ) {
+    const hasMembership = await this.checkCommunityMembership(
+      userId,
+      communityId,
+    );
 
     const opportunities = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.opportunities
@@ -141,7 +178,9 @@ export class ConnectOpportunityService {
 
     const now = Date.now();
     const deadlineMs = o.deadline ? new Date(o.deadline).getTime() : null;
-    const daysLeft = deadlineMs ? Math.max(0, Math.ceil((deadlineMs - now) / (1000 * 60 * 60 * 24))) : null;
+    const daysLeft = deadlineMs
+      ? Math.max(0, Math.ceil((deadlineMs - now) / (1000 * 60 * 60 * 24)))
+      : null;
 
     return {
       opportunity: {
@@ -149,41 +188,55 @@ export class ConnectOpportunityService {
         title: o.title,
         categoryKey: o.type || 'opp.type.partnership',
         organizationLabel: p?.company || p?.name || 'Doanh nghiệp thành viên',
-        shortDescription: o.description ? o.description.substring(0, 160) : null,
-        publishedAt: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
+        shortDescription: o.description
+          ? o.description.substring(0, 160)
+          : null,
+        publishedAt: o.created_at
+          ? new Date(o.created_at).toISOString()
+          : new Date().toISOString(),
         expiresAt: o.deadline ? new Date(o.deadline).toISOString() : null,
         daysLeft,
         interested: interests.length > 0,
-        interestLevel: interests[0]?.interest_level || (interests.length > 0 ? 'high' : null),
+        interestLevel:
+          interests[0]?.interest_level ||
+          (interests.length > 0 ? 'high' : null),
       },
       description: o.description || null,
       regionLabel: o.region || 'Toàn quốc',
       industryLabel: o.industry || 'Đa ngành',
       budgetMin: o.budget_min != null ? Number(o.budget_min) : null,
       budgetMax: o.budget_max != null ? Number(o.budget_max) : null,
-      poster: p ? {
-        memberRef: p.id,
-        displayName: p.name,
-      } : null,
+      poster: p
+        ? {
+            memberRef: p.id,
+            displayName: p.name,
+          }
+        : null,
       communityId,
       communityName: assoc[0]?.name || 'CLB Doanh Nhân CEO 1983',
       canExpressInterest: true,
       followUp: null,
       followUpHistory: [],
       followUpAttachments: [],
-      claimedBy: o.claimed_by_name ? {
-        id: o.claimed_by_id,
-        name: o.claimed_by_name,
-        at: o.claimed_at,
-        phone: o.claimed_phone,
-        company: o.claimed_company,
-      } : null,
+      claimedBy: o.claimed_by_name
+        ? {
+            id: o.claimed_by_id,
+            name: o.claimed_by_name,
+            at: o.claimed_at,
+            phone: o.claimed_phone,
+            company: o.claimed_company,
+          }
+        : null,
       image: o.image || null,
       thumbnail: o.image || null,
     };
   }
 
-  async createCommunityOpportunity(userId: string, communityId: string, data: any) {
+  async createCommunityOpportunity(
+    userId: string,
+    communityId: string,
+    data: any,
+  ) {
     const oppId = `OPP-${Date.now().toString(36).toUpperCase()}`;
     const member = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, phone, company FROM public.members 
@@ -243,7 +296,11 @@ export class ConnectOpportunityService {
     };
   }
 
-  async claimCommunityOpportunity(userId: string, communityId: string, opportunityRef: string) {
+  async claimCommunityOpportunity(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+  ) {
     const member = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, phone, company FROM public.members 
       WHERE user_id = ${userId}::uuid OR id = ${userId}
@@ -256,23 +313,37 @@ export class ConnectOpportunityService {
       LIMIT 1
     `.catch(() => [] as any[]);
 
-    const claimantName = member[0]?.name || userProfile[0]?.display_name || 'Hội viên CEO 1983';
+    const claimantName =
+      member[0]?.name || userProfile[0]?.display_name || 'Hội viên CEO 1983';
     const claimantPhone = member[0]?.phone || '';
-    const claimantCompany = member[0]?.company || userProfile[0]?.company_name || '';
+    const claimantCompany =
+      member[0]?.company || userProfile[0]?.company_name || '';
 
     // 0. Fetch opportunity title & poster_id first to validate ownership
     const oppRow = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, poster_id, association_id FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
     `.catch(() => [] as any[]);
     if (!oppRow || oppRow.length === 0) {
-      throw new NotFoundException('Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!');
+      throw new NotFoundException(
+        'Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!',
+      );
     }
     const posterId = oppRow[0]?.poster_id;
-    if (posterId && (posterId.toString() === userId.toString() || posterId.toString() === member[0]?.id?.toString() || posterId.toString() === member[0]?.code?.toString())) {
-      throw new BadRequestException('Bạn là người đăng cơ hội này nên không thể tự nhận hoặc tự ứng tuyển cho chính mình!');
+    if (
+      posterId &&
+      (posterId.toString() === userId.toString() ||
+        posterId.toString() === member[0]?.id?.toString() ||
+        posterId.toString() === member[0]?.code?.toString())
+    ) {
+      throw new BadRequestException(
+        'Bạn là người đăng cơ hội này nên không thể tự nhận hoặc tự ứng tuyển cho chính mình!',
+      );
     }
     const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
-    const assocId = (communityId && communityId.trim().length > 10) ? communityId.trim() : (oppRow[0]?.association_id || null);
+    const assocId =
+      communityId && communityId.trim().length > 10
+        ? communityId.trim()
+        : oppRow[0]?.association_id || null;
 
     // 1. Update opportunity claim record
     await this.prisma.$executeRaw`
@@ -415,14 +486,26 @@ export class ConnectOpportunityService {
       SELECT id, title, poster_id, association_id, budget_min, budget_max FROM public.opportunities WHERE id = ${opportunityRef} LIMIT 1
     `.catch(() => [] as any[]);
     if (!oppRow || oppRow.length === 0) {
-      throw new NotFoundException('Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!');
+      throw new NotFoundException(
+        'Không tìm thấy thông tin cơ hội giao thương này trên hệ thống!',
+      );
     }
     const posterId = oppRow[0]?.poster_id;
-    if (posterId && (posterId.toString() === userId.toString() || posterId.toString() === member[0]?.id?.toString() || posterId.toString() === member[0]?.code?.toString())) {
-      throw new BadRequestException('Bạn là người đăng cơ hội này nên không thể tự gửi yêu cầu quan tâm cho chính mình!');
+    if (
+      posterId &&
+      (posterId.toString() === userId.toString() ||
+        posterId.toString() === member[0]?.id?.toString() ||
+        posterId.toString() === member[0]?.code?.toString())
+    ) {
+      throw new BadRequestException(
+        'Bạn là người đăng cơ hội này nên không thể tự gửi yêu cầu quan tâm cho chính mình!',
+      );
     }
     const oppTitle = oppRow[0]?.title || 'Cơ hội kết nối';
-    const assocId = (communityId && communityId.trim().length > 10) ? communityId.trim() : (oppRow[0]?.association_id || null);
+    const assocId =
+      communityId && communityId.trim().length > 10
+        ? communityId.trim()
+        : oppRow[0]?.association_id || null;
 
     const bMax = oppRow[0]?.budget_max ? Number(oppRow[0].budget_max) : 0;
     const dVal = dealValue != null ? Number(dealValue) : 0;
@@ -433,9 +516,12 @@ export class ConnectOpportunityService {
       dealPercent = 100;
     }
 
-    const defaultMsg = dVal > 0 
-      ? `Đề xuất deal: ${new Intl.NumberFormat('vi-VN').format(dVal)} VNĐ (${dealPercent}% so với ngân sách)`
-      : (interestLevel === 'high' ? 'Quan tâm cao cơ hội này' : 'Quan tâm thấp cơ hội này');
+    const defaultMsg =
+      dVal > 0
+        ? `Đề xuất deal: ${new Intl.NumberFormat('vi-VN').format(dVal)} VNĐ (${dealPercent}% so với ngân sách)`
+        : interestLevel === 'high'
+          ? 'Quan tâm cao cơ hội này'
+          : 'Quan tâm thấp cơ hội này';
 
     await this.prisma.$executeRaw`
       INSERT INTO public.opportunity_interests (
@@ -454,7 +540,9 @@ export class ConnectOpportunityService {
     const notifId = crypto.randomUUID();
     const dedupeInterest = `interest_${opportunityRef}_${userId}_${Date.now()}`;
     const isLow = interestLevel === 'low';
-    const notifTitle = isLow ? 'Đã chuyển cơ hội sang quan tâm thấp' : 'Đã gửi mức độ quan tâm cơ hội';
+    const notifTitle = isLow
+      ? 'Đã chuyển cơ hội sang quan tâm thấp'
+      : 'Đã gửi mức độ quan tâm cơ hội';
     const notifBody = isLow
       ? `Bạn đã chuyển cơ hội "${oppTitle}" sang mức quan tâm thấp.`
       : `Bạn đã đăng ký quan tâm cơ hội "${oppTitle}". Dữ liệu đã đồng bộ về CRM.`;
@@ -485,7 +573,9 @@ export class ConnectOpportunityService {
       this.gateway.emitUnreadNotificationCount(userId, 1);
 
       this.gateway.emitToAll('notification:new', {
-        title: isLow ? 'Doanh nghiệp chuyển cơ hội sang quan tâm thấp' : 'Doanh nghiệp đăng ký quan tâm cơ hội',
+        title: isLow
+          ? 'Doanh nghiệp chuyển cơ hội sang quan tâm thấp'
+          : 'Doanh nghiệp đăng ký quan tâm cơ hội',
         body: `${claimantName} (${claimantCompany}) ${isLow ? 'chuyển sang quan tâm thấp' : 'đăng ký quan tâm'} cơ hội: ${oppTitle}`,
         appScope: 'all',
         sentAt: now.toISOString(),
@@ -498,7 +588,11 @@ export class ConnectOpportunityService {
     return { ok: true };
   }
 
-  async withdrawCommunityOpportunityInterest(userId: string, communityId: string, opportunityRef: string) {
+  async withdrawCommunityOpportunityInterest(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+  ) {
     try {
       const member = await this.prisma.$queryRaw<any[]>`
         SELECT id, code, user_id, phone, contact FROM public.members 
@@ -527,7 +621,12 @@ export class ConnectOpportunityService {
     return { ok: true, withdrawn: true, opportunityId: opportunityRef };
   }
 
-  async scheduleCommunityOpportunityFollowUp(userId: string, communityId: string, opportunityRef: string, inDays: number) {
+  async scheduleCommunityOpportunityFollowUp(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+    inDays: number,
+  ) {
     const nextAction = new Date(Date.now() + inDays * 24 * 60 * 60 * 1000);
     const now = new Date();
 
@@ -544,7 +643,12 @@ export class ConnectOpportunityService {
     return { ok: true };
   }
 
-  async updateCommunityOpportunityFollowUp(userId: string, communityId: string, opportunityRef: string, action: string) {
+  async updateCommunityOpportunityFollowUp(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+    action: string,
+  ) {
     const now = new Date();
     if (action === 'done' || action === 'cancel') {
       await this.prisma.$executeRaw`
@@ -556,16 +660,32 @@ export class ConnectOpportunityService {
     return { ok: true };
   }
 
-  async updateOpportunityDealStatus(userId: string, opportunityId: string, status: string, note?: string) {
-    await this.prisma.$executeRawUnsafe(`
+  async updateOpportunityDealStatus(
+    userId: string,
+    opportunityId: string,
+    status: string,
+    note?: string,
+  ) {
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       UPDATE public.opportunities
       SET status = $1, updated_at = NOW()
       WHERE id = $2 OR id::text = $2
-    `, status, opportunityId).catch(() => {});
+    `,
+        status,
+        opportunityId,
+      )
+      .catch(() => {});
 
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+    const rows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT * FROM public.opportunities WHERE id = $1 LIMIT 1
-    `, opportunityId).catch(() => []);
+    `,
+        opportunityId,
+      )
+      .catch(() => []);
 
     return {
       success: true,
@@ -576,7 +696,13 @@ export class ConnectOpportunityService {
     };
   }
 
-  async saveCommunityOpportunityProgress(userId: string, communityId: string, opportunityRef: string, progress: string, note: string) {
+  async saveCommunityOpportunityProgress(
+    userId: string,
+    communityId: string,
+    opportunityRef: string,
+    progress: string,
+    note: string,
+  ) {
     const now = new Date();
     await this.prisma.$executeRaw`
       INSERT INTO public.community_opportunity_followups (
@@ -608,7 +734,10 @@ export class ConnectOpportunityService {
     return { ok: true };
   }
 
-  async removeCommunityOpportunityAttachment(userId: string, attachmentId: string) {
+  async removeCommunityOpportunityAttachment(
+    userId: string,
+    attachmentId: string,
+  ) {
     await this.prisma.$executeRaw`
       DELETE FROM public.community_opportunity_followup_attachments
       WHERE id = ${attachmentId}::uuid AND user_id = ${userId}::uuid
@@ -624,8 +753,12 @@ export class ConnectOpportunityService {
       let memberId: string | null = null;
       let memberCode: string | null = null;
       if (userId) {
-        const roles = await this.prisma.user_roles.findMany({ where: { user_id: userId } }).catch(() => []) as any[];
-        isPlatformAdmin = roles.some((r: any) => r.role === 'platform_admin' || r.role === 'admin');
+        const roles = (await this.prisma.user_roles
+          .findMany({ where: { user_id: userId } })
+          .catch(() => [])) as any[];
+        isPlatformAdmin = roles.some(
+          (r: any) => r.role === 'platform_admin' || r.role === 'admin',
+        );
 
         const memberRows = await this.prisma.$queryRaw<any[]>`
           SELECT id, code FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId} LIMIT 1
@@ -685,27 +818,56 @@ export class ConnectOpportunityService {
           FROM public.user_connections
           WHERE status = 'accepted'::public.global_connection_status AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
         `.catch(() => []);
-        connectedUserIds = conns.map(c => String(c.requester_user_id) === String(userId) ? String(c.recipient_user_id) : String(c.requester_user_id));
+        connectedUserIds = conns.map((c) =>
+          String(c.requester_user_id) === String(userId)
+            ? String(c.recipient_user_id)
+            : String(c.requester_user_id),
+        );
       }
 
-      const visibleOpps = opps.filter(o => {
+      const visibleOpps = opps.filter((o) => {
         const posterId = String(o.poster_id || '');
         if (isPlatformAdmin) return true;
-        if (posterId === String(userId) || (memberId && posterId === String(memberId)) || (memberCode && posterId === String(memberCode))) return true;
+        if (
+          posterId === String(userId) ||
+          (memberId && posterId === String(memberId)) ||
+          (memberCode && posterId === String(memberCode))
+        )
+          return true;
 
         const scope = (o.target_scope || 'all').toLowerCase();
         const recips: string[] = Array.isArray(o.target_recipients)
           ? o.target_recipients.map(String)
-          : (typeof o.target_recipients === 'string' ? JSON.parse(o.target_recipients || '[]') : []);
+          : typeof o.target_recipients === 'string'
+            ? JSON.parse(o.target_recipients || '[]')
+            : [];
 
         // Nếu cơ hội assign cụ thể từng người (target_scope là 'assigned', 'specific', 'private' hoặc có danh sách target_recipients)
-        if (scope === 'assigned' || scope === 'specific' || scope === 'private' || (recips.length > 0 && scope !== 'public' && scope !== 'all')) {
-          return recips.some(r => r === String(userId) || (memberId && r === String(memberId)) || (memberCode && r === String(memberCode)));
+        if (
+          scope === 'assigned' ||
+          scope === 'specific' ||
+          scope === 'private' ||
+          (recips.length > 0 && scope !== 'public' && scope !== 'all')
+        ) {
+          return recips.some(
+            (r) =>
+              r === String(userId) ||
+              (memberId && r === String(memberId)) ||
+              (memberCode && r === String(memberCode)),
+          );
         }
 
         // Nếu chia sẻ cho bạn bè kết nối
         if (scope === 'friends') {
-          if (recips.some(r => r === String(userId) || (memberId && r === String(memberId)) || (memberCode && r === String(memberCode)))) return true;
+          if (
+            recips.some(
+              (r) =>
+                r === String(userId) ||
+                (memberId && r === String(memberId)) ||
+                (memberCode && r === String(memberCode)),
+            )
+          )
+            return true;
           return connectedUserIds.includes(posterId);
         }
 
@@ -718,8 +880,10 @@ export class ConnectOpportunityService {
       });
 
       return {
-        opportunities: visibleOpps.map(r => {
-          const imgList = safeParseImages(r.images || (r.image ? [r.image] : []));
+        opportunities: visibleOpps.map((r) => {
+          const imgList = safeParseImages(
+            r.images || (r.image ? [r.image] : []),
+          );
           const firstImg = imgList[0] || r.image || undefined;
           return {
             id: String(r.id),
@@ -735,14 +899,20 @@ export class ConnectOpportunityService {
             budgetMax: r.budget_max != null ? Number(r.budget_max) : undefined,
             region: r.region || '',
             industry: r.industry || '',
-            deadline: r.deadline ? new Date(r.deadline).toISOString() : new Date().toISOString(),
+            deadline: r.deadline
+              ? new Date(r.deadline).toISOString()
+              : new Date().toISOString(),
             status: r.status || 'open',
-            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+            createdAt: r.created_at
+              ? new Date(r.created_at).toISOString()
+              : new Date().toISOString(),
             views: Number(r.views || 0),
             emoji: r.emoji || '💡',
             claimedById: r.claimed_by_id || undefined,
             claimedByName: r.claimed_by_name || undefined,
-            claimedAt: r.claimed_at ? new Date(r.claimed_at).toISOString() : undefined,
+            claimedAt: r.claimed_at
+              ? new Date(r.claimed_at).toISOString()
+              : undefined,
             claimedPhone: r.claimed_phone || undefined,
             claimedCompany: r.claimed_company || undefined,
             contactName: r.contact_name || undefined,
@@ -753,13 +923,16 @@ export class ConnectOpportunityService {
             thumbnail: firstImg,
             images: imgList,
             referrer: r.referrer || undefined,
-            commissionPercent: r.commission_percent != null ? Number(r.commission_percent) : undefined,
+            commissionPercent:
+              r.commission_percent != null
+                ? Number(r.commission_percent)
+                : undefined,
             targetScope: r.target_scope || 'all',
             targetRecipients: r.target_recipients || [],
             targetGroups: r.target_groups || [],
           };
         }),
-        interests: interests.map(it => ({
+        interests: interests.map((it) => ({
           id: String(it.id),
           opportunityId: String(it.opportunity_id),
           memberId: String(it.member_id || ''),
@@ -773,7 +946,9 @@ export class ConnectOpportunityService {
           interestLevel: it.interest_level || 'high',
           dealValue: it.deal_value != null ? Number(it.deal_value) : 0,
           dealPercent: it.deal_percent != null ? Number(it.deal_percent) : 0,
-          createdAt: it.created_at ? new Date(it.created_at).toISOString() : new Date().toISOString(),
+          createdAt: it.created_at
+            ? new Date(it.created_at).toISOString()
+            : new Date().toISOString(),
         })),
         interestCounts,
       };
@@ -837,14 +1012,20 @@ export class ConnectOpportunityService {
           budgetMax: r.budget_max != null ? Number(r.budget_max) : undefined,
           region: r.region || '',
           industry: r.industry || '',
-          deadline: r.deadline ? new Date(r.deadline).toISOString() : new Date().toISOString(),
+          deadline: r.deadline
+            ? new Date(r.deadline).toISOString()
+            : new Date().toISOString(),
           status: r.status || 'open',
-          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          createdAt: r.created_at
+            ? new Date(r.created_at).toISOString()
+            : new Date().toISOString(),
           views: Number(r.views || 0),
           emoji: r.emoji || '💡',
           claimedById: r.claimed_by_id || undefined,
           claimedByName: r.claimed_by_name || undefined,
-          claimedAt: r.claimed_at ? new Date(r.claimed_at).toISOString() : undefined,
+          claimedAt: r.claimed_at
+            ? new Date(r.claimed_at).toISOString()
+            : undefined,
           claimedPhone: r.claimed_phone || undefined,
           claimedCompany: r.claimed_company || undefined,
           contactName: r.contact_name || undefined,
@@ -855,7 +1036,7 @@ export class ConnectOpportunityService {
           thumbnail: firstImg,
           images: imgList,
         },
-        interests: interests.map(it => ({
+        interests: interests.map((it) => ({
           id: String(it.id),
           opportunityId: String(it.opportunity_id),
           memberId: String(it.member_id || ''),
@@ -867,7 +1048,9 @@ export class ConnectOpportunityService {
           message: it.message || '',
           contact: it.contact || it.member_phone || '',
           interestLevel: it.interest_level || 'high',
-          createdAt: it.created_at ? new Date(it.created_at).toISOString() : new Date().toISOString(),
+          createdAt: it.created_at
+            ? new Date(it.created_at).toISOString()
+            : new Date().toISOString(),
         })),
       };
     } catch (err) {
@@ -878,7 +1061,8 @@ export class ConnectOpportunityService {
 
   async createOpportunity(userId: string, data: any) {
     const oppId = data.id || `OPP-${Date.now().toString(36).toUpperCase()}`;
-    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
+    const assocId =
+      data.associationId || 'c1983000-0000-4000-8000-000000001983';
 
     // Fetch poster details (member or account)
     const mem = await this.prisma.$queryRaw<any[]>`
@@ -892,18 +1076,26 @@ export class ConnectOpportunityService {
       LIMIT 1
     `.catch(() => []);
 
-    const contactName = (data.contactName || mem[0]?.name || vu[0]?.name || 'Ban Quản Trị').trim();
+    const contactName = (
+      data.contactName ||
+      mem[0]?.name ||
+      vu[0]?.name ||
+      'Ban Quản Trị'
+    ).trim();
     const contactPhone = (data.contactPhone || mem[0]?.phone || '').trim();
     const contactTitle = (data.contactTitle || 'Đại diện hợp tác').trim();
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
-    const images: string[] = safeParseImages(data.images || (data.image ? [data.image] : []));
+    const images: string[] = safeParseImages(
+      data.images || (data.image ? [data.image] : []),
+    );
     const oppImage = images[0] || data.image || data.thumbnail || null;
     const targetScope = data.targetScope || 'all';
     const targetRecipients = JSON.stringify(data.targetRecipients || []);
     const targetGroups = JSON.stringify(data.targetGroups || []);
 
     const referrer = data.referrer ? String(data.referrer).trim() : null;
-    const commissionPercent = data.commissionPercent != null ? Number(data.commissionPercent) : null;
+    const commissionPercent =
+      data.commissionPercent != null ? Number(data.commissionPercent) : null;
 
     // Kiểm tra trùng cơ hội kinh doanh (Cùng người đăng, cùng tiêu đề trong vòng 1 giờ)
     const cleanTitle = (data.title || '').trim().toLowerCase();
@@ -916,7 +1108,9 @@ export class ConnectOpportunityService {
         LIMIT 1
       `.catch(() => []);
       if (recentDup.length > 0) {
-        throw new BadRequestException('Bạn vừa đăng một cơ hội kinh doanh có tiêu đề tương tự trong vòng 1 giờ qua. Vui lòng kiểm tra lại để tránh đăng trùng lặp!');
+        throw new BadRequestException(
+          'Bạn vừa đăng một cơ hội kinh doanh có tiêu đề tương tự trong vòng 1 giờ qua. Vui lòng kiểm tra lại để tránh đăng trùng lặp!',
+        );
       }
     }
 
@@ -942,7 +1136,10 @@ export class ConnectOpportunityService {
         )
       `;
     } catch (err: any) {
-      console.warn('createOpportunity primary insert failed, using fallback:', err?.message);
+      console.warn(
+        'createOpportunity primary insert failed, using fallback:',
+        err?.message,
+      );
       await this.prisma.$executeRaw`
         INSERT INTO public.opportunities (
           id, association_id, poster_id, title, description, type,
@@ -963,7 +1160,9 @@ export class ConnectOpportunityService {
     }
 
     // Ghi nhận nhật ký audit log
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.audit_logs (actor_user_id, action, target_type, target_id, metadata, created_at)
       VALUES (
         ${isValidUuid(userId) ? `'${userId}'::uuid` : 'NULL'},
@@ -973,7 +1172,9 @@ export class ConnectOpportunityService {
         '${JSON.stringify({ title: data.title, targetScope, contactName, company })}'::jsonb,
         now()
       );
-    `).catch(() => null);
+    `,
+      )
+      .catch(() => null);
 
     return { ok: true, id: oppId };
   }
@@ -989,8 +1190,16 @@ export class ConnectOpportunityService {
   }
 
   async updateOpportunity(userId: string, opportunityId: string, data: any) {
-    const images: string[] | null = data.images || data.image ? safeParseImages(data.images || [data.image]) : null;
-    const oppImage = images && images[0] ? images[0] : (data.image !== undefined ? data.image : data.thumbnail);
+    const images: string[] | null =
+      data.images || data.image
+        ? safeParseImages(data.images || [data.image])
+        : null;
+    const oppImage =
+      images && images[0]
+        ? images[0]
+        : data.image !== undefined
+          ? data.image
+          : data.thumbnail;
 
     await this.prisma.$executeRaw`
       UPDATE public.opportunities
@@ -1062,17 +1271,23 @@ export class ConnectOpportunityService {
         LIMIT 50
       `.catch(() => [] as any[]);
 
-      const oppIds = opportunities.map(o => o.id);
+      const oppIds = opportunities.map((o) => o.id);
       let myInterests = new Set<string>();
       if (oppIds.length > 0) {
         const ints = await this.prisma.$queryRaw<any[]>`
           SELECT opportunity_id FROM public.opportunity_interests
           WHERE contact = ${userId} OR member_id::text = ${userId}
         `.catch(() => [] as any[]);
-        myInterests = new Set(ints.map(i => String(i.opportunity_id)));
+        myInterests = new Set(ints.map((i) => String(i.opportunity_id)));
       }
 
-      const OPP_COLORS = ['#D97706', '#F59E0B', '#B45309', '#D8B282', '#EDB028'];
+      const OPP_COLORS = [
+        '#D97706',
+        '#F59E0B',
+        '#B45309',
+        '#D8B282',
+        '#EDB028',
+      ];
 
       const myMembers = await this.prisma.$queryRaw<any[]>`
         SELECT id, code, user_id FROM public.members
@@ -1081,8 +1296,12 @@ export class ConnectOpportunityService {
       const myIds = new Set<string>([
         String(userId).toLowerCase(),
         ...(myMembers[0]?.id ? [String(myMembers[0].id).toLowerCase()] : []),
-        ...(myMembers[0]?.code ? [String(myMembers[0].code).toLowerCase()] : []),
-        ...(myMembers[0]?.user_id ? [String(myMembers[0].user_id).toLowerCase()] : []),
+        ...(myMembers[0]?.code
+          ? [String(myMembers[0].code).toLowerCase()]
+          : []),
+        ...(myMembers[0]?.user_id
+          ? [String(myMembers[0].user_id).toLowerCase()]
+          : []),
       ]);
 
       if (opportunities.length === 0) {
@@ -1105,7 +1324,8 @@ export class ConnectOpportunityService {
         const bMax = o.budget_max ? Number(o.budget_max) : undefined;
         const formatValFromNumber = (n: number) => {
           if (n <= 100) return `${n} Tỷ đ`;
-          if (n >= 1e9) return `${(n / 1e9).toFixed(1).replace(/\.0$/, '')} Tỷ đ`;
+          if (n >= 1e9)
+            return `${(n / 1e9).toFixed(1).replace(/\.0$/, '')} Tỷ đ`;
           if (n >= 1e6) return `${(n / 1e6).toFixed(0)} Tr đ`;
           return `${n.toLocaleString('vi-VN')} đ`;
         };
@@ -1131,8 +1351,16 @@ export class ConnectOpportunityService {
           tag: tagVi,
           title: o.title,
           description: o.description || o.summary || '',
-          company: o.company || o.poster_company || o.association_name || o.region || o.industry || 'CLB Doanh Nhân CEO 1983',
-          time: o.created_at ? new Date(o.created_at).toISOString() : new Date().toISOString(),
+          company:
+            o.company ||
+            o.poster_company ||
+            o.association_name ||
+            o.region ||
+            o.industry ||
+            'CLB Doanh Nhân CEO 1983',
+          time: o.created_at
+            ? new Date(o.created_at).toISOString()
+            : new Date().toISOString(),
           color: OPP_COLORS[i % OPP_COLORS.length],
           interested: myInterests.has(String(o.id)),
           image: firstImg,
@@ -1140,31 +1368,51 @@ export class ConnectOpportunityService {
           images: imgList,
           posterId: o.poster_id || o.poster_code || 'admin',
           posterCode: o.poster_code || o.poster_id || 'admin',
-          posterName: o.poster_name || o.contact_name || o.poster_company || 'Hội viên CLB',
+          posterName:
+            o.poster_name ||
+            o.contact_name ||
+            o.poster_company ||
+            'Hội viên CLB',
           contactName: o.poster_name || o.contact_name || 'Đại diện hợp tác',
           contactPhone: o.contact_phone || null,
           contactTitle: o.contact_title || 'Đại diện hợp tác',
           value: formattedVal,
-          estimatedValue: Number(o.estimated_value || bMax || bMin || 0) || undefined,
+          estimatedValue:
+            Number(o.estimated_value || bMax || bMin || 0) || undefined,
           budgetMin: bMin,
           budgetMax: bMax,
-          claimed: Boolean(o.claimed_by_id || o.claimed_at || o.claimed_by_name),
+          claimed: Boolean(
+            o.claimed_by_id || o.claimed_at || o.claimed_by_name,
+          ),
           claimedById: o.claimed_by_id || undefined,
           claimedByName: o.claimed_by_name || undefined,
-          claimedAt: o.claimed_at ? new Date(o.claimed_at).toISOString() : undefined,
+          claimedAt: o.claimed_at
+            ? new Date(o.claimed_at).toISOString()
+            : undefined,
           claimedPhone: o.claimed_phone || undefined,
           status: o.status || 'open',
           industry: o.industry || 'Đa ngành',
           region: o.region || 'Toàn quốc',
-          tradeType: o.trade_type || (
-            (o.title + ' ' + (o.description || '')).toLowerCase().includes('tìm') ||
-            (o.title + ' ' + (o.description || '')).toLowerCase().includes('cần mua') ||
-            (o.title + ' ' + (o.description || '')).toLowerCase().includes('nhập') ||
-            (o.title + ' ' + (o.description || '')).toLowerCase().includes('kêu gọi')
+          tradeType:
+            o.trade_type ||
+            ((o.title + ' ' + (o.description || ''))
+              .toLowerCase()
+              .includes('tìm') ||
+            (o.title + ' ' + (o.description || ''))
+              .toLowerCase()
+              .includes('cần mua') ||
+            (o.title + ' ' + (o.description || ''))
+              .toLowerCase()
+              .includes('nhập') ||
+            (o.title + ' ' + (o.description || ''))
+              .toLowerCase()
+              .includes('kêu gọi')
               ? 'buyer'
-              : 'seller'
-          ),
-          isOwner: myIds.has(String(o.poster_id || '').toLowerCase()) || (Boolean(o.poster_code) && myIds.has(String(o.poster_code).toLowerCase())),
+              : 'seller'),
+          isOwner:
+            myIds.has(String(o.poster_id || '').toLowerCase()) ||
+            (Boolean(o.poster_code) &&
+              myIds.has(String(o.poster_code).toLowerCase())),
         };
       });
     } catch {
@@ -1172,8 +1420,21 @@ export class ConnectOpportunityService {
     }
   }
 
-  async expressOpportunityInterest(userId: string, opportunityId: string, message?: string, dealValue?: number, interestLevel?: string) {
-    return this.expressCommunityOpportunityInterest(userId, '', opportunityId, interestLevel || 'high', dealValue, message);
+  async expressOpportunityInterest(
+    userId: string,
+    opportunityId: string,
+    message?: string,
+    dealValue?: number,
+    interestLevel?: string,
+  ) {
+    return this.expressCommunityOpportunityInterest(
+      userId,
+      '',
+      opportunityId,
+      interestLevel || 'high',
+      dealValue,
+      message,
+    );
   }
 
   async incrementOpportunityView(opportunityId: string) {
@@ -1247,11 +1508,15 @@ export class ConnectOpportunityService {
       const myIds = new Set<string>([
         String(userId).toLowerCase(),
         ...(myMembers[0]?.id ? [String(myMembers[0].id).toLowerCase()] : []),
-        ...(myMembers[0]?.code ? [String(myMembers[0].code).toLowerCase()] : []),
-        ...(myMembers[0]?.user_id ? [String(myMembers[0].user_id).toLowerCase()] : []),
+        ...(myMembers[0]?.code
+          ? [String(myMembers[0].code).toLowerCase()]
+          : []),
+        ...(myMembers[0]?.user_id
+          ? [String(myMembers[0].user_id).toLowerCase()]
+          : []),
       ]);
 
-      let totalClubCount = allOpps.length;
+      const totalClubCount = allOpps.length;
       let totalClubValue = 0;
       let mySharedCount = 0;
       let mySharedValue = 0;
@@ -1265,7 +1530,11 @@ export class ConnectOpportunityService {
         totalClubValue += valMax;
 
         const isMine = myIds.has(String(o.poster_id || '').toLowerCase());
-        const isWon = o.status === 'claimed' || o.status === 'won' || o.status === 'closed' || !!o.claimed_by_id;
+        const isWon =
+          o.status === 'claimed' ||
+          o.status === 'won' ||
+          o.status === 'closed' ||
+          !!o.claimed_by_id;
 
         if (isMine) {
           mySharedCount++;
@@ -1275,7 +1544,9 @@ export class ConnectOpportunityService {
         if (isWon) {
           totalWonCount++;
           totalWonValue += valMax;
-          const isMyWon = myIds.has(String(o.claimed_by_id || '').toLowerCase());
+          const isMyWon = myIds.has(
+            String(o.claimed_by_id || '').toLowerCase(),
+          );
           if (isMyWon) {
             myWonCount++;
             myWonValue += valMax;
@@ -1286,12 +1557,19 @@ export class ConnectOpportunityService {
           id: o.id,
           title: o.title,
           description: o.description,
-          type: o.type === 'buy' ? 'Bên mua' : (o.type === 'sell' ? 'Bên bán' : (o.type || 'Hợp tác B2B')),
+          type:
+            o.type === 'buy'
+              ? 'Bên mua'
+              : o.type === 'sell'
+                ? 'Bên bán'
+                : o.type || 'Hợp tác B2B',
           tradeType: o.type,
           industry: o.industry || 'Đa ngành',
           budgetMin: Number(o.budget_min) || 0,
           budgetMax: Number(o.budget_max) || 0,
-          valueFormatted: valMax ? `${(valMax / 1000000).toLocaleString('vi-VN')} triệu VNĐ` : 'Thương lượng',
+          valueFormatted: valMax
+            ? `${(valMax / 1000000).toLocaleString('vi-VN')} triệu VNĐ`
+            : 'Thương lượng',
           posterName: o.poster_name,
           posterCompany: o.poster_company,
           posterDepartment: o.poster_department,
@@ -1306,17 +1584,22 @@ export class ConnectOpportunityService {
       });
 
       // Thống kê thành viên trao cơ hội nhiều nhất (Top Givers)
-      const giversMap = new Map<string, {
-        posterId: string;
-        name: string;
-        company: string;
-        department: string;
-        count: number;
-        totalValue: number;
-      }>();
+      const giversMap = new Map<
+        string,
+        {
+          posterId: string;
+          name: string;
+          company: string;
+          department: string;
+          count: number;
+          totalValue: number;
+        }
+      >();
 
       for (const o of allOpps) {
-        const pId = String(o.poster_id || o.poster_name || 'Hội viên').toLowerCase();
+        const pId = String(
+          o.poster_id || o.poster_name || 'Hội viên',
+        ).toLowerCase();
         const val = Number(o.budget_max) || Number(o.budget_min) || 0;
         if (!giversMap.has(pId)) {
           giversMap.set(pId, {
@@ -1333,7 +1616,9 @@ export class ConnectOpportunityService {
         g.totalValue += val;
       }
 
-      const topGivers = Array.from(giversMap.values()).sort((a, b) => b.count - a.count || b.totalValue - a.totalValue);
+      const topGivers = Array.from(giversMap.values()).sort(
+        (a, b) => b.count - a.count || b.totalValue - a.totalValue,
+      );
       const topGiver = topGivers[0] || null;
 
       return {
@@ -1371,4 +1656,3 @@ export class ConnectOpportunityService {
     }
   }
 }
-

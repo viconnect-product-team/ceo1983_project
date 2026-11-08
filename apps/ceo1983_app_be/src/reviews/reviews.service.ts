@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 import { ReviewsRepository } from './reviews.repository';
 import { CreateReviewDto, UpdateReviewDto } from './dto';
@@ -9,8 +13,13 @@ export { CreateReviewDto, UpdateReviewDto };
 export class ReviewsService {
   constructor(private readonly reviewsRepo: ReviewsRepository) {}
 
-  async listReviews(filter: { sellerId?: string; productId?: string; companyName?: string } | string) {
-    const filterObj = typeof filter === 'string' ? { sellerId: filter } : (filter || {});
+  async listReviews(
+    filter:
+      | { sellerId?: string; productId?: string; companyName?: string }
+      | string,
+  ) {
+    const filterObj =
+      typeof filter === 'string' ? { sellerId: filter } : filter || {};
     const rows = await this.reviewsRepo.listReviews(filterObj);
 
     const reviews = rows.map((r) => ({
@@ -26,11 +35,15 @@ export class ReviewsService {
       comment: r.comment || '',
       reviewType: r.review_type || 'service',
       images: Array.isArray(r.images) ? r.images : [],
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
     }));
 
     const count = reviews.length;
-    const avg = count ? reviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+    const avg = count
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / count
+      : 0;
     return { reviews, stats: { count, avg: Number(avg.toFixed(1)) } };
   }
 
@@ -41,7 +54,10 @@ export class ReviewsService {
     const id = crypto.randomUUID();
     const reviewerId = data.reviewerId || userId;
 
-    const reviewerName = data.reviewerName || (await this.reviewsRepo.findReviewerName(reviewerId, userId)) || 'Hội viên CEO 1983';
+    const reviewerName =
+      data.reviewerName ||
+      (await this.reviewsRepo.findReviewerName(reviewerId, userId)) ||
+      'Hội viên CEO 1983';
 
     const r = await this.reviewsRepo.insertReview({
       id,
@@ -76,7 +92,12 @@ export class ReviewsService {
   }
 
   async updateReview(userId: string, id: string, data: UpdateReviewDto) {
-    const r = await this.reviewsRepo.updateReviewRaw(id, data.rating, data.comment, data.reviewType);
+    const r = await this.reviewsRepo.updateReviewRaw(
+      id,
+      data.rating,
+      data.comment,
+      data.reviewType,
+    );
     if (!r) throw new NotFoundException('Review not found');
 
     return {

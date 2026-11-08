@@ -28,10 +28,15 @@ export function parsePersonId(personId: string) {
   return { targetKind, targetUserId, targetCardId, targetGuestId };
 }
 
-export function composePersonId(targetKind: string, targetUserId: string | null, targetCardId: string | null, targetGuestId: string | null) {
+export function composePersonId(
+  targetKind: string,
+  targetUserId: string | null,
+  targetCardId: string | null,
+  targetGuestId: string | null,
+) {
   if (targetKind === 'connection' && targetUserId) return `u:${targetUserId}`;
   if (targetKind === 'saved_card' && targetCardId) return `c:${targetCardId}`;
-  if (targetKind === 'guest_contact' && targetGuestId) return `g:${targetGuestId}`;
+  if (targetKind === 'guest_contact' && targetGuestId)
+    return `g:${targetGuestId}`;
   return '';
 }
-

@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
 import { parsePersonId, composePersonId } from '../connect-app.utils';
@@ -13,7 +19,9 @@ export class ConnectNetworkService {
 
   async resolvePublicCounterparts(userIds: string[]) {
     if (!Array.isArray(userIds) || userIds.length === 0) return [];
-    const validIds = userIds.filter(id => typeof id === 'string' && id.trim().length > 0);
+    const validIds = userIds.filter(
+      (id) => typeof id === 'string' && id.trim().length > 0,
+    );
     if (validIds.length === 0) return [];
 
     const summaries: any[] = [];
@@ -125,13 +133,16 @@ export class ConnectNetworkService {
       WHERE status = 'accepted'::public.global_connection_status AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
       ORDER BY responded_at DESC NULLS LAST
     `.catch(() => []);
-    
-    const counterpartIds = connections.map(c => c.requester_user_id === userId ? c.target_user_id : c.requester_user_id);
-    const summaries = await this.resolvePublicCounterparts(counterpartIds);
-    const summaryMap = new Map(summaries.map(s => [s.userId, s]));
 
-    return connections.map(c => {
-      const counterpartUserId = c.requester_user_id === userId ? c.target_user_id : c.requester_user_id;
+    const counterpartIds = connections.map((c) =>
+      c.requester_user_id === userId ? c.target_user_id : c.requester_user_id,
+    );
+    const summaries = await this.resolvePublicCounterparts(counterpartIds);
+    const summaryMap = new Map(summaries.map((s) => [s.userId, s]));
+
+    return connections.map((c) => {
+      const counterpartUserId =
+        c.requester_user_id === userId ? c.target_user_id : c.requester_user_id;
       const s = summaryMap.get(counterpartUserId);
       return {
         id: c.id,
@@ -143,7 +154,9 @@ export class ConnectNetworkService {
         companyName: s?.companyName || null,
         headline: s?.headline || null,
         primaryCardSlug: s?.primaryCardSlug || null,
-        respondedAt: c.responded_at ? new Date(c.responded_at).toISOString() : null,
+        respondedAt: c.responded_at
+          ? new Date(c.responded_at).toISOString()
+          : null,
         createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
       };
     });
@@ -189,7 +202,7 @@ export class ConnectNetworkService {
       `.catch(() => []);
     }
 
-    return cards.map(c => ({
+    return cards.map((c) => ({
       id: c.id,
       targetCardId: c.target_card_id,
       savedAt: c.saved_at ? new Date(c.saved_at).toISOString() : null,
@@ -199,7 +212,7 @@ export class ConnectNetworkService {
         professionalTitle: c.professional_title || null,
         companyName: c.company_name || null,
         slug: c.slug || c.target_card_id,
-      }
+      },
     }));
   }
 
@@ -211,20 +224,27 @@ export class ConnectNetworkService {
       ORDER BY last_shared_at DESC
     `.catch(() => []);
 
-    return guests.map(g => ({
+    return guests.map((g) => ({
       id: g.id,
       displayName: g.display_name || null,
       title: g.title || null,
       companyName: g.company_name || null,
-      firstSharedAt: g.first_shared_at ? new Date(g.first_shared_at).toISOString() : null,
-      lastSharedAt: g.last_shared_at ? new Date(g.last_shared_at).toISOString() : null,
+      firstSharedAt: g.first_shared_at
+        ? new Date(g.first_shared_at).toISOString()
+        : null,
+      lastSharedAt: g.last_shared_at
+        ? new Date(g.last_shared_at).toISOString()
+        : null,
       source: g.source || null,
     }));
   }
 
   async getTodayRecommendations(userId: string) {
     const now = new Date();
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        userId,
+      );
     const safeUserId = isUuid ? userId : '00000000-0000-0000-0000-000000000000';
 
     // Fetch viewer profile to know their location, headline and industry for smart matching
@@ -236,7 +256,9 @@ export class ConnectNetworkService {
     `.catch(() => [] as any[]);
 
     const rawViewerCity = (viewerProfile[0]?.city || '').trim().toLowerCase();
-    const viewerCity = rawViewerCity.replace(/^(thành phố|tp\.|tỉnh)\s*/i, '').trim();
+    const viewerCity = rawViewerCity
+      .replace(/^(thành phố|tp\.|tỉnh)\s*/i, '')
+      .trim();
 
     // Fetch connected users with real interaction timestamps and counts (Nurture Connections list)
     const connectedRows: any[] = await this.prisma.$queryRaw<any[]>`
@@ -283,7 +305,7 @@ export class ConnectNetworkService {
     `.catch(() => [] as any[]);
 
     // Fetch non-connected users (AI Match Suggestions list)
-    let nonConnectedRows: any[] = await this.prisma.$queryRaw<any[]>`
+    const nonConnectedRows: any[] = await this.prisma.$queryRaw<any[]>`
       SELECT bi.id as identity_id, bi.owner_user_id, bi.display_name, bi.avatar_url, bi.headline, bi.company_name, bi.city
       FROM public.business_identities bi
       WHERE bi.owner_user_id != ${safeUserId}::uuid AND bi.status = 'active'
@@ -305,14 +327,16 @@ export class ConnectNetworkService {
         ...nonConnectedRows.map((r: any) => String(r.owner_user_id)),
         ...connectedRows.map((r: any) => String(r.owner_user_id)),
       ];
-      const extraUsers = await this.prisma.vione_users.findMany({
-        where: {
-          id: {
-            notIn: existingIds,
+      const extraUsers = await this.prisma.vione_users
+        .findMany({
+          where: {
+            id: {
+              notIn: existingIds,
+            },
           },
-        },
-        take: 15,
-      }).catch(() => [] as any[]);
+          take: 15,
+        })
+        .catch(() => [] as any[]);
 
       extraUsers.forEach((u: any) => {
         nonConnectedRows.push({
@@ -328,8 +352,18 @@ export class ConnectNetworkService {
     }
 
     const LEADERSHIP_KEYWORDS = [
-      'chủ tịch', 'ceo', 'founder', 'sáng lập', 'giám đốc', 'director', 
-      'c-level', 'tổng giám đốc', 'phó giám đốc', 'trưởng phòng', 'leader', 'chuyên gia'
+      'chủ tịch',
+      'ceo',
+      'founder',
+      'sáng lập',
+      'giám đốc',
+      'director',
+      'c-level',
+      'tổng giám đốc',
+      'phó giám đốc',
+      'trưởng phòng',
+      'leader',
+      'chuyên gia',
     ];
 
     const isHighPotential = (headline: string, company: string): boolean => {
@@ -339,8 +373,14 @@ export class ConnectNetworkService {
 
     const isNearby = (candidateCity: string): boolean => {
       if (!viewerCity || !candidateCity) return false;
-      const cleanCandidate = candidateCity.toLowerCase().replace(/^(thành phố|tp\.|tỉnh)\s*/i, '').trim();
-      return cleanCandidate.includes(viewerCity) || viewerCity.includes(cleanCandidate);
+      const cleanCandidate = candidateCity
+        .toLowerCase()
+        .replace(/^(thành phố|tp\.|tỉnh)\s*/i, '')
+        .trim();
+      return (
+        cleanCandidate.includes(viewerCity) ||
+        viewerCity.includes(cleanCandidate)
+      );
     };
 
     const scoredRecommendations: Array<{ score: number; item: any }> = [];
@@ -348,7 +388,9 @@ export class ConnectNetworkService {
     // 1. Process non-connected users (AI Match suggestions)
     nonConnectedRows.forEach((row: any) => {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
-      const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
+      const cleanPersonId = personIdStr.startsWith('u:')
+        ? personIdStr
+        : `u:${personIdStr}`;
       const company = row.company_name || 'Doanh nghiệp đối tác';
       const city = row.city || 'Việt Nam';
       const headline = row.headline || 'Doanh nhân';
@@ -403,13 +445,23 @@ export class ConnectNetworkService {
     // 2. Process connected users (Nurture Connections & frequent interactions)
     connectedRows.forEach((row) => {
       const personIdStr = row.owner_user_id ? String(row.owner_user_id) : '';
-      const cleanPersonId = personIdStr.startsWith('u:') ? personIdStr : `u:${personIdStr}`;
-      
-      const lastInteractionDate = row.last_moment_at || row.last_message_at || row.connection_updated_at || row.connection_created_at || now;
+      const cleanPersonId = personIdStr.startsWith('u:')
+        ? personIdStr
+        : `u:${personIdStr}`;
+
+      const lastInteractionDate =
+        row.last_moment_at ||
+        row.last_message_at ||
+        row.connection_updated_at ||
+        row.connection_created_at ||
+        now;
       const lastTime = new Date(lastInteractionDate).getTime();
-      const diffMs = Math.max(0, now.getTime() - (isNaN(lastTime) ? now.getTime() : lastTime));
+      const diffMs = Math.max(
+        0,
+        now.getTime() - (isNaN(lastTime) ? now.getTime() : lastTime),
+      );
       const days = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-      
+
       const displayName = row.display_name || 'Đối tác';
       const headline = row.headline || 'Doanh nhân';
       const company = row.company_name || 'Partner';
@@ -425,7 +477,7 @@ export class ConnectNetworkService {
 
       if (near) score += 45; // Gần bạn
       if (potential) score += 35; // Lãnh đạo / Tiềm năng
-      
+
       // Priority 3: Nhiều tương tác
       if (totalInteractions >= 5) {
         score += 45; // Đối tác gắn bó, tương tác nhiều
@@ -489,11 +541,12 @@ export class ConnectNetworkService {
     const list = await this.getTodayRecommendations(userId);
     const cleanId = personId.startsWith('u:') ? personId : `u:${personId}`;
     const rawId = personId.replace(/^[ucg]:/, '');
-    const rec = list.recommendations.find(r => 
-      r.person.personId === cleanId || 
-      r.person.personId === personId || 
-      r.person.personId === rawId ||
-      r.person.personId.endsWith(rawId)
+    const rec = list.recommendations.find(
+      (r) =>
+        r.person.personId === cleanId ||
+        r.person.personId === personId ||
+        r.person.personId === rawId ||
+        r.person.personId.endsWith(rawId),
     );
     return { recommendation: rec || null };
   }
@@ -630,10 +683,12 @@ export class ConnectNetworkService {
     let nextCursor: string | null = null;
     if (momentRows.length > limit) {
       const nextItem = momentRows.pop();
-      nextCursor = nextItem.created_at ? new Date(nextItem.created_at).toISOString() : null;
+      nextCursor = nextItem.created_at
+        ? new Date(nextItem.created_at).toISOString()
+        : null;
     }
 
-    const momentIds = momentRows.map(m => m.id);
+    const momentIds = momentRows.map((m) => m.id);
     let mediaRows: any[] = [];
     if (momentIds.length > 0) {
       mediaRows = await this.prisma.$queryRaw<any[]>`
@@ -654,7 +709,9 @@ export class ConnectNetworkService {
     for (const m of mediaRows) {
       if (m.storage_path) {
         signed[m.storage_path] =
-          m.storage_path.startsWith('http') || m.storage_path.startsWith('data:') || m.storage_path.startsWith('blob:')
+          m.storage_path.startsWith('http') ||
+          m.storage_path.startsWith('data:') ||
+          m.storage_path.startsWith('blob:')
             ? m.storage_path
             : m.storage_path.startsWith('/')
               ? m.storage_path
@@ -662,7 +719,7 @@ export class ConnectNetworkService {
       }
     }
 
-    const items = momentRows.map(row => {
+    const items = momentRows.map((row) => {
       let personId = '';
       if (row.target_kind === 'connection') {
         personId = `u:${row.target_user_id}`;
@@ -673,19 +730,39 @@ export class ConnectNetworkService {
       }
 
       const slots = mediaByMomentId.get(row.id) || [];
-      const photoUrls = slots.map(s => {
-        if (!s.storage_path) return '';
-        if (s.storage_path.startsWith('/upload/') || s.storage_path.startsWith('http')) {
-          return s.storage_path;
-        }
-        return signed[s.storage_path] || `/upload/file/${s.storage_path.split('/').pop()}`;
-      }).filter(Boolean);
+      const photoUrls = slots
+        .map((s) => {
+          if (!s.storage_path) return '';
+          if (
+            s.storage_path.startsWith('/upload/') ||
+            s.storage_path.startsWith('http')
+          ) {
+            return s.storage_path;
+          }
+          return (
+            signed[s.storage_path] ||
+            `/upload/file/${s.storage_path.split('/').pop()}`
+          );
+        })
+        .filter(Boolean);
 
-      const ownerDisplayName = row.owner_display_name || row.owner_email?.split('@')[0] || 'Hội viên CEO 1983';
-      const targetDisplayName = row.target_display_name || row.card_display_name || row.guest_display_name || null;
-      const targetAvatarUrl = row.target_avatar_url || row.card_avatar_url || null;
+      const ownerDisplayName =
+        row.owner_display_name ||
+        row.owner_email?.split('@')[0] ||
+        'Hội viên CEO 1983';
+      const targetDisplayName =
+        row.target_display_name ||
+        row.card_display_name ||
+        row.guest_display_name ||
+        null;
+      const targetAvatarUrl =
+        row.target_avatar_url || row.card_avatar_url || null;
       const targetHeadline = row.target_job_title || null;
-      const targetCompanyName = row.target_company_name || row.card_company_name || row.guest_company_name || null;
+      const targetCompanyName =
+        row.target_company_name ||
+        row.card_company_name ||
+        row.guest_company_name ||
+        null;
 
       return {
         momentId: row.id,
@@ -697,16 +774,24 @@ export class ConnectNetworkService {
           headline: row.owner_job_title || null,
           companyName: row.owner_company_name || null,
         },
-        target: targetDisplayName ? {
-          personId,
-          displayName: targetDisplayName,
-          avatarUrl: targetAvatarUrl,
-          headline: targetHeadline,
-          companyName: targetCompanyName,
-        } : null,
+        target: targetDisplayName
+          ? {
+              personId,
+              displayName: targetDisplayName,
+              avatarUrl: targetAvatarUrl,
+              headline: targetHeadline,
+              companyName: targetCompanyName,
+            }
+          : null,
         personId,
-        occurredAt: row.occurred_at ? new Date(row.occurred_at).toISOString() : new Date().toISOString(),
-        createdAt: row.created_at ? new Date(row.created_at).toISOString() : (row.occurred_at ? new Date(row.occurred_at).toISOString() : new Date().toISOString()),
+        occurredAt: row.occurred_at
+          ? new Date(row.occurred_at).toISOString()
+          : new Date().toISOString(),
+        createdAt: row.created_at
+          ? new Date(row.created_at).toISOString()
+          : row.occurred_at
+            ? new Date(row.occurred_at).toISOString()
+            : new Date().toISOString(),
         eventName: row.event_name || null,
         placeLabel: row.place_label || null,
         note: row.note || null,
@@ -742,7 +827,7 @@ export class ConnectNetworkService {
     });
 
     // Fetch user registrations and capacity counts for all events
-    const eventIds = events.map(e => e.id);
+    const eventIds = events.map((e) => e.id);
     let regSet = new Set<string>();
     let regCounts = new Map<string, number>();
 
@@ -750,8 +835,10 @@ export class ConnectNetworkService {
       const userMembers = await this.prisma.$queryRaw<any[]>`
         SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
       `.catch(() => [] as any[]);
-      const userMemberCodes = userMembers.map(m => m.code).filter(Boolean);
-      const userInfo = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+      const userMemberCodes = userMembers.map((m) => m.code).filter(Boolean);
+      const userInfo = await this.prisma.vione_users
+        .findUnique({ where: { id: userId } })
+        .catch(() => null);
       const userEmail = userInfo?.email || userMembers[0]?.email || '';
 
       const registrations = await this.prisma.$queryRaw<any[]>`
@@ -760,24 +847,35 @@ export class ConnectNetworkService {
           AND (member_code = ANY(${userMemberCodes}) OR (email != '' AND email = ${userEmail}))
           AND status != 'cancelled'
       `.catch(() => [] as any[]);
-      regSet = new Set(registrations.map(r => r.event_id));
+      regSet = new Set(registrations.map((r) => r.event_id));
 
-      const counts = await this.prisma.$queryRaw<{ event_id: string; cnt: bigint }[]>`
+      const counts = await this.prisma.$queryRaw<
+        { event_id: string; cnt: bigint }[]
+      >`
         SELECT event_id, COUNT(*) as cnt FROM public.event_registrations
         WHERE event_id = ANY(${eventIds}) AND status != 'cancelled'
         GROUP BY event_id
       `.catch(() => [] as any[]);
-      regCounts = new Map(counts.map(c => [c.event_id, Number(c.cnt)] as [string, number]));
+      regCounts = new Map(
+        counts.map((c) => [c.event_id, Number(c.cnt)] as [string, number]),
+      );
     }
 
     return {
-      nextEvents: events.map(e => {
+      nextEvents: events.map((e) => {
         const isRegistered = regSet.has(e.id);
         const capacity = e.capacity ? Number(e.capacity) : 0;
-        const isFull = capacity > 0 && (regCounts.get(e.id) ?? Number(e.registered || 0)) >= capacity;
+        const isFull =
+          capacity > 0 &&
+          (regCounts.get(e.id) ?? Number(e.registered || 0)) >= capacity;
         const isCancelled = e.status === 'cancelled';
 
-        let registrationState: 'available' | 'registered' | 'closed' | 'full' | 'cancelled';
+        let registrationState:
+          | 'available'
+          | 'registered'
+          | 'closed'
+          | 'full'
+          | 'cancelled';
         if (isRegistered) registrationState = 'registered';
         else if (isCancelled) registrationState = 'cancelled';
         else if (isFull) registrationState = 'full';
@@ -793,16 +891,20 @@ export class ConnectNetworkService {
           capacityState: capacity <= 0 ? null : isFull ? 'full' : 'open',
         };
       }),
-      openOpportunities: opportunities.map(o => ({
+      openOpportunities: opportunities.map((o) => ({
         opportunityRef: o.id,
         title: o.title,
         categoryKey: o.type ? `opp.type.${o.type}` : null,
         organizationLabel: null,
-        daysLeft: o.deadline ? Math.ceil((new Date(o.deadline).getTime() - Date.now()) / (1000 * 3600 * 24)) : null,
+        daysLeft: o.deadline
+          ? Math.ceil(
+              (new Date(o.deadline).getTime() - Date.now()) /
+                (1000 * 3600 * 24),
+            )
+          : null,
       })),
     };
   }
-
 
   async getUnreadNotificationCount(userId: string) {
     const [notifCountRes, pendingConnRes] = await Promise.all([
@@ -821,7 +923,14 @@ export class ConnectNetworkService {
   }
 
   async sendConnectionRequest(userId: string, body: any) {
-    let targetUserId = body.targetUserId || body.target_user_id || body.targetPersonNodeId || body.memberCode || body.targetMemberCode || body.memberId || body.code;
+    let targetUserId =
+      body.targetUserId ||
+      body.target_user_id ||
+      body.targetPersonNodeId ||
+      body.memberCode ||
+      body.targetMemberCode ||
+      body.memberId ||
+      body.code;
     if (targetUserId && String(targetUserId).startsWith('u:')) {
       targetUserId = String(targetUserId).substring(2);
     }
@@ -863,7 +972,7 @@ export class ConnectNetworkService {
       LIMIT 1
     `.catch(() => []);
 
-    let reqId = crypto.randomUUID();
+    const reqId = crypto.randomUUID();
 
     if (existing.length > 0) {
       const conn = existing[0];
@@ -960,7 +1069,8 @@ export class ConnectNetworkService {
           requesterEmail = memA[0].email || null;
           requesterMemberCode = memA[0].code || null;
           requesterAvatarUrl = requesterAvatarUrl || memA[0].avatar || null;
-          requesterDisplayName = requesterDisplayName || memA[0].contact || memA[0].name;
+          requesterDisplayName =
+            requesterDisplayName || memA[0].contact || memA[0].name;
           requesterCompanyName = requesterCompanyName || memA[0].name;
         }
       } catch {}
@@ -987,7 +1097,9 @@ export class ConnectNetworkService {
         display_name: showName ? requesterDisplayName : 'Hội viên CEO 1983',
         avatar_url: showPhoto ? requesterAvatarUrl : null,
         job_title: showCompany ? requesterJobTitle : 'Hội viên CLB CEO 1983',
-        company_name: showCompany ? requesterCompanyName : 'Đã ẩn theo cài đặt riêng tư',
+        company_name: showCompany
+          ? requesterCompanyName
+          : 'Đã ẩn theo cài đặt riêng tư',
         phone: showPhone ? requesterPhone : 'Đã ẩn theo cài đặt riêng tư',
         email: showEmail ? requesterEmail : 'Đã ẩn theo cài đặt riêng tư',
         connectionId: reqId,
@@ -1028,7 +1140,9 @@ export class ConnectNetworkService {
           ${safeData}::jsonb, 'open_route', 'bc.notif.action.viewConnectionRequests', ${actionTarget}::jsonb,
           'high', 'delivered', ${now}, ${now}, ${dedupeKey}
         )
-      `.catch((err) => console.warn('Could not insert connection notification:', err));
+      `.catch((err) =>
+        console.warn('Could not insert connection notification:', err),
+      );
 
       // Also persist to member_notifications for the member portal
       try {
@@ -1050,9 +1164,14 @@ export class ConnectNetworkService {
             ${reqId},
             ${now}
           )
-        `.catch((err) => console.warn('member_notifications insert failed:', err));
+        `.catch((err) =>
+          console.warn('member_notifications insert failed:', err),
+        );
 
-        if (targetMembers[0]?.id && String(targetUserId) !== String(targetMembers[0]?.id)) {
+        if (
+          targetMembers[0]?.id &&
+          String(targetUserId) !== String(targetMembers[0]?.id)
+        ) {
           await this.prisma.$executeRaw`
             INSERT INTO public.member_notifications (
               id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
@@ -1103,7 +1222,9 @@ export class ConnectNetworkService {
       const extraTargetRooms: string[] = [];
       if (targetMems[0]?.code) {
         extraTargetRooms.push(`user:${targetMems[0].code}`);
-        extraTargetRooms.push(`user:${String(targetMems[0].code).toLowerCase()}`);
+        extraTargetRooms.push(
+          `user:${String(targetMems[0].code).toLowerCase()}`,
+        );
       }
       if (targetMems[0]?.id) {
         extraTargetRooms.push(`user:${targetMems[0].id}`);
@@ -1112,7 +1233,12 @@ export class ConnectNetworkService {
         extraTargetRooms.push(`user:${targetMems[0].user_id}`);
       }
 
-      this.gateway.emitConnectionRequested(targetUserId, requester, reqId, extraTargetRooms);
+      this.gateway.emitConnectionRequested(
+        targetUserId,
+        requester,
+        reqId,
+        extraTargetRooms,
+      );
       this.gateway.emitNotification(targetUserId, notifPayload);
     } catch (e) {
       console.warn('sendConnectionRequest notification broadcast failed:', e);
@@ -1130,7 +1256,8 @@ export class ConnectNetworkService {
     const resolvedUserId = memRows[0]?.user_id || userId;
 
     const rawConnId = body.connectionId || body.requestId || body.id;
-    let targetUserId = body.requesterUserId || body.targetUserId || body.memberCode;
+    let targetUserId =
+      body.requesterUserId || body.targetUserId || body.memberCode;
     if (targetUserId) {
       const tRows = await this.prisma.$queryRaw<any[]>`
         SELECT user_id FROM public.members WHERE user_id::text = ${String(targetUserId)} OR id::text = ${String(targetUserId)} OR LOWER(code) = LOWER(${String(targetUserId)}) LIMIT 1
@@ -1138,7 +1265,10 @@ export class ConnectNetworkService {
       if (tRows[0]?.user_id) targetUserId = tRows[0].user_id;
     }
 
-    const isConnUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(rawConnId || ''));
+    const isConnUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(rawConnId || ''),
+      );
 
     let connRows: any[] = [];
     if (isConnUuid) {
@@ -1150,7 +1280,13 @@ export class ConnectNetworkService {
     }
 
     // Fallback if not found by UUID: search pending request between the two users
-    if (connRows.length === 0 && targetUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId))) {
+    if (
+      connRows.length === 0 &&
+      targetUserId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(targetUserId),
+      )
+    ) {
       connRows = await this.prisma.$queryRaw<any[]>`
         SELECT id, requester_user_id, recipient_user_id FROM public.user_connections
         WHERE (requester_user_id = ${targetUserId}::uuid AND recipient_user_id = ${resolvedUserId}::uuid)
@@ -1165,7 +1301,12 @@ export class ConnectNetworkService {
         SELECT source_record_id as id, recipient_user_id FROM public.business_notifications
         WHERE id = ${rawConnId}::uuid LIMIT 1
       `.catch(() => []);
-      if (connRows[0]?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(connRows[0].id))) {
+      if (
+        connRows[0]?.id &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          String(connRows[0].id),
+        )
+      ) {
         connRows = await this.prisma.$queryRaw<any[]>`
           SELECT id, requester_user_id, recipient_user_id FROM public.user_connections WHERE id = ${connRows[0].id}::uuid LIMIT 1
         `.catch(() => []);
@@ -1173,11 +1314,16 @@ export class ConnectNetworkService {
     }
 
     let actualConnId = connRows[0]?.id;
-    let requesterUserId = connRows[0]?.requester_user_id || targetUserId;
+    const requesterUserId = connRows[0]?.requester_user_id || targetUserId;
 
     if (!actualConnId) {
       actualConnId = crypto.randomUUID();
-      if (requesterUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(requesterUserId))) {
+      if (
+        requesterUserId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          String(requesterUserId),
+        )
+      ) {
         await this.prisma.$executeRaw`
           INSERT INTO public.user_connections (id, requester_user_id, recipient_user_id, status, source_type, requested_at, responded_at, created_at, updated_at)
           VALUES (${actualConnId}::uuid, ${requesterUserId}::uuid, ${resolvedUserId}::uuid, 'accepted'::public.global_connection_status, 'qr_scan'::public.global_connection_source_type, ${now}, ${now}, ${now}, ${now})
@@ -1248,11 +1394,13 @@ export class ConnectNetworkService {
       timestamp: now.toISOString(),
     });
     if (resolvedUserId !== userId) {
-      this.gateway.server?.to(`user:${resolvedUserId}`).emit('notification:updated', {
-        connectionId: actualConnId,
-        connectionStatus: 'accepted',
-        timestamp: now.toISOString(),
-      });
+      this.gateway.server
+        ?.to(`user:${resolvedUserId}`)
+        .emit('notification:updated', {
+          connectionId: actualConnId,
+          connectionStatus: 'accepted',
+          timestamp: now.toISOString(),
+        });
     }
 
     if (requesterUserId) {
@@ -1263,7 +1411,9 @@ export class ConnectNetworkService {
           WHERE owner_user_id = ${userId}::uuid AND status = 'active'
           LIMIT 1
         `.catch(() => [] as any[]);
-        const accepter = accepterProfiles[0] || { display_name: 'Hội viên CEO 1983' };
+        const accepter = accepterProfiles[0] || {
+          display_name: 'Hội viên CEO 1983',
+        };
         const notifId = crypto.randomUUID();
         const safeData = JSON.stringify({
           counterpartDisplayName: accepter.display_name || 'Hội viên CEO 1983',
@@ -1334,7 +1484,11 @@ export class ConnectNetworkService {
           createdAt: now.toISOString(),
         };
 
-        this.gateway.emitConnectionAccepted(requesterUserId, accepter, actualConnId);
+        this.gateway.emitConnectionAccepted(
+          requesterUserId,
+          accepter,
+          actualConnId,
+        );
         this.gateway.emitNotification(requesterUserId, notifPayload);
       } catch (e) {
         console.warn('acceptConnection notification failed:', e);
@@ -1400,7 +1554,11 @@ export class ConnectNetworkService {
           LIMIT 1
         `.catch(() => [] as any[]);
         const declinerUser = declinerProfiles[0];
-        const declinerName = declinerUser?.display_name || declinerUser?.full_name || declinerUser?.company_name || 'Hội viên CEO 1983';
+        const declinerName =
+          declinerUser?.display_name ||
+          declinerUser?.full_name ||
+          declinerUser?.company_name ||
+          'Hội viên CEO 1983';
 
         const notifId = crypto.randomUUID();
         const safeData = JSON.stringify({
@@ -1464,9 +1622,10 @@ export class ConnectNetworkService {
   }
 
   async cancelConnection(userId: string, body: any) {
-    const b = typeof body === 'string' ? { connectionId: body } : (body || {});
+    const b = typeof body === 'string' ? { connectionId: body } : body || {};
     const connId = b.connectionId || b.requestId || b.id;
-    let targetUserId = b.targetUserId || b.target_user_id || b.counterpartUserId || b.memberCode;
+    let targetUserId =
+      b.targetUserId || b.target_user_id || b.counterpartUserId || b.memberCode;
 
     // Resolve user IDs
     const senderRows = await this.prisma.$queryRaw<any[]>`
@@ -1482,7 +1641,10 @@ export class ConnectNetworkService {
       if (targetRows[0]?.user_id) targetUserId = targetRows[0].user_id;
     }
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(connId || ''));
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(connId || ''),
+      );
 
     let deletedRows: any[] = [];
     if (isUuid) {
@@ -1493,7 +1655,13 @@ export class ConnectNetworkService {
       `.catch(() => []);
     }
 
-    if (deletedRows.length === 0 && targetUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId))) {
+    if (
+      deletedRows.length === 0 &&
+      targetUserId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(targetUserId),
+      )
+    ) {
       deletedRows = await this.prisma.$queryRaw<any[]>`
         DELETE FROM public.user_connections
         WHERE (requester_user_id = ${resolvedUserId}::uuid AND recipient_user_id = ${targetUserId}::uuid AND status = 'pending'::public.global_connection_status)
@@ -1515,10 +1683,12 @@ export class ConnectNetworkService {
 
     if (recipientUserId) {
       try {
-        this.gateway.server?.to(`user:${recipientUserId}`).emit('connection:cancelled', {
-          connectionId: connId,
-          timestamp: now.toISOString(),
-        });
+        this.gateway.server
+          ?.to(`user:${recipientUserId}`)
+          .emit('connection:cancelled', {
+            connectionId: connId,
+            timestamp: now.toISOString(),
+          });
       } catch (e) {
         console.warn('cancelConnection broadcast failed:', e);
       }
@@ -1529,7 +1699,8 @@ export class ConnectNetworkService {
 
   async disconnectConnection(userId: string, body: any) {
     const connId = body.connectionId;
-    const targetUserId = body.targetUserId || body.target_user_id || body.targetPersonNodeId;
+    const targetUserId =
+      body.targetUserId || body.target_user_id || body.targetPersonNodeId;
     let resolvedTargetId = targetUserId;
     if (resolvedTargetId && String(resolvedTargetId).startsWith('u:')) {
       resolvedTargetId = String(resolvedTargetId).substring(2);
@@ -1627,7 +1798,10 @@ export class ConnectNetworkService {
     } else if (pairState.status === 'accepted') {
       state = 'connected';
     } else if (pairState.status === 'pending') {
-      state = pairState.direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
+      state =
+        pairState.direction === 'outgoing'
+          ? 'outgoing_pending'
+          : 'incoming_pending';
     }
 
     return {
@@ -1636,7 +1810,11 @@ export class ConnectNetworkService {
     };
   }
 
-  async sendConnectionRequestByToken(userId: string, token: string, mutationKey?: string) {
+  async sendConnectionRequestByToken(
+    userId: string,
+    token: string,
+    mutationKey?: string,
+  ) {
     const links = await this.prisma.$queryRaw<any[]>`
       SELECT id, identity_id, status FROM public.identity_share_links
       WHERE public_token = ${token} AND status = 'active'
@@ -1677,13 +1855,37 @@ export class ConnectNetworkService {
    *   + business_identities (id hoặc owner_user_id)
    *   + profiles (id hoặc email)
    */
-  async nfcTap(userId: string, payload: string | { token: string; action?: 'resolve' | 'connect'; message?: string }) {
-    const tokenRaw = typeof payload === 'string' ? payload : (payload?.token || (payload as any)?.value || '');
-    const action = (typeof payload === 'object' && payload?.action) ? payload.action : 'connect';
-    const message = (typeof payload === 'object' && payload?.message) ? payload.message : undefined;
+  async nfcTap(
+    userId: string,
+    payload:
+      | string
+      | { token: string; action?: 'resolve' | 'connect'; message?: string },
+  ) {
+    const tokenRaw =
+      typeof payload === 'string'
+        ? payload
+        : payload?.token || (payload as any)?.value || '';
+    const action =
+      typeof payload === 'object' && payload?.action
+        ? payload.action
+        : 'connect';
+    const message =
+      typeof payload === 'object' && payload?.message
+        ? payload.message
+        : undefined;
 
-    if (!tokenRaw || typeof tokenRaw !== 'string' || tokenRaw.trim().length === 0) {
-      return { ok: false, reason: 'invalid_token', profile: null, connectionId: null, state: 'unavailable' };
+    if (
+      !tokenRaw ||
+      typeof tokenRaw !== 'string' ||
+      tokenRaw.trim().length === 0
+    ) {
+      return {
+        ok: false,
+        reason: 'invalid_token',
+        profile: null,
+        connectionId: null,
+        state: 'unavailable',
+      };
     }
 
     const cleanToken = tokenRaw.trim();
@@ -1720,7 +1922,10 @@ export class ConnectNetworkService {
     // 1b. Nếu chưa tìm thấy, kiểm tra business_cards (theo slug hoặc id)
     if (!targetUserId) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            cleanToken,
+          );
         const cards = isUuid
           ? await this.prisma.$queryRaw<any[]>`
               SELECT * FROM public.business_cards
@@ -1740,18 +1945,27 @@ export class ConnectNetworkService {
     }
 
     // 1b1. Kiểm tra JWT token (ey...) nếu là Signed QR của Membership Pass
-    if (!targetUserId && cleanToken.startsWith('ey') && cleanToken.includes('.')) {
+    if (
+      !targetUserId &&
+      cleanToken.startsWith('ey') &&
+      cleanToken.includes('.')
+    ) {
       try {
         const parts = cleanToken.split('.');
         if (parts[1]) {
-          const payloadJson = Buffer.from(parts[1], 'base64url').toString('utf8');
+          const payloadJson = Buffer.from(parts[1], 'base64url').toString(
+            'utf8',
+          );
           const decoded = JSON.parse(payloadJson);
           const passId = decoded.passId || decoded.pass_id || decoded.id;
           const memberId = decoded.memberId || decoded.member_id;
           const subId = decoded.userId || decoded.user_id || decoded.sub;
 
           if (passId) {
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(passId));
+            const isUuid =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                String(passId),
+              );
             if (isUuid) {
               const passes = await this.prisma.$queryRaw<any[]>`
                 SELECT * FROM public.member_identity_passes
@@ -1774,7 +1988,10 @@ export class ConnectNetworkService {
           }
 
           if (!targetUserId && memberId) {
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(memberId));
+            const isUuid =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                String(memberId),
+              );
             const members = isUuid
               ? await this.prisma.$queryRaw<any[]>`
                   SELECT * FROM public.members
@@ -1793,7 +2010,10 @@ export class ConnectNetworkService {
           }
 
           if (!targetUserId && subId) {
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(subId));
+            const isUuid =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                String(subId),
+              );
             if (isUuid) {
               targetUserId = String(subId);
             }
@@ -1805,7 +2025,10 @@ export class ConnectNetworkService {
     // 1b2. Kiểm tra member_identity_passes (theo pass_serial hoặc id)
     if (!targetUserId) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            cleanToken,
+          );
         const passes = isUuid
           ? await this.prisma.$queryRaw<any[]>`
               SELECT * FROM public.member_identity_passes
@@ -1835,7 +2058,10 @@ export class ConnectNetworkService {
     // 1c. Nếu chưa tìm thấy, kiểm tra members (theo code hoặc id)
     if (!targetUserId) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            cleanToken,
+          );
         const members = isUuid
           ? await this.prisma.$queryRaw<any[]>`
               SELECT * FROM public.members
@@ -1857,7 +2083,10 @@ export class ConnectNetworkService {
     // 1d. Nếu chưa tìm thấy, kiểm tra business_identities (theo id hoặc owner_user_id)
     if (!targetUserId) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            cleanToken,
+          );
         if (isUuid) {
           const identities = await this.prisma.$queryRaw<any[]>`
             SELECT * FROM public.business_identities
@@ -1875,7 +2104,10 @@ export class ConnectNetworkService {
     // 1e. Nếu chưa tìm thấy, kiểm tra profiles (theo id)
     if (!targetUserId) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            cleanToken,
+          );
         if (isUuid) {
           const profiles = await this.prisma.$queryRaw<any[]>`
             SELECT * FROM public.profiles
@@ -1921,12 +2153,24 @@ export class ConnectNetworkService {
 
     // Không tìm thấy user hợp lệ
     if (!targetUserId) {
-      return { ok: false, reason: 'not_found', profile: null, connectionId: null, state: 'unavailable' };
+      return {
+        ok: false,
+        reason: 'not_found',
+        profile: null,
+        connectionId: null,
+        state: 'unavailable',
+      };
     }
 
     // Tự quét mã của chính mình
     if (targetUserId === userId) {
-      return { ok: false, reason: 'self', profile: null, connectionId: null, state: 'self' };
+      return {
+        ok: false,
+        reason: 'self',
+        profile: null,
+        connectionId: null,
+        state: 'self',
+      };
     }
 
     // 2. Fetch bổ sung đầy đủ thông tin profile đối phương (đảm bảo hiển thị đầy đủ avatar, tên, công ty, chức vụ)
@@ -1984,18 +2228,20 @@ export class ConnectNetworkService {
     if (existing.length > 0) {
       const conn = existing[0];
       connId = conn.id;
-      const direction = conn.requester_user_id === userId ? 'outgoing' : 'incoming';
+      const direction =
+        conn.requester_user_id === userId ? 'outgoing' : 'incoming';
       if (conn.status === 'accepted') {
         state = 'connected';
       } else if (conn.status === 'pending') {
-        state = direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
+        state =
+          direction === 'outgoing' ? 'outgoing_pending' : 'incoming_pending';
       } else {
         state = 'none';
       }
     }
 
     // 3. Kiểm tra Field Visibility nếu có Identity
-    let vis: Record<string, string> = {};
+    const vis: Record<string, string> = {};
     if (foundIdentity) {
       try {
         const visibilityRows = await this.prisma.$queryRaw<any[]>`
@@ -2013,63 +2259,83 @@ export class ConnectNetworkService {
       return false; // 'private' or 'hidden'
     };
 
-    const displayName = (foundIdentity?.display_name ? foundIdentity.display_name : null)
-      || foundCard?.display_name
-      || foundMember?.name
-      || foundMember?.full_name
-      || foundProfile?.display_name
-      || 'Hội viên CEO 1983';
+    const displayName =
+      (foundIdentity?.display_name ? foundIdentity.display_name : null) ||
+      foundCard?.display_name ||
+      foundMember?.name ||
+      foundMember?.full_name ||
+      foundProfile?.display_name ||
+      'Hội viên CEO 1983';
 
-    const avatarUrl = foundIdentity?.avatar_url
-      || foundCard?.avatar_url
-      || foundMember?.avatar_url
-      || foundMember?.avatar
-      || foundProfile?.avatar_url
-      || null;
+    const avatarUrl =
+      foundIdentity?.avatar_url ||
+      foundCard?.avatar_url ||
+      foundMember?.avatar_url ||
+      foundMember?.avatar ||
+      foundProfile?.avatar_url ||
+      null;
 
-    const headline = (show('headline') ? foundIdentity?.headline : null)
-      || foundCard?.headline
-      || foundCard?.professional_title
-      || foundMember?.job_title
-      || foundMember?.position
-      || foundProfile?.headline
-      || null;
+    const headline =
+      (show('headline') ? foundIdentity?.headline : null) ||
+      foundCard?.headline ||
+      foundCard?.professional_title ||
+      foundMember?.job_title ||
+      foundMember?.position ||
+      foundProfile?.headline ||
+      null;
 
-    const jobTitle = (show('jobTitle') ? foundIdentity?.job_title : null)
-      || foundCard?.professional_title
-      || foundMember?.job_title
-      || foundMember?.position
-      || null;
+    const jobTitle =
+      (show('jobTitle') ? foundIdentity?.job_title : null) ||
+      foundCard?.professional_title ||
+      foundMember?.job_title ||
+      foundMember?.position ||
+      null;
 
-    const companyName = (show('companyName') ? foundIdentity?.company_name : null)
-      || foundCard?.company_name
-      || foundMember?.company_name
-      || foundMember?.company
-      || foundProfile?.company_name
-      || null;
+    const companyName =
+      (show('companyName') ? foundIdentity?.company_name : null) ||
+      foundCard?.company_name ||
+      foundMember?.company_name ||
+      foundMember?.company ||
+      foundProfile?.company_name ||
+      null;
 
-    const primaryEmail = (show('primaryEmail') ? foundIdentity?.primary_email : null)
-      || (show('primaryEmail') ? foundCard?.email || foundMember?.email || foundProfile?.email : null)
-      || null;
+    const primaryEmail =
+      (show('primaryEmail') ? foundIdentity?.primary_email : null) ||
+      (show('primaryEmail')
+        ? foundCard?.email || foundMember?.email || foundProfile?.email
+        : null) ||
+      null;
 
-    const primaryPhone = (show('primaryPhone') ? foundIdentity?.primary_phone : null)
-      || (show('primaryPhone') ? foundCard?.phone || foundMember?.phone || foundMember?.contact || foundProfile?.phone : null)
-      || null;
+    const primaryPhone =
+      (show('primaryPhone') ? foundIdentity?.primary_phone : null) ||
+      (show('primaryPhone')
+        ? foundCard?.phone ||
+          foundMember?.phone ||
+          foundMember?.contact ||
+          foundProfile?.phone
+        : null) ||
+      null;
 
-    const website = (show('website') ? foundIdentity?.website : null)
-      || (show('website') ? foundCard?.website : null)
-      || null;
+    const website =
+      (show('website') ? foundIdentity?.website : null) ||
+      (show('website') ? foundCard?.website : null) ||
+      null;
 
-    const linkedinUrl = (show('linkedinUrl') ? foundIdentity?.linkedin_url : null)
-      || (show('linkedinUrl') ? foundCard?.linkedin_url : null)
-      || null;
+    const linkedinUrl =
+      (show('linkedinUrl') ? foundIdentity?.linkedin_url : null) ||
+      (show('linkedinUrl') ? foundCard?.linkedin_url : null) ||
+      null;
 
-    const city = (show('city') ? foundIdentity?.city : null)
-      || foundCard?.address
-      || foundMember?.address
-      || null;
+    const city =
+      (show('city') ? foundIdentity?.city : null) ||
+      foundCard?.address ||
+      foundMember?.address ||
+      null;
 
-    const bio = (show('bio') ? (foundCard?.bio || foundIdentity?.bio || foundMember?.bio) : null) || null;
+    const bio =
+      (show('bio')
+        ? foundCard?.bio || foundIdentity?.bio || foundMember?.bio
+        : null) || null;
 
     const profile = {
       targetUserId,
@@ -2085,11 +2351,19 @@ export class ConnectNetworkService {
       city,
       bio,
       primaryCardSlug: foundCard?.slug || null,
-      executiveRole: foundMember?.executive_role || (foundMember?.id ? 'member' : null),
+      executiveRole:
+        foundMember?.executive_role || (foundMember?.id ? 'member' : null),
       department: foundMember?.department || 'CLB Doanh Nhân CEO 1983',
       association: 'CLB Doanh Nhân CEO 1983 - HanoiBA',
-      skills: ['Quản trị doanh nghiệp', 'Xúc tiến thương mại', 'Kết nối B2B', 'Chiến lược dòng tiền'],
-      talents: foundMember?.executive_role ? `Lãnh đạo ${foundMember?.department || 'Ban'} CLB CEO 1983` : 'Doanh nhân hội viên chính thức',
+      skills: [
+        'Quản trị doanh nghiệp',
+        'Xúc tiến thương mại',
+        'Kết nối B2B',
+        'Chiến lược dòng tiền',
+      ],
+      talents: foundMember?.executive_role
+        ? `Lãnh đạo ${foundMember?.department || 'Ban'} CLB CEO 1983`
+        : 'Doanh nhân hội viên chính thức',
       verifiedBadge: true,
     };
 
@@ -2111,18 +2385,36 @@ export class ConnectNetworkService {
     if (existing.length > 0) {
       const conn = existing[0];
       if (conn.status === 'accepted') {
-        return { ok: true, reason: 'already_connected', profile, connectionId: conn.id, state: 'connected' };
+        return {
+          ok: true,
+          reason: 'already_connected',
+          profile,
+          connectionId: conn.id,
+          state: 'connected',
+        };
       }
 
       // If incoming pending: target user already requested connection -> auto accept
       if (conn.status === 'pending' && conn.recipient_user_id === userId) {
         await this.acceptConnection(userId, { connectionId: conn.id });
-        return { ok: true, reason: 'connected', profile, connectionId: conn.id, state: 'connected' };
+        return {
+          ok: true,
+          reason: 'connected',
+          profile,
+          connectionId: conn.id,
+          state: 'connected',
+        };
       }
 
       // If outgoing pending: already sent and awaiting response
       if (conn.status === 'pending' && conn.requester_user_id === userId) {
-        return { ok: true, reason: 'pending_sent', profile, connectionId: conn.id, state: 'outgoing_pending' };
+        return {
+          ok: true,
+          reason: 'pending_sent',
+          profile,
+          connectionId: conn.id,
+          state: 'outgoing_pending',
+        };
       }
 
       // Terminated connection: delete stale row to prevent PostgreSQL trigger violations
@@ -2202,7 +2494,9 @@ export class ConnectNetworkService {
         ${safeData}::jsonb, 'open_route', 'bc.notif.action.viewConnectionRequests', ${actionTarget}::jsonb,
         'high', 'delivered', ${now}, ${now}, ${dedupeKey}
       )
-    `.catch((err) => console.warn('Could not insert business notification for tap:', err));
+    `.catch((err) =>
+      console.warn('Could not insert business notification for tap:', err),
+    );
 
     // 7. Lưu thông báo vào Member Notifications (để trang Thông báo Hội viên cũng thấy)
     try {
@@ -2211,7 +2505,11 @@ export class ConnectNetworkService {
       `.catch(() => []);
       const memberRecipientId = targetMembers[0]?.id || targetUserId;
       const notifTitle = `${requester.displayName || 'Một hội viên'} muốn kết nối với bạn`;
-      const notifBody = message ? `${message}` : (requester.headline ? `${requester.headline}${requester.companyName ? ' tại ' + requester.companyName : ''}` : 'Đã gửi cho bạn một yêu cầu kết nối danh thiếp.');
+      const notifBody = message
+        ? `${message}`
+        : requester.headline
+          ? `${requester.headline}${requester.companyName ? ' tại ' + requester.companyName : ''}`
+          : 'Đã gửi cho bạn một yêu cầu kết nối danh thiếp.';
 
       await this.prisma.$executeRaw`
         INSERT INTO public.member_notifications (
@@ -2263,7 +2561,11 @@ export class ConnectNetworkService {
       };
 
       this.gateway.emitNfcTapped(targetUserId, socketRequesterProfile, reqId);
-      this.gateway.emitConnectionRequested(targetUserId, socketRequesterProfile, reqId);
+      this.gateway.emitConnectionRequested(
+        targetUserId,
+        socketRequesterProfile,
+        reqId,
+      );
       this.gateway.emitNotification(targetUserId, notifPayload);
     } catch (e) {
       console.warn('Tap connection WebSocket broadcast failed:', e);
@@ -2278,7 +2580,6 @@ export class ConnectNetworkService {
     };
   }
 
-
   async getConnectionById(userId: string, connectionId: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, requester_user_id, recipient_user_id as target_user_id, status, created_at FROM public.user_connections
@@ -2287,7 +2588,8 @@ export class ConnectNetworkService {
     `.catch(() => []);
     if (rows.length === 0) throw new NotFoundException('Connection not found');
     const r = rows[0];
-    const counterpartUserId = r.requester_user_id === userId ? r.target_user_id : r.requester_user_id;
+    const counterpartUserId =
+      r.requester_user_id === userId ? r.target_user_id : r.requester_user_id;
     return {
       id: r.id,
       counterpartUserId,
@@ -2308,7 +2610,7 @@ export class ConnectNetworkService {
       WHERE recipient_user_id = ${resolvedUserId}::uuid AND status = 'pending'::public.global_connection_status
       ORDER BY created_at DESC
     `.catch(() => []);
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.id,
       requesterUserId: r.requester_user_id,
       counterpartUserId: r.requester_user_id,
@@ -2330,7 +2632,7 @@ export class ConnectNetworkService {
       WHERE requester_user_id = ${resolvedUserId}::uuid AND status = 'pending'::public.global_connection_status
       ORDER BY created_at DESC
     `.catch(() => []);
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.id,
       counterpartUserId: r.target_user_id,
       recipientUserId: r.target_user_id,
@@ -2368,22 +2670,31 @@ export class ConnectNetworkService {
       WHERE id = ${id}::uuid AND owner_user_id = ${userId}::uuid
       LIMIT 1
     `.catch(() => []);
-    if (rows.length === 0) throw new NotFoundException('Guest contact not found');
+    if (rows.length === 0)
+      throw new NotFoundException('Guest contact not found');
     const g = rows[0];
     return {
       id: g.id,
       displayName: g.display_name || null,
       title: g.title || null,
       companyName: g.company_name || null,
-      firstSharedAt: g.first_shared_at ? new Date(g.first_shared_at).toISOString() : null,
-      lastSharedAt: g.last_shared_at ? new Date(g.last_shared_at).toISOString() : null,
+      firstSharedAt: g.first_shared_at
+        ? new Date(g.first_shared_at).toISOString()
+        : null,
+      lastSharedAt: g.last_shared_at
+        ? new Date(g.last_shared_at).toISOString()
+        : null,
       source: g.source || null,
       ownerLabel: g.owner_label || null,
       ownerNote: g.owner_note || null,
     };
   }
 
-  async updateGuestContactOwnerFields(userId: string, id: string, body: { ownerLabel?: string | null; ownerNote?: string | null }) {
+  async updateGuestContactOwnerFields(
+    userId: string,
+    id: string,
+    body: { ownerLabel?: string | null; ownerNote?: string | null },
+  ) {
     await this.prisma.$executeRaw`
       UPDATE public.guest_contacts
       SET owner_label = ${body.ownerLabel || null}, owner_note = ${body.ownerNote || null}
@@ -2399,7 +2710,6 @@ export class ConnectNetworkService {
     `;
     return { removed: true };
   }
-
 
   async reportUser(userId: string, data: any) {
     const id = crypto.randomUUID();
@@ -2417,7 +2727,6 @@ export class ConnectNetworkService {
     `;
     return { reportId: id };
   }
-
 
   async getPersonalization(userId: string) {
     const prefs = await this.prisma.$queryRaw<any[]>`
@@ -2449,8 +2758,10 @@ export class ConnectNetworkService {
 
     // Derived values (simple baseline reconnectcadence calculation matching engine)
     let reconnectThresholdDays = 45;
-    if (preferences.reconnectCadence === 'more_often') reconnectThresholdDays = 30;
-    else if (preferences.reconnectCadence === 'less_often') reconnectThresholdDays = 60;
+    if (preferences.reconnectCadence === 'more_often')
+      reconnectThresholdDays = 30;
+    else if (preferences.reconnectCadence === 'less_often')
+      reconnectThresholdDays = 60;
 
     let preferredAction: string | null = null;
     if (preferences.preferredContactAction !== 'auto') {
@@ -2461,9 +2772,13 @@ export class ConnectNetworkService {
       preferences,
       profile: {
         reconnectThresholdDays,
-        cadenceSource: preferences.reconnectCadence === 'auto' ? 'default' : 'explicit',
+        cadenceSource:
+          preferences.reconnectCadence === 'auto' ? 'default' : 'explicit',
         preferredAction,
-        actionSource: preferences.preferredContactAction === 'auto' ? 'default' : 'explicit',
+        actionSource:
+          preferences.preferredContactAction === 'auto'
+            ? 'default'
+            : 'explicit',
       },
     };
   }
@@ -2501,7 +2816,11 @@ export class ConnectNetworkService {
       return { ok: true, recorded: false };
     }
 
-    const type = ['recommendation_opened', 'recommendation_dismissed'].includes(input.kind) ? input.recommendationType : null;
+    const type = ['recommendation_opened', 'recommendation_dismissed'].includes(
+      input.kind,
+    )
+      ? input.recommendationType
+      : null;
     const now = new Date();
 
     await this.prisma.$executeRaw`
@@ -2538,7 +2857,8 @@ export class ConnectNetworkService {
 
   async createPersonPlan(userId: string, input: any) {
     const planId = crypto.randomUUID();
-    const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+    const { targetKind, targetUserId, targetCardId, targetGuestId } =
+      parsePersonId(input.personId);
     const now = new Date();
     const dueAt = new Date(input.dueAt);
 
@@ -2572,7 +2892,7 @@ export class ConnectNetworkService {
         completedAt: null,
         createdAt: p.created_at ? new Date(p.created_at).toISOString() : null,
         updatedAt: p.updated_at ? new Date(p.updated_at).toISOString() : null,
-      }
+      },
     };
   }
 
@@ -2582,7 +2902,8 @@ export class ConnectNetworkService {
 
     let rows: any[];
     if (input.personId) {
-      const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+      const { targetKind, targetUserId, targetCardId, targetGuestId } =
+        parsePersonId(input.personId);
       rows = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.business_relationship_person_plans
         WHERE owner_user_id = ${userId}::uuid
@@ -2606,16 +2927,23 @@ export class ConnectNetworkService {
       `.catch(() => [] as any[]);
     }
 
-    const plans = rows.map(p => ({
+    const plans = rows.map((p) => ({
       id: p.id,
-      personId: composePersonId(p.target_kind, p.target_user_id, p.target_card_id, p.target_guest_id),
+      personId: composePersonId(
+        p.target_kind,
+        p.target_user_id,
+        p.target_card_id,
+        p.target_guest_id,
+      ),
       kind: p.kind,
       status: p.status,
       dueAt: p.due_at ? new Date(p.due_at).toISOString() : '',
       title: p.title,
       note: p.note,
       locationLabel: p.location_label,
-      completedAt: p.completed_at ? new Date(p.completed_at).toISOString() : null,
+      completedAt: p.completed_at
+        ? new Date(p.completed_at).toISOString()
+        : null,
       createdAt: p.created_at ? new Date(p.created_at).toISOString() : null,
       updatedAt: p.updated_at ? new Date(p.updated_at).toISOString() : null,
     }));
@@ -2647,7 +2975,12 @@ export class ConnectNetworkService {
     return {
       plan: {
         id: p.id,
-        personId: composePersonId(p.target_kind, p.target_user_id, p.target_card_id, p.target_guest_id),
+        personId: composePersonId(
+          p.target_kind,
+          p.target_user_id,
+          p.target_card_id,
+          p.target_guest_id,
+        ),
         kind: p.kind,
         status: input.status,
         dueAt: p.due_at ? new Date(p.due_at).toISOString() : '',
@@ -2657,7 +2990,7 @@ export class ConnectNetworkService {
         completedAt: completedAt ? completedAt.toISOString() : null,
         createdAt: p.created_at ? new Date(p.created_at).toISOString() : null,
         updatedAt: now.toISOString(),
-      }
+      },
     };
   }
 
@@ -2671,7 +3004,9 @@ export class ConnectNetworkService {
       return { status: 'ok', page: { items: [], nextCursor: null } };
     }
     const parsed = parsePersonId(personId);
-    const targetUserId = parsed.targetUserId || (personId.includes(':') ? personId.split(':')[1] : personId);
+    const targetUserId =
+      parsed.targetUserId ||
+      (personId.includes(':') ? personId.split(':')[1] : personId);
 
     // 1. Query Pair state if connection
     if (parsed.targetKind === 'connection' && targetUserId) {
@@ -2717,13 +3052,16 @@ export class ConnectNetworkService {
     }
 
     const moments = await momentsQuery.catch(() => [] as any[]);
-    const momentIds = moments.map(m => m.id);
+    const momentIds = moments.map((m) => m.id);
 
-    const momentMedia = momentIds.length > 0 ? await this.prisma.$queryRaw<any[]>`
+    const momentMedia =
+      momentIds.length > 0
+        ? await this.prisma.$queryRaw<any[]>`
       SELECT moment_id, storage_path, sort_order FROM public.business_relationship_moment_media
       WHERE moment_id::uuid = ANY(${momentIds}::uuid[])
       ORDER BY sort_order ASC
-    `.catch(() => [] as any[]) : [];
+    `.catch(() => [] as any[])
+        : [];
 
     const mediaMap = new Map<string, any[]>();
     for (const m of momentMedia) {
@@ -2760,7 +3098,9 @@ export class ConnectNetworkService {
       items.push({
         id: `moment:${m.id}`,
         kind: 'moment',
-        occurredAt: m.occurred_at ? new Date(m.occurred_at).toISOString() : null,
+        occurredAt: m.occurred_at
+          ? new Date(m.occurred_at).toISOString()
+          : null,
         provenance: { domain: 'moment' },
         moment: {
           title: m.event_name,
@@ -2768,7 +3108,7 @@ export class ConnectNetworkService {
           note: m.note,
           photoUrl,
           photoCount: mediaFiles.length,
-        }
+        },
       });
     }
 
@@ -2803,9 +3143,13 @@ export class ConnectNetworkService {
       if (g) {
         const isScanned = g.source === 'business_card_scan';
         items.push({
-          id: isScanned ? `business_card_scanned:${parsed.targetGuestId}` : `contact_shared:${parsed.targetGuestId}`,
+          id: isScanned
+            ? `business_card_scanned:${parsed.targetGuestId}`
+            : `contact_shared:${parsed.targetGuestId}`,
           kind: isScanned ? 'business_card_scanned' : 'contact_shared',
-          occurredAt: g.first_shared_at ? new Date(g.first_shared_at).toISOString() : null,
+          occurredAt: g.first_shared_at
+            ? new Date(g.first_shared_at).toISOString()
+            : null,
           provenance: { domain: 'guest_contact' },
         });
       }
@@ -2827,21 +3171,26 @@ export class ConnectNetworkService {
         items.push({
           id: `connected_to:${targetUserId}`,
           kind: 'connected',
-          occurredAt: c.created_at ? new Date(c.created_at).toISOString() : null,
+          occurredAt: c.created_at
+            ? new Date(c.created_at).toISOString()
+            : null,
           provenance: { domain: 'graph' },
         });
       }
     }
 
     // Sort items occurredAt DESC
-    items.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+    items.sort(
+      (a, b) =>
+        new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+    );
 
     return {
       status: 'ok',
       page: {
         items,
         nextCursor: null,
-      }
+      },
     };
   }
 
@@ -2870,7 +3219,7 @@ export class ConnectNetworkService {
       const cards = await this.prisma.$queryRaw<any[]>`
         SELECT id, owner_user_id FROM public.member_business_cards WHERE slug = ${slug} LIMIT 1
       `.catch(() => []);
-      let cardId = cards[0]?.id || null;
+      const cardId = cards[0]?.id || null;
       let ownerId = cards[0]?.owner_user_id || null;
 
       if (!ownerId) {
@@ -2910,5 +3259,4 @@ export class ConnectNetworkService {
   // ---------------------------------------------------------------------------
   // Admin: renewal audit scope
   // ---------------------------------------------------------------------------
-
 }

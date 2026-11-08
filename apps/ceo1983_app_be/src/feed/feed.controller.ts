@@ -22,7 +22,23 @@ export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_truyen_thong', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'bqt',
+    'btt',
+    'btv',
+    'btk',
+    'bxt',
+    'btn',
+    'quan_tri',
+    'tong_thu_ky',
+    'ban_thu_ky',
+    'truong_ban_truyen_thong',
+    'member',
+  )
   @Get('moderation/comments')
   async listAllCommentsForModeration(
     @Query('search') search?: string,
@@ -151,12 +167,8 @@ export class FeedController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async deletePost(
-    @Request() req: any,
-    @Param('id') id: string,
-  ) {
+  async deletePost(@Request() req: any, @Param('id') id: string) {
     const userId = req.user?.id || req.user?.sub || '';
     return this.feedService.deletePost(userId, id);
   }
-
 }

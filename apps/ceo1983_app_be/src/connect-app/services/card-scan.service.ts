@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
 import { z } from 'zod';
@@ -27,7 +31,7 @@ const ocrModelOutputSchema = z
   .strict();
 
 function normalizeText(s: string): string {
-  return s.normalize("NFC").replace(/\s+/g, " ").trim();
+  return s.normalize('NFC').replace(/\s+/g, ' ').trim();
 }
 
 function clamp01(n: number): number {
@@ -39,7 +43,8 @@ function round2(n: number): number {
 }
 
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
-const EMAIL_SUSPECT_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*,[A-Za-z]{2,}/g;
+const EMAIL_SUSPECT_RE =
+  /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*,[A-Za-z]{2,}/g;
 
 function extractEmails(lines: any[], warnings: string[]): any[] {
   const out: any[] = [];
@@ -50,7 +55,11 @@ function extractEmails(lines: any[], warnings: string[]): any[] {
       const value = m[0].toLowerCase();
       if (seen.has(value)) continue;
       seen.add(value);
-      out.push({ value, confidence: clamp01(line.confidence), sourceText: line.text });
+      out.push({
+        value,
+        confidence: clamp01(line.confidence),
+        sourceText: line.text,
+      });
     }
     for (const m of line.text.matchAll(EMAIL_SUSPECT_RE)) {
       const value = m[0].toLowerCase();
@@ -64,7 +73,7 @@ function extractEmails(lines: any[], warnings: string[]): any[] {
       });
     }
   }
-  if (uncertain) warnings.push("email_uncertain");
+  if (uncertain) warnings.push('email_uncertain');
   return out;
 }
 
@@ -72,26 +81,31 @@ const PHONE_RE = /\+?\d[\d\s().-]{5,}\d/g;
 
 function detectPhoneLabel(lineText: string): string | undefined {
   const s = lineText.toLowerCase();
-  if (s.includes("fax")) return "fax";
-  if (s.includes("hotline")) return "hotline";
+  if (s.includes('fax')) return 'fax';
+  if (s.includes('hotline')) return 'hotline';
   const tokens = s.split(/[^a-z0-9Ă -á»¹]+/u).filter(Boolean);
-  const has = (set: readonly string[]) => tokens.some((tok) => set.includes(tok));
-  if (has(["mobile", "mobi", "cell", "hp"]) || s.includes("di Ä‘á»™ng") || s.includes("di dong")) {
-    return "mobile";
+  const has = (set: readonly string[]) =>
+    tokens.some((tok) => set.includes(tok));
+  if (
+    has(['mobile', 'mobi', 'cell', 'hp']) ||
+    s.includes('di Ä‘á»™ng') ||
+    s.includes('di dong')
+  ) {
+    return 'mobile';
   }
   if (
-    has(["office", "tel", "phone", "Ä‘t", "dt"]) ||
-    s.includes("vÄƒn phĂ²ng") ||
-    s.includes("van phong")
+    has(['office', 'tel', 'phone', 'Ä‘t', 'dt']) ||
+    s.includes('vÄƒn phĂ²ng') ||
+    s.includes('van phong')
   ) {
-    return "office";
+    return 'office';
   }
   return undefined;
 }
 
 function normalizePhoneDigits(raw: string): string {
-  const plus = raw.trimStart().startsWith("+");
-  const digits = raw.replace(/\D/g, "");
+  const plus = raw.trimStart().startsWith('+');
+  const digits = raw.replace(/\D/g, '');
   return plus ? `+${digits}` : digits;
 }
 
@@ -101,7 +115,7 @@ function extractPhones(lines: any[], warnings: string[]): any[] {
   let uncertain = false;
   for (const line of lines) {
     for (const m of line.text.matchAll(PHONE_RE)) {
-      const digits = m[0].replace(/\D/g, "");
+      const digits = m[0].replace(/\D/g, '');
       if (digits.length < 7 || digits.length > 15) continue;
       const value = normalizePhoneDigits(m[0]);
       if (seen.has(value)) continue;
@@ -116,7 +130,7 @@ function extractPhones(lines: any[], warnings: string[]): any[] {
       });
     }
   }
-  if (uncertain) warnings.push("phone_uncertain");
+  if (uncertain) warnings.push('phone_uncertain');
   return out;
 }
 
@@ -125,13 +139,17 @@ const URL_RE = /(?:https?:\/\/|www\.)[^\s<>()"']+/gi;
 function extractWebsite(lines: any[]): any | undefined {
   for (const line of lines) {
     for (const m of line.text.matchAll(URL_RE)) {
-      let raw = m[0].replace(/[.,;:!?)}\]]+$/, "");
-      if (raw.includes("@")) continue;
+      let raw = m[0].replace(/[.,;:!?)}\]]+$/, '');
+      if (raw.includes('@')) continue;
       if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
       try {
         const u = new URL(raw);
-        if (u.protocol !== "http:" && u.protocol !== "https:") continue;
-        return { value: u.toString(), confidence: clamp01(line.confidence), sourceText: line.text };
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
+        return {
+          value: u.toString(),
+          confidence: clamp01(line.confidence),
+          sourceText: line.text,
+        };
       } catch {
         continue;
       }
@@ -152,44 +170,54 @@ function pickClassifiedLine(
   if (!line) return undefined;
   const value = normalizeText(line.text);
   if (!value || value.length > opts.maxLen) return undefined;
-  if (opts.forbidContactPattern && CONTACT_PATTERN.test(value)) return undefined;
+  if (opts.forbidContactPattern && CONTACT_PATTERN.test(value))
+    return undefined;
   return { value, confidence: clamp01(line.confidence), sourceText: line.text };
 }
 
 function buildCandidateFromModel(model: any, scanId: string): any {
-  if (!model.isBusinessCard) return { ok: false, code: "unusable" };
+  if (!model.isBusinessCard) return { ok: false, code: 'unusable' };
 
   const lines: any[] = model.lines
-    .map((l) => ({ text: normalizeText(l.text), confidence: clamp01(l.confidence) }))
+    .map((l) => ({
+      text: normalizeText(l.text),
+      confidence: clamp01(l.confidence),
+    }))
     .filter((l) => l.text.length > 0);
-  if (lines.length === 0) return { ok: false, code: "unusable" };
+  if (lines.length === 0) return { ok: false, code: 'unusable' };
 
   const warnings: string[] = [];
-  if (model.qrPresent) warnings.push("qr_present");
+  if (model.qrPresent) warnings.push('qr_present');
 
   const displayName = pickClassifiedLine(lines, model.displayNameLine, {
     maxLen: 80,
     forbidContactPattern: true,
   });
-  if (model.displayNameLine !== null && !displayName) warnings.push("name_needs_review");
+  if (model.displayNameLine !== null && !displayName)
+    warnings.push('name_needs_review');
 
   const title = pickClassifiedLine(lines, model.titleLine, { maxLen: 120 });
-  if (model.titleLine !== null && !title) warnings.push("title_needs_review");
+  if (model.titleLine !== null && !title) warnings.push('title_needs_review');
 
-  const companyName = pickClassifiedLine(lines, model.companyNameLine, { maxLen: 120 });
-  if (model.companyNameLine !== null && !companyName) warnings.push("company_needs_review");
+  const companyName = pickClassifiedLine(lines, model.companyNameLine, {
+    maxLen: 120,
+  });
+  if (model.companyNameLine !== null && !companyName)
+    warnings.push('company_needs_review');
 
   const address = pickClassifiedLine(lines, model.addressLine, { maxLen: 160 });
-  if (model.addressLine !== null && !address) warnings.push("address_needs_review");
+  if (model.addressLine !== null && !address)
+    warnings.push('address_needs_review');
 
   const emails = extractEmails(lines, warnings);
   const phones = extractPhones(lines, warnings);
   const website = extractWebsite(lines);
 
-  if (!displayName) warnings.push("no_name");
-  const hasChannel = phones.length > 0 || emails.length > 0 || website !== undefined;
-  if (!hasChannel) warnings.push("no_contact_channel");
-  if (!displayName && !hasChannel) return { ok: false, code: "unusable" };
+  if (!displayName) warnings.push('no_name');
+  const hasChannel =
+    phones.length > 0 || emails.length > 0 || website !== undefined;
+  if (!hasChannel) warnings.push('no_contact_channel');
+  if (!displayName && !hasChannel) return { ok: false, code: 'unusable' };
 
   const present: any[] = [
     ...(displayName ? [displayName] : []),
@@ -203,14 +231,16 @@ function buildCandidateFromModel(model: any, scanId: string): any {
   const overallConfidence =
     present.length === 0
       ? 0
-      : round2(present.reduce((sum, f) => sum + f.confidence, 0) / present.length);
+      : round2(
+          present.reduce((sum, f) => sum + f.confidence, 0) / present.length,
+        );
 
   return {
     ok: true,
     candidate: {
       schemaVersion: 1,
       scanId,
-      status: "candidate",
+      status: 'candidate',
       fields: {
         ...(displayName ? { displayName } : {}),
         ...(title ? { title } : {}),
@@ -228,30 +258,32 @@ function buildCandidateFromModel(model: any, scanId: string): any {
 
 function candidateFromRawModelOutput(raw: unknown, scanId: string): any {
   const parsed = ocrModelOutputSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, code: "invalid_output" };
+  if (!parsed.success) return { ok: false, code: 'invalid_output' };
   const built = buildCandidateFromModel(parsed.data, scanId);
-  if (!built.ok) return { ok: false, code: "unusable" };
+  if (!built.ok) return { ok: false, code: 'unusable' };
   return { ok: true, candidate: built.candidate };
 }
 
 async function runCardOcrVision(imageDataUrl: string): Promise<unknown> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("OCR runtime is not configured");
+  const apiKey = process.env['LOVABLE_API_KEY'];
+  if (!apiKey) throw new Error('OCR runtime is not configured');
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: `You are a business-card OCR extraction engine inside a contact-acquisition pipeline.
+  const response = await fetch(
+    'https://ai.gateway.lovable.dev/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `You are a business-card OCR extraction engine inside a contact-acquisition pipeline.
 Return STRICT JSON only:
 {
   "isBusinessCard": boolean,
@@ -262,23 +294,27 @@ Return STRICT JSON only:
   "companyNameLine": number | null,
   "addressLine": number | null,
   "qrPresent": boolean
-}`
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Read this business card image and return JSON." },
-            { type: "image_url", image_url: { url: imageDataUrl } }
-          ]
-        }
-      ]
-    })
-  });
+}`,
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Read this business card image and return JSON.',
+              },
+              { type: 'image_url', image_url: { url: imageDataUrl } },
+            ],
+          },
+        ],
+      }),
+    },
+  );
 
   if (!response.ok) throw new Error(`OCR provider error ${response.status}`);
-  const json = await response.json() as any;
+  const json = await response.json();
   const content = json?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("OCR provider returned an empty response");
+  if (!content) throw new Error('OCR provider returned an empty response');
   return JSON.parse(content);
 }
 
@@ -291,14 +327,16 @@ export class ConnectCardScanService {
     try {
       raw = await runCardOcrVision(imageDataUrl);
     } catch (err: any) {
-      console.warn(`cardScanOcr vision error or no API key configured: ${err?.message || err}`);
+      console.warn(
+        `cardScanOcr vision error or no API key configured: ${err?.message || err}`,
+      );
       raw = {
         isBusinessCard: true,
         unusableReason: null,
         lines: [
-          { text: "ThĂ´ng tin danh thiáº¿p", confidence: 0.95 },
-          { text: "Äá»‘i tĂ¡c liĂªn há»‡", confidence: 0.9 },
-          { text: "0900000000", confidence: 0.85 },
+          { text: 'ThĂ´ng tin danh thiáº¿p', confidence: 0.95 },
+          { text: 'Äá»‘i tĂ¡c liĂªn há»‡', confidence: 0.9 },
+          { text: '0900000000', confidence: 0.85 },
         ],
         displayNameLine: 0,
         titleLine: 1,
@@ -314,13 +352,22 @@ export class ConnectCardScanService {
 
   async cardScanResolve(
     userId: string,
-    input: { email: string | null; phone: string | null; displayName?: string | null; companyName?: string | null }
+    input: {
+      email: string | null;
+      phone: string | null;
+      displayName?: string | null;
+      companyName?: string | null;
+    },
   ) {
     const email = input.email ? input.email.trim().toLowerCase() : null;
     const phone = input.phone ? input.phone.trim() : null;
     const phoneDigits = phone ? phone.replace(/[^0-9]/g, '') : null;
-    const name = input.displayName ? input.displayName.trim().toLowerCase() : null;
-    const company = input.companyName ? input.companyName.trim().toLowerCase() : null;
+    const name = input.displayName
+      ? input.displayName.trim().toLowerCase()
+      : null;
+    const company = input.companyName
+      ? input.companyName.trim().toLowerCase()
+      : null;
     const domain = email ? email.split('@')[1]?.toLowerCase() : null;
 
     if (!email && !phone && !name && !company) {
@@ -478,8 +525,8 @@ export class ConnectCardScanService {
       matches.length === 0
         ? 'none'
         : matches.length === 1 && matches[0].matchLevel === 'exact'
-        ? 'exact'
-        : 'ambiguous';
+          ? 'exact'
+          : 'ambiguous';
 
     return {
       state,
@@ -536,13 +583,24 @@ export class ConnectCardScanService {
       const target = targets[0];
       if (!target) throw new NotFoundException('target_not_found');
 
-      const fName = fieldChoices.displayName === 'card' ? displayName : (target.display_name || displayName);
-      const fPhone = fieldChoices.phone === 'card' ? phone : (target.phone || phone);
-      const fEmail = fieldChoices.email === 'card' ? email : (target.email || email);
-      const fCompany = fieldChoices.companyName === 'card' ? companyName : (target.company_name || companyName);
-      const fTitle = fieldChoices.title === 'card' ? title : (target.title || title);
-      const fWebsite = fieldChoices.website === 'card' ? website : (target.website || website);
-      const fAddress = fieldChoices.address === 'card' ? address : (target.address || address);
+      const fName =
+        fieldChoices.displayName === 'card'
+          ? displayName
+          : target.display_name || displayName;
+      const fPhone =
+        fieldChoices.phone === 'card' ? phone : target.phone || phone;
+      const fEmail =
+        fieldChoices.email === 'card' ? email : target.email || email;
+      const fCompany =
+        fieldChoices.companyName === 'card'
+          ? companyName
+          : target.company_name || companyName;
+      const fTitle =
+        fieldChoices.title === 'card' ? title : target.title || title;
+      const fWebsite =
+        fieldChoices.website === 'card' ? website : target.website || website;
+      const fAddress =
+        fieldChoices.address === 'card' ? address : target.address || address;
 
       const now = new Date();
       await this.prisma.$executeRaw`
@@ -571,7 +629,12 @@ export class ConnectCardScanService {
     }
 
     if (!confirmedNew) {
-      const dups = await this.cardScanResolve(userId, { email, phone, displayName, companyName });
+      const dups = await this.cardScanResolve(userId, {
+        email,
+        phone,
+        displayName,
+        companyName,
+      });
       if (dups.state !== 'none') {
         return { ok: false, error: 'match_conflict' };
       }

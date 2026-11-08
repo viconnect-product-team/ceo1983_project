@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Request, UseGuards, Query, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Body,
+  Request,
+  UseGuards,
+  Query,
+  Param,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 import { ConnectAppGateway } from './connect-app.gateway';
@@ -18,8 +30,15 @@ export class MeController {
   }
 
   @Post('end-call')
-  async endCall(@Request() req, @Body() body: { callId?: string; targetUserId?: string }) {
-    return this.gateway.endCallForUser(req.user.id, body?.callId, body?.targetUserId);
+  async endCall(
+    @Request() req,
+    @Body() body: { callId?: string; targetUserId?: string },
+  ) {
+    return this.gateway.endCallForUser(
+      req.user.id,
+      body?.callId,
+      body?.targetUserId,
+    );
   }
 
   @Get('profile')
@@ -73,16 +92,30 @@ export class MeController {
   }
 
   @Get('notifications')
-  async listNotifications(@Request() req, @Query('limit') limit?: string, @Query('unreadOnly') unreadOnly?: string) {
+  async listNotifications(
+    @Request() req,
+    @Query('limit') limit?: string,
+    @Query('unreadOnly') unreadOnly?: string,
+  ) {
     const lim = limit ? parseInt(limit, 10) : 30;
     const isUnreadOnly = unreadOnly === 'true' || unreadOnly === '1';
-    return this.connectAppService.listNotifications(req.user.id, lim, isUnreadOnly);
+    return this.connectAppService.listNotifications(
+      req.user.id,
+      lim,
+      isUnreadOnly,
+    );
   }
 
   @Get('notifications/member')
-  async listMyMemberNotifications(@Request() req, @Query('personalOnly') personalOnly?: string) {
+  async listMyMemberNotifications(
+    @Request() req,
+    @Query('personalOnly') personalOnly?: string,
+  ) {
     const isPersonalOnly = personalOnly === 'true' || personalOnly === '1';
-    return this.connectAppService.listMyMemberNotifications(req.user.id, isPersonalOnly);
+    return this.connectAppService.listMyMemberNotifications(
+      req.user.id,
+      isPersonalOnly,
+    );
   }
 
   @Post('notifications/member/read')
@@ -106,8 +139,14 @@ export class MeController {
   }
 
   @Post('notifications/member/dismiss-broadcast')
-  async dismissBroadcastNotification(@Request() req, @Body('ids') ids: string[]) {
-    return this.connectAppService.dismissBroadcastNotification(req.user.id, ids || []);
+  async dismissBroadcastNotification(
+    @Request() req,
+    @Body('ids') ids: string[],
+  ) {
+    return this.connectAppService.dismissBroadcastNotification(
+      req.user.id,
+      ids || [],
+    );
   }
 
   @Get('notifications/unread-count')

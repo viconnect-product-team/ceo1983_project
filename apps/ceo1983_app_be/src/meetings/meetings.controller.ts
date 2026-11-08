@@ -67,8 +67,13 @@ export class MeetingsController {
     @Body() body: any,
   ) {
     const userId = req.user.id || req.user.sub;
-    const status = body?.status || (body?.action === 'accept' ? 'confirmed' : 'declined');
-    return this.meetingsService.respondConnectionAppointment(userId, id, status);
+    const status =
+      body?.status || (body?.action === 'accept' ? 'confirmed' : 'declined');
+    return this.meetingsService.respondConnectionAppointment(
+      userId,
+      id,
+      status,
+    );
   }
 
   @Post('connection-appointments/:id/cancel')
@@ -78,7 +83,11 @@ export class MeetingsController {
     @Body() body: any,
   ) {
     const userId = req.user.id || req.user.sub;
-    return this.meetingsService.cancelConnectionAppointment(userId, id, body?.reason);
+    return this.meetingsService.cancelConnectionAppointment(
+      userId,
+      id,
+      body?.reason,
+    );
   }
 
   @Post('workspace/list')
@@ -201,10 +210,7 @@ export class MeetingsController {
   }
 
   @Delete(':id')
-  async deleteMeeting(
-    @Request() req: any,
-    @Param('id') id: string,
-  ) {
+  async deleteMeeting(@Request() req: any, @Param('id') id: string) {
     const userId = req.user.id || req.user.sub;
     return this.meetingsService.deleteMeeting(userId, id);
   }

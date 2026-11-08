@@ -1,4 +1,9 @@
-export type PrizeTargetType = 'PRODUCT' | 'SPONSOR_PACKAGE' | 'CUSTOM' | 'VOUCHER' | 'CASH';
+export type PrizeTargetType =
+  | 'PRODUCT'
+  | 'SPONSOR_PACKAGE'
+  | 'CUSTOM'
+  | 'VOUCHER'
+  | 'CASH';
 
 export class CreateEventPrizeDto {
   eventId!: string;

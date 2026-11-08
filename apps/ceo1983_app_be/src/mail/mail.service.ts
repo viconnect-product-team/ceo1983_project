@@ -4,12 +4,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 
-const DEFAULT_APP_URL = process.env.APP_URL 
-  ? process.env.APP_URL.replace(/\/$/, '') 
+const DEFAULT_APP_URL = process.env.APP_URL
+  ? process.env.APP_URL.replace(/\/$/, '')
   : 'https://ceo1983.viconnect.vn';
 
-const DEFAULT_CRM_URL = process.env.CRM_URL 
-  ? process.env.CRM_URL.replace(/\/$/, '') 
+const DEFAULT_CRM_URL = process.env.CRM_URL
+  ? process.env.CRM_URL.replace(/\/$/, '')
   : 'https://crm.ceo1983.viconnect.vn';
 
 export interface SendAccountEmailOptions {
@@ -236,7 +236,11 @@ export class MailService {
   private transporter: nodemailer.Transporter | null = null;
 
   private readonly failedRecipients = new Set<string>();
-  private readonly suppressionFile = path.resolve(process.cwd(), 'uploads', 'mail_suppression_list.json');
+  private readonly suppressionFile = path.resolve(
+    process.cwd(),
+    'uploads',
+    'mail_suppression_list.json',
+  );
 
   constructor() {
     this.initTransporter();
@@ -249,9 +253,13 @@ export class MailService {
         const raw = fs.readFileSync(this.suppressionFile, 'utf8');
         const list = JSON.parse(raw);
         if (Array.isArray(list)) {
-          list.forEach((email: string) => this.failedRecipients.add(String(email).toLowerCase().trim()));
+          list.forEach((email: string) =>
+            this.failedRecipients.add(String(email).toLowerCase().trim()),
+          );
         }
-        this.logger.log(`Loaded ${this.failedRecipients.size} suppressed email addresses from disk.`);
+        this.logger.log(
+          `Loaded ${this.failedRecipients.size} suppressed email addresses from disk.`,
+        );
       }
     } catch (err: any) {
       this.logger.warn(`Could not load mail suppression list: ${err.message}`);
@@ -264,9 +272,15 @@ export class MailService {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(this.suppressionFile, JSON.stringify(Array.from(this.failedRecipients), null, 2), 'utf8');
+      fs.writeFileSync(
+        this.suppressionFile,
+        JSON.stringify(Array.from(this.failedRecipients), null, 2),
+        'utf8',
+      );
     } catch (err: any) {
-      this.logger.warn(`Could not persist mail suppression list: ${err.message}`);
+      this.logger.warn(
+        `Could not persist mail suppression list: ${err.message}`,
+      );
     }
   }
 
@@ -315,10 +329,17 @@ export class MailService {
       cid?: string;
       contentType?: string;
     }>;
-  }): Promise<{ ok: boolean; message: string; messageId?: string; isSuppressed?: boolean }> {
+  }): Promise<{
+    ok: boolean;
+    message: string;
+    messageId?: string;
+    isSuppressed?: boolean;
+  }> {
     const cleanTo = (options.to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -331,7 +352,8 @@ export class MailService {
       );
       return {
         ok: false,
-        message: 'Email address previously failed to receive mail. Delivery cancelled without retry.',
+        message:
+          'Email address previously failed to receive mail. Delivery cancelled without retry.',
         isSuppressed: true,
       };
     }
@@ -341,7 +363,11 @@ export class MailService {
       this.logger.log(
         `[MOCK_EMAIL_SKIPPED_SMTP] Destination "${cleanTo}" is a test/mock address. Recorded to audit log without sending via Gmail SMTP. Context: ${options.auditContext || options.subject}`,
       );
-      return { ok: true, message: 'Test email logged to audit stream (SMTP skipped to prevent bounce)' };
+      return {
+        ok: true,
+        message:
+          'Test email logged to audit stream (SMTP skipped to prevent bounce)',
+      };
     }
 
     // 3. Nếu cấu hình SMTP Transporter: Gửi thật qua Gmail/SMTP
@@ -356,8 +382,14 @@ export class MailService {
           html: options.html,
           attachments: options.attachments,
         });
-        this.logger.log(`Email dispatched successfully to ${cleanTo}. Id: ${info.messageId}`);
-        return { ok: true, message: 'Email sent successfully via SMTP', messageId: info.messageId };
+        this.logger.log(
+          `Email dispatched successfully to ${cleanTo}. Id: ${info.messageId}`,
+        );
+        return {
+          ok: true,
+          message: 'Email sent successfully via SMTP',
+          messageId: info.messageId,
+        };
       } catch (err: any) {
         // Ghi nhận ngay vào danh sách thất bại - Nếu fail 1 lần thì thôi không bắn thêm nữa
         this.failedRecipients.add(lowerTo);
@@ -366,13 +398,21 @@ export class MailService {
           `[SMTP_FAILURE_SUPPRESSED] Failed to send email to ${cleanTo} via SMTP: ${err.message}. Address added to suppression list (no further retries).`,
           err.stack,
         );
-        return { ok: false, message: `SMTP delivery failed: ${err.message}. Address added to suppression list (no retry).` };
+        return {
+          ok: false,
+          message: `SMTP delivery failed: ${err.message}. Address added to suppression list (no retry).`,
+        };
       }
     }
 
     // 4. Fallback Audit Log khi chưa cấu hình SMTP
-    this.logger.log(`[AUDIT_EMAIL_DISPATCH] To: ${cleanTo} | Subject: ${options.subject} | Context: ${options.auditContext || ''}`);
-    return { ok: true, message: 'Email logged to audit stream (SMTP fallback mode)' };
+    this.logger.log(
+      `[AUDIT_EMAIL_DISPATCH] To: ${cleanTo} | Subject: ${options.subject} | Context: ${options.auditContext || ''}`,
+    );
+    return {
+      ok: true,
+      message: 'Email logged to audit stream (SMTP fallback mode)',
+    };
   }
 
   private initTransporter() {
@@ -402,7 +442,8 @@ export class MailService {
   }
 
   private getCleanFromEmail(): string {
-    const raw = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
+    const raw =
+      process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@ceo1983.com';
     const match = raw.match(/<([^>]+)>/);
     if (match && match[1]) {
       return match[1].trim();
@@ -413,11 +454,23 @@ export class MailService {
   /**
    * Gửi email thông tin tài khoản đăng nhập (Email + Mật khẩu ngẫu nhiên) cho hội viên mới
    */
-  async sendRegistrationAccountEmail(options: SendAccountEmailOptions): Promise<{ ok: boolean; message?: string }> {
-    const { to, fullName, username, passwordRaw, companyName, memberCode, portalUrl } = options;
+  async sendRegistrationAccountEmail(
+    options: SendAccountEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      username,
+      passwordRaw,
+      companyName,
+      memberCode,
+      portalUrl,
+    } = options;
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send account email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send account email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -483,12 +536,16 @@ export class MailService {
           <span class="info-label">Mật khẩu khởi tạo:</span>
           <span class="info-value cred-highlight">${passwordRaw}</span>
         </div>
-        ${memberCode ? `
+        ${
+          memberCode
+            ? `
         <div class="info-row" style="margin-top: 8px;">
           <span class="info-label">Mã số Hội viên dự kiến:</span>
           <span class="info-value" style="color: #d97706;">${memberCode}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <div class="btn-wrap">
@@ -527,12 +584,22 @@ export class MailService {
     qrUrlOrText: string,
     cid: string,
     filename: string,
-  ): Promise<{ filename: string; content: Buffer; cid: string; contentType: string } | null> {
+  ): Promise<{
+    filename: string;
+    content: Buffer;
+    cid: string;
+    contentType: string;
+  } | null> {
     try {
-      if (qrUrlOrText.startsWith('http://') || qrUrlOrText.startsWith('https://')) {
+      if (
+        qrUrlOrText.startsWith('http://') ||
+        qrUrlOrText.startsWith('https://')
+      ) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 3500);
-        const res = await fetch(qrUrlOrText, { signal: controller.signal }).catch(() => null);
+        const res = await fetch(qrUrlOrText, {
+          signal: controller.signal,
+        }).catch(() => null);
         clearTimeout(timeout);
         if (res && res.ok) {
           const ab = await res.arrayBuffer();
@@ -567,7 +634,9 @@ export class MailService {
   /**
    * Gửi email xác nhận vé sự kiện điện tử (E-Ticket) kèm thông tin người đăng ký và mã QR check-in
    */
-  async sendEventTicketEmail(options: SendEventTicketEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendEventTicketEmail(
+    options: SendEventTicketEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       fullName,
@@ -596,11 +665,19 @@ export class MailService {
 
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send event ticket email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send event ticket email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string; contentDisposition: string } | null = null;
+    let qrAttachment: {
+      filename: string;
+      content: Buffer;
+      cid: string;
+      contentType: string;
+      contentDisposition: string;
+    } | null = null;
     let qrDataUrl = '';
     const backendQrUrl = `${process.env.APP_URL || DEFAULT_APP_URL}/api/events/qr?data=${encodeURIComponent(registrationId)}&size=360`;
     if (isConfirmedTicket) {
@@ -622,14 +699,28 @@ export class MailService {
         };
         qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
       } catch (qrErr) {
-        this.logger.warn(`Could not generate QR code buffer for ticket #${registrationId}: ${(qrErr as any)?.message}`);
+        this.logger.warn(
+          `Could not generate QR code buffer for ticket #${registrationId}: ${qrErr?.message}`,
+        );
       }
     }
 
-    const vietQrUrlStr = vietQrUrl || `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
-    let vietQrAttachment: { filename: string; content: Buffer; cid: string; contentType: string; contentDisposition?: string } | null = null;
+    const vietQrUrlStr =
+      vietQrUrl ||
+      `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent('EV' + registrationId)}&accountName=${encodeURIComponent('CLB DOANH NHAN CEO 1983')}`;
+    let vietQrAttachment: {
+      filename: string;
+      content: Buffer;
+      cid: string;
+      contentType: string;
+      contentDisposition?: string;
+    } | null = null;
     if (!isConfirmedTicket) {
-      vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vietqr_payment_qr', `vietqr-${registrationId}.png`);
+      vietQrAttachment = await this.getVietQrAttachment(
+        vietQrUrlStr,
+        'vietqr_payment_qr',
+        `vietqr-${registrationId}.png`,
+      );
       if (vietQrAttachment) {
         vietQrAttachment.contentDisposition = 'inline';
       }
@@ -638,14 +729,14 @@ export class MailService {
     const appEventsUrl = `${DEFAULT_APP_URL}/association/events`;
     const qrSrc = qrAttachment
       ? 'cid:event_ticket_qr'
-      : (qrCodeUrl || qrDataUrl || backendQrUrl);
+      : qrCodeUrl || qrDataUrl || backendQrUrl;
     const vietQrSrc = vietQrAttachment ? 'cid:vietqr_payment_qr' : vietQrUrlStr;
 
     const subject = paymentConfirmed
       ? `[CLB CEO 1983] Xác Nhận Đã Thanh Toán & Vé Điện Tử Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
       : isFree
-      ? `[CLB CEO 1983] Vé Điện Tử & Mã QR Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
-      : `[CLB CEO 1983] Hướng Dẫn Thanh Toán VietQR & Đăng Ký: ${eventTitle} — ${fullName} (#${registrationId})`;
+        ? `[CLB CEO 1983] Vé Điện Tử & Mã QR Check-in: ${eventTitle} — ${fullName} (#${registrationId})`
+        : `[CLB CEO 1983] Hướng Dẫn Thanh Toán VietQR & Đăng Ký: ${eventTitle} — ${fullName} (#${registrationId})`;
 
     const html = `
 <!DOCTYPE html>
@@ -699,7 +790,7 @@ export class MailService {
 <body>
   <div class="container">
     <div class="header">
-      <div class="gold-badge">${paymentConfirmed ? '✦ VÉ ĐIỆN TỬ - ĐÃ XÁC NHẬN THANH TOÁN ✦' : (isFree ? '✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦' : '✦ HƯỚNG DẪN THANH TOÁN PHÍ THAM DỰ ✦')}</div>
+      <div class="gold-badge">${paymentConfirmed ? '✦ VÉ ĐIỆN TỬ - ĐÃ XÁC NHẬN THANH TOÁN ✦' : isFree ? '✦ VÉ THAM DỰ SỰ KIỆN ĐIỆN TỬ (E-TICKET) ✦' : '✦ HƯỚNG DẪN THANH TOÁN PHÍ THAM DỰ ✦'}</div>
       <h1 class="title">CLB DOANH NHÂN CEO 1983</h1>
       <p class="subtitle">Hệ Sinh Thái Kết Nối & Giao Thương Doanh Nhân Đẳng Cấp</p>
     </div>
@@ -707,11 +798,12 @@ export class MailService {
     <div class="content">
       <div class="greeting">Kính gửi Anh/Chị <strong>${fullName}</strong>,</div>
       <div class="intro">
-        ${paymentConfirmed
-          ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Giao dịch thanh toán phí tham dự sự kiện của Anh/Chị đã được <strong>xác nhận thành công</strong>! Dưới đây là <strong>Vé Điện Tử và Mã QR Check-in</strong> chính thức của Anh/Chị tại sự kiện:`
-          : isFree 
-          ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã <strong>đăng ký thành công</strong> vé tham dự sự kiện. Dưới đây là thông tin vé điện tử và <strong>Mã QR Check-in</strong> chính thức của Anh/Chị:`
-          : `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng cảm ơn Anh/Chị đã gửi phiếu đăng ký tham gia sự kiện. Dưới đây là <strong>Mã VietQR thanh toán phí tham dự</strong>. Vui lòng chuyển khoản để hệ thống kích hoạt vé QR check-in cho Anh/Chị:`
+        ${
+          paymentConfirmed
+            ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Giao dịch thanh toán phí tham dự sự kiện của Anh/Chị đã được <strong>xác nhận thành công</strong>! Dưới đây là <strong>Vé Điện Tử và Mã QR Check-in</strong> chính thức của Anh/Chị tại sự kiện:`
+            : isFree
+              ? `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Anh/Chị đã <strong>đăng ký thành công</strong> vé tham dự sự kiện. Dưới đây là thông tin vé điện tử và <strong>Mã QR Check-in</strong> chính thức của Anh/Chị:`
+              : `Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng cảm ơn Anh/Chị đã gửi phiếu đăng ký tham gia sự kiện. Dưới đây là <strong>Mã VietQR thanh toán phí tham dự</strong>. Vui lòng chuyển khoản để hệ thống kích hoạt vé QR check-in cho Anh/Chị:`
         }
       </div>
 
@@ -722,7 +814,9 @@ export class MailService {
           <div class="event-meta">🗓️ Thời gian: <strong>${eventDate || ''} ${eventTime ? '· ' + eventTime : ''}</strong></div>
         </div>
 
-        ${!isConfirmedTicket ? `
+        ${
+          !isConfirmedTicket
+            ? `
         <!-- TEMPLATE MÃ VNPAY-QR THANH TOÁN DÀNH CHO SỰ KIỆN CÓ PHÍ CHỜ THANH TOÁN -->
         <div class="qr-container">
           <div style="font-weight: 800; color: #003B95; font-size: 14px; text-transform: uppercase;">MÃ VNPAY-QR THANH TOÁN PHÍ THAM DỰ</div>
@@ -739,7 +833,8 @@ export class MailService {
             <p><strong>Cú pháp chuyển khoản:</strong> <strong style="color: #003B95; font-family: monospace;">EV${registrationId} ${phone || ''}</strong></p>
           </div>
         </div>
-        ` : `
+        `
+            : `
         <!-- TEMPLATE MÃ QR CHECK-IN DÀNH CHO VÉ ĐÃ XÁC NHẬN / ĐÃ THANH TOÁN -->
         <div class="qr-container">
           <img src="${qrSrc}" alt="Mã QR Check-in" class="qr-img" />
@@ -749,44 +844,57 @@ export class MailService {
             <a href="${backendQrUrl}" target="_blank" style="font-size: 11.5px; color: #003B95; text-decoration: underline; font-weight: 700;">[Bấm vào đây để mở trực tiếp hoặc tải mã QR về máy]</a>
           </div>
         </div>
-        `}
+        `
+        }
 
         <div class="info-grid">
           <div class="info-row">
             <div class="info-cell-label">Người tham dự:</div>
             <div class="info-cell-value">${fullName}</div>
           </div>
-          ${position || company ? `
+          ${
+            position || company
+              ? `
           <div class="info-row">
             <div class="info-cell-label">Chức vụ & Doanh nghiệp:</div>
             <div class="info-cell-value">${position ? position + ' · ' : ''}${company || ''}</div>
           </div>
-          ` : ''}
-          ${phone ? `
+          `
+              : ''
+          }
+          ${
+            phone
+              ? `
           <div class="info-row">
             <div class="info-cell-label">Số điện thoại:</div>
             <div class="info-cell-value">${phone}</div>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
           <div class="info-row">
             <div class="info-cell-label">Loại vé & Số lượng:</div>
             <div class="info-cell-value">${ticketCount} vé (${ticketType})</div>
           </div>
-          ${isConfirmedTicket && luckyNumber ? `
+          ${
+            isConfirmedTicket && luckyNumber
+              ? `
           <div class="info-row">
             <div class="info-cell-label">Số may mắn quay thưởng:</div>
             <div class="info-cell-value"><span class="badge-lucky">Lucky #${luckyNumber}</span></div>
           </div>
-          ` : ''}
+          `
+              : ''
+          }
           <div class="info-row">
             <div class="info-cell-label">Trạng thái vé:</div>
             <div class="info-cell-value">
-              ${paymentConfirmed
-                ? '<span class="badge-status">✓ ĐÃ THANH TOÁN (HỢP LỆ)</span>'
-                : (isFree 
-                  ? '<span class="badge-status">✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)</span>' 
-                  : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VNPAY-QR</span>'
-                )
+              ${
+                paymentConfirmed
+                  ? '<span class="badge-status">✓ ĐÃ THANH TOÁN (HỢP LỆ)</span>'
+                  : isFree
+                    ? '<span class="badge-status">✓ ĐÃ XÁC NHẬN (Miễn phí 0 đ)</span>'
+                    : '<span class="badge-status-pending">⏳ CHỜ THANH TOÁN VNPAY-QR</span>'
               }
             </div>
           </div>
@@ -794,15 +902,19 @@ export class MailService {
       </div>
 
       <div class="checkin-guide">
-        ${isConfirmedTicket ? `
+        ${
+          isConfirmedTicket
+            ? `
         <strong>📌 Hướng dẫn Check-in tại sự kiện:</strong>
         <br>1. Khi đến địa điểm tổ chức, Anh/Chị vui lòng mở email này xuất trình <strong>Mã QR vé</strong> trên cho Ban Thư Ký tại bàn đón tiếp.
         <br>2. Ban Tổ Chức sẽ quét mã check-in trong 1 giây và trao thẻ đại biểu, tài liệu cùng quà tặng tham gia sự kiện.
-        ` : `
+        `
+            : `
         <strong>📌 Hướng dẫn sau khi chuyển khoản:</strong>
         <br>1. Sau khi Anh/Chị chuyển khoản thành công, hệ thống đối soát Napas 24/7 hoặc Ban Truyền Thông xác nhận sẽ tự động kích hoạt vé chính thức.
         <br>2. Ban Thư Ký sẽ gửi email thông báo vé đã kích hoạt kèm mã QR check-in vào cửa chính thức cho Anh/Chị.
-        `}
+        `
+        }
       </div>
 
       <div class="btn-wrap">
@@ -820,7 +932,12 @@ export class MailService {
 </html>
     `;
 
-    const attachments: Array<{ filename: string; content: Buffer; cid: string; contentType: string }> = [];
+    const attachments: Array<{
+      filename: string;
+      content: Buffer;
+      cid: string;
+      contentType: string;
+    }> = [];
     if (qrAttachment) attachments.push(qrAttachment);
     if (vietQrAttachment) attachments.push(vietQrAttachment);
 
@@ -837,7 +954,9 @@ export class MailService {
   /**
    * Gửi email cảm ơn và thông báo sự kiện đã đủ số lượng đại biểu (hết chỗ/sold-out)
    */
-  async sendEventSoldOutEmail(options: SendEventSoldOutEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendEventSoldOutEmail(
+    options: SendEventSoldOutEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       fullName,
@@ -852,7 +971,9 @@ export class MailService {
 
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send event sold-out email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send event sold-out email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -965,11 +1086,23 @@ export class MailService {
   /**
    * Gửi email chào mừng hội viên mới đăng ký tài khoản vào App Doanh Nhân CEO 1983
    */
-  async sendAppWelcomeRegistrationEmail(options: SendAppWelcomeEmailOptions): Promise<{ ok: boolean; message?: string }> {
-    const { to, fullName, username, passwordRaw, phone, companyName, portalUrl } = options;
+  async sendAppWelcomeRegistrationEmail(
+    options: SendAppWelcomeEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      username,
+      passwordRaw,
+      phone,
+      companyName,
+      portalUrl,
+    } = options;
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send app welcome email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send app welcome email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -1036,18 +1169,26 @@ export class MailService {
           <span class="info-label">Tài khoản (Email):</span>
           <span class="info-value cred-box">${username}</span>
         </div>
-        ${passwordRaw ? `
+        ${
+          passwordRaw
+            ? `
         <div class="info-row">
           <span class="info-label">Mật khẩu khởi tạo:</span>
           <span class="info-value cred-box">${passwordRaw}</span>
         </div>
-        ` : ''}
-        ${phone ? `
+        `
+            : ''
+        }
+        ${
+          phone
+            ? `
         <div class="info-row">
           <span class="info-label">Số điện thoại liên kết:</span>
           <span class="info-value">${phone}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         <div class="info-row">
           <span class="info-label">Trạng thái tài khoản:</span>
           <span class="info-value" style="color: #16a34a;">✓ Đã sẵn sàng truy cập</span>
@@ -1101,11 +1242,25 @@ export class MailService {
   /**
    * Gửi email thông báo kích hoạt tài khoản thành công và cập nhật mật khẩu/email mới
    */
-  async sendAppAccountActivatedEmail(options: SendAppAccountActivatedEmailOptions): Promise<{ ok: boolean; message?: string }> {
-    const { to, fullName, username, newPassword, phone, companyName, memberCode, portalUrl, isEmailUpdated } = options;
+  async sendAppAccountActivatedEmail(
+    options: SendAppAccountActivatedEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      username,
+      newPassword,
+      phone,
+      companyName,
+      memberCode,
+      portalUrl,
+      isEmailUpdated,
+    } = options;
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send app account activated email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send app account activated email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -1174,24 +1329,36 @@ export class MailService {
           <span class="info-label">Tên đăng nhập (Email):</span>
           <span class="info-value cred-box">${cleanTo}</span>
         </div>
-        ${phone ? `
+        ${
+          phone
+            ? `
         <div class="info-row">
           <span class="info-label">Số điện thoại liên kết:</span>
           <span class="info-value cred-box" style="background: #f1f5f9; color: #0f172a; border-color: #cbd5e1;">${phone}</span>
         </div>
-        ` : ''}
-        ${newPassword ? `
+        `
+            : ''
+        }
+        ${
+          newPassword
+            ? `
         <div class="info-row">
           <span class="info-label">Mật khẩu mới đã đặt:</span>
           <span class="info-value cred-box">${newPassword}</span>
         </div>
-        ` : ''}
-        ${memberCode ? `
+        `
+            : ''
+        }
+        ${
+          memberCode
+            ? `
         <div class="info-row">
           <span class="info-label">Mã hội viên:</span>
           <span class="info-value" style="color: #003B95; font-weight: 800;">${memberCode}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         <div class="info-row">
           <span class="info-label">Trạng thái:</span>
           <span class="info-value" style="color: #16a34a; font-weight: 800;">✓ Đã kích hoạt hoàn tất</span>
@@ -1245,11 +1412,24 @@ export class MailService {
   /**
    * Gửi email chúc mừng khi hồ sơ hội viên được Ban điều hành / Quản trị viên duyệt chính thức
    */
-  async sendMemberApprovedEmail(options: SendMemberApprovedEmailOptions): Promise<{ ok: boolean; message?: string }> {
-    const { to, fullName, memberCode, associationName, companyName, portalUrl, username, passwordRaw } = options;
+  async sendMemberApprovedEmail(
+    options: SendMemberApprovedEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      memberCode,
+      associationName,
+      companyName,
+      portalUrl,
+      username,
+      passwordRaw,
+    } = options;
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send member approval email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send member approval email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -1306,28 +1486,40 @@ export class MailService {
           <span class="info-label">Hội viên:</span>
           <span class="info-value">${fullName}</span>
         </div>
-        ${memberCode ? `
+        ${
+          memberCode
+            ? `
         <div class="info-row">
           <span class="info-label">Mã số Hội viên:</span>
           <span class="info-value" style="color: #003B95; font-weight: 800;">${memberCode}</span>
         </div>
-        ` : ''}
-        ${companyName ? `
+        `
+            : ''
+        }
+        ${
+          companyName
+            ? `
         <div class="info-row">
           <span class="info-label">Doanh nghiệp:</span>
           <span class="info-value">${companyName}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         <div class="info-row">
           <span class="info-label">Tài khoản đăng nhập (Email):</span>
           <span class="info-value" style="font-family: monospace; font-weight: 700; color: #003B95;">${username || cleanTo}</span>
         </div>
-        ${passwordRaw ? `
+        ${
+          passwordRaw
+            ? `
         <div class="info-row">
           <span class="info-label">Mật khẩu khởi tạo:</span>
           <span class="info-value cred-badge">${passwordRaw}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         <div class="info-row">
           <span class="info-label">Trạng thái:</span>
           <span class="info-value" style="color: #16a34a; font-weight: 800;">✓ Đã phê duyệt chính thức</span>
@@ -1360,11 +1552,26 @@ export class MailService {
   /**
    * Gửi email xác nhận tiếp nhận hồ sơ đăng ký gia nhập cho ứng viên (Landing page / Public Register)
    */
-  async sendRegistrationReceivedEmail(options: SendRegistrationReceivedEmailOptions): Promise<{ ok: boolean; message?: string }> {
-    const { to, fullName, phone, companyName, position, boardWish, industry, needs, offers, memberId } = options;
+  async sendRegistrationReceivedEmail(
+    options: SendRegistrationReceivedEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      phone,
+      companyName,
+      position,
+      boardWish,
+      industry,
+      needs,
+      offers,
+      memberId,
+    } = options;
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`Cannot send registration received email: invalid destination email "${cleanTo}"`);
+      this.logger.warn(
+        `Cannot send registration received email: invalid destination email "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -1427,12 +1634,16 @@ export class MailService {
           <span class="info-label">Doanh nghiệp:</span>
           <span class="info-value" style="color: #003B95;">${companyName}</span>
         </div>
-        ${phone ? `
+        ${
+          phone
+            ? `
         <div class="info-row">
           <span class="info-label">Số điện thoại liên hệ:</span>
           <span class="info-value">${phone}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
         <div class="info-row">
           <span class="info-label">Email tiếp nhận:</span>
           <span class="info-value" style="font-family: monospace;">${cleanTo}</span>
@@ -1451,7 +1662,10 @@ export class MailService {
             'ind.service': 'Thương mại - Dịch vụ',
             'ind.other': 'Ngành nghề khác',
           };
-          const resolvedIndustry = (industry && INDUSTRY_LABELS[industry]) ? INDUSTRY_LABELS[industry] : (industry || 'Thương mại - Dịch vụ');
+          const resolvedIndustry =
+            industry && INDUSTRY_LABELS[industry]
+              ? INDUSTRY_LABELS[industry]
+              : industry || 'Thương mại - Dịch vụ';
           return `
           <div class="info-row">
             <span class="info-label">Lĩnh vực hoạt động:</span>
@@ -1459,12 +1673,16 @@ export class MailService {
           </div>
           `;
         })()}
-        ${memberId ? `
+        ${
+          memberId
+            ? `
         <div class="info-row">
           <span class="info-label">Mã tham chiếu hồ sơ:</span>
           <span class="info-value" style="font-family: monospace; color: #64748b;">${memberId}</span>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <div class="status-box">
@@ -1510,19 +1728,43 @@ export class MailService {
         code: 'FEE_NOTICE_ANNUAL',
         category: 'fee',
         name: 'Thông Báo Nộp Hội Phí Niên Liễm Định Kỳ',
-        description: 'Tự động gửi thông báo nộp phí hội viên định kỳ hàng năm kèm mã VietQR và hướng dẫn thanh toán.',
+        description:
+          'Tự động gửi thông báo nộp phí hội viên định kỳ hàng năm kèm mã VietQR và hướng dẫn thanh toán.',
         channels: ['email', 'in_app', 'push'],
-        subject: '[CLB CEO 1983] Thông Báo Nộp Hội Phí Thường Niên Năm {{fee_year}} — Anh/Chị {{full_name}}',
+        subject:
+          '[CLB CEO 1983] Thông Báo Nộp Hội Phí Thường Niên Năm {{fee_year}} — Anh/Chị {{full_name}}',
         inAppTitle: 'Thông báo nộp hội phí thường niên {{fee_year}}',
-        inAppBody: 'Kính gửi Anh/Chị {{full_name}}, hệ thống gửi thông báo hội phí năm {{fee_year}} của đơn vị {{company_name}}.',
+        inAppBody:
+          'Kính gửi Anh/Chị {{full_name}}, hệ thống gửi thông báo hội phí năm {{fee_year}} của đơn vị {{company_name}}.',
         variables: [
-          { key: 'full_name', label: 'Tên hội viên', example: 'Nguyễn Văn Hùng' },
+          {
+            key: 'full_name',
+            label: 'Tên hội viên',
+            example: 'Nguyễn Văn Hùng',
+          },
           { key: 'member_code', label: 'Mã hội viên', example: 'M1983-001' },
-          { key: 'company_name', label: 'Tên doanh nghiệp', example: 'Tập Đoàn Công Nghệ ViConnect' },
+          {
+            key: 'company_name',
+            label: 'Tên doanh nghiệp',
+            example: 'Tập Đoàn Công Nghệ ViConnect',
+          },
           { key: 'fee_year', label: 'Năm hội phí', example: '2026' },
-          { key: 'fee_amount', label: 'Số tiền hội phí', example: '15,000,000' },
-          { key: 'due_date', label: 'Hạn chót thanh toán', example: '31/10/2026' },
-          { key: 'vietqr_url', label: 'Đường dẫn ảnh VietQR', example: 'https://api.vietqr.io/image/970422-198388889999-compact2.jpg' },
+          {
+            key: 'fee_amount',
+            label: 'Số tiền hội phí',
+            example: '15,000,000',
+          },
+          {
+            key: 'due_date',
+            label: 'Hạn chót thanh toán',
+            example: '31/10/2026',
+          },
+          {
+            key: 'vietqr_url',
+            label: 'Đường dẫn ảnh VietQR',
+            example:
+              'https://api.vietqr.io/image/970422-198388889999-compact2.jpg',
+          },
         ],
         updatedAt: '2026-10-01',
         isCustom: false,
@@ -1563,19 +1805,38 @@ export class MailService {
         code: 'WELCOME_NEW_MEMBER',
         category: 'welcome',
         name: 'Thư Chào Mừng & Cảm Ơn Hội Viên Mới Gia Nhập',
-        description: 'Tự động gửi ngay sau khi tài khoản hội viên được Ban Quản Trị phê duyệt chính thức.',
+        description:
+          'Tự động gửi ngay sau khi tài khoản hội viên được Ban Quản Trị phê duyệt chính thức.',
         channels: ['email', 'in_app', 'push'],
-        subject: 'CHÀO MỪNG ANH/CHỊ {{full_name}} CHÍNH THỨC GIA NHẬP CLB DOANH NHÂN CEO 1983',
+        subject:
+          'CHÀO MỪNG ANH/CHỊ {{full_name}} CHÍNH THỨC GIA NHẬP CLB DOANH NHÂN CEO 1983',
         inAppTitle: 'Chúc mừng gia nhập CLB CEO 1983',
-        inAppBody: 'Hồ sơ của Anh/Chị đã được Ban Thường Trực duyệt. Chào mừng Anh/Chị đến với cộng đồng Doanh nhân CEO 1983!',
+        inAppBody:
+          'Hồ sơ của Anh/Chị đã được Ban Thường Trực duyệt. Chào mừng Anh/Chị đến với cộng đồng Doanh nhân CEO 1983!',
         variables: [
           { key: 'full_name', label: 'Tên hội viên', example: 'Trần Thị Mai' },
           { key: 'member_code', label: 'Mã hội viên', example: 'M1983-088' },
-          { key: 'company_name', label: 'Tên công ty', example: 'Công ty TNHH Thời Trang Luxury' },
+          {
+            key: 'company_name',
+            label: 'Tên công ty',
+            example: 'Công ty TNHH Thời Trang Luxury',
+          },
           { key: 'joined_date', label: 'Ngày gia nhập', example: '02/10/2026' },
-          { key: 'executive_role', label: 'Vai trò hiệp hội', example: 'Hội Viên Chính Thức' },
-          { key: 'department', label: 'Ban chuyên môn', example: 'Ban Xúc Tiến Thương Mại' },
-          { key: 'app_download_link', label: 'Link tải app', example: 'https://ceo1983.com/association' },
+          {
+            key: 'executive_role',
+            label: 'Vai trò hiệp hội',
+            example: 'Hội Viên Chính Thức',
+          },
+          {
+            key: 'department',
+            label: 'Ban chuyên môn',
+            example: 'Ban Xúc Tiến Thương Mại',
+          },
+          {
+            key: 'app_download_link',
+            label: 'Link tải app',
+            example: 'https://ceo1983.com/association',
+          },
         ],
         updatedAt: '2026-10-01',
         isCustom: false,
@@ -1652,7 +1913,9 @@ export class MailService {
   /**
    * 1. Gửi email thư mời tham dự cuộc họp (Cả Trực tiếp Offline và Trực tuyến Online)
    */
-  async sendMeetingInvitationEmail(options: SendMeetingInvitationEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendMeetingInvitationEmail(
+    options: SendMeetingInvitationEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       recipientName,
@@ -1669,8 +1932,14 @@ export class MailService {
       portalUrl,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
-    const isOnline = meetingType === 'online' || (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
+    const isOnline =
+      meetingType === 'online' ||
+      (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/meetings`;
     const subject = `[CLB CEO 1983] Thư Mời Tham Dự ${isOnline ? 'Cuộc Họp Online' : 'Cuộc Họp Trực Tiếp'}: ${meetingTitle} - ${date}`;
 
@@ -1750,7 +2019,9 @@ export class MailService {
   /**
    * 2. Gửi email cuộc gặp kết nối giao thương 1-on-1 (Lời mời hẹn gặp & Xác nhận lịch hẹn)
    */
-  async sendConnectionAppointmentEmail(options: SendConnectionAppointmentEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendConnectionAppointmentEmail(
+    options: SendConnectionAppointmentEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       recipientName,
@@ -1767,10 +2038,17 @@ export class MailService {
       portalUrl,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
     const isConfirmed = status === 'confirmed' || status === 'accepted';
-    const isOnline = venueType === 'online' || (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
-    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/business-connect`;
+    const isOnline =
+      venueType === 'online' ||
+      (venueOrLink && venueOrLink.toLowerCase().startsWith('http'));
+    const appUrl =
+      portalUrl || `${DEFAULT_APP_URL}/association/business-connect`;
 
     const subject = isConfirmed
       ? `[CLB CEO 1983] Xác Nhận Lịch Hẹn Kết Nối 1-1 Thành Công với ${partnerName} - ${date}`
@@ -1813,9 +2091,10 @@ export class MailService {
     <div class="content">
       <div class="greeting">Kính gửi Anh/Chị <strong>${recipientName}</strong>,</div>
       <div class="intro">
-        ${isConfirmed
-          ? `Lịch hẹn kết nối giao thương 1-1 giữa Anh/Chị và <strong>${partnerName}</strong> đã được xác nhận thành công trên hệ thống Hiệp Hội CEO 1983.`
-          : `Doanh nhân <strong>${partnerName}</strong> ${partnerCompany ? `(đại diện <strong>${partnerCompany}</strong>)` : ''} vừa gửi lời mời hẹn gặp kết nối giao thương 1-1 tới Anh/Chị.`
+        ${
+          isConfirmed
+            ? `Lịch hẹn kết nối giao thương 1-1 giữa Anh/Chị và <strong>${partnerName}</strong> đã được xác nhận thành công trên hệ thống Hiệp Hội CEO 1983.`
+            : `Doanh nhân <strong>${partnerName}</strong> ${partnerCompany ? `(đại diện <strong>${partnerCompany}</strong>)` : ''} vừa gửi lời mời hẹn gặp kết nối giao thương 1-1 tới Anh/Chị.`
         }
       </div>
       <div class="card-box">
@@ -1854,7 +2133,9 @@ export class MailService {
   /**
    * 3. Gửi email xác nhận thanh toán vé sự kiện thành công (Vé điện tử & Mã QR Check-in)
    */
-  async sendEventPaymentSuccessEmail(options: SendEventPaymentSuccessEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendEventPaymentSuccessEmail(
+    options: SendEventPaymentSuccessEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       fullName,
@@ -1874,11 +2155,20 @@ export class MailService {
       portalUrl,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/events`;
     const subject = `[CLB CEO 1983] Xác Nhận Thanh Toán Vé Sự Kiện Thành Công — ${eventTitle} (Mã vé: #${registrationId})`;
 
-    let qrAttachment: { filename: string; content: Buffer; cid: string; contentType: string } | null = null;
+    let qrAttachment: {
+      filename: string;
+      content: Buffer;
+      cid: string;
+      contentType: string;
+    } | null = null;
     let qrDataUrl = '';
     try {
       const qrBuffer = await QRCode.toBuffer(String(registrationId), {
@@ -1897,7 +2187,9 @@ export class MailService {
       };
       qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
     } catch (qrErr) {
-      this.logger.warn(`Could not generate QR code buffer for payment ticket #${registrationId}: ${(qrErr as any)?.message}`);
+      this.logger.warn(
+        `Could not generate QR code buffer for payment ticket #${registrationId}: ${qrErr?.message}`,
+      );
     }
 
     const html = `
@@ -1955,7 +2247,7 @@ export class MailService {
 
       <div class="qr-wrap">
         <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">MÃ QR CHECK-IN TẠI QUẦY LỄ TÂN</div>
-        <img src="${qrAttachment ? 'cid:event_payment_qr' : (qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`)}" alt="QR Check-in" class="qr-img" width="170" height="170" />
+        <img src="${qrAttachment ? 'cid:event_payment_qr' : qrCodeUrl || qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registrationId)}`}" alt="QR Check-in" class="qr-img" width="170" height="170" />
         <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Anh/Chị vui lòng xuất trình mã QR này tại quầy đón tiếp để in thẻ và nhận quà.</div>
       </div>
 
@@ -1986,7 +2278,9 @@ export class MailService {
   /**
    * 4. Gửi email thông báo hội phí thường niên & nhắc phí kèm mã VNPAY-QR
    */
-  async sendMembershipFeeNotificationEmail(options: SendMembershipFeeNotificationEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendMembershipFeeNotificationEmail(
+    options: SendMembershipFeeNotificationEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       memberName,
@@ -2004,11 +2298,21 @@ export class MailService {
       reminderCount,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
     const isReminder = Boolean(reminderCount && reminderCount > 0);
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/profile`;
-    const vietQrUrlStr = vietQrUrl || `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|CEO1983|FEE|${invoiceNo}|${amount}|${memberCode || ''}`)}`;
-    const vietQrAttachment = await this.getVietQrAttachment(vietQrUrlStr, 'vnpay_fee_qr', `vnpay-fee-${invoiceNo}.png`);
+    const vietQrUrlStr =
+      vietQrUrl ||
+      `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|CEO1983|FEE|${invoiceNo}|${amount}|${memberCode || ''}`)}`;
+    const vietQrAttachment = await this.getVietQrAttachment(
+      vietQrUrlStr,
+      'vnpay_fee_qr',
+      `vnpay-fee-${invoiceNo}.png`,
+    );
     const qrImg = vietQrAttachment ? 'cid:vnpay_fee_qr' : vietQrUrlStr;
 
     const subject = isReminder
@@ -2104,7 +2408,9 @@ export class MailService {
   /**
    * 5. Gửi email xác nhận thanh toán hội phí thành công & gia hạn hội viên
    */
-  async sendMembershipFeeSuccessEmail(options: SendMembershipFeeSuccessEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendMembershipFeeSuccessEmail(
+    options: SendMembershipFeeSuccessEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       memberName,
@@ -2119,7 +2425,11 @@ export class MailService {
       portalUrl,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/profile`;
     const subject = `[CLB CEO 1983] Xác Nhận Hoàn Thành Hội Phí Năm ${year} — Hội Viên ${memberName}`;
 
@@ -2203,7 +2513,9 @@ export class MailService {
   /**
    * 6. Gửi email thông báo phân công công việc mới cho người được giao việc
    */
-  async sendTaskAssignmentEmail(options: SendTaskAssignmentEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendTaskAssignmentEmail(
+    options: SendTaskAssignmentEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       assigneeName,
@@ -2220,7 +2532,11 @@ export class MailService {
       portalUrl,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/tasks`;
     const subject = `[CLB CEO 1983] Bạn Được Phân Công Công Việc Mới: [${taskCode}] ${taskTitle}`;
 
@@ -2301,7 +2617,9 @@ export class MailService {
   /**
    * 7. Gửi email nhắc nhở tiến độ công việc & đôn đốc hạn chót cho người được giao việc
    */
-  async sendTaskReminderEmail(options: SendTaskReminderEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendTaskReminderEmail(
+    options: SendTaskReminderEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       assigneeName,
@@ -2317,7 +2635,11 @@ export class MailService {
       portalUrl,
     } = options;
 
-    const cleanTo = (to || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+    const cleanTo = (
+      to ||
+      process.env.ADMIN_NOTIFY_EMAIL ||
+      'vupv090120@gmail.com'
+    ).trim();
     const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/tasks`;
     const subject = `[CLB CEO 1983] Nhắc Nhở Tiến Độ Công Việc: [${taskCode}] ${taskTitle} (Đôn đốc lần ${reminderCount})`;
 
@@ -2371,12 +2693,16 @@ export class MailService {
         <div class="info-row"><span class="info-label">Tiến độ hoàn thành:</span><span class="info-value" style="color: #0284c7; font-size: 15px;">${currentProgress}%</span></div>
         <div class="progress-bar"><div class="progress-fill" style="width: ${Math.min(100, Math.max(0, currentProgress))}%;"></div></div>
         <div class="info-row" style="margin-top: 10px;"><span class="info-label">Hạn chót (Deadline):</span><span class="info-value" style="color: #dc2626; font-size: 15px; font-weight: 800;">${dueDate}</span></div>
-        ${evaluationFeedback ? `
+        ${
+          evaluationFeedback
+            ? `
         <div style="margin-top: 12px; padding: 10px; background: #fff1f2; border-radius: 8px; border: 1px dashed #fda4af;">
           <div style="font-size: 12px; font-weight: 700; color: #be123c;">ĐÁNH GIÁ / Ý KIẾN CHỈ ĐẠO:</div>
           <div style="font-size: 13px; color: #881337; margin-top: 4px; font-style: italic;">"${evaluationFeedback}"</div>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
       <div class="btn-wrap">
         <a href="${appUrl}" class="btn-primary" target="_blank">⚡ Cập Nhật Tiến Độ & Nộp Báo Cáo Ngay</a>
@@ -2401,7 +2727,11 @@ export class MailService {
     });
   }
 
-  async sendTestByTemplateId(id: string, to: string, customVariables?: Record<string, string>) {
+  async sendTestByTemplateId(
+    id: string,
+    to: string,
+    customVariables?: Record<string, string>,
+  ) {
     const template = await this.getTemplate(id);
     if (!template) {
       throw new Error(`Template ${id} not found`);
@@ -2435,7 +2765,13 @@ export class MailService {
     });
   }
 
-  async sendDirectEmail(options: { to: string; subject: string; html: string; templateCode?: string; fromName?: string }) {
+  async sendDirectEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    templateCode?: string;
+    fromName?: string;
+  }) {
     return this.dispatchSmtpEmail({
       to: options.to,
       subject: options.subject,
@@ -2445,14 +2781,20 @@ export class MailService {
     });
   }
 
-  async sendDynamic(templateCode: string, to: string, variables: Record<string, string>) {
+  async sendDynamic(
+    templateCode: string,
+    to: string,
+    variables: Record<string, string>,
+  ) {
     return this.sendTestByTemplateId(templateCode, to, variables);
   }
 
   /**
    * Gửi email chúc mừng đại biểu/hội viên trúng giải bốc thăm may mắn (Lucky Draw)
    */
-  async sendLuckyDrawWinnerEmail(options: SendLuckyDrawWinnerEmailOptions): Promise<{ ok: boolean; message?: string }> {
+  async sendLuckyDrawWinnerEmail(
+    options: SendLuckyDrawWinnerEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       winnerName,
@@ -2468,7 +2810,9 @@ export class MailService {
 
     const cleanTo = (to || '').trim();
     if (!cleanTo || !cleanTo.includes('@')) {
-      this.logger.warn(`[sendLuckyDrawWinnerEmail] Bỏ qua vì email không hợp lệ: "${cleanTo}"`);
+      this.logger.warn(
+        `[sendLuckyDrawWinnerEmail] Bỏ qua vì email không hợp lệ: "${cleanTo}"`,
+      );
       return { ok: false, message: 'Invalid recipient email' };
     }
 
@@ -2563,5 +2907,3 @@ export class MailService {
     });
   }
 }
-
-

@@ -7,4 +7,3 @@ export * from './adapter/zalo.adapter';
 export * from './observer/domain-event-emitter';
 export * from './builder/membership-certificate.builder';
 export * from './state/approval-workflow.state';
-

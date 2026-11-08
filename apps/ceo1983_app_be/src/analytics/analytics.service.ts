@@ -1,7 +1,14 @@
 import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type TimeGranularity = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
+export type TimeGranularity =
+  | 'minute'
+  | 'hour'
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'quarter'
+  | 'year';
 
 export interface BucketInfo {
   name: string;
@@ -11,7 +18,10 @@ export interface BucketInfo {
   timeLabel: string;
 }
 
-export function getBuckets(granularity: TimeGranularity, now: Date = new Date()): BucketInfo[] {
+export function getBuckets(
+  granularity: TimeGranularity,
+  now: Date = new Date(),
+): BucketInfo[] {
   const buckets: BucketInfo[] = [];
   if (granularity === 'minute') {
     // 6 mốc 5 phút gần nhất
@@ -32,7 +42,10 @@ export function getBuckets(granularity: TimeGranularity, now: Date = new Date())
     for (let i = 5; i >= 0; i--) {
       const end = new Date(now.getTime() - i * 60 * 60 * 1000);
       const start = new Date(end.getTime() - 60 * 60 * 1000);
-      const hStr = end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const hStr = end.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
       const label = i === 0 ? 'Hiện tại' : hStr;
       buckets.push({
         name: label,
@@ -47,8 +60,22 @@ export function getBuckets(granularity: TimeGranularity, now: Date = new Date())
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
-      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+      const start = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate(),
+        0,
+        0,
+        0,
+      );
+      const end = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate(),
+        23,
+        59,
+        59,
+      );
       const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
       const dayName = i === 0 ? 'Hôm nay' : dayNames[d.getDay()];
       const dateStr = `${d.getDate()}/${d.getMonth() + 1}`;
@@ -123,24 +150,27 @@ export function getBuckets(granularity: TimeGranularity, now: Date = new Date())
   return buckets;
 }
 
-export const CHART_METAS: Record<string, {
-  unit: string;
-  col1Label: string;
-  col1Color: string;
-  col1Unit?: string;
-  col2Label: string;
-  col2Color: string;
-  col2Unit?: string;
-  col3Label: string;
-  col3Color: string;
-  col3Unit?: string;
-  col4Label: string;
-  col4Color: string;
-  col4Unit?: string;
-  timelineLabel: string;
-  timelineColor: string;
-  timelineUnit?: string;
-}> = {
+export const CHART_METAS: Record<
+  string,
+  {
+    unit: string;
+    col1Label: string;
+    col1Color: string;
+    col1Unit?: string;
+    col2Label: string;
+    col2Color: string;
+    col2Unit?: string;
+    col3Label: string;
+    col3Color: string;
+    col3Unit?: string;
+    col4Label: string;
+    col4Color: string;
+    col4Unit?: string;
+    timelineLabel: string;
+    timelineColor: string;
+    timelineUnit?: string;
+  }
+> = {
   top_connections: {
     unit: 'Lượt',
     col1Label: 'Kết nối 1-on-1',
@@ -245,7 +275,17 @@ export function buildGranularChart(
   now: Date = new Date(),
 ) {
   const buckets = getBuckets(granularity, now);
-  const { opps, conns, eventRegs, bMeetings, feedPosts, feedLikes, feedComments, shareLogs, members } = dataSources;
+  const {
+    opps,
+    conns,
+    eventRegs,
+    bMeetings,
+    feedPosts,
+    feedLikes,
+    feedComments,
+    shareLogs,
+    members,
+  } = dataSources;
 
   let prevTimelineVal = 0;
   return buckets.map((b) => {
@@ -267,31 +307,48 @@ export function buildGranularChart(
     if (category === 'top_connections') {
       const bConns = conns.filter(inBucket);
       const bMeets = bMeetings.filter(inBucket);
-      col1 = bConns.filter(c => c.status === 'accepted' || c.status === 'connected').length; // Đã kết nối thành công
-      col2 = bConns.filter(c => c.status === 'pending').length; // Chờ phản hồi
+      col1 = bConns.filter(
+        (c) => c.status === 'accepted' || c.status === 'connected',
+      ).length; // Đã kết nối thành công
+      col2 = bConns.filter((c) => c.status === 'pending').length; // Chờ phản hồi
       col3 = bMeets.length; // Cuộc gặp B2B
       col4 = Math.max(0, bConns.length - (col1 + col2)); // Kết nối khác
       timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'top_opportunities') {
       const bOpps = opps.filter(inBucket);
       const bMeets = bMeetings.filter(inBucket);
-      col1 = bOpps.filter(o => o.status === 'open' || !o.status).length; // Cơ hội mở mới
-      col2 = bOpps.filter(o => o.status === 'negotiating' || o.status === 'in_progress').length; // Đang đàm phán
-      col3 = bOpps.filter(o => !!o.claimed_by_id || o.status === 'claimed' || o.status === 'connected').length; // Đã kết nối/chốt
+      col1 = bOpps.filter((o) => o.status === 'open' || !o.status).length; // Cơ hội mở mới
+      col2 = bOpps.filter(
+        (o) => o.status === 'negotiating' || o.status === 'in_progress',
+      ).length; // Đang đàm phán
+      col3 = bOpps.filter(
+        (o) =>
+          !!o.claimed_by_id ||
+          o.status === 'claimed' ||
+          o.status === 'connected',
+      ).length; // Đã kết nối/chốt
       col4 = bMeets.length; // Cuộc gặp B2B cơ hội
       timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'top_events_meetings') {
       const bRegs = eventRegs.filter(inBucket);
       const bMeets = bMeetings.filter(inBucket);
-      col1 = bRegs.filter(r => r.status === 'attended' || !!r.checked_in_at).length; // Điểm danh thực tế
-      col2 = bRegs.filter(r => r.status === 'pending' || (!r.checked_in_at && r.status !== 'attended')).length; // Chờ check-in
+      col1 = bRegs.filter(
+        (r) => r.status === 'attended' || !!r.checked_in_at,
+      ).length; // Điểm danh thực tế
+      col2 = bRegs.filter(
+        (r) =>
+          r.status === 'pending' ||
+          (!r.checked_in_at && r.status !== 'attended'),
+      ).length; // Chờ check-in
       col3 = bMeets.length; // Cuộc họp ban
       col4 = Math.max(0, bRegs.length - (col1 + col2)); // Đăng ký khác
       timelineVal = col1 + col2 + col3 + col4;
     } else if (category === 'top_referrals') {
       const bMems = members.filter(inBucket);
-      col1 = bMems.filter(m => Number(m.fee_paid || 0) > 0).length; // Đã kết nạp chính thức
-      col2 = bMems.filter(m => !m.fee_paid || Number(m.fee_paid || 0) === 0).length; // Chờ kết nạp
+      col1 = bMems.filter((m) => Number(m.fee_paid || 0) > 0).length; // Đã kết nạp chính thức
+      col2 = bMems.filter(
+        (m) => !m.fee_paid || Number(m.fee_paid || 0) === 0,
+      ).length; // Chờ kết nạp
       col3 = Math.round(bMems.length * 0.5); // Hội viên giới thiệu
       col4 = Math.round(bMems.length * 0.2); // Hoàn thành nhiệm vụ
       timelineVal = col1 + col2 + col3 + col4;
@@ -337,7 +394,7 @@ export function buildGranularChart(
 
 @Injectable()
 export class AnalyticsService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
     await this.ensureTables();
@@ -345,7 +402,9 @@ export class AnalyticsService implements OnModuleInit {
 
   private async ensureTables() {
     try {
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.feed_posts (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           title TEXT,
@@ -367,18 +426,26 @@ export class AnalyticsService implements OnModuleInit {
           created_at TIMESTAMPTZ DEFAULT NOW(),
           updated_at TIMESTAMPTZ DEFAULT NOW()
         )
-      `).catch(() => { });
+      `,
+        )
+        .catch(() => {});
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.feed_likes (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           post_id UUID NOT NULL,
           user_id TEXT NOT NULL,
           created_at TIMESTAMPTZ DEFAULT NOW()
         )
-      `).catch(() => { });
+      `,
+        )
+        .catch(() => {});
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.feed_comments (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           post_id UUID NOT NULL,
@@ -394,9 +461,13 @@ export class AnalyticsService implements OnModuleInit {
           media_type TEXT,
           reaction TEXT
         )
-      `).catch(() => { });
+      `,
+        )
+        .catch(() => {});
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.audit_logs (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           action TEXT NOT NULL,
@@ -407,7 +478,9 @@ export class AnalyticsService implements OnModuleInit {
           metadata JSONB DEFAULT '{}',
           created_at TIMESTAMPTZ DEFAULT NOW()
         )
-      `).catch(() => { });
+      `,
+        )
+        .catch(() => {});
     } catch (e: any) {
       console.warn('[AnalyticsService] ensureTables notice:', e?.message);
     }
@@ -498,7 +571,10 @@ export class AnalyticsService implements OnModuleInit {
 
       const shareLogs = rawShareLogs.map((l: any) => ({
         ...l,
-        metadata: typeof l.metadata === 'string' ? JSON.parse(l.metadata || '{}') : (l.metadata || {}),
+        metadata:
+          typeof l.metadata === 'string'
+            ? JSON.parse(l.metadata || '{}')
+            : l.metadata || {},
       }));
 
       let shareFbCount = 0;
@@ -534,7 +610,15 @@ export class AnalyticsService implements OnModuleInit {
       };
 
       // Generate multi-granularity charts for all 7 levels (minute, hour, day, week, month, quarter, year)
-      const allGranularities: TimeGranularity[] = ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'];
+      const allGranularities: TimeGranularity[] = [
+        'minute',
+        'hour',
+        'day',
+        'week',
+        'month',
+        'quarter',
+        'year',
+      ];
 
       const generateAllGranularitiesForCat = (catKey: string) => {
         const result: Record<string, any[]> = {};
@@ -544,36 +628,45 @@ export class AnalyticsService implements OnModuleInit {
         return result;
       };
 
-      const connGranularCharts = generateAllGranularitiesForCat('top_connections');
-      const oppGranularCharts = generateAllGranularitiesForCat('top_opportunities');
-      const eventGranularCharts = generateAllGranularitiesForCat('top_events_meetings');
+      const connGranularCharts =
+        generateAllGranularitiesForCat('top_connections');
+      const oppGranularCharts =
+        generateAllGranularitiesForCat('top_opportunities');
+      const eventGranularCharts = generateAllGranularitiesForCat(
+        'top_events_meetings',
+      );
       const refGranularCharts = generateAllGranularitiesForCat('top_referrals');
-      const sentimentGranularCharts = generateAllGranularitiesForCat('activity_sentiment');
-      const shareGranularCharts = generateAllGranularitiesForCat('external_shares');
+      const sentimentGranularCharts =
+        generateAllGranularitiesForCat('activity_sentiment');
+      const shareGranularCharts =
+        generateAllGranularitiesForCat('external_shares');
 
       // Member stats tracking map
-      const memberStatsMap = new Map<string, {
-        id: string;
-        code: string;
-        name: string;
-        company: string;
-        title: string;
-        avatar: string;
-        department: string;
-        phone: string;
-        email: string;
-        feePaid: number;
-        connectionsCount: number;
-        publicOppsShared: number;
-        allOppsShared: number;
-        oppsWon: number;
-        dealsValue: number;
-        eventsAttended: number;
-        feedInteractions: number;
-        referralsCount: number;
-        interactionScore: number;
-        totalValueVnd: number;
-      }>();
+      const memberStatsMap = new Map<
+        string,
+        {
+          id: string;
+          code: string;
+          name: string;
+          company: string;
+          title: string;
+          avatar: string;
+          department: string;
+          phone: string;
+          email: string;
+          feePaid: number;
+          connectionsCount: number;
+          publicOppsShared: number;
+          allOppsShared: number;
+          oppsWon: number;
+          dealsValue: number;
+          eventsAttended: number;
+          feedInteractions: number;
+          referralsCount: number;
+          interactionScore: number;
+          totalValueVnd: number;
+        }
+      >();
 
       for (const m of members) {
         const fee = Number(m.fee_paid) || 10000000;
@@ -602,7 +695,8 @@ export class AnalyticsService implements OnModuleInit {
 
         memberStatsMap.set(String(m.id).toLowerCase(), entry);
         if (m.code) memberStatsMap.set(String(m.code).toLowerCase(), entry);
-        if (m.user_id) memberStatsMap.set(String(m.user_id).toLowerCase(), entry);
+        if (m.user_id)
+          memberStatsMap.set(String(m.user_id).toLowerCase(), entry);
       }
 
       // Count connections
@@ -627,7 +721,8 @@ export class AnalyticsService implements OnModuleInit {
       let totalClubWonValue = 0;
 
       for (const opp of opportunities) {
-        const val = Number(opp.budget_max) || Number(opp.budget_min) || 50000000;
+        const val =
+          Number(opp.budget_max) || Number(opp.budget_min) || 50000000;
         totalClubOppValue += val;
 
         const posterId = String(opp.poster_id || '').toLowerCase();
@@ -678,15 +773,27 @@ export class AnalyticsService implements OnModuleInit {
 
       // Deduplicate member stats by member ID
       const uniqueStats = Array.from(
-        new Map(members.map(m => [m.id, memberStatsMap.get(String(m.id).toLowerCase())!])).values()
+        new Map(
+          members.map((m) => [
+            m.id,
+            memberStatsMap.get(String(m.id).toLowerCase())!,
+          ]),
+        ).values(),
       ).filter(Boolean);
 
       uniqueStats.forEach((m) => {
-        m.interactionScore = (m.connectionsCount * 10) + (m.publicOppsShared * 15) + (m.eventsAttended * 20) + (m.feedInteractions * 3);
+        m.interactionScore =
+          m.connectionsCount * 10 +
+          m.publicOppsShared * 15 +
+          m.eventsAttended * 20 +
+          m.feedInteractions * 3;
       });
 
       // Medal Tier helper - Top 10 Kim Cương, Bạch Kim, Vàng
-      const assignTiers = (list: any[], catType: 'connections' | 'opportunities' | 'events' | 'referrals') => {
+      const assignTiers = (
+        list: any[],
+        catType: 'connections' | 'opportunities' | 'events' | 'referrals',
+      ) => {
         return list.slice(0, 10).map((item, idx) => {
           let tier = 'Top 10 Doanh Nhân Xuất Sắc';
           let tierCode = 'TOP_HONOR';
@@ -717,7 +824,9 @@ export class AnalyticsService implements OnModuleInit {
           } else if (catType === 'events') {
             valueStr = item.eventsAttended + ' Sự kiện tham gia';
           } else {
-            valueStr = (item.referralsCount || item.connectionsCount || 0) + ' Hội viên giới thiệu';
+            valueStr =
+              (item.referralsCount || item.connectionsCount || 0) +
+              ' Hội viên giới thiệu';
           }
 
           return {
@@ -734,29 +843,46 @@ export class AnalyticsService implements OnModuleInit {
 
       // CHỈ XẾP HẠNG HỘI VIÊN KHI CÓ DỮ LIỆU THỰC TẾ PHÁT SINH (> 0), KHÔNG TỰ BỊA TOP KHI CHƯA CÓ HOẠT ĐỘNG
       const validConnectionsList = [...uniqueStats]
-        .filter(m => (m.connectionsCount || 0) > 0)
-        .sort((a, b) => b.connectionsCount - a.connectionsCount || b.interactionScore - a.interactionScore);
+        .filter((m) => (m.connectionsCount || 0) > 0)
+        .sort(
+          (a, b) =>
+            b.connectionsCount - a.connectionsCount ||
+            b.interactionScore - a.interactionScore,
+        );
       const topConnections = assignTiers(validConnectionsList, 'connections');
 
       // Danh mục Cơ hội: BẮT BUỘC chỉ xếp hạng những ai THỰC SỰ đã đăng cơ hội công khai (> 0)
       const validOppsList = [...uniqueStats]
-        .filter(m => (m.publicOppsShared || 0) > 0)
-        .sort((a, b) => (b.publicOppsShared || 0) - (a.publicOppsShared || 0) || (b.dealsValue || 0) - (a.dealsValue || 0));
+        .filter((m) => (m.publicOppsShared || 0) > 0)
+        .sort(
+          (a, b) =>
+            (b.publicOppsShared || 0) - (a.publicOppsShared || 0) ||
+            (b.dealsValue || 0) - (a.dealsValue || 0),
+        );
       const topOpportunities = assignTiers(validOppsList, 'opportunities');
 
       const validEventsList = [...uniqueStats]
-        .filter(m => (m.eventsAttended || 0) > 0)
-        .sort((a, b) => b.eventsAttended - a.eventsAttended || b.feedInteractions - a.feedInteractions);
+        .filter((m) => (m.eventsAttended || 0) > 0)
+        .sort(
+          (a, b) =>
+            b.eventsAttended - a.eventsAttended ||
+            b.feedInteractions - a.feedInteractions,
+        );
       const topEventsMeetings = assignTiers(validEventsList, 'events');
 
       const validReferralsList = [...uniqueStats]
-        .filter(m => (m.referralsCount || 0) > 0)
+        .filter((m) => (m.referralsCount || 0) > 0)
         .sort((a, b) => (b.referralsCount || 0) - (a.referralsCount || 0));
       const topReferrals = assignTiers(validReferralsList, 'referrals');
 
-      const totalClubValueContributed = uniqueStats.reduce((sum, m) => sum + m.totalValueVnd, 0);
-      const activeMembers = uniqueStats.filter(m => m.interactionScore >= 20);
-      const needsSupportMembers = uniqueStats.filter(m => m.interactionScore < 20);
+      const totalClubValueContributed = uniqueStats.reduce(
+        (sum, m) => sum + m.totalValueVnd,
+        0,
+      );
+      const activeMembers = uniqueStats.filter((m) => m.interactionScore >= 20);
+      const needsSupportMembers = uniqueStats.filter(
+        (m) => m.interactionScore < 20,
+      );
 
       const leastActiveTop3 = [...uniqueStats]
         .sort((a, b) => a.interactionScore - b.interactionScore)
@@ -765,10 +891,14 @@ export class AnalyticsService implements OnModuleInit {
           ...m,
           rank: idx + 1,
           statusLabel: 'Cần hỗ trợ kết nối',
-          warningReason: m.eventsAttended === 0
-            ? 'Chưa tham gia sự kiện trong kỳ'
-            : (m.connectionsCount === 0 ? 'Chưa phát sinh kết nối giao thương' : 'Chưa cập nhật hoạt động gần đây'),
-          actionNeeded: 'Ban Thư Ký liên hệ giới thiệu đối tác giao thương phù hợp',
+          warningReason:
+            m.eventsAttended === 0
+              ? 'Chưa tham gia sự kiện trong kỳ'
+              : m.connectionsCount === 0
+                ? 'Chưa phát sinh kết nối giao thương'
+                : 'Chưa cập nhật hoạt động gần đây',
+          actionNeeded:
+            'Ban Thư Ký liên hệ giới thiệu đối tác giao thương phù hợp',
         }));
 
       // Sentiment trend data
@@ -785,60 +915,146 @@ export class AnalyticsService implements OnModuleInit {
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
           totalCount: uniqueStats.length,
-          ratePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
+          ratePercent:
+            uniqueStats.length > 0
+              ? Math.round((activeMembers.length / uniqueStats.length) * 100)
+              : 0,
         },
       ];
 
       // Pie chart distributions
-      const connAccepted = connections.filter(c => c.status === 'accepted' || c.status === 'connected').length;
-      const connPending = connections.filter(c => c.status === 'pending').length;
+      const connAccepted = connections.filter(
+        (c) => c.status === 'accepted' || c.status === 'connected',
+      ).length;
+      const connPending = connections.filter(
+        (c) => c.status === 'pending',
+      ).length;
       const connPieChartData = [
-        { name: '1-on-1 Trực tiếp', value: connAccepted > 0 ? connAccepted : 1, fill: '#003B95' },
-        { name: 'Kết nối Ban Điều Hành', value: Math.max(1, Math.round(connAccepted * 0.4)), fill: '#059669' },
-        { name: 'Chờ phản hồi', value: connPending > 0 ? connPending : 1, fill: '#F59E0B' },
-        { name: 'Cuộc gặp B2B', value: bMeetings.length > 0 ? bMeetings.length : 1, fill: '#7C3AED' },
+        {
+          name: '1-on-1 Trực tiếp',
+          value: connAccepted > 0 ? connAccepted : 1,
+          fill: '#003B95',
+        },
+        {
+          name: 'Kết nối Ban Điều Hành',
+          value: Math.max(1, Math.round(connAccepted * 0.4)),
+          fill: '#059669',
+        },
+        {
+          name: 'Chờ phản hồi',
+          value: connPending > 0 ? connPending : 1,
+          fill: '#F59E0B',
+        },
+        {
+          name: 'Cuộc gặp B2B',
+          value: bMeetings.length > 0 ? bMeetings.length : 1,
+          fill: '#7C3AED',
+        },
       ];
 
-      const oppBuyCount = opportunities.filter(o => (o.type || '').toLowerCase().includes('buy') || (o.type || '').toLowerCase().includes('cần')).length;
-      const oppSellCount = opportunities.filter(o => (o.type || '').toLowerCase().includes('sell') || (o.type || '').toLowerCase().includes('cung')).length;
-      const oppOtherCount = Math.max(0, opportunities.length - oppBuyCount - oppSellCount);
+      const oppBuyCount = opportunities.filter(
+        (o) =>
+          (o.type || '').toLowerCase().includes('buy') ||
+          (o.type || '').toLowerCase().includes('cần'),
+      ).length;
+      const oppSellCount = opportunities.filter(
+        (o) =>
+          (o.type || '').toLowerCase().includes('sell') ||
+          (o.type || '').toLowerCase().includes('cung'),
+      ).length;
+      const oppOtherCount = Math.max(
+        0,
+        opportunities.length - oppBuyCount - oppSellCount,
+      );
       const oppPieChartData = [
-        { name: 'Nhu cầu Mua / Cần cung cấp', value: Math.max(1, oppBuyCount), fill: '#003B95' },
-        { name: 'Sản phẩm Bán / Cung ứng', value: Math.max(1, oppSellCount), fill: '#059669' },
-        { name: 'Hợp tác liên minh & M&A', value: Math.max(1, oppOtherCount), fill: '#F59E0B' },
+        {
+          name: 'Nhu cầu Mua / Cần cung cấp',
+          value: Math.max(1, oppBuyCount),
+          fill: '#003B95',
+        },
+        {
+          name: 'Sản phẩm Bán / Cung ứng',
+          value: Math.max(1, oppSellCount),
+          fill: '#059669',
+        },
+        {
+          name: 'Hợp tác liên minh & M&A',
+          value: Math.max(1, oppOtherCount),
+          fill: '#F59E0B',
+        },
       ];
 
       const eventPieChartData = [
-        { name: 'Sự kiện toàn CLB', value: Math.max(1, eventRegs.length), fill: '#003B95' },
-        { name: 'Cuộc họp Ban chuyên môn', value: Math.max(1, bMeetings.length), fill: '#059669' },
+        {
+          name: 'Sự kiện toàn CLB',
+          value: Math.max(1, eventRegs.length),
+          fill: '#003B95',
+        },
+        {
+          name: 'Cuộc họp Ban chuyên môn',
+          value: Math.max(1, bMeetings.length),
+          fill: '#059669',
+        },
       ];
 
       const refPieChartData = [
-        { name: 'Hội viên Kim Cương', value: Math.max(1, Math.round(uniqueStats.length * 0.15)), fill: '#06B6D4' },
-        { name: 'Hội viên Bạch Kim', value: Math.max(1, Math.round(uniqueStats.length * 0.25)), fill: '#64748B' },
-        { name: 'Hội viên Vàng', value: Math.max(1, Math.round(uniqueStats.length * 0.35)), fill: '#F59E0B' },
-        { name: 'Hội viên Tiêu Chuẩn', value: Math.max(1, Math.round(uniqueStats.length * 0.25)), fill: '#003B95' },
+        {
+          name: 'Hội viên Kim Cương',
+          value: Math.max(1, Math.round(uniqueStats.length * 0.15)),
+          fill: '#06B6D4',
+        },
+        {
+          name: 'Hội viên Bạch Kim',
+          value: Math.max(1, Math.round(uniqueStats.length * 0.25)),
+          fill: '#64748B',
+        },
+        {
+          name: 'Hội viên Vàng',
+          value: Math.max(1, Math.round(uniqueStats.length * 0.35)),
+          fill: '#F59E0B',
+        },
+        {
+          name: 'Hội viên Tiêu Chuẩn',
+          value: Math.max(1, Math.round(uniqueStats.length * 0.25)),
+          fill: '#003B95',
+        },
       ];
 
       // TOP 1, TOP 2, TOP 3 BẮT BUỘC PHẢI CÓ DỮ LIỆU THỰC TẾ (> 0), TUYỆT ĐỐI KHÔNG GÁN TOP KHI BẰNG 0
       const membersWithRealActivity = [...uniqueStats]
-        .filter(m => (m.totalValueVnd || 0) > 0 || (m.publicOppsShared || 0) > 0 || (m.connectionsCount || 0) > 0 || (m.eventsAttended || 0) > 0 || (m.feedInteractions || 0) > 0 || (m.referralsCount || 0) > 0)
-        .sort((a, b) => (b.totalValueVnd - a.totalValueVnd) || (b.interactionScore - a.interactionScore));
+        .filter(
+          (m) =>
+            (m.totalValueVnd || 0) > 0 ||
+            (m.publicOppsShared || 0) > 0 ||
+            (m.connectionsCount || 0) > 0 ||
+            (m.eventsAttended || 0) > 0 ||
+            (m.feedInteractions || 0) > 0 ||
+            (m.referralsCount || 0) > 0,
+        )
+        .sort(
+          (a, b) =>
+            b.totalValueVnd - a.totalValueVnd ||
+            b.interactionScore - a.interactionScore,
+        );
 
-      const top1 = membersWithRealActivity.length > 0 ? membersWithRealActivity[0] : null;
-      const top2 = membersWithRealActivity.length > 1 ? membersWithRealActivity[1] : null;
-      const top3 = membersWithRealActivity.length > 2 ? membersWithRealActivity[2] : null;
+      const top1 =
+        membersWithRealActivity.length > 0 ? membersWithRealActivity[0] : null;
+      const top2 =
+        membersWithRealActivity.length > 1 ? membersWithRealActivity[1] : null;
+      const top3 =
+        membersWithRealActivity.length > 2 ? membersWithRealActivity[2] : null;
       const top3List = membersWithRealActivity.slice(0, 3);
 
-      const granLabel = {
-        minute: 'Theo phút',
-        hour: 'Theo giờ',
-        day: 'Theo ngày',
-        week: 'Theo tuần',
-        month: 'Theo tháng',
-        quarter: 'Theo quý',
-        year: 'Theo năm',
-      }[granularity] || 'Theo tháng';
+      const granLabel =
+        {
+          minute: 'Theo phút',
+          hour: 'Theo giờ',
+          day: 'Theo ngày',
+          week: 'Theo tuần',
+          month: 'Theo tháng',
+          quarter: 'Theo quý',
+          year: 'Theo năm',
+        }[granularity] || 'Theo tháng';
 
       return {
         ok: true,
@@ -849,13 +1065,21 @@ export class AnalyticsService implements OnModuleInit {
           totalValueContributed: totalClubValueContributed,
           totalClubOpportunities: opportunities.length,
           totalDealsWon: totalClubWonCount,
-          totalInteractions: eventRegs.length + feedLikes.length + feedComments.length + opportunities.length + connections.length,
+          totalInteractions:
+            eventRegs.length +
+            feedLikes.length +
+            feedComments.length +
+            opportunities.length +
+            connections.length,
           totalConnections: connections.length,
           totalMeetings: bMeetings.length,
           totalEvents: eventRegs.length,
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
-          activeRatePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
+          activeRatePercent:
+            uniqueStats.length > 0
+              ? Math.round((activeMembers.length / uniqueStats.length) * 100)
+              : 0,
         },
         categories: {
           activitySentiment: {
@@ -907,14 +1131,21 @@ export class AnalyticsService implements OnModuleInit {
             metricLabel: 'Lượt click công khai',
             totalClicks: totalShareClicks,
             totalConversions: shareConversions,
-            conversionRatePercent: totalShareClicks > 0 ? Math.round((shareConversions / totalShareClicks) * 100) : 0,
+            conversionRatePercent:
+              totalShareClicks > 0
+                ? Math.round((shareConversions / totalShareClicks) * 100)
+                : 0,
             chartData: shareGranularCharts[granularity] || [],
             chartMeta: CHART_METAS.external_shares,
             granularities: shareGranularCharts,
             platforms: [
               { name: 'Facebook', count: shareFbCount, color: '#1877F2' },
               { name: 'Zalo', count: shareZaloCount, color: '#0068FF' },
-              { name: 'Trình duyệt Web', count: shareWebCount, color: '#003B95' },
+              {
+                name: 'Trình duyệt Web',
+                count: shareWebCount,
+                color: '#003B95',
+              },
               { name: 'Nguồn khác', count: shareOtherCount, color: '#64748B' },
             ],
             recentLogs: shareLogs.slice(0, 15),
@@ -923,7 +1154,10 @@ export class AnalyticsService implements OnModuleInit {
         externalShareClicks: {
           totalClicks: totalShareClicks,
           totalConversions: shareConversions,
-          conversionRatePercent: totalShareClicks > 0 ? Math.round((shareConversions / totalShareClicks) * 100) : 0,
+          conversionRatePercent:
+            totalShareClicks > 0
+              ? Math.round((shareConversions / totalShareClicks) * 100)
+              : 0,
           facebook: shareFbCount,
           zalo: shareZaloCount,
           web: shareWebCount,
@@ -938,7 +1172,10 @@ export class AnalyticsService implements OnModuleInit {
           activeCount: activeMembers.length,
           needsSupportCount: needsSupportMembers.length,
           totalMembers: uniqueStats.length,
-          activeRatePercent: uniqueStats.length > 0 ? Math.round((activeMembers.length / uniqueStats.length) * 100) : 0,
+          activeRatePercent:
+            uniqueStats.length > 0
+              ? Math.round((activeMembers.length / uniqueStats.length) * 100)
+              : 0,
           sentimentTrendData,
           leastActiveTop3,
         },
@@ -988,7 +1225,8 @@ export class AnalyticsService implements OnModuleInit {
     }
     return {
       ok: true,
-      message: 'Nhập dữ liệu thành công. Các chỉ số thống kê đã được đồng bộ vào hệ thống.',
+      message:
+        'Nhập dữ liệu thành công. Các chỉ số thống kê đã được đồng bộ vào hệ thống.',
       rowsProcessed: Array.isArray(body?.rows) ? body.rows.length : 1,
     };
   }

@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { parsePersonId, composePersonId } from '../connect-app.utils';
 import * as crypto from 'crypto';
@@ -16,7 +22,7 @@ export class ConnectCustomerService {
 
     if (customers.length === 0) return { ok: true, customers: [] };
 
-    const customerIds = customers.map(c => c.id);
+    const customerIds = customers.map((c) => c.id);
     const links = await this.prisma.$queryRaw<any[]>`
       SELECT customer_id, tag_id FROM public.bc_customer_tag_links
       WHERE customer_id::uuid = ANY(${customerIds}::uuid[])
@@ -29,9 +35,14 @@ export class ConnectCustomerService {
       linksMap.set(link.customer_id, list);
     }
 
-    const result = customers.map(c => ({
+    const result = customers.map((c) => ({
       id: c.id,
-      personId: composePersonId(c.target_kind, c.target_user_id, c.target_card_id, c.target_guest_id),
+      personId: composePersonId(
+        c.target_kind,
+        c.target_user_id,
+        c.target_card_id,
+        c.target_guest_id,
+      ),
       displayName: c.display_name,
       companyName: c.company_name,
       stage: c.stage,
@@ -39,8 +50,12 @@ export class ConnectCustomerService {
       currency: c.currency,
       sourceLabel: c.source_label,
       note: c.note,
-      nextActionAt: c.next_action_at ? new Date(c.next_action_at).toISOString() : null,
-      lastContactAt: c.last_contact_at ? new Date(c.last_contact_at).toISOString() : null,
+      nextActionAt: c.next_action_at
+        ? new Date(c.next_action_at).toISOString()
+        : null,
+      lastContactAt: c.last_contact_at
+        ? new Date(c.last_contact_at).toISOString()
+        : null,
       tagIds: linksMap.get(c.id) ?? [],
       createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
       updatedAt: c.updated_at ? new Date(c.updated_at).toISOString() : null,
@@ -50,7 +65,8 @@ export class ConnectCustomerService {
   }
 
   async createBcCustomer(userId: string, input: any) {
-    const { targetKind, targetUserId, targetCardId, targetGuestId } = parsePersonId(input.personId);
+    const { targetKind, targetUserId, targetCardId, targetGuestId } =
+      parsePersonId(input.personId);
 
     if (targetUserId === userId) {
       throw new BadRequestException('cannot_add_self_as_customer');
@@ -125,12 +141,14 @@ export class ConnectCustomerService {
         currency: c.currency,
         sourceLabel: c.source_label,
         note: c.note,
-        nextActionAt: c.next_action_at ? new Date(c.next_action_at).toISOString() : null,
+        nextActionAt: c.next_action_at
+          ? new Date(c.next_action_at).toISOString()
+          : null,
         lastContactAt: null,
         tagIds: [],
         createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
         updatedAt: c.updated_at ? new Date(c.updated_at).toISOString() : null,
-      }
+      },
     };
   }
 
@@ -146,11 +164,20 @@ export class ConnectCustomerService {
 
     const now = new Date();
     const stage = input.stage !== undefined ? input.stage : c.stage;
-    const expectedValue = input.expectedValue !== undefined ? input.expectedValue : c.expected_value;
+    const expectedValue =
+      input.expectedValue !== undefined
+        ? input.expectedValue
+        : c.expected_value;
     const currency = input.currency !== undefined ? input.currency : c.currency;
-    const sourceLabel = input.sourceLabel !== undefined ? input.sourceLabel : c.source_label;
+    const sourceLabel =
+      input.sourceLabel !== undefined ? input.sourceLabel : c.source_label;
     const note = input.note !== undefined ? input.note : c.note;
-    const nextActionAt = input.nextActionAt !== undefined ? (input.nextActionAt ? new Date(input.nextActionAt) : null) : c.next_action_at;
+    const nextActionAt =
+      input.nextActionAt !== undefined
+        ? input.nextActionAt
+          ? new Date(input.nextActionAt)
+          : null
+        : c.next_action_at;
 
     await this.prisma.$executeRaw`
       UPDATE public.bc_customers
@@ -173,7 +200,12 @@ export class ConnectCustomerService {
       ok: true,
       customer: {
         id: c.id,
-        personId: composePersonId(c.target_kind, c.target_user_id, c.target_card_id, c.target_guest_id),
+        personId: composePersonId(
+          c.target_kind,
+          c.target_user_id,
+          c.target_card_id,
+          c.target_guest_id,
+        ),
         displayName: c.display_name,
         companyName: c.company_name,
         stage,
@@ -181,12 +213,16 @@ export class ConnectCustomerService {
         currency,
         sourceLabel,
         note,
-        nextActionAt: nextActionAt ? new Date(nextActionAt).toISOString() : null,
-        lastContactAt: c.last_contact_at ? new Date(c.last_contact_at).toISOString() : null,
-        tagIds: links.map(l => l.tag_id),
+        nextActionAt: nextActionAt
+          ? new Date(nextActionAt).toISOString()
+          : null,
+        lastContactAt: c.last_contact_at
+          ? new Date(c.last_contact_at).toISOString()
+          : null,
+        tagIds: links.map((l) => l.tag_id),
         createdAt: c.created_at ? new Date(c.created_at).toISOString() : null,
         updatedAt: now.toISOString(),
-      }
+      },
     };
   }
 
@@ -210,7 +246,8 @@ export class ConnectCustomerService {
     const customer = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+    if (customer.length === 0)
+      throw new ForbiddenException('customer_access_denied');
 
     const logs = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.bc_customer_logs
@@ -220,14 +257,16 @@ export class ConnectCustomerService {
 
     return {
       ok: true,
-      logs: logs.map(l => ({
+      logs: logs.map((l) => ({
         id: l.id,
         customerId: l.customer_id,
         kind: l.kind,
         body: l.body,
-        occurredAt: l.occurred_at ? new Date(l.occurred_at).toISOString() : null,
+        occurredAt: l.occurred_at
+          ? new Date(l.occurred_at).toISOString()
+          : null,
         createdAt: l.created_at ? new Date(l.created_at).toISOString() : null,
-      }))
+      })),
     };
   }
 
@@ -235,10 +274,13 @@ export class ConnectCustomerService {
     const customer = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_customers WHERE id = ${input.customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+    if (customer.length === 0)
+      throw new ForbiddenException('customer_access_denied');
 
     const logId = crypto.randomUUID();
-    const occurredAt = input.occurredAt ? new Date(input.occurredAt) : new Date();
+    const occurredAt = input.occurredAt
+      ? new Date(input.occurredAt)
+      : new Date();
     const now = new Date();
 
     await this.prisma.$executeRaw`
@@ -273,7 +315,7 @@ export class ConnectCustomerService {
         body: input.body,
         occurredAt: occurredAt.toISOString(),
         createdAt: now.toISOString(),
-      }
+      },
     };
   }
 
@@ -289,14 +331,14 @@ export class ConnectCustomerService {
 
     return {
       ok: true,
-      tags: tags.map(t => ({
+      tags: tags.map((t) => ({
         id: t.id,
         name: t.name,
         normalizedName: t.normalized_name,
         count: t.count ?? 0,
         createdAt: t.created_at ? new Date(t.created_at).toISOString() : null,
         updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
-      }))
+      })),
     };
   }
 
@@ -319,7 +361,7 @@ export class ConnectCustomerService {
           count: 0,
           createdAt: t.created_at ? new Date(t.created_at).toISOString() : null,
           updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
-        }
+        },
       };
     }
 
@@ -343,7 +385,7 @@ export class ConnectCustomerService {
         count: 0,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-      }
+      },
     };
   }
 
@@ -379,7 +421,7 @@ export class ConnectCustomerService {
         count: t.count ?? 0,
         createdAt: t.created_at ? new Date(t.created_at).toISOString() : null,
         updatedAt: t.updated_at ? new Date(t.updated_at).toISOString() : null,
-      }
+      },
     };
   }
 
@@ -397,7 +439,8 @@ export class ConnectCustomerService {
     const customer = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+    if (customer.length === 0)
+      throw new ForbiddenException('customer_access_denied');
 
     const tagIds: string[] = [];
     for (const name of names) {
@@ -423,7 +466,8 @@ export class ConnectCustomerService {
     const customer = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_customers WHERE id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+    if (customer.length === 0)
+      throw new ForbiddenException('customer_access_denied');
 
     const needs = await this.prisma.$queryRaw<any[]>`
       SELECT id, customer_id, kind, body, priority, status, created_at, updated_at
@@ -434,7 +478,7 @@ export class ConnectCustomerService {
 
     return {
       ok: true,
-      needs: needs.map(n => ({
+      needs: needs.map((n) => ({
         id: n.id,
         customerId: n.customer_id,
         kind: n.kind,
@@ -443,7 +487,7 @@ export class ConnectCustomerService {
         status: n.status,
         createdAt: n.created_at ? new Date(n.created_at).toISOString() : null,
         updatedAt: n.updated_at ? new Date(n.updated_at).toISOString() : null,
-      }))
+      })),
     };
   }
 
@@ -451,7 +495,8 @@ export class ConnectCustomerService {
     const customer = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.bc_customers WHERE id = ${input.customerId}::uuid AND owner_user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    if (customer.length === 0) throw new ForbiddenException('customer_access_denied');
+    if (customer.length === 0)
+      throw new ForbiddenException('customer_access_denied');
 
     const needId = crypto.randomUUID();
     const now = new Date();
@@ -475,7 +520,7 @@ export class ConnectCustomerService {
         status: 'open',
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-      }
+      },
     };
   }
 
@@ -516,7 +561,7 @@ export class ConnectCustomerService {
         status,
         createdAt: n.created_at ? new Date(n.created_at).toISOString() : null,
         updatedAt: now.toISOString(),
-      }
+      },
     };
   }
 
@@ -528,7 +573,8 @@ export class ConnectCustomerService {
       LIMIT 1
     `.catch(() => [] as any[]);
 
-    if (existing.length === 0) throw new ForbiddenException('need_access_denied');
+    if (existing.length === 0)
+      throw new ForbiddenException('need_access_denied');
 
     await this.prisma.$executeRaw`
       DELETE FROM public.bc_customer_needs WHERE id = ${needId}::uuid
@@ -579,11 +625,20 @@ export class ConnectCustomerService {
       WHERE customer_id = ${customerId}::uuid AND owner_user_id = ${userId}::uuid
     `.catch(() => [] as any[]);
 
-    const approvedTagNames = feedback.filter(f => f.verdict === 'good').map(f => f.tag_name);
-    const rejectedTagNames = feedback.filter(f => f.verdict === 'bad').map(f => f.tag_name);
+    const approvedTagNames = feedback
+      .filter((f) => f.verdict === 'good')
+      .map((f) => f.tag_name);
+    const rejectedTagNames = feedback
+      .filter((f) => f.verdict === 'bad')
+      .map((f) => f.tag_name);
 
-    const logTexts = logs.map(l => `[${l.occurred_at ? new Date(l.occurred_at).toLocaleDateString() : ''} - ${l.kind}] ${l.body || ''}`);
-    const needTexts = needs.map(n => `[${n.status} - ${n.priority}] ${n.body}`);
+    const logTexts = logs.map(
+      (l) =>
+        `[${l.occurred_at ? new Date(l.occurred_at).toLocaleDateString() : ''} - ${l.kind}] ${l.body || ''}`,
+    );
+    const needTexts = needs.map(
+      (n) => `[${n.status} - ${n.priority}] ${n.body}`,
+    );
 
     const response = await suggestCustomerTags({
       stageLabel: c.stage,
@@ -592,8 +647,8 @@ export class ConnectCustomerService {
       note: c.note || '',
       logs: logTexts,
       needs: needTexts,
-      existingTagNames: existingTags.map(t => t.name),
-      currentTagNames: currentTags.map(t => t.name),
+      existingTagNames: existingTags.map((t) => t.name),
+      currentTagNames: currentTags.map((t) => t.name),
       approvedTagNames,
       rejectedTagNames,
     });
@@ -627,12 +682,12 @@ export class ConnectCustomerService {
     `.catch(() => [] as any[]);
 
     return {
-      runs: runs.map(r => ({
+      runs: runs.map((r) => ({
         id: r.id,
         customerId: r.customer_id,
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : null,
         suggestions: r.suggestions,
-      }))
+      })),
     };
   }
 
@@ -677,7 +732,7 @@ export class ConnectCustomerService {
     `.catch(() => [] as any[]);
 
     return {
-      feedback: feedback.map(f => ({
+      feedback: feedback.map((f) => ({
         id: f.id,
         customerId: f.customer_id,
         runId: f.run_id,
@@ -685,10 +740,9 @@ export class ConnectCustomerService {
         verdict: f.verdict,
         createdAt: f.created_at ? new Date(f.created_at).toISOString() : null,
         updatedAt: f.updated_at ? new Date(f.updated_at).toISOString() : null,
-      }))
+      })),
     };
   }
-
 }
 
 async function suggestCustomerTags(input: {
@@ -703,66 +757,82 @@ async function suggestCustomerTags(input: {
   approvedTagNames?: string[];
   rejectedTagNames?: string[];
 }) {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) return { ok: false, error: "unavailable" as const };
+  const apiKey = process.env['LOVABLE_API_KEY'];
+  if (!apiKey) return { ok: false, error: 'unavailable' as const };
 
   const context = [
-    `TĂªn: ${input.displayName || "(khĂ´ng rĂµ)"}`,
-    `CĂ´ng ty: ${input.companyName || "(khĂ´ng rĂµ)"}`,
+    `TĂªn: ${input.displayName || '(khĂ´ng rĂµ)'}`,
+    `CĂ´ng ty: ${input.companyName || '(khĂ´ng rĂµ)'}`,
     `Giai Ä‘oáº¡n: ${input.stageLabel}`,
-    `Ghi chĂº: ${input.note || "(trá»‘ng)"}`,
-    `Lá»‹ch sá»­ chÄƒm sĂ³c:\n${input.logs.length ? input.logs.map((l) => `- ${l}`).join("\n") : "(trá»‘ng)"}`,
-    `Äiá»ƒm Ä‘au & nhu cáº§u:\n${input.needs.length ? input.needs.map((n) => `- ${n}`).join("\n") : "(trá»‘ng)"}`,
-    `NhĂ£n Ä‘Ă£ gáº¯n: ${input.currentTagNames.join(", ") || "(chÆ°a cĂ³)"}`,
-    `Danh má»¥c nhĂ£n hiá»‡n cĂ³: ${input.existingTagNames.join(", ") || "(chÆ°a cĂ³)"}`,
-    `NhĂ£n ngÆ°á»i dĂ¹ng Ä‘Ă¡nh giĂ¡ ÄĂNG trÆ°á»›c Ä‘Ă¢y: ${(input.approvedTagNames ?? []).join(", ") || "(chÆ°a cĂ³)"}`,
+    `Ghi chĂº: ${input.note || '(trá»‘ng)'}`,
+    `Lá»‹ch sá»­ chÄƒm sĂ³c:\n${input.logs.length ? input.logs.map((l) => `- ${l}`).join('\n') : '(trá»‘ng)'}`,
+    `Äiá»ƒm Ä‘au & nhu cáº§u:\n${input.needs.length ? input.needs.map((n) => `- ${n}`).join('\n') : '(trá»‘ng)'}`,
+    `NhĂ£n Ä‘Ă£ gáº¯n: ${input.currentTagNames.join(', ') || '(chÆ°a cĂ³)'}`,
+    `Danh má»¥c nhĂ£n hiá»‡n cĂ³: ${input.existingTagNames.join(', ') || '(chÆ°a cĂ³)'}`,
+    `NhĂ£n ngÆ°á»i dĂ¹ng Ä‘Ă¡nh giĂ¡ ÄĂNG trÆ°á»›c Ä‘Ă¢y: ${(input.approvedTagNames ?? []).join(', ') || '(chÆ°a cĂ³)'}`,
     `NhĂ£n ngÆ°á»i dĂ¹ng Ä‘Ă¡nh giĂ¡ SAI trÆ°á»›c Ä‘Ă¢y (tuyá»‡t Ä‘á»‘i khĂ´ng Ä‘á» xuáº¥t láº¡i): ${
-      (input.rejectedTagNames ?? []).join(", ") || "(chÆ°a cĂ³)"
+      (input.rejectedTagNames ?? []).join(', ') || '(chÆ°a cĂ³)'
     }`,
-  ].join("\n");
+  ].join('\n');
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      temperature: 0.2,
-      messages: [
-        {
-          role: "system",
-          content: `Báº¡n lĂ  trá»£ lĂ½ phĂ¢n nhĂ³m khĂ¡ch hĂ ng cho má»™t ngÆ°á»i bĂ¡n hĂ ng cĂ¡ nhĂ¢n.
+  const response = await fetch(
+    'https://ai.gateway.lovable.dev/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content: `Báº¡n lĂ  trá»£ lĂ½ phĂ¢n nhĂ³m khĂ¡ch hĂ ng cho má»™t ngÆ°á»i bĂ¡n hĂ ng cĂ¡ nhĂ¢n.
 Äá» xuáº¥t tá»‘i Ä‘a 5 NHĂƒN ngáº¯n Ä‘á»ƒ phĂ¢n nhĂ³m khĂ¡ch hĂ ng.
-Tráº£ vá» DUY NHáº¤T JSON dáº¡ng: {"suggestions":[{"name":"...","reason":"...","confidence":0.8}]}. KhĂ´ng markdown.`
-        },
-        { role: "user", content: context }
-      ]
-    })
-  });
+Tráº£ vá» DUY NHáº¤T JSON dáº¡ng: {"suggestions":[{"name":"...","reason":"...","confidence":0.8}]}. KhĂ´ng markdown.`,
+          },
+          { role: 'user', content: context },
+        ],
+      }),
+    },
+  );
 
-  if (!response.ok) return { ok: false, error: "unavailable" as const };
-  const json = await response.json() as any;
-  const content = json?.choices?.[0]?.message?.content ?? "";
-  
+  if (!response.ok) return { ok: false, error: 'unavailable' as const };
+  const json = await response.json();
+  const content = json?.choices?.[0]?.message?.content ?? '';
+
   try {
-    const text = content.replace(/```json/gi, "").replace(/```/g, "").trim();
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start < 0 || end <= start) return { ok: false, error: "unavailable" as const };
-    const parsed = JSON.parse(text.slice(start, end + 1)) as any;
-    const rawSuggestions = (parsed.suggestions ?? []).map((s: any) => ({
-      name: String(s.name || '').trim().slice(0, 24),
-      reason: String(s.reason || '').trim().slice(0, 120),
-      confidence: typeof s.confidence === 'number' ? s.confidence : 0.5,
-    })).filter((s: any) => s.name.length > 0).slice(0, 5);
+    const text = content
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start < 0 || end <= start)
+      return { ok: false, error: 'unavailable' as const };
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    const rawSuggestions = (parsed.suggestions ?? [])
+      .map((s: any) => ({
+        name: String(s.name || '')
+          .trim()
+          .slice(0, 24),
+        reason: String(s.reason || '')
+          .trim()
+          .slice(0, 120),
+        confidence: typeof s.confidence === 'number' ? s.confidence : 0.5,
+      }))
+      .filter((s: any) => s.name.length > 0)
+      .slice(0, 5);
 
-    const existing = new Set(input.existingTagNames.map(n => n.toLowerCase()));
-    const already = new Set(input.currentTagNames.map(n => n.toLowerCase()));
+    const existing = new Set(
+      input.existingTagNames.map((n) => n.toLowerCase()),
+    );
+    const already = new Set(input.currentTagNames.map((n) => n.toLowerCase()));
     const seen = new Set<string>();
     const suggestions: any[] = [];
-    
+
     for (const s of rawSuggestions) {
       const key = s.name.toLowerCase();
       if (seen.has(key) || already.has(key)) continue;
@@ -777,6 +847,6 @@ Tráº£ vá» DUY NHáº¤T JSON dáº¡ng: {"suggestions":[{"name":"...","re
 
     return { ok: true, suggestions };
   } catch {
-    return { ok: false, error: "unavailable" as const };
+    return { ok: false, error: 'unavailable' as const };
   }
 }

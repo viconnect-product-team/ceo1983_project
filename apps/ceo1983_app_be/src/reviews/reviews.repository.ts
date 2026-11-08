@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ReviewsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listReviews(filter: { sellerId?: string; productId?: string; companyName?: string }): Promise<any[]> {
+  async listReviews(filter: {
+    sellerId?: string;
+    productId?: string;
+    companyName?: string;
+  }): Promise<any[]> {
     const { sellerId, productId, companyName } = filter;
     if (productId) {
       return this.prisma.$queryRaw<any[]>`
@@ -46,7 +50,10 @@ export class ReviewsRepository {
     return this.listReviews({ sellerId });
   }
 
-  async findReviewerName(reviewerId: string, userId: string): Promise<string | null> {
+  async findReviewerName(
+    reviewerId: string,
+    userId: string,
+  ): Promise<string | null> {
     const memberRows = await this.prisma.$queryRaw<any[]>`
       SELECT name FROM public.members WHERE id::text = ${reviewerId} OR user_id::text = ${userId} LIMIT 1
     `.catch(() => [] as any[]);
@@ -93,28 +100,38 @@ export class ReviewsRepository {
       )
       RETURNING id, seller_id, product_id, company_name, reviewer_id, reviewer_name, reviewer_role, reviewer_avatar, rating, comment, review_type, images, created_at
     `.catch((err) => {
-      console.warn('[ReviewsRepository] insertReview raw fallback:', err?.message);
+      console.warn(
+        '[ReviewsRepository] insertReview raw fallback:',
+        err?.message,
+      );
       return [] as any[];
     });
 
-    return inserted[0] || {
-      id,
-      seller_id: sellerId,
-      product_id: productId,
-      company_name: companyName,
-      reviewer_id: reviewerId,
-      reviewer_name: reviewerName,
-      reviewer_role: reviewerRole,
-      reviewer_avatar: reviewerAvatar,
-      rating,
-      comment,
-      review_type: reviewType,
-      images,
-      created_at: new Date(),
-    };
+    return (
+      inserted[0] || {
+        id,
+        seller_id: sellerId,
+        product_id: productId,
+        company_name: companyName,
+        reviewer_id: reviewerId,
+        reviewer_name: reviewerName,
+        reviewer_role: reviewerRole,
+        reviewer_avatar: reviewerAvatar,
+        rating,
+        comment,
+        review_type: reviewType,
+        images,
+        created_at: new Date(),
+      }
+    );
   }
 
-  async updateReviewRaw(id: string, rating?: number, comment?: string, reviewType?: string): Promise<any> {
+  async updateReviewRaw(
+    id: string,
+    rating?: number,
+    comment?: string,
+    reviewType?: string,
+  ): Promise<any> {
     await this.prisma.$executeRaw`
       UPDATE public.reviews
       SET rating = COALESCE(${rating}, rating),

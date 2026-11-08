@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Body, Param, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiService } from './ai.service';
 import { AiCrmAnalyticsService } from './ai-crm-analytics.service';
@@ -19,8 +28,15 @@ export class AiController {
 
   /** POST /api/ai/ask — Hỏi đáp Trợ lý AI (Google Gemini 2.0 Flash / Smart Hybrid) */
   @Post('ask')
-  async askAssistant(@Request() req: any, @Body() body: { prompt: string; clientContext?: any }) {
-    const res = await this.aiService.askAssistant(req.user.id, body.prompt, body.clientContext);
+  async askAssistant(
+    @Request() req: any,
+    @Body() body: { prompt: string; clientContext?: any },
+  ) {
+    const res = await this.aiService.askAssistant(
+      req.user.id,
+      body.prompt,
+      body.clientContext,
+    );
     return { ok: true, data: res };
   }
 
@@ -28,7 +44,13 @@ export class AiController {
   @Post('ask-voice')
   async askVoiceAssistant(
     @Request() req: any,
-    @Body() body: { audioBase64?: string; mimeType?: string; prompt?: string; clientContext?: any },
+    @Body()
+    body: {
+      audioBase64?: string;
+      mimeType?: string;
+      prompt?: string;
+      clientContext?: any;
+    },
   ) {
     const res = await this.aiService.askVoiceAssistant(
       req.user.id,
@@ -54,22 +76,26 @@ export class AiController {
 
   /** POST /api/ai/audit — Ghi audit log (metadata only, không ghi prompt/answer) */
   @Post('audit')
-  async insertAudit(@Request() req: any, @Body() body: {
-    requestId: string;
-    associationId?: string | null;
-    capability: string;
-    permissionLevel: string;
-    provider: string;
-    model?: string | null;
-    usedFallback?: boolean;
-    fallbackReason?: string | null;
-    providerLatencyMs?: number;
-    totalLatencyMs?: number;
-    sourceTypes?: string[];
-    sourceCount?: number;
-    action?: string;
-    target?: string;
-  }) {
+  async insertAudit(
+    @Request() req: any,
+    @Body()
+    body: {
+      requestId: string;
+      associationId?: string | null;
+      capability: string;
+      permissionLevel: string;
+      provider: string;
+      model?: string | null;
+      usedFallback?: boolean;
+      fallbackReason?: string | null;
+      providerLatencyMs?: number;
+      totalLatencyMs?: number;
+      sourceTypes?: string[];
+      sourceCount?: number;
+      action?: string;
+      target?: string;
+    },
+  ) {
     await this.aiService.insertAiAudit({
       requestId: body.requestId,
       userId: req.user.id,
@@ -131,8 +157,14 @@ export class AiController {
 
   /** POST /api/ai/quota/record — Ghi nhận 1 câu hỏi và kiểm tra hạn mức */
   @Post('quota/record')
-  async recordQuestion(@Request() req: any, @Body() body: { question?: string }) {
-    const result = await this.aiService.checkAndIncrementUserQuota(req.user.id, body.question);
+  async recordQuestion(
+    @Request() req: any,
+    @Body() body: { question?: string },
+  ) {
+    const result = await this.aiService.checkAndIncrementUserQuota(
+      req.user.id,
+      body.question,
+    );
     return { ok: result.allowed, data: result.quota };
   }
 
@@ -149,7 +181,14 @@ export class AiController {
   @Post('admin/users/reset')
   async resetOrAdjustUserQuota(
     @Request() req: any,
-    @Body() body: { userId: string; resetCount?: boolean; addExtra?: number; newLimit?: number; unblock?: boolean }
+    @Body()
+    body: {
+      userId: string;
+      resetCount?: boolean;
+      addExtra?: number;
+      newLimit?: number;
+      unblock?: boolean;
+    },
   ) {
     const res = await this.aiService.resetOrAdjustUserQuota(body.userId, body);
     return res;
@@ -159,9 +198,12 @@ export class AiController {
   @Post('admin/users/block')
   async toggleBlockUserAi(
     @Request() req: any,
-    @Body() body: { userId: string; blocked: boolean }
+    @Body() body: { userId: string; blocked: boolean },
   ) {
-    const res = await this.aiService.toggleBlockUserAi(body.userId, body.blocked);
+    const res = await this.aiService.toggleBlockUserAi(
+      body.userId,
+      body.blocked,
+    );
     return res;
   }
 
@@ -185,8 +227,14 @@ export class AiController {
 
   /** POST /api/ai/test-connection — Kiểm tra kết nối model */
   @Post('test-connection')
-  async testConnection(@Body() body: { provider: string; apiKey?: string; model?: string }) {
-    const res = await this.crmAnalytics.testConnection(body.provider, body.apiKey, body.model);
+  async testConnection(
+    @Body() body: { provider: string; apiKey?: string; model?: string },
+  ) {
+    const res = await this.crmAnalytics.testConnection(
+      body.provider,
+      body.apiKey,
+      body.model,
+    );
     return res;
   }
 
@@ -212,27 +260,39 @@ export class AiController {
   @Post('crm/export-report')
   async exportSubReport(
     @Request() req: any,
-    @Body() body: { type: 'financial_summary' | 'invoice' | 'receipt' | 'events_report'; options?: any }
+    @Body()
+    body: {
+      type: 'financial_summary' | 'invoice' | 'receipt' | 'events_report';
+      options?: any;
+    },
   ) {
-    const res = await this.crmAnalytics.exportSubReport(req.user.id, body.type, body.options);
+    const res = await this.crmAnalytics.exportSubReport(
+      req.user.id,
+      body.type,
+      body.options,
+    );
     return res;
   }
-
 
   /** POST /api/ai/crm/chat — Trò chuyện Trợ lý AI chuẩn ChatGPT với Live Context CRM & Model Free */
   @Post('crm/chat')
   async crmChat(
     @Request() req: any,
-    @Body() body: { message: string; history?: Array<{ role: 'user' | 'assistant'; content: string }>; model?: string; persona?: any }
+    @Body()
+    body: {
+      message: string;
+      history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+      model?: string;
+      persona?: any;
+    },
   ) {
     const res = await this.crmAnalytics.handleChatAssistant(
       req.user?.id || 'admin',
       body.message,
       body.history || [],
       body.model,
-      body.persona
+      body.persona,
     );
     return res;
   }
-
 }

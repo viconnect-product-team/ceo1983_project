@@ -57,9 +57,17 @@ export class MembersService {
       return true;
     }
     const adminRoles = [
-      'platform_admin', 'tenant_admin', 'admin', 'superadmin',
-      'quan_tri', 'chu_tich', 'truong_ban_dieu_hanh', 'thanh_vien_ban_dieu_hanh',
-      'ban_dieu_hanh', 'bqt', 'adm'
+      'platform_admin',
+      'tenant_admin',
+      'admin',
+      'superadmin',
+      'quan_tri',
+      'chu_tich',
+      'truong_ban_dieu_hanh',
+      'thanh_vien_ban_dieu_hanh',
+      'ban_dieu_hanh',
+      'bqt',
+      'adm',
     ];
 
     // Check vione_users by id or email or username
@@ -86,7 +94,11 @@ export class MembersService {
       const roles = await this.prisma.$queryRaw<any[]>`
         SELECT role::text FROM public.user_roles WHERE user_id::text = ${vUsers[0].id}::text
       `.catch(() => [] as any[]);
-      if (roles.some((r: any) => adminRoles.includes((r.role || '').toLowerCase()))) {
+      if (
+        roles.some((r: any) =>
+          adminRoles.includes((r.role || '').toLowerCase()),
+        )
+      ) {
         return true;
       }
     }
@@ -94,7 +106,9 @@ export class MembersService {
     const roles = await this.prisma.$queryRaw<any[]>`
       SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
     `.catch(() => [] as any[]);
-    if (roles.some((r: any) => adminRoles.includes((r.role || '').toLowerCase()))) {
+    if (
+      roles.some((r: any) => adminRoles.includes((r.role || '').toLowerCase()))
+    ) {
       return true;
     }
     return false;
@@ -105,16 +119,33 @@ export class MembersService {
 
     try {
       const executiveRoles = [
-        'admin', 'association_admin', 'owner', 'platform_admin', 'tenant_admin', 'superadmin',
-        'quan_tri', 'chu_tich', 'truong_ban_dieu_hanh', 'thanh_vien_ban_dieu_hanh',
-        'ban_dieu_hanh', 'bqt', 'adm', 'truong_ban', 'ban_thu_ky', 'tong_thu_ky'
+        'admin',
+        'association_admin',
+        'owner',
+        'platform_admin',
+        'tenant_admin',
+        'superadmin',
+        'quan_tri',
+        'chu_tich',
+        'truong_ban_dieu_hanh',
+        'thanh_vien_ban_dieu_hanh',
+        'ban_dieu_hanh',
+        'bqt',
+        'adm',
+        'truong_ban',
+        'ban_thu_ky',
+        'tong_thu_ky',
       ];
 
       // 1. Check user_roles
       const roles = await this.prisma.$queryRaw<any[]>`
         SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
       `.catch(() => [] as any[]);
-      if (roles.some((r: any) => executiveRoles.includes((r.role || '').toLowerCase()))) {
+      if (
+        roles.some((r: any) =>
+          executiveRoles.includes((r.role || '').toLowerCase()),
+        )
+      ) {
         return true;
       }
 
@@ -132,7 +163,11 @@ export class MembersService {
         `.catch(() => []);
       }
 
-      if (mems.some((m: any) => executiveRoles.includes((m.role || '').toLowerCase()))) {
+      if (
+        mems.some((m: any) =>
+          executiveRoles.includes((m.role || '').toLowerCase()),
+        )
+      ) {
         return true;
       }
 
@@ -164,7 +199,11 @@ export class MembersService {
    * theo app_settings.crm_member_permissions (override cá nhân) và app_settings.crm_permission_matrix.
    * Nếu bị thu hồi hoặc uncheck -> trả về false.
    */
-  async checkActionPermission(userId: string, actionCode: string, assocId?: string): Promise<boolean> {
+  async checkActionPermission(
+    userId: string,
+    actionCode: string,
+    assocId?: string,
+  ): Promise<boolean> {
     try {
       // 1. Platform Admin / Superadmin luôn có quyền tối thượng
       if (await this.checkIsPlatformAdmin(userId)) {
@@ -189,13 +228,21 @@ export class MembersService {
       `.catch(() => []);
       if (memberPermsRow.length && memberPermsRow[0]?.value) {
         const val = memberPermsRow[0].value;
-        const map = typeof val === 'string' ? JSON.parse(val) : (val.permissionsMap || val);
-        const profile = (memberCode && map[memberCode]) || (email && map[email]);
+        const map =
+          typeof val === 'string' ? JSON.parse(val) : val.permissionsMap || val;
+        const profile =
+          (memberCode && map[memberCode]) || (email && map[email]);
         if (profile) {
-          if (Array.isArray(profile.deniedCodes) && profile.deniedCodes.includes(actionCode)) {
+          if (
+            Array.isArray(profile.deniedCodes) &&
+            profile.deniedCodes.includes(actionCode)
+          ) {
             return false;
           }
-          if (Array.isArray(profile.allowedCodes) && profile.allowedCodes.includes(actionCode)) {
+          if (
+            Array.isArray(profile.allowedCodes) &&
+            profile.allowedCodes.includes(actionCode)
+          ) {
             return true;
           }
         }
@@ -208,7 +255,9 @@ export class MembersService {
 
       if (matrixRow.length && matrixRow[0]?.value) {
         const val = matrixRow[0].value;
-        const cats = Array.isArray(val) ? val : (val.categories || val.rows || []);
+        const cats = Array.isArray(val)
+          ? val
+          : val.categories || val.rows || [];
         if (Array.isArray(cats) && cats.length > 0) {
           const userRoleRows = await this.prisma.$queryRaw<any[]>`
             SELECT role::text FROM public.user_roles WHERE user_id::text = ${userId}::text
@@ -217,23 +266,53 @@ export class MembersService {
           const dept = (user?.department || '').toLowerCase();
 
           let roleKey = 'member';
-          if (rawRole.includes('admin') || rawRole.includes('bqt') || rawRole.includes('chủ tịch') || email === 'admin@connect.vn') {
+          if (
+            rawRole.includes('admin') ||
+            rawRole.includes('bqt') ||
+            rawRole.includes('chủ tịch') ||
+            email === 'admin@connect.vn'
+          ) {
             roleKey = 'admin';
-          } else if (rawRole.includes('quan_tri') || rawRole.includes('superadmin')) {
+          } else if (
+            rawRole.includes('quan_tri') ||
+            rawRole.includes('superadmin')
+          ) {
             roleKey = 'quan_tri';
-          } else if (rawRole.includes('tong_thu_ky') || dept.includes('thư ký')) {
+          } else if (
+            rawRole.includes('tong_thu_ky') ||
+            dept.includes('thư ký')
+          ) {
             roleKey = 'tong_thu_ky';
-          } else if (rawRole.includes('truyền thông') || dept.includes('truyền thông')) {
+          } else if (
+            rawRole.includes('truyền thông') ||
+            dept.includes('truyền thông')
+          ) {
             roleKey = 'truong_ban_truyen_thong';
-          } else if (rawRole.includes('thành viên') || dept.includes('thành viên')) {
+          } else if (
+            rawRole.includes('thành viên') ||
+            dept.includes('thành viên')
+          ) {
             roleKey = 'truong_ban_thanh_vien';
-          } else if (rawRole.includes('xúc tiến') || dept.includes('xúc tiến') || dept.includes('thương mại')) {
+          } else if (
+            rawRole.includes('xúc tiến') ||
+            dept.includes('xúc tiến') ||
+            dept.includes('thương mại')
+          ) {
             roleKey = 'truong_ban_xuc_tien';
-          } else if (rawRole.includes('tài chính') || dept.includes('tài chính')) {
+          } else if (
+            rawRole.includes('tài chính') ||
+            dept.includes('tài chính')
+          ) {
             roleKey = 'truong_ban_tai_chinh';
-          } else if (rawRole.includes('thiện nguyện') || dept.includes('thiện nguyện')) {
+          } else if (
+            rawRole.includes('thiện nguyện') ||
+            dept.includes('thiện nguyện')
+          ) {
             roleKey = 'truong_ban_thien_nguyen';
-          } else if (dept.includes('điều hành') || rawRole.includes('dieu_hanh')) {
+          } else if (
+            dept.includes('điều hành') ||
+            rawRole.includes('dieu_hanh')
+          ) {
             roleKey = 'truong_ban_dieu_hanh';
           }
 
@@ -244,7 +323,10 @@ export class MembersService {
               for (const act of feat.actions) {
                 if (act.code === actionCode) {
                   if (act.roles && typeof act.roles === 'object') {
-                    const allowed = act.roles[roleKey] !== undefined ? !!act.roles[roleKey] : !!act.roles['admin'];
+                    const allowed =
+                      act.roles[roleKey] !== undefined
+                        ? !!act.roles[roleKey]
+                        : !!act.roles['admin'];
                     return allowed;
                   }
                 }
@@ -265,11 +347,19 @@ export class MembersService {
     }
   }
 
-  async getAssociationIdForUser(userId: string, requestedAssocId?: string): Promise<string | null> {
+  async getAssociationIdForUser(
+    userId: string,
+    requestedAssocId?: string,
+  ): Promise<string | null> {
     if (requestedAssocId) {
       const isPlatformAdmin = await this.checkIsPlatformAdmin(userId);
       if (isPlatformAdmin) return requestedAssocId;
-      if (userId && typeof userId === 'string' && userId.trim() !== '' && userId !== '00000000-0000-0000-0000-000000000000') {
+      if (
+        userId &&
+        typeof userId === 'string' &&
+        userId.trim() !== '' &&
+        userId !== '00000000-0000-0000-0000-000000000000'
+      ) {
         const mem = await this.prisma.$queryRaw<any[]>`
           SELECT 1 FROM public.memberships 
           WHERE user_id = ${userId}::uuid AND association_id = ${requestedAssocId}::uuid
@@ -281,7 +371,12 @@ export class MembersService {
       }
     }
 
-    if (userId && typeof userId === 'string' && userId.trim() !== '' && userId !== '00000000-0000-0000-0000-000000000000') {
+    if (
+      userId &&
+      typeof userId === 'string' &&
+      userId.trim() !== '' &&
+      userId !== '00000000-0000-0000-0000-000000000000'
+    ) {
       const mems = await this.prisma.$queryRaw<any[]>`
         SELECT association_id FROM (
           SELECT association_id, is_default, created_at FROM public.memberships
@@ -326,13 +421,29 @@ export class MembersService {
     // Normalize level
     let mappedLevel = 'memberLevel.medium';
     const rawLevel = String(r.level || '').toLowerCase();
-    if (rawLevel.includes('large') || rawLevel.includes('vip') || rawLevel.includes('diamond') || rawLevel.includes('kim')) {
+    if (
+      rawLevel.includes('large') ||
+      rawLevel.includes('vip') ||
+      rawLevel.includes('diamond') ||
+      rawLevel.includes('kim')
+    ) {
       mappedLevel = 'memberLevel.large';
-    } else if (rawLevel.includes('medium') || rawLevel.includes('gold') || rawLevel.includes('vang')) {
+    } else if (
+      rawLevel.includes('medium') ||
+      rawLevel.includes('gold') ||
+      rawLevel.includes('vang')
+    ) {
       mappedLevel = 'memberLevel.medium';
-    } else if (rawLevel.includes('small') || rawLevel.includes('silver') || rawLevel.includes('bac')) {
+    } else if (
+      rawLevel.includes('small') ||
+      rawLevel.includes('silver') ||
+      rawLevel.includes('bac')
+    ) {
       mappedLevel = 'memberLevel.small';
-    } else if (rawLevel.includes('individual') || rawLevel.includes('ca_nhan')) {
+    } else if (
+      rawLevel.includes('individual') ||
+      rawLevel.includes('ca_nhan')
+    ) {
       mappedLevel = 'memberLevel.individual';
     } else if (r.level && r.level.startsWith('memberLevel.')) {
       mappedLevel = r.level;
@@ -341,13 +452,28 @@ export class MembersService {
     // Normalize industry
     let mappedIndustry = 'ind.trade';
     const rawInd = String(r.industry || '').toLowerCase();
-    if (rawInd.includes('it') || rawInd.includes('công nghệ') || rawInd.includes('phần mềm')) {
+    if (
+      rawInd.includes('it') ||
+      rawInd.includes('công nghệ') ||
+      rawInd.includes('phần mềm')
+    ) {
       mappedIndustry = 'ind.it';
-    } else if (rawInd.includes('sản xuất') || rawInd.includes('manufacturing')) {
+    } else if (
+      rawInd.includes('sản xuất') ||
+      rawInd.includes('manufacturing')
+    ) {
       mappedIndustry = 'ind.manufacturing';
-    } else if (rawInd.includes('bất động sản') || rawInd.includes('realestate') || rawInd.includes('địa ốc')) {
+    } else if (
+      rawInd.includes('bất động sản') ||
+      rawInd.includes('realestate') ||
+      rawInd.includes('địa ốc')
+    ) {
       mappedIndustry = 'ind.realestate';
-    } else if (rawInd.includes('tài chính') || rawInd.includes('finance') || rawInd.includes('ngân hàng')) {
+    } else if (
+      rawInd.includes('tài chính') ||
+      rawInd.includes('finance') ||
+      rawInd.includes('ngân hàng')
+    ) {
       mappedIndustry = 'ind.finance';
     } else if (r.industry && r.industry.startsWith('ind.')) {
       mappedIndustry = r.industry;
@@ -356,9 +482,20 @@ export class MembersService {
     // Normalize region
     let mappedRegion = 'region.north';
     const rawReg = String(r.region || '').toLowerCase();
-    if (rawReg.includes('trung') || rawReg.includes('đà nẵng') || rawReg.includes('huế') || rawReg.includes('central')) {
+    if (
+      rawReg.includes('trung') ||
+      rawReg.includes('đà nẵng') ||
+      rawReg.includes('huế') ||
+      rawReg.includes('central')
+    ) {
       mappedRegion = 'region.central';
-    } else if (rawReg.includes('nam') || rawReg.includes('hồ chí minh') || rawReg.includes('hcm') || rawReg.includes('sài gòn') || rawReg.includes('south')) {
+    } else if (
+      rawReg.includes('nam') ||
+      rawReg.includes('hồ chí minh') ||
+      rawReg.includes('hcm') ||
+      rawReg.includes('sài gòn') ||
+      rawReg.includes('south')
+    ) {
       mappedRegion = 'region.south';
     } else if (r.region && r.region.startsWith('region.')) {
       mappedRegion = r.region;
@@ -367,7 +504,11 @@ export class MembersService {
     // Normalize type
     let mappedType = 'company';
     const rawType = String(r.type || '').toLowerCase();
-    if (rawType.includes('individual') || rawType.includes('ca_nhan') || rawType.includes('cá nhân')) {
+    if (
+      rawType.includes('individual') ||
+      rawType.includes('ca_nhan') ||
+      rawType.includes('cá nhân')
+    ) {
       mappedType = 'individual';
     } else {
       mappedType = 'company';
@@ -378,7 +519,11 @@ export class MembersService {
     let compName = r.company_name || r.company || '';
     let staffSizeStr = r.company_size || '';
 
-    if (r.about && typeof r.about === 'string' && r.about.trim().startsWith('{')) {
+    if (
+      r.about &&
+      typeof r.about === 'string' &&
+      r.about.trim().startsWith('{')
+    ) {
       try {
         const meta = JSON.parse(r.about);
         if (meta.representative) {
@@ -422,16 +567,36 @@ export class MembersService {
       joinedAt: joinedStr,
       feeYear: r.fee_year ?? new Date().getFullYear(),
       feePaid: Boolean(r.fee_paid),
-      termEnd: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : (r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null),
-      term_end: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : (r.term_end ? new Date(r.term_end).toISOString().slice(0, 10) : null),
-      renewedAt: r.renewed_at ? new Date(r.renewed_at).toISOString().slice(0, 10) : null,
-      renewed_at: r.renewed_at ? new Date(r.renewed_at).toISOString().slice(0, 10) : null,
-      newTermEnd: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : null,
-      new_term_end: r.new_term_end ? new Date(r.new_term_end).toISOString().slice(0, 10) : null,
+      termEnd: r.new_term_end
+        ? new Date(r.new_term_end).toISOString().slice(0, 10)
+        : r.term_end
+          ? new Date(r.term_end).toISOString().slice(0, 10)
+          : null,
+      term_end: r.new_term_end
+        ? new Date(r.new_term_end).toISOString().slice(0, 10)
+        : r.term_end
+          ? new Date(r.term_end).toISOString().slice(0, 10)
+          : null,
+      renewedAt: r.renewed_at
+        ? new Date(r.renewed_at).toISOString().slice(0, 10)
+        : null,
+      renewed_at: r.renewed_at
+        ? new Date(r.renewed_at).toISOString().slice(0, 10)
+        : null,
+      newTermEnd: r.new_term_end
+        ? new Date(r.new_term_end).toISOString().slice(0, 10)
+        : null,
+      new_term_end: r.new_term_end
+        ? new Date(r.new_term_end).toISOString().slice(0, 10)
+        : null,
       reminderCount: Number(r.reminder_count ?? 0),
       reminder_count: Number(r.reminder_count ?? 0),
-      lastReminder: r.last_reminder ? new Date(r.last_reminder).toISOString().slice(0, 10) : null,
-      last_reminder: r.last_reminder ? new Date(r.last_reminder).toISOString().slice(0, 10) : null,
+      lastReminder: r.last_reminder
+        ? new Date(r.last_reminder).toISOString().slice(0, 10)
+        : null,
+      last_reminder: r.last_reminder
+        ? new Date(r.last_reminder).toISOString().slice(0, 10)
+        : null,
       paymentStatus: r.payment_status || (r.fee_paid ? 'paid' : 'unpaid'),
       payment_status: r.payment_status || (r.fee_paid ? 'paid' : 'unpaid'),
       address: r.address ?? '',
@@ -451,8 +616,14 @@ export class MembersService {
       avatar: r.avatar || r.avatar_url || null,
       companyLogo: r.company_logo_url || null,
       companyLogoUrl: r.company_logo_url || null,
-      latitude: r.latitude !== null && r.latitude !== undefined ? Number(r.latitude) : null,
-      longitude: r.longitude !== null && r.longitude !== undefined ? Number(r.longitude) : null,
+      latitude:
+        r.latitude !== null && r.latitude !== undefined
+          ? Number(r.latitude)
+          : null,
+      longitude:
+        r.longitude !== null && r.longitude !== undefined
+          ? Number(r.longitude)
+          : null,
       isLocationSharing: r.is_location_sharing ?? true,
       lastLocationUpdated: r.last_location_updated_at || null,
       createdAt: r.created_at,
@@ -472,7 +643,10 @@ export class MembersService {
     },
   ) {
     const isPlatformAdmin = await this.checkIsPlatformAdmin(userId);
-    const assocId = await this.getAssociationIdForUser(userId, filters?.associationId);
+    const assocId = await this.getAssociationIdForUser(
+      userId,
+      filters?.associationId,
+    );
 
     let rows: any[];
     if (isPlatformAdmin && !filters?.associationId) {
@@ -532,8 +706,16 @@ export class MembersService {
     if (filters?.type && filters.type !== 'all') {
       const targetType = filters.type.toLowerCase();
       items = items.filter((m) => {
-        if (targetType === 'company' || targetType === 'enterprise' || targetType === 'corporate') {
-          return m.type === 'company' || m.type === 'enterprise' || m.type === 'corporate';
+        if (
+          targetType === 'company' ||
+          targetType === 'enterprise' ||
+          targetType === 'corporate'
+        ) {
+          return (
+            m.type === 'company' ||
+            m.type === 'enterprise' ||
+            m.type === 'corporate'
+          );
         }
         return m.type === targetType;
       });
@@ -554,11 +736,19 @@ export class MembersService {
   // Mobile API: member directory
   async listDirectory(userId: string, connectedOnly?: boolean) {
     const assocId = await this.getAssociationIdForUser(userId);
-    const rows = await this.membersRepo.findDirectoryMembers(assocId, userId, connectedOnly);
+    const rows = await this.membersRepo.findDirectoryMembers(
+      assocId,
+      userId,
+      connectedOnly,
+    );
 
     return rows.map((m) => {
       const personalName = m.person_name ?? m.contact ?? m.name ?? '';
-      const compName = (m.type === 'company' ? m.name : '') || m.company_name || m.company || 'CLB Doanh Nhân CEO 1983';
+      const compName =
+        (m.type === 'company' ? m.name : '') ||
+        m.company_name ||
+        m.company ||
+        'CLB Doanh Nhân CEO 1983';
       return {
         id: m.id ?? m.user_id ?? m.code ?? '',
         code: m.code ?? '',
@@ -568,20 +758,20 @@ export class MembersService {
         contact: m.contact ?? m.person_name ?? '',
         personName: personalName,
         personTitle: m.person_title ?? '',
-      email: m.email ?? null,
-      phone: m.phone ?? null,
-      about: m.about ?? null,
-      address: m.address ?? null,
-      website: m.website ?? null,
-      industry: m.industry ?? '',
-      region: m.region ?? '',
-      type: m.type === 'individual' ? 'individual' : 'company',
-      verified: m.status === 'active',
-      userId: m.user_id ?? null,
-      executiveRole: m.executive_role || 'member',
-      executive_role: m.executive_role || 'member',
-      department: m.department || 'Hội viên CEO 1983',
-      role: m.executive_role || 'member',
+        email: m.email ?? null,
+        phone: m.phone ?? null,
+        about: m.about ?? null,
+        address: m.address ?? null,
+        website: m.website ?? null,
+        industry: m.industry ?? '',
+        region: m.region ?? '',
+        type: m.type === 'individual' ? 'individual' : 'company',
+        verified: m.status === 'active',
+        userId: m.user_id ?? null,
+        executiveRole: m.executive_role || 'member',
+        executive_role: m.executive_role || 'member',
+        department: m.department || 'Hội viên CEO 1983',
+        role: m.executive_role || 'member',
         avatar: m.avatar ?? null,
       };
     });
@@ -593,9 +783,11 @@ export class MembersService {
       SELECT * FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId} LIMIT 1
     `.catch(() => []);
 
-    const user = await this.prisma.vione_users.findUnique({
-      where: { id: userId },
-    }).catch(() => null);
+    const user = await this.prisma.vione_users
+      .findUnique({
+        where: { id: userId },
+      })
+      .catch(() => null);
 
     const userProfiles = await this.prisma.$queryRaw<any[]>`
       SELECT display_name, avatar_url, professional_title, company_name, industry, region
@@ -617,9 +809,13 @@ export class MembersService {
       }
     }
 
-    const userPhone = (user as any)?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : null);
+    const userPhone =
+      (user as any)?.phone ||
+      (user?.username && /^\d+$/.test(user.username) ? user.username : null);
     if (rows.length === 0 && userPhone) {
-      const altPhone = userPhone.startsWith('0') ? userPhone.slice(1) : '0' + userPhone;
+      const altPhone = userPhone.startsWith('0')
+        ? userPhone.slice(1)
+        : '0' + userPhone;
       rows = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.members 
         WHERE phone = ${userPhone} OR phone = ${altPhone}
@@ -636,8 +832,14 @@ export class MembersService {
 
     // If new user has no member record yet, auto-create CEO 1983 member with their real name
     if (rows.length === 0 && (user || profile)) {
-      const realName = (user?.name || profile?.display_name || user?.username || 'Hội viên CEO 1983').trim();
-      const userEmail = user?.email || `${user?.username || userId.slice(0, 8)}@ceo1983.vn`;
+      const realName = (
+        user?.name ||
+        profile?.display_name ||
+        user?.username ||
+        'Hội viên CEO 1983'
+      ).trim();
+      const userEmail =
+        user?.email || `${user?.username || userId.slice(0, 8)}@ceo1983.vn`;
       const finalPhone = userPhone || '0983000000';
       const newCode = 'M1983-' + String(Math.floor(100 + Math.random() * 900));
       const company = profile?.company_name || 'CLB Doanh Nhân CEO 1983';
@@ -683,14 +885,40 @@ export class MembersService {
       LIMIT 1
     `.catch(() => [] as any[]);
     const m = rows[0] || null;
-    const unifiedAvatar = cardSetting?.photo_url || m?.avatar_url || m?.avatar || user?.avatar_url || profileAvatars[0]?.avatar || profile?.avatar_url || null;
-    const unifiedCompanyLogo = cardSetting?.company_logo_url || m?.company_logo_url || profileAvatars[0]?.company_logo || profile?.company_logo_url || null;
-    const unifiedCompanyName = m?.company_name || cardSetting?.display_company || profile?.company_name || m?.about || 'CLB Doanh Nhân CEO 1983';
+    const unifiedAvatar =
+      cardSetting?.photo_url ||
+      m?.avatar_url ||
+      m?.avatar ||
+      user?.avatar_url ||
+      profileAvatars[0]?.avatar ||
+      profile?.avatar_url ||
+      null;
+    const unifiedCompanyLogo =
+      cardSetting?.company_logo_url ||
+      m?.company_logo_url ||
+      profileAvatars[0]?.company_logo ||
+      profile?.company_logo_url ||
+      null;
+    const unifiedCompanyName =
+      m?.company_name ||
+      cardSetting?.display_company ||
+      profile?.company_name ||
+      m?.about ||
+      'CLB Doanh Nhân CEO 1983';
 
     if (rows.length > 0) {
-      const memberName = (m.name && m.name !== 'Hội viên CEO 1983' && m.name !== 'Thành viên mới' && m.name !== 'Hội viên CEO 1983')
-        ? m.name
-        : (cardSetting?.display_name || user?.name || profile?.display_name || m.name || user?.username || 'Hội viên CEO 1983');
+      const memberName =
+        m.name &&
+        m.name !== 'Hội viên CEO 1983' &&
+        m.name !== 'Thành viên mới' &&
+        m.name !== 'Hội viên CEO 1983'
+          ? m.name
+          : cardSetting?.display_name ||
+            user?.name ||
+            profile?.display_name ||
+            m.name ||
+            user?.username ||
+            'Hội viên CEO 1983';
 
       return {
         id: m.id,
@@ -699,10 +927,19 @@ export class MembersService {
         code: m.code ?? '',
         name: memberName,
         status: m.status ?? 'active',
-        validUntil: m.term_end ? (m.term_end instanceof Date ? m.term_end.toISOString().slice(0, 10) : String(m.term_end).slice(0, 10)) : null,
+        validUntil: m.term_end
+          ? m.term_end instanceof Date
+            ? m.term_end.toISOString().slice(0, 10)
+            : String(m.term_end).slice(0, 10)
+          : null,
         verified: m.status === 'active',
         type: m.type === 'individual' ? 'individual' : 'company',
-        title: m.executive_role || m.department || (m.contact && m.contact !== m.name ? m.contact : null) || profile?.professional_title || 'Hội viên chính thức',
+        title:
+          m.executive_role ||
+          m.department ||
+          (m.contact && m.contact !== m.name ? m.contact : null) ||
+          profile?.professional_title ||
+          'Hội viên chính thức',
         company: unifiedCompanyName,
         companyName: unifiedCompanyName,
         email: m.email ?? user?.email ?? '',
@@ -716,7 +953,11 @@ export class MembersService {
         company_size: m.company_size || '20 - 50 nhân sự',
         about: m.about ?? null,
         bio: m.about ?? null,
-        joinedAt: m.joined_at ? (m.joined_at instanceof Date ? m.joined_at.toISOString().slice(0, 10) : String(m.joined_at).slice(0, 10)) : null,
+        joinedAt: m.joined_at
+          ? m.joined_at instanceof Date
+            ? m.joined_at.toISOString().slice(0, 10)
+            : String(m.joined_at).slice(0, 10)
+          : null,
         executiveRole: m.executive_role || 'member',
         executive_role: m.executive_role || 'member',
         department: m.department || 'Hội viên CEO 1983',
@@ -731,7 +972,12 @@ export class MembersService {
     }
 
     // Fallback: If no member row exists for this user, return non-member identity with real user name
-    const fallbackName = cardSetting?.display_name || user?.name || profile?.display_name || user?.username || 'Thành viên mới';
+    const fallbackName =
+      cardSetting?.display_name ||
+      user?.name ||
+      profile?.display_name ||
+      user?.username ||
+      'Thành viên mới';
     return {
       id: null,
       memberId: null,
@@ -792,9 +1038,11 @@ export class MembersService {
 
     // Fallback: if member record was matched by email
     if (!memberUpdated || memberUpdated === 0) {
-      const user = await this.prisma.vione_users.findUnique({
-        where: { id: userId },
-      }).catch(() => null);
+      const user = await this.prisma.vione_users
+        .findUnique({
+          where: { id: userId },
+        })
+        .catch(() => null);
       if (user?.email) {
         await this.prisma.$executeRaw`
           UPDATE public.members
@@ -811,29 +1059,33 @@ export class MembersService {
     };
   }
 
-  async updateMyProfile(userId: string, data: {
-    name?: string;
-    title?: string;
-    company?: string;
-    phone?: string;
-    email?: string;
-    avatar?: string;
-    companyLogo?: string;
-    address?: string;
-    latitude?: number;
-    longitude?: number;
-    website?: string;
-    bio?: string;
-    companySize?: string;
-    company_size?: string;
-    industry?: string;
-  }) {
+  async updateMyProfile(
+    userId: string,
+    data: {
+      name?: string;
+      title?: string;
+      company?: string;
+      phone?: string;
+      email?: string;
+      avatar?: string;
+      companyLogo?: string;
+      address?: string;
+      latitude?: number;
+      longitude?: number;
+      website?: string;
+      bio?: string;
+      companySize?: string;
+      company_size?: string;
+      industry?: string;
+    },
+  ) {
     if (!userId) {
       throw new BadRequestException('User ID is required');
     }
 
     const { name, title, company, phone, email, address, website, bio } = data;
-    const companySize = data.companySize || data.company_size || (data as any)?.staffSize;
+    const companySize =
+      data.companySize || data.company_size || (data as any)?.staffSize;
     const industry = data.industry;
     const avatar = data.avatar || (data as any)?.avatarUrl;
     const companyLogo = data.companyLogo || (data as any)?.companyLogoUrl;
@@ -844,10 +1096,12 @@ export class MembersService {
       if (name) userUpdate.name = name;
       if (phone) userUpdate.phone = phone;
       if (avatar) userUpdate.avatar_url = avatar;
-      await this.prisma.vione_users.update({
-        where: { id: userId },
-        data: userUpdate,
-      }).catch(() => null);
+      await this.prisma.vione_users
+        .update({
+          where: { id: userId },
+          data: userUpdate,
+        })
+        .catch(() => null);
     } catch {}
 
     // 2. Update user_profiles
@@ -1021,8 +1275,10 @@ export class MembersService {
       const c = (r.category ?? '').toLowerCase();
       const a = (r.action ?? '').toLowerCase();
       let type = 'note';
-      if (c === 'fee' || a.includes('thanh toán') || a.includes('payment')) type = 'payment';
-      else if (c === 'event' || a.includes('sự kiện') || a.includes('event')) type = 'event';
+      if (c === 'fee' || a.includes('thanh toán') || a.includes('payment'))
+        type = 'payment';
+      else if (c === 'event' || a.includes('sự kiện') || a.includes('event'))
+        type = 'event';
       else if (a.includes('email') || a.includes('bản tin')) type = 'email';
       else if (a.includes('gọi') || a.includes('call')) type = 'call';
       else if (a.includes('họp') || a.includes('meeting')) type = 'meeting';
@@ -1033,7 +1289,11 @@ export class MembersService {
         title: r.action,
         by: r.user ?? '—',
         detail: r.target ?? undefined,
-        date: r.created_at ? (r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at)) : new Date().toISOString(),
+        date: r.created_at
+          ? r.created_at instanceof Date
+            ? r.created_at.toISOString()
+            : String(r.created_at)
+          : new Date().toISOString(),
       };
     });
 
@@ -1060,7 +1320,12 @@ export class MembersService {
         else if (t === 'partner') role = 'partner';
 
         const d = r.event_date || r.registered_at;
-        const dateStr = d instanceof Date ? d.toISOString() : (d ? String(d) : new Date().toISOString());
+        const dateStr =
+          d instanceof Date
+            ? d.toISOString()
+            : d
+              ? String(d)
+              : new Date().toISOString();
 
         return {
           id: r.id,
@@ -1083,19 +1348,24 @@ export class MembersService {
     `.catch(() => []);
 
     const payments = invRows.map((i, idx) => {
-      let m = (i.method ?? '').toLowerCase();
+      const m = (i.method ?? '').toLowerCase();
       let method = 'bank';
       if (m === 'card') method = 'card';
       else if (m === 'cash') method = 'cash';
       else if (m === 'evoucher') method = 'evoucher';
 
-      let s = (i.status ?? '').toLowerCase();
+      const s = (i.status ?? '').toLowerCase();
       let status = 'pending';
       if (s === 'paid') status = 'paid';
       else if (s === 'refunded') status = 'refunded';
 
       const d = i.paid_at || i.due_date;
-      const dateStr = d instanceof Date ? d.toISOString() : (d ? String(d) : new Date().toISOString());
+      const dateStr =
+        d instanceof Date
+          ? d.toISOString()
+          : d
+            ? String(d)
+            : new Date().toISOString();
 
       return {
         id: i.invoice_no ?? `inv-${idx}`,
@@ -1124,7 +1394,8 @@ export class MembersService {
       // ignore
     }
 
-    const compName = company?.company || company?.company_name || company?.name || '';
+    const compName =
+      company?.company || company?.company_name || company?.name || '';
     const personnel: any[] = [];
     const seenEmails = new Set<string>();
     const seenIds = new Set<string>();
@@ -1150,7 +1421,8 @@ export class MembersService {
       for (const r of memberRows) {
         const id = r.id;
         const email = r.user_email || r.email || '';
-        const name = r.contact || r.user_name || r.name || 'Nhân sự Doanh nghiệp';
+        const name =
+          r.contact || r.user_name || r.name || 'Nhân sự Doanh nghiệp';
         if (seenIds.has(id)) continue;
         seenIds.add(id);
         if (email) seenEmails.add(email.toLowerCase());
@@ -1160,8 +1432,14 @@ export class MembersService {
           id: r.id,
           code: r.code || '',
           name,
-          title: isOwner ? (company?.contact ? 'Đại diện pháp luật / Chủ tịch' : 'Đại diện doanh nghiệp') : (r.executive_role && r.executive_role !== 'member' ? r.executive_role : 'Nhân sự chủ chốt'),
-          role: isOwner ? 'owner' : (r.executive_role || 'member'),
+          title: isOwner
+            ? company?.contact
+              ? 'Đại diện pháp luật / Chủ tịch'
+              : 'Đại diện doanh nghiệp'
+            : r.executive_role && r.executive_role !== 'member'
+              ? r.executive_role
+              : 'Nhân sự chủ chốt',
+          role: isOwner ? 'owner' : r.executive_role || 'member',
           department: r.department || 'Nhân sự',
           email: r.user_email || r.email || '',
           phone: r.user_phone || r.phone || '',
@@ -1194,7 +1472,12 @@ export class MembersService {
         id: cm.id,
         code: '',
         name: cm.user_name || cm.email || 'Nhân sự',
-        title: cm.role === 'owner' ? 'Đại diện pháp luật' : cm.role === 'admin' ? 'Quản lý điều hành' : 'Nhân sự doanh nghiệp',
+        title:
+          cm.role === 'owner'
+            ? 'Đại diện pháp luật'
+            : cm.role === 'admin'
+              ? 'Quản lý điều hành'
+              : 'Nhân sự doanh nghiệp',
         role: cm.role || 'member',
         department: 'Nhân sự',
         email,
@@ -1264,14 +1547,25 @@ export class MembersService {
   }
 
   async createMember(userId: string, data: CreateMemberDto) {
-    const assocId = await this.getAssociationIdForUser(userId, data.associationId);
+    const assocId = await this.getAssociationIdForUser(
+      userId,
+      data.associationId,
+    );
     const isAdmin = await this.checkIsAdmin(userId, assocId ?? undefined);
     if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền thêm hội viên');
+      throw new ForbiddenException(
+        'Chỉ quản trị viên mới có quyền thêm hội viên',
+      );
     }
-    const canAdd = await this.checkActionPermission(userId, 'MEM_ADD', assocId ?? undefined);
+    const canAdd = await this.checkActionPermission(
+      userId,
+      'MEM_ADD',
+      assocId ?? undefined,
+    );
     if (!canAdd) {
-      throw new ForbiddenException('Hành động thêm hội viên mới (MEM_ADD) đã bị thu hồi trong cấu hình phân quyền hệ thống');
+      throw new ForbiddenException(
+        'Hành động thêm hội viên mới (MEM_ADD) đã bị thu hồi trong cấu hình phân quyền hệ thống',
+      );
     }
 
     const now = new Date();
@@ -1286,7 +1580,9 @@ export class MembersService {
         SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
       `.catch(() => []);
       if (existingEmail.length > 0) {
-        throw new BadRequestException('Email này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+        throw new BadRequestException(
+          'Email này đã được sử dụng bởi một hội viên khác trên hệ thống!',
+        );
       }
     }
 
@@ -1297,7 +1593,9 @@ export class MembersService {
         SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanPhone} LIMIT 1
       `.catch(() => []);
       if (existingPhone.length > 0) {
-        throw new BadRequestException('Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+        throw new BadRequestException(
+          'Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!',
+        );
       }
     }
 
@@ -1372,34 +1670,56 @@ export class MembersService {
     const current = existing[0];
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
     if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền cập nhật hội viên');
+      throw new ForbiddenException(
+        'Chỉ quản trị viên mới có quyền cập nhật hội viên',
+      );
     }
-    const canEdit = await this.checkActionPermission(userId, 'MEM_EDIT', current.association_id);
+    const canEdit = await this.checkActionPermission(
+      userId,
+      'MEM_EDIT',
+      current.association_id,
+    );
     if (!canEdit) {
-      throw new ForbiddenException('Hành động chỉnh sửa thông tin hội viên (MEM_EDIT) đã bị thu hồi trong cấu hình phân quyền hệ thống');
+      throw new ForbiddenException(
+        'Hành động chỉnh sửa thông tin hội viên (MEM_EDIT) đã bị thu hồi trong cấu hình phân quyền hệ thống',
+      );
     }
 
     // Kiểm tra trùng Email khi cập nhật
-    if (data.email && data.email.trim().toLowerCase() !== (current.email || '').trim().toLowerCase()) {
+    if (
+      data.email &&
+      data.email.trim().toLowerCase() !==
+        (current.email || '').trim().toLowerCase()
+    ) {
       const cleanEmail = data.email.trim().toLowerCase();
       const dup = await this.prisma.$queryRaw<any[]>`
         SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} AND id != ${current.id} LIMIT 1
       `.catch(() => []);
       if (dup.length > 0) {
-        throw new BadRequestException('Email này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+        throw new BadRequestException(
+          'Email này đã được sử dụng bởi một hội viên khác trên hệ thống!',
+        );
       }
     }
 
     // Kiểm tra trùng Số điện thoại khi cập nhật
     if (data.phone) {
       const cleanNewPhone = data.phone.replace(/[^0-9+]/g, '').trim();
-      const cleanCurPhone = (current.phone || '').replace(/[^0-9+]/g, '').trim();
-      if (cleanNewPhone && cleanNewPhone !== cleanCurPhone && cleanNewPhone.length >= 8) {
+      const cleanCurPhone = (current.phone || '')
+        .replace(/[^0-9+]/g, '')
+        .trim();
+      if (
+        cleanNewPhone &&
+        cleanNewPhone !== cleanCurPhone &&
+        cleanNewPhone.length >= 8
+      ) {
         const dup = await this.prisma.$queryRaw<any[]>`
           SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanNewPhone} AND id != ${current.id} LIMIT 1
         `.catch(() => []);
         if (dup.length > 0) {
-          throw new BadRequestException('Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+          throw new BadRequestException(
+            'Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!',
+          );
         }
       }
     }
@@ -1410,19 +1730,31 @@ export class MembersService {
     const phone = data.phone !== undefined ? data.phone : current.phone;
     const type = data.type !== undefined ? data.type : current.type;
     const level = data.level !== undefined ? data.level : current.level;
-    const industry = data.industry !== undefined ? data.industry : current.industry;
+    const industry =
+      data.industry !== undefined ? data.industry : current.industry;
     const region = data.region !== undefined ? data.region : current.region;
     const status = data.status !== undefined ? data.status : current.status;
     const address = data.address !== undefined ? data.address : current.address;
     const website = data.website !== undefined ? data.website : current.website;
-    const taxCode = data.taxCode !== undefined ? data.taxCode : current.tax_code;
-    const employees = data.employees !== undefined ? data.employees : current.employees;
+    const taxCode =
+      data.taxCode !== undefined ? data.taxCode : current.tax_code;
+    const employees =
+      data.employees !== undefined ? data.employees : current.employees;
     const about = data.about !== undefined ? data.about : current.about;
-    const feeYear = data.feeYear !== undefined ? data.feeYear : (current.fee_year ?? new Date().getFullYear());
-    let paymentStatus = data.paymentStatus !== undefined
-      ? data.paymentStatus
-      : (data.feePaid !== undefined ? (data.feePaid ? 'paid' : 'unpaid') : (current.payment_status || (current.fee_paid ? 'paid' : 'unpaid')));
-    let finalFeePaid = data.feePaid !== undefined ? data.feePaid : current.fee_paid;
+    const feeYear =
+      data.feeYear !== undefined
+        ? data.feeYear
+        : (current.fee_year ?? new Date().getFullYear());
+    let paymentStatus =
+      data.paymentStatus !== undefined
+        ? data.paymentStatus
+        : data.feePaid !== undefined
+          ? data.feePaid
+            ? 'paid'
+            : 'unpaid'
+          : current.payment_status || (current.fee_paid ? 'paid' : 'unpaid');
+    let finalFeePaid =
+      data.feePaid !== undefined ? data.feePaid : current.fee_paid;
     if (data.paymentStatus === 'unpaid') {
       finalFeePaid = false;
       paymentStatus = 'unpaid';
@@ -1486,10 +1818,12 @@ export class MembersService {
       try {
         let memberUserId = current.user_id;
         if (!memberUserId && (email || current.email)) {
-          const u = await this.prisma.vione_users.findFirst({
-            where: { email: email || current.email },
-            select: { id: true },
-          }).catch(() => null);
+          const u = await this.prisma.vione_users
+            .findFirst({
+              where: { email: email || current.email },
+              select: { id: true },
+            })
+            .catch(() => null);
           if (u) memberUserId = u.id;
         }
         if (!memberUserId && (phone || current.phone)) {
@@ -1503,10 +1837,17 @@ export class MembersService {
 
         // Tự động khởi tạo tài khoản đăng nhập khi duyệt hội viên nếu chưa có (BUG-AUTH-001)
         const isApproved = status === 'active' || status === 'approved';
-        if (!memberUserId && isApproved && (email || current.email || phone || current.phone)) {
+        if (
+          !memberUserId &&
+          isApproved &&
+          (email || current.email || phone || current.phone)
+        ) {
           try {
             const newUserId = crypto.randomUUID();
-            const memberEmail = email || current.email || `${(current.member_code || 'member').toLowerCase().replace(/[^a-z0-9]/g, '')}@ceo1983.com`;
+            const memberEmail =
+              email ||
+              current.email ||
+              `${(current.member_code || 'member').toLowerCase().replace(/[^a-z0-9]/g, '')}@ceo1983.com`;
             const memberPhone = phone || current.phone || '';
             const memberName = name || current.name || 'Hội viên CEO 1983';
             await this.prisma.$executeRaw`
@@ -1515,10 +1856,12 @@ export class MembersService {
               ON CONFLICT (email) DO NOTHING
             `.catch(() => null);
 
-            const linkedUser = await this.prisma.vione_users.findFirst({
-              where: { email: memberEmail },
-              select: { id: true },
-            }).catch(() => null);
+            const linkedUser = await this.prisma.vione_users
+              .findFirst({
+                where: { email: memberEmail },
+                select: { id: true },
+              })
+              .catch(() => null);
 
             if (linkedUser) {
               memberUserId = linkedUser.id;
@@ -1527,7 +1870,10 @@ export class MembersService {
               `.catch(() => null);
             }
           } catch (createErr) {
-            console.warn('Auto create user on member approval notice:', createErr);
+            console.warn(
+              'Auto create user on member approval notice:',
+              createErr,
+            );
           }
         }
 
@@ -1536,8 +1882,8 @@ export class MembersService {
           const notifTitle = isApproved
             ? '🎉 Chúc mừng! Hồ sơ gia nhập CLB của bạn đã được phê duyệt!'
             : status === 'pending'
-            ? 'Hồ sơ gia nhập CLB của bạn đang được xét duyệt'
-            : 'Thông báo kết quả duyệt hồ sơ gia nhập CLB';
+              ? 'Hồ sơ gia nhập CLB của bạn đang được xét duyệt'
+              : 'Thông báo kết quả duyệt hồ sơ gia nhập CLB';
           const notifBody = isApproved
             ? `Chúc mừng bạn đã chính thức trở thành hội viên của ${name || 'Hiệp hội'}. Thẻ VIP Số NFC và toàn bộ quyền lợi đã được kích hoạt trong App Hội Viên.`
             : `Hồ sơ gia nhập của bạn đã được cập nhật trạng thái: ${status}. Vui lòng mở App Hội Viên hoặc liên hệ Ban thư ký để biết thêm chi tiết.`;
@@ -1561,7 +1907,9 @@ export class MembersService {
               ${safeData}::jsonb, 'navigate', 'Mở App Hội Viên', '{"route": "/m"}'::jsonb,
               'high', 'delivered', 'all', 'all', now(), now(), ${`member_approval:${id}:${status}:${Date.now()}`}
             )
-          `.catch((err) => console.warn('Could not insert member approval notification:', err));
+          `.catch((err) =>
+            console.warn('Could not insert member approval notification:', err),
+          );
 
           await this.prisma.$executeRaw`
             INSERT INTO public.member_notifications (
@@ -1587,13 +1935,18 @@ export class MembersService {
           if (memberEmail && memberEmail.includes('@')) {
             const passMatch = (current.about || '').match(/Pass=([^\s|]+)/);
             let rawPass = passMatch ? passMatch[1].trim() : undefined;
-            if (rawPass && (rawPass.startsWith('[') || rawPass.toLowerCase().includes('random'))) {
+            if (
+              rawPass &&
+              (rawPass.startsWith('[') ||
+                rawPass.toLowerCase().includes('random'))
+            ) {
               rawPass = undefined;
             }
 
             // Nếu chưa có mật khẩu hoặc mật khẩu là placeholder [Random], tự động sinh mật khẩu ngẫu nhiên 6 ký tự
             if (!rawPass) {
-              const randomChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+              const randomChars =
+                '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
               rawPass = Array.from(crypto.randomBytes(6))
                 .map((byte) => randomChars[byte % randomChars.length])
                 .join('');
@@ -1613,16 +1966,26 @@ export class MembersService {
               }
             }
 
-            void this.mailService.sendMemberApprovedEmail({
-              to: memberEmail,
-              fullName: name || current.name || current.contact || 'Quý Hội viên',
-              memberCode: current.code || id,
-              associationName: 'CLB Doanh Nhân CEO 1983',
-              companyName: current.company || current.organization || name,
-              portalUrl: process.env.APP_URL ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login` : 'https://ceo1983.viconnect.vn/association/login',
-              username: memberEmail,
-              passwordRaw: rawPass,
-            }).catch((err) => console.warn('Could not send member approval email:', err?.message));
+            void this.mailService
+              .sendMemberApprovedEmail({
+                to: memberEmail,
+                fullName:
+                  name || current.name || current.contact || 'Quý Hội viên',
+                memberCode: current.code || id,
+                associationName: 'CLB Doanh Nhân CEO 1983',
+                companyName: current.company || current.organization || name,
+                portalUrl: process.env.APP_URL
+                  ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login`
+                  : 'https://ceo1983.viconnect.vn/association/login',
+                username: memberEmail,
+                passwordRaw: rawPass,
+              })
+              .catch((err) =>
+                console.warn(
+                  'Could not send member approval email:',
+                  err?.message,
+                ),
+              );
           }
         }
       } catch (err) {
@@ -1633,7 +1996,11 @@ export class MembersService {
     return this.getMemberById(userId, id);
   }
 
-  async updateMemberContact(userId: string, id: string, data: UpdateMemberContactDto) {
+  async updateMemberContact(
+    userId: string,
+    id: string,
+    data: UpdateMemberContactDto,
+  ) {
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.members WHERE id = ${id} LIMIT 1
     `.catch(() => []);
@@ -1645,7 +2012,9 @@ export class MembersService {
     const current = existing[0];
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
     if (!isAdmin) {
-      throw new ForbiddenException('Chỉ quản trị viên mới có quyền cập nhật hội viên');
+      throw new ForbiddenException(
+        'Chỉ quản trị viên mới có quyền cập nhật hội viên',
+      );
     }
 
     const email = data.email !== undefined ? data.email : current.email;
@@ -1664,7 +2033,11 @@ export class MembersService {
     return this.getMemberById(userId, id);
   }
 
-  async deleteMember(userId: string, id: string, mode?: 'company_only' | 'all') {
+  async deleteMember(
+    userId: string,
+    id: string,
+    mode?: 'company_only' | 'all',
+  ) {
     const cleanId = String(id || '').replace(/^RNW-/, '');
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.members WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} LIMIT 1
@@ -1676,9 +2049,15 @@ export class MembersService {
 
     const current = existing[0];
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
-    const canDelete = await this.checkActionPermission(userId, 'MEM_DELETE', current.association_id);
+    const canDelete = await this.checkActionPermission(
+      userId,
+      'MEM_DELETE',
+      current.association_id,
+    );
     if (!isAdmin && !canDelete) {
-      throw new ForbiddenException('Chỉ quản trị viên hoặc tài khoản được cấp quyền xóa (MEM_DELETE) mới có quyền xóa');
+      throw new ForbiddenException(
+        'Chỉ quản trị viên hoặc tài khoản được cấp quyền xóa (MEM_DELETE) mới có quyền xóa',
+      );
     }
 
     const memberEmail = (current.email || '').trim().toLowerCase();
@@ -1739,16 +2118,23 @@ export class MembersService {
         WHERE id = ${current.id}
       `.catch(() => {});
 
-      const actorUserId = userId && userId.length === 36 ? userId : '00000000-0000-4000-8000-000000000002';
-      const actorEmailRow = (await this.prisma.$queryRawUnsafe<any[]>(
-        `SELECT email FROM public.vione_users WHERE id = $1::uuid LIMIT 1`,
-        actorUserId
-      ).catch(() => [])) as any[];
+      const actorUserId =
+        userId && userId.length === 36
+          ? userId
+          : '00000000-0000-4000-8000-000000000002';
+      const actorEmailRow = (await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT email FROM public.vione_users WHERE id = $1::uuid LIMIT 1`, actorUserId)
+        .catch(() => [])) as any[];
       const actorEmail = actorEmailRow[0]?.email || 'admin@connect.vn';
-      const effectiveAssoc = current.association_id || 'c1983000-0000-4000-8000-000000001983';
+      const effectiveAssoc =
+        current.association_id || 'c1983000-0000-4000-8000-000000001983';
 
       // Ghi đồng bộ vào cả 2 bảng audit_logs (CRM Audit Logs) và activity_log (Chi tiết hệ thống)
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.audit_logs (
           id, actor_user_id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
         ) VALUES (
@@ -1762,12 +2148,19 @@ export class MembersService {
           $3::jsonb,
           now()
         )
-      `, actorUserId, current.code || current.id, JSON.stringify({
-        memberName: current.name,
-        companyName: companyName || current.company_name,
-        memberCode: current.code,
-        mode: 'company_only'
-      })).catch((e: any) => this.logger.warn(`Could not log to audit_logs: ${e?.message}`));
+      `,
+          actorUserId,
+          current.code || current.id,
+          JSON.stringify({
+            memberName: current.name,
+            companyName: companyName || current.company_name,
+            memberCode: current.code,
+            mode: 'company_only',
+          }),
+        )
+        .catch((e: any) =>
+          this.logger.warn(`Could not log to audit_logs: ${e?.message}`),
+        );
 
       await this.logActivity(
         'Xóa doanh nghiệp liên kết',
@@ -1777,7 +2170,11 @@ export class MembersService {
         effectiveAssoc,
       );
 
-      return { ok: true, mode: 'company_only', message: 'Đã xóa dữ liệu doanh nghiệp liên kết thành công' };
+      return {
+        ok: true,
+        mode: 'company_only',
+        message: 'Đã xóa dữ liệu doanh nghiệp liên kết thành công',
+      };
     }
 
     // CASE 2: Xóa toàn diện cả hội viên và doanh nghiệp liên kết (mode === 'all')
@@ -1787,13 +2184,19 @@ export class MembersService {
         DELETE FROM public.companies
         WHERE LOWER(name) = LOWER(${companyName})
            OR (owner_id IS NOT NULL AND ${memberUserId ? memberUserId : '00000000-0000-0000-0000-000000000000'}::uuid = owner_id)
-      `.catch((e) => this.logger.warn(`Could not delete from companies: ${e?.message}`));
+      `.catch((e) =>
+        this.logger.warn(`Could not delete from companies: ${e?.message}`),
+      );
 
       await this.prisma.$executeRaw`
         DELETE FROM public.vione_companies
         WHERE LOWER(name) = LOWER(${companyName})
            OR (user_id IS NOT NULL AND ${memberUserId ? memberUserId : '00000000-0000-0000-0000-000000000000'}::uuid = user_id)
-      `.catch((e) => this.logger.warn(`Could not delete from vione_companies: ${e?.message}`));
+      `.catch((e) =>
+        this.logger.warn(
+          `Could not delete from vione_companies: ${e?.message}`,
+        ),
+      );
     }
     if (taxCode) {
       await this.prisma.$executeRaw`
@@ -1860,13 +2263,17 @@ export class MembersService {
         WHERE id = ${memberUserId}::uuid
            OR (${memberEmail !== ''} AND LOWER(email) = ${memberEmail})
            OR (${memberEmail !== ''} AND LOWER(username) = ${memberEmail})
-      `.catch((e) => this.logger.warn(`Could not delete from vione_users: ${e?.message}`));
+      `.catch((e) =>
+        this.logger.warn(`Could not delete from vione_users: ${e?.message}`),
+      );
 
       await this.prisma.$executeRaw`
         DELETE FROM auth.users
         WHERE id = ${memberUserId}::uuid
            OR (${memberEmail !== ''} AND LOWER(email) = ${memberEmail})
-      `.catch((e) => this.logger.warn(`Could not delete from auth.users: ${e?.message}`));
+      `.catch((e) =>
+        this.logger.warn(`Could not delete from auth.users: ${e?.message}`),
+      );
     } else if (memberEmail) {
       await this.prisma.$executeRaw`
         DELETE FROM public.vione_users
@@ -1888,15 +2295,22 @@ export class MembersService {
     `;
 
     // 5. Ghi nhật ký hoạt động đồng bộ vào cả 2 bảng audit_logs (CRM) và activity_log (Hệ thống)
-    const actorUserId = userId && userId.length === 36 ? userId : '00000000-0000-4000-8000-000000000002';
-    const actorEmailRow = (await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT email FROM public.vione_users WHERE id = $1::uuid LIMIT 1`,
-      actorUserId
-    ).catch(() => [])) as any[];
+    const actorUserId =
+      userId && userId.length === 36
+        ? userId
+        : '00000000-0000-4000-8000-000000000002';
+    const actorEmailRow = (await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT email FROM public.vione_users WHERE id = $1::uuid LIMIT 1`, actorUserId)
+      .catch(() => [])) as any[];
     const actorEmail = actorEmailRow[0]?.email || 'admin@connect.vn';
-    const effectiveAssoc = current.association_id || 'c1983000-0000-4000-8000-000000001983';
+    const effectiveAssoc =
+      current.association_id || 'c1983000-0000-4000-8000-000000001983';
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.audit_logs (
         id, actor_user_id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
       ) VALUES (
@@ -1910,22 +2324,34 @@ export class MembersService {
         $3::jsonb,
         now()
       )
-    `, actorUserId, current.code || current.id, JSON.stringify({
-      memberName: current.name,
-      companyName: companyName || current.company_name,
-      memberCode: current.code,
-      mode: 'all'
-    })).catch((e: any) => this.logger.warn(`Could not log to audit_logs: ${e?.message}`));
+    `,
+        actorUserId,
+        current.code || current.id,
+        JSON.stringify({
+          memberName: current.name,
+          companyName: companyName || current.company_name,
+          memberCode: current.code,
+          mode: 'all',
+        }),
+      )
+      .catch((e: any) =>
+        this.logger.warn(`Could not log to audit_logs: ${e?.message}`),
+      );
 
     await this.logActivity(
       'Xóa hội viên, tài khoản & doanh nghiệp liên quan',
       `${current.name || companyName || 'Hội viên'} (${current.code || cleanId})`,
       'member',
       actorEmail,
-      effectiveAssoc
+      effectiveAssoc,
     );
 
-    return { ok: true, mode: 'all', message: 'Đã xóa hội viên, doanh nghiệp và tài khoản liên quan thành công' };
+    return {
+      ok: true,
+      mode: 'all',
+      message:
+        'Đã xóa hội viên, doanh nghiệp và tài khoản liên quan thành công',
+    };
   }
 
   async renewMember(userId: string, id: string) {
@@ -1936,15 +2362,19 @@ export class MembersService {
       LIMIT 1
     `.catch(() => []);
 
-    if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
+    if (rows.length === 0)
+      throw new NotFoundException('Không tìm thấy hội viên');
     const current = rows[0];
 
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
-    if (!isAdmin) throw new ForbiddenException('Chỉ quản trị viên mới có quyền gia hạn');
+    if (!isAdmin)
+      throw new ForbiddenException('Chỉ quản trị viên mới có quyền gia hạn');
 
     const base = current.new_term_end
       ? new Date(current.new_term_end)
-      : (current.term_end ? new Date(current.term_end) : new Date());
+      : current.term_end
+        ? new Date(current.term_end)
+        : new Date();
     const newEnd = new Date(base);
     newEnd.setFullYear(newEnd.getFullYear() + 1);
     const newEndStr = newEnd.toISOString().slice(0, 10);
@@ -1962,7 +2392,13 @@ export class MembersService {
     `;
 
     // Activity log
-    await this.logActivity('Gia hạn hội phí', `${current.name} (${current.code || cleanId})`, 'fee', 'admin@connect.vn', current.association_id);
+    await this.logActivity(
+      'Gia hạn hội phí',
+      `${current.name} (${current.code || cleanId})`,
+      'fee',
+      'admin@connect.vn',
+      current.association_id,
+    );
 
     // Dispatch 2-way notification
     if (current.user_id) {
@@ -1978,7 +2414,9 @@ export class MembersService {
           targetRoute: '/m/card',
         });
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
             title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -1986,15 +2424,32 @@ export class MembersService {
             $1::uuid, $2::uuid, 'membership', $3, 'membership_renewed', 'renewal_success',
             $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
           )
-        `, notifId, current.user_id, current.id, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+        `,
+            notifId,
+            current.user_id,
+            current.id,
+            notifTitle,
+            notifBody,
+            safeData,
+            dedupeKey,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'renewal', $4, NOW()
           )
-        `, current.id, notifTitle, notifBody, current.id).catch(() => {});
+        `,
+            current.id,
+            notifTitle,
+            notifBody,
+            current.id,
+          )
+          .catch(() => {});
       } catch (e: any) {
         console.warn('Failed to notify member of renewal:', e?.message);
       }
@@ -2015,15 +2470,25 @@ export class MembersService {
       LIMIT 1
     `.catch(() => []);
 
-    if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
+    if (rows.length === 0)
+      throw new NotFoundException('Không tìm thấy hội viên');
     const current = rows[0];
 
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
-    if (!isAdmin) throw new ForbiddenException('Chỉ quản trị viên mới có quyền cập nhật trạng thái thanh toán');
+    if (!isAdmin)
+      throw new ForbiddenException(
+        'Chỉ quản trị viên mới có quyền cập nhật trạng thái thanh toán',
+      );
 
     const paymentStatus = body.paymentStatus || 'unpaid';
-    const feePaid = paymentStatus === 'unpaid' ? false : (body.feePaid !== undefined ? body.feePaid : true);
-    const feeYear = body.feeYear ?? current.fee_year ?? new Date().getFullYear();
+    const feePaid =
+      paymentStatus === 'unpaid'
+        ? false
+        : body.feePaid !== undefined
+          ? body.feePaid
+          : true;
+    const feeYear =
+      body.feeYear ?? current.fee_year ?? new Date().getFullYear();
 
     await this.prisma.$executeRaw`
       UPDATE public.members SET
@@ -2053,11 +2518,15 @@ export class MembersService {
       LIMIT 1
     `.catch(() => []);
 
-    if (rows.length === 0) throw new NotFoundException('Không tìm thấy hội viên');
+    if (rows.length === 0)
+      throw new NotFoundException('Không tìm thấy hội viên');
     const current = rows[0];
 
     const isAdmin = await this.checkIsAdmin(userId, current.association_id);
-    if (!isAdmin) throw new ForbiddenException('Chỉ quản trị viên mới có quyền gửi nhắc nhở');
+    if (!isAdmin)
+      throw new ForbiddenException(
+        'Chỉ quản trị viên mới có quyền gửi nhắc nhở',
+      );
 
     const today = new Date().toISOString().slice(0, 10);
     const newCount = ((current.reminder_count as number) ?? 0) + 1;
@@ -2078,7 +2547,9 @@ export class MembersService {
         const termEndStr = current.term_end
           ? new Date(current.term_end).toLocaleDateString('vi-VN')
           : 'Sắp tới hạn';
-        const reminderTag = isAuto ? 'HỆ THỐNG TỰ ĐỘNG NHẮC NHỞ' : 'BAN THƯ KÝ NHẮC NHỞ';
+        const reminderTag = isAuto
+          ? 'HỆ THỐNG TỰ ĐỘNG NHẮC NHỞ'
+          : 'BAN THƯ KÝ NHẮC NHỞ';
         const subject = `[CLB CEO 1983] Nhắc Nhở Gia Hạn Niên Liễm — Hội Viên ${current.name}`;
         const html = `
 <!DOCTYPE html>
@@ -2159,7 +2630,10 @@ export class MembersService {
           html,
         });
       } catch (mailErr: any) {
-        console.warn(`Failed to dispatch reminder email to ${current.email}:`, mailErr?.message);
+        console.warn(
+          `Failed to dispatch reminder email to ${current.email}:`,
+          mailErr?.message,
+        );
       }
     }
 
@@ -2177,15 +2651,19 @@ Ban Thư Ký CLB Doanh Nhân CEO 1983 xin trân trọng thông báo: Thời hạ
 Trân trọng cảm ơn Anh/Chị!`;
 
         const accessToken = process.env.ZALO_OA_ACCESS_TOKEN || '';
-        this.zaloService.sendMessage({
-          accessToken,
-          userId: current.zalo_user_id || undefined,
-          targetPhone: current.phone || undefined,
-          targetName: current.name,
-          message: zaloMsg,
-        }).catch((err) => {
-          this.logger.warn(`Failed to dispatch Zalo OA message to ${current.name}: ${err?.message}`);
-        });
+        this.zaloService
+          .sendMessage({
+            accessToken,
+            userId: current.zalo_user_id || undefined,
+            targetPhone: current.phone || undefined,
+            targetName: current.name,
+            message: zaloMsg,
+          })
+          .catch((err) => {
+            this.logger.warn(
+              `Failed to dispatch Zalo OA message to ${current.name}: ${err?.message}`,
+            );
+          });
       } catch (zaloErr) {
         this.logger.warn(`Zalo reminder dispatch error: ${zaloErr?.message}`);
       }
@@ -2205,7 +2683,9 @@ Trân trọng cảm ơn Anh/Chị!`;
           targetRoute: '/fees',
         });
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
             title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -2213,17 +2693,37 @@ Trân trọng cảm ơn Anh/Chị!`;
             $1::uuid, $2::uuid, 'membership', $3, 'renewal_reminder', 'fee_reminder',
             $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
           )
-        `, notifId, current.user_id, current.id, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+        `,
+            notifId,
+            current.user_id,
+            current.id,
+            notifTitle,
+            notifBody,
+            safeData,
+            dedupeKey,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'renewal_reminder', $4, NOW()
           )
-        `, current.id, notifTitle, notifBody, current.id).catch(() => {});
+        `,
+            current.id,
+            notifTitle,
+            notifBody,
+            current.id,
+          )
+          .catch(() => {});
       } catch (e: any) {
-        console.warn('Failed to send renewal reminder notification:', e?.message);
+        console.warn(
+          'Failed to send renewal reminder notification:',
+          e?.message,
+        );
       }
     }
 
@@ -2418,7 +2918,12 @@ Trân trọng cảm ơn Anh/Chị!`;
     const p = profileRows[0];
     const memberCode = m?.code ?? null;
     const rawStatus = String(m?.status ?? '').toLowerCase();
-    const membershipStatus = ['active', 'pending', 'suspended', 'expired'].includes(rawStatus)
+    const membershipStatus = [
+      'active',
+      'pending',
+      'suspended',
+      'expired',
+    ].includes(rawStatus)
       ? rawStatus
       : 'unknown';
     const canAct = Boolean(memberCode) && membershipStatus === 'active';
@@ -2438,16 +2943,31 @@ Trân trọng cảm ơn Anh/Chị!`;
     };
   }
 
-  async logActivity(action: string, target: string, category: string, userEmail: string = 'admin@connect.vn', assocId?: string) {
+  async logActivity(
+    action: string,
+    target: string,
+    category: string,
+    userEmail: string = 'admin@connect.vn',
+    assocId?: string,
+  ) {
     try {
       const now = new Date();
       const at = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`;
       const code = `L-${Date.now().toString(36).toUpperCase()}`;
       const effectiveAssoc = assocId || 'c1983000-0000-4000-8000-000000001983';
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma.$executeRawUnsafe(
+        `
         INSERT INTO public.activity_log (id, code, "user", action, target, category, at, ip, created_at, updated_at, association_id)
         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, '127.0.0.1', now(), now(), $7::uuid)
-      `, code, userEmail, action, target, category, at, effectiveAssoc);
+      `,
+        code,
+        userEmail,
+        action,
+        target,
+        category,
+        at,
+        effectiveAssoc,
+      );
     } catch (e: any) {
       console.warn('logActivity error:', e?.message);
     }
@@ -2492,9 +3012,13 @@ Trân trọng cảm ơn Anh/Chị!`;
     const today = new Date();
     const invoices = invRows.map((i, idx) => {
       const raw = (i.status as string) ?? '';
-      const due = i.due_date ? new Date(i.due_date).toISOString().slice(0, 10) : null;
-      let status: 'paid' | 'pending' | 'overdue' = raw === 'paid' ? 'paid' : 'pending';
-      if (status === 'pending' && due && new Date(due) < today) status = 'overdue';
+      const due = i.due_date
+        ? new Date(i.due_date).toISOString().slice(0, 10)
+        : null;
+      let status: 'paid' | 'pending' | 'overdue' =
+        raw === 'paid' ? 'paid' : 'pending';
+      if (status === 'pending' && due && new Date(due) < today)
+        status = 'overdue';
 
       return {
         id: i.id ?? `inv-${idx}`,
@@ -2503,7 +3027,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         amount: Number(i.amount ?? 0),
         status,
         dueDate: due,
-        paidAt: i.paid_at ? new Date(i.paid_at).toISOString().slice(0, 10) : null,
+        paidAt: i.paid_at
+          ? new Date(i.paid_at).toISOString().slice(0, 10)
+          : null,
       };
     });
 
@@ -2521,10 +3047,18 @@ Trân trọng cảm ơn Anh/Chị!`;
       name: me.name ?? '',
       level: me.level ?? null,
       status: me.status ?? null,
-      joinedAt: me.joined_at ? new Date(me.joined_at).toISOString().slice(0, 10) : null,
-      termEnd: me.term_end ? new Date(me.term_end).toISOString().slice(0, 10) : null,
-      newTermEnd: me.new_term_end ? new Date(me.new_term_end).toISOString().slice(0, 10) : null,
-      renewedAt: me.renewed_at ? new Date(me.renewed_at).toISOString().slice(0, 10) : null,
+      joinedAt: me.joined_at
+        ? new Date(me.joined_at).toISOString().slice(0, 10)
+        : null,
+      termEnd: me.term_end
+        ? new Date(me.term_end).toISOString().slice(0, 10)
+        : null,
+      newTermEnd: me.new_term_end
+        ? new Date(me.new_term_end).toISOString().slice(0, 10)
+        : null,
+      renewedAt: me.renewed_at
+        ? new Date(me.renewed_at).toISOString().slice(0, 10)
+        : null,
       feeYear: me.fee_year ? Number(me.fee_year) : null,
       feePaid: Boolean(me.fee_paid),
       daysToExpiry,
@@ -2550,9 +3084,13 @@ Trân trọng cảm ơn Anh/Chị!`;
     const today = new Date();
     return invRows.map((i, idx) => {
       const raw = (i.status as string) ?? '';
-      const due = i.due_date ? new Date(i.due_date).toISOString().slice(0, 10) : null;
-      let status: 'paid' | 'pending' | 'overdue' = raw === 'paid' ? 'paid' : 'pending';
-      if (status === 'pending' && due && new Date(due) < today) status = 'overdue';
+      const due = i.due_date
+        ? new Date(i.due_date).toISOString().slice(0, 10)
+        : null;
+      let status: 'paid' | 'pending' | 'overdue' =
+        raw === 'paid' ? 'paid' : 'pending';
+      if (status === 'pending' && due && new Date(due) < today)
+        status = 'overdue';
       const year = i.year ? Number(i.year) : null;
 
       return {
@@ -2562,7 +3100,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         amount: Number(i.amount ?? 0),
         method: i.method ?? null,
         status,
-        paidAt: i.paid_at ? new Date(i.paid_at).toISOString().slice(0, 10) : null,
+        paidAt: i.paid_at
+          ? new Date(i.paid_at).toISOString().slice(0, 10)
+          : null,
         dueDate: due,
         termStart: year ? `${year}-01-01` : null,
         termEnd: year ? `${year}-12-31` : null,
@@ -2601,15 +3141,22 @@ Trân trọng cảm ơn Anh/Chị!`;
       LIMIT 50
     `.catch(() => [] as any[]);
 
-    const pending = invRows.filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled');
+    const pending = invRows.filter(
+      (i: any) => i.status !== 'paid' && i.status !== 'cancelled',
+    );
     const outstanding = pending.reduce((s, i) => s + Number(i.amount ?? 0), 0);
     const lastAmount = Number(invRows[0]?.amount ?? 0);
     const renewalFee = lastAmount > 0 ? lastAmount : 2_000_000;
-    const currentTermEnd = me.new_term_end ? new Date(me.new_term_end).toISOString().slice(0, 10) : (me.term_end ? new Date(me.term_end).toISOString().slice(0, 10) : null);
+    const currentTermEnd = me.new_term_end
+      ? new Date(me.new_term_end).toISOString().slice(0, 10)
+      : me.term_end
+        ? new Date(me.term_end).toISOString().slice(0, 10)
+        : null;
 
-    const fromDate = currentTermEnd && new Date(currentTermEnd).getTime() > Date.now()
-      ? new Date(currentTermEnd)
-      : new Date();
+    const fromDate =
+      currentTermEnd && new Date(currentTermEnd).getTime() > Date.now()
+        ? new Date(currentTermEnd)
+        : new Date();
     fromDate.setFullYear(fromDate.getFullYear() + 1);
     const nextTermEnd = fromDate.toISOString().slice(0, 10);
 
@@ -2626,12 +3173,16 @@ Trân trọng cảm ơn Anh/Chị!`;
     };
   }
 
-  async payMyRenewal(userId: string, body: { method: string; correlationId?: string }) {
+  async payMyRenewal(
+    userId: string,
+    body: { method: string; correlationId?: string },
+  ) {
     const quote = await this.getRenewalQuote(userId);
     if (!quote.found) throw new NotFoundException('Không tìm thấy hội viên');
 
     const nextEnd = quote.nextTermEnd;
-    const ref = body.correlationId || `RNW-${Date.now().toString(36).toUpperCase()}`;
+    const ref =
+      body.correlationId || `RNW-${Date.now().toString(36).toUpperCase()}`;
 
     await this.prisma.$executeRaw`
       UPDATE public.members
@@ -2641,12 +3192,19 @@ Trân trọng cảm ơn Anh/Chị!`;
 
     // Send confirmation email for successful fee payment / renewal
     try {
-      const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+      const user = await this.prisma.vione_users.findUnique({
+        where: { id: userId },
+      });
       const memRows = await this.prisma.$queryRaw<any[]>`
         SELECT name, email, code FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
       `.catch(() => []);
       const memberName = memRows[0]?.name || user?.name || 'Quý Hội viên';
-      const recipientEmail = (memRows[0]?.email || user?.email || process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com').trim();
+      const recipientEmail = (
+        memRows[0]?.email ||
+        user?.email ||
+        process.env.ADMIN_NOTIFY_EMAIL ||
+        'vupv090120@gmail.com'
+      ).trim();
       const currentYear = new Date().getFullYear();
 
       await this.mailService.sendMembershipFeeSuccessEmail({
@@ -2656,10 +3214,15 @@ Trân trọng cảm ơn Anh/Chị!`;
         year: currentYear,
         amount: Number(quote.amount || 15000000),
         paidDate: new Date().toISOString().slice(0, 10),
-        paymentMethod: body.method === 'bank' ? 'Cổng thanh toán VNPAY' : body.method || 'Cổng thanh toán điện tử',
+        paymentMethod:
+          body.method === 'bank'
+            ? 'Cổng thanh toán VNPAY'
+            : body.method || 'Cổng thanh toán điện tử',
       });
     } catch (err: any) {
-      this.logger.warn(`Failed to send membership fee success email for renewal: ${err?.message}`);
+      this.logger.warn(
+        `Failed to send membership fee success email for renewal: ${err?.message}`,
+      );
     }
 
     return {
@@ -2692,13 +3255,17 @@ Trân trọng cảm ơn Anh/Chị!`;
       status: r.status || 'success',
       errorReason: r.error_reason || null,
       correlationId: r.correlation_id || null,
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
       metadata: r.metadata || {},
     }));
   }
 
   async listLinkableMembers(userId: string) {
-    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+    const user = await this.prisma.vione_users.findUnique({
+      where: { id: userId },
+    });
     if (!user || !user.email) return [];
 
     const rows = await this.prisma.$queryRaw<any[]>`
@@ -2722,13 +3289,19 @@ Trân trọng cảm ơn Anh/Chị!`;
   }
 
   async linkMyMemberProfile(userId: string, memberId: string) {
-    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } });
+    const user = await this.prisma.vione_users.findUnique({
+      where: { id: userId },
+    });
     if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
 
-    const member = await this.prisma.members.findUnique({ where: { id: memberId } });
+    const member = await this.prisma.members.findUnique({
+      where: { id: memberId },
+    });
     if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
     if (member.email?.toLowerCase() !== user.email?.toLowerCase()) {
-      throw new BadRequestException('Email tài khoản không khớp với email hồ sơ hội viên');
+      throw new BadRequestException(
+        'Email tài khoản không khớp với email hồ sơ hội viên',
+      );
     }
 
     await this.prisma.members.update({
@@ -2739,7 +3312,9 @@ Trân trọng cảm ơn Anh/Chị!`;
   }
 
   async unlinkMyMemberProfile(userId: string, memberId: string) {
-    const member = await this.prisma.members.findUnique({ where: { id: memberId } });
+    const member = await this.prisma.members.findUnique({
+      where: { id: memberId },
+    });
     if (!member) throw new NotFoundException('Không tìm thấy hồ sơ hội viên');
     if (member.user_id !== userId) {
       throw new ForbiddenException('Bạn không sở hữu liên kết này');
@@ -2755,18 +3330,32 @@ Trân trọng cảm ơn Anh/Chị!`;
   async updateMemberRoleDept(
     operatorUserId: string | undefined,
     memberId: string,
-    data: { executiveRole: string; department: string; associationId?: string; email?: string; code?: string; name?: string },
+    data: {
+      executiveRole: string;
+      department: string;
+      associationId?: string;
+      email?: string;
+      code?: string;
+      name?: string;
+    },
   ) {
     // 0. Authorization check: Only Quản trị or Admin can assign committees or roles
     if (operatorUserId) {
-      const isPrivilegedUser = await this.prisma.$queryRawUnsafe<any[]>(`
+      const isPrivilegedUser = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT 1 FROM public.user_roles
         WHERE user_id = $1::uuid
           AND role IN ('admin', 'platform_admin', 'superadmin', 'quan_tri')
         LIMIT 1
-      `, operatorUserId).catch(() => []);
+      `,
+          operatorUserId,
+        )
+        .catch(() => []);
 
-      const isPrivilegedMember = await this.prisma.$queryRawUnsafe<any[]>(`
+      const isPrivilegedMember = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT 1 FROM public.members
         WHERE user_id = $1::uuid
           AND (
@@ -2779,7 +3368,10 @@ Trân trọng cảm ơn Anh/Chị!`;
             OR LOWER(department) LIKE '%điều hành%'
           )
         LIMIT 1
-      `, operatorUserId).catch(() => []);
+      `,
+          operatorUserId,
+        )
+        .catch(() => []);
 
       const isHardcodedAdmin =
         operatorUserId === '00000000-0000-0000-0000-000000000000' ||
@@ -2787,71 +3379,155 @@ Trân trọng cảm ơn Anh/Chị!`;
     }
 
     const cleanId = (memberId || '').replace(/^acc_/, '').trim();
-    let member = await this.prisma.members.findUnique({ where: { id: cleanId } }).catch(() => null);
+    let member = await this.prisma.members
+      .findUnique({ where: { id: cleanId } })
+      .catch(() => null);
     if (!member) {
-      member = await this.prisma.members.findFirst({
-        where: {
-          OR: [
-            { code: cleanId },
-            { user_id: cleanId },
-            { email: cleanId },
-            ...(data.email ? [{ email: (data.email || '').trim().toLowerCase() }] : []),
-            ...(data.code ? [{ code: (data.code || '').trim().toUpperCase() }] : []),
-          ],
-        },
-      }).catch(() => null);
+      member = await this.prisma.members
+        .findFirst({
+          where: {
+            OR: [
+              { code: cleanId },
+              { user_id: cleanId },
+              { email: cleanId },
+              ...(data.email
+                ? [{ email: (data.email || '').trim().toLowerCase() }]
+                : []),
+              ...(data.code
+                ? [{ code: (data.code || '').trim().toUpperCase() }]
+                : []),
+            ],
+          },
+        })
+        .catch(() => null);
     }
 
-    const assocId = data.associationId || member?.association_id || 'c1983000-0000-4000-8000-000000001983';
+    const assocId =
+      data.associationId ||
+      member?.association_id ||
+      'c1983000-0000-4000-8000-000000001983';
 
     // Normalize to exact committees
     const rawDept = (data.department || '').trim();
     const rawDeptLower = rawDept.toLowerCase();
     let sanitizedDept = 'Hội viên ceo1983';
-    if (rawDeptLower.includes('điều hành') || rawDeptLower.includes('quản trị') || rawDeptLower.includes('bdh') || rawDeptLower.includes('bqt')) {
+    if (
+      rawDeptLower.includes('điều hành') ||
+      rawDeptLower.includes('quản trị') ||
+      rawDeptLower.includes('bdh') ||
+      rawDeptLower.includes('bqt')
+    ) {
       sanitizedDept = 'Ban Điều Hành';
-    } else if (rawDeptLower.includes('thư ký') || rawDeptLower.includes('btk')) {
+    } else if (
+      rawDeptLower.includes('thư ký') ||
+      rawDeptLower.includes('btk')
+    ) {
       sanitizedDept = 'Ban Thư Ký';
-    } else if (rawDeptLower.includes('thành viên') || rawDeptLower.includes('btv')) {
+    } else if (
+      rawDeptLower.includes('thành viên') ||
+      rawDeptLower.includes('btv')
+    ) {
       sanitizedDept = 'Ban Thành viên';
-    } else if (rawDeptLower.includes('xúc tiến') || rawDeptLower.includes('thương mại') || rawDeptLower.includes('bxt')) {
+    } else if (
+      rawDeptLower.includes('xúc tiến') ||
+      rawDeptLower.includes('thương mại') ||
+      rawDeptLower.includes('bxt')
+    ) {
       sanitizedDept = 'Ban xúc tiến';
-    } else if (rawDeptLower.includes('thiện nguyện') || rawDeptLower.includes('an sinh') || rawDeptLower.includes('btn')) {
+    } else if (
+      rawDeptLower.includes('thiện nguyện') ||
+      rawDeptLower.includes('an sinh') ||
+      rawDeptLower.includes('btn')
+    ) {
       sanitizedDept = 'Ban thiện nguyện';
-    } else if (rawDeptLower.includes('truyền thông') || rawDeptLower.includes('btt')) {
+    } else if (
+      rawDeptLower.includes('truyền thông') ||
+      rawDeptLower.includes('btt')
+    ) {
       sanitizedDept = 'Ban truyền thông';
-    } else if (rawDeptLower.includes('tài chính') || rawDeptLower.includes('btc')) {
+    } else if (
+      rawDeptLower.includes('tài chính') ||
+      rawDeptLower.includes('btc')
+    ) {
       sanitizedDept = 'Ban tài chính';
-    } else if (rawDept && !rawDeptLower.includes('hội viên') && !rawDeptLower.includes('ceo1983')) {
+    } else if (
+      rawDept &&
+      !rawDeptLower.includes('hội viên') &&
+      !rawDeptLower.includes('ceo1983')
+    ) {
       sanitizedDept = rawDept;
     }
 
     // Normalize to granular roles: chu_tich, quan_tri, admin, ban_dieu_hanh, tong_thu_ky, ban_thu_ky, truong_ban_*, thanh_vien_ban_*, member
     const rawRole = (data.executiveRole || '').trim().toLowerCase();
     let sanitizedRole = 'member';
-    if (rawRole === 'chu_tich' || rawRole.includes('chủ tịch') || rawRole === 'president') {
+    if (
+      rawRole === 'chu_tich' ||
+      rawRole.includes('chủ tịch') ||
+      rawRole === 'president'
+    ) {
       sanitizedRole = 'chu_tich';
-    } else if (rawRole === 'quan_tri' || rawRole.includes('quản trị') || rawRole === 'platform_admin' || rawRole === 'superadmin') {
+    } else if (
+      rawRole === 'quan_tri' ||
+      rawRole.includes('quản trị') ||
+      rawRole === 'platform_admin' ||
+      rawRole === 'superadmin'
+    ) {
       sanitizedRole = 'quan_tri';
     } else if (rawRole === 'admin') {
       sanitizedRole = 'admin';
-    } else if (rawRole === 'ban_dieu_hanh' || rawRole === 'truong_ban_dieu_hanh' || rawRole === 'pho_chu_tich' || rawRole.includes('phó chủ tịch') || (rawRole.includes('điều hành') && !rawRole.includes('hội viên'))) {
+    } else if (
+      rawRole === 'ban_dieu_hanh' ||
+      rawRole === 'truong_ban_dieu_hanh' ||
+      rawRole === 'pho_chu_tich' ||
+      rawRole.includes('phó chủ tịch') ||
+      (rawRole.includes('điều hành') && !rawRole.includes('hội viên'))
+    ) {
       sanitizedRole = 'ban_dieu_hanh';
     } else if (rawRole === 'tong_thu_ky' || rawRole.includes('tổng thư ký')) {
       sanitizedRole = 'tong_thu_ky';
-    } else if (rawRole === 'ban_thu_ky' || rawRole === 'thu_ky' || (rawRole.includes('thư ký') && !rawRole.includes('phó') && !rawRole.includes('tổng'))) {
+    } else if (
+      rawRole === 'ban_thu_ky' ||
+      rawRole === 'thu_ky' ||
+      (rawRole.includes('thư ký') &&
+        !rawRole.includes('phó') &&
+        !rawRole.includes('tổng'))
+    ) {
       sanitizedRole = 'ban_thu_ky';
-    } else if (rawRole === 'truong_ban_truyen_thong' || (rawRole.includes('truyền thông') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+    } else if (
+      rawRole === 'truong_ban_truyen_thong' ||
+      (rawRole.includes('truyền thông') &&
+        (rawRole.includes('trưởng') || rawRole.includes('truong')))
+    ) {
       sanitizedRole = 'truong_ban_truyen_thong';
-    } else if (rawRole === 'truong_ban_thanh_vien' || (rawRole.includes('thành viên') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+    } else if (
+      rawRole === 'truong_ban_thanh_vien' ||
+      (rawRole.includes('thành viên') &&
+        (rawRole.includes('trưởng') || rawRole.includes('truong')))
+    ) {
       sanitizedRole = 'truong_ban_thanh_vien';
-    } else if (rawRole === 'truong_ban_xuc_tien' || ((rawRole.includes('xúc tiến') || rawRole.includes('thương mại')) && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+    } else if (
+      rawRole === 'truong_ban_xuc_tien' ||
+      ((rawRole.includes('xúc tiến') || rawRole.includes('thương mại')) &&
+        (rawRole.includes('trưởng') || rawRole.includes('truong')))
+    ) {
       sanitizedRole = 'truong_ban_xuc_tien';
-    } else if (rawRole === 'truong_ban_tai_chinh' || (rawRole.includes('tài chính') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+    } else if (
+      rawRole === 'truong_ban_tai_chinh' ||
+      (rawRole.includes('tài chính') &&
+        (rawRole.includes('trưởng') || rawRole.includes('truong')))
+    ) {
       sanitizedRole = 'truong_ban_tai_chinh';
-    } else if (rawRole === 'truong_ban_thien_nguyen' || (rawRole.includes('thiện nguyện') && (rawRole.includes('trưởng') || rawRole.includes('truong')))) {
+    } else if (
+      rawRole === 'truong_ban_thien_nguyen' ||
+      (rawRole.includes('thiện nguyện') &&
+        (rawRole.includes('trưởng') || rawRole.includes('truong')))
+    ) {
       sanitizedRole = 'truong_ban_thien_nguyen';
-    } else if (rawRole.startsWith('thanh_vien_ban_') || rawRole.startsWith('truong_ban_')) {
+    } else if (
+      rawRole.startsWith('thanh_vien_ban_') ||
+      rawRole.startsWith('truong_ban_')
+    ) {
       sanitizedRole = rawRole;
     } else {
       sanitizedRole = 'member';
@@ -2860,7 +3536,10 @@ Trân trọng cảm ơn Anh/Chị!`;
     if (!member) {
       // Lookup or link to vione_users table if possible
       const cleanEmail = (data.email || '').trim().toLowerCase();
-      const isCleanIdUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      const isCleanIdUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          cleanId,
+        );
       const userRows = await this.prisma.$queryRaw<any[]>`
         SELECT id, name, email FROM public.vione_users
         WHERE ( ${isCleanIdUuid} AND id = ${cleanId}::uuid )
@@ -2869,16 +3548,36 @@ Trân trọng cảm ơn Anh/Chị!`;
       `.catch(() => []);
       const existingUser = userRows.length > 0 ? userRows[0] : null;
 
-      const targetMemberId = (cleanId.includes('-') && cleanId.length >= 30) ? cleanId : crypto.randomUUID();
-      const targetCode = data.code || `CEO-${targetMemberId.slice(0, 4).toUpperCase()}`;
+      const targetMemberId =
+        cleanId.includes('-') && cleanId.length >= 30
+          ? cleanId
+          : crypto.randomUUID();
+      const targetCode =
+        data.code || `CEO-${targetMemberId.slice(0, 4).toUpperCase()}`;
       const targetName = data.name || existingUser?.name || 'Hội viên CEO 1983';
-      const targetEmail = (data.email || existingUser?.email || `${targetCode.toLowerCase()}@ceo1983.vn`).trim().toLowerCase();
+      const targetEmail = (
+        data.email ||
+        existingUser?.email ||
+        `${targetCode.toLowerCase()}@ceo1983.vn`
+      )
+        .trim()
+        .toLowerCase();
 
-      const isUuid = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-      const safeAssocUuid = isUuid(assocId) ? assocId : 'c1983000-0000-4000-8000-000000001983';
-      const safeExistingUserUuid = isUuid(existingUser?.id) ? existingUser.id : null;
+      const isUuid = (str: any) =>
+        typeof str === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          str,
+        );
+      const safeAssocUuid = isUuid(assocId)
+        ? assocId
+        : 'c1983000-0000-4000-8000-000000001983';
+      const safeExistingUserUuid = isUuid(existingUser?.id)
+        ? existingUser.id
+        : null;
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.members (
           id, code, name, email, user_id, association_id, department, executive_role, status, created_at, updated_at
         ) VALUES (
@@ -2889,16 +3588,34 @@ Trân trọng cảm ơn Anh/Chị!`;
           executive_role = EXCLUDED.executive_role,
           user_id = COALESCE(EXCLUDED.user_id, public.members.user_id),
           updated_at = NOW()
-      `, targetMemberId, targetCode, targetName, targetEmail, safeExistingUserUuid, safeAssocUuid, sanitizedDept, sanitizedRole).catch(() => {});
+      `,
+          targetMemberId,
+          targetCode,
+          targetName,
+          targetEmail,
+          safeExistingUserUuid,
+          safeAssocUuid,
+          sanitizedDept,
+          sanitizedRole,
+        )
+        .catch(() => {});
 
-      member = await this.prisma.members.findUnique({ where: { id: targetMemberId } }).catch(() => null);
+      member = await this.prisma.members
+        .findUnique({ where: { id: targetMemberId } })
+        .catch(() => null);
     }
 
     // Auto-link to vione_users if member exists but user_id is null
     let userId = member?.user_id;
-    const isUuid = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    const isUuid = (str: any) =>
+      typeof str === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        str,
+      );
     if (!userId) {
-      const cleanEmail = (data.email || member?.email || '').trim().toLowerCase();
+      const cleanEmail = (data.email || member?.email || '')
+        .trim()
+        .toLowerCase();
       const cleanCode = (data.code || member?.code || '').trim().toLowerCase();
       const isCleanIdUuid = isUuid(cleanId);
       const vUsers = await this.prisma.$queryRaw<any[]>`
@@ -2913,29 +3630,53 @@ Trân trọng cảm ơn Anh/Chị!`;
         userId = vUsers[0].id;
         if (member) {
           member.user_id = userId ?? null;
-          await this.prisma.$executeRawUnsafe(`
+          await this.prisma
+            .$executeRawUnsafe(
+              `
             UPDATE public.members SET user_id = $1::uuid WHERE id = $2
-          `, userId, member.id).catch(() => {});
+          `,
+              userId,
+              member.id,
+            )
+            .catch(() => {});
         }
       }
     }
 
-    const safeAssocUuid = isUuid(assocId) ? assocId : 'c1983000-0000-4000-8000-000000001983';
+    const safeAssocUuid = isUuid(assocId)
+      ? assocId
+      : 'c1983000-0000-4000-8000-000000001983';
     const safeUserUuid = isUuid(userId) ? userId : null;
 
     if (member) {
       // 1. Update members table safely
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         UPDATE public.members
         SET executive_role = $1, department = $2, association_id = $3::uuid, user_id = COALESCE(user_id, $4::uuid), updated_at = NOW()
         WHERE id = $5
-      `, sanitizedRole, sanitizedDept, safeAssocUuid, safeUserUuid, member.id).catch(async () => {
-        await this.prisma.$executeRawUnsafe(`
+      `,
+          sanitizedRole,
+          sanitizedDept,
+          safeAssocUuid,
+          safeUserUuid,
+          member.id,
+        )
+        .catch(async () => {
+          await this.prisma
+            .$executeRawUnsafe(
+              `
           UPDATE public.members
           SET executive_role = $1, department = $2, updated_at = NOW()
           WHERE id = $3
-        `, sanitizedRole, sanitizedDept, member.id).catch(() => {});
-      });
+        `,
+              sanitizedRole,
+              sanitizedDept,
+              member.id,
+            )
+            .catch(() => {});
+        });
     }
 
     // 2. If user_id is resolved, update memberships and user_roles in PostgreSQL
@@ -2953,11 +3694,14 @@ Trân trọng cảm ơn Anh/Chị!`;
         sanitizedRole.startsWith('truong_ban_')
       ) {
         isLeadership = true;
-        appRoleValue = sanitizedRole === 'quan_tri' ? 'platform_admin' : 'admin';
+        appRoleValue =
+          sanitizedRole === 'quan_tri' ? 'platform_admin' : 'admin';
       }
 
       // Upsert into memberships table (valid schema columns)
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.memberships (
           id, user_id, association_id, role, is_default, created_at, updated_at, department, executive_role
         ) VALUES (
@@ -2968,9 +3712,18 @@ Trân trọng cảm ơn Anh/Chị!`;
             executive_role = EXCLUDED.executive_role,
             department = EXCLUDED.department,
             updated_at = NOW()
-      `, userId, assocId, appRoleValue, sanitizedDept, sanitizedRole).catch(async (mErr) => {
-        // Fallback without app_role cast if type varies
-        await this.prisma.$executeRawUnsafe(`
+      `,
+          userId,
+          assocId,
+          appRoleValue,
+          sanitizedDept,
+          sanitizedRole,
+        )
+        .catch(async (mErr) => {
+          // Fallback without app_role cast if type varies
+          await this.prisma
+            .$executeRawUnsafe(
+              `
           INSERT INTO public.memberships (
             id, user_id, association_id, is_default, created_at, updated_at, department, executive_role
           ) VALUES (
@@ -2980,18 +3733,35 @@ Trân trọng cảm ơn Anh/Chị!`;
           SET executive_role = EXCLUDED.executive_role,
               department = EXCLUDED.department,
               updated_at = NOW()
-        `, userId, assocId, sanitizedDept, sanitizedRole).catch(() => {});
-      });
+        `,
+              userId,
+              assocId,
+              sanitizedDept,
+              sanitizedRole,
+            )
+            .catch(() => {});
+        });
 
       // Cleanly sync user_roles in public.user_roles (enum app_role: admin, member, platform_admin)
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         DELETE FROM public.user_roles WHERE user_id = $1::uuid
-      `, userId).catch(() => {});
+      `,
+          userId,
+        )
+        .catch(() => {});
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.user_roles (id, user_id, role, created_at)
         VALUES (gen_random_uuid(), $1::uuid, $2::app_role, NOW())
-      `, userId, appRoleValue).catch(() => {});
+      `,
+          userId,
+          appRoleValue,
+        )
+        .catch(() => {});
 
       // Dispatch 2-way business notification
       try {
@@ -3007,7 +3777,9 @@ Trân trọng cảm ơn Anh/Chị!`;
           targetRoute: '/account-settings',
         });
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
             title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -3015,15 +3787,32 @@ Trân trọng cảm ơn Anh/Chị!`;
             $1::uuid, $2::uuid, 'membership', $3, 'role_assigned', 'role_updated',
             $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
           )
-        `, notifId, userId, member?.id || memberId, notifTitle, notifBody, safeData, dedupeKey).catch(() => {});
+        `,
+            notifId,
+            userId,
+            member?.id || memberId,
+            notifTitle,
+            notifBody,
+            safeData,
+            dedupeKey,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'membership', $4, NOW()
           )
-        `, member?.id || memberId, notifTitle, notifBody, member?.id || memberId).catch(() => {});
+        `,
+            member?.id || memberId,
+            notifTitle,
+            notifBody,
+            member?.id || memberId,
+          )
+          .catch(() => {});
       } catch (e: any) {
         console.warn('Failed to send role update notification:', e?.message);
       }
@@ -3079,7 +3868,9 @@ Trân trọng cảm ơn Anh/Chị!`;
     } = data;
 
     if (!fullName || !phone || !email || !companyName) {
-      throw new BadRequestException('Vui lòng điền đầy đủ Họ tên, Số điện thoại, Email và Tên doanh nghiệp');
+      throw new BadRequestException(
+        'Vui lòng điền đầy đủ Họ tên, Số điện thoại, Email và Tên doanh nghiệp',
+      );
     }
 
     // Association CEO 1983 fallback default
@@ -3104,7 +3895,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
       `.catch(() => []);
       if (existingEmail.length > 0) {
-        throw new BadRequestException('Email này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+        throw new BadRequestException(
+          'Email này đã được sử dụng bởi một hội viên khác trên hệ thống!',
+        );
       }
     }
 
@@ -3115,7 +3908,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         SELECT id FROM public.members WHERE regexp_replace(phone, '[^0-9+]', '', 'g') = ${cleanPhone} LIMIT 1
       `.catch(() => []);
       if (existingPhone.length > 0) {
-        throw new BadRequestException('Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!');
+        throw new BadRequestException(
+          'Số điện thoại này đã được sử dụng bởi một hội viên khác trên hệ thống!',
+        );
       }
     }
 
@@ -3167,7 +3962,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         )
       `;
     } catch (insertErr: any) {
-      this.logger.warn(`Lỗi insert public.members có company_size: ${insertErr?.message}. Đang thử insert fallback...`);
+      this.logger.warn(
+        `Lỗi insert public.members có company_size: ${insertErr?.message}. Đang thử insert fallback...`,
+      );
       try {
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
@@ -3203,8 +4000,13 @@ Trân trọng cảm ơn Anh/Chị!`;
           )
         `;
       } catch (fallbackErr: any) {
-        this.logger.error(`Lỗi nghiêm trọng khi lưu thông tin đăng ký: ${fallbackErr?.message}`, fallbackErr?.stack);
-        throw new BadRequestException('Không thể ghi nhận hồ sơ đăng ký vào hệ thống. Vui lòng kiểm tra lại thông tin hoặc thử lại sau!');
+        this.logger.error(
+          `Lỗi nghiêm trọng khi lưu thông tin đăng ký: ${fallbackErr?.message}`,
+          fallbackErr?.stack,
+        );
+        throw new BadRequestException(
+          'Không thể ghi nhận hồ sơ đăng ký vào hệ thống. Vui lòng kiểm tra lại thông tin hoặc thử lại sau!',
+        );
       }
     }
 
@@ -3240,24 +4042,29 @@ Trân trọng cảm ơn Anh/Chị!`;
     });
 
     // Bắn thư cảm ơn về email ngay khi điền form đăng ký xong (Yêu cầu 8)
-    void this.mailService.sendRegistrationReceivedEmail({
-      to: email.trim().toLowerCase(),
-      fullName,
-      phone,
-      companyName,
-      position: position || 'Đại diện Doanh nghiệp',
-      industry: industry || 'Kinh doanh & Quản lý',
-      needs,
-      offers,
-      memberId: id,
-    }).catch((err: any) => {
-      this.logger.warn(`Lỗi gửi thư cảm ơn đăng ký hội viên: ${err?.message}`);
-    });
+    void this.mailService
+      .sendRegistrationReceivedEmail({
+        to: email.trim().toLowerCase(),
+        fullName,
+        phone,
+        companyName,
+        position: position || 'Đại diện Doanh nghiệp',
+        industry: industry || 'Kinh doanh & Quản lý',
+        needs,
+        offers,
+        memberId: id,
+      })
+      .catch((err: any) => {
+        this.logger.warn(
+          `Lỗi gửi thư cảm ơn đăng ký hội viên: ${err?.message}`,
+        );
+      });
 
     return {
       ok: true,
       memberId: id,
-      message: 'Đăng ký hội viên thành công! Thư cảm ơn đã được gửi tới email của Anh/Chị.',
+      message:
+        'Đăng ký hội viên thành công! Thư cảm ơn đã được gửi tới email của Anh/Chị.',
     };
   }
 
@@ -3265,7 +4072,10 @@ Trân trọng cảm ơn Anh/Chị!`;
    * Kiểm tra thẩm quyền phê duyệt hồ sơ hội viên mới.
    * Thẩm quyền thuộc về Ban Thành Viên (BTV) hoặc Ban Quản Trị (BQT) / Admin / Super Admin.
    */
-  async checkCanApproveMember(userId: string, assocId?: string): Promise<boolean> {
+  async checkCanApproveMember(
+    userId: string,
+    assocId?: string,
+  ): Promise<boolean> {
     if (!userId) return false;
 
     // 1. SuperAdmin / System Admin ID mặc định
@@ -3331,7 +4141,12 @@ Trân trọng cảm ơn Anh/Chị!`;
       `.catch(() => []);
       if (perms.length > 0) {
         const p = perms[0];
-        if (p.can_manage_members || p.is_admin || p.canManageMembers || p.isAdmin) {
+        if (
+          p.can_manage_members ||
+          p.is_admin ||
+          p.canManageMembers ||
+          p.isAdmin
+        ) {
           return true;
         }
       }
@@ -3346,7 +4161,9 @@ Trân trọng cảm ơn Anh/Chị!`;
       if (actorMembers.length > 0) {
         const actorMember = actorMembers[0];
         const dept = String(actorMember?.department || '').toLowerCase();
-        const execRole = String(actorMember?.executive_role || '').toLowerCase();
+        const execRole = String(
+          actorMember?.executive_role || '',
+        ).toLowerCase();
         const memRole = String(actorMember?.role || '').toLowerCase();
 
         // Ban Thành Viên có thẩm quyền phê duyệt hồ sơ kết nạp
@@ -3399,21 +4216,30 @@ Trân trọng cảm ơn Anh/Chị!`;
     }
 
     const member = rows[0];
-    const canApprove = await this.checkCanApproveMember(adminUserId, member.association_id);
+    const canApprove = await this.checkCanApproveMember(
+      adminUserId,
+      member.association_id,
+    );
     if (!canApprove) {
       throw new ForbiddenException(
-        'Thẩm quyền kiểm duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Bạn vui lòng sử dụng tài khoản Ban Quản Trị/Ban Thành Viên để phê duyệt hồ sơ kết nạp.'
+        'Thẩm quyền kiểm duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Bạn vui lòng sử dụng tài khoản Ban Quản Trị/Ban Thành Viên để phê duyệt hồ sơ kết nạp.',
       );
     }
-    const canApproveAction = await this.checkActionPermission(adminUserId, 'MEM_APPROVE', member.association_id);
+    const canApproveAction = await this.checkActionPermission(
+      adminUserId,
+      'MEM_APPROVE',
+      member.association_id,
+    );
     if (!canApproveAction) {
       throw new ForbiddenException(
-        'Quyền phê duyệt hội viên (MEM_APPROVE) đã bị thu hồi trong cấu hình ma trận phân quyền hệ thống'
+        'Quyền phê duyệt hội viên (MEM_APPROVE) đã bị thu hồi trong cấu hình ma trận phân quyền hệ thống',
       );
     }
 
     if (!member.email || !member.email.includes('@')) {
-      throw new BadRequestException('Hội viên chưa có địa chỉ email hợp lệ để cấp phát tài khoản');
+      throw new BadRequestException(
+        'Hội viên chưa có địa chỉ email hợp lệ để cấp phát tài khoản',
+      );
     }
 
     // 1. Sinh mật khẩu ngẫu nhiên cho hội viên (vd: CEO1983@9482)
@@ -3423,26 +4249,27 @@ Trân trọng cảm ơn Anh/Chị!`;
     const hashedPassword = await bcrypt.hash(passwordRaw, salt);
 
     // 2. Tìm hoặc tạo tài khoản trong vione_users
-    let userRecord = await this.prisma.vione_users.findFirst({
-      where: {
-        OR: [
-          { email: member.email },
-          { username: member.email },
-        ],
-      },
-    }).catch(() => null);
+    const userRecord = await this.prisma.vione_users
+      .findFirst({
+        where: {
+          OR: [{ email: member.email }, { username: member.email }],
+        },
+      })
+      .catch(() => null);
 
     let assignedUserId: string;
     if (userRecord) {
       assignedUserId = userRecord.id;
-      await this.prisma.vione_users.update({
-        where: { id: userRecord.id },
-        data: {
-          password: hashedPassword,
-          name: member.contact || member.name,
-          updated_at: new Date(),
-        },
-      }).catch(() => null);
+      await this.prisma.vione_users
+        .update({
+          where: { id: userRecord.id },
+          data: {
+            password: hashedPassword,
+            name: member.contact || member.name,
+            updated_at: new Date(),
+          },
+        })
+        .catch(() => null);
     } else {
       assignedUserId = crypto.randomUUID();
       await this.prisma.vione_users.create({
@@ -3486,7 +4313,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         account_status = 'active',
         updated_at = NOW()
     `.catch((profileErr: any) => {
-      this.logger.warn(`Could not upsert user_profiles for member: ${profileErr?.message}`);
+      this.logger.warn(
+        `Could not upsert user_profiles for member: ${profileErr?.message}`,
+      );
     });
 
     // Đồng bộ vào auth.users để thỏa mãn ràng buộc khóa ngoại members_user_id_fkey
@@ -3501,9 +4330,10 @@ Trân trọng cảm ơn Anh/Chị!`;
     }
 
     // 3. Tạo mã hội viên nếu chưa có
-    const memberCode = (member.code && member.code.trim() !== '')
-      ? member.code
-      : `M1983-${Math.floor(100 + Math.random() * 900)}`;
+    const memberCode =
+      member.code && member.code.trim() !== ''
+        ? member.code
+        : `M1983-${Math.floor(100 + Math.random() * 900)}`;
 
     // 4. Kích hoạt trạng thái hội viên trong bảng members
     await this.prisma.$executeRaw`
@@ -3529,10 +4359,14 @@ Trân trọng cảm ơn Anh/Chị!`;
     // 6. Gửi email tài khoản đăng nhập chính thức
     let emailSent = false;
     let emailMessage = '';
-    const portalUrl = process.env.APP_URL 
+    const portalUrl = process.env.APP_URL
       ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login`
       : 'https://ceo1983.viconnect.vn/association/login';
-    const compName = member.company_name || member.company || member.organization || member.name;
+    const compName =
+      member.company_name ||
+      member.company ||
+      member.organization ||
+      member.name;
 
     try {
       const emailResult = await this.mailService.sendRegistrationAccountEmail({
@@ -3655,17 +4489,21 @@ Trân trọng cảm ơn Anh/Chị!`;
   }
 
   async getMemberLocations() {
-    const list = await this.prisma.$queryRawUnsafe<any[]>(`
+    const list = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT id, code, name, company_name, avatar, avatar_url, phone, email, industry, department, executive_role,
              latitude, longitude, is_location_sharing, last_location_updated_at
       FROM public.members
       WHERE is_location_sharing = true AND latitude IS NOT NULL AND longitude IS NOT NULL
       ORDER BY last_location_updated_at DESC NULLS LAST;
-    `).catch(() => []);
+    `,
+      )
+      .catch(() => []);
 
     return {
       success: true,
-      data: list.map(m => ({
+      data: list.map((m) => ({
         id: m.id,
         code: m.code,
         name: m.name,
@@ -3679,19 +4517,24 @@ Trân trọng cảm ơn Anh/Chị!`;
         latitude: Number(m.latitude),
         longitude: Number(m.longitude),
         lastUpdated: m.last_location_updated_at,
-      }))
+      })),
     };
   }
 
   async geocodeAddress(address: string) {
     if (!address || !address.trim()) {
-      return { ok: false, message: 'address_required', lat: 21.0175, lng: 105.7838 };
+      return {
+        ok: false,
+        message: 'address_required',
+        lat: 21.0175,
+        lng: 105.7838,
+      };
     }
     const cleanAddr = address.trim();
     try {
       const res = await fetch(
         `https://photon.komoot.io/api/?q=${encodeURIComponent(cleanAddr)}&limit=1`,
-        { headers: { 'User-Agent': 'Ceo1983App/1.0' } }
+        { headers: { 'User-Agent': 'Ceo1983App/1.0' } },
       );
       if (res.ok) {
         const data = await res.json();
@@ -3699,14 +4542,26 @@ Trân trọng cảm ơn Anh/Chị!`;
         if (feat && feat.geometry && Array.isArray(feat.geometry.coordinates)) {
           const [lon, lat] = feat.geometry.coordinates;
           const p = feat.properties || {};
-          const formatted = [p.name, p.street, p.district, p.city, p.country].filter(Boolean).join(', ');
-          return { ok: true, lat: Number(lat), lng: Number(lon), formattedAddress: formatted || cleanAddr };
+          const formatted = [p.name, p.street, p.district, p.city, p.country]
+            .filter(Boolean)
+            .join(', ');
+          return {
+            ok: true,
+            lat: Number(lat),
+            lng: Number(lon),
+            formattedAddress: formatted || cleanAddr,
+          };
         }
       }
     } catch (e) {
       console.warn('Photon geocode error:', e);
     }
-    return { ok: true, lat: 21.0175, lng: 105.7838, formattedAddress: cleanAddr };
+    return {
+      ok: true,
+      lat: 21.0175,
+      lng: 105.7838,
+      formattedAddress: cleanAddr,
+    };
   }
 
   async reverseGeocodeCoordinates(lat: number, lng: number) {
@@ -3716,7 +4571,7 @@ Trân trọng cảm ơn Anh/Chị!`;
     try {
       const res = await fetch(
         `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`,
-        { headers: { 'User-Agent': 'Ceo1983App/1.0' } }
+        { headers: { 'User-Agent': 'Ceo1983App/1.0' } },
       );
       if (res.ok) {
         const data = await res.json();
@@ -3740,13 +4595,27 @@ Trân trọng cảm ơn Anh/Chị!`;
     } catch (e) {
       console.warn('Photon reverseGeocode error:', e);
     }
-    return { ok: true, address: 'Keangnam Landmark 72, Đường Phạm Hùng, Cầu Giấy, Hà Nội' };
+    return {
+      ok: true,
+      address: 'Keangnam Landmark 72, Đường Phạm Hùng, Cầu Giấy, Hà Nội',
+    };
   }
 
-  async updateMyLocation(userId: string, body: { latitude: number; longitude: number; isSharing?: boolean; address?: string }) {
+  async updateMyLocation(
+    userId: string,
+    body: {
+      latitude: number;
+      longitude: number;
+      isSharing?: boolean;
+      address?: string;
+    },
+  ) {
     if (!userId) throw new BadRequestException('Chưa đăng nhập');
-    const isSharing = body.isSharing !== undefined ? Boolean(body.isSharing) : true;
-    const addressUpdate = body.address ? `, address = '${body.address.replace(/'/g, "''")}'` : '';
+    const isSharing =
+      body.isSharing !== undefined ? Boolean(body.isSharing) : true;
+    const addressUpdate = body.address
+      ? `, address = '${body.address.replace(/'/g, "''")}'`
+      : '';
     await this.prisma.$executeRawUnsafe(`
       UPDATE public.members 
       SET latitude = ${body.latitude}, 
@@ -3756,7 +4625,10 @@ Trân trọng cảm ơn Anh/Chị!`;
           ${addressUpdate}
       WHERE user_id = '${userId}'::uuid OR id = '${userId}';
     `);
-    return { success: true, message: 'Đã cập nhật vị trí bản đồ & địa chỉ doanh nghiệp' };
+    return {
+      success: true,
+      message: 'Đã cập nhật vị trí bản đồ & địa chỉ doanh nghiệp',
+    };
   }
 
   async bulkImportMembers(userId: string, membersData: any[]) {
@@ -3764,7 +4636,14 @@ Trân trọng cảm ơn Anh/Chị!`;
       throw new BadRequestException('Database connection not available');
     }
     if (!Array.isArray(membersData) || membersData.length === 0) {
-      return { success: true, total: 0, created: 0, updated: 0, skipped: 0, message: 'Không có dữ liệu để nhập' };
+      return {
+        success: true,
+        total: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        message: 'Không có dữ liệu để nhập',
+      };
     }
 
     let created = 0;
@@ -3774,14 +4653,32 @@ Trân trọng cảm ơn Anh/Chị!`;
     const defaultAssocId = 'c1983000-0000-4000-8000-000000001983';
 
     for (const item of membersData) {
-      const name = String(item.name || item.fullName || item.hoTen || '').trim();
-      const phone = String(item.phone || item.sdt || item.soDienThoai || '').trim();
-      const email = String(item.email || '').trim().toLowerCase();
-      const company = String(item.company || item.companyName || item.congTy || '').trim();
-      const industry = String(item.industry || item.nganhNghe || 'Đa ngành').trim();
-      const title = String(item.title || item.position || item.chucVu || item.executiveRole || 'Hội viên').trim();
+      const name = String(
+        item.name || item.fullName || item.hoTen || '',
+      ).trim();
+      const phone = String(
+        item.phone || item.sdt || item.soDienThoai || '',
+      ).trim();
+      const email = String(item.email || '')
+        .trim()
+        .toLowerCase();
+      const company = String(
+        item.company || item.companyName || item.congTy || '',
+      ).trim();
+      const industry = String(
+        item.industry || item.nganhNghe || 'Đa ngành',
+      ).trim();
+      const title = String(
+        item.title ||
+          item.position ||
+          item.chucVu ||
+          item.executiveRole ||
+          'Hội viên',
+      ).trim();
       const address = String(item.address || item.diaChi || '').trim();
-      const department = String(item.department || item.banChuyenMon || 'Ban Thành Viên').trim();
+      const department = String(
+        item.department || item.banChuyenMon || 'Ban Thành Viên',
+      ).trim();
 
       if (!name) {
         skipped++;
@@ -3847,9 +4744,3 @@ Trân trọng cảm ơn Anh/Chị!`;
     };
   }
 }
-
-
-
-
-
-

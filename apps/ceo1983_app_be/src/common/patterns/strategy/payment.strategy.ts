@@ -64,7 +64,6 @@ export class VietQRPaymentStrategy implements IPaymentStrategy {
   }
 }
 
-
 export class MoMoPaymentStrategy implements IPaymentStrategy {
   readonly methodCode = 'MOMO';
 
@@ -73,7 +72,9 @@ export class MoMoPaymentStrategy implements IPaymentStrategy {
       success: true,
       method: 'MOMO',
       transactionRef: intent.orderId,
-      paymentUrl: intent.returnUrl || `https://test-payment.momo.vn/v2/gateway/pay?orderId=${intent.orderId}`,
+      paymentUrl:
+        intent.returnUrl ||
+        `https://test-payment.momo.vn/v2/gateway/pay?orderId=${intent.orderId}`,
       qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=momo://pay?orderId=${intent.orderId}&amount=${intent.amount}`,
     };
   }
@@ -95,4 +96,3 @@ export class PaymentStrategyFactory {
     return strategy || this.registry.get('VIETQR')!;
   }
 }
-

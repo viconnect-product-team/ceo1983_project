@@ -58,7 +58,9 @@ export class VietnameseValidationPipe implements PipeTransform {
           }
           throw new BadRequestException({
             statusCode: 400,
-            message: messages.join('; ') || 'Dữ liệu gửi lên không đúng định dạng yêu cầu!',
+            message:
+              messages.join('; ') ||
+              'Dữ liệu gửi lên không đúng định dạng yêu cầu!',
             errors: errorMap,
           });
         }

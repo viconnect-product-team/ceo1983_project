@@ -27,7 +27,9 @@ export class DraftState implements IApprovalState {
   }
 
   approve(context: WorkflowActionContext): IApprovalState {
-    throw new Error('Hồ sơ đang ở trạng thái Nháp, phải gửi yêu cầu phê duyệt trước.');
+    throw new Error(
+      'Hồ sơ đang ở trạng thái Nháp, phải gửi yêu cầu phê duyệt trước.',
+    );
   }
 
   reject(context: WorkflowActionContext): IApprovalState {
@@ -52,14 +54,22 @@ export class PendingReviewState implements IApprovalState {
 
   approve(context: WorkflowActionContext): IApprovalState {
     // Chỉ Admin hoặc Ban Thư Ký có quyền duyệt
-    if (context.userRole !== 'admin' && context.userRole !== 'tong_thu_ky' && context.userRole !== 'chu_tich') {
+    if (
+      context.userRole !== 'admin' &&
+      context.userRole !== 'tong_thu_ky' &&
+      context.userRole !== 'chu_tich'
+    ) {
       throw new Error('Bạn không có thẩm quyền phê duyệt hồ sơ này.');
     }
     return new ApprovedState();
   }
 
   reject(context: WorkflowActionContext): IApprovalState {
-    if (context.userRole !== 'admin' && context.userRole !== 'tong_thu_ky' && context.userRole !== 'chu_tich') {
+    if (
+      context.userRole !== 'admin' &&
+      context.userRole !== 'tong_thu_ky' &&
+      context.userRole !== 'chu_tich'
+    ) {
       throw new Error('Bạn không có thẩm quyền từ chối hồ sơ này.');
     }
     return new RejectedState(context.notes || 'Từ chối bởi Ban Điều Hành');
@@ -86,7 +96,9 @@ export class ApprovedState implements IApprovalState {
   }
 
   reject(): IApprovalState {
-    throw new Error('Hồ sơ đã được phê chuẩn chính thức, không thể từ chối trực tiếp.');
+    throw new Error(
+      'Hồ sơ đã được phê chuẩn chính thức, không thể từ chối trực tiếp.',
+    );
   }
 
   cancel(): IApprovalState {
@@ -179,4 +191,3 @@ export class ApprovalWorkflowContext {
     this.currentState = this.currentState.cancel(actionContext);
   }
 }
-

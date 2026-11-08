@@ -14,7 +14,9 @@ export interface DomainEvent<T = any> {
   actorId?: string;
 }
 
-export type DomainEventListener<T = any> = (event: DomainEvent<T>) => Promise<void> | void;
+export type DomainEventListener<T = any> = (
+  event: DomainEvent<T>,
+) => Promise<void> | void;
 
 export class DomainEventEmitter {
   private static instance: DomainEventEmitter;
@@ -46,7 +48,10 @@ export class DomainEventEmitter {
       try {
         await listener(event);
       } catch (err: any) {
-        console.error(`[DomainObserver] Error handling event ${eventName}:`, err?.message || err);
+        console.error(
+          `[DomainObserver] Error handling event ${eventName}:`,
+          err?.message || err,
+        );
       }
     });
   }
@@ -58,4 +63,3 @@ export class DomainEventEmitter {
 
 // Global Domain Event Bus
 export const domainEventBus = DomainEventEmitter.getInstance();
-

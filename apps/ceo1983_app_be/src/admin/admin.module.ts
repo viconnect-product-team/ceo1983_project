@@ -14,4 +14,3 @@ import { MailModule } from '../mail/mail.module';
   exports: [AdminService, AdminRepository],
 })
 export class AdminModule {}
-

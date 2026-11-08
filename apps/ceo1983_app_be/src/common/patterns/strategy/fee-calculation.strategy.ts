@@ -94,7 +94,10 @@ export class ExecutiveMemberFeeStrategy implements IFeeCalculationStrategy {
  * Strategy Registry Factory
  */
 export class FeeCalculationStrategyResolver {
-  private static strategies: Map<string, IFeeCalculationStrategy> = new Map<string, IFeeCalculationStrategy>([
+  private static strategies: Map<string, IFeeCalculationStrategy> = new Map<
+    string,
+    IFeeCalculationStrategy
+  >([
     ['REGULAR', new RegularMemberFeeStrategy()],
     ['VIP', new VipMemberFeeStrategy()],
     ['EXECUTIVE', new ExecutiveMemberFeeStrategy()],

@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tài Liệu Thiết Kế Cơ Sở Dữ Liệu PostgreSQL & Đặc Tả REST API Hệ Thống CEO 1983</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        flowchart: { curve: 'basis', htmlLabels: true },
+        themeVariables: {
+          primaryColor: '#003B95',
+          primaryTextColor: '#ffffff',
+          primaryBorderColor: '#002B70',
+          lineColor: '#D97706',
+          secondaryColor: '#EFF6FF',
+          tertiaryColor: '#FFFFFF'
+        }
+      });
+    });
+  </script>
+  <style>
+    :root {
+      --primary: #003B95;
+      --navy: #1F3864;
+      --gold: #D97706;
+      --dark: #0F172A;
+      --muted: #475569;
+      --border: #CBD5E1;
+      --bg-alt: #F8FAFC;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Times New Roman', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: var(--dark);
+      background: #FFFFFF;
+      margin: 0;
+      padding: 20px;
+    }
+
+    @media screen {
+      body {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.08);
+      }
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 15mm;
+    }
+
+    /* Cover Page */
+    .cover-page {
+      text-align: center;
+      padding: 60px 20px;
+      page-break-after: always;
+      border: 3px double var(--primary);
+      border-radius: 8px;
+      margin-bottom: 40px;
+      background: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%);
+    }
+    .cover-org {
+      font-size: 15pt;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .cover-sub-org {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .cover-deco {
+      font-size: 18pt;
+      color: var(--gold);
+      margin-bottom: 40px;
+    }
+    .cover-title {
+      font-size: 24pt;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      line-height: 1.3;
+      margin-bottom: 16px;
+    }
+    .cover-subtitle {
+      font-size: 13pt;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 50px;
+    }
+    .cover-meta {
+      width: 100%;
+      max-width: 550px;
+      margin: 0 auto 50px auto;
+      border-collapse: collapse;
+      font-size: 10.5pt;
+      text-align: left;
+    }
+    .cover-meta th {
+      background: var(--bg-alt);
+      color: var(--primary);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      width: 38%;
+      font-weight: 700;
+    }
+    .cover-meta td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+    }
+    .cover-footer {
+      font-size: 9.5pt;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+    }
+
+    /* Headings */
+    .heading-1 {
+      font-size: 18pt;
+      color: var(--primary);
+      font-weight: 700;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 6px;
+      margin-top: 36px;
+      margin-bottom: 16px;
+      page-break-after: avoid;
+    }
+    .heading-2 {
+      font-size: 14pt;
+      color: var(--gold);
+      font-weight: 700;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+    }
+    .heading-3 {
+      font-size: 12pt;
+      color: var(--navy);
+      font-weight: 700;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+    .heading-4 {
+      font-size: 11pt;
+      color: var(--dark);
+      font-weight: 700;
+      font-style: italic;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      page-break-after: avoid;
+    }
+
+    .doc-para {
+      margin: 8px 0;
+      text-align: justify;
+    }
+
+    .doc-divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 24px 0;
+    }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      margin: 16px 0;
+      overflow-x: auto;
+      page-break-inside: avoid;
+    }
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+      background: #FFFFFF;
+    }
+    .doc-table th {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 700;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .doc-table td {
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .doc-table tr:nth-child(even) td {
+      background: var(--bg-alt);
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      border-left: 4px solid;
+      page-break-inside: avoid;
+    }
+    .callout-important {
+      background: #EFF6FF;
+      border-color: #2563EB;
+    }
+    .callout-note {
+      background: #F8FAFC;
+      border-color: var(--primary);
+    }
+    .callout-tip {
+      background: #F0FDF4;
+      border-color: #16A34A;
+    }
+    .callout-warning, .callout-caution {
+      background: #FFFBEB;
+      border-color: var(--gold);
+    }
+    .callout-header {
+      font-weight: 700;
+      font-size: 10pt;
+      margin-bottom: 4px;
+      color: var(--primary);
+    }
+
+    /* Mermaid */
+    .mermaid-container {
+      margin: 20px auto;
+      text-align: center;
+      page-break-inside: avoid;
+      background: #FAFAFA;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .mermaid {
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    /* Code Block */
+    .code-block {
+      background: #0F172A;
+      color: #F8FAFC;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+      font-size: 9.5pt;
+      overflow-x: auto;
+      margin: 14px 0;
+    }
+    .code-inline {
+      background: #F1F5F9;
+      color: var(--gold);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      font-size: 9.5pt;
+      font-weight: 600;
+    }
+
+    /* Images */
+    .img-card {
+      margin: 18px auto;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    .img-wrapper {
+      display: inline-block;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      background: #F8FAFC;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      max-width: 100%;
+    }
+    .img-wrapper img {
+      max-width: 100%;
+      height: auto;
+      max-height: 420px;
+      border-radius: 4px;
+      display: block;
+      margin: 0 auto;
+    }
+    .img-caption {
+      font-size: 9.5pt;
+      font-style: italic;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .img-placeholder {
+      padding: 18px;
+      background: #F1F5F9;
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Lists */
+    .doc-list {
+      margin: 8px 0 8px 24px;
+      padding: 0;
+    }
+    .doc-list li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TRANG BÌA CHUYÊN NGHIỆP -->
+  <div class="cover-page">
+    <div class="cover-org">HỘI DOANH NGHIỆP TRẺ HÀ NỘI (HANOIBA)</div>
+    <div class="cover-sub-org">CLB DOANH NHÂN CEO 1983</div>
+    <div class="cover-deco">❖ ❖ ❖</div>
+    <h1 class="cover-title">THIẾT KẾ CƠ SỞ DỮ LIỆU POSTGRESQL & ĐẶC TẢ REST API</h1>
+    <div class="cover-subtitle">Kiến Trúc Pure NestJS 3 Tầng, 16 Bảng PostgreSQL & 50+ REST API Endpoints</div>
+
+    <table class="cover-meta">
+      <tr>
+        <th>Mã Tài Liệu</th>
+        <td><strong>DB-API-CEO1983-MASTER-HANOIBA</strong></td>
+      </tr>
+      <tr>
+        <th>Phiên Bản</th>
+        <td>Phiên Bản 10.0 Enterprise Handover Standard</td>
+      </tr>
+      <tr>
+        <th>Cơ Quan Chủ Quản</th>
+        <td>CLB Doanh Nhân CEO 1983 (HanoiBA)</td>
+      </tr>
+      <tr>
+        <th>Đơn Vị Phát Triển</th>
+        <td>VICONNECT - Nền tảng Chuyển đổi số</td>
+      </tr>
+      <tr>
+        <th>Ngày Bàn Giao</th>
+        <td>08/11/2026</td>
+      </tr>
+      <tr>
+        <th>Trạng Thái</th>
+        <td><strong style="color: #16A34A;">✓ ĐÃ THẨM ĐỊNH & NGHIỆM THU CHÍNH THỨC</strong></td>
+      </tr>
+    </table>
+
+    <div class="cover-footer">
+      Lưu hành nội bộ Ban Chấp Hành CLB Doanh Nhân CEO 1983 & Doanh Nghiệp Hội Viên
+    </div>
+  </div>
+
+  <!-- NỘI DUNG TÀI LIỆU -->
+  <div class="doc-body">
+    <h1 class="heading-1">HỆ SINH THÁI NỀN TẢNG SỐ CLB DOANH NHÂN CEO 1983 (HANOIBA)</h1>
+<h2 class="heading-2">TÀI LIỆU THIẾT KẾ CƠ SỞ DỮ LIỆU POSTGRESQL & ĐẶC TẢ REST API</h2>
+<p class="doc-para"><em>(DATABASE DESIGN & REST API SPECIFICATIONS - MASTER ENTERPRISE SPEC)</em></p>
+<hr class="doc-divider"/>
+<ul class="doc-list">
+<li><strong>Mã tài liệu:</strong> <code class="code-inline">DB-API-CEO1983-MASTER-HANOIBA</code></li>
+<li><strong>Phiên bản:</strong> <code class="code-inline">Phiên bản 10.0 Enterprise Handover Standard (Bản Bàn Giao Kỹ Thuật & CSDL Toàn Diện)</code></li>
+<li><strong>Cơ quan chủ quản:</strong> Câu Lạc Bộ Doanh Nhân CEO 1983 — Trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</li>
+<li><strong>Đơn vị phát triển giải pháp:</strong> VICONNECT - Đội ngũ Kỹ sư Dữ liệu & Kiến trúc sư Backend NestJS</li>
+<li><strong>Công nghệ cốt lõi:</strong> PostgreSQL 16+, NestJS Pure 3-Tier, Prisma ORM, JWT Authentication, Redis Cache, Socket.IO Realtime</li>
+<li><strong>Ngày phát hành:</strong> <code class="code-inline">08/11/2026</code></li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">MỤC LỤC TÀI LIỆU</h2>
+<ol class="doc-list">
+<li><strong>PHẦN I: TỔNG QUAN KIẾN TRÚC DỮ LIỆU & GIAO TIẾP HỆ THỐNG</strong></li>
+</ol>
+<ul class="doc-list">
+<li>1.1. Triết Lý Thiết Kế Kiến Trúc Backend NestJS Thuần Khiết</li>
+<li>1.2. Chuẩn Hóa Khóa Chính UUIDv4 & Tính Toàn Vẹn Quan Hệ</li>
+<li>1.3. Cơ Chế Bảo Mật RBAC, DataScopeInterceptor & Xác Thực JWT</li>
+</ul>
+<ol class="doc-list">
+<li><strong>PHẦN II: THIẾT KẾ CƠ SỞ DỮ LIỆU POSTGRESQL CHI TIẾT (16 BẢNG DỮ LIỆU)</strong></li>
+</ol>
+<ul class="doc-list">
+<li>2.1. Sơ Đồ Quan Hệ Thực Thể Toàn Diện (Full ERD Diagram)</li>
+<li>2.2. Phân Hệ Người Dùng, Hội Viên & Doanh Nghiệp (<code class="code-inline">vione_users</code>, <code class="code-inline">members</code>, <code class="code-inline">companies</code>)</li>
+<li>2.3. Phân Hệ Phân Quyền Vai Trò & Phân Ban (<code class="code-inline">user_roles</code>, <code class="code-inline">committee_members</code>)</li>
+<li>2.4. Phân Hệ Giao Thương B2B, Cơ Hội & Đàm Phán Deal (<code class="code-inline">opportunities</code>, <code class="code-inline">opportunity_interests</code>)</li>
+<li>2.5. Phân Hệ Sản Phẩm & Gian Hàng Sàn TMĐT (<code class="code-inline">products</code>)</li>
+<li>2.6. Phân Hệ Sự Kiện, Sơ Đồ Ghế Cinema & Trạm Soát Vé (<code class="code-inline">events</code>, <code class="code-inline">event_registrations</code>)</li>
+<li>2.7. Phân Hệ Cuộc Họp Ban & Quản Lý Check-in Độc Lập (<code class="code-inline">business_meetings</code>, <code class="code-inline">meeting_participants</code>)</li>
+<li>2.8. Phân Hệ Bảng Tin Mạng Lưới & Bình Luận Cây 3 Tầng (<code class="code-inline">feed_posts</code>, <code class="code-inline">feed_comments</code>, <code class="code-inline">feed_likes</code>)</li>
+<li>2.9. Phân Hệ Tài Chính, Sổ Quỹ & Thu Hội Phí Niên Liễm (<code class="code-inline">financial_transactions</code>, <code class="code-inline">membership_fees</code>)</li>
+<li>2.10. Phân Hệ Tích Hợp Zalo OA & Quản Lý Token 6 Giờ (<code class="code-inline">zalo_accounts</code>)</li>
+<li>2.11. Phân Hệ Quản Trị Hệ Thống & Nhật Ký Kiểm Toán (<code class="code-inline">audit_logs</code>, <code class="code-inline">app_settings</code>, <code class="code-inline">notifications</code>)</li>
+</ul>
+<ol class="doc-list">
+<li><strong>PHẦN III: ĐẶC TẢ CHI TIẾT 50+ REST API ENDPOINTS CHUẨN DOANH NGHIỆP</strong></li>
+</ol>
+<ul class="doc-list">
+<li>3.1. Phân Hệ Xác Thực & Phiên Làm Việc (Authentication & Session APIs)</li>
+<li>3.2. Phân Hệ Quản Trị Hội Viên & Thẩm Định Hồ Sơ (Members APIs)</li>
+<li>3.3. Phân Hệ Sự Kiện, Sơ Đồ Bàn Tiệc & Trạm Soát Vé QR Gate (Events & Seating APIs)</li>
+<li>3.4. Phân Hệ Cuộc Họp Ban & Quản Lý Check-in Độc Lập (Meetings & Check-in APIs)</li>
+<li>3.5. Phân Hệ Cơ Hội Giao Thương B2B & Đàm Phán Deal Sinh Lời (Opportunities & Deals APIs)</li>
+<li>3.6. Phân Hệ Sản Phẩm & Sàn TMĐT Nội Khối (Products APIs)</li>
+<li>3.7. Phân Hệ Mạng Lưới, Đăng Bài QR & Bình Luận Cây (Feed & Comments APIs)</li>
+<li>3.8. Phân Hệ Tài Chính, Thu Hội Phí & Webhook Đối Soát (Finance & Payment APIs)</li>
+<li>3.9. Phân Hệ Tích Hợp Zalo OA & Tự Động Làm Mới Token (Zalo OA APIs)</li>
+<li>3.10. Phân Hệ Báo Cáo Thống Kê 2 Cột & Dashboard KPI (Analytics BI APIs)</li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">PHẦN I: TỔNG QUAN KIẾN TRÚC DỮ LIỆU & GIAO TIẾP HỆ THỐNG</h2>
+<h3 class="heading-3">1. Triết lý Thiết kế Kiến trúc (Design Philosophy)</h3>
+<ol class="doc-list">
+<li><strong>Kiến trúc Pure NestJS 3 tầng (Controller - Service - Repository/Prisma)</strong>:</li>
+</ol>
+<ul class="doc-list">
+<li>100% nghiệp vụ quản trị CRM và tính năng Mobile App kết nối qua cổng API RESTful NestJS (<code class="code-inline">apps/ceo1983_app_be</code>).</li>
+<li>Tuyệt đối loại bỏ các kết nối trực tiếp PostgREST phía client nhằm đảm bảo tính toàn vẹn nghiệp vụ, an toàn dữ liệu và tuân thủ RBAC chặt chẽ.</li>
+</ul>
+<ol class="doc-list">
+<li><strong>PostgreSQL Relational Core</strong>:</li>
+</ol>
+<ul class="doc-list">
+<li>Sử dụng PostgreSQL phiên bản 16+ với schema <code class="code-inline">public</code> được phân định rõ ràng giữa các phân hệ: Hội viên, Doanh nghiệp, Phân quyền RBAC, Giao thương B2B, Sự kiện & Cuộc họp, Quản trị Tài liệu, Tài chính Thu - Chi, Mạng xã hội nội bộ, và Thông báo thời gian thực.</li>
+<li>Định danh bản ghi sử dụng chuẩn <code class="code-inline">UUIDv4</code> để đảm bảo an toàn, bảo mật thông tin và khả năng mở rộng dữ liệu phân tán.</li>
+</ul>
+<ol class="doc-list">
+<li><strong>Chuẩn hóa Giao thức REST API</strong>:</li>
+</ol>
+<ul class="doc-list">
+<li>Mọi request gửi tới API được xác thực qua header <code class="code-inline">Authorization: Bearer <JWT_ACCESS_TOKEN></code>.</li>
+<li>Định dạng payload và response chuẩn <code class="code-inline">application/json</code>.</li>
+<li>Cơ chế xử lý lỗi chuẩn HTTP Status Codes (<code class="code-inline">200 OK</code>, <code class="code-inline">201 Created</code>, <code class="code-inline">400 Bad Request</code>, <code class="code-inline">401 Unauthorized</code>, <code class="code-inline">403 Forbidden</code>, <code class="code-inline">404 Not Found</code>, <code class="code-inline">500 Internal Server Error</code>).</li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">PHẦN II: THIẾT KẾ CƠ SỞ DỮ LIỆU POSTGRESQL CHI TIẾT (DATABASE SCHEMA)</h2>
+<pre class="code-block"><code>                            ┌────────────────────────┐
+                            │      vione_users       │
+                            └───────────┬────────────┘
+                                        │ 1:1
+                                        ▼
+                            ┌────────────────────────┐
+                            │        members         │
+                            └─────┬────────────┬─────┘
+                                  │ 1:1        │ 1:N
+                                  ▼            ▼
+             ┌───────────────────────┐      ┌─────────────────────────┐
+             │       companies       │      │      opportunities      │
+             └───────────┬───────────┘      └─────────────────────────┘
+                         │ 1:N                         ▲
+                         ▼                             │ 1:N
+             ┌───────────────────────┐      ┌──────────┴──────────────┐
+             │       products        │      │    user_connections     │
+             └───────────────────────┘      └─────────────────────────┘</code></pre>
+<hr class="doc-divider"/>
+<h3 class="heading-3">1. Phân Hệ Người Dùng & Hội Viên (Identity & Membership)</h3>
+<h4 class="heading-4">1.1. Bảng <code class="code-inline">public.vione_users</code> (Tài khoản người dùng cơ sở)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính tài khoản người dùng</td>
+</tr>
+<tr>
+  <td><code class="code-inline">name</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Họ và tên hiển thị cơ sở</td>
+</tr>
+<tr>
+  <td><code class="code-inline">email</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">UNIQUE, NOT NULL</code></td>
+  <td>Địa chỉ email đăng nhập</td>
+</tr>
+<tr>
+  <td><code class="code-inline">avatar_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Đường dẫn ảnh đại diện gốc</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm tạo tài khoản</td>
+</tr>
+<tr>
+  <td><code class="code-inline">updated_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm cập nhật cuối cùng</td>
+</tr>
+</tbody>
+</table></div>
+<h4 class="heading-4">1.2. Bảng <code class="code-inline">public.members</code> (Hồ sơ Hội viên CLB Doanh Nhân CEO 1983)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính hồ sơ hội viên</td>
+</tr>
+<tr>
+  <td><code class="code-inline">user_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> vione_users(id), ON DELETE SET NULL</code></td>
+  <td>Khóa ngoại nối với tài khoản cơ sở</td>
+</tr>
+<tr>
+  <td><code class="code-inline">code</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">UNIQUE, NOT NULL</code></td>
+  <td>Mã số hội viên (VD: <code class="code-inline">CEO1983-001</code>)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">name</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Họ tên đầy đủ của hội viên</td>
+</tr>
+<tr>
+  <td><code class="code-inline">phone</code></td>
+  <td><code class="code-inline">VARCHAR(20)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Số điện thoại liên hệ (chỉ chứa 10-11 chữ số)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">email</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Email liên hệ hội viên</td>
+</tr>
+<tr>
+  <td><code class="code-inline">company_name</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Tên doanh nghiệp của hội viên</td>
+</tr>
+<tr>
+  <td><code class="code-inline">position</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">DEFAULT 'CEO'</code></td>
+  <td>Chức danh trong doanh nghiệp</td>
+</tr>
+<tr>
+  <td><code class="code-inline">department</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ban chuyên môn CLB (VD: Ban Xúc tiến Thương mại)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">executive_role</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Vai trò trong Ban Điều Hành (Chủ tịch, Phó CT, Trưởng ban)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'active'</code></td>
+  <td>Trạng thái (<code class="code-inline">active</code>, <code class="code-inline">pending</code>, <code class="code-inline">expired</code>, <code class="code-inline">locked</code>)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">tier</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'official'</code></td>
+  <td>Hạng hội viên (<code class="code-inline">official</code> - Chính thức, <code class="code-inline">honorary</code> - Danh dự)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">region</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">DEFAULT 'Hà Nội'</code></td>
+  <td>Khu vực địa lý</td>
+</tr>
+<tr>
+  <td><code class="code-inline">address</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Địa chỉ trụ sở/văn phòng làm việc</td>
+</tr>
+<tr>
+  <td><code class="code-inline">latitude</code></td>
+  <td><code class="code-inline">DOUBLE PRECISION</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Tọa độ vĩ độ địa lý (GPS)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">longitude</code></td>
+  <td><code class="code-inline">DOUBLE PRECISION</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Tọa độ kinh độ địa lý (GPS)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">avatar_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ảnh đại diện chuyên nghiệp của hội viên</td>
+</tr>
+<tr>
+  <td><code class="code-inline">cover_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ảnh bìa trang cá nhân</td>
+</tr>
+<tr>
+  <td><code class="code-inline">business_card_slug</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">UNIQUE, NULL</code></td>
+  <td>Định danh URL danh thiếp điện tử công khai</td>
+</tr>
+<tr>
+  <td><code class="code-inline">about</code></td>
+  <td><code class="code-inline">JSONB</code></td>
+  <td><code class="code-inline">DEFAULT '{}'</code></td>
+  <td>Thông tin bổ sung, tiểu sử, thông số lãnh đạo</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Ngày gia nhập CLB</td>
+</tr>
+<tr>
+  <td><code class="code-inline">updated_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Ngày cập nhật thông tin</td>
+</tr>
+</tbody>
+</table></div>
+<h4 class="heading-4">1.3. Bảng <code class="code-inline">public.companies</code> (Hồ sơ Doanh nghiệp Thành viên)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính doanh nghiệp</td>
+</tr>
+<tr>
+  <td><code class="code-inline">member_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), ON DELETE CASCADE</code></td>
+  <td>Khóa ngoại nối với hội viên sáng lập</td>
+</tr>
+<tr>
+  <td><code class="code-inline">name</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Tên pháp nhân doanh nghiệp đầy đủ</td>
+</tr>
+<tr>
+  <td><code class="code-inline">tax_code</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Mã số thuế doanh nghiệp</td>
+</tr>
+<tr>
+  <td><code class="code-inline">industry</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Lĩnh vực kinh doanh chủ lực</td>
+</tr>
+<tr>
+  <td><code class="code-inline">employee_scale</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT '10 - 50 nhân sự'</code></td>
+  <td>Quy mô nhân sự</td>
+</tr>
+<tr>
+  <td><code class="code-inline">website</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Website doanh nghiệp</td>
+</tr>
+<tr>
+  <td><code class="code-inline">address</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Địa chỉ trụ sở đăng ký kinh doanh</td>
+</tr>
+<tr>
+  <td><code class="code-inline">description</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Năng lực sản xuất, sản phẩm dịch vụ chủ lực</td>
+</tr>
+<tr>
+  <td><code class="code-inline">annual_revenue</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Doanh thu ước tính hàng năm</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Ngày tạo hồ sơ</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">2. Phân Hệ Phân Quyền RBAC (Role-Based Access Control)</h3>
+<h4 class="heading-4">2.1. Bảng <code class="code-inline">public.roles</code> & <code class="code-inline">public.permissions</code></h4>
+<ul class="doc-list">
+<li><code class="code-inline">public.roles</code>: <code class="code-inline">id (VARCHAR)</code>, <code class="code-inline">name (VARCHAR)</code>, <code class="code-inline">description (TEXT)</code>, <code class="code-inline">created_at (TIMESTAMPTZ)</code>.</li>
+<li>Các vai trò chuẩn: <code class="code-inline">chu_tich</code>, <code class="code-inline">admin</code>, <code class="code-inline">ban_dieu_hanh</code>, <code class="code-inline">tong_thu_ky</code>, <code class="code-inline">ke_toan</code>, các <code class="code-inline">truong_ban_<em></code>, các <code class="code-inline">thanh_vien_ban_</em></code>, và <code class="code-inline">member</code>.</li>
+<li><code class="code-inline">public.permissions</code>: <code class="code-inline">id (VARCHAR)</code>, <code class="code-inline">name (VARCHAR)</code>, <code class="code-inline">module (VARCHAR)</code>, <code class="code-inline">description (TEXT)</code>.</li>
+<li><code class="code-inline">public.role_permissions</code>: Bảng nối nhiều-nhiều <code class="code-inline">role_id (VARCHAR)</code> và <code class="code-inline">permission_id (VARCHAR)</code>.</li>
+<li><code class="code-inline">public.user_roles</code>: Bảng gán vai trò người dùng <code class="code-inline">user_id (UUID)</code>, <code class="code-inline">role_id (VARCHAR)</code>, <code class="code-inline">assigned_at (TIMESTAMPTZ)</code>.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3. Phân Hệ Giao Thương B2B, Kết Nối & Cuộc Hẹn 1-on-1</h3>
+<h4 class="heading-4">3.1. Bảng <code class="code-inline">public.opportunities</code> (Cơ hội hợp tác B2B)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính cơ hội</td>
+</tr>
+<tr>
+  <td><code class="code-inline">creator_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NOT NULL</code></td>
+  <td>Hội viên đăng cơ hội</td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Tiêu đề tóm tắt nhu cầu</td>
+</tr>
+<tr>
+  <td><code class="code-inline">description</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Mô tả chi tiết yêu cầu hợp tác</td>
+</tr>
+<tr>
+  <td><code class="code-inline">type</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Phân loại: <code class="code-inline">buy</code> (Mua), <code class="code-inline">sell</code> (Bán), <code class="code-inline">partner</code> (Tìm đối tác)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">industry</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Ngành nghề kinh doanh liên quan</td>
+</tr>
+<tr>
+  <td><code class="code-inline">value_vnd</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">DEFAULT 0</code></td>
+  <td>Giá trị giao dịch ước tính (VNĐ)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'open'</code></td>
+  <td>Trạng thái: <code class="code-inline">open</code>, <code class="code-inline">connecting</code>, <code class="code-inline">won</code> (khớp lệnh), <code class="code-inline">closed</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">visibility</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'public'</code></td>
+  <td>Phạm vi: <code class="code-inline">public</code> (CLB), <code class="code-inline">internal</code> (Ban)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm tạo</td>
+</tr>
+<tr>
+  <td><code class="code-inline">updated_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm cập nhật cuối</td>
+</tr>
+</tbody>
+</table></div>
+<h4 class="heading-4">3.2. Bảng <code class="code-inline">public.user_connections</code> (Kết nối giao thương & Cuộc gặp 1-on-1)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính kết nối</td>
+</tr>
+<tr>
+  <td><code class="code-inline">sender_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NOT NULL</code></td>
+  <td>Hội viên chủ động gửi lời mời</td>
+</tr>
+<tr>
+  <td><code class="code-inline">receiver_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NOT NULL</code></td>
+  <td>Hội viên được nhận lời mời</td>
+</tr>
+<tr>
+  <td><code class="code-inline">type</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'b2b_connect'</code></td>
+  <td>Loại hình: <code class="code-inline">b2b_connect</code>, <code class="code-inline">meeting_1on1</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'pending'</code></td>
+  <td>Trạng thái: <code class="code-inline">pending</code>, <code class="code-inline">accepted</code>, <code class="code-inline">rejected</code>, <code class="code-inline">completed</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">meeting_time</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Lịch hẹn gặp trao đổi cụ thể</td>
+</tr>
+<tr>
+  <td><code class="code-inline">location</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Địa điểm hẹn gặp (offline / online meeting URL)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">notes</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ghi chú nội dung trao đổi sau cuộc gặp</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm tạo kết nối</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">4. Phân Hệ Sự Kiện, Hội Nghị & Cuộc Họp Ban Chuyên Môn</h3>
+<h4 class="heading-4">4.1. Bảng <code class="code-inline">public.events</code> (Sự kiện lớn, Gala, Hội thảo CLB)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính sự kiện</td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Tên sự kiện</td>
+</tr>
+<tr>
+  <td><code class="code-inline">description</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Giới thiệu nội dung sự kiện</td>
+</tr>
+<tr>
+  <td><code class="code-inline">poster_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ảnh bìa/banner truyền thông sự kiện</td>
+</tr>
+<tr>
+  <td><code class="code-inline">start_time</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Thời gian bắt đầu</td>
+</tr>
+<tr>
+  <td><code class="code-inline">end_time</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Thời gian kết thúc</td>
+</tr>
+<tr>
+  <td><code class="code-inline">location</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Địa chỉ tổ chức sự kiện</td>
+</tr>
+<tr>
+  <td><code class="code-inline">capacity</code></td>
+  <td><code class="code-inline">INTEGER</code></td>
+  <td><code class="code-inline">DEFAULT 100</code></td>
+  <td>Số lượng người tham gia tối đa</td>
+</tr>
+<tr>
+  <td><code class="code-inline">ticket_price</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">DEFAULT 0</code></td>
+  <td>Giá vé tham gia (0 = Miễn phí)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">checkin_code</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Mã định danh check-in QR Code</td>
+</tr>
+<tr>
+  <td><code class="code-inline">agenda</code></td>
+  <td><code class="code-inline">JSONB</code></td>
+  <td><code class="code-inline">DEFAULT '[]'</code></td>
+  <td>Lịch trình chương trình chi tiết theo từng mốc giờ</td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'published'</code></td>
+  <td>Trạng thái: <code class="code-inline">draft</code>, <code class="code-inline">published</code>, <code class="code-inline">ongoing</code>, <code class="code-inline">completed</code>, <code class="code-inline">cancelled</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm tạo sự kiện</td>
+</tr>
+</tbody>
+</table></div>
+<h4 class="heading-4">4.2. Bảng <code class="code-inline">public.event_registrations</code> (Đăng ký & Soát vé sự kiện)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính đăng ký</td>
+</tr>
+<tr>
+  <td><code class="code-inline">event_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> events(id), ON DELETE CASCADE</code></td>
+  <td>Khóa ngoại sự kiện</td>
+</tr>
+<tr>
+  <td><code class="code-inline">member_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NOT NULL</code></td>
+  <td>Hội viên tham gia</td>
+</tr>
+<tr>
+  <td><code class="code-inline">ticket_code</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">UNIQUE, NOT NULL</code></td>
+  <td>Mã vé điện tử định danh</td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'registered'</code></td>
+  <td>Trạng thái: <code class="code-inline">registered</code>, <code class="code-inline">paid</code>, <code class="code-inline">attended</code> (đã quét mã check-in)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">checked_in_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Thời điểm quét mã QR thành công tại cửa soát vé</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm đăng ký vé</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">5. Phân Hệ Quản Trị Tài Liệu & Thư Mục Google Drive (<code class="code-inline">public.documents</code>)</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính tài liệu/thư mục</td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Tên tài liệu hoặc tên thư mục</td>
+</tr>
+<tr>
+  <td><code class="code-inline">category</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Chuyên mục tài liệu: <code class="code-inline">BOD</code>, <code class="code-inline">FINANCE</code>, <code class="code-inline">LEGAL</code>, <code class="code-inline">EVENT</code>, <code class="code-inline">MEDIA</code>, <code class="code-inline">TRAINING</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">file_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Đường dẫn tệp tin tải trực tiếp lên server</td>
+</tr>
+<tr>
+  <td><code class="code-inline">drive_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Đường dẫn liên kết Google Drive tương tác</td>
+</tr>
+<tr>
+  <td><code class="code-inline">folder_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> documents(id), ON DELETE SET NULL</code></td>
+  <td>Thư mục cha chứa tài liệu này</td>
+</tr>
+<tr>
+  <td><code class="code-inline">is_folder</code></td>
+  <td><code class="code-inline">BOOLEAN</code></td>
+  <td><code class="code-inline">DEFAULT FALSE</code></td>
+  <td>Đánh dấu là Thư mục (<code class="code-inline">true</code>) hay Tệp (<code class="code-inline">false</code>)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">share_scope</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'ALL'</code></td>
+  <td>Phạm vi chia sẻ: <code class="code-inline">ALL</code>, <code class="code-inline">BOD_ONLY</code>, <code class="code-inline">SECRETARY</code>, <code class="code-inline">INTERNAL</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">file_size</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">DEFAULT 0</code></td>
+  <td>Dung lượng tệp tính bằng byte</td>
+</tr>
+<tr>
+  <td><code class="code-inline">file_type</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Loại định dạng tệp: <code class="code-inline">pdf</code>, <code class="code-inline">docx</code>, <code class="code-inline">xlsx</code>, <code class="code-inline">zip</code>, <code class="code-inline">folder</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">download_count</code></td>
+  <td><code class="code-inline">INTEGER</code></td>
+  <td><code class="code-inline">DEFAULT 0</code></td>
+  <td>Số lượt hội viên tải về</td>
+</tr>
+<tr>
+  <td><code class="code-inline">uploaded_by</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NULL</code></td>
+  <td>Người tạo/tải tệp lên</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Ngày tạo tài liệu/thư mục</td>
+</tr>
+<tr>
+  <td><code class="code-inline">updated_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Ngày chỉnh sửa cuối</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">6. Phân Hệ Tài Chính Thu - Chi & Qũy Ngân Sách CLB</h3>
+<h4 class="heading-4">6.1. Bảng <code class="code-inline">public.income_records</code> (Khoản thu)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính khoản thu</td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Nội dung khoản thu</td>
+</tr>
+<tr>
+  <td><code class="code-inline">category</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Phân loại: <code class="code-inline">membership_fee</code> (Niên liễm), <code class="code-inline">event_ticket</code> (Vé sự kiện), <code class="code-inline">sponsor</code> (Tài trợ)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">amount</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Số tiền thu (VNĐ)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">payer_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NULL</code></td>
+  <td>Hội viên nộp tiền</td>
+</tr>
+<tr>
+  <td><code class="code-inline">payment_method</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'bank_transfer'</code></td>
+  <td>Hình thức: <code class="code-inline">bank_transfer</code>, <code class="code-inline">cash</code>, <code class="code-inline">card</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'paid'</code></td>
+  <td>Trạng thái: <code class="code-inline">paid</code>, <code class="code-inline">pending</code>, <code class="code-inline">cancelled</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">invoice_url</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ảnh chụp ủy nhiệm chi / hóa đơn điện tử</td>
+</tr>
+<tr>
+  <td><code class="code-inline">recorded_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm ghi nhận giao dịch</td>
+</tr>
+</tbody>
+</table></div>
+<h4 class="heading-4">6.2. Bảng <code class="code-inline">public.expense_records</code> (Khoản chi)</h4>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính khoản chi</td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Nội dung chi ngân sách</td>
+</tr>
+<tr>
+  <td><code class="code-inline">category</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Chuyên mục: <code class="code-inline">event</code>, <code class="code-inline">office</code>, <code class="code-inline">charity</code>, <code class="code-inline">marketing</code>, <code class="code-inline">operation</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">amount</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Số tiền thực chi (VNĐ)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">advance_amount</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">DEFAULT 0</code></td>
+  <td>Số tiền tạm ứng trước</td>
+</tr>
+<tr>
+  <td><code class="code-inline">refund_amount</code></td>
+  <td><code class="code-inline">BIGINT</code></td>
+  <td><code class="code-inline">DEFAULT 0</code></td>
+  <td>Số tiền hoàn ứng lại quỹ</td>
+</tr>
+<tr>
+  <td><code class="code-inline">payee_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NULL</code></td>
+  <td>Người nhận tiền/thực thi</td>
+</tr>
+<tr>
+  <td><code class="code-inline">approved_by</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NULL</code></td>
+  <td>Cán bộ lãnh đạo phê duyệt (Chủ tịch/TTK)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'approved'</code></td>
+  <td>Trạng thái: <code class="code-inline">draft</code>, <code class="code-inline">submitted</code>, <code class="code-inline">approved</code>, <code class="code-inline">rejected</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">spent_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Ngày giải ngân chi tiêu</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">7. Phân Hệ Bảng Tin Mạng Xã Hội (<code class="code-inline">public.feed_posts</code>, <code class="code-inline">feed_comments</code>, <code class="code-inline">feed_likes</code>)</h3>
+<ul class="doc-list">
+<li><code class="code-inline">public.feed_posts</code>: <code class="code-inline">id (UUID)</code>, <code class="code-inline">author_id (UUID)</code>, <code class="code-inline">title (VARCHAR)</code>, <code class="code-inline">content (TEXT)</code>, <code class="code-inline">category (VARCHAR: GENERAL, EVENT, NEWS, MEETING)</code>, <code class="code-inline">media_urls (TEXT[])</code>, <code class="code-inline">likes_count (INTEGER)</code>, <code class="code-inline">comments_count (INTEGER)</code>, <code class="code-inline">created_at (TIMESTAMPTZ)</code>.</li>
+<li><code class="code-inline">public.feed_comments</code>: <code class="code-inline">id (UUID)</code>, <code class="code-inline">post_id (UUID)</code>, <code class="code-inline">author_id (UUID)</code>, <code class="code-inline">parent_id (UUID, NULL)</code>, <code class="code-inline">content (TEXT)</code>, <code class="code-inline">created_at (TIMESTAMPTZ)</code>.</li>
+<li><code class="code-inline">public.feed_likes</code>: <code class="code-inline">post_id (UUID)</code>, <code class="code-inline">member_id (UUID)</code>, <code class="code-inline">created_at (TIMESTAMPTZ)</code>, <code class="code-inline">PRIMARY KEY (post_id, member_id)</code>.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">8. Phân Hệ Thông Báo Đa Kênh (<code class="code-inline">public.notifications</code>)</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính thông báo</td>
+</tr>
+<tr>
+  <td><code class="code-inline">recipient_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> members(id), NOT NULL</code></td>
+  <td>Hội viên nhận thông báo</td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Tiêu đề thông báo ngắn gọn</td>
+</tr>
+<tr>
+  <td><code class="code-inline">content</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Chi tiết nội dung thông báo</td>
+</tr>
+<tr>
+  <td><code class="code-inline">category</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Phân loại: <code class="code-inline">MEMBER</code>, <code class="code-inline">EVENT</code>, <code class="code-inline">MEETING</code>, <code class="code-inline">OPPORTUNITY</code>, <code class="code-inline">TASK</code>, <code class="code-inline">FINANCE</code>, <code class="code-inline">SYSTEM</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">target_route</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Điều hướng liên kết khi bấm vào (Deep Link)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">is_read</code></td>
+  <td><code class="code-inline">BOOLEAN</code></td>
+  <td><code class="code-inline">DEFAULT FALSE</code></td>
+  <td>Trạng thái đã đọc hay chưa</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm phát thông báo</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">9. Phân Hệ Tin Nhắn Trực Tiếp & Cuộc Trò Chuyện B2B (<code class="code-inline">public.messages</code>)</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính tin nhắn</td>
+</tr>
+<tr>
+  <td><code class="code-inline">from_id</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Định danh người gửi (UUID / Member ID / Code)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">to_id</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Định danh người nhận (UUID / Member ID / Code)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">content</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Nội dung tin nhắn (văn bản thường hoặc thẻ [file:...], [meeting:...])</td>
+</tr>
+<tr>
+  <td><code class="code-inline">file_metadata</code></td>
+  <td><code class="code-inline">JSONB</code></td>
+  <td><code class="code-inline">DEFAULT '{}'</code></td>
+  <td>Metadata tệp tin đính kèm (URL, tên tệp, kích thước, mimeType)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">is_read</code></td>
+  <td><code class="code-inline">BOOLEAN</code></td>
+  <td><code class="code-inline">DEFAULT FALSE</code></td>
+  <td>Trạng thái đã xem tin nhắn hay chưa</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm gửi tin nhắn</td>
+</tr>
+</tbody>
+</table></div>
+<p class="doc-para"><em>Chỉ mục tối ưu:</em> <code class="code-inline">CREATE INDEX idx_messages_from_to ON public.messages(from_id, to_id);</code>, <code class="code-inline">CREATE INDEX idx_messages_to_from ON public.messages(to_id, from_id);</code></p>
+<hr class="doc-divider"/>
+<h3 class="heading-3">10. Phân Hệ Quan Tâm Cơ Hội B2B & Yêu Cầu Báo Giá (<code class="code-inline">public.opportunity_interests</code>, <code class="code-inline">public.quote_requests</code>)</h3>
+<ul class="doc-list">
+<li><code class="code-inline">public.opportunity_interests</code>:</li>
+</ul>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính bản ghi quan tâm</td>
+</tr>
+<tr>
+  <td><code class="code-inline">opportunity_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">FOREIGN KEY -> opportunities(id), ON DELETE CASCADE</code></td>
+  <td>Khóa ngoại cơ hội kinh doanh</td>
+</tr>
+<tr>
+  <td><code class="code-inline">user_id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Khóa ngoại tài khoản người dùng</td>
+</tr>
+<tr>
+  <td><code class="code-inline">member_id</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>ID định danh hội viên bày tỏ quan tâm</td>
+</tr>
+<tr>
+  <td><code class="code-inline">member_code</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Mã số hội viên (VD: CEO-83001)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">phone</code></td>
+  <td><code class="code-inline">VARCHAR(20)</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>SĐT người quan tâm để liên hệ tức thời</td>
+</tr>
+<tr>
+  <td><code class="code-inline">notes</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Ghi chú nhu cầu hợp tác ban đầu</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm bày tỏ quan tâm</td>
+</tr>
+</tbody>
+</table></div>
+<ul class="doc-list">
+<li><code class="code-inline">public.quote_requests</code>:</li>
+</ul>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính yêu cầu báo giá</td>
+</tr>
+<tr>
+  <td><code class="code-inline">product_id</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>ID sản phẩm trên sàn B2B</td>
+</tr>
+<tr>
+  <td><code class="code-inline">buyer_id</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>ID hội viên gửi yêu cầu báo giá</td>
+</tr>
+<tr>
+  <td><code class="code-inline">quantity</code></td>
+  <td><code class="code-inline">INTEGER</code></td>
+  <td><code class="code-inline">DEFAULT 1</code></td>
+  <td>Số lượng hàng hóa/dịch vụ cần mua</td>
+</tr>
+<tr>
+  <td><code class="code-inline">notes</code></td>
+  <td><code class="code-inline">TEXT</code></td>
+  <td><code class="code-inline">NULL</code></td>
+  <td>Yêu cầu kỹ thuật và thời gian giao hàng</td>
+</tr>
+<tr>
+  <td><code class="code-inline">status</code></td>
+  <td><code class="code-inline">VARCHAR(50)</code></td>
+  <td><code class="code-inline">DEFAULT 'pending'</code></td>
+  <td>Trạng thái: pending, quoted, ordered, rejected</td>
+</tr>
+<tr>
+  <td><code class="code-inline">created_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm gửi yêu cầu</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">11. Phân Hệ Cấu Hình Trang Đích Dynamic (<code class="code-inline">public.landing_web_configs</code>)</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Tên cột</th>
+  <th>Kiểu dữ liệu</th>
+  <th>Ràng buộc</th>
+  <th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code class="code-inline">id</code></td>
+  <td><code class="code-inline">UUID</code></td>
+  <td><code class="code-inline">PRIMARY KEY, DEFAULT gen_random_uuid()</code></td>
+  <td>Khóa chính cấu hình landing</td>
+</tr>
+<tr>
+  <td><code class="code-inline">template_id</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">UNIQUE, NOT NULL</code></td>
+  <td>Mã bản mẫu: <code class="code-inline">timed_cards</code>, <code class="code-inline">startup_mobile</code></td>
+</tr>
+<tr>
+  <td><code class="code-inline">title</code></td>
+  <td><code class="code-inline">VARCHAR(255)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Tiêu đề trang đích</td>
+</tr>
+<tr>
+  <td><code class="code-inline">slug</code></td>
+  <td><code class="code-inline">VARCHAR(100)</code></td>
+  <td><code class="code-inline">NOT NULL</code></td>
+  <td>Đường dẫn path-based (VD: web-v1, web-v2)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">is_published</code></td>
+  <td><code class="code-inline">BOOLEAN</code></td>
+  <td><code class="code-inline">DEFAULT TRUE</code></td>
+  <td>Trạng thái xuất bản công khai</td>
+</tr>
+<tr>
+  <td><code class="code-inline">config</code></td>
+  <td><code class="code-inline">JSONB</code></td>
+  <td><code class="code-inline">DEFAULT '{}'</code></td>
+  <td>Cấu hình dynamic 5 tab (hero, ribbon, map, avatars, testimonials)</td>
+</tr>
+<tr>
+  <td><code class="code-inline">updated_at</code></td>
+  <td><code class="code-inline">TIMESTAMPTZ</code></td>
+  <td><code class="code-inline">DEFAULT NOW()</code></td>
+  <td>Thời điểm cập nhật cuối cùng</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h2 class="heading-2">PHẦN III: ĐẶC TẢ CHI TIẾT REST API ENDPOINTS</h2>
+<h3 class="heading-3">1. Phân Hệ Xác Thực & Phiên Làm Việc (Authentication & Session)</h3>
+<h4 class="heading-4">1.1. <code class="code-inline">POST /auth/login</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Đăng nhập hệ thống bằng Email và Mật khẩu.</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "email": "president@ceo1983.vn",
+    "password": "SecurePassword123@"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">200 OK</code></strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "e6a12b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+      "email": "president@ceo1983.vn",
+      "name": "Trần Tuấn Anh",
+      "role": "chu_tich",
+      "memberId": "12345678-1234-1234-1234-123456789abc"
+    }
+  }</code></pre>
+<h4 class="heading-4">1.2. <code class="code-inline">GET /auth/me</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Lấy thông tin tài khoản và danh sách quyền hạn hiện hữu của phiên đăng nhập.</li>
+<li><strong>Header</strong>: <code class="code-inline">Authorization: Bearer <TOKEN></code></li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Trả về hồ sơ người dùng kèm mảng permissions (<code class="code-inline">crm_dashboard</code>, <code class="code-inline">crm_finance_edit</code>, <code class="code-inline">cat_mobile_app</code>,...).</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">2. Phân Hệ Quản Trị Hội Viên (CRM & Member Management)</h3>
+<h4 class="heading-4">2.1. <code class="code-inline">GET /members</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Lấy danh sách hội viên 360° có phân trang và bộ lọc.</li>
+<li><strong>Query Parameters</strong>:</li>
+<li><code class="code-inline">page</code> (number, default: 1)</li>
+<li><code class="code-inline">limit</code> (number, default: 20)</li>
+<li><code class="code-inline">search</code> (string, tìm theo tên, số điện thoại, công ty, mã hội viên)</li>
+<li><code class="code-inline">department</code> (string, lọc theo Ban chuyên môn)</li>
+<li><code class="code-inline">status</code> (string: <code class="code-inline">active</code>, <code class="code-inline">pending</code>, <code class="code-inline">expired</code>)</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "data": [
+      {
+        "id": "7b04f762-c840-410a-8a5f-141a0e101419",
+        "code": "CEO1983-001",
+        "name": "Trần Tuấn Anh",
+        "phone": "0393631546",
+        "email": "tuananh@vione.vn",
+        "companyName": "Công ty Cổ phần và Công nghệ Đầu tư ViOne",
+        "position": "Chủ tịch HĐQT",
+        "department": "Ban Xúc tiến Thương mại",
+        "executiveRole": "Chủ tịch CLB",
+        "status": "active",
+        "tier": "official",
+        "avatarUrl": "https://storage.ceo1983.vn/avatars/user-01.jpg"
+      }
+    ],
+    "total": 128,
+    "page": 1,
+    "limit": 20
+  }</code></pre>
+<h4 class="heading-4">2.2. <code class="code-inline">PATCH /members/:id/role-dept</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Cập nhật Ban chuyên môn và Vai trò Ban Điều Hành cho hội viên (Đặc quyền: Chủ tịch, Admin, Tổng thư ký).</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "department": "Ban Đào tạo & Truyền thông",
+    "executiveRole": "Trưởng Ban",
+    "status": "active",
+    "tier": "official"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Trả về hồ sơ hội viên sau khi cập nhật thành công.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3. Phân Hệ Thống Kê & Báo Cáo Thông Minh (Analytics BI)</h3>
+<h4 class="heading-4">3.1. <code class="code-inline">GET /analytics/overview</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Cung cấp các chỉ số KPI then chốt phục vụ trang chủ CRM và Thống kê Mobile App.</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "kpi": {
+      "totalMembers": 128,
+      "totalConnections": 340,
+      "totalMeetings": 186,
+      "totalEvents": 14,
+      "totalOpportunities": 52,
+      "totalOpportunityValue": 85600000000,
+      "totalDealsWon": 28,
+      "activeRatePercent": 85.5
+    }
+  }</code></pre>
+<h4 class="heading-4">3.2. <code class="code-inline">GET /analytics/chart</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Cung cấp dữ liệu cột chồng và đường timeline đồng bộ theo thời gian thực.</li>
+<li><strong>Query Parameters</strong>:</li>
+<li><code class="code-inline">range</code> (string: <code class="code-inline">minute</code>, <code class="code-inline">hour</code>, <code class="code-inline">day</code>, <code class="code-inline">week</code>, <code class="code-inline">month</code>, <code class="code-inline">quarter</code>, <code class="code-inline">year</code>)</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "chartData": [
+      {
+        "timeBucket": "10/2026",
+        "connections": 45,
+        "meetings": 30,
+        "events": 8,
+        "opportunities": 12,
+        "timelineVal": 95
+      }
+    ]
+  }</code></pre>
+<hr class="doc-divider"/>
+<h3 class="heading-3">4. Phân Hệ Quản Trị Tài Liệu & Thư Mục (Document & Google Drive)</h3>
+<h4 class="heading-4">4.1. <code class="code-inline">GET /documents</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Lấy danh sách tài liệu và thư mục theo cấp phân cấp <code class="code-inline">folder_id</code>.</li>
+<li><strong>Query Parameters</strong>:</li>
+<li><code class="code-inline">folderId</code> (UUID, optional: nếu null lấy danh sách cấp gốc Root)</li>
+<li><code class="code-inline">category</code> (string, optional: lọc theo chuyên mục)</li>
+<li><code class="code-inline">search</code> (string, tìm kiếm tên tài liệu)</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "folders": [
+      {
+        "id": "c1a2b3c4-0000-1111-2222-333344445555",
+        "title": "Hồ Sơ Pháp Lý & Điều Lệ CLB",
+        "category": "LEGAL",
+        "isFolder": true,
+        "createdAt": "2026-09-01T08:00:00Z"
+      }
+    ],
+    "documents": [
+      {
+        "id": "d2b3c4d5-1111-2222-3333-444455556666",
+        "title": "Quy chế Quản lý Tài chính Quý 3_2026.pdf",
+        "category": "FINANCE",
+        "fileUrl": "https://storage.ceo1983.vn/docs/quy-che-tc.pdf",
+        "driveUrl": "https://docs.google.com/document/d/1aBcDeFg...",
+        "isFolder": false,
+        "folderId": "c1a2b3c4-0000-1111-2222-333344445555",
+        "shareScope": "ALL",
+        "fileSize": 2450800,
+        "fileType": "pdf",
+        "downloadCount": 42
+      }
+    ]
+  }</code></pre>
+<h4 class="heading-4">4.2. <code class="code-inline">POST /documents</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Tải lên tài liệu mới hoặc tạo thư mục mới vào CSDL.</li>
+<li><strong>Request Body (Tạo Thư mục)</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "title": "Tài liệu Ban Xúc Tiến Thương Mại",
+    "category": "BOD",
+    "isFolder": true,
+    "folderId": null,
+    "shareScope": "BOD_ONLY"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Request Body (Lưu Tệp tin vào Thư mục đã chọn)</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "title": "Biên bản họp Đại hội Thường niên 2026.docx",
+    "category": "BOD",
+    "isFolder": false,
+    "folderId": "c1a2b3c4-0000-1111-2222-333344445555",
+    "fileUrl": "/uploads/documents/bien-ban-hop-2026.docx",
+    "driveUrl": "https://drive.google.com/file/d/1XyZ...",
+    "shareScope": "ALL",
+    "fileSize": 1048576,
+    "fileType": "docx"
+  }</code></pre>
+<h4 class="heading-4">4.3. <code class="code-inline">PATCH /documents/:id/move</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Di chuyển tệp tin hoặc thư mục con vào thư mục đích khác.</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "targetFolderId": "c1a2b3c4-0000-1111-2222-333344445555"
+  }</code></pre>
+<hr class="doc-divider"/>
+<h3 class="heading-3">5. Phân Hệ Sự Kiện & Điểm Danh Check-in QR (Events & QR Check-in)</h3>
+<h4 class="heading-4">5.1. <code class="code-inline">POST /events/:id/checkin</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Ban soát vé quét mã QR trên vé điện tử của hội viên tại cổng check-in sự kiện.</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "ticketCode": "TIC-CEO1983-2026-X89A"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">200 OK</code></strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "success": true,
+    "message": "Check-in thành công!",
+    "member": {
+      "name": "Nguyễn Văn Linh",
+      "company": "Công ty Cổ phần Công nghệ ViOne",
+      "ticketCode": "TIC-CEO1983-2026-X89A",
+      "checkedInAt": "2026-11-06T18:30:15Z"
+    }
+  }</code></pre>
+<hr class="doc-divider"/>
+<h3 class="heading-3">6. Phân Hệ Mobile App: Vị Trí Doanh Nghiệp & Bản Đồ 2D (Business Location)</h3>
+<h4 class="heading-4">6.1. <code class="code-inline">PUT /members/my-location</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Hội viên cập nhật địa chỉ trụ sở và tọa độ GPS định vị bản đồ 2D.</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "address": "39 Ngõ 29 Mạc Thái Tông, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội",
+    "latitude": 21.0175,
+    "longitude": 105.7838,
+    "company": "Công ty Cổ phần và Công nghệ Đầu tư ViOne"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Trả về dữ liệu vị trí đã được lưu an toàn vào PostgreSQL.</li>
+</ul>
+<h4 class="heading-4">6.2. <code class="code-inline">GET /members/geocode</code> & <code class="code-inline">GET /members/reverse-geocode</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Chuyển đổi hai chiều giữa địa chỉ chuỗi ký tự và tọa độ kinh độ/vĩ độ (Geocoding API).</li>
+<li><strong>Query Params (Geocode)</strong>: <code class="code-inline">address=...</code> -> Trả về <code class="code-inline">{ lat, lng, displayName }</code>.</li>
+<li><strong>Query Params (Reverse Geocode)</strong>: <code class="code-inline">lat=...&lng=...</code> -> Trả về <code class="code-inline">{ address, street, district, city }</code>.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">7. Phân Hệ Cơ Hội B2B & Quản Trị Quan Tâm (Opportunities & Interests)</h3>
+<h4 class="heading-4">7.1. <code class="code-inline">POST /community/opportunities/:id/interest</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Hội viên bày tỏ quan tâm đến một cơ hội giao thương B2B.</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "notes": "Công ty chúng tôi có năng lực cung ứng 500 tấn nhôm định hình tiêu chuẩn ISO."
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">201 Created</code></strong>: Ghi nhận vào <code class="code-inline">opportunity_interests</code> và gửi push notification tới chủ cơ hội.</li>
+</ul>
+<h4 class="heading-4">7.2. <code class="code-inline">DELETE /opportunities/:id/interests</code> & <code class="code-inline">POST /community/opportunities/:id/uninterest</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Hội viên rút/bỏ quan tâm cơ hội kinh doanh.</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Xóa triệt để bản ghi quan tâm đối soát qua UUID, mã hội viên và số điện thoại.</li>
+</ul>
+<h4 class="heading-4">7.3. <code class="code-inline">POST /community/opportunities/:id/deal-status</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Chủ cơ hội cập nhật trạng thái tiến độ đàm phán (<code class="code-inline">negotiating</code>, <code class="code-inline">won</code>, <code class="code-inline">closed</code>).</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "status": "won",
+    "actualValue": 2500000000,
+    "partnerId": "7b04f762-c840-410a-8a5f-141a0e101419"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Cập nhật trạng thái deal và cộng dồn giá trị vào thống kê giao thương.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">8. Phân Hệ Tin Nhắn Trực Tiếp & Giao Tiếp B2B (Direct Messaging)</h3>
+<h4 class="heading-4">8.1. <code class="code-inline">POST /dm/member/messages</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Gửi tin nhắn trao đổi hoặc gửi tệp văn bản giữa hai hội viên.</li>
+<li><strong>Request Body</strong>:</li>
+</ul>
+<pre class="code-block"><code>  {
+    "toId": "M1983-002",
+    "content": "Kính gửi anh Tuấn Anh hồ sơ năng lực [file:https://storage.ceo1983.vn/docs/profile.pdf|Profile_ViOne.pdf|2.4MB]"
+  }</code></pre>
+<ul class="doc-list">
+<li><strong>Response <code class="code-inline">201 Created</code></strong>: Lưu vào bảng <code class="code-inline">messages</code> và phát sóng Socket.IO tới người nhận.</li>
+</ul>
+<h4 class="heading-4">8.2. <code class="code-inline">GET /dm/member/messages</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Lấy lịch sử hội thoại tin nhắn phân trang giữa hai hội viên.</li>
+<li><strong>Query Params</strong>: <code class="code-inline">partnerId=M1983-002&limit=50&before=...</code>.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">9. Phân Hệ Sinh Mã QR Vé Sự Kiện Nội Bộ Siêu Tốc (Native QR Ticket)</h3>
+<h4 class="heading-4">9.1. <code class="code-inline">GET /events/qr</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Sinh mã QR vé mời check-in hoặc thanh toán MoMo định dạng PNG sắc nét nội bộ dưới 5 mili-giây.</li>
+<li><strong>Query Params</strong>: <code class="code-inline">code=TIC-CEO1983-2026-X89A&size=300</code>.</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Trả về <code class="code-inline">image/png</code> trực tiếp kèm header <code class="code-inline">Cache-Control: public, max-age=86400</code>.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">10. Phân Hệ Kiểm Duyệt Bình Luận Tin Tức CRM (News Moderation)</h3>
+<h4 class="heading-4">10.1. <code class="code-inline">GET /moderation/comments</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Cán bộ CRM tải danh sách toàn bộ bình luận trên các bài viết tin tức để kiểm duyệt.</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Trả về mảng bình luận kèm thông tin tác giả, bài viết gốc và cờ trạng thái.</li>
+</ul>
+<h4 class="heading-4">10.2. <code class="code-inline">DELETE /moderation/comments/:id</code></h4>
+<ul class="doc-list">
+<li><strong>Mục đích</strong>: Ban Truyền Thông xóa bỏ bình luận vi phạm điều lệ CLB.</li>
+<li><strong>Response <code class="code-inline">200 OK</code></strong>: Đánh dấu xóa hoặc xóa vĩnh viễn khỏi CSDL và ghi nhận audit log.</li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">PHẦN IV: CHIẾN LƯỢC ĐÁNH INDEX VÀ TỐI ƯU HIỆU NĂNG CSDL (DATABASE INDEXING)</h2>
+<p class="doc-para">Để đảm bảo tốc độ phản hồi API luôn dưới 50ms với quy mô dữ liệu mở rộng hàng triệu bản ghi, hệ thống đã thiết lập các chỉ mục (indexes) chiến lược:</p>
+<ol class="doc-list">
+<li><code class="code-inline">CREATE INDEX idx_members_user_id ON public.members(user_id);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_members_phone ON public.members(phone);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_members_department_status ON public.members(department, status);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_opportunities_creator_status ON public.opportunities(creator_id, status);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_opportunities_type_created ON public.opportunities(type, created_at DESC);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_documents_folder_category ON public.documents(folder_id, category);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_notifications_recipient_read ON public.notifications(recipient_id, is_read);</code></li>
+<li><code class="code-inline">CREATE INDEX idx_event_reg_event_member ON public.event_registrations(event_id, member_id);</code></li>
+</ol>
+<hr class="doc-divider"/>
+<h2 class="heading-2">PHẦN V: KẾT LUẬN & ĐỒNG BỘ TÀI LIỆU</h2>
+<p class="doc-para">Tài liệu đặc tả này là kim chỉ nam kỹ thuật cho toàn bộ đội ngũ phát triển, được lưu trữ tại <code class="code-inline">document/notebooklm/09_DAC_TA_API_VA_THIET_KE_CSDL.md</code> để đồng bộ trực tiếp lên hệ thống <strong>Google NotebookLM Master của CEO 1983</strong>.</p>
+<p class="doc-para">Mọi sự thay đổi về schema bảng CSDL hoặc API payload trong quá trình vận hành tiếp theo bắt buộc phải cập nhật đồng bộ vào tài liệu này và <code class="code-inline">document/SRS_CEO1983_MASTER_CHINH_THUC.md</code>.</p>
+
+  </div>
+
+</body>
+</html>

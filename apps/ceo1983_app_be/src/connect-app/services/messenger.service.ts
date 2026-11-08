@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
 import { formatVNTime } from '../connect-app.utils';
@@ -49,7 +54,8 @@ export class ConnectMessengerService {
 
         // Tự động tạo hồ sơ hội viên cho tài khoản này
         const userEmail = u.email || `${u.username || userId}@ceo1983.vn`;
-        const newCode = 'M1983-' + String(Math.floor(100 + Math.random() * 900));
+        const newCode =
+          'M1983-' + String(Math.floor(100 + Math.random() * 900));
         await this.prisma.$executeRaw`
           INSERT INTO public.members (
             id, code, name, contact, email, phone, type, level, industry, region,
@@ -79,9 +85,15 @@ export class ConnectMessengerService {
         }
       }
 
-      return `M1983-${String(userId).replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase()}`;
+      return `M1983-${String(userId)
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(-4)
+        .toUpperCase()}`;
     } catch {
-      return `M1983-${String(userId).replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase()}`;
+      return `M1983-${String(userId)
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .slice(-4)
+        .toUpperCase()}`;
     }
   }
 
@@ -113,7 +125,8 @@ export class ConnectMessengerService {
     const memberByUserId = new Map<string, any>();
     for (const mem of members) {
       if (mem.code) memberByCode.set(String(mem.code).toLowerCase(), mem);
-      if (mem.user_id) memberByUserId.set(String(mem.user_id).toLowerCase(), mem);
+      if (mem.user_id)
+        memberByUserId.set(String(mem.user_id).toLowerCase(), mem);
       if (mem.id) memberByCode.set(String(mem.id).toLowerCase(), mem);
     }
 
@@ -135,7 +148,10 @@ export class ConnectMessengerService {
 
     // Tra cứu kết nối thực tế trong public.user_connections để phân loại: Đã kết nối hay Tin nhắn chờ
     const peerUserIds = Array.from(memberByUserId.keys()).filter(Boolean);
-    const connMap = new Map<string, { status: string; requesterId: string; connectionId: string }>();
+    const connMap = new Map<
+      string,
+      { status: string; requesterId: string; connectionId: string }
+    >();
     if (peerUserIds.length > 0) {
       try {
         const conns = await this.prisma.$queryRaw<any[]>`
@@ -145,9 +161,10 @@ export class ConnectMessengerService {
              OR (recipient_user_id = ${userId}::uuid AND requester_user_id = ANY(${peerUserIds}::uuid[]))
         `.catch(() => []);
         for (const c of conns) {
-          const otherId = String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
-            ? String(c.recipient_user_id).toLowerCase()
-            : String(c.requester_user_id).toLowerCase();
+          const otherId =
+            String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
+              ? String(c.recipient_user_id).toLowerCase()
+              : String(c.requester_user_id).toLowerCase();
           connMap.set(otherId, {
             status: String(c.status).toLowerCase(),
             requesterId: String(c.requester_user_id).toLowerCase(),
@@ -163,35 +180,59 @@ export class ConnectMessengerService {
     for (const peer of peers) {
       const list = byPeer.get(peer)!;
       const latest = list[0];
-      const unread = list.filter((m) => (myKeys.includes(String(m.to_id).toLowerCase())) && m.read_at == null).length;
+      const unread = list.filter(
+        (m) =>
+          myKeys.includes(String(m.to_id).toLowerCase()) && m.read_at == null,
+      ).length;
       const isSystem = peer === 'admin' || peer === 'system';
       const mem = memberByCode.get(peer) || memberByUserId.get(peer);
       const peerUserId = mem?.user_id ? String(mem.user_id) : null;
 
       // ĐẢM BẢO: Hễ có tin nhắn giữa 2 bên là hiển thị 100%, không lọc bỏ!
-      const hasMessages = Boolean(latest && latest.text && String(latest.text).trim().length > 0);
+      const hasMessages = Boolean(
+        latest && latest.text && String(latest.text).trim().length > 0,
+      );
       if (!isSystem && !hasMessages) {
         continue;
       }
 
-      const isOnline = isSystem ? true : (peerUserId ? (this.gateway?.isUserOnline(peerUserId) ?? false) : false);
-      const connInfo = peerUserId ? connMap.get(peerUserId.toLowerCase()) : null;
-      const isConnected = isSystem ? true : (connInfo?.status === 'accepted');
-      const connectionStatus = isSystem ? 'accepted' : (connInfo?.status || 'none');
+      const isOnline = isSystem
+        ? true
+        : peerUserId
+          ? (this.gateway?.isUserOnline(peerUserId) ?? false)
+          : false;
+      const connInfo = peerUserId
+        ? connMap.get(peerUserId.toLowerCase())
+        : null;
+      const isConnected = isSystem ? true : connInfo?.status === 'accepted';
+      const connectionStatus = isSystem
+        ? 'accepted'
+        : connInfo?.status || 'none';
       const isPending = !isSystem && connInfo?.status === 'pending';
-      const isOutgoingPending = isPending && connInfo?.requesterId === userId.toLowerCase();
-      const isIncomingPending = isPending && connInfo?.requesterId !== userId.toLowerCase();
+      const isOutgoingPending =
+        isPending && connInfo?.requesterId === userId.toLowerCase();
+      const isIncomingPending =
+        isPending && connInfo?.requesterId !== userId.toLowerCase();
       const isStranger = !isSystem && !isConnected;
 
       resList.push({
         peerCode: mem?.code || peer,
         userId: peerUserId ?? null,
         isOnline,
-        name: isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (mem?.display_name || mem?.name || mem?.contact || peer.toUpperCase()),
+        name: isSystem
+          ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983'
+          : mem?.display_name ||
+            mem?.name ||
+            mem?.contact ||
+            peer.toUpperCase(),
         avatarUrl: isSystem ? '/ceo1983-logo.png' : (mem?.avatar ?? null),
         last: latest.text,
-        time: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
-        rawTime: latest.created_at ? new Date(latest.created_at).toISOString() : new Date().toISOString(),
+        time: latest.created_at
+          ? new Date(latest.created_at).toISOString()
+          : new Date().toISOString(),
+        rawTime: latest.created_at
+          ? new Date(latest.created_at).toISOString()
+          : new Date().toISOString(),
         unread,
         isSystem,
         isConnected,
@@ -261,36 +302,38 @@ export class ConnectMessengerService {
     const peerMem = peerMemRows[0];
     const peerAliases = new Set<string>([peer]);
     if (peerMem?.code) peerAliases.add(String(peerMem.code).toLowerCase());
-    if (peerMem?.user_id) peerAliases.add(String(peerMem.user_id).toLowerCase());
+    if (peerMem?.user_id)
+      peerAliases.add(String(peerMem.user_id).toLowerCase());
     if (peerMem?.id) peerAliases.add(String(peerMem.id).toLowerCase());
 
     const myAliases = new Set<string>([mine, userId.toLowerCase()]);
     const peerList = Array.from(peerAliases);
     const myList = Array.from(myAliases);
 
-    const rawMsgs = await (
-      (isGroup || isChannel)
-        ? this.prisma.$queryRaw<any[]>`
+    const rawMsgs = await (isGroup || isChannel
+      ? this.prisma.$queryRaw<any[]>`
             SELECT id, from_id, to_id, text, created_at, read_at
             FROM public.messages
             WHERE LOWER(to_id) = ${peer} OR LOWER(from_id) = ${peer}
             ORDER BY created_at ASC
           `.catch((): any[] => [])
-        : this.prisma.$queryRaw<any[]>`
+      : this.prisma.$queryRaw<any[]>`
             SELECT id, from_id, to_id, text, created_at, read_at
             FROM public.messages
             WHERE (LOWER(from_id) = ANY(${myList}::text[]) AND LOWER(to_id) = ANY(${peerList}::text[]))
                OR (LOWER(from_id) = ANY(${peerList}::text[]) AND LOWER(to_id) = ANY(${myList}::text[]))
             ORDER BY created_at ASC
-          `.catch((): any[] => [])
-    );
+          `.catch((): any[] => []));
 
     const msgs: any[] = Array.isArray(rawMsgs) ? [...rawMsgs] : [];
 
     if (isSystem && msgs.length === 0) {
-      const welcomeMsg = 'Chào mừng quý Anh/Chị đến với Kênh Thông Báo Chính Thức của Ban Thư Ký CLB Doanh Nhân CEO 1983!';
-      const paymentMsg = '[action:payment|amount:20000000|invoice:HD-2026-001|qr:https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=20000000&addInfo=HD-2026-001|due:31/03/2026|desc:H%E1%BB%99i%20ph%C3%AD%20th%C6%B0%E1%BB%9Dng%20ni%C3%AAn%202026%20-%20CLB%20Doanh%20Nh%C3%A2n%20CEO%201983]';
-      const meetingMsg = '[action:meeting|title:H%E1%BB%8Dp%20Ban%20Ch%E1%BA%A5p%20H%C3%A0nh%20CEO%201983%20Th%C3%A1ng%203|time:14:00%20-%2028/03/2026|location:Trung%20t%C3%A2m%20H%E1%BB%99i%20Ngh%E1%BB%8B%20Qu%E1%BB%91c%20Gia%20H%C3%A0%20N%E1%BB%99i|link:https://meet.ceo1983.vn/ceo1983-bch|desc:Phi%C3%AAn%20h%E1%BB%8Dp%20chi%E1%BA%BFn%20l%C6%B0%E1%BB%A3c%20tri%E1%BB%83n%20khai%20giao%20th%C6%B0%C6%A1ng%20to%C3%A0n%20di%E1%BB%87n]';
+      const welcomeMsg =
+        'Chào mừng quý Anh/Chị đến với Kênh Thông Báo Chính Thức của Ban Thư Ký CLB Doanh Nhân CEO 1983!';
+      const paymentMsg =
+        '[action:payment|amount:20000000|invoice:HD-2026-001|qr:https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=20000000&addInfo=HD-2026-001|due:31/03/2026|desc:H%E1%BB%99i%20ph%C3%AD%20th%C6%B0%E1%BB%9Dng%20ni%C3%AAn%202026%20-%20CLB%20Doanh%20Nh%C3%A2n%20CEO%201983]';
+      const meetingMsg =
+        '[action:meeting|title:H%E1%BB%8Dp%20Ban%20Ch%E1%BA%A5p%20H%C3%A0nh%20CEO%201983%20Th%C3%A1ng%203|time:14:00%20-%2028/03/2026|location:Trung%20t%C3%A2m%20H%E1%BB%99i%20Ngh%E1%BB%8B%20Qu%E1%BB%91c%20Gia%20H%C3%A0%20N%E1%BB%99i|link:https://meet.ceo1983.vn/ceo1983-bch|desc:Phi%C3%AAn%20h%E1%BB%8Dp%20chi%E1%BA%BFn%20l%C6%B0%E1%BB%A3c%20tri%E1%BB%83n%20khai%20giao%20th%C6%B0%C6%A1ng%20to%C3%A0n%20di%E1%BB%87n]';
 
       await this.prisma.$executeRaw`
         INSERT INTO public.messages (id, from_id, to_id, text, created_at)
@@ -301,9 +344,30 @@ export class ConnectMessengerService {
       `.catch(() => null);
 
       msgs.push(
-        { id: 'sys-welcome', from_id: 'admin', to_id: mine, text: welcomeMsg, created_at: new Date(Date.now() - 172800000).toISOString(), read_at: null },
-        { id: 'sys-payment', from_id: 'admin', to_id: mine, text: paymentMsg, created_at: new Date(Date.now() - 3600000).toISOString(), read_at: null },
-        { id: 'sys-meeting', from_id: 'admin', to_id: mine, text: meetingMsg, created_at: new Date(Date.now() - 600000).toISOString(), read_at: null },
+        {
+          id: 'sys-welcome',
+          from_id: 'admin',
+          to_id: mine,
+          text: welcomeMsg,
+          created_at: new Date(Date.now() - 172800000).toISOString(),
+          read_at: null,
+        },
+        {
+          id: 'sys-payment',
+          from_id: 'admin',
+          to_id: mine,
+          text: paymentMsg,
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+          read_at: null,
+        },
+        {
+          id: 'sys-meeting',
+          from_id: 'admin',
+          to_id: mine,
+          text: meetingMsg,
+          created_at: new Date(Date.now() - 600000).toISOString(),
+          read_at: null,
+        },
       );
     }
 
@@ -376,8 +440,10 @@ export class ConnectMessengerService {
     };
 
     const resolvedPeerName = isChannel
-      ? (channelNames[peer] || `Kênh ${peerCode}`)
-      : (isSystem ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983' : (peerMem?.name || peerMem?.contact || peerCode.toUpperCase()));
+      ? channelNames[peer] || `Kênh ${peerCode}`
+      : isSystem
+        ? 'Ban Thư Ký CLB Doanh Nhân CEO 1983'
+        : peerMem?.name || peerMem?.contact || peerCode.toUpperCase();
 
     return {
       peerCode: peerMem?.code || peer,
@@ -392,7 +458,9 @@ export class ConnectMessengerService {
           text: m.text,
           mine: isMine,
           time: formatVNTime(new Date(m.created_at)),
-          createdAt: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
+          createdAt: m.created_at
+            ? new Date(m.created_at).toISOString()
+            : new Date().toISOString(),
           seen: m.read_at != null,
           isRetracted: m.text === '[retracted]',
         };
@@ -409,7 +477,12 @@ export class ConnectMessengerService {
     // Chuẩn hóa peerCode: nếu người gửi truyền user_id hoặc code viết hoa, phân giải về code hội viên
     let targetPeerCode = peerCode.toLowerCase();
     let targetUserId: string | null = null;
-    if (!isGroup && !isChannel && targetPeerCode !== 'admin' && targetPeerCode !== 'system') {
+    if (
+      !isGroup &&
+      !isChannel &&
+      targetPeerCode !== 'admin' &&
+      targetPeerCode !== 'system'
+    ) {
       const peerMemRows = await this.prisma.$queryRaw<any[]>`
         SELECT m.code, m.user_id FROM public.members m 
         WHERE LOWER(m.code) = ${targetPeerCode} OR m.user_id::text = ${targetPeerCode} OR m.id = ${targetPeerCode}
@@ -417,7 +490,9 @@ export class ConnectMessengerService {
       `.catch((): any[] => []);
       if (peerMemRows[0]) {
         targetPeerCode = String(peerMemRows[0].code).toLowerCase();
-        targetUserId = peerMemRows[0].user_id ? String(peerMemRows[0].user_id) : null;
+        targetUserId = peerMemRows[0].user_id
+          ? String(peerMemRows[0].user_id)
+          : null;
       }
     }
 
@@ -430,19 +505,32 @@ export class ConnectMessengerService {
     `;
 
     // Đồng bộ thông báo tin nhắn mới vào public.member_notifications để Mobile App nhận push ngay cả khi tắt màn hình/chạy ngầm
-    if (targetUserId || (targetPeerCode && targetPeerCode !== 'admin' && targetPeerCode !== 'system')) {
+    if (
+      targetUserId ||
+      (targetPeerCode &&
+        targetPeerCode !== 'admin' &&
+        targetPeerCode !== 'system')
+    ) {
       const senderMem = await this.prisma.$queryRaw<any[]>`
         SELECT name, company_name FROM public.members WHERE LOWER(code) = ${mine} OR user_id::text = ${userId} LIMIT 1
       `.catch((): any[] => []);
       const senderName = senderMem[0]?.name || myCode;
       const notifTarget = targetUserId || targetPeerCode;
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.member_notifications (
           id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
         ) VALUES (
           gen_random_uuid(), $1::text, $2, $3, false, false, 'chat', $4::text, NOW()
         )
-      `, String(notifTarget), `Tin nhắn mới từ ${senderName}`, text.length > 80 ? text.slice(0, 80) + '...' : text, mine).catch(() => {});
+      `,
+          String(notifTarget),
+          `Tin nhắn mới từ ${senderName}`,
+          text.length > 80 ? text.slice(0, 80) + '...' : text,
+          mine,
+        )
+        .catch(() => {});
     }
 
     if (this.gateway && this.gateway.server) {
@@ -535,16 +623,30 @@ export class ConnectMessengerService {
     const counterpartUserIds = new Set<string>();
     const acceptedSet = new Set<string>();
     for (const t of threads) {
-      const counterpart = String(t.user1_id).toLowerCase() === userId.toLowerCase() ? String(t.user2_id).toLowerCase() : String(t.user1_id).toLowerCase();
+      const counterpart =
+        String(t.user1_id).toLowerCase() === userId.toLowerCase()
+          ? String(t.user2_id).toLowerCase()
+          : String(t.user1_id).toLowerCase();
       counterpartUserIds.add(counterpart);
     }
     for (const c of connections) {
-      const counterpart = String(c.requester_user_id).toLowerCase() === userId.toLowerCase() ? String(c.recipient_user_id).toLowerCase() : String(c.requester_user_id).toLowerCase();
+      const counterpart =
+        String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
+          ? String(c.recipient_user_id).toLowerCase()
+          : String(c.requester_user_id).toLowerCase();
       counterpartUserIds.add(counterpart);
       acceptedSet.add(counterpart);
     }
 
-    const userProfilesMap = new Map<string, { displayName: string; avatarUrl: string | null; headline: string | null; companyName: string | null }>();
+    const userProfilesMap = new Map<
+      string,
+      {
+        displayName: string;
+        avatarUrl: string | null;
+        headline: string | null;
+        companyName: string | null;
+      }
+    >();
     if (counterpartUserIds.size > 0) {
       const idsArray = Array.from(counterpartUserIds);
       const [identities, profiles, members] = await Promise.all([
@@ -567,15 +669,32 @@ export class ConnectMessengerService {
 
       for (const id of idsArray) {
         const idLower = id.toLowerCase();
-        const ident = (identities as any[]).find((i: any) => String(i.owner_user_id).toLowerCase() === idLower);
-        const prof = (profiles as any[]).find((p: any) => String(p.user_id).toLowerCase() === idLower);
-        const mem = (members as any[]).find((m: any) => String(m.user_id).toLowerCase() === idLower);
+        const ident = (identities as any[]).find(
+          (i: any) => String(i.owner_user_id).toLowerCase() === idLower,
+        );
+        const prof = (profiles as any[]).find(
+          (p: any) => String(p.user_id).toLowerCase() === idLower,
+        );
+        const mem = (members as any[]).find(
+          (m: any) => String(m.user_id).toLowerCase() === idLower,
+        );
 
         userProfilesMap.set(idLower, {
-          displayName: ident?.display_name || prof?.display_name || mem?.name || 'Doanh nhân CEO 1983',
-          avatarUrl: ident?.avatar_url || prof?.avatar_url || mem?.avatar || null,
-          headline: ident?.headline || ident?.job_title || prof?.professional_title || mem?.position || null,
-          companyName: ident?.company_name || prof?.company_name || mem?.company || null,
+          displayName:
+            ident?.display_name ||
+            prof?.display_name ||
+            mem?.name ||
+            'Doanh nhân CEO 1983',
+          avatarUrl:
+            ident?.avatar_url || prof?.avatar_url || mem?.avatar || null,
+          headline:
+            ident?.headline ||
+            ident?.job_title ||
+            prof?.professional_title ||
+            mem?.position ||
+            null,
+          companyName:
+            ident?.company_name || prof?.company_name || mem?.company || null,
         });
       }
     }
@@ -584,9 +703,17 @@ export class ConnectMessengerService {
     const addedCounterparts = new Set<string>();
 
     for (const t of threads) {
-      const counterpartId = String(t.user1_id).toLowerCase() === userId.toLowerCase() ? String(t.user2_id).toLowerCase() : String(t.user1_id).toLowerCase();
+      const counterpartId =
+        String(t.user1_id).toLowerCase() === userId.toLowerCase()
+          ? String(t.user2_id).toLowerCase()
+          : String(t.user1_id).toLowerCase();
       addedCounterparts.add(counterpartId);
-      const profile = userProfilesMap.get(counterpartId) || { displayName: 'Doanh nhân CEO 1983', avatarUrl: null, headline: null, companyName: null };
+      const profile = userProfilesMap.get(counterpartId) || {
+        displayName: 'Doanh nhân CEO 1983',
+        avatarUrl: null,
+        headline: null,
+        companyName: null,
+      };
       resultThreads.push({
         threadId: t.id,
         personId: `u:${counterpartId}`,
@@ -595,9 +722,13 @@ export class ConnectMessengerService {
         headline: profile.headline,
         companyName: profile.companyName,
         isOnline: this.gateway?.isUserOnline(counterpartId) ?? false,
-        lastMessageAt: t.last_message_at ? new Date(t.last_message_at).toISOString() : null,
+        lastMessageAt: t.last_message_at
+          ? new Date(t.last_message_at).toISOString()
+          : null,
         lastMessagePreview: t.last_message_body || null,
-        lastMessageFromMe: t.last_sender_id ? String(t.last_sender_id).toLowerCase() === userId.toLowerCase() : false,
+        lastMessageFromMe: t.last_sender_id
+          ? String(t.last_sender_id).toLowerCase() === userId.toLowerCase()
+          : false,
         unreadCount: Number(t.unread_count || 0),
         isConnected: acceptedSet.has(counterpartId),
       });
@@ -605,14 +736,23 @@ export class ConnectMessengerService {
 
     // Bổ sung các hội viên đã kết nối nhưng chưa phát sinh tin nhắn
     for (const c of connections) {
-      const counterpartId = String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
-        ? String(c.recipient_user_id).toLowerCase()
-        : String(c.requester_user_id).toLowerCase();
+      const counterpartId =
+        String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
+          ? String(c.recipient_user_id).toLowerCase()
+          : String(c.requester_user_id).toLowerCase();
 
       if (!addedCounterparts.has(counterpartId)) {
         addedCounterparts.add(counterpartId);
-        const profile = userProfilesMap.get(counterpartId) || { displayName: 'Doanh nhân CEO 1983', avatarUrl: null, headline: null, companyName: null };
-        const [u1, u2] = userId.toLowerCase() < counterpartId.toLowerCase() ? [userId, counterpartId] : [counterpartId, userId];
+        const profile = userProfilesMap.get(counterpartId) || {
+          displayName: 'Doanh nhân CEO 1983',
+          avatarUrl: null,
+          headline: null,
+          companyName: null,
+        };
+        const [u1, u2] =
+          userId.toLowerCase() < counterpartId.toLowerCase()
+            ? [userId, counterpartId]
+            : [counterpartId, userId];
 
         let threadId = crypto.randomUUID();
         try {
@@ -650,11 +790,15 @@ export class ConnectMessengerService {
   }
 
   async openMyDmThread(userId: string, counterpartUserId: string) {
-    if (!counterpartUserId) throw new BadRequestException('counterpart_user_id_required');
+    if (!counterpartUserId)
+      throw new BadRequestException('counterpart_user_id_required');
     let cleanId = counterpartUserId;
     if (cleanId.startsWith('u:')) cleanId = cleanId.substring(2);
 
-    const [u1, u2] = userId.toLowerCase() < cleanId.toLowerCase() ? [userId, cleanId] : [cleanId, userId];
+    const [u1, u2] =
+      userId.toLowerCase() < cleanId.toLowerCase()
+        ? [userId, cleanId]
+        : [cleanId, userId];
 
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.direct_message_threads
@@ -696,9 +840,11 @@ export class ConnectMessengerService {
       `.catch(() => []);
 
       if (conn.length > 0) {
-        const otherId = String(conn[0].requester_user_id).toLowerCase() === userId.toLowerCase()
-          ? String(conn[0].recipient_user_id)
-          : String(conn[0].requester_user_id);
+        const otherId =
+          String(conn[0].requester_user_id).toLowerCase() ===
+          userId.toLowerCase()
+            ? String(conn[0].recipient_user_id)
+            : String(conn[0].requester_user_id);
         const openRes = await this.openMyDmThread(userId, otherId);
         targetThreadId = openRes.threadId;
         threadRows = await this.prisma.$queryRaw<any[]>`
@@ -728,14 +874,27 @@ export class ConnectMessengerService {
     }
 
     const t = threadRows[0];
-    const counterpartId = String(t.user1_id).toLowerCase() === userId.toLowerCase()
-      ? String(t.user2_id).toLowerCase()
-      : String(t.user1_id).toLowerCase();
+    const counterpartId =
+      String(t.user1_id).toLowerCase() === userId.toLowerCase()
+        ? String(t.user2_id).toLowerCase()
+        : String(t.user1_id).toLowerCase();
 
     const [ident, prof, mem, conn] = await Promise.all([
-      this.prisma.$queryRaw<any[]>`SELECT display_name, avatar_url, headline, job_title, company_name FROM public.business_identities WHERE owner_user_id = ${counterpartId}::uuid LIMIT 1`.catch(() => []),
-      this.prisma.$queryRaw<any[]>`SELECT display_name, avatar_url, professional_title, company_name FROM public.user_profiles WHERE user_id = ${counterpartId}::uuid LIMIT 1`.catch(() => []),
-      this.prisma.$queryRaw<any[]>`SELECT name, avatar, company, position FROM public.members WHERE user_id = ${counterpartId}::uuid LIMIT 1`.catch(() => []),
+      this.prisma.$queryRaw<
+        any[]
+      >`SELECT display_name, avatar_url, headline, job_title, company_name FROM public.business_identities WHERE owner_user_id = ${counterpartId}::uuid LIMIT 1`.catch(
+        () => [],
+      ),
+      this.prisma.$queryRaw<
+        any[]
+      >`SELECT display_name, avatar_url, professional_title, company_name FROM public.user_profiles WHERE user_id = ${counterpartId}::uuid LIMIT 1`.catch(
+        () => [],
+      ),
+      this.prisma.$queryRaw<
+        any[]
+      >`SELECT name, avatar, company, position FROM public.members WHERE user_id = ${counterpartId}::uuid LIMIT 1`.catch(
+        () => [],
+      ),
       this.prisma.$queryRaw<any[]>`
         SELECT id FROM public.user_connections
         WHERE status = 'accepted'::public.global_connection_status
@@ -748,16 +907,32 @@ export class ConnectMessengerService {
     const threadSummary = {
       threadId: t.id,
       personId: `u:${counterpartId}`,
-      displayName: ident[0]?.display_name || prof[0]?.display_name || mem[0]?.name || 'Doanh nhân CEO 1983',
-      avatarUrl: ident[0]?.avatar_url || prof[0]?.avatar_url || mem[0]?.avatar || null,
-      headline: ident[0]?.headline || ident[0]?.job_title || prof[0]?.professional_title || mem[0]?.position || null,
-      companyName: ident[0]?.company_name || prof[0]?.company_name || mem[0]?.company || null,
+      displayName:
+        ident[0]?.display_name ||
+        prof[0]?.display_name ||
+        mem[0]?.name ||
+        'Doanh nhân CEO 1983',
+      avatarUrl:
+        ident[0]?.avatar_url || prof[0]?.avatar_url || mem[0]?.avatar || null,
+      headline:
+        ident[0]?.headline ||
+        ident[0]?.job_title ||
+        prof[0]?.professional_title ||
+        mem[0]?.position ||
+        null,
+      companyName:
+        ident[0]?.company_name ||
+        prof[0]?.company_name ||
+        mem[0]?.company ||
+        null,
       isOnline: this.gateway?.isUserOnline(counterpartId) ?? false,
-      lastMessageAt: t.last_message_at ? new Date(t.last_message_at).toISOString() : null,
+      lastMessageAt: t.last_message_at
+        ? new Date(t.last_message_at).toISOString()
+        : null,
       lastMessagePreview: t.last_message_body || null,
       lastMessageFromMe: false,
       unreadCount: 0,
-      isConnected: (conn && conn.length > 0),
+      isConnected: conn && conn.length > 0,
     };
 
     await this.prisma.$executeRaw`
@@ -774,14 +949,16 @@ export class ConnectMessengerService {
       LIMIT 100
     `.catch(() => []);
 
-    const messages = msgRows.map(m => ({
+    const messages = msgRows.map((m) => ({
       id: m.id,
       threadId: m.thread_id,
       fromMe: String(m.sender_user_id).toLowerCase() === userId.toLowerCase(),
       body: m.is_retracted ? 'Tin nhắn đã được thu hồi' : m.body,
       reactions: Array.isArray(m.reactions) ? m.reactions : [],
       replyTo: m.reply_to || null,
-      createdAt: m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString(),
+      createdAt: m.created_at
+        ? new Date(m.created_at).toISOString()
+        : new Date().toISOString(),
       readAt: m.read_at ? new Date(m.read_at).toISOString() : null,
       retractedAt: m.is_retracted ? new Date(m.updated_at).toISOString() : null,
     }));
@@ -789,10 +966,14 @@ export class ConnectMessengerService {
     return { ok: true, thread: threadSummary, messages };
   }
 
-  async sendMyDmMessage(userId: string, threadId: string, data: { body: string; clientToken?: string; replyTo?: any }) {
+  async sendMyDmMessage(
+    userId: string,
+    threadId: string,
+    data: { body: string; clientToken?: string; replyTo?: any },
+  ) {
     if (!data?.body?.trim()) throw new BadRequestException('empty_message');
 
-    let threadRows = await this.prisma.$queryRaw<any[]>`
+    const threadRows = await this.prisma.$queryRaw<any[]>`
       SELECT id, user1_id, user2_id FROM public.direct_message_threads
       WHERE id = ${threadId}::uuid AND (user1_id = ${userId}::uuid OR user2_id = ${userId}::uuid)
       LIMIT 1
@@ -803,9 +984,10 @@ export class ConnectMessengerService {
     }
 
     const t = threadRows[0];
-    const counterpartId = String(t.user1_id).toLowerCase() === userId.toLowerCase()
-      ? String(t.user2_id).toLowerCase()
-      : String(t.user1_id).toLowerCase();
+    const counterpartId =
+      String(t.user1_id).toLowerCase() === userId.toLowerCase()
+        ? String(t.user2_id).toLowerCase()
+        : String(t.user1_id).toLowerCase();
 
     const newMsgId = crypto.randomUUID();
     const replyJson = data.replyTo ? JSON.stringify(data.replyTo) : null;
@@ -843,11 +1025,16 @@ export class ConnectMessengerService {
     };
 
     if (this.gateway) {
-      this.gateway.emitDmMessageReceived(t.id, counterpartId, { ...messageObj, fromMe: false }, {
-        threadId: t.id,
-        lastMessagePreview: data.body.slice(0, 150),
-        lastMessageAt: new Date().toISOString(),
-      });
+      this.gateway.emitDmMessageReceived(
+        t.id,
+        counterpartId,
+        { ...messageObj, fromMe: false },
+        {
+          threadId: t.id,
+          lastMessagePreview: data.body.slice(0, 150),
+          lastMessageAt: new Date().toISOString(),
+        },
+      );
     }
 
     return { ok: true, message: messageObj };
@@ -872,7 +1059,9 @@ export class ConnectMessengerService {
     `.catch(() => []);
 
     if (msgRows.length === 0) throw new NotFoundException('message_not_found');
-    if (String(msgRows[0].sender_user_id).toLowerCase() !== userId.toLowerCase()) {
+    if (
+      String(msgRows[0].sender_user_id).toLowerCase() !== userId.toLowerCase()
+    ) {
       throw new ForbiddenException('cannot_retract_other_message');
     }
 
@@ -895,8 +1084,12 @@ export class ConnectMessengerService {
 
     if (msgRows.length === 0) throw new NotFoundException('message_not_found');
 
-    let reactions = Array.isArray(msgRows[0].reactions) ? msgRows[0].reactions : [];
-    const existingIdx = reactions.findIndex((r: any) => r.userId === userId && r.emoji === emoji);
+    let reactions = Array.isArray(msgRows[0].reactions)
+      ? msgRows[0].reactions
+      : [];
+    const existingIdx = reactions.findIndex(
+      (r: any) => r.userId === userId && r.emoji === emoji,
+    );
     if (existingIdx !== -1) {
       reactions.splice(existingIdx, 1);
     } else {
@@ -933,9 +1126,10 @@ export class ConnectMessengerService {
 
     const friendUserIds = new Set<string>();
     for (const c of connRows) {
-      const friendId = String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
-        ? String(c.recipient_user_id).toLowerCase()
-        : String(c.requester_user_id).toLowerCase();
+      const friendId =
+        String(c.requester_user_id).toLowerCase() === userId.toLowerCase()
+          ? String(c.recipient_user_id).toLowerCase()
+          : String(c.requester_user_id).toLowerCase();
       friendUserIds.add(friendId);
     }
 
@@ -951,8 +1145,10 @@ export class ConnectMessengerService {
       `.catch(() => []);
     }
 
-    const foundUserIds = new Set(identities.map(i => String(i.user_id).toLowerCase()));
-    const missingIds = allTargetIds.filter(id => !foundUserIds.has(id));
+    const foundUserIds = new Set(
+      identities.map((i) => String(i.user_id).toLowerCase()),
+    );
+    const missingIds = allTargetIds.filter((id) => !foundUserIds.has(id));
 
     if (missingIds.length > 0) {
       const [profiles, members] = await Promise.all([
@@ -979,7 +1175,7 @@ export class ConnectMessengerService {
         .toLowerCase()
         .trim();
 
-    let results = identities.map(i => ({
+    let results = identities.map((i) => ({
       userId: String(i.user_id),
       displayName: i.display_name || 'Hội viên CEO 1983',
       avatarUrl: i.avatar_url || null,
@@ -996,14 +1192,14 @@ export class ConnectMessengerService {
 
     if (query && query.trim()) {
       const qNorm = normalize(query);
-      results = results.filter(r => 
-        normalize(r.displayName).includes(qNorm) || 
-        (r.companyName && normalize(r.companyName).includes(qNorm)) ||
-        (r.headline && normalize(r.headline).includes(qNorm))
+      results = results.filter(
+        (r) =>
+          normalize(r.displayName).includes(qNorm) ||
+          (r.companyName && normalize(r.companyName).includes(qNorm)) ||
+          (r.headline && normalize(r.headline).includes(qNorm)),
       );
     }
 
     return results.slice(0, 50);
   }
-
 }

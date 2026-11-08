@@ -1,5 +1,38 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.65): Xuất Bản Trọn Bộ 4 Tài Liệu Bàn Giao Doanh Nghiệp (16 Tệp Đầy Đủ 4 Định Dạng: .md, .html, .docx, .pdf) Chuẩn Hóa Cực Kỳ Chi Tiết Kèm Sơ Đồ & Ảnh Sản Phẩm ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Bộ Tài Liệu 1: Tài Liệu Yêu Cầu Nghiệp Vụ Doanh Nghiệp (BRD - Business Requirements Document)*:
+     - **Tệp xuất bản**: \`01_BRD_CEO1983_HANOIBA\` (.md: 38.0 KB, .html: 56.3 KB, .docx: 32.6 KB, .pdf: 423.3 KB).
+     - **Nội dung chuyên sâu**: Bối cảnh thành lập CLB Doanh Nhân CEO 1983 - Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA), mô hình 6 Ban chuyên môn, ma trận RACI, chuẩn nhận diện 3 màu (Đỏ, Vàng, Xanh) & Cam Tiên Phong.
+     - **8 Sơ đồ quy trình kinh doanh (Mermaid Flowcharts)**: Thẩm định hội viên 1983; Giao thương B2B & hẹn 1-on-1 trong 3 tình huống; Sự kiện Gala & lưu vết 5 hạng mục; Họp Ban cố định vs bất thường; Thu hội phí tự động MoMo/VNPay/VietQR; Đối soát biến động tài chính & nhập xuất Excel; Đăng bài đa kênh 1-chạm; Trợ lý số AI chào mừng.
+     - **Ma trận 30 Business Use Cases**: 15 CRM BUCs (\`BUC-CRM-001\` -> \`015\`) + 15 Mobile App BUCs (\`BUC-APP-001\` -> \`015\`).
+     - **Quy định thanh toán & Nghiệm thu kinh doanh**: VietQR Napas247, MoMo, VNPay; Bảng chỉ số KPI nghiệm thu thực tế đạt 100%.
+  2. *Bộ Tài Liệu 2: Đặc Tả Yêu Cầu Phần Mềm Kỹ Thuật (SRS - Software Requirements Specification)*:
+     - **Tệp xuất bản**: \`02_SRS_CEO1983_HANOIBA\` (.md: 150.5 KB, .html: 189.0 KB, .docx: 69.3 KB, .pdf: 1,251.7 KB).
+     - **Chuẩn quốc tế IEEE 830-1998**: Kiến trúc hệ thống đa tầng Monorepo DDD, luồng dữ liệu End-to-End, State Diagrams (Hội viên, Cơ hội B2B, Sự kiện & Check-in QR Gate).
+     - **ĐẶC TẢ CHI TIẾT 30 SOFTWARE USE CASES (15 CRM + 15 MOBILE APP) - MỖI USE CASE ĐỀU CÓ BIỂU ĐỒ MERMAID ĐỘC LẬP**:
+       - 15 CRM Use Cases (\`UC-CRM-001\` -> \`015\`) & 15 Mobile App Use Cases (\`UC-APP-001\` -> \`015\`).
+       - Từng Use Case gồm: Mã, Tên, Actor chính/phụ, Goal, Description, Preconditions, Postconditions, **Sơ đồ Mermaid Use Case Flowchart / Sequence riêng biệt**, Main Flow, Alternative Flows, Business Rules (BR-01 -> BR-60), Technical Implementation (Frontend routes, Endpoints, PostgreSQL tables).
+       - Tích hợp đầy đủ các tính năng mới: Cơ hội B2B phân quyền Public vs Assigned, đàm phán deal theo tỷ lệ % lợi nhuận; Check-in độc lập cho sự kiện, họp mặt, diễn đàn; Tự động refresh token Zalo OA 6h; Thống kê 2 cột; Cài đặt 1 chạm PWA; Poster sinh nhật hoàng gia.
+  3. *Bộ Tài Liệu 3: Thiết Kế Cơ Sở Dữ Liệu PostgreSQL & Đặc Tả REST API (Database & API Design)*:
+     - **Tệp xuất bản**: \`03_THIET_KE_CSDL_VA_API_CEO1983_HANOIBA\` (.md: 37.2 KB, .html: 80.3 KB, .docx: 35.2 KB, .pdf: 616.7 KB).
+     - **Sơ đồ quan hệ thực thể ERD Mermaid**: Trực quan hóa 16 bảng CSDL cốt lõi và quan hệ 1:1, 1:N, N:N.
+     - **Đặc tả 16 bảng PostgreSQL chi tiết**: \`vione_users\`, \`members\`, \`companies\`, \`opportunities\` (kèm \`visibility\`, \`assigned_to_ids\`), \`opportunity_interests\` (kèm \`deal_amount\`, \`deal_percent\`, \`deal_profit_rank\`), \`products\`, \`events\`, \`event_registrations\`, \`business_meetings\`, \`meeting_participants\`, \`feed_posts\`, \`feed_comments\`, \`financial_transactions\`, \`membership_fees\`, \`audit_logs\`, \`zalo_accounts\`.
+     - **Đặc tả hơn 50+ REST API Endpoints chuẩn NestJS**: Method, Path, Auth Guard, Request Body Schema JSON, Response Success / Error Schema JSON, Status Code cho toàn bộ 10 phân hệ nghiệp vụ.
+  4. *Bộ Tài Liệu 4: Cẩm Nang Hướng Dẫn Sử Dụng Hệ Thống Toàn Diện (User Manual / Guide)*:
+     - **Tệp xuất bản**: \`04_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_HANOIBA\` (.md: 43.2 KB, .html: 67.1 KB, .docx: 32.9 KB, .pdf: 608.7 KB).
+     - **Phần I - Hướng dẫn Quản trị viên Web CRM**: Đăng nhập, phân quyền RBAC 6 Ban, quy trình 3 bước duyệt hội viên, quản lý hồ sơ 360, sơ đồ bàn tiệc Cinema Seating, trạm soát vé QR Gate, họp ban & Kanban, quản trị deal B2B, quản lý sổ quỹ thu chi, xuất nhập Excel SheetJS, đăng bài đa kênh 1-chạm, cấu hình Zalo OA refresh token 6h & Audit Logs.
+     - **Phần II - Hướng dẫn Hội viên CEO 1983 Mobile App**: Cài đặt 1-chạm PWA/Native, đăng nhập sinh trắc học FaceID, trang chủ banner auto-slide full-width, thẻ danh thiếp VIP QR 3D Gyroscope, danh bạ đồng niên 1983, đặt lịch hẹn 1-on-1 trong 3 kịch bản, nhận vé QR E-Ticket & check-in cổng, đăng tin cơ hội B2B & đàm phán deal theo % lời nhất, sàn TMĐT nội khối, bảng tin mạng lưới kèm QR & bình luận cây 3 cấp, xem thống kê 2 cột (số lượng & giá trị), cài đặt bảo mật & tùy biến màu theme thương hiệu swatches.
+     - **Ảnh minh họa thực tế**: Nhúng trực tiếp 33 ảnh chụp màn hình chất lượng cao từ \`document/images/evidence/\`.
+  5. *Đóng Gói & Lưu Trữ Đa Thư Mục*:
+     - Toàn bộ 16 tệp được xuất bản và lưu trữ đồng bộ tại:
+       - \`document/handover/\` (Thư mục bàn giao trực tiếp)
+       - \`document/handover/output/\` (Bản build đóng gói bàn giao)
+       - \`apps/ceo1983_app_fe/public/docs/\` (Phục vụ tải tài liệu trực tuyến trên Web CRM / Mobile App).
+  6. *Kiểm Tra Chất Lượng Mã Nguồn & Ràng Buộc*:
+     - Type check: \`npx tsc --noEmit\` cả Backend và Frontend đều đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy \`git push\` hay \`git commit\`. Mã nguồn bảo toàn an toàn tại local nhánh \`dev\`.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.64): Tối Ưu Hóa & Hoàn Thiện 6 Hạng Mục CEO 1983 Mobile App Theo Phản Hồi Người Dùng ([NODE-APP-001], [NODE-APP-009], [NODE-APP-012], [NODE-APP-014])**:
   1. *Hạng mục 1: Thống Kê Các Danh Mục & Chia Sẻ Thống Kê 2 Cột ([NODE-APP-012])*:
      - **Bổ sung cột chỉ số thứ 4 cho Cơ hội kinh doanh**: Đã cập nhật `APP_CHART_METAS.top_opportunities` bổ sung `col4Label: "Đã khớp lệnh / chốt"`, `col4Color: "#8B5CF6"`, `col4Unit: "Deal"`, đảm bảo các danh mục có đầy đủ các cột chỉ số và khớp hoàn toàn dữ liệu Backend.

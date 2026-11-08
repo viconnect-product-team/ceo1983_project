@@ -40,15 +40,20 @@ export class AppController {
     const targetType = (rawParamType || rawQueryType || '').toLowerCase();
     const targetId = rawParamId || rawQueryId || '';
 
-    const DEFAULT_IMAGE = 'https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg';
+    const DEFAULT_IMAGE =
+      'https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg';
     const SITE_NAME = 'CLB Doanh Nhân CEO 1983 (HanoiBA)';
     const BASE_WEB_URL = 'https://ceo1983.viconnect.vn';
 
     // Nhận diện Bot / Web Crawler của Facebook (kể cả Meta mới 2024-2026), Zalo, Twitter, Telegram, LinkedIn
     const userAgent = (req?.headers?.['user-agent'] || '').toLowerCase();
-    const isCrawler = /facebookexternalhit|facebot|facebookcatalog|meta-externalagent|meta-externaladsagent|zalo|zalopc|twitterbot|linkedinbot|telegrambot|whatsapp|slackbot|googlebot|bingbot|baiduspider|yandex|vkshare/i.test(userAgent);
+    const isCrawler =
+      /facebookexternalhit|facebot|facebookcatalog|meta-externalagent|meta-externaladsagent|zalo|zalopc|twitterbot|linkedinbot|telegrambot|whatsapp|slackbot|googlebot|bingbot|baiduspider|yandex|vkshare/i.test(
+        userAgent,
+      );
 
-    let resolvedTitle = customTitle || 'CLB Doanh Nhân CEO 1983 — Kết Nối Giao Thương';
+    let resolvedTitle =
+      customTitle || 'CLB Doanh Nhân CEO 1983 — Kết Nối Giao Thương';
     let resolvedDesc =
       customDesc ||
       'Mạng lưới giao thương B2B, chia sẻ cơ hội kinh doanh và kết nối doanh nhân CEO 1983 trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA).';
@@ -69,11 +74,14 @@ export class AppController {
 
     try {
       if (targetType === 'opportunity' && targetId) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/opportunities?id=${encodeURIComponent(targetId)}`;
-        const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, description, image, images, budget_min, budget_max, industry, company, contact_name, contact_phone FROM public.opportunities WHERE id::text = $1 LIMIT 1`,
-          targetId,
-        ).catch(() => [] as any[]);
+        targetUrl =
+          customTarget ||
+          `${BASE_WEB_URL}/association/opportunities?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT title, description, image, images, budget_min, budget_max, industry, company, contact_name, contact_phone FROM public.opportunities WHERE id::text = $1 LIMIT 1`, targetId)
+          .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
@@ -82,11 +90,16 @@ export class AppController {
           const bMax = item.budget_max != null ? Number(item.budget_max) : 0;
           const bVal = bMax > 0 ? bMax : bMin;
           if (bVal > 0) {
-            budgetStr = bVal >= 1e9 ? ` (Quy mô: ${(bVal / 1e9).toFixed(1)} Tỷ VNĐ)` : ` (Quy mô: ${(bVal / 1e6).toFixed(0)} Tr VNĐ)`;
+            budgetStr =
+              bVal >= 1e9
+                ? ` (Quy mô: ${(bVal / 1e9).toFixed(1)} Tỷ VNĐ)`
+                : ` (Quy mô: ${(bVal / 1e6).toFixed(0)} Tr VNĐ)`;
           }
-          resolvedTitle = item.title ? `[Cơ Hội Giao Thương B2B] ${item.title}${budgetStr} — CLB CEO 1983` : (customTitle || resolvedTitle);
-          
-          let descParts: string[] = [];
+          resolvedTitle = item.title
+            ? `[Cơ Hội Giao Thương B2B] ${item.title}${budgetStr} — CLB CEO 1983`
+            : customTitle || resolvedTitle;
+
+          const descParts: string[] = [];
           if (item.company) {
             descParts.push(`Doanh nghiệp: ${item.company}`);
           }
@@ -117,48 +130,70 @@ export class AppController {
             resolvedImage = customImage;
           }
         }
-      } else if ((targetType === 'product' || targetType === 'marketplace') && targetId) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/products?id=${encodeURIComponent(targetId)}`;
-        const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT id, title, name, description, price, original_price, member_price, unit, currency, image_url, image_urls, company FROM public.products WHERE id::text = $1 OR custom_id = $1 LIMIT 1`,
-          targetId,
-        ).catch(() => [] as any[]);
+      } else if (
+        (targetType === 'product' || targetType === 'marketplace') &&
+        targetId
+      ) {
+        targetUrl =
+          customTarget ||
+          `${BASE_WEB_URL}/association/products?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT id, title, name, description, price, original_price, member_price, unit, currency, image_url, image_urls, company FROM public.products WHERE id::text = $1 OR custom_id = $1 LIMIT 1`, targetId)
+          .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
           const prodName = item.name || item.title || 'Sản phẩm tiêu biểu';
-          const pVal = item.member_price != null && Number(item.member_price) > 0 
-            ? Number(item.member_price) 
-            : (item.price != null && Number(item.price) > 0 ? Number(item.price) : 0);
-          
+          const pVal =
+            item.member_price != null && Number(item.member_price) > 0
+              ? Number(item.member_price)
+              : item.price != null && Number(item.price) > 0
+                ? Number(item.price)
+                : 0;
+
           let priceStr = '';
           if (pVal > 0) {
-            priceStr = pVal >= 1e9 ? ` (${(pVal / 1e9).toFixed(1)} Tỷ VNĐ)` : ` (${(pVal / 1e6).toFixed(0)} Tr VNĐ)`;
+            priceStr =
+              pVal >= 1e9
+                ? ` (${(pVal / 1e9).toFixed(1)} Tỷ VNĐ)`
+                : ` (${(pVal / 1e6).toFixed(0)} Tr VNĐ)`;
           }
           resolvedTitle = `[Sàn Thương Mại B2B CEO 1983] ${prodName}${priceStr}`;
 
-          let descParts: string[] = [];
+          const descParts: string[] = [];
           if (item.company) descParts.push(`Cung cấp bởi: ${item.company}`);
-          if (item.description) descParts.push(item.description.replace(/<[^>]*>?/gm, '').trim());
-          if (descParts.length > 0) resolvedDesc = descParts.join(' — ').slice(0, 260);
+          if (item.description)
+            descParts.push(item.description.replace(/<[^>]*>?/gm, '').trim());
+          if (descParts.length > 0)
+            resolvedDesc = descParts.join(' — ').slice(0, 260);
 
           if (item.image_url) {
             resolvedImage = item.image_url;
-          } else if (Array.isArray(item.image_urls) && item.image_urls.length > 0) {
+          } else if (
+            Array.isArray(item.image_urls) &&
+            item.image_urls.length > 0
+          ) {
             resolvedImage = item.image_urls[0];
           }
         }
       } else if (targetType === 'event' && targetId) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/events?id=${encodeURIComponent(targetId)}`;
-        const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, description, cover_image, banner_url, location, event_date, category FROM public.events WHERE id::text = $1 LIMIT 1`,
-          targetId,
-        ).catch(() => [] as any[]);
+        targetUrl =
+          customTarget ||
+          `${BASE_WEB_URL}/association/events?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT title, description, cover_image, banner_url, location, event_date, category FROM public.events WHERE id::text = $1 LIMIT 1`, targetId)
+          .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title ? `[Sự Kiện CEO 1983] ${item.title}` : resolvedTitle;
-          let details: string[] = [];
+          resolvedTitle = item.title
+            ? `[Sự Kiện CEO 1983] ${item.title}`
+            : resolvedTitle;
+          const details: string[] = [];
           if (item.event_date) {
             try {
               const d = new Date(item.event_date);
@@ -179,19 +214,26 @@ export class AppController {
           }
         }
       } else if ((targetType === 'post' || targetType === 'feed') && targetId) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/messages?post=${encodeURIComponent(targetId)}`;
-        const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, content, images, author_name, author_company, author_role, author_avatar, shared_article, created_at, likes_count, comments_count FROM public.feed_posts WHERE id::text = $1 LIMIT 1`,
-          targetId,
-        ).catch(() => [] as any[]);
+        targetUrl =
+          customTarget ||
+          `${BASE_WEB_URL}/association/messages?post=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT title, content, images, author_name, author_company, author_role, author_avatar, shared_article, created_at, likes_count, comments_count FROM public.feed_posts WHERE id::text = $1 LIMIT 1`, targetId)
+          .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title || (item.author_name ? `Bài chia sẻ từ Doanh nhân ${item.author_name} — Mạng lưới CEO 1983` : 'Bài viết trên Mạng lưới CEO 1983');
+          resolvedTitle =
+            item.title ||
+            (item.author_name
+              ? `Bài chia sẻ từ Doanh nhân ${item.author_name} — Mạng lưới CEO 1983`
+              : 'Bài viết trên Mạng lưới CEO 1983');
           if (item.content) {
             resolvedDesc = item.content.slice(0, 260);
           }
-          
+
           let parsedImages: string[] = [];
           if (Array.isArray(item.images)) {
             parsedImages = item.images;
@@ -199,13 +241,18 @@ export class AppController {
             try {
               const parsed = JSON.parse(item.images);
               if (Array.isArray(parsed)) parsedImages = parsed;
-              else if (item.images.startsWith('http')) parsedImages = [item.images];
+              else if (item.images.startsWith('http'))
+                parsedImages = [item.images];
             } catch {
               if (item.images.startsWith('http')) parsedImages = [item.images];
             }
           }
 
-          parsedImages = parsedImages.map(img => img.startsWith('http') ? img : `${BASE_WEB_URL}${img.startsWith('/') ? '' : '/'}${img}`);
+          parsedImages = parsedImages.map((img) =>
+            img.startsWith('http')
+              ? img
+              : `${BASE_WEB_URL}${img.startsWith('/') ? '' : '/'}${img}`,
+          );
 
           if (parsedImages.length > 0) {
             resolvedImage = parsedImages[0];
@@ -216,22 +263,45 @@ export class AppController {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
-          
+
           const formattedHtml = escapedContent
-            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #003B95; text-decoration: underline;">$1</a>')
-            .replace(/#([\w\u00C0-\u024F\u1E00-\u1EFF]+)/g, '<span style="color: #D97706; font-weight: 700;">#$1</span>')
+            .replace(
+              /(https?:\/\/[^\s]+)/g,
+              '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #003B95; text-decoration: underline;">$1</a>',
+            )
+            .replace(
+              /#([\w\u00C0-\u024F\u1E00-\u1EFF]+)/g,
+              '<span style="color: #D97706; font-weight: 700;">#$1</span>',
+            )
             .split('\n\n')
-            .map((p: string) => `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`)
+            .map(
+              (p: string) =>
+                `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`,
+            )
             .join('');
 
           let parsedArticle: any = null;
           if (item.shared_article) {
             try {
-              parsedArticle = typeof item.shared_article === 'string' ? JSON.parse(item.shared_article) : item.shared_article;
-              if (parsedArticle?.title) resolvedTitle = `${parsedArticle.title} — Chia sẻ trên CEO 1983`;
-              if (parsedArticle?.snippet || parsedArticle?.excerpt) resolvedDesc = (parsedArticle.snippet || parsedArticle.excerpt).slice(0, 260);
-              if (parsedArticle?.thumbnailUrl || parsedArticle?.thumbnail || parsedArticle?.image) {
-                resolvedImage = parsedArticle.thumbnailUrl || parsedArticle.thumbnail || parsedArticle.image;
+              parsedArticle =
+                typeof item.shared_article === 'string'
+                  ? JSON.parse(item.shared_article)
+                  : item.shared_article;
+              if (parsedArticle?.title)
+                resolvedTitle = `${parsedArticle.title} — Chia sẻ trên CEO 1983`;
+              if (parsedArticle?.snippet || parsedArticle?.excerpt)
+                resolvedDesc = (
+                  parsedArticle.snippet || parsedArticle.excerpt
+                ).slice(0, 260);
+              if (
+                parsedArticle?.thumbnailUrl ||
+                parsedArticle?.thumbnail ||
+                parsedArticle?.image
+              ) {
+                resolvedImage =
+                  parsedArticle.thumbnailUrl ||
+                  parsedArticle.thumbnail ||
+                  parsedArticle.image;
               }
             } catch {}
           }
@@ -240,8 +310,20 @@ export class AppController {
             authorName: item.author_name || 'Doanh nhân CEO 1983',
             authorCompany: item.author_company || 'CLB Doanh Nhân CEO 1983',
             authorRole: item.author_role || 'Hội viên chính thức',
-            authorAvatar: item.author_avatar ? (item.author_avatar.startsWith('http') ? item.author_avatar : `${BASE_WEB_URL}${item.author_avatar.startsWith('/') ? '' : '/'}${item.author_avatar}`) : 'https://ceo1983.viconnect.vn/logo_ceo_1983_round.png',
-            createdAt: item.created_at ? new Date(item.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : '',
+            authorAvatar: item.author_avatar
+              ? item.author_avatar.startsWith('http')
+                ? item.author_avatar
+                : `${BASE_WEB_URL}${item.author_avatar.startsWith('/') ? '' : '/'}${item.author_avatar}`
+              : 'https://ceo1983.viconnect.vn/logo_ceo_1983_round.png',
+            createdAt: item.created_at
+              ? new Date(item.created_at).toLocaleDateString('vi-VN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })
+              : '',
             contentFormattedHtml: formattedHtml,
             images: parsedImages,
             likesCount: Number(item.likes_count || 0),
@@ -249,38 +331,55 @@ export class AppController {
             articleSnippet: parsedArticle,
           };
         }
-      } else if ((targetType === 'news' || targetType === 'article') && targetId) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/news?id=${encodeURIComponent(targetId)}`;
-        const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, excerpt, content, cover_image, author, published_at, category FROM public.news WHERE id::text = $1 OR code = $1 LIMIT 1`,
-          targetId,
-        ).catch(() => [] as any[]);
+      } else if (
+        (targetType === 'news' || targetType === 'article') &&
+        targetId
+      ) {
+        targetUrl =
+          customTarget ||
+          `${BASE_WEB_URL}/association/news?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT title, excerpt, content, cover_image, author, published_at, category FROM public.news WHERE id::text = $1 OR code = $1 LIMIT 1`, targetId)
+          .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title ? `[Tin Tức CEO 1983] ${item.title}` : resolvedTitle;
+          resolvedTitle = item.title
+            ? `[Tin Tức CEO 1983] ${item.title}`
+            : resolvedTitle;
           if (item.excerpt) resolvedDesc = item.excerpt.slice(0, 260);
-          else if (item.content) resolvedDesc = item.content.replace(/<[^>]*>?/gm, '').slice(0, 260);
+          else if (item.content)
+            resolvedDesc = item.content.replace(/<[^>]*>?/gm, '').slice(0, 260);
 
           if (item.cover_image) {
             resolvedImage = item.cover_image;
           }
 
           const rawContent = item.content || item.excerpt || '';
-          const escapedContent = rawContent.startsWith('<') ? rawContent : rawContent
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .split('\n\n')
-            .map((p: string) => `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`)
-            .join('');
+          const escapedContent = rawContent.startsWith('<')
+            ? rawContent
+            : rawContent
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .split('\n\n')
+                .map(
+                  (p: string) =>
+                    `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`,
+                )
+                .join('');
 
           richPostData = {
             authorName: item.author || 'Ban Truyền Thông CEO 1983',
             authorCompany: 'CLB Doanh Nhân CEO 1983 (HanoiBA)',
             authorRole: item.category || 'Tin tức nội bộ',
-            authorAvatar: 'https://ceo1983.viconnect.vn/logo_ceo_1983_round.png',
-            createdAt: item.published_at ? new Date(item.published_at).toLocaleDateString('vi-VN') : '',
+            authorAvatar:
+              'https://ceo1983.viconnect.vn/logo_ceo_1983_round.png',
+            createdAt: item.published_at
+              ? new Date(item.published_at).toLocaleDateString('vi-VN')
+              : '',
             contentFormattedHtml: escapedContent,
             images: resolvedImage ? [resolvedImage] : [],
             likesCount: 0,
@@ -288,18 +387,24 @@ export class AppController {
           };
         }
       } else if (targetType === 'training' && targetId) {
-        targetUrl = customTarget || `${BASE_WEB_URL}/association/training?id=${encodeURIComponent(targetId)}`;
-        const rows = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT title, description, cover_image, instructor FROM public.trainings WHERE id::text = $1 LIMIT 1`,
-          targetId,
-        ).catch(() => [] as any[]);
+        targetUrl =
+          customTarget ||
+          `${BASE_WEB_URL}/association/training?id=${encodeURIComponent(targetId)}`;
+        const rows = await this.prisma
+          .$queryRawUnsafe<
+            any[]
+          >(`SELECT title, description, cover_image, instructor FROM public.trainings WHERE id::text = $1 LIMIT 1`, targetId)
+          .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title ? `[Khóa Đào Tạo Doanh Nhân] ${item.title} — CEO 1983` : resolvedTitle;
-          let details: string[] = [];
+          resolvedTitle = item.title
+            ? `[Khóa Đào Tạo Doanh Nhân] ${item.title} — CEO 1983`
+            : resolvedTitle;
+          const details: string[] = [];
           if (item.instructor) details.push(`Giảng viên: ${item.instructor}`);
-          if (item.description) details.push(item.description.replace(/<[^>]*>?/gm, '').trim());
+          if (item.description)
+            details.push(item.description.replace(/<[^>]*>?/gm, '').trim());
           if (details.length > 0) {
             resolvedDesc = details.join(' — ').slice(0, 260);
           }
@@ -319,12 +424,18 @@ export class AppController {
 
     // Escape ký tự an toàn cho HTML meta tag
     const safeTitle = (resolvedTitle || '').replace(/"/g, '&quot;');
-    const safeDesc = (resolvedDesc || '').replace(/"/g, '&quot;').replace(/\n/g, ' ');
+    const safeDesc = (resolvedDesc || '')
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, ' ');
     const safeImage = (resolvedImage || DEFAULT_IMAGE).replace(/"/g, '&quot;');
     const safeTarget = targetUrl.replace(/"/g, '&quot;');
 
     // URL chuẩn cho og:url: Luôn giữ URL preview hiện tại để Facebook/Zalo không bị redirect sang SPA index.html
-    const canonicalShareUrl = `${BASE_WEB_URL}${req?.originalUrl || `/share/${targetType || 'preview'}/${targetId || ''}`}`.replace(/"/g, '&quot;');
+    const canonicalShareUrl =
+      `${BASE_WEB_URL}${req?.originalUrl || `/share/${targetType || 'preview'}/${targetId || ''}`}`.replace(
+        /"/g,
+        '&quot;',
+      );
     const ogCanonicalUrl = canonicalShareUrl;
 
     // Xây dựng giao diện xem bài viết trực quan giữ nguyên 100% format & layout ảnh như app CEO 1983

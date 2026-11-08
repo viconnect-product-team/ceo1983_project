@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, Body, Request, UseGuards, Headers, Query, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Request,
+  UseGuards,
+  Headers,
+  Query,
+  Param,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -19,7 +31,11 @@ export class NfcDeviceController {
   }
 
   @Patch('nfc-tags/:tagId')
-  async renameMyNfcTag(@Request() req, @Param('tagId') tagId: string, @Body('label') label: string) {
+  async renameMyNfcTag(
+    @Request() req,
+    @Param('tagId') tagId: string,
+    @Body('label') label: string,
+  ) {
     return this.connectAppService.renameMyNfcTag(req.user.id, { tagId, label });
   }
 
@@ -52,6 +68,10 @@ export class NfcDeviceController {
     @Headers('x-device-key') currentKey?: string,
   ) {
     const key = deviceKey || currentKey || null;
-    return this.connectAppService.revokeMyDeviceSession(req.user.id, sessionId, key);
+    return this.connectAppService.revokeMyDeviceSession(
+      req.user.id,
+      sessionId,
+      key,
+    );
   }
 }

@@ -1,4 +1,15 @@
-import { Controller, Post, Body, Request, UseGuards, Get, Patch, Delete, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Request,
+  UseGuards,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -10,11 +21,18 @@ export class MomentController {
   // --- Mentionable Users Autocomplete & Moment Tagging ---
   @Get('mentionable-users')
   async searchMentionableUsers(@Request() req, @Query('q') query?: string) {
-    return this.connectAppService.searchMentionableUsers(req.user.id, query || '');
+    return this.connectAppService.searchMentionableUsers(
+      req.user.id,
+      query || '',
+    );
   }
 
   @Post('notify-tags')
-  async notifyMomentTags(@Request() req, @Body() body: { momentId: string; taggedUserIds: string[]; content?: string }) {
+  async notifyMomentTags(
+    @Request() req,
+    @Body()
+    body: { momentId: string; taggedUserIds: string[]; content?: string },
+  ) {
     return this.connectAppService.notifyMomentTags(req.user.id, body);
   }
 
@@ -49,7 +67,8 @@ export class MomentController {
   async createMomentComment(
     @Request() req,
     @Param('id') id: string,
-    @Body() body: { parentId?: string | null; content: string; mentions?: any[] },
+    @Body()
+    body: { parentId?: string | null; content: string; mentions?: any[] },
   ) {
     return this.connectAppService.createMomentComment(req.user.id, id, body);
   }
@@ -60,7 +79,11 @@ export class MomentController {
     @Param('id') id: string,
     @Param('commentId') commentId: string,
   ) {
-    return this.connectAppService.deleteMomentComment(req.user.id, id, commentId);
+    return this.connectAppService.deleteMomentComment(
+      req.user.id,
+      id,
+      commentId,
+    );
   }
 
   @Post(':id/comments/:commentId/like')
@@ -69,7 +92,11 @@ export class MomentController {
     @Param('id') id: string,
     @Param('commentId') commentId: string,
   ) {
-    return this.connectAppService.toggleMomentCommentLike(req.user.id, id, commentId);
+    return this.connectAppService.toggleMomentCommentLike(
+      req.user.id,
+      id,
+      commentId,
+    );
   }
 
   @Post()
@@ -78,13 +105,21 @@ export class MomentController {
   }
 
   @Post(':id/finalize')
-  async finalizeMoment(@Request() req, @Param('id') id: string, @Body() data: any) {
+  async finalizeMoment(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
     const input = { ...data, momentId: id };
     return this.connectAppService.finalizeMoment(req.user.id, input);
   }
 
   @Patch(':id')
-  async updateMoment(@Request() req, @Param('id') id: string, @Body() data: any) {
+  async updateMoment(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
     const input = { ...data, momentId: id };
     return this.connectAppService.updateMoment(req.user.id, input);
   }
@@ -100,23 +135,42 @@ export class MomentController {
   }
 
   @Post(':id/photo-slots')
-  async addMomentPhotoSlots(@Request() req, @Param('id') id: string, @Body() body: { count: number }) {
-    return this.connectAppService.addMomentPhotoSlots(req.user.id, id, body.count);
+  async addMomentPhotoSlots(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { count: number },
+  ) {
+    return this.connectAppService.addMomentPhotoSlots(
+      req.user.id,
+      id,
+      body.count,
+    );
   }
 
   @Post(':id/photos/commit')
-  async commitMomentPhotos(@Request() req, @Param('id') id: string, @Body() data: any) {
+  async commitMomentPhotos(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
     const input = { ...data, momentId: id };
     return this.connectAppService.commitMomentPhotos(req.user.id, input);
   }
 
   @Delete(':id/photos/:mediaId')
-  async removeMomentPhoto(@Request() req, @Param('id') id: string, @Param('mediaId') mediaId: string) {
+  async removeMomentPhoto(
+    @Request() req,
+    @Param('id') id: string,
+    @Param('mediaId') mediaId: string,
+  ) {
     return this.connectAppService.removeMomentPhoto(req.user.id, id, mediaId);
   }
 
   @Post('voice-transcribe')
-  async transcribeMomentVoice(@Request() req, @Body() body: { audioBase64: string; mimeType: string }) {
+  async transcribeMomentVoice(
+    @Request() req,
+    @Body() body: { audioBase64: string; mimeType: string },
+  ) {
     return this.transcribeAudio(body.audioBase64, body.mimeType);
   }
 
@@ -138,17 +192,37 @@ export class MomentController {
   }
 
   @Post(':id/reminders')
-  async createReminder(@Request() req, @Param('id') id: string, @Body() body: { remindAt: string; label?: string | null }) {
-    return this.connectAppService.createMomentReminder(req.user.id, id, body.remindAt, body.label || null);
+  async createReminder(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { remindAt: string; label?: string | null },
+  ) {
+    return this.connectAppService.createMomentReminder(
+      req.user.id,
+      id,
+      body.remindAt,
+      body.label || null,
+    );
   }
 
   @Patch('reminders/:reminderId/status')
-  async setReminderStatus(@Request() req, @Param('reminderId') reminderId: string, @Body() body: { status: string }) {
-    return this.connectAppService.setMomentReminderStatus(req.user.id, reminderId, body.status);
+  async setReminderStatus(
+    @Request() req,
+    @Param('reminderId') reminderId: string,
+    @Body() body: { status: string },
+  ) {
+    return this.connectAppService.setMomentReminderStatus(
+      req.user.id,
+      reminderId,
+      body.status,
+    );
   }
 
   @Delete('reminders/:reminderId')
-  async deleteReminder(@Request() req, @Param('reminderId') reminderId: string) {
+  async deleteReminder(
+    @Request() req,
+    @Param('reminderId') reminderId: string,
+  ) {
     return this.connectAppService.deleteMomentReminder(req.user.id, reminderId);
   }
 
@@ -160,7 +234,9 @@ export class MomentController {
     }
 
     try {
-      const clean = audioBase64.includes(',') ? audioBase64.slice(audioBase64.indexOf(',') + 1) : audioBase64;
+      const clean = audioBase64.includes(',')
+        ? audioBase64.slice(audioBase64.indexOf(',') + 1)
+        : audioBase64;
       const buffer = Buffer.from(clean, 'base64');
       if (buffer.length < 1024) {
         return { ok: false, error: 'empty_audio' };
@@ -169,26 +245,35 @@ export class MomentController {
         return { ok: false, error: 'too_large' };
       }
 
-      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : mimeType.includes('wav') ? 'wav' : 'webm';
-      
+      const ext = mimeType.includes('mp4')
+        ? 'mp4'
+        : mimeType.includes('ogg')
+          ? 'ogg'
+          : mimeType.includes('wav')
+            ? 'wav'
+            : 'webm';
+
       const formData = new FormData();
       formData.append('model', 'openai/gpt-4o-mini-transcribe');
       const fileBlob = new Blob([buffer], { type: mimeType || 'audio/webm' });
       formData.append('file', fileBlob, `voice.${ext}`);
 
-      const sttRes = await fetch('https://ai.gateway.lovable.dev/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
+      const sttRes = await fetch(
+        'https://ai.gateway.lovable.dev/v1/audio/transcriptions',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
+      );
 
       if (!sttRes.ok) {
         return { ok: false, error: 'unavailable' };
       }
 
-      const sttData = await sttRes.json() as { text?: string };
+      const sttData = (await sttRes.json()) as { text?: string };
       const transcript = (sttData.text || '').trim();
 
       if (!transcript) {
@@ -197,19 +282,21 @@ export class MomentController {
 
       let note = transcript;
       try {
-        const chatRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            temperature: 0.2,
-            messages: [
-              {
-                role: 'system',
-                content: `Bạn là trợ lý ghi chú quan hệ. Người dùng vừa gặp một người và đọc lại nội dung cuộc gặp.
+        const chatRes = await fetch(
+          'https://ai.gateway.lovable.dev/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash',
+              temperature: 0.2,
+              messages: [
+                {
+                  role: 'system',
+                  content: `Bạn là trợ lý ghi chú quan hệ. Người dùng vừa gặp một người và đọc lại nội dung cuộc gặp.
 
 Nhiệm vụ: viết lại thành GHI CHÚ RIÊNG TƯ ngắn gọn, chuyên nghiệp, dễ đọc lại sau nhiều tháng.
 
@@ -219,17 +306,18 @@ Quy tắc bắt buộc:
 - Giữ nguyên ngôn ngữ của người nói (tiếng Việt thì trả lời tiếng Việt).
 - Tối đa 6 gạch đầu dòng ngắn; nếu có việc cần làm, thêm dòng cuối "Việc cần làm: ...".
 - Không tiêu đề, không lời dẫn, không markdown đậm. Trả về THUẦN văn bản.`,
-              },
-              {
-                role: 'user',
-                content: `<transcript>\n${transcript.slice(0, 6000)}\n</transcript>`,
-              },
-            ],
-          }),
-        });
+                },
+                {
+                  role: 'user',
+                  content: `<transcript>\n${transcript.slice(0, 6000)}\n</transcript>`,
+                },
+              ],
+            }),
+          },
+        );
 
         if (chatRes.ok) {
-          const chatData = await chatRes.json() as any;
+          const chatData = await chatRes.json();
           const content = chatData.choices?.[0]?.message?.content?.trim();
           if (content) {
             note = content;

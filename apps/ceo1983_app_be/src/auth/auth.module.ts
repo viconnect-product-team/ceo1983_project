@@ -24,7 +24,13 @@ import { DataScopeInterceptor } from './data-scope.interceptor';
       signOptions: { expiresIn: '60m' },
     }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy, RolesGuard, DataScopeInterceptor],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    RolesGuard,
+    DataScopeInterceptor,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule, RolesGuard, DataScopeInterceptor],
 })

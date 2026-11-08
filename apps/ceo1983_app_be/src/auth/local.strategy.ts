@@ -2,7 +2,10 @@ import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { recordLoginFailure, resetLoginFailures } from '../common/middleware/rate-limiter.middleware';
+import {
+  recordLoginFailure,
+  resetLoginFailures,
+} from '../common/middleware/rate-limiter.middleware';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -20,7 +23,9 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const user = await this.authService.validateUser(username, password);
     if (!user) {
       recordLoginFailure(clientIp);
-      throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác hoặc đã bị xóa');
+      throw new UnauthorizedException(
+        'Tài khoản hoặc mật khẩu không chính xác hoặc đã bị xóa',
+      );
     }
     resetLoginFailures(clientIp);
     return user;

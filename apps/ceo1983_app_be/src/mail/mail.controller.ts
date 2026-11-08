@@ -85,7 +85,9 @@ export class MailController {
   @Post('templates')
   async createTemplate(@Body() body: CreateMailTemplateDto) {
     if (!body.code || !body.name || !body.subject || !body.htmlBody) {
-      throw new BadRequestException('Missing required fields: code, name, subject, or htmlBody');
+      throw new BadRequestException(
+        'Missing required fields: code, name, subject, or htmlBody',
+      );
     }
     return this.mailService.createTemplate(body);
   }
@@ -130,9 +132,14 @@ export class MailController {
   async deleteTemplate(@Param('id') id: string) {
     const deleted = await this.mailService.deleteTemplate(id);
     if (!deleted) {
-      throw new NotFoundException(`Email template with ID "${id}" not found or cannot be deleted`);
+      throw new NotFoundException(
+        `Email template with ID "${id}" not found or cannot be deleted`,
+      );
     }
-    return { success: true, message: `Email template "${id}" deleted successfully` };
+    return {
+      success: true,
+      message: `Email template "${id}" deleted successfully`,
+    };
   }
 
   /**
@@ -162,7 +169,9 @@ export class MailController {
     return this.mailService.sendDirectEmail({
       to: body.to,
       subject: body.subject || '[CEO 1983] Thử nghiệm gửi email hệ thống',
-      html: body.html || '<p>Thử nghiệm gửi email thành công từ hệ thống CEO 1983.</p>',
+      html:
+        body.html ||
+        '<p>Thử nghiệm gửi email thành công từ hệ thống CEO 1983.</p>',
       templateCode: body.templateCode,
     });
   }
@@ -181,8 +190,14 @@ export class MailController {
     },
   ) {
     if (!body.templateCode || !body.to) {
-      throw new BadRequestException('Both templateCode and recipient "to" are required');
+      throw new BadRequestException(
+        'Both templateCode and recipient "to" are required',
+      );
     }
-    return this.mailService.sendDynamic(body.templateCode, body.to, body.variables || {});
+    return this.mailService.sendDynamic(
+      body.templateCode,
+      body.to,
+      body.variables || {},
+    );
   }
 }
