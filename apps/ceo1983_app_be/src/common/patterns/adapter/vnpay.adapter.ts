@@ -18,7 +18,12 @@ export interface CreateGatewayUrlParams {
 export interface IPaymentGatewayAdapter {
   readonly gatewayName: string;
   createCheckoutUrl(params: CreateGatewayUrlParams): string;
-  verifyReturn(params: Record<string, string>): { isValid: boolean; orderId: string; amount: number; transactionNo: string };
+  verifyReturn(params: Record<string, string>): {
+    isValid: boolean;
+    orderId: string;
+    amount: number;
+    transactionNo: string;
+  };
 }
 
 export class VNPayAdapter implements IPaymentGatewayAdapter {
@@ -29,11 +34,25 @@ export class VNPayAdapter implements IPaymentGatewayAdapter {
   private readonly gatewayUrl: string;
   private readonly returnUrl: string;
 
-  constructor(config?: { tmnCode?: string; hashSecret?: string; gatewayUrl?: string; returnUrl?: string }) {
+  constructor(config?: {
+    tmnCode?: string;
+    hashSecret?: string;
+    gatewayUrl?: string;
+    returnUrl?: string;
+  }) {
     this.tmnCode = config?.tmnCode || process.env.VNPAY_TMN_CODE || 'CEO1983V';
-    this.hashSecret = config?.hashSecret || process.env.VNPAY_HASH_SECRET || 'A89F43BC9201EFA3B872190A812C4590';
-    this.gatewayUrl = config?.gatewayUrl || process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-    this.returnUrl = config?.returnUrl || process.env.VNPAY_RETURN_URL || 'https://ceo1983.vn/payment/vnpay-return';
+    this.hashSecret =
+      config?.hashSecret ||
+      process.env.VNPAY_HASH_SECRET ||
+      'A89F43BC9201EFA3B872190A812C4590';
+    this.gatewayUrl =
+      config?.gatewayUrl ||
+      process.env.VNPAY_URL ||
+      'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+    this.returnUrl =
+      config?.returnUrl ||
+      process.env.VNPAY_RETURN_URL ||
+      'https://ceo1983.vn/payment/vnpay-return';
   }
 
   private formatVNPayDate(date: Date): string {
@@ -86,7 +105,12 @@ export class VNPayAdapter implements IPaymentGatewayAdapter {
     return `${this.gatewayUrl}?${new URLSearchParams(sortedParams).toString()}`;
   }
 
-  verifyReturn(params: Record<string, string>): { isValid: boolean; orderId: string; amount: number; transactionNo: string } {
+  verifyReturn(params: Record<string, string>): {
+    isValid: boolean;
+    orderId: string;
+    amount: number;
+    transactionNo: string;
+  } {
     const secureHash = params['vnp_SecureHash'];
     const copy = { ...params };
     delete copy['vnp_SecureHash'];
@@ -100,15 +124,19 @@ export class VNPayAdapter implements IPaymentGatewayAdapter {
     const isValid = Boolean(
       secureHash &&
       checkHash &&
-      crypto.timingSafeEqual(Buffer.from(secureHash, 'hex'), Buffer.from(checkHash, 'hex'))
+      crypto.timingSafeEqual(
+        Buffer.from(secureHash, 'hex'),
+        Buffer.from(checkHash, 'hex'),
+      ),
     );
 
     return {
       isValid,
       orderId: params['vnp_TxnRef'] || '',
-      amount: params['vnp_Amount'] ? parseInt(params['vnp_Amount'], 10) / 100 : 0,
+      amount: params['vnp_Amount']
+        ? parseInt(params['vnp_Amount'], 10) / 100
+        : 0,
       transactionNo: params['vnp_TransactionNo'] || '',
     };
   }
 }
-

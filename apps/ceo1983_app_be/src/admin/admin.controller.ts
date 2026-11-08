@@ -30,7 +30,16 @@ export { UpdateDemoLeadDto, CreateInvoiceDto, AddInvoiceReminderDto };
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk', 'chu_tich', 'pho_chu_tich')
+@Roles(
+  'admin',
+  'platform_admin',
+  'adm',
+  'bqt',
+  'btc',
+  'btk',
+  'chu_tich',
+  'pho_chu_tich',
+)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -69,9 +78,7 @@ export class AdminController {
   }
 
   @Post('invoices')
-  async createInvoice(
-    @Body() body: CreateInvoiceDto,
-  ) {
+  async createInvoice(@Body() body: CreateInvoiceDto) {
     return this.adminService.createInvoice(body);
   }
 
@@ -138,9 +145,7 @@ export class AdminController {
 
   @Post('notifications/:id/send')
   @UseGuards(JwtAuthGuard)
-  async sendNotification(
-    @Param('id') id: string,
-  ) {
+  async sendNotification(@Param('id') id: string) {
     return this.adminService.sendNotification(id);
   }
 
@@ -157,9 +162,7 @@ export class AdminController {
 
   @Delete('notifications/:id')
   @UseGuards(JwtAuthGuard)
-  async deleteNotification(
-    @Param('id') id: string,
-  ) {
+  async deleteNotification(@Param('id') id: string) {
     return this.adminService.deleteNotification(id);
   }
 
@@ -167,9 +170,7 @@ export class AdminController {
 
   @Get('events/:eventId/attendees-preview')
   @UseGuards(JwtAuthGuard)
-  async getEventAttendeesPreview(
-    @Param('eventId') eventId: string,
-  ) {
+  async getEventAttendeesPreview(@Param('eventId') eventId: string) {
     return this.adminService.getEventAttendeesPreview(eventId);
   }
 
@@ -221,7 +222,10 @@ export class AdminController {
   }
 
   @Patch('transactions/:id')
-  async updateTransaction(@Param('id') id: string, @Body() body: UpdateTransactionDto) {
+  async updateTransaction(
+    @Param('id') id: string,
+    @Body() body: UpdateTransactionDto,
+  ) {
     return this.adminService.updateTransaction(id, body);
   }
 
@@ -318,7 +322,3 @@ export class AdminController {
     });
   }
 }
-
-
-
-

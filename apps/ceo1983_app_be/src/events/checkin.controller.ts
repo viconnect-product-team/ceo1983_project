@@ -8,7 +8,11 @@ import {
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { AuthGuard } from '../auth/auth.guard';
-import { CheckinAttendeeDto, RecordMemberCheckinDto, ScanTicketDto } from './dto';
+import {
+  CheckinAttendeeDto,
+  RecordMemberCheckinDto,
+  ScanTicketDto,
+} from './dto';
 
 @Controller('checkin')
 @UseGuards(AuthGuard)
@@ -17,12 +21,16 @@ export class CheckinController {
 
   @Get('state')
   async getCheckinState(@Request() req: any) {
-    return this.eventsService.getCheckinState(req.user?.id || req.user?.sub || 'default');
+    return this.eventsService.getCheckinState(
+      req.user?.id || req.user?.sub || 'default',
+    );
   }
 
   @Get('qr-events')
   async getCheckinQrEvents(@Request() req: any) {
-    return this.eventsService.getCheckinQrEvents(req.user?.id || req.user?.sub || 'default');
+    return this.eventsService.getCheckinQrEvents(
+      req.user?.id || req.user?.sub || 'default',
+    );
   }
 
   @Post()
@@ -36,20 +44,28 @@ export class CheckinController {
   }
 
   @Post('record')
-  async recordMemberCheckin(@Request() req: any, @Body() body: RecordMemberCheckinDto) {
-    return this.eventsService.recordMemberCheckin(req.user?.id || req.user?.sub, body);
+  async recordMemberCheckin(
+    @Request() req: any,
+    @Body() body: RecordMemberCheckinDto,
+  ) {
+    return this.eventsService.recordMemberCheckin(
+      req.user?.id || req.user?.sub,
+      body,
+    );
   }
 
   @Post('scan-ticket')
-  async scanTicket(
-    @Request() req: any,
-    @Body() body: ScanTicketDto,
-  ) {
-    return this.eventsService.scanTicketPayload(req.user?.id || req.user?.sub, body);
+  async scanTicket(@Request() req: any, @Body() body: ScanTicketDto) {
+    return this.eventsService.scanTicketPayload(
+      req.user?.id || req.user?.sub,
+      body,
+    );
   }
 
   @Get('my-checkins')
   async listMyMemberCheckins(@Request() req: any) {
-    return this.eventsService.listMyMemberCheckins(req.user?.id || req.user?.sub);
+    return this.eventsService.listMyMemberCheckins(
+      req.user?.id || req.user?.sub,
+    );
   }
 }

@@ -1,9 +1,13 @@
 import { Controller, Post, Body, Req, Get, Query } from '@nestjs/common';
-import { PaymentService, CreateVNPayUrlDto, VerifyVNPayReturnDto } from './payment.service';
+import {
+  PaymentService,
+  CreateVNPayUrlDto,
+  VerifyVNPayReturnDto,
+} from './payment.service';
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @Post('vnpay-create-url')
   createVNPayUrl(@Body() dto: CreateVNPayUrlDto, @Req() req: any) {
@@ -76,7 +80,10 @@ export class PaymentController {
 
   @Post('simulate-success')
   simulateSuccess(@Body() dto: { orderId: string; amount: number }) {
-    return this.paymentService.simulateVnpayPaymentSuccess(dto.orderId, dto.amount);
+    return this.paymentService.simulateVnpayPaymentSuccess(
+      dto.orderId,
+      dto.amount,
+    );
   }
 
   @Post('momo-create-url')
@@ -102,13 +109,18 @@ export class PaymentController {
       orderId: query.orderId,
       amount: query.amount,
       transId: query.transId,
-      message: Number(query.resultCode) === 0 ? 'Thanh toán MoMo thành công!' : query.message || 'Giao dịch không thành công',
+      message:
+        Number(query.resultCode) === 0
+          ? 'Thanh toán MoMo thành công!'
+          : query.message || 'Giao dịch không thành công',
     };
   }
 
   @Post('simulate-momo-success')
   simulateMomoSuccess(@Body() dto: { orderId: string; amount: number }) {
-    return this.paymentService.simulateMomoPaymentSuccess(dto.orderId, dto.amount);
+    return this.paymentService.simulateMomoPaymentSuccess(
+      dto.orderId,
+      dto.amount,
+    );
   }
-
 }

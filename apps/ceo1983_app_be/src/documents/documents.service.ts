@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { DocumentsRepository } from './documents.repository';
 import { CreateDocumentDto, UpdateDocumentDto } from './dto';
 
@@ -14,7 +18,9 @@ export class DocumentsService {
       name: r.name,
       category: r.category,
       size: r.size || '',
-      uploadedAt: r.uploaded_at ? new Date(r.uploaded_at).toISOString() : new Date().toISOString(),
+      uploadedAt: r.uploaded_at
+        ? new Date(r.uploaded_at).toISOString()
+        : new Date().toISOString(),
       uploadedBy: r.uploaded_by || '',
       type: r.type,
       filePath: r.file_path || '',
@@ -43,11 +49,14 @@ export class DocumentsService {
   async create(userId: string, data: CreateDocumentDto) {
     const activeId = await this.documentsRepo.getActiveAssociationId(userId);
     const isFolder = Boolean(data.isFolder || data.type === 'folder');
-    const code = (isFolder ? 'FLD-' : 'DOC-') + Math.random().toString(36).slice(2, 10).toUpperCase();
+    const code =
+      (isFolder ? 'FLD-' : 'DOC-') +
+      Math.random().toString(36).slice(2, 10).toUpperCase();
     const uploadedBy = data.uploadedBy || 'Thành viên CLB';
     const size = data.size || (isFolder ? 'Thư mục' : '');
     const filePath = data.filePath || null;
-    const folderId = data.folderId !== undefined ? data.folderId : (data.parentId || null);
+    const folderId =
+      data.folderId !== undefined ? data.folderId : data.parentId || null;
     const driveUrl = data.driveUrl || null;
     const shareScope = data.shareScope || 'public';
     const shareRole = data.shareRole || 'viewer';
@@ -92,8 +101,14 @@ export class DocumentsService {
       }
     }
     const filePath = data.filePath;
-    const isFolder = data.isFolder !== undefined ? data.isFolder : (data.type === 'folder' ? true : undefined);
-    const folderId = data.folderId !== undefined ? data.folderId : data.parentId;
+    const isFolder =
+      data.isFolder !== undefined
+        ? data.isFolder
+        : data.type === 'folder'
+          ? true
+          : undefined;
+    const folderId =
+      data.folderId !== undefined ? data.folderId : data.parentId;
 
     const r = await this.documentsRepo.updateDocument(
       id,
@@ -125,7 +140,12 @@ export class DocumentsService {
     return { id, isStarred };
   }
 
-  async updateShare(id: string, shareScope: string, shareRole: string, sharedWith: any) {
+  async updateShare(
+    id: string,
+    shareScope: string,
+    shareRole: string,
+    sharedWith: any,
+  ) {
     await this.documentsRepo.updateShare(id, shareScope, shareRole, sharedWith);
     return { id, shareScope, shareRole, sharedWith };
   }

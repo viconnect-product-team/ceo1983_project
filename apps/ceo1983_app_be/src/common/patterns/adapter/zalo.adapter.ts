@@ -11,17 +11,31 @@ export interface SendZaloNotificationParams {
 }
 
 export interface IZaloAdapter {
-  sendZns(params: SendZaloNotificationParams): Promise<{ success: boolean; msgId?: string; error?: string }>;
-  sendOaMessage(userId: string, text: string): Promise<{ success: boolean; msgId?: string; error?: string }>;
+  sendZns(
+    params: SendZaloNotificationParams,
+  ): Promise<{ success: boolean; msgId?: string; error?: string }>;
+  sendOaMessage(
+    userId: string,
+    text: string,
+  ): Promise<{ success: boolean; msgId?: string; error?: string }>;
 }
 
 export class ZaloOaAdapter implements IZaloAdapter {
   constructor(private readonly zaloServiceInstance?: any) {}
 
-  async sendZns(params: SendZaloNotificationParams): Promise<{ success: boolean; msgId?: string; error?: string }> {
+  async sendZns(
+    params: SendZaloNotificationParams,
+  ): Promise<{ success: boolean; msgId?: string; error?: string }> {
     try {
-      if (this.zaloServiceInstance && typeof this.zaloServiceInstance.sendZns === 'function') {
-        const res = await this.zaloServiceInstance.sendZns(params.phone, params.templateId, params.templateData);
+      if (
+        this.zaloServiceInstance &&
+        typeof this.zaloServiceInstance.sendZns === 'function'
+      ) {
+        const res = await this.zaloServiceInstance.sendZns(
+          params.phone,
+          params.templateId,
+          params.templateData,
+        );
         return { success: true, msgId: res?.message_id };
       }
       return { success: true };
@@ -30,10 +44,19 @@ export class ZaloOaAdapter implements IZaloAdapter {
     }
   }
 
-  async sendOaMessage(userId: string, text: string): Promise<{ success: boolean; msgId?: string; error?: string }> {
+  async sendOaMessage(
+    userId: string,
+    text: string,
+  ): Promise<{ success: boolean; msgId?: string; error?: string }> {
     try {
-      if (this.zaloServiceInstance && typeof this.zaloServiceInstance.sendDirectMessage === 'function') {
-        const res = await this.zaloServiceInstance.sendDirectMessage(userId, text);
+      if (
+        this.zaloServiceInstance &&
+        typeof this.zaloServiceInstance.sendDirectMessage === 'function'
+      ) {
+        const res = await this.zaloServiceInstance.sendDirectMessage(
+          userId,
+          text,
+        );
         return { success: true, msgId: res?.message_id };
       }
       return { success: true };
@@ -42,4 +65,3 @@ export class ZaloOaAdapter implements IZaloAdapter {
     }
   }
 }
-

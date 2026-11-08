@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete, Patch, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Request,
+  UseGuards,
+  Param,
+  Query,
+  Delete,
+  Patch,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -52,7 +64,11 @@ export class NetworkController {
     @Param('id') id: string,
     @Body() body: { ownerLabel?: string | null; ownerNote?: string | null },
   ) {
-    return this.connectAppService.updateGuestContactOwnerFields(req.user.id, id, body);
+    return this.connectAppService.updateGuestContactOwnerFields(
+      req.user.id,
+      id,
+      body,
+    );
   }
 
   @Delete('guest-contacts/:id')
@@ -66,12 +82,21 @@ export class NetworkController {
   }
 
   @Get('recommendations/person/:personId')
-  async getPersonRecommendation(@Request() req, @Param('personId') personId: string) {
-    return this.connectAppService.getPersonRecommendation(req.user.id, personId);
+  async getPersonRecommendation(
+    @Request() req,
+    @Param('personId') personId: string,
+  ) {
+    return this.connectAppService.getPersonRecommendation(
+      req.user.id,
+      personId,
+    );
   }
 
   @Delete('recommendations/person/:personId')
-  async dismissRecommendation(@Request() req, @Param('personId') personId: string) {
+  async dismissRecommendation(
+    @Request() req,
+    @Param('personId') personId: string,
+  ) {
     return this.connectAppService.dismissRecommendation(req.user.id, personId);
   }
 
@@ -87,17 +112,28 @@ export class NetworkController {
 
   @Delete('requests/:id')
   async cancelRequestById(@Request() req: any, @Param('id') id: string) {
-    return this.connectAppService.cancelConnection(req.user.id, { connectionId: id });
+    return this.connectAppService.cancelConnection(req.user.id, {
+      connectionId: id,
+    });
   }
 
   @Post('requests/:id/cancel')
   async cancelRequestByIdPost(@Request() req: any, @Param('id') id: string) {
-    return this.connectAppService.cancelConnection(req.user.id, { connectionId: id });
+    return this.connectAppService.cancelConnection(req.user.id, {
+      connectionId: id,
+    });
   }
 
   @Delete('requests')
-  async cancelRequestQuery(@Request() req: any, @Query() query: any, @Body() body: any) {
-    return this.connectAppService.cancelConnection(req.user.id, { ...query, ...body });
+  async cancelRequestQuery(
+    @Request() req: any,
+    @Query() query: any,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.cancelConnection(req.user.id, {
+      ...query,
+      ...body,
+    });
   }
 
   @Post('requests/cancel')
@@ -106,18 +142,28 @@ export class NetworkController {
   }
 
   @Patch('connections/:id')
-  async updateConnection(@Request() req, @Param('id') id: string, @Body() body: { status: string }) {
+  async updateConnection(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
     if (body.status === 'accepted') {
-      return this.connectAppService.acceptConnection(req.user.id, { connectionId: id });
+      return this.connectAppService.acceptConnection(req.user.id, {
+        connectionId: id,
+      });
     } else if (body.status === 'declined') {
-      return this.connectAppService.declineConnection(req.user.id, { connectionId: id });
+      return this.connectAppService.declineConnection(req.user.id, {
+        connectionId: id,
+      });
     }
     throw new BadRequestException('invalid_status');
   }
 
   @Delete('connections/:id')
   async deleteConnection(@Request() req, @Param('id') id: string) {
-    return this.connectAppService.disconnectConnection(req.user.id, { connectionId: id });
+    return this.connectAppService.disconnectConnection(req.user.id, {
+      connectionId: id,
+    });
   }
 
   @Post('blocks')
@@ -126,18 +172,32 @@ export class NetworkController {
   }
 
   @Get('state')
-  async getConnectionState(@Request() req, @Query('targetUserId') targetUserId: string) {
+  async getConnectionState(
+    @Request() req,
+    @Query('targetUserId') targetUserId: string,
+  ) {
     return this.connectAppService.getConnectionState(req.user.id, targetUserId);
   }
 
   @Get('token-state/:token')
-  async getConnectionStateByToken(@Request() req, @Param('token') token: string) {
+  async getConnectionStateByToken(
+    @Request() req,
+    @Param('token') token: string,
+  ) {
     return this.connectAppService.getConnectionStateByToken(req.user.id, token);
   }
 
   @Post('connections/token')
-  async sendConnectionRequestByToken(@Request() req, @Body('token') token: string, @Body('mutationKey') mutationKey?: string) {
-    return this.connectAppService.sendConnectionRequestByToken(req.user.id, token, mutationKey);
+  async sendConnectionRequestByToken(
+    @Request() req,
+    @Body('token') token: string,
+    @Body('mutationKey') mutationKey?: string,
+  ) {
+    return this.connectAppService.sendConnectionRequestByToken(
+      req.user.id,
+      token,
+      mutationKey,
+    );
   }
 
   /**
@@ -151,9 +211,11 @@ export class NetworkController {
     return this.connectAppService.nfcTap(req.user.id, body);
   }
 
-
   @Get('connection/:connectionId')
-  async getConnectionById(@Request() req, @Param('connectionId') connectionId: string) {
+  async getConnectionById(
+    @Request() req,
+    @Param('connectionId') connectionId: string,
+  ) {
     return this.connectAppService.getConnectionById(req.user.id, connectionId);
   }
 
@@ -198,8 +260,15 @@ export class NetworkController {
   }
 
   @Patch('person-plans/:planId/status')
-  async setPersonPlanStatus(@Request() req, @Param('planId') planId: string, @Body() body: { status: string }) {
-    return this.connectAppService.setPersonPlanStatus(req.user.id, { planId, status: body.status });
+  async setPersonPlanStatus(
+    @Request() req,
+    @Param('planId') planId: string,
+    @Body() body: { status: string },
+  ) {
+    return this.connectAppService.setPersonPlanStatus(req.user.id, {
+      planId,
+      status: body.status,
+    });
   }
 
   // --- BC-Mobile-6C: Personalization & Recommendations Settings ---
@@ -210,12 +279,18 @@ export class NetworkController {
 
   @Post('personalization/update')
   async updatePersonalization(@Request() req, @Body() body: any) {
-    return this.connectAppService.updatePersonalizationPreferences(req.user.id, body);
+    return this.connectAppService.updatePersonalizationPreferences(
+      req.user.id,
+      body,
+    );
   }
 
   @Post('personalization/record-interaction')
   async recordPersonalizationInteraction(@Request() req, @Body() body: any) {
-    return this.connectAppService.recordPersonalizationInteraction(req.user.id, body);
+    return this.connectAppService.recordPersonalizationInteraction(
+      req.user.id,
+      body,
+    );
   }
 
   @Post('personalization/reset')
@@ -223,4 +298,3 @@ export class NetworkController {
     return this.connectAppService.resetPersonalization(req.user.id);
   }
 }
-

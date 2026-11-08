@@ -30,13 +30,19 @@ export class DocumentsController {
   async create(@Request() req: any, @Body() data: CreateDocumentDto) {
     const userId = req.user.id || req.user.sub;
     if (!data.name || !data.category || !data.type) {
-      throw new BadRequestException('Missing required fields: name, category, or type');
+      throw new BadRequestException(
+        'Missing required fields: name, category, or type',
+      );
     }
     return this.documentsService.create(userId, data);
   }
 
   @Put(':id')
-  async update(@Request() req: any, @Param('id') id: string, @Body() data: UpdateDocumentDto) {
+  async update(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() data: UpdateDocumentDto,
+  ) {
     const userId = req.user?.id || req.user?.sub;
     return this.documentsService.update(id, data, userId);
   }

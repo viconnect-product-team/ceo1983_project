@@ -4,7 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 function toValidUuid(id: string | null | undefined): string | null {
   if (!id) return null;
   const clean = String(id).trim();
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean)) {
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      clean,
+    )
+  ) {
     return clean;
   }
   return null;
@@ -20,13 +24,17 @@ export class VotingRepository {
     if (VotingRepository.seededOnce) return;
     try {
       // Đảm bảo có bảng cờ hệ thống để ghi nhận đã khởi tạo seed 1 lần duy nhất
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.app_system_flags (
           key VARCHAR(100) PRIMARY KEY,
           value TEXT,
           created_at TIMESTAMP DEFAULT NOW()
         )
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
 
       const flag = await this.prisma.$queryRaw<any[]>`
         SELECT value FROM public.app_system_flags WHERE key = 'polls_seeded' LIMIT 1
@@ -45,8 +53,10 @@ export class VotingRepository {
         const seedPolls = [
           {
             id: 'c1983000-0000-4000-8000-000000000001',
-            title: 'Thông qua Báo cáo Tài chính kiểm toán 2025 & Dự toán Ngân sách 2026',
-            description: 'Căn cứ Điều lệ Hiệp hội, Ban Điều Hành kính trình toàn thể Quý Hội viên biểu quyết thông qua báo cáo quyết toán tài chính năm 2025 và hạn mức phân bổ ngân sách xúc tiến thương mại năm 2026.',
+            title:
+              'Thông qua Báo cáo Tài chính kiểm toán 2025 & Dự toán Ngân sách 2026',
+            description:
+              'Căn cứ Điều lệ Hiệp hội, Ban Điều Hành kính trình toàn thể Quý Hội viên biểu quyết thông qua báo cáo quyết toán tài chính năm 2025 và hạn mức phân bổ ngân sách xúc tiến thương mại năm 2026.',
             status: 'open',
             startDate: new Date('2026-09-20'),
             endDate: new Date('2026-12-31'),
@@ -54,8 +64,10 @@ export class VotingRepository {
           },
           {
             id: 'c1983000-0000-4000-8000-000000000002',
-            title: 'Phê chuẩn kiện toàn nhân sự Ban Xúc Tiến Thương Mại & Ban Pháp Chế',
-            description: 'Biểu quyết phê chuẩn bổ nhiệm bổ sung 02 Phó Ban Xúc Tiến Thương Mại và 01 Phó Ban Pháp Chế nhằm tăng cường năng lực kết nối doanh nghiệp giai đoạn cuối năm.',
+            title:
+              'Phê chuẩn kiện toàn nhân sự Ban Xúc Tiến Thương Mại & Ban Pháp Chế',
+            description:
+              'Biểu quyết phê chuẩn bổ nhiệm bổ sung 02 Phó Ban Xúc Tiến Thương Mại và 01 Phó Ban Pháp Chế nhằm tăng cường năng lực kết nối doanh nghiệp giai đoạn cuối năm.',
             status: 'open',
             startDate: new Date('2026-09-25'),
             endDate: new Date('2026-12-31'),
@@ -63,8 +75,10 @@ export class VotingRepository {
           },
           {
             id: 'c1983000-0000-4000-8000-000000000003',
-            title: 'Lựa chọn cung đường & chủ đề chương trình Caravan Doanh Nhân 2026',
-            description: 'Toàn thể Hội viên tham gia biểu quyết lựa chọn cung đường di chuyển và chương trình thiện nguyện đồng hành cùng Caravan CEO 1983.',
+            title:
+              'Lựa chọn cung đường & chủ đề chương trình Caravan Doanh Nhân 2026',
+            description:
+              'Toàn thể Hội viên tham gia biểu quyết lựa chọn cung đường di chuyển và chương trình thiện nguyện đồng hành cùng Caravan CEO 1983.',
             status: 'closed',
             startDate: new Date('2026-08-10'),
             endDate: new Date('2026-08-20'),
@@ -72,8 +86,10 @@ export class VotingRepository {
           },
           {
             id: 'c1983000-0000-4000-8000-000000000004',
-            title: 'Sửa đổi Quy chế xét duyệt kết nạp Hội viên chính thức năm 2026',
-            description: 'Quy chế mới áp dụng tiêu chuẩn xác thực pháp lý doanh nghiệp và chứng thư số hóa danh thiếp thông minh cho toàn thể hội viên gia nhập.',
+            title:
+              'Sửa đổi Quy chế xét duyệt kết nạp Hội viên chính thức năm 2026',
+            description:
+              'Quy chế mới áp dụng tiêu chuẩn xác thực pháp lý doanh nghiệp và chứng thư số hóa danh thiếp thông minh cho toàn thể hội viên gia nhập.',
             status: 'closed',
             startDate: new Date('2026-07-15'),
             endDate: new Date('2026-07-25'),
@@ -98,10 +114,14 @@ export class VotingRepository {
       }
 
       // Đánh dấu cờ polls_seeded = 'true' vĩnh viễn để khi người dùng xóa hết biểu quyết (count = 0), không bị tự động sinh lại
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.app_system_flags (key, value) VALUES ('polls_seeded', 'true')
         ON CONFLICT (key) DO UPDATE SET value = 'true'
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
       VotingRepository.seededOnce = true;
     } catch (e: any) {
       console.warn('ensureSeedPolls warning:', e?.message);
@@ -110,7 +130,8 @@ export class VotingRepository {
 
   async listPollsRaw(userId: string): Promise<any[]> {
     await this.ensureSeedPolls();
-    const safeUserId = toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
+    const safeUserId =
+      toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
     return this.prisma.$queryRaw<any[]>`
       SELECT p.*,
         e.name as event_name,
@@ -145,8 +166,10 @@ export class VotingRepository {
   }
 
   async getPollByIdRaw(userId: string, id: string): Promise<any[]> {
-    const safeUserId = toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
-    const safePollId = toValidUuid(id) || '00000000-0000-0000-0000-000000000000';
+    const safeUserId =
+      toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
+    const safePollId =
+      toValidUuid(id) || '00000000-0000-0000-0000-000000000000';
     return this.prisma.$queryRaw<any[]>`
       SELECT p.*,
         e.name as event_name,
@@ -174,11 +197,20 @@ export class VotingRepository {
     `.catch(() => [] as any[]);
   }
 
-  async insertVote(voteId: string, pollId: string, optionId: string, userId: string, source: string): Promise<void> {
+  async insertVote(
+    voteId: string,
+    pollId: string,
+    optionId: string,
+    userId: string,
+    source: string,
+  ): Promise<void> {
     const safeVoteId = toValidUuid(voteId) || crypto.randomUUID();
-    const safePollId = toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
-    const safeOptId = toValidUuid(optionId) || '00000000-0000-0000-0000-000000000000';
-    const safeUserId = toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
+    const safePollId =
+      toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
+    const safeOptId =
+      toValidUuid(optionId) || '00000000-0000-0000-0000-000000000000';
+    const safeUserId =
+      toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
     await this.prisma.$executeRaw`
       INSERT INTO public.poll_votes (id, poll_id, option_id, user_id, source_app, created_at)
       VALUES (${safeVoteId}::uuid, ${safePollId}::uuid, ${safeOptId}::uuid, ${safeUserId}::uuid, ${source}, now())
@@ -208,7 +240,14 @@ export class VotingRepository {
     `.catch(() => []);
   }
 
-  async insertPoll(pollId: string, title: string, description: string | null, startDt: Date, endDt: Date, eventId: string | null): Promise<void> {
+  async insertPoll(
+    pollId: string,
+    title: string,
+    description: string | null,
+    startDt: Date,
+    endDt: Date,
+    eventId: string | null,
+  ): Promise<void> {
     const safePollId = toValidUuid(pollId) || crypto.randomUUID();
     const validEventId = toValidUuid(eventId);
     await this.prisma.$executeRaw`
@@ -217,9 +256,14 @@ export class VotingRepository {
     `;
   }
 
-  async insertPollOption(optId: string, pollId: string, title: string): Promise<void> {
+  async insertPollOption(
+    optId: string,
+    pollId: string,
+    title: string,
+  ): Promise<void> {
     const safeOptId = toValidUuid(optId) || crypto.randomUUID();
-    const safePollId = toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
+    const safePollId =
+      toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
     await this.prisma.$executeRaw`
       INSERT INTO public.poll_options (id, poll_id, title, votes_count, created_at)
       VALUES (${safeOptId}::uuid, ${safePollId}::uuid, ${title}, 0, now())
@@ -236,7 +280,9 @@ export class VotingRepository {
         SELECT id FROM public.vione_users 
         WHERE id NOT IN (SELECT user_id FROM public.members WHERE user_id IS NOT NULL)
       `.catch(async () => {
-        return this.prisma.$queryRaw<any[]>`SELECT id FROM public.vione_users LIMIT 50`.catch(() => [] as any[]);
+        return this.prisma.$queryRaw<
+          any[]
+        >`SELECT id FROM public.vione_users LIMIT 50`.catch(() => [] as any[]);
       });
     } else {
       return this.prisma.$queryRaw<any[]>`
@@ -249,8 +295,18 @@ export class VotingRepository {
     }
   }
 
-  async createNotification(userId: string, title: string, body: string, pollId: string, safeDisplayData: string, dedupeKey: string, kind: string = 'interactive_poll'): Promise<void> {
-    await this.prisma.$executeRawUnsafe(`
+  async createNotification(
+    userId: string,
+    title: string,
+    body: string,
+    pollId: string,
+    safeDisplayData: string,
+    dedupeKey: string,
+    kind: string = 'interactive_poll',
+  ): Promise<void> {
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.business_notifications (
         id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
         title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -258,15 +314,32 @@ export class VotingRepository {
         gen_random_uuid(), $1, 'voting', $2, 'poll_created', $3,
         $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
       )
-    `, userId, pollId, kind, title, body, safeDisplayData, dedupeKey).catch(() => {});
+    `,
+        userId,
+        pollId,
+        kind,
+        title,
+        body,
+        safeDisplayData,
+        dedupeKey,
+      )
+      .catch(() => {});
 
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.member_notifications (
         id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, false, false, 'voting', $4, NOW()
       )
-    `, userId, title, body, pollId).catch(() => {});
+    `,
+        userId,
+        title,
+        body,
+        pollId,
+      )
+      .catch(() => {});
   }
 
   async markPollClosed(id: string): Promise<void> {
@@ -277,7 +350,15 @@ export class VotingRepository {
     `.catch(() => {});
   }
 
-  async updatePollRaw(id: string, title?: string, description?: string | null, status?: string | null, startDt?: Date | null, endDt?: Date | null, eventId?: string | null): Promise<void> {
+  async updatePollRaw(
+    id: string,
+    title?: string,
+    description?: string | null,
+    status?: string | null,
+    startDt?: Date | null,
+    endDt?: Date | null,
+    eventId?: string | null,
+  ): Promise<void> {
     if (eventId !== undefined && eventId !== null) {
       await this.prisma.$executeRaw`
         UPDATE public.polls
@@ -316,7 +397,10 @@ export class VotingRepository {
     `.catch(() => {});
   }
 
-  async findMemberForLuckyDraw(winnerCode?: string, winnerName?: string): Promise<any[]> {
+  async findMemberForLuckyDraw(
+    winnerCode?: string,
+    winnerName?: string,
+  ): Promise<any[]> {
     const cleanCode = (winnerCode || '').replace(/^#/, '').trim();
     if (cleanCode) {
       const regRes = await this.prisma.$queryRaw<any[]>`
@@ -345,9 +429,20 @@ export class VotingRepository {
     return [];
   }
 
-  async sendLuckyDrawNotification(targetUserId: string, title: string, body: string, eventId: string, safeDisplayData: string, memberCode?: string, prizeTitle?: string, eventName?: string): Promise<void> {
+  async sendLuckyDrawNotification(
+    targetUserId: string,
+    title: string,
+    body: string,
+    eventId: string,
+    safeDisplayData: string,
+    memberCode?: string,
+    prizeTitle?: string,
+    eventName?: string,
+  ): Promise<void> {
     // 1. Business notifications
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.business_notifications (
         id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
         title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -355,36 +450,67 @@ export class VotingRepository {
         gen_random_uuid(), $1, 'events', $2, 'lucky_draw_won', 'perk_reward',
         $3, $4, $5::jsonb, 'high', 'delivered', $6, 'association_app', 'association_app', NOW(), NOW()
       )
-    `, targetUserId, eventId || 'lucky-draw', title, body, safeDisplayData, `lucky-win-${Date.now()}`).catch(() => {});
+    `,
+        targetUserId,
+        eventId || 'lucky-draw',
+        title,
+        body,
+        safeDisplayData,
+        `lucky-win-${Date.now()}`,
+      )
+      .catch(() => {});
 
     // 2. Member in-app notifications pointing to perks
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.member_notifications (
         id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, false, false, 'perk', $4, NOW()
       )
-    `, targetUserId, title, body, eventId || 'lucky-draw').catch(() => {});
+    `,
+        targetUserId,
+        title,
+        body,
+        eventId || 'lucky-draw',
+      )
+      .catch(() => {});
 
     // 3. Official broadcast notification
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.notifications (
         id, code, title, body, audience, channel, status, sent_at, reach, association_id, app_scope, target_app, created_at, updated_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, 'members', 'official_events', 'sent', NOW(), 1,
         'c1983000-0000-4000-8000-000000001983'::uuid, 'association_app', 'association_app', NOW(), NOW()
       )
-    `, `NOTIF-PERK-${Date.now().toString().slice(-6)}`, title, body).catch(() => {});
+    `,
+        `NOTIF-PERK-${Date.now().toString().slice(-6)}`,
+        title,
+        body,
+      )
+      .catch(() => {});
 
     // 4. Create custom perk reward voucher in public.perks for the member
     const perkTitle = prizeTitle ? `🎁 Phần thưởng: ${prizeTitle}` : title;
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.perks (
         id, title, category, partner, summary, description, discount, icon, link, valid_until, sort_order, status, created_at, updated_at
       ) VALUES (
         gen_random_uuid(), $1, 'Trúng thưởng sự kiện', $2, $3, $4, '100% Miễn phí', 'gift', '/association/perks', NOW() + INTERVAL '30 days', 1, 'active', NOW(), NOW()
       )
-    `, perkTitle, eventName || 'Ban Tổ Chức CEO 1983', `Phần thưởng sự kiện dành cho hội viên ${memberCode || ''}`, body).catch(() => {});
+    `,
+        perkTitle,
+        eventName || 'Ban Tổ Chức CEO 1983',
+        `Phần thưởng sự kiện dành cho hội viên ${memberCode || ''}`,
+        body,
+      )
+      .catch(() => {});
 
     if (memberCode) {
       await this.prisma.$executeRaw`

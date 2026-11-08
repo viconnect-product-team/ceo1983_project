@@ -5,16 +5,24 @@ import { PrismaService } from '../prisma/prisma.service';
 export class EventsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async queryRaw<T = any>(query: TemplateStringsArray, ...values: any[]): Promise<T[]> {
+  async queryRaw<T = any>(
+    query: TemplateStringsArray,
+    ...values: any[]
+  ): Promise<T[]> {
     return this.prisma.$queryRaw<T[]>(query, ...values).catch(() => [] as T[]);
   }
 
-  async executeRaw(query: TemplateStringsArray, ...values: any[]): Promise<number> {
+  async executeRaw(
+    query: TemplateStringsArray,
+    ...values: any[]
+  ): Promise<number> {
     return this.prisma.$executeRaw(query, ...values).catch(() => 0);
   }
 
   async queryRawUnsafe<T = any>(query: string, ...values: any[]): Promise<T[]> {
-    return this.prisma.$queryRawUnsafe<T[]>(query, ...values).catch(() => [] as T[]);
+    return this.prisma
+      .$queryRawUnsafe<T[]>(query, ...values)
+      .catch(() => [] as T[]);
   }
 
   async executeRawUnsafe(query: string, ...values: any[]): Promise<number> {

@@ -1,5 +1,16 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { SyndicationService, PlatformConfigDto, PublishBroadcastDto } from './syndication.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import {
+  SyndicationService,
+  PlatformConfigDto,
+  PublishBroadcastDto,
+} from './syndication.service';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 
 @Controller('syndication')

@@ -6,7 +6,9 @@ export class AdminRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async ensureSchema(): Promise<void> {
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       CREATE TABLE IF NOT EXISTS public.notifications (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         code text UNIQUE,
@@ -23,49 +25,105 @@ export class AdminRepository {
         created_at timestamptz DEFAULT now(),
         updated_at timestamptz DEFAULT now()
       );
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'crm';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'crm';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_channel text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS description text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS pushed_to_messages boolean DEFAULT false;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'association_app';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'association_app';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS pushed_to_messages boolean DEFAULT false;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS poster_url text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS event_id text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.member_notifications ADD COLUMN IF NOT EXISTS poster_url text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.member_notifications ADD COLUMN IF NOT EXISTS image_url text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS image_url text;
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     // Chuẩn hóa bảng transactions tài chính cho VNPAY & Thu Chi
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       CREATE TABLE IF NOT EXISTS public.transactions (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         code text UNIQUE,
@@ -85,19 +143,35 @@ export class AdminRepository {
         created_at timestamptz DEFAULT now(),
         updated_at timestamptz DEFAULT now()
       );
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS provider text DEFAULT 'vnpay';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS provider_ref text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     // Chuẩn hóa bảng invoices (Hóa đơn điện tử hội phí & sự kiện)
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       CREATE TABLE IF NOT EXISTS public.invoices (
         id text PRIMARY KEY,
         member_id text,
@@ -116,40 +190,80 @@ export class AdminRepository {
         created_at timestamptz DEFAULT now(),
         updated_at timestamptz DEFAULT now()
       );
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS category text DEFAULT 'Hội phí';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS customer_name text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS customer_email text;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS customer_phone text;
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
 
     // Chuẩn hóa cột thanh toán VNPAY trong event_registrations
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'pending';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS payment_amount numeric DEFAULT 0;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'vnpay';
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS paid_at timestamptz;
-    `).catch(() => {});
-    await this.prisma.$executeRawUnsafe(`
+    `,
+      )
+      .catch(() => {});
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS vnp_txn_ref text;
-    `).catch(() => {});
+    `,
+      )
+      .catch(() => {});
   }
 
   async queryRawUnsafe<T = any>(query: string, ...values: any[]): Promise<T[]> {
-    return this.prisma.$queryRawUnsafe<T[]>(query, ...values).catch(() => [] as T[]);
+    return this.prisma
+      .$queryRawUnsafe<T[]>(query, ...values)
+      .catch(() => [] as T[]);
   }
 
   async executeRawUnsafe(query: string, ...values: any[]): Promise<number> {
@@ -157,7 +271,9 @@ export class AdminRepository {
   }
 
   async findDemoLeads(whereClause: string): Promise<any[]> {
-    return this.prisma.$queryRawUnsafe<any[]>(`
+    return this.prisma
+      .$queryRawUnsafe<any[]>(
+        `
       SELECT 
         id, name, email, organization, phone, job_title, preferred_date,
         preferred_slot, timezone, notes, locale, status, admin_notes,
@@ -166,18 +282,25 @@ export class AdminRepository {
       WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT 500
-    `).catch(() => []);
+    `,
+      )
+      .catch(() => []);
   }
 
   async findDemoLeadById(id: string): Promise<any | null> {
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT * FROM public.demo_requests WHERE id = $1 LIMIT 1`,
-      id,
-    ).catch(() => []);
+    const rows = await this.prisma
+      .$queryRawUnsafe<
+        any[]
+      >(`SELECT * FROM public.demo_requests WHERE id = $1 LIMIT 1`, id)
+      .catch(() => []);
     return rows[0] || null;
   }
 
-  async updateDemoLead(id: string, status?: string, adminNotes?: string | null): Promise<any> {
+  async updateDemoLead(
+    id: string,
+    status?: string,
+    adminNotes?: string | null,
+  ): Promise<any> {
     const sets: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -261,7 +384,13 @@ export class AdminRepository {
     `;
   }
 
-  async insertInvoiceReminder(id: string, invoiceId: string, channel: string, byName?: string, note?: string): Promise<void> {
+  async insertInvoiceReminder(
+    id: string,
+    invoiceId: string,
+    channel: string,
+    byName?: string,
+    note?: string,
+  ): Promise<void> {
     await this.prisma.$executeRaw`
       INSERT INTO public.invoice_reminders (id, invoice_id, channel, by_name, note, sent_at)
       VALUES (${id}, ${invoiceId}, ${channel}, ${byName || 'Admin'}, ${note || null}, now())
@@ -278,8 +407,10 @@ export class AdminRepository {
   }
 
   async getUserRoles(userId: string): Promise<any[]> {
-    return this.prisma.user_roles.findMany({
-      where: { user_id: userId },
-    }).catch(() => []);
+    return this.prisma.user_roles
+      .findMany({
+        where: { user_id: userId },
+      })
+      .catch(() => []);
   }
 }

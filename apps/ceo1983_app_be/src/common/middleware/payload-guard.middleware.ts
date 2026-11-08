@@ -11,7 +11,8 @@ export class PayloadGuardMiddleware implements NestMiddleware {
       return res.status(HttpStatus.PAYLOAD_TOO_LARGE).json({
         statusCode: HttpStatus.PAYLOAD_TOO_LARGE,
         error: 'Payload Too Large',
-        message: 'Kích thước tải trọng vượt quá giới hạn tối đa cho phép (10MB) (Zero-Trust Security Gate Lớp 4).',
+        message:
+          'Kích thước tải trọng vượt quá giới hạn tối đa cho phép (10MB) (Zero-Trust Security Gate Lớp 4).',
       });
     }
 
@@ -26,7 +27,8 @@ export class PayloadGuardMiddleware implements NestMiddleware {
           res.status(HttpStatus.PAYLOAD_TOO_LARGE).json({
             statusCode: HttpStatus.PAYLOAD_TOO_LARGE,
             error: 'Payload Too Large',
-            message: 'Dung lượng luồng tải trọng vượt quá 10MB. Yêu cầu đã bị hủy để bảo vệ tài nguyên máy chủ (Zero-Trust Security Gate Lớp 4).',
+            message:
+              'Dung lượng luồng tải trọng vượt quá 10MB. Yêu cầu đã bị hủy để bảo vệ tài nguyên máy chủ (Zero-Trust Security Gate Lớp 4).',
           });
         }
       }
@@ -36,4 +38,3 @@ export class PayloadGuardMiddleware implements NestMiddleware {
     next();
   }
 }
-

@@ -35,7 +35,10 @@ export class EventsController {
     @Res() res: any,
   ) {
     const rawData = data || regId || 'CEO1983-EVENT-TICKET';
-    const parsedSize = Math.min(Math.max(parseInt(size || '320', 10) || 320, 100), 800);
+    const parsedSize = Math.min(
+      Math.max(parseInt(size || '320', 10) || 320, 100),
+      800,
+    );
     try {
       const buffer = await QRCode.toBuffer(String(rawData), {
         width: parsedSize,
@@ -49,7 +52,9 @@ export class EventsController {
       res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
       return res.end(buffer);
     } catch (err: any) {
-      res.status(500).json({ error: 'Failed to generate QR code', message: err?.message });
+      res
+        .status(500)
+        .json({ error: 'Failed to generate QR code', message: err?.message });
     }
   }
 
@@ -69,24 +74,71 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_truyen_thong', 'truong_ban_thanh_vien', 'truong_ban_xuc_tien', 'truong_ban_tai_chinh', 'truong_ban_thien_nguyen', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'bqt',
+    'btt',
+    'btv',
+    'btk',
+    'bxt',
+    'btn',
+    'quan_tri',
+    'tong_thu_ky',
+    'ban_thu_ky',
+    'truong_ban_truyen_thong',
+    'truong_ban_thanh_vien',
+    'truong_ban_xuc_tien',
+    'truong_ban_tai_chinh',
+    'truong_ban_thien_nguyen',
+    'member',
+  )
   @Get('registrations')
   async listRegistrations(
     @Request() req: any,
     @Query('associationId') associationId?: string,
     @Query('eventId') eventId?: string,
   ) {
-    return this.eventsService.listRegistrations(req.user?.id || '', associationId, eventId);
+    return this.eventsService.listRegistrations(
+      req.user?.id || '',
+      associationId,
+      eventId,
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btv', 'btk', 'bxt', 'btn', 'quan_tri', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_truyen_thong', 'truong_ban_thanh_vien', 'truong_ban_xuc_tien', 'truong_ban_tai_chinh', 'truong_ban_thien_nguyen', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'bqt',
+    'btt',
+    'btv',
+    'btk',
+    'bxt',
+    'btn',
+    'quan_tri',
+    'tong_thu_ky',
+    'ban_thu_ky',
+    'truong_ban_truyen_thong',
+    'truong_ban_thanh_vien',
+    'truong_ban_xuc_tien',
+    'truong_ban_tai_chinh',
+    'truong_ban_thien_nguyen',
+    'member',
+  )
   @Get('with-registrations')
   async listEventsWithRegistrations(
     @Request() req: any,
     @Query('associationId') associationId?: string,
   ) {
-    return this.eventsService.listEventsWithRegistrations(req.user.id, associationId);
+    return this.eventsService.listEventsWithRegistrations(
+      req.user.id,
+      associationId,
+    );
   }
 
   @Get()
@@ -122,7 +174,11 @@ export class EventsController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/register')
-  async registerForEvent(@Request() req: any, @Param('id') id: string, @Body() body?: any) {
+  async registerForEvent(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body?: any,
+  ) {
     return this.eventsService.registerForEvent(req.user.id, id, body);
   }
 
@@ -136,7 +192,11 @@ export class EventsController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/cancel')
-  async cancelEventRegistration(@Request() req: any, @Param('id') id: string, @Body('reason') reason?: string) {
+  async cancelEventRegistration(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('reason') reason?: string,
+  ) {
     return this.eventsService.cancelEventRegistration(req.user.id, id, reason);
   }
 
@@ -181,7 +241,11 @@ export class EventsController {
     @Param('id') id: string,
     @Body('seatAssignment') seatAssignment: string,
   ) {
-    return this.eventsService.updateRegistrationSeating(req.user.id, id, seatAssignment);
+    return this.eventsService.updateRegistrationSeating(
+      req.user.id,
+      id,
+      seatAssignment,
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -198,31 +262,59 @@ export class EventsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btc')
   @Post('registrations/:id/send-payment-reminder')
-  async sendPaymentReminder(
-    @Request() req: any,
-    @Param('id') id: string,
-  ) {
+  async sendPaymentReminder(@Request() req: any, @Param('id') id: string) {
     return this.eventsService.sendPaymentReminder(req.user.id, id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc', 'btk', 'btv', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_tai_chinh', 'truong_ban_kiem_soat', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'bqt',
+    'btt',
+    'btc',
+    'btk',
+    'btv',
+    'tong_thu_ky',
+    'ban_thu_ky',
+    'truong_ban_tai_chinh',
+    'truong_ban_kiem_soat',
+    'member',
+  )
   @Post('registrations/:id/confirm-payment')
   async confirmPayment(
     @Request() req: any,
     @Param('id') id: string,
     @Body('method') method?: string,
   ) {
-    return this.eventsService.confirmBankPayment(req.user.id, id, method || 'bank_transfer');
+    return this.eventsService.confirmBankPayment(
+      req.user.id,
+      id,
+      method || 'bank_transfer',
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt', 'btc', 'btk', 'btv', 'tong_thu_ky', 'ban_thu_ky', 'truong_ban_tai_chinh', 'truong_ban_kiem_soat', 'member')
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'bqt',
+    'btt',
+    'btc',
+    'btk',
+    'btv',
+    'tong_thu_ky',
+    'ban_thu_ky',
+    'truong_ban_tai_chinh',
+    'truong_ban_kiem_soat',
+    'member',
+  )
   @Post('registrations/:id/reconcile-payment')
-  async reconcilePayment(
-    @Request() req: any,
-    @Param('id') id: string,
-  ) {
+  async reconcilePayment(@Request() req: any, @Param('id') id: string) {
     return this.eventsService.reconcilePayment(req.user.id, id);
   }
 

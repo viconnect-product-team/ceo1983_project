@@ -25,7 +25,11 @@ function loadEnvFile(envPath: string) {
 loadEnvFile(path.join(__dirname, '../../../../.env'));
 loadEnvFile(path.join(process.cwd(), '.env'));
 
-function probeTcp(host: string, port: number, timeoutMs = 1200): Promise<boolean> {
+function probeTcp(
+  host: string,
+  port: number,
+  timeoutMs = 1200,
+): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     let settled = false;
@@ -55,9 +59,18 @@ async function resolveDatabaseConfig() {
     !process.env.DATABASE_URL.includes('113.20.107.184') &&
     !process.env.DATABASE_URL.includes('127.0.0.1:6432')
   ) {
-    console.log('\x1b[32m%s\x1b[0m', '================================================================');
-    console.log('\x1b[32m%s\x1b[0m', `✅ [Database Config] Sử dụng DATABASE_URL từ môi trường: ${process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
-    console.log('\x1b[32m%s\x1b[0m', '================================================================');
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      '================================================================',
+    );
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      `✅ [Database Config] Sử dụng DATABASE_URL từ môi trường: ${process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`,
+    );
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      '================================================================',
+    );
     return;
   }
 
@@ -68,18 +81,42 @@ async function resolveDatabaseConfig() {
     process.env.DATABASE_URL =
       process.env.LOCAL_DATABASE_URL ||
       'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@ceo1983-postgres-prod:5432/ceo1983_project?schema=public';
-    console.log('\x1b[32m%s\x1b[0m', '================================================================');
-    console.log('\x1b[32m%s\x1b[0m', '🐳 [Database Auto-Config] MÔI TRƯỜNG DOCKER: Kết nối qua mạng ceo1983-network');
-    console.log('\x1b[32m%s\x1b[0m', '   Target: ceo1983-postgres-prod:5432/ceo1983_project');
-    console.log('\x1b[32m%s\x1b[0m', '================================================================');
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      '================================================================',
+    );
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      '🐳 [Database Auto-Config] MÔI TRƯỜNG DOCKER: Kết nối qua mạng ceo1983-network',
+    );
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      '   Target: ceo1983-postgres-prod:5432/ceo1983_project',
+    );
+    console.log(
+      '\x1b[32m%s\x1b[0m',
+      '================================================================',
+    );
   } else {
     process.env.DATABASE_URL =
       process.env.REMOTE_DATABASE_URL ||
       'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public';
-    console.log('\x1b[33m%s\x1b[0m', '================================================================');
-    console.log('\x1b[33m%s\x1b[0m', '💻 [Database Auto-Config] MÁY CỤC BỘ / HOST: Kết nối server 14.225.217.232');
-    console.log('\x1b[33m%s\x1b[0m', '   Target: 14.225.217.232:5436/ceo1983_project');
-    console.log('\x1b[33m%s\x1b[0m', '================================================================');
+    console.log(
+      '\x1b[33m%s\x1b[0m',
+      '================================================================',
+    );
+    console.log(
+      '\x1b[33m%s\x1b[0m',
+      '💻 [Database Auto-Config] MÁY CỤC BỘ / HOST: Kết nối server 14.225.217.232',
+    );
+    console.log(
+      '\x1b[33m%s\x1b[0m',
+      '   Target: 14.225.217.232:5436/ceo1983_project',
+    );
+    console.log(
+      '\x1b[33m%s\x1b[0m',
+      '================================================================',
+    );
   }
 }
 
@@ -115,18 +152,32 @@ async function bootstrap() {
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
-    if (req.url && (req.url.includes('/auth/') || req.url.includes('/api/auth/'))) {
+    if (
+      req.url &&
+      (req.url.includes('/auth/') || req.url.includes('/api/auth/'))
+    ) {
       res.setHeader('Cache-Control', 'no-store');
     }
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload',
+    );
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'camera=*, microphone=(), geolocation=*');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://appleid.apple.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-ancestors 'self'");
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=*, microphone=(), geolocation=*',
+    );
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://appleid.apple.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-ancestors 'self'",
+    );
     next();
   });
 
-  app.setGlobalPrefix('api', { exclude: ['share', 'share/(.*)', 'api/share', 'api/share/(.*)'] });
+  app.setGlobalPrefix('api', {
+    exclude: ['share', 'share/(.*)', 'api/share', 'api/share/(.*)'],
+  });
   // VULN-11 Fix: Khóa chặt chính sách CORS Whitelist theo các tên miền chính thức, ngăn ngừa CSRF & rò rỉ dữ liệu
   const allowedOrigins = [
     'https://ceo1983.viconnect.vn',
@@ -140,8 +191,15 @@ async function bootstrap() {
     'capacitor://localhost',
   ];
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.viconnect.vn')) {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.viconnect.vn')
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Chặn bởi chính sách an ninh CORS của CEO 1983'));
@@ -160,4 +218,3 @@ async function bootstrap() {
   console.log(`Application is running on: http://0.0.0.0:${port}/api`);
 }
 void bootstrap();
-

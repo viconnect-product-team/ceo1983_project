@@ -14,10 +14,10 @@ export class DataScopeInterceptor implements NestInterceptor {
   constructor(private reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const scope = this.reflector.getAllAndOverride<DataScopeType>(DATA_SCOPE_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const scope = this.reflector.getAllAndOverride<DataScopeType>(
+      DATA_SCOPE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!scope) {
       return next.handle();
@@ -51,8 +51,14 @@ export class DataScopeInterceptor implements NestInterceptor {
       normRoles.includes('bqt') ||
       normRoles.includes('ban_dieu_hanh') ||
       normRoles.includes('pho_chu_tich');
-    const isBTC = isBQT || normRoles.includes('btc') || normRoles.includes('truong_ban_tai_chinh');
-    const isBTT = isBQT || normRoles.includes('btt') || normRoles.includes('truong_ban_truyen_thong');
+    const isBTC =
+      isBQT ||
+      normRoles.includes('btc') ||
+      normRoles.includes('truong_ban_tai_chinh');
+    const isBTT =
+      isBQT ||
+      normRoles.includes('btt') ||
+      normRoles.includes('truong_ban_truyen_thong');
 
     return next.handle().pipe(
       map((data) => {
@@ -95,7 +101,10 @@ export class DataScopeInterceptor implements NestInterceptor {
       ? item.phone.replace(/(\d{3})\d+(\d{3})/, '$1****$2')
       : '';
     const maskedEmail = item.email
-      ? item.email.replace(/(.{2})(.*)(?=@)/, (_: any, a: any, b: any) => a + '*'.repeat(b.length))
+      ? item.email.replace(
+          /(.{2})(.*)(?=@)/,
+          (_: any, a: any, b: any) => a + '*'.repeat(b.length),
+        )
       : '';
 
     return {

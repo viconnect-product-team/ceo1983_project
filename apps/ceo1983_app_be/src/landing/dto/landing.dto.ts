@@ -2,7 +2,10 @@ export class CreateLandingWebDto {
   name!: string;
   slug!: string;
   subdomain?: string;
-  template?: 'timed_cards_opening' | 'ceo1983_executive' | 'startup_mobile_showcase';
+  template?:
+    | 'timed_cards_opening'
+    | 'ceo1983_executive'
+    | 'startup_mobile_showcase';
 }
 
 export class ApplySubdomainDto {
@@ -25,4 +28,3 @@ export class TestApiConnectorDto {
     ctaLink?: string;
   };
 }
-

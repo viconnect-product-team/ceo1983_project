@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
@@ -31,12 +42,20 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  async updateProduct(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  async updateProduct(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.connectAppService.updateProduct(req.user.id, id, body);
   }
 
   @Put(':id')
-  async updateProductPut(@Request() req: any, @Param('id') id: string, @Body() body: any) {
+  async updateProductPut(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
     return this.connectAppService.updateProduct(req.user.id, id, body);
   }
 

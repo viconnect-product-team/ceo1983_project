@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from './connect-app.gateway';
 import { MailService } from '../mail/mail.service';
@@ -96,7 +103,9 @@ export class ConnectAppService implements OnModuleInit {
           CONSTRAINT uq_brm_moment_like UNIQUE (moment_id, user_id)
         );
       `);
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS image TEXT;
         ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_name TEXT;
         ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_phone TEXT;
@@ -108,12 +117,16 @@ export class ConnectAppService implements OnModuleInit {
         ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
         ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC;
         ALTER TABLE public.products ADD COLUMN IF NOT EXISTS member_price NUMERIC;
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         ALTER TABLE public.business_relationship_moments
         ADD COLUMN IF NOT EXISTS visibility VARCHAR(32) DEFAULT 'friends';
       `);
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS brm_target_xor;
         ALTER TABLE public.business_relationship_moments ADD CONSTRAINT brm_target_xor CHECK (
           (target_kind = 'connection' AND target_user_id IS NOT NULL AND target_card_id IS NULL AND target_guest_id IS NULL) OR
@@ -124,15 +137,23 @@ export class ConnectAppService implements OnModuleInit {
         ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS business_relationship_moments_target_kind_check;
         ALTER TABLE public.business_relationship_moments ADD CONSTRAINT business_relationship_moments_target_kind_check
           CHECK (target_kind = ANY (ARRAY['connection'::text, 'saved_card'::text, 'guest_contact'::text, 'general'::text]));
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         ALTER TABLE public.business_relationship_moment_comments
         ADD COLUMN IF NOT EXISTS photo_url TEXT;
       `);
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.associations ADD COLUMN IF NOT EXISTS banner_url text;
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
+      `,
+        )
+        .catch(() => {});
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         CREATE TABLE IF NOT EXISTS public.association_logo_history (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           association_id UUID NOT NULL,
@@ -143,19 +164,37 @@ export class ConnectAppService implements OnModuleInit {
           action TEXT NOT NULL DEFAULT 'change',
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
+      `,
+        )
+        .catch(() => {});
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'crm';
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
+      `,
+        )
+        .catch(() => {});
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'crm';
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
+      `,
+        )
+        .catch(() => {});
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'ceo1983_app';
-      `).catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
+      `,
+        )
+        .catch(() => {});
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'ceo1983_app';
-      `).catch(() => {});
+      `,
+        )
+        .catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.direct_message_threads (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -229,7 +268,6 @@ export class ConnectAppService implements OnModuleInit {
     }
   }
 
-
   async getBriefing(userId: string) {
     const now = new Date();
 
@@ -259,10 +297,10 @@ export class ConnectAppService implements OnModuleInit {
           const formattedStart = formatVNTime(new Date(m.scheduled_start_at));
           const safeData = JSON.stringify({
             meetingTitle: m.title,
-            scheduledAt: formattedStart
+            scheduledAt: formattedStart,
           });
           const actionTarget = JSON.stringify({
-            route: '/connect-app'
+            route: '/connect-app',
           });
 
           const dedupeKey = `meeting_upcoming_reminder:${userId}:${m.id}`;
@@ -285,40 +323,40 @@ export class ConnectAppService implements OnModuleInit {
     }
 
     // 1. Connection requests
-    const connectionRequests = await this.prisma.$queryRaw`
+    const connectionRequests = (await this.prisma.$queryRaw`
       SELECT id, requester_user_id, recipient_user_id as target_user_id, status::text as status, created_at
       FROM public.user_connections
       WHERE status = 'pending'::public.global_connection_status AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
       ORDER BY created_at DESC
       LIMIT 50
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
     // 2. Introduction requests
-    const introductionRequests = await this.prisma.$queryRaw`
+    const introductionRequests = (await this.prisma.$queryRaw`
       SELECT id, status, created_at, requester_user_id, intermediary_user_id, target_user_id, target_person_node_id
       FROM public.introduction_requests
       WHERE status IN ('pending', 'accepted') AND (requester_user_id = ${userId}::uuid OR intermediary_user_id = ${userId}::uuid OR target_user_id = ${userId}::uuid)
       ORDER BY created_at DESC
       LIMIT 50
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
     // 3. Introduction deliveries
-    const introductionDeliveries = await this.prisma.$queryRaw`
+    const introductionDeliveries = (await this.prisma.$queryRaw`
       SELECT id, status, created_at, recipient_user_id
       FROM public.introduction_deliveries
       WHERE status IN ('sent', 'delivered') AND recipient_user_id = ${userId}::uuid
       ORDER BY created_at DESC
       LIMIT 50
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
     // 4. Business meetings
-    const businessMeetings = await this.prisma.$queryRaw`
+    const businessMeetings = (await this.prisma.$queryRaw`
       SELECT id, status, scheduled_start_at, organizer_user_id
       FROM public.business_meetings
       WHERE organizer_user_id = ${userId}::uuid
       ORDER BY scheduled_start_at ASC NULLS LAST
       LIMIT 50
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
     // Fetch community and registered events for today & upcoming
     const todayStr = now.toISOString().slice(0, 10);
@@ -350,27 +388,28 @@ export class ConnectAppService implements OnModuleInit {
       return [];
     });
 
-
     // 5. Followups
-    const businessMeetingFollowUps = await this.prisma.$queryRaw`
+    const businessMeetingFollowUps = (await this.prisma.$queryRaw`
       SELECT id, meeting_id, status, due_at, title, owner_user_id
       FROM public.business_meeting_follow_ups
       WHERE status IN ('open', 'in_progress') AND owner_user_id = ${userId}::uuid
       ORDER BY due_at ASC NULLS LAST
       LIMIT 50
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
     // 6. Timeline events
-    const graphTimelineEvents = await this.prisma.$queryRaw`
+    const graphTimelineEvents = (await this.prisma.$queryRaw`
       SELECT id, occurred_at, event_kind, person_node_id
       FROM public.graph_timeline_events
       ORDER BY occurred_at DESC
       LIMIT 50
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
-    const allEventsMapped = registeredEvents.map(e => {
+    const allEventsMapped = registeredEvents.map((e) => {
       const eventDate = new Date(e.scheduled_start_at);
-      const eDateStr = !isNaN(eventDate.getTime()) ? eventDate.toISOString().slice(0, 10) : '';
+      const eDateStr = !isNaN(eventDate.getTime())
+        ? eventDate.toISOString().slice(0, 10)
+        : '';
       const isToday = eDateStr === todayStr;
       return {
         id: `event:${e.id}`,
@@ -404,65 +443,87 @@ export class ConnectAppService implements OnModuleInit {
           type: e.type,
         },
         viewerPermissions: { canRoute: true, canInlineMutate: false },
-        safeDisplayData: { counterpartDisplayName: e.association_name || 'Cộng đồng' },
+        safeDisplayData: {
+          counterpartDisplayName: e.association_name || 'Cộng đồng',
+        },
         dedupeKey: `event:${e.id}`,
         registryVersion: 1,
       };
     });
 
-    const todayEventsList = allEventsMapped.filter(e => e.context.isToday);
-    const upcomingEventsList = allEventsMapped.filter(e => !e.context.isToday);
+    const todayEventsList = allEventsMapped.filter((e) => e.context.isToday);
+    const upcomingEventsList = allEventsMapped.filter(
+      (e) => !e.context.isToday,
+    );
 
     return {
-      connectionRequests: connectionRequests.map(r => ({
+      connectionRequests: connectionRequests.map((r) => ({
         id: String(r.id),
         direction: r.requester_user_id === userId ? 'outgoing' : 'incoming',
         status: String(r.status),
-        createdAt: r.created_at ? new Date(r.created_at).toISOString() : now.toISOString(),
+        createdAt: r.created_at
+          ? new Date(r.created_at).toISOString()
+          : now.toISOString(),
         counterpartHandle: null,
         counterpartDisplayName: null,
         counterpartAvatarUrl: null,
       })),
-      introductionRequests: introductionRequests.map(r => {
-        const role = r.intermediary_user_id === userId
-          ? 'intermediary'
-          : r.target_user_id === userId
-            ? 'target'
-            : 'requester';
+      introductionRequests: introductionRequests.map((r) => {
+        const role =
+          r.intermediary_user_id === userId
+            ? 'intermediary'
+            : r.target_user_id === userId
+              ? 'target'
+              : 'requester';
         return {
           id: String(r.id),
           role,
           status: String(r.status),
-          createdAt: r.created_at ? new Date(r.created_at).toISOString() : now.toISOString(),
+          createdAt: r.created_at
+            ? new Date(r.created_at).toISOString()
+            : now.toISOString(),
           targetPersonNodeId: r.target_person_node_id || null,
           counterpartDisplayName: null,
         };
       }),
-      introductionDeliveries: introductionDeliveries.map(r => ({
+      introductionDeliveries: introductionDeliveries.map((r) => ({
         id: String(r.id),
         status: String(r.status),
-        createdAt: r.created_at ? new Date(r.created_at).toISOString() : now.toISOString(),
+        createdAt: r.created_at
+          ? new Date(r.created_at).toISOString()
+          : now.toISOString(),
         counterpartDisplayName: null,
       })),
       meetingWorkspaceItems: [
-        ...businessMeetings.map(r => {
-          const isUpcoming = r.status === 'confirmed' && r.scheduled_start_at && new Date(r.scheduled_start_at) >= now;
+        ...businessMeetings.map((r) => {
+          const isUpcoming =
+            r.status === 'confirmed' &&
+            r.scheduled_start_at &&
+            new Date(r.scheduled_start_at) >= now;
           return {
             meetingId: String(r.id),
             status: String(r.status),
-            bucket: isUpcoming ? 'upcoming' : r.status === 'completed' ? 'history' : 'overview',
-            suggestedActionKind: r.status === 'proposed'
-              ? 'respond_meeting'
-              : r.status === 'confirmed' && !r.scheduled_start_at
-                ? 'schedule_meeting'
-                : 'view_meeting',
-            scheduledStartAt: r.scheduled_start_at ? new Date(r.scheduled_start_at).toISOString() : null,
-            viewerRole: r.organizer_user_id === userId ? 'organizer' : 'attendee',
+            bucket: isUpcoming
+              ? 'upcoming'
+              : r.status === 'completed'
+                ? 'history'
+                : 'overview',
+            suggestedActionKind:
+              r.status === 'proposed'
+                ? 'respond_meeting'
+                : r.status === 'confirmed' && !r.scheduled_start_at
+                  ? 'schedule_meeting'
+                  : 'view_meeting',
+            scheduledStartAt: r.scheduled_start_at
+              ? new Date(r.scheduled_start_at).toISOString()
+              : null,
+            viewerRole:
+              r.organizer_user_id === userId ? 'organizer' : 'attendee',
             counterpartDisplayName: null,
             hasOutcome: false,
           };
         }),
-        ...registeredEvents.map(e => {
+        ...registeredEvents.map((e) => {
           const eventDate = new Date(e.scheduled_start_at);
           return {
             meetingId: String(e.id),
@@ -476,28 +537,31 @@ export class ConnectAppService implements OnModuleInit {
             isEvent: true,
             communityId: String(e.association_id),
           };
-        })
+        }),
       ],
-      meetingFollowUps: businessMeetingFollowUps.map(r => {
+      meetingFollowUps: businessMeetingFollowUps.map((r) => {
         const isOverdue = r.due_at && new Date(r.due_at) < now;
         return {
           id: String(r.id),
           meetingId: String(r.meeting_id),
           status: String(r.status),
           dueAt: r.due_at ? new Date(r.due_at).toISOString() : null,
-          temporalState: r.status === 'completed'
-            ? 'completed'
-            : r.status === 'cancelled'
-              ? 'cancelled'
-              : isOverdue
-                ? 'overdue'
-                : 'active',
+          temporalState:
+            r.status === 'completed'
+              ? 'completed'
+              : r.status === 'cancelled'
+                ? 'cancelled'
+                : isOverdue
+                  ? 'overdue'
+                  : 'active',
           title: r.title || null,
         };
       }),
-      relationshipActivity: graphTimelineEvents.map(r => ({
+      relationshipActivity: graphTimelineEvents.map((r) => ({
         id: String(r.id),
-        occurredAt: r.occurred_at ? new Date(r.occurred_at).toISOString() : now.toISOString(),
+        occurredAt: r.occurred_at
+          ? new Date(r.occurred_at).toISOString()
+          : now.toISOString(),
         eventKind: String(r.event_kind),
         personNodeId: r.person_node_id || null,
         counterpartDisplayName: null,
@@ -514,102 +578,370 @@ export class ConnectAppService implements OnModuleInit {
     };
   }
 
-
   // ==========================================
   // 1. Identity & Profiles - Delegated to ConnectIdentityService
   // ==========================================
-  getMyProfile(userId: string) { return this.identityService.getMyProfile(userId); }
-  updateMyProfile(userId: string, data: any) { return this.identityService.updateMyProfile(userId, data); }
-  getMyIdentity(userId: string) { return this.identityService.getMyIdentity(userId); }
-  upsertMyIdentity(userId: string, input: any) { return this.identityService.upsertMyIdentity(userId, input); }
-  updateMyVisibility(userId: string, updates: any[]) { return this.identityService.updateMyVisibility(userId, updates); }
-  getOrCreateMyShareLink(userId: string) { return this.identityService.getOrCreateMyShareLink(userId); }
-  rotateMyShareLink(userId: string) { return this.identityService.rotateMyShareLink(userId); }
-  getPublicIdentityByToken(token: string) { return this.identityService.getPublicIdentityByToken(token); }
-  getMyShowcase(userId: string) { return this.identityService.getMyShowcase(userId); }
-  addShowcaseItem(userId: string, item: any) { return this.identityService.addShowcaseItem(userId, item); }
-  deleteShowcaseItem(userId: string, itemId: string) { return this.identityService.deleteShowcaseItem(userId, itemId); }
+  getMyProfile(userId: string) {
+    return this.identityService.getMyProfile(userId);
+  }
+  updateMyProfile(userId: string, data: any) {
+    return this.identityService.updateMyProfile(userId, data);
+  }
+  getMyIdentity(userId: string) {
+    return this.identityService.getMyIdentity(userId);
+  }
+  upsertMyIdentity(userId: string, input: any) {
+    return this.identityService.upsertMyIdentity(userId, input);
+  }
+  updateMyVisibility(userId: string, updates: any[]) {
+    return this.identityService.updateMyVisibility(userId, updates);
+  }
+  getOrCreateMyShareLink(userId: string) {
+    return this.identityService.getOrCreateMyShareLink(userId);
+  }
+  rotateMyShareLink(userId: string) {
+    return this.identityService.rotateMyShareLink(userId);
+  }
+  getPublicIdentityByToken(token: string) {
+    return this.identityService.getPublicIdentityByToken(token);
+  }
+  getMyShowcase(userId: string) {
+    return this.identityService.getMyShowcase(userId);
+  }
+  addShowcaseItem(userId: string, item: any) {
+    return this.identityService.addShowcaseItem(userId, item);
+  }
+  deleteShowcaseItem(userId: string, itemId: string) {
+    return this.identityService.deleteShowcaseItem(userId, itemId);
+  }
 
   // ==========================================
   // 2. Communities & Memberships - Delegated to ConnectCommunityService
   // ==========================================
-  getMyCommunities(userId: string) { return this.communityService.getMyCommunities(userId); }
-  checkCommunityMembership(userId: string, communityId: string) { return this.communityService.checkCommunityMembership(userId, communityId); }
-  getCommunityDetail(userId: string, communityId: string) { return this.communityService.getCommunityDetail(userId, communityId); }
-  listCommunityMembers(userId: string, communityId: string, searchQuery?: string, offset?: number, roleFilter?: string) { return this.communityService.listCommunityMembers(userId, communityId, searchQuery, offset, roleFilter); }
-  getCommunityMemberProfile(userId: string, communityId: string, memberRef: string) { return this.communityService.getCommunityMemberProfile(userId, communityId, memberRef); }
-  connectCommunityMember(userId: string, communityId: string, memberRef: string) { return this.communityService.connectCommunityMember(userId, communityId, memberRef); }
-  updateCommunityMemberRole(userId: string, communityId: string, memberRef: string, role: string) { return this.communityService.updateCommunityMemberRole(userId, communityId, memberRef, role); }
-  listCommunityNews(userId: string, communityId: string, offset: number) { return this.communityService.listCommunityNews(userId, communityId, offset); }
-  getCommunityNewsDetail(userId: string, communityId: string, newsRef: string) { return this.communityService.getCommunityNewsDetail(userId, communityId, newsRef); }
-  listJoinableCommunities(userId: string) { return this.communityService.listJoinableCommunities(userId); }
-  requestCommunityJoin(userId: string, input: any) { return this.communityService.requestCommunityJoin(userId, input); }
-  cancelCommunityJoin(userId: string, input: any) { return this.communityService.cancelCommunityJoin(userId, input); }
-  createCommunity(userId: string, input: any) { return this.communityService.createCommunity(userId, input); }
-  listCommunityJoinHistory(userId: string) { return this.communityService.listCommunityJoinHistory(userId); }
-  syncCommunityJoinDecisions(userId: string) { return this.communityService.syncCommunityJoinDecisions(userId); }
-  listCommunityJoinAdminRequests(userId: string) { return this.communityService.listCommunityJoinAdminRequests(userId); }
-  listCommunityInvites(userId: string, communityId: string) { return this.communityService.listCommunityInvites(userId, communityId); }
-  createCommunityInvite(userId: string, input: any) { return this.communityService.createCommunityInvite(userId, input); }
-  listCommunityInviteTemplates(userId: string, communityId: string) { return this.communityService.listCommunityInviteTemplates(userId, communityId); }
-  saveCommunityInviteTemplate(userId: string, input: any) { return this.communityService.saveCommunityInviteTemplate(userId, input); }
-  resetCommunityInviteTemplate(userId: string, input: any) { return this.communityService.resetCommunityInviteTemplate(userId, input); }
-  cancelCommunityInvite(userId: string, inviteRef: string) { return this.communityService.cancelCommunityInvite(userId, inviteRef); }
-  resendCommunityInvite(userId: string, inviteRef: string, locale?: string) { return this.communityService.resendCommunityInvite(userId, inviteRef, locale); }
-  getCommunityInviteByToken(userId: string, token: string) { return this.communityService.getCommunityInviteByToken(userId, token); }
-  acceptCommunityInvite(userId: string, token: string, email: string) { return this.communityService.acceptCommunityInvite(userId, token, email); }
-  updateAcceptedInviteRole(userId: string, inviteRef: string, role: string) { return this.communityService.updateAcceptedInviteRole(userId, inviteRef, role); }
-  listInviteRoleHistory(userId: string, inviteRef: string) { return this.communityService.listInviteRoleHistory(userId, inviteRef); }
-  listCommunityEvents(userId: string, communityId: string, tab: string, offset: number) { return this.communityService.listCommunityEvents(userId, communityId, tab, offset); }
-  getCommunityEventDetail(userId: string, communityId: string, eventRef: string) { return this.communityService.getCommunityEventDetail(userId, communityId, eventRef); }
-  registerCommunityEvent(userId: string, communityId: string, eventRef: string) { return this.communityService.registerCommunityEvent(userId, communityId, eventRef); }
-  cancelCommunityEventRegistration(userId: string, communityId: string, eventRef: string) { return this.communityService.cancelCommunityEventRegistration(userId, communityId, eventRef); }
+  getMyCommunities(userId: string) {
+    return this.communityService.getMyCommunities(userId);
+  }
+  checkCommunityMembership(userId: string, communityId: string) {
+    return this.communityService.checkCommunityMembership(userId, communityId);
+  }
+  getCommunityDetail(userId: string, communityId: string) {
+    return this.communityService.getCommunityDetail(userId, communityId);
+  }
+  listCommunityMembers(
+    userId: string,
+    communityId: string,
+    searchQuery?: string,
+    offset?: number,
+    roleFilter?: string,
+  ) {
+    return this.communityService.listCommunityMembers(
+      userId,
+      communityId,
+      searchQuery,
+      offset,
+      roleFilter,
+    );
+  }
+  getCommunityMemberProfile(
+    userId: string,
+    communityId: string,
+    memberRef: string,
+  ) {
+    return this.communityService.getCommunityMemberProfile(
+      userId,
+      communityId,
+      memberRef,
+    );
+  }
+  connectCommunityMember(
+    userId: string,
+    communityId: string,
+    memberRef: string,
+  ) {
+    return this.communityService.connectCommunityMember(
+      userId,
+      communityId,
+      memberRef,
+    );
+  }
+  updateCommunityMemberRole(
+    userId: string,
+    communityId: string,
+    memberRef: string,
+    role: string,
+  ) {
+    return this.communityService.updateCommunityMemberRole(
+      userId,
+      communityId,
+      memberRef,
+      role,
+    );
+  }
+  listCommunityNews(userId: string, communityId: string, offset: number) {
+    return this.communityService.listCommunityNews(userId, communityId, offset);
+  }
+  getCommunityNewsDetail(userId: string, communityId: string, newsRef: string) {
+    return this.communityService.getCommunityNewsDetail(
+      userId,
+      communityId,
+      newsRef,
+    );
+  }
+  listJoinableCommunities(userId: string) {
+    return this.communityService.listJoinableCommunities(userId);
+  }
+  requestCommunityJoin(userId: string, input: any) {
+    return this.communityService.requestCommunityJoin(userId, input);
+  }
+  cancelCommunityJoin(userId: string, input: any) {
+    return this.communityService.cancelCommunityJoin(userId, input);
+  }
+  createCommunity(userId: string, input: any) {
+    return this.communityService.createCommunity(userId, input);
+  }
+  listCommunityJoinHistory(userId: string) {
+    return this.communityService.listCommunityJoinHistory(userId);
+  }
+  syncCommunityJoinDecisions(userId: string) {
+    return this.communityService.syncCommunityJoinDecisions(userId);
+  }
+  listCommunityJoinAdminRequests(userId: string) {
+    return this.communityService.listCommunityJoinAdminRequests(userId);
+  }
+  listCommunityInvites(userId: string, communityId: string) {
+    return this.communityService.listCommunityInvites(userId, communityId);
+  }
+  createCommunityInvite(userId: string, input: any) {
+    return this.communityService.createCommunityInvite(userId, input);
+  }
+  listCommunityInviteTemplates(userId: string, communityId: string) {
+    return this.communityService.listCommunityInviteTemplates(
+      userId,
+      communityId,
+    );
+  }
+  saveCommunityInviteTemplate(userId: string, input: any) {
+    return this.communityService.saveCommunityInviteTemplate(userId, input);
+  }
+  resetCommunityInviteTemplate(userId: string, input: any) {
+    return this.communityService.resetCommunityInviteTemplate(userId, input);
+  }
+  cancelCommunityInvite(userId: string, inviteRef: string) {
+    return this.communityService.cancelCommunityInvite(userId, inviteRef);
+  }
+  resendCommunityInvite(userId: string, inviteRef: string, locale?: string) {
+    return this.communityService.resendCommunityInvite(
+      userId,
+      inviteRef,
+      locale,
+    );
+  }
+  getCommunityInviteByToken(userId: string, token: string) {
+    return this.communityService.getCommunityInviteByToken(userId, token);
+  }
+  acceptCommunityInvite(userId: string, token: string, email: string) {
+    return this.communityService.acceptCommunityInvite(userId, token, email);
+  }
+  updateAcceptedInviteRole(userId: string, inviteRef: string, role: string) {
+    return this.communityService.updateAcceptedInviteRole(
+      userId,
+      inviteRef,
+      role,
+    );
+  }
+  listInviteRoleHistory(userId: string, inviteRef: string) {
+    return this.communityService.listInviteRoleHistory(userId, inviteRef);
+  }
+  listCommunityEvents(
+    userId: string,
+    communityId: string,
+    tab: string,
+    offset: number,
+  ) {
+    return this.communityService.listCommunityEvents(
+      userId,
+      communityId,
+      tab,
+      offset,
+    );
+  }
+  getCommunityEventDetail(
+    userId: string,
+    communityId: string,
+    eventRef: string,
+  ) {
+    return this.communityService.getCommunityEventDetail(
+      userId,
+      communityId,
+      eventRef,
+    );
+  }
+  registerCommunityEvent(
+    userId: string,
+    communityId: string,
+    eventRef: string,
+  ) {
+    return this.communityService.registerCommunityEvent(
+      userId,
+      communityId,
+      eventRef,
+    );
+  }
+  cancelCommunityEventRegistration(
+    userId: string,
+    communityId: string,
+    eventRef: string,
+  ) {
+    return this.communityService.cancelCommunityEventRegistration(
+      userId,
+      communityId,
+      eventRef,
+    );
+  }
 
   // ==========================================
   // 3. Network, Connections & Recommendations - Delegated to ConnectNetworkService
   // ==========================================
-  resolvePublicCounterparts(userIds: string[]) { return this.networkService.resolvePublicCounterparts(userIds); }
-  listConnections(userId: string) { return this.networkService.listConnections(userId); }
-  searchSavedCards(userId: string, query?: string) { return this.networkService.searchSavedCards(userId, query); }
-  listGuestContacts(userId: string) { return this.networkService.listGuestContacts(userId); }
-  getTodayRecommendations(userId: string) { return this.networkService.getTodayRecommendations(userId); }
-  getPersonRecommendation(userId: string, personId: string) { return this.networkService.getPersonRecommendation(userId, personId); }
-  dismissRecommendation(userId: string, recId: string) { return this.networkService.dismissRecommendation(userId, recId); }
-  getNetworkFeed(userId: string, query?: any) { return this.networkService.getNetworkFeed(userId, query); }
-  getCommunityActivityPreview(userId: string, communityId: string) { return this.networkService.getCommunityActivityPreview(userId, communityId); }
-  getUnreadNotificationCount(userId: string) { return this.networkService.getUnreadNotificationCount(userId); }
-  sendConnectionRequest(userId: string, input: any) { return this.networkService.sendConnectionRequest(userId, input); }
-  acceptConnection(userId: string, body: any) { return this.networkService.acceptConnection(userId, body); }
-  declineConnection(userId: string, body: any) { return this.networkService.declineConnection(userId, body); }
-  cancelConnection(userId: string, connectionIdOrBody: any) { const body = typeof connectionIdOrBody === 'string' ? { connectionId: connectionIdOrBody } : connectionIdOrBody; return this.networkService.cancelConnection(userId, body); }
-  disconnectConnection(userId: string, body: any) { return this.networkService.disconnectConnection(userId, body); }
-  blockUser(userId: string, targetUserId: string) { return this.networkService.blockUser(userId, targetUserId); }
-  getConnectionState(userId: string, targetUserId: string) { return this.networkService.getConnectionState(userId, targetUserId); }
-  getConnectionStateByToken(userId: string, token: string) { return this.networkService.getConnectionStateByToken(userId, token); }
-  sendConnectionRequestByToken(userId: string, token: string, mutationKey?: string) { return this.networkService.sendConnectionRequestByToken(userId, token, mutationKey); }
-  nfcTap(userId: string, input: any) { return this.networkService.nfcTap(userId, input); }
-  getConnectionById(userId: string, connectionId: string) { return this.networkService.getConnectionById(userId, connectionId); }
-  listIncomingRequests(userId: string) { return this.networkService.listIncomingRequests(userId); }
-  listOutgoingRequests(userId: string) { return this.networkService.listOutgoingRequests(userId); }
-  countConnectionsByStatus(userId: string) { return this.networkService.countConnectionsByStatus(userId); }
-  getGuestContact(userId: string, contactId: string) { return this.networkService.getGuestContact(userId, contactId); }
-  updateGuestContactOwnerFields(userId: string, contactId: string, fields: any) { return this.networkService.updateGuestContactOwnerFields(userId, contactId, fields); }
-  deleteGuestContact(userId: string, contactId: string) { return this.networkService.deleteGuestContact(userId, contactId); }
-  reportUser(userId: string, data: any) { return this.networkService.reportUser(userId, data); }
-  getPersonalization(userId: string) { return this.networkService.getPersonalization(userId); }
-  updatePersonalizationPreferences(userId: string, input: any) { return this.networkService.updatePersonalizationPreferences(userId, input); }
-  recordPersonalizationInteraction(userId: string, input: any) { return this.networkService.recordPersonalizationInteraction(userId, input); }
-  resetPersonalization(userId: string) { return this.networkService.resetPersonalization(userId); }
-  createPersonPlan(userId: string, input: any) { return this.networkService.createPersonPlan(userId, input); }
-  listPersonPlans(userId: string, input?: any) { return this.networkService.listPersonPlans(userId, input); }
-  setPersonPlanStatus(userId: string, input: any) { return this.networkService.setPersonPlanStatus(userId, input); }
-  getPersonJourney(userId: string, input: any) { return this.networkService.getPersonJourney(userId, input); }
-  shareGuestContact(userId: string, input: any) { return this.networkService.shareGuestContact(userId, input); }
+  resolvePublicCounterparts(userIds: string[]) {
+    return this.networkService.resolvePublicCounterparts(userIds);
+  }
+  listConnections(userId: string) {
+    return this.networkService.listConnections(userId);
+  }
+  searchSavedCards(userId: string, query?: string) {
+    return this.networkService.searchSavedCards(userId, query);
+  }
+  listGuestContacts(userId: string) {
+    return this.networkService.listGuestContacts(userId);
+  }
+  getTodayRecommendations(userId: string) {
+    return this.networkService.getTodayRecommendations(userId);
+  }
+  getPersonRecommendation(userId: string, personId: string) {
+    return this.networkService.getPersonRecommendation(userId, personId);
+  }
+  dismissRecommendation(userId: string, recId: string) {
+    return this.networkService.dismissRecommendation(userId, recId);
+  }
+  getNetworkFeed(userId: string, query?: any) {
+    return this.networkService.getNetworkFeed(userId, query);
+  }
+  getCommunityActivityPreview(userId: string, communityId: string) {
+    return this.networkService.getCommunityActivityPreview(userId, communityId);
+  }
+  getUnreadNotificationCount(userId: string) {
+    return this.networkService.getUnreadNotificationCount(userId);
+  }
+  sendConnectionRequest(userId: string, input: any) {
+    return this.networkService.sendConnectionRequest(userId, input);
+  }
+  acceptConnection(userId: string, body: any) {
+    return this.networkService.acceptConnection(userId, body);
+  }
+  declineConnection(userId: string, body: any) {
+    return this.networkService.declineConnection(userId, body);
+  }
+  cancelConnection(userId: string, connectionIdOrBody: any) {
+    const body =
+      typeof connectionIdOrBody === 'string'
+        ? { connectionId: connectionIdOrBody }
+        : connectionIdOrBody;
+    return this.networkService.cancelConnection(userId, body);
+  }
+  disconnectConnection(userId: string, body: any) {
+    return this.networkService.disconnectConnection(userId, body);
+  }
+  blockUser(userId: string, targetUserId: string) {
+    return this.networkService.blockUser(userId, targetUserId);
+  }
+  getConnectionState(userId: string, targetUserId: string) {
+    return this.networkService.getConnectionState(userId, targetUserId);
+  }
+  getConnectionStateByToken(userId: string, token: string) {
+    return this.networkService.getConnectionStateByToken(userId, token);
+  }
+  sendConnectionRequestByToken(
+    userId: string,
+    token: string,
+    mutationKey?: string,
+  ) {
+    return this.networkService.sendConnectionRequestByToken(
+      userId,
+      token,
+      mutationKey,
+    );
+  }
+  nfcTap(userId: string, input: any) {
+    return this.networkService.nfcTap(userId, input);
+  }
+  getConnectionById(userId: string, connectionId: string) {
+    return this.networkService.getConnectionById(userId, connectionId);
+  }
+  listIncomingRequests(userId: string) {
+    return this.networkService.listIncomingRequests(userId);
+  }
+  listOutgoingRequests(userId: string) {
+    return this.networkService.listOutgoingRequests(userId);
+  }
+  countConnectionsByStatus(userId: string) {
+    return this.networkService.countConnectionsByStatus(userId);
+  }
+  getGuestContact(userId: string, contactId: string) {
+    return this.networkService.getGuestContact(userId, contactId);
+  }
+  updateGuestContactOwnerFields(
+    userId: string,
+    contactId: string,
+    fields: any,
+  ) {
+    return this.networkService.updateGuestContactOwnerFields(
+      userId,
+      contactId,
+      fields,
+    );
+  }
+  deleteGuestContact(userId: string, contactId: string) {
+    return this.networkService.deleteGuestContact(userId, contactId);
+  }
+  reportUser(userId: string, data: any) {
+    return this.networkService.reportUser(userId, data);
+  }
+  getPersonalization(userId: string) {
+    return this.networkService.getPersonalization(userId);
+  }
+  updatePersonalizationPreferences(userId: string, input: any) {
+    return this.networkService.updatePersonalizationPreferences(userId, input);
+  }
+  recordPersonalizationInteraction(userId: string, input: any) {
+    return this.networkService.recordPersonalizationInteraction(userId, input);
+  }
+  resetPersonalization(userId: string) {
+    return this.networkService.resetPersonalization(userId);
+  }
+  createPersonPlan(userId: string, input: any) {
+    return this.networkService.createPersonPlan(userId, input);
+  }
+  listPersonPlans(userId: string, input?: any) {
+    return this.networkService.listPersonPlans(userId, input);
+  }
+  setPersonPlanStatus(userId: string, input: any) {
+    return this.networkService.setPersonPlanStatus(userId, input);
+  }
+  getPersonJourney(userId: string, input: any) {
+    return this.networkService.getPersonJourney(userId, input);
+  }
+  shareGuestContact(userId: string, input: any) {
+    return this.networkService.shareGuestContact(userId, input);
+  }
 
   // ==========================================
   // 4. Notifications & Push Messages (Core Service)
   // ==========================================
-  async listNotifications(userId: string, limit: number = 30, unreadOnly: boolean = false) {
+  async listNotifications(
+    userId: string,
+    limit: number = 30,
+    unreadOnly: boolean = false,
+  ) {
     const [rows, pendingConnections]: [any[], any[]] = await Promise.all([
       this.prisma.$queryRaw<any[]>`
         SELECT id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
@@ -637,10 +969,10 @@ export class ConnectAppService implements OnModuleInit {
 
     // Tra cứu trạng thái thực tế mới nhất của các connection trong user_connections
     const allConnIds = rows
-      .map(r => r.source_record_id || r.safe_display_data?.connectionId)
+      .map((r) => r.source_record_id || r.safe_display_data?.connectionId)
       .filter(Boolean);
 
-    let connStatusMap = new Map<string, string>();
+    const connStatusMap = new Map<string, string>();
     if (allConnIds.length > 0) {
       try {
         const connRows = await this.prisma.$queryRaw<any[]>`
@@ -656,11 +988,16 @@ export class ConnectAppService implements OnModuleInit {
       }
     }
 
-    const mapped: any[] = rows.map(r => {
+    const mapped: any[] = rows.map((r) => {
       const connId = r.source_record_id || r.safe_display_data?.connectionId;
-      const connStatus = (connId ? connStatusMap.get(connId) : null) ||
+      const connStatus =
+        (connId ? connStatusMap.get(connId) : null) ||
         r.safe_display_data?.connectionStatus ||
-        (r.notification_kind === 'connection_request_accepted' ? 'accepted' : r.notification_kind === 'connection_request_declined' ? 'declined' : 'pending');
+        (r.notification_kind === 'connection_request_accepted'
+          ? 'accepted'
+          : r.notification_kind === 'connection_request_declined'
+            ? 'declined'
+            : 'pending');
 
       return {
         id: r.id,
@@ -681,9 +1018,13 @@ export class ConnectAppService implements OnModuleInit {
         action: {
           kind: r.action_kind || 'open_route',
           labelKey: r.action_label_key || 'bc.notif.action.view',
-          targetRoute: r.action_target?.route || (r.source_domain === 'connection' ? '/connect-app/network' : null),
+          targetRoute:
+            r.action_target?.route ||
+            (r.source_domain === 'connection' ? '/connect-app/network' : null),
           targetParams: r.action_target?.params || null,
-          targetSearch: r.action_target?.search || (r.source_domain === 'connection' ? { tab: 'requests' } : null),
+          targetSearch:
+            r.action_target?.search ||
+            (r.source_domain === 'connection' ? { tab: 'requests' } : null),
           requiresConfirmation: false,
           canonicalCapability: null,
         },
@@ -740,32 +1081,47 @@ export class ConnectAppService implements OnModuleInit {
           priority: 'normal',
           status: 'delivered',
           scheduledFor: null,
-          deliveredAt: br.sent_at ? new Date(br.sent_at).toISOString() : new Date(br.created_at).toISOString(),
+          deliveredAt: br.sent_at
+            ? new Date(br.sent_at).toISOString()
+            : new Date(br.created_at).toISOString(),
           readAt: null,
           archivedAt: null,
           expiredAt: null,
           dedupeKey: br.id,
           schemaVersion: 1,
-          createdAt: br.sent_at ? new Date(br.sent_at).toISOString() : new Date(br.created_at).toISOString(),
-          updatedAt: br.sent_at ? new Date(br.sent_at).toISOString() : new Date(br.created_at).toISOString(),
+          createdAt: br.sent_at
+            ? new Date(br.sent_at).toISOString()
+            : new Date(br.created_at).toISOString(),
+          updatedAt: br.sent_at
+            ? new Date(br.sent_at).toISOString()
+            : new Date(br.created_at).toISOString(),
         });
       }
     } catch (e) {
-      console.warn('Error fetching broadcast notifications for connect-app:', e);
+      console.warn(
+        'Error fetching broadcast notifications for connect-app:',
+        e,
+      );
     }
 
     // Đảm bảo mọi pending connection request đều có mặt trong danh sách thông báo
     const existingConnIds = new Set(
       mapped
-        .filter(m => m.notificationKind === 'connection_request_received' || m.sourceDomain === 'connection')
-        .map(m => m.sourceRecordId)
+        .filter(
+          (m) =>
+            m.notificationKind === 'connection_request_received' ||
+            m.sourceDomain === 'connection',
+        )
+        .map((m) => m.sourceRecordId),
     );
 
-    const missingConns = pendingConnections.filter(c => !existingConnIds.has(c.id));
+    const missingConns = pendingConnections.filter(
+      (c) => !existingConnIds.has(c.id),
+    );
     if (missingConns.length > 0) {
-      const requesterIds = missingConns.map(c => c.requester_user_id);
+      const requesterIds = missingConns.map((c) => c.requester_user_id);
       const counterparts = await this.resolvePublicCounterparts(requesterIds);
-      const cpMap = new Map(counterparts.map(cp => [cp.userId, cp]));
+      const cpMap = new Map(counterparts.map((cp) => [cp.userId, cp]));
 
       for (const conn of missingConns) {
         const cp = cpMap.get(conn.requester_user_id) || {
@@ -828,11 +1184,18 @@ export class ConnectAppService implements OnModuleInit {
            OR LOWER(email) IN (SELECT LOWER(email) FROM public.vione_users WHERE id = ${userId}::uuid)
       `.catch(() => []);
 
-      const memberCodes: string[] = members.map(m => String(m.code)).filter(Boolean);
+      const memberCodes: string[] = members
+        .map((m) => String(m.code))
+        .filter(Boolean);
       const memberKeys: string[] = [userId, userId.toLowerCase()];
       for (const m of members) {
         if (m.id) memberKeys.push(String(m.id), String(m.id).toLowerCase());
-        if (m.code) memberKeys.push(String(m.code), String(m.code).toLowerCase(), String(m.code).toUpperCase());
+        if (m.code)
+          memberKeys.push(
+            String(m.code),
+            String(m.code).toLowerCase(),
+            String(m.code).toUpperCase(),
+          );
         if (m.email) memberKeys.push(String(m.email).toLowerCase());
       }
 
@@ -847,20 +1210,24 @@ export class ConnectAppService implements OnModuleInit {
 
       for (const mn of memNotifs) {
         if (mn.dismissed) continue;
-        const isInvoice = mn.ref_type === 'invoice' || (mn.title && mn.title.toLowerCase().includes('phí'));
+        const isInvoice =
+          mn.ref_type === 'invoice' ||
+          (mn.title && mn.title.toLowerCase().includes('phí'));
         mapped.push({
           id: `mem-notif-${mn.id}`,
           recipientUserId: userId,
           sourceDomain: isInvoice ? 'finance' : 'association',
           sourceRecordId: mn.ref_id || mn.id,
           eventKind: isInvoice ? 'invoice_reminder' : 'system_broadcast',
-          notificationKind: isInvoice ? 'overdue_payment_reminder' : 'system_broadcast',
+          notificationKind: isInvoice
+            ? 'overdue_payment_reminder'
+            : 'system_broadcast',
           titleKey: mn.title,
           bodyKey: mn.body || '',
           appScope: 'all',
           targetApp: 'all',
           safeDisplayData: {
-            invoiceId: isInvoice ? (mn.ref_id || mn.id) : undefined,
+            invoiceId: isInvoice ? mn.ref_id || mn.id : undefined,
             title: mn.title,
             message: mn.body || '',
             body: mn.body || '',
@@ -869,7 +1236,9 @@ export class ConnectAppService implements OnModuleInit {
           action: {
             kind: 'open_route',
             labelKey: isInvoice ? 'Thanh toán phí' : 'bc.notif.action.view',
-            targetRoute: isInvoice ? '/association/renew/pay' : '/connect-app/notifications',
+            targetRoute: isInvoice
+              ? '/association/renew/pay'
+              : '/connect-app/notifications',
             targetParams: null,
             targetSearch: null,
             requiresConfirmation: false,
@@ -878,19 +1247,30 @@ export class ConnectAppService implements OnModuleInit {
           priority: isInvoice ? 'critical' : 'normal',
           status: mn.read ? 'read' : 'delivered',
           scheduledFor: null,
-          deliveredAt: mn.created_at ? new Date(mn.created_at).toISOString() : new Date().toISOString(),
-          readAt: mn.read && mn.created_at ? new Date(mn.created_at).toISOString() : null,
+          deliveredAt: mn.created_at
+            ? new Date(mn.created_at).toISOString()
+            : new Date().toISOString(),
+          readAt:
+            mn.read && mn.created_at
+              ? new Date(mn.created_at).toISOString()
+              : null,
           archivedAt: null,
           expiredAt: null,
           dedupeKey: `mem-notif-${mn.id}`,
           schemaVersion: 1,
-          createdAt: mn.created_at ? new Date(mn.created_at).toISOString() : new Date().toISOString(),
-          updatedAt: mn.created_at ? new Date(mn.created_at).toISOString() : new Date().toISOString(),
+          createdAt: mn.created_at
+            ? new Date(mn.created_at).toISOString()
+            : new Date().toISOString(),
+          updatedAt: mn.created_at
+            ? new Date(mn.created_at).toISOString()
+            : new Date().toISOString(),
         });
       }
 
       // 2. Kiểm tra trạng thái hội phí quá hạn chưa thanh toán (tài khoản Lê Hoàng Long hoặc hội viên khác)
-      const overdueMember = (members as any[]).find((m: any) => m.dues_status === 'overdue');
+      const overdueMember = (members as any[]).find(
+        (m: any) => m.dues_status === 'overdue',
+      );
       if (overdueMember) {
         const invRows = await this.prisma.$queryRaw<any[]>`
           SELECT id, invoice_no, title, amount, due_date, status
@@ -902,12 +1282,18 @@ export class ConnectAppService implements OnModuleInit {
         `.catch(() => []);
 
         const inv = invRows[0];
-        const invAmount = inv?.amount ? Number(inv.amount).toLocaleString('vi-VN') + ' đ' : 'Cần thanh toán';
+        const invAmount = inv?.amount
+          ? Number(inv.amount).toLocaleString('vi-VN') + ' đ'
+          : 'Cần thanh toán';
         const invTitle = 'Thông báo: Hội phí hội viên quá hạn chưa thanh toán';
         const invBody = `Hội phí của hội viên ${overdueMember.full_name || 'CEO 1983'} (${invAmount}) đã quá hạn thanh toán. Vui lòng hoàn tất đóng phí để tiếp tục duy trì quyền lợi và kết nối B2B trên hệ thống.`;
 
         // Chỉ thêm nếu chưa có thông báo tương đương
-        const alreadyHasOverdue = mapped.some(m => m.notificationKind === 'overdue_payment_reminder' || (m.titleKey && m.titleKey.includes('quá hạn')));
+        const alreadyHasOverdue = mapped.some(
+          (m) =>
+            m.notificationKind === 'overdue_payment_reminder' ||
+            (m.titleKey && m.titleKey.includes('quá hạn')),
+        );
         if (!alreadyHasOverdue) {
           mapped.unshift({
             id: `dues-overdue-${overdueMember.id}`,
@@ -963,7 +1349,9 @@ export class ConnectAppService implements OnModuleInit {
 
       for (const opp of oppRows) {
         const oppTitle = `[Cơ hội B2B] ${opp.title}`;
-        const oppBody = opp.description || `Cơ hội kinh doanh mới ngành ${opp.industry || 'B2B'} với ngân sách ${opp.budget_min ? Number(opp.budget_min).toLocaleString('vi-VN') + ' đ' : 'Thỏa thuận'}. Bấm để xem chi tiết và tiếp nhận!`;
+        const oppBody =
+          opp.description ||
+          `Cơ hội kinh doanh mới ngành ${opp.industry || 'B2B'} với ngân sách ${opp.budget_min ? Number(opp.budget_min).toLocaleString('vi-VN') + ' đ' : 'Thỏa thuận'}. Bấm để xem chi tiết và tiếp nhận!`;
         mapped.push({
           id: `opp-notif-${opp.id}`,
           recipientUserId: userId,
@@ -994,14 +1382,20 @@ export class ConnectAppService implements OnModuleInit {
           priority: 'high',
           status: 'delivered',
           scheduledFor: null,
-          deliveredAt: opp.created_at ? new Date(opp.created_at).toISOString() : new Date().toISOString(),
+          deliveredAt: opp.created_at
+            ? new Date(opp.created_at).toISOString()
+            : new Date().toISOString(),
           readAt: null,
           archivedAt: null,
           expiredAt: null,
           dedupeKey: `opp-notif-${opp.id}`,
           schemaVersion: 1,
-          createdAt: opp.created_at ? new Date(opp.created_at).toISOString() : new Date().toISOString(),
-          updatedAt: opp.created_at ? new Date(opp.created_at).toISOString() : new Date().toISOString(),
+          createdAt: opp.created_at
+            ? new Date(opp.created_at).toISOString()
+            : new Date().toISOString(),
+          updatedAt: opp.created_at
+            ? new Date(opp.created_at).toISOString()
+            : new Date().toISOString(),
         });
       }
 
@@ -1010,14 +1404,16 @@ export class ConnectAppService implements OnModuleInit {
         const adminMessages = await this.prisma.$queryRaw<any[]>`
           SELECT id, from_id, to_id, text, created_at
           FROM public.messages
-          WHERE from_id = 'ADMIN' AND LOWER(to_id) = ANY(${memberCodes.map(c => c.toLowerCase())}::text[])
+          WHERE from_id = 'ADMIN' AND LOWER(to_id) = ANY(${memberCodes.map((c) => c.toLowerCase())}::text[])
           ORDER BY created_at DESC
           LIMIT 5
         `.catch(() => []);
 
         for (const msg of adminMessages) {
           const rawText = msg.text || '';
-          const cleanText = rawText.replace(/\[action:[^\]]+\]/g, '').trim() || 'Bạn có thông báo mới từ Ban Quản trị CLB CEO 1983.';
+          const cleanText =
+            rawText.replace(/\[action:[^\]]+\]/g, '').trim() ||
+            'Bạn có thông báo mới từ Ban Quản trị CLB CEO 1983.';
           mapped.push({
             id: `msg-admin-${msg.id}`,
             recipientUserId: userId,
@@ -1047,19 +1443,28 @@ export class ConnectAppService implements OnModuleInit {
             priority: 'high',
             status: 'delivered',
             scheduledFor: null,
-            deliveredAt: msg.created_at ? new Date(msg.created_at).toISOString() : new Date().toISOString(),
+            deliveredAt: msg.created_at
+              ? new Date(msg.created_at).toISOString()
+              : new Date().toISOString(),
             readAt: null,
             archivedAt: null,
             expiredAt: null,
             dedupeKey: `msg-admin-${msg.id}`,
             schemaVersion: 1,
-            createdAt: msg.created_at ? new Date(msg.created_at).toISOString() : new Date().toISOString(),
-            updatedAt: msg.created_at ? new Date(msg.created_at).toISOString() : new Date().toISOString(),
+            createdAt: msg.created_at
+              ? new Date(msg.created_at).toISOString()
+              : new Date().toISOString(),
+            updatedAt: msg.created_at
+              ? new Date(msg.created_at).toISOString()
+              : new Date().toISOString(),
           });
         }
       }
     } catch (err) {
-      console.warn('Error fetching association member notifications & opportunities:', err);
+      console.warn(
+        'Error fetching association member notifications & opportunities:',
+        err,
+      );
     }
 
     // Sắp xếp thống nhất theo thời gian tạo mới nhất
@@ -1070,17 +1475,19 @@ export class ConnectAppService implements OnModuleInit {
     });
 
     if (unreadOnly) {
-      return mapped.filter(n => n.readAt === null && n.status !== 'read').slice(0, limit);
+      return mapped
+        .filter((n) => n.readAt === null && n.status !== 'read')
+        .slice(0, limit);
     }
 
     return mapped.slice(0, limit);
   }
 
-
   async markNotificationsRead(userId: string, ids?: string[]) {
     if (ids && ids.length > 0) {
-      const validUuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-      const uuidIds = ids.filter(id => validUuidRegex.test(id));
+      const validUuidRegex =
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      const uuidIds = ids.filter((id) => validUuidRegex.test(id));
       if (uuidIds.length > 0) {
         await this.prisma.$executeRaw`
           UPDATE public.business_notifications
@@ -1162,7 +1569,9 @@ export class ConnectAppService implements OnModuleInit {
   async deleteNotifications(userId: string, ids: string[]) {
     if (!ids || ids.length === 0) return { ok: true, deleted: 0 };
 
-    const connIds = ids.filter((id) => id.startsWith('conn-req-')).map((id) => id.replace('conn-req-', ''));
+    const connIds = ids
+      .filter((id) => id.startsWith('conn-req-'))
+      .map((id) => id.replace('conn-req-', ''));
     const notifIds = ids.filter((id) => !id.startsWith('conn-req-'));
 
     if (connIds.length > 0) {
@@ -1197,7 +1606,9 @@ export class ConnectAppService implements OnModuleInit {
       SELECT id, email, created_at FROM public.vione_users WHERE id = ${userId}::uuid LIMIT 1
     `.catch(() => []);
     const userEmail = users[0]?.email || '';
-    const userCreatedAt = users[0]?.created_at ? new Date(users[0].created_at).getTime() : Date.now();
+    const userCreatedAt = users[0]?.created_at
+      ? new Date(users[0].created_at).getTime()
+      : Date.now();
 
     const members = await this.prisma.$queryRaw<any[]>`
       SELECT id, code, email, phone FROM public.members
@@ -1214,7 +1625,11 @@ export class ConnectAppService implements OnModuleInit {
         recipientKeys.push(String(m.id), String(m.id).toLowerCase());
       }
       if (m.code) {
-        recipientKeys.push(String(m.code), String(m.code).toLowerCase(), String(m.code).toUpperCase());
+        recipientKeys.push(
+          String(m.code),
+          String(m.code).toLowerCase(),
+          String(m.code).toUpperCase(),
+        );
       }
       if (m.email) {
         recipientKeys.push(String(m.email).toLowerCase());
@@ -1233,9 +1648,10 @@ export class ConnectAppService implements OnModuleInit {
         LIMIT 30
       `.catch(() => []);
 
-    const [broadcast, personal, business]: [any[], any[], any[]] = await Promise.all([
-      broadcastPromise,
-      this.prisma.$queryRaw<any[]>`
+    const [broadcast, personal, business]: [any[], any[], any[]] =
+      await Promise.all([
+        broadcastPromise,
+        this.prisma.$queryRaw<any[]>`
         SELECT id, title, body, created_at, read, dismissed, ref_type, ref_id
         FROM public.member_notifications
         WHERE recipient_id::text = ANY(${recipientKeys}::text[])
@@ -1243,7 +1659,7 @@ export class ConnectAppService implements OnModuleInit {
         ORDER BY created_at DESC
         LIMIT 50
       `.catch(() => []),
-      this.prisma.$queryRaw<any[]>`
+        this.prisma.$queryRaw<any[]>`
         SELECT id, title_key, body_key, safe_display_data, notification_kind, created_at, read_at, source_record_id, pushed_to_messages
         FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid
@@ -1254,7 +1670,7 @@ export class ConnectAppService implements OnModuleInit {
         ORDER BY created_at DESC
         LIMIT 40
       `.catch(() => []),
-    ]);
+      ]);
 
     const dismissedRows = await this.prisma.$queryRaw<any[]>`
       SELECT notification_id FROM public.broadcast_notification_dismissals
@@ -1264,9 +1680,17 @@ export class ConnectAppService implements OnModuleInit {
 
     // Resolve real-time connection status for connection request items
     const allConnIds = [
-      ...personal.filter((p) => p.ref_type === 'connection' && p.ref_id).map((p) => p.ref_id),
-      ...business.map((b) => b.safe_display_data?.connectionId || b.source_record_id).filter(Boolean),
-    ].filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id)));
+      ...personal
+        .filter((p) => p.ref_type === 'connection' && p.ref_id)
+        .map((p) => p.ref_id),
+      ...business
+        .map((b) => b.safe_display_data?.connectionId || b.source_record_id)
+        .filter(Boolean),
+    ].filter((id) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(id),
+      ),
+    );
 
     const connStatusMap: Record<string, string> = {};
     if (allConnIds.length > 0) {
@@ -1300,17 +1724,22 @@ export class ConnectAppService implements OnModuleInit {
         if (n.code && existingPersonalKeys.has(String(n.code))) return false;
         const sentTime = new Date(n.sent_at || n.created_at).getTime();
         // Không dump toàn bộ thông báo cũ từ nhiều tháng trước lên tài khoản mới tạo
-        return sentTime >= userCreatedAt - (3 * 24 * 60 * 60 * 1000);
+        return sentTime >= userCreatedAt - 3 * 24 * 60 * 60 * 1000;
       })
       .map((n) => {
-        const isDismissed = dismissedIds.has(n.id) || (n.code && dismissedIds.has(n.code));
+        const isDismissed =
+          dismissedIds.has(n.id) || (n.code && dismissedIds.has(n.code));
         return {
           id: n.id,
           code: n.code,
           title: n.title,
           body: n.body,
-          time: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
-          createdAt: n.sent_at ? new Date(n.sent_at).toISOString() : new Date(n.created_at).toISOString(),
+          time: n.sent_at
+            ? new Date(n.sent_at).toISOString()
+            : new Date(n.created_at).toISOString(),
+          createdAt: n.sent_at
+            ? new Date(n.sent_at).toISOString()
+            : new Date(n.created_at).toISOString(),
           type: typeMap(n.audience),
           unread: !isDismissed,
           dismissed: Boolean(isDismissed),
@@ -1318,19 +1747,27 @@ export class ConnectAppService implements OnModuleInit {
           personal: false,
           notificationKind: 'system_broadcast',
           targetChannel: n.target_channel || null,
-          pushedToMessages: Boolean(n.pushed_to_messages || (n.target_channel && n.target_channel !== 'none')),
+          pushedToMessages: Boolean(
+            n.pushed_to_messages ||
+            (n.target_channel && n.target_channel !== 'none'),
+          ),
         };
       });
 
     const personalItems = personal.map((n) => {
       const isConn = n.ref_type === 'connection' && n.ref_id;
-      const connStatus = isConn && connStatusMap[n.ref_id] ? connStatusMap[n.ref_id] : null;
+      const connStatus =
+        isConn && connStatusMap[n.ref_id] ? connStatusMap[n.ref_id] : null;
       return {
         id: n.id,
         title: n.title,
         body: n.body,
-        time: n.created_at ? new Date(n.created_at).toISOString() : new Date().toISOString(),
-        createdAt: n.created_at ? new Date(n.created_at).toISOString() : new Date().toISOString(),
+        time: n.created_at
+          ? new Date(n.created_at).toISOString()
+          : new Date().toISOString(),
+        createdAt: n.created_at
+          ? new Date(n.created_at).toISOString()
+          : new Date().toISOString(),
         type: 'network',
         unread: !n.read,
         dismissed: Boolean(n.dismissed),
@@ -1339,7 +1776,9 @@ export class ConnectAppService implements OnModuleInit {
         refType: n.ref_type,
         refId: n.ref_id,
         sourceRecordId: isConn ? n.ref_id : undefined,
-        safeDisplayData: isConn ? { connectionId: n.ref_id, connectionStatus: connStatus } : undefined,
+        safeDisplayData: isConn
+          ? { connectionId: n.ref_id, connectionStatus: connStatus }
+          : undefined,
       };
     });
 
@@ -1352,34 +1791,69 @@ export class ConnectAppService implements OnModuleInit {
           safe.connectionStatus = connStatusMap[connId];
         }
       }
-      const counterpartName = safe.counterpartDisplayName || safe.senderName || 'Hội viên CEO 1983';
+      const counterpartName =
+        safe.counterpartDisplayName || safe.senderName || 'Hội viên CEO 1983';
 
       let title = safe.title || b.title_key || 'Thông báo mới';
       let body = safe.body || safe.message || b.body_key || '';
 
-      if (b.notification_kind === 'connection_request_received' || b.title_key?.includes('connection_request_received') || title?.includes('connection_request_received')) {
+      if (
+        b.notification_kind === 'connection_request_received' ||
+        b.title_key?.includes('connection_request_received') ||
+        title?.includes('connection_request_received')
+      ) {
         title = `Lời mời kết nối mới`;
         body = `${counterpartName} muốn kết nối danh thiếp số với bạn.`;
-      } else if (b.notification_kind === 'connection_request_accepted' || b.title_key?.includes('connection_request_accepted') || title?.includes('connection_request_accepted')) {
+      } else if (
+        b.notification_kind === 'connection_request_accepted' ||
+        b.title_key?.includes('connection_request_accepted') ||
+        title?.includes('connection_request_accepted')
+      ) {
         title = `Kết nối thành công`;
         body = `${counterpartName} đã chấp nhận lời mời kết nối của bạn.`;
-      } else if (b.notification_kind === 'connection_request_declined' || b.title_key?.includes('connection_request_declined') || title?.includes('connection_request_declined')) {
+      } else if (
+        b.notification_kind === 'connection_request_declined' ||
+        b.title_key?.includes('connection_request_declined') ||
+        title?.includes('connection_request_declined')
+      ) {
         title = `Lời mời kết nối bị từ chối`;
         body = `${counterpartName} đã từ chối lời mời kết nối.`;
       }
 
       let itemType: any = 'network';
-      if (b.notification_kind === 'interactive_poll' || safe.pollId || safe.type === 'poll') itemType = 'voting';
-      else if (b.notification_kind === 'lucky_draw_winner' || safe.type === 'lucky_draw_winner' || safe.luckyNumber) itemType = 'event';
-      else if (b.notification_kind === 'overdue_payment_reminder' || safe.invoiceId) itemType = 'fee';
-      else if (b.notification_kind?.startsWith('meeting') || b.notification_kind?.startsWith('event')) itemType = 'event';
+      if (
+        b.notification_kind === 'interactive_poll' ||
+        safe.pollId ||
+        safe.type === 'poll'
+      )
+        itemType = 'voting';
+      else if (
+        b.notification_kind === 'lucky_draw_winner' ||
+        safe.type === 'lucky_draw_winner' ||
+        safe.luckyNumber
+      )
+        itemType = 'event';
+      else if (
+        b.notification_kind === 'overdue_payment_reminder' ||
+        safe.invoiceId
+      )
+        itemType = 'fee';
+      else if (
+        b.notification_kind?.startsWith('meeting') ||
+        b.notification_kind?.startsWith('event')
+      )
+        itemType = 'event';
 
       return {
         id: b.id,
         title,
         body,
-        time: b.created_at ? new Date(b.created_at).toISOString() : new Date().toISOString(),
-        createdAt: b.created_at ? new Date(b.created_at).toISOString() : new Date().toISOString(),
+        time: b.created_at
+          ? new Date(b.created_at).toISOString()
+          : new Date().toISOString(),
+        createdAt: b.created_at
+          ? new Date(b.created_at).toISOString()
+          : new Date().toISOString(),
         type: itemType,
         unread: !b.read_at,
         dismissed: false,
@@ -1399,8 +1873,12 @@ export class ConnectAppService implements OnModuleInit {
       id: `welcome-${userId}`,
       title: 'Chào mừng bạn đến với CLB Doanh Nhân CEO 1983!',
       body: 'Chúc mừng bạn đã chính thức gia nhập CLB Doanh Nhân CEO 1983. Hãy hoàn thiện danh thiếp số và bắt đầu khám phá các sự kiện, cơ hội giao thương B2B độc quyền!',
-      time: users[0]?.created_at ? new Date(users[0].created_at).toISOString() : new Date().toISOString(),
-      createdAt: users[0]?.created_at ? new Date(users[0].created_at).toISOString() : new Date().toISOString(),
+      time: users[0]?.created_at
+        ? new Date(users[0].created_at).toISOString()
+        : new Date().toISOString(),
+      createdAt: users[0]?.created_at
+        ? new Date(users[0].created_at).toISOString()
+        : new Date().toISOString(),
       type: 'system',
       unread: true,
       dismissed: false,
@@ -1411,28 +1889,36 @@ export class ConnectAppService implements OnModuleInit {
       pushedToMessages: false,
     };
 
-    const combined: any[] = [...businessItems, ...personalItems, ...broadcastItems];
+    const combined: any[] = [
+      ...businessItems,
+      ...personalItems,
+      ...broadcastItems,
+    ];
     if (combined.length === 0) {
       combined.push(welcomeNotification);
     }
 
     const rawAll = combined.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     const seenKeys = new Set<string>();
     const deduplicated: any[] = [];
     for (const rawItem of rawAll) {
-      const item = rawItem as any;
+      const item = rawItem;
       const keys: string[] = [];
       if (item.id) keys.push(`id:${item.id}`);
-      if (item.refType && item.refId) keys.push(`ref:${item.refType}:${item.refId}`);
+      if (item.refType && item.refId)
+        keys.push(`ref:${item.refType}:${item.refId}`);
       if (item.sourceRecordId) keys.push(`src:${item.sourceRecordId}`);
       if (item.title && item.body) {
         const normTitle = String(item.title).trim().toLowerCase();
         const normBody = String(item.body).trim().toLowerCase().slice(0, 80);
         const d = new Date(item.createdAt);
-        const dayKey = isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const dayKey = isNaN(d.getTime())
+          ? ''
+          : `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
         keys.push(`text:${normTitle}|${normBody}|${dayKey}`);
       }
 
@@ -1559,163 +2045,552 @@ export class ConnectAppService implements OnModuleInit {
     return prefs;
   }
 
-
   // ==========================================
   // 5. Customer Relationship Management - Delegated to ConnectCustomerService
   // ==========================================
   // ==========================================
   // 5. Customer Relationship Management - Delegated to ConnectCustomerService
   // ==========================================
-  listBcCustomers(userId: string) { return this.customerService.listBcCustomers(userId); }
-  createBcCustomer(userId: string, input: any) { return this.customerService.createBcCustomer(userId, input); }
-  updateBcCustomer(userId: string, input: any) { return this.customerService.updateBcCustomer(userId, input); }
-  deleteBcCustomer(userId: string, customerId: string) { return this.customerService.deleteBcCustomer(userId, customerId); }
-  listBcCustomerLogs(userId: string, customerId: string) { return this.customerService.listBcCustomerLogs(userId, customerId); }
-  addBcCustomerLog(userId: string, input: any) { return this.customerService.addBcCustomerLog(userId, input); }
-  listBcCustomerTags(userId: string) { return this.customerService.listBcCustomerTags(userId); }
-  createBcCustomerTag(userId: string, name: string) { return this.customerService.createBcCustomerTag(userId, name); }
-  renameBcCustomerTag(userId: string, tagId: string, name: string) { return this.customerService.renameBcCustomerTag(userId, tagId, name); }
-  deleteBcCustomerTag(userId: string, tagId: string) { return this.customerService.deleteBcCustomerTag(userId, tagId); }
-  setBcCustomerTags(userId: string, customerId: string, names: string[]) { return this.customerService.setBcCustomerTags(userId, customerId, names); }
-  listBcCustomerNeeds(userId: string, customerId: string) { return this.customerService.listBcCustomerNeeds(userId, customerId); }
-  addBcCustomerNeed(userId: string, input: any) { return this.customerService.addBcCustomerNeed(userId, input); }
-  updateBcCustomerNeed(userId: string, input: any) { return this.customerService.updateBcCustomerNeed(userId, input); }
-  deleteBcCustomerNeed(userId: string, needId: string) { return this.customerService.deleteBcCustomerNeed(userId, needId); }
-  suggestCustomerTags(userId: string, customerId: string) { return this.customerService.suggestCustomerTags(userId, customerId); }
-  listCustomerTagSuggestHistory(userId: string, customerId: string) { return this.customerService.listCustomerTagSuggestHistory(userId, customerId); }
-  saveCustomerTagSuggestFeedback(userId: string, input: any) { return this.customerService.saveCustomerTagSuggestFeedback(userId, input); }
-  listCustomerTagSuggestFeedback(userId: string, customerId: string) { return this.customerService.listCustomerTagSuggestFeedback(userId, customerId); }
+  listBcCustomers(userId: string) {
+    return this.customerService.listBcCustomers(userId);
+  }
+  createBcCustomer(userId: string, input: any) {
+    return this.customerService.createBcCustomer(userId, input);
+  }
+  updateBcCustomer(userId: string, input: any) {
+    return this.customerService.updateBcCustomer(userId, input);
+  }
+  deleteBcCustomer(userId: string, customerId: string) {
+    return this.customerService.deleteBcCustomer(userId, customerId);
+  }
+  listBcCustomerLogs(userId: string, customerId: string) {
+    return this.customerService.listBcCustomerLogs(userId, customerId);
+  }
+  addBcCustomerLog(userId: string, input: any) {
+    return this.customerService.addBcCustomerLog(userId, input);
+  }
+  listBcCustomerTags(userId: string) {
+    return this.customerService.listBcCustomerTags(userId);
+  }
+  createBcCustomerTag(userId: string, name: string) {
+    return this.customerService.createBcCustomerTag(userId, name);
+  }
+  renameBcCustomerTag(userId: string, tagId: string, name: string) {
+    return this.customerService.renameBcCustomerTag(userId, tagId, name);
+  }
+  deleteBcCustomerTag(userId: string, tagId: string) {
+    return this.customerService.deleteBcCustomerTag(userId, tagId);
+  }
+  setBcCustomerTags(userId: string, customerId: string, names: string[]) {
+    return this.customerService.setBcCustomerTags(userId, customerId, names);
+  }
+  listBcCustomerNeeds(userId: string, customerId: string) {
+    return this.customerService.listBcCustomerNeeds(userId, customerId);
+  }
+  addBcCustomerNeed(userId: string, input: any) {
+    return this.customerService.addBcCustomerNeed(userId, input);
+  }
+  updateBcCustomerNeed(userId: string, input: any) {
+    return this.customerService.updateBcCustomerNeed(userId, input);
+  }
+  deleteBcCustomerNeed(userId: string, needId: string) {
+    return this.customerService.deleteBcCustomerNeed(userId, needId);
+  }
+  suggestCustomerTags(userId: string, customerId: string) {
+    return this.customerService.suggestCustomerTags(userId, customerId);
+  }
+  listCustomerTagSuggestHistory(userId: string, customerId: string) {
+    return this.customerService.listCustomerTagSuggestHistory(
+      userId,
+      customerId,
+    );
+  }
+  saveCustomerTagSuggestFeedback(userId: string, input: any) {
+    return this.customerService.saveCustomerTagSuggestFeedback(userId, input);
+  }
+  listCustomerTagSuggestFeedback(userId: string, customerId: string) {
+    return this.customerService.listCustomerTagSuggestFeedback(
+      userId,
+      customerId,
+    );
+  }
 
   // ==========================================
   // 6. Card Scanning & OCR - Delegated to ConnectCardScanService
   // ==========================================
-  cardScanOcr(userId: string, imageDataUrl: string, clientToken: string) { return this.cardScanService.cardScanOcr(userId, imageDataUrl, clientToken); }
-  cardScanResolve(userId: string, input: any) { return this.cardScanService.cardScanResolve(userId, input); }
-  cardScanSave(userId: string, input: any) { return this.cardScanService.cardScanSave(userId, input); }
+  cardScanOcr(userId: string, imageDataUrl: string, clientToken: string) {
+    return this.cardScanService.cardScanOcr(userId, imageDataUrl, clientToken);
+  }
+  cardScanResolve(userId: string, input: any) {
+    return this.cardScanService.cardScanResolve(userId, input);
+  }
+  cardScanSave(userId: string, input: any) {
+    return this.cardScanService.cardScanSave(userId, input);
+  }
 
   // ==========================================
   // 7. Moments (BC-Mobile-2E) - Delegated to ConnectMomentsService
   // ==========================================
-  prepareMoment(userId: string, data: any) { return this.momentsService.prepareMoment(userId, data); }
-  finalizeMoment(userId: string, data: any) { return this.momentsService.finalizeMoment(userId, data); }
-  updateMoment(userId: string, data: any) { return this.momentsService.updateMoment(userId, data); }
-  deleteMoment(userId: string, momentId: string) { return this.momentsService.deleteMoment(userId, momentId); }
-  listMomentComments(momentId: string, viewerUserId: string) { return this.momentsService.listMomentComments(momentId, viewerUserId); }
-  createMomentComment(userId: string, momentId: string, data: any) { return this.momentsService.createMomentComment(userId, momentId, data); }
-  deleteMomentComment(userId: string, momentId: string, commentId: string) { return this.momentsService.deleteMomentComment(userId, momentId, commentId); }
-  toggleMuteMoment(userId: string, momentId: string) { return this.momentsService.toggleMuteMoment(userId, momentId); }
-  getMomentMuteStatus(userId: string, momentId: string) { return this.momentsService.getMomentMuteStatus(userId, momentId); }
-  toggleMomentCommentLike(userId: string, momentId: string, commentId: string) { return this.momentsService.toggleMomentCommentLike(userId, momentId, commentId); }
-  toggleMomentLike(userId: string, momentId: string) { return this.momentsService.toggleMomentLike(userId, momentId); }
-  getMomentLikeStatus(userId: string, momentId: string) { return this.momentsService.getMomentLikeStatus(userId, momentId); }
-  listMomentPhotos(userId: string, momentId: string) { return this.momentsService.listMomentPhotos(userId, momentId); }
-  addMomentPhotoSlots(userId: string, momentId: string, slots: number) { return this.momentsService.addMomentPhotoSlots(userId, momentId, slots); }
-  commitMomentPhotos(userId: string, files: any) { return this.momentsService.commitMomentPhotos(userId, files); }
-  removeMomentPhoto(userId: string, momentId: string, mediaId: string) { return this.momentsService.removeMomentPhoto(userId, momentId, mediaId); }
-  listMomentReminders(userId: string, momentId: string | null, includeDone: boolean, limit: number) { return this.momentsService.listMomentReminders(userId, momentId, includeDone, limit); }
-  createMomentReminder(userId: string, momentId: string, remindAt: string, label: string | null) { return this.momentsService.createMomentReminder(userId, momentId, remindAt, label); }
-  setMomentReminderStatus(userId: string, reminderId: string, status: string) { return this.momentsService.setMomentReminderStatus(userId, reminderId, status); }
-  deleteMomentReminder(userId: string, reminderId: string) { return this.momentsService.deleteMomentReminder(userId, reminderId); }
-  notifyMomentTags(userId: string, input: any) { return this.momentsService.notifyMomentTags(userId, input); }
+  prepareMoment(userId: string, data: any) {
+    return this.momentsService.prepareMoment(userId, data);
+  }
+  finalizeMoment(userId: string, data: any) {
+    return this.momentsService.finalizeMoment(userId, data);
+  }
+  updateMoment(userId: string, data: any) {
+    return this.momentsService.updateMoment(userId, data);
+  }
+  deleteMoment(userId: string, momentId: string) {
+    return this.momentsService.deleteMoment(userId, momentId);
+  }
+  listMomentComments(momentId: string, viewerUserId: string) {
+    return this.momentsService.listMomentComments(momentId, viewerUserId);
+  }
+  createMomentComment(userId: string, momentId: string, data: any) {
+    return this.momentsService.createMomentComment(userId, momentId, data);
+  }
+  deleteMomentComment(userId: string, momentId: string, commentId: string) {
+    return this.momentsService.deleteMomentComment(userId, momentId, commentId);
+  }
+  toggleMuteMoment(userId: string, momentId: string) {
+    return this.momentsService.toggleMuteMoment(userId, momentId);
+  }
+  getMomentMuteStatus(userId: string, momentId: string) {
+    return this.momentsService.getMomentMuteStatus(userId, momentId);
+  }
+  toggleMomentCommentLike(userId: string, momentId: string, commentId: string) {
+    return this.momentsService.toggleMomentCommentLike(
+      userId,
+      momentId,
+      commentId,
+    );
+  }
+  toggleMomentLike(userId: string, momentId: string) {
+    return this.momentsService.toggleMomentLike(userId, momentId);
+  }
+  getMomentLikeStatus(userId: string, momentId: string) {
+    return this.momentsService.getMomentLikeStatus(userId, momentId);
+  }
+  listMomentPhotos(userId: string, momentId: string) {
+    return this.momentsService.listMomentPhotos(userId, momentId);
+  }
+  addMomentPhotoSlots(userId: string, momentId: string, slots: number) {
+    return this.momentsService.addMomentPhotoSlots(userId, momentId, slots);
+  }
+  commitMomentPhotos(userId: string, files: any) {
+    return this.momentsService.commitMomentPhotos(userId, files);
+  }
+  removeMomentPhoto(userId: string, momentId: string, mediaId: string) {
+    return this.momentsService.removeMomentPhoto(userId, momentId, mediaId);
+  }
+  listMomentReminders(
+    userId: string,
+    momentId: string | null,
+    includeDone: boolean,
+    limit: number,
+  ) {
+    return this.momentsService.listMomentReminders(
+      userId,
+      momentId,
+      includeDone,
+      limit,
+    );
+  }
+  createMomentReminder(
+    userId: string,
+    momentId: string,
+    remindAt: string,
+    label: string | null,
+  ) {
+    return this.momentsService.createMomentReminder(
+      userId,
+      momentId,
+      remindAt,
+      label,
+    );
+  }
+  setMomentReminderStatus(userId: string, reminderId: string, status: string) {
+    return this.momentsService.setMomentReminderStatus(
+      userId,
+      reminderId,
+      status,
+    );
+  }
+  deleteMomentReminder(userId: string, reminderId: string) {
+    return this.momentsService.deleteMomentReminder(userId, reminderId);
+  }
+  notifyMomentTags(userId: string, input: any) {
+    return this.momentsService.notifyMomentTags(userId, input);
+  }
 
   // ==========================================
   // 8. NFC Device Sessions & Tags (BC-Mobile-5C) - Delegated to ConnectNfcService
   // ==========================================
-  listMyDeviceSessions(userId: string, currentKey: string | null = null) { return this.nfcService.listMyDeviceSessions(userId, currentKey); }
-  touchMyDeviceSession(userId: string, input: any) { return this.nfcService.touchMyDeviceSession(userId, input); }
-  revokeMyDeviceSession(userId: string, sessionId: string, currentKey: string | null = null) { return this.nfcService.revokeMyDeviceSession(userId, sessionId, currentKey); }
-  listMyNfcTags(userId: string) { return this.nfcService.listMyNfcTags(userId); }
-  registerMyNfcTag(userId: string, data: any) { return this.nfcService.registerMyNfcTag(userId, data); }
-  revokeMyNfcTag(userId: string, tagId: string) { return this.nfcService.revokeMyNfcTag(userId, tagId); }
-  renameMyNfcTag(userId: string, input: any) { return this.nfcService.renameMyNfcTag(userId, input); }
+  listMyDeviceSessions(userId: string, currentKey: string | null = null) {
+    return this.nfcService.listMyDeviceSessions(userId, currentKey);
+  }
+  touchMyDeviceSession(userId: string, input: any) {
+    return this.nfcService.touchMyDeviceSession(userId, input);
+  }
+  revokeMyDeviceSession(
+    userId: string,
+    sessionId: string,
+    currentKey: string | null = null,
+  ) {
+    return this.nfcService.revokeMyDeviceSession(userId, sessionId, currentKey);
+  }
+  listMyNfcTags(userId: string) {
+    return this.nfcService.listMyNfcTags(userId);
+  }
+  registerMyNfcTag(userId: string, data: any) {
+    return this.nfcService.registerMyNfcTag(userId, data);
+  }
+  revokeMyNfcTag(userId: string, tagId: string) {
+    return this.nfcService.revokeMyNfcTag(userId, tagId);
+  }
+  renameMyNfcTag(userId: string, input: any) {
+    return this.nfcService.renameMyNfcTag(userId, input);
+  }
 
   // ==========================================
   // 9. Opportunities - Delegated to ConnectOpportunityService
   // ==========================================
-  listCommunityOpportunities(userId: string, communityId: string, query: string, offset: number) { return this.opportunityService.listCommunityOpportunities(userId, communityId, query, offset); }
-  getCommunityOpportunityDetail(userId: string, communityId: string, oppId: string) { return this.opportunityService.getCommunityOpportunityDetail(userId, communityId, oppId); }
-  createCommunityOpportunity(userId: string, communityId: string, data: any) { return this.opportunityService.createCommunityOpportunity(userId, communityId, data); }
-  createCommunityNews(userId: string, communityId: string, data: any) { return this.opportunityService.createCommunityNews(userId, communityId, data); }
-  claimCommunityOpportunity(userId: string, communityId: string, oppId: string) { return this.opportunityService.claimCommunityOpportunity(userId, communityId, oppId); }
-  expressCommunityOpportunityInterest(userId: string, communityId: string, oppId: string, data: any, dealValue?: number, message?: string) { return this.opportunityService.expressCommunityOpportunityInterest(userId, communityId, oppId, typeof data === 'string' ? data : (data?.interestLevel || 'high'), dealValue ?? data?.dealValue, message ?? data?.message); }
-  withdrawCommunityOpportunityInterest(userId: string, communityId: string, oppId: string) { return this.opportunityService.withdrawCommunityOpportunityInterest(userId, communityId, oppId); }
-  scheduleCommunityOpportunityFollowUp(userId: string, communityId: string, oppId: string, inDays: number) { return this.opportunityService.scheduleCommunityOpportunityFollowUp(userId, communityId, oppId, inDays); }
-  updateCommunityOpportunityFollowUp(userId: string, communityId: string, oppId: string, data: any) { return this.opportunityService.updateCommunityOpportunityFollowUp(userId, communityId, oppId, data); }
-  saveCommunityOpportunityProgress(userId: string, communityId: string, oppId: string, progress: string, note: string) { return this.opportunityService.saveCommunityOpportunityProgress(userId, communityId, oppId, progress, note); }
-  updateOpportunityDealStatus(userId: string, oppId: string, status: string, note?: string) { return this.opportunityService.updateOpportunityDealStatus(userId, oppId, status, note); }
-  addCommunityOpportunityAttachment(userId: string, input: any) { return this.opportunityService.addCommunityOpportunityAttachment(userId, input); }
-  removeCommunityOpportunityAttachment(userId: string, attachmentId: string) { return this.opportunityService.removeCommunityOpportunityAttachment(userId, attachmentId); }
-  listAllOpportunities(userId: string) { return this.opportunityService.listAllOpportunities(userId); }
-  getOpportunityById(id: string) { return this.opportunityService.getOpportunityById(id); }
-  createOpportunity(userId: string, data: any) { return this.opportunityService.createOpportunity(userId, data); }
-  deleteOpportunity(userId: string, id: string) { return this.opportunityService.deleteOpportunity(userId, id); }
-  updateOpportunity(userId: string, id: string, data: any) { return this.opportunityService.updateOpportunity(userId, id, data); }
-  toggleOpportunityStatus(userId: string, id: string) { return this.opportunityService.toggleOpportunityStatus(userId, id); }
-  listMyOpportunities(userId: string) { return this.opportunityService.listMyOpportunities(userId); }
-  getOpportunityReport(userId: string) { return this.opportunityService.getOpportunityReport(userId); }
-  expressOpportunityInterest(userId: string, oppId: string, message?: string, dealValue?: number, interestLevel?: string) { return this.opportunityService.expressOpportunityInterest(userId, oppId, message, dealValue, interestLevel); }
-  incrementOpportunityView(id: string) { return this.opportunityService.incrementOpportunityView(id); }
-  getOpportunityInterestedMembers(id: string) { return this.opportunityService.getOpportunityInterestedMembers(id); }
+  listCommunityOpportunities(
+    userId: string,
+    communityId: string,
+    query: string,
+    offset: number,
+  ) {
+    return this.opportunityService.listCommunityOpportunities(
+      userId,
+      communityId,
+      query,
+      offset,
+    );
+  }
+  getCommunityOpportunityDetail(
+    userId: string,
+    communityId: string,
+    oppId: string,
+  ) {
+    return this.opportunityService.getCommunityOpportunityDetail(
+      userId,
+      communityId,
+      oppId,
+    );
+  }
+  createCommunityOpportunity(userId: string, communityId: string, data: any) {
+    return this.opportunityService.createCommunityOpportunity(
+      userId,
+      communityId,
+      data,
+    );
+  }
+  createCommunityNews(userId: string, communityId: string, data: any) {
+    return this.opportunityService.createCommunityNews(
+      userId,
+      communityId,
+      data,
+    );
+  }
+  claimCommunityOpportunity(
+    userId: string,
+    communityId: string,
+    oppId: string,
+  ) {
+    return this.opportunityService.claimCommunityOpportunity(
+      userId,
+      communityId,
+      oppId,
+    );
+  }
+  expressCommunityOpportunityInterest(
+    userId: string,
+    communityId: string,
+    oppId: string,
+    data: any,
+    dealValue?: number,
+    message?: string,
+  ) {
+    return this.opportunityService.expressCommunityOpportunityInterest(
+      userId,
+      communityId,
+      oppId,
+      typeof data === 'string' ? data : data?.interestLevel || 'high',
+      dealValue ?? data?.dealValue,
+      message ?? data?.message,
+    );
+  }
+  withdrawCommunityOpportunityInterest(
+    userId: string,
+    communityId: string,
+    oppId: string,
+  ) {
+    return this.opportunityService.withdrawCommunityOpportunityInterest(
+      userId,
+      communityId,
+      oppId,
+    );
+  }
+  scheduleCommunityOpportunityFollowUp(
+    userId: string,
+    communityId: string,
+    oppId: string,
+    inDays: number,
+  ) {
+    return this.opportunityService.scheduleCommunityOpportunityFollowUp(
+      userId,
+      communityId,
+      oppId,
+      inDays,
+    );
+  }
+  updateCommunityOpportunityFollowUp(
+    userId: string,
+    communityId: string,
+    oppId: string,
+    data: any,
+  ) {
+    return this.opportunityService.updateCommunityOpportunityFollowUp(
+      userId,
+      communityId,
+      oppId,
+      data,
+    );
+  }
+  saveCommunityOpportunityProgress(
+    userId: string,
+    communityId: string,
+    oppId: string,
+    progress: string,
+    note: string,
+  ) {
+    return this.opportunityService.saveCommunityOpportunityProgress(
+      userId,
+      communityId,
+      oppId,
+      progress,
+      note,
+    );
+  }
+  updateOpportunityDealStatus(
+    userId: string,
+    oppId: string,
+    status: string,
+    note?: string,
+  ) {
+    return this.opportunityService.updateOpportunityDealStatus(
+      userId,
+      oppId,
+      status,
+      note,
+    );
+  }
+  addCommunityOpportunityAttachment(userId: string, input: any) {
+    return this.opportunityService.addCommunityOpportunityAttachment(
+      userId,
+      input,
+    );
+  }
+  removeCommunityOpportunityAttachment(userId: string, attachmentId: string) {
+    return this.opportunityService.removeCommunityOpportunityAttachment(
+      userId,
+      attachmentId,
+    );
+  }
+  listAllOpportunities(userId: string) {
+    return this.opportunityService.listAllOpportunities(userId);
+  }
+  getOpportunityById(id: string) {
+    return this.opportunityService.getOpportunityById(id);
+  }
+  createOpportunity(userId: string, data: any) {
+    return this.opportunityService.createOpportunity(userId, data);
+  }
+  deleteOpportunity(userId: string, id: string) {
+    return this.opportunityService.deleteOpportunity(userId, id);
+  }
+  updateOpportunity(userId: string, id: string, data: any) {
+    return this.opportunityService.updateOpportunity(userId, id, data);
+  }
+  toggleOpportunityStatus(userId: string, id: string) {
+    return this.opportunityService.toggleOpportunityStatus(userId, id);
+  }
+  listMyOpportunities(userId: string) {
+    return this.opportunityService.listMyOpportunities(userId);
+  }
+  getOpportunityReport(userId: string) {
+    return this.opportunityService.getOpportunityReport(userId);
+  }
+  expressOpportunityInterest(
+    userId: string,
+    oppId: string,
+    message?: string,
+    dealValue?: number,
+    interestLevel?: string,
+  ) {
+    return this.opportunityService.expressOpportunityInterest(
+      userId,
+      oppId,
+      message,
+      dealValue,
+      interestLevel,
+    );
+  }
+  incrementOpportunityView(id: string) {
+    return this.opportunityService.incrementOpportunityView(id);
+  }
+  getOpportunityInterestedMembers(id: string) {
+    return this.opportunityService.getOpportunityInterestedMembers(id);
+  }
 
   // ==========================================
   // 10. Member Messaging & DM Threads - Delegated to ConnectMessengerService
   // ==========================================
-  listMemberConversations(userId: string) { return this.messengerService.listMemberConversations(userId); }
-  listMemberMessages(userId: string, peerCode: string) { return this.messengerService.listMemberMessages(userId, peerCode); }
-  sendMemberMessage(userId: string, peerCode: string, text: string) { return this.messengerService.sendMemberMessage(userId, peerCode, text); }
-  retractMemberMessage(userId: string, messageId: string) { return this.messengerService.retractMemberMessage(userId, messageId); }
-  listMyDmThreads(userId: string) { return this.messengerService.listMyDmThreads(userId); }
-  openMyDmThread(userId: string, counterpartId: string) { return this.messengerService.openMyDmThread(userId, counterpartId); }
-  getMyDmThreadDetail(userId: string, threadId: string) { return this.messengerService.getMyDmThreadDetail(userId, threadId); }
-  sendMyDmMessage(userId: string, threadId: string, data: any) { return this.messengerService.sendMyDmMessage(userId, threadId, data); }
-  markMyDmThreadRead(userId: string, threadId: string) { return this.messengerService.markMyDmThreadRead(userId, threadId); }
-  retractMyDmMessage(userId: string, messageId: string) { return this.messengerService.retractMyDmMessage(userId, messageId); }
-  reactToDmMessage(userId: string, messageId: string, reaction: string) { return this.messengerService.reactToDmMessage(userId, messageId, reaction); }
-  searchMentionableUsers(userId: string, query: string) { return this.messengerService.searchMentionableUsers(userId, query); }
+  listMemberConversations(userId: string) {
+    return this.messengerService.listMemberConversations(userId);
+  }
+  listMemberMessages(userId: string, peerCode: string) {
+    return this.messengerService.listMemberMessages(userId, peerCode);
+  }
+  sendMemberMessage(userId: string, peerCode: string, text: string) {
+    return this.messengerService.sendMemberMessage(userId, peerCode, text);
+  }
+  retractMemberMessage(userId: string, messageId: string) {
+    return this.messengerService.retractMemberMessage(userId, messageId);
+  }
+  listMyDmThreads(userId: string) {
+    return this.messengerService.listMyDmThreads(userId);
+  }
+  openMyDmThread(userId: string, counterpartId: string) {
+    return this.messengerService.openMyDmThread(userId, counterpartId);
+  }
+  getMyDmThreadDetail(userId: string, threadId: string) {
+    return this.messengerService.getMyDmThreadDetail(userId, threadId);
+  }
+  sendMyDmMessage(userId: string, threadId: string, data: any) {
+    return this.messengerService.sendMyDmMessage(userId, threadId, data);
+  }
+  markMyDmThreadRead(userId: string, threadId: string) {
+    return this.messengerService.markMyDmThreadRead(userId, threadId);
+  }
+  retractMyDmMessage(userId: string, messageId: string) {
+    return this.messengerService.retractMyDmMessage(userId, messageId);
+  }
+  reactToDmMessage(userId: string, messageId: string, reaction: string) {
+    return this.messengerService.reactToDmMessage(userId, messageId, reaction);
+  }
+  searchMentionableUsers(userId: string, query: string) {
+    return this.messengerService.searchMentionableUsers(userId, query);
+  }
 
   // ==========================================
   // 11. Content, News & Perks - Delegated to ConnectContentService
   // ==========================================
-  listPublishedNews() { return this.contentService.listPublishedNews(); }
-  listActivePerks() { return this.contentService.listActivePerks(); }
-  getPerkById(id: string) { return this.contentService.getPerkById(id); }
-  listAllPerksAdmin() { return this.contentService.listAllPerksAdmin(); }
-  createPerkAdmin(data: any) { return this.contentService.createPerkAdmin(data); }
-  updatePerkAdmin(id: string, data: any) { return this.contentService.updatePerkAdmin(id, data); }
-  deletePerkAdmin(id: string) { return this.contentService.deletePerkAdmin(id); }
-  listAdminNews() { return this.contentService.listAdminNews(); }
-  createNewsAdmin(data: any) { return this.contentService.createNewsAdmin(data); }
-  updateNewsAdmin(id: string, data: any) { return this.contentService.updateNewsAdmin(id, data); }
-  deleteNewsAdmin(id: string) { return this.contentService.deleteNewsAdmin(id); }
-  syncNewsFromCeo1983Web() { return this.contentService.syncNewsFromCeo1983Web(); }
+  listPublishedNews() {
+    return this.contentService.listPublishedNews();
+  }
+  listActivePerks() {
+    return this.contentService.listActivePerks();
+  }
+  getPerkById(id: string) {
+    return this.contentService.getPerkById(id);
+  }
+  listAllPerksAdmin() {
+    return this.contentService.listAllPerksAdmin();
+  }
+  createPerkAdmin(data: any) {
+    return this.contentService.createPerkAdmin(data);
+  }
+  updatePerkAdmin(id: string, data: any) {
+    return this.contentService.updatePerkAdmin(id, data);
+  }
+  deletePerkAdmin(id: string) {
+    return this.contentService.deletePerkAdmin(id);
+  }
+  listAdminNews() {
+    return this.contentService.listAdminNews();
+  }
+  createNewsAdmin(data: any) {
+    return this.contentService.createNewsAdmin(data);
+  }
+  updateNewsAdmin(id: string, data: any) {
+    return this.contentService.updateNewsAdmin(id, data);
+  }
+  deleteNewsAdmin(id: string) {
+    return this.contentService.deleteNewsAdmin(id);
+  }
+  syncNewsFromCeo1983Web() {
+    return this.contentService.syncNewsFromCeo1983Web();
+  }
 
   // ==========================================
   // 12. Marketplace Products & Quotes - Delegated to ConnectMarketplaceService
   // ==========================================
-  listActiveProducts() { return this.marketplaceService.listActiveProducts(); }
-  createProduct(userId: string, data: any) { return this.marketplaceService.createProduct(userId, data); }
-  updateProduct(userId: string, id: string, data: any) { return this.marketplaceService.updateProduct(userId, id, data); }
-  deleteProduct(userId: string, id: string) { return this.marketplaceService.deleteProduct(userId, id); }
-  listMarketplaceProducts(query?: any) { return this.marketplaceService.listMarketplaceProducts(query); }
-  getMarketplaceProductById(id: string) { return this.marketplaceService.getMarketplaceProductById(id); }
-  createMarketplaceProduct(userId: string, data: any) { return this.marketplaceService.createMarketplaceProduct(userId, data); }
-  updateMarketplaceProduct(userId: string, id: string, data: any) { return this.marketplaceService.updateMarketplaceProduct(userId, id, data); }
-  deleteMarketplaceProduct(userId: string, id: string) { return this.marketplaceService.deleteMarketplaceProduct(userId, id); }
-  toggleProductSold(userId: string, id: string) { return this.marketplaceService.toggleProductSold(userId, id); }
-  listProductQuotes(userId: string) { return this.marketplaceService.listProductQuotes(userId); }
-  requestProductQuote(userId: string, data: any) { return this.marketplaceService.requestProductQuote(userId, data); }
-  updateQuoteStatus(userId: string, id: string, status: string) { return this.marketplaceService.updateQuoteStatus(userId, id, status); }
-  sendQuoteReminder(userId: string, id: string) { return this.marketplaceService.sendQuoteReminder(userId, id); }
-  cancelQuote(userId: string, id: string, reason: string) { return this.marketplaceService.cancelQuote(userId, id, reason); }
-  deleteQuote(userId: string, id: string) { return this.marketplaceService.deleteQuote(userId, id); }
+  listActiveProducts() {
+    return this.marketplaceService.listActiveProducts();
+  }
+  createProduct(userId: string, data: any) {
+    return this.marketplaceService.createProduct(userId, data);
+  }
+  updateProduct(userId: string, id: string, data: any) {
+    return this.marketplaceService.updateProduct(userId, id, data);
+  }
+  deleteProduct(userId: string, id: string) {
+    return this.marketplaceService.deleteProduct(userId, id);
+  }
+  listMarketplaceProducts(query?: any) {
+    return this.marketplaceService.listMarketplaceProducts(query);
+  }
+  getMarketplaceProductById(id: string) {
+    return this.marketplaceService.getMarketplaceProductById(id);
+  }
+  createMarketplaceProduct(userId: string, data: any) {
+    return this.marketplaceService.createMarketplaceProduct(userId, data);
+  }
+  updateMarketplaceProduct(userId: string, id: string, data: any) {
+    return this.marketplaceService.updateMarketplaceProduct(userId, id, data);
+  }
+  deleteMarketplaceProduct(userId: string, id: string) {
+    return this.marketplaceService.deleteMarketplaceProduct(userId, id);
+  }
+  toggleProductSold(userId: string, id: string) {
+    return this.marketplaceService.toggleProductSold(userId, id);
+  }
+  listProductQuotes(userId: string) {
+    return this.marketplaceService.listProductQuotes(userId);
+  }
+  requestProductQuote(userId: string, data: any) {
+    return this.marketplaceService.requestProductQuote(userId, data);
+  }
+  updateQuoteStatus(userId: string, id: string, status: string) {
+    return this.marketplaceService.updateQuoteStatus(userId, id, status);
+  }
+  sendQuoteReminder(userId: string, id: string) {
+    return this.marketplaceService.sendQuoteReminder(userId, id);
+  }
+  cancelQuote(userId: string, id: string, reason: string) {
+    return this.marketplaceService.cancelQuote(userId, id, reason);
+  }
+  deleteQuote(userId: string, id: string) {
+    return this.marketplaceService.deleteQuote(userId, id);
+  }
 
   // ==========================================
   // 13. Public Registration - Delegated to ConnectPublicRegistrationService
   // ==========================================
-  getPublicAssociationBySlug(slug: string) { return this.publicRegistrationService.getPublicAssociationBySlug(slug); }
-  resolveAssociationByHost(host: string) { return this.publicRegistrationService.resolveAssociationByHost(host); }
-  submitClubRegistration(data: any) { return this.publicRegistrationService.submitClubRegistration(data); }
-  checkClubRegistrationStatus(query: any) { return this.publicRegistrationService.checkClubRegistrationStatus(query); }
+  getPublicAssociationBySlug(slug: string) {
+    return this.publicRegistrationService.getPublicAssociationBySlug(slug);
+  }
+  resolveAssociationByHost(host: string) {
+    return this.publicRegistrationService.resolveAssociationByHost(host);
+  }
+  submitClubRegistration(data: any) {
+    return this.publicRegistrationService.submitClubRegistration(data);
+  }
+  checkClubRegistrationStatus(query: any) {
+    return this.publicRegistrationService.checkClubRegistrationStatus(query);
+  }
 
   // ==========================================
   // 14. Settings, Audit & System Administration (Core Service)
@@ -1738,12 +2613,16 @@ export class ConnectAppService implements OnModuleInit {
     `.catch(() => [] as any[]);
     let customName = '';
     if (appSettingRow.length > 0 && appSettingRow[0]?.value) {
-      customName = typeof appSettingRow[0].value === 'string' 
-        ? appSettingRow[0].value 
-        : (appSettingRow[0].value?.name || appSettingRow[0].value?.orgName || '');
+      customName =
+        typeof appSettingRow[0].value === 'string'
+          ? appSettingRow[0].value
+          : appSettingRow[0].value?.name ||
+            appSettingRow[0].value?.orgName ||
+            '';
     }
 
-    const finalOrgName = r?.org_name || customName || assoc?.name || 'CLB Doanh Nhân CEO 1983';
+    const finalOrgName =
+      r?.org_name || customName || assoc?.name || 'CLB Doanh Nhân CEO 1983';
 
     return {
       orgName: finalOrgName,
@@ -1802,7 +2681,9 @@ export class ConnectAppService implements OnModuleInit {
     const row = await this.prisma.$queryRaw<any[]>`
       SELECT voting_open_pref FROM public.user_settings WHERE user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    return { pref: (row[0]?.voting_open_pref ?? null) as 'same' | 'new' | null };
+    return {
+      pref: (row[0]?.voting_open_pref ?? null) as 'same' | 'new' | null,
+    };
   }
 
   async setVotingPref(userId: string, pref: string | null) {
@@ -1827,7 +2708,9 @@ export class ConnectAppService implements OnModuleInit {
     const memberships = await this.prisma.$queryRaw<any[]>`
       SELECT role FROM public.memberships WHERE user_id = ${userId}::uuid
     `.catch(() => [] as any[]);
-    const isAdmin = (memberships ?? []).some((m: any) => m.role === 'admin' || m.role === 'association_admin');
+    const isAdmin = (memberships ?? []).some(
+      (m: any) => m.role === 'admin' || m.role === 'association_admin',
+    );
     return { to: isAdmin ? '/' : '/m' };
   }
 
@@ -1838,7 +2721,9 @@ export class ConnectAppService implements OnModuleInit {
   async getMediaSignedUrl(userId: string, path: string) {
     if (!path) return { signedUrl: null };
     const signedUrl =
-      path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')
+      path.startsWith('http') ||
+      path.startsWith('data:') ||
+      path.startsWith('blob:')
         ? path
         : path.startsWith('/')
           ? path
@@ -1849,7 +2734,6 @@ export class ConnectAppService implements OnModuleInit {
   // ---------------------------------------------------------------------------
   // Public: share guest contact (via PostgreSQL RPC / Prisma)
   // ---------------------------------------------------------------------------
-
 
   async getAdminRenewalScope(userId: string) {
     const platformAdmin = await this.prisma.$queryRaw<any[]>`
@@ -1875,7 +2759,8 @@ export class ConnectAppService implements OnModuleInit {
       .map((m: any) => m.association_id)
       .filter(Boolean);
 
-    if (!adminAssocIds.length) return { isPlatformAdmin: false, associations: [] };
+    if (!adminAssocIds.length)
+      return { isPlatformAdmin: false, associations: [] };
 
     const assocs = await this.prisma.$queryRaw<any[]>`
       SELECT id, name FROM public.associations WHERE id = ANY(${adminAssocIds}) ORDER BY name
@@ -1918,15 +2803,23 @@ export class ConnectAppService implements OnModuleInit {
         LIMIT ${limit}
       `.catch(() => [] as any[]);
 
-      const memberIds = [...new Set(rows.map((r: any) => r.member_id).filter(Boolean))];
-      const assocIds = [...new Set(rows.map((r: any) => r.association_id).filter(Boolean))];
+      const memberIds = [
+        ...new Set(rows.map((r: any) => r.member_id).filter(Boolean)),
+      ];
+      const assocIds = [
+        ...new Set(rows.map((r: any) => r.association_id).filter(Boolean)),
+      ];
 
       const [members, assocs] = await Promise.all([
         memberIds.length
-          ? this.prisma.$queryRaw<any[]>`SELECT id, name, code FROM public.members WHERE id = ANY(${memberIds}::uuid[])`
+          ? this.prisma.$queryRaw<
+              any[]
+            >`SELECT id, name, code FROM public.members WHERE id = ANY(${memberIds}::uuid[])`
           : Promise.resolve([] as any[]),
         assocIds.length
-          ? this.prisma.$queryRaw<any[]>`SELECT id, name FROM public.associations WHERE id = ANY(${assocIds}::uuid[])`
+          ? this.prisma.$queryRaw<
+              any[]
+            >`SELECT id, name FROM public.associations WHERE id = ANY(${assocIds}::uuid[])`
           : Promise.resolve([] as any[]),
       ]).catch(() => [[], []] as any[][]);
 
@@ -1968,7 +2861,6 @@ export class ConnectAppService implements OnModuleInit {
     }
   }
 
-
   async notifyAssociationAdmins(
     associationId: string,
     payload: {
@@ -1992,7 +2884,9 @@ export class ConnectAppService implements OnModuleInit {
           gen_random_uuid(), ${code}, ${payload.title}, ${payload.body},
           'staff', 'inapp', 'sent', ${now}, ${associationId}::uuid, 'crm', 'crm', ${now}, ${now}
         )
-      `.catch((err) => console.warn('Could not insert scoped public.notifications:', err));
+      `.catch((err) =>
+        console.warn('Could not insert scoped public.notifications:', err),
+      );
 
       // 2. Query admin / staff user IDs of this association + all platform administrators
       const adminMembers = await this.prisma.$queryRaw<any[]>`
@@ -2007,7 +2901,9 @@ export class ConnectAppService implements OnModuleInit {
         WHERE email LIKE '%admin%' OR username LIKE '%admin%'
       `.catch(() => [] as any[]);
 
-      const adminUserIds = Array.from(new Set(adminMembers.map((m) => m.user_id).filter(Boolean)));
+      const adminUserIds = Array.from(
+        new Set(adminMembers.map((m) => m.user_id).filter(Boolean)),
+      );
 
       // 3. For each admin user, insert business_notifications & emit WebSocket
       for (const adminId of adminUserIds) {
@@ -2040,7 +2936,9 @@ export class ConnectAppService implements OnModuleInit {
             ${safeData}::jsonb, 'navigate', 'Xem hồ sơ & duyệt', ${actionTarget}::jsonb,
             'high', 'delivered', 'crm', 'crm', ${now}, ${now}, ${`assoc_alert:${notifId}`}
           )
-        `.catch((err) => console.warn('Error inserting business_notification for admin:', err));
+        `.catch((err) =>
+          console.warn('Error inserting business_notification for admin:', err),
+        );
 
         this.gateway.emitNotification(adminId, {
           id: notifId,
@@ -2088,7 +2986,6 @@ export class ConnectAppService implements OnModuleInit {
     }
   }
 
-
   // ==========================================
   // Two-Way Business Notification Dispatcher
   // ==========================================
@@ -2113,7 +3010,9 @@ export class ConnectAppService implements OnModuleInit {
     });
 
     // 1. Business notifications
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.business_notifications (
         id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
         title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -2121,18 +3020,39 @@ export class ConnectAppService implements OnModuleInit {
         $1::uuid, $2::uuid, $3, $4, $5, $6,
         $7, $8, $9::jsonb, $10, 'delivered', $11, 'all', 'all', NOW(), NOW()
       )
-    `, notifId, params.userId, params.sourceDomain, params.sourceRecordId, params.eventKind, params.notificationKind,
-       params.title, params.body, safeData, params.priority || 'normal', dedupeKey).catch(() => {});
+    `,
+        notifId,
+        params.userId,
+        params.sourceDomain,
+        params.sourceRecordId,
+        params.eventKind,
+        params.notificationKind,
+        params.title,
+        params.body,
+        safeData,
+        params.priority || 'normal',
+        dedupeKey,
+      )
+      .catch(() => {});
 
     // 2. Association member_notifications
     const recipientId = params.memberId || params.userId;
-    await this.prisma.$executeRawUnsafe(`
+    await this.prisma
+      .$executeRawUnsafe(
+        `
       INSERT INTO public.member_notifications (
         id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
       ) VALUES (
         gen_random_uuid(), $1, $2, $3, false, false, $4, $5, NOW()
       )
-    `, recipientId, params.title, params.body, params.sourceDomain, params.sourceRecordId).catch(() => {});
+    `,
+        recipientId,
+        params.title,
+        params.body,
+        params.sourceDomain,
+        params.sourceRecordId,
+      )
+      .catch(() => {});
 
     // 3. Realtime gateway emit
     try {
@@ -2158,10 +3078,13 @@ export class ConnectAppService implements OnModuleInit {
     `.catch(() => []);
 
     if (rows.length > 0 && rows[0].value) {
-      const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+      const val =
+        typeof rows[0].value === 'string'
+          ? JSON.parse(rows[0].value)
+          : rows[0].value;
       const isEnabled = val.enabled === true && val.themeId !== 'none';
       return {
-        themeId: isEnabled ? (val.themeId || 'classic') : 'none',
+        themeId: isEnabled ? val.themeId || 'classic' : 'none',
         enabled: isEnabled,
         updatedAt: val.updatedAt || null,
       };
@@ -2213,14 +3136,26 @@ export class ConnectAppService implements OnModuleInit {
     };
   }
 
-  async updateAssociationLogo(userId: string, associationId?: string, logoUrl?: string | null) {
+  async updateAssociationLogo(
+    userId: string,
+    associationId?: string,
+    logoUrl?: string | null,
+  ) {
     let targetId = associationId;
     if (!targetId || !/^[0-9a-fA-F-]{36}$/.test(targetId)) {
-      const first = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.catch(() => []);
+      const first = await this.prisma.$queryRaw<
+        any[]
+      >`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.catch(
+        () => [],
+      );
       if (first.length > 0) targetId = first[0].id;
     }
     if (targetId) {
-      const prev = await this.prisma.$queryRaw<any[]>`SELECT logo_url FROM public.associations WHERE id = ${targetId}::uuid LIMIT 1`.catch(() => []);
+      const prev = await this.prisma.$queryRaw<
+        any[]
+      >`SELECT logo_url FROM public.associations WHERE id = ${targetId}::uuid LIMIT 1`.catch(
+        () => [],
+      );
       const oldUrl = prev[0]?.logo_url || null;
 
       await this.prisma.$executeRaw`
@@ -2229,7 +3164,9 @@ export class ConnectAppService implements OnModuleInit {
         WHERE id = ${targetId}::uuid
       `;
 
-      const user = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+      const user = await this.prisma.vione_users
+        .findUnique({ where: { id: userId } })
+        .catch(() => null);
       const actorName = user?.name || user?.email || 'Quản trị viên';
 
       try {
@@ -2246,7 +3183,11 @@ export class ConnectAppService implements OnModuleInit {
     try {
       let targetId = associationId;
       if (!targetId || !/^[0-9a-fA-F-]{36}$/.test(targetId)) {
-        const first = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.catch(() => []);
+        const first = await this.prisma.$queryRaw<
+          any[]
+        >`SELECT id FROM public.associations ORDER BY created_at ASC LIMIT 1`.catch(
+          () => [],
+        );
         if (first.length > 0) targetId = first[0].id;
       }
       if (!targetId) return [];
@@ -2263,7 +3204,9 @@ export class ConnectAppService implements OnModuleInit {
         changedByName: r.changed_by_name || null,
         oldLogoUrl: r.old_logo_url || null,
         newLogoUrl: r.new_logo_url || null,
-        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        createdAt: r.created_at
+          ? new Date(r.created_at).toISOString()
+          : new Date().toISOString(),
       }));
     } catch {
       return [];
@@ -2276,11 +3219,20 @@ export class ConnectAppService implements OnModuleInit {
       const ip = data.ip || '127.0.0.1';
       const ua = data.userAgent || data.user_agent || '';
       const ref = data.referrer || '';
-      const device = data.device || (ua.toLowerCase().includes('mobile') ? 'Mobile' : 'Desktop');
-      await this.prisma.$executeRawUnsafe(`
+      const device =
+        data.device ||
+        (ua.toLowerCase().includes('mobile') ? 'Mobile' : 'Desktop');
+      await this.prisma.$executeRawUnsafe(
+        `
         INSERT INTO public.landing_traffic_logs (slug, ip, user_agent, referrer, device, created_at)
         VALUES ($1, $2, $3, $4, $5, NOW())
-      `, slug, ip, ua, ref, device);
+      `,
+        slug,
+        ip,
+        ua,
+        ref,
+        device,
+      );
       return { success: true, message: 'Visitor logged' };
     } catch (err: any) {
       return { success: false, error: err.message };
@@ -2289,15 +3241,31 @@ export class ConnectAppService implements OnModuleInit {
 
   async getLandingTrafficStats() {
     try {
-      const totalRow = await this.prisma.$queryRawUnsafe<any[]>(`SELECT COUNT(*)::int as count FROM public.landing_traffic_logs`).catch(() => [{ count: 0 }]);
-      const todayRow = await this.prisma.$queryRawUnsafe<any[]>(`SELECT COUNT(*)::int as count FROM public.landing_traffic_logs WHERE created_at >= CURRENT_DATE`).catch(() => [{ count: 0 }]);
-      const uniqueRow = await this.prisma.$queryRawUnsafe<any[]>(`SELECT COUNT(DISTINCT ip)::int as count FROM public.landing_traffic_logs`).catch(() => [{ count: 0 }]);
-      const recent = await this.prisma.$queryRawUnsafe<any[]>(`
+      const totalRow = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT COUNT(*)::int as count FROM public.landing_traffic_logs`)
+        .catch(() => [{ count: 0 }]);
+      const todayRow = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT COUNT(*)::int as count FROM public.landing_traffic_logs WHERE created_at >= CURRENT_DATE`)
+        .catch(() => [{ count: 0 }]);
+      const uniqueRow = await this.prisma
+        .$queryRawUnsafe<
+          any[]
+        >(`SELECT COUNT(DISTINCT ip)::int as count FROM public.landing_traffic_logs`)
+        .catch(() => [{ count: 0 }]);
+      const recent = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `
         SELECT id, slug, ip, user_agent as "userAgent", referrer, device, created_at as "createdAt"
         FROM public.landing_traffic_logs
         ORDER BY created_at DESC
         LIMIT 50
-      `).catch(() => []);
+      `,
+        )
+        .catch(() => []);
 
       return {
         totalVisits: Number(totalRow[0]?.count || recent.length),
@@ -2314,5 +3282,4 @@ export class ConnectAppService implements OnModuleInit {
       };
     }
   }
-
 }

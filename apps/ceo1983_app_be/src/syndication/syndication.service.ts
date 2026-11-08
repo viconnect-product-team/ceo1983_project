@@ -1,4 +1,9 @@
-import { Injectable, Logger, Optional, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Optional,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 
@@ -88,16 +93,24 @@ export class SyndicationService {
         SELECT value FROM public.app_settings WHERE key = 'crm_platform_integrations' LIMIT 1
       `;
       if (rows && rows.length > 0 && rows[0]?.value) {
-        const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+        const val =
+          typeof rows[0].value === 'string'
+            ? JSON.parse(rows[0].value)
+            : rows[0].value;
         return { ...DEFAULT_CONFIG, ...val };
       }
     } catch (err) {
-      this.logger.warn('Failed to load platform config from DB, returning defaults', err);
+      this.logger.warn(
+        'Failed to load platform config from DB, returning defaults',
+        err,
+      );
     }
     return DEFAULT_CONFIG;
   }
 
-  async saveConfig(dto: Partial<PlatformConfigDto>): Promise<{ success: boolean; config: PlatformConfigDto }> {
+  async saveConfig(
+    dto: Partial<PlatformConfigDto>,
+  ): Promise<{ success: boolean; config: PlatformConfigDto }> {
     const current = await this.getConfig();
     const updated: PlatformConfigDto = { ...current, ...dto };
 
@@ -123,17 +136,20 @@ export class SyndicationService {
     const broadcastId = `BC_${Date.now()}`;
     const timestamp = new Date().toISOString();
 
-    const channels = Array.isArray(dto.targetChannels) && dto.targetChannels.length > 0
-      ? dto.targetChannels
-      : ['facebook', 'zalo', 'website'];
+    const channels =
+      Array.isArray(dto.targetChannels) && dto.targetChannels.length > 0
+        ? dto.targetChannels
+        : ['facebook', 'zalo', 'website'];
 
     const channelResults: Record<string, any> = {};
 
     // 1. Phân phối lên Facebook (Hội nhóm & Fanpage)
     if (channels.includes('facebook') && config.fbEnabled) {
-      const targetGroupUrl = config.fbGroupUrl || 'https://facebook.com/groups/clbdoanhnhanceo1983';
-      const targetPageUrl = config.fbPageUrl || 'https://facebook.com/clbdoanhnhanceo1983.hanoiba';
-      
+      const targetGroupUrl =
+        config.fbGroupUrl || 'https://facebook.com/groups/clbdoanhnhanceo1983';
+      const targetPageUrl =
+        config.fbPageUrl || 'https://facebook.com/clbdoanhnhanceo1983.hanoiba';
+
       // Giả lập hoặc gọi Facebook Graph API khi có token
       channelResults.facebook = {
         success: true,
@@ -149,7 +165,8 @@ export class SyndicationService {
 
     // 2. Phân phối lên Zalo (Nhóm Zalo & OA)
     if (channels.includes('zalo') && config.zaloEnabled) {
-      const targetZaloGroup = config.zaloGroupUrl || 'https://zalo.me/g/clbceo1983hanoiba';
+      const targetZaloGroup =
+        config.zaloGroupUrl || 'https://zalo.me/g/clbceo1983hanoiba';
       channelResults.zalo = {
         success: true,
         channel: 'zalo',
@@ -193,7 +210,10 @@ export class SyndicationService {
         `;
         let historyList: any[] = [];
         if (rows && rows.length > 0 && rows[0]?.value) {
-          historyList = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+          historyList =
+            typeof rows[0].value === 'string'
+              ? JSON.parse(rows[0].value)
+              : rows[0].value;
         }
         historyList.unshift(historyItem);
         if (historyList.length > 50) historyList = historyList.slice(0, 50);
@@ -226,7 +246,9 @@ export class SyndicationService {
         SELECT value FROM public.app_settings WHERE key = 'crm_syndication_broadcast_history' LIMIT 1
       `;
       if (rows && rows.length > 0 && rows[0]?.value) {
-        return typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+        return typeof rows[0].value === 'string'
+          ? JSON.parse(rows[0].value)
+          : rows[0].value;
       }
     } catch (err) {
       this.logger.warn('Failed to load broadcast history', err);

@@ -1,4 +1,12 @@
-import { Injectable, Logger, HttpException, HttpStatus, Optional, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  HttpException,
+  HttpStatus,
+  Optional,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -53,22 +61,33 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   private autoRefreshTimer: NodeJS.Timeout | null = null;
   private readonly webhookInteractions = new Map<
     string,
-    { userId: string; displayName: string; avatar: string; lastMessage: string; time: number }
+    {
+      userId: string;
+      displayName: string;
+      avatar: string;
+      lastMessage: string;
+      time: number;
+    }
   >();
 
   constructor(@Optional() private readonly prisma?: PrismaService) {}
 
   onModuleInit() {
-    this.logger.log('Khởi chạy tiến trình Zalo OA Auto-Token Manager (chu kỳ 6 tiếng)...');
+    this.logger.log(
+      'Khởi chạy tiến trình Zalo OA Auto-Token Manager (chu kỳ 6 tiếng)...',
+    );
     // Chạy kiểm tra sau 15 giây khi server sẵn sàng
     setTimeout(() => {
       this.checkAndAutoRefreshTokenOnStartup();
     }, 15000);
 
     // Chu kỳ 6 tiếng = 6 * 60 * 60 * 1000 = 21,600,000 ms
-    this.autoRefreshTimer = setInterval(() => {
-      this.performAutoRefreshToken();
-    }, 6 * 60 * 60 * 1000);
+    this.autoRefreshTimer = setInterval(
+      () => {
+        this.performAutoRefreshToken();
+      },
+      6 * 60 * 60 * 1000,
+    );
   }
 
   onModuleDestroy() {
@@ -82,24 +101,36 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     try {
       const cfg = await this.getOaConfig();
       if (!cfg || !cfg.refreshToken || !cfg.appId || !cfg.secretKey) {
-        this.logger.log('[Zalo Auto-Refresh] Chưa có cấu hình Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL.');
+        this.logger.log(
+          '[Zalo Auto-Refresh] Chưa có cấu hình Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL.',
+        );
         return;
       }
 
-      const lastRef = cfg.lastRefreshedAt ? new Date(cfg.lastRefreshedAt).getTime() : 0;
+      const lastRef = cfg.lastRefreshedAt
+        ? new Date(cfg.lastRefreshedAt).getTime()
+        : 0;
       const now = Date.now();
       const sixHoursMs = 6 * 60 * 60 * 1000;
 
       // Nếu đã hơn 6 tiếng chưa refresh hoặc chưa từng refresh -> thực hiện ngay
       if (now - lastRef >= sixHoursMs) {
-        this.logger.log('[Zalo Auto-Refresh Startup] Đã quá 6 tiếng chưa làm mới token Zalo OA, tự động thực thi ngay...');
+        this.logger.log(
+          '[Zalo Auto-Refresh Startup] Đã quá 6 tiếng chưa làm mới token Zalo OA, tự động thực thi ngay...',
+        );
         await this.performAutoRefreshToken();
       } else {
-        const nextInMinutes = Math.round((sixHoursMs - (now - lastRef)) / 60000);
-        this.logger.log(`[Zalo Auto-Refresh Startup] Token Zalo OA còn hiệu lực tốt (lần refresh kế tiếp sau khoảng ${nextInMinutes} phút).`);
+        const nextInMinutes = Math.round(
+          (sixHoursMs - (now - lastRef)) / 60000,
+        );
+        this.logger.log(
+          `[Zalo Auto-Refresh Startup] Token Zalo OA còn hiệu lực tốt (lần refresh kế tiếp sau khoảng ${nextInMinutes} phút).`,
+        );
       }
     } catch (err: any) {
-      this.logger.warn(`checkAndAutoRefreshTokenOnStartup warning: ${err?.message}`);
+      this.logger.warn(
+        `checkAndAutoRefreshTokenOnStartup warning: ${err?.message}`,
+      );
     }
   }
 
@@ -113,7 +144,9 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         SELECT value FROM public.app_settings WHERE key = 'zalo_oa_config' LIMIT 1
       `);
       if (row.length > 0 && row[0]?.value) {
-        return typeof row[0].value === 'string' ? JSON.parse(row[0].value) : row[0].value;
+        return typeof row[0].value === 'string'
+          ? JSON.parse(row[0].value)
+          : row[0].value;
       }
       return null;
     } catch (err: any) {
@@ -125,17 +158,28 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   /**
    * Lưu cấu hình Zalo OA vào bảng public.app_settings
    */
-  async saveOaConfig(config: any, userId?: string): Promise<{ ok: boolean; message: string; data?: any }> {
+  async saveOaConfig(
+    config: any,
+    userId?: string,
+  ): Promise<{ ok: boolean; message: string; data?: any }> {
     if (!this.prisma) return { ok: true, message: 'No prisma' };
     try {
       const validUserId = userId && userId.length === 36 ? userId : null;
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma.$executeRawUnsafe(
+        `
         INSERT INTO public.app_settings (key, value, updated_at, updated_by)
         VALUES ('zalo_oa_config', $1::jsonb, now(), $2::uuid)
         ON CONFLICT (key) DO UPDATE
         SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
-      `, JSON.stringify(config), validUserId);
-      return { ok: true, message: 'Đã lưu cấu hình Zalo OA vào CSDL thành công', data: config };
+      `,
+        JSON.stringify(config),
+        validUserId,
+      );
+      return {
+        ok: true,
+        message: 'Đã lưu cấu hình Zalo OA vào CSDL thành công',
+        data: config,
+      };
     } catch (err: any) {
       this.logger.warn(`saveOaConfig error: ${err?.message}`);
       return { ok: false, message: err?.message || 'Lỗi lưu cấu hình Zalo OA' };
@@ -145,13 +189,25 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   /**
    * Thực hiện làm mới Access Token Zalo OA tự động (Cứ 6 tiếng hoặc kích hoạt tức thì)
    */
-  async performAutoRefreshToken(): Promise<{ ok: boolean; message: string; data?: any }> {
+  async performAutoRefreshToken(): Promise<{
+    ok: boolean;
+    message: string;
+    data?: any;
+  }> {
     try {
-      this.logger.log('[Zalo Auto-Refresh 6h] Bắt đầu kiểm tra và làm mới token Zalo OA...');
+      this.logger.log(
+        '[Zalo Auto-Refresh 6h] Bắt đầu kiểm tra và làm mới token Zalo OA...',
+      );
       const cfg = await this.getOaConfig();
       if (!cfg || !cfg.refreshToken || !cfg.appId || !cfg.secretKey) {
-        this.logger.warn('[Zalo Auto-Refresh 6h] Bỏ qua: Chưa cấu hình đủ appId, secretKey hoặc refreshToken trong CSDL');
-        return { ok: false, message: 'Chưa cấu hình đủ thông tin Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL' };
+        this.logger.warn(
+          '[Zalo Auto-Refresh 6h] Bỏ qua: Chưa cấu hình đủ appId, secretKey hoặc refreshToken trong CSDL',
+        );
+        return {
+          ok: false,
+          message:
+            'Chưa cấu hình đủ thông tin Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL',
+        };
       }
 
       const res = await this.refreshToken({
@@ -172,11 +228,20 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         };
 
         await this.saveOaConfig(updatedConfig);
-        this.logger.log(`[Zalo Auto-Refresh 6h] ĐÃ TỰ ĐỘNG LÀM MỚI TOKEN THÀNH CÔNG! Token mới hiệu lực thêm ${res.expiresIn}s.`);
-        return { ok: true, message: 'Làm mới token thành công và đã đồng bộ lưu vào CSDL', data: updatedConfig };
+        this.logger.log(
+          `[Zalo Auto-Refresh 6h] ĐÃ TỰ ĐỘNG LÀM MỚI TOKEN THÀNH CÔNG! Token mới hiệu lực thêm ${res.expiresIn}s.`,
+        );
+        return {
+          ok: true,
+          message: 'Làm mới token thành công và đã đồng bộ lưu vào CSDL',
+          data: updatedConfig,
+        };
       }
 
-      return { ok: false, message: 'Không nhận được access_token mới từ máy chủ Zalo OAuth' };
+      return {
+        ok: false,
+        message: 'Không nhận được access_token mới từ máy chủ Zalo OAuth',
+      };
     } catch (err: any) {
       const errMsg = err?.message || 'Lỗi không xác định khi làm mới token';
       this.logger.error(`[Zalo Auto-Refresh 6h] LỖI LÀM MỚI TOKEN: ${errMsg}`);
@@ -244,7 +309,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
             uid,
             String(event?.recipient?.id || ''),
             msg,
-            JSON.stringify(event)
+            JSON.stringify(event),
           );
 
           // Phát hiện nếu tin nhắn chứa SĐT di động Việt Nam
@@ -258,14 +323,14 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
           if (extractedPhone) {
             const memberRow: any[] = await this.prisma.$queryRawUnsafe(
               `SELECT id FROM public.members WHERE phone LIKE $1 LIMIT 1`,
-              `%${extractedPhone}%`
+              `%${extractedPhone}%`,
             );
             if (memberRow.length > 0) {
               matchedMemberId = memberRow[0].id;
               await this.prisma.$executeRawUnsafe(
                 `UPDATE public.members SET zalo_user_id = $1 WHERE id = $2`,
                 uid,
-                matchedMemberId
+                matchedMemberId,
               );
             }
           }
@@ -286,16 +351,20 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
             avatar,
             extractedPhone || null,
             matchedMemberId,
-            msg
+            msg,
           );
         } catch (dbErr: any) {
           this.logger.warn(`Lỗi lưu Zalo Webhook vào DB: ${dbErr.message}`);
         }
       }
 
-      this.logger.log(`✅ [Zalo Webhook] Đã ghi nhận tương tác từ Zalo User ID: ${uid} - Nội dung: "${msg}"`);
+      this.logger.log(
+        `✅ [Zalo Webhook] Đã ghi nhận tương tác từ Zalo User ID: ${uid} - Nội dung: "${msg}"`,
+      );
     } catch (err: any) {
-      this.logger.warn(`⚠️ [Zalo Webhook] Lỗi khi xử lý payload: ${err.message}`);
+      this.logger.warn(
+        `⚠️ [Zalo Webhook] Lỗi khi xử lý payload: ${err.message}`,
+      );
     }
   }
 
@@ -311,22 +380,30 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
 
       let response: any;
       try {
-        response = await axios.post('https://oauth.zalo.me/v4/oa/access_token', params.toString(), {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            secret_key: dto.secretKey.trim(),
+        response = await axios.post(
+          'https://oauth.zalo.me/v4/oa/access_token',
+          params.toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              secret_key: dto.secretKey.trim(),
+            },
+            timeout: 10000,
           },
-          timeout: 10000,
-        });
+        );
       } catch (err: any) {
         // Fallback endpoint
-        response = await axios.post('https://oauth.zaloapp.com/v4/oa/access_token', params.toString(), {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            secret_key: dto.secretKey.trim(),
+        response = await axios.post(
+          'https://oauth.zaloapp.com/v4/oa/access_token',
+          params.toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              secret_key: dto.secretKey.trim(),
+            },
+            timeout: 10000,
           },
-          timeout: 10000,
-        });
+        );
       }
 
       if (response.data && response.data.access_token) {
@@ -355,16 +432,22 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         };
       }
 
-      this.logger.warn(`Zalo refresh token error: ${JSON.stringify(response.data)}`);
+      this.logger.warn(
+        `Zalo refresh token error: ${JSON.stringify(response.data)}`,
+      );
       throw new HttpException(
-        response.data?.error_description || response.data?.message || 'Không thể gia hạn token từ Zalo',
+        response.data?.error_description ||
+          response.data?.message ||
+          'Không thể gia hạn token từ Zalo',
         HttpStatus.BAD_REQUEST,
       );
     } catch (error: any) {
       this.logger.error(`Error refreshing Zalo token: ${error.message}`);
       if (error instanceof HttpException) throw error;
       throw new HttpException(
-        error.response?.data?.error_description || error.message || 'Lỗi kết nối máy chủ Zalo OAuth',
+        error.response?.data?.error_description ||
+          error.message ||
+          'Lỗi kết nối máy chủ Zalo OAuth',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -386,21 +469,29 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
 
       let response: any;
       try {
-        response = await axios.post('https://oauth.zalo.me/v4/oa/access_token', params.toString(), {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            secret_key: dto.secretKey.trim(),
+        response = await axios.post(
+          'https://oauth.zalo.me/v4/oa/access_token',
+          params.toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              secret_key: dto.secretKey.trim(),
+            },
+            timeout: 10000,
           },
-          timeout: 10000,
-        });
+        );
       } catch (err: any) {
-        response = await axios.post('https://oauth.zaloapp.com/v4/oa/access_token', params.toString(), {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            secret_key: dto.secretKey.trim(),
+        response = await axios.post(
+          'https://oauth.zaloapp.com/v4/oa/access_token',
+          params.toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              secret_key: dto.secretKey.trim(),
+            },
+            timeout: 10000,
           },
-          timeout: 10000,
-        });
+        );
       }
 
       if (response.data && response.data.access_token) {
@@ -428,16 +519,22 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         };
       }
 
-      this.logger.warn(`Zalo exchange auth code error: ${JSON.stringify(response.data)}`);
+      this.logger.warn(
+        `Zalo exchange auth code error: ${JSON.stringify(response.data)}`,
+      );
       throw new HttpException(
-        response.data?.error_description || response.data?.message || 'Không thể đổi mã ủy quyền từ Zalo',
+        response.data?.error_description ||
+          response.data?.message ||
+          'Không thể đổi mã ủy quyền từ Zalo',
         HttpStatus.BAD_REQUEST,
       );
     } catch (error: any) {
       this.logger.error(`Error exchanging Zalo auth code: ${error.message}`);
       if (error instanceof HttpException) throw error;
       throw new HttpException(
-        error.response?.data?.error_description || error.message || 'Lỗi máy chủ Zalo OAuth khi đổi mã ủy quyền',
+        error.response?.data?.error_description ||
+          error.message ||
+          'Lỗi máy chủ Zalo OAuth khi đổi mã ủy quyền',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -448,10 +545,13 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
    */
   async checkTokenStatus(accessToken: string) {
     try {
-      const response = await axios.get('https://openapi.zalo.me/v2.0/oa/getoa', {
-        headers: { access_token: accessToken.trim() },
-        timeout: 8000,
-      });
+      const response = await axios.get(
+        'https://openapi.zalo.me/v2.0/oa/getoa',
+        {
+          headers: { access_token: accessToken.trim() },
+          timeout: 8000,
+        },
+      );
 
       if (response.data && response.data.error === 0) {
         return {
@@ -466,7 +566,8 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         success: false,
         valid: false,
         errorCode: response.data?.error,
-        message: response.data?.message || 'Access Token đã hết hạn hoặc không hợp lệ',
+        message:
+          response.data?.message || 'Access Token đã hết hạn hoặc không hợp lệ',
       };
     } catch (err: any) {
       return {
@@ -483,7 +584,11 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   async getRecentChats(accessToken: string) {
     const chats: any[] = [];
     const seenIds = new Set<string>();
-    let lastZaloError: { code: number; message: string; guide?: string } | null = null;
+    let lastZaloError: {
+      code: number;
+      message: string;
+      guide?: string;
+    } | null = null;
 
     // 0. Nạp từ CSDL PostgreSQL (zalo_subscribers và members đã có liên kết Zalo)
     if (this.prisma) {
@@ -563,18 +668,21 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
 
     // 1. Thử lấy danh sách tin nhắn tương tác gần đây qua API listrecentchat
     try {
-      const response = await axios.get('https://openapi.zalo.me/v2.0/oa/listrecentchat', {
-        headers: {
-          access_token: accessToken.trim(),
+      const response = await axios.get(
+        'https://openapi.zalo.me/v2.0/oa/listrecentchat',
+        {
+          headers: {
+            access_token: accessToken.trim(),
+          },
+          params: {
+            data: JSON.stringify({
+              offset: 0,
+              count: 10,
+            }),
+          },
+          timeout: 5000,
         },
-        params: {
-          data: JSON.stringify({
-            offset: 0,
-            count: 10,
-          }),
-        },
-        timeout: 5000,
-      });
+      );
 
       if (response.data) {
         if (response.data.error === 0 && Array.isArray(response.data.data)) {
@@ -582,7 +690,8 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
             // src === 1: Người dùng gửi cho OA (from_id là userId của khách)
             // src === 0: OA gửi cho người dùng (to_id là userId của khách)
             const uid = String(item.src === 1 ? item.from_id : item.to_id);
-            const name = item.src === 1 ? item.from_display_name : item.to_display_name;
+            const name =
+              item.src === 1 ? item.from_display_name : item.to_display_name;
             const avatar = item.src === 1 ? item.from_avatar : item.to_avatar;
 
             if (uid && uid !== 'undefined' && !seenIds.has(uid)) {
@@ -604,10 +713,12 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
               response.data.error === -216
                 ? 'Access Token đã hết hạn hoặc không hợp lệ. Vui lòng bấm Gia hạn Access Token!'
                 : response.data.error === -212
-                ? 'Ứng dụng chưa được kích hoạt quyền Quản lý tin nhắn trên Zalo Developers.'
-                : undefined,
+                  ? 'Ứng dụng chưa được kích hoạt quyền Quản lý tin nhắn trên Zalo Developers.'
+                  : undefined,
           };
-          this.logger.warn(`[Zalo OA] listrecentchat error ${response.data.error}: ${response.data.message}`);
+          this.logger.warn(
+            `[Zalo OA] listrecentchat error ${response.data.error}: ${response.data.message}`,
+          );
         }
       }
     } catch (err: any) {
@@ -617,16 +728,22 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     // 2. Nếu chưa có tin nhắn, thử lấy qua danh sách người quan tâm (followers)
     if (chats.length === 0) {
       try {
-        const followersRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getfollowers', {
-          headers: { access_token: accessToken.trim() },
-          params: {
-            data: JSON.stringify({ offset: 0, count: 10 }),
+        const followersRes = await axios.get(
+          'https://openapi.zalo.me/v2.0/oa/getfollowers',
+          {
+            headers: { access_token: accessToken.trim() },
+            params: {
+              data: JSON.stringify({ offset: 0, count: 10 }),
+            },
+            timeout: 5000,
           },
-          timeout: 5000,
-        });
+        );
 
         if (followersRes.data) {
-          if (followersRes.data.error === 0 && Array.isArray(followersRes.data?.data?.users)) {
+          if (
+            followersRes.data.error === 0 &&
+            Array.isArray(followersRes.data?.data?.users)
+          ) {
             const users = followersRes.data.data.users;
             for (const u of users) {
               const uid = String(u.user_id);
@@ -637,13 +754,17 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
                 let displayName = 'Hội viên Zalo';
                 let avatar = '';
                 try {
-                  const profileRes = await axios.get('https://openapi.zalo.me/v2.0/oa/getprofile', {
-                    headers: { access_token: accessToken.trim() },
-                    params: { data: JSON.stringify({ user_id: uid }) },
-                    timeout: 3000,
-                  });
+                  const profileRes = await axios.get(
+                    'https://openapi.zalo.me/v2.0/oa/getprofile',
+                    {
+                      headers: { access_token: accessToken.trim() },
+                      params: { data: JSON.stringify({ user_id: uid }) },
+                      timeout: 3000,
+                    },
+                  );
                   if (profileRes.data && profileRes.data.error === 0) {
-                    displayName = profileRes.data.data?.display_name || displayName;
+                    displayName =
+                      profileRes.data.data?.display_name || displayName;
                     avatar = profileRes.data.data?.avatar || '';
                   }
                 } catch {}
@@ -666,7 +787,9 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
                   ? 'Access Token đã hết hạn hoặc không hợp lệ. Vui lòng bấm Gia hạn Access Token!'
                   : undefined,
             };
-            this.logger.warn(`[Zalo OA] getfollowers error ${followersRes.data.error}: ${followersRes.data.message}`);
+            this.logger.warn(
+              `[Zalo OA] getfollowers error ${followersRes.data.error}: ${followersRes.data.message}`,
+            );
           }
         }
       } catch (err: any) {
@@ -687,10 +810,16 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
    */
   async sendMessage(dto: SendZaloMessageDto) {
     if (!dto.accessToken?.trim()) {
-      throw new HttpException('Thiếu Access Token của Zalo OA. Vui lòng dán Access Token hợp lệ!', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Thiếu Access Token của Zalo OA. Vui lòng dán Access Token hợp lệ!',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (!dto.message?.trim()) {
-      throw new HttpException('Nội dung tin nhắn không được để trống', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Nội dung tin nhắn không được để trống',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     let targetUserId = dto.userId?.trim();
@@ -700,11 +829,14 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     if (!targetUserId && this.prisma && dto.targetPhone) {
       try {
         const cleanPhone = dto.targetPhone.replace(/\D/g, '');
-        const phoneVariants = [cleanPhone, cleanPhone.startsWith('84') ? '0' + cleanPhone.slice(2) : cleanPhone];
+        const phoneVariants = [
+          cleanPhone,
+          cleanPhone.startsWith('84') ? '0' + cleanPhone.slice(2) : cleanPhone,
+        ];
         const member: any[] = await this.prisma.$queryRawUnsafe(
           `SELECT zalo_user_id, name FROM public.members WHERE (phone LIKE $1 OR phone LIKE $2) AND zalo_user_id IS NOT NULL AND zalo_user_id != '' LIMIT 1`,
           `%${phoneVariants[0]}%`,
-          `%${phoneVariants[1]}%`
+          `%${phoneVariants[1]}%`,
         );
         if (member.length > 0 && member[0].zalo_user_id) {
           targetUserId = member[0].zalo_user_id;
@@ -713,7 +845,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
           const sub: any[] = await this.prisma.$queryRawUnsafe(
             `SELECT zalo_user_id, display_name FROM public.zalo_subscribers WHERE (phone LIKE $1 OR phone LIKE $2) LIMIT 1`,
             `%${phoneVariants[0]}%`,
-            `%${phoneVariants[1]}%`
+            `%${phoneVariants[1]}%`,
           );
           if (sub.length > 0 && sub[0].zalo_user_id) {
             targetUserId = sub[0].zalo_user_id;
@@ -730,7 +862,10 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       const targetLower = (dto.targetName || '').toLowerCase().trim();
       for (const item of this.webhookInteractions.values()) {
         const nameLower = (item.displayName || '').toLowerCase().trim();
-        if (targetLower && (nameLower.includes(targetLower) || targetLower.includes(nameLower))) {
+        if (
+          targetLower &&
+          (nameLower.includes(targetLower) || targetLower.includes(nameLower))
+        ) {
           targetUserId = item.userId;
           recipientName = item.displayName;
           break;
@@ -771,7 +906,9 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
           }
         }
       } catch (err: any) {
-        this.logger.warn(`Could not resolve user_id automatically: ${err.message}`);
+        this.logger.warn(
+          `Could not resolve user_id automatically: ${err.message}`,
+        );
       }
     }
 
@@ -783,9 +920,11 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      this.logger.log(`Sending CS message to Zalo User ID: ${targetUserId} (${recipientName})`);
+      this.logger.log(
+        `Sending CS message to Zalo User ID: ${targetUserId} (${recipientName})`,
+      );
 
-      let response = await axios.post(
+      const response = await axios.post(
         'https://openapi.zalo.me/v3.0/oa/message/cs',
         {
           recipient: {
@@ -808,7 +947,9 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       // Fallback sang endpoint v2.0 nếu v3.0 trả về lỗi -235 (Loại OA chưa hỗ trợ v3.0 CS)
       if (zaloData && zaloData.error === -235) {
         try {
-          this.logger.log(`API v3.0 returned -235, attempting fallback to v2.0 message API...`);
+          this.logger.log(
+            `API v3.0 returned -235, attempting fallback to v2.0 message API...`,
+          );
           const fallbackRes = await axios.post(
             'https://openapi.zalo.me/v2.0/oa/message',
             {
@@ -829,7 +970,9 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
           if (fallbackRes.data && fallbackRes.data.error === 0) {
             zaloData = fallbackRes.data;
           } else if (fallbackRes.data) {
-            this.logger.warn(`v2.0 fallback response: ${JSON.stringify(fallbackRes.data)}`);
+            this.logger.warn(
+              `v2.0 fallback response: ${JSON.stringify(fallbackRes.data)}`,
+            );
           }
         } catch (e: any) {
           this.logger.warn(`v2.0 fallback failed: ${e.message}`);
@@ -851,11 +994,14 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       // Xử lý các mã lỗi phổ biến của Zalo để báo rõ cho người dùng
       let errorDesc = zaloData?.message || 'Lỗi gửi tin Zalo OA';
       if (zaloData?.error === -216) {
-        errorDesc = 'Access Token đã hết hạn! Vui lòng bấm nút "Tự Động Gia Hạn Token Mới" để tiếp tục.';
+        errorDesc =
+          'Access Token đã hết hạn! Vui lòng bấm nút "Tự Động Gia Hạn Token Mới" để tiếp tục.';
       } else if (zaloData?.error === -213) {
-        errorDesc = 'Zalo User ID không hợp lệ hoặc người dùng chưa quan tâm/nhắn tin với OA!';
+        errorDesc =
+          'Zalo User ID không hợp lệ hoặc người dùng chưa quan tâm/nhắn tin với OA!';
       } else if (zaloData?.error === -221) {
-        errorDesc = 'Đã quá 48h kể từ tin nhắn tương tác cuối cùng của người dùng với OA theo chính sách CS của Zalo.';
+        errorDesc =
+          'Đã quá 48h kể từ tin nhắn tương tác cuối cùng của người dùng với OA theo chính sách CS của Zalo.';
       } else if (zaloData?.error === -235) {
         errorDesc =
           'Loại hình Zalo OA của bạn chưa được cấp quyền dùng API gửi tin tự động (Lỗi -235). Nguyên nhân: Tài khoản OA của bạn hiện là OA Nội Dung hoặc OA Miễn Phí chưa nâng cấp Gói Dịch Vụ OA (Dùng thử/Cơ bản/Nâng cao) trên oa.zalo.me. Bạn hãy bấm nút "Mở Zalo OA Chat Gửi Ngay" hoặc chuyển sang giải pháp ZNS theo SĐT!';
@@ -870,7 +1016,9 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     } catch (error: any) {
       this.logger.error(`Error sending Zalo message: ${error.message}`);
       throw new HttpException(
-        error.response?.data?.message || error.message || 'Lỗi khi gọi API Zalo OA',
+        error.response?.data?.message ||
+          error.message ||
+          'Lỗi khi gọi API Zalo OA',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -881,10 +1029,20 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
    */
   async sendBulkMessages(dto: SendBulkZaloMessageDto) {
     if (!dto.accessToken?.trim()) {
-      throw new HttpException('Thiếu Access Token của Zalo OA', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Thiếu Access Token của Zalo OA',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-    if (!dto.recipients || !Array.isArray(dto.recipients) || dto.recipients.length === 0) {
-      throw new HttpException('Danh sách hội viên nhận tin không được để trống', HttpStatus.BAD_REQUEST);
+    if (
+      !dto.recipients ||
+      !Array.isArray(dto.recipients) ||
+      dto.recipients.length === 0
+    ) {
+      throw new HttpException(
+        'Danh sách hội viên nhận tin không được để trống',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const results: Array<{
@@ -899,11 +1057,13 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     let failedCount = 0;
     const delay = dto.delayMs || 250;
 
-    this.logger.log(`Starting bulk campaign for ${dto.recipients.length} members`);
+    this.logger.log(
+      `Starting bulk campaign for ${dto.recipients.length} members`,
+    );
 
     for (const recipient of dto.recipients) {
       // Thay thế các biến động tương ứng cho từng hội viên
-      let message = dto.messageTemplate
+      const message = dto.messageTemplate
         .replace(/{ho_ten}/g, recipient.name || 'Hội viên')
         .replace(/{so_dien_thoai}/g, recipient.phone || '')
         .replace(/{ma_hoi_vien}/g, recipient.memberCode || 'CEO1983')
@@ -913,7 +1073,10 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
             ? new Intl.NumberFormat('vi-VN').format(recipient.feeAmount)
             : '10.000.000',
         )
-        .replace(/{ten_doanh_nghiep}/g, recipient.company || 'Doanh nghiệp Hội viên CEO 1983');
+        .replace(
+          /{ten_doanh_nghiep}/g,
+          recipient.company || 'Doanh nghiệp Hội viên CEO 1983',
+        );
 
       try {
         const sendRes = await this.sendMessage({
@@ -979,16 +1142,20 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     messageTemplate?: string;
     accessToken?: string;
   }) {
-    const accessToken = dto.accessToken || process.env.ZALO_OA_ACCESS_TOKEN || '';
+    const accessToken =
+      dto.accessToken || process.env.ZALO_OA_ACCESS_TOKEN || '';
     if (!accessToken) {
-      return { success: false, message: 'Thiếu Zalo OA Access Token để chạy chu kỳ tự động.' };
+      return {
+        success: false,
+        message: 'Thiếu Zalo OA Access Token để chạy chu kỳ tự động.',
+      };
     }
 
     let recipients: SendBulkRecipientDto[] = [];
     if (this.prisma) {
       try {
         const members: any[] = await this.prisma.$queryRawUnsafe(
-          `SELECT id, name, phone, code as member_code, company_name FROM public.members WHERE phone IS NOT NULL AND phone != '' LIMIT 50`
+          `SELECT id, name, phone, code as member_code, company_name FROM public.members WHERE phone IS NOT NULL AND phone != '' LIMIT 50`,
         );
         recipients = members.map((m) => ({
           phone: m.phone || '',
@@ -1004,8 +1171,20 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
 
     if (recipients.length === 0) {
       recipients = [
-        { phone: '0973924819', name: 'Phạm Văn Vũ', memberCode: 'CEO1983-001', company: 'ViConnect Tech', feeAmount: 10000000 },
-        { phone: '0973205683', name: 'Lê Thị Thùy Dung', memberCode: 'CEO1983-002', company: 'Phó Chánh VP CEO 1983', feeAmount: 10000000 },
+        {
+          phone: '0973924819',
+          name: 'Phạm Văn Vũ',
+          memberCode: 'CEO1983-001',
+          company: 'ViConnect Tech',
+          feeAmount: 10000000,
+        },
+        {
+          phone: '0973205683',
+          name: 'Lê Thị Thùy Dung',
+          memberCode: 'CEO1983-002',
+          company: 'Phó Chánh VP CEO 1983',
+          feeAmount: 10000000,
+        },
       ];
     }
 
@@ -1038,13 +1217,22 @@ Trân trọng cảm ơn Anh/Chị!`;
     trackingId?: string;
   }) {
     if (!dto.accessToken?.trim()) {
-      throw new HttpException('Thiếu Access Token để gửi ZNS', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Thiếu Access Token để gửi ZNS',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (!dto.phone?.trim()) {
-      throw new HttpException('Số điện thoại nhận ZNS không được để trống', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Số điện thoại nhận ZNS không được để trống',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (!dto.templateId?.trim()) {
-      throw new HttpException('Template ID ZNS không được để trống', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Template ID ZNS không được để trống',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     let formattedPhone = dto.phone.replace(/\D/g, '');
@@ -1055,7 +1243,9 @@ Trân trọng cảm ơn Anh/Chị!`;
     }
 
     try {
-      this.logger.log(`Sending ZNS template ${dto.templateId} to phone: ${formattedPhone}`);
+      this.logger.log(
+        `Sending ZNS template ${dto.templateId} to phone: ${formattedPhone}`,
+      );
       const response = await axios.post(
         'https://business.openapi.zalo.me/message/template',
         {
@@ -1070,7 +1260,7 @@ Trân trọng cảm ơn Anh/Chị!`;
             access_token: dto.accessToken.trim(),
           },
           timeout: 10000,
-        }
+        },
       );
 
       const resData = response.data;
@@ -1082,7 +1272,9 @@ Trân trọng cảm ơn Anh/Chị!`;
         };
       }
 
-      this.logger.warn(`ZNS failed: error ${resData.error}: ${resData.message}`);
+      this.logger.warn(
+        `ZNS failed: error ${resData.error}: ${resData.message}`,
+      );
       return {
         success: false,
         error: resData.error,
@@ -1091,18 +1283,21 @@ Trân trọng cảm ơn Anh/Chị!`;
           resData.error === -124
             ? 'Access Token hết hạn hoặc không có quyền gửi ZNS.'
             : resData.error === -108
-            ? 'Số điện thoại không hợp lệ hoặc chưa đăng ký tài khoản Zalo.'
-            : resData.error === -118
-            ? 'Tài khoản ZCA (Zalo Cloud Account) của Doanh nghiệp không đủ số dư để gửi ZNS.'
-            : resData.error === -114
-            ? 'Template ID ZNS chưa được Zalo phê duyệt hoặc các biến template_data không khớp.'
-            : undefined,
+              ? 'Số điện thoại không hợp lệ hoặc chưa đăng ký tài khoản Zalo.'
+              : resData.error === -118
+                ? 'Tài khoản ZCA (Zalo Cloud Account) của Doanh nghiệp không đủ số dư để gửi ZNS.'
+                : resData.error === -114
+                  ? 'Template ID ZNS chưa được Zalo phê duyệt hoặc các biến template_data không khớp.'
+                  : undefined,
       };
     } catch (err: any) {
       this.logger.error(`Error sending ZNS: ${err.message}`);
       return {
         success: false,
-        message: err.response?.data?.message || err.message || 'Lỗi mạng khi kết nối Zalo ZNS API',
+        message:
+          err.response?.data?.message ||
+          err.message ||
+          'Lỗi mạng khi kết nối Zalo ZNS API',
       };
     }
   }
@@ -1110,10 +1305,18 @@ Trân trọng cảm ơn Anh/Chị!`;
   /**
    * Liên kết Zalo User ID (UID) với Hội viên hoặc Số Điện Thoại trong CRM
    */
-  async bindMemberUid(body: { phone?: string; zaloUid: string; name?: string; memberId?: string }) {
+  async bindMemberUid(body: {
+    phone?: string;
+    zaloUid: string;
+    name?: string;
+    memberId?: string;
+  }) {
     const { phone, zaloUid, name, memberId } = body;
     if (!zaloUid?.trim()) {
-      throw new HttpException('Zalo User ID không được để trống', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Zalo User ID không được để trống',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const cleanUid = zaloUid.trim();
     const cleanPhone = (phone || '').trim();
@@ -1123,13 +1326,13 @@ Trân trọng cảm ơn Anh/Chị!`;
         await this.prisma.$executeRawUnsafe(
           `UPDATE public.members SET zalo_user_id = $1 WHERE id = $2`,
           cleanUid,
-          memberId
+          memberId,
         );
       } else if (cleanPhone) {
         await this.prisma.$executeRawUnsafe(
           `UPDATE public.members SET zalo_user_id = $1 WHERE phone LIKE $2`,
           cleanUid,
-          `%${cleanPhone}%`
+          `%${cleanPhone}%`,
         );
       }
       await this.prisma.$executeRawUnsafe(
@@ -1143,7 +1346,7 @@ Trân trọng cảm ơn Anh/Chị!`;
         cleanUid,
         name || 'Hội viên',
         cleanPhone || null,
-        memberId || null
+        memberId || null,
       );
     }
 
@@ -1176,12 +1379,16 @@ Trân trọng cảm ơn Anh/Chị!`;
     if (!this.prisma) return { ok: true };
     try {
       const validUserId = userId && userId.length === 36 ? userId : null;
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma.$executeRawUnsafe(
+        `
         INSERT INTO public.app_settings (key, value, updated_at, updated_by)
         VALUES ('crm_zalo_templates', $1::jsonb, now(), $2::uuid)
         ON CONFLICT (key) DO UPDATE
         SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
-      `, JSON.stringify(templates), validUserId);
+      `,
+        JSON.stringify(templates),
+        validUserId,
+      );
       return { ok: true, message: 'Đã lưu mẫu tin nhắn Zalo thành công' };
     } catch (err: any) {
       this.logger.warn(`saveTemplates error: ${err?.message}`);
@@ -1227,16 +1434,26 @@ Trân trọng cảm ơn Anh/Chị!`;
     if (!this.prisma) return { ok: true };
     try {
       const validUserId = userId && userId.length === 36 ? userId : null;
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma.$executeRawUnsafe(
+        `
         INSERT INTO public.app_settings (key, value, updated_at, updated_by)
         VALUES ('zalo_miniapp_config', $1::jsonb, now(), $2::uuid)
         ON CONFLICT (key) DO UPDATE
         SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
-      `, JSON.stringify(config), validUserId);
-      return { ok: true, message: 'Đã lưu cấu hình Zalo Mini App thành công vào CSDL' };
+      `,
+        JSON.stringify(config),
+        validUserId,
+      );
+      return {
+        ok: true,
+        message: 'Đã lưu cấu hình Zalo Mini App thành công vào CSDL',
+      };
     } catch (err: any) {
       this.logger.warn(`saveMiniAppConfig error: ${err?.message}`);
-      return { ok: false, message: err?.message || 'Lỗi lưu cấu hình Zalo Mini App' };
+      return {
+        ok: false,
+        message: err?.message || 'Lỗi lưu cấu hình Zalo Mini App',
+      };
     }
   }
 

@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
 import { ConnectMessengerService } from './messenger.service';
@@ -22,7 +29,11 @@ function safeParseImages(val: any): string[] {
         // fallback
       }
     }
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+    if (
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('/')
+    ) {
       return [trimmed];
     }
   }
@@ -84,29 +95,51 @@ export class ConnectMarketplaceService {
 
       return rows.map((p) => {
         const numPrice = Number(p.price || p.sale_price || p.cost || 0);
-        const formattedPrice = p.price_text || (numPrice > 0 ? `${numPrice.toLocaleString('vi-VN')} đ` : (p.price || 'Liên hệ báo giá'));
+        const formattedPrice =
+          p.price_text ||
+          (numPrice > 0
+            ? `${numPrice.toLocaleString('vi-VN')} đ`
+            : p.price || 'Liên hệ báo giá');
         const imgList = safeParseImages(p.image_urls);
-        const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || p.image_url || p.image || null;
-        const finalImgList = imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
+        const firstImg =
+          (imgList && imgList.length > 0 ? imgList[0] : null) ||
+          p.image_url ||
+          p.image ||
+          null;
+        const finalImgList =
+          imgList.length > 0 ? imgList : firstImg ? [firstImg] : [];
         return {
           id: String(p.custom_id || p.id),
           name: p.name || p.title || 'Sản phẩm doanh nghiệp',
           title: p.title || p.name || 'Sản phẩm doanh nghiệp',
-          company: p.seller_company || p.company || p.association_name || 'CLB Doanh Nhân CEO 1983',
+          company:
+            p.seller_company ||
+            p.company ||
+            p.association_name ||
+            'CLB Doanh Nhân CEO 1983',
           sellerName: p.seller_name || undefined,
           sellerAvatar: p.seller_avatar || undefined,
           sellerPhone: p.seller_phone || undefined,
           category: p.category || 'Sản phẩm & Dịch vụ',
           likes: Number(p.likes ?? 0),
           views: Number(p.views ?? 0),
-          time: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
-          createdAt: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(),
+          time: p.created_at
+            ? new Date(p.created_at).toISOString()
+            : new Date().toISOString(),
+          createdAt: p.created_at
+            ? new Date(p.created_at).toISOString()
+            : new Date().toISOString(),
           imageUrl: firstImg,
           imageUrls: finalImgList,
           videoUrl: p.video_url || undefined,
           price: formattedPrice,
-          originalPrice: p.original_price ? `${Number(p.original_price).toLocaleString('vi-VN')} đ` : undefined,
-          memberPrice: p.member_discount_price || p.member_price ? `${Number(p.member_discount_price || p.member_price).toLocaleString('vi-VN')} đ` : undefined,
+          originalPrice: p.original_price
+            ? `${Number(p.original_price).toLocaleString('vi-VN')} đ`
+            : undefined,
+          memberPrice:
+            p.member_discount_price || p.member_price
+              ? `${Number(p.member_discount_price || p.member_price).toLocaleString('vi-VN')} đ`
+              : undefined,
           unit: p.unit || 'Gói',
           currency: p.currency || 'VND',
           sellerId: p.seller_id ? String(p.seller_id) : undefined,
@@ -129,12 +162,33 @@ export class ConnectMarketplaceService {
     const category = data.category !== undefined ? data.category : null;
     const unit = data.unit !== undefined ? data.unit : null;
     const currency = data.currency !== undefined ? data.currency : null;
-    const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? Number(data.price) : null;
-    const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? Number(data.originalPrice) : cleanPrice;
-    const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? Number(data.memberPrice) : cleanPrice;
-    const imgArr: string[] | null = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
-    const imageUrl = imgArr && imgArr[0] ? imgArr[0] : (data.imageUrl || null);
-    const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
+    const cleanPrice =
+      data.price !== undefined && data.price !== null && data.price !== ''
+        ? Number(data.price)
+        : null;
+    const cleanOriginalPrice =
+      data.originalPrice !== undefined &&
+      data.originalPrice !== null &&
+      data.originalPrice !== ''
+        ? Number(data.originalPrice)
+        : cleanPrice;
+    const cleanMemberPrice =
+      data.memberPrice !== undefined &&
+      data.memberPrice !== null &&
+      data.memberPrice !== ''
+        ? Number(data.memberPrice)
+        : cleanPrice;
+    const imgArr: string[] | null =
+      data.imageUrls || data.imageUrl
+        ? safeParseImages(data.imageUrls || [data.imageUrl])
+        : null;
+    const imageUrl = imgArr && imgArr[0] ? imgArr[0] : data.imageUrl || null;
+    const videoUrl =
+      data.videoUrl !== undefined
+        ? data.videoUrl
+        : data.video_url !== undefined
+          ? data.video_url
+          : null;
 
     try {
       await this.prisma.$executeRaw`
@@ -157,7 +211,10 @@ export class ConnectMarketplaceService {
         WHERE (custom_id = ${productId} OR id::text = ${productId})
       `;
     } catch (err: any) {
-      console.warn('updateProduct primary update failed, using fallback:', err?.message);
+      console.warn(
+        'updateProduct primary update failed, using fallback:',
+        err?.message,
+      );
       await this.prisma.$executeRaw`
         UPDATE public.products
         SET
@@ -226,8 +283,13 @@ export class ConnectMarketplaceService {
     return rows.map((r) => {
       const imgList = safeParseImages(r.image_urls);
       const cat = r.category ?? 'mk.cat.other';
-      const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || r.image || '';
-      const finalImgList = imgList && imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
+      const firstImg =
+        (imgList && imgList.length > 0 ? imgList[0] : null) ||
+        r.image_url ||
+        r.image ||
+        '';
+      const finalImgList =
+        imgList && imgList.length > 0 ? imgList : firstImg ? [firstImg] : [];
 
       return {
         id: String(r.custom_id || r.id),
@@ -317,8 +379,13 @@ export class ConnectMarketplaceService {
     `.catch(() => []);
 
     const imgList = safeParseImages(r.image_urls);
-    const firstImg = (imgList && imgList.length > 0 ? imgList[0] : null) || r.image_url || r.image || '';
-    const finalImgList = imgList && imgList.length > 0 ? imgList : (firstImg ? [firstImg] : []);
+    const firstImg =
+      (imgList && imgList.length > 0 ? imgList[0] : null) ||
+      r.image_url ||
+      r.image ||
+      '';
+    const finalImgList =
+      imgList && imgList.length > 0 ? imgList : firstImg ? [firstImg] : [];
 
     return {
       product: {
@@ -370,15 +437,24 @@ export class ConnectMarketplaceService {
     const id = data.id || `prod-${Date.now()}`;
     const sellerId = String(data.sellerId || userId || 'ceo1983');
     const title = (data.title || data.name || 'Sản phẩm mới').trim();
-    const imageUrls = safeParseImages(data.imageUrls || (data.imageUrl ? [data.imageUrl] : []));
+    const imageUrls = safeParseImages(
+      data.imageUrls || (data.imageUrl ? [data.imageUrl] : []),
+    );
     const firstImage = imageUrls[0] || data.imageUrl || data.image || null;
     const videoUrl = data.videoUrl || data.video_url || null;
     const company = (data.company || 'CLB Doanh Nhân CEO 1983').trim();
-    const originalPrice = data.originalPrice !== undefined ? Number(data.originalPrice) : Number(data.price ?? 0);
-    const memberPrice = data.memberPrice !== undefined ? Number(data.memberPrice) : Number(data.price ?? 0);
+    const originalPrice =
+      data.originalPrice !== undefined
+        ? Number(data.originalPrice)
+        : Number(data.price ?? 0);
+    const memberPrice =
+      data.memberPrice !== undefined
+        ? Number(data.memberPrice)
+        : Number(data.price ?? 0);
     const unit = data.unit || 'Gói';
     const currency = data.currency || 'VND';
-    const assocId = data.associationId || 'c1983000-0000-4000-8000-000000001983';
+    const assocId =
+      data.associationId || 'c1983000-0000-4000-8000-000000001983';
 
     // B2B Marketplace Policy: Giới hạn tối đa 5 sản phẩm/doanh nghiệp tiêu biểu
     try {
@@ -393,7 +469,9 @@ export class ConnectMarketplaceService {
       `;
       const currentCount = Number(countRes?.[0]?.cnt || 0);
       if (currentCount >= 5) {
-        throw new BadRequestException('Mỗi doanh nghiệp chỉ được đăng tối đa 5 sản phẩm/dịch vụ tiêu biểu trên sàn B2B CEO 1983 (tránh spam, đảm bảo chất lượng sàn). Vui lòng quản lý hoặc xóa sản phẩm cũ để đăng mới!');
+        throw new BadRequestException(
+          'Mỗi doanh nghiệp chỉ được đăng tối đa 5 sản phẩm/dịch vụ tiêu biểu trên sàn B2B CEO 1983 (tránh spam, đảm bảo chất lượng sàn). Vui lòng quản lý hoặc xóa sản phẩm cũ để đăng mới!',
+        );
       }
     } catch (err: any) {
       if (err instanceof BadRequestException) throw err;
@@ -413,7 +491,10 @@ export class ConnectMarketplaceService {
       )
       RETURNING *
     `.catch(async (err) => {
-      console.warn('createMarketplaceProduct primary insert failed, using fallback:', err?.message);
+      console.warn(
+        'createMarketplaceProduct primary insert failed, using fallback:',
+        err?.message,
+      );
       return this.prisma.$queryRaw<any[]>`
         INSERT INTO public.products (
           custom_id, seller_id, title, name, description, price, category, status, views, emoji, pdf_url, image_urls, video_url, website_url, facebookurl, created_at, updated_at
@@ -440,11 +521,14 @@ export class ConnectMarketplaceService {
       currency: r.currency || currency,
       category: r.category ?? 'mk.cat.other',
       status: r.status ?? 'active',
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
       views: 0,
       emoji: r.emoji ?? '🛍️',
       pdfUrl: r.pdf_url ?? '',
-      imageUrls: imageUrls.length > 0 ? imageUrls : (firstImage ? [firstImage] : []),
+      imageUrls:
+        imageUrls.length > 0 ? imageUrls : firstImage ? [firstImage] : [],
       imageUrl: firstImage,
       videoUrl: videoUrl || undefined,
       company: company || r.company || 'CLB Doanh Nhân CEO 1983',
@@ -464,14 +548,37 @@ export class ConnectMarketplaceService {
     const emoji = data.emoji !== undefined ? data.emoji : null;
     const pdfUrl = data.pdfUrl !== undefined ? data.pdfUrl : null;
     const websiteUrl = data.websiteUrl !== undefined ? data.websiteUrl : null;
-    const facebookUrl = data.facebookUrl !== undefined ? data.facebookUrl : null;
+    const facebookUrl =
+      data.facebookUrl !== undefined ? data.facebookUrl : null;
 
-    const imageUrls = data.imageUrls || data.imageUrl ? safeParseImages(data.imageUrls || [data.imageUrl]) : null;
-    const firstImage = imageUrls && imageUrls[0] ? imageUrls[0] : (data.imageUrl || null);
-    const videoUrl = data.videoUrl !== undefined ? data.videoUrl : (data.video_url !== undefined ? data.video_url : null);
-    const cleanPrice = data.price !== undefined && data.price !== null && data.price !== '' ? BigInt(Math.round(Number(data.price))) : null;
-    const cleanOriginalPrice = data.originalPrice !== undefined && data.originalPrice !== null && data.originalPrice !== '' ? BigInt(Math.round(Number(data.originalPrice))) : null;
-    const cleanMemberPrice = data.memberPrice !== undefined && data.memberPrice !== null && data.memberPrice !== '' ? BigInt(Math.round(Number(data.memberPrice))) : null;
+    const imageUrls =
+      data.imageUrls || data.imageUrl
+        ? safeParseImages(data.imageUrls || [data.imageUrl])
+        : null;
+    const firstImage =
+      imageUrls && imageUrls[0] ? imageUrls[0] : data.imageUrl || null;
+    const videoUrl =
+      data.videoUrl !== undefined
+        ? data.videoUrl
+        : data.video_url !== undefined
+          ? data.video_url
+          : null;
+    const cleanPrice =
+      data.price !== undefined && data.price !== null && data.price !== ''
+        ? BigInt(Math.round(Number(data.price)))
+        : null;
+    const cleanOriginalPrice =
+      data.originalPrice !== undefined &&
+      data.originalPrice !== null &&
+      data.originalPrice !== ''
+        ? BigInt(Math.round(Number(data.originalPrice)))
+        : null;
+    const cleanMemberPrice =
+      data.memberPrice !== undefined &&
+      data.memberPrice !== null &&
+      data.memberPrice !== ''
+        ? BigInt(Math.round(Number(data.memberPrice)))
+        : null;
 
     const rows = await this.prisma.$queryRaw<any[]>`
       UPDATE public.products
@@ -568,7 +675,9 @@ export class ConnectMarketplaceService {
 
   async requestProductQuote(userId: string, data: any) {
     if (!data?.productId) {
-      throw new BadRequestException('Vui lòng chỉ định sản phẩm cần gửi yêu cầu báo giá!');
+      throw new BadRequestException(
+        'Vui lòng chỉ định sản phẩm cần gửi yêu cầu báo giá!',
+      );
     }
 
     // 0. Ownership check: Sellers cannot quote/bid on their own products
@@ -582,7 +691,10 @@ export class ConnectMarketplaceService {
         LEFT JOIN public.members m ON (m.user_id::text = p.seller_id::text OR m.id::text = p.seller_id::text OR m.code::text = p.seller_id::text)
         WHERE (p.custom_id = ${String(data.productId)} OR p.id::text = ${String(data.productId)}) LIMIT 1
       `.catch((err) => {
-        console.warn('Error querying product for quote ownership check:', err?.message);
+        console.warn(
+          'Error querying product for quote ownership check:',
+          err?.message,
+        );
         return [];
       });
 
@@ -590,13 +702,26 @@ export class ConnectMarketplaceService {
         const prod = prodRows[0];
         if (prod.title) prodTitle = prod.title;
         if (prod.association_id) assocId = prod.association_id;
-        const uid = String(userId || '').trim().toLowerCase();
-        const sellerId = String(prod.seller_id || '').trim().toLowerCase();
-        const sellerUserId = String(prod.seller_user_id || '').trim().toLowerCase();
-        const memberId = String(prod.member_id || '').trim().toLowerCase();
+        const uid = String(userId || '')
+          .trim()
+          .toLowerCase();
+        const sellerId = String(prod.seller_id || '')
+          .trim()
+          .toLowerCase();
+        const sellerUserId = String(prod.seller_user_id || '')
+          .trim()
+          .toLowerCase();
+        const memberId = String(prod.member_id || '')
+          .trim()
+          .toLowerCase();
 
-        if (uid && (uid === sellerId || uid === sellerUserId || uid === memberId)) {
-          throw new BadRequestException('Bạn là người đăng sản phẩm này nên không thể tự gửi yêu cầu báo giá cho chính mình!');
+        if (
+          uid &&
+          (uid === sellerId || uid === sellerUserId || uid === memberId)
+        ) {
+          throw new BadRequestException(
+            'Bạn là người đăng sản phẩm này nên không thể tự gửi yêu cầu báo giá cho chính mình!',
+          );
         }
       }
     } catch (checkErr: any) {
@@ -688,7 +813,9 @@ export class ConnectMarketplaceService {
         });
 
         // business_notifications
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
             title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -696,16 +823,33 @@ export class ConnectMarketplaceService {
             $1::uuid, $2::uuid, 'marketplace', $3, 'quote_requested', 'new_quote',
             $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
           )
-        `, notifId, targetUserId, id, notifTitle, notifBody, safeData, `quote-req-${id}`).catch(() => {});
+        `,
+            notifId,
+            targetUserId,
+            id,
+            notifTitle,
+            notifBody,
+            safeData,
+            `quote-req-${id}`,
+          )
+          .catch(() => {});
 
         // member_notifications
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'quote', $4, NOW()
           )
-        `, targetMemberId, notifTitle, notifBody, id).catch(() => {});
+        `,
+            targetMemberId,
+            notifTitle,
+            notifBody,
+            id,
+          )
+          .catch(() => {});
 
         // Real-time WebSocket emission
         this.gateway.emitNotification(String(targetUserId), {
@@ -718,10 +862,13 @@ export class ConnectMarketplaceService {
 
         // 5. PUSH TO MESSENGER: Push quote template into seller's direct chat inbox
         try {
-          const targetPeer = prod.member_code || prod.member_id || prod.seller_user_id || prod.seller_id;
+          const targetPeer =
+            prod.member_code ||
+            prod.member_id ||
+            prod.seller_user_id ||
+            prod.seller_id;
           if (targetPeer && this.messengerService) {
-            const quoteChatTemplate = 
-`📋 [YÊU CẦU BÁO GIÁ SẢN PHẨM]
+            const quoteChatTemplate = `📋 [YÊU CẦU BÁO GIÁ SẢN PHẨM]
 ───────────────
 🛍️ Sản phẩm: ${prodTitle}
 🔢 Số lượng: ${data.quantity ?? 1}
@@ -732,10 +879,17 @@ export class ConnectMarketplaceService {
 ⚡ Thời gian gửi: ${new Date().toLocaleString('vi-VN')}
 🆔 Mã báo giá: ${id}`;
 
-            await this.messengerService.sendMemberMessage(userId, String(targetPeer), quoteChatTemplate);
+            await this.messengerService.sendMemberMessage(
+              userId,
+              String(targetPeer),
+              quoteChatTemplate,
+            );
           }
         } catch (chatErr: any) {
-          console.warn('Failed to push quote template into chat:', chatErr?.message);
+          console.warn(
+            'Failed to push quote template into chat:',
+            chatErr?.message,
+          );
         }
       }
     } catch (e: any) {
@@ -778,7 +932,9 @@ export class ConnectMarketplaceService {
         targetRoute: '/marketplace',
       });
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.business_notifications (
           id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
           title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -786,15 +942,32 @@ export class ConnectMarketplaceService {
           $1::uuid, $2::uuid, 'marketplace', $3, 'quote_status_updated', 'quote_status',
           $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'all', 'all', NOW(), NOW()
         )
-      `, notifId, q.buyer_id, id, notifTitle, notifBody, safeData, `quote-status-${id}-${status}`).catch(() => {});
+      `,
+          notifId,
+          q.buyer_id,
+          id,
+          notifTitle,
+          notifBody,
+          safeData,
+          `quote-status-${id}-${status}`,
+        )
+        .catch(() => {});
 
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         INSERT INTO public.member_notifications (
           id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
         ) VALUES (
           gen_random_uuid(), $1, $2, $3, false, false, 'quote', $4, NOW()
         )
-      `, q.buyer_id, notifTitle, notifBody, id).catch(() => {});
+      `,
+          q.buyer_id,
+          notifTitle,
+          notifBody,
+          id,
+        )
+        .catch(() => {});
 
       this.gateway.emitNotification(String(q.buyer_id), {
         id: notifId,
@@ -837,7 +1010,9 @@ export class ConnectMarketplaceService {
           targetRoute: '/marketplace',
         });
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.business_notifications (
             id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
             title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
@@ -845,15 +1020,32 @@ export class ConnectMarketplaceService {
             $1::uuid, $2::uuid, 'marketplace', $3, 'quote_reminder', 'quote_reminder',
             $4, $5, $6::jsonb, 'high', 'delivered', $7, 'all', 'all', NOW(), NOW()
           )
-        `, notifId, prodRows[0].seller_id, id, notifTitle, notifBody, safeData, `quote-remind-${id}-${Date.now()}`).catch(() => {});
+        `,
+            notifId,
+            prodRows[0].seller_id,
+            id,
+            notifTitle,
+            notifBody,
+            safeData,
+            `quote-remind-${id}-${Date.now()}`,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(`
+        await this.prisma
+          .$executeRawUnsafe(
+            `
           INSERT INTO public.member_notifications (
             id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
           ) VALUES (
             gen_random_uuid(), $1, $2, $3, false, false, 'quote', $4, NOW()
           )
-        `, prodRows[0].seller_id, notifTitle, notifBody, id).catch(() => {});
+        `,
+            prodRows[0].seller_id,
+            notifTitle,
+            notifBody,
+            id,
+          )
+          .catch(() => {});
 
         this.gateway.emitNotification(String(prodRows[0].seller_id), {
           id: notifId,
@@ -909,7 +1101,9 @@ export class ConnectMarketplaceService {
           gen_random_uuid(), ${code}, ${payload.title}, ${payload.body},
           'staff', 'inapp', 'sent', ${now}, ${associationId}::uuid, 'crm', 'crm', ${now}, ${now}
         )
-      `.catch((err) => console.warn('Could not insert scoped public.notifications:', err));
+      `.catch((err) =>
+        console.warn('Could not insert scoped public.notifications:', err),
+      );
 
       // 2. Query admin / staff user IDs of this association + all platform administrators
       const adminMembers = await this.prisma.$queryRaw<any[]>`
@@ -924,7 +1118,9 @@ export class ConnectMarketplaceService {
         WHERE email LIKE '%admin%' OR username LIKE '%admin%'
       `.catch(() => [] as any[]);
 
-      const adminUserIds = Array.from(new Set(adminMembers.map((m) => m.user_id).filter(Boolean)));
+      const adminUserIds = Array.from(
+        new Set(adminMembers.map((m) => m.user_id).filter(Boolean)),
+      );
 
       // 3. For each admin user, insert business_notifications & emit WebSocket
       for (const adminId of adminUserIds) {
@@ -957,7 +1153,9 @@ export class ConnectMarketplaceService {
             ${safeData}::jsonb, 'navigate', 'Xem hồ sơ & duyệt', ${actionTarget}::jsonb,
             'high', 'delivered', 'crm', 'crm', ${now}, ${now}, ${`assoc_alert:${notifId}`}
           )
-        `.catch((err) => console.warn('Error inserting business_notification for admin:', err));
+        `.catch((err) =>
+          console.warn('Error inserting business_notification for admin:', err),
+        );
 
         this.gateway.emitNotification(adminId, {
           id: notifId,
@@ -1004,5 +1202,4 @@ export class ConnectMarketplaceService {
       console.warn('Error in notifyAssociationAdmins:', err);
     }
   }
-
 }

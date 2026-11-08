@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { AdvertisementsRepository } from './advertisements.repository';
 import { CreateAdvertisementDto, CreateAdRequestDto } from './dto';
 
@@ -47,11 +53,15 @@ export class AdvertisementsService implements OnModuleInit {
         targetUrl: r.target_url || 'https://ceo1983.vn',
         animation: r.animation || 'gradient-wave',
         startDate: r.start_date || new Date().toISOString().split('T')[0],
-        endDate: r.end_date || new Date(Date.now() + 864e5 * 90).toISOString().split('T')[0],
+        endDate:
+          r.end_date ||
+          new Date(Date.now() + 864e5 * 90).toISOString().split('T')[0],
         status: r.status || 'active',
         impressions: Number(r.impressions || 0),
         clicks: Number(r.clicks || 0),
-        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        createdAt: r.created_at
+          ? new Date(r.created_at).toISOString()
+          : new Date().toISOString(),
       }));
     } catch (err: any) {
       this.logger.warn(`Could not load advertisements: ${err?.message}`);
@@ -78,7 +88,9 @@ export class AdvertisementsService implements OnModuleInit {
       status: r.status || 'active',
       impressions: Number(r.impressions || 0),
       clicks: Number(r.clicks || 0),
-      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      createdAt: r.created_at
+        ? new Date(r.created_at).toISOString()
+        : new Date().toISOString(),
     };
   }
 
@@ -88,7 +100,9 @@ export class AdvertisementsService implements OnModuleInit {
     const animation = dto.animation?.trim() || 'gradient-wave';
     const status = dto.status || 'active';
     const startDate = dto.startDate || new Date().toISOString().split('T')[0];
-    const endDate = dto.endDate || new Date(Date.now() + 864e5 * 90).toISOString().split('T')[0];
+    const endDate =
+      dto.endDate ||
+      new Date(Date.now() + 864e5 * 90).toISOString().split('T')[0];
     const targetUrl = dto.targetUrl?.trim() || 'https://ceo1983.vn/marketplace';
 
     await this.adsRepo.insertAdvertisement({
@@ -106,22 +120,33 @@ export class AdvertisementsService implements OnModuleInit {
     });
 
     if (dto.requestId) {
-      await this.adsRepo.updateRequestStatus(dto.requestId, 'active').catch(() => {});
+      await this.adsRepo
+        .updateRequestStatus(dto.requestId, 'active')
+        .catch(() => {});
     }
 
     return this.findById(id);
   }
 
-  async update(id: string, data: Partial<CreateAdvertisementDto>): Promise<AdvertisementItem> {
+  async update(
+    id: string,
+    data: Partial<CreateAdvertisementDto>,
+  ): Promise<AdvertisementItem> {
     const ad = await this.findById(id);
     const title = data.title !== undefined ? data.title.trim() : ad.title;
-    const companyName = data.companyName !== undefined ? data.companyName.trim() : ad.companyName;
-    const badgeText = data.badgeText !== undefined ? data.badgeText.trim() : ad.badgeText;
-    const bannerUrl = data.bannerUrl !== undefined ? data.bannerUrl.trim() : ad.bannerUrl;
-    const targetUrl = data.targetUrl !== undefined ? data.targetUrl.trim() : ad.targetUrl;
-    const animation = data.animation !== undefined ? data.animation.trim() : ad.animation;
+    const companyName =
+      data.companyName !== undefined ? data.companyName.trim() : ad.companyName;
+    const badgeText =
+      data.badgeText !== undefined ? data.badgeText.trim() : ad.badgeText;
+    const bannerUrl =
+      data.bannerUrl !== undefined ? data.bannerUrl.trim() : ad.bannerUrl;
+    const targetUrl =
+      data.targetUrl !== undefined ? data.targetUrl.trim() : ad.targetUrl;
+    const animation =
+      data.animation !== undefined ? data.animation.trim() : ad.animation;
     const status = data.status !== undefined ? data.status : ad.status;
-    const startDate = data.startDate !== undefined ? data.startDate : ad.startDate;
+    const startDate =
+      data.startDate !== undefined ? data.startDate : ad.startDate;
     const endDate = data.endDate !== undefined ? data.endDate : ad.endDate;
 
     await this.adsRepo.updateAdvertisement(id, {
@@ -171,10 +196,15 @@ export class AdvertisementsService implements OnModuleInit {
         status: r.status || 'pending',
         paymentAmount: Number(r.payment_amount || 15000000),
         paymentCode: r.payment_code || `QC-CEO1983-${r.id}`,
-        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        createdAt: r.created_at
+          ? new Date(r.created_at).toISOString()
+          : new Date().toISOString(),
       }));
     } catch (err: any) {
-      this.logger.error(`Error in findAllRequests: ${err?.message}`, err?.stack);
+      this.logger.error(
+        `Error in findAllRequests: ${err?.message}`,
+        err?.stack,
+      );
       return [];
     }
   }

@@ -51,19 +51,22 @@ export class AuthGuard implements CanActivate {
   private extractTokenFromHeader(request: any): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     if (type === 'Bearer' && token) return token;
-    
+
     // Cookie support (vibe_token, sb-access-token, token, access_token)
     if (request.cookies) {
       if (request.cookies.vibe_token) return request.cookies.vibe_token;
-      if (request.cookies['sb-access-token']) return request.cookies['sb-access-token'];
+      if (request.cookies['sb-access-token'])
+        return request.cookies['sb-access-token'];
       if (request.cookies.token) return request.cookies.token;
       if (request.cookies.access_token) return request.cookies.access_token;
     }
-    
+
     // Raw cookie header parsing fallback
     const rawCookie = request.headers?.cookie;
     if (rawCookie && typeof rawCookie === 'string') {
-      const match = rawCookie.match(/(?:vibe_token|sb-access-token|access_token|token)=([^;]+)/);
+      const match = rawCookie.match(
+        /(?:vibe_token|sb-access-token|access_token|token)=([^;]+)/,
+      );
       if (match && match[1]) return decodeURIComponent(match[1]);
     }
 

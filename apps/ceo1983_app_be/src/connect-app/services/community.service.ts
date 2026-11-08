@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
 import { ConnectNetworkService } from './network.service';
@@ -14,7 +19,7 @@ export class ConnectCommunityService {
 
   async getMyCommunities(userId: string) {
     const ceoAssocId = 'c1983000-0000-4000-8000-000000001983';
-    let memberships = await this.prisma.$queryRaw`
+    let memberships = (await this.prisma.$queryRaw`
       SELECT DISTINCT ON (m.association_id) 
         m.association_id, m.role, m.is_default, a.name, a.logo_url, a.banner_url, a.tagline, a.about
       FROM (
@@ -24,7 +29,7 @@ export class ConnectCommunityService {
       ) m
       JOIN public.associations a ON m.association_id = a.id
       WHERE a.id = ${ceoAssocId}::uuid
-    `.catch(() => []) as any[];
+    `.catch(() => [])) as any[];
 
     if (memberships.length === 0) {
       const defaultAssoc = await this.prisma.$queryRaw<any[]>`
@@ -41,28 +46,30 @@ export class ConnectCommunityService {
             ON CONFLICT (user_id, association_id) DO NOTHING
           `;
         } catch {}
-        memberships = [{
-          association_id: d.id,
-          role: 'member',
-          is_default: true,
-          name: d.name,
-          logo_url: d.logo_url,
-          banner_url: d.banner_url,
-          tagline: d.tagline,
-          about: d.about,
-        }];
+        memberships = [
+          {
+            association_id: d.id,
+            role: 'member',
+            is_default: true,
+            name: d.name,
+            logo_url: d.logo_url,
+            banner_url: d.banner_url,
+            tagline: d.tagline,
+            about: d.about,
+          },
+        ];
       }
     }
 
     const result: any[] = [];
     for (const m of memberships) {
-      const activeCountRes = await this.prisma.$queryRaw`
+      const activeCountRes = (await this.prisma.$queryRaw`
         SELECT COUNT(DISTINCT uid)::int as count FROM (
           SELECT id::text as uid FROM public.members WHERE association_id = ${m.association_id}::uuid AND status = 'active'
           UNION
           SELECT user_id::text as uid FROM public.memberships WHERE association_id = ${m.association_id}::uuid
         ) all_m
-      `.catch(() => [{ count: 0 }]) as any[];
+      `.catch(() => [{ count: 0 }])) as any[];
       const count = activeCountRes[0]?.count || 0;
 
       result.push({
@@ -83,8 +90,10 @@ export class ConnectCommunityService {
     });
   }
 
-
-  async checkCommunityMembership(userId: string, communityId: string): Promise<boolean> {
+  async checkCommunityMembership(
+    userId: string,
+    communityId: string,
+  ): Promise<boolean> {
     const mem = await this.prisma.$queryRaw<any[]>`
       SELECT association_id FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
@@ -96,14 +105,21 @@ export class ConnectCommunityService {
     if (mem.length > 0) return true;
 
     // Check if platform admin or admin
-    const roles = await this.prisma.user_roles.findMany({ where: { user_id: userId } }).catch(() => []) as any[];
-    const isPlatformAdmin = roles.some((r: any) => r.role === 'platform_admin' || r.role === 'admin');
+    const roles = (await this.prisma.user_roles
+      .findMany({ where: { user_id: userId } })
+      .catch(() => [])) as any[];
+    const isPlatformAdmin = roles.some(
+      (r: any) => r.role === 'platform_admin' || r.role === 'admin',
+    );
     if (isPlatformAdmin) return true;
 
     return false;
   }
 
-  async getCommunityDetail(userId: string, communityId: string): Promise<any | null> {
+  async getCommunityDetail(
+    userId: string,
+    communityId: string,
+  ): Promise<any | null> {
     let memberships = await this.prisma.$queryRaw<any[]>`
       SELECT role, is_default FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
@@ -122,8 +138,12 @@ export class ConnectCommunityService {
       }
     }
     if (memberships.length === 0) {
-      const roles = await this.prisma.user_roles.findMany({ where: { user_id: userId } }).catch(() => []) as any[];
-      const isPlatformAdmin = roles.some((r: any) => r.role === 'platform_admin' || r.role === 'admin');
+      const roles = (await this.prisma.user_roles
+        .findMany({ where: { user_id: userId } })
+        .catch(() => [])) as any[];
+      const isPlatformAdmin = roles.some(
+        (r: any) => r.role === 'platform_admin' || r.role === 'admin',
+      );
       if (isPlatformAdmin) {
         memberships = [{ role: 'admin', is_default: false }];
       } else {
@@ -140,13 +160,13 @@ export class ConnectCommunityService {
     if (associations.length === 0) return null;
     const assoc = associations[0];
 
-    const activeCountRes = await this.prisma.$queryRaw`
+    const activeCountRes = (await this.prisma.$queryRaw`
       SELECT COUNT(DISTINCT uid)::int as count FROM (
         SELECT id::text as uid FROM public.members WHERE association_id = ${communityId}::uuid AND status = 'active'
         UNION
         SELECT user_id::text as uid FROM public.memberships WHERE association_id = ${communityId}::uuid
       ) all_m
-    `.catch(() => [{ count: 0 }]) as any[];
+    `.catch(() => [{ count: 0 }])) as any[];
     const memberCount = activeCountRes[0]?.count || 0;
 
     let upcomingEvents: any[] = [];
@@ -157,7 +177,7 @@ export class ConnectCommunityService {
         ORDER BY (date >= CURRENT_DATE) DESC, date ASC
         LIMIT 5
       `;
-      upcomingEvents = events.map(e => ({
+      upcomingEvents = events.map((e) => ({
         eventId: String(e.id),
         name: String(e.name),
         date: e.date ? new Date(e.date).toISOString() : '',
@@ -203,7 +223,10 @@ export class ConnectCommunityService {
     offset: number = 0,
     roleFilter: string = 'all',
   ) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId || '');
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        userId || '',
+      );
     let viewerMemberships: any[] = [];
     if (isUuid) {
       viewerMemberships = await this.prisma.$queryRaw<any[]>`
@@ -220,7 +243,8 @@ export class ConnectCommunityService {
         if (isMember.length > 0) viewerMemberships = [{ role: 'member' }];
       }
     }
-    const viewerRole = viewerMemberships[0]?.role === 'admin' ? 'admin' : 'member';
+    const viewerRole =
+      viewerMemberships[0]?.role === 'admin' ? 'admin' : 'member';
 
     const searchNormalized = searchQuery.trim().toLowerCase();
     const searchLike = `%${searchNormalized}%`;
@@ -300,7 +324,7 @@ export class ConnectCommunityService {
     const totalCount = allMembers.length;
     const pageItems = allMembers.slice(offset, offset + 25);
 
-    const items = pageItems.map(m => ({
+    const items = pageItems.map((m) => ({
       memberRef: m.member_ref,
       displayName: m.display_name,
       avatarUrl: m.avatar_url || null,
@@ -322,7 +346,11 @@ export class ConnectCommunityService {
     };
   }
 
-  async getCommunityMemberProfile(userId: string, communityId: string, memberRef: string) {
+  async getCommunityMemberProfile(
+    userId: string,
+    communityId: string,
+    memberRef: string,
+  ) {
     let viewerMemberships = await this.prisma.$queryRaw<any[]>`
       SELECT role FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
@@ -336,7 +364,8 @@ export class ConnectCommunityService {
       `.catch(() => []);
       if (isMember.length > 0) viewerMemberships = [{ role: 'member' }];
     }
-    const viewerRole = viewerMemberships[0]?.role === 'admin' ? 'admin' : 'member';
+    const viewerRole =
+      viewerMemberships[0]?.role === 'admin' ? 'admin' : 'member';
 
     const associations = await this.prisma.$queryRaw<any[]>`
       SELECT id, name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
@@ -380,7 +409,11 @@ export class ConnectCommunityService {
       industryLabel = m.industry;
       regionLabel = m.region;
       role = m.member_role === 'admin' ? 'admin' : 'member';
-      joinedAt = m.joined_at ? new Date(m.joined_at).toISOString() : (m.created_at ? new Date(m.created_at).toISOString() : null);
+      joinedAt = m.joined_at
+        ? new Date(m.joined_at).toISOString()
+        : m.created_at
+          ? new Date(m.created_at).toISOString()
+          : null;
 
       if (targetUserId) {
         const bi = await this.prisma.$queryRaw<any[]>`
@@ -441,7 +474,10 @@ export class ConnectCommunityService {
         if (conn.status === 'accepted') {
           state = 'connected';
         } else if (conn.status === 'pending') {
-          state = conn.requester_user_id === userId ? 'outgoing_pending' : 'incoming_pending';
+          state =
+            conn.requester_user_id === userId
+              ? 'outgoing_pending'
+              : 'incoming_pending';
         } else {
           state = 'none';
         }
@@ -512,7 +548,11 @@ export class ConnectCommunityService {
     };
   }
 
-  async connectCommunityMember(userId: string, communityId: string, memberRef: string) {
+  async connectCommunityMember(
+    userId: string,
+    communityId: string,
+    memberRef: string,
+  ) {
     let targetUserId: string | null = null;
     const memberRows = await this.prisma.$queryRaw<any[]>`
       SELECT user_id FROM public.members WHERE id = ${memberRef}::uuid LIMIT 1
@@ -535,7 +575,12 @@ export class ConnectCommunityService {
       : { ok: true, status: 'requested' };
   }
 
-  async updateCommunityMemberRole(userId: string, communityId: string, memberRef: string, role: string) {
+  async updateCommunityMemberRole(
+    userId: string,
+    communityId: string,
+    memberRef: string,
+    role: string,
+  ) {
     const memberships = await this.prisma.$queryRaw<any[]>`
       SELECT role FROM public.memberships
       WHERE user_id = ${userId}::uuid AND association_id = ${communityId}::uuid
@@ -579,7 +624,10 @@ export class ConnectCommunityService {
   }
 
   async listCommunityNews(userId: string, communityId: string, offset: number) {
-    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+    const hasMembership = await this.checkCommunityMembership(
+      userId,
+      communityId,
+    );
 
     const limit = 10;
     const news = await this.prisma.$queryRaw<any[]>`
@@ -596,22 +644,29 @@ export class ConnectCommunityService {
     `.catch(() => [{ count: 0 }]);
 
     const totalCount = total[0]?.count ?? 0;
-    const items = news.map(row => ({
+    const items = news.map((row) => ({
       newsRef: row.id,
-      title: row.title || "",
+      title: row.title || '',
       excerpt: row.excerpt || null,
       category: row.category || null,
       author: row.author || null,
-      publishedLabel: row.published_at ? new Date(row.published_at).toLocaleDateString() : null,
+      publishedLabel: row.published_at
+        ? new Date(row.published_at).toLocaleDateString()
+        : null,
       views: row.views || 0,
     }));
 
-    const nextOffset = offset + items.length < totalCount ? offset + items.length : null;
+    const nextOffset =
+      offset + items.length < totalCount ? offset + items.length : null;
 
     return { items, totalCount, nextOffset };
   }
 
-  async getCommunityNewsDetail(userId: string, communityId: string, newsRef: string) {
+  async getCommunityNewsDetail(
+    userId: string,
+    communityId: string,
+    newsRef: string,
+  ) {
     let news = await this.prisma.$queryRaw<any[]>`
       SELECT id, code, title, excerpt, category, author, published_at, views, status, created_at, association_id
       FROM public.news
@@ -637,7 +692,7 @@ export class ConnectCommunityService {
       SELECT name FROM public.associations WHERE id = ${effectiveAssocId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
-    const assoc = assocs[0] || { name: "" };
+    const assoc = assocs[0] || { name: '' };
 
     // Increment view count
     await this.prisma.$executeRaw`
@@ -648,11 +703,15 @@ export class ConnectCommunityService {
       news: {
         newsRef: row.id,
         code: row.code || null,
-        title: row.title || "",
+        title: row.title || '',
         excerpt: row.excerpt || null,
         category: row.category || null,
         author: row.author || null,
-        publishedLabel: row.published_at ? (isNaN(Date.parse(row.published_at)) ? row.published_at : new Date(row.published_at).toLocaleDateString()) : null,
+        publishedLabel: row.published_at
+          ? isNaN(Date.parse(row.published_at))
+            ? row.published_at
+            : new Date(row.published_at).toLocaleDateString()
+          : null,
         views: (row.views || 0) + 1,
       },
       communityName: assoc.name,
@@ -669,7 +728,7 @@ export class ConnectCommunityService {
       UNION
       SELECT association_id FROM public.members WHERE user_id = ${userId}::uuid AND status = 'active'
     `.catch(() => [] as any[]);
-    const joined = new Set(memberships.map(m => String(m.association_id)));
+    const joined = new Set(memberships.map((m) => String(m.association_id)));
 
     const assocs = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, logo_url, tagline FROM public.associations
@@ -692,8 +751,8 @@ export class ConnectCommunityService {
     }
 
     return assocs
-      .filter(a => !joined.has(String(a.id)))
-      .map(a => {
+      .filter((a) => !joined.has(String(a.id)))
+      .map((a) => {
         const req = byAssoc.get(String(a.id));
         return {
           communityId: String(a.id),
@@ -706,7 +765,10 @@ export class ConnectCommunityService {
       });
   }
 
-  async requestCommunityJoin(userId: string, input: { communityId: string; note?: string | null }) {
+  async requestCommunityJoin(
+    userId: string,
+    input: { communityId: string; note?: string | null },
+  ) {
     const communityId = input.communityId;
     const note = input.note ? input.note.trim().slice(0, 500) : null;
 
@@ -722,7 +784,8 @@ export class ConnectCommunityService {
       SELECT id, name FROM public.associations WHERE id = ${communityId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
-    if (assocs.length === 0) throw new BadRequestException('community_join_unavailable');
+    if (assocs.length === 0)
+      throw new BadRequestException('community_join_unavailable');
 
     const now = new Date();
 
@@ -766,7 +829,8 @@ export class ConnectCommunityService {
       const userProfiles = await this.prisma.$queryRaw<any[]>`
         SELECT display_name, company_name FROM public.business_identities WHERE owner_user_id = ${userId}::uuid LIMIT 1
       `.catch(() => []);
-      const applicantName = userProfiles[0]?.display_name || 'Hội viên CEO 1983';
+      const applicantName =
+        userProfiles[0]?.display_name || 'Hội viên CEO 1983';
       const applicantCompany = userProfiles[0]?.company_name || '';
 
       void this.notifyAssociationAdmins(communityId, {
@@ -784,10 +848,14 @@ export class ConnectCommunityService {
     return { status: 'approved' };
   }
 
-
-  async cancelCommunityJoin(userId: string, input: { communityId: string; cancelReason?: string | null }) {
+  async cancelCommunityJoin(
+    userId: string,
+    input: { communityId: string; cancelReason?: string | null },
+  ) {
     const communityId = input.communityId;
-    const reason = input.cancelReason ? input.cancelReason.trim().slice(0, 500) : null;
+    const reason = input.cancelReason
+      ? input.cancelReason.trim().slice(0, 500)
+      : null;
 
     const requests = await this.prisma.$queryRaw<any[]>`
       SELECT id, status FROM public.community_join_requests
@@ -812,7 +880,19 @@ export class ConnectCommunityService {
     return { status: 'cancelled' };
   }
 
-  async createCommunity(userId: string, input: { name: string; description?: string; logoUrl?: string; bannerUrl?: string; coverUrl?: string; slug?: string; tagline?: string; about?: string }) {
+  async createCommunity(
+    userId: string,
+    input: {
+      name: string;
+      description?: string;
+      logoUrl?: string;
+      bannerUrl?: string;
+      coverUrl?: string;
+      slug?: string;
+      tagline?: string;
+      about?: string;
+    },
+  ) {
     if (!input.name || !input.name.trim()) {
       throw new BadRequestException('Tên cộng đồng không được để trống');
     }
@@ -826,7 +906,8 @@ export class ConnectCommunityService {
       .replace(/Đ/g, 'd')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-    const slug = input.slug?.trim() || cleanSlug || `comm-${Date.now().toString(36)}`;
+    const slug =
+      input.slug?.trim() || cleanSlug || `comm-${Date.now().toString(36)}`;
     const tagline = input.tagline || input.description || null;
     const about = input.about || input.description || null;
     const logoUrl = input.logoUrl || null;
@@ -848,7 +929,9 @@ export class ConnectCommunityService {
 
     // Thông báo cho các client
     try {
-      this.gateway?.emitToRoom(`user:${userId}`, 'community:updated', { communityId });
+      this.gateway?.emitToRoom(`user:${userId}`, 'community:updated', {
+        communityId,
+      });
     } catch {}
 
     return {
@@ -869,7 +952,6 @@ export class ConnectCommunityService {
     };
   }
 
-
   async listCommunityJoinHistory(userId: string) {
     const requests = await this.prisma.$queryRaw<any[]>`
       SELECT id, association_id, status, message, cancel_reason, created_at, decided_at
@@ -884,7 +966,9 @@ export class ConnectCommunityService {
       WHERE user_id = ${userId}::uuid
     `.catch(() => [] as any[]);
 
-    const existingAssocIds = new Set(requests.map(r => String(r.association_id)));
+    const existingAssocIds = new Set(
+      requests.map((r) => String(r.association_id)),
+    );
     const merged = [...requests];
 
     for (const m of memberships) {
@@ -903,20 +987,23 @@ export class ConnectCommunityService {
 
     if (merged.length === 0) return [];
 
-    const assocIds = Array.from(new Set(merged.map(r => r.association_id)));
+    const assocIds = Array.from(new Set(merged.map((r) => r.association_id)));
     const assocs = await this.prisma.$queryRaw<any[]>`
       SELECT id, name, logo_url FROM public.associations
       WHERE id::uuid = ANY(${assocIds}::uuid[])
     `.catch(() => [] as any[]);
 
-    const assocMap = new Map(assocs.map(a => [String(a.id), a]));
+    const assocMap = new Map(assocs.map((a) => [String(a.id), a]));
 
-    return merged.map(r => {
-      const assoc: any = assocMap.get(String(r.association_id)) ?? { name: "Cộng đồng", logo_url: null };
+    return merged.map((r) => {
+      const assoc: any = assocMap.get(String(r.association_id)) ?? {
+        name: 'Cộng đồng',
+        logo_url: null,
+      };
       return {
         requestId: String(r.id),
         communityId: String(r.association_id),
-        name: assoc.name || "Cộng đồng",
+        name: assoc.name || 'Cộng đồng',
         logoUrl: assoc.logo_url || null,
         status: r.status,
         requestedAt: r.created_at ? new Date(r.created_at).toISOString() : null,
@@ -938,29 +1025,35 @@ export class ConnectCommunityService {
 
     if (requests.length === 0) return [];
 
-    const dedupeKeys = requests.map(r => `community_join:${r.id}:${r.status}`);
+    const dedupeKeys = requests.map(
+      (r) => `community_join:${r.id}:${r.status}`,
+    );
 
     const existingNotifs = await this.prisma.$queryRaw<any[]>`
       SELECT dedupe_key FROM public.business_notifications
       WHERE recipient_user_id = ${userId}::uuid AND dedupe_key = ANY(${dedupeKeys})
     `.catch(() => [] as any[]);
 
-    const notifiedKeys = new Set(existingNotifs.map(n => n.dedupe_key));
-    const pendingRequests = requests.filter(r => !notifiedKeys.has(`community_join:${r.id}:${r.status}`));
+    const notifiedKeys = new Set(existingNotifs.map((n) => n.dedupe_key));
+    const pendingRequests = requests.filter(
+      (r) => !notifiedKeys.has(`community_join:${r.id}:${r.status}`),
+    );
 
     if (pendingRequests.length === 0) return [];
 
-    const assocIds = Array.from(new Set(pendingRequests.map(r => r.association_id)));
+    const assocIds = Array.from(
+      new Set(pendingRequests.map((r) => r.association_id)),
+    );
     const assocs = await this.prisma.$queryRaw<any[]>`
       SELECT id, name FROM public.associations WHERE id::uuid = ANY(${assocIds}::uuid[])
     `.catch(() => [] as any[]);
 
-    const nameMap = new Map(assocs.map(a => [a.id, a.name]));
+    const nameMap = new Map(assocs.map((a) => [a.id, a.name]));
     const now = new Date();
 
     const output: any[] = [];
     for (const r of pendingRequests) {
-      const name = nameMap.get(r.association_id) || "â€”";
+      const name = nameMap.get(r.association_id) || 'â€”';
       const approved = r.status === 'approved';
       const notifId = crypto.randomUUID();
 
@@ -976,7 +1069,7 @@ export class ConnectCommunityService {
           ${approved ? 'bc.notif.kind.community_join_approved.title' : 'bc.notif.kind.community_join_rejected.title'},
           ${approved ? 'bc.notif.kind.community_join_approved.body' : 'bc.notif.kind.community_join_rejected.body'},
           'bc.notif.action.viewJoinHistory', 'open_route',
-          ${JSON.stringify({ route: "/association", search: { tab: "history" } })}::jsonb,
+          ${JSON.stringify({ route: '/association', search: { tab: 'history' } })}::jsonb,
           ${JSON.stringify({ communityName: name })}::jsonb,
           'normal', 'delivered', ${now}, ${`community_join:${r.id}:${r.status}`}
         )
@@ -998,7 +1091,7 @@ export class ConnectCommunityService {
       WHERE user_id = ${userId}::uuid AND role = 'admin'
     `.catch(() => [] as any[]);
 
-    const assocIds = Array.from(new Set(managed.map(m => m.association_id)));
+    const assocIds = Array.from(new Set(managed.map((m) => m.association_id)));
     if (assocIds.length === 0) return [];
 
     const requests = await this.prisma.$queryRaw<any[]>`
@@ -1011,23 +1104,23 @@ export class ConnectCommunityService {
 
     if (requests.length === 0) return [];
 
-    const requesterIds = Array.from(new Set(requests.map(r => r.user_id)));
+    const requesterIds = Array.from(new Set(requests.map((r) => r.user_id)));
     const profiles = await this.prisma.$queryRaw<any[]>`
       SELECT id, full_name FROM public.profiles WHERE id::uuid = ANY(${requesterIds}::uuid[])
     `.catch(() => [] as any[]);
 
-    const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
+    const profileMap = new Map(profiles.map((p) => [p.id, p.full_name]));
 
     const assocs = await this.prisma.$queryRaw<any[]>`
       SELECT id, name FROM public.associations WHERE id::uuid = ANY(${assocIds}::uuid[])
     `.catch(() => [] as any[]);
 
-    const assocMap = new Map(assocs.map(a => [a.id, a.name]));
+    const assocMap = new Map(assocs.map((a) => [a.id, a.name]));
 
-    return requests.map(r => ({
+    return requests.map((r) => ({
       requestId: r.id,
       communityId: r.association_id,
-      communityName: assocMap.get(r.association_id) || "â€”",
+      communityName: assocMap.get(r.association_id) || 'â€”',
       requesterName: profileMap.get(r.user_id) || null,
       status: r.status,
       note: r.message || null,
@@ -1048,19 +1141,22 @@ export class ConnectCommunityService {
       ORDER BY created_at DESC
     `.catch(() => [] as any[]);
 
-    return invites.map(row => ({
+    return invites.map((row) => ({
       inviteRef: row.id,
       email: row.email,
       note: row.note || null,
       status: row.status,
       createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-      respondedAt: row.responded_at ? new Date(row.responded_at).toISOString() : null,
+      respondedAt: row.responded_at
+        ? new Date(row.responded_at).toISOString()
+        : null,
       token: row.token,
-      locale: row.locale || "vi",
+      locale: row.locale || 'vi',
       emailSubject: row.email_subject || null,
       emailBody: row.email_body || null,
-      invitedRole: row.invited_role || "member",
-      acceptedRole: row.status === 'accepted' ? (row.invited_role || "member") : null,
+      invitedRole: row.invited_role || 'member',
+      acceptedRole:
+        row.status === 'accepted' ? row.invited_role || 'member' : null,
       canManageRole: row.status === 'accepted' && row.accepted_by !== userId,
     }));
   }
@@ -1093,25 +1189,39 @@ export class ConnectCommunityService {
     `.catch(() => [] as any[]);
 
     const defaultVi = {
-      locale: "vi",
-      subject: "Lời mời tham gia {{community}}",
-      body: "Xin chào,\n\n{{inviter}} mời bạn tham gia cộng đồng {{community}} trên CEO 1983.\n\nNhấn vào liên kết để tham gia:\n{{link}}\n\nTrân trọng,\n{{community}}",
+      locale: 'vi',
+      subject: 'Lời mời tham gia {{community}}',
+      body: 'Xin chào,\n\n{{inviter}} mời bạn tham gia cộng đồng {{community}} trên CEO 1983.\n\nNhấn vào liên kết để tham gia:\n{{link}}\n\nTrân trọng,\n{{community}}',
     };
     const defaultEn = {
-      locale: "en",
-      subject: "Invitation to join {{community}}",
-      body: "Hello,\n\n{{inviter}} has invited you to join the {{community}} community on CEO 1983.\n\nClick the link below to join:\n{{link}}\n\nBest regards,\n{{community}}",
+      locale: 'en',
+      subject: 'Invitation to join {{community}}',
+      body: 'Hello,\n\n{{inviter}} has invited you to join the {{community}} community on CEO 1983.\n\nClick the link below to join:\n{{link}}\n\nBest regards,\n{{community}}',
     };
 
     const cleanTpl = (str: string, fb: string) => {
-      if (!str || str.includes("Lá»") || str.includes("Ä‘") || str.includes("cá»™ng") || str.includes("chĂ") || str.includes("báº¡n")) return fb;
+      if (
+        !str ||
+        str.includes('Lá»') ||
+        str.includes('Ä‘') ||
+        str.includes('cá»™ng') ||
+        str.includes('chĂ') ||
+        str.includes('báº¡n')
+      )
+        return fb;
       return str;
     };
 
-    const mapping = templates.map(t => ({
+    const mapping = templates.map((t) => ({
       locale: t.locale,
-      subject: cleanTpl(t.subject, t.locale === "vi" ? defaultVi.subject : defaultEn.subject),
-      body: cleanTpl(t.body, t.locale === "vi" ? defaultVi.body : defaultEn.body),
+      subject: cleanTpl(
+        t.subject,
+        t.locale === 'vi' ? defaultVi.subject : defaultEn.subject,
+      ),
+      body: cleanTpl(
+        t.body,
+        t.locale === 'vi' ? defaultVi.body : defaultEn.body,
+      ),
     }));
 
     return {
@@ -1154,7 +1264,11 @@ export class ConnectCommunityService {
     return { ok: true };
   }
 
-  async resendCommunityInvite(userId: string, inviteRef: string, locale?: string) {
+  async resendCommunityInvite(
+    userId: string,
+    inviteRef: string,
+    locale?: string,
+  ) {
     const now = new Date();
     if (locale) {
       await this.prisma.$executeRaw`
@@ -1181,7 +1295,7 @@ export class ConnectCommunityService {
       SELECT name FROM public.associations WHERE id = ${inv.association_id}::uuid LIMIT 1
     `.catch(() => [] as any[]);
 
-    const assoc = assocs[0] || { name: "" };
+    const assoc = assocs[0] || { name: '' };
 
     const memberships = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.memberships WHERE user_id = ${userId}::uuid AND association_id = ${inv.association_id}::uuid LIMIT 1
@@ -1196,7 +1310,7 @@ export class ConnectCommunityService {
       maskedEmail: inv.email, // simple return without mask for convenience
       createdAt: inv.created_at ? new Date(inv.created_at).toISOString() : null,
       alreadyMember: memberships.length > 0,
-      invitedRole: inv.invited_role || "member",
+      invitedRole: inv.invited_role || 'member',
     };
   }
 
@@ -1223,7 +1337,7 @@ export class ConnectCommunityService {
       LIMIT 1
     `.catch(() => [] as any[]);
 
-    const role = inv.invited_role || "member";
+    const role = inv.invited_role || 'member';
     const now = new Date();
 
     if (existing.length === 0) {
@@ -1251,7 +1365,11 @@ export class ConnectCommunityService {
     };
   }
 
-  async updateAcceptedInviteRole(userId: string, inviteRef: string, role: string) {
+  async updateAcceptedInviteRole(
+    userId: string,
+    inviteRef: string,
+    role: string,
+  ) {
     const invites = await this.prisma.$queryRaw<any[]>`
       SELECT association_id, status, accepted_by FROM public.community_invitations
       WHERE id = ${inviteRef}::uuid
@@ -1327,14 +1445,14 @@ export class ConnectCommunityService {
 
     if (rows.length === 0) return [];
 
-    const actorIds = Array.from(new Set(rows.map(r => r.actor_user_id)));
+    const actorIds = Array.from(new Set(rows.map((r) => r.actor_user_id)));
     const profiles = await this.prisma.$queryRaw<any[]>`
       SELECT id, full_name FROM public.profiles WHERE id::uuid = ANY(${actorIds}::uuid[])
     `.catch(() => [] as any[]);
 
-    const nameMap = new Map(profiles.map(p => [p.id, p.full_name]));
+    const nameMap = new Map(profiles.map((p) => [p.id, p.full_name]));
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
       eventRef: r.id,
       oldRole: r.old_role,
       newRole: r.new_role,
@@ -1347,19 +1465,30 @@ export class ConnectCommunityService {
   // BC-Mobile-7B â€” Community Activity & Opportunities
   // ==========================================
 
-  async listCommunityEvents(userId: string, communityId: string, tab: string, offset: number) {
-    const hasMembership = await this.checkCommunityMembership(userId, communityId);
+  async listCommunityEvents(
+    userId: string,
+    communityId: string,
+    tab: string,
+    offset: number,
+  ) {
+    const hasMembership = await this.checkCommunityMembership(
+      userId,
+      communityId,
+    );
 
     const limit = 10;
     const userMembers = await this.prisma.$queryRaw<any[]>`
       SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
     `.catch(() => [] as any[]);
-    const userMemberCodes = userMembers.map(m => m.code).filter(Boolean);
-    const userInfo = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const userMemberCodes = userMembers.map((m) => m.code).filter(Boolean);
+    const userInfo = await this.prisma.vione_users
+      .findUnique({ where: { id: userId } })
+      .catch(() => null);
     const userEmail = userInfo?.email || userMembers[0]?.email || '';
 
     let events: any[];
-    const safeMemberCodes = userMemberCodes.length > 0 ? userMemberCodes : ['__NO_MEMBER__'];
+    const safeMemberCodes =
+      userMemberCodes.length > 0 ? userMemberCodes : ['__NO_MEMBER__'];
     if (tab === 'registered') {
       events = await this.prisma.$queryRaw<any[]>`
         SELECT e.* FROM public.events e
@@ -1384,7 +1513,7 @@ export class ConnectCommunityService {
       `.catch(() => [] as any[]);
     }
 
-    const eventIds = events.map(e => e.id);
+    const eventIds = events.map((e) => e.id);
     let regSet = new Set<string>();
     if (eventIds.length > 0) {
       const registrations = await this.prisma.$queryRaw<any[]>`
@@ -1393,34 +1522,46 @@ export class ConnectCommunityService {
           AND (member_code = ANY(${safeMemberCodes}) OR (email != '' AND email = ${userEmail}))
           AND status != 'cancelled'
       `.catch(() => [] as any[]);
-      regSet = new Set(registrations.map(r => r.event_id));
+      regSet = new Set(registrations.map((r) => r.event_id));
     }
 
     // Count total registrations per event for capacity checks
     let regCounts: Map<string, number> = new Map();
     if (eventIds.length > 0) {
-      const counts = await this.prisma.$queryRaw<{ event_id: string; cnt: bigint }[]>`
+      const counts = await this.prisma.$queryRaw<
+        { event_id: string; cnt: bigint }[]
+      >`
         SELECT event_id, COUNT(*) as cnt FROM public.event_registrations
         WHERE event_id = ANY(${eventIds}) AND status != 'cancelled'
         GROUP BY event_id
       `.catch(() => [] as any[]);
-      regCounts = new Map(counts.map(c => [c.event_id, Number(c.cnt)] as [string, number]));
+      regCounts = new Map(
+        counts.map((c) => [c.event_id, Number(c.cnt)] as [string, number]),
+      );
     }
 
     const totalCount = events.length;
-    const items = events.map(e => {
+    const items = events.map((e) => {
       const isRegistered = regSet.has(e.id);
       const capacity = e.capacity ? Number(e.capacity) : 0;
-      const isFull = capacity > 0 && (regCounts.get(e.id) ?? Number(e.registered || 0)) >= capacity;
+      const isFull =
+        capacity > 0 &&
+        (regCounts.get(e.id) ?? Number(e.registered || 0)) >= capacity;
       const isCancelled = e.status === 'cancelled';
 
-      let registrationState: 'available' | 'registered' | 'closed' | 'full' | 'cancelled';
+      let registrationState:
+        | 'available'
+        | 'registered'
+        | 'closed'
+        | 'full'
+        | 'cancelled';
       if (isRegistered) registrationState = 'registered';
       else if (isCancelled) registrationState = 'cancelled';
       else if (isFull) registrationState = 'full';
       else registrationState = 'available';
 
-      const capacityState: 'open' | 'full' | null = capacity <= 0 ? null : isFull ? 'full' : 'open';
+      const capacityState: 'open' | 'full' | null =
+        capacity <= 0 ? null : isFull ? 'full' : 'open';
 
       return {
         eventRef: e.id,
@@ -1440,8 +1581,11 @@ export class ConnectCommunityService {
     };
   }
 
-
-  async getCommunityEventDetail(userId: string, communityId: string, eventRef: string) {
+  async getCommunityEventDetail(
+    userId: string,
+    communityId: string,
+    eventRef: string,
+  ) {
     let events = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.events
       WHERE association_id = ${communityId}::uuid AND (id = ${eventRef} OR id::text = ${eventRef})
@@ -1462,8 +1606,10 @@ export class ConnectCommunityService {
     const userMembers = await this.prisma.$queryRaw<any[]>`
       SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
     `.catch(() => [] as any[]);
-    const userMemberCodes = userMembers.map(m => m.code).filter(Boolean);
-    const userInfo = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const userMemberCodes = userMembers.map((m) => m.code).filter(Boolean);
+    const userInfo = await this.prisma.vione_users
+      .findUnique({ where: { id: userId } })
+      .catch(() => null);
     const userEmail = userInfo?.email || userMembers[0]?.email || '';
 
     const registrations = await this.prisma.$queryRaw<any[]>`
@@ -1479,7 +1625,10 @@ export class ConnectCommunityService {
       SELECT COUNT(*) as count FROM public.event_registrations
       WHERE event_id = ${eventRef} AND status != 'cancelled'
     `.catch(() => [{ count: BigInt(0) }]);
-    const totalReg = regCounts && regCounts.length > 0 ? (regCounts[0]?.count ?? BigInt(0)) : BigInt(0);
+    const totalReg =
+      regCounts && regCounts.length > 0
+        ? (regCounts[0]?.count ?? BigInt(0))
+        : BigInt(0);
 
     const isRegistered = registrations.length > 0;
     const capacity = e.capacity ? Number(e.capacity) : 0;
@@ -1487,7 +1636,12 @@ export class ConnectCommunityService {
     const isCancelled = e.status === 'cancelled';
 
     // Map to canonical registrationState
-    let registrationState: 'available' | 'registered' | 'closed' | 'full' | 'cancelled';
+    let registrationState:
+      | 'available'
+      | 'registered'
+      | 'closed'
+      | 'full'
+      | 'cancelled';
     if (isRegistered) {
       registrationState = 'registered';
     } else if (isCancelled) {
@@ -1499,7 +1653,8 @@ export class ConnectCommunityService {
     }
 
     const canRegister = !isRegistered && !isCancelled && !isFull;
-    const capacityState: 'open' | 'full' | null = capacity <= 0 ? null : isFull ? 'full' : 'open';
+    const capacityState: 'open' | 'full' | null =
+      capacity <= 0 ? null : isFull ? 'full' : 'open';
 
     const effectiveAssocId = e.association_id || communityId;
     const communities = await this.prisma.$queryRaw<any[]>`
@@ -1523,8 +1678,11 @@ export class ConnectCommunityService {
     };
   }
 
-
-  async registerCommunityEvent(userId: string, communityId: string, eventRef: string) {
+  async registerCommunityEvent(
+    userId: string,
+    communityId: string,
+    eventRef: string,
+  ) {
     const eventRows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.events WHERE id = ${eventRef} LIMIT 1
     `.catch(() => [] as any[]);
@@ -1533,9 +1691,12 @@ export class ConnectCommunityService {
     const memberRows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.members WHERE user_id = ${userId}::uuid LIMIT 1
     `.catch(() => [] as any[]);
-    const userRows = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const userRows = await this.prisma.vione_users
+      .findUnique({ where: { id: userId } })
+      .catch(() => null);
 
-    const memberCode = memberRows[0]?.code ?? `MB-${Date.now().toString(36).toUpperCase()}`;
+    const memberCode =
+      memberRows[0]?.code ?? `MB-${Date.now().toString(36).toUpperCase()}`;
     const memberName = memberRows[0]?.name ?? userRows?.name ?? 'Hội viên';
     const email = memberRows[0]?.email ?? userRows?.email ?? '';
 
@@ -1567,12 +1728,18 @@ export class ConnectCommunityService {
     return { ok: true, registrationId: regId, luckyNumber: luckyNum };
   }
 
-  async cancelCommunityEventRegistration(userId: string, communityId: string, eventRef: string) {
+  async cancelCommunityEventRegistration(
+    userId: string,
+    communityId: string,
+    eventRef: string,
+  ) {
     const memberRows = await this.prisma.$queryRaw<any[]>`
       SELECT code, email FROM public.members WHERE user_id = ${userId}::uuid
     `.catch(() => [] as any[]);
-    const memberCodes = memberRows.map(m => m.code).filter(Boolean);
-    const user = await this.prisma.vione_users.findUnique({ where: { id: userId } }).catch(() => null);
+    const memberCodes = memberRows.map((m) => m.code).filter(Boolean);
+    const user = await this.prisma.vione_users
+      .findUnique({ where: { id: userId } })
+      .catch(() => null);
     const email = user?.email || memberRows[0]?.email || '';
 
     await this.prisma.$executeRaw`
@@ -1586,8 +1753,6 @@ export class ConnectCommunityService {
 
     return { ok: true };
   }
-
-
 
   async notifyAssociationAdmins(
     associationId: string,
@@ -1611,7 +1776,9 @@ export class ConnectCommunityService {
           gen_random_uuid(), ${code}, ${payload.title}, ${payload.body},
           'staff', 'inapp', 'sent', ${now}, ${associationId}::uuid, 'crm', 'crm', ${now}, ${now}
         )
-      `.catch((err) => console.warn('Could not insert scoped public.notifications:', err));
+      `.catch((err) =>
+        console.warn('Could not insert scoped public.notifications:', err),
+      );
 
       const adminMembers = await this.prisma.$queryRaw<any[]>`
         SELECT DISTINCT user_id FROM public.memberships
@@ -1625,7 +1792,9 @@ export class ConnectCommunityService {
         WHERE email LIKE '%admin%' OR username LIKE '%admin%'
       `.catch(() => [] as any[]);
 
-      const adminUserIds = Array.from(new Set(adminMembers.map((m) => m.user_id).filter(Boolean)));
+      const adminUserIds = Array.from(
+        new Set(adminMembers.map((m) => m.user_id).filter(Boolean)),
+      );
 
       for (const adminId of adminUserIds) {
         const notifId = crypto.randomUUID();
@@ -1657,7 +1826,9 @@ export class ConnectCommunityService {
             ${safeData}::jsonb, 'navigate', 'Xem hồ sơ & duyệt', ${actionTarget}::jsonb,
             'high', 'delivered', 'crm', 'crm', ${now}, ${now}, ${`assoc_alert:${notifId}`}
           )
-        `.catch((err) => console.warn('Error inserting business_notification for admin:', err));
+        `.catch((err) =>
+          console.warn('Error inserting business_notification for admin:', err),
+        );
 
         if (this.gateway) {
           this.gateway.emitNotification(adminId, {
@@ -1707,5 +1878,4 @@ export class ConnectCommunityService {
       console.warn('Error in notifyAssociationAdmins:', err);
     }
   }
-
 }

@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class DocumentsRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getActiveAssociationId(userId: string): Promise<string | null> {
     try {
@@ -106,7 +106,8 @@ export class DocumentsRepository {
     docScope?: string,
     enterpriseName?: string | null,
   ): Promise<any> {
-    const sharedWithJson = sharedWith !== undefined ? JSON.stringify(sharedWith) : null;
+    const sharedWithJson =
+      sharedWith !== undefined ? JSON.stringify(sharedWith) : null;
     await this.prisma.$executeRaw`
       UPDATE public.documents
       SET name = COALESCE(${name !== undefined ? name : null}, name),
@@ -171,7 +172,10 @@ export class DocumentsRepository {
     return true;
   }
 
-  async moveDocument(id: string, targetFolderId: string | null): Promise<boolean> {
+  async moveDocument(
+    id: string,
+    targetFolderId: string | null,
+  ): Promise<boolean> {
     await this.prisma.$executeRaw`
       UPDATE public.documents
       SET folder_id = ${targetFolderId || null},
@@ -194,7 +198,7 @@ export class DocumentsRepository {
     if (found[0].is_folder) {
       await this.prisma.$executeRaw`
         DELETE FROM public.documents WHERE folder_id = ${id}
-      `.catch(() => { });
+      `.catch(() => {});
     }
 
     await this.prisma.$executeRaw`
@@ -204,7 +208,10 @@ export class DocumentsRepository {
   }
 
   async findDocumentById(id: string): Promise<any | null> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT code, name, category, size, uploaded_at, uploaded_by, type, file_path, folder_id, drive_url, is_folder,
              share_scope, share_role, shared_with, is_starred, color_tag, description, doc_scope, enterprise_name
@@ -215,7 +222,9 @@ export class DocumentsRepository {
     return rows[0] || null;
   }
 
-  async findFilePath(id: string): Promise<{ filePath: string | null; name: string } | null> {
+  async findFilePath(
+    id: string,
+  ): Promise<{ filePath: string | null; name: string } | null> {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT file_path, name FROM public.documents WHERE code = ${id} LIMIT 1
     `.catch(() => []);

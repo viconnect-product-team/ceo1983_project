@@ -23,14 +23,20 @@ function cleanStoredMediaUrl(url?: string | null): string | null {
   if (!url) return null;
   let cleaned = url.trim();
   if (cleaned.startsWith('data:image/')) return cleaned;
-  cleaned = cleaned.replace(/^https?:\/\/(127\.0\.0\.1|localhost|14\.225\.217\.232)(:[0-9]+)?(\/api)?/, '');
+  cleaned = cleaned.replace(
+    /^https?:\/\/(127\.0\.0\.1|localhost|14\.225\.217\.232)(:[0-9]+)?(\/api)?/,
+    '',
+  );
   if (!cleaned.startsWith('/') && !cleaned.startsWith('http')) {
     cleaned = '/' + cleaned;
   }
   return cleaned;
 }
 
-async function saveBase64AvatarDirectly(base64Data: string, userId: string): Promise<string> {
+async function saveBase64AvatarDirectly(
+  base64Data: string,
+  userId: string,
+): Promise<string> {
   try {
     const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -194,45 +200,109 @@ export function resolveUserPermissions(
   ]);
 
   // 3. Tổng thư ký / Ban Thư ký
-  if (normRole === 'tong_thu_ky' || normRole === 'ban_thu_ky' || dept.includes('thư ký')) {
-    ['events:manage', 'events:checkin', 'news:manage', 'documents:manage', 'voting:manage',
-     'EVT_ADD', 'EVT_EDIT', 'CHK_SCAN', 'NWS_ADD', 'NWS_EDIT', 'DOC_ADD', 'DOC_EDIT', 'VOTE_ADD'].forEach((p) => perms.add(p));
+  if (
+    normRole === 'tong_thu_ky' ||
+    normRole === 'ban_thu_ky' ||
+    dept.includes('thư ký')
+  ) {
+    [
+      'events:manage',
+      'events:checkin',
+      'news:manage',
+      'documents:manage',
+      'voting:manage',
+      'EVT_ADD',
+      'EVT_EDIT',
+      'CHK_SCAN',
+      'NWS_ADD',
+      'NWS_EDIT',
+      'DOC_ADD',
+      'DOC_EDIT',
+      'VOTE_ADD',
+    ].forEach((p) => perms.add(p));
   }
 
   // 4. Ban Truyền Thông (BTT)
   if (normRole.includes('truyen_thong') || dept.includes('truyền thông')) {
-    ['events:checkin', 'news:manage', 'media:manage', 'CHK_SCAN', 'NWS_ADD', 'NWS_EDIT', 'EVT_ADD'].forEach((p) => perms.add(p));
+    [
+      'events:checkin',
+      'news:manage',
+      'media:manage',
+      'CHK_SCAN',
+      'NWS_ADD',
+      'NWS_EDIT',
+      'EVT_ADD',
+    ].forEach((p) => perms.add(p));
   }
 
   // 5. Ban Thành viên (BTV)
   if (normRole.includes('thanh_vien') || dept.includes('thành viên')) {
-    ['members:manage', 'members:approve', 'MEM_ADD', 'MEM_EDIT', 'MEM_APPROVE'].forEach((p) => perms.add(p));
+    [
+      'members:manage',
+      'members:approve',
+      'MEM_ADD',
+      'MEM_EDIT',
+      'MEM_APPROVE',
+    ].forEach((p) => perms.add(p));
   }
 
   // 6. Ban Xúc tiến thương mại (BXT)
   if (normRole.includes('xuc_tien') || dept.includes('xúc tiến')) {
-    ['marketplace:manage', 'opportunities:manage', 'MKT_EDIT', 'MKT_DELETE', 'OPP_EDIT', 'OPP_DELETE'].forEach((p) => perms.add(p));
+    [
+      'marketplace:manage',
+      'opportunities:manage',
+      'MKT_EDIT',
+      'MKT_DELETE',
+      'OPP_EDIT',
+      'OPP_DELETE',
+    ].forEach((p) => perms.add(p));
   }
 
   // 7. Ban Tài chính (BTC)
   if (normRole.includes('tai_chinh') || dept.includes('tài chính')) {
-    ['finance:view', 'finance:manage', 'FEE_VIEW', 'FEE_ADD', 'FEE_EDIT'].forEach((p) => perms.add(p));
+    [
+      'finance:view',
+      'finance:manage',
+      'FEE_VIEW',
+      'FEE_ADD',
+      'FEE_EDIT',
+    ].forEach((p) => perms.add(p));
   }
 
   // 8. Ban Thiện nguyện (BTN)
   if (normRole.includes('thien_nguyen') || dept.includes('thiện nguyện')) {
-    ['charity:manage', 'CHA_VIEW', 'CHA_ADD', 'CHA_MANAGE'].forEach((p) => perms.add(p));
+    ['charity:manage', 'CHA_VIEW', 'CHA_ADD', 'CHA_MANAGE'].forEach((p) =>
+      perms.add(p),
+    );
   }
 
   // 9. Ban Điều Hành (BDH)
   if (normRole === 'ban_dieu_hanh' || dept.includes('điều hành')) {
-    ['events:manage', 'events:checkin', 'members:manage', 'marketplace:manage', 'opportunities:manage', 'news:manage', 'documents:manage', 'finance:view',
-     'CHK_SCAN', 'MEM_EDIT', 'EVT_ADD', 'EVT_EDIT', 'MKT_EDIT', 'OPP_EDIT', 'NWS_ADD'].forEach((p) => perms.add(p));
+    [
+      'events:manage',
+      'events:checkin',
+      'members:manage',
+      'marketplace:manage',
+      'opportunities:manage',
+      'news:manage',
+      'documents:manage',
+      'finance:view',
+      'CHK_SCAN',
+      'MEM_EDIT',
+      'EVT_ADD',
+      'EVT_EDIT',
+      'MKT_EDIT',
+      'OPP_EDIT',
+      'NWS_ADD',
+    ].forEach((p) => perms.add(p));
   }
 
   // 10. Dynamic RBAC Matrix from app_settings (Đồng bộ phân quyền thời gian thực)
   if (dynamicMatrix) {
-    const categories = dynamicMatrix.categories || dynamicMatrix.rows || (Array.isArray(dynamicMatrix) ? dynamicMatrix : []);
+    const categories =
+      dynamicMatrix.categories ||
+      dynamicMatrix.rows ||
+      (Array.isArray(dynamicMatrix) ? dynamicMatrix : []);
     if (Array.isArray(categories)) {
       const allRoleKeys = [normRole, ...rList];
       for (const cat of categories) {
@@ -240,7 +310,7 @@ export function resolveUserPermissions(
         for (const feat of cat.features) {
           if (feat.route) {
             const hasAnyAction = (feat.actions || []).some((a: any) =>
-              allRoleKeys.some((k) => a?.roles?.[k] === true)
+              allRoleKeys.some((k) => a?.roles?.[k] === true),
             );
             if (hasAnyAction) {
               perms.add(feat.route);
@@ -248,7 +318,9 @@ export function resolveUserPermissions(
           }
           if (feat.actions && Array.isArray(feat.actions)) {
             for (const act of feat.actions) {
-              const isAllowed = allRoleKeys.some((k) => act?.roles?.[k] === true);
+              const isAllowed = allRoleKeys.some(
+                (k) => act?.roles?.[k] === true,
+              );
               if (isAllowed) {
                 if (act.code) perms.add(act.code);
                 if (act.id) perms.add(act.id);
@@ -307,7 +379,10 @@ export class UsersService {
 
   async findById(id: string): Promise<vione_users | null> {
     if (!id) return null;
-    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+    const isUuid =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        id,
+      );
 
     if (isUuid) {
       const user = await this.usersRepo.findById(id);
@@ -316,7 +391,11 @@ export class UsersService {
       }
     }
 
-    if (id === 'mock-admin-id' || id === '00000000-0000-0000-0000-000000000000' || id === '00000000-0000-4000-8000-000000000002') {
+    if (
+      id === 'mock-admin-id' ||
+      id === '00000000-0000-0000-0000-000000000000' ||
+      id === '00000000-0000-4000-8000-000000000002'
+    ) {
       const adminUser = await this.usersRepo.findByUsername('admin@connect.vn');
 
       if (adminUser) {
@@ -377,7 +456,10 @@ export class UsersService {
     });
 
     // Sync to auth.users
-    await this.usersRepo.syncToAuthUsers(newUser.id, newUser.email || newUser.username);
+    await this.usersRepo.syncToAuthUsers(
+      newUser.id,
+      newUser.email || newUser.username,
+    );
 
     // Auto-link to approved member in public.members if matching phone or email
     const cleanPhone = (newUser.username || '').replace(/\D/g, '');
@@ -416,14 +498,21 @@ export class UsersService {
     try {
       let user = await this.findById(userId);
       if (!user) {
-        user = (await this.findByUsername(userId)) || (await this.findByEmail(userId));
+        user =
+          (await this.findByUsername(userId)) ||
+          (await this.findByEmail(userId));
       }
       if (!user) {
         throw new NotFoundException('Không tìm thấy thông tin tài khoản');
       }
 
-      const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(user.id);
-      const safeUuid = isUuid ? user.id : '00000000-0000-4000-8000-000000000002';
+      const isUuid =
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+          user.id,
+        );
+      const safeUuid = isUuid
+        ? user.id
+        : '00000000-0000-4000-8000-000000000002';
 
       const [profile, roles, memberships, memberRow] = await Promise.all([
         this.usersRepo.getUserProfile(safeUuid),
@@ -433,20 +522,33 @@ export class UsersService {
       ]);
       const roleList = (roles || []).map((r) => r.role).filter(Boolean);
       const isAssocAdmin = (memberships ?? []).some(
-        (m: any) => m.role === 'admin' || m.role === 'association_admin' || m.role === 'owner',
+        (m: any) =>
+          m.role === 'admin' ||
+          m.role === 'association_admin' ||
+          m.role === 'owner',
       );
       if (isAssocAdmin && !roleList.includes('admin')) {
         roleList.push('admin');
       }
 
-      let normalizedDept = memberRow?.department || memberships?.[0]?.department || 'Hội viên ceo1983';
+      let normalizedDept =
+        memberRow?.department ||
+        memberships?.[0]?.department ||
+        'Hội viên ceo1983';
       if (normalizedDept.toLowerCase().includes('quản trị')) {
-        normalizedDept = normalizedDept.replace(/ban quản trị/gi, 'Ban Điều Hành').replace(/quản trị/gi, 'Điều Hành');
+        normalizedDept = normalizedDept
+          .replace(/ban quản trị/gi, 'Ban Điều Hành')
+          .replace(/quản trị/gi, 'Điều Hành');
       }
 
       let primaryRole = 'member';
-      const fallbackExec = memberships?.[0]?.executive_role ? String(memberships[0].executive_role).toLowerCase().trim() : '';
-      const exec = (memberRow?.executive_role ? String(memberRow.executive_role).toLowerCase().trim() : '') || fallbackExec;
+      const fallbackExec = memberships?.[0]?.executive_role
+        ? String(memberships[0].executive_role).toLowerCase().trim()
+        : '';
+      const exec =
+        (memberRow?.executive_role
+          ? String(memberRow.executive_role).toLowerCase().trim()
+          : '') || fallbackExec;
       const dept = normalizedDept.toLowerCase();
       const userEmail = (user.email || user.username || '').toLowerCase();
 
@@ -492,29 +594,65 @@ export class UsersService {
 
       let isExplicitDeptLeader = false;
       let matchedDeptLeaderRole = '';
-      if (!isExplicitPresident && !isExplicitGeneralSecretary && !isExplicitExecutive && !isExplicitAdmin) {
+      if (
+        !isExplicitPresident &&
+        !isExplicitGeneralSecretary &&
+        !isExplicitExecutive &&
+        !isExplicitAdmin
+      ) {
         if (exec.includes('truyền thông') || dept.includes('truyền thông')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_truyen_thong')) {
+          if (
+            exec.startsWith('truong_ban_') ||
+            exec.includes('trưởng ban') ||
+            exec.includes('phó ban') ||
+            roleList.includes('truong_ban_truyen_thong')
+          ) {
             matchedDeptLeaderRole = 'truong_ban_truyen_thong';
             isExplicitDeptLeader = true;
           }
-        } else if (exec.includes('thành viên') || (dept.includes('thành viên') && !dept.includes('hội viên'))) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_thanh_vien')) {
+        } else if (
+          exec.includes('thành viên') ||
+          (dept.includes('thành viên') && !dept.includes('hội viên'))
+        ) {
+          if (
+            exec.startsWith('truong_ban_') ||
+            exec.includes('trưởng ban') ||
+            exec.includes('phó ban') ||
+            roleList.includes('truong_ban_thanh_vien')
+          ) {
             matchedDeptLeaderRole = 'truong_ban_thanh_vien';
             isExplicitDeptLeader = true;
           }
         } else if (exec.includes('xúc tiến') || dept.includes('xúc tiến')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_xuc_tien')) {
+          if (
+            exec.startsWith('truong_ban_') ||
+            exec.includes('trưởng ban') ||
+            exec.includes('phó ban') ||
+            roleList.includes('truong_ban_xuc_tien')
+          ) {
             matchedDeptLeaderRole = 'truong_ban_xuc_tien';
             isExplicitDeptLeader = true;
           }
         } else if (exec.includes('tài chính') || dept.includes('tài chính')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_tai_chinh')) {
+          if (
+            exec.startsWith('truong_ban_') ||
+            exec.includes('trưởng ban') ||
+            exec.includes('phó ban') ||
+            roleList.includes('truong_ban_tai_chinh')
+          ) {
             matchedDeptLeaderRole = 'truong_ban_tai_chinh';
             isExplicitDeptLeader = true;
           }
-        } else if (exec.includes('thiện nguyện') || dept.includes('thiện nguyện')) {
-          if (exec.startsWith('truong_ban_') || exec.includes('trưởng ban') || exec.includes('phó ban') || roleList.includes('truong_ban_thien_nguyen')) {
+        } else if (
+          exec.includes('thiện nguyện') ||
+          dept.includes('thiện nguyện')
+        ) {
+          if (
+            exec.startsWith('truong_ban_') ||
+            exec.includes('trưởng ban') ||
+            exec.includes('phó ban') ||
+            roleList.includes('truong_ban_thien_nguyen')
+          ) {
             matchedDeptLeaderRole = 'truong_ban_thien_nguyen';
             isExplicitDeptLeader = true;
           }
@@ -565,12 +703,16 @@ export class UsersService {
         if (!roleList.includes('moderator')) roleList.push('moderator');
         if (!roleList.includes('admin')) roleList.push('admin');
       } else if (isExplicitAdmin) {
-        primaryRole = (exec === 'quan_tri' || exec.includes('quản trị')) ? 'quan_tri' : 'admin';
+        primaryRole =
+          exec === 'quan_tri' || exec.includes('quản trị')
+            ? 'quan_tri'
+            : 'admin';
         if (!roleList.includes('admin')) roleList.push('admin');
         if (!roleList.includes('quan_tri')) roleList.push('quan_tri');
       } else if (isExplicitDeptLeader) {
         primaryRole = matchedDeptLeaderRole;
-        if (!roleList.includes(matchedDeptLeaderRole)) roleList.push(matchedDeptLeaderRole);
+        if (!roleList.includes(matchedDeptLeaderRole))
+          roleList.push(matchedDeptLeaderRole);
         if (!roleList.includes('moderator')) roleList.push('moderator');
         if (!roleList.includes('admin')) roleList.push('admin');
       } else if (isExplicitSecretary) {
@@ -616,7 +758,10 @@ export class UsersService {
       `.catch(() => []);
       const dynamicMatrix = matrixRows?.[0]?.value || null;
 
-      const userAvatar = cleanStoredMediaUrl(user.avatar_url || profile?.avatar_url || (memberRow as any)?.avatar) || null;
+      const userAvatar =
+        cleanStoredMediaUrl(
+          user.avatar_url || profile?.avatar_url || memberRow?.avatar,
+        ) || null;
 
       return {
         id: user.id,
@@ -631,8 +776,24 @@ export class UsersService {
         has_password: !!user.password && user.password.length > 0,
         created_at: user.created_at,
         updated_at: user.updated_at,
-        executiveRole: memberRow?.executive_role || (primaryRole === 'chu_tich' ? 'Chủ tịch' : (primaryRole === 'admin' ? 'Quản trị viên' : (primaryRole === 'ban_dieu_hanh' ? 'Ban Điều Hành' : 'Hội viên'))),
-        executive_role: memberRow?.executive_role || (primaryRole === 'chu_tich' ? 'Chủ tịch' : (primaryRole === 'admin' ? 'Quản trị viên' : (primaryRole === 'ban_dieu_hanh' ? 'Ban Điều Hành' : 'Hội viên'))),
+        executiveRole:
+          memberRow?.executive_role ||
+          (primaryRole === 'chu_tich'
+            ? 'Chủ tịch'
+            : primaryRole === 'admin'
+              ? 'Quản trị viên'
+              : primaryRole === 'ban_dieu_hanh'
+                ? 'Ban Điều Hành'
+                : 'Hội viên'),
+        executive_role:
+          memberRow?.executive_role ||
+          (primaryRole === 'chu_tich'
+            ? 'Chủ tịch'
+            : primaryRole === 'admin'
+              ? 'Quản trị viên'
+              : primaryRole === 'ban_dieu_hanh'
+                ? 'Ban Điều Hành'
+                : 'Hội viên'),
         department: normalizedDept,
         memberCode: memberRow?.code || null,
         memberId: memberRow?.id || null,
@@ -652,17 +813,29 @@ export class UsersService {
           : null,
         roles: roleList,
         role: primaryRole,
-        isPresident: primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
-        isAdmin: primaryRole === 'admin' || primaryRole === 'chu_tich' || roleList.includes('admin') || roleList.includes('platform_admin'),
-        isExecutive: primaryRole === 'ban_dieu_hanh' || roleList.includes('ban_dieu_hanh') || roleList.includes('bqt'),
-        isGeneralSecretary: primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky'),
+        isPresident:
+          primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
+        isAdmin:
+          primaryRole === 'admin' ||
+          primaryRole === 'chu_tich' ||
+          roleList.includes('admin') ||
+          roleList.includes('platform_admin'),
+        isExecutive:
+          primaryRole === 'ban_dieu_hanh' ||
+          roleList.includes('ban_dieu_hanh') ||
+          roleList.includes('bqt'),
+        isGeneralSecretary:
+          primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky'),
         isDepartmentLeader: primaryRole.startsWith('truong_ban_'),
         permissions: resolveUserPermissions(
           primaryRole,
           roleList,
           normalizedDept,
           primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
-          primaryRole === 'admin' || primaryRole === 'chu_tich' || roleList.includes('admin') || roleList.includes('platform_admin'),
+          primaryRole === 'admin' ||
+            primaryRole === 'chu_tich' ||
+            roleList.includes('admin') ||
+            roleList.includes('platform_admin'),
           dynamicMatrix,
         ),
         permissionMatrix: dynamicMatrix,
@@ -671,7 +844,10 @@ export class UsersService {
       if (err instanceof NotFoundException) {
         throw err;
       }
-      this.logger.error(`Error in getAccountDetails for userId: ${userId}: ${err?.message}`, err?.stack);
+      this.logger.error(
+        `Error in getAccountDetails for userId: ${userId}: ${err?.message}`,
+        err?.stack,
+      );
       return {
         id: userId,
         username: 'admin@connect.vn',
@@ -723,7 +899,9 @@ export class UsersService {
         NOT: { id: userId },
       });
       if (existing) {
-        throw new BadRequestException('Email đã được sử dụng bởi một tài khoản khác');
+        throw new BadRequestException(
+          'Email đã được sử dụng bởi một tài khoản khác',
+        );
       }
     }
 
@@ -732,7 +910,10 @@ export class UsersService {
     if (data.avatar_url !== undefined) {
       if (data.avatar_url && data.avatar_url.startsWith('data:image/')) {
         try {
-          finalAvatarUrl = await saveBase64AvatarDirectly(data.avatar_url, userId);
+          finalAvatarUrl = await saveBase64AvatarDirectly(
+            data.avatar_url,
+            userId,
+          );
         } catch (e: any) {
           this.logger.warn(`Failed to convert base64 avatar: ${e?.message}`);
           finalAvatarUrl = cleanStoredMediaUrl(data.avatar_url) || undefined;
@@ -770,8 +951,11 @@ export class UsersService {
         display_name: data.name !== undefined ? data.name : undefined,
         avatar_url: finalAvatarUrl !== undefined ? finalAvatarUrl : undefined,
         professional_title:
-          data.professional_title !== undefined ? data.professional_title : undefined,
-        company_name: data.company_name !== undefined ? data.company_name : undefined,
+          data.professional_title !== undefined
+            ? data.professional_title
+            : undefined,
+        company_name:
+          data.company_name !== undefined ? data.company_name : undefined,
         industry: data.industry !== undefined ? data.industry : undefined,
         region: data.region !== undefined ? data.region : undefined,
         bio: data.bio !== undefined ? data.bio : undefined,
@@ -835,7 +1019,9 @@ export class UsersService {
 
     let user = userId ? await this.usersRepo.findById(userId) : null;
     if (!user && options?.email) {
-      user = await this.usersRepo.findByEmail(options.email.trim().toLowerCase());
+      user = await this.usersRepo.findByEmail(
+        options.email.trim().toLowerCase(),
+      );
     }
     if (!user && options?.phone) {
       user = await this.usersRepo.findByUsername(options.phone.trim());
@@ -853,7 +1039,9 @@ export class UsersService {
       }
 
       // Tier 1: bcrypt compare
-      let isMatch = await bcrypt.compare(cleanCurrent, user.password).catch(() => false);
+      let isMatch = await bcrypt
+        .compare(cleanCurrent, user.password)
+        .catch(() => false);
 
       // Tier 2: plain text match (if stored unhashed)
       if (!isMatch && cleanCurrent === user.password) {
@@ -862,7 +1050,10 @@ export class UsersService {
 
       // Tier 3: check public.members about field for Pass=...
       if (!isMatch) {
-        const memberInfo = await this.usersRepo.getMemberInfo(targetUserId, user.email);
+        const memberInfo = await this.usersRepo.getMemberInfo(
+          targetUserId,
+          user.email,
+        );
         if (memberInfo && memberInfo.about) {
           const passMatch = memberInfo.about.match(/Pass=([^\s|]+)/);
           if (passMatch && passMatch[1].trim() === cleanCurrent) {
@@ -873,16 +1064,23 @@ export class UsersService {
 
       // Tier 4: normalize zero-width and non-breaking spaces
       if (!isMatch) {
-        const normalizedClean = cleanCurrent.replace(/[\u200B-\u200D\uFEFF\u00A0\r\n\t]/g, '').trim();
+        const normalizedClean = cleanCurrent
+          .replace(/[\u200B-\u200D\uFEFF\u00A0\r\n\t]/g, '')
+          .trim();
         if (normalizedClean !== cleanCurrent) {
-          isMatch = await bcrypt.compare(normalizedClean, user.password).catch(() => false);
+          isMatch = await bcrypt
+            .compare(normalizedClean, user.password)
+            .catch(() => false);
           if (!isMatch && normalizedClean === user.password) isMatch = true;
         }
       }
 
       // Tier 5: query members table directly for about or notes
       if (!isMatch) {
-        const rawMember = await this.usersRepo.getRawMemberNotesAndAbout(targetUserId, user.email || options?.email || '');
+        const rawMember = await this.usersRepo.getRawMemberNotesAndAbout(
+          targetUserId,
+          user.email || options?.email || '',
+        );
         if (rawMember) {
           const passMatch = rawMember.match(/Pass=([^\s|]+)/);
           if (passMatch && passMatch[1].trim() === cleanCurrent) {
@@ -896,7 +1094,9 @@ export class UsersService {
       if (!isMatch) {
         const mustChange = await this.checkMustChangePassword(targetUserId);
         if (mustChange) {
-          this.logger.warn(`[UsersService] User ${targetUserId} (${user.email}) onboarding first password change - tolerated mismatch for initial activation`);
+          this.logger.warn(
+            `[UsersService] User ${targetUserId} (${user.email}) onboarding first password change - tolerated mismatch for initial activation`,
+          );
           isMatch = true;
         }
       }
@@ -914,11 +1114,18 @@ export class UsersService {
     let emailUpdated = false;
     const requestedEmail = options?.email?.trim().toLowerCase();
 
-    if (requestedEmail && requestedEmail.includes('@') && requestedEmail !== (user.email || '').toLowerCase()) {
+    if (
+      requestedEmail &&
+      requestedEmail.includes('@') &&
+      requestedEmail !== (user.email || '').toLowerCase()
+    ) {
       // Kiểm tra trùng email với tài khoản khác
-      const existingWithEmail = await this.usersRepo.findByEmail(requestedEmail);
+      const existingWithEmail =
+        await this.usersRepo.findByEmail(requestedEmail);
       if (existingWithEmail && existingWithEmail.id !== targetUserId) {
-        throw new BadRequestException(`Email "${requestedEmail}" đã được sử dụng bởi một tài khoản khác`);
+        throw new BadRequestException(
+          `Email "${requestedEmail}" đã được sử dụng bởi một tài khoản khác`,
+        );
       }
       finalEmail = requestedEmail;
       emailUpdated = true;
@@ -926,7 +1133,9 @@ export class UsersService {
 
     // Xử lý cập nhật SĐT nếu người dùng cung cấp
     let finalPhone = '';
-    const cleanPhone = options?.phone ? options.phone.trim().replace(/\D/g, '') : '';
+    const cleanPhone = options?.phone
+      ? options.phone.trim().replace(/\D/g, '')
+      : '';
     if (cleanPhone.length >= 9) {
       finalPhone = options?.phone?.trim() || cleanPhone;
     }
@@ -945,7 +1154,10 @@ export class UsersService {
 
     // Cập nhật thông tin hội viên (public.members & public.user_profiles)
     const profile = await this.usersRepo.getUserProfile(targetUserId);
-    const memberRow = await this.usersRepo.getMemberInfo(targetUserId, user.email);
+    const memberRow = await this.usersRepo.getMemberInfo(
+      targetUserId,
+      user.email,
+    );
 
     if (emailUpdated || finalPhone) {
       await this.usersRepo.syncMemberDetails(targetUserId, {
@@ -957,7 +1169,11 @@ export class UsersService {
         {
           user_id: targetUserId,
           phone: finalPhone || undefined,
-          display_name: options?.fullName || profile?.display_name || user.name || 'Hội viên',
+          display_name:
+            options?.fullName ||
+            profile?.display_name ||
+            user.name ||
+            'Hội viên',
           updated_at: new Date(),
         },
         {
@@ -971,19 +1187,28 @@ export class UsersService {
     // Đánh dấu onboarding_status = 'completed' để hoàn tất quy trình đổi mật khẩu bắt buộc
     await this.usersRepo.completeOnboardingStatus(targetUserId);
 
-    const displayName = options?.fullName || profile?.display_name || user.name || memberRow?.name || 'Hội viên CEO 1983';
+    const displayName =
+      options?.fullName ||
+      profile?.display_name ||
+      user.name ||
+      memberRow?.name ||
+      'Hội viên CEO 1983';
     const memberCode = memberRow?.code || profile?.member_code || 'HV-1983';
     const companyName = profile?.company_name || 'CLB Doanh Nhân CEO 1983';
-    const resolvedPhone = finalPhone || profile?.phone || memberRow?.phone || '';
+    const resolvedPhone =
+      finalPhone || profile?.phone || memberRow?.phone || '';
 
     // Gửi email thông báo kích hoạt thành công (và thông tin tài khoản mới) nếu:
     // 1. Người dùng đổi sang email mới, hoặc
     // 2. Yêu cầu sendActivationEmail = true, hoặc
     // 3. Tài khoản mới đổi mật khẩu lần đầu
     let emailSent = false;
-    let emailRecipient = finalEmail;
+    const emailRecipient = finalEmail;
 
-    if (finalEmail && (emailUpdated || options?.sendActivationEmail !== false)) {
+    if (
+      finalEmail &&
+      (emailUpdated || options?.sendActivationEmail !== false)
+    ) {
       try {
         const mailRes = await this.mailService.sendAppAccountActivatedEmail({
           to: finalEmail,
@@ -997,7 +1222,9 @@ export class UsersService {
         });
         emailSent = mailRes.ok;
       } catch (mailErr: any) {
-        this.logger.warn(`Failed to dispatch activation email to ${finalEmail}: ${mailErr.message}`);
+        this.logger.warn(
+          `Failed to dispatch activation email to ${finalEmail}: ${mailErr.message}`,
+        );
       }
     }
 
@@ -1050,7 +1277,10 @@ export class UsersService {
         updated_at: new Date(),
       },
     );
-    return { success: true, message: 'Tài khoản đã được vô hiệu hóa thành công' };
+    return {
+      success: true,
+      message: 'Tài khoản đã được vô hiệu hóa thành công',
+    };
   }
 
   // ── ADMIN USER MANAGEMENT METHODS ───────────────────────────────────────
@@ -1089,11 +1319,11 @@ export class UsersService {
     ]);
 
     const profileMap = new Map<string, any>();
-    for (const p of profiles as any[]) {
+    for (const p of profiles) {
       profileMap.set(p.user_id, p);
     }
     const roleMap = new Map<string, string[]>();
-    for (const r of roles as any[]) {
+    for (const r of roles) {
       const list = roleMap.get(r.user_id) || [];
       list.push(r.role);
       roleMap.set(r.user_id, list);
@@ -1103,7 +1333,8 @@ export class UsersService {
       const p = profileMap.get(u.id);
       const userRoles = roleMap.get(u.id) || [];
       if (
-        (u.id === '00000000-0000-0000-0000-000000000000' || u.username === 'admin@connect.vn') &&
+        (u.id === '00000000-0000-0000-0000-000000000000' ||
+          u.username === 'admin@connect.vn') &&
         !userRoles.includes('admin')
       ) {
         userRoles.push('admin');
@@ -1139,8 +1370,12 @@ export class UsersService {
       this.usersRepo.getAllRoles(),
     ]);
 
-    const activeCount = (allProfiles as any[]).filter((p: any) => p.account_status === 'active').length;
-    const suspendedCount = (allProfiles as any[]).filter((p: any) => p.account_status === 'suspended').length;
+    const activeCount = (allProfiles as any[]).filter(
+      (p: any) => p.account_status === 'active',
+    ).length;
+    const suspendedCount = (allProfiles as any[]).filter(
+      (p: any) => p.account_status === 'suspended',
+    ).length;
     const adminCount = (allRoles as any[]).filter(
       (r: any) => r.role === 'platform_admin' || r.role === 'tenant_admin',
     ).length;
@@ -1174,13 +1409,12 @@ export class UsersService {
       throw new BadRequestException('Tên đăng nhập không được để trống');
     }
     const username = data.username.trim();
-    const cleanEmail = (data.email || (username.includes('@') ? username : '')).trim().toLowerCase();
+    const cleanEmail = (data.email || (username.includes('@') ? username : ''))
+      .trim()
+      .toLowerCase();
 
     const existing = await this.usersRepo.findFirst({
-      OR: [
-        { username },
-        ...(cleanEmail ? [{ email: cleanEmail }] : []),
-      ],
+      OR: [{ username }, ...(cleanEmail ? [{ email: cleanEmail }] : [])],
     });
     if (existing) {
       throw new BadRequestException('Tên đăng nhập hoặc Email đã tồn tại');
@@ -1192,7 +1426,9 @@ export class UsersService {
         SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} LIMIT 1
       `.catch(() => []);
       if (existingMember.length > 0) {
-        throw new BadRequestException('Địa chỉ Email này đã được sử dụng bởi một hội viên trên hệ thống');
+        throw new BadRequestException(
+          'Địa chỉ Email này đã được sử dụng bởi một hội viên trên hệ thống',
+        );
       }
     }
 
@@ -1206,17 +1442,24 @@ export class UsersService {
         LIMIT 1
       `.catch(() => []);
       if (existingPhone.length > 0) {
-        throw new BadRequestException('Số điện thoại này đã được sử dụng trên hệ thống');
+        throw new BadRequestException(
+          'Số điện thoại này đã được sử dụng trên hệ thống',
+        );
       }
     }
 
-    const rawPassword = data.password && data.password.trim() ? data.password : 'CEO1983@123';
+    const rawPassword =
+      data.password && data.password.trim() ? data.password : 'CEO1983@123';
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(rawPassword, salt);
 
     const newUser = await this.createUser({
       username,
-      email: data.email ? data.email.trim() : (username.includes('@') ? username : undefined),
+      email: data.email
+        ? data.email.trim()
+        : username.includes('@')
+          ? username
+          : undefined,
       password: hashedPassword,
       name: data.name ? data.name.trim() : username,
       email_verified: true,
@@ -1270,7 +1513,9 @@ export class UsersService {
         SELECT id FROM public.members WHERE LOWER(email) = ${cleanEmail} AND (user_id IS NULL OR user_id != ${id}::uuid) LIMIT 1
       `.catch(() => []);
       if (existingMember.length > 0) {
-        throw new BadRequestException('Địa chỉ Email này đã được sử dụng bởi một hội viên khác');
+        throw new BadRequestException(
+          'Địa chỉ Email này đã được sử dụng bởi một hội viên khác',
+        );
       }
     }
 
@@ -1289,7 +1534,8 @@ export class UsersService {
         },
         {
           display_name: data.name !== undefined ? data.name : undefined,
-          account_status: data.account_status !== undefined ? data.account_status : undefined,
+          account_status:
+            data.account_status !== undefined ? data.account_status : undefined,
           updated_at: new Date(),
         },
       );
@@ -1298,11 +1544,17 @@ export class UsersService {
     if (data.role) {
       await this.usersRepo.deleteUserRoles(id);
       await this.usersRepo.createUserRole(id, data.role);
-      await this.prisma.$executeRawUnsafe(`
+      await this.prisma
+        .$executeRawUnsafe(
+          `
         UPDATE public.members
         SET executive_role = $1, updated_at = NOW()
         WHERE user_id = $2::uuid OR id = $2::uuid
-      `, data.role, id).catch(() => {});
+      `,
+          data.role,
+          id,
+        )
+        .catch(() => {});
     }
 
     return this.getAccountDetails(id);
@@ -1379,7 +1631,9 @@ export class UsersService {
 
   async adminDeleteUser(callerId: string, targetId: string) {
     if (callerId === targetId) {
-      throw new BadRequestException('Bạn không thể xóa tài khoản của chính mình');
+      throw new BadRequestException(
+        'Bạn không thể xóa tài khoản của chính mình',
+      );
     }
 
     if (
@@ -1391,85 +1645,118 @@ export class UsersService {
     }
 
     const user = await this.findById(targetId);
-    const userEmail = (user?.email || user?.username || '').toLowerCase().trim();
-    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(targetId);
+    const userEmail = (user?.email || user?.username || '')
+      .toLowerCase()
+      .trim();
+    const isUuid =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        targetId,
+      );
 
     // 1. Cascade cleanup related records to avoid FK constraint violations
     try {
       if (isUuid) {
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.vba_member_permissions WHERE user_id = $1::uuid OR member_id::text = $1`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.vba_member_permissions WHERE user_id = $1::uuid OR member_id::text = $1`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.memberships WHERE user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.memberships WHERE user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.business_relationship_moment_media WHERE owner_user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.business_relationship_moment_media WHERE owner_user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.business_relationship_moments WHERE owner_user_id = $1::uuid OR target_user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.business_relationship_moments WHERE owner_user_id = $1::uuid OR target_user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.meeting_participants WHERE user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.meeting_participants WHERE user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.business_appointments WHERE host_user_id = $1::uuid OR guest_user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.business_appointments WHERE host_user_id = $1::uuid OR guest_user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.event_registrations WHERE user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.event_registrations WHERE user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.member_business_cards WHERE user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.member_business_cards WHERE user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.card_settings WHERE user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.card_settings WHERE user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.user_connections WHERE requester_user_id = $1::uuid OR recipient_user_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.user_connections WHERE requester_user_id = $1::uuid OR recipient_user_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.direct_messages WHERE sender_id = $1::uuid OR recipient_id = $1::uuid`,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.direct_messages WHERE sender_id = $1::uuid OR recipient_id = $1::uuid`,
+            targetId,
+          )
+          .catch(() => {});
 
         if (userEmail) {
-          await this.prisma.$executeRawUnsafe(
-            `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1 OR LOWER(email) = $2 OR LOWER(contact_email) = $2`,
-            targetId,
-            userEmail,
-          ).catch(() => {});
+          await this.prisma
+            .$executeRawUnsafe(
+              `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1 OR LOWER(email) = $2 OR LOWER(contact_email) = $2`,
+              targetId,
+              userEmail,
+            )
+            .catch(() => {});
         } else {
-          await this.prisma.$executeRawUnsafe(
-            `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1`,
-            targetId,
-          ).catch(() => {});
+          await this.prisma
+            .$executeRawUnsafe(
+              `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1`,
+              targetId,
+            )
+            .catch(() => {});
         }
       } else if (userEmail) {
-        await this.prisma.$executeRawUnsafe(
-          `DELETE FROM public.members WHERE LOWER(email) = $1 OR LOWER(contact_email) = $1 OR id::text = $2`,
-          userEmail,
-          targetId,
-        ).catch(() => {});
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.members WHERE LOWER(email) = $1 OR LOWER(contact_email) = $1 OR id::text = $2`,
+            userEmail,
+            targetId,
+          )
+          .catch(() => {});
       }
 
       await this.usersRepo.deleteUserRoles(targetId);
@@ -1479,7 +1766,9 @@ export class UsersService {
         await this.usersRepo.deleteAuthUser(targetId);
       }
     } catch (err: any) {
-      console.warn(`[adminDeleteUser] Warning during cascade delete: ${err?.message}`);
+      console.warn(
+        `[adminDeleteUser] Warning during cascade delete: ${err?.message}`,
+      );
     }
 
     return {
@@ -1488,4 +1777,3 @@ export class UsersService {
     };
   }
 }
-

@@ -16,10 +16,10 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     // If no roles specified, allow through
     if (!requiredRoles || requiredRoles.length === 0) {
@@ -62,7 +62,11 @@ export class RolesGuard implements CanActivate {
           if (m.executive_role) dbRoles.push(m.executive_role);
           if (m.department) dbRoles.push(m.department);
           // Nếu hội viên bị đình chỉ hoặc vô hiệu hóa trong DB, lập tức chặn
-          if (m.status === 'suspended' || m.status === 'inactive' || m.status === 'banned') {
+          if (
+            m.status === 'suspended' ||
+            m.status === 'inactive' ||
+            m.status === 'banned'
+          ) {
             throw new ForbiddenException(
               'Tài khoản của bạn đã bị tạm khóa hoặc thu hồi quyền truy cập. Vui lòng liên hệ Ban Điều Hành.',
             );
@@ -74,7 +78,11 @@ export class RolesGuard implements CanActivate {
         `.catch(() => []);
         if (vUsers.length > 0) {
           const vu = vUsers[0];
-          if (vu.status === 'inactive' || vu.status === 'suspended' || vu.status === 'banned') {
+          if (
+            vu.status === 'inactive' ||
+            vu.status === 'suspended' ||
+            vu.status === 'banned'
+          ) {
             throw new ForbiddenException(
               'Tài khoản của bạn đã bị vô hiệu hóa bởi Quản trị viên.',
             );
@@ -83,7 +91,11 @@ export class RolesGuard implements CanActivate {
           // VULN-02 Fix: Chỉ tài khoản quản trị hệ thống chính thức được định danh tường minh (loại bỏ lỗ hổng substring includes 'admin')
           const cleanEmail = (vu.email || '').toLowerCase().trim();
           const cleanUsername = (vu.username || '').toLowerCase().trim();
-          if (cleanEmail === 'admin@connect.vn' || cleanUsername === 'admin@connect.vn' || cleanEmail === 'ceo.chutich@ceo1983.com') {
+          if (
+            cleanEmail === 'admin@connect.vn' ||
+            cleanUsername === 'admin@connect.vn' ||
+            cleanEmail === 'ceo.chutich@ceo1983.com'
+          ) {
             dbRoles.push('admin', 'platform_admin', 'adm');
           }
         }
@@ -100,12 +112,20 @@ export class RolesGuard implements CanActivate {
     if (user.srsRole) effectiveRoles.push(user.srsRole);
     if (user.executiveRole) effectiveRoles.push(user.executiveRole);
 
-    const userEmail = String(user.email || user.username || '').toLowerCase().trim();
-    if (userEmail === 'admin@connect.vn' || userEmail === 'ceo.chutich@ceo1983.com' || userEmail.startsWith('admin')) {
+    const userEmail = String(user.email || user.username || '')
+      .toLowerCase()
+      .trim();
+    if (
+      userEmail === 'admin@connect.vn' ||
+      userEmail === 'ceo.chutich@ceo1983.com' ||
+      userEmail.startsWith('admin')
+    ) {
       effectiveRoles.push('admin', 'platform_admin', 'adm', 'chu_tich', 'bqt');
     }
 
-    const normalizedUserRoles = effectiveRoles.map((r) => String(r).toLowerCase().trim());
+    const normalizedUserRoles = effectiveRoles.map((r) =>
+      String(r).toLowerCase().trim(),
+    );
 
     // SuperAdmin / Platform Admin / ADM / Admin / Chủ tịch / Ban Điều Hành bypass
     if (
@@ -129,8 +149,15 @@ export class RolesGuard implements CanActivate {
 
     // Kiểm tra thêm quyền từ user.permissions hoặc ma trận phân quyền dynamic trong DB (Đồng bộ RBAC API)
     if (!hasPermission) {
-      const userPerms: string[] = Array.isArray(user.permissions) ? user.permissions.map((p: any) => String(p).toLowerCase().trim()) : [];
-      if (userPerms.includes('*') || requiredRoles.some((req) => userPerms.includes(req.toLowerCase().trim()))) {
+      const userPerms: string[] = Array.isArray(user.permissions)
+        ? user.permissions.map((p: any) => String(p).toLowerCase().trim())
+        : [];
+      if (
+        userPerms.includes('*') ||
+        requiredRoles.some((req) =>
+          userPerms.includes(req.toLowerCase().trim()),
+        )
+      ) {
         hasPermission = true;
       }
     }
@@ -142,7 +169,8 @@ export class RolesGuard implements CanActivate {
         `.catch(() => []);
         if (matrixRows.length > 0 && matrixRows[0]?.value) {
           const val = matrixRows[0].value;
-          const categories = val.categories || val.rows || (Array.isArray(val) ? val : []);
+          const categories =
+            val.categories || val.rows || (Array.isArray(val) ? val : []);
           if (Array.isArray(categories)) {
             for (const cat of categories) {
               if (hasPermission) break;
@@ -151,10 +179,18 @@ export class RolesGuard implements CanActivate {
                 if (hasPermission) break;
                 if (!feat?.actions || !Array.isArray(feat.actions)) continue;
                 for (const act of feat.actions) {
-                  const actCode = String(act.code || act.id || '').toLowerCase().trim();
-                  const matchesReq = requiredRoles.some((req) => req.toLowerCase().trim() === actCode || actCode.includes(req.toLowerCase().trim()));
+                  const actCode = String(act.code || act.id || '')
+                    .toLowerCase()
+                    .trim();
+                  const matchesReq = requiredRoles.some(
+                    (req) =>
+                      req.toLowerCase().trim() === actCode ||
+                      actCode.includes(req.toLowerCase().trim()),
+                  );
                   if (matchesReq && act.roles) {
-                    const isGranted = normalizedUserRoles.some((r) => act.roles[r] === true);
+                    const isGranted = normalizedUserRoles.some(
+                      (r) => act.roles[r] === true,
+                    );
                     if (isGranted) {
                       hasPermission = true;
                       break;

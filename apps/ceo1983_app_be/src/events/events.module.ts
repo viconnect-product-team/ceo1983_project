@@ -14,4 +14,3 @@ import { MailModule } from '../mail/mail.module';
   exports: [EventsService, EventsRepository],
 })
 export class EventsModule {}
-

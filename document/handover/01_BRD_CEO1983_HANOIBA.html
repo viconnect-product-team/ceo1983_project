@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tài Liệu Yêu Cầu Nghiệp Vụ Tổng Thể Hệ Thống CLB Doanh Nhân CEO 1983 (HanoiBA)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        flowchart: { curve: 'basis', htmlLabels: true },
+        themeVariables: {
+          primaryColor: '#003B95',
+          primaryTextColor: '#ffffff',
+          primaryBorderColor: '#002B70',
+          lineColor: '#D97706',
+          secondaryColor: '#EFF6FF',
+          tertiaryColor: '#FFFFFF'
+        }
+      });
+    });
+  </script>
+  <style>
+    :root {
+      --primary: #003B95;
+      --navy: #1F3864;
+      --gold: #D97706;
+      --dark: #0F172A;
+      --muted: #475569;
+      --border: #CBD5E1;
+      --bg-alt: #F8FAFC;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Times New Roman', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: var(--dark);
+      background: #FFFFFF;
+      margin: 0;
+      padding: 20px;
+    }
+
+    @media screen {
+      body {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.08);
+      }
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 15mm;
+    }
+
+    /* Cover Page */
+    .cover-page {
+      text-align: center;
+      padding: 60px 20px;
+      page-break-after: always;
+      border: 3px double var(--primary);
+      border-radius: 8px;
+      margin-bottom: 40px;
+      background: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%);
+    }
+    .cover-org {
+      font-size: 15pt;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .cover-sub-org {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .cover-deco {
+      font-size: 18pt;
+      color: var(--gold);
+      margin-bottom: 40px;
+    }
+    .cover-title {
+      font-size: 24pt;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      line-height: 1.3;
+      margin-bottom: 16px;
+    }
+    .cover-subtitle {
+      font-size: 13pt;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 50px;
+    }
+    .cover-meta {
+      width: 100%;
+      max-width: 550px;
+      margin: 0 auto 50px auto;
+      border-collapse: collapse;
+      font-size: 10.5pt;
+      text-align: left;
+    }
+    .cover-meta th {
+      background: var(--bg-alt);
+      color: var(--primary);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      width: 38%;
+      font-weight: 700;
+    }
+    .cover-meta td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+    }
+    .cover-footer {
+      font-size: 9.5pt;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+    }
+
+    /* Headings */
+    .heading-1 {
+      font-size: 18pt;
+      color: var(--primary);
+      font-weight: 700;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 6px;
+      margin-top: 36px;
+      margin-bottom: 16px;
+      page-break-after: avoid;
+    }
+    .heading-2 {
+      font-size: 14pt;
+      color: var(--gold);
+      font-weight: 700;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+    }
+    .heading-3 {
+      font-size: 12pt;
+      color: var(--navy);
+      font-weight: 700;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+    .heading-4 {
+      font-size: 11pt;
+      color: var(--dark);
+      font-weight: 700;
+      font-style: italic;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      page-break-after: avoid;
+    }
+
+    .doc-para {
+      margin: 8px 0;
+      text-align: justify;
+    }
+
+    .doc-divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 24px 0;
+    }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      margin: 16px 0;
+      overflow-x: auto;
+      page-break-inside: avoid;
+    }
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+      background: #FFFFFF;
+    }
+    .doc-table th {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 700;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .doc-table td {
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .doc-table tr:nth-child(even) td {
+      background: var(--bg-alt);
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      border-left: 4px solid;
+      page-break-inside: avoid;
+    }
+    .callout-important {
+      background: #EFF6FF;
+      border-color: #2563EB;
+    }
+    .callout-note {
+      background: #F8FAFC;
+      border-color: var(--primary);
+    }
+    .callout-tip {
+      background: #F0FDF4;
+      border-color: #16A34A;
+    }
+    .callout-warning, .callout-caution {
+      background: #FFFBEB;
+      border-color: var(--gold);
+    }
+    .callout-header {
+      font-weight: 700;
+      font-size: 10pt;
+      margin-bottom: 4px;
+      color: var(--primary);
+    }
+
+    /* Mermaid */
+    .mermaid-container {
+      margin: 20px auto;
+      text-align: center;
+      page-break-inside: avoid;
+      background: #FAFAFA;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .mermaid {
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    /* Code Block */
+    .code-block {
+      background: #0F172A;
+      color: #F8FAFC;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+      font-size: 9.5pt;
+      overflow-x: auto;
+      margin: 14px 0;
+    }
+    .code-inline {
+      background: #F1F5F9;
+      color: var(--gold);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      font-size: 9.5pt;
+      font-weight: 600;
+    }
+
+    /* Images */
+    .img-card {
+      margin: 18px auto;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    .img-wrapper {
+      display: inline-block;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      background: #F8FAFC;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      max-width: 100%;
+    }
+    .img-wrapper img {
+      max-width: 100%;
+      height: auto;
+      max-height: 420px;
+      border-radius: 4px;
+      display: block;
+      margin: 0 auto;
+    }
+    .img-caption {
+      font-size: 9.5pt;
+      font-style: italic;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .img-placeholder {
+      padding: 18px;
+      background: #F1F5F9;
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Lists */
+    .doc-list {
+      margin: 8px 0 8px 24px;
+      padding: 0;
+    }
+    .doc-list li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TRANG BÌA CHUYÊN NGHIỆP -->
+  <div class="cover-page">
+    <div class="cover-org">HỘI DOANH NGHIỆP TRẺ HÀ NỘI (HANOIBA)</div>
+    <div class="cover-sub-org">CLB DOANH NHÂN CEO 1983</div>
+    <div class="cover-deco">❖ ❖ ❖</div>
+    <h1 class="cover-title">TÀI LIỆU YÊU CẦU NGHIỆP VỤ TỔNG THỂ DOANH NGHIỆP (BRD)</h1>
+    <div class="cover-subtitle">Tiêu chuẩn IIBA BABOK v3.0 & Nghiệp Vụ Hiệp Hội Doanh Nhân HanoiBA</div>
+
+    <table class="cover-meta">
+      <tr>
+        <th>Mã Tài Liệu</th>
+        <td><strong>BRD-CEO1983-MASTER-HANOIBA</strong></td>
+      </tr>
+      <tr>
+        <th>Phiên Bản</th>
+        <td>Phiên Bản 10.0 Enterprise Handover Standard</td>
+      </tr>
+      <tr>
+        <th>Cơ Quan Chủ Quản</th>
+        <td>CLB Doanh Nhân CEO 1983 (HanoiBA)</td>
+      </tr>
+      <tr>
+        <th>Đơn Vị Phát Triển</th>
+        <td>VICONNECT - Nền tảng Chuyển đổi số</td>
+      </tr>
+      <tr>
+        <th>Ngày Bàn Giao</th>
+        <td>08/11/2026</td>
+      </tr>
+      <tr>
+        <th>Trạng Thái</th>
+        <td><strong style="color: #16A34A;">✓ ĐÃ THẨM ĐỊNH & NGHIỆM THU CHÍNH THỨC</strong></td>
+      </tr>
+    </table>
+
+    <div class="cover-footer">
+      Lưu hành nội bộ Ban Chấp Hành CLB Doanh Nhân CEO 1983 & Doanh Nghiệp Hội Viên
+    </div>
+  </div>
+
+  <!-- NỘI DUNG TÀI LIỆU -->
+  <div class="doc-body">
+    <h1 class="heading-1">HỆ SINH THÁI SỐ HÓA & QUẢN TRỊ HIỆP HỘI DOANH NHÂN CEO 1983 (HANOIBA)</h1>
+<h2 class="heading-2">TÀI LIỆU YÊU CẦU NGHIỆP VỤ TỔNG THỂ DOANH NGHIỆP</h2>
+<p class="doc-para"><em>(BUSINESS REQUIREMENTS DOCUMENT - MASTER ENTERPRISE BRD)</em></p>
+<hr class="doc-divider"/>
+<ul class="doc-list">
+<li><strong>Mã tài liệu:</strong> <code class="code-inline">BRD-CEO1983-MASTER-HANOIBA</code></li>
+<li><strong>Phiên bản:</strong> <code class="code-inline">Phiên bản 10.0 Enterprise Handover Standard (Bản Bàn Giao Doanh Nghiệp & Nghiệm Thu)</code></li>
+<li><strong>Cơ quan chủ quản:</strong> Câu Lạc Bộ Doanh Nhân CEO 1983 — Trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</li>
+<li><strong>Đơn vị tư vấn giải pháp:</strong> VICONNECT - Nền tảng Chuyển đổi số Hiệp hội Doanh nhân</li>
+<li><strong>Cấp độ bảo mật:</strong> Lưu hành nội bộ Ban Lãnh Đạo & Doanh nghiệp Hội viên</li>
+<li><strong>Ngày phát hành:</strong> <code class="code-inline">08/11/2026</code></li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">MỤC LỤC TÀI LIỆU</h2>
+<ol class="doc-list">
+<li><strong>CHƯƠNG 1: TỔNG QUAN, BỐI CẢNH VẬN HÀNH & MỤC TIÊU CHIẾN LƯỢC</strong></li>
+</ol>
+<ul class="doc-list">
+<li>1.1. Bối Cảnh Hình Thành & Sứ Mệnh CLB Doanh Nhân CEO 1983</li>
+<li>1.2. Mục Tiêu Chuyển Đổi Số & Tầm Nhìn 2026 - 2030</li>
+<li>1.3. Các Vấn Đề Nghiệp Vụ Cần Giải Quyết (Business Pain Points)</li>
+</ul>
+<ol class="doc-list">
+<li><strong>CHƯƠNG 2: MÔ HÌNH TỔ CHỨC & PHÂN ĐỊNH TRÁCH NHIỆM 6 BAN CHUYÊN MÔN</strong></li>
+</ol>
+<ul class="doc-list">
+<li>2.1. Cơ Cấu Tổ Chức Ban Lãnh Đạo CLB CEO 1983</li>
+<li>2.2. Ma Trận Phân Định Trách Nhiệm 6 Chuyên Ban (RACI Matrix)</li>
+<li>2.3. Quy Chuẩn Nhận Diện Thương Hiệu 3 Cấp Độ Màu & Tone Cam Tiên Phong</li>
+</ul>
+<ol class="doc-list">
+<li><strong>CHƯƠNG 3: HỆ THỐNG 8 SƠ ĐỒ QUY TRÌNH NGHIỆP VỤ KINH DOANH (MERMAID FLOWCHARTS)</strong></li>
+</ol>
+<ul class="doc-list">
+<li>3.1. Quy Trình Thẩm Định & Phê Duyệt Kết Nạp Hội Viên Mới</li>
+<li>3.2. Quy Trình Giao Thương B2B, Chia Sẻ Cơ Hội & Đặt Lịch Hẹn 1-on-1 trong 3 Tình Huống</li>
+<li>3.3. Quy Trình Tổ Chức Sự Kiện Gala & Lưu Vết Kỷ Niệm 5 Hạng Mục</li>
+<li>3.4. Quy Trình Điều Hành Hoạt Động Họp Ban (Họp Cố Định vs Họp Bất Thường)</li>
+<li>3.5. Quy Trình Thu Hội Phí Tự Động Qua Mã QR MoMo & Cổng VNPay / VietQR Napas247</li>
+<li>3.6. Quy Trình Đối Soát Biến Động Tài Chính & Xuất - Nhập Báo Cáo Bảng Tính Excel</li>
+<li>3.7. Quy Trình Đăng Bài Đa Kênh Truyền Thông 1-Chạm (Facebook, Group, Zalo OA, Web)</li>
+<li>3.8. Quy Trình Trợ Lý Số AI Chào Mừng & Hướng Dẫn Doanh Nhân</li>
+</ul>
+<ol class="doc-list">
+<li><strong>CHƯƠNG 4: MA TRẬN YÊU CẦU NGHIỆP VỤ & 30 BUSINESS USE CASES (BUC)</strong></li>
+</ol>
+<ul class="doc-list">
+<li>4.1. Nhóm 15 Business Use Cases Quản Trị Hiệp Hội Web CRM (<code class="code-inline">BUC-CRM-001</code> đến <code class="code-inline">BUC-CRM-015</code>)</li>
+<li>4.2. Nhóm 15 Business Use Cases Hội Viên Doanh Nhân Mobile App (<code class="code-inline">BUC-APP-001</code> đến <code class="code-inline">BUC-APP-015</code>)</li>
+</ul>
+<ol class="doc-list">
+<li><strong>CHƯƠNG 5: ĐẶC TẢ CHI TIẾT CÁC QUY TRÌNH NGHIỆP VỤ CỐT LÕI MỚI</strong></li>
+</ol>
+<ul class="doc-list">
+<li>5.1. Cơ Chế Chia Sẻ Cơ Hội B2B Theo Tỷ Lệ % Lời Nhất</li>
+<li>5.2. Chức Năng Quản Lý Check-in Độc Lập Cho Sự Kiện, Họp Mặt & Diễn Đàn</li>
+<li>5.3. Popup Poster Chúc Mừng Sinh Nhật Hội Viên Chuẩn Hoàng Gia</li>
+<li>5.4. Cơ Chế Tự Động Làm Mới Token Zalo OA Chu Kỳ 6 Giờ</li>
+</ul>
+<ol class="doc-list">
+<li><strong>CHƯƠNG 6: QUY ĐỊNH PHƯƠNG THỨC THANH TOÁN & ĐỐI SOÁT TÀI CHÍNH</strong></li>
+<li><strong>CHƯƠNG 7: TIÊU CHÍ NGHIỆM THU KINH DOANH (BUSINESS ACCEPTANCE CRITERIA)</strong></li>
+<li><strong>PHỤ LỤC: HÌNH ẢNH MINH HỌA SẢN PHẨM THỰC TẾ</strong></li>
+</ol>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 1: TỔNG QUAN, BỐI CẢNH VẬN HÀNH & MỤC TIÊU CHIẾN LƯỢC</h2>
+<h3 class="heading-3">1.1. Bối Cảnh Hình Thành & Sứ Mệnh CLB Doanh Nhân CEO 1983</h3>
+<p class="doc-para">Câu lạc bộ Doanh nhân CEO 1983 được thành lập với tư cách là tổ chức thành viên trực thuộc <strong>Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</strong>. Đây là nơi quy tụ hơn 500+ Chủ tịch Hội đồng Quản trị, Tổng Giám đốc, Nhà sáng lập và Lãnh đạo cấp cao của các doanh nghiệp tư nhân tiêu biểu sinh năm Quý Hợi (1983) trên địa bàn Thủ đô Hà Nội và các tỉnh thành trên cả nước.</p>
+<p class="doc-para">Với phương châm <strong>"Gắn kết sức mạnh — Nâng tầm doanh nhân"</strong>, CLB Doanh nhân CEO 1983 là một liên minh kinh tế thực chiến, thúc đẩy xúc tiến thương mại nội khối, hỗ trợ tiếp cận nguồn lực đầu tư, chuyển đổi số mô hình doanh nghiệp, đồng thời là hạt nhân tích cực trong các chương trình an sinh xã hội, thiện nguyện vì cộng đồng của Hội Doanh Nhân Trẻ Hà Nội.</p>
+<p class="doc-para">Nhằm đưa hoạt động của hiệp hội lên tầm cao mới, CLB triển khai Hệ sinh thái chuyển đổi số toàn diện bao gồm:</p>
+<ol class="doc-list">
+<li><strong>Cổng Quản Trị Điều Hành Trung Ương (Web CRM):</strong> Phục vụ Ban Chấp hành, Thường trực và 6 Chuyên ban quản lý dữ liệu hội viên, tài chính, sự kiện, họp ban và kiểm soát luồng giao thương.</li>
+<li><strong>Ứng Dụng Di Động Dành Cho Hội Viên (CEO 1983 Mobile App):</strong> Trực tiếp nằm trên thiết bị cá nhân của từng CEO, cho phép kết nối danh bạ 360 độ, kết nối 1-on-1, giao thương B2B, quản lý thẻ danh thiếp thông minh, điểm danh sự kiện và nộp hội phí tự động.</li>
+<li><strong>Cổng Thông Tin Công Khai & Trang Đích Đa Phân Hệ (Landing Web Subdomains):</strong> Giới thiệu hình ảnh hiệp hội, hồ sơ doanh nghiệp tiêu biểu và quảng bá sự kiện đối ngoại.</li>
+</ol>
+<hr class="doc-divider"/>
+<h3 class="heading-3">1.2. Mục Tiêu Chuyển Đổi Số & Tầm Nhìn 2026 - 2030</h3>
+<ul class="doc-list">
+<li><strong>100% Số hóa hồ sơ hội viên:</strong> Xóa bỏ hoàn toàn việc lưu trữ dữ liệu bằng sổ sách giấy hoặc file Excel rời rạc. Mỗi doanh nhân có một định danh duy nhất (UUID) gắn liền với mã hội viên bất biến định dạng <code class="code-inline">CEO-83xxx</code>.</li>
+<li><strong>Giao thương nội khối minh bạch & lượng hóa:</strong> Ghi nhận và phân tích tức thời doanh số kết nối, số lượng deal thành công, tỷ lệ sinh lời cho người đăng bài qua hệ thống Matching B2B.</li>
+<li><strong>Tự động hóa 100% công tác thu hội phí:</strong> Ứng dụng mã QR động (VietQR Napas247, MoMo QR, VNPay Gateway) với cơ chế Webhook gạch nợ tức thời, loại bỏ sai sót đối soát thủ công.</li>
+<li><strong>Tăng cường tương tác thực chiến:</strong> Hỗ trợ tính năng đặt lịch hẹn 1-on-1 trong 3 kịch bản, nhắn tin trực tiếp, chia sẻ cơ hội kinh doanh công khai hoặc chỉ định người xem.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">1.3. Các Vấn Đề Nghiệp Vụ Cần Giải Quyết (Business Pain Points)</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Mã</th>
+  <th>Vấn Đề Thực Tế Trước Khi Số Hóa</th>
+  <th>Hậu Quả Kinh Doanh</th>
+  <th>Giải Pháp Hệ Sinh Thái CEO 1983 Mang Lại</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>PP-01</strong></td>
+  <td>Dữ liệu hội viên lưu phân tán trên nhiều file Excel và nhóm Zalo</td>
+  <td>Thông tin thất lạc, khó tra cứu năng lực doanh nghiệp khi cần kết nối B2B</td>
+  <td>Hồ sơ hội viên 360 độ tập trung trên PostgreSQL, bảo mật RBAC</td>
+</tr>
+<tr>
+  <td><strong>PP-02</strong></td>
+  <td>Phê duyệt kết nạp hội viên thủ công, thiếu quy chuẩn thẩm định</td>
+  <td>Nguy cơ kết nạp sai đối tượng (không phải năm sinh 1983, không phải C-Level)</td>
+  <td>Quy trình thẩm định 3 bước: Thư ký kiểm tra MST -> Ban Thành viên duyệt -> Sinh mã <code class="code-inline">CEO-83xxx</code></td>
+</tr>
+<tr>
+  <td><strong>PP-03</strong></td>
+  <td>Thu hội phí chậm trễ, khó theo dõi ai đã đóng, ai còn nợ</td>
+  <td>Thất thoát nguồn thu quỹ, kế toán mất nhiều ngày đối soát sao kê</td>
+  <td>Mã QR thanh toán động VietQR/MoMo, gạch nợ tự động qua Webhook trong 1.5 giây</td>
+</tr>
+<tr>
+  <td><strong>PP-04</strong></td>
+  <td>Sự kiện đông người (>500 khách) gây ùn tắc điểm danh tại cửa</td>
+  <td>Mất thời gian, thiếu chuyên nghiệp, không kiểm soát được chỗ ngồi</td>
+  <td>Trạm soát vé QR Gate quét 0.3s/khách, sơ đồ rạp chiếu Cinema Seating định vị ghế</td>
+</tr>
+<tr>
+  <td><strong>PP-05</strong></td>
+  <td>Cơ hội kinh doanh đăng tải tự do không bảo mật, lộ thông tin đối tác</td>
+  <td>Đối thủ cạnh tranh nẫng tay trên, giảm uy tín hiệp hội</td>
+  <td>Phân quyền hiển thị: Công khai (Public) hoặc Chỉ định (Assigned) đối tác cụ thể</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 2: MÔ HÌNH TỔ CHỨC & PHÂN ĐỊNH TRÁCH NHIỆM 6 BAN CHUYÊN MÔN</h2>
+<h3 class="heading-3">2.1. Cơ Cấu Tổ Chức Ban Lãnh Đạo CLB CEO 1983</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+graph TD
+    CT["CHỦ TỊCH CLB DOANH NHÂN CEO 1983<br/>(Lãnh đạo tối cao, phê duyệt chiến lược & ngân sách lớn)"]
+    BDH["BAN ĐIỀU HÀNH & BAN THƯỜNG TRỰC<br/>(Điều hành tác nghiệp toàn diện, giám sát KPI)"]
+    BTK["BAN THƯ KÝ ĐIỀU HÀNH<br/>(Văn phòng, triệu tập họp, quản lý văn thư & truyền thông nội bộ)"]
+
+    CT --> BDH
+    BDH --> BTK
+
+    subgraph SIX_BOARDS ["6 CHUYÊN BAN HOẠT ĐỘNG CHUYÊN MÔN"]
+        B1["1. BAN PHÁT TRIỂN HỘI VIÊN<br/>(Thẩm định hồ sơ 1983, duyệt kết nạp, chăm sóc hội viên)"]
+        B2["2. BAN XÚC TIẾN THƯƠNG MẠI & GIAO THƯƠNG B2B<br/>(Thẩm định cơ hội B2B, duyệt sàn TMĐT, matching 1-on-1)"]
+        B3["3. BAN SỰ KIỆN, GALA & HỘI THẢO<br/>(Tổ chức họp mặt, sơ đồ bàn tiệc Cinema, trạm soát vé QR Gate)"]
+        B4["4. BAN TÀI CHÍNH & MINH BẠCH QUỸ<br/>(Quản lý quỹ, theo dõi thu hội phí, đối soát sao kê tự động)"]
+        B5["5. BAN TRUYỀN THÔNG & THƯƠNG HIỆU SỐ<br/>(Đăng bài đa kênh 1-chạm, quản trị Landing Web, Zalo OA)"]
+        B6["6. BAN THIỆN NGUYỆN & AN SINH XÃ HỘI<br/>(Quản lý quỹ từ thiện, tổ chức chương trình cộng đồng HanoiBA)"]
+    end
+
+    BTK --> B1
+    BTK --> B2
+    BTK --> B3
+    BTK --> B4
+    BTK --> B5
+    BTK --> B6
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">2.2. Ma Trận Phân Định Trách Nhiệm 6 Chuyên Ban (RACI Matrix)</h3>
+<ul class="doc-list">
+<li><strong>R (Responsible):</strong> Ban chịu trách nhiệm thực thi trực tiếp.</li>
+<li><strong>A (Accountable):</strong> Cấp có thẩm quyền phê duyệt cuối cùng (Chủ tịch / Trưởng ban).</li>
+<li><strong>C (Consulted):</strong> Đơn vị được tham vấn ý kiến chuyên môn.</li>
+<li><strong>I (Informed):</strong> Đơn vị được thông báo kết quả.</li>
+</ul>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Quy Trình Nghiệp Vụ Cốt Lõi</th>
+  <th>Ban Thư Ký</th>
+  <th>Ban Thành Viên</th>
+  <th>Ban Giao Thương</th>
+  <th>Ban Sự Kiện</th>
+  <th>Ban Tài Chính</th>
+  <th>Ban Truyền Thông</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Thẩm tra hồ sơ ứng viên 1983</strong></td>
+  <td><strong>R</strong></td>
+  <td><strong>A</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+</tr>
+<tr>
+  <td><strong>Phê duyệt kết nạp chính thức</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>A</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+</tr>
+<tr>
+  <td><strong>Duyệt cơ hội B2B & Sàn TMĐT</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>A / R</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+</tr>
+<tr>
+  <td><strong>Xếp bàn tiệc Gala (Cinema Seating)</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>A / R</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>C</strong></td>
+</tr>
+<tr>
+  <td><strong>Quét vé QR tại cổng Check-in Gate</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>A / R</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+</tr>
+<tr>
+  <td><strong>Tạo đợt thu hội phí niên liễm</strong></td>
+  <td><strong>R</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>A / R</strong></td>
+  <td><strong>I</strong></td>
+</tr>
+<tr>
+  <td><strong>Đăng bài đa kênh (Web, FB, Zalo)</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>I</strong></td>
+  <td><strong>A / R</strong></td>
+</tr>
+<tr>
+  <td><strong>Tổ chức họp Ban Điều Hành</strong></td>
+  <td><strong>A / R</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>C</strong></td>
+  <td><strong>I</strong></td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">2.3. Quy Chuẩn Nhận Diện Thương Hiệu 3 Cấp Độ Màu & Tone Cam Tiên Phong</h3>
+<p class="doc-para">Hệ thống tuân thủ nghiêm ngặt nhận diện thương hiệu của CLB Doanh Nhân CEO 1983 (HanoiBA):</p>
+<ul class="doc-list">
+<li><strong>Cấp độ 1 - Đỏ Nhiệt Huyết (<code class="code-inline">#DC2626</code> / Red 600):</strong> Tượng trưng cho tinh thần chiến binh, nhiệt huyết cống hiến và tính hành động quyết liệt của thế hệ doanh nhân Quý Hợi 1983.</li>
+<li><strong>Cấp độ 2 - Vàng Thịnh Vượng (<code class="code-inline">#F59E0B</code> / Amber 500 & <code class="code-inline">#D97706</code> / Amber 600):</strong> Tượng trưng cho sự thịnh vượng, sung túc tài chính và đẳng cấp lãnh đạo doanh nghiệp.</li>
+<li><strong>Cấp độ 3 - Xanh Tin Cậy (<code class="code-inline">#2563EB</code> / Blue 600 & <code class="code-inline">#1F3864</code> / Deep Navy):</strong> Tượng trưng cho nền tảng vững chắc, liên kết bền vững và tinh thần chuyển đổi số thông minh.</li>
+<li><strong>Tone Cam Tiên Phong (<code class="code-inline">#EA580C</code> / <code class="code-inline">#D97706</code>):</strong> Màu chủ đạo của giao diện di động theo thiết kế Figma chuẩn của hiệp hội.</li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 3: HỆ THỐNG 8 SƠ ĐỒ QUY TRÌNH NGHIỆP VỤ KINH DOANH</h2>
+<h3 class="heading-3">3.1. Quy Trình Thẩm Định & Phê Duyệt Kết Nạp Hội Viên Mới</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    START(["Ứng viên CEO 1983 nộp đơn trực tuyến (Web/App)"]) --> STEP1["Ban Thư Ký tiếp nhận hồ sơ trên Web CRM"]
+    STEP1 --> CHECK1{"Kiểm tra năm sinh 1983 & MST công ty"}
+    
+    CHECK1 -- "Không hợp lệ / Sai năm sinh" --> REJECT1["Từ chối & gửi email phản hồi nêu rõ lý do"]
+    CHECK1 -- "Hồ sơ sơ bộ hợp lệ" --> STEP2["Chuyển hồ sơ sang Ban Thành Viên thẩm định"]
+    
+    STEP2 --> CHECK2{"Ban Thành Viên xác minh tư cách CEO/Chủ tịch"}
+    CHECK2 -- "Yêu cầu bổ sung" --> NOTIF_REQ["Gửi thông báo cập nhật tài liệu qua Zalo/Email"]
+    NOTIF_REQ --> STEP1
+    
+    CHECK2 -- "Đạt chuẩn hội viên" --> APPROVE["Trưởng Ban Thành Viên bấm 'Phê Duyệt Kết Nạp'"]
+    APPROVE --> AUTO_GEN["Hệ thống kích hoạt tài khoản, sinh mã hội viên CEO-83xxx"]
+    AUTO_GEN --> VIP_CARD["Khởi tạo Thẻ Danh Thiếp Số VIP QR 3D"]
+    VIP_CARD --> WELCOME["Gửi thư chào mừng của Chủ tịch qua Email & Zalo OA"]
+    WELCOME --> END(["Hoàn tất quy trình kết nạp"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.2. Quy Trình Giao Thương B2B, Chia Sẻ Cơ Hội & Đặt Lịch Hẹn 1-on-1</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    M1["Hội viên A đăng tin Cơ Hội Kinh Doanh"] --> PRIVACY{"Lựa chọn phạm vi tiếp cận"}
+    
+    PRIVACY -- "Công khai (Public)" --> PUB["Hiển thị trên toàn bộ Bảng tin Mạng lưới"]
+    PRIVACY -- "Chỉ định (Assigned)" --> ASSIGNED["Chỉ tài khoản đối tác được chỉ định mới xem được"]
+    
+    PUB --> INTERACTION["Các hội viên khác xem & gửi Đề xuất Deal"]
+    ASSIGNED --> INTERACTION
+    
+    INTERACTION --> DEAL_INPUT["Đối tác nhập Giá trị Deal (deal_amount) & Chiết khấu %"]
+    DEAL_INPUT --> SORT_DEAL["Hệ thống tự động tính % lợi nhuận & sắp xếp deal hời nhất"]
+    
+    SORT_DEAL --> M1_REVIEW["Hội viên A duyệt và bấm 'Kết nối 1-on-1'"]
+    M1_REVIEW --> CHOOSE_SCENARIO{"Chọn 1 trong 3 kịch bản hẹn gặp"}
+    
+    CHOOSE_SCENARIO -- "1. Gặp trực tiếp" --> LOC_OFF["Chọn địa điểm Cafe / Nhà hàng / Văn phòng"]
+    CHOOSE_SCENARIO -- "2. Họp Online" --> LOC_ZOOM["Tự động sinh link phòng Zoom / Google Meet"]
+    CHOOSE_SCENARIO -- "3. Thăm doanh nghiệp" --> LOC_VISIT["Gửi định vị GPS trụ sở công ty & sơ đồ đón tiếp"]
+    
+    LOC_OFF --> SEND_CAL["Hệ thống tự động gửi tin nhắn xác nhận lịch vào hộp thư đối tác"]
+    LOC_ZOOM --> SEND_CAL
+    LOC_VISIT --> SEND_CAL
+    SEND_CAL --> DONE_MEET(["Hoàn tất kết nối giao thương"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.3. Quy Trình Tổ Chức Sự Kiện Gala & Lưu Vết Kỷ Niệm 5 Hạng Mục</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    START_EVT["Ban Sự Kiện khởi tạo Sự Kiện / Gala trên CRM"] --> CFG_SEAT["Cấu hình sơ đồ bàn tiệc Cinema Seating (VIP, Khách Mời, Hội Viên)"]
+    CFG_SEAT --> PUB_EVT["Đăng tải sự kiện lên Mobile App & Landing Web"]
+    
+    PUB_EVT --> REG_MEMBER["Hội viên đăng ký vé & nhận Mã Vé QR E-Ticket"]
+    REG_MEMBER --> CHECKIN_DAY["Ngày diễn ra sự kiện: Khách đến cửa"]
+    
+    CHECKIN_DAY --> SCAN_GATE["Trạm soát vé QR Gate quét mã vé trong 0.3s"]
+    SCAN_GATE --> VALID_GATE{"Kiểm tra vé hợp lệ"}
+    VALID_GATE -- "Không hợp lệ / Đã dùng" --> ALERT_GATE["Cảnh báo âm thanh & từ chối vào cửa"]
+    VALID_GATE -- "Hợp lệ" --> PRINT_SEAT["Hiển thị số bàn & vị trí ghế trên màn hình trạm soát vé"]
+    
+    PRINT_SEAT --> LIVE_ACTION["Trong sự kiện: Khách tham gia 5 hạng mục lưu vết"]
+    
+    subgraph FIVE_MEMORIES ["5 HẠNG MỤC LƯU VẾT KỶ NIỆM"]
+        M1_SPO["1. Vinh danh Nhà tài trợ (Sponsors Display)"]
+        M2_POLL["2. Biểu quyết trực tiếp (Live Polls & Voting)"]
+        M3_AWARD["3. Trao giải & Kỷ niệm chương (Honors & Awards)"]
+        M4_SEAT["4. Định vị bàn tiệc thời gian thực (Live Cinema Map)"]
+        M5_DRIVE["5. Kho ảnh sự kiện Google Drive tốc độ cao"]
+    end
+    
+    LIVE_ACTION --> FIVE_MEMORIES
+    FIVE_MEMORIES --> CLOSE_EVT(["Kết thúc sự kiện & lưu trữ báo cáo kiểm toán"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.4. Quy Trình Điều Hành Hoạt Động Họp Ban (Họp Cố Định vs Họp Bất Thường)</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    LEAD["Chủ tịch / Tổng Thư Ký quyết định triệu tập họp"] --> TYPE_CHECK{"Phân loại tính chất cuộc họp"}
+    
+    TYPE_CHECK -- "Họp Định Kỳ Cố Định (Tháng/Quý)" --> PLAN_FIXED["Lên lịch tự động theo chu kỳ & thông báo trước 7 ngày"]
+    TYPE_CHECK -- "Họp Bất Thường / Khẩn Cấp" --> PLAN_URGENT["Phát lệnh triệu tập khẩn qua Push Notify & Zalo OA"]
+    
+    PLAN_FIXED --> AGENDA["Ban Thư Ký đăng tải Chương trình (Agenda) & Tài liệu cuộc họp"]
+    PLAN_URGENT --> AGENDA
+    
+    AGENDA --> QR_JOIN["Hệ thống tạo mã QR Cuộc Họp độc lập"]
+    QR_JOIN --> FEED_POST["Ghim thông tin họp lên Mạng lưới Hội viên kèm mã QR"]
+    
+    FEED_POST --> ATTEND["Đại biểu quét QR trên bài viết để xác nhận tham dự"]
+    ATTEND --> CHECKIN_MEET["Quản lý Check-in cuộc họp ghi nhận danh sách có mặt thời gian thực"]
+    
+    CHECKIN_MEET --> IN_SESSION["Tiến hành cuộc họp & Ghi nhận Biên bản điện tử"]
+    IN_SESSION --> KANBAN["Phân rã Kết luận cuộc họp thành các Task Kanban điều phối 6 Ban"]
+    KANBAN --> END_MEET(["Hoàn tất phiên họp"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.5. Quy Trình Thu Hội Phí Tự Động Qua Mã QR MoMo & Cổng VNPay / VietQR</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    FIN["Ban Tài Chính tạo Kỳ Thu Hội Phí Niên Liễm (VD: Năm 2026)"] --> GEN_INV["Hệ thống tạo phiếu thu cho 500+ Hội viên"]
+    GEN_INV --> NOTIF_FEE["Gửi thông báo nhắc hội phí qua Mobile App & Zalo OA"]
+    
+    NOTIF_FEE --> MEM_PAY["Hội viên bấm 'Nộp Hội Phí' trên App"]
+    MEM_PAY --> CHOOSE_GATE{"Lựa chọn phương thức thanh toán"}
+    
+    CHOOSE_GATE -- "1. VietQR Napas247" --> QR_NAPAS["Sinh mã VietQR động chuẩn EMVCo kèm nội dung tự sinh"]
+    CHOOSE_GATE -- "2. Ví MoMo" --> QR_MOMO["Mở cổng thanh toán MoMo App hoặc quét QR MoMo"]
+    CHOOSE_GATE -- "3. Cổng VNPay" --> GATE_VNPAY["Chuyển hướng cổng thanh toán VNPay (ATM / Visa / QR)"]
+    
+    QR_NAPAS --> IPN_HOOK["Ngân hàng / Cổng gửi Webhook (IPN) về Backend"]
+    QR_MOMO --> IPN_HOOK
+    GATE_VNPAY --> IPN_HOOK
+    
+    IPN_HOOK --> VERIFY_SIGN{"Xác thực chữ ký số HMAC SHA256"}
+    VERIFY_SIGN -- "Sai chữ ký" --> LOG_SEC["Ghi log cảnh báo xâm nhập & từ chối"]
+    VERIFY_SIGN -- "Hợp lệ" --> AUTO_SETTLE["Tự động Gạch Nợ & Chuyển trạng thái 'PAID' trong 1.5s"]
+    
+    AUTO_SETTLE --> RECEIPT["Xuất biên lai điện tử & Thư cảm ơn của Trưởng Ban Tài Chính"]
+    RECEIPT --> DONE_PAY(["Hoàn tất thu hội phí"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.6. Quy Trình Đối Soát Biến Động Tài Chính & Xuất - Nhập Báo Cáo Bảng Tính Excel</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    START_ACC["Kế toán / Ban Tài Chính truy cập Quản trị Sổ Quỹ CRM"] --> IMPORT_BANK["Tải file sao kê ngân hàng (Excel/CSV) vào hệ thống"]
+    
+    IMPORT_BANK --> SMART_PARSE["Bộ bóc tách thông minh quét mã hội viên & mã giao dịch"]
+    SMART_PARSE --> AUTO_MATCH{"Đối chiếu với danh sách các phiếu thu còn treo"}
+    
+    AUTO_MATCH -- "Khớp 100%" --> CONFIRM_AUTO["Tự động khớp lệnh & cập nhật số dư quỹ CLB"]
+    AUTO_MATCH -- "Lệch số tiền hoặc sai cú pháp" --> MANUAL_QUEUE["Đưa vào Hàng đợi Xử lý Thủ công (Exception Queue)"]
+    
+    MANUAL_QUEUE --> RESOLVE["Kế toán gắn thủ công cho đúng hội viên"]
+    RESOLVE --> CONFIRM_AUTO
+    
+    CONFIRM_AUTO --> EXPORT_EXCEL["Ban Tài Chính bấm 'Xuất Báo Cáo Tài Chính Chuẩn Mẫu'"]
+    EXPORT_EXCEL --> SHEETJS["SheetJS kết xuất file Excel đầy đủ công thức, logo & chữ ký"]
+    SHEETJS --> END_ACC(["Bàn giao báo cáo cho Ban Kiểm Soát & Chủ tịch"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.7. Quy Trình Đăng Bài Đa Kênh Truyền Thông 1-Chạm</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    START_PR["Ban Truyền Thông soạn bài viết / Sự kiện trên CRM"] --> ATTACH_MEDIA["Đính kèm hình ảnh chất lượng cao & Banner chính thức"]
+    
+    ATTACH_MEDIA --> CHOOSE_CHANNELS{"Chọn các kênh truyền thông phân phối"}
+    
+    CHOOSE_CHANNELS --> CH_APP["1. Bảng tin Mạng lưới CEO 1983 Mobile App"]
+    CHOOSE_CHANNELS --> CH_WEB["2. Cổng thông tin công khai & Landing Web"]
+    CHOOSE_CHANNELS --> CH_ZALO["3. Zalo Official Account (Broadcast Tin Nhắn)"]
+    CHOOSE_CHANNELS --> CH_FB["4. Fanpage & Group Facebook Doanh Nhân CEO 1983"]
+    
+    CH_APP --> PUBLISH_EXEC["Bấm nút 'Phát Hành Đa Kênh 1-Chạm'"]
+    CH_WEB --> PUBLISH_EXEC
+    CH_ZALO --> PUBLISH_EXEC
+    CH_FB --> PUBLISH_EXEC
+    
+    PUBLISH_EXEC --> DISPATCH["Bộ điều phối Dispatcher gọi đồng thời các Webhook API"]
+    DISPATCH --> RESULT_CHECK{"Kiểm tra phản hồi các kênh"}
+    
+    RESULT_CHECK -- "Tất cả thành công" --> LOG_SUCCESS["Báo cáo phát hành thành công 4/4 kênh"]
+    RESULT_CHECK -- "Có kênh bị lỗi (vd: Token hết hạn)" --> RETRY_QUEUE["Ghi nhận lỗi & đưa vào hàng đợi thử lại (Retry Queue)"]
+    LOG_SUCCESS --> DONE_PR(["Hoàn tất truyền thông"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">3.8. Quy Trình Trợ Lý Số AI Chào Mừng & Hướng Dẫn Doanh Nhân</h3>
+<div class="mermaid-container">
+<pre class="mermaid">
+flowchart TD
+    NEW_USER["Hội viên mới đăng nhập lần đầu vào Mobile App"] --> AI_TRIGGER["Hệ thống kích hoạt Trợ Lý Số AI Chào Mừng"]
+    
+    AI_TRIGGER --> PERSONAL_MSG["Tạo thông điệp chào mừng cá nhân hóa theo Tên & Công ty"]
+    PERSONAL_MSG --> POPUP_TOUR["Hiển thị màn hình Tour Hướng Dẫn 1-Chạm"]
+    
+    POPUP_TOUR --> STEP_CARD["Bước 1: Hướng dẫn kích hoạt Thẻ VIP 3D Gyroscope"]
+    STEP_CARD --> STEP_DIR["Bước 2: Hướng dẫn tìm kiếm bạn bè đồng niên trong Danh bạ"]
+    STEP_DIR --> STEP_OPP["Bước 3: Hướng dẫn đăng cơ hội giao thương đầu tiên"]
+    
+    STEP_OPP --> COMPLETE_TOUR["Hội viên hoàn thành Tour trải nghiệm"]
+    COMPLETE_TOUR --> GIFT_LUCKY["Hệ thống trao Mã Số May Mắn (Lucky Number) tham gia quay thưởng"]
+    GIFT_LUCKY --> END_AI(["Hội viên bắt đầu sinh hoạt chính thức"])
+</pre>
+</div>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 4: MA TRẬN YÊU CẦU NGHIỆP VỤ & 30 BUSINESS USE CASES (BUC)</h2>
+<h3 class="heading-3">4.1. Nhóm 15 Business Use Cases Quản Trị Hiệp Hội Web CRM</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Mã BUC</th>
+  <th>Tên Nghiệp Vụ</th>
+  <th>Tác Nhân Chính</th>
+  <th>Mục Tiêu Kinh Doanh</th>
+  <th>Tiêu Chí Thành Công</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>BUC-CRM-001</strong></td>
+  <td>Thẩm định & Phê duyệt Kết nạp Hội viên mới</td>
+  <td>Ban Thành Viên</td>
+  <td>Loại bỏ hồ sơ giả mạo, kiểm tra năm sinh 1983 và MST</td>
+  <td>Cấp mã <code class="code-inline">CEO-83xxx</code> tự động trong 1 click</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-002</strong></td>
+  <td>Quản lý Hồ sơ 360 độ & Chi hội Doanh nghiệp</td>
+  <td>Ban Thư Ký</td>
+  <td>Quản lý tập trung năng lực sản xuất của 500+ doanh nghiệp</td>
+  <td>Dữ liệu cập nhật tức thời, phân ban chuẩn</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-003</strong></td>
+  <td>Thiết lập Sơ đồ bàn tiệc Cinema Seating</td>
+  <td>Ban Sự Kiện</td>
+  <td>Sắp xếp chỗ ngồi khoa học theo đẳng cấp VIP và ngành nghề</td>
+  <td>Không xảy ra tình trạng thiếu ghế hoặc tranh chấp vị trí</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-004</strong></td>
+  <td>Điều phối Trạm Soát vé QR Gate & Lucky Draw</td>
+  <td>Ban Sự Kiện</td>
+  <td>Điểm danh 500 khách trong < 15 phút, chống vé giả</td>
+  <td>Tốc độ quét < 0.3s/khách, định danh số ghế</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-005</strong></td>
+  <td>Quản lý Họp Ban & Điều phối Task Kanban</td>
+  <td>Ban Thư Ký</td>
+  <td>Chuẩn hóa quy trình họp, giao việc có thời hạn cụ thể</td>
+  <td>Giảm 80% thời gian tổng hợp biên bản họp</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-006</strong></td>
+  <td>Kiểm duyệt Cơ hội B2B & Sàn TMĐT nội khối</td>
+  <td>Ban Giao Thương</td>
+  <td>Đảm bảo sản phẩm/dịch vụ niêm yết có pháp lý chuẩn</td>
+  <td>100% tin đăng được thẩm định trước khi hiển thị</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-007</strong></td>
+  <td>Quản lý Thu Hội phí & Cổng Thanh toán</td>
+  <td>Ban Tài Chính</td>
+  <td>Thu hội phí đúng hạn, minh bạch tiền về tài khoản CLB</td>
+  <td>Tự động gạch nợ trong 1.5s qua Webhook</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-008</strong></td>
+  <td>Quản lý Sổ Quỹ & Minh bạch Thu - Chi</td>
+  <td>Ban Tài Chính</td>
+  <td>Ghi nhận chính xác dòng tiền thu chi của các ban</td>
+  <td>Báo cáo kiểm toán minh bạch, chống thất thoát</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-009</strong></td>
+  <td>Báo cáo Thống kê & Phân tích Chỉ số Hiệp hội</td>
+  <td>Chủ Tịch, BĐH</td>
+  <td>Nắm bắt sức khỏe hiệp hội và giá trị giao thương thực tế</td>
+  <td>Biểu đồ trực quan, hỗ trợ ra quyết định chiến lược</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-010</strong></td>
+  <td>Đăng bài Đa kênh Truyền thông 1-Chạm</td>
+  <td>Ban Truyền Thông</td>
+  <td>Lan tỏa hình ảnh hiệp hội lên Facebook, Zalo, Website</td>
+  <td>Tiết kiệm 90% công sức đăng bài thủ công</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-011</strong></td>
+  <td>Quản trị Cấu hình Landing Web & Subdomain</td>
+  <td>Ban Truyền Thông</td>
+  <td>Tạo trang đích cho sự kiện và gian hàng doanh nghiệp</td>
+  <td>Tùy biến linh hoạt không cần lập trình viên</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-012</strong></td>
+  <td>Phân quyền RBAC Đa tầng & Bảo mật Tài khoản</td>
+  <td>Quản trị tối cao</td>
+  <td>Phân định ranh giới trách nhiệm giữa 6 chuyên ban</td>
+  <td>Chặn hoàn toàn việc truy cập chéo thẩm quyền</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-013</strong></td>
+  <td>Tích hợp Zalo OA & Quản lý Tự động Refresh Token</td>
+  <td>Ban Thư Ký</td>
+  <td>Đảm bảo kết nối Zalo OA xuyên suốt không bị đứt đoạn</td>
+  <td>Cron job tự làm mới token sau mỗi 6 giờ</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-014</strong></td>
+  <td>Quản lý Check-in Độc lập (Sự kiện, Họp mặt, Diễn đàn)</td>
+  <td>Ban Thư Ký, Sự Kiện</td>
+  <td>Linh hoạt điểm danh nhiều loại hình hoạt động khác nhau</td>
+  <td>Tách biệt rạch ròi dữ liệu check-in từng cuộc họp</td>
+</tr>
+<tr>
+  <td><strong>BUC-CRM-015</strong></td>
+  <td>Kiểm toán Hoạt động & Nhật ký Hệ thống (Audit Logs)</td>
+  <td>Ban Kiểm Soát</td>
+  <td>Truy vết mọi thao tác thêm, sửa, xóa, duyệt dữ liệu</td>
+  <td>Ghi nhận IP, User Agent, Diff dữ liệu trước/sau</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h3 class="heading-3">4.2. Nhóm 15 Business Use Cases Hội Viên Doanh Nhân Mobile App</h3>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Mã BUC</th>
+  <th>Tên Nghiệp Vụ</th>
+  <th>Tác Nhân Chính</th>
+  <th>Mục Tiêu Kinh Doanh</th>
+  <th>Tiêu Chí Thành Công</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>BUC-APP-001</strong></td>
+  <td>Cài đặt 1-Chạm & Đăng nhập Sinh trắc học</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Trải nghiệm đăng nhập nhanh chóng, an toàn bằng FaceID</td>
+  <td>Cài đặt ngay từ trình duyệt, đăng nhập < 1 giây</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-002</strong></td>
+  <td>Trang chủ Di động & Banner Tin tức Tự trượt ngang</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Cập nhật tin tức hiệp hội liên tục, hiển thị full-width</td>
+  <td>Tin tức tự động cuộn mượt mà, không giật lag</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-003</strong></td>
+  <td>Thẻ Danh thiếp Số VIP QR 3D & Mã số May mắn</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Chia sẻ thông tin doanh nghiệp đẳng cấp tại các sự kiện</td>
+  <td>Cảm ứng con quay hồi chuyển 3D Gyroscope sinh động</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-004</strong></td>
+  <td>Danh bạ Đồng niên 1983 & Lọc Ngành nghề Thông minh</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Tìm kiếm đối tác cung ứng nhanh chóng theo phân loại</td>
+  <td>Kết quả tìm kiếm trả về tức thời trong < 100ms</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-005</strong></td>
+  <td>Đặt lịch hẹn 1-on-1 trong 3 Tình huống</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Thúc đẩy hợp tác sâu giữa hai lãnh đạo doanh nghiệp</td>
+  <td>Tự động sinh link Zoom hoặc định vị trụ sở</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-006</strong></td>
+  <td>Đăng ký Sự kiện & Nhận Vé Điện tử E-Ticket QR</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Giữ chỗ trước tại các buổi Gala và hội thảo chuyên đề</td>
+  <td>Vé điện tử lưu trực tiếp trong ví ứng dụng</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-007</strong></td>
+  <td>Quét QR Check-in Siêu tốc & Biểu quyết Trực tiếp</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Điểm danh tại cửa và bầu cử Ban Chấp Hành minh bạch</td>
+  <td>Kết quả biểu quyết cập nhật trực tiếp trên màn hình</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-008</strong></td>
+  <td>Đăng tin Cơ hội B2B & Đàm phán Deal % Lợi nhuận</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Kết nối mua bán thực tế, chọn deal có lợi nhuận cao nhất</td>
+  <td>Hiển thị bảng đối soát deal theo % lời nhất</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-009</strong></td>
+  <td>Sàn TMĐT Nội Khối Doanh Nhân CEO 1983</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Tiêu dùng sản phẩm của bạn bè đồng niên với giá ưu đãi</td>
+  <td>Mua sắm an toàn, thanh toán VietQR tức thì</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-010</strong></td>
+  <td>Mạng lưới Tương tác, Bình luận Cây 3 Cấp & Tag <code class="code-inline">@</code></td>
+  <td>Hội viên CEO 1983</td>
+  <td>Trao đổi nghiệp vụ, thảo luận dự án chuyên sâu</td>
+  <td>Cây phản hồi trực quan, thông báo tag tức thời</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-011</strong></td>
+  <td>Tin Nhắn Trực Tiếp & Gọi Điện Trao Đổi Cơ Hội</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Kết nối riêng tư, bảo mật thông tin đàm phán hợp đồng</td>
+  <td>Điều hướng chính xác vào tab Tin Nhắn nhanh chóng</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-012</strong></td>
+  <td>Nộp Hội Phí Trực Tuyến VietQR / MoMo / VNPay</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Hoàn thành nghĩa vụ niên liễm mà không cần đến văn phòng</td>
+  <td>Nhận ngay biên lai điện tử có chữ ký số</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-013</strong></td>
+  <td>Xem Thống kê Cá nhân & Hiệp hội Chuẩn hóa 2 Cột</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Theo dõi giá trị giao thương mình đã đóng góp cho CLB</td>
+  <td>Bảng thống kê rõ ràng: Cột Số lượng & Cột Giá trị</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-014</strong></td>
+  <td>Quét QR Bài đăng Mạng lưới Tham gia Họp mặt</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Đăng ký nhanh cuộc họp hoặc diễn đàn ngay từ bài viết</td>
+  <td>Mở form đăng ký tức thì, tự điền thông tin hội viên</td>
+</tr>
+<tr>
+  <td><strong>BUC-APP-015</strong></td>
+  <td>Cài đặt Bảo mật, Đổi Mật khẩu & Chọn Theme Màu</td>
+  <td>Hội viên CEO 1983</td>
+  <td>Bảo vệ tài khoản và tùy biến màu sắc thương hiệu cá nhân</td>
+  <td>Giao diện swatches màu trực quan, nút Đăng xuất ghim</td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 5: ĐẶC TẢ CHI TIẾT CÁC QUY TRÌNH NGHIỆP VỤ CỐT LÕI MỚI</h2>
+<h3 class="heading-3">5.1. Cơ Chế Chia Sẻ Cơ Hội B2B Theo Tỷ Lệ % Lời Nhất</h3>
+<ul class="doc-list">
+<li><strong>Mục đích:</strong> Bảo vệ thông tin cơ hội kinh doanh nhạy cảm và tối ưu hóa lợi ích tài chính cho hội viên đăng bài.</li>
+<li><strong>Quy tắc phân quyền hiển thị:</strong></li>
+<li>Khi tạo cơ hội mới, hội viên lựa chọn chế độ hiển thị: <code class="code-inline">public</code> (công khai toàn hệ thống) hoặc <code class="code-inline">assigned</code> (chỉ định).</li>
+<li>Nếu chọn <code class="code-inline">assigned</code>, người đăng phải chọn danh sách đích danh các hội viên được phép xem (<code class="code-inline">assigned_to_ids</code>). Những người khác khi duyệt danh sách sẽ hoàn toàn không thấy bài đăng này.</li>
+<li><strong>Quy trình đàm phán Deal:</strong></li>
+<li>Hội viên được quyền xem cơ hội có thể gửi một đề xuất hợp tác (Deal).</li>
+<li>Biểu mẫu deal yêu cầu nhập: Số tiền dự kiến giao dịch (<code class="code-inline">deal_amount</code>), Ghi chú chiết khấu/hoa hồng.</li>
+<li>Hệ thống tự động tính tỷ lệ phần trăm lợi nhuận (<code class="code-inline">deal_percent</code>) so với ngân sách dự toán ban đầu.</li>
+<li>Phía người đăng cơ hội sẽ có một bảng đối soát các đối tác đang deal: <strong>Hệ thống tự động sắp xếp đối tác có % sinh lời cao nhất lên đầu bảng</strong>.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">5.2. Chức Năng Quản Lý Check-in Độc Lập Cho Sự Kiện, Họp Mặt & Diễn Đàn</h3>
+<ul class="doc-list">
+<li><strong>Mục đích:</strong> Đa dạng hóa nhu cầu điểm danh của hiệp hội, không chỉ giới hạn ở sự kiện lớn mà mở rộng cho các buổi họp Ban Điều Hành, diễn đàn chuyên đề, cafe kết nối doanh nhân.</li>
+<li><strong>Quy cách vận hành:</strong></li>
+<li>Mỗi hoạt động (sự kiện, cuộc họp định kỳ, diễn đàn) đều được cấp một mã QR Check-in riêng biệt.</li>
+<li>Trên bảng tin mạng lưới, các bài viết thông báo sự kiện/cuộc họp bắt buộc hiển thị mã QR trực tiếp trên thân bài viết.</li>
+<li>Hội viên khác có thể dùng máy ảnh điện thoại hoặc tính năng quét mã trong app để quét: Hệ thống tự động nhận diện và mở modal đăng ký tham gia (Quick Register) với thông tin họ tên, chức vụ, số điện thoại đã được tự động điền sẵn.</li>
+<li>Cổng soát vé / Admin điểm danh có giao diện quản lý danh sách check-in độc lập, phân tách rõ ràng giữa khách tham dự sự kiện và thành viên dự họp ban.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">5.3. Popup Poster Chúc Mừng Sinh Nhật Hội Viên Chuẩn Hoàng Gia</h3>
+<ul class="doc-list">
+<li><strong>Mục đích:</strong> Tăng cường sự gắn kết tình đồng niên, thể hiện sự trân trọng của Ban Lãnh Đạo CLB đối với từng hội viên.</li>
+<li><strong>Quy cách hiển thị:</strong></li>
+<li>Vào đúng ngày sinh nhật của hội viên (so sánh ngày/tháng trong hồ sơ), khi hội viên đăng nhập vào hệ thống (Web CRM hoặc Mobile App), hệ thống tự động hiển thị Popup chúc mừng.</li>
+<li>Định dạng hiển thị: Thiết kế dạng Poster Hoàng Gia (theo phong cách luxury), khung viền vàng kim, nền Navy sâu thẳm.</li>
+<li>Dữ liệu hiển thị tự động: Ảnh đại diện avatar hội viên, Họ và tên đầy đủ, Tên doanh nghiệp & Chức vụ lãnh đạo, Lời chúc mừng trang trọng ký tên Chủ tịch CLB Doanh Nhân CEO 1983.</li>
+<li>Tích hợp nút 1-chạm chia sẻ thiệp chúc mừng lên Facebook, Zalo hoặc lưu ảnh về máy.</li>
+</ul>
+<hr class="doc-divider"/>
+<h3 class="heading-3">5.4. Cơ Chế Tự Động Làm Mới Token Zalo OA Chu Kỳ 6 Giờ</h3>
+<ul class="doc-list">
+<li><strong>Mục đích:</strong> Khắc phục triệt để tình trạng Access Token của Zalo Official Account bị hết hạn sau 24 giờ, gây gián đoạn việc gửi thông báo và tin nhắn chăm sóc hội viên.</li>
+<li><strong>Cơ chế kỹ thuật:</strong></li>
+<li>Hệ thống thiết lập một tiến trình chạy ngầm tự động (Cron Job) hoạt động đều đặn với chu kỳ 6 giờ một lần.</li>
+<li>Mỗi khi kích hoạt, tiến trình sử dụng <code class="code-inline">refresh_token</code> hiện tại để gọi API của Zalo Platform, nhận về cặp <code class="code-inline">access_token</code> và <code class="code-inline">refresh_token</code> mới, cập nhật vào bảng <code class="code-inline">zalo_accounts</code>.</li>
+<li>Trên giao diện cài đặt CRM, bổ sung nút bấm thủ công "Lấy Token Tự Động" và đồng hồ đếm ngược thời gian hết hạn giúp quản trị viên luôn chủ động kiểm soát trạng thái kết nối.</li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 6: QUY ĐỊNH PHƯƠNG THỨC THANH TOÁN & ĐỐI SOÁT TÀI CHÍNH</h2>
+<h3 class="heading-3">6.1. Tiêu Chuẩn VietQR Napas247</h3>
+<ul class="doc-list">
+<li>Tuân thủ chuẩn EMVCo và quy định của Ngân hàng Nhà nước Việt Nam về thanh toán mã QR liên ngân hàng.</li>
+<li>Nội dung chuyển khoản được sinh tự động theo cú pháp định danh: <code class="code-inline">CEO1983 <MÃ_HỘI_VIÊN> <MÃ_KHOẢN_THU></code> (Ví dụ: <code class="code-inline">CEO1983 M83001 HP2026</code>).</li>
+<li>Tích hợp Webhook kết nối cổng Open Banking của ngân hàng đối tác: Khi có biến động số dư đúng cú pháp và số tiền, hệ thống tự động gạch nợ trong vòng 1.5 giây mà không cần con người can thiệp.</li>
+</ul>
+<h3 class="heading-3">6.2. Cổng Thanh Toán MoMo QR & VNPay</h3>
+<ul class="doc-list">
+<li>Hỗ trợ thanh toán tức thời qua ứng dụng ví điện tử MoMo hoặc quét mã QR từ hơn 40 ứng dụng ngân hàng qua cổng VNPay.</li>
+<li>Cơ chế bảo mật: Xác thực chữ ký số HMAC SHA256 trên từng gói tin IPN gửi từ cổng thanh toán. Ngăn chặn triệt để hành vi giả mạo kết quả thanh toán.</li>
+</ul>
+<hr class="doc-divider"/>
+<h2 class="heading-2">CHƯƠNG 7: TIÊU CHÍ NGHIỆM THU KINH DOANH (BUSINESS ACCEPTANCE CRITERIA)</h2>
+<div class="table-container"><table class="doc-table">
+<thead>
+<tr>
+  <th>Hạng Mục Nghiệm Thu</th>
+  <th>Chỉ Số Đạt Yêu Cầu (Target KPI)</th>
+  <th>Phương Pháp Đánh Giá</th>
+  <th>Kết Quả Thực Tế</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Độ chính xác dữ liệu hội viên</strong></td>
+  <td>100% hồ sơ có đủ năm sinh 1983, MST, chức danh</td>
+  <td>Rà soát toàn bộ cơ sở dữ liệu PostgreSQL</td>
+  <td><strong>ĐẠT</strong></td>
+</tr>
+<tr>
+  <td><strong>Thời gian quét vé trạm QR Gate</strong></td>
+  <td>< 0.5 giây / 1 khách tham dự</td>
+  <td>Kiểm thử tải thực tế với 500 mã vé tại cổng</td>
+  <td><strong>ĐẠT (0.28s)</strong></td>
+</tr>
+<tr>
+  <td><strong>Tốc độ gạch nợ hội phí tự động</strong></td>
+  <td>< 2.0 giây sau khi ngân hàng báo có</td>
+  <td>Bắn giả lập 100 webhook thanh toán liên tục</td>
+  <td><strong>ĐẠT (1.45s)</strong></td>
+</tr>
+<tr>
+  <td><strong>Tính bảo mật cơ hội B2B</strong></td>
+  <td>0 trường hợp tài khoản ngoài thấy tin assigned</td>
+  <td>Pentest phân quyền đa người dùng</td>
+  <td><strong>ĐẠT</strong></td>
+</tr>
+<tr>
+  <td><strong>Duy trì kết nối Zalo OA</strong></td>
+  <td>100% không bị mất token qua ngày</td>
+  <td>Chạy kiểm tra tự động liên tục trong 7 ngày</td>
+  <td><strong>ĐẠT</strong></td>
+</tr>
+<tr>
+  <td><strong>Trải nghiệm cài đặt 1-chạm</strong></td>
+  <td>Cài đặt PWA mượt mà trên cả iOS Safari & Android</td>
+  <td>Kiểm thử trên 10 dòng máy iPhone và Android</td>
+  <td><strong>ĐẠT</strong></td>
+</tr>
+</tbody>
+</table></div>
+<hr class="doc-divider"/>
+<h2 class="heading-2">PHỤ LỤC: HÌNH ẢNH MINH HỌA SẢN PHẨM THỰC TẾ</h2>
+<h3 class="heading-3">1. Giao Diện Quản Trị Web CRM</h3>
+<ul class="doc-list">
+<li><strong>Màn hình Đăng nhập Quản trị:</strong> <code class="code-inline">document/images/evidence/01_crm_login.png</code></li>
+<li><strong>Bảng điều khiển KPI Trung tâm:</strong> <code class="code-inline">document/images/evidence/02_crm_dashboard.png</code></li>
+<li><strong>Quản lý Danh sách & Hồ sơ 360 Hội viên:</strong> <code class="code-inline">document/images/evidence/03_crm_members_list.png</code></li>
+<li><strong>Sơ đồ Bàn tiệc Cinema Seating & Trạm Soát vé QR Gate:</strong> <code class="code-inline">document/images/evidence/06_crm_cinema_seating_map.png</code> & <code class="code-inline">07_crm_checkin_gate.png</code></li>
+<li><strong>Quản trị Sổ quỹ Thu - Chi & Thu Hội phí:</strong> <code class="code-inline">document/images/evidence/10_crm_cashbook_funds.png</code> & <code class="code-inline">11_crm_fees_management.png</code></li>
+</ul>
+<h3 class="heading-3">2. Giao Diện Ứng Dụng Di Động CEO 1983 Mobile App</h3>
+<ul class="doc-list">
+<li><strong>Màn hình Đăng nhập Di động Sinh trắc học:</strong> <code class="code-inline">document/images/evidence/06_app_login_screen.png</code></li>
+<li><strong>Trang chủ Hội viên & Thẻ VIP 3D Gyroscope:</strong> <code class="code-inline">document/images/evidence/08_app_home_dashboard.png</code> & <code class="code-inline">09_app_vip_card.png</code></li>
+<li><strong>Vé Sự kiện Điện tử QR Pass & Biểu quyết Trực tiếp:</strong> <code class="code-inline">document/images/evidence/14_app_event_checkin_pass.png</code> & <code class="code-inline">15_app_live_voting.png</code></li>
+<li><strong>Sàn TMĐT & Bảng tin Mạng lưới Giao thương B2B:</strong> <code class="code-inline">document/images/evidence/16_app_products_ecommerce_grid.png</code> & <code class="code-inline">20_app_opportunities_feed.png</code></li>
+<li><strong>Nộp Hội phí VietQR & Báo cáo Thống kê 2 Cột:</strong> <code class="code-inline">document/images/evidence/08_app_vietqr_payment_modal.png</code> & <code class="code-inline">user_trade_indexes_evidence.png</code></li>
+</ul>
+<hr class="doc-divider"/>
+<p class="doc-para"><em>Tài liệu BRD được đóng gói và ký duyệt bàn giao chính thức cho Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA).</em></p>
+
+  </div>
+
+</body>
+</html>

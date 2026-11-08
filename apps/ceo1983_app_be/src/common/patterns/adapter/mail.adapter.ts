@@ -12,15 +12,22 @@ export interface SendMailOptions {
 }
 
 export interface IMailAdapter {
-  sendMail(options: SendMailOptions): Promise<{ success: boolean; messageId?: string; error?: string }>;
+  sendMail(
+    options: SendMailOptions,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }>;
 }
 
 export class NodemailerMailAdapter implements IMailAdapter {
   constructor(private readonly mailServiceInstance?: any) {}
 
-  async sendMail(options: SendMailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendMail(
+    options: SendMailOptions,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      if (this.mailServiceInstance && typeof this.mailServiceInstance.sendMailRaw === 'function') {
+      if (
+        this.mailServiceInstance &&
+        typeof this.mailServiceInstance.sendMailRaw === 'function'
+      ) {
         const res = await this.mailServiceInstance.sendMailRaw(options);
         return { success: true, messageId: res?.messageId };
       }
@@ -30,4 +37,3 @@ export class NodemailerMailAdapter implements IMailAdapter {
     }
   }
 }
-

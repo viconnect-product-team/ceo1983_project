@@ -11,4 +11,3 @@ export class CreateReviewDto {
   reviewType?: string;
   images?: string[];
 }
-

@@ -40,7 +40,11 @@ export class MarketplaceController {
     @Param('id') id: string,
     @Body() body: any,
   ) {
-    return this.connectAppService.updateMarketplaceProduct(req.user.id, id, body);
+    return this.connectAppService.updateMarketplaceProduct(
+      req.user.id,
+      id,
+      body,
+    );
   }
 
   @Patch('products/:id')
@@ -49,7 +53,11 @@ export class MarketplaceController {
     @Param('id') id: string,
     @Body() body: any,
   ) {
-    return this.connectAppService.updateMarketplaceProduct(req.user.id, id, body);
+    return this.connectAppService.updateMarketplaceProduct(
+      req.user.id,
+      id,
+      body,
+    );
   }
 
   @Delete('products/:id')

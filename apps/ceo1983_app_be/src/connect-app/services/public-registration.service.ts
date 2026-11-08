@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailService } from '../../mail/mail.service';
 import { ConnectAppGateway } from '../connect-app.gateway';
@@ -74,7 +79,9 @@ export class ConnectPublicRegistrationService {
       String(body.email || '').trim() ||
       `${phone.replace(/\D/g, '') || 'applicant'}@applicant.ceo1983.vn`;
     const company = String(body.company || body.companyName || fullName).trim();
-    const title = String(body.title || body.jobTitle || 'Lãnh đạo Doanh nghiệp').trim();
+    const title = String(
+      body.title || body.jobTitle || 'Lãnh đạo Doanh nghiệp',
+    ).trim();
     const revenue = String(body.revenue || '').trim();
     const industry = String(body.industry || '').trim();
     const clubSlug = String(body.clubSlug || 'ceo-1983').trim();
@@ -113,7 +120,8 @@ export class ConnectPublicRegistrationService {
           username: existing.email || email,
           email: existing.email || email,
           reference: `APP-${existing.id}`,
-          message: 'Hồ sơ đăng ký gia nhập của Quý CEO đã được tiếp nhận trên CRM và đang được Ban Thư Ký xét duyệt!',
+          message:
+            'Hồ sơ đăng ký gia nhập của Quý CEO đã được tiếp nhận trên CRM và đang được Ban Thư Ký xét duyệt!',
         };
       }
     } catch (dupErr) {
@@ -135,7 +143,8 @@ export class ConnectPublicRegistrationService {
         const firstAssoc = await this.prisma.$queryRaw<any[]>`
           SELECT id FROM public.associations ORDER BY landing_published DESC, created_at DESC LIMIT 1
         `.catch(() => []);
-        if (firstAssoc.length > 0 && firstAssoc[0]?.id) assocId = firstAssoc[0].id;
+        if (firstAssoc.length > 0 && firstAssoc[0]?.id)
+          assocId = firstAssoc[0].id;
       }
     } catch {
       assocId = null;
@@ -178,7 +187,8 @@ export class ConnectPublicRegistrationService {
     }
 
     // 3. Sinh chuỗi ký tự mật khẩu ngẫu nhiên (6 ký tự chuẩn dễ nhập) & gửi qua email thông báo
-    const randomChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+    const randomChars =
+      '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
     const rawPassword = Array.from(crypto.randomBytes(6))
       .map((byte) => randomChars[byte % randomChars.length])
       .join('');
@@ -250,7 +260,13 @@ export class ConnectPublicRegistrationService {
 
     const detailedNotes = `${notesContent} | TÀI KHOẢN ĐĂNG NHẬP: Email=${email} | Pass=${rawPassword}`;
 
-    const targetAssocUuid = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
+    const targetAssocUuid =
+      assocId ||
+      (await this.prisma.$queryRaw<
+        any[]
+      >`SELECT id FROM public.associations LIMIT 1`
+        .then((r) => r[0]?.id)
+        .catch(() => null));
 
     try {
       if (targetAssocUuid) {
@@ -370,11 +386,19 @@ export class ConnectPublicRegistrationService {
           passwordRaw: rawPassword,
           companyName: company,
           memberCode: memberId,
-          portalUrl: process.env.APP_URL ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login` : 'https://ceo1983.viconnect.vn/association/login',
+          portalUrl: process.env.APP_URL
+            ? `${process.env.APP_URL.replace(/\/$/, '')}/association/login`
+            : 'https://ceo1983.viconnect.vn/association/login',
         });
       }
 
-      const targetAssocId = assocId || (await this.prisma.$queryRaw<any[]>`SELECT id FROM public.associations LIMIT 1`.then(r => r[0]?.id).catch(() => null));
+      const targetAssocId =
+        assocId ||
+        (await this.prisma.$queryRaw<
+          any[]
+        >`SELECT id FROM public.associations LIMIT 1`
+          .then((r) => r[0]?.id)
+          .catch(() => null));
       if (targetAssocId) {
         // Trigger Realtime Notifications to Association Admins & Web CRM
         void this.notifyAssociationAdmins(targetAssocId, {
@@ -383,7 +407,14 @@ export class ConnectPublicRegistrationService {
           targetRoute: `/members?status=pending`,
           type: 'club_registration_received',
           sourceRecordId: memberId,
-          meta: { applicantName: fullName, companyName: company, phone, clubSlug, email, username: email },
+          meta: {
+            applicantName: fullName,
+            companyName: company,
+            phone,
+            clubSlug,
+            email,
+            username: email,
+          },
         });
       }
     } catch (err) {
@@ -399,17 +430,23 @@ export class ConnectPublicRegistrationService {
       reference: `APP-${memberId}`,
       leadId: demoReqId || memberId,
       accountCreated: true,
-      message: 'Hồ sơ đăng ký gia nhập đã được tiếp nhận! Tên đăng nhập và mật khẩu khởi tạo đã được gửi đến email của bạn.',
+      message:
+        'Hồ sơ đăng ký gia nhập đã được tiếp nhận! Tên đăng nhập và mật khẩu khởi tạo đã được gửi đến email của bạn.',
     };
   }
 
   async checkClubRegistrationStatus(query: { phone?: string; email?: string }) {
     const rawPhone = String(query?.phone || '').trim();
     const cleanPhone = rawPhone.replace(/\D/g, '');
-    const email = String(query?.email || '').trim().toLowerCase();
+    const email = String(query?.email || '')
+      .trim()
+      .toLowerCase();
 
     if (!cleanPhone && !email) {
-      return { found: false, message: 'Vui lòng cung cấp số điện thoại hoặc email để tra cứu' };
+      return {
+        found: false,
+        message: 'Vui lòng cung cấp số điện thoại hoặc email để tra cứu',
+      };
     }
 
     // 1. Check in public.members
@@ -426,11 +463,14 @@ export class ConnectPublicRegistrationService {
       if (memRows.length > 0) {
         const m = memRows[0];
         const status = (m.status || 'pending').toLowerCase();
-        const isApproved = status === 'active' || status === 'approved' || status === 'memberstatus.active';
+        const isApproved =
+          status === 'active' ||
+          status === 'approved' ||
+          status === 'memberstatus.active';
         const isRejected = status === 'rejected' || status === 'declined';
         return {
           found: true,
-          status: isApproved ? 'approved' : (isRejected ? 'rejected' : 'pending'),
+          status: isApproved ? 'approved' : isRejected ? 'rejected' : 'pending',
           rawStatus: status,
           isApproved,
           hasAccount: Boolean(m.user_id),
@@ -442,9 +482,9 @@ export class ConnectPublicRegistrationService {
           createdAt: m.created_at,
           message: isApproved
             ? 'Hồ sơ của Quý Doanh nhân đã được phê duyệt chính thức!'
-            : (isRejected
-                ? 'Hồ sơ cần bổ sung thông tin hoặc chưa đạt tiêu chuẩn thẩm định.'
-                : 'Hồ sơ đang chờ Ban Thư Ký CLB CEO 1983 thẩm định trong 24h.'),
+            : isRejected
+              ? 'Hồ sơ cần bổ sung thông tin hoặc chưa đạt tiêu chuẩn thẩm định.'
+              : 'Hồ sơ đang chờ Ban Thư Ký CLB CEO 1983 thẩm định trong 24h.',
         };
       }
     } catch (e) {
@@ -489,7 +529,8 @@ export class ConnectPublicRegistrationService {
 
     return {
       found: false,
-      message: 'Không tìm thấy hồ sơ đăng ký với thông tin này. Vui lòng nộp hồ sơ mới.',
+      message:
+        'Không tìm thấy hồ sơ đăng ký với thông tin này. Vui lòng nộp hồ sơ mới.',
     };
   }
 
@@ -498,7 +539,6 @@ export class ConnectPublicRegistrationService {
    * Creates records in public.notifications and public.business_notifications,
    * and dispatches instant WebSocket alerts to Web CRM & Mobile admins with actionable redirection.
    */
-
 
   async notifyAssociationAdmins(
     associationId: string,
@@ -522,7 +562,9 @@ export class ConnectPublicRegistrationService {
           gen_random_uuid(), ${code}, ${payload.title}, ${payload.body},
           'staff', 'inapp', 'sent', ${now}, ${associationId}::uuid, 'crm', 'crm', ${now}, ${now}
         )
-      `.catch((err) => console.warn('Could not insert scoped public.notifications:', err));
+      `.catch((err) =>
+        console.warn('Could not insert scoped public.notifications:', err),
+      );
 
       const adminMembers = await this.prisma.$queryRaw<any[]>`
         SELECT DISTINCT user_id FROM public.memberships
@@ -536,7 +578,9 @@ export class ConnectPublicRegistrationService {
         WHERE email LIKE '%admin%' OR username LIKE '%admin%'
       `.catch(() => [] as any[]);
 
-      const adminUserIds = Array.from(new Set(adminMembers.map((m) => m.user_id).filter(Boolean)));
+      const adminUserIds = Array.from(
+        new Set(adminMembers.map((m) => m.user_id).filter(Boolean)),
+      );
 
       for (const adminId of adminUserIds) {
         const notifId = crypto.randomUUID();
@@ -568,7 +612,9 @@ export class ConnectPublicRegistrationService {
             ${safeData}::jsonb, 'navigate', 'Xem hồ sơ & duyệt', ${actionTarget}::jsonb,
             'high', 'delivered', 'crm', 'crm', ${now}, ${now}, ${`assoc_alert:${notifId}`}
           )
-        `.catch((err) => console.warn('Error inserting business_notification for admin:', err));
+        `.catch((err) =>
+          console.warn('Error inserting business_notification for admin:', err),
+        );
 
         if (this.gateway) {
           this.gateway.emitNotification(adminId, {
@@ -618,5 +664,4 @@ export class ConnectPublicRegistrationService {
       console.warn('Error in notifyAssociationAdmins:', err);
     }
   }
-
 }

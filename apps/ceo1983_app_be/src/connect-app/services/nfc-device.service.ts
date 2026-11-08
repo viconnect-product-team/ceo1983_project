@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class ConnectNfcService {
-  constructor(
-    private prisma: PrismaService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async listMyDeviceSessions(userId: string, currentKey: string | null) {
     const rows = await this.prisma.$queryRaw<any[]>`
@@ -16,15 +18,19 @@ export class ConnectNfcService {
       ORDER BY last_seen_at DESC
     `.catch(() => [] as any[]);
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.id,
       deviceKey: r.device_key,
-      label: r.device_label ?? "Thiết bị",
+      label: r.device_label ?? 'Thiết bị',
       platform: r.platform,
       browser: r.browser,
       isStandalone: r.is_standalone,
-      firstSeenAt: r.first_seen_at ? new Date(r.first_seen_at).toISOString() : null,
-      lastSeenAt: r.last_seen_at ? new Date(r.last_seen_at).toISOString() : null,
+      firstSeenAt: r.first_seen_at
+        ? new Date(r.first_seen_at).toISOString()
+        : null,
+      lastSeenAt: r.last_seen_at
+        ? new Date(r.last_seen_at).toISOString()
+        : null,
       revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
       isCurrent: currentKey !== null && r.device_key === currentKey,
     }));
@@ -61,7 +67,11 @@ export class ConnectNfcService {
     return { revoked: false };
   }
 
-  async revokeMyDeviceSession(userId: string, sessionId: string, currentKey: string | null) {
+  async revokeMyDeviceSession(
+    userId: string,
+    sessionId: string,
+    currentKey: string | null,
+  ) {
     const now = new Date();
     await this.prisma.$executeRaw`
       UPDATE public.user_device_sessions
@@ -82,12 +92,16 @@ export class ConnectNfcService {
     return {
       id: r.id,
       deviceKey: r.device_key,
-      label: r.device_label ?? "Thiết bị",
+      label: r.device_label ?? 'Thiết bị',
       platform: r.platform,
       browser: r.browser,
       isStandalone: r.is_standalone,
-      firstSeenAt: r.first_seen_at ? new Date(r.first_seen_at).toISOString() : null,
-      lastSeenAt: r.last_seen_at ? new Date(r.last_seen_at).toISOString() : null,
+      firstSeenAt: r.first_seen_at
+        ? new Date(r.first_seen_at).toISOString()
+        : null,
+      lastSeenAt: r.last_seen_at
+        ? new Date(r.last_seen_at).toISOString()
+        : null,
       revokedAt: r.revoked_at ? new Date(r.revoked_at).toISOString() : null,
       isCurrent: currentKey !== null && r.device_key === currentKey,
     };
@@ -103,7 +117,7 @@ export class ConnectNfcService {
       ORDER BY t.created_at DESC
     `.catch(() => [] as any[]);
 
-    return rows.map(r => {
+    return rows.map((r) => {
       let derivedStatus = 'STALE';
       if (r.status === 'revoked') derivedStatus = 'REVOKED';
       else if (r.link_status === 'active') derivedStatus = 'ACTIVE';
@@ -113,7 +127,9 @@ export class ConnectNfcService {
         label: r.label,
         status: derivedStatus,
         writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
-        lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+        lastTappedAt: r.link_last_used_at
+          ? new Date(r.link_last_used_at).toISOString()
+          : null,
         updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
       };
     });
@@ -160,7 +176,9 @@ export class ConnectNfcService {
       label: r.label,
       status: derivedStatus,
       writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
-      lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+      lastTappedAt: r.link_last_used_at
+        ? new Date(r.link_last_used_at).toISOString()
+        : null,
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
     };
   }
@@ -194,7 +212,9 @@ export class ConnectNfcService {
       label: r.label,
       status: derivedStatus,
       writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
-      lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+      lastTappedAt: r.link_last_used_at
+        ? new Date(r.link_last_used_at).toISOString()
+        : null,
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
     };
   }
@@ -228,7 +248,9 @@ export class ConnectNfcService {
       label: r.label,
       status: derivedStatus,
       writtenAt: r.written_at ? new Date(r.written_at).toISOString() : null,
-      lastTappedAt: r.link_last_used_at ? new Date(r.link_last_used_at).toISOString() : null,
+      lastTappedAt: r.link_last_used_at
+        ? new Date(r.link_last_used_at).toISOString()
+        : null,
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
     };
   }

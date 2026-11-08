@@ -34,21 +34,25 @@ export class UsersController {
 
   @Get('me')
   async getMyAccount(@Request() req: any) {
-    const userId = req.user?.id || req.user?.sub || req.user?.userId || '00000000-0000-4000-8000-000000000002';
+    const userId =
+      req.user?.id ||
+      req.user?.sub ||
+      req.user?.userId ||
+      '00000000-0000-4000-8000-000000000002';
     return this.usersService.getAccountDetails(userId);
   }
 
   @Put('me')
   @Patch('me')
-  async updateMyAccount(@Request() req: any, @Body() body: UpdateAccountProfileDto) {
+  async updateMyAccount(
+    @Request() req: any,
+    @Body() body: UpdateAccountProfileDto,
+  ) {
     return this.usersService.updateAccountProfile(req.user.id, body);
   }
 
   @Post('change-password')
-  async changePassword(
-    @Request() req: any,
-    @Body() body: ChangePasswordDto,
-  ) {
+  async changePassword(@Request() req: any, @Body() body: ChangePasswordDto) {
     const userId = req.user?.id || req.user?.sub || req.user?.userId || '';
     return this.usersService.changePassword(
       userId,
@@ -64,20 +68,22 @@ export class UsersController {
   }
 
   @Post('deactivate')
-  async deactivateAccount(@Request() req: any, @Body() body: DeactivateAccountDto) {
+  async deactivateAccount(
+    @Request() req: any,
+    @Body() body: DeactivateAccountDto,
+  ) {
     return this.usersService.deactivateAccount(req.user.id, body?.password);
   }
 
   // ── ADMIN USER MANAGEMENT ──────────────────────────────────────────────────
 
   @Get()
-  async listUsers(
-    @Request() req: any,
-    @Query() query: ListUsersQueryDto,
-  ) {
+  async listUsers(@Request() req: any, @Query() query: ListUsersQueryDto) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
-      throw new ForbiddenException('Bạn không có quyền truy cập danh sách người dùng');
+      throw new ForbiddenException(
+        'Bạn không có quyền truy cập danh sách người dùng',
+      );
     }
     return this.usersService.listUsers({
       search: query.search,
@@ -92,7 +98,9 @@ export class UsersController {
   async getUserById(@Request() req: any, @Param('id') id: string) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin && req.user.id !== id) {
-      throw new ForbiddenException('Không có quyền xem thông tin tài khoản này');
+      throw new ForbiddenException(
+        'Không có quyền xem thông tin tài khoản này',
+      );
     }
     return this.usersService.getAccountDetails(id);
   }
@@ -114,7 +122,9 @@ export class UsersController {
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
-      throw new ForbiddenException('Bạn không có quyền chỉnh sửa tài khoản này');
+      throw new ForbiddenException(
+        'Bạn không có quyền chỉnh sửa tài khoản này',
+      );
     }
     return this.usersService.adminUpdateUser(id, body);
   }
@@ -127,7 +137,9 @@ export class UsersController {
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
-      throw new ForbiddenException('Bạn không có quyền thay đổi trạng thái tài khoản');
+      throw new ForbiddenException(
+        'Bạn không có quyền thay đổi trạng thái tài khoản',
+      );
     }
     return this.usersService.adminToggleStatus(id, body?.status);
   }
@@ -140,7 +152,9 @@ export class UsersController {
   ) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
-      throw new ForbiddenException('Bạn không có quyền đặt lại mật khẩu tài khoản này');
+      throw new ForbiddenException(
+        'Bạn không có quyền đặt lại mật khẩu tài khoản này',
+      );
     }
     return this.usersService.adminResetPassword(id, body.newPassword);
   }
@@ -149,7 +163,9 @@ export class UsersController {
   async deleteUser(@Request() req: any, @Param('id') id: string) {
     const isAdmin = await this.usersService.checkIsAdmin(req.user.id);
     if (!isAdmin) {
-      throw new ForbiddenException('Bạn không có quyền xóa tài khoản người dùng');
+      throw new ForbiddenException(
+        'Bạn không có quyền xóa tài khoản người dùng',
+      );
     }
     return this.usersService.adminDeleteUser(req.user.id, id);
   }

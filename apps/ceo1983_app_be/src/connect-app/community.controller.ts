@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Request, UseGuards, Param, Query, Delete, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Request,
+  UseGuards,
+  Param,
+  Query,
+  Delete,
+  Patch,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
@@ -42,10 +53,7 @@ export class CommunityController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createCommunity(
-    @Request() req,
-    @Body() body: CreateCommunityDto,
-  ) {
+  async createCommunity(@Request() req, @Body() body: CreateCommunityDto) {
     return this.connectAppService.createCommunity(req.user.id, body);
   }
 
@@ -62,11 +70,17 @@ export class CommunityController {
     @Request() req: any,
     @Body() body: { associationId?: string; logoUrl: string | null },
   ) {
-    return this.connectAppService.updateAssociationLogo(req.user.id, body.associationId, body.logoUrl);
+    return this.connectAppService.updateAssociationLogo(
+      req.user.id,
+      body.associationId,
+      body.logoUrl,
+    );
   }
 
   @Get('logo-history')
-  async getAssociationLogoHistory(@Query('associationId') associationId?: string) {
+  async getAssociationLogoHistory(
+    @Query('associationId') associationId?: string,
+  ) {
     return this.connectAppService.getAssociationLogoHistory(associationId);
   }
 
@@ -94,7 +108,10 @@ export class CommunityController {
 
   @Delete('invites/:inviteRef')
   @UseGuards(JwtAuthGuard)
-  async cancelCommunityInvite(@Request() req, @Param('inviteRef') inviteRef: string) {
+  async cancelCommunityInvite(
+    @Request() req,
+    @Param('inviteRef') inviteRef: string,
+  ) {
     return this.connectAppService.cancelCommunityInvite(req.user.id, inviteRef);
   }
 
@@ -105,18 +122,32 @@ export class CommunityController {
     @Param('inviteRef') inviteRef: string,
     @Body('locale') locale?: string,
   ) {
-    return this.connectAppService.resendCommunityInvite(req.user.id, inviteRef, locale);
+    return this.connectAppService.resendCommunityInvite(
+      req.user.id,
+      inviteRef,
+      locale,
+    );
   }
 
   @Get('invites/token/:token')
-  async getCommunityInviteByToken(@Request() req, @Param('token') token: string) {
+  async getCommunityInviteByToken(
+    @Request() req,
+    @Param('token') token: string,
+  ) {
     return this.connectAppService.getCommunityInviteByToken(req.user.id, token);
   }
 
   @Post('invites/accept')
   @UseGuards(JwtAuthGuard)
-  async acceptCommunityInvite(@Request() req, @Body() body: { token: string; email: string }) {
-    return this.connectAppService.acceptCommunityInvite(req.user.id, body.token, body.email);
+  async acceptCommunityInvite(
+    @Request() req,
+    @Body() body: { token: string; email: string },
+  ) {
+    return this.connectAppService.acceptCommunityInvite(
+      req.user.id,
+      body.token,
+      body.email,
+    );
   }
 
   @Patch('invites/:inviteRef/role')
@@ -126,23 +157,42 @@ export class CommunityController {
     @Param('inviteRef') inviteRef: string,
     @Body('role') role: 'admin' | 'member',
   ) {
-    return this.connectAppService.updateAcceptedInviteRole(req.user.id, inviteRef, role);
+    return this.connectAppService.updateAcceptedInviteRole(
+      req.user.id,
+      inviteRef,
+      role,
+    );
   }
 
   @Get('invites/:inviteRef/role-history')
-  async listInviteRoleHistory(@Request() req, @Param('inviteRef') inviteRef: string) {
+  async listInviteRoleHistory(
+    @Request() req,
+    @Param('inviteRef') inviteRef: string,
+  ) {
     return this.connectAppService.listInviteRoleHistory(req.user.id, inviteRef);
   }
 
   // --- Parameterized :communityId Routes ---
   @Get(':communityId')
-  async getCommunityDetail(@Request() req, @Param('communityId') communityId: string) {
-    return this.connectAppService.getCommunityDetail(req.user.id, cleanCommunityId(communityId));
+  async getCommunityDetail(
+    @Request() req,
+    @Param('communityId') communityId: string,
+  ) {
+    return this.connectAppService.getCommunityDetail(
+      req.user.id,
+      cleanCommunityId(communityId),
+    );
   }
 
   @Get(':communityId/activity-preview')
-  async getCommunityActivityPreview(@Request() req, @Param('communityId') communityId: string) {
-    return this.connectAppService.getCommunityActivityPreview(req.user.id, cleanCommunityId(communityId));
+  async getCommunityActivityPreview(
+    @Request() req,
+    @Param('communityId') communityId: string,
+  ) {
+    return this.connectAppService.getCommunityActivityPreview(
+      req.user.id,
+      cleanCommunityId(communityId),
+    );
   }
 
   @Get(':communityId/members')
@@ -168,7 +218,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('memberRef') memberRef: string,
   ) {
-    return this.connectAppService.getCommunityMemberProfile(req.user.id, communityId, memberRef);
+    return this.connectAppService.getCommunityMemberProfile(
+      req.user.id,
+      communityId,
+      memberRef,
+    );
   }
 
   @Post(':communityId/members/:memberRef/connect')
@@ -178,7 +232,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('memberRef') memberRef: string,
   ) {
-    return this.connectAppService.connectCommunityMember(req.user.id, communityId, memberRef);
+    return this.connectAppService.connectCommunityMember(
+      req.user.id,
+      communityId,
+      memberRef,
+    );
   }
 
   @Patch(':communityId/members/:memberRef/role')
@@ -189,7 +247,12 @@ export class CommunityController {
     @Param('memberRef') memberRef: string,
     @Body('role') role: string,
   ) {
-    return this.connectAppService.updateCommunityMemberRole(req.user.id, communityId, memberRef, role);
+    return this.connectAppService.updateCommunityMemberRole(
+      req.user.id,
+      communityId,
+      memberRef,
+      role,
+    );
   }
 
   // --- Community News ---
@@ -212,7 +275,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('newsRef') newsRef: string,
   ) {
-    return this.connectAppService.getCommunityNewsDetail(req.user.id, communityId, newsRef);
+    return this.connectAppService.getCommunityNewsDetail(
+      req.user.id,
+      communityId,
+      newsRef,
+    );
   }
 
   @Post(':communityId/join-requests')
@@ -222,7 +289,10 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Body() body: { note?: string | null },
   ) {
-    return this.connectAppService.requestCommunityJoin(req.user.id, { communityId, note: body.note });
+    return this.connectAppService.requestCommunityJoin(req.user.id, {
+      communityId,
+      note: body.note,
+    });
   }
 
   @Delete(':communityId/join-requests')
@@ -232,35 +302,71 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Body() body: { cancelReason?: string | null },
   ) {
-    return this.connectAppService.cancelCommunityJoin(req.user.id, { communityId, cancelReason: body.cancelReason });
+    return this.connectAppService.cancelCommunityJoin(req.user.id, {
+      communityId,
+      cancelReason: body.cancelReason,
+    });
   }
 
   // --- Community Invites (:communityId) ---
   @Get(':communityId/invites')
   @UseGuards(JwtAuthGuard)
-  async listCommunityInvites(@Request() req, @Param('communityId') communityId: string) {
-    return this.connectAppService.listCommunityInvites(req.user.id, communityId);
+  async listCommunityInvites(
+    @Request() req,
+    @Param('communityId') communityId: string,
+  ) {
+    return this.connectAppService.listCommunityInvites(
+      req.user.id,
+      communityId,
+    );
   }
 
   @Post(':communityId/invites')
   @UseGuards(JwtAuthGuard)
-  async createCommunityInvite(@Request() req, @Param('communityId') communityId: string, @Body() body: any) {
-    return this.connectAppService.createCommunityInvite(req.user.id, { ...body, communityId });
+  async createCommunityInvite(
+    @Request() req,
+    @Param('communityId') communityId: string,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.createCommunityInvite(req.user.id, {
+      ...body,
+      communityId,
+    });
   }
 
   @Get(':communityId/invite-templates')
-  async listCommunityInviteTemplates(@Request() req, @Param('communityId') communityId: string) {
-    return this.connectAppService.listCommunityInviteTemplates(req.user.id, communityId);
+  async listCommunityInviteTemplates(
+    @Request() req,
+    @Param('communityId') communityId: string,
+  ) {
+    return this.connectAppService.listCommunityInviteTemplates(
+      req.user.id,
+      communityId,
+    );
   }
 
   @Post(':communityId/invite-templates')
-  async saveCommunityInviteTemplate(@Request() req, @Param('communityId') communityId: string, @Body() body: any) {
-    return this.connectAppService.saveCommunityInviteTemplate(req.user.id, { ...body, communityId });
+  async saveCommunityInviteTemplate(
+    @Request() req,
+    @Param('communityId') communityId: string,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.saveCommunityInviteTemplate(req.user.id, {
+      ...body,
+      communityId,
+    });
   }
 
   @Post(':communityId/invite-templates/reset')
-  async resetCommunityInviteTemplate(@Request() req, @Param('communityId') communityId: string, @Body() body: any) {
-    return this.connectAppService.resetCommunityInviteTemplate(req.user.id, { ...body, communityId });
+  async resetCommunityInviteTemplate(
+    @Request() req,
+    @Param('communityId') communityId: string,
+    @Body() body: any,
+  ) {
+    return this.connectAppService.resetCommunityInviteTemplate(req.user.id, {
+      ...body,
+      communityId,
+    });
   }
 
   // --- Community Activity ---
@@ -285,7 +391,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('eventRef') eventRef: string,
   ) {
-    return this.connectAppService.getCommunityEventDetail(req.user.id, communityId, eventRef);
+    return this.connectAppService.getCommunityEventDetail(
+      req.user.id,
+      communityId,
+      eventRef,
+    );
   }
 
   @Post(':communityId/events/:eventRef/registrations')
@@ -295,7 +405,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('eventRef') eventRef: string,
   ) {
-    return this.connectAppService.registerCommunityEvent(req.user.id, communityId, eventRef);
+    return this.connectAppService.registerCommunityEvent(
+      req.user.id,
+      communityId,
+      eventRef,
+    );
   }
 
   @Delete(':communityId/events/:eventRef/registrations')
@@ -305,7 +419,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('eventRef') eventRef: string,
   ) {
-    return this.connectAppService.cancelCommunityEventRegistration(req.user.id, communityId, eventRef);
+    return this.connectAppService.cancelCommunityEventRegistration(
+      req.user.id,
+      communityId,
+      eventRef,
+    );
   }
 
   @Get(':communityId/opportunities')
@@ -329,7 +447,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('opportunityRef') opportunityRef: string,
   ) {
-    return this.connectAppService.getCommunityOpportunityDetail(req.user.id, communityId, opportunityRef);
+    return this.connectAppService.getCommunityOpportunityDetail(
+      req.user.id,
+      communityId,
+      opportunityRef,
+    );
   }
 
   @Post(':communityId/opportunities')
@@ -339,7 +461,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Body() body: any,
   ) {
-    return this.connectAppService.createCommunityOpportunity(req.user.id, communityId, body);
+    return this.connectAppService.createCommunityOpportunity(
+      req.user.id,
+      communityId,
+      body,
+    );
   }
 
   @Post(':communityId/news')
@@ -349,7 +475,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Body() body: any,
   ) {
-    return this.connectAppService.createCommunityNews(req.user.id, communityId, body);
+    return this.connectAppService.createCommunityNews(
+      req.user.id,
+      communityId,
+      body,
+    );
   }
 
   @Post(':communityId/opportunities/:opportunityRef/claim')
@@ -359,7 +489,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('opportunityRef') opportunityRef: string,
   ) {
-    return this.connectAppService.claimCommunityOpportunity(req.user.id, communityId, opportunityRef);
+    return this.connectAppService.claimCommunityOpportunity(
+      req.user.id,
+      communityId,
+      opportunityRef,
+    );
   }
 
   @Post(':communityId/opportunities/:opportunityRef/interests')
@@ -385,7 +519,11 @@ export class CommunityController {
     @Param('communityId') communityId: string,
     @Param('opportunityRef') opportunityRef: string,
   ) {
-    return this.connectAppService.withdrawCommunityOpportunityInterest(req.user.id, communityId, opportunityRef);
+    return this.connectAppService.withdrawCommunityOpportunityInterest(
+      req.user.id,
+      communityId,
+      opportunityRef,
+    );
   }
 
   @Post(':communityId/opportunities/:opportunityRef/followups')
@@ -446,16 +584,25 @@ export class CommunityController {
     @Param('opportunityRef') opportunityRef: string,
     @Body() body: any,
   ) {
-    return this.connectAppService.addCommunityOpportunityAttachment(req.user.id, {
-      ...body,
-      communityId,
-      opportunityRef,
-    });
+    return this.connectAppService.addCommunityOpportunityAttachment(
+      req.user.id,
+      {
+        ...body,
+        communityId,
+        opportunityRef,
+      },
+    );
   }
 
   @Delete('opportunities/attachments/:attachmentId')
   @UseGuards(JwtAuthGuard)
-  async removeCommunityOpportunityAttachment(@Request() req, @Param('attachmentId') attachmentId: string) {
-    return this.connectAppService.removeCommunityOpportunityAttachment(req.user.id, attachmentId);
+  async removeCommunityOpportunityAttachment(
+    @Request() req,
+    @Param('attachmentId') attachmentId: string,
+  ) {
+    return this.connectAppService.removeCommunityOpportunityAttachment(
+      req.user.id,
+      attachmentId,
+    );
   }
 }

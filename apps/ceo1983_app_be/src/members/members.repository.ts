@@ -5,16 +5,24 @@ import { PrismaService } from '../prisma/prisma.service';
 export class MembersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async queryRaw<T = any>(query: TemplateStringsArray, ...values: any[]): Promise<T[]> {
+  async queryRaw<T = any>(
+    query: TemplateStringsArray,
+    ...values: any[]
+  ): Promise<T[]> {
     return this.prisma.$queryRaw<T[]>(query, ...values).catch(() => [] as T[]);
   }
 
-  async executeRaw(query: TemplateStringsArray, ...values: any[]): Promise<number> {
+  async executeRaw(
+    query: TemplateStringsArray,
+    ...values: any[]
+  ): Promise<number> {
     return this.prisma.$executeRaw(query, ...values).catch(() => 0);
   }
 
   async queryRawUnsafe<T = any>(query: string, ...values: any[]): Promise<T[]> {
-    return this.prisma.$queryRawUnsafe<T[]>(query, ...values).catch(() => [] as T[]);
+    return this.prisma
+      .$queryRawUnsafe<T[]>(query, ...values)
+      .catch(() => [] as T[]);
   }
 
   async executeRawUnsafe(query: string, ...values: any[]): Promise<number> {
@@ -57,9 +65,11 @@ export class MembersRepository {
   }
 
   async findVioneUserById(id: string): Promise<any | null> {
-    return this.prisma.vione_users.findUnique({
-      where: { id },
-    }).catch(() => null);
+    return this.prisma.vione_users
+      .findUnique({
+        where: { id },
+      })
+      .catch(() => null);
   }
 
   async findFirstAssociation(): Promise<any | null> {
@@ -69,7 +79,11 @@ export class MembersRepository {
     return rows[0] || null;
   }
 
-  async findDirectoryMembers(assocId: string | null, userId?: string, connectedOnly?: boolean): Promise<any[]> {
+  async findDirectoryMembers(
+    assocId: string | null,
+    userId?: string,
+    connectedOnly?: boolean,
+  ): Promise<any[]> {
     if (connectedOnly && userId) {
       if (assocId) {
         return this.prisma.$queryRaw<any[]>`
@@ -91,7 +105,10 @@ export class MembersRepository {
           WHERE m.association_id::text = ${assocId}::text AND m.status = 'active'
           ORDER BY m.name ASC
         `.catch((err) => {
-          console.error('findDirectoryMembers connected assoc query error:', err);
+          console.error(
+            'findDirectoryMembers connected assoc query error:',
+            err,
+          );
           return [];
         });
       } else {

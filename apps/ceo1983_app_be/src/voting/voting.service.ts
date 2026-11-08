@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Optional,
+} from '@nestjs/common';
 import * as crypto from 'crypto';
 import { VotingRepository } from './voting.repository';
 import { CreatePollDto, CastVoteDto } from './dto';
@@ -25,11 +30,15 @@ export class VotingService {
     }));
 
     const totalVotes = opts.reduce((sum, o) => sum + o.votesCount, 0);
-    const maxVotes = opts.length > 0 ? Math.max(...opts.map((o) => o.votesCount)) : 0;
+    const maxVotes =
+      opts.length > 0 ? Math.max(...opts.map((o) => o.votesCount)) : 0;
 
     return opts.map((o) => ({
       ...o,
-      percentage: totalVotes > 0 ? Number(((o.votesCount / totalVotes) * 100).toFixed(1)) : 0,
+      percentage:
+        totalVotes > 0
+          ? Number(((o.votesCount / totalVotes) * 100).toFixed(1))
+          : 0,
       isLeading: totalVotes > 0 && o.votesCount === maxVotes && maxVotes > 0,
     }));
   }
@@ -129,7 +138,12 @@ export class VotingService {
     };
   }
 
-  async castVote(userId: string, pollId: string, optionId: string, sourceApp: string = 'association_app') {
+  async castVote(
+    userId: string,
+    pollId: string,
+    optionId: string,
+    sourceApp: string = 'association_app',
+  ) {
     if (!pollId || !optionId) {
       throw new BadRequestException('pollId and optionId are required');
     }
@@ -137,13 +151,25 @@ export class VotingService {
     const validSource = sourceApp === 'crm' ? 'crm' : 'association_app';
     const voteId = crypto.randomUUID();
 
-    await this.votingRepo.insertVote(voteId, pollId, optionId, userId, validSource);
+    await this.votingRepo.insertVote(
+      voteId,
+      pollId,
+      optionId,
+      userId,
+      validSource,
+    );
     return this.getPollById(userId, pollId);
   }
 
   async createPoll(userId: string, data: CreatePollDto) {
-    if (!data.title || !Array.isArray(data.options) || data.options.length < 2) {
-      throw new BadRequestException('Tiêu đề và ít nhất 2 phương án bình chọn là bắt buộc');
+    if (
+      !data.title ||
+      !Array.isArray(data.options) ||
+      data.options.length < 2
+    ) {
+      throw new BadRequestException(
+        'Tiêu đề và ít nhất 2 phương án bình chọn là bắt buộc',
+      );
     }
 
     const pollId = crypto.randomUUID();
@@ -154,7 +180,10 @@ export class VotingService {
     if (!startDate && !endDate && eventId) {
       const ev = await this.votingRepo.findEventDate(eventId);
       if (ev.length > 0 && ev[0].date) {
-        const evDateStr = ev[0].date instanceof Date ? ev[0].date.toISOString().slice(0, 10) : String(ev[0].date).slice(0, 10);
+        const evDateStr =
+          ev[0].date instanceof Date
+            ? ev[0].date.toISOString().slice(0, 10)
+            : String(ev[0].date).slice(0, 10);
         startDate = evDateStr;
         endDate = evDateStr;
       }
@@ -163,13 +192,24 @@ export class VotingService {
     if (startDate && !endDate) endDate = startDate;
     if (!startDate && endDate) startDate = endDate;
 
-    let startDt = startDate ? new Date(startDate) : new Date();
-    let endDt = endDate ? new Date(endDate) : new Date(startDt);
-    if (startDate && endDate && String(startDate).slice(0, 10) === String(endDate).slice(0, 10)) {
+    const startDt = startDate ? new Date(startDate) : new Date();
+    const endDt = endDate ? new Date(endDate) : new Date(startDt);
+    if (
+      startDate &&
+      endDate &&
+      String(startDate).slice(0, 10) === String(endDate).slice(0, 10)
+    ) {
       endDt.setHours(23, 59, 59, 999);
     }
 
-    await this.votingRepo.insertPoll(pollId, data.title, data.description || null, startDt, endDt, eventId);
+    await this.votingRepo.insertPoll(
+      pollId,
+      data.title,
+      data.description || null,
+      startDt,
+      endDt,
+      eventId,
+    );
 
     const createdOptions: Array<{ id: string; title: string }> = [];
     for (const optTitle of data.options) {
@@ -183,7 +223,9 @@ export class VotingService {
       const audience = data.targetAudience || 'all';
       const users = await this.votingRepo.findAudienceUsers(audience);
       const notifTitle = `[Biểu quyết mới] ${data.title}`;
-      const notifBody = data.description || 'Tham gia biểu quyết ý kiến ngay trên ứng dụng Hiệp hội & CRM.';
+      const notifBody =
+        data.description ||
+        'Tham gia biểu quyết ý kiến ngay trên ứng dụng Hiệp hội & CRM.';
       const safeDisplayData = JSON.stringify({
         title: data.title,
         body: notifBody,
@@ -197,10 +239,21 @@ export class VotingService {
       for (const u of users) {
         if (!u.id) continue;
         const dedupeKey = `poll-notif-${pollId}-${u.id}`;
-        await this.votingRepo.createNotification(u.id, notifTitle, notifBody, pollId, safeDisplayData, dedupeKey, 'interactive_poll');
+        await this.votingRepo.createNotification(
+          u.id,
+          notifTitle,
+          notifBody,
+          pollId,
+          safeDisplayData,
+          dedupeKey,
+          'interactive_poll',
+        );
       }
     } catch (err: any) {
-      console.warn('[VotingService] Error broadcasting poll notification:', err?.message);
+      console.warn(
+        '[VotingService] Error broadcasting poll notification:',
+        err?.message,
+      );
     }
 
     return this.getPollById(userId, pollId);
@@ -211,7 +264,8 @@ export class VotingService {
 
     await this.votingRepo.markPollClosed(id);
     const poll = await this.getPollById(userId, id);
-    const leadingOption = poll.options.find((o: any) => o.isLeading) || poll.options[0] || null;
+    const leadingOption =
+      poll.options.find((o: any) => o.isLeading) || poll.options[0] || null;
 
     try {
       const users = await this.votingRepo.findAudienceUsers('all');
@@ -234,10 +288,21 @@ export class VotingService {
       for (const u of users) {
         if (!u.id) continue;
         const dedupeKey = `poll-result-${id}-${u.id}`;
-        await this.votingRepo.createNotification(u.id, notifTitle, notifBody, id, safeDisplayData, dedupeKey, 'poll_result');
+        await this.votingRepo.createNotification(
+          u.id,
+          notifTitle,
+          notifBody,
+          id,
+          safeDisplayData,
+          dedupeKey,
+          'poll_result',
+        );
       }
     } catch (err: any) {
-      console.warn('[VotingService] Error broadcasting poll close notification:', err?.message);
+      console.warn(
+        '[VotingService] Error broadcasting poll close notification:',
+        err?.message,
+      );
     }
 
     return poll;
@@ -245,19 +310,36 @@ export class VotingService {
 
   async updatePoll(userId: string, id: string, data: any) {
     if (!id) throw new BadRequestException('ID is required');
-    const eventId = data.eventId !== undefined ? data.eventId : (data.event_id !== undefined ? data.event_id : null);
-    let startDate = (data as any).startsAt || data.startDate || null;
-    let endDate = (data as any).endsAt || data.endDate || null;
+    const eventId =
+      data.eventId !== undefined
+        ? data.eventId
+        : data.event_id !== undefined
+          ? data.event_id
+          : null;
+    let startDate = data.startsAt || data.startDate || null;
+    let endDate = data.endsAt || data.endDate || null;
     if (startDate && !endDate) endDate = startDate;
     if (!startDate && endDate) startDate = endDate;
 
-    let startDt = startDate ? new Date(startDate) : null;
-    let endDt = endDate ? new Date(endDate) : null;
-    if (startDt && endDt && String(startDate).slice(0, 10) === String(endDate).slice(0, 10)) {
+    const startDt = startDate ? new Date(startDate) : null;
+    const endDt = endDate ? new Date(endDate) : null;
+    if (
+      startDt &&
+      endDt &&
+      String(startDate).slice(0, 10) === String(endDate).slice(0, 10)
+    ) {
       endDt.setHours(23, 59, 59, 999);
     }
 
-    await this.votingRepo.updatePollRaw(id, data.title, data.description || null, data.status || null, startDt, endDt, eventId);
+    await this.votingRepo.updatePollRaw(
+      id,
+      data.title,
+      data.description || null,
+      data.status || null,
+      startDt,
+      endDt,
+      eventId,
+    );
     return this.getPollById(userId, id);
   }
 
@@ -267,20 +349,26 @@ export class VotingService {
     return { ok: true, id };
   }
 
-  async notifyLuckyDrawWinner(userId: string, data: {
-    winnerName: string;
-    winnerCompany?: string;
-    winnerCode?: string;
-    luckyNumber?: string;
-    prize: string;
-    eventName?: string;
-    eventId?: string;
-  }) {
+  async notifyLuckyDrawWinner(
+    userId: string,
+    data: {
+      winnerName: string;
+      winnerCompany?: string;
+      winnerCode?: string;
+      luckyNumber?: string;
+      prize: string;
+      eventName?: string;
+      eventId?: string;
+    },
+  ) {
     const title = `🎁 [Ưu Đãi Trúng Thưởng] Chúc mừng bạn đã trúng ${data.prize}!`;
     const body = `Ban Tổ chức CLB Doanh Nhân CEO 1983 xin trân trọng chúc mừng Anh/Chị ${data.winnerName} (${data.winnerCompany || 'Hội viên'}, Số may mắn: #${data.luckyNumber || 'LUCKY'}) đã xuất sắc trúng giải thưởng "${data.prize}" tại sự kiện "${data.eventName || 'Sự kiện CEO 1983'}". Phần thưởng đã được đẩy vào mục Ưu Đãi của bạn!`;
 
     const targetCode = data.winnerCode || data.luckyNumber;
-    const recipients = await this.votingRepo.findMemberForLuckyDraw(targetCode, data.winnerName);
+    const recipients = await this.votingRepo.findMemberForLuckyDraw(
+      targetCode,
+      data.winnerName,
+    );
     const safeDisplayData = JSON.stringify({
       winnerName: data.winnerName,
       winnerCompany: data.winnerCompany,
@@ -305,23 +393,28 @@ export class VotingService {
       safeDisplayData,
       targetMemberCode,
       data.prize,
-      data.eventName
+      data.eventName,
     );
 
     // Bắn email chúc mừng trúng thưởng tới người trúng giải
     if (this.mailService && recipientEmail) {
-      this.mailService.sendLuckyDrawWinnerEmail({
-        to: recipientEmail,
-        winnerName: data.winnerName,
-        winnerCompany: data.winnerCompany,
-        winnerCode: targetMemberCode,
-        luckyNumber: data.luckyNumber,
-        prizeTitle: data.prize,
-        eventName: data.eventName || 'Sự kiện CLB CEO 1983',
-        perkUrl: 'https://ceo1983.viconnect.vn/association/perks',
-      }).catch((err) => {
-        console.warn('[notifyLuckyDrawWinner] Failed to send winner email:', err?.message);
-      });
+      this.mailService
+        .sendLuckyDrawWinnerEmail({
+          to: recipientEmail,
+          winnerName: data.winnerName,
+          winnerCompany: data.winnerCompany,
+          winnerCode: targetMemberCode,
+          luckyNumber: data.luckyNumber,
+          prizeTitle: data.prize,
+          eventName: data.eventName || 'Sự kiện CLB CEO 1983',
+          perkUrl: 'https://ceo1983.viconnect.vn/association/perks',
+        })
+        .catch((err) => {
+          console.warn(
+            '[notifyLuckyDrawWinner] Failed to send winner email:',
+            err?.message,
+          );
+        });
     }
 
     return {
