@@ -1,5 +1,109 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 08/11/2026 (v10.67): Triển Khai Toàn Diện Bộ Unit Test Cho Cả Web CRM & CEO 1983 Mobile App (Đạt 82/82 Tests PASS 100% - BE: 41 Tests, FE: 41 Tests) ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Tổng Thể Bộ Unit Test Độc Lập*:
+     - **Backend NestJS (Jest)**: **18 Test Suites, 41 Tests PASS (100%)**, 0 lỗi.
+     - **Frontend React 19 / TanStack Router (Vitest)**: **7 Test Suites, 41 Tests PASS (100%)**, 0 lỗi.
+     - **Tổng cộng**: **82 Unit Tests đạt tỷ lệ thành công 100%**.
+  2. *Danh Mục 18 Test Suites Backend (`apps/ceo1983_app_be/src/__tests__/`)*:
+     - `crm-rbac-permissions.spec.ts`: Xác thực ma trận phân quyền 6 Ban chuyên môn, kiểm tra cấm quyền hội viên sửa cấu hình hệ thống, và cấp phép Ban Truyền Thông/Ban Hội Viên.
+     - `crm-finance-invoices.spec.ts`: Kiểm thử tạo hóa đơn niên liễm, đối soát trạng thái `pending`/`paid`, sinh mã VietQR thanh toán.
+     - `crm-events-checkin.spec.ts`: Kiểm thử soát vé QR Gate độc lập <0.3s, tự động cập nhật trạng thái `attended`, kiểm thử sơ đồ bàn tiệc Cinema Seating.
+     - `crm-meetings-workspace.spec.ts`: Quản lý cuộc họp ban cố định/bất thường, không gian làm việc Workspace và tổng hợp kết luận.
+     - `crm-tasks-kanban.spec.ts`: Tạo công việc, gán người thực hiện (assignee), chuyển dịch trạng thái tiến độ trên bảng Kanban.
+     - `crm-documents.spec.ts`: Quản lý văn kiện số hóa điều lệ CLB, gắn dấu sao văn bản quan trọng.
+     - `app-opportunities-deal.spec.ts`: Kiểm tra cơ hội Public vs Assigned, tính toán tỷ lệ % đàm phán deal, chống tạo trùng lặp trong 1 giờ.
+     - `app-marketplace.spec.ts`: Kiểm thử sàn TMĐT nội khối, giới hạn tối đa 5 sản phẩm/DN, lọc sản phẩm active và tính giá ưu đãi hội viên.
+     - `app-feed-comments.spec.ts`: Đăng bài kèm mã QR sự kiện, thích bài viết, bình luận phân cấp và gắn thẻ @ đối tác.
+     - `app-dm-chat.spec.ts`: Kiểm thử phân giải mã hội viên (memberCode resolution), tạo hồ sơ hội viên tự động, lấy danh sách cuộc trò chuyện B2B.
+     - `system-zalo-oa.spec.ts`: Kiểm thử quản lý token Zalo OA, cơ chế tự động refresh token định kỳ 6 tiếng.
+     - `auth.service.spec.ts`, `auth.controller.spec.ts`: Kiểm thử đăng nhập, sinh JWT token và bảo vệ endpoint.
+     - `business-card.service.spec.ts`, `business-card.controller.spec.ts`: Kiểm thử danh thiếp điện tử và chia sẻ thông tin.
+     - `prisma.service.spec.ts`, `users.service.spec.ts`, `app.controller.spec.ts`: Kiểm thử tầng dữ liệu và người dùng.
+  3. *Danh Mục 7 Test Suites Frontend (`apps/ceo1983_app_fe/src/__tests__/unit/`)*:
+     - `formatters.test.ts`: Định dạng ngày chuẩn Việt Nam (`formatDisplayDate`, `formatFullVnDate`), lọc số điện thoại (`sanitizePhoneNumber`), lời chào theo giờ (`getVNTimeGreeting`), sinh chuỗi UUID an toàn.
+     - `deal-margin.test.ts`: Tính toán tỷ lệ % deal so với ngân sách kỳ vọng (`dealPercent`), biên lợi nhuận (`+X% lời`), xếp hạng deal giảm dần theo giá trị có lợi nhất cho người đăng.
+     - `theme-branding.test.ts`: Kiểm tra hệ thống 3 màu thương hiệu (Mức 1 Đỏ, Mức 2 Vàng/Hổ phách, Mức 3 Xanh Navy), cấm màu tím/hồng/neon, bắt buộc nút bấm dùng solid Navy `#003B95` không dùng gradient.
+     - `vietqr-payload.test.ts`: Sinh URL ảnh VietQR Napas247, mã hóa nội dung chuyển khoản tiếng Việt, xử lý tài khoản và số tiền thanh toán.
+     - `comment-tree.test.ts`: Thuật toán chuyển đổi danh sách phẳng thành cây phân cấp Facebook (`organizeCommentsTree`), bình luận gốc mới nhất ở trên, câu trả lời con theo thứ tự thời gian tăng dần, nhận diện thẻ `@mention` đối tác.
+     - `analytics-2columns.test.ts`: Quy chuẩn danh mục chia sẻ `external_shares` có đúng 2 cột (Số lượng và Giá trị), các danh mục chuẩn 4 cột (`top_opportunities`, `top_events_meetings`), format tiền gọn (`Tỷ đ`, `Tr đ`).
+     - `pwa-install.test.ts`: Xử lý sự kiện cài đặt 1-chạm PWA độc lập, kích hoạt `beforeinstallprompt` và dispatch sự kiện hướng dẫn cài đặt iOS/Android.
+  4. *Đảm Bảo Chất Lượng Code Tuyệt Đối (Code Quality)*:
+     - Toàn bộ backend và frontend đều vượt qua kiểm tra kiểu tĩnh `tsc --noEmit` với **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Toàn bộ thay đổi lưu an toàn tại local branch `dev`, người dùng toàn quyền chủ động kiểm tra và commit/push.
+
+- **Bản cập nhật ngày 08/11/2026 (v10.66): Hoàn Tất Kiểm Thử Toàn Diện 50/50 Test Cases Đạt Tỷ Lệ Thành Công 100% (PASS: 50 / FAIL: 0) Cho Toàn Bộ Web CRM & CEO 1983 Mobile App Kèm 50 Ảnh Minh Chứng & Báo Cáo Nghiệm Thu ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Kết Quả Kiểm Thử Toàn Diện (Full System Test Suite)*:
+     - **Tổng số test cases**: **50 Cases** bao phủ 15 phân hệ nghiệp vụ cốt lõi.
+     - **Tỷ lệ thành công**: **50 / 50 Cases đạt PASS (100.0%)**, **0 FAIL**.
+     - **3 Tài khoản kiểm thử thực tế**:
+       - `admin@connect.vn` (Vai trò: Superadmin / Chủ tịch / Ban Quản trị tối cao)
+       - `vumikasa6@gmail.com` (Vai trò: Admin / Ban Điều Hành / Ban Thư Ký)
+       - `vupv090120@gmail.com` (Vai trò: Member / Hội viên Doanh nhân chính thức)
+  2. *Độ Bao Phủ 15 Phân Hệ Nghiệp Vụ*:
+     - **Phân hệ 1: Xác thực & Danh tính (Auth & Identity)**: `TC-01` -> `TC-03` (Lấy thông tin tài khoản Me trên CRM, xác thực phiên Ban Điều Hành, đăng nhập Mobile App).
+     - **Phân hệ 2: Phân quyền RBAC & Add Quyền**: `TC-04` -> `TC-07` (Tra cứu ma trận 6 Ban, cập nhật gán thêm quyền cho chuyên ban, kiểm tra quyền tác nghiệp hội viên, truy vết audit log).
+     - **Phân hệ 3: Điều phối công việc Kanban & Assign Giao việc**: `TC-08` -> `TC-11` (Tạo task mới, gán người thực hiện assignee, hội viên cập nhật tiến độ, xem bảng Kanban đa cột).
+     - **Phân hệ 4: Nhắn tin trực tiếp DM & B2B Chat**: `TC-12` -> `TC-15` (Lấy danh sách hội thoại, Admin gửi tin nhắn DM cho Hội viên, Hội viên phản hồi trên Mobile App, xem luồng tin nhắn trên CRM).
+     - **Phân hệ 5: Quản trị hội viên & Hồ sơ 360**: `TC-16` -> `TC-19` (Danh sách hội viên, hồ sơ 360 độ doanh nghiệp, lọc hồ sơ chờ phê duyệt pending, danh bạ đồng niên trên App).
+     - **Phân hệ 6: Sự kiện & Trạm soát vé QR Gate**: `TC-20` -> `TC-23` (Tạo sự kiện Gala có thu phí, hội viên đăng ký nhận vé E-Ticket, vận hành trạm soát vé QR Gate <0.3s, xem sơ đồ bàn tiệc Cinema Seating).
+     - **Phân hệ 7: Cuộc họp ban & Điểm danh check-in độc lập**: `TC-24` -> `TC-26` (Triệu tập cuộc họp ban cố định, không gian điều hành Workspace & tóm tắt, hội viên tra cứu lịch họp trên App).
+     - **Phân hệ 8: Cơ hội giao thương B2B & Deal Margin %**: `TC-27` -> `TC-30` (Đăng tin cơ hội công khai Public, cơ hội bảo mật chỉ định Assigned, gửi đề xuất deal kèm số tiền & % lợi nhuận, đối soát deal sắp xếp theo % lời nhất).
+     - **Phân hệ 9: Sàn TMĐT nội khối & Gian hàng**: `TC-31` -> `TC-33` (Hội viên đăng bán sản phẩm, duyệt danh mục gian hàng marketplace trên App, kiểm duyệt sản phẩm trên Web CRM).
+     - **Phân hệ 10: Mạng lưới bảng tin & Bình luận cây 3 cấp**: `TC-34` -> `TC-37` (Đăng bài kèm mã QR họp mặt, Thích bài viết, bình luận phân cấp gắn thẻ @ đối tác, lấy cây bình luận chuẩn Facebook).
+     - **Phân hệ 11: Tài chính, Sổ quỹ & Thu hội phí VietQR**: `TC-38` -> `TC-41` (Tạo phiếu thu niên liễm, sinh mã thanh toán VietQR Napas247, ghi nhận phiếu chi sổ quỹ, tra cứu lịch sử thu chi).
+     - **Phân hệ 12: Quản trị tài liệu & Văn thư số CLB**: `TC-42` -> `TC-43` (Lưu trữ văn bản quy chế điều lệ PDF, tra cứu danh mục văn kiện & biểu mẫu số hóa).
+     - **Phân hệ 13: Tích hợp Zalo OA & Refresh Token 6h**: `TC-44` -> `TC-45` (Kiểm tra cấu hình & hạn dùng token Zalo OA, kích hoạt làm mới tự động cron 6h).
+     - **Phân hệ 14: Báo cáo thống kê BI & Giao thương 2 cột**: `TC-46` -> `TC-47` (Dashboard trung tâm & chỉ số KPI, biểu đồ xu hướng chuẩn hóa 2 cột Số lượng & Giá trị).
+     - **Phân hệ 15: Cấu hình hệ thống & Theme 3 màu thương hiệu**: `TC-48` -> `TC-50` (Tra cứu cấu hình theme 3 màu, tùy biến màu giao diện trực tuyến, tổng quan thông báo & badge số đếm menu tree).
+  3. *Hạ Tầng Dữ Liệu & Tối Ưu Hóa Kỹ Thuật*:
+     - Chuẩn hóa CSDL `feed_posts`: bổ sung `privacy`, `external_link`, `shared_article`, chuyển đổi cột `images` sang kiểu mảng `text[]`.
+     - Cấu hình Implicit Cast PostgreSQL `text` sang `uuid` giúp API bình luận `feed_comments` tương thích hoàn hảo.
+     - Chuẩn hóa mặc định `association_id` cho bảng `invoices` (`c1983000-0000-4000-8000-000000001983`), bổ sung cột `advance_amount` và `refund_amount` cho `transactions`.
+     - Tích hợp bộ sinh dữ liệu động chống trùng lặp sự kiện và cơ hội trong vòng 1 giờ.
+  4. *Xuất Bản Báo Cáo & Ảnh Minh Chứng*:
+     - **50 Ảnh minh chứng giao diện thực tế**: Lưu tại `test-reports/screenshots/` từ `tc_01_auth_admin_me.png` đến `tc_50_admin_notifications_overview.png`, có HUD Banner hiển thị: Case ID, Actor, Method, API Endpoint, Status, HTTP Code.
+     - **Báo cáo kiểm thử Markdown**: `test-reports/FULL_SYSTEM_TEST_REPORT_CEO1983.md`.
+     - **Báo cáo kiểm thử HTML**: `test-reports/FULL_SYSTEM_TEST_REPORT_CEO1983.html`.
+     - Đồng bộ vào cổng tài liệu trực tuyến: `apps/ceo1983_app_fe/public/docs/`.
+  5. *Đảm Bảo Chất Lượng Code (Code Quality)*:
+     - Chạy `npx tsc --noEmit` cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
+
+# System Memory & Architecture
+
+- **Bản cập nhật ngày 08/11/2026 (v10.67): Triển Khai Toàn Diện Bộ Unit Test Cho Cả Web CRM & CEO 1983 Mobile App (Đạt 82/82 Tests PASS 100% - BE: 41 Tests, FE: 41 Tests) ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Tổng Thể Bộ Unit Test Độc Lập*:
+     - **Backend NestJS (Jest)**: **18 Test Suites, 41 Tests PASS (100%)**, 0 lỗi.
+     - **Frontend React 19 / TanStack Router (Vitest)**: **7 Test Suites, 41 Tests PASS (100%)**, 0 lỗi.
+     - **Tổng cộng**: **82 Unit Tests đạt tỷ lệ thành công 100%**.
+  2. *Danh Mục 18 Test Suites Backend (`apps/ceo1983_app_be/src/__tests__/`)*:
+     - `crm-rbac-permissions.spec.ts`: Xác thực ma trận phân quyền 6 Ban chuyên môn, kiểm tra cấm quyền hội viên sửa cấu hình hệ thống, và cấp phép Ban Truyền Thông/Ban Hội Viên.
+     - `crm-finance-invoices.spec.ts`: Kiểm thử tạo hóa đơn niên liễm, đối soát trạng thái `pending`/`paid`, sinh mã VietQR thanh toán.
+     - `crm-events-checkin.spec.ts`: Kiểm thử soát vé QR Gate độc lập <0.3s, tự động cập nhật trạng thái `attended`, kiểm thử sơ đồ bàn tiệc Cinema Seating.
+     - `crm-meetings-workspace.spec.ts`: Quản lý cuộc họp ban cố định/bất thường, không gian làm việc Workspace và tổng hợp kết luận.
+     - `crm-tasks-kanban.spec.ts`: Tạo công việc, gán người thực hiện (assignee), chuyển dịch trạng thái tiến độ trên bảng Kanban.
+     - `crm-documents.spec.ts`: Quản lý văn kiện số hóa điều lệ CLB, gắn dấu sao văn bản quan trọng.
+     - `app-opportunities-deal.spec.ts`: Kiểm tra cơ hội Public vs Assigned, tính toán tỷ lệ % đàm phán deal, chống tạo trùng lặp trong 1 giờ.
+     - `app-marketplace.spec.ts`: Kiểm thử sàn TMĐT nội khối, giới hạn tối đa 5 sản phẩm/DN, lọc sản phẩm active và tính giá ưu đãi hội viên.
+     - `app-feed-comments.spec.ts`: Đăng bài kèm mã QR sự kiện, thích bài viết, bình luận phân cấp và gắn thẻ @ đối tác.
+     - `app-dm-chat.spec.ts`: Kiểm thử phân giải mã hội viên (memberCode resolution), tạo hồ sơ hội viên tự động, lấy danh sách cuộc trò chuyện B2B.
+     - `system-zalo-oa.spec.ts`: Kiểm thử quản lý token Zalo OA, cơ chế tự động refresh token định kỳ 6 tiếng.
+     - `auth.service.spec.ts`, `auth.controller.spec.ts`: Kiểm thử đăng nhập, sinh JWT token và bảo vệ endpoint.
+     - `business-card.service.spec.ts`, `business-card.controller.spec.ts`: Kiểm thử danh thiếp điện tử và chia sẻ thông tin.
+     - `prisma.service.spec.ts`, `users.service.spec.ts`, `app.controller.spec.ts`: Kiểm thử tầng dữ liệu và người dùng.
+  3. *Danh Mục 7 Test Suites Frontend (`apps/ceo1983_app_fe/src/__tests__/unit/`)*:
+     - `formatters.test.ts`: Định dạng ngày chuẩn Việt Nam (`formatDisplayDate`, `formatFullVnDate`), lọc số điện thoại (`sanitizePhoneNumber`), lời chào theo giờ (`getVNTimeGreeting`), sinh chuỗi UUID an toàn.
+     - `deal-margin.test.ts`: Tính toán tỷ lệ % deal so với ngân sách kỳ vọng (`dealPercent`), biên lợi nhuận (`+X% lời`), xếp hạng deal giảm dần theo giá trị có lợi nhất cho người đăng.
+     - `theme-branding.test.ts`: Kiểm tra hệ thống 3 màu thương hiệu (Mức 1 Đỏ, Mức 2 Vàng/Hổ phách, Mức 3 Xanh Navy), cấm màu tím/hồng/neon, bắt buộc nút bấm dùng solid Navy `#003B95` không dùng gradient.
+     - `vietqr-payload.test.ts`: Sinh URL ảnh VietQR Napas247, mã hóa nội dung chuyển khoản tiếng Việt, xử lý tài khoản và số tiền thanh toán.
+     - `comment-tree.test.ts`: Thuật toán chuyển đổi danh sách phẳng thành cây phân cấp Facebook (`organizeCommentsTree`), bình luận gốc mới nhất ở trên, câu trả lời con theo thứ tự thời gian tăng dần, nhận diện thẻ `@mention` đối tác.
+     - `analytics-2columns.test.ts`: Quy chuẩn danh mục chia sẻ `external_shares` có đúng 2 cột (Số lượng và Giá trị), các danh mục chuẩn 4 cột (`top_opportunities`, `top_events_meetings`), format tiền gọn (`Tỷ đ`, `Tr đ`).
+     - `pwa-install.test.ts`: Xử lý sự kiện cài đặt 1-chạm PWA độc lập, kích hoạt `beforeinstallprompt` và dispatch sự kiện hướng dẫn cài đặt iOS/Android.
+  4. *Đảm Bảo Chất Lượng Code Tuyệt Đối (Code Quality)*:
+     - Toàn bộ backend và frontend đều vượt qua kiểm tra kiểu tĩnh `tsc --noEmit` với **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Toàn bộ thay đổi lưu an toàn tại local branch `dev`, người dùng toàn quyền chủ động kiểm tra và commit/push.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.65): Xuất Bản Trọn Bộ 4 Tài Liệu Bàn Giao Doanh Nghiệp (16 Tệp Đầy Đủ 4 Định Dạng: .md, .html, .docx, .pdf) Chuẩn Hóa Cực Kỳ Chi Tiết Kèm Sơ Đồ & Ảnh Sản Phẩm ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
   1. *Bộ Tài Liệu 1: Tài Liệu Yêu Cầu Nghiệp Vụ Doanh Nghiệp (BRD - Business Requirements Document)*:
      - **Tệp xuất bản**: \`01_BRD_CEO1983_HANOIBA\` (.md: 38.0 KB, .html: 56.3 KB, .docx: 32.6 KB, .pdf: 423.3 KB).
