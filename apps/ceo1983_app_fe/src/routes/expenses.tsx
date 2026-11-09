@@ -1,4 +1,32 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowDownCircle,
+  Download,
+  FileDown,
+  Filter,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+  Wallet,
+  Receipt,
+  CheckCircle2,
+  Clock,
+  Banknote,
+  Building,
+  Upload,
+} from "lucide-react";
+import { toast } from "sonner";
+import { fetchNestApi } from "@/lib/api-client";
+import { AppShell } from "@/components/dashboard/AppShell";
+import { PageHeader, Pill } from "@/components/dashboard/PageKit";
+import { Card } from "@/components/ui/card";
+import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
+import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
+import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
+import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
 import type { Transaction } from "@/types/finance.types";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
@@ -188,10 +216,8 @@ function ExpensesPage() {
       };
 
       await fetchNestApi(`/admin/transactions/${refundingTx.id}`, {
-        method: "PUT",
-        body: updatePayload,
-      }).catch(async () => {
-        await updateFn({ data: updatePayload });
+        method: "PATCH",
+        body: JSON.stringify(updatePayload),
       });
 
       setTransactionsList((prev) =>

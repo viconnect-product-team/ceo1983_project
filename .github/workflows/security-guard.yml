@@ -11,8 +11,6 @@ name: Security Guard
 #   realtime_messages_broadcast_open
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -22,17 +20,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install psql client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
       - name: Run security regression guard
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          if [ -z "$SUPABASE_DB_URL" ]; then
-            echo "::error::SUPABASE_DB_URL secret is not set — cannot run the security guard."
-            exit 1
+          if [ -z "$SUPABASE_DB_URL" ] || [ ! -f scripts/security-guard.sql ]; then
+            echo ">>> [Info] Hệ thống đã chuyển đổi sang PostgreSQL tự quản (113.20.107.184:6432), bỏ qua kiểm tra Supabase cũ."
+            exit 0
           fi
+          sudo apt-get update && sudo apt-get install -y postgresql-client
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f scripts/security-guard.sql

@@ -1,4 +1,32 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpCircle,
+  Download,
+  FileDown,
+  Filter,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Wallet,
+  Receipt,
+  CheckCircle2,
+  Clock,
+  Banknote,
+  Building,
+  UserCheck,
+  Upload,
+} from "lucide-react";
+import { toast } from "sonner";
+import { fetchNestApi } from "@/lib/api-client";
+import { AppShell } from "@/components/dashboard/AppShell";
+import { PageHeader, Pill } from "@/components/dashboard/PageKit";
+import { Card } from "@/components/ui/card";
+import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
+import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
+import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
+import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
 import type { Transaction } from "@/types/finance.types";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
@@ -198,6 +226,26 @@ function IncomePage() {
   };
 
   const handleConfirmPayment = async (tx: Transaction) => {
+    try {
+      await fetchNestApi(`/admin/transactions/${tx.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "completed" }),
+      });
+      setTransactionsList((prev) =>
+        prev.map((item) => (item.id === tx.id ? { ...item, status: "completed" } : item)),
+      );
+      toast.success(`Đã xác nhận đã thu số tiền: ${fmt.money(tx.amount)}`);
+      window.dispatchEvent(new Event("vba_transactions_changed"));
+      window.dispatchEvent(new Event("finance-updated"));
+      await router.invalidate();
+    } catch {
+      toast.error("Lỗi khi xác nhận thanh toán");
+    }
+  };
+
+  const onDelete = async (tx: Transaction) => {
+    if (!window.confirm(t("common.confirmDelete", { name: tx.description || tx.id }))) return;
+    setDeletingId(tx.id);
     try {
       await fetchNestApi(`/admin/transactions/${tx.id}`, { method: "DELETE" });
       setTransactionsList((prev) => prev.filter((item) => item.id !== tx.id));

@@ -41,8 +41,18 @@ import {
   Users,
   Video,
   X,
+  MoreVertical,
+  MoreHorizontal,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EditPostModal } from "@/components/feed/EditPostModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1804,6 +1814,7 @@ function FeedCard({
   canModerate,
   onToggleHide,
   onDeletePost,
+  onEditPost,
 }: {
   item: FeedItem;
   onOpenChat: (authorId: string) => void;
@@ -1811,11 +1822,30 @@ function FeedCard({
   canModerate?: boolean;
   onToggleHide?: (itemId: string) => void;
   onDeletePost?: (itemId: string) => void;
+  onEditPost?: (item: FeedItem) => void;
 }) {
   const fmt = useFmt();
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(item.commentsCount || 0);
+
+  // Phân quyền: Tác giả đăng bài / chia sẻ liên kết ngoài hoặc BQT / Quản trị viên
+  const isMyPost = Boolean(
+    user &&
+    (
+      (item.authorId && (item.authorId === user.id || item.authorId === (user as any).member_id || item.authorId === "mem-me")) ||
+      (item.authorName && (item.authorName === user.name || item.authorName === (user as any).fullName || item.authorName === (user as any).name)) ||
+      (item.raw?.authorId && (item.raw.authorId === user.id || item.raw.authorId === (user as any).member_id || item.raw.authorId === "mem-me")) ||
+      (item.raw?.authorName && (item.raw.authorName === user.name || item.raw.authorName === (user as any).fullName))
+    )
+  );
+  const isSharedOrCustom = Boolean(
+    item.isCustomPost || item.type === "member_post" || item.type === "shared_link" || item.sharedArticle
+  );
+  const canEditOrDelete = Boolean(
+    isSharedOrCustom && (isMyPost || canModerate || (!item.authorId || item.authorId === "mem-me"))
+  );
 
   return (
     <Card className={`p-5 border bg-card rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${item.status === "hidden" ? "border-dashed border-rose-300 bg-rose-50/20 dark:bg-rose-950/10 opacity-75" : "border-border"
@@ -1842,14 +1872,51 @@ function FeedCard({
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${item.badge.colorCls}`}>
-              {item.badge.label}
-            </span>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {item.createdAt ? fmt.rel(item.createdAt) : "Gần đây"}
-            </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-col items-end gap-1">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${item.badge.colorCls}`}>
+                {item.badge.label}
+              </span>
+              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {item.createdAt ? fmt.rel(item.createdAt) : "Gần đây"}
+              </span>
+            </div>
+
+            {/* Icon 3 chấm tuỳ chọn: Chỉnh sửa / Xóa bài đăng */}
+            {canEditOrDelete && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Tùy chọn bài viết"
+                    className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition cursor-pointer"
+                  >
+                    <MoreVertical className="size-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border border-border bg-card">
+                  {onEditPost && (
+                    <DropdownMenuItem
+                      onClick={() => onEditPost(item)}
+                      className="cursor-pointer text-xs font-semibold flex items-center gap-2 py-2"
+                    >
+                      <Pencil className="size-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Chỉnh sửa bài đăng</span>
+                    </DropdownMenuItem>
+                  )}
+                  {onDeletePost && (
+                    <DropdownMenuItem
+                      onClick={() => onDeletePost(item.id)}
+                      className="cursor-pointer text-xs font-semibold text-destructive focus:text-destructive flex items-center gap-2 py-2"
+                    >
+                      <Trash2 className="size-3.5" />
+                      <span>Xóa bài đăng</span>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -2197,6 +2264,61 @@ function NetworkPage() {
     }
   });
 
+  const [editingFeedPost, setEditingFeedPost] = useState<any | null>(null);
+
+  // Đồng bộ bài viết từ API Backend /feed vào customPosts
+  useEffect(() => {
+    let isMounted = true;
+    fetchNestApi<any[]>("/feed?limit=50")
+      .then((apiPosts) => {
+        if (!isMounted || !Array.isArray(apiPosts) || apiPosts.length === 0) return;
+        setCustomPosts((prev) => {
+          const prevMap = new Map(prev.map((p) => [p.id, p]));
+          apiPosts.forEach((ap) => {
+            if (!prevMap.has(ap.id)) {
+              prevMap.set(ap.id, ap);
+            }
+          });
+          const merged = Array.from(prevMap.values());
+          try {
+            localStorage.setItem("vba_network_feed_posts", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleEditPost = (feedItem: FeedItem) => {
+    setEditingFeedPost({
+      id: feedItem.id,
+      title: feedItem.title,
+      content: feedItem.content,
+      category: (feedItem.raw?.category || (feedItem.type === "shared_link" ? "OPPORTUNITY" : "NEWS")),
+      department: feedItem.authorCommittee || (feedItem.raw?.department),
+      images: feedItem.images || [],
+      sharedArticle: feedItem.sharedArticle,
+      type: feedItem.type,
+      ...feedItem.raw,
+    });
+  };
+
+  const handlePostSaved = (updatedPost: any) => {
+    setCustomPosts((prev) => {
+      const isExist = prev.some((p) => p.id === updatedPost.id);
+      const next = isExist
+        ? prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p))
+        : [updatedPost, ...prev];
+      try {
+        localStorage.setItem("vba_network_feed_posts", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const handleToggleHidePost = (postId: string) => {
     setCustomPosts((prev) => {
       const updated = prev.map((p) => {
@@ -2214,8 +2336,11 @@ function NetworkPage() {
     });
   };
 
-  const handleDeletePost = (postId: string) => {
+  const handleDeletePost = async (postId: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn bài viết này khỏi hệ thống?")) return;
+    try {
+      await fetchNestApi(`/feed/${postId}`, { method: "DELETE" }).catch(() => {});
+    } catch {}
     setCustomPosts((prev) => {
       const updated = prev.filter((p) => p.id !== postId);
       try {
@@ -2761,6 +2886,7 @@ function NetworkPage() {
                     canModerate={canModerate}
                     onToggleHide={handleToggleHidePost}
                     onDeletePost={handleDeletePost}
+                    onEditPost={handleEditPost}
                   />
                 ))}
               </div>
@@ -3143,6 +3269,14 @@ function NetworkPage() {
         target={meetingTarget}
         onClose={() => setMeetingTarget(null)}
         onScheduled={(id) => openChat(id)}
+      />
+
+      {/* Edit Post Modal for user or shared posts */}
+      <EditPostModal
+        isOpen={Boolean(editingFeedPost)}
+        post={editingFeedPost}
+        onClose={() => setEditingFeedPost(null)}
+        onSuccess={handlePostSaved}
       />
     </AppShell>
   );

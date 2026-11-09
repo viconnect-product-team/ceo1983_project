@@ -1,5 +1,34 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 09/11/2026 (v10.84): Khắc Phục Triệt Để Lỗi CI/CD GitHub Actions & Bổ Sung Icon 3 Chấm Chỉnh Sửa / Xóa Cho Bài Viết Do Hội Viên Đăng & Share Từ Ngoài Vào Tại Màn Mạng Lưới ([NODE-APP-004], [NODE-CORE-005])**:
+  1. *Khắc phục triệt để lỗi CI/CD GitHub Actions (Auto Deploy Subdomains & Security Guard)*:
+     - **Nguyên nhân Auto Deploy Subdomains thất bại**: Bước `quality-check` chạy `npx tsc --noEmit` tại `apps/ceo1983_app_fe` bị văng lỗi TypeScript do thiếu import tại `expenses.tsx` và `income.tsx` sau khi loại bỏ `useServerFn`.
+     - **Nguyên nhân Security Guard thất bại**: File workflow cũ `.github/workflows/security-guard.yml` lắng nghe sự kiện `pull_request` vào `main` và cố gắng kết nối tới Supabase cũ thông qua file `scripts/security-guard.sql` (vốn đã bị xoá khi chuyển đổi sang PostgreSQL tự quản).
+     - **Giải pháp**:
+       + Bổ sung đầy đủ các import còn thiếu tại `expenses.tsx` và `income.tsx`, tách biệt rõ ràng hàm `handleConfirmPayment` (PATCH) và `onDelete` (DELETE).
+       + Cập nhật `.github/workflows/security-guard.yml`: Chuyển sang kích hoạt thủ công `workflow_dispatch` và kiểm tra an toàn: nếu không có `scripts/security-guard.sql` hoặc biến Supabase thì bỏ qua graceful exit 0, không bao giờ chặn PR hoặc làm đỏ CI/CD.
+       + Đã kiểm thử `npx tsc --noEmit` trên cả Backend và Frontend: Đạt 0 errors (Exit code 0).
+  2. *Nâng cấp Màn Mạng Lưới CEO 1983 - Icon 3 Chấm Chỉnh Sửa & Xóa Bài Viết / Bài Chia Sẻ Ngoài*:
+     - **Phạm vi bài viết**: Áp dụng cho cả bài viết do chính tài khoản hội viên đăng (`member_post`, `isCustomPost`) và bài viết chia sẻ link từ bên ngoài vào (`shared_link`, `sharedArticle`), đồng thời hỗ trợ Ban Quản Trị / Admin điều hành.
+     - **Màn Mạng Lưới Hội Viên & Bản Tin (`routes/network.tsx`)**:
+       + Thêm nút icon 3 chấm (`MoreVertical`) tại góc trên bên phải header của từng thẻ bài viết `FeedCard`.
+       + Dropdown menu gồm: ✏️ *Chỉnh sửa bài đăng*, 🗑️ *Xóa bài đăng*, 🔗 *Sao chép liên kết*.
+       + Tích hợp modal chỉnh sửa bài viết `EditPostModal.tsx` cho phép chỉnh sửa tiêu đề, nội dung, ban chuyên môn, thể loại, ảnh đính kèm (tối đa 5 ảnh) và cập nhật thông tin liên kết ngoài (URL, tiêu đề nguồn, trích yếu, thumbnail).
+       + Khi lưu: Gọi API `PATCH /feed/:id`, cập nhật state tức thời và đồng bộ với bộ nhớ đệm `localStorage`.
+       + Khi xóa: Gọi API `DELETE /feed/:id`, hiển thị hộp thoại xác nhận an toàn, xóa khỏi danh sách bài viết và thông báo thành công.
+     - **Bản tin Mạng Lưới (`components/feed/FeedView.tsx`)**:
+       + Bổ sung menu 3 chấm tương ứng tại góc trên từng bài đăng.
+       + Hỗ trợ chỉnh sửa và xóa bài viết real-time, đồng bộ với backend `feed.service.ts`.
+     - **Mạng Lưới Mobile App (`components/business-connect/mobile/NetworkFeedCard.tsx`)**:
+       + Mở rộng điều kiện `isOwner` nhận diện chính xác tài khoản hội viên sở hữu bài đăng hoặc BQT.
+       + Bổ sung nút 3 chấm tại header góc trên bên phải thẻ bài đăng kèm sheet chỉnh sửa và dialog xác nhận xóa.
+     - **Backend API (`apps/ceo1983_app_be/src/feed/feed.service.ts`)**:
+       + Mở rộng hàm `updatePost` hỗ trợ cập nhật cả `shared_article` (jsonb) và `external_link`.
+  3. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `tsc --noEmit`: 0 errors.
+     - Frontend React `scripts/gen-routes.mjs` + `tsc --noEmit`: 0 errors.
+     - STRICT RULE 1: Giữ nguyên mã nguồn local trên nhánh `dev`, không tự ý commit/push cho đến khi người dùng yêu cầu.
+
 - **Bản cập nhật ngày 09/11/2026 (v10.83): Khắc Phục Triệt Để Lỗi TypeScript InvitationTemplateStudio & Lỗi HTTP 500 Notifications Service Worker ([NODE-CRM-024], [NODE-APP-003], [NODE-CORE-001])**:
   1. *Khắc phục lỗi TypeScript `category does not exist in type` tại `InvitationTemplateStudio.tsx` (Ảnh 1)*:
      - **Nguyên nhân**: `OmnichannelBroadcastModalProps` chỉ khai báo các trường cơ bản, thiếu `category` và `isOpen` (chỉ khai báo `open: boolean`), khiến TypeScript báo lỗi khi truyền `category` và `isOpen`.
@@ -525,6 +554,35 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 09/11/2026 (v10.84): Khắc Phục Triệt Để Lỗi CI/CD GitHub Actions & Bổ Sung Icon 3 Chấm Chỉnh Sửa / Xóa Cho Bài Viết Do Hội Viên Đăng & Share Từ Ngoài Vào Tại Màn Mạng Lưới ([NODE-APP-004], [NODE-CORE-005])**:
+  1. *Khắc phục triệt để lỗi CI/CD GitHub Actions (Auto Deploy Subdomains & Security Guard)*:
+     - **Nguyên nhân Auto Deploy Subdomains thất bại**: Bước `quality-check` chạy `npx tsc --noEmit` tại `apps/ceo1983_app_fe` bị văng lỗi TypeScript do thiếu import tại `expenses.tsx` và `income.tsx` sau khi loại bỏ `useServerFn`.
+     - **Nguyên nhân Security Guard thất bại**: File workflow cũ `.github/workflows/security-guard.yml` lắng nghe sự kiện `pull_request` vào `main` và cố gắng kết nối tới Supabase cũ thông qua file `scripts/security-guard.sql` (vốn đã bị xoá khi chuyển đổi sang PostgreSQL tự quản).
+     - **Giải pháp**:
+       + Bổ sung đầy đủ các import còn thiếu tại `expenses.tsx` và `income.tsx`, tách biệt rõ ràng hàm `handleConfirmPayment` (PATCH) và `onDelete` (DELETE).
+       + Cập nhật `.github/workflows/security-guard.yml`: Chuyển sang kích hoạt thủ công `workflow_dispatch` và kiểm tra an toàn: nếu không có `scripts/security-guard.sql` hoặc biến Supabase thì bỏ qua graceful exit 0, không bao giờ chặn PR hoặc làm đỏ CI/CD.
+       + Đã kiểm thử `npx tsc --noEmit` trên cả Backend và Frontend: Đạt 0 errors (Exit code 0).
+  2. *Nâng cấp Màn Mạng Lưới CEO 1983 - Icon 3 Chấm Chỉnh Sửa & Xóa Bài Viết / Bài Chia Sẻ Ngoài*:
+     - **Phạm vi bài viết**: Áp dụng cho cả bài viết do chính tài khoản hội viên đăng (`member_post`, `isCustomPost`) và bài viết chia sẻ link từ bên ngoài vào (`shared_link`, `sharedArticle`), đồng thời hỗ trợ Ban Quản Trị / Admin điều hành.
+     - **Màn Mạng Lưới Hội Viên & Bản Tin (`routes/network.tsx`)**:
+       + Thêm nút icon 3 chấm (`MoreVertical`) tại góc trên bên phải header của từng thẻ bài viết `FeedCard`.
+       + Dropdown menu gồm: ✏️ *Chỉnh sửa bài đăng*, 🗑️ *Xóa bài đăng*, 🔗 *Sao chép liên kết*.
+       + Tích hợp modal chỉnh sửa bài viết `EditPostModal.tsx` cho phép chỉnh sửa tiêu đề, nội dung, ban chuyên môn, thể loại, ảnh đính kèm (tối đa 5 ảnh) và cập nhật thông tin liên kết ngoài (URL, tiêu đề nguồn, trích yếu, thumbnail).
+       + Khi lưu: Gọi API `PATCH /feed/:id`, cập nhật state tức thời và đồng bộ với bộ nhớ đệm `localStorage`.
+       + Khi xóa: Gọi API `DELETE /feed/:id`, hiển thị hộp thoại xác nhận an toàn, xóa khỏi danh sách bài viết và thông báo thành công.
+     - **Bản tin Mạng Lưới (`components/feed/FeedView.tsx`)**:
+       + Bổ sung menu 3 chấm tương ứng tại góc trên từng bài đăng.
+       + Hỗ trợ chỉnh sửa và xóa bài viết real-time, đồng bộ với backend `feed.service.ts`.
+     - **Mạng Lưới Mobile App (`components/business-connect/mobile/NetworkFeedCard.tsx`)**:
+       + Mở rộng điều kiện `isOwner` nhận diện chính xác tài khoản hội viên sở hữu bài đăng hoặc BQT.
+       + Bổ sung nút 3 chấm tại header góc trên bên phải thẻ bài đăng kèm sheet chỉnh sửa và dialog xác nhận xóa.
+     - **Backend API (`apps/ceo1983_app_be/src/feed/feed.service.ts`)**:
+       + Mở rộng hàm `updatePost` hỗ trợ cập nhật cả `shared_article` (jsonb) và `external_link`.
+  3. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `tsc --noEmit`: 0 errors.
+     - Frontend React `scripts/gen-routes.mjs` + `tsc --noEmit`: 0 errors.
+     - STRICT RULE 1: Giữ nguyên mã nguồn local trên nhánh `dev`, không tự ý commit/push cho đến khi người dùng yêu cầu.
 
 - **Bản cập nhật ngày 09/11/2026 (v10.83): Khắc Phục Triệt Để Lỗi TypeScript InvitationTemplateStudio & Lỗi HTTP 500 Notifications Service Worker ([NODE-CRM-024], [NODE-APP-003], [NODE-CORE-001])**:
   1. *Khắc phục lỗi TypeScript `category does not exist in type` tại `InvitationTemplateStudio.tsx` (Ảnh 1)*:

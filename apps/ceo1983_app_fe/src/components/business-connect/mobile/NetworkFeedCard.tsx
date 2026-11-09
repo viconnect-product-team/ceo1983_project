@@ -18,6 +18,8 @@ import {
   MapPin,
   MessageSquare,
   MoreHorizontal,
+  MoreVertical,
+  Pencil,
   Trash2,
   UserPlus,
   Users,
@@ -31,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFmt, useT, type TKey } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useNetworkRowConnect } from "@/hooks/use-network-row-connect";
 import { ConnectConfirmDialog } from "./ConnectConfirmDialog";
@@ -194,9 +197,15 @@ export function NetworkFeedCard({
   const t = useT();
   const fmt = useFmt();
   const viewerUserId = useViewerUserId();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
+
+  const [topManageOpen, setTopManageOpen] = useState(false);
+  const [topDeleteConfirmOpen, setTopDeleteConfirmOpen] = useState(false);
+  const [topDeleting, setTopDeleting] = useState(false);
 
   // Author details (người đăng)
   const authorName = item.owner?.displayName || person?.displayName || t("bc.mobile.network.unknownPerson");
@@ -212,6 +221,59 @@ export function NetworkFeedCard({
 
   const place = item.placeLabel ?? item.eventName;
   const timeDisplay = item.createdAt ? fmt.rel(item.createdAt) : fmt.rel(item.occurredAt);
+
+  // Phân quyền: Tác giả đăng bài / chia sẻ hoặc BQT / Quản trị viên
+  const isOwner = Boolean(
+    (viewerUserId &&
+      (authorUserId === viewerUserId ||
+       item.ownerUserId === viewerUserId ||
+       item.owner?.userId === viewerUserId ||
+       (authorUserId && authorUserId.replace(/^u:/, "") === viewerUserId.replace(/^u:/, "")))) ||
+    (user && (
+      (authorUserId && (user.id === authorUserId || (user as any).member_id === authorUserId)) ||
+      (authorName && (user.name === authorName || (user as any).fullName === authorName || (user as any).name === authorName)) ||
+      user.isAdmin ||
+      user.role === "admin" ||
+      user.role === "quan_tri" ||
+      user.role === "chu_tich"
+    ))
+  );
+
+  const handleTopDeleteMoment = async () => {
+    setTopDeleting(true);
+    try {
+      await deleteMomentDirect(item.momentId);
+      toast.success("Đã xoá bài đăng thành công");
+      setTopDeleteConfirmOpen(false);
+      void queryClient.invalidateQueries({ queryKey: networkFeedKeys.root });
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể xoá bài đăng. Vui lòng thử lại sau.");
+    } finally {
+      setTopDeleting(false);
+    }
+  };
+
+  const handleTopShare = async () => {
+    const shareUrl = `${window.location.origin}/connect-app/network#moment-${item.momentId}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.eventName || "Khoảnh khắc Business Connect",
+          text: item.note || "Khoảnh khắc giao thương trên ViOne",
+          url: shareUrl,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Đã sao chép liên kết bài đăng");
+    } catch {
+      toast.error("Không thể sao chép liên kết");
+    }
+  };
 
   const handleImageClick = (index: number) => {
     setViewerIndex(index);
@@ -311,6 +373,58 @@ export function NetworkFeedCard({
             ) : null}
           </p>
         </div>
+
+        {/* Nút 3 chấm góc trên bên phải thẻ bài đăng */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={t("bc.mobile.network.feed.more")}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--bc-mobile-muted)] transition-colors active:bg-[var(--bc-mobile-surface-2)] hover:text-foreground cursor-pointer -mt-1 -mr-1"
+            >
+              <MoreHorizontal aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[190px]">
+            <DropdownMenuItem asChild>
+              <Link to="/connect-app/network/$personId" params={{ personId: authorUserId ? `u:${authorUserId}` : item.personId }}>
+                Xem hồ sơ {authorName.split(" ").pop()}
+              </Link>
+            </DropdownMenuItem>
+
+            {targetName && targetName !== authorName ? (
+              <DropdownMenuItem asChild>
+                <Link to="/connect-app/network/$personId" params={{ personId: targetPersonId }}>
+                  Xem hồ sơ {targetName.split(" ").pop()}
+                </Link>
+              </DropdownMenuItem>
+            ) : null}
+
+            <DropdownMenuItem onSelect={handleTopShare} className="cursor-pointer">
+              Sao chép liên kết
+            </DropdownMenuItem>
+
+            {/* Chỉ hiện tuỳ chọn Sửa & Xoá cho chính chủ sở hữu bài đăng hoặc BQT */}
+            {isOwner ? (
+              <>
+                <DropdownMenuItem
+                  onSelect={() => setTopManageOpen(true)}
+                  className="text-[var(--bc-mobile-accent)] focus:text-[var(--bc-mobile-accent)] cursor-pointer flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span>{t("bc.mobile.network.feed.editMoment")}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setTopDeleteConfirmOpen(true)}
+                  className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <span>Xoá bài đăng</span>
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Ảnh lớn hoặc lưới ảnh kèm "+N" (Click để xem toàn màn hình) */}
@@ -340,6 +454,59 @@ export function NetworkFeedCard({
       ) : null}
 
       <FeedActionRow item={item} person={person} />
+
+      {/* Sheet chỉnh sửa bài đăng từ header */}
+      <MomentManageSheet
+        open={topManageOpen}
+        onOpenChange={setTopManageOpen}
+        momentId={item.momentId}
+        occurredAt={item.occurredAt}
+        title={item.eventName}
+        placeLabel={item.placeLabel}
+        note={item.note}
+        photoUrls={item.photoUrls}
+        visibility={item.visibility}
+        targetPersonId={item.personId}
+        targetPersonName={item.target?.displayName}
+        onChanged={() => {
+          void queryClient.invalidateQueries({ queryKey: networkFeedKeys.root });
+        }}
+      />
+
+      {/* Dialog xác nhận xoá bài đăng từ header */}
+      <AlertDialog open={topDeleteConfirmOpen} onOpenChange={setTopDeleteConfirmOpen}>
+        <AlertDialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl text-foreground">
+          <AlertDialogHeader className="space-y-2">
+            <AlertDialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </span>
+              <span>Xác nhận xoá bài đăng</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Bạn có chắc chắn muốn xoá bài đăng khoảnh khắc này khỏi bảng tin? Hành động này sẽ xoá vĩnh viễn hình ảnh và nội dung đi kèm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex gap-2 sm:justify-end">
+            <AlertDialogCancel
+              disabled={topDeleting}
+              className="rounded-xl border border-border bg-secondary/50 text-foreground hover:bg-secondary text-xs sm:text-sm font-semibold px-4 py-2"
+            >
+              Huỷ
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={topDeleting}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleTopDeleteMoment();
+              }}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs sm:text-sm font-semibold px-4 py-2 shadow-xs"
+            >
+              {topDeleting ? "Đang xoá..." : "Xoá vĩnh viễn"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }
@@ -379,12 +546,22 @@ function FeedActionRow({
   const place = item.placeLabel ?? item.eventName;
   const timeDisplay = item.createdAt ? fmt.rel(item.createdAt) : fmt.rel(item.occurredAt);
 
-  // Phân quyền: Chỉ tác giả/người đăng mới có quyền chỉnh sửa / xoá khoảnh khắc
+  const { user } = useAuth();
+  // Phân quyền: Tác giả đăng bài / chia sẻ hoặc BQT / Quản trị viên
   const isOwner = Boolean(
-    viewerUserId &&
+    (viewerUserId &&
       (authorUserId === viewerUserId ||
        item.ownerUserId === viewerUserId ||
-       item.owner?.userId === viewerUserId)
+       item.owner?.userId === viewerUserId ||
+       (authorUserId && authorUserId.replace(/^u:/, "") === viewerUserId.replace(/^u:/, "")))) ||
+    (user && (
+      (authorUserId && (user.id === authorUserId || (user as any).member_id === authorUserId)) ||
+      (authorName && (user.name === authorName || (user as any).fullName === authorName || (user as any).name === authorName)) ||
+      user.isAdmin ||
+      user.role === "admin" ||
+      user.role === "quan_tri" ||
+      user.role === "chu_tich"
+    ))
   );
 
   const handleDirectMessage = () => {

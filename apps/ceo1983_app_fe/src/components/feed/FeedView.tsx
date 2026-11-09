@@ -29,12 +29,22 @@ import {
   Video,
   Smile,
   Film,
+  MoreVertical,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-client";
 import { executeShare } from "@/lib/share-helper";
 import { useAuth } from "@/context/AuthContext";
 import { CreatePostModal, COMMITTEES } from "./CreatePostModal";
+import { EditPostModal } from "./EditPostModal";
 import { CommentTreeSection } from "./CommentTreeSection";
 import { QuickRegisterMeetingModal } from "./QuickRegisterMeetingModal";
 import { QrCanvas } from "../member/QrCanvas";
@@ -409,6 +419,32 @@ export function FeedView({
   const [createModalOpen, setCreateModalOpen] = useState(() => {
     return Boolean(initialShare?.url || initialShare?.title || initialShare?.text);
   });
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
+
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này khỏi bảng tin?")) return;
+    try {
+      await fetchNestApi(`/feed/${postId}`, { method: "DELETE" }).catch(() => {});
+    } catch {}
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    try {
+      const raw = localStorage.getItem("vba_network_feed_posts");
+      if (raw) {
+        const list = JSON.parse(raw);
+        localStorage.setItem(
+          "vba_network_feed_posts",
+          JSON.stringify(list.filter((p: any) => p.id !== postId))
+        );
+      }
+    } catch {}
+    toast.success("Đã xóa bài viết thành công!");
+  };
+
+  const handlePostSaved = (updatedPost: any) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p))
+    );
+  };
 
   useEffect(() => {
     if (initialShare?.url || initialShare?.title || initialShare?.text) {
@@ -947,7 +983,61 @@ export function FeedView({
                     </div>
                   </div>
 
-                  <div className="shrink-0">{renderCategoryBadge(post.category)}</div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {renderCategoryBadge(post.category)}
+                    {(() => {
+                      const isMyPost = Boolean(
+                        user &&
+                        (
+                          post.authorId === user.id ||
+                          post.authorId === (user as any).member_id ||
+                          post.authorId === "mem-me" ||
+                          post.authorName === user.name ||
+                          post.authorName === (user as any).fullName ||
+                          post.authorName === (user as any).name
+                        )
+                      );
+                      const canModerate = Boolean(
+                        user &&
+                        (user.isAdmin || user.isPresident || user.isExecutive || user.role === "admin" || user.role === "quan_tri")
+                      );
+                      const canEditOrDelete = Boolean(
+                        isMyPost || canModerate || post.authorId === "mem-me" || post.sharedArticle || post.externalLink
+                      );
+
+                      if (!canEditOrDelete) return null;
+
+                      return (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label="Tùy chọn bài viết"
+                              className="size-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                            >
+                              <MoreVertical className="size-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <DropdownMenuItem
+                              onClick={() => setEditingPost(post)}
+                              className="cursor-pointer text-xs font-semibold flex items-center gap-2 py-2"
+                            >
+                              <Pencil className="size-3.5 text-blue-600 dark:text-blue-400" />
+                              <span>Chỉnh sửa bài đăng</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeletePost(post.id)}
+                              className="cursor-pointer text-xs font-semibold text-destructive focus:text-destructive flex items-center gap-2 py-2"
+                            >
+                              <Trash2 className="size-3.5" />
+                              <span>Xóa bài đăng</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {/* Title & Content */}
@@ -1437,6 +1527,14 @@ export function FeedView({
           />
         </div>
       )}
+
+      {/* ── EDIT POST MODAL ── */}
+      <EditPostModal
+        isOpen={Boolean(editingPost)}
+        post={editingPost}
+        onClose={() => setEditingPost(null)}
+        onSuccess={handlePostSaved}
+      />
     </div>
   );
 }

@@ -1160,6 +1160,8 @@ export class FeedService {
       department?: string;
       images?: string[];
       privacy?: string;
+      sharedArticle?: any;
+      externalLink?: string;
     },
   ) {
     if (!postId) throw new BadRequestException('Mã bài viết không hợp lệ.');
@@ -1183,6 +1185,21 @@ export class FeedService {
           ? data.images
           : []
         : null;
+
+    const sharedArticleJson =
+      data.sharedArticle !== undefined
+        ? data.sharedArticle
+          ? JSON.stringify(data.sharedArticle)
+          : null
+        : null;
+
+    const extLink =
+      data.externalLink !== undefined
+        ? data.externalLink
+        : data.sharedArticle?.url
+          ? String(data.sharedArticle.url).trim()
+          : null;
+
     await this.prisma.$executeRawUnsafe(
       `
       UPDATE public.feed_posts
@@ -1193,8 +1210,10 @@ export class FeedService {
         department = COALESCE($4, department),
         privacy = COALESCE($5, privacy),
         images = CASE WHEN $6::text[] IS NOT NULL THEN $6::text[] ELSE images END,
+        shared_article = CASE WHEN $7::text IS NOT NULL THEN $7::jsonb ELSE shared_article END,
+        external_link = COALESCE($8, external_link),
         updated_at = NOW()
-      WHERE id = $7::uuid
+      WHERE id = $9::uuid
     `,
       data.title || null,
       data.content || null,
@@ -1202,6 +1221,8 @@ export class FeedService {
       data.department || null,
       data.privacy || null,
       imgArr,
+      sharedArticleJson,
+      extLink,
       postId,
     );
     return { ok: true, message: 'Đã cập nhật bài viết thành công.' };
