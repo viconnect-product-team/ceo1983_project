@@ -162,7 +162,7 @@ export function Ceo1983ChatAssistant() {
       if (saved) {
         return JSON.parse(saved);
       }
-    } catch {}
+    } catch { }
     return [];
   });
   const [input, setInput] = useState("");
@@ -184,14 +184,14 @@ export function Ceo1983ChatAssistant() {
     try {
       const saved = localStorage.getItem("ceo1983_ai_btn_pos");
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { }
     return {};
   });
   const [isDismissed, setIsDismissed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     try {
       return sessionStorage.getItem("ceo1983_ai_dismissed") === "true";
-    } catch {}
+    } catch { }
     return false;
   });
   const [aiActive, setAiActive] = useState<boolean>(() => isVoiceAiEnabled());
@@ -250,7 +250,7 @@ export function Ceo1983ChatAssistant() {
     isDraggingRef.current = false;
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {}
+    } catch { }
     if (hasDraggedRef.current && btnPos.x !== undefined && btnPos.y !== undefined) {
       localStorage.setItem("ceo1983_ai_btn_pos", JSON.stringify(btnPos));
     }
@@ -315,40 +315,40 @@ export function Ceo1983ChatAssistant() {
 
         const profileData = ctx?.user
           ? {
-              name: ctx.user.name,
-              company: ctx.user.company,
-              code: ctx.user.code,
-              role: ctx.roleLabel || "Hội viên",
-              title: ctx.user.title,
-              email: ctx.user.email,
-            }
+            name: ctx.user.name,
+            company: ctx.user.company,
+            code: ctx.user.code,
+            role: ctx.roleLabel || "Hội viên",
+            title: ctx.user.title,
+            email: ctx.user.email,
+          }
           : {
-              name: user?.name || "Anh/Chị",
-              company: (user as any)?.company || "",
-              code: (user as any)?.member_code || "",
-              role: (user as any)?.role || "Hội viên",
-              title: "",
-              email: user?.email || "",
-            };
+            name: user?.name || "Anh/Chị",
+            company: (user as any)?.company || "",
+            code: (user as any)?.member_code || "",
+            role: (user as any)?.role || "Hội viên",
+            title: "",
+            email: user?.email || "",
+          };
 
         const registered = Array.isArray(ctx?.myEvents)
           ? ctx.myEvents.map((e: any) => ({
-              id: e.eventId,
-              title: e.name,
-              date: e.date,
-              time: e.time,
-              place: e.location,
-              registered: true,
-            }))
+            id: e.eventId,
+            title: e.name,
+            date: e.date,
+            time: e.time,
+            place: e.location,
+            registered: true,
+          }))
           : [];
         const upcoming = Array.isArray(ctx?.topEvents)
           ? ctx.topEvents.map((e: any) => ({
-              id: e.id,
-              title: e.name,
-              date: e.date,
-              place: e.location,
-              registered: registered.some((r: any) => r.id === e.id),
-            }))
+            id: e.id,
+            title: e.name,
+            date: e.date,
+            place: e.location,
+            registered: registered.some((r: any) => r.id === e.id),
+          }))
           : [];
         const mapOpp = (o: any) => ({
           id: o.id,
@@ -359,25 +359,25 @@ export function Ceo1983ChatAssistant() {
         });
         const meetings = Array.isArray(ctx?.myMeetings)
           ? ctx.myMeetings.map((m: any) => ({
-              id: m.id,
-              topic: m.title || "Cuộc hẹn B2B",
-              partnerName: "",
-              partnerCompany: "",
-              time: m.startAt ? new Date(m.startAt).toLocaleString("vi-VN") : "Chưa chốt giờ",
-              location: "",
-              status: m.status,
-              upcoming: !!m.upcoming,
-            }))
+            id: m.id,
+            topic: m.title || "Cuộc hẹn B2B",
+            partnerName: "",
+            partnerCompany: "",
+            time: m.startAt ? new Date(m.startAt).toLocaleString("vi-VN") : "Chưa chốt giờ",
+            location: "",
+            status: m.status,
+            upcoming: !!m.upcoming,
+          }))
           : [];
         const invoices = Array.isArray(ctx?.dues?.unpaidInvoices)
           ? ctx.dues.unpaidInvoices.map((i: any) => ({
-              id: i.invoiceNo,
-              title: `Hội phí${i.year ? ` năm ${i.year}` : ""}${i.invoiceNo ? ` (${i.invoiceNo})` : ""}`,
-              amount: fmtVnd(i.amount),
-              dueDate: i.dueDate || "",
-              status: i.status,
-              note: `${profileData.code || ""} HP${i.year || ""}`.trim(),
-            }))
+            id: i.invoiceNo,
+            title: `Hội phí${i.year ? ` năm ${i.year}` : ""}${i.invoiceNo ? ` (${i.invoiceNo})` : ""}`,
+            amount: fmtVnd(i.amount),
+            dueDate: i.dueDate || "",
+            status: i.status,
+            note: `${profileData.code || ""} HP${i.year || ""}`.trim(),
+          }))
           : [];
 
         if (active) {
@@ -415,7 +415,7 @@ export function Ceo1983ChatAssistant() {
   useEffect(() => {
     try {
       localStorage.setItem(CHAT_HISTORY_STORAGE_KEY, JSON.stringify(messages.slice(-30)));
-    } catch {}
+    } catch { }
   }, [messages]);
 
   // Auto scroll to bottom
@@ -789,46 +789,46 @@ export function Ceo1983ChatAssistant() {
     const eventsText =
       liveContext.upcomingEvents.length > 0
         ? liveContext.upcomingEvents
-            .map(
-              (e) =>
-                `- ID: ${e.id} | Tên: "${e.title}" | Ngày: ${e.time || e.date} | Địa điểm: ${e.place} | Đã đăng ký: ${e.registered ? "CÓ" : "Chưa"}`
-            )
-            .join("\n")
+          .map(
+            (e) =>
+              `- ID: ${e.id} | Tên: "${e.title}" | Ngày: ${e.time || e.date} | Địa điểm: ${e.place} | Đã đăng ký: ${e.registered ? "CÓ" : "Chưa"}`
+          )
+          .join("\n")
         : "Không có sự kiện.";
 
     const regEventsText =
       liveContext.registeredEvents.length > 0
         ? liveContext.registeredEvents
-            .map((e) => `- "${e.title}" (Thời gian: ${e.time || e.date}, Địa điểm: ${e.place})`)
-            .join("\n")
+          .map((e) => `- "${e.title}" (Thời gian: ${e.time || e.date}, Địa điểm: ${e.place})`)
+          .join("\n")
         : "Chưa đăng ký sự kiện nào.";
 
     const oppsText =
       liveContext.opportunities.length > 0
         ? liveContext.opportunities
-            .map((o) => `- "${o.title}" | Công ty: ${o.company} | Thể loại: ${o.tag} | Giá trị: ${o.value}`)
-            .join("\n")
+          .map((o) => `- "${o.title}" | Công ty: ${o.company} | Thể loại: ${o.tag} | Giá trị: ${o.value}`)
+          .join("\n")
         : "Không có cơ hội mới.";
 
     const interestedOppsText =
       liveContext.interestedOpportunities.length > 0
         ? liveContext.interestedOpportunities
-            .map((o) => `- "${o.title}" (${o.company} - Giá trị: ${o.value})`)
-            .join("\n")
+          .map((o) => `- "${o.title}" (${o.company} - Giá trị: ${o.value})`)
+          .join("\n")
         : "Chưa lưu cơ hội nào.";
 
     const meetingsText =
       liveContext.b2bMeetings.length > 0
         ? liveContext.b2bMeetings
-            .map((m) => `- "${m.topic}" với ${m.partnerName} (${m.partnerCompany}) vào lúc ${m.time} tại ${m.location}`)
-            .join("\n")
+          .map((m) => `- "${m.topic}" với ${m.partnerName} (${m.partnerCompany}) vào lúc ${m.time} tại ${m.location}`)
+          .join("\n")
         : "Chưa có lịch hẹn gặp.";
 
     const invoicesText =
       liveContext.invoices.length > 0
         ? liveContext.invoices
-            .map((i) => `- "${i.title}": ${i.amount} (Hạn nộp: ${i.dueDate} - Trạng thái: ${i.status})`)
-            .join("\n")
+          .map((i) => `- "${i.title}": ${i.amount} (Hạn nộp: ${i.dueDate} - Trạng thái: ${i.status})`)
+          .join("\n")
         : "Không có hóa đơn nợ.";
 
     return `Bạn là Trợ lý AI Thông minh chính thức của CLB Doanh Nhân CEO 1983 (Hiệp Hội Doanh Nghiệp Trẻ Hà Nội - HanoiBA).
@@ -931,7 +931,7 @@ HƯỚNG DẪN TRẢ LỜI:
           .then((r) => {
             if (r?.data) setQuota(r.data);
           })
-          .catch(() => {});
+          .catch(() => { });
       } catch {
         /* backend không phản hồi -> thử OpenRouter phía client */
       }
@@ -1046,7 +1046,7 @@ HƯỚNG DẪN TRẢ LỜI:
     setMessages([]);
     try {
       localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
-    } catch {}
+    } catch { }
     toast.success("Đã xóa lịch sử trò chuyện!");
   };
 
@@ -1244,11 +1244,10 @@ HƯỚNG DẪN TRẢ LỜI:
                     )}
 
                     <div
-                      className={`relative max-w-[85%] rounded-2xl px-3.5 py-2.5 shadow-xs ${
-                        isUser
-                          ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-white rounded-tr-xs border border-amber-400/30"
-                          : "bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 rounded-tl-xs border border-slate-200 dark:border-slate-700/80"
-                      }`}
+                      className={`relative max-w-[85%] rounded-2xl px-3.5 py-2.5 shadow-xs ${isUser
+                        ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-white rounded-tr-xs border border-amber-400/30"
+                        : "bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 rounded-tl-xs border border-slate-200 dark:border-slate-700/80"
+                        }`}
                     >
                       <div className="whitespace-pre-wrap break-words">{m.content}</div>
 
