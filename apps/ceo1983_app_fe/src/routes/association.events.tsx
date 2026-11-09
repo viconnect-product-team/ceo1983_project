@@ -1279,6 +1279,61 @@ function EventsScreen() {
   } | null>(null);
   const [allTicketsModalOpen, setAllTicketsModalOpen] = useState(false);
 
+  // Lắng nghe URL Query Params khi quét mã QR hoặc click link từ Zalo OA / Email:
+  // Ví dụ: /association/events?action=register&id=...&ticket=...&ref=qr_scan
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get("action");
+    const targetEventId = params.get("id") || params.get("eventId");
+    const ticketParam = params.get("ticket") || params.get("ticketCode") || params.get("regId");
+    const qrData = params.get("qrData");
+
+    // Chỉ kích hoạt một lần khi URL có tham số đăng ký hoặc mã vé
+    if (action === "register" || action === "dang-ky" || targetEventId || ticketParam || qrData) {
+      const allEvs = serverEvents || [];
+      const matched = allEvs.find((ev) => ev.id === targetEventId) || allEvs[0];
+
+      if (action === "ticket" && ticketParam) {
+        setTicketPassModal({
+          eventTitle: matched?.title || "Sự Kiện CLB Doanh Nhân CEO 1983",
+          ticketCode: ticketParam,
+          luckyNumber: "1983",
+          ticketType: "VIP Member Pass",
+          ticketCount: 1,
+          isFree: true,
+          date: matched?.date ? formatDisplayDate(matched.date) : "15/11/2026",
+          time: matched?.time || "08:30 - Thứ Bảy",
+          location: matched?.place || "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
+          attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+          attendeePhone: member?.phone || "",
+          attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+          attendeePosition: member?.title || "Hội viên chính thức",
+          qrUrl: `https://crm.ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(ticketParam)}`,
+        });
+      } else {
+        const evToOpen: MyEvent = matched || {
+          id: targetEventId || "gala-ceo1983-2026",
+          title: "Gala Doanh Nhân CEO 1983 & Kết Nối Giao Thương 2026",
+          description: "Sự kiện kết nối giao thương trọng điểm thường niên của CLB Doanh Nhân CEO 1983 (HanoiBA).",
+          date: new Date().toISOString(),
+          time: "08:30 - Thứ Bảy",
+          place: "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
+          fee: 0,
+          ticketPrice: 0,
+          registered: false,
+          communityName: "CLB Doanh Nhân CEO 1983 (HanoiBA)",
+        } as any;
+
+        handleOpenRegister(evToOpen);
+        toast.success(`Đã tự động mở Form Đăng Ký tham dự sự kiện "${evToOpen.title}" từ mã QR!`, {
+          icon: "🎟️",
+          duration: 4000,
+        });
+      }
+    }
+  }, [serverEvents]);
+
 
   // Form registration state
   const [formName, setFormName] = useState("");

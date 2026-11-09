@@ -63,10 +63,10 @@ function InstallPage() {
             {appUrl}
           </code>
           <Link
-            to="/m"
+            to="/open-app"
             className="flex items-center gap-2 rounded-xl vba-gold-grad px-5 py-2.5 text-[13px] font-bold text-primary-foreground"
           >
-            <Download className="h-4 w-4" /> Mở ứng dụng ngay
+            <Download className="h-4 w-4" /> Cài đặt &amp; Mở Ứng Dụng Ngay
           </Link>
         </div>
 

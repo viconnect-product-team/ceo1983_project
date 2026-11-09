@@ -474,7 +474,8 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
+    const appOpenUrl = `${DEFAULT_APP_URL}/open-app?email=${encodeURIComponent(username || '')}`;
+    const appUrl = portalUrl || appOpenUrl;
     const crmUrl = `${DEFAULT_CRM_URL}/auth`;
 
     const subject = `[CLB CEO 1983] Chào mừng Gia nhập — Thông tin Tài khoản Đăng nhập của Anh/Chị ${fullName}`;
@@ -549,7 +550,7 @@ export class MailService {
       </div>
 
       <div class="btn-wrap">
-        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Đăng Nhập App Hiệp Hội</a>
+        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)</a>
       </div>
 
       <div class="note">
@@ -1106,7 +1107,8 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appLoginUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
+    const appOpenUrl = `${DEFAULT_APP_URL}/open-app?email=${encodeURIComponent(username || cleanTo)}`;
+    const appLoginUrl = portalUrl || appOpenUrl;
     const subject = `[CLB CEO 1983] Chào Mừng Anh/Chị ${fullName} Gia Nhập Ứng Dụng Doanh Nhân CEO 1983`;
 
     const html = `
@@ -1212,7 +1214,7 @@ export class MailService {
       </div>
 
       <div class="btn-wrap">
-        <a href="${appLoginUrl}" class="btn-primary" target="_blank">📲 Mở App & Đăng Nhập Ngay</a>
+        <a href="${appLoginUrl}" class="btn-primary" target="_blank">📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)</a>
       </div>
 
       <div class="note">
@@ -1264,7 +1266,8 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appLoginUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
+    const appOpenUrl = `${DEFAULT_APP_URL}/open-app?email=${encodeURIComponent(username || cleanTo)}`;
+    const appLoginUrl = portalUrl || appOpenUrl;
     const subject = isEmailUpdated
       ? `[CLB CEO 1983] Cập Nhật Email & Kích Hoạt Tài Khoản Thành Công — Anh/Chị ${fullName}`
       : `[CLB CEO 1983] Kích Hoạt Tài Khoản Thành Công — Anh/Chị ${fullName}`;
@@ -1433,7 +1436,8 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const appUrl = portalUrl || `${DEFAULT_APP_URL}/association/login`;
+    const appOpenUrl = `${DEFAULT_APP_URL}/open-app?email=${encodeURIComponent(username || cleanTo)}`;
+    const appUrl = portalUrl || appOpenUrl;
     const assocTitle = associationName || 'CLB Doanh Nhân CEO 1983';
     const subject = `[${assocTitle}] Chúc Mừng Hồ Sơ Hội Viên Của Anh/Chị ${fullName} Đã Được Phê Duyệt Chính Thức`;
 
@@ -1527,7 +1531,7 @@ export class MailService {
       </div>
 
       <div class="btn-wrap">
-        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở App Hội Viên & Đăng Nhập Ngay</a>
+        <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)</a>
       </div>
     </div>
 

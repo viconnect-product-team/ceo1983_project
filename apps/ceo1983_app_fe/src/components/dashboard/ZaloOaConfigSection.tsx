@@ -203,13 +203,29 @@ export const ZaloOaConfigSection: React.FC = () => {
 
     let messageBody = "";
     if (testType === "event") {
-      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Ban Tổ Chức trân trọng kính mời Anh/Chị tham dự Sự Kiện & Gala Giao Thương CEO 1983. Thời gian: 08:30 Thứ Bảy. Địa điểm: Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội. Trân trọng!`;
+      const regUrl = "https://ceo1983.viconnect.vn/association/events?action=register";
+      const qrImageUrl = `https://crm.ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(regUrl)}&size=320`;
+      messageBody = `🎟️ [CLB DOANH NHÂN CEO 1983 - THƯ MỜI SỰ KIỆN & VÉ CHECK-IN ĐIỆN TỬ]
+Kính gửi Hội viên: ${testRecipientName} (SĐT: ${testPhone})
+Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng kính mời Anh/Chị tham dự sự kiện:
+
+🌟 Tên sự kiện: Gala Doanh Nhân CEO 1983 & Kết Nối Giao Thương 2026
+🗓️ Thời gian: 08:30 - Thứ Bảy
+📍 Địa điểm: Keangnam Landmark 72, Phạm Hùng, Hà Nội
+
+👉 Mở Form Đăng Ký & Nhận Vé:
+${regUrl}
+
+📱 Link Ảnh Mã QR Check-in:
+${qrImageUrl}
+
+* Hướng dẫn Check-in: Anh/Chị vui lòng lưu mã QR hoặc mở tin nhắn Zalo này tại bàn Lễ tân / Cổng Check-in để quét mã nhận Thẻ đại biểu & Quà tặng chính thức.`;
     } else if (testType === "forum") {
-      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Thường Trực CLB kính mời Anh/Chị tham dự Diễn Đàn Doanh Nhân & Xúc Tiến Thương Mại B2B 2026. Cơ hội kết nối 100+ Doanh chủ tiên phong.`;
+      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Thường Trực CLB kính mời Anh/Chị tham dự Diễn Đàn Doanh Nhân & Xúc Tiến Thương Mại B2B 2026. Cơ hội kết nối 100+ Doanh chủ tiên phong.\n\n👉 Chi tiết & Đăng ký: https://ceo1983.viconnect.vn/association/events?action=register`;
     } else if (testType === "meeting") {
-      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Ban Điều Hành thông báo triệu tập Cuộc họp Ban Thường Trực định kỳ lúc 09:00 tại Văn phòng HanoiBA & trực tuyến qua Jitsi Meet.`;
+      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Ban Điều Hành thông báo triệu tập Cuộc họp Ban Thường Trực định kỳ lúc 09:00 tại Văn phòng HanoiBA & trực tuyến qua Jitsi Meet.\n\n💻 Tham gia: https://meet.jit.si/CEO1983_MEET_BAN_DIEU_HANH_14`;
     } else if (testType === "fee") {
-      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Ban Tài chính trân trọng thông báo kỳ thu hội phí thường niên năm 2026. Số tiền: 10.000.000 đ. Kính chúc Quý Doanh nghiệp ngày càng phát triển thịnh vượng!`;
+      messageBody = `[CLB CEO 1983] Kính gửi Hội viên ${testRecipientName}, Ban Tài chính trân trọng thông báo kỳ thu hội phí thường niên năm 2026. Số tiền: 10.000.000 đ. Kính chúc Quý Doanh nghiệp ngày càng phát triển thịnh vượng!\n\n💳 Xem mã VietQR: https://ceo1983.viconnect.vn/association/profile`;
     } else {
       messageBody = customMessage.trim() || `[CLB CEO 1983] Tin nhắn kiểm thử kết nối thành công từ Cổng Quản trị CRM CEO 1983 đến số ${testPhone}.`;
     }
