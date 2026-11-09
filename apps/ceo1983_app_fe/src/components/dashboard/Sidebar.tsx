@@ -9,7 +9,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMyAssociationsFn, type MyAssociation } from "@/lib/associations.functions";
-import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
+import { useUnreadNotifications, markNotificationsSeen } from "@/hooks/use-unread-notifications";
 import { resolveMediaUrl } from "@/lib/api-client";
 import {
   LayoutDashboard,
@@ -194,6 +194,21 @@ const permissionsGroup: Item[] = [
     label: "Quản lý Tài Khoản",
   },
 ];
+const pageTemplates: Item[] = [
+  {
+    key: "nav.pageTemplates" as TKey,
+    icon: LayoutTemplate,
+    to: "/templates",
+    label: "Quản lý mẫu trang",
+    children: [
+      { to: "/templates?tab=invitation", label: "Template Thư Mời" },
+      { to: "/templates?tab=email", label: "Template Email" },
+      { to: "/templates?tab=zalo", label: "Template Mẫu Tin Nhắn Zalo" },
+      { to: "/templates?tab=dues", label: "Thanh Toán Hội Phí" },
+      { to: "/templates?tab=forum-meetings", label: "Mẫu Cuộc Gặp Diễn Đàn" },
+    ],
+  },
+];
 const admin: Item[] = [
   { key: "nav.documents", icon: FolderOpen, to: "/documents" },
 ];
@@ -230,6 +245,7 @@ function NavItem({
   badge,
   badges,
   getLabel,
+  onDismissBadge,
 }: {
   item: Item;
   pathname: string | undefined;
@@ -239,6 +255,7 @@ function NavItem({
   badge?: number;
   badges?: Record<string, number>;
   getLabel?: (it: { to?: string; key?: string; label?: string }, fallback?: string) => string;
+  onDismissBadge?: (route?: string) => void;
 }) {
   const t = useT();
   const Icon = item.icon;
@@ -276,9 +293,9 @@ function NavItem({
     }`;
   const badgeEl = showBadge ? (
     collapsed ? (
-      <span className="vba-badge-pop absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-sidebar" />
+      <span className="vba-badge-pop absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-600 ring-2 ring-sidebar" />
     ) : (
-      <span className="vba-badge-pop inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-extrabold text-white shadow-xs">
+      <span className="vba-badge-pop inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-black text-white !text-white shadow-xs select-none">
         {badgeText}
       </span>
     )
@@ -326,6 +343,7 @@ function NavItem({
           data-active={active ? "true" : undefined}
           className={cls}
           onClick={() => {
+            if (item.to) onDismissBadge?.(item.to);
             if (hasChildren) setExpanded(true);
             if (onNavigate) onNavigate();
           }}
@@ -358,7 +376,10 @@ function NavItem({
               <Link
                 key={child.to}
                 to={child.to}
-                onClick={onNavigate}
+                onClick={() => {
+                  if (child.to) onDismissBadge?.(child.to);
+                  if (onNavigate) onNavigate();
+                }}
                 className={`group flex items-center justify-between gap-2 rounded-lg py-1.5 px-2.5 text-[12px] font-medium transition-[background-color,color] ${childActive
                     ? "bg-sidebar-accent text-sidebar-primary font-bold shadow-2xs"
                     : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
@@ -372,7 +393,7 @@ function NavItem({
                   <span className="truncate">{child.label}</span>
                 </div>
                 {hasChildBadge && (
-                  <span className="vba-badge-pop shrink-0 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-extrabold text-white shadow-xs">
+                  <span className="vba-badge-pop shrink-0 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-black text-white !text-white shadow-xs select-none">
                     {childBadge > 99 ? "99+" : childBadge}
                   </span>
                 )}
@@ -393,6 +414,7 @@ function Group({
   collapsed,
   onNavigate,
   badges,
+  onDismissBadge,
 }: {
   label?: TKey;
   items: Item[];
@@ -401,6 +423,7 @@ function Group({
   collapsed: boolean;
   onNavigate?: () => void;
   badges?: Record<string, number>;
+  onDismissBadge?: (route?: string) => void;
 }) {
   if (!items || items.length === 0) return null;
   const t = useT();
@@ -428,6 +451,7 @@ function Group({
             badge={it.to ? badges?.[it.to] : undefined}
             badges={badges}
             getLabel={getLabel}
+            onDismissBadge={onDismissBadge}
           />
         ))}
       </div>
@@ -545,6 +569,58 @@ export function Sidebar({
     "/notifications": unreadNotify,
     ...(notifBadges || {}),
   };
+
+  const [dismissedBadges, setDismissedBadges] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("vba_crm_dismissed_badges");
+        if (raw) return new Set(JSON.parse(raw));
+      } catch {}
+    }
+    return new Set();
+  });
+
+  const dismissBadge = useCallback((route?: string) => {
+    if (!route) return;
+    setDismissedBadges((prev) => {
+      const next = new Set(prev);
+      next.add(route);
+      const clean = route.split("?")[0];
+      next.add(clean);
+      if (clean === "/notifications") {
+        next.add("/notifications?filter=new_members");
+        next.add("/notifications?filter=fee_alerts");
+        next.add("/notifications?filter=admin_system");
+        next.add("/notifications?filter=events_meetings");
+        markNotificationsSeen();
+      }
+      try {
+        localStorage.setItem("vba_crm_dismissed_badges", JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (pathname) {
+      dismissBadge(pathname);
+      if (searchStr) {
+        dismissBadge(`${pathname}${searchStr}`);
+      }
+    }
+  }, [pathname, searchStr, dismissBadge]);
+
+  const effectiveBadges = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const [route, count] of Object.entries(badges)) {
+      if (dismissedBadges.has(route) || dismissedBadges.has(route.split("?")[0])) {
+        result[route] = 0;
+      } else {
+        result[route] = count;
+      }
+    }
+    return result;
+  }, [badges, dismissedBadges]);
 
   const [overrideBrandName, setOverrideBrandName] = useState<string | null>(null);
   const [overrideBrandLogo, setOverrideBrandLogo] = useState<string | null>(null);
@@ -689,6 +765,8 @@ export function Sidebar({
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
+  const filteredTemplates = pageTemplates.filter((it) => isAllowed(it.to));
+
   const filteredSystem = system.filter((it) => {
     if (!isAllowed(it.to)) return false;
     if (it.to === "/tasks") return true;
@@ -779,7 +857,8 @@ export function Sidebar({
           searchStr={searchStr}
           collapsed={isCollapsed}
           onNavigate={onNavigate}
-          badges={badges}
+          badges={effectiveBadges}
+          onDismissBadge={dismissBadge}
         />
         {canViewMembers && (
           <Group
@@ -789,7 +868,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {canViewEvents && (
@@ -800,7 +880,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {canViewSponsors && (
@@ -811,7 +892,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {canViewFinance && (
@@ -822,7 +904,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {canViewComm && (
@@ -833,7 +916,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {canViewNetwork && (
@@ -844,7 +928,20 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
+          />
+        )}
+        {filteredTemplates.length > 0 && (
+          <Group
+            label="nav.group.pageTemplates"
+            items={filteredTemplates}
+            pathname={pathname}
+            searchStr={searchStr}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {canViewSystem && (
@@ -855,7 +952,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {filteredAdmin.length > 0 && (
@@ -866,7 +964,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
         {filteredPermissions.length > 0 && (
@@ -877,7 +976,8 @@ export function Sidebar({
             searchStr={searchStr}
             collapsed={isCollapsed}
             onNavigate={onNavigate}
-            badges={badges}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
           />
         )}
       </div>

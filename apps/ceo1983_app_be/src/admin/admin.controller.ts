@@ -321,4 +321,29 @@ export class AdminController {
       offset: Number(offset),
     });
   }
+
+  // ── INVITATION TEMPLATES & OMNICHANNEL BROADCAST ───────────────────────────
+  @Get('invitation-templates')
+  @UseGuards(JwtAuthGuard)
+  async getInvitationTemplates() {
+    return this.adminService.getInvitationTemplates();
+  }
+
+  @Post('invitation-templates')
+  @UseGuards(JwtAuthGuard)
+  async saveInvitationTemplates(
+    @Request() req: any,
+    @Body() body: { templates: any[] },
+  ) {
+    return this.adminService.saveInvitationTemplates(
+      body.templates,
+      req.user?.id,
+    );
+  }
+
+  @Post('invitation-templates/broadcast')
+  @UseGuards(JwtAuthGuard)
+  async broadcastInvitation(@Request() req: any, @Body() body: any) {
+    return this.adminService.broadcastInvitation(body, req.user?.id);
+  }
 }

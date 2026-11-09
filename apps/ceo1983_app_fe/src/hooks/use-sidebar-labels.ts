@@ -40,6 +40,7 @@ export const DEFAULT_SIDEBAR_LABELS: Record<string, string> = {
   "/departments": "Quản lý Ban Chuyên Môn",
   "/accounts": "Quản lý Tài Khoản",
   "/documents": "Tài liệu & Biểu mẫu",
+  "/templates": "Quản lý mẫu trang",
   // Group keys:
   "nav.group.overview": "Tổng quan",
   "nav.group.members": "Hội viên",
@@ -48,6 +49,7 @@ export const DEFAULT_SIDEBAR_LABELS: Record<string, string> = {
   "nav.group.finance": "Tài chính",
   "nav.group.comm": "Truyền thông",
   "nav.group.network": "Kết nối kinh doanh",
+  "nav.group.pageTemplates": "Quản lý mẫu trang",
   "nav.group.system": "Hệ thống",
   "nav.group.permissions": "Phân quyền",
   "nav.group.admin": "Quản trị",

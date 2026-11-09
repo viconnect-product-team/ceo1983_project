@@ -73,3 +73,23 @@ export class UpdateTransactionDto {
   status?: string;
   [key: string]: any;
 }
+
+export class BroadcastInvitationDto {
+  templateId?: string;
+  posterUrl!: string;
+  title!: string;
+  subtitle?: string;
+  date?: string;
+  time?: string;
+  location?: string;
+  salutation?: string;
+  bodyText?: string;
+  channels!: {
+    sendToApp: boolean;
+    sendToZalo: boolean;
+    sendToEmail: boolean;
+  };
+  targetAudience?: 'all' | 'executives' | 'registered' | 'department';
+  departmentId?: string;
+  [key: string]: any;
+}
