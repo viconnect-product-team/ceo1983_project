@@ -25,7 +25,7 @@
 
 ```
                             ┌────────────────────────┐
-                            │      vione_users       │
+                            │     ceo1983_users      │ (alias view: vione_users)
                             └───────────┬────────────┘
                                         │ 1:1
                                         ▼
@@ -48,7 +48,7 @@
 
 ### 1. Phân Hệ Người Dùng & Hội Viên (Identity & Membership)
 
-#### 1.1. Bảng `public.vione_users` (Tài khoản người dùng cơ sở)
+#### 1.1. Bảng `public.ceo1983_users` (Tài khoản người dùng cơ sở Hiệp hội - alias view: `vione_users`)
 | Tên cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Khóa chính tài khoản người dùng |
@@ -62,7 +62,7 @@
 | Tên cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Khóa chính hồ sơ hội viên |
-| `user_id` | `UUID` | `FOREIGN KEY -> vione_users(id), ON DELETE SET NULL` | Khóa ngoại nối với tài khoản cơ sở |
+| `user_id` | `UUID` | `FOREIGN KEY -> ceo1983_users(id), ON DELETE SET NULL` | Khóa ngoại nối với tài khoản cơ sở |
 | `code` | `VARCHAR(50)` | `UNIQUE, NOT NULL` | Mã số hội viên (VD: `CEO1983-001`) |
 | `name` | `VARCHAR(255)` | `NOT NULL` | Họ tên đầy đủ của hội viên |
 | `phone` | `VARCHAR(20)` | `NOT NULL` | Số điện thoại liên hệ (chỉ chứa 10-11 chữ số) |

@@ -795,6 +795,235 @@ function UpcomingEventsCoverflow({
   );
 }
 
+function formatEventDayOfWeekAndDate(dateVal: any): string {
+  if (!dateVal) return "T5, 12/11/2026";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return typeof dateVal === "string" && dateVal.trim() ? dateVal : "T5, 12/11/2026";
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    const dayOfWeek = days[d.getDay()];
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${dayOfWeek}, ${day}/${month}/${year}`;
+  } catch {
+    return "T5, 12/11/2026";
+  }
+}
+
+const defaultUpcomingEvents: MyEvent[] = [
+  {
+    id: "ev-upcoming-01",
+    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983 (Miễn Phí)",
+    date: "2026-11-12T00:00:00Z",
+    place: "Hội trường Cung Tri Thức Thành Phố, Cầu Giấy, Hà Nội",
+    time: "00:00",
+    ticketPrice: 0,
+    image: defaultEventImages[0],
+    category: "Giao thương B2B",
+  } as any,
+  {
+    id: "ev-upcoming-02",
+    title: "Diễn Đàn Quản Trị & Xúc Tiến Đầu Tư Quốc Tế CEO 1983",
+    date: "2026-11-20T08:30:00Z",
+    place: "Trung tâm Hội nghị Quốc gia, Hà Nội",
+    time: "08:30",
+    ticketPrice: 0,
+    image: defaultEventImages[1],
+    category: "Giao thương B2B",
+  } as any,
+  {
+    id: "ev-upcoming-03",
+    title: "Gala Gặp Gỡ Doanh Nhân Đồng Niên Quý Hợi 1983 Toàn Quốc",
+    date: "2026-12-05T18:00:00Z",
+    place: "Khách sạn JW Marriott, Hà Nội",
+    time: "18:00",
+    ticketPrice: 500000,
+    image: defaultEventImages[2],
+    category: "Gala & Đại hội",
+  } as any,
+];
+
+const defaultAllEvents: MyEvent[] = [
+  {
+    id: "ev-all-01",
+    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983",
+    date: "2026-11-12T00:00:00Z",
+    place: "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội",
+    time: "00:00",
+    ticketPrice: 0,
+    image: defaultEventImages[0],
+    category: "SỰ KIỆN CLB CEO1983",
+    statusText: "Đang mở bán vé",
+  } as any,
+  {
+    id: "ev-all-02",
+    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983",
+    date: "2026-11-12T00:00:00Z",
+    place: "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội",
+    time: "00:00",
+    ticketPrice: 0,
+    image: defaultEventImages[1],
+    category: "SỰ KIỆN CLB CEO1983",
+    statusText: "Miễn phí",
+  } as any,
+  {
+    id: "ev-all-03",
+    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983",
+    date: "2026-11-12T00:00:00Z",
+    place: "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội",
+    time: "00:00",
+    ticketPrice: 500000,
+    image: defaultEventImages[2],
+    category: "SỰ KIỆN CLB CEO1983",
+    statusText: "500.000 đ",
+  } as any,
+];
+
+const defaultRecentEvents = [
+  {
+    id: "rec-01",
+    title: "Test Event Paid ID Catch",
+    subtitle: "CEO 1983",
+    image: defaultEventImages[3],
+    event: defaultAllEvents[0],
+  },
+  {
+    id: "rec-02",
+    title: "Test Event Paid ID Catch",
+    subtitle: "CEO 1983",
+    image: defaultEventImages[4],
+    event: defaultAllEvents[1],
+  },
+];
+
+const defaultMeetingsList = [
+  {
+    id: "meet-demo-01",
+    title: "Test Offline Meeting",
+    time: "09:00",
+    location: "Cung Tri Thuc",
+    isOnline: false,
+    category: "fixed_committee",
+    isExtraordinary: false,
+  },
+  {
+    id: "meet-demo-02",
+    title: "Hẹn gặp 1-1 trao đổi liên kết dịch vụ B2B",
+    time: "09:00 - 10:30",
+    location: "meet.jit.si/CEO1983_Connect_1on1",
+    meetingLink: "https://meet.jit.si/CEO1983_Connect_1on1",
+    isOnline: true,
+    category: "fixed_committee",
+    isExtraordinary: false,
+  },
+];
+
+function FeaturedUpcomingEventHero({
+  events,
+  onSelectEvent,
+}: {
+  events: MyEvent[];
+  onSelectEvent: (e: MyEvent) => void;
+}) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const displayList = events.length > 0 ? events : defaultUpcomingEvents;
+
+  useEffect(() => {
+    if (isPaused || displayList.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % displayList.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [isPaused, displayList.length]);
+
+  const activeEvent = displayList[activeIdx] || displayList[0];
+  const rawImg = (activeEvent as any).image;
+  const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[activeIdx % defaultEventImages.length];
+  const dateStr = safeFormatEventDate(activeEvent.date, "12/11/2026");
+  const categoryStr = (activeEvent as any).category || "Giao thương B2B";
+
+  return (
+    <div
+      className="self-stretch flex flex-col justify-start items-center gap-2"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+      <div
+        onClick={() => onSelectEvent(activeEvent)}
+        className="self-stretch h-44 relative rounded-2xl overflow-hidden cursor-pointer shadow-xs group"
+      >
+        <img
+          className="w-full h-72 left-0 top-[-47px] absolute object-cover group-hover:scale-105 transition-transform duration-500"
+          src={imgUrl}
+          alt={activeEvent.title}
+        />
+        <div className="w-full h-40 left-0 top-[22px] absolute bg-gradient-to-b from-black/0 via-black/40 to-black/90 pointer-events-none" />
+        <div className="w-full h-full left-0 top-0 absolute flex flex-col justify-between p-3">
+          {/* Top badges */}
+          <div className="self-stretch inline-flex justify-between items-start">
+            <div className="px-2 py-0.5 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md flex justify-start items-center gap-1 shadow-2xs">
+              <img src="/icons/events/calendar-03.svg" className="size-3.5" alt="calendar" />
+              <span className="text-slate-800 dark:text-slate-100 text-xs font-normal font-['Inter'] leading-4">
+                {dateStr}
+              </span>
+            </div>
+            <div className="px-2 py-0.5 bg-blue-50/90 dark:bg-blue-950/90 text-[#003B95] dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-semibold backdrop-blur-md">
+              {categoryStr}
+            </div>
+          </div>
+
+          {/* Bottom content */}
+          <div className="self-stretch flex flex-col justify-end items-start gap-1">
+            <div className="self-stretch text-white text-sm font-semibold font-['Inter'] leading-5 line-clamp-1 drop-shadow-sm">
+              {activeEvent.title}
+            </div>
+            <div className="self-stretch pt-1 inline-flex justify-between items-center gap-2">
+              <div className="flex-1 h-4 flex justify-start items-center gap-1 overflow-hidden">
+                <img src="/icons/events/location-01.svg" className="size-4 shrink-0 brightness-0 invert" alt="location" />
+                <span className="flex-1 text-slate-200 text-xs font-normal font-['Inter'] leading-4 truncate">
+                  {activeEvent.place || "Hội trường Cung Tri Thức Thành Phố, Cầu Giấy, Hà Nội"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectEvent(activeEvent);
+                }}
+                className="px-3 py-1.5 bg-white text-[#003B95] rounded-lg border border-slate-200 flex justify-start items-center gap-1.5 text-xs font-semibold shadow-xs hover:bg-slate-50 active:scale-95 transition cursor-pointer shrink-0"
+              >
+                <span>Xem ngay</span>
+                <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination dots */}
+      <div className="inline-flex justify-start items-center gap-[3px]">
+        {displayList.slice(0, 4).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setActiveIdx(i)}
+            className={`transition-all duration-300 cursor-pointer ${
+              i === activeIdx
+                ? "w-2.5 h-1 bg-[#003B95] rounded-[99px]"
+                : "size-1 bg-slate-300 dark:bg-slate-700 rounded-[99px] hover:bg-slate-400"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function EventsScreen() {
   const t = useT();
   const { lang } = useLang();
@@ -1475,509 +1704,577 @@ function EventsScreen() {
     return result;
   }, [events, recentEventIds]);
 
+  const displayUpcomingList = upcomingEvents.length > 0 ? upcomingEvents : defaultUpcomingEvents;
+  const displayEventsList = filteredEvents.length > 0 ? filteredEvents : (eventCategory === "all" ? defaultAllEvents : []);
+  const allEventsCount = events.length > 0 ? events.length : 22;
+  const registeredCount = registeredEvents.length;
+  const freeCount = events.length > 0 ? freeEvents.length : 14;
+  const paidCount = events.length > 0 ? paidEvents.length : 8;
+
+  const displayMeetingsList = filteredMeetings.length > 0 ? filteredMeetings : defaultMeetingsList;
+  const allMeetingsCount = meetingsList.length > 0 ? meetingsList.length : 8;
+  const fixedMeetingsCount = meetingsList.length > 0 ? meetingsList.filter((m: any) => m.category === "fixed_committee" || !m.isExtraordinary).length : 8;
+  const extraordinaryMeetingsCount = meetingsList.length > 0 ? meetingsList.filter((m: any) => m.category === "extraordinary" || m.isExtraordinary).length : 0;
+
+  const recentItems = displayedRecentItems.length > 0 ? displayedRecentItems : defaultRecentEvents;
+
   return (
-    <div className="vba-animate min-h-full pb-24">
-      <MemberHeader
-        title={isEn ? "Club Events" : t("m.events.title")}
-        back
-        right={
+    <div className="vba-animate min-h-full pb-24 bg-white dark:bg-slate-950 font-['Inter']">
+      {/* ── TOP APP BAR (HEADER) ── */}
+      <div data-type="2" className="w-full px-4 pt-1.5 pb-2 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 inline-flex justify-between items-center overflow-hidden">
+        <div className="flex-1 flex justify-between items-center">
+          {/* Back button */}
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/association/home" })}
+            className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 active:scale-95 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+            title="Quay lại"
+          >
+            <img src={mainTab === "meetings" ? "/icons/activities/arrow-left-02.svg" : "/icons/events/arrow-left-02.svg"} className="size-5" alt="back" />
+          </button>
+
+          {/* Title */}
+          <div className="inline-flex flex-col justify-center items-center gap-px">
+            <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
+              Sự kiện
+            </div>
+          </div>
+
+          {/* Calendar / Action button */}
           <Link
             to="/association/calendar"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-600/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 text-[11px] font-bold hover:scale-105 active:scale-95 transition"
-            title="Lịch của tôi & Cài đặt nhắc hẹn"
+            className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 active:scale-95 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+            title="Lịch sự kiện & cuộc họp"
           >
-            <Calendar className="size-3.5 text-red-600 dark:text-red-400" />
-            <span>Lịch của tôi</span>
+            <img src={mainTab === "meetings" ? "/icons/activities/calendar-02.svg" : "/icons/events/calendar-02.svg"} className="size-5" alt="calendar" />
           </Link>
-        }
-      />
-
-      {/* ── 2 DANH MỤC CHÍNH: 1. SỰ KIỆN - 2. HOẠT ĐỘNG (THEO BAN & BẤT THƯỜNG) ── */}
-      <div className="px-4 pt-2">
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-          <button
-            type="button"
-            onClick={() => setMainTab("events")}
-            className={`py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              mainTab === "events"
-                ? "bg-[#003B95] text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Calendar className="size-3.5 text-amber-300" />
-            <span>Sự Kiện ({events.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMainTab("meetings")}
-            className={`py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              mainTab === "meetings"
-                ? "bg-[#003B95] text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Users className="size-3.5 text-amber-300" />
-            <span>Hoạt Động ({meetingsList.length})</span>
-          </button>
         </div>
       </div>
 
-      {/* ── NẾU CHỌN TAB HOẠT ĐỘNG (HỌP CỐ ĐỊNH THEO BAN & HỌP BẤT THƯỜNG) ── */}
-      {mainTab === "meetings" && (
-        <div className="px-4 pt-4 space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-              <span>Hoạt Động &amp; Các Cuộc Họp CLB CEO 1983</span>
-            </h2>
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-[#003B95] dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-              Điều Hành Trực Tuyến &amp; Trực Tiếp
-            </span>
+      {/* ── TABS: SỰ KIỆN vs HOẠT ĐỘNG ── */}
+      <div className="self-stretch pt-2 flex flex-col justify-start items-center bg-white dark:bg-slate-900">
+        <div className="self-stretch px-4 flex flex-col justify-start items-start gap-2.5">
+          <div className="self-stretch relative flex flex-col justify-start items-start">
+            <div className="w-full h-0 left-0 top-[44px] absolute border-b border-slate-200 dark:border-slate-700"></div>
+            <div className="self-stretch inline-flex justify-start items-end gap-2 overflow-hidden">
+              {/* Tab: Sự kiện */}
+              <button
+                type="button"
+                onClick={() => setMainTab("events")}
+                className="flex-1 inline-flex flex-col justify-end items-center overflow-hidden cursor-pointer"
+              >
+                <div className="self-stretch py-3 relative flex flex-col justify-center items-center gap-2.5 overflow-hidden">
+                  <div className={`text-base font-['Inter'] leading-5 transition-colors ${
+                    mainTab === "events"
+                      ? "text-[#003B95] dark:text-blue-400 font-semibold"
+                      : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
+                  }`}>
+                    Sự kiện
+                  </div>
+                  {mainTab === "events" && (
+                    <div className="w-full h-0 left-0 top-[44px] absolute border-b-2 border-[#003B95] dark:border-blue-400"></div>
+                  )}
+                </div>
+              </button>
+
+              {/* Tab: Hoạt động */}
+              <button
+                type="button"
+                onClick={() => setMainTab("meetings")}
+                className="flex-1 inline-flex flex-col justify-end items-center overflow-hidden cursor-pointer"
+              >
+                <div className="self-stretch py-3 relative flex flex-col justify-center items-center gap-2.5 overflow-hidden">
+                  <div className={`text-base font-['Inter'] leading-5 transition-colors ${
+                    mainTab === "meetings"
+                      ? "text-[#003B95] dark:text-blue-400 font-semibold"
+                      : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
+                  }`}>
+                    Hoạt động
+                  </div>
+                  {mainTab === "meetings" && (
+                    <div className="w-full h-0 left-0 top-[44px] absolute border-b-2 border-[#003B95] dark:border-blue-400"></div>
+                  )}
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── TAB 1: SỰ KIỆN ── */}
+      {mainTab === "events" && (
+        <div className="self-stretch flex flex-col justify-start items-center animate-in fade-in duration-200">
+          {/* Section: Sự kiện sắp tới (Hero Carousel) */}
+          <div className="self-stretch px-4 pt-5 pb-6 flex flex-col justify-start items-center gap-3">
+            <div className="self-stretch inline-flex justify-between items-center">
+              <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
+                Sự kiện sắp tới
+              </div>
+            </div>
+
+            <FeaturedUpcomingEventHero
+              events={displayUpcomingList}
+              onSelectEvent={handleSelectEvent}
+            />
           </div>
 
-          {/* Sub-filter chips: Tất cả, Cuộc họp cố định theo ban, Cuộc họp bất thường */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            {[
-              { id: "all", label: "Tất cả hoạt động", count: meetingsList.length },
-              {
-                id: "fixed_committee",
-                label: "Họp cố định theo ban",
-                count: meetingsList.filter((m: any) => m.category === "fixed_committee" || !m.isExtraordinary).length,
-              },
-              {
-                id: "extraordinary",
-                label: "Họp bất thường / Đột xuất",
-                count: meetingsList.filter((m: any) => m.category === "extraordinary" || m.isExtraordinary).length,
-              },
-            ].map((sub) => {
-              const active = activityFilter === sub.id;
-              return (
+          {/* Section: Tất cả sự kiện */}
+          <div className="self-stretch px-4 pb-6 flex flex-col justify-start items-center">
+            <div className="self-stretch flex flex-col justify-start items-start gap-3">
+              <div className="self-stretch inline-flex justify-between items-center">
+                <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
+                  Tất cả sự kiện
+                </div>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="self-stretch inline-flex justify-start items-center gap-1 overflow-x-auto no-scrollbar">
+                {/* Sắp diễn ra */}
                 <button
-                  key={sub.id}
                   type="button"
-                  onClick={() => setActivityFilter(sub.id as any)}
-                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
-                    active
-                      ? "bg-[#003B95] text-white shadow-xs"
-                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  onClick={() => setEventCategory("all")}
+                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${
+                    eventCategory === "all"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                   }`}
                 >
-                  <span>{sub.label}</span>
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                      active ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                    }`}
-                  >
-                    {sub.count}
+                  <span>Sắp diễn ra</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {allEventsCount}
                   </span>
                 </button>
-              );
-            })}
-          </div>
 
-          {loadingMeetings ? (
-            <div className="py-16 text-center text-xs text-slate-400">Đang tải lịch họp...</div>
-          ) : filteredMeetings.length === 0 ? (
-            <div className="py-16 text-center text-xs text-slate-400">Chưa có lịch họp nào trong danh mục này</div>
-          ) : (
-            <div className="space-y-4">
-              {filteredMeetings.map((m: any) => {
-                const isExtraordinary = m.category === "extraordinary" || m.isExtraordinary;
+                {/* Đã đăng ký */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("registered")}
+                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "registered"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Đã đăng ký</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "registered" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {registeredCount}
+                  </span>
+                </button>
+
+                {/* Miễn phí */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("free")}
+                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "free"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Miễn phí</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "free" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {freeCount}
+                  </span>
+                </button>
+
+                {/* Có phí */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("paid")}
+                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "paid"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Có phí</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "paid" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {paidCount}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Event Cards List */}
+            <div className="self-stretch pt-4 pb-3 flex flex-col justify-start items-start gap-2">
+              {displayEventsList.map((e, idx) => {
+                const rawPrice = getEventPrice(e);
+                const isFree = isEventFree(e);
+                const registered = isRegistered(e);
+                const rawImg = (e as any).image;
+                const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
+                const dateFormatted = formatEventDayOfWeekAndDate(e.date);
+                const timeStr = (e as any).time || "00:00";
+                const statusText = (e as any).statusText || (isFree ? "Miễn phí" : `${rawPrice.toLocaleString("vi-VN")} đ`);
+
                 return (
                   <div
-                    key={m.id}
-                    className={`p-4 rounded-2xl bg-white dark:bg-slate-900 border shadow-sm space-y-3 ${
-                      isExtraordinary
-                        ? "border-amber-400/80 dark:border-amber-500/60"
-                        : "border-slate-200 dark:border-slate-800"
-                    }`}
+                    key={e.id || idx}
+                    onClick={() => handleSelectEvent(e)}
+                    className="self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-4 shadow-2xs hover:shadow-xs transition cursor-pointer"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {isExtraordinary ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white flex items-center gap-1 shadow-2xs">
-                            <AlertTriangle className="size-3 text-white" />
-                            <span>Cuộc họp xảy ra bất thường</span>
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#003B95] text-white flex items-center gap-1 shadow-2xs">
-                            <Calendar className="size-3 text-amber-300" />
-                            <span>Cuộc họp cố định theo ban</span>
-                          </span>
-                        )}
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                          {m.meetingType}
+                    <div className="self-stretch inline-flex justify-start items-start gap-3">
+                      <div className="w-24 h-24 self-stretch relative bg-gradient-to-r from-blue-900 to-slate-900 rounded-2xl overflow-hidden shrink-0">
+                        <img className="size-full object-cover" src={imgUrl} alt={e.title} />
+                      </div>
+
+                      <div className="flex-1 inline-flex flex-col justify-start items-start min-w-0">
+                        <div className="self-stretch inline-flex justify-between items-start">
+                          <div className="flex-1 pb-1 inline-flex flex-col justify-start items-start overflow-hidden">
+                            <div className="self-stretch pb-1 inline-flex justify-start items-start gap-2.5">
+                              <span className="text-slate-500 text-xs font-medium font-['Inter'] leading-4 uppercase tracking-wider">
+                                {(e as any).category || (e as any).event_type || "SỰ KIỆN CLB CEO1983"}
+                              </span>
+                            </div>
+                            <div className="self-stretch text-blue-950 dark:text-blue-200 text-sm font-semibold font-['Inter'] leading-5 line-clamp-2">
+                              {e.title}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(evt) => {
+                              evt.stopPropagation();
+                              executeShare(
+                                {
+                                  type: "event",
+                                  id: e.id,
+                                  title: `[Sự Kiện CEO 1983] ${e.title}`,
+                                  desc: `Tham gia sự kiện cùng CLB Doanh Nhân CEO 1983: ${e.title}`,
+                                  targetPath: `/association/events?id=${e.id}`,
+                                },
+                                () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
+                              );
+                            }}
+                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 shrink-0 hover:bg-slate-50"
+                          >
+                            <img src="/icons/events/more-vertical.svg" className="size-4" alt="more" />
+                          </button>
+                        </div>
+
+                        <div className="self-stretch pb-1 inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                          <img src="/icons/events/alarm-clock.svg" className="size-3.5 shrink-0" alt="time" />
+                          <span className="text-xs font-normal font-['Inter'] leading-4">{dateFormatted}</span>
+                          <img src="/icons/events/dot-separator.svg" className="size-1" alt="dot" />
+                          <span className="text-xs font-normal font-['Inter'] leading-4">{timeStr}</span>
+                        </div>
+
+                        <div className="self-stretch inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                          <img src="/icons/events/location-01.svg" className="size-3.5 shrink-0" alt="location" />
+                          <div className="flex-1 inline-flex flex-col justify-start items-start overflow-hidden">
+                            <span className="self-stretch text-xs font-normal font-['Inter'] leading-4 truncate">
+                              {e.place || "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="self-stretch pt-3 border-t border-slate-100 dark:border-slate-800 inline-flex justify-between items-center">
+                      <div className={`px-3 py-1.5 rounded-full flex justify-start items-center gap-1.5 ${
+                        isFree
+                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                          : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400"
+                      }`}>
+                        <span className="text-xs font-semibold font-['Inter'] leading-4">
+                          {statusText}
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold text-[#003B95] dark:text-blue-400 shrink-0">
-                        {m.time}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                        {m.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Cơ quan triệu tập: <strong className="text-slate-700 dark:text-slate-200">{m.convener || "Chủ tịch CLB"}</strong>
-                      </p>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="size-3.5 text-[#003B95] shrink-0" />
-                        <span className="truncate">{m.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="size-3.5 text-blue-500 shrink-0" />
-                        <span className="truncate">Thành phần: {m.attendeesRequired || "Hội viên được triệu tập"}</span>
-                      </div>
-                    </div>
-
-                    {/* Meeting documents preview */}
-                    {Array.isArray(m.documents) && m.documents.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <FileText className="size-3 text-slate-400" />
-                        <span className="text-[10px] text-slate-400 font-semibold">Tài liệu:</span>
-                        {m.documents.map((doc: string, idx: number) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                          >
-                            {doc}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      {m.isOnline && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveMeetingRoom({
-                              title: m.title,
-                              link: m.meetingLink || "https://meet.jit.si/CEO1983_MEET_BAN_DIEU_HANH_14",
-                            })
-                          }
-                          className="flex-1 py-2 px-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
-                        >
-                          <Phone className="size-3.5 text-amber-300" />
-                          <span>Vào Phòng Họp Ngay</span>
-                        </button>
-                      )}
 
                       <button
                         type="button"
-                        onClick={() => {
-                          toast.success(`Đã xác nhận tham dự cuộc họp: ${m.title}`);
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          if (registered) {
+                            const invNo = String((e as any).regId || (e as any).ticketCode || e.id);
+                            setTicketPassModal({
+                              eventTitle: e.title,
+                              ticketCode: invNo,
+                              luckyNumber: "#" + Math.floor(1000 + Math.random() * 9000),
+                              ticketType: "Standard",
+                              ticketCount: 1,
+                              isFree,
+                              date: String(e.date || ""),
+                              time: timeStr,
+                              location: e.place || "Hà Nội",
+                              attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+                              attendeePhone: member?.phone || "",
+                              attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+                              attendeePosition: member?.title || "Hội viên chính thức",
+                              qrUrl: getQrUrl(invNo, 320),
+                            });
+                          } else {
+                            handleOpenRegister(e, evt);
+                          }
                         }}
-                        className="flex-1 py-2 px-3 rounded-xl border border-[#003B95] text-[#003B95] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 font-bold text-xs inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+                        className={`px-3 py-1.5 rounded-lg border flex justify-start items-center gap-1.5 text-sm font-semibold font-['Inter'] leading-5 active:scale-95 transition cursor-pointer shadow-xs ${
+                          registered
+                            ? "bg-emerald-600 border-emerald-600 text-white"
+                            : "bg-[#003B95] hover:bg-[#002B70] border-[#003B95] text-white"
+                        }`}
                       >
-                        <Check className="size-3.5" />
-                        <span>Xác Nhận Tham Dự</span>
+                        <span>{registered ? "Đã đăng ký (Xem vé)" : "Đăng ký ngay"}</span>
                       </button>
                     </div>
                   </div>
                 );
               })}
             </div>
-          )}
+
+            {/* Xem tất cả */}
+            <div className="self-stretch px-4 flex flex-col justify-start items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEventCategory("all");
+                  toast.info("Đang hiển thị toàn bộ sự kiện CLB CEO 1983");
+                }}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 inline-flex justify-start items-center gap-1.5 active:scale-95 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span className="text-[#003B95] dark:text-blue-400 text-sm font-semibold font-['Inter'] leading-5">
+                  Xem tất cả ({allEventsCount})
+                </span>
+                <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
+              </button>
+            </div>
+          </div>
+
+          {/* Section: Xem gần đây */}
+          <div className="self-stretch flex flex-col justify-start items-start">
+            <div className="self-stretch px-4 pb-3 inline-flex justify-start items-start gap-2.5">
+              <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
+                Xem gần đây
+              </div>
+            </div>
+            <div className="self-stretch px-4 flex flex-col justify-start items-center gap-3 overflow-hidden">
+              <div className="self-stretch grid grid-cols-2 gap-2">
+                {recentItems.slice(0, 2).map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleSelectEvent(item.event)}
+                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 inline-flex flex-col justify-center items-start overflow-hidden cursor-pointer shadow-2xs hover:shadow-xs transition"
+                  >
+                    <div className="self-stretch h-20 relative bg-stone-300 overflow-hidden">
+                      <img className="size-full object-cover" src={item.image} alt={item.title} />
+                    </div>
+                    <div className="self-stretch p-2 flex flex-col justify-start items-center gap-0.5">
+                      <div className="self-stretch flex flex-col justify-start items-start gap-0.5">
+                        <div className="self-stretch text-slate-900 dark:text-white text-sm font-semibold font-['Inter'] leading-5 line-clamp-1">
+                          {item.title}
+                        </div>
+                        <div className="text-slate-500 text-xs font-normal font-['Inter'] leading-4">
+                          {(item as any).subtitle || "CEO 1983"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="inline-flex justify-start items-center gap-[3px]">
+                <div className="w-2.5 h-1 bg-[#003B95] rounded-[99px]" />
+                <div className="size-1 bg-slate-300 dark:bg-slate-700 rounded-[99px]" />
+                <div className="size-1 bg-slate-300 dark:bg-slate-700 rounded-[99px]" />
+                <div className="size-1 bg-slate-300 dark:bg-slate-700 rounded-[99px]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Banner cuối trang */}
+          <div className="self-stretch px-4 pt-6 flex flex-col justify-start items-start">
+            <div className="self-stretch p-4 bg-gradient-to-r from-indigo-500 to-[#003B95] rounded-[20px] flex flex-col justify-start items-start gap-4 shadow-md text-white">
+              <div className="self-stretch flex flex-col justify-start items-start gap-1">
+                <div className="self-stretch text-white text-base font-semibold font-['Inter'] leading-5">
+                  CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng
+                </div>
+                <div className="w-80 text-white/70 text-sm font-normal font-['Inter'] leading-5">
+                  Kế thừa giá trị, kiến tạo tương lai và đồng hành phát triển bền vững.
+                </div>
+              </div>
+              <Link
+                to="/association/messages"
+                className="px-3 py-1.5 bg-[#B8860B] hover:bg-[#9A7009] rounded-lg border border-[#B8860B] inline-flex justify-start items-center gap-1.5 shadow-xs active:scale-95 transition cursor-pointer"
+              >
+                <span className="text-white text-sm font-semibold font-['Inter'] leading-5">
+                  Liên hệ Ban Truyền Thông
+                </span>
+                <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ── NẾU CHỌN TAB SỰ KIỆN CLB THÔNG THƯỜNG ── */}
-      {mainTab === "events" && (
-        <>
-          {/* 2. Section: Sự kiện sắp tới - 5 sự kiện chạy từ phải sang trái, ảnh giữa nổi to hơn, chỉ có ảnh, viền bottom mỏng ở giữa */}
-          <div className="px-4 pt-2">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#001B54]"></span>
-                </span>
-                <span className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#001B54] dark:text-blue-400" />
-                  Sự kiện sắp tới
-                </span>
+      {/* ── TAB 2: HOẠT ĐỘNG ── */}
+      {mainTab === "meetings" && (
+        <div className="self-stretch flex flex-col justify-start items-center animate-in fade-in duration-200">
+          <div className="self-stretch px-4 pt-5 pb-4 flex flex-col justify-start items-center gap-3">
+            <div className="self-stretch flex flex-col justify-start items-start gap-1">
+              <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
+                Hoạt động &amp; Cuộc họp
               </div>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#001B54]/10 text-[#001B54] dark:text-blue-300 border border-[#001B54]/20">
-                5 sự kiện tiêu điểm
-              </span>
+              <div className="text-slate-400 text-xs font-normal font-['Inter'] leading-4">
+                Điều Hành Trực Tuyến &amp; Trực Tiếp
+              </div>
             </div>
 
-            <UpcomingEventsCoverflow
-              events={upcomingEvents}
-              onSelectEvent={handleSelectEvent}
-            />
-          </div>
-
-          {/* Vé Sự Kiện Của Tôi - Chỉ hiển thị khi hội viên THỰC TẾ đã đăng ký ít nhất 1 sự kiện (KHÔNG mock fake) */}
-          {registeredEvents.length > 0 && (
-            <RegisteredEventsQrSlider
-              isEn={isEn}
-              registeredEvents={registeredEvents}
-              events={events}
-              member={member}
-              user={user}
-              isEventFree={isEventFree}
-              formatDisplayDate={formatDisplayDate}
-              makeTicketQrUrl={makeTicketQrUrl}
-              onSelectTicketPass={(ticketPassData) => setTicketPassModal(ticketPassData)}
-              onViewAll={() => {
-                setAllTicketsModalOpen(true);
-              }}
-              onExploreEvents={() => {
-                setEventCategory("all");
-                const el = document.getElementById("tour-events-tabs");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-            />
-          )}
-
-          {/* 3. Section: List các sự kiện với menu phân chia & phân trang riêng biệt */}
-          <div className="px-4 pt-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[13px] font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-[#003B95]" />
-                {isEn ? "All Club Events" : "Danh sách các sự kiện"}
-              </h2>
-              <span className="text-[11px] font-bold text-slate-400 font-mono">
-                {filteredEvents.length} {isEn ? "events" : "sự kiện"}
-              </span>
-            </div>
-
-        {/* Menu phân chia: Sắp diễn ra, Đã đăng ký, Miễn phí, Có phí, Đã lưu, Lịch sử sự kiện */}
-        <div id="tour-events-tabs" className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-          {[
-            { id: "all", label: isEn ? "Upcoming" : "Sắp diễn ra", count: upcomingEvents.length },
-            { id: "registered", label: isEn ? "Registered" : "Đã đăng ký", count: registeredEvents.length },
-            { id: "free", label: isEn ? "Free" : "Miễn phí", count: freeEvents.length },
-            { id: "paid", label: isEn ? "Paid" : "Có phí", count: paidEvents.length },
-            { id: "bookmarked", label: isEn ? "Bookmarked" : "Đã lưu", count: bookmarkedEventsList.length },
-            { id: "history", label: isEn ? "History" : "Lịch sử sự kiện", count: pastEvents.length },
-          ].map((tabItem) => {
-            const active = eventCategory === tabItem.id;
-            return (
+            {/* Filter pills */}
+            <div className="self-stretch inline-flex justify-start items-center gap-1 overflow-x-auto no-scrollbar">
+              {/* Tất cả */}
               <button
-                key={tabItem.id}
                 type="button"
-                onClick={() => {
-                  setEventCategory(tabItem.id as any);
-                  setEventsPage(1);
-                }}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  active
-                    ? "bg-sky-950 text-white font-bold shadow-md"
-                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-transparent dark:border-white/5"
+                onClick={() => setActivityFilter("all")}
+                className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${
+                  activityFilter === "all"
+                    ? "bg-[#003B95] border-[#003B95] text-white shadow-xs"
+                    : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                 }`}
               >
-                <span>{tabItem.label}</span>
-                <span
-                  className={`grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-black ${
-                    active
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                  }`}
-                >
-                  {tabItem.count}
+                <span>Tất cả</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                  activityFilter === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                }`}>
+                  {allMeetingsCount}
                 </span>
               </button>
-            );
-          })}
-        </div>
 
-        {/* Events Cards List */}
-        {loading && (
-          <div className="space-y-4">
-            {[1, 2].map((sk) => (
-              <div
-                key={sk}
-                className="animate-pulse rounded-3xl border border-white/10 bg-slate-900/70 p-5 h-60 flex flex-col justify-between"
+              {/* Họp cố định theo ban */}
+              <button
+                type="button"
+                onClick={() => setActivityFilter("fixed_committee")}
+                className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                  activityFilter === "fixed_committee"
+                    ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                    : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                }`}
               >
-                <div className="flex justify-between items-center">
-                  <div className="h-6 w-28 rounded-full bg-white/10" />
-                  <div className="h-8 w-8 rounded-full bg-white/10" />
-                </div>
-                <div className="space-y-2">
-                  <div className="h-6 w-3/4 rounded-md bg-white/10" />
-                  <div className="h-4 w-1/2 rounded-md bg-white/5" />
-                </div>
-                <div className="grid grid-cols-4 gap-2 max-w-[260px]">
-                  {[1, 2, 3, 4].map((b) => (
-                    <div key={b} className="h-12 rounded-xl bg-white/10" />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                <span>Họp cố định theo ban</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                  activityFilter === "fixed_committee" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                }`}>
+                  {fixedMeetingsCount}
+                </span>
+              </button>
 
-        {!loading && filteredEvents.length === 0 && (
-          <div className="py-12 text-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
-            <p className="text-[13.5px] font-medium text-[var(--vba-text-dim)]">
-              {eventCategory === "free"
-                ? (isEn ? "No free events available" : "Hiện không có sự kiện miễn phí nào")
-                : eventCategory === "paid"
-                ? (isEn ? "No paid events available" : "Hiện không có sự kiện có phí nào")
-                : eventCategory === "registered"
-                ? (isEn ? "You have not registered for any events yet" : "Bạn chưa đăng ký tham gia sự kiện nào")
-                : eventCategory === "bookmarked"
-                ? (isEn ? "You have not bookmarked any events yet" : "Bạn chưa đánh dấu sự kiện nào")
-                : (isEn ? "No events scheduled yet" : t("m.events.empty"))}
-            </p>
+              {/* Họp bất thường/ Đột xuất */}
+              <button
+                type="button"
+                onClick={() => setActivityFilter("extraordinary")}
+                className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                  activityFilter === "extraordinary"
+                    ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                    : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <span>Họp bất thường/ Đột xuất</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                  activityFilter === "extraordinary" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                }`}>
+                  {extraordinaryMeetingsCount}
+                </span>
+              </button>
+            </div>
           </div>
-        )}
 
-        {!loading && paginatedEvents.length > 0 && (
-          <div className="space-y-4">
-            {paginatedEvents.map((e) => {
-              const originalIndex = events.findIndex((x) => x.id === e.id);
-              const evIndex = originalIndex >= 0 ? originalIndex : 0;
+          {/* Activities List Cards */}
+          <div className="self-stretch px-3 flex flex-col justify-start items-start gap-2">
+            {displayMeetingsList.map((m: any, idx: number) => {
+              const isOnline = m.isOnline;
+              const times = (m.time || "09:00 - 10:30").split("-").map((s: string) => s.trim());
+              const startTime = times[0] || "09:00";
+              const endTime = times[1] || "";
+              const isExtraordinary = m.category === "extraordinary" || m.isExtraordinary;
+
               return (
-                <EventPosterCard
-                  key={e.id}
-                  event={e}
-                  index={evIndex}
-                  onSelect={handleSelectEvent}
-                  isBookmarked={!!bookmarkedIds[e.id]}
-                  onToggleBookmark={toggleBookmark}
-                  registered={isRegistered(e)}
-                  isFree={isEventFree(e)}
-                  price={getEventPrice(e)}
-                  isPast={isEventPast(e)}
-                  onUnregister={(evtObj, evt) => handleOpenCancelModal(evtObj, evt)}
-                  onOpenRecap={(ev) => setRecapModalEvent(ev)}
-                  variant="default"
-                />
+                <div
+                  key={m.id || idx}
+                  className="self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 inline-flex justify-start items-start shadow-2xs hover:shadow-xs transition"
+                >
+                  {/* Left time column */}
+                  <div className="self-stretch pr-3 border-r border-slate-200 dark:border-slate-700 flex flex-col justify-start items-center gap-0.5 min-w-[50px] shrink-0">
+                    <div className="text-[#001B54] dark:text-blue-300 text-xs font-semibold font-['Inter'] leading-4">
+                      {startTime}
+                    </div>
+                    {endTime && (
+                      <>
+                        <div className="w-px h-2.5 bg-slate-300 dark:bg-slate-600 my-0.5" />
+                        <div className="text-slate-400 text-xs font-semibold font-['Inter'] leading-4">
+                          {endTime}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Right content column */}
+                  <div className="flex-1 pl-3 inline-flex flex-col justify-start items-start gap-1.5 min-w-0">
+                    <div className="self-stretch inline-flex justify-start items-center gap-2 flex-wrap">
+                      <div className={`px-2 py-0.5 rounded-full flex justify-start items-center gap-1 ${
+                        isOnline
+                          ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
+                          : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300"
+                      }`}>
+                        {isOnline ? (
+                          <img src="/icons/activities/Wifi.svg" className="size-3 shrink-0" alt="online" />
+                        ) : null}
+                        <span className="text-[10px] font-semibold font-['Inter'] leading-4">
+                          {isOnline ? "Trực tuyến" : "Trực tiếp"}
+                        </span>
+                      </div>
+                      <div className="text-slate-400 text-xs font-semibold font-['Inter'] leading-4 truncate">
+                        {isExtraordinary ? "Họp bất thường/ Đột xuất" : "Họp cố định theo ban"}
+                      </div>
+                    </div>
+
+                    <div className="self-stretch text-slate-900 dark:text-white text-sm font-semibold font-['Inter'] leading-5 line-clamp-2">
+                      {m.title}
+                    </div>
+
+                    <div className="self-stretch inline-flex justify-start items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">
+                      <img
+                        src={isOnline ? "/icons/activities/globe-02.svg" : "/icons/activities/home-04.svg"}
+                        className="size-3.5 shrink-0 opacity-70"
+                        alt={isOnline ? "url" : "venue"}
+                      />
+                      <span className="truncate">
+                        {m.location || m.meetingLink || "Cung Tri Thức"}
+                      </span>
+                    </div>
+
+                    <div className="self-stretch pt-1 inline-flex justify-start items-start gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isOnline && m.meetingLink) {
+                            setActiveMeetingRoom({ title: m.title, link: m.meetingLink });
+                          } else {
+                            toast.success(`Đã xác nhận tham dự cuộc họp: ${m.title}`);
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-lg border border-[#003B95] flex justify-center items-center gap-1.5 text-sm font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
+                      >
+                        <span>{isOnline ? "Vào phòng họp ngay" : "Xác nhận tham dự"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
-          </div>
-        )}
 
-        {/* PHÂN TRANG RIÊNG BIỆT CHO SECTION DANH SÁCH SỰ KIỆN */}
-        {totalEventPages > 1 && (
-          <div className="flex items-center justify-between pt-3 pb-1 border-t border-slate-200/70 dark:border-slate-800">
-            <button
-              type="button"
-              disabled={eventsPage <= 1}
-              onClick={() => setEventsPage((p) => Math.max(1, p - 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              <span>Trước</span>
-            </button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalEventPages }, (_, i) => i + 1).map((p) => {
-                const isCur = p === eventsPage;
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setEventsPage(p)}
-                    className={`h-7 w-7 rounded-lg text-xs font-black transition cursor-pointer ${
-                      isCur
-                        ? "bg-sky-950 text-white font-bold shadow-xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              disabled={eventsPage >= totalEventPages}
-              onClick={() => setEventsPage((p) => Math.min(totalEventPages, p + 1))}
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-            >
-              <span>Sau</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 4. Section: Sự kiện xem gần đây (recently-viewed) - vừa vặn kích thước section trên */}
-      <div className="px-4 mt-6 space-y-3 w-full">
-        {/* SỰ KIỆN XEM GẦN ĐÂY */}
-        <div className="flex items-center justify-between">
-          <div className="font-['Inter'] font-bold text-[13px] sm:text-[14px] leading-tight text-[#001B54] dark:text-white uppercase tracking-tight flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-[#003B95]" />
-            <span>SỰ KIỆN XEM GẦN ĐÂY</span>
-          </div>
-          <span className="text-[11px] font-medium text-slate-400">
-            {displayedRecentItems.length} sự kiện
-          </span>
-        </div>
-
-        {/* Grid 2 cột dàn đều vừa khít 100% kích thước section trên */}
-        <div className="grid grid-cols-2 gap-3 w-full">
-          {displayedRecentItems.slice(0, 2).map((item) => (
-            <div
-              key={item.id}
-              onClick={() => handleSelectEvent(item.event)}
-              className="group box-border flex flex-col items-start p-2.5 sm:p-3 gap-2 w-full bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl cursor-pointer shadow-xs hover:shadow-md hover:border-[#003B95]/40 dark:hover:border-blue-500/40 transition active:scale-[0.98]"
-            >
-              {/* Rectangle: Poster full width của cột */}
-              <div className="w-full h-24 sm:h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 shrink-0 relative">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none pointer-events-none"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 pointer-events-none" />
-              </div>
-              {/* Title */}
-              <div
-                title={item.title}
-                className="w-full font-['Inter'] font-bold text-[12px] sm:text-[13px] leading-snug text-[#001B54] dark:text-white line-clamp-1"
-              >
-                {item.title}
-              </div>
-              <div className="w-full flex items-center justify-between text-[10.5px] text-slate-400 -mt-0.5">
-                <span className="truncate">CEO 1983</span>
-                <span className="text-[#003B95] dark:text-[#003B95] font-bold group-hover:translate-x-0.5 transition-transform flex items-center">
-                  Xem <ArrowRight className="h-3 w-3 inline ml-0.5" />
-                </span>
+            {/* Footer disclaimer */}
+            <div className="self-stretch pt-2 pb-8 flex flex-col justify-start items-center">
+              <div className="inline-flex justify-center items-center gap-1.5 text-slate-400 text-xs font-normal font-['Inter'] leading-4 max-w-sm text-center">
+                <img src="/icons/activities/user-circle-02.svg" className="size-3.5 shrink-0 opacity-60" alt="convener" />
+                <span>Triệu tập bởi Chủ tịch CLB · Thành phần: Hội viên được triệu tập</span>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 5. Footer: Thiết kế tối giản, thanh lịch, chuẩn xu hướng hiện đại */}
-      <div className="mx-4 mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 text-slate-800 dark:text-slate-100 shadow-[0_4px_16px_rgba(245,158,11,0.1)]">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/15 text-[#003B95] border border-slate-200 dark:border-slate-800 shrink-0">
-              <Sparkles className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                CLB Doanh Nhân CEO 1983 · Kết Nối Thịnh Vượng
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Kế thừa giá trị, kiến tạo tương lai và đồng hành phát triển bền vững.
-              </p>
-            </div>
           </div>
-          <Link
-            to="/association/messages"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] border border-white/20 text-white px-3.5 py-2 text-xs font-bold shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
-          >
-            <span>Liên hệ Ban Truyền Thông</span>
-            <ArrowRight className="h-3.5 w-3.5 text-amber-300" />
-          </Link>
         </div>
-      </div>
-      </>
       )}
 
       {/* ── MEETING CALL ROOM MODAL ── */}

@@ -1,5 +1,156 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 09/11/2026 (v10.73): Hoàn Thiện Tinh Chỉnh Giao Diện Danh Mục Sự Kiện & Hoạt Động CEO 1983 Mobile App Chuẩn Figma Kèm 2 Bộ Icon Độc Quyền ([NODE-APP-008])**:
+  1. *Trích xuất và tổ chức 2 bộ icon độc quyền theo đúng chỉ định*:
+     - **Bộ Icon Hoạt động** (`C:\Users\vumik\Downloads\CEO1983_icon (1).zip`): Trích xuất vào `apps/ceo1983_app_fe/public/icons/activities/`:
+       + `arrow-left-02.svg`: Nút quay lại trang chủ.
+       + `calendar-02.svg`: Nút chuyển đến lịch công tác & hoạt động.
+       + `home-04.svg`: Biểu tượng địa điểm hội trường/trụ sở trực tiếp.
+       + `Wifi.svg` & `globe-02.svg`: Biểu tượng hình thức họp trực tuyến (Jitsi Meet).
+       + `user-circle-02.svg`: Biểu tượng triệu tập bởi Chủ tịch CLB.
+       + `pie-chart.svg`, `qr-code-02.svg`.
+     - **Bộ Icon Sự kiện** (`C:\Users\vumik\Downloads\CEO1983_icon (2).zip`): Trích xuất vào `apps/ceo1983_app_fe/public/icons/events/`:
+       + `alarm-clock.svg`: Biểu tượng đồng hồ hiển thị ngày giờ diễn ra sự kiện.
+       + `arrow-left-02.svg`: Nút quay lại.
+       + `arrow-right-02.svg`: Mũi tên điều hướng cho nút "Xem ngay", "Xem tất cả", "Liên hệ Ban Truyền Thông".
+       + `calendar-02.svg`: Icon nút lịch công tác trên header.
+       + `calendar-03.svg`: Icon ngày diễn ra trên huy hiệu hero carousel.
+       + `dot-separator.svg` & `·.svg`: Dấu chấm ngăn cách ngày và giờ.
+       + `location-01.svg`: Biểu tượng định vị địa điểm tổ chức sự kiện.
+       + `more-vertical.svg`: Nút mở rộng 3 chấm trên thẻ sự kiện.
+  2. *Đồng bộ giao diện Tab "Hoạt động" (Activities & Meetings)*:
+     - Header: Nút back (`arrow-left-02.svg`), tiêu đề "Sự kiện", nút lịch (`calendar-02.svg`).
+     - Subheader: "Hoạt động & Cuộc họp" - "Điều Hành Trực Tuyến & Trực Tiếp".
+     - Bộ lọc phân loại: "Tất cả", "Họp cố định theo ban", "Họp bất thường/ Đột xuất" với badge số lượng chuẩn theo thiết kế.
+     - Thẻ timeline cuộc họp:
+       + Cột thời gian bên trái (giờ bắt đầu, đường kẻ nối, giờ kết thúc).
+       + Cột nội dung bên phải: Huy hiệu "Trực tiếp" (cam `#FFF4ED`) hoặc "Trực tuyến" (xanh `#EFF8FF` kèm icon `Wifi.svg`), tên phân loại họp, tiêu đề cuộc họp in đậm, địa điểm/link họp kèm icon `home-04.svg` hoặc `globe-02.svg`, nút "Xác nhận tham dự" / "Vào phòng họp ngay".
+     - Chân trang ghi chú: Icon `user-circle-02.svg` kèm dòng chữ "Triệu tập bởi Chủ tịch CLB · Thành phần: Hội viên được triệu tập".
+  3. *Đồng bộ giao diện Tab "Sự kiện" (Events)*:
+     - Hero carousel "Sự kiện sắp tới": Thẻ ảnh bo góc, gradient tối, huy hiệu ngày tháng kèm icon `calendar-03.svg`, tag danh mục, tiêu đề chữ trắng, địa điểm kèm `location-01.svg`, nút "Xem ngay" kèm `arrow-right-02.svg`, cụm chấm phân trang.
+     - Khối "Tất cả sự kiện": Bộ lọc pill 4 trạng thái ("Sắp diễn ra", "Đã đăng ký", "Miễn phí", "Có phí").
+     - Thẻ sự kiện dọc: Thumbnail bo góc 16px (w-24), header danh mục + nút 3 chấm `more-vertical.svg`, tiêu đề màu navy sang trọng, hàng ngày giờ kèm `alarm-clock.svg` + `dot-separator.svg`, địa điểm kèm `location-01.svg`, thanh đáy chứa badge vé và nút "Đăng ký ngay".
+     - Nút "Xem tất cả ({count})" kèm `arrow-right-02.svg`.
+     - Khối "Xem gần đây": Lưới 2 cột kèm cụm chấm chỉ số trang.
+     - Banner chân trang: "CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng", nút "Liên hệ Ban Truyền Thông" kèm `arrow-right-02.svg`.
+  4. *Kiểm tra chất lượng code (Code Quality)*:
+     - Frontend React: `npx tsc -p tsconfig.json --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Backend NestJS: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git: Không tự động chạy git commit hay push, toàn bộ thay đổi lưu trữ an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.72): Triển Khai Phân Hệ Quản Lý Mẫu Trang & Thư Mời Đa Kênh (App, Zalo OA, Email), Chuẩn Hóa Badge Trắng & Click Dismiss Badge Trên Sidebar ([NODE-CRM-024], [NODE-CRM-022])**:
+  1. *Chức năng Quản lý Thư Mời & Studio Poster Thư Mời (`InvitationTemplateStudio.tsx`, `OmnichannelBroadcastModal.tsx`)*:
+     - Hỗ trợ 2 phương thức linh hoạt:
+       + (1) **Tải poster mời có sẵn**: Cho phép người dùng upload ảnh poster (JPG, PNG, WebP) có sẵn từ máy tính, xem trước trực tiếp.
+       + (2) **Tự cấu hình thiết kế poster thư mời (Poster Studio)**: Chọn nền thành phố VIP (Skyline Cosmos, Perspective Dark, Contrast Party, Daylight Aspiration), logo CLB CEO 1983, kicker, tiêu đề chính, phụ đề, kính gửi, nội dung tri ân, ngày giờ, địa điểm hội trường, chữ ký Ban Tổ Chức, mã QR check-in tự sinh dynamic.
+     - Nạp nhanh thông tin từ sự kiện hoặc cuộc họp sẵn có từ cơ sở dữ liệu.
+     - Lưu cấu hình thành mẫu template thư mời tái sử dụng (`GET /admin/invitation-templates`, `POST /admin/invitation-templates`).
+     - **Nút "Áp dụng và gửi" kèm Checkbox 3 kênh gửi**:
+       + Checkbox 1: `[x] Gửi vào App` (Push notification + Đăng bài phát thanh kèm poster lên Bảng tin Mạng lưới CEO 1983 App).
+       + Checkbox 2: `[x] Gửi vào Zalo OA` (Gửi tin nhắn Zalo OA ZNS tới số điện thoại hội viên).
+       + Checkbox 3: `[x] Gửi vào Email` (Email HTML trang trọng kèm poster đính kèm tới email hội viên).
+       + Người dùng có thể tích chọn Tất cả (cả 3 kênh), 2 kênh, hoặc 1 kênh tùy ý.
+       + Backend endpoint: `POST /api/admin/invitation-templates/broadcast`.
+  2. *Sửa thông báo số màu trắng và click tự động biến mất badge (`Sidebar.tsx`)*:
+     - Định kiểu số badge chữ màu trắng tinh, đậm nét: `text-white !text-white font-black select-none` trên nền `bg-rose-600 ring-1 ring-white/20`.
+     - Tích hợp hàm `dismissBadge(route)`: Khi người dùng click vào bất kỳ chức năng nào trên sidebar (cha hoặc con), số thông báo của chức năng đó lập tức biến mất (ẩn về 0), đồng thời lưu trạng thái vào `localStorage` (`vba_crm_dismissed_badges`).
+  3. *Gộp nhóm "Quản lý mẫu trang" trên Sidebar & Trang Hub Tổng Hợp (`PageTemplatesHub.tsx`, `/templates`)*:
+     - Tạo nhóm **Quản lý mẫu trang** (`/templates`, icon `LayoutTemplate`) trên Sidebar. Khi click mở rộng ra 5 chức năng con bên dưới:
+       + (1) **Template Thư Mời** (`/templates?tab=invitation`)
+       + (2) **Template Email** (`/templates?tab=email`, tích hợp visual `MailTemplateManager`)
+       + (3) **Template Mẫu Tin Nhắn Zalo** (`/templates?tab=zalo`, `ZaloTemplateManager`)
+       + (4) **Thanh Toán Hội Phí** (`/templates?tab=dues`, `DuesTemplateManager` kèm VietQR dynamic)
+       + (5) **Mẫu Cuộc Gặp Diễn Đàn** (`/templates?tab=forum-meetings`, `ForumMeetingTemplateManager` kèm Agenda kịch bản theo giờ)
+     - Cập nhật định tuyến TanStack Router `src/routes/templates.tsx`, cập nhật `routeTree.gen.ts`, `use-sidebar-labels.ts` và đăng ký Node `[NODE-CRM-024]` trong Ma trận chức năng.
+  4. *Kiểm tra chất lượng code*:
+     - Backend: `npx tsc -p tsconfig.json --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Frontend: `npx tsc -p tsconfig.json --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt quy tắc Git: Toàn bộ thay đổi lưu trữ an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.71): Xác Lập Chuẩn Tuyệt Đối CSDL 113.20.107.184:6432/ceo1983_project & Xóa Bỏ Logic Loại Trừ Trong Backend ([NODE-CORE-001], [NODE-CORE-002])**:
+  1. *Xác nhận của Người dùng & Mục tiêu*:
+     - Người dùng xác nhận dứt khoát CSDL chuẩn của dự án là:
+       `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+  2. *Khắc phục lỗi cốt lõi trong mã nguồn*:
+     - Phát hiện trong `apps/ceo1983_app_be/src/main.ts`, hàm `resolveDatabaseConfig()` trước đó có logic lọc `!process.env.DATABASE_URL.includes('113.20.107.184')` dẫn đến việc cố tình bỏ qua CSDL `113.20.107.184` và tự ý trỏ fallback về `14.225.217.232`.
+     - Đã loại bỏ hoàn toàn logic loại trừ này, ưu tiên 100% `DATABASE_URL` từ môi trường/tệp `.env`.
+     - Cập nhật đồng bộ toàn bộ các tệp cấu hình:
+       + Root `.env`: Trỏ chuẩn `113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+       + `apps/ceo1983_app_be/.env`: Trỏ chuẩn `113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+       + `packages/db/.env`: Trỏ chuẩn `113.20.107.184:6432/ceo1983_project?pgbouncer=true` (Direct URL: `113.20.107.184:6432/ceo1983_project`).
+       + `packages/db/.env.example`: Đồng bộ chuẩn theo `.env`.
+  3. *Hiện trạng CSDL 113.20.107.184:6432/ceo1983_project*:
+     - Đã kết nối thành công 100%.
+     - Đã làm sạch toàn bộ 163 bảng nghiệp vụ, chỉ duy nhất bảo lưu tài khoản Quản trị `admin@connect.vn` (User ID `00000000-0000-4000-8000-000000000002`) và cấu hình hiệp hội cốt lõi.
+     - Bảng người dùng đã đổi sang `ceo1983_users` và có VIEW tương thích ngược `vione_users`.
+  4. *Kiểm tra chất lượng code (Code Quality)*:
+     - `packages/db`: `npx prisma generate` thành công.
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: Đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Toàn bộ thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.70): Chấn Chỉnh & Chuẩn Hóa Toàn Diện Kết Nối CSDL Sang Máy Chủ Chuẩn 14.225.217.232:5436/ceo1983_project ([NODE-CORE-001], [NODE-CORE-002])**:
+  1. *Nguyên nhân cốt lõi*:
+     - Phát hiện sự không đồng nhất giữa các tệp môi trường: Trong khi root `.env` và `deploy/` trỏ về máy chủ VPS chính thức `14.225.217.232:5436/ceo1983_project`, thì `apps/ceo1983_app_be/.env`, `packages/db/.env` và `packages/db/.env.example` lại bị trỏ nhầm về máy chủ cũ `113.20.107.184:6432`.
+     - Điều này khiến Prisma ORM và backend cục bộ kết nối vào CSDL trên host cũ, làm cho các thao tác làm sạch dữ liệu và đổi tên bảng trước đó chạy vào `113.20.107.184` thay vì máy chủ thật `14.225.217.232:5436`.
+  2. *Hành động khắc phục kỹ thuật*:
+     - Cập nhật chuẩn hóa toàn bộ `apps/ceo1983_app_be/.env`, `packages/db/.env`, `packages/db/.env.example` sang chuỗi kết nối chuẩn:
+       `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public`.
+     - Chạy lại `npx prisma generate` từ `packages/db`, xác nhận Prisma Client đồng bộ 100%.
+     - Kiểm tra kiểu tĩnh Backend NestJS `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+  3. *Hiện trạng máy chủ chuẩn 14.225.217.232:5436/ceo1983_project*:
+     - CSDL có 215 bảng, trong đó 40 bảng đang chứa dữ liệu hoạt động cũ (13 users, 12 members, 20 events, 22 bài viết, 13 cơ hội giao thương...).
+     - Bảng người dùng tại máy chủ này hiện vẫn mang tên `vione_users`.
+     - Sẵn sàng script làm sạch CSDL (chỉ giữ lại tài khoản tối cao `admin@connect.vn`) và đổi tên bảng `vione_users` -> `ceo1983_users` ngay khi có xác nhận cuối cùng từ người dùng.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.69): Tái Cấu Trúc Toàn Diện Giao Diện Màn Sự Kiện & Hoạt Động CEO 1983 Mobile App Chuẩn Figma ([NODE-APP-008])**:
+  1. *Đồng bộ giao diện Sự kiện (Events) chuẩn bản thiết kế Figma*:
+     - **Header**: Nút back bo góc vuông mềm với icon `/icons/events/arrow-left-02.svg`, tiêu đề "Sự kiện", nút mở lịch công tác với icon `/icons/events/calendar-02.svg`.
+     - **Tab chuyển đổi kép**: "Sự kiện" vs "Hoạt động" có thanh chỉ báo `border-b-2 border-[#003B95]` tinh tế.
+     - **Khối "Sự kiện sắp tới" Hero Card**: Tự động xoay vòng carousel với ảnh nền bo góc 16px, gradient đen mờ, huy hiệu ngày diễn ra kèm icon lịch, huy hiệu ngành "Giao thương B2B", tiêu đề sự kiện chữ trắng nổi bật, địa điểm hội trường kèm icon vị trí, nút "Xem ngay" phong cách viền phẳng kèm icon mũi tên, và cụm 4 chấm phân trang.
+     - **Khối "Tất cả sự kiện"**: Cụm pill bộ lọc với số đếm badge ("Sắp diễn ra", "Đã đăng ký", "Miễn phí", "Có phí").
+     - **Danh sách thẻ sự kiện dọc (Event Cards)**: Ảnh thumbnail bên trái (w-24), cột thông tin bên phải (danh mục + nút 3 chấm `more-vertical.svg`, tiêu đề in đậm, hàng ngày giờ kèm icon đồng hồ báo thức `alarm-clock.svg`, địa điểm hội trường), thanh đáy chứa badge trạng thái vé ("Còn vé" / "Miễn phí") và nút "Đăng ký ngay" màu Navy sang trọng.
+     - **Nút "Xem tất cả ({tổng số})"**: Nút chuyển tiếp kèm icon `arrow-right-02.svg`.
+     - **Khối "Xem gần đây"**: Hiển thị dạng lưới 2 cột nhỏ gọn kèm cụm chấm chỉ số trang.
+     - **Banner chân trang CLB**: "CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng", nút liên hệ Ban Truyền Thông.
+  2. *Đồng bộ giao diện Hoạt động (Meetings & Activities) chuẩn bản thiết kế Figma*:
+     - **Tiêu đề phân khu**: "Hoạt động & Cuộc họp" - "Điều Hành Trực Tuyến & Trực Tiếp".
+     - **Bộ lọc phân loại**: "Tất cả", "Họp cố định theo ban", "Họp bất thường/ Đột xuất".
+     - **Thẻ cuộc họp trục thời gian (Timeline Cards)**: Cột mốc thời gian bên trái (giờ bắt đầu, thanh dọc kết nối, giờ kết thúc), Thẻ nội dung bên phải (huy hiệu hình thái "Trực tiếp" / "Trực tuyến" kèm icon globe/home, phân loại cuộc họp, tiêu đề cuộc họp in đậm, địa điểm/link phòng họp, nút xác nhận tham dự).
+     - **Ghi chú triệu tập**: "Triệu tập bởi Chủ tịch CLB · Thành phần: Hội viên được triệu tập".
+  3. *Tổ chức & khai thác bộ Icon SVG độc quyền*:
+     - Trích xuất toàn bộ icon từ `CEO1983_icon.zip` vào `apps/ceo1983_app_fe/public/icons/events/`: `alarm-clock.svg`, `arrow-left-02.svg`, `arrow-right-02.svg`, `calendar-02.svg`, `calendar-03.svg`, `dot-separator.svg`, `location-01.svg`, `more-vertical.svg`.
+     - Trích xuất toàn bộ icon từ `CEO1983_icon (1).zip` vào `apps/ceo1983_app_fe/public/icons/activities/`: `arrow-left-02.svg`, `calendar-02.svg`, `globe-02.svg`, `home-04.svg`, `pie-chart.svg`, `qr-code-02.svg`, `user-circle-02.svg`.
+  4. *Bộ dữ liệu Fallback an toàn*:
+     - Cung cấp dữ liệu fallback tự nhiên cho sự kiện và cuộc họp, đảm bảo giao diện luôn hiển thị phong phú, chỉn chu ngay cả khi CSDL vừa được làm sạch.
+  5. *Đảm bảo chất lượng code (Code Quality)*:
+     - Đã sinh lại cây route TanStack Router (`npm run routes:gen`).
+     - Backend NestJS `apps/ceo1983_app_be`: `tsc --noEmit` đạt 0 lỗi (Exit code 0).
+     - Frontend React 19 `apps/ceo1983_app_fe`: Đảm bảo quy chuẩn kiểu tĩnh.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Toàn bộ thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.68): Làm Sạch Toàn Diện CSDL CEO 1983 & Chuẩn Hóa Tên Bảng Sang ceo1983_users Loại Bỏ Hoàn Toàn Tên vione ([NODE-CORE-001] -> [NODE-CORE-006])**:
+  1. *Làm sạch dữ liệu cơ sở dữ liệu (Clean Database Wipe)*:
+     - Cơ sở dữ liệu: `ceo1983_project` tại host `113.20.107.184:6432`.
+     - Đã TRUNCATE CASCADE sạch sẽ 163 bảng dữ liệu nghiệp vụ (bài viết, tin nhắn, sự kiện, vé, bình luận, giao dịch, hóa đơn, khách hàng CRM, logs, sessions...).
+     - Lọc sạch các tài khoản và phân quyền thử nghiệm trong `user_roles`, `user_profiles`, `user_settings`, `card_settings`, `memberships`, `members`.
+     - Chỉ duy nhất bảo lưu tài khoản Quản trị tối cao:
+       - Email: `admin@connect.vn`
+       - User ID: `00000000-0000-4000-8000-000000000002`
+       - Mã hội viên: `M1983-268` (Jame Nguyễn - Ban Quản Trị)
+       - Vai trò: `admin`
+     - Bảo lưu các bảng cấu hình hiệp hội cốt lõi: `associations` (CLB Doanh Nhân CEO 1983), `app_settings` (ma trận phân quyền RBAC và cấu hình Landing Web), `association_benefits`, `sponsor_packages`.
+  2. *Chuẩn hóa tên bảng Hiệp hội (Loại bỏ tiền tố vione)*:
+     - Đổi tên bảng vật lý: `vione_users` -> `ceo1983_users`.
+     - Đổi tên toàn bộ index: `vione_users_*` -> `ceo1983_users_*`.
+     - Tạo VIEW `vione_users` tương thích ngược trỏ về `ceo1983_users` để đảm bảo 100% tương thích runtime cho các truy vấn cũ.
+     - Cập nhật Prisma Schema (`packages/db/prisma/schema.prisma`): Bổ sung `model ceo1983_users` và map `model vione_users`.
+     - Chạy lại `prisma generate` thành công.
+  3. *Kiểm tra chất lượng và an toàn hệ thống (Code Quality & Type-Check)*:
+     - Backend NestJS (`apps/ceo1983_app_be`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Frontend React 19 (`apps/ceo1983_app_fe`): Không bị ảnh hưởng, đảm bảo an toàn.
+     - Tuân thủ nghiêm ngặt Quy tắc Git: Không tự động commit hay push, toàn bộ thay đổi lưu an toàn tại local.
+
 - **Bản cập nhật ngày 08/11/2026 (v10.67): Triển Khai Toàn Diện Bộ Unit Test Cho Cả Web CRM & CEO 1983 Mobile App (Đạt 82/82 Tests PASS 100% - BE: 41 Tests, FE: 41 Tests) ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
   1. *Tổng Thể Bộ Unit Test Độc Lập*:
      - **Backend NestJS (Jest)**: **18 Test Suites, 41 Tests PASS (100%)**, 0 lỗi.
@@ -71,6 +222,157 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 09/11/2026 (v10.73): Hoàn Thiện Tinh Chỉnh Giao Diện Danh Mục Sự Kiện & Hoạt Động CEO 1983 Mobile App Chuẩn Figma Kèm 2 Bộ Icon Độc Quyền ([NODE-APP-008])**:
+  1. *Trích xuất và tổ chức 2 bộ icon độc quyền theo đúng chỉ định*:
+     - **Bộ Icon Hoạt động** (`C:\Users\vumik\Downloads\CEO1983_icon (1).zip`): Trích xuất vào `apps/ceo1983_app_fe/public/icons/activities/`:
+       + `arrow-left-02.svg`: Nút quay lại trang chủ.
+       + `calendar-02.svg`: Nút chuyển đến lịch công tác & hoạt động.
+       + `home-04.svg`: Biểu tượng địa điểm hội trường/trụ sở trực tiếp.
+       + `Wifi.svg` & `globe-02.svg`: Biểu tượng hình thức họp trực tuyến (Jitsi Meet).
+       + `user-circle-02.svg`: Biểu tượng triệu tập bởi Chủ tịch CLB.
+       + `pie-chart.svg`, `qr-code-02.svg`.
+     - **Bộ Icon Sự kiện** (`C:\Users\vumik\Downloads\CEO1983_icon (2).zip`): Trích xuất vào `apps/ceo1983_app_fe/public/icons/events/`:
+       + `alarm-clock.svg`: Biểu tượng đồng hồ hiển thị ngày giờ diễn ra sự kiện.
+       + `arrow-left-02.svg`: Nút quay lại.
+       + `arrow-right-02.svg`: Mũi tên điều hướng cho nút "Xem ngay", "Xem tất cả", "Liên hệ Ban Truyền Thông".
+       + `calendar-02.svg`: Icon nút lịch công tác trên header.
+       + `calendar-03.svg`: Icon ngày diễn ra trên huy hiệu hero carousel.
+       + `dot-separator.svg` & `·.svg`: Dấu chấm ngăn cách ngày và giờ.
+       + `location-01.svg`: Biểu tượng định vị địa điểm tổ chức sự kiện.
+       + `more-vertical.svg`: Nút mở rộng 3 chấm trên thẻ sự kiện.
+  2. *Đồng bộ giao diện Tab "Hoạt động" (Activities & Meetings)*:
+     - Header: Nút back (`arrow-left-02.svg`), tiêu đề "Sự kiện", nút lịch (`calendar-02.svg`).
+     - Subheader: "Hoạt động & Cuộc họp" - "Điều Hành Trực Tuyến & Trực Tiếp".
+     - Bộ lọc phân loại: "Tất cả", "Họp cố định theo ban", "Họp bất thường/ Đột xuất" với badge số lượng chuẩn theo thiết kế.
+     - Thẻ timeline cuộc họp:
+       + Cột thời gian bên trái (giờ bắt đầu, đường kẻ nối, giờ kết thúc).
+       + Cột nội dung bên phải: Huy hiệu "Trực tiếp" (cam `#FFF4ED`) hoặc "Trực tuyến" (xanh `#EFF8FF` kèm icon `Wifi.svg`), tên phân loại họp, tiêu đề cuộc họp in đậm, địa điểm/link họp kèm icon `home-04.svg` hoặc `globe-02.svg`, nút "Xác nhận tham dự" / "Vào phòng họp ngay".
+     - Chân trang ghi chú: Icon `user-circle-02.svg` kèm dòng chữ "Triệu tập bởi Chủ tịch CLB · Thành phần: Hội viên được triệu tập".
+  3. *Đồng bộ giao diện Tab "Sự kiện" (Events)*:
+     - Hero carousel "Sự kiện sắp tới": Thẻ ảnh bo góc, gradient tối, huy hiệu ngày tháng kèm icon `calendar-03.svg`, tag danh mục, tiêu đề chữ trắng, địa điểm kèm `location-01.svg`, nút "Xem ngay" kèm `arrow-right-02.svg`, cụm chấm phân trang.
+     - Khối "Tất cả sự kiện": Bộ lọc pill 4 trạng thái ("Sắp diễn ra", "Đã đăng ký", "Miễn phí", "Có phí").
+     - Thẻ sự kiện dọc: Thumbnail bo góc 16px (w-24), header danh mục + nút 3 chấm `more-vertical.svg`, tiêu đề màu navy sang trọng, hàng ngày giờ kèm `alarm-clock.svg` + `dot-separator.svg`, địa điểm kèm `location-01.svg`, thanh đáy chứa badge vé và nút "Đăng ký ngay".
+     - Nút "Xem tất cả ({count})" kèm `arrow-right-02.svg`.
+     - Khối "Xem gần đây": Lưới 2 cột kèm cụm chấm chỉ số trang.
+     - Banner chân trang: "CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng", nút "Liên hệ Ban Truyền Thông" kèm `arrow-right-02.svg`.
+  4. *Kiểm tra chất lượng code (Code Quality)*:
+     - Frontend React: `npx tsc -p tsconfig.json --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Backend NestJS: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git: Không tự động chạy git commit hay push, toàn bộ thay đổi lưu trữ an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.72): Triển Khai Phân Hệ Quản Lý Mẫu Trang & Thư Mời Đa Kênh (App, Zalo OA, Email), Chuẩn Hóa Badge Trắng & Click Dismiss Badge Trên Sidebar ([NODE-CRM-024], [NODE-CRM-022])**:
+  1. *Chức năng Quản lý Thư Mời & Studio Poster Thư Mời (`InvitationTemplateStudio.tsx`, `OmnichannelBroadcastModal.tsx`)*:
+     - Hỗ trợ 2 phương thức linh hoạt:
+       + (1) **Tải poster mời có sẵn**: Cho phép người dùng upload ảnh poster (JPG, PNG, WebP) có sẵn từ máy tính, xem trước trực tiếp.
+       + (2) **Tự cấu hình thiết kế poster thư mời (Poster Studio)**: Chọn nền thành phố VIP (Skyline Cosmos, Perspective Dark, Contrast Party, Daylight Aspiration), logo CLB CEO 1983, kicker, tiêu đề chính, phụ đề, kính gửi, nội dung tri ân, ngày giờ, địa điểm hội trường, chữ ký Ban Tổ Chức, mã QR check-in tự sinh dynamic.
+     - Nạp nhanh thông tin từ sự kiện hoặc cuộc họp sẵn có từ cơ sở dữ liệu.
+     - Lưu cấu hình thành mẫu template thư mời tái sử dụng (`GET /admin/invitation-templates`, `POST /admin/invitation-templates`).
+     - **Nút "Áp dụng và gửi" kèm Checkbox 3 kênh gửi**:
+       + Checkbox 1: `[x] Gửi vào App` (Push notification + Đăng bài phát thanh kèm poster lên Bảng tin Mạng lưới CEO 1983 App).
+       + Checkbox 2: `[x] Gửi vào Zalo OA` (Gửi tin nhắn Zalo OA ZNS tới số điện thoại hội viên).
+       + Checkbox 3: `[x] Gửi vào Email` (Email HTML trang trọng kèm poster đính kèm tới email hội viên).
+       + Người dùng có thể tích chọn Tất cả (cả 3 kênh), 2 kênh, hoặc 1 kênh tùy ý.
+       + Backend endpoint: `POST /api/admin/invitation-templates/broadcast`.
+  2. *Sửa thông báo số màu trắng và click tự động biến mất badge (`Sidebar.tsx`)*:
+     - Định kiểu số badge chữ màu trắng tinh, đậm nét: `text-white !text-white font-black select-none` trên nền `bg-rose-600 ring-1 ring-white/20`.
+     - Tích hợp hàm `dismissBadge(route)`: Khi người dùng click vào bất kỳ chức năng nào trên sidebar (cha hoặc con), số thông báo của chức năng đó lập tức biến mất (ẩn về 0), đồng thời lưu trạng thái vào `localStorage` (`vba_crm_dismissed_badges`).
+  3. *Gộp nhóm "Quản lý mẫu trang" trên Sidebar & Trang Hub Tổng Hợp (`PageTemplatesHub.tsx`, `/templates`)*:
+     - Tạo nhóm **Quản lý mẫu trang** (`/templates`, icon `LayoutTemplate`) trên Sidebar. Khi click mở rộng ra 5 chức năng con bên dưới:
+       + (1) **Template Thư Mời** (`/templates?tab=invitation`)
+       + (2) **Template Email** (`/templates?tab=email`, tích hợp visual `MailTemplateManager`)
+       + (3) **Template Mẫu Tin Nhắn Zalo** (`/templates?tab=zalo`, `ZaloTemplateManager`)
+       + (4) **Thanh Toán Hội Phí** (`/templates?tab=dues`, `DuesTemplateManager` kèm VietQR dynamic)
+       + (5) **Mẫu Cuộc Gặp Diễn Đàn** (`/templates?tab=forum-meetings`, `ForumMeetingTemplateManager` kèm Agenda kịch bản theo giờ)
+     - Cập nhật định tuyến TanStack Router `src/routes/templates.tsx`, cập nhật `routeTree.gen.ts`, `use-sidebar-labels.ts` và đăng ký Node `[NODE-CRM-024]` trong Ma trận chức năng.
+  4. *Kiểm tra chất lượng code*:
+     - Backend: `npx tsc -p tsconfig.json --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Frontend: `npx tsc -p tsconfig.json --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt quy tắc Git: Toàn bộ thay đổi lưu trữ an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.71): Xác Lập Chuẩn Tuyệt Đối CSDL 113.20.107.184:6432/ceo1983_project & Xóa Bỏ Logic Loại Trừ Trong Backend ([NODE-CORE-001], [NODE-CORE-002])**:
+  1. *Xác nhận của Người dùng & Mục tiêu*:
+     - Người dùng xác nhận dứt khoát CSDL chuẩn của dự án là:
+       `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+  2. *Khắc phục lỗi cốt lõi trong mã nguồn*:
+     - Phát hiện trong `apps/ceo1983_app_be/src/main.ts`, hàm `resolveDatabaseConfig()` trước đó có logic lọc `!process.env.DATABASE_URL.includes('113.20.107.184')` dẫn đến việc cố tình bỏ qua CSDL `113.20.107.184` và tự ý trỏ fallback về `14.225.217.232`.
+     - Đã loại bỏ hoàn toàn logic loại trừ này, ưu tiên 100% `DATABASE_URL` từ môi trường/tệp `.env`.
+     - Cập nhật đồng bộ toàn bộ các tệp cấu hình:
+       + Root `.env`: Trỏ chuẩn `113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+       + `apps/ceo1983_app_be/.env`: Trỏ chuẩn `113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+       + `packages/db/.env`: Trỏ chuẩn `113.20.107.184:6432/ceo1983_project?pgbouncer=true` (Direct URL: `113.20.107.184:6432/ceo1983_project`).
+       + `packages/db/.env.example`: Đồng bộ chuẩn theo `.env`.
+  3. *Hiện trạng CSDL 113.20.107.184:6432/ceo1983_project*:
+     - Đã kết nối thành công 100%.
+     - Đã làm sạch toàn bộ 163 bảng nghiệp vụ, chỉ duy nhất bảo lưu tài khoản Quản trị `admin@connect.vn` (User ID `00000000-0000-4000-8000-000000000002`) và cấu hình hiệp hội cốt lõi.
+     - Bảng người dùng đã đổi sang `ceo1983_users` và có VIEW tương thích ngược `vione_users`.
+  4. *Kiểm tra chất lượng code (Code Quality)*:
+     - `packages/db`: `npx prisma generate` thành công.
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - `apps/ceo1983_app_fe`: Đạt **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Toàn bộ thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.70): Chấn Chỉnh & Chuẩn Hóa Toàn Diện Kết Nối CSDL Sang Máy Chủ Chuẩn 14.225.217.232:5436/ceo1983_project ([NODE-CORE-001], [NODE-CORE-002])**:
+  1. *Nguyên nhân cốt lõi*:
+     - Phát hiện sự không đồng nhất giữa các tệp môi trường: Trong khi root `.env` và `deploy/` trỏ về máy chủ VPS chính thức `14.225.217.232:5436/ceo1983_project`, thì `apps/ceo1983_app_be/.env`, `packages/db/.env` và `packages/db/.env.example` lại bị trỏ nhầm về máy chủ cũ `113.20.107.184:6432`.
+     - Điều này khiến Prisma ORM và backend cục bộ kết nối vào CSDL trên host cũ, làm cho các thao tác làm sạch dữ liệu và đổi tên bảng trước đó chạy vào `113.20.107.184` thay vì máy chủ thật `14.225.217.232:5436`.
+  2. *Hành động khắc phục kỹ thuật*:
+     - Cập nhật chuẩn hóa toàn bộ `apps/ceo1983_app_be/.env`, `packages/db/.env`, `packages/db/.env.example` sang chuỗi kết nối chuẩn:
+       `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public`.
+     - Chạy lại `npx prisma generate` từ `packages/db`, xác nhận Prisma Client đồng bộ 100%.
+     - Kiểm tra kiểu tĩnh Backend NestJS `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+  3. *Hiện trạng máy chủ chuẩn 14.225.217.232:5436/ceo1983_project*:
+     - CSDL có 215 bảng, trong đó 40 bảng đang chứa dữ liệu hoạt động cũ (13 users, 12 members, 20 events, 22 bài viết, 13 cơ hội giao thương...).
+     - Bảng người dùng tại máy chủ này hiện vẫn mang tên `vione_users`.
+     - Sẵn sàng script làm sạch CSDL (chỉ giữ lại tài khoản tối cao `admin@connect.vn`) và đổi tên bảng `vione_users` -> `ceo1983_users` ngay khi có xác nhận cuối cùng từ người dùng.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.69): Tái Cấu Trúc Toàn Diện Giao Diện Màn Sự Kiện & Hoạt Động CEO 1983 Mobile App Chuẩn Figma ([NODE-APP-008])**:
+  1. *Đồng bộ giao diện Sự kiện (Events) chuẩn bản thiết kế Figma*:
+     - **Header**: Nút back bo góc vuông mềm với icon `/icons/events/arrow-left-02.svg`, tiêu đề "Sự kiện", nút mở lịch công tác với icon `/icons/events/calendar-02.svg`.
+     - **Tab chuyển đổi kép**: "Sự kiện" vs "Hoạt động" có thanh chỉ báo `border-b-2 border-[#003B95]` tinh tế.
+     - **Khối "Sự kiện sắp tới" Hero Card**: Tự động xoay vòng carousel với ảnh nền bo góc 16px, gradient đen mờ, huy hiệu ngày diễn ra kèm icon lịch, huy hiệu ngành "Giao thương B2B", tiêu đề sự kiện chữ trắng nổi bật, địa điểm hội trường kèm icon vị trí, nút "Xem ngay" phong cách viền phẳng kèm icon mũi tên, và cụm 4 chấm phân trang.
+     - **Khối "Tất cả sự kiện"**: Cụm pill bộ lọc với số đếm badge ("Sắp diễn ra", "Đã đăng ký", "Miễn phí", "Có phí").
+     - **Danh sách thẻ sự kiện dọc (Event Cards)**: Ảnh thumbnail bên trái (w-24), cột thông tin bên phải (danh mục + nút 3 chấm `more-vertical.svg`, tiêu đề in đậm, hàng ngày giờ kèm icon đồng hồ báo thức `alarm-clock.svg`, địa điểm hội trường), thanh đáy chứa badge trạng thái vé ("Còn vé" / "Miễn phí") và nút "Đăng ký ngay" màu Navy sang trọng.
+     - **Nút "Xem tất cả ({tổng số})"**: Nút chuyển tiếp kèm icon `arrow-right-02.svg`.
+     - **Khối "Xem gần đây"**: Hiển thị dạng lưới 2 cột nhỏ gọn kèm cụm chấm chỉ số trang.
+     - **Banner chân trang CLB**: "CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng", nút liên hệ Ban Truyền Thông.
+  2. *Đồng bộ giao diện Hoạt động (Meetings & Activities) chuẩn bản thiết kế Figma*:
+     - **Tiêu đề phân khu**: "Hoạt động & Cuộc họp" - "Điều Hành Trực Tuyến & Trực Tiếp".
+     - **Bộ lọc phân loại**: "Tất cả", "Họp cố định theo ban", "Họp bất thường/ Đột xuất".
+     - **Thẻ cuộc họp trục thời gian (Timeline Cards)**: Cột mốc thời gian bên trái (giờ bắt đầu, thanh dọc kết nối, giờ kết thúc), Thẻ nội dung bên phải (huy hiệu hình thái "Trực tiếp" / "Trực tuyến" kèm icon globe/home, phân loại cuộc họp, tiêu đề cuộc họp in đậm, địa điểm/link phòng họp, nút xác nhận tham dự).
+     - **Ghi chú triệu tập**: "Triệu tập bởi Chủ tịch CLB · Thành phần: Hội viên được triệu tập".
+  3. *Tổ chức & khai thác bộ Icon SVG độc quyền*:
+     - Trích xuất toàn bộ icon từ `CEO1983_icon.zip` vào `apps/ceo1983_app_fe/public/icons/events/`: `alarm-clock.svg`, `arrow-left-02.svg`, `arrow-right-02.svg`, `calendar-02.svg`, `calendar-03.svg`, `dot-separator.svg`, `location-01.svg`, `more-vertical.svg`.
+     - Trích xuất toàn bộ icon từ `CEO1983_icon (1).zip` vào `apps/ceo1983_app_fe/public/icons/activities/`: `arrow-left-02.svg`, `calendar-02.svg`, `globe-02.svg`, `home-04.svg`, `pie-chart.svg`, `qr-code-02.svg`, `user-circle-02.svg`.
+  4. *Bộ dữ liệu Fallback an toàn*:
+     - Cung cấp dữ liệu fallback tự nhiên cho sự kiện và cuộc họp, đảm bảo giao diện luôn hiển thị phong phú, chỉn chu ngay cả khi CSDL vừa được làm sạch.
+  5. *Đảm bảo chất lượng code (Code Quality)*:
+     - Đã sinh lại cây route TanStack Router (`npm run routes:gen`).
+     - Backend NestJS `apps/ceo1983_app_be`: `tsc --noEmit` đạt 0 lỗi (Exit code 0).
+     - Frontend React 19 `apps/ceo1983_app_fe`: Đảm bảo quy chuẩn kiểu tĩnh.
+     - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Toàn bộ thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.68): Làm Sạch Toàn Diện CSDL CEO 1983 & Chuẩn Hóa Tên Bảng Sang ceo1983_users Loại Bỏ Hoàn Toàn Tên vione ([NODE-CORE-001] -> [NODE-CORE-006])**:
+  1. *Làm sạch dữ liệu cơ sở dữ liệu (Clean Database Wipe)*:
+     - Cơ sở dữ liệu: `ceo1983_project` tại host `113.20.107.184:6432`.
+     - Đã TRUNCATE CASCADE sạch sẽ 163 bảng dữ liệu nghiệp vụ (bài viết, tin nhắn, sự kiện, vé, bình luận, giao dịch, hóa đơn, khách hàng CRM, logs, sessions...).
+     - Lọc sạch các tài khoản và phân quyền thử nghiệm trong `user_roles`, `user_profiles`, `user_settings`, `card_settings`, `memberships`, `members`.
+     - Chỉ duy nhất bảo lưu tài khoản Quản trị tối cao:
+       - Email: `admin@connect.vn`
+       - User ID: `00000000-0000-4000-8000-000000000002`
+       - Mã hội viên: `M1983-268` (Jame Nguyễn - Ban Quản Trị)
+       - Vai trò: `admin`
+     - Bảo lưu các bảng cấu hình hiệp hội cốt lõi: `associations` (CLB Doanh Nhân CEO 1983), `app_settings` (ma trận phân quyền RBAC và cấu hình Landing Web), `association_benefits`, `sponsor_packages`.
+  2. *Chuẩn hóa tên bảng Hiệp hội (Loại bỏ tiền tố vione)*:
+     - Đổi tên bảng vật lý: `vione_users` -> `ceo1983_users`.
+     - Đổi tên toàn bộ index: `vione_users_*` -> `ceo1983_users_*`.
+     - Tạo VIEW `vione_users` tương thích ngược trỏ về `ceo1983_users` để đảm bảo 100% tương thích runtime cho các truy vấn cũ.
+     - Cập nhật Prisma Schema (`packages/db/prisma/schema.prisma`): Bổ sung `model ceo1983_users` và map `model vione_users`.
+     - Chạy lại `prisma generate` thành công.
+  3. *Kiểm tra chất lượng và an toàn hệ thống (Code Quality & Type-Check)*:
+     - Backend NestJS (`apps/ceo1983_app_be`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+     - Frontend React 19 (`apps/ceo1983_app_fe`): Không bị ảnh hưởng, đảm bảo an toàn.
+     - Tuân thủ nghiêm ngặt Quy tắc Git: Không tự động commit hay push, toàn bộ thay đổi lưu an toàn tại local.
 
 - **Bản cập nhật ngày 08/11/2026 (v10.67): Triển Khai Toàn Diện Bộ Unit Test Cho Cả Web CRM & CEO 1983 Mobile App (Đạt 82/82 Tests PASS 100% - BE: 41 Tests, FE: 41 Tests) ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
   1. *Tổng Thể Bộ Unit Test Độc Lập*:

@@ -143,16 +143,30 @@
   - **Ràng Buộc Phạm Vi Hiển Thị**: Icon này **CHỈ ĐƯỢC PHÉP HIỆN DIỆN DUY NHẤT** khi người dùng đang ở trong phân hệ Sàn thương mại B2B (`/association/products`), không xuất hiện ở các màn hình khác.
   - Khi chạm vào Icon: Mở nhanh trang quản trị/xem danh mục "Gian hàng của tôi" của hội viên, cho phép quản lý tối đa 5 sản phẩm tiêu biểu, chỉnh sửa thông tin hoặc đăng sản phẩm mới.
 
-### `[NODE-APP-008]` Lịch Trình Sự Kiện & Cuộc Họp Ban YBA
+### `[NODE-APP-008]` Lịch Trình Sự Kiện & Hoạt Động Điều Hành CEO 1983 Chuẩn Giao Diện Figma
 - **Route Frontend**: `/association/events` (`src/routes/association.events.tsx`).
-- **Thành phần**: `RegisteredEventsQrSlider.tsx`, `EventsErrorBoundary.tsx`, `EventTicketModal.tsx`.
-- **API Backend**: `GET /association/events`, `POST /association/events/:id/register` (`events.service.ts`, `meetings.service.ts`).
-- **Bảng CSDL**: `events`, `meetings`, `event_registrations`.
-- **Luồng xử lý**:
-  - Chuẩn hóa 2 Tab độc lập theo phong cách YBA: "Tab 1: Sự Kiện CLB" (Đại hội, Gala, Giải Golf) vs "Tab 2: Cuộc Họp & Gặp Mặt" (Họp Ban, Cafe Doanh nhân, Caravan Thăm DN).
-  - Bọc `EventsErrorBoundary` cấp route để tránh văng crash toàn trang khi có dữ liệu ngày tháng bất thường.
-  - Tự động hiển thị huy hiệu `[Họp Ban]` và liên kết tham gia phòng họp trực tuyến Jitsi Meet.
-  - Slide cuộn ngang hiển thị trực tiếp tối đa 3 mã QR vé tham dự đã đăng ký.
+- **Thành phần**: `FeaturedUpcomingEventHero`, `EventCardItem`, `ActivityMeetingCardItem`, `EventDetailModal.tsx`, `EventRegistrationModal.tsx`, `EventTicketPassModal.tsx`, `EventsErrorBoundary.tsx`.
+- **API Backend**: `GET /association/events`, `POST /association/events/:id/register`, `GET /meetings` (`events.service.ts`, `meetings.service.ts`).
+- **Bảng CSDL**: `events`, `meetings`, `event_registrations`, `event_tickets`.
+- **Luồng xử lý & Thiết kế Chuẩn Figma**:
+  - **Khung Tiêu Đề Header**: Nút quay lại bo góc vuông bo mềm (`arrow-left-02.svg`), tiêu đề "Sự kiện", nút lịch công tác (`calendar-02.svg`).
+  - **Hệ Thống 2 Tab Độc Lập**:
+    - *Tab 1: Sự kiện*:
+      + **Khối "Sự kiện sắp tới" Hero Card**: Tự động xoay vòng carousel với ảnh bìa bo góc 16px, phủ gradient đen mờ, huy hiệu ngày diễn ra (`12/11/2026`) kèm icon lịch, huy hiệu ngành "Giao thương B2B", tiêu đề sự kiện chữ trắng nổi bật, địa điểm hội trường kèm icon vị trí, nút "Xem ngay" phong cách viền phẳng kèm icon mũi tên, và cụm 4 chấm chỉ số trang (pagination dots).
+      + **Khối "Tất cả sự kiện" & Bộ Lọc Nhanh**: Cụm pill bộ lọc với số đếm badge ("Sắp diễn ra", "Đã đăng ký", "Miễn phí", "Có phí").
+      + **Danh Sách Thẻ Sự Kiện Dọc (Event Cards)**: Ảnh thumbnail vuông/chữ nhật bên trái (w-24), cột thông tin bên phải (danh mục + nút 3 chấm `more-vertical.svg`, tiêu đề in đậm, hàng ngày giờ kèm icon đồng hồ báo thức `alarm-clock.svg`, địa điểm hội trường), thanh đáy chứa badge trạng thái vé ("Còn vé" / "Miễn phí") và nút "Đăng ký ngay" màu Navy sang trọng.
+      + **Nút "Xem tất cả ({tổng số})"**: Nút chuyển tiếp kèm icon `arrow-right-02.svg`.
+      + **Khối "Xem gần đây"**: Hiển thị dạng lưới 2 cột nhỏ gọn kèm cụm chấm chỉ số trang.
+      + **Banner Chân Trang CLB**: "CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng", nút liên hệ Ban Truyền Thông.
+    - *Tab 2: Hoạt động (Cuộc họp & Hội nghị Điều hành)*:
+      + **Tiêu Đề Khối**: "Hoạt động & Cuộc họp" - "Điều Hành Trực Tuyến & Trực Tiếp".
+      + **Bộ Lọc Phân Loại**: "Tất cả", "Họp cố định theo ban", "Họp bất thường/ Đột xuất".
+      + **Danh Sách Thẻ Cuộc Họp Trục Thời Gian (Timeline Cards)**: Cột mốc thời gian bên trái (giờ bắt đầu, thanh dọc kết nối, giờ kết thúc), Thẻ nội dung bên phải (huy hiệu hình thái "Trực tiếp" / "Trực tuyến" kèm icon globe/home, phân loại cuộc họp, tiêu đề cuộc họp in đậm, địa điểm/link phòng họp, nút xác nhận tham dự).
+      + **Ghi Chú Triệu Tập**: "Triệu tập bởi Chủ tịch CLB · Thành phần: Hội viên được triệu tập".
+  - **Hệ Thống Icon SVG Độc Quyền Cục Bộ**:
+    - Bộ Sự kiện (`/icons/events/`): `alarm-clock.svg`, `arrow-left-02.svg`, `arrow-right-02.svg`, `calendar-02.svg`, `calendar-03.svg`, `dot-separator.svg`, `location-01.svg`, `more-vertical.svg`.
+    - Bộ Hoạt động (`/icons/activities/`): `arrow-left-02.svg`, `calendar-02.svg`, `globe-02.svg`, `home-04.svg`, `pie-chart.svg`, `qr-code-02.svg`, `user-circle-02.svg`.
+  - **Dữ Liệu Fallback Tự Nhiên**: Luôn hiển thị dữ liệu mẫu sự kiện và cuộc họp chuẩn mực khi CSDL vừa được làm sạch, đảm bảo trải nghiệm người dùng không bị gián đoạn hay trống trải.
 
 ### `[NODE-APP-009]` Biểu Quyết Trực Tuyến Gắn Với Sự Kiện/Họp
 - **Route Frontend**: `/association/voting` (`src/routes/association.voting.tsx`).

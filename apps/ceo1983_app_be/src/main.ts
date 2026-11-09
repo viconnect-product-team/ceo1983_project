@@ -53,19 +53,15 @@ function probeTcp(
 }
 
 async function resolveDatabaseConfig() {
-  // 1. Nếu DATABASE_URL đã được chỉ định rõ ràng từ môi trường Docker và không phải IP/cổng cũ đã đóng
-  if (
-    process.env.DATABASE_URL &&
-    !process.env.DATABASE_URL.includes('113.20.107.184') &&
-    !process.env.DATABASE_URL.includes('127.0.0.1:6432')
-  ) {
+  // 1. Ưu tiên sử dụng DATABASE_URL được thiết lập từ tệp .env hoặc môi trường
+  if (process.env.DATABASE_URL) {
     console.log(
       '\x1b[32m%s\x1b[0m',
       '================================================================',
     );
     console.log(
       '\x1b[32m%s\x1b[0m',
-      `✅ [Database Config] Sử dụng DATABASE_URL từ môi trường: ${process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`,
+      `✅ [Database Config] Sử dụng DATABASE_URL: ${process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`,
     );
     console.log(
       '\x1b[32m%s\x1b[0m',
@@ -100,21 +96,21 @@ async function resolveDatabaseConfig() {
   } else {
     process.env.DATABASE_URL =
       process.env.REMOTE_DATABASE_URL ||
-      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@14.225.217.232:5436/ceo1983_project?schema=public';
+      'postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true';
     console.log(
-      '\x1b[33m%s\x1b[0m',
+      '\x1b[32m%s\x1b[0m',
       '================================================================',
     );
     console.log(
-      '\x1b[33m%s\x1b[0m',
-      '💻 [Database Auto-Config] MÁY CỤC BỘ / HOST: Kết nối server 14.225.217.232',
+      '\x1b[32m%s\x1b[0m',
+      '💻 [Database Config] MÁY CỤC BỘ / HOST: Kết nối server 113.20.107.184:6432',
     );
     console.log(
-      '\x1b[33m%s\x1b[0m',
-      '   Target: 14.225.217.232:5436/ceo1983_project',
+      '\x1b[32m%s\x1b[0m',
+      '   Target: 113.20.107.184:6432/ceo1983_project',
     );
     console.log(
-      '\x1b[33m%s\x1b[0m',
+      '\x1b[32m%s\x1b[0m',
       '================================================================',
     );
   }

@@ -3822,6 +3822,23 @@ model business_card_interactions {
   card member_business_cards @relation(fields: [card_id], references: [id], onDelete: Cascade)
 }
 
+model ceo1983_users {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username            String   @unique
+  password            String
+  email               String?  @unique
+  name                String?
+  avatar_url          String?
+  google_id           String?  @unique
+  apple_id            String?  @unique
+  email_verified      Boolean  @default(false)
+  apple_refresh_token String?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("ceo1983_users")
+}
+
 model vione_users {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username            String   @unique
@@ -3835,6 +3852,8 @@ model vione_users {
   apple_refresh_token String?
   created_at          DateTime @default(now()) @db.Timestamptz(6)
   updated_at          DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("vione_users")
 }
 
 model user_profiles {

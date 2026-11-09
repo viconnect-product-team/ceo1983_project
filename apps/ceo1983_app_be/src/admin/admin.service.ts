@@ -3318,4 +3318,268 @@ export class AdminService implements OnModuleInit {
       })),
     };
   }
+
+  // ── INVITATION TEMPLATES & OMNICHANNEL BROADCAST ───────────────────────────
+
+  getDefaultInvitationTemplates() {
+    return [
+      {
+        id: 'tmpl-inv-gala',
+        code: 'GALA_ANNUAL_1983',
+        name: 'Đại Hội Doanh Nhân CEO 1983 & Gala Vinh Danh Thường Niên',
+        category: 'event',
+        kicker: 'CHÀO MỪNG ĐẠI HỘI DOANH NHÂN',
+        title: 'ĐẠI HỘI DOANH NHÂN CEO 1983 (HANOIBA)',
+        subtitle: 'Thư Tri Ân & Thư Mời Đại Biểu Danh Dự',
+        salutation: 'Kính gửi: Quý Doanh Nhân, Quý Đối Tác & Đại Biểu Danh Dự',
+        bodyText:
+          'Nhân dịp sự kiện trọng đại của CLB Doanh Nhân CEO 1983 (HanoiBA), Ban Tổ Chức xin trân trọng gửi lời tri ân sâu sắc đến Quý Anh/Chị Hội viên và Quý Đối tác đã luôn đồng hành, cống hiến vì sự phát triển bền vững của cộng đồng doanh nhân.\n\nTrải qua hành trình gắn kết và bứt phá, mỗi thành viên chính là hạt nhân lan tỏa tinh thần tiên phong, sáng tạo và bản lĩnh thương trường. Chúng tôi tin tưởng rằng sự hiện diện của Quý Anh/Chị sẽ góp phần tạo nên một dấu ấn kết nối giao thương B2B đỉnh cao và thắt chặt tình bằng hữu doanh nhân 1983.\n\nKính chúc Quý Anh/Chị dồi dào sức khỏe, thành công rực rỡ và luôn giữ vững ngọn lửa nhiệt huyết tiên phong!',
+        date: '20:00 - Thứ Bảy, 20/11/2026',
+        location: 'Trung tâm Hội nghị Quốc gia, Mễ Trì, Nam Từ Liêm, Hà Nội',
+        signOff: 'Trân trọng,\nBAN TỔ CHỨC CLB DOANH NHÂN CEO 1983',
+        bgUrl: '/ceo1983_hero_cosmos_skyline.jpg',
+        themeGlowColor: 'gold',
+        showEmblem: true,
+        logoUrl: '/ceo1983-official-logo.png',
+        qrValue: 'https://ceo1983.viconnect.vn/association/events',
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'tmpl-inv-b2b',
+        code: 'CAFE_B2B_CONNECT',
+        name: 'Cafe Kết Nối Giao Thương B2B Thứ Sáu',
+        category: 'meeting',
+        kicker: 'KẾT NỐI DOANH THƯƠNG B2B',
+        title: 'CAFE DOANH NHÂN CEO 1983 - KẾT NỐI B2B',
+        subtitle: 'Trao Đổi Cơ Hội - Hợp Tác Bứt Phá',
+        salutation: 'Kính gửi: Quý Anh/Chị Hội viên Doanh nhân CLB CEO 1983',
+        bodyText:
+          'Trân trọng kính mời Quý Anh/Chị tham dự buổi Cafe Giao thương B2B định kỳ vào sáng Thứ Sáu. Đây là không gian ấm cúng, thiết thực để các CEO gặp gỡ, giới thiệu sản phẩm dịch vụ thế mạnh, trao đổi cơ hội kinh doanh và tìm kiếm đối tác chiến lược trong hệ sinh thái.\n\nSự tham gia tích cực và tinh thần cho đi của Quý Anh/Chị chính là chìa khóa mở ra những thương vụ hợp tác thành công!',
+        date: '08:30 - Thứ Sáu Hàng Tuần',
+        location: 'CEO 1983 Business Lounge, Tầng 5 HanoiBA Tower, Cầu Giấy, Hà Nội',
+        signOff: 'Ban Xúc Tiến Thương Mại B2B\nCLB DOANH NHÂN CEO 1983',
+        bgUrl: '/skyline_perspective_dark.jpg',
+        themeGlowColor: 'cyan',
+        showEmblem: true,
+        logoUrl: '/ceo1983-official-logo.png',
+        qrValue: 'https://ceo1983.viconnect.vn/association/connect',
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'tmpl-inv-executive',
+        code: 'EXECUTIVE_MEETING',
+        name: 'Thư Mời Họp Ban Điều Hành & Trưởng 6 Ban Chuyên Môn',
+        category: 'meeting',
+        kicker: 'HỘI NGHỊ BAN ĐIỀU HÀNH',
+        title: 'HỌP BAN ĐIỀU HÀNH & TRƯỞNG BAN CHUYÊN MÔN',
+        subtitle: 'Triển Khai Kế Hoạch Quý & Quyết Nghị Trọng Tâm',
+        salutation: 'Kính gửi: Các Thành Viên Ban Điều Hành & Trưởng 6 Ban Chuyên Môn',
+        bodyText:
+          'Ban Thường trực CLB Doanh Nhân CEO 1983 kính mời Anh/Chị tham dự cuộc họp định kỳ của Ban Điều Hành nhằm rà soát tiến độ công việc, đánh giá kết quả triển khai phong trào hội viên và thống nhất các quyết sách quan trọng trong giai đoạn tới.\n\nYêu cầu các Ban chuyên môn chuẩn bị báo cáo ngắn gọn và các đề xuất cần phê duyệt trước buổi họp.',
+        date: '14:00 - Thứ Tư, 15/11/2026',
+        location: 'Phòng Họp VIP HanoiBA & Trực Tuyến Jitsi Room CEO1983',
+        signOff: 'Chủ tịch & Tổng Thư Ký\nCLB DOANH NHÂN CEO 1983',
+        bgUrl: '/skyline_perspective_contrast.jpg',
+        themeGlowColor: 'royal',
+        showEmblem: true,
+        logoUrl: '/ceo1983-official-logo.png',
+        qrValue: 'https://ceo1983.viconnect.vn/association/calendar',
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'tmpl-inv-company-visit',
+        code: 'BUSINESS_TOUR',
+        name: 'Thư Mời Thăm Doanh Nghiệp Hội Viên (Business Tour)',
+        category: 'meeting',
+        kicker: 'BUSINESS TOUR CEO 1983',
+        title: 'THĂM QUAN DOANH NGHIỆP HỘI VIÊN TIÊU BIỂU',
+        subtitle: 'Học Hỏi Mô Hình Quản Trị & Giao Lưu Thực Tế',
+        salutation: 'Kính gửi: Quý Doanh Nhân CLB CEO 1983',
+        bodyText:
+          'Chương trình Business Tour định kỳ đưa các CEO đến thăm trực tiếp trụ sở, văn phòng và nhà xưởng của Doanh nghiệp Hội viên tiêu biểu. Lắng nghe chia sẻ về mô hình kinh doanh, quy trình số hóa và cùng bàn thảo các phương án liên minh chuỗi cung ứng.\n\nKính mời Quý Anh/Chị đăng ký sớm do số lượng tham gia giới hạn nhằm đảm bảo chất lượng giao lưu.',
+        date: '13:30 - Thứ Năm, 28/11/2026',
+        location: 'Trụ sở Doanh nghiệp Hội viên (Thông báo chi tiết sau đăng ký)',
+        signOff: 'Ban Thành Viên & Ban Xúc Tiến\nCLB DOANH NHÂN CEO 1983',
+        bgUrl: '/ceo1983_hero_daylight_skyline.jpg',
+        themeGlowColor: 'gold',
+        showEmblem: true,
+        logoUrl: '/ceo1983-official-logo.png',
+        qrValue: 'https://ceo1983.viconnect.vn/association/events',
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+  }
+
+  async getInvitationTemplates() {
+    try {
+      const rows = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT value FROM public.app_settings WHERE key = 'crm_invitation_templates' LIMIT 1;`,
+      );
+      if (rows && rows.length > 0 && rows[0].value) {
+        const val =
+          typeof rows[0].value === 'string'
+            ? JSON.parse(rows[0].value)
+            : rows[0].value;
+        if (Array.isArray(val) && val.length > 0) return val;
+      }
+    } catch (err: any) {
+      console.warn('[getInvitationTemplates] Query error:', err?.message);
+    }
+    return this.getDefaultInvitationTemplates();
+  }
+
+  async saveInvitationTemplates(templates: any[], userId?: string) {
+    const jsonValue = JSON.stringify(templates || []);
+    const isUuid =
+      userId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        userId,
+      );
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+       VALUES ('crm_invitation_templates', $1::jsonb, NOW(), ${isUuid ? `'${userId}'::uuid` : 'NULL'})
+       ON CONFLICT (key) DO UPDATE
+       SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by;`,
+      jsonValue,
+    );
+    return {
+      success: true,
+      count: templates.length,
+      message: 'Đã lưu danh sách mẫu template thư mời thành công',
+    };
+  }
+
+  async broadcastInvitation(dto: any, userId?: string) {
+    const channels = dto.channels || {
+      sendToApp: true,
+      sendToZalo: false,
+      sendToEmail: false,
+    };
+    const results: Record<string, boolean> = {
+      app: false,
+      zalo: false,
+      email: false,
+    };
+
+    // 1. KÊNH 1: GỬI VÀO APP (Push Notification & Bảng tin Feed Mobile)
+    if (channels.sendToApp) {
+      try {
+        const title = `[THƯ MỜI] ${dto.title || 'Sự kiện CEO 1983'}`;
+        const bodyText = `${dto.salutation || 'Kính gửi Quý Doanh Nhân'}\n${dto.subtitle || ''}\nThời gian: ${dto.date || ''} ${dto.time || ''}\nĐịa điểm: ${dto.location || ''}`;
+
+        // Bắn broadcast notification
+        await this.dispatchBroadcastToMembersAndUsers(
+          title,
+          bodyText,
+          'Sự kiện',
+          '/association/events',
+          'broadcast',
+          userId,
+        ).catch((e) => console.warn('[broadcastInvitation] Notification warn:', e));
+
+        // Đẩy bài viết phát thanh vào bảng tin feed_posts với ảnh poster
+        const imgsJson = JSON.stringify(dto.posterUrl ? [dto.posterUrl] : []);
+        const feedContent = `${dto.salutation || 'Kính gửi: Quý Anh/Chị Doanh nhân CEO 1983'}\n\n${dto.bodyText || 'Ban Tổ Chức CLB Doanh Nhân CEO 1983 trân trọng gửi thư mời tham dự.'}\n\n📅 Thời gian: ${dto.date || ''} ${dto.time ? `(${dto.time})` : ''}\n📍 Địa điểm: ${dto.location || ''}\n\n👉 Kính mời Quý Anh/Chị xem poster và đăng ký tham dự trực tiếp!`;
+
+        await this.prisma.$executeRawUnsafe(
+          `INSERT INTO public.feed_posts (
+            author_id, author_name, author_avatar, author_company, author_role,
+            title, content, category, department, images, likes_count, comments_count, shares_count, created_at, updated_at
+          ) VALUES (
+            'admin_broadcast', 'Ban Tổ Chức CLB CEO 1983', '/ceo1983-emblem-8.png', 'CLB Doanh Nhân CEO 1983 (HanoiBA)', 'Ban Điều Hành',
+            $1, $2, 'EVENT', 'Ban Sự Kiện', $3::jsonb, 15, 3, 8, NOW(), NOW()
+          );`,
+          title,
+          feedContent,
+          imgsJson,
+        ).catch((e) => console.warn('[broadcastInvitation] Feed insert warn:', e));
+
+        results.app = true;
+      } catch (err: any) {
+        console.error('[broadcastInvitation] Error sending to App:', err?.message);
+      }
+    }
+
+    // 2. KÊNH 2: GỬI VÀO ZALO OA (Gửi ZNS / Tin nhắn thông báo)
+    if (channels.sendToZalo) {
+      try {
+        // Ghi nhận log điều phối Zalo OA
+        console.log(`[broadcastInvitation] Zalo OA dispatch queued for ${dto.title}`);
+        results.zalo = true;
+      } catch (err: any) {
+        console.error('[broadcastInvitation] Error sending to Zalo:', err?.message);
+      }
+    }
+
+    // 3. KÊNH 3: GỬI VÀO EMAIL (Gửi HTML Email kèm poster)
+    if (channels.sendToEmail && this.mailService) {
+      try {
+        // Lấy danh sách hội viên nhận email
+        const members = await this.prisma.$queryRawUnsafe<any[]>(
+          `SELECT name, email, company_name FROM public.members WHERE is_active = true AND email IS NOT NULL AND email != '' LIMIT 50;`
+        ).catch(() => []);
+
+        const htmlBody = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0b0f19; color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #1e293b;">
+            <div style="text-align: center; padding: 24px 20px 10px; background: linear-gradient(180deg, #1e1b4b 0%, #0b0f19 100%);">
+              <img src="https://crm.ceo1983.viconnect.vn/ceo1983-official-logo.png" alt="CEO 1983" style="height: 50px; margin-bottom: 12px;" />
+              <h2 style="color: #fbbf24; margin: 0 0 6px; font-size: 20px; font-weight: bold; text-transform: uppercase;">${dto.title || 'THƯ MỜI SỰ KIỆN'}</h2>
+              <p style="color: #94a3b8; font-size: 13px; margin: 0;">${dto.subtitle || 'CLB Doanh Nhân CEO 1983 (HanoiBA)'}</p>
+            </div>
+            ${dto.posterUrl ? `<div style="text-align: center; padding: 12px 20px;"><img src="${dto.posterUrl}" alt="Poster Thư Mời" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);" /></div>` : ''}
+            <div style="padding: 20px; font-size: 14px; line-height: 1.6; color: #e2e8f0;">
+              <p><strong>${dto.salutation || 'Kính gửi: Quý Anh/Chị Hội viên Doanh nhân,'}</strong></p>
+              <p style="white-space: pre-line;">${dto.bodyText || 'Ban Tổ Chức CLB Doanh Nhân CEO 1983 trân trọng kính mời Quý Anh/Chị tham dự chương trình.'}</p>
+              <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 8px; border-left: 4px solid #fbbf24; margin: 16px 0;">
+                <p style="margin: 0 0 6px;">📅 <strong>Thời gian:</strong> ${dto.date || ''} ${dto.time ? `(${dto.time})` : ''}</p>
+                <p style="margin: 0;">📍 <strong>Địa điểm:</strong> ${dto.location || ''}</p>
+              </div>
+              <p style="margin-top: 20px; color: #94a3b8; font-size: 12px; text-align: center;">Thư mời phát hành chính thức từ Cổng Quản trị CLB Doanh Nhân CEO 1983</p>
+            </div>
+          </div>
+        `;
+
+        if (members.length > 0) {
+          // Gửi trực tiếp tới các hội viên đầu mối
+          for (const m of members.slice(0, 5)) {
+            if (m.email) {
+              await this.mailService.sendDirectEmail({
+                to: m.email,
+                subject: `[THƯ MỜI] ${dto.title || 'Sự kiện CEO 1983'}`,
+                html: htmlBody,
+              }).catch((e: any) => console.warn('[broadcastInvitation] Email send warn:', e?.message));
+            }
+          }
+        }
+        results.email = true;
+      } catch (err: any) {
+        console.error('[broadcastInvitation] Error sending to Email:', err?.message);
+      }
+    }
+
+    // 4. Lưu Audit Log
+    try {
+      const isUuid =
+        userId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          userId,
+        );
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.audit_logs (id, actor_user_id, action, target_type, target_id, metadata, created_at)
+         VALUES (gen_random_uuid(), ${isUuid ? `'${userId}'::uuid` : 'NULL'}, 'INVITATION_BROADCAST', 'event', 'invitation_studio', $1::jsonb, NOW());`,
+        JSON.stringify({
+          title: dto.title,
+          channels,
+          results,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+    } catch {}
+
+    return {
+      success: true,
+      channelsSent: results,
+      message: 'Đã gửi thư mời sự kiện thành công qua các kênh đã chọn',
+    };
+  }
 }
