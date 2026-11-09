@@ -11,19 +11,7 @@ export interface MeetingItemLike {
 
 export function WorkspaceSummaryCards({ meetings = [] }: { meetings?: MeetingItemLike[] }) {
   const stats = useMemo(() => {
-    let list = meetings;
-    if ((!list || list.length === 0) && typeof window !== "undefined") {
-      try {
-        const stored =
-          localStorage.getItem("ceo1983_meetings_history") ||
-          localStorage.getItem("vione_meetings_history") ||
-          "[]";
-        list = JSON.parse(stored);
-      } catch {
-        list = [];
-      }
-    }
-
+    const list = Array.isArray(meetings) ? meetings : [];
     const total = list.length;
     const upcoming = list.filter((m) => {
       const s = (m.status || "").toLowerCase();

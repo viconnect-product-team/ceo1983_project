@@ -8,6 +8,7 @@ import {
   YAxis,
 } from "recharts";
 import { useT } from "@/lib/i18n";
+import { ChartAdaptiveTooltip } from "@/components/common/ChartAdaptiveTooltip";
 
 const data = [
   { m: "12/2023", new: 480, churn: 110 },
@@ -60,13 +61,14 @@ export function GrowthChart() {
               tickLine={false}
             />
             <Tooltip
-              contentStyle={{
-                background: "var(--color-card)",
-                border: "1px solid var(--color-border)",
-                borderRadius: 12,
-                fontSize: 12,
-                boxShadow: "var(--shadow-elevated)",
-              }}
+              content={
+                <ChartAdaptiveTooltip
+                  formatter={(val: number, name: string) => [
+                    `${val} hội viên`,
+                    name === "new" ? "Gia nhập mới" : name === "churn" ? "Rời hiệp hội" : name,
+                  ]}
+                />
+              }
             />
             <Line
               type="monotone"

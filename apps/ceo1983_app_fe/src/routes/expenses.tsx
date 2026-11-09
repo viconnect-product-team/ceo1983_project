@@ -1,40 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowDownCircle,
-  Download,
-  FileDown,
-  Filter,
-  Pencil,
-  Plus,
-  RotateCcw,
-  Search,
-  Trash2,
-  Wallet,
-  Receipt,
-  CheckCircle2,
-  Clock,
-  Banknote,
-  Building,
-  Upload,
-} from "lucide-react";
-import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import { fetchNestApi } from "@/lib/api-client";
-import { AppShell } from "@/components/dashboard/AppShell";
-import { PageHeader, Pill } from "@/components/dashboard/PageKit";
-import { Card } from "@/components/ui/card";
-import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
-import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
-import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
-import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
-import {
-  createTransactionFn,
-  deleteTransactionFn,
-  listTransactionsFn,
-  updateTransactionFn,
-  type Transaction,
-} from "@/lib/finance.functions";
+import { createFileRoute } from "@tanstack/react-router"
+import type { Transaction } from "@/types/finance.types";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
 import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
@@ -77,71 +42,11 @@ const initialExpenseColWidths: Record<ExpenseColKey, number> = {
   actions: 110,
 };
 
-const DEFAULT_EXPENSES_TRANSACTIONS: Transaction[] = [
-  {
-    id: "PC-2026-001",
-    date: "2026-03-09",
-    type: "expense",
-    category: "event",
-    description: "Chi phí thuê trung tâm hội nghị & teabreak",
-    amount: 35000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Trung tâm Hội nghị Quốc gia",
-  },
-  {
-    id: "PC-2026-002",
-    date: "2026-03-08",
-    type: "expense",
-    category: "operation",
-    description: "Chi phí hạ tầng máy chủ Cloud & bảo mật hệ thống",
-    amount: 12000000,
-    method: "bank",
-    status: "completed",
-    recipient: "VNPT Cloud / AWS",
-  },
-  {
-    id: "PC-2026-003",
-    date: "2026-03-06",
-    type: "expense",
-    category: "marketing",
-    description: "In ấn backdrop, tài liệu & kỷ yếu hội viên",
-    amount: 8500000,
-    method: "cash",
-    status: "completed",
-    recipient: "Công ty In ấn Tiến Phát",
-  },
-  {
-    id: "PC-2026-004",
-    date: "2026-03-03",
-    type: "expense",
-    category: "admin",
-    description: "Văn phòng phẩm và bưu chính gửi giấy mời đại hội",
-    amount: 3200000,
-    method: "cash",
-    status: "completed",
-    recipient: "Bưu chính Viettel Post",
-  },
-  {
-    id: "PC-2026-005",
-    date: "2026-02-27",
-    type: "expense",
-    category: "event",
-    description: "Tạm ứng chi phí đón tiếp đoàn đại biểu quốc tế",
-    amount: 15000000,
-    advanceAmount: 15000000,
-    refundAmount: 2000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Ban Đối ngoại Hiệp hội",
-  },
-];
-
 export const Route = createFileRoute("/expenses")({
   ssr: false,
   loader: async () => {
     try {
-      const data = await listTransactionsFn();
+      const data = await fetchNestApi<Transaction[]>("/admin/transactions?type=expense");
       return Array.isArray(data) ? data : [];
     } catch {
       return [];
@@ -163,14 +68,12 @@ function ExpensesPage() {
   const rawLoaderData = Route.useLoaderData();
   const loadedTransactions = Array.isArray(rawLoaderData) ? (rawLoaderData as Transaction[]) : [];
 
-  const [transactionsList, setTransactionsList] = useState<Transaction[]>(
-    loadedTransactions.length > 0 ? loadedTransactions : DEFAULT_EXPENSES_TRANSACTIONS,
-  );
+  const [transactionsList, setTransactionsList] = useState<Transaction[]>(loadedTransactions);
 
   const fetchLiveExpenses = async () => {
     try {
-      const res = await fetchNestApi<Transaction[]>("/admin/transactions");
-      if (Array.isArray(res) && res.length > 0) {
+      const res = await fetchNestApi<Transaction[]>("/admin/transactions?type=expense");
+      if (Array.isArray(res)) {
         setTransactionsList(res);
       }
     } catch (err) {
@@ -198,10 +101,6 @@ function ExpensesPage() {
   // Sub-filter: all | standard (Chi tiêu thường) | advance (Tạm ứng)
   const [categoryFilter, setCategoryFilter] = useState<"all" | "advance" | "standard">("all");
   const [q, setQ] = useState("");
-
-  const createFn = useServerFn(createTransactionFn);
-  const updateFn = useServerFn(updateTransactionFn);
-  const deleteFn = useServerFn(deleteTransactionFn);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -337,10 +236,8 @@ function ExpensesPage() {
 
       if (editing) {
         await fetchNestApi(`/admin/transactions/${editing.id}`, {
-          method: "PUT",
-          body: { id: editing.id, ...payload },
-        }).catch(async () => {
-          await updateFn({ data: { id: editing.id, ...payload } });
+          method: "PATCH",
+          body: JSON.stringify(payload),
         });
         setTransactionsList((prev) =>
           prev.map((t) => (t.id === editing.id ? { ...t, ...payload } : t)),
@@ -351,9 +248,7 @@ function ExpensesPage() {
         const newCode = `PC-${new Date().getFullYear()}-${rand}`;
         const res: any = await fetchNestApi("/admin/transactions", {
           method: "POST",
-          body: { id: newCode, ...payload },
-        }).catch(async () => {
-          return await createFn({ data: payload });
+          body: JSON.stringify(payload),
         });
         const createdTx: Transaction = {
           id: res?.id || newCode,
@@ -379,9 +274,7 @@ function ExpensesPage() {
     if (!window.confirm(t("common.confirmDelete", { name: tx.description || tx.id }))) return;
     setDeletingId(tx.id);
     try {
-      await fetchNestApi(`/admin/transactions/${tx.id}`, { method: "DELETE" }).catch(async () => {
-        await deleteFn({ data: { id: tx.id } });
-      });
+      await fetchNestApi(`/admin/transactions/${tx.id}`, { method: "DELETE" });
       setTransactionsList((prev) => prev.filter((t) => t.id !== tx.id));
       window.dispatchEvent(new CustomEvent("vba_transactions_changed"));
       window.dispatchEvent(new CustomEvent("finance-updated"));
@@ -701,7 +594,7 @@ function ExpensesPage() {
       {viewMode === "charts" && (
         <div className="space-y-6">
           <FinanceChartsSection
-            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_EXPENSES_TRANSACTIONS}
+            transactions={TRANSACTIONS}
             defaultTab="expense"
             hideTabs={false}
             title="Biểu Đồ Phân Bổ Chi Tiêu Thực Tế & Cơ Cấu Danh Mục"
@@ -715,7 +608,7 @@ function ExpensesPage() {
       {viewMode === "unit_tree" && (
         <div className="space-y-6">
           <FinanceUnitTreeSection
-            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_EXPENSES_TRANSACTIONS}
+            transactions={TRANSACTIONS}
             type="expense"
             title="Cây Phân Cấp Ngân Sách Chi Theo 6 Ban & Các Hạng Mục"
             subtitle="Sơ đồ tỷ trọng thực chi theo Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện"

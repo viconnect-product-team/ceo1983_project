@@ -162,6 +162,14 @@ const FREE_MODELS = [
 
 const QUICK_PROMPTS = [
   {
+    icon: Sparkles,
+    color: "from-amber-500/10 to-yellow-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40",
+    title: "Cố vấn Vốn & Thẩm Định Deal",
+    desc: "Tôi có 50 triệu thì deal cơ hội nào phù hợp & phân tích lời lỗ",
+    prompt: "Tôi có 50000000 đồng thì có cơ hội kinh doanh nào phù hợp và phân tích lời lỗ nếu deal cơ hội đó dựa vào hồ sơ năng lực của người đăng?",
+    persona: "opportunity" as AiPersonaType,
+  },
+  {
     icon: Handshake,
     color: "from-orange-500/10 to-amber-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900/40",
     title: "Cơ hội B2B mới nhất",

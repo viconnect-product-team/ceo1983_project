@@ -222,6 +222,7 @@ export class AdminController {
   }
 
   @Patch('transactions/:id')
+  @Put('transactions/:id')
   async updateTransaction(
     @Param('id') id: string,
     @Body() body: UpdateTransactionDto,

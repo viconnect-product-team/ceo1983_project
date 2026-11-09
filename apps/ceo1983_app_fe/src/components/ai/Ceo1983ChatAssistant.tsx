@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   Bot,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -85,6 +86,18 @@ interface QuickPrompt {
 }
 
 const QUICK_PROMPTS: QuickPrompt[] = [
+  {
+    label: "Tôi có 50.000.000đ deal cơ hội nào?",
+    query: "Tôi có 50000000 thì có cơ hội kinh doanh nào phù hợp và phân tích lời lỗ nếu deal cơ hội đó?",
+    icon: Sparkles,
+    route: "/association/opportunities",
+  },
+  {
+    label: "Phân tích dòng tiền & chia sẻ cơ hội",
+    query: "Phân tích dòng tiền tôi đã chi vào hội phí và dòng tiền ở chia sẻ cơ hội B2B của tôi?",
+    icon: TrendingUp,
+    route: "/association/opportunities",
+  },
   {
     label: "Sự kiện tôi đã đăng ký",
     query: "Tôi có đăng ký sự kiện nào không?",

@@ -1,40 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowUpCircle,
-  Download,
-  FileDown,
-  Filter,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  Wallet,
-  Receipt,
-  CheckCircle2,
-  Clock,
-  Banknote,
-  Building,
-  UserCheck,
-  Upload,
-} from "lucide-react";
-import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import { fetchNestApi } from "@/lib/api-client";
-import { AppShell } from "@/components/dashboard/AppShell";
-import { PageHeader, Pill } from "@/components/dashboard/PageKit";
-import { Card } from "@/components/ui/card";
-import { FinanceExcelImportModal } from "@/components/dashboard/FinanceExcelImportModal";
-import { FinanceChartsSection } from "@/components/dashboard/FinanceChartsSection";
-import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboard/FinanceViewModeTabs";
-import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
-import {
-  createTransactionFn,
-  deleteTransactionFn,
-  listTransactionsFn,
-  updateTransactionFn,
-  type Transaction,
-} from "@/lib/finance.functions";
+import { createFileRoute } from "@tanstack/react-router"
+import type { Transaction } from "@/types/finance.types";
 import { downloadInvoiceVoucher } from "@/lib/invoice-receipt";
 import { useFmt, useT } from "@/lib/i18n";
 import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
@@ -73,80 +38,11 @@ const initialIncomeColWidths: Record<IncomeColKey, number> = {
   actions: 110,
 };
 
-const DEFAULT_INCOME_TRANSACTIONS: Transaction[] = [
-  {
-    id: "PT-2026-001",
-    date: "2026-03-10",
-    type: "income",
-    category: "membership_fee",
-    description: "Thu hội phí hội viên VIP 2026",
-    amount: 50000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Công ty CP Tập đoàn Hòa Bình",
-  },
-  {
-    id: "PT-2026-002",
-    date: "2026-03-09",
-    type: "income",
-    category: "event_ticket",
-    description: "Thu vé tham dự Diễn đàn Kết nối Giao thương B2B",
-    amount: 1500000,
-    method: "bank",
-    status: "completed",
-    recipient: "Bà Trần Mai Anh",
-  },
-  {
-    id: "PT-2026-003",
-    date: "2026-03-08",
-    type: "income",
-    category: "event_walkin",
-    description: "Thu tiền mặt trực tiếp tại bàn đón tiếp sự kiện",
-    amount: 500000,
-    method: "cash",
-    status: "completed",
-    recipient: "Ông Nguyễn Hoàng Long",
-  },
-  {
-    id: "PT-2026-004",
-    date: "2026-03-05",
-    type: "income",
-    category: "sponsor",
-    description: "Thu gói Tài trợ Kim Cương Tech Expo 2026",
-    amount: 150000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Techcombank",
-  },
-  {
-    id: "PT-2026-005",
-    date: "2026-03-02",
-    type: "income",
-    category: "membership_fee",
-    description: "Thu phí gia nhập hội viên mới",
-    amount: 15000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Công ty TNHH Smart Logistics",
-  },
-  {
-    id: "PT-2026-006",
-    date: "2026-02-28",
-    type: "income",
-    category: "event_walkin",
-    description: "Thu đột xuất tiền mặt ủng hộ quỹ hội viên",
-    amount: 2000000,
-    method: "cash",
-    status: "completed",
-    recipient: "Ông Vũ Minh Tuấn",
-  },
-];
-
 export const Route = createFileRoute("/income")({
   ssr: false,
   loader: async () => {
     try {
-      const data = await listTransactionsFn();
+      const data = await fetchNestApi<Transaction[]>("/admin/transactions?type=income");
       return Array.isArray(data) ? data : [];
     } catch {
       return [];
@@ -168,14 +64,12 @@ function IncomePage() {
   const rawLoaderData = Route.useLoaderData();
   const loadedTransactions = Array.isArray(rawLoaderData) ? (rawLoaderData as Transaction[]) : [];
 
-  const [transactionsList, setTransactionsList] = useState<Transaction[]>(
-    loadedTransactions.length > 0 ? loadedTransactions : DEFAULT_INCOME_TRANSACTIONS,
-  );
+  const [transactionsList, setTransactionsList] = useState<Transaction[]>(loadedTransactions);
 
   const fetchLiveIncome = async () => {
     try {
       const res = await fetchNestApi<Transaction[]>("/admin/transactions?type=income");
-      if (Array.isArray(res) && res.length > 0) {
+      if (Array.isArray(res)) {
         setTransactionsList(res);
       }
     } catch (err) {
@@ -205,10 +99,6 @@ function IncomePage() {
   // Category filter: all | membership_fee | event_ticket | event_walkin | sponsor | other
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [q, setQ] = useState("");
-
-  const createFn = useServerFn(createTransactionFn);
-  const updateFn = useServerFn(updateTransactionFn);
-  const deleteFn = useServerFn(deleteTransactionFn);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -276,10 +166,8 @@ function IncomePage() {
 
       if (editing) {
         await fetchNestApi(`/admin/transactions/${editing.id}`, {
-          method: "PUT",
+          method: "PATCH",
           body: JSON.stringify(payload),
-        }).catch(async () => {
-          await updateFn({ data: { id: editing.id, ...payload } });
         });
         setTransactionsList((prev) =>
           prev.map((item) => (item.id === editing.id ? { ...item, ...payload } : item)),
@@ -289,8 +177,6 @@ function IncomePage() {
         const res: any = await fetchNestApi("/admin/transactions", {
           method: "POST",
           body: JSON.stringify(payload),
-        }).catch(async () => {
-          return await createFn({ data: payload });
         });
         const createdItem = res?.data || {
           ...payload,
@@ -313,31 +199,7 @@ function IncomePage() {
 
   const handleConfirmPayment = async (tx: Transaction) => {
     try {
-      await fetchNestApi(`/admin/transactions/${tx.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ ...tx, status: "completed" }),
-      }).catch(async () => {
-        await updateFn({ data: { id: tx.id, status: "completed" } });
-      });
-      setTransactionsList((prev) =>
-        prev.map((item) => (item.id === tx.id ? { ...item, status: "completed" } : item)),
-      );
-      toast.success(`Đã xác nhận đã thu số tiền: ${fmt.money(tx.amount)}`);
-      window.dispatchEvent(new Event("vba_transactions_changed"));
-      window.dispatchEvent(new Event("finance-updated"));
-      await router.invalidate();
-    } catch {
-      toast.error("Lỗi khi xác nhận thanh toán");
-    }
-  };
-
-  const onDelete = async (tx: Transaction) => {
-    if (!window.confirm(t("common.confirmDelete", { name: tx.description || tx.id }))) return;
-    setDeletingId(tx.id);
-    try {
-      await fetchNestApi(`/admin/transactions/${tx.id}`, { method: "DELETE" }).catch(async () => {
-        await deleteFn({ data: { id: tx.id } });
-      });
+      await fetchNestApi(`/admin/transactions/${tx.id}`, { method: "DELETE" });
       setTransactionsList((prev) => prev.filter((item) => item.id !== tx.id));
       toast.success(t("common.deletedToast"));
       window.dispatchEvent(new Event("vba_transactions_changed"));
@@ -595,7 +457,7 @@ function IncomePage() {
       {viewMode === "charts" && (
         <div className="space-y-6">
           <FinanceChartsSection
-            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_INCOME_TRANSACTIONS}
+            transactions={TRANSACTIONS}
             defaultTab="income_sponsor"
             hideTabs={false}
             title="Biểu Đồ Phân Tích Cơ Cấu Nguồn Thu & Tài Trợ"
@@ -609,7 +471,7 @@ function IncomePage() {
       {viewMode === "unit_tree" && (
         <div className="space-y-6">
           <FinanceUnitTreeSection
-            transactions={TRANSACTIONS.length > 0 ? TRANSACTIONS : DEFAULT_INCOME_TRANSACTIONS}
+            transactions={TRANSACTIONS}
             type="income"
             title="Cây Phân Cấp Nguồn Thu Theo 6 Ban & Khối Doanh Nghiệp"
             subtitle="Sơ đồ tỷ trọng thực thu theo Ban Điều Hành, Ban Thành Viên, Ban Xúc Tiến, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện"

@@ -26,7 +26,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNestApi } from "@/lib/api-client";
-import { listTransactionsFn, type Transaction } from "@/lib/finance.functions";
+import type { Transaction } from "@/types/finance.types";
 import { useFmt, useT } from "@/lib/i18n";
 import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
 import { toast } from "sonner";
@@ -38,129 +38,15 @@ import { FinanceViewModeTabs, type FinanceViewMode } from "@/components/dashboar
 import { FinanceUnitTreeSection } from "@/components/dashboard/FinanceUnitTreeSection";
 import { InvoiceExportModal, type InvoiceItem } from "@/components/dashboard/InvoiceExportModal";
 
-const FALLBACK_TRANSACTIONS: Transaction[] = [
-  {
-    id: "PT-2026-001",
-    date: "2026-03-10",
-    type: "income",
-    category: "Hội phí hội viên",
-    description: "Thu hội phí hội viên Kim Cương 2026",
-    amount: 50000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Công ty CP Tập đoàn Hòa Bình",
-  },
-  {
-    id: "PT-2026-002",
-    date: "2026-03-09",
-    type: "income",
-    category: "Vé sự kiện",
-    description: "Thu vé tham dự Diễn đàn Kết nối Giao thương B2B Quốc Tế",
-    amount: 15000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Công ty TNHH Giải pháp Số An Phát",
-  },
-  {
-    id: "PT-2026-003",
-    date: "2026-03-08",
-    type: "income",
-    category: "Tài trợ sự kiện",
-    description: "Tài trợ kim cương Gala Dinner Doanh nhân Tiên Phong",
-    amount: 80000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Ngân hàng Thương mại Cổ phần Á Châu",
-  },
-  {
-    id: "PT-2026-004",
-    date: "2026-03-06",
-    type: "income",
-    category: "Thu đột xuất",
-    description: "Đăng ký bổ sung gian hàng triển lãm B2B Tech Expo",
-    amount: 8000000,
-    method: "cash",
-    status: "completed",
-    recipient: "Doanh nghiệp Tư nhân Minh Khang",
-  },
-  {
-    id: "PT-2026-005",
-    date: "2026-03-04",
-    type: "income",
-    category: "Hội phí hội viên",
-    description: "Phí gia nhập hội viên mới Khối Sản Xuất & Bán Lẻ",
-    amount: 20000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Công ty TNHH Dược phẩm An Sinh",
-  },
-  {
-    id: "PC-2026-001",
-    date: "2026-03-10",
-    type: "expense",
-    category: "Thuê địa điểm & Hội trường",
-    description: "Thanh toán tiền thuê trung tâm hội nghị Gem Center",
-    amount: 35000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Gem Center Saigon",
-  },
-  {
-    id: "PC-2026-002",
-    date: "2026-03-09",
-    type: "expense",
-    category: "Tiệc chiêu đãi & F&B",
-    description: "Tiệc trà teabreak & gala dinner đại biểu B2B",
-    amount: 18000000,
-    method: "bank",
-    status: "completed",
-    recipient: "Saigon Catering Service",
-  },
-  {
-    id: "PC-2026-003",
-    date: "2026-03-07",
-    type: "expense",
-    category: "Quà tặng & Ấn phẩm",
-    description: "In ấn backdrop, kỷ yếu hội viên mạ vàng, cúp vinh danh",
-    amount: 12500000,
-    method: "bank",
-    status: "completed",
-    recipient: "Công ty In ấn Mỹ Thuật Á Đông",
-  },
-  {
-    id: "PC-2026-004",
-    date: "2026-03-05",
-    type: "expense",
-    category: "Truyền thông & Báo chí",
-    description: "Gói truyền thông báo điện tử VnExpress, CafeF, Doanh Nhân Trẻ",
-    amount: 15000000,
-    method: "bank",
-    status: "completed",
-    recipient: "VCCorp Media Network",
-  },
-  {
-    id: "PC-2026-005",
-    date: "2026-03-02",
-    type: "expense",
-    category: "Hành chính & Tiếp khách",
-    description: "Chi phí tiếp đón đoàn xúc tiến thương mại Hàn Quốc",
-    amount: 4500000,
-    method: "cash",
-    status: "completed",
-    recipient: "Văn phòng Hiệp hội CEO 1983",
-  },
-];
-
 export const Route = createFileRoute("/finance-report")({
   ssr: false,
   loader: async () => {
     try {
-      const data = await listTransactionsFn();
-      if (Array.isArray(data) && data.length > 0) return data;
+      const data = await fetchNestApi<Transaction[]>("/admin/transactions");
+      return Array.isArray(data) ? data : [];
     } catch {
-      // fallback safe
+      return [];
     }
-    return FALLBACK_TRANSACTIONS;
   },
   component: FinanceReport,
 });
@@ -170,7 +56,7 @@ type PeriodFilter = "all" | "day" | "week" | "month" | "year";
 function FinanceReport() {
   const t = useT();
   const fmt = useFmt();
-  const rawTransactions = (Route.useLoaderData() as Transaction[]) || FALLBACK_TRANSACTIONS;
+  const rawTransactions = (Route.useLoaderData() as Transaction[]) || [];
 
   const [period, setPeriod] = useState<PeriodFilter>("all");
   const [viewMode, setViewMode] = useState<FinanceViewMode>("dashboard");
@@ -187,9 +73,9 @@ function FinanceReport() {
       try {
         const query = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
         const res = await fetchNestApi<Transaction[]>(`/admin/transactions${query}`);
-        if (Array.isArray(res) && res.length > 0) return res;
+        if (Array.isArray(res)) return res;
       } catch {}
-      return rawTransactions;
+      return [];
     },
     initialData: rawTransactions,
   });

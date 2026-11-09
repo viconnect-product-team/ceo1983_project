@@ -23,6 +23,7 @@ import {
   UserCheck,
   Send,
   Users,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -51,6 +52,7 @@ import {
   TaskAssignmentHistoryView,
   TaskFormModal,
   TaskDetailDrawer,
+  AiTaskExtractorModal,
 } from '@/features/tasks';
 
 interface TaskSearchParams {
@@ -109,6 +111,7 @@ function TasksPage() {
   const [defaultDateForNew, setDefaultDateForNew] = useState<string | undefined>(undefined);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const [aiExtractorOpen, setAiExtractorOpen] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -263,9 +266,18 @@ function TasksPage() {
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
       const updated = await updateTaskStatus(taskId, newStatus);
-      setTasks((prev) => [updated, ...prev.filter((t) => t.id !== taskId)]);
-      if (selectedTask?.id === taskId) setSelectedTask(updated);
-      toast.success(`Đã cập nhật trạng thái: ${TASK_STATUS_CONFIG[newStatus]?.label}`);
+      // Đảm bảo nếu chuyển sang DONE thì tự động là 100% tiến độ
+      const finalUpdated = newStatus === 'DONE' ? { ...updated, progress: 100 } : updated;
+      setTasks((prev) => [finalUpdated, ...prev.filter((t) => t.id !== taskId)]);
+      if (selectedTask?.id === taskId) setSelectedTask(finalUpdated);
+
+      if (newStatus === 'DONE') {
+        toast.success(`🎉 Đã hoàn thành công việc: "${finalUpdated.title}"! (Tiến độ: 100%)`, {
+          duration: 3500,
+        });
+      } else {
+        toast.success(`Đã cập nhật trạng thái: ${TASK_STATUS_CONFIG[newStatus]?.label}`);
+      }
     } catch {
       toast.error('Không thể cập nhật trạng thái');
     }
@@ -334,7 +346,17 @@ function TasksPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setAiExtractorOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-600 to-[#003B95] hover:opacity-95 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition cursor-pointer"
+              title="Tự động bóc tách task, gợi ý giải pháp và phân công nhân sự các Ban từ file Word/Excel/văn bản họp"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>✨ AI Bóc Tách Task (Word/Excel)</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -388,96 +410,43 @@ function TasksPage() {
           </div>
         </div>
 
-        {/* ── THANH CHỨC NĂNG CON TRONG QUẢN LÝ CÔNG VIỆC (Scope Filter Tabs) ── */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          {[
-            { id: 'all', label: 'Tất cả công việc', icon: CheckSquare, count: tasks.length },
-            {
-              id: 'my_tasks',
-              label: 'Công việc của tôi',
-              icon: UserCheck,
-              count: tasks.filter((t) => {
-                const uId = String(user?.id || '').toLowerCase();
-                const uEmail = String(user?.email || '').toLowerCase();
-                const uName = String(user?.name || '').toLowerCase();
-                return (
-                  (t.assignee?.id && String(t.assignee.id).toLowerCase() === uId) ||
-                  (t.assignee?.email && String(t.assignee.email).toLowerCase() === uEmail) ||
-                  (t.assignee?.name && uName && String(t.assignee.name).toLowerCase().includes(uName)) ||
-                  t.assignees?.some(
-                    (a) =>
-                      (a.id && String(a.id).toLowerCase() === uId) ||
-                      (a.name && uName && String(a.name).toLowerCase().includes(uName)),
-                  )
-                );
-              }).length || 6,
-            },
-            {
-              id: 'assigned_by_me',
-              label: 'Công việc tôi giao đi',
-              icon: Send,
-              count: tasks.filter((t) => {
-                const uId = String(user?.id || '').toLowerCase();
-                return (
-                  (t.creator?.id && String(t.creator.id).toLowerCase() === uId) ||
-                  (t.supervisor?.id && String(t.supervisor.id).toLowerCase() === uId)
-                );
-              }).length || 4,
-            },
-            {
-              id: 'by_department',
-              label: 'Phân công theo Ban',
-              icon: Building,
-              count: TASK_DEPARTMENTS.length,
-            },
-            {
-              id: 'overdue',
-              label: 'Cần đôn đốc / Quá hạn',
-              icon: AlertTriangle,
-              count: stats.overdue,
-              isBadgeRed: true,
-            },
-          ].map((scope) => {
-            const ScopeIcon = scope.icon;
-            const isActive = (currentScope === 'all' && scope.id === 'all') || currentScope === scope.id;
-            return (
-              <button
-                key={scope.id}
-                type="button"
-                onClick={() => {
-                  if (scope.id === 'by_department') {
-                    setViewMode('tree');
-                  }
-                  void navigate({
-                    to: '/tasks',
-                    search: {
-                      ...searchParams,
-                      filter: scope.id === 'all' ? undefined : scope.id,
-                      view: scope.id === 'by_department' ? 'tree' : searchParams.view,
-                    },
-                  });
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${isActive
-                    ? 'bg-[#003B95] text-white shadow-sm shadow-[#003B95]/30'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200/80 dark:border-slate-700/80'
-                  }`}
-              >
-                <ScopeIcon className="w-3.5 h-3.5 shrink-0" />
-                <span>{scope.label}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive
-                      ? 'bg-white/20 text-white'
-                      : scope.isBadgeRed
-                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                    }`}
-                >
-                  {scope.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* ── PHÂN HỆ CÔNG VIỆC ĐƯỢC CHỌN TỪ MENU SIDEBAR ── */}
+        {currentScope !== 'all' && (
+          <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-600 dark:text-slate-400">Mục đang lọc từ Sidebar:</span>
+              <span className="font-bold text-[#003B95] dark:text-blue-300">
+                {currentScope === 'my_tasks'
+                  ? 'Công việc của tôi'
+                  : currentScope === 'assigned_by_me'
+                    ? 'Công việc tôi giao đi'
+                    : currentScope === 'by_department'
+                      ? 'Phân công theo Ban'
+                      : currentScope === 'overdue'
+                        ? 'Cần đôn đốc / Quá hạn'
+                        : currentScope}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#003B95] text-white">
+                {filteredTasks.length} việc
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void navigate({
+                  to: '/tasks',
+                  search: {
+                    ...searchParams,
+                    filter: undefined,
+                  },
+                });
+              }}
+              className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              Xem tất cả công việc
+            </button>
+          </div>
+        )}
 
         {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -738,6 +707,17 @@ function TasksPage() {
             setTasks((prev) => [updated, ...prev.filter((t) => t.id !== updated.id)]);
             loadData();
           }}
+        />
+
+        {/* Modal: AI Bóc Tách Task Từ File Báo Cáo Ý Kiến Họp */}
+        <AiTaskExtractorModal
+          isOpen={aiExtractorOpen}
+          onClose={() => setAiExtractorOpen(false)}
+          onTasksCreated={() => {
+            loadData();
+            setViewMode('kanban');
+          }}
+          initialDepartment={selectedDept !== 'ALL' ? selectedDept : 'Ban Điều Hành'}
         />
       </div>
     </AppShell>

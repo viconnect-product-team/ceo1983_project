@@ -44,7 +44,14 @@ export function TaskCard({ task, onClick, zoomLevel = 'standard' }: TaskCardProp
   return (
     <div
       onClick={() => onClick(task)}
-      className={`group relative flex flex-col justify-between rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 ${cardPadding} shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-[#003B95]/50 hover:shadow-md cursor-pointer select-none`}
+      draggable={true}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.setData('application/json', JSON.stringify({ id: task.id, status: task.status, title: task.title }));
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      className={`group relative flex flex-col justify-between rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 ${cardPadding} shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-[#003B95]/50 hover:shadow-md cursor-grab active:cursor-grabbing active:opacity-60 active:scale-[0.98] select-none`}
+      title="Nhấn để xem chi tiết hoặc Kéo thả để chuyển cột trạng thái"
     >
       <div>
         {/* Top Header: Code, Priority, Status dot */}

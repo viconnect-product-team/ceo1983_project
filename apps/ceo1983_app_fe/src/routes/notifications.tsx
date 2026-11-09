@@ -1024,37 +1024,26 @@ function NotifyPage() {
         </CrmMetricGrid>
       </div>
 
-      {/* ── SUB-TREE TABS ĐƯỢC CHỌN TỪ SIDEBAR TREE MENU ── */}
-      <div className="mb-4 overflow-x-auto pb-1 scrollbar-none">
-        <div className="flex items-center gap-2 min-w-max">
-          {subFilters.map((sub) => {
-            const SubIcon = sub.icon;
-            const isActive = activeSubFilter === sub.id;
-            return (
-              <Link
-                key={sub.id}
-                to="/notifications"
-                search={sub.id === "all" ? {} : { filter: sub.id }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive
-                    ? "bg-[#003B95] text-white shadow-sm shadow-[#003B95]/30"
-                    : "bg-white dark:bg-card text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
-                  }`}
-              >
-                <SubIcon className="h-3.5 w-3.5 shrink-0" />
-                <span>{sub.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                    }`}
-                >
-                  {sub.count}
-                </span>
-              </Link>
-            );
-          })}
+      {/* ── BỘ LỌC CHUYÊN BIỆT ĐƯỢC ĐIỀU HƯỚNG TỪ MENU SIDEBAR ── */}
+      {activeSubFilter !== "all" && (
+        <div className="mb-4 flex items-center justify-between px-3.5 py-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-600 dark:text-slate-400">Phân hệ đang xem từ Sidebar:</span>
+            <span className="font-bold text-[#003B95] dark:text-blue-300">
+              {subFilters.find((s) => s.id === activeSubFilter)?.label || activeSubFilter}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#003B95] text-white">
+              {filtered.length} thông báo
+            </span>
+          </div>
+          <Link
+            to="/notifications"
+            className="text-[11px] font-bold text-[#003B95] dark:text-blue-400 hover:underline cursor-pointer"
+          >
+            Xem tất cả thông báo
+          </Link>
         </div>
-      </div>
+      )}
 
       {/* ── TOOLBAR TÌM KIẾM, BỘ LỌC PHẠM VI & CHUYỂN ĐỔI GIAO DIỆN ── */}
       <div className="mb-4 bg-white dark:bg-card p-3 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">

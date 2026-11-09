@@ -1178,7 +1178,7 @@ export class ConnectAppService implements OnModuleInit {
     // Bổ sung thông báo từ Hiệp hội CEO 1983 (member_notifications, hội phí quá hạn, cơ hội, tin nhắn BQT)
     try {
       const members = await this.prisma.$queryRaw<any[]>`
-        SELECT id, code, full_name, email, dues_status, membership_tier, renewal_date
+        SELECT id, code, name, email, payment_status, level, term_end
         FROM public.members
         WHERE user_id = ${userId}::uuid
            OR LOWER(email) IN (SELECT LOWER(email) FROM public.vione_users WHERE id = ${userId}::uuid)
@@ -1267,9 +1267,9 @@ export class ConnectAppService implements OnModuleInit {
         });
       }
 
-      // 2. Kiểm tra trạng thái hội phí quá hạn chưa thanh toán (tài khoản Lê Hoàng Long hoặc hội viên khác)
+      // 2. Kiểm tra trạng thái hội phí quá hạn chưa thanh toán
       const overdueMember = (members as any[]).find(
-        (m: any) => m.dues_status === 'overdue',
+        (m: any) => m.payment_status === 'overdue' || m.dues_status === 'overdue',
       );
       if (overdueMember) {
         const invRows = await this.prisma.$queryRaw<any[]>`
@@ -1286,7 +1286,7 @@ export class ConnectAppService implements OnModuleInit {
           ? Number(inv.amount).toLocaleString('vi-VN') + ' đ'
           : 'Cần thanh toán';
         const invTitle = 'Thông báo: Hội phí hội viên quá hạn chưa thanh toán';
-        const invBody = `Hội phí của hội viên ${overdueMember.full_name || 'CEO 1983'} (${invAmount}) đã quá hạn thanh toán. Vui lòng hoàn tất đóng phí để tiếp tục duy trì quyền lợi và kết nối B2B trên hệ thống.`;
+        const invBody = `Hội phí của hội viên ${overdueMember.name || overdueMember.full_name || 'CEO 1983'} (${invAmount}) đã quá hạn thanh toán. Vui lòng hoàn tất đóng phí để tiếp tục duy trì quyền lợi và kết nối B2B trên hệ thống.`;
 
         // Chỉ thêm nếu chưa có thông báo tương đương
         const alreadyHasOverdue = mapped.some(

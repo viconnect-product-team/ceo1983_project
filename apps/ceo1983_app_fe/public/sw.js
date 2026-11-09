@@ -47,13 +47,19 @@ self.addEventListener("fetch", (event) => {
   if (
     url.pathname.startsWith("/api") ||
     url.pathname.startsWith("/dm") ||
+    url.pathname.startsWith("/connect-app") ||
     url.pathname.startsWith("/socket.io") ||
     url.pathname.startsWith("/_serverFn") ||
-    url.pathname.startsWith("/admin/") ||
+    url.pathname.startsWith("/admin") ||
     url.pathname.startsWith("/notifications") ||
     url.pathname.startsWith("/members") ||
     url.pathname.startsWith("/events") ||
-    url.pathname.startsWith("/meetings")
+    url.pathname.startsWith("/meetings") ||
+    url.pathname.startsWith("/news") ||
+    url.pathname.startsWith("/opportunities") ||
+    url.pathname.startsWith("/products") ||
+    url.pathname.startsWith("/transactions") ||
+    url.pathname.startsWith("/invoices")
   ) {
     return;
   }
@@ -207,7 +213,7 @@ setInterval(async () => {
     }
 
     // 2. Kiểm tra thông báo mới từ hệ thống CLB Doanh Nhân CEO 1983
-    let notifRes = await fetch("/connect-app/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
+    let notifRes = await fetch("/api/connect-app/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
     if (!notifRes || !notifRes.ok) {
       notifRes = await fetch("/api/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
     }

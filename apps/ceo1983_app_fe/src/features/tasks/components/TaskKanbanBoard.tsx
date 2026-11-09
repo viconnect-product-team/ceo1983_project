@@ -77,6 +77,9 @@ export function TaskKanbanBoard({
   onAddTaskToColumn,
   onQuickStatusChange,
 }: TaskKanbanBoardProps) {
+  // Drag and drop state
+  const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
+
   // Zoom mode: 'compact' (280px), 'standard' (345px), 'spacious' (410px)
   const [zoomLevel, setZoomLevel] = useState<TaskZoomLevel>(() => {
     if (typeof window !== 'undefined') {
@@ -172,11 +175,41 @@ export function TaskKanbanBoard({
         {COLUMNS.map((col) => {
           const Icon = col.icon;
           const colTasks = tasks.filter((t) => t.status === col.status);
+          const isOverThisCol = dragOverCol === col.status;
 
           return (
             <div
               key={col.status}
-              className={`flex-shrink-0 flex flex-col rounded-2xl bg-slate-50/90 dark:bg-slate-900/70 border border-slate-200/90 dark:border-slate-800 p-3.5 shadow-xs transition-all duration-200 border-t-4 ${col.borderTop} ${columnWidthClass}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverCol !== col.status) {
+                  setDragOverCol(col.status);
+                }
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  if (dragOverCol === col.status) setDragOverCol(null);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverCol(null);
+                const taskId = e.dataTransfer.getData('text/plain');
+                if (!taskId) return;
+                const currentTask = tasks.find((t) => t.id === taskId);
+                if (!currentTask) return;
+                if (currentTask.status === col.status) return;
+
+                onQuickStatusChange?.(taskId, col.status);
+              }}
+              className={`flex-shrink-0 flex flex-col rounded-2xl p-3.5 shadow-xs transition-all duration-200 border-t-4 ${col.borderTop} ${columnWidthClass} ${
+                isOverThisCol
+                  ? col.status === 'DONE'
+                    ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 shadow-lg scale-[1.01]'
+                    : 'ring-2 ring-[#003B95] dark:ring-blue-400 bg-blue-50/70 dark:bg-blue-950/40 shadow-lg scale-[1.01]'
+                  : 'bg-slate-50/90 dark:bg-slate-900/70 border border-slate-200/90 dark:border-slate-800'
+              }`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-200/70 dark:border-slate-800">
@@ -206,7 +239,24 @@ export function TaskKanbanBoard({
 
               {/* Task list container */}
               <div className={`flex flex-col ${columnCardGap} min-h-[160px]`}>
-                {colTasks.length === 0 ? (
+                {isOverThisCol && (
+                  <div
+                    className={`p-2.5 rounded-xl border-2 border-dashed text-xs font-bold text-center animate-pulse flex items-center justify-center gap-1.5 ${
+                      col.status === 'DONE'
+                        ? 'border-emerald-500 bg-emerald-100/90 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'border-[#003B95] bg-blue-100/90 text-[#003B95] dark:bg-blue-950 dark:text-blue-300'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>
+                      {col.status === 'DONE'
+                        ? 'Thả để hoàn thành công việc (Tự động 100%)'
+                        : `Thả để chuyển sang ${col.title}`}
+                    </span>
+                  </div>
+                )}
+
+                {colTasks.length === 0 && !isOverThisCol ? (
                   <div className="flex flex-col items-center justify-center py-10 px-4 text-center border-2 border-dashed border-slate-200/80 dark:border-slate-800/80 rounded-xl text-slate-400 bg-white/40 dark:bg-slate-900/30">
                     <p className="text-[12px] font-medium">Chưa có công việc</p>
                     {onAddTaskToColumn && (

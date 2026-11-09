@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useT } from "@/lib/i18n";
+import { ChartAdaptiveTooltip } from "@/components/common/ChartAdaptiveTooltip";
 
 const data = [
   { m: "12/2023", v: 1.5 },
@@ -43,15 +44,12 @@ export function RevenueChart() {
               tickFormatter={(v) => `${v}B`}
             />
             <Tooltip
-              cursor={{ fill: "var(--color-muted)" }}
-              contentStyle={{
-                background: "var(--color-card)",
-                border: "1px solid var(--color-border)",
-                borderRadius: 12,
-                fontSize: 12,
-                boxShadow: "var(--shadow-elevated)",
-              }}
-              formatter={(v: number) => [`${v} tỷ`, "Doanh thu"]}
+              cursor={{ fill: "rgba(100, 116, 139, 0.1)" }}
+              content={
+                <ChartAdaptiveTooltip
+                  formatter={(v: number) => [`${v} tỷ VNĐ`, "Doanh thu"]}
+                />
+              }
             />
             <Bar dataKey="v" fill="url(#g-rev)" radius={[8, 8, 0, 0]} maxBarSize={42} />
           </BarChart>

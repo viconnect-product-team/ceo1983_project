@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ChartAdaptiveTooltip } from "@/components/common/ChartAdaptiveTooltip";
 import {
   Users,
   UserCheck,
@@ -225,13 +226,11 @@ function GrowthArea({ data }: { data: DashboardStats["growth"] }) {
             tickLine={false}
           />
           <Tooltip
-            contentStyle={{
-              background: "var(--color-card)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 12,
-              fontSize: 12,
-              boxShadow: "var(--shadow-elevated)",
-            }}
+            content={
+              <ChartAdaptiveTooltip
+                formatter={(val: number) => [`${val} hội viên`, "Quy mô"]}
+              />
+            }
           />
           <Area
             type="monotone"

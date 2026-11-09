@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 
 export interface OmnichannelBroadcastModalProps {
-  open: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   invitationData: {
     title: string;
@@ -31,16 +32,21 @@ export interface OmnichannelBroadcastModalProps {
     salutation?: string;
     bodyText?: string;
     templateId?: string;
+    category?: string;
+    [key: string]: any;
   };
   onSuccess?: () => void;
 }
 
 export function OmnichannelBroadcastModal({
   open,
+  isOpen,
   onClose,
   invitationData,
   onSuccess,
 }: OmnichannelBroadcastModalProps) {
+  const isModalOpen = open ?? isOpen ?? true;
+  if (!isModalOpen) return null;
   // Checkbox states for 3 channels (user can pick 1, 2, or all 3)
   const [sendToApp, setSendToApp] = useState<boolean>(true);
   const [sendToZalo, setSendToZalo] = useState<boolean>(true);

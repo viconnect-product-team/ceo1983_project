@@ -1,5 +1,201 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 09/11/2026 (v10.83): Khắc Phục Triệt Để Lỗi TypeScript InvitationTemplateStudio & Lỗi HTTP 500 Notifications Service Worker ([NODE-CRM-024], [NODE-APP-003], [NODE-CORE-001])**:
+  1. *Khắc phục lỗi TypeScript `category does not exist in type` tại `InvitationTemplateStudio.tsx` (Ảnh 1)*:
+     - **Nguyên nhân**: `OmnichannelBroadcastModalProps` chỉ khai báo các trường cơ bản, thiếu `category` và `isOpen` (chỉ khai báo `open: boolean`), khiến TypeScript báo lỗi khi truyền `category` và `isOpen`.
+     - **Giải pháp**:
+       + Cập nhật `OmnichannelBroadcastModalProps` tại `apps/ceo1983_app_fe/src/components/templates/OmnichannelBroadcastModal.tsx` hỗ trợ cả `open?: boolean`, `isOpen?: boolean`, bổ sung `category?: string` và index signature `[key: string]: any`.
+       + Chuẩn hóa việc truyền dữ liệu trong `InvitationTemplateStudio.tsx` với cả hai prop `open` và `isOpen`, truyền đầy đủ các thông tin ngày giờ, địa điểm, tiêu đề, posterUrl và thể loại.
+  2. *Khắc phục lỗi HTTP 500 `notifications?limit=5` & `ERR_CACHE_MISS` trong DevTools Network (Ảnh 2 & 3)*:
+     - **Nguyên nhân 1 (Service Worker Routing)**:
+       + Trong `public/sw.js`, tiến trình ngầm kiểm tra thông báo gọi: `fetch("/connect-app/me/notifications?limit=5&unreadOnly=true")` (thiếu tiền tố `/api`). Do Nginx chỉ proxy `/api/` về backend, request không có `/api/` bị đẩy về server SSR frontend và gây lỗi 500.
+       + Các endpoint `/news`, `/opportunities`, `/products`, `/transactions` chưa được đưa vào danh sách ngoại lệ của Service Worker, khiến `sw.js` cố gắng đọc cache tĩnh và gây ra lỗi `ERR_CACHE_MISS`.
+     - **Nguyên nhân 2 (Database Column Name Mismatch)**:
+       + Trong `apps/ceo1983_app_be/src/connect-app/connect-app.service.ts` hàm `listNotifications`: câu truy vấn CSDL gọi `SELECT id, code, full_name, email, dues_status, membership_tier, renewal_date FROM public.members`. Tuy nhiên, trong CSDL PostgreSQL thực tế, các cột chuẩn là `name`, `payment_status`, `level`, `term_end`. Lỗi này làm phát sinh ngoại lệ cơ sở dữ liệu `column "full_name" does not exist`.
+     - **Giải pháp dứt điểm**:
+       + **Cập nhật Service Worker (`public/sw.js` & `.output/public/sw.js`)**:
+         * Bổ sung đầy đủ danh sách bỏ qua cache cho toàn bộ các API: `/connect-app`, `/news`, `/opportunities`, `/products`, `/transactions`, `/invoices`, `/admin`.
+         * Sửa đường dẫn gọi ngầm thành `/api/connect-app/me/notifications?limit=5&unreadOnly=true` và dự phòng `/api/me/notifications?limit=5&unreadOnly=true` để luôn đi qua proxy `/api/` của backend.
+       + **Chuẩn hóa SQL Query trong Backend (`connect-app.service.ts`)**:
+         * Sửa câu lệnh SELECT khớp 100% schema PostgreSQL: `SELECT id, code, name, email, payment_status, level, term_end FROM public.members`.
+         * Cập nhật các trường tra cứu hội viên quá hạn: `m.payment_status === 'overdue' || m.dues_status === 'overdue'`, `overdueMember.name || overdueMember.full_name`.
+         * Kiểm thử query thực tế trên CSDL: Trả về thành công 100% với dữ liệu thực tế hội viên.
+  3. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `nest build`: Exit code 0 (0 errors).
+     - Frontend `routeTree.gen.ts` & build: 0 errors.
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Mọi thay đổi lưu trữ local trên nhánh `dev`, không tự ý commit/push.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.82): Nâng Cấp Luồng Công Việc CRM CEO 1983 - Kéo Thả Kanban Tự Động Hoàn Thành 100% & Bóc Tách Task Thông Minh Bằng AI Từ File Word/Excel Báo Cáo Ý Kiến Họp Kèm Phân Công Từng Người Theo Ban ([NODE-CRM-012], [NODE-CORE-004])**:
+  1. *Khắc phục triệt để lỗi code trong ảnh (`Cannot find name 'useQuery'` tại `finance-report.tsx`)*:
+     - Bổ sung đầy đủ import `useQuery` từ `@tanstack/react-query`, `fetchNestApi`, `AppShell`, `PageHeader`, `Card` và toàn bộ các icon Lucide (`Upload`, `FileSpreadsheet`, `Receipt`, `FileText`, `Printer`, `Download`, `Search`).
+     - Đã xác thực build thành công với 0 lỗi syntax/import.
+  2. *Nâng cấp Kéo Thả Trạng Thái Kanban (HTML5 Drag & Drop) - Tự Động Chuyển "Đã Hoàn Thành" Khi Thả Cột DONE*:
+     - **Thẻ công việc (`TaskCard.tsx`)**: Kích hoạt `draggable={true}`, lắng nghe `onDragStart` đóng gói `taskId` và metadata công việc; hiệu ứng thị giác tương tác `cursor-grab`, `active:cursor-grabbing`, giảm nhẹ opacity và thu nhỏ nhẹ khi đang kéo.
+     - **Bảng cột Kanban (`TaskKanbanBoard.tsx`)**:
+       + Bổ sung đầy đủ sự kiện `onDragOver`, `onDragLeave`, `onDrop` trên toàn bộ 5 cột trạng thái: `TODO` (Chờ xử lý), `IN_PROGRESS` (Đang thực hiện), `REVIEW` (Chờ nghiệm thu), `DONE` (Đã hoàn thành), `OVERDUE` (Quá hạn / Tạm dừng).
+       + Hiệu ứng nhận diện vùng thả (Dropzone Highlighting): Cột đang được hover kéo vào phát sáng nổi bật với viền `ring-2 ring-[#003B95]` (hoặc `ring-2 ring-emerald-500` cho cột DONE), nền đổi màu mượt mà kèm thanh thông báo hướng dẫn động dạng pulse.
+       + **Tự động đổi trạng thái "Đã hoàn thành"**: Khi thả task vào cột `DONE`:
+         * Lập tức chuyển trạng thái `task.status = 'DONE'`.
+         * Tự động đặt tiến độ công việc lên `100%`.
+         * Gọi API backend (`updateTaskStatus(taskId, 'DONE')`) và cập nhật state tức thời.
+         * Kích hoạt Toast thông báo thành công: `🎉 Đã hoàn thành công việc: "[Tiêu đề]"! (Tiến độ: 100%)`.
+       + Kéo qua các cột khác: Tự động đổi trạng thái tương ứng và thông báo chuyển cột rõ ràng.
+  3. *Trợ Lý AI Phân Tích Báo Cáo Họp, Bóc Tách Task & Tự Động Chia Việc Cho Từng Thành Viên Theo Ban*:
+     - **Backend API (`apps/ceo1983_app_be/src/ai/ai.service.ts` & `ai.controller.ts`)**:
+       + Thêm endpoint: `POST /api/ai/extract-tasks-from-document`.
+       + Truy vấn CSDL PostgreSQL (`public.members`) để lấy danh sách nhân sự thực tế của Ban được chọn (kèm họ tên, chức danh, chuyên môn).
+       + Tích hợp mô hình AI Google Gemini 2.0 Flash / 2.5 Flash kết hợp bộ máy Heuristic Semantic NLP thông minh (chạy song song và dự phòng khi offline):
+         * **Phân tích bối cảnh & gợi ý giải pháp**: Tóm tắt 2-3 câu trọng tâm cuộc họp và đưa ra 3 - 5 giải pháp triển khai khả thi, chuẩn mực quản trị điều hành CLB CEO 1983.
+         * **Bóc tách danh sách công việc (Tasks)**: Tách các ý kiến chỉ đạo thành 3 - 8 đầu việc rõ ràng, tiêu đề hành động, mô tả phạm vi, độ ưu tiên (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`), hạn hoàn thành (`dueDate`), sản phẩm bàn giao (`deliverables`) và các bước thực hiện con (`subtasks`).
+         * **Chia task đích danh**: Tự động gán đúng từng người trong Ban được chọn (Chủ tịch, Phó Chủ tịch, Trưởng Ban, Phó Ban, Ủy viên chuyên trách).
+     - **Giao diện Modal Bóc Tách Task Thông Minh (`AiTaskExtractorModal.tsx`)**:
+       + Hỗ trợ tải file Excel (`.xlsx`, `.xls`, `.csv`), Word (`.docx`) hoặc dán trực tiếp biên bản họp.
+       + Đọc file siêu tốc ngay tại trình duyệt thông qua thư viện `xlsx` và `jszip` (giải nén cấu trúc XML của file Word).
+       + Dropdown chọn Ban chuyên trách: Ban Điều Hành, Ban Thư Ký, Ban Xúc Tiến Thương Mại, Ban Phát Triển Hội Viên, Ban Truyền Thông & Sự Kiện, Ban Tài Chính & Pháp Chế, Ban Thiện Nguyện & Cộng Đồng.
+       + Cho phép nhập thêm yêu cầu / chỉ đạo bổ sung cho AI.
+       + Giao diện hiển thị trực quan: Khối tóm tắt & giải pháp đề xuất của AI + Danh sách thẻ công việc kèm checkbox chọn/bỏ chọn, sửa nhanh thông tin và nút **"Tạo hàng loạt [N] công việc vào hệ thống"**.
+     - **Tích hợp Header Trang `/tasks` (`tasks.tsx`)**:
+       + Thêm nút bấm nổi bật phong cách VIP: **"✨ AI Bóc Tách Task (Word/Excel)"** trên thanh công cụ trang Quản lý công việc.
+       + Khi tạo xong: Tự động tải lại danh sách công việc và chuyển sang chế độ xem Kanban để người dùng kéo thả quản lý ngay lập tức.
+  4. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `nest build`: Exit code 0 (0 errors).
+     - Frontend Route generation & component compilation: 0 errors.
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Mọi thay đổi lưu trữ cục bộ trên nhánh `dev`, không tự ý chạy git commit hay git push.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.80): Khắc Phục Triệt Để Lỗi Cannot Access 'D' Before Initialization Thu Chi, Dọn Sạch Dữ Liệu Rác CSDL, Tinh Chỉnh Tooltip Thống Kê Nền Sáng Theo Theme & Tái Cấu Trúc Điều Hướng Quản Lý Mẫu, Thông Báo, Công Việc Theo Menu Sidebar ([NODE-CRM-001], [NODE-CRM-008], [NODE-CRM-009], [NODE-CRM-011], [NODE-CRM-012], [NODE-CRM-014])**:
+  1. *Khắc phục lỗi `Cannot access 'D' before initialization` tại Khoản thu (`/income`) và Khoản chi (`/expenses`)*:
+     - **Nguyên nhân gốc rễ**: Lỗi closure hoisting của Vite bundler do import server functions (`useServerFn`, `createTransactionFn`, `updateTransactionFn`, `deleteTransactionFn`) trong route bundle client-side.
+     - **Giải pháp dứt điểm**:
+       + Gỡ bỏ hoàn toàn `useServerFn` và các hàm server functions khỏi `income.tsx`, `expenses.tsx` và `finance-report.tsx`.
+       + Chuẩn hóa lời gọi API trực tiếp qua `fetchNestApi`: `GET /admin/transactions?type=income`, `POST /admin/transactions`, `PATCH /admin/transactions/:id`, `DELETE /admin/transactions/:id`.
+       + Tách riêng kiểu dữ liệu `Transaction` vào file độc lập `apps/ceo1983_app_fe/src/types/finance.types.ts` để cách ly 100% mã nguồn server khỏi client bundle.
+  2. *Dọn sạch dữ liệu rác trong CSDL PostgreSQL `113.20.107.184:6432` và loại bỏ Mock Fallback*:
+     - **Tắt cơ chế tự động re-seed**: Vô hiệu hóa hoàn toàn hàm `ensureSeedTransactions()` trong `apps/ceo1983_app_be/src/admin/admin.service.ts` để backend không bao giờ tự động chèn 11 giao dịch mẫu mỗi khi database trống.
+     - **Thực thi xóa sạch dữ liệu trên database chính thức**: Đã chạy câu lệnh DELETE sạch 100% dữ liệu các bảng `transactions` (xóa 10 bản ghi rác cũ), `invoices`, `invoice_reminders`, `meetings`, `business_meetings`, `business_meeting_participants`. Hiện CSDL chỉ còn duy nhất 1 tài khoản `admin@connect.vn` và 1 member tương ứng của Quản trị viên.
+     - **Loại bỏ Mock Data Fallback trên Frontend**: Xóa bỏ `DEFAULT_INCOME_TRANSACTIONS`, `DEFAULT_EXPENSES_TRANSACTIONS` và `FALLBACK_TRANSACTIONS` trong `income.tsx`, `expenses.tsx`, `finance-report.tsx`. Khi CSDL trống, giao diện hiển thị trạng thái bảng rỗng sạch sẽ kèm Empty State thanh lịch với chỉ số 0đ.
+     - **Dọn dẹp Cache LocalStorage Cuộc Gặp**: Loại bỏ fallback `localStorage.getItem("ceo1983_meetings_history")` trong `business-connect.meetings.index.tsx` và `WorkspaceSummaryCards.tsx`, tự động xóa sạch key rác cũ trong trình duyệt, chỉ lấy dữ liệu thực tế từ API `/meetings`.
+  3. *Khắc phục lỗi Chú Thích Chỉ Số Thống Kê (Recharts Tooltip) Bị Nền Tối Ở Theme Sáng*:
+     - **Nguyên nhân**: Các component `<Tooltip />` của Recharts đang bị hardcode style màu nền tối cố định `backgroundColor: "rgba(15, 23, 42, 0.95)"` hoặc class `bg-slate-900 text-white border-slate-700`.
+     - **Giải pháp**: Xây dựng component dùng chung `ChartAdaptiveTooltip` (`apps/ceo1983_app_fe/src/components/common/ChartAdaptiveTooltip.tsx`) tích hợp class Tailwind thích ứng hoàn hảo theo theme:
+       + **Light Theme**: Nền trắng tinh khiết `bg-white/95`, viền mỏng thanh lịch `border-slate-200/90`, chữ đen đậm `text-slate-900`, nhãn `text-slate-800`, bóng đổ `shadow-xl shadow-slate-900/10`.
+       + **Dark Theme**: Nền tối `dark:bg-slate-900/95`, viền `dark:border-slate-800`, chữ trắng `dark:text-white`.
+       + Đã áp dụng đồng bộ cho toàn bộ hệ thống biểu đồ: `FinanceChartsSection.tsx` (Composed Chart dòng tiền & 2 Pie Charts cơ cấu thu/chi), `RevenueChart.tsx`, `GrowthChart.tsx`, `ExecutiveDashboard.tsx`, `analytics.tsx` (Pie & Bar Composed Chart) và `TaskStatisticsChartView.tsx`.
+  4. *Tái Cấu Trúc Điều Hướng Quản Lý Mẫu, Thông Báo & Công Việc: Bỏ Chọn Ngang, Chỉ Điều Hướng Qua Sidebar*:
+     - **Quản lý Mẫu (Templates)**:
+       + **Bỏ chọn ngang**: Xóa bỏ hoàn toàn thanh 5 thẻ card ngang ở đầu trang `PageTemplatesHub.tsx` (`templates.tsx`) theo đúng ảnh phản hồi của người dùng.
+       + **Điều hướng Sidebar duy nhất**: Người dùng chỉ được phép chuyển đổi các phân hệ mẫu thông qua Menu Sidebar:
+         * 🎨 *Mẫu Thư Mời & Poster* (`/templates?tab=invitation`)
+         * 📧 *Mẫu Email Marketing* (`/templates?tab=email`)
+         * 💬 *Mẫu Tin Nhắn Zalo OA* (`/templates?tab=zalo`)
+         * 💳 *Mẫu Thu Phí & VietQR* (`/templates?tab=dues`)
+         * 🤝 *Mẫu Cuộc Gặp Diễn Đàn* (`/templates?tab=forum-meetings`)
+       + Component hiển thị trực tiếp nội dung tương ứng theo URL query param `tab` do Sidebar điều hướng.
+     - **Thông Báo (`notifications.tsx`)**:
+       + Bỏ thanh sub-tree tab chọn ngang (Tất cả thông báo, Hội viên mới, Cảnh báo hội phí, BQT, Sự kiện).
+       + Người dùng chỉ chọn chuyển đổi trực tiếp trên Menu Sidebar con của mục "Thông Báo". Khi lọc, hiển thị indicator badge thông báo nhóm đang xem kèm liên kết quay lại tất cả.
+     - **Quản Lý Công Việc (`tasks.tsx`)**:
+       + Bỏ thanh Scope Filter tabs ngang (Tất cả công việc, Việc của tôi, Việc tôi giao, Theo Ban, Quá hạn).
+       + Chuyển đổi bộ lọc 100% thông qua các mục con trên Menu Sidebar của mục "Quản lý công việc".
+  5. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `tsc --noEmit`: Exit code 0 (0 errors).
+     - Frontend React TanStack Router `npm run build:dev` & Route generation: Exit code 0 (100% build sạch sẽ không lỗi).
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Mọi thay đổi lưu local trên nhánh `dev`, không tự động git commit hay git push.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.78): Nâng Cấp Studio Poster Đồ Họa Master Đẳng Cấp Chuẩn Pinterest Atlantis (Pin 374009944081934333), Chèn Hội Viên Thực Tế Kèm Avatar Mờ Viền & AI Super Premium Cố Vấn Khớp Vốn, Phân Tích Lời Lỗ Deal B2B & Dòng Tiền Hội Phí ([NODE-CRM-024], [NODE-APP-006], [NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Studio Poster Đồ Họa Master Đẳng Cấp & Chuẩn Pinterest Atlantis (`https://www.pinterest.com/pin/374009944081934333/`)*:
+     - **Tái tạo trọn vẹn Mẫu Cung Điện Atlantis Hoàng Gia (Hera Royal Palace 3D)**:
+       + Nền gốc sắc nét độ phân giải cao trích xuất trực tiếp: `/templates/atlantis_palace_poster.jpg`.
+       + Biểu tượng Đinh ba hoàng kim 3D (Golden Trident Emblem) đính ngọc trai và hoa văn Baroque.
+       + Chữ 3D nghệ thuật cỡ đại "ATLANTIS" viền dòng nước xoáy pha lê lấp lánh (Water Splash Wave Swirl) và vỏ sò ngọc trai dưới chân chữ.
+       + Cánh gà trái `FASHION / MYTHOLOGY / CREATIVITY` và cánh gà phải `BEYOND / THE SURFACE / INNOVATION`.
+       + Trích dẫn Serif sang trọng: `"O OLIMPO SE ABRE MAIS UMA VEZ. VENHA VIVENCIAR ATLANTIS..."` kết hợp thông điệp kiến tạo thịnh vượng doanh nhân CEO 1983.
+       + Khối ngày giờ phân tầng: DATA `10/09` | HORÁRIO `21:30` | LOCAL `HABBLET HOTEL & CUNG ĐIỆN HERA`.
+       + Dải đặc quyền: `"+ 2 EMBLEMAS EXCLUSIVOS PARA OS PARTICIPANTES."`
+     - **Bộ chuyển đổi nhanh 3 Mẫu Hoàng Gia 1 chạm**:
+       * Mẫu 1: Cung Điện Atlantis Hoàng Gia (Pinterest 374009944081934333).
+       * Mẫu 2: Wyndham Thanh Thủy Heian Villas (Pinterest 501447739786387302).
+       * Mẫu 3: Gala Doanh Nhân CEO 1983 Gold Luxury.
+     - **Họa tiết trang trí đẳng cấp trên cùng (Top Ornaments)** và **dưới đáy (Bottom Ornaments)**:
+       * Trên cùng: Đinh ba Atlantis 3D, Vòm vàng Baroque hoàng kim, Sao kim cương, Vương miện quý tộc, Art Deco.
+       * Dưới đáy: Sóng nước dạ quang vỏ sò, Dải nơ ngọc trai, Vạch sáng laser.
+     - **Bố cục kéo thả Dynamic như TopCV / Canva (`InvitationTemplateStudio.tsx`)**:
+       * Khi click vào bất kỳ khối nào: Hiển thị Bounding Box viền nét đứt vàng/cyan với các điểm neo handles.
+       * Floating Mini Toolbar nổi ngay trên khối cho phép chọn Font chữ (Playfair Serif, Cinzel La Mã, Thư pháp, Inter, Orbitron 3D), Cỡ chữ (S, M, L, XL, 2XL, 3XL), Dải màu gradient (Gold, Cyan, Platinum, Ruby, White), Bật/Tắt dập nổi 3D (3D Emboss Glow) và Bật/Tắt nền kính mờ (Frosted Glass).
+       * Di chuyển chuột mượt mà (Mouse & Touch Drag & Drop) tính toán tọa độ X%, Y%.
+     - **Trường thông tin Người tham gia / Đại biểu VIP / Diễn giả (Dynamic Attendees)**:
+       * Tích hợp gọi trực tiếp API `/members` (Danh bạ CLB) và `/events/registrations` (Đại biểu đăng ký sự kiện).
+       * Modal tìm kiếm hội viên theo Tên, Công ty, Mã hội viên, Chức vụ.
+       * Tự động lấy **Avatar**, **Họ tên**, **Chức vụ / Công ty / Cấp bậc trong CLB** đưa lên poster.
+       * 5 chế độ hiển thị khung ảnh: Tròn hoàng gia 3D, Vòm Heian, Bầu dục ngọc trai, Mờ viền lông vũ (Soft Feathering Blur 0-40px hòa tan vào nền poster) và Thẻ nổi 3D.
+     - **Công nghệ AI OCR Bóc tách tự động khi tải poster mẫu lên**:
+       * Nhận diện tự động các khối text: Tiêu đề, Ngày giờ, Địa điểm, Dòng kính mời, Slogan và chuyển thành các khối text tương tác có thể chỉnh sửa tự do.
+  2. *Nâng cấp AI Super Premium: Phân Tích Dòng Tiền Hội Viên, Khớp Vốn Đầu Tư (50.000.000 VNĐ) & Cố Vấn Đàm Phán Deal P&L / ROI (`AiService`, `ai.controller.ts`, `Ceo1983ChatAssistant.tsx`, `CrmChatGPTView.tsx`)*:
+     - **Phân tích toàn diện dòng tiền hội viên trong PostgreSQL**:
+       + Tổng hội phí đã nộp (`transactions` category `membership_fee`, `invoices`).
+       + Dòng tiền vé sự kiện & Gala (`transactions` category `event`).
+       + Dòng tiền từ chia sẻ cơ hội B2B (`opportunities` do hội viên đăng) và các thương vụ đã ký kết (`opportunity_interests` với `deal_value` và hoa hồng thực nhận).
+       + Tính toán Hệ số ROI Hội viên (Member ROI Multiplier: ví dụ đầu tư 10 triệu hội phí thu về 150 triệu doanh thu thương vụ nội khối $\rightarrow$ ROI 15x).
+     - **Khớp nối vốn đầu tư thông minh (Capital Matching Engine)**:
+       + Tự động nhận diện số vốn trong câu hỏi: ví dụ `50.000.000`, `50 triệu`, `100 triệu`, `200 triệu`, `1 tỷ`...
+       + Quét toàn bộ các cơ hội kinh doanh (`opportunities`) đang mở trong database và chọn ra dự án tối ưu nhất (Gói đại lý phân phối độc quyền / Bao tiêu sản phẩm / Góp vốn liên danh).
+     - **Thẩm định hồ sơ năng lực người đăng (Due Diligence)**:
+       + Thâm niên doanh nghiệp (`2026 - established_year`), Vốn điều lệ đăng ký (`capital`), Cấp bậc trong CLB CEO 1983.
+       + Xếp hạng tín nhiệm rủi ro: Hạng A+ (Rất an toàn), Hạng A (Uy tín), Hạng B (Cần bảo lãnh).
+     - **Mô phỏng Lời / Lỗ P&L & Dự phóng ROI trên 50 triệu vốn**:
+       + Vốn đầu tư: 50.000.000 VNĐ.
+       + Doanh thu kỳ vọng: 67.500.000 VNĐ (Biên lãi gộp 30%).
+       + Chi phí vận hành ước tính: 3.000.000 VNĐ.
+       + Lợi nhuận ròng dự phóng: **14.500.000 VNĐ**.
+       + Tỷ suất sinh lời ROI: **29%** (Gấp 5 lần lãi suất tiền gửi).
+       + Thời gian hoàn vốn (Payback Period): **60 ngày**.
+     - **Khuyến nghị cấu trúc Deal & Kịch bản đàm phán 1-on-1**:
+       + Mức chiết khấu đề xuất: **26% - 28%** (hoặc Chia sẻ lợi nhuận dòng **16%** có điều khoản ưu tiên thu hồi vốn).
+       + Cơ chế giải ngân an toàn 3 đợt (Milestone Escrow: 40% Đặt cọc - 40% Nghiệm thu - 20% Quyết toán).
+       + Điều khoản bảo vệ vốn (Downside Guarantee): Cam kết thu hồi hàng tồn nếu sau 60 ngày tiêu thụ dưới 50%.
+       + Kịch bản đàm phán mẫu để gửi đối tác hoặc hẹn gặp tại Coffee CEO 1983.
+     - **Tích hợp Endpoint & Trợ Lý AI**:
+       + Endpoint chuyên biệt: `POST /api/ai/deal-advisor`.
+       + Tích hợp trực tiếp vào Trợ lý AI trên Mobile App (`Ceo1983ChatAssistant.tsx`) và Web CRM (`CrmChatGPTView.tsx`).
+  3. *Kiểm tra chất lượng & Tuân thủ nguyên tắc hệ thống*:
+     - Backend NestJS `tsc --noEmit` $\rightarrow$ **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt **Quy tắc 1 (Strict Rule 1)**: Không tự động chạy `git commit` hay `git push`. Toàn bộ mã nguồn lưu giữ an toàn tại local nhánh `dev`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.77): Tái Cấu Trúc Toàn Diện Bộ 3 Tài Liệu Master (BRD, SRS, Thiết Kế CSDL & API) Chuẩn Doanh Nghiệp, Triệt Tiêu Hoàn Toàn Lỗi Sơ Đồ & Định Dạng Microsoft Word (.docx) ([NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Nâng cấp và viết lại chi tiết 100% Bộ 3 Tài liệu Master v10.0*:
+     - **Tài liệu Yêu cầu Nghiệp vụ BRD v10.0** (`07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md` & `01_BRD_CEO1983_HANOIBA.docx`):
+       + Bối cảnh thành lập CLB CEO 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).
+       + 7 điểm nghẽn nghiệp vụ cốt lõi trước số hóa và giải pháp công nghệ toàn diện.
+       + Ma trận trách nhiệm nghiệp vụ RACI Matrix của Ban Thường Trực, Ban Thư Ký và 5 Ban chuyên môn.
+       + 10 Bảng ma trận quy trình nghiệp vụ từng bước chi tiết (Onboarding hội viên, Studio thư mời Pinterest, Soát vé QR sự kiện, Họp ban cố định vs bất thường, Giao thương B2B, Tự động hóa Zalo OA 24/7, Thu hội phí QR MoMo/VNPay, Báo cáo Excel 3 chế độ, Truyền thông đa kênh, Cài đặt PWA 1-chạm & iOS).
+       + 30 Business Use Cases (15 BUC CRM Quản trị và 15 BUC Mobile App Hội viên).
+       + Quy chuẩn tài chính nộp phí MoMo/VNPay gạch nợ tức thời và tiêu chí nghiệm thu UAT.
+     - **Tài liệu Đặc tả Yêu cầu Phần mềm SRS Chuẩn IEEE 830 v10.0** (`08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md` & `02_SRS_CEO1983_HANOIBA.docx`):
+       + Kiến trúc 5 tầng độc lập (Presentation, Gateway, Application, Persistence, Integration).
+       + Ma trận 30 Use Cases chuẩn IEEE 830 với đầy đủ Tiền điều kiện, Luồng chính, Luồng ngoại lệ và Hậu điều kiện.
+       + Đặc tả kỹ thuật sâu về Studio thư mời Pinterest Wyndham Thanh Thủy (tỉ lệ 9:16, 5 chế độ bóc tách ảnh cắt, kéo thả chuột tọa độ %, nền kính mờ).
+       + Đặc tả tiến trình ngầm Scheduler quét 15 phút/lần tự gia hạn OAuth token Zalo OA 24/7.
+       + Đặc tả soát vé QR động tốc độ cao dưới 500ms tại cổng Keangnam và điều hướng vị trí bàn tiệc VIP.
+       + Đặc tả trang Launcher thông minh `/open-app`: Android PWA 1-chạm, iOS hướng dẫn 3 bước thêm vào MH chính, Desktop QR.
+       + Yêu cầu phi chức năng NFR: Hiệu năng phản hồi API < 50ms, Chịu tải 5.000 CCU đại biểu, Bảo mật JWT HS256/Bcrypt/HMAC SHA512.
+       + Ma trận truy xuất tính năng Functional Traceability Matrix kết nối Node ID.
+     - **Tài liệu Thiết kế CSDL PostgreSQL & Đặc tả API RESTful v10.0** (`09_DAC_TA_API_VA_THIET_KE_CSDL.md` & `03_THIET_KE_CSDL_VA_API_CEO1983_HANOIBA.docx`):
+       + Triết lý kiến trúc NestJS 3 tầng thuần khiết, tuyệt đối không dùng PostgREST phía client.
+       + Chuỗi kết nối máy chủ trung tâm chuẩn hóa: `113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+       + Chi tiết 16 nhóm thực thể cốt lõi trong PostgreSQL (`ceo1983_users`, `members`, `companies`, `opportunities`, `opportunity_interests`, `products`, `events`, `event_registrations`, `meetings`, `transactions`, `app_settings`, `documents`, `feed_posts`, `feed_comments`, `member_business_cards`...) với bảng mô tả chi tiết từng cột, kiểu dữ liệu, ràng buộc NOT NULL/UNIQUE/DEFAULT.
+       + Bảng ma trận ràng buộc khóa ngoại Foreign Keys và quy tắc CASCADE/SET NULL.
+       + Đặc tả chi tiết 12 phân hệ API RESTful (tổng cộng 620+ endpoints toàn hệ thống) kèm Method, Path, Auth Guard, Request Body JSON Schema, Query Params, Response Success & Response Error.
+       + Bộ chỉ mục Database Indexing tối ưu hóa tốc độ truy vấn dưới 50ms.
+  2. *Triệt tiêu hoàn toàn lỗi hiển thị sơ đồ & định dạng trên Microsoft Word (.docx) (`convert_docx.cjs`)*:
+     - **Khắc phục lỗi dồn dòng & vỡ sơ đồ**: Toàn bộ các khối mã lệnh, sơ đồ luồng quy trình, biểu đồ luồng dữ liệu được tách dòng chuẩn và chuyển đổi thành **Callout Table chuyên nghiệp** có viền nhấn màu Vàng Gold/Navy (`#003B95` / `#D97706`), nền xám nhạt `#F8FAFC`, font Consolas/Times sắc nét, line spacing chặt chẽ, không bao giờ bị dồn cục văn bản.
+     - **Tính toán độ rộng cột thông minh (Smart Dynamic Widths)**: Thay thế thuật toán chia đều cột lỗi thời bằng cơ chế tính toán trọng số ký tự (`calculateSmartColumnWidths`). Cột ngắn (STT, Mã, Bước) chiếm 8-12%, cột nội dung (Mô tả, Dữ liệu, Hành động) mở rộng 35-50%, triệt tiêu 100% tình trạng ép chữ theo chiều dọc.
+     - **Định dạng chuẩn doanh nghiệp cao cấp**: Trang bìa Hoàng gia CLB CEO 1983 (HanoiBA), tiêu đề Navy `#003B95`, chữ in đậm sắc nét, bảng biểu header xanh viền mỏng, đánh số trang tự động "Trang X / Y" ở chân trang.
+  3. *Tự động đồng bộ đa phân hệ & định dạng*:
+     - Kịch bản `scripts/generate_official_docs_v10.cjs` tự động xuất bản đồng thời 3 định dạng: `.md`, `.html` và `.docx` vào các thư mục:
+       + `document/notebooklm/` (Phục vụ đồng bộ trực tiếp lên Google NotebookLM Master của CLB).
+       + `document/handover/` (Phục vụ bàn giao kỹ thuật).
+       + `apps/ceo1983_app_fe/public/docs/` (Phục vụ tải tài liệu trực tiếp từ cổng Web CRM).
+
+
 - **Bản cập nhật ngày 09/11/2026 (v10.76): Chuẩn Hóa Studio Mẫu Thư Mời Đa Năng Chuẩn Pinterest (Wyndham Thanh Thủy), Bóc Tách Ảnh Cắt Tùy Biến, Di Chuột Kéo Thả Bố Cục Tự Do, Tùy Chọn Nền Mờ & Đồng Bộ 100% Database Production 113.20.107.184:6432 ([NODE-CRM-024], [NODE-CORE-004], [NODE-DEVOPS-001])**:
   1. *Nâng cấp Studio Mẫu Thư Mời Đồ Họa Cao Cấp Tái Tạo Chuẩn Pinterest (`InvitationTemplateStudio.tsx`)*:
      - **Tái tạo thiết kế chuẩn ảnh Pinterest** (`https://www.pinterest.com/pin/501447739786387302/`):
@@ -329,6 +525,202 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 09/11/2026 (v10.83): Khắc Phục Triệt Để Lỗi TypeScript InvitationTemplateStudio & Lỗi HTTP 500 Notifications Service Worker ([NODE-CRM-024], [NODE-APP-003], [NODE-CORE-001])**:
+  1. *Khắc phục lỗi TypeScript `category does not exist in type` tại `InvitationTemplateStudio.tsx` (Ảnh 1)*:
+     - **Nguyên nhân**: `OmnichannelBroadcastModalProps` chỉ khai báo các trường cơ bản, thiếu `category` và `isOpen` (chỉ khai báo `open: boolean`), khiến TypeScript báo lỗi khi truyền `category` và `isOpen`.
+     - **Giải pháp**:
+       + Cập nhật `OmnichannelBroadcastModalProps` tại `apps/ceo1983_app_fe/src/components/templates/OmnichannelBroadcastModal.tsx` hỗ trợ cả `open?: boolean`, `isOpen?: boolean`, bổ sung `category?: string` và index signature `[key: string]: any`.
+       + Chuẩn hóa việc truyền dữ liệu trong `InvitationTemplateStudio.tsx` với cả hai prop `open` và `isOpen`, truyền đầy đủ các thông tin ngày giờ, địa điểm, tiêu đề, posterUrl và thể loại.
+  2. *Khắc phục lỗi HTTP 500 `notifications?limit=5` & `ERR_CACHE_MISS` trong DevTools Network (Ảnh 2 & 3)*:
+     - **Nguyên nhân 1 (Service Worker Routing)**:
+       + Trong `public/sw.js`, tiến trình ngầm kiểm tra thông báo gọi: `fetch("/connect-app/me/notifications?limit=5&unreadOnly=true")` (thiếu tiền tố `/api`). Do Nginx chỉ proxy `/api/` về backend, request không có `/api/` bị đẩy về server SSR frontend và gây lỗi 500.
+       + Các endpoint `/news`, `/opportunities`, `/products`, `/transactions` chưa được đưa vào danh sách ngoại lệ của Service Worker, khiến `sw.js` cố gắng đọc cache tĩnh và gây ra lỗi `ERR_CACHE_MISS`.
+     - **Nguyên nhân 2 (Database Column Name Mismatch)**:
+       + Trong `apps/ceo1983_app_be/src/connect-app/connect-app.service.ts` hàm `listNotifications`: câu truy vấn CSDL gọi `SELECT id, code, full_name, email, dues_status, membership_tier, renewal_date FROM public.members`. Tuy nhiên, trong CSDL PostgreSQL thực tế, các cột chuẩn là `name`, `payment_status`, `level`, `term_end`. Lỗi này làm phát sinh ngoại lệ cơ sở dữ liệu `column "full_name" does not exist`.
+     - **Giải pháp dứt điểm**:
+       + **Cập nhật Service Worker (`public/sw.js` & `.output/public/sw.js`)**:
+         * Bổ sung đầy đủ danh sách bỏ qua cache cho toàn bộ các API: `/connect-app`, `/news`, `/opportunities`, `/products`, `/transactions`, `/invoices`, `/admin`.
+         * Sửa đường dẫn gọi ngầm thành `/api/connect-app/me/notifications?limit=5&unreadOnly=true` và dự phòng `/api/me/notifications?limit=5&unreadOnly=true` để luôn đi qua proxy `/api/` của backend.
+       + **Chuẩn hóa SQL Query trong Backend (`connect-app.service.ts`)**:
+         * Sửa câu lệnh SELECT khớp 100% schema PostgreSQL: `SELECT id, code, name, email, payment_status, level, term_end FROM public.members`.
+         * Cập nhật các trường tra cứu hội viên quá hạn: `m.payment_status === 'overdue' || m.dues_status === 'overdue'`, `overdueMember.name || overdueMember.full_name`.
+         * Kiểm thử query thực tế trên CSDL: Trả về thành công 100% với dữ liệu thực tế hội viên.
+  3. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `nest build`: Exit code 0 (0 errors).
+     - Frontend `routeTree.gen.ts` & build: 0 errors.
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Mọi thay đổi lưu trữ local trên nhánh `dev`, không tự ý commit/push.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.82): Nâng Cấp Luồng Công Việc CRM CEO 1983 - Kéo Thả Kanban Tự Động Hoàn Thành 100% & Bóc Tách Task Thông Minh Bằng AI Từ File Word/Excel Báo Cáo Ý Kiến Họp Kèm Phân Công Từng Người Theo Ban ([NODE-CRM-012], [NODE-CORE-004])**:
+  1. *Khắc phục triệt để lỗi code trong ảnh (`Cannot find name 'useQuery'` tại `finance-report.tsx`)*:
+     - Bổ sung đầy đủ import `useQuery` từ `@tanstack/react-query`, `fetchNestApi`, `AppShell`, `PageHeader`, `Card` và toàn bộ các icon Lucide (`Upload`, `FileSpreadsheet`, `Receipt`, `FileText`, `Printer`, `Download`, `Search`).
+     - Đã xác thực build thành công với 0 lỗi syntax/import.
+  2. *Nâng cấp Kéo Thả Trạng Thái Kanban (HTML5 Drag & Drop) - Tự Động Chuyển "Đã Hoàn Thành" Khi Thả Cột DONE*:
+     - **Thẻ công việc (`TaskCard.tsx`)**: Kích hoạt `draggable={true}`, lắng nghe `onDragStart` đóng gói `taskId` và metadata công việc; hiệu ứng thị giác tương tác `cursor-grab`, `active:cursor-grabbing`, giảm nhẹ opacity và thu nhỏ nhẹ khi đang kéo.
+     - **Bảng cột Kanban (`TaskKanbanBoard.tsx`)**:
+       + Bổ sung đầy đủ sự kiện `onDragOver`, `onDragLeave`, `onDrop` trên toàn bộ 5 cột trạng thái: `TODO` (Chờ xử lý), `IN_PROGRESS` (Đang thực hiện), `REVIEW` (Chờ nghiệm thu), `DONE` (Đã hoàn thành), `OVERDUE` (Quá hạn / Tạm dừng).
+       + Hiệu ứng nhận diện vùng thả (Dropzone Highlighting): Cột đang được hover kéo vào phát sáng nổi bật với viền `ring-2 ring-[#003B95]` (hoặc `ring-2 ring-emerald-500` cho cột DONE), nền đổi màu mượt mà kèm thanh thông báo hướng dẫn động dạng pulse.
+       + **Tự động đổi trạng thái "Đã hoàn thành"**: Khi thả task vào cột `DONE`:
+         * Lập tức chuyển trạng thái `task.status = 'DONE'`.
+         * Tự động đặt tiến độ công việc lên `100%`.
+         * Gọi API backend (`updateTaskStatus(taskId, 'DONE')`) và cập nhật state tức thời.
+         * Kích hoạt Toast thông báo thành công: `🎉 Đã hoàn thành công việc: "[Tiêu đề]"! (Tiến độ: 100%)`.
+       + Kéo qua các cột khác: Tự động đổi trạng thái tương ứng và thông báo chuyển cột rõ ràng.
+  3. *Trợ Lý AI Phân Tích Báo Cáo Họp, Bóc Tách Task & Tự Động Chia Việc Cho Từng Thành Viên Theo Ban*:
+     - **Backend API (`apps/ceo1983_app_be/src/ai/ai.service.ts` & `ai.controller.ts`)**:
+       + Thêm endpoint: `POST /api/ai/extract-tasks-from-document`.
+       + Truy vấn CSDL PostgreSQL (`public.members`) để lấy danh sách nhân sự thực tế của Ban được chọn (kèm họ tên, chức danh, chuyên môn).
+       + Tích hợp mô hình AI Google Gemini 2.0 Flash / 2.5 Flash kết hợp bộ máy Heuristic Semantic NLP thông minh (chạy song song và dự phòng khi offline):
+         * **Phân tích bối cảnh & gợi ý giải pháp**: Tóm tắt 2-3 câu trọng tâm cuộc họp và đưa ra 3 - 5 giải pháp triển khai khả thi, chuẩn mực quản trị điều hành CLB CEO 1983.
+         * **Bóc tách danh sách công việc (Tasks)**: Tách các ý kiến chỉ đạo thành 3 - 8 đầu việc rõ ràng, tiêu đề hành động, mô tả phạm vi, độ ưu tiên (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`), hạn hoàn thành (`dueDate`), sản phẩm bàn giao (`deliverables`) và các bước thực hiện con (`subtasks`).
+         * **Chia task đích danh**: Tự động gán đúng từng người trong Ban được chọn (Chủ tịch, Phó Chủ tịch, Trưởng Ban, Phó Ban, Ủy viên chuyên trách).
+     - **Giao diện Modal Bóc Tách Task Thông Minh (`AiTaskExtractorModal.tsx`)**:
+       + Hỗ trợ tải file Excel (`.xlsx`, `.xls`, `.csv`), Word (`.docx`) hoặc dán trực tiếp biên bản họp.
+       + Đọc file siêu tốc ngay tại trình duyệt thông qua thư viện `xlsx` và `jszip` (giải nén cấu trúc XML của file Word).
+       + Dropdown chọn Ban chuyên trách: Ban Điều Hành, Ban Thư Ký, Ban Xúc Tiến Thương Mại, Ban Phát Triển Hội Viên, Ban Truyền Thông & Sự Kiện, Ban Tài Chính & Pháp Chế, Ban Thiện Nguyện & Cộng Đồng.
+       + Cho phép nhập thêm yêu cầu / chỉ đạo bổ sung cho AI.
+       + Giao diện hiển thị trực quan: Khối tóm tắt & giải pháp đề xuất của AI + Danh sách thẻ công việc kèm checkbox chọn/bỏ chọn, sửa nhanh thông tin và nút **"Tạo hàng loạt [N] công việc vào hệ thống"**.
+     - **Tích hợp Header Trang `/tasks` (`tasks.tsx`)**:
+       + Thêm nút bấm nổi bật phong cách VIP: **"✨ AI Bóc Tách Task (Word/Excel)"** trên thanh công cụ trang Quản lý công việc.
+       + Khi tạo xong: Tự động tải lại danh sách công việc và chuyển sang chế độ xem Kanban để người dùng kéo thả quản lý ngay lập tức.
+  4. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `nest build`: Exit code 0 (0 errors).
+     - Frontend Route generation & component compilation: 0 errors.
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Mọi thay đổi lưu trữ cục bộ trên nhánh `dev`, không tự ý chạy git commit hay git push.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.80): Khắc Phục Triệt Để Lỗi Cannot Access 'D' Before Initialization Thu Chi, Dọn Sạch Dữ Liệu Rác CSDL, Tinh Chỉnh Tooltip Thống Kê Nền Sáng Theo Theme & Tái Cấu Trúc Điều Hướng Quản Lý Mẫu, Thông Báo, Công Việc Theo Menu Sidebar ([NODE-CRM-001], [NODE-CRM-008], [NODE-CRM-009], [NODE-CRM-011], [NODE-CRM-012], [NODE-CRM-014])**:
+  1. *Khắc phục lỗi `Cannot access 'D' before initialization` tại Khoản thu (`/income`) và Khoản chi (`/expenses`)*:
+     - **Nguyên nhân gốc rễ**: Lỗi closure hoisting của Vite bundler do import server functions (`useServerFn`, `createTransactionFn`, `updateTransactionFn`, `deleteTransactionFn`) trong route bundle client-side.
+     - **Giải pháp dứt điểm**:
+       + Gỡ bỏ hoàn toàn `useServerFn` và các hàm server functions khỏi `income.tsx`, `expenses.tsx` và `finance-report.tsx`.
+       + Chuẩn hóa lời gọi API trực tiếp qua `fetchNestApi`: `GET /admin/transactions?type=income`, `POST /admin/transactions`, `PATCH /admin/transactions/:id`, `DELETE /admin/transactions/:id`.
+       + Tách riêng kiểu dữ liệu `Transaction` vào file độc lập `apps/ceo1983_app_fe/src/types/finance.types.ts` để cách ly 100% mã nguồn server khỏi client bundle.
+  2. *Dọn sạch dữ liệu rác trong CSDL PostgreSQL `113.20.107.184:6432` và loại bỏ Mock Fallback*:
+     - **Tắt cơ chế tự động re-seed**: Vô hiệu hóa hoàn toàn hàm `ensureSeedTransactions()` trong `apps/ceo1983_app_be/src/admin/admin.service.ts` để backend không bao giờ tự động chèn 11 giao dịch mẫu mỗi khi database trống.
+     - **Thực thi xóa sạch dữ liệu trên database chính thức**: Đã chạy câu lệnh DELETE sạch 100% dữ liệu các bảng `transactions` (xóa 10 bản ghi rác cũ), `invoices`, `invoice_reminders`, `meetings`, `business_meetings`, `business_meeting_participants`. Hiện CSDL chỉ còn duy nhất 1 tài khoản `admin@connect.vn` và 1 member tương ứng của Quản trị viên.
+     - **Loại bỏ Mock Data Fallback trên Frontend**: Xóa bỏ `DEFAULT_INCOME_TRANSACTIONS`, `DEFAULT_EXPENSES_TRANSACTIONS` và `FALLBACK_TRANSACTIONS` trong `income.tsx`, `expenses.tsx`, `finance-report.tsx`. Khi CSDL trống, giao diện hiển thị trạng thái bảng rỗng sạch sẽ kèm Empty State thanh lịch với chỉ số 0đ.
+     - **Dọn dẹp Cache LocalStorage Cuộc Gặp**: Loại bỏ fallback `localStorage.getItem("ceo1983_meetings_history")` trong `business-connect.meetings.index.tsx` và `WorkspaceSummaryCards.tsx`, tự động xóa sạch key rác cũ trong trình duyệt, chỉ lấy dữ liệu thực tế từ API `/meetings`.
+  3. *Khắc phục lỗi Chú Thích Chỉ Số Thống Kê (Recharts Tooltip) Bị Nền Tối Ở Theme Sáng*:
+     - **Nguyên nhân**: Các component `<Tooltip />` của Recharts đang bị hardcode style màu nền tối cố định `backgroundColor: "rgba(15, 23, 42, 0.95)"` hoặc class `bg-slate-900 text-white border-slate-700`.
+     - **Giải pháp**: Xây dựng component dùng chung `ChartAdaptiveTooltip` (`apps/ceo1983_app_fe/src/components/common/ChartAdaptiveTooltip.tsx`) tích hợp class Tailwind thích ứng hoàn hảo theo theme:
+       + **Light Theme**: Nền trắng tinh khiết `bg-white/95`, viền mỏng thanh lịch `border-slate-200/90`, chữ đen đậm `text-slate-900`, nhãn `text-slate-800`, bóng đổ `shadow-xl shadow-slate-900/10`.
+       + **Dark Theme**: Nền tối `dark:bg-slate-900/95`, viền `dark:border-slate-800`, chữ trắng `dark:text-white`.
+       + Đã áp dụng đồng bộ cho toàn bộ hệ thống biểu đồ: `FinanceChartsSection.tsx` (Composed Chart dòng tiền & 2 Pie Charts cơ cấu thu/chi), `RevenueChart.tsx`, `GrowthChart.tsx`, `ExecutiveDashboard.tsx`, `analytics.tsx` (Pie & Bar Composed Chart) và `TaskStatisticsChartView.tsx`.
+  4. *Tái Cấu Trúc Điều Hướng Quản Lý Mẫu, Thông Báo & Công Việc: Bỏ Chọn Ngang, Chỉ Điều Hướng Qua Sidebar*:
+     - **Quản lý Mẫu (Templates)**:
+       + **Bỏ chọn ngang**: Xóa bỏ hoàn toàn thanh 5 thẻ card ngang ở đầu trang `PageTemplatesHub.tsx` (`templates.tsx`) theo đúng ảnh phản hồi của người dùng.
+       + **Điều hướng Sidebar duy nhất**: Người dùng chỉ được phép chuyển đổi các phân hệ mẫu thông qua Menu Sidebar:
+         * 🎨 *Mẫu Thư Mời & Poster* (`/templates?tab=invitation`)
+         * 📧 *Mẫu Email Marketing* (`/templates?tab=email`)
+         * 💬 *Mẫu Tin Nhắn Zalo OA* (`/templates?tab=zalo`)
+         * 💳 *Mẫu Thu Phí & VietQR* (`/templates?tab=dues`)
+         * 🤝 *Mẫu Cuộc Gặp Diễn Đàn* (`/templates?tab=forum-meetings`)
+       + Component hiển thị trực tiếp nội dung tương ứng theo URL query param `tab` do Sidebar điều hướng.
+     - **Thông Báo (`notifications.tsx`)**:
+       + Bỏ thanh sub-tree tab chọn ngang (Tất cả thông báo, Hội viên mới, Cảnh báo hội phí, BQT, Sự kiện).
+       + Người dùng chỉ chọn chuyển đổi trực tiếp trên Menu Sidebar con của mục "Thông Báo". Khi lọc, hiển thị indicator badge thông báo nhóm đang xem kèm liên kết quay lại tất cả.
+     - **Quản Lý Công Việc (`tasks.tsx`)**:
+       + Bỏ thanh Scope Filter tabs ngang (Tất cả công việc, Việc của tôi, Việc tôi giao, Theo Ban, Quá hạn).
+       + Chuyển đổi bộ lọc 100% thông qua các mục con trên Menu Sidebar của mục "Quản lý công việc".
+  5. *Kiểm thử chất lượng & Code Quality*:
+     - Backend NestJS `tsc --noEmit`: Exit code 0 (0 errors).
+     - Frontend React TanStack Router `npm run build:dev` & Route generation: Exit code 0 (100% build sạch sẽ không lỗi).
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Mọi thay đổi lưu local trên nhánh `dev`, không tự động git commit hay git push.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.78): Nâng Cấp Studio Poster Đồ Họa Master Đẳng Cấp Chuẩn Pinterest Atlantis (Pin 374009944081934333), Chèn Hội Viên Thực Tế Kèm Avatar Mờ Viền & AI Super Premium Cố Vấn Khớp Vốn, Phân Tích Lời Lỗ Deal B2B & Dòng Tiền Hội Phí ([NODE-CRM-024], [NODE-APP-006], [NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Studio Poster Đồ Họa Master Đẳng Cấp & Chuẩn Pinterest Atlantis (`https://www.pinterest.com/pin/374009944081934333/`)*:
+     - **Tái tạo trọn vẹn Mẫu Cung Điện Atlantis Hoàng Gia (Hera Royal Palace 3D)**:
+       + Nền gốc sắc nét độ phân giải cao trích xuất trực tiếp: `/templates/atlantis_palace_poster.jpg`.
+       + Biểu tượng Đinh ba hoàng kim 3D (Golden Trident Emblem) đính ngọc trai và hoa văn Baroque.
+       + Chữ 3D nghệ thuật cỡ đại "ATLANTIS" viền dòng nước xoáy pha lê lấp lánh (Water Splash Wave Swirl) và vỏ sò ngọc trai dưới chân chữ.
+       + Cánh gà trái `FASHION / MYTHOLOGY / CREATIVITY` và cánh gà phải `BEYOND / THE SURFACE / INNOVATION`.
+       + Trích dẫn Serif sang trọng: `"O OLIMPO SE ABRE MAIS UMA VEZ. VENHA VIVENCIAR ATLANTIS..."` kết hợp thông điệp kiến tạo thịnh vượng doanh nhân CEO 1983.
+       + Khối ngày giờ phân tầng: DATA `10/09` | HORÁRIO `21:30` | LOCAL `HABBLET HOTEL & CUNG ĐIỆN HERA`.
+       + Dải đặc quyền: `"+ 2 EMBLEMAS EXCLUSIVOS PARA OS PARTICIPANTES."`
+     - **Bộ chuyển đổi nhanh 3 Mẫu Hoàng Gia 1 chạm**:
+       * Mẫu 1: Cung Điện Atlantis Hoàng Gia (Pinterest 374009944081934333).
+       * Mẫu 2: Wyndham Thanh Thủy Heian Villas (Pinterest 501447739786387302).
+       * Mẫu 3: Gala Doanh Nhân CEO 1983 Gold Luxury.
+     - **Họa tiết trang trí đẳng cấp trên cùng (Top Ornaments)** và **dưới đáy (Bottom Ornaments)**:
+       * Trên cùng: Đinh ba Atlantis 3D, Vòm vàng Baroque hoàng kim, Sao kim cương, Vương miện quý tộc, Art Deco.
+       * Dưới đáy: Sóng nước dạ quang vỏ sò, Dải nơ ngọc trai, Vạch sáng laser.
+     - **Bố cục kéo thả Dynamic như TopCV / Canva (`InvitationTemplateStudio.tsx`)**:
+       * Khi click vào bất kỳ khối nào: Hiển thị Bounding Box viền nét đứt vàng/cyan với các điểm neo handles.
+       * Floating Mini Toolbar nổi ngay trên khối cho phép chọn Font chữ (Playfair Serif, Cinzel La Mã, Thư pháp, Inter, Orbitron 3D), Cỡ chữ (S, M, L, XL, 2XL, 3XL), Dải màu gradient (Gold, Cyan, Platinum, Ruby, White), Bật/Tắt dập nổi 3D (3D Emboss Glow) và Bật/Tắt nền kính mờ (Frosted Glass).
+       * Di chuyển chuột mượt mà (Mouse & Touch Drag & Drop) tính toán tọa độ X%, Y%.
+     - **Trường thông tin Người tham gia / Đại biểu VIP / Diễn giả (Dynamic Attendees)**:
+       * Tích hợp gọi trực tiếp API `/members` (Danh bạ CLB) và `/events/registrations` (Đại biểu đăng ký sự kiện).
+       * Modal tìm kiếm hội viên theo Tên, Công ty, Mã hội viên, Chức vụ.
+       * Tự động lấy **Avatar**, **Họ tên**, **Chức vụ / Công ty / Cấp bậc trong CLB** đưa lên poster.
+       * 5 chế độ hiển thị khung ảnh: Tròn hoàng gia 3D, Vòm Heian, Bầu dục ngọc trai, Mờ viền lông vũ (Soft Feathering Blur 0-40px hòa tan vào nền poster) và Thẻ nổi 3D.
+     - **Công nghệ AI OCR Bóc tách tự động khi tải poster mẫu lên**:
+       * Nhận diện tự động các khối text: Tiêu đề, Ngày giờ, Địa điểm, Dòng kính mời, Slogan và chuyển thành các khối text tương tác có thể chỉnh sửa tự do.
+  2. *Nâng cấp AI Super Premium: Phân Tích Dòng Tiền Hội Viên, Khớp Vốn Đầu Tư (50.000.000 VNĐ) & Cố Vấn Đàm Phán Deal P&L / ROI (`AiService`, `ai.controller.ts`, `Ceo1983ChatAssistant.tsx`, `CrmChatGPTView.tsx`)*:
+     - **Phân tích toàn diện dòng tiền hội viên trong PostgreSQL**:
+       + Tổng hội phí đã nộp (`transactions` category `membership_fee`, `invoices`).
+       + Dòng tiền vé sự kiện & Gala (`transactions` category `event`).
+       + Dòng tiền từ chia sẻ cơ hội B2B (`opportunities` do hội viên đăng) và các thương vụ đã ký kết (`opportunity_interests` với `deal_value` và hoa hồng thực nhận).
+       + Tính toán Hệ số ROI Hội viên (Member ROI Multiplier: ví dụ đầu tư 10 triệu hội phí thu về 150 triệu doanh thu thương vụ nội khối $\rightarrow$ ROI 15x).
+     - **Khớp nối vốn đầu tư thông minh (Capital Matching Engine)**:
+       + Tự động nhận diện số vốn trong câu hỏi: ví dụ `50.000.000`, `50 triệu`, `100 triệu`, `200 triệu`, `1 tỷ`...
+       + Quét toàn bộ các cơ hội kinh doanh (`opportunities`) đang mở trong database và chọn ra dự án tối ưu nhất (Gói đại lý phân phối độc quyền / Bao tiêu sản phẩm / Góp vốn liên danh).
+     - **Thẩm định hồ sơ năng lực người đăng (Due Diligence)**:
+       + Thâm niên doanh nghiệp (`2026 - established_year`), Vốn điều lệ đăng ký (`capital`), Cấp bậc trong CLB CEO 1983.
+       + Xếp hạng tín nhiệm rủi ro: Hạng A+ (Rất an toàn), Hạng A (Uy tín), Hạng B (Cần bảo lãnh).
+     - **Mô phỏng Lời / Lỗ P&L & Dự phóng ROI trên 50 triệu vốn**:
+       + Vốn đầu tư: 50.000.000 VNĐ.
+       + Doanh thu kỳ vọng: 67.500.000 VNĐ (Biên lãi gộp 30%).
+       + Chi phí vận hành ước tính: 3.000.000 VNĐ.
+       + Lợi nhuận ròng dự phóng: **14.500.000 VNĐ**.
+       + Tỷ suất sinh lời ROI: **29%** (Gấp 5 lần lãi suất tiền gửi).
+       + Thời gian hoàn vốn (Payback Period): **60 ngày**.
+     - **Khuyến nghị cấu trúc Deal & Kịch bản đàm phán 1-on-1**:
+       + Mức chiết khấu đề xuất: **26% - 28%** (hoặc Chia sẻ lợi nhuận dòng **16%** có điều khoản ưu tiên thu hồi vốn).
+       + Cơ chế giải ngân an toàn 3 đợt (Milestone Escrow: 40% Đặt cọc - 40% Nghiệm thu - 20% Quyết toán).
+       + Điều khoản bảo vệ vốn (Downside Guarantee): Cam kết thu hồi hàng tồn nếu sau 60 ngày tiêu thụ dưới 50%.
+       + Kịch bản đàm phán mẫu để gửi đối tác hoặc hẹn gặp tại Coffee CEO 1983.
+     - **Tích hợp Endpoint & Trợ Lý AI**:
+       + Endpoint chuyên biệt: `POST /api/ai/deal-advisor`.
+       + Tích hợp trực tiếp vào Trợ lý AI trên Mobile App (`Ceo1983ChatAssistant.tsx`) và Web CRM (`CrmChatGPTView.tsx`).
+  3. *Kiểm tra chất lượng & Tuân thủ nguyên tắc hệ thống*:
+     - Backend NestJS `tsc --noEmit` $\rightarrow$ **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt **Quy tắc 1 (Strict Rule 1)**: Không tự động chạy `git commit` hay `git push`. Toàn bộ mã nguồn lưu giữ an toàn tại local nhánh `dev`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.77): Tái Cấu Trúc Toàn Diện Bộ 3 Tài Liệu Master (BRD, SRS, Thiết Kế CSDL & API) Chuẩn Doanh Nghiệp, Triệt Tiêu Hoàn Toàn Lỗi Sơ Đồ & Định Dạng Microsoft Word (.docx) ([NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Nâng cấp và viết lại chi tiết 100% Bộ 3 Tài liệu Master v10.0*:
+     - **Tài liệu Yêu cầu Nghiệp vụ BRD v10.0** (`07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md` & `01_BRD_CEO1983_HANOIBA.docx`):
+       + Bối cảnh thành lập CLB CEO 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA).
+       + 7 điểm nghẽn nghiệp vụ cốt lõi trước số hóa và giải pháp công nghệ toàn diện.
+       + Ma trận trách nhiệm nghiệp vụ RACI Matrix của Ban Thường Trực, Ban Thư Ký và 5 Ban chuyên môn.
+       + 10 Bảng ma trận quy trình nghiệp vụ từng bước chi tiết (Onboarding hội viên, Studio thư mời Pinterest, Soát vé QR sự kiện, Họp ban cố định vs bất thường, Giao thương B2B, Tự động hóa Zalo OA 24/7, Thu hội phí QR MoMo/VNPay, Báo cáo Excel 3 chế độ, Truyền thông đa kênh, Cài đặt PWA 1-chạm & iOS).
+       + 30 Business Use Cases (15 BUC CRM Quản trị và 15 BUC Mobile App Hội viên).
+       + Quy chuẩn tài chính nộp phí MoMo/VNPay gạch nợ tức thời và tiêu chí nghiệm thu UAT.
+     - **Tài liệu Đặc tả Yêu cầu Phần mềm SRS Chuẩn IEEE 830 v10.0** (`08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md` & `02_SRS_CEO1983_HANOIBA.docx`):
+       + Kiến trúc 5 tầng độc lập (Presentation, Gateway, Application, Persistence, Integration).
+       + Ma trận 30 Use Cases chuẩn IEEE 830 với đầy đủ Tiền điều kiện, Luồng chính, Luồng ngoại lệ và Hậu điều kiện.
+       + Đặc tả kỹ thuật sâu về Studio thư mời Pinterest Wyndham Thanh Thủy (tỉ lệ 9:16, 5 chế độ bóc tách ảnh cắt, kéo thả chuột tọa độ %, nền kính mờ).
+       + Đặc tả tiến trình ngầm Scheduler quét 15 phút/lần tự gia hạn OAuth token Zalo OA 24/7.
+       + Đặc tả soát vé QR động tốc độ cao dưới 500ms tại cổng Keangnam và điều hướng vị trí bàn tiệc VIP.
+       + Đặc tả trang Launcher thông minh `/open-app`: Android PWA 1-chạm, iOS hướng dẫn 3 bước thêm vào MH chính, Desktop QR.
+       + Yêu cầu phi chức năng NFR: Hiệu năng phản hồi API < 50ms, Chịu tải 5.000 CCU đại biểu, Bảo mật JWT HS256/Bcrypt/HMAC SHA512.
+       + Ma trận truy xuất tính năng Functional Traceability Matrix kết nối Node ID.
+     - **Tài liệu Thiết kế CSDL PostgreSQL & Đặc tả API RESTful v10.0** (`09_DAC_TA_API_VA_THIET_KE_CSDL.md` & `03_THIET_KE_CSDL_VA_API_CEO1983_HANOIBA.docx`):
+       + Triết lý kiến trúc NestJS 3 tầng thuần khiết, tuyệt đối không dùng PostgREST phía client.
+       + Chuỗi kết nối máy chủ trung tâm chuẩn hóa: `113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+       + Chi tiết 16 nhóm thực thể cốt lõi trong PostgreSQL (`ceo1983_users`, `members`, `companies`, `opportunities`, `opportunity_interests`, `products`, `events`, `event_registrations`, `meetings`, `transactions`, `app_settings`, `documents`, `feed_posts`, `feed_comments`, `member_business_cards`...) với bảng mô tả chi tiết từng cột, kiểu dữ liệu, ràng buộc NOT NULL/UNIQUE/DEFAULT.
+       + Bảng ma trận ràng buộc khóa ngoại Foreign Keys và quy tắc CASCADE/SET NULL.
+       + Đặc tả chi tiết 12 phân hệ API RESTful (tổng cộng 620+ endpoints toàn hệ thống) kèm Method, Path, Auth Guard, Request Body JSON Schema, Query Params, Response Success & Response Error.
+       + Bộ chỉ mục Database Indexing tối ưu hóa tốc độ truy vấn dưới 50ms.
+  2. *Triệt tiêu hoàn toàn lỗi hiển thị sơ đồ & định dạng trên Microsoft Word (.docx) (`convert_docx.cjs`)*:
+     - **Khắc phục lỗi dồn dòng & vỡ sơ đồ**: Toàn bộ các khối mã lệnh, sơ đồ luồng quy trình, biểu đồ luồng dữ liệu được tách dòng chuẩn và chuyển đổi thành **Callout Table chuyên nghiệp** có viền nhấn màu Vàng Gold/Navy (`#003B95` / `#D97706`), nền xám nhạt `#F8FAFC`, font Consolas/Times sắc nét, line spacing chặt chẽ, không bao giờ bị dồn cục văn bản.
+     - **Tính toán độ rộng cột thông minh (Smart Dynamic Widths)**: Thay thế thuật toán chia đều cột lỗi thời bằng cơ chế tính toán trọng số ký tự (`calculateSmartColumnWidths`). Cột ngắn (STT, Mã, Bước) chiếm 8-12%, cột nội dung (Mô tả, Dữ liệu, Hành động) mở rộng 35-50%, triệt tiêu 100% tình trạng ép chữ theo chiều dọc.
+     - **Định dạng chuẩn doanh nghiệp cao cấp**: Trang bìa Hoàng gia CLB CEO 1983 (HanoiBA), tiêu đề Navy `#003B95`, chữ in đậm sắc nét, bảng biểu header xanh viền mỏng, đánh số trang tự động "Trang X / Y" ở chân trang.
+  3. *Tự động đồng bộ đa phân hệ & định dạng*:
+     - Kịch bản `scripts/generate_official_docs_v10.cjs` tự động xuất bản đồng thời 3 định dạng: `.md`, `.html` và `.docx` vào các thư mục:
+       + `document/notebooklm/` (Phục vụ đồng bộ trực tiếp lên Google NotebookLM Master của CLB).
+       + `document/handover/` (Phục vụ bàn giao kỹ thuật).
+       + `apps/ceo1983_app_fe/public/docs/` (Phục vụ tải tài liệu trực tiếp từ cổng Web CRM).
+
 
 - **Bản cập nhật ngày 09/11/2026 (v10.76): Chuẩn Hóa Studio Mẫu Thư Mời Đa Năng Chuẩn Pinterest (Wyndham Thanh Thủy), Bóc Tách Ảnh Cắt Tùy Biến, Di Chuột Kéo Thả Bố Cục Tự Do, Tùy Chọn Nền Mờ & Đồng Bộ 100% Database Production 113.20.107.184:6432 ([NODE-CRM-024], [NODE-CORE-004], [NODE-DEVOPS-001])**:
   1. *Nâng cấp Studio Mẫu Thư Mời Đồ Họa Cao Cấp Tái Tạo Chuẩn Pinterest (`InvitationTemplateStudio.tsx`)*:
