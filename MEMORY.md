@@ -1,5 +1,84 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 09/11/2026 (v10.76): Chuẩn Hóa Studio Mẫu Thư Mời Đa Năng Chuẩn Pinterest (Wyndham Thanh Thủy), Bóc Tách Ảnh Cắt Tùy Biến, Di Chuột Kéo Thả Bố Cục Tự Do, Tùy Chọn Nền Mờ & Đồng Bộ 100% Database Production 113.20.107.184:6432 ([NODE-CRM-024], [NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Nâng cấp Studio Mẫu Thư Mời Đồ Họa Cao Cấp Tái Tạo Chuẩn Pinterest (`InvitationTemplateStudio.tsx`)*:
+     - **Tái tạo thiết kế chuẩn ảnh Pinterest** (`https://www.pinterest.com/pin/501447739786387302/`):
+       + Tỉ lệ khung hình dọc 9:16 (`360x640px` preview tương tác, xuất ảnh phân giải cao `1080x1920px`).
+       + Bảng màu chuyển sắc đêm hoàng gia (`#071530` $\rightarrow$ `#0d234a` $\rightarrow$ `#061225`) kết hợp vệt sao rơi li ti và vầng hào quang tinh tế.
+       + Kiểu chữ: Chữ *"Thư mời"* phong cách Serif mạ bạc thanh lịch; dòng phụ *"TRÂN TRỌNG KÍNH MỜI QUÝ HỘI VIÊN & ĐỐI TÁC"* giãn cách ký tự sang trọng (tracking `0.28em`).
+       + Chữ nghệ thuật cỡ đại *"DÒNG CHẢY HẠNH PHÚC"* với hiệu ứng gradient băng tuyết trắng - xanh cyan rực rỡ và đổ bóng đa lớp sắc nét.
+       + Hộp Đặc Quyền Capsule Badge bo tròn viên thuốc viền sáng cyan hiển thị quà tặng / đặc quyền VIP.
+       + Cụm Ngày Giờ Số Lớn Luxury: Thứ, giờ, bộ 3 số ngày/tháng/năm lớn (`06 | 04 | 24` hoặc `12 | 11 | 26`) ngăn cách bằng vạch dọc `|`, kèm địa điểm và icon định vị.
+       + Phối cảnh cổng chào Heian chân poster đèn lồng rực rỡ trích xuất chuẩn xác từ ảnh gốc Pinterest (`/templates/heian_gate_venue.jpg`).
+     - **Trường thêm ảnh bóc tách cắt đưa lên poster (`CutoutImageConfig`)**:
+       + Hỗ trợ upload ảnh tùy ý từ máy tính hoặc chọn ảnh mẫu dự án.
+       + Cung cấp 5 chế độ bóc tách & cắt cúp thông minh:
+         * (1) Cổng vòm Heian (`arch` - bo tròn vòm cung phía trên theo phong cách Nhật Bản).
+         * (2) Viền mờ hòa quyện (`soft_feather` - làm mờ dần 4 cạnh hòa tan vào nền đêm xanh).
+         * (3) Huy hiệu diễn giả (`oval` - khung bầu dục viền vàng kim sang trọng).
+         * (4) Bo góc mượt mà 24px (`rounded` - bo góc thẻ hiện đại).
+         * (5) Toàn cảnh chân poster (`cinema` - trải rộng toàn chiều ngang phía chân poster).
+       + Bộ điều khiển trực quan: Điều chỉnh vị trí dọc Y (30% - 95%), Tỉ lệ Scale (60% - 140%), Độ trong suốt Opacity (40% - 100%).
+     - **Tính năng di chuột kéo thả tự do mọi khối text & bố cục (Interactive Mouse Drag & Drop)**:
+       + Người dùng có thể nhấn giữ chuột và kéo thả trực tiếp trên khung preview poster để định vị lại tọa độ mong muốn cho từng thành phần: Dòng kính mời, Chữ Thư mời, Tiêu đề nghệ thuật, Phụ đề, Hộp đặc quyền Capsule, Cụm Ngày/Giờ/Địa điểm, và Ảnh bóc tách.
+       + Tọa độ tính toán bằng tỉ lệ phần trăm `%` tự động co giãn chính xác khi xuất ảnh full HD.
+       + Trang bị nút "Đặt lại vị trí chuẩn Pinterest" bằng 1 chạm để khôi phục bố cục nguyên bản.
+     - **Tùy chọn nền mờ trên text (Frosted Glass Blur Toggle)**:
+       + Mỗi khối văn bản và tiêu đề đều có công tắc bật/tắt:
+         * Bật nền mờ: Áp dụng hiệu ứng kính mờ `backdrop-blur-md bg-slate-950/45 border border-white/15 rounded-xl` giúp đọc chữ rõ ràng trên nền ảnh phức tạp.
+         * Tắt nền mờ: Hiển thị chữ trong suốt hòa cùng nền với hiệu ứng đổ bóng đa lớp sắc nét.
+       + Nút chuyển đổi nhanh toàn bộ các khối chỉ với 1 click.
+     - **Tích hợp xuất ảnh & gửi đa kênh**:
+       + Tải ảnh poster PNG sắc nét về máy.
+       + Lưu vào kho mẫu template thư mời hệ thống.
+       + Gửi thông báo đa kênh tức thời: App Mobile CEO 1983, Zalo OA ZNS, Email HTML trang trọng.
+  2. *Khẳng định & Đồng bộ 100% Cấu Hình Database Production về 113.20.107.184:6432*:
+     - Toàn bộ các file môi trường triển khai Docker và cấu hình hệ thống đã được đồng bộ chuẩn xác:
+       + `deploy/ceo1983/.env.association`
+       + `deploy/ceo1983/.env.production`
+       + `deploy/crm/.env.crm`
+       + `deploy/crm/.env.production`
+       + `.env.production`
+       + `.env`
+       + `packages/db/.env`
+       + `apps/ceo1983_app_be/.env`
+     - Tất cả chuỗi kết nối đều trỏ thống nhất về: `postgresql://postgres:***@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+     - Xác thực kết nối và làm sạch dữ liệu thành công trên máy chủ trung tâm:
+       + `ceo1983_users`: 1 (Duy nhất tài khoản `admin@connect.vn`).
+       + `members`: 1 (Hồ sơ quản trị viên tối cao).
+       + `events`: 0.
+       + `transactions`: 0.
+       + `notifications`: 0.
+  3. *Kiểm tra chất lượng mã nguồn*:
+     - Tuân thủ quy chuẩn nghiêm ngặt: Kiểm tra Typecheck và không chạy lệnh `git commit`/`git push` tự động.
+
+
+- **Bản cập nhật ngày 09/11/2026 (v10.75): Đồng Bộ URL Mã QR Check-in Sự Kiện Cho Zalo OA, Xóa Sạch Dữ Liệu Production 2 Database Chỉ Còn admin@connect.vn, Tạo Trang Launcher Mở & Cài Đặt App Đa Nền Tảng (iOS & Android) và Tối Ưu CI/CD Auto-Deploy ([NODE-CRM-010], [NODE-APP-008], [NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Khắc phục triệt để lỗi quét mã QR Sự Kiện & Chuẩn hóa tin nhắn Zalo OA (`events.controller.ts`, `association.events.tsx`, `ZaloOaConfigSection.tsx`)*:
+     - **Nguyên nhân gốc**: Mã QR cũ tạo từ chuỗi văn bản thô `CEO1983_EVENT_CHECKIN|...` nên khi quét bằng máy ảnh điện thoại hoặc Zalo, máy quét nhận diện là "Văn bản" chứ không mở liên kết Web.
+     - **Giải pháp toàn diện**:
+       + Backend `@Get('qr')`: Tự động nhận diện dữ liệu QR, nếu không phải URL sẽ tự động đóng gói thành Web URL đầy đủ: `https://ceo1983.viconnect.vn/association/events?action=register&qrData=...`. Đảm bảo 100% camera iOS, Android và Zalo quét đều hiện thông báo "Mở liên kết".
+       + Frontend `association.events.tsx`: Tích hợp `useEffect` lắng nghe `window.location.search` (`action=register`, `id=...`, `ticket=...`). Khi người dùng quét mã QR hoặc bấm link từ Zalo OA, hệ thống tự động mở ngay `EventRegistrationModal` (hoặc `EventTicketPassModal` nếu có mã vé).
+       + Cấu hình Zalo OA: Chuẩn hóa mẫu tin nhắn sự kiện và tính năng bắn test, cung cấp rõ ràng cả Link Web đăng ký trực tiếp và Link ảnh QR Code.
+  2. *Làm sạch 100% dữ liệu trên cả 2 Database Production (14.225.217.232 & 113.20.107.184)*:
+     - Đã xóa sạch toàn bộ 212 bảng nghiệp vụ trên cả hai database máy chủ thật (`14.225.217.232:5436` và `113.20.107.184:6432`).
+     - Đảm bảo an toàn phân quyền Zero-Trust: Chỉ duy nhất giữ lại tài khoản tối cao `admin@connect.vn` (username `admin`, quyền `SUPER_ADMIN`).
+     - Xác nhận số liệu: `ceo1983_users`: 1, `members`: 1 (hồ sơ Admin), `events`: 0, `transactions`: 0, `notifications`: 0.
+  3. *Tự động cài đặt và mở App CEO 1983 cho cả iOS và Android khi bấm link từ Email (`open-app.tsx`, `install.tsx`, `mail.service.ts`)*:
+     - Tạo mới route `/open-app`:
+       + **Nhận diện thiết bị thông minh**: Tự động phân loại iOS, Android và Desktop.
+       + **Đối với Android**: Tự động kích hoạt hộp thoại cài đặt PWA Native 1-chạm (`beforeinstallprompt`), kèm tùy chọn tải file APK trực tiếp.
+       + **Đối với iOS (iPhone/iPad)**: Hiển thị hướng dẫn trực quan 3 bước "Thêm vào MH chính" (Safari Share ➔ Add to Home Screen), tạo biểu tượng App CEO 1983 chuẩn Apple không cần duyệt App Store.
+       + **Nếu đã ở trong chế độ App (Standalone/Capacitor)**: Tự động đăng nhập thẳng vào ứng dụng.
+       + **Đối với Desktop**: Hiển thị mã QR để quét bằng điện thoại kèm nút đăng nhập cổng Web.
+     - Cập nhật nút bấm trong các mẫu Email kích hoạt/chào mừng tài khoản mới: Trỏ trực tiếp đến `https://ceo1983.viconnect.vn/open-app?email=...` với tiêu đề `📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)`.
+  4. *Khắc phục lỗi GitHub Actions Workflow Run #108 (`auto-deploy-subdomains.yml`)*:
+     - Thêm bước dọn dẹp Docker container và cache images cũ trên VPS (`docker system prune -f`, `docker builder prune -f`), ngăn ngừa tràn phân vùng ổ cứng `/` gây timeout và fail khi truyền file nén qua SCP.
+     - Bảo vệ an toàn cho lệnh `setup-ssl.sh` để không làm gián đoạn pipeline khi các container ứng dụng đã khởi động thành công.
+  5. *Kiểm tra chất lượng code (Strict Type-Check)*:
+     - Backend: `npx tsc --noEmit` ➔ **Exit code 0 (0 errors)**.
+     - Frontend: `npx tsc --noEmit` ➔ **Exit code 0 (0 errors)**.
+
 - **Bản cập nhật ngày 09/11/2026 (v10.74): Tinh Gọn Cấu Hình Zalo OA 3 Trường Thiết Yếu, Tự Động Gia Hạn Token 24/7 Ngầm & Chuẩn Hóa Mẫu Thư Mời Đa Năng Pinterest Wyndham Thanh Thủy ([NODE-CRM-024], [NODE-CORE-005])**:
   1. *Tinh gọn và gộp tổng quan cấu hình Zalo OA (`ZaloOaConfigSection.tsx`)*:
      - Chuyển đổi từ màn hình phức tạp 3.185 dòng thành giao diện gọn nhẹ, trực quan với 3 thẻ chính:
@@ -250,6 +329,85 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 09/11/2026 (v10.76): Chuẩn Hóa Studio Mẫu Thư Mời Đa Năng Chuẩn Pinterest (Wyndham Thanh Thủy), Bóc Tách Ảnh Cắt Tùy Biến, Di Chuột Kéo Thả Bố Cục Tự Do, Tùy Chọn Nền Mờ & Đồng Bộ 100% Database Production 113.20.107.184:6432 ([NODE-CRM-024], [NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Nâng cấp Studio Mẫu Thư Mời Đồ Họa Cao Cấp Tái Tạo Chuẩn Pinterest (`InvitationTemplateStudio.tsx`)*:
+     - **Tái tạo thiết kế chuẩn ảnh Pinterest** (`https://www.pinterest.com/pin/501447739786387302/`):
+       + Tỉ lệ khung hình dọc 9:16 (`360x640px` preview tương tác, xuất ảnh phân giải cao `1080x1920px`).
+       + Bảng màu chuyển sắc đêm hoàng gia (`#071530` $\rightarrow$ `#0d234a` $\rightarrow$ `#061225`) kết hợp vệt sao rơi li ti và vầng hào quang tinh tế.
+       + Kiểu chữ: Chữ *"Thư mời"* phong cách Serif mạ bạc thanh lịch; dòng phụ *"TRÂN TRỌNG KÍNH MỜI QUÝ HỘI VIÊN & ĐỐI TÁC"* giãn cách ký tự sang trọng (tracking `0.28em`).
+       + Chữ nghệ thuật cỡ đại *"DÒNG CHẢY HẠNH PHÚC"* với hiệu ứng gradient băng tuyết trắng - xanh cyan rực rỡ và đổ bóng đa lớp sắc nét.
+       + Hộp Đặc Quyền Capsule Badge bo tròn viên thuốc viền sáng cyan hiển thị quà tặng / đặc quyền VIP.
+       + Cụm Ngày Giờ Số Lớn Luxury: Thứ, giờ, bộ 3 số ngày/tháng/năm lớn (`06 | 04 | 24` hoặc `12 | 11 | 26`) ngăn cách bằng vạch dọc `|`, kèm địa điểm và icon định vị.
+       + Phối cảnh cổng chào Heian chân poster đèn lồng rực rỡ trích xuất chuẩn xác từ ảnh gốc Pinterest (`/templates/heian_gate_venue.jpg`).
+     - **Trường thêm ảnh bóc tách cắt đưa lên poster (`CutoutImageConfig`)**:
+       + Hỗ trợ upload ảnh tùy ý từ máy tính hoặc chọn ảnh mẫu dự án.
+       + Cung cấp 5 chế độ bóc tách & cắt cúp thông minh:
+         * (1) Cổng vòm Heian (`arch` - bo tròn vòm cung phía trên theo phong cách Nhật Bản).
+         * (2) Viền mờ hòa quyện (`soft_feather` - làm mờ dần 4 cạnh hòa tan vào nền đêm xanh).
+         * (3) Huy hiệu diễn giả (`oval` - khung bầu dục viền vàng kim sang trọng).
+         * (4) Bo góc mượt mà 24px (`rounded` - bo góc thẻ hiện đại).
+         * (5) Toàn cảnh chân poster (`cinema` - trải rộng toàn chiều ngang phía chân poster).
+       + Bộ điều khiển trực quan: Điều chỉnh vị trí dọc Y (30% - 95%), Tỉ lệ Scale (60% - 140%), Độ trong suốt Opacity (40% - 100%).
+     - **Tính năng di chuột kéo thả tự do mọi khối text & bố cục (Interactive Mouse Drag & Drop)**:
+       + Người dùng có thể nhấn giữ chuột và kéo thả trực tiếp trên khung preview poster để định vị lại tọa độ mong muốn cho từng thành phần: Dòng kính mời, Chữ Thư mời, Tiêu đề nghệ thuật, Phụ đề, Hộp đặc quyền Capsule, Cụm Ngày/Giờ/Địa điểm, và Ảnh bóc tách.
+       + Tọa độ tính toán bằng tỉ lệ phần trăm `%` tự động co giãn chính xác khi xuất ảnh full HD.
+       + Trang bị nút "Đặt lại vị trí chuẩn Pinterest" bằng 1 chạm để khôi phục bố cục nguyên bản.
+     - **Tùy chọn nền mờ trên text (Frosted Glass Blur Toggle)**:
+       + Mỗi khối văn bản và tiêu đề đều có công tắc bật/tắt:
+         * Bật nền mờ: Áp dụng hiệu ứng kính mờ `backdrop-blur-md bg-slate-950/45 border border-white/15 rounded-xl` giúp đọc chữ rõ ràng trên nền ảnh phức tạp.
+         * Tắt nền mờ: Hiển thị chữ trong suốt hòa cùng nền với hiệu ứng đổ bóng đa lớp sắc nét.
+       + Nút chuyển đổi nhanh toàn bộ các khối chỉ với 1 click.
+     - **Tích hợp xuất ảnh & gửi đa kênh**:
+       + Tải ảnh poster PNG sắc nét về máy.
+       + Lưu vào kho mẫu template thư mời hệ thống.
+       + Gửi thông báo đa kênh tức thời: App Mobile CEO 1983, Zalo OA ZNS, Email HTML trang trọng.
+  2. *Khẳng định & Đồng bộ 100% Cấu Hình Database Production về 113.20.107.184:6432*:
+     - Toàn bộ các file môi trường triển khai Docker và cấu hình hệ thống đã được đồng bộ chuẩn xác:
+       + `deploy/ceo1983/.env.association`
+       + `deploy/ceo1983/.env.production`
+       + `deploy/crm/.env.crm`
+       + `deploy/crm/.env.production`
+       + `.env.production`
+       + `.env`
+       + `packages/db/.env`
+       + `apps/ceo1983_app_be/.env`
+     - Tất cả chuỗi kết nối đều trỏ thống nhất về: `postgresql://postgres:***@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+     - Xác thực kết nối và làm sạch dữ liệu thành công trên máy chủ trung tâm:
+       + `ceo1983_users`: 1 (Duy nhất tài khoản `admin@connect.vn`).
+       + `members`: 1 (Hồ sơ quản trị viên tối cao).
+       + `events`: 0.
+       + `transactions`: 0.
+       + `notifications`: 0.
+  3. *Kiểm tra chất lượng mã nguồn*:
+     - Tuân thủ quy chuẩn nghiêm ngặt: Kiểm tra Typecheck và không chạy lệnh `git commit`/`git push` tự động.
+
+
+- **Bản cập nhật ngày 09/11/2026 (v10.75): Đồng Bộ URL Mã QR Check-in Sự Kiện Cho Zalo OA, Xóa Sạch Dữ Liệu Production 2 Database Chỉ Còn admin@connect.vn, Tạo Trang Launcher Mở & Cài Đặt App Đa Nền Tảng (iOS & Android) và Tối Ưu CI/CD Auto-Deploy ([NODE-CRM-010], [NODE-APP-008], [NODE-CORE-004], [NODE-DEVOPS-001])**:
+  1. *Khắc phục triệt để lỗi quét mã QR Sự Kiện & Chuẩn hóa tin nhắn Zalo OA (`events.controller.ts`, `association.events.tsx`, `ZaloOaConfigSection.tsx`)*:
+     - **Nguyên nhân gốc**: Mã QR cũ tạo từ chuỗi văn bản thô `CEO1983_EVENT_CHECKIN|...` nên khi quét bằng máy ảnh điện thoại hoặc Zalo, máy quét nhận diện là "Văn bản" chứ không mở liên kết Web.
+     - **Giải pháp toàn diện**:
+       + Backend `@Get('qr')`: Tự động nhận diện dữ liệu QR, nếu không phải URL sẽ tự động đóng gói thành Web URL đầy đủ: `https://ceo1983.viconnect.vn/association/events?action=register&qrData=...`. Đảm bảo 100% camera iOS, Android và Zalo quét đều hiện thông báo "Mở liên kết".
+       + Frontend `association.events.tsx`: Tích hợp `useEffect` lắng nghe `window.location.search` (`action=register`, `id=...`, `ticket=...`). Khi người dùng quét mã QR hoặc bấm link từ Zalo OA, hệ thống tự động mở ngay `EventRegistrationModal` (hoặc `EventTicketPassModal` nếu có mã vé).
+       + Cấu hình Zalo OA: Chuẩn hóa mẫu tin nhắn sự kiện và tính năng bắn test, cung cấp rõ ràng cả Link Web đăng ký trực tiếp và Link ảnh QR Code.
+  2. *Làm sạch 100% dữ liệu trên cả 2 Database Production (14.225.217.232 & 113.20.107.184)*:
+     - Đã xóa sạch toàn bộ 212 bảng nghiệp vụ trên cả hai database máy chủ thật (`14.225.217.232:5436` và `113.20.107.184:6432`).
+     - Đảm bảo an toàn phân quyền Zero-Trust: Chỉ duy nhất giữ lại tài khoản tối cao `admin@connect.vn` (username `admin`, quyền `SUPER_ADMIN`).
+     - Xác nhận số liệu: `ceo1983_users`: 1, `members`: 1 (hồ sơ Admin), `events`: 0, `transactions`: 0, `notifications`: 0.
+  3. *Tự động cài đặt và mở App CEO 1983 cho cả iOS và Android khi bấm link từ Email (`open-app.tsx`, `install.tsx`, `mail.service.ts`)*:
+     - Tạo mới route `/open-app`:
+       + **Nhận diện thiết bị thông minh**: Tự động phân loại iOS, Android và Desktop.
+       + **Đối với Android**: Tự động kích hoạt hộp thoại cài đặt PWA Native 1-chạm (`beforeinstallprompt`), kèm tùy chọn tải file APK trực tiếp.
+       + **Đối với iOS (iPhone/iPad)**: Hiển thị hướng dẫn trực quan 3 bước "Thêm vào MH chính" (Safari Share ➔ Add to Home Screen), tạo biểu tượng App CEO 1983 chuẩn Apple không cần duyệt App Store.
+       + **Nếu đã ở trong chế độ App (Standalone/Capacitor)**: Tự động đăng nhập thẳng vào ứng dụng.
+       + **Đối với Desktop**: Hiển thị mã QR để quét bằng điện thoại kèm nút đăng nhập cổng Web.
+     - Cập nhật nút bấm trong các mẫu Email kích hoạt/chào mừng tài khoản mới: Trỏ trực tiếp đến `https://ceo1983.viconnect.vn/open-app?email=...` với tiêu đề `📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)`.
+  4. *Khắc phục lỗi GitHub Actions Workflow Run #108 (`auto-deploy-subdomains.yml`)*:
+     - Thêm bước dọn dẹp Docker container và cache images cũ trên VPS (`docker system prune -f`, `docker builder prune -f`), ngăn ngừa tràn phân vùng ổ cứng `/` gây timeout và fail khi truyền file nén qua SCP.
+     - Bảo vệ an toàn cho lệnh `setup-ssl.sh` để không làm gián đoạn pipeline khi các container ứng dụng đã khởi động thành công.
+  5. *Kiểm tra chất lượng code (Strict Type-Check)*:
+     - Backend: `npx tsc --noEmit` ➔ **Exit code 0 (0 errors)**.
+     - Frontend: `npx tsc --noEmit` ➔ **Exit code 0 (0 errors)**.
 
 - **Bản cập nhật ngày 09/11/2026 (v10.74): Tinh Gọn Cấu Hình Zalo OA 3 Trường Thiết Yếu, Tự Động Gia Hạn Token 24/7 Ngầm & Chuẩn Hóa Mẫu Thư Mời Đa Năng Pinterest Wyndham Thanh Thủy ([NODE-CRM-024], [NODE-CORE-005])**:
   1. *Tinh gọn và gộp tổng quan cấu hình Zalo OA (`ZaloOaConfigSection.tsx`)*:

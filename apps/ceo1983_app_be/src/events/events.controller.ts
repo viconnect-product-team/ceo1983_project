@@ -32,9 +32,23 @@ export class EventsController {
     @Query('data') data: string,
     @Query('regId') regId: string,
     @Query('size') size: string,
+    @Query('eventId') eventId: string,
     @Res() res: any,
   ) {
-    const rawData = data || regId || 'CEO1983-EVENT-TICKET';
+    let rawData = data || regId || 'CEO1983-EVENT-TICKET';
+    const baseUrl = process.env.APP_URL || 'https://ceo1983.viconnect.vn';
+    
+    // Nếu rawData không phải là một liên kết Web (URL), chuyển đổi thành URL mở Form đăng ký / Thẻ Check-in trên Web
+    if (!rawData.startsWith('http://') && !rawData.startsWith('https://')) {
+      const qp = new URLSearchParams();
+      qp.set('action', 'register');
+      if (eventId) qp.set('id', eventId);
+      if (regId) qp.set('ticket', regId);
+      qp.set('ref', 'qr_scan');
+      qp.set('qrData', rawData);
+      rawData = `${baseUrl}/association/events?${qp.toString()}`;
+    }
+
     const parsedSize = Math.min(
       Math.max(parseInt(size || '320', 10) || 320, 100),
       800,

@@ -37,9 +37,9 @@ export function ZaloTemplateManager() {
       name: "Thư Mời Sự Kiện & QR Check-in",
       category: "event",
       title: "THƯ MỜI THAM DỰ SỰ KIỆN CEO 1983",
-      body: "Kính gửi Anh/Chị {{ho_ten}},\nBan Tổ Chức CLB Doanh Nhân CEO 1983 trân trọng kính mời Anh/Chị tham dự sự kiện \"{{ten_su_kien}}\".\n\n- Thời gian: {{thoi_gian}}\n- Địa điểm: {{dia_diem}}\n\nVui lòng bấm vào nút bên dưới để mở thẻ đại biểu và xuất trình mã QR tại bàn tiếp đón.",
-      ctaText: "Mở Thẻ Đại Biểu & QR",
-      ctaUrl: "https://ceo1983.viconnect.vn/association/events",
+      body: "Kính gửi Anh/Chị {{ho_ten}},\nBan Tổ Chức CLB Doanh Nhân CEO 1983 trân trọng kính mời Anh/Chị tham dự sự kiện \"{{ten_su_kien}}\".\n\n- Thời gian: {{thoi_gian}}\n- Địa điểm: {{dia_diem}}\n\nVui lòng bấm vào nút bên dưới để mở form đăng ký hoặc xuất trình mã QR tại bàn tiếp đón.",
+      ctaText: "Mở Form Đăng Ký & Nhận Vé",
+      ctaUrl: "https://ceo1983.viconnect.vn/association/events?action=register",
       variables: ["ho_ten", "ten_su_kien", "thoi_gian", "dia_diem"],
     },
     {
