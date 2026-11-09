@@ -80,15 +80,12 @@ function MeetingsWorkspacePage() {
 
   const loadMeetings = async () => {
     setLoading(true);
-    let local: ConnectionMeetingItem[] = [];
-    try {
-      const stored =
-        localStorage.getItem("ceo1983_meetings_history") ||
-        localStorage.getItem("vione_meetings_history") ||
-        "[]";
-      local = JSON.parse(stored);
-    } catch {
-      local = [];
+    // Dọn sạch rác cache localStorage cũ nếu có
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("ceo1983_meetings_history");
+        localStorage.removeItem("vione_meetings_history");
+      } catch {}
     }
 
     try {
@@ -124,12 +121,9 @@ function MeetingsWorkspacePage() {
         };
       });
 
-      const map = new Map<string, ConnectionMeetingItem>();
-      for (const m of remoteMeetings) map.set(m.id, m);
-      for (const m of local) map.set(m.id, m);
-      setLocalMeetings(Array.from(map.values()));
+      setLocalMeetings(remoteMeetings);
     } catch {
-      setLocalMeetings(local);
+      setLocalMeetings([]);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,16 @@
 /**
- * CONVERT DOCX MODULE
+/**
+ * CONVERT DOCX MODULE - ENTERPRISE EDITION V10.0
  * Converts Markdown to Microsoft Word (.docx) format using docx library (^9.7.1)
- * Standard A4 layout, Royal Cover Page, Styled Tables, Headings, Header & Footer
+ * Standard A4 layout, Royal HanoiBA Cover Page, Styled Tables, Smart Auto-Width,
+ * Callout Boxes for Process Flows & Code Blocks, Crisp Typography, Header & Footer.
+ * 
+ * FIXES PREVIOUS ISSUES:
+ * 1. No more broken diagrams: Multi-line code/flow blocks are converted to styled Callout Tables
+ *    with line-by-line TextRuns (with break) and Consolas font, preventing Word layout corruption.
+ * 2. Smart Column Widths: Table columns are weighted by character length instead of flat equal widths,
+ *    giving narrow columns (STT, Mã, Bước) ~10-15% and content columns (Mô tả, Hành động) ~35-50%.
+ * 3. Page Breaks & Headings: Clean spacing, no orphan headings, cantSplit rows on tables.
  */
 
 const fs = require('fs');
@@ -24,11 +33,12 @@ const {
   AlignmentType,
   BorderStyle,
   ShadingType,
-  ImageRun,
   PageBreak
 } = docx;
 
 const FONT_FAMILY = 'Times New Roman';
+const CODE_FONT = 'Consolas';
+
 const COLORS = {
   NAVY: '003B95',
   GOLD: 'D97706',
@@ -38,10 +48,11 @@ const COLORS = {
   BORDER_COLOR: 'CBD5E1',
   BG_LIGHT: 'F8FAFC',
   BG_HEADER: '003B95',
-  WHITE: 'FFFFFF'
+  WHITE: 'FFFFFF',
+  ACCENT_BORDER: '003B95'
 };
 
-const TABLE_WIDTH_DXA = 9026; // A4 printable area width in dxa
+const TABLE_WIDTH_DXA = 9026; // A4 printable width in dxa
 
 const TABLE_BORDER = {
   top: { style: BorderStyle.SINGLE, size: 2, color: COLORS.BORDER_COLOR },
@@ -85,7 +96,7 @@ function parseInlineMarkdown(text, baseOptions = {}) {
     } else if (raw.startsWith('`') && raw.endsWith('`')) {
       runs.push(new TextRun({
         text: raw.slice(1, -1),
-        font: 'Consolas',
+        font: CODE_FONT,
         color: COLORS.DARK_GOLD,
         bold: true,
         size: (baseOptions.size || 22) - 2
@@ -105,6 +116,48 @@ function parseInlineMarkdown(text, baseOptions = {}) {
   return runs.length > 0 ? runs : [new TextRun({ text: '', font: FONT_FAMILY, ...baseOptions })];
 }
 
+/**
+ * Calculates smart column widths based on maximum content length in each column
+ */
+function calculateSmartColumnWidths(headerCols, dataRows) {
+  const colCount = headerCols.length;
+  if (colCount === 0) return [];
+
+  // Calculate length weights
+  const maxLen = new Array(colCount).fill(0);
+  for (let c = 0; c < colCount; c++) {
+    maxLen[c] = (headerCols[c] || '').length * 1.5;
+  }
+
+  for (const row of dataRows) {
+    for (let c = 0; c < colCount; c++) {
+      const cellLen = (row[c] || '').length;
+      if (cellLen > maxLen[c]) {
+        maxLen[c] = cellLen;
+      }
+    }
+  }
+
+  // Bound weights: Min 8%, Max 50%
+  const clampedWeights = maxLen.map(l => Math.min(Math.max(Math.sqrt(l), 3), 18));
+  const totalWeight = clampedWeights.reduce((a, b) => a + b, 0);
+
+  let allocatedDxa = 0;
+  const colWidthsDxa = [];
+
+  for (let c = 0; c < colCount; c++) {
+    if (c === colCount - 1) {
+      colWidthsDxa.push(TABLE_WIDTH_DXA - allocatedDxa);
+    } else {
+      const w = Math.round((clampedWeights[c] / totalWeight) * TABLE_WIDTH_DXA);
+      colWidthsDxa.push(w);
+      allocatedDxa += w;
+    }
+  }
+
+  return colWidthsDxa;
+}
+
 function createWordTable(tableLines) {
   if (tableLines.length < 2) return null;
   const headerCols = tableLines[0].split('|').map(s => s.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
@@ -117,14 +170,16 @@ function createWordTable(tableLines) {
 
   const colCount = headerCols.length;
   if (colCount === 0) return null;
-  const colWidth = Math.floor(100 / colCount);
+
+  const colWidthsDxa = calculateSmartColumnWidths(headerCols, dataRows);
 
   const headerRow = new TableRow({
     tableHeader: true,
-    children: headerCols.map(c => new TableCell({
-      width: { size: colWidth, type: WidthType.PERCENTAGE },
+    cantSplit: true,
+    children: headerCols.map((c, idx) => new TableCell({
+      width: { size: colWidthsDxa[idx], type: WidthType.DXA },
       shading: { fill: COLORS.BG_HEADER, type: ShadingType.CLEAR },
-      margins: { top: 120, bottom: 120, left: 140, right: 140 },
+      margins: { top: 120, bottom: 120, left: 130, right: 130 },
       borders: TABLE_BORDER,
       children: [
         new Paragraph({
@@ -144,16 +199,18 @@ function createWordTable(tableLines) {
   });
 
   const bodyRows = dataRows.map((row, rIdx) => new TableRow({
+    cantSplit: true,
     children: headerCols.map((_, cIdx) => {
       const cellText = row[cIdx] || '';
+      const isShortCol = colWidthsDxa[cIdx] < 1200;
       return new TableCell({
-        width: { size: colWidth, type: WidthType.PERCENTAGE },
+        width: { size: colWidthsDxa[cIdx], type: WidthType.DXA },
         shading: rIdx % 2 === 1 ? { fill: COLORS.BG_LIGHT, type: ShadingType.CLEAR } : undefined,
-        margins: { top: 100, bottom: 100, left: 140, right: 140 },
+        margins: { top: 100, bottom: 100, left: 130, right: 130 },
         borders: TABLE_BORDER,
         children: [
           new Paragraph({
-            alignment: AlignmentType.LEFT,
+            alignment: isShortCol ? AlignmentType.CENTER : AlignmentType.LEFT,
             children: parseInlineMarkdown(cellText, { size: 20, color: COLORS.DARK_SLATE })
           })
         ]
@@ -164,6 +221,49 @@ function createWordTable(tableLines) {
   return new Table({
     width: { size: TABLE_WIDTH_DXA, type: WidthType.DXA },
     rows: [headerRow, ...bodyRows]
+  });
+}
+
+/**
+ * Creates an elegant Callout Table for Process Flows, Code Blocks, and System Diagrams
+ * Prevents text run newline collapse bug in Word.
+ */
+function createCalloutBox(lines, options = {}) {
+  const isDiagram = options.isDiagram || false;
+  const borderAccentColor = isDiagram ? COLORS.GOLD : COLORS.NAVY;
+
+  const paragraphs = lines.map((l, idx) => {
+    const isArrowLine = l.includes('➔') || l.includes('->') || l.includes('-->') || l.includes('──');
+    return new Paragraph({
+      spacing: { before: 20, after: 20, line: 220 },
+      children: [
+        new TextRun({
+          text: l || ' ',
+          font: isDiagram ? FONT_FAMILY : CODE_FONT,
+          size: isDiagram ? 19 : 17,
+          bold: isArrowLine,
+          color: isArrowLine ? COLORS.NAVY : COLORS.DARK_SLATE
+        })
+      ]
+    });
+  });
+
+  const calloutCell = new TableCell({
+    width: { size: TABLE_WIDTH_DXA, type: WidthType.DXA },
+    shading: { fill: 'F8FAFC', type: ShadingType.CLEAR },
+    margins: { top: 140, bottom: 140, left: 200, right: 180 },
+    borders: {
+      left: { style: BorderStyle.SINGLE, size: 24, color: borderAccentColor }, // 3pt thick accent border
+      top: { style: BorderStyle.SINGLE, size: 2, color: COLORS.BORDER_COLOR },
+      bottom: { style: BorderStyle.SINGLE, size: 2, color: COLORS.BORDER_COLOR },
+      right: { style: BorderStyle.SINGLE, size: 2, color: COLORS.BORDER_COLOR }
+    },
+    children: paragraphs
+  });
+
+  return new Table({
+    width: { size: TABLE_WIDTH_DXA, type: WidthType.DXA },
+    rows: [new TableRow({ children: [calloutCell] })]
   });
 }
 
@@ -197,24 +297,24 @@ function createCoverPageElements(docInfo) {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 600 },
+      spacing: { before: 0, after: 500 },
       children: [
         new TextRun({
           text: '❖  ❖  ❖',
           font: FONT_FAMILY,
-          size: 28,
+          size: 26,
           color: COLORS.GOLD
         })
       ]
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 400, after: 180 },
+      spacing: { before: 300, after: 180 },
       children: [
         new TextRun({
           text: docInfo.systemName || docInfo.title,
           font: FONT_FAMILY,
-          size: 34,
+          size: 32,
           bold: true,
           color: COLORS.NAVY
         })
@@ -222,7 +322,7 @@ function createCoverPageElements(docInfo) {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 0, after: 500 },
+      spacing: { before: 0, after: 400 },
       children: [
         new TextRun({
           text: docInfo.subTitle || '',
@@ -265,7 +365,7 @@ function createCoverPageElements(docInfo) {
             new TableCell({
               width: { size: 65, type: WidthType.PERCENTAGE },
               borders: TABLE_BORDER,
-              children: [new Paragraph({ children: [new TextRun({ text: docInfo.version || 'Version 10.0', font: FONT_FAMILY, size: 20 })] })]
+              children: [new Paragraph({ children: [new TextRun({ text: docInfo.version || 'Version 10.0 Toàn Diện', font: FONT_FAMILY, size: 20 })] })]
             })
           ]
         }),
@@ -342,6 +442,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
   let tableBuffer = [];
   let inCodeBlock = false;
   let codeBuffer = [];
+  let codeBlockLang = '';
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -350,20 +451,14 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
     // Code blocks / Mermaid
     if (trimmed.startsWith('```')) {
       if (inCodeBlock) {
-        docChildren.push(new Paragraph({
-          spacing: { before: 80, after: 80 },
-          shading: { fill: 'F1F5F9', type: ShadingType.CLEAR },
-          children: [
-            new TextRun({
-              text: codeBuffer.join('\n'),
-              font: 'Consolas',
-              size: 18,
-              color: COLORS.DARK_SLATE
-            })
-          ]
-        }));
+        // End of code block -> Flush into elegant Callout Box
+        const isMermaid = codeBlockLang.toLowerCase().includes('mermaid') || codeBuffer.some(l => l.includes('graph ') || l.includes('sequenceDiagram'));
+        const callout = createCalloutBox(codeBuffer, { isDiagram: isMermaid });
+        docChildren.push(callout);
+
         inCodeBlock = false;
         codeBuffer = [];
+        codeBlockLang = '';
       } else {
         if (inTable && tableBuffer.length > 0) {
           const t = createWordTable(tableBuffer);
@@ -373,6 +468,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
         }
         inCodeBlock = true;
         codeBuffer = [];
+        codeBlockLang = trimmed.replace(/^```/, '').trim();
       }
       continue;
     }
@@ -438,12 +534,19 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
       continue;
     }
 
+    // Process Flow Banner (e.g. `[1. Đăng ký] ➔ [2. Duyệt] ➔ [3. Cấp thẻ]`)
+    if (line.includes('➔') && (line.startsWith('*') || line.startsWith('`') || line.startsWith('['))) {
+      const bannerBox = createCalloutBox([trimmed.replace(/^\*+|\*+$/g, '')], { isDiagram: true });
+      docChildren.push(bannerBox);
+      continue;
+    }
+
     // Bullet list
     const bulletMatch = line.match(/^(\s*)[*-]\s+(.+)$/);
     if (bulletMatch) {
       docChildren.push(new Paragraph({
         bullet: { level: 0 },
-        spacing: { before: 40, after: 40, line: 260 },
+        spacing: { before: 30, after: 30, line: 250 },
         children: parseInlineMarkdown(bulletMatch[2], { size: 21, color: COLORS.DARK_SLATE })
       }));
       continue;
@@ -453,9 +556,12 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
     const numMatch = line.match(/^(\s*)\d+\.\s+(.+)$/);
     if (numMatch) {
       docChildren.push(new Paragraph({
-        spacing: { before: 40, after: 40, line: 260 },
+        spacing: { before: 30, after: 30, line: 250 },
         indent: { left: 360 },
-        children: parseInlineMarkdown(numMatch[2], { size: 21, color: COLORS.DARK_SLATE })
+        children: [
+          new TextRun({ text: numMatch[0].split('.')[0] + '. ', bold: true, font: FONT_FAMILY, size: 21, color: COLORS.NAVY }),
+          ...parseInlineMarkdown(numMatch[2], { size: 21, color: COLORS.DARK_SLATE })
+        ]
       }));
       continue;
     }
@@ -463,7 +569,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
     // Blockquote
     if (line.startsWith('>')) {
       docChildren.push(new Paragraph({
-        spacing: { before: 60, after: 60, line: 260 },
+        spacing: { before: 60, after: 60, line: 250 },
         indent: { left: 400 },
         shading: { fill: COLORS.BG_LIGHT, type: ShadingType.CLEAR },
         children: parseInlineMarkdown(line.replace(/^>\s?/, ''), { size: 20, italics: true, color: COLORS.MUTED_SLATE })
@@ -474,7 +580,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
     // Normal paragraph
     if (trimmed.length > 0) {
       docChildren.push(new Paragraph({
-        spacing: { before: 60, after: 60, line: 260 },
+        spacing: { before: 50, after: 50, line: 250 },
         alignment: AlignmentType.JUSTIFIED,
         children: parseInlineMarkdown(line, { size: 21, color: COLORS.DARK_SLATE })
       }));
@@ -492,7 +598,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
       default: {
         document: {
           run: { font: FONT_FAMILY, size: 22, color: COLORS.DARK_SLATE },
-          paragraph: { spacing: { line: 260 } }
+          paragraph: { spacing: { line: 250 } }
         }
       }
     },
@@ -500,7 +606,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
       {
         properties: {
           page: {
-            size: { width: 11906, height: 16838 }, // A4
+            size: { width: 11906, height: 16838 }, // A4 standard
             margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 }
           }
         },
@@ -553,8 +659,7 @@ async function convertMarkdownToDocx(mdText, docInfo, outputFilePath) {
 
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(outputFilePath, buffer);
-  console.log(`✓ Đã xuất DOCX thành công: ${outputFilePath}`);
+  console.log(`✓ Đã xuất DOCX thành công: ${outputFilePath} (${(fs.statSync(outputFilePath).size / 1024).toFixed(1)} KB)`);
 }
 
 module.exports = { convertMarkdownToDocx };
-

@@ -20,10 +20,11 @@ export const Route = createFileRoute("/templates")({
 
 function TemplatesRouteComponent() {
   const search = Route.useSearch();
+  const currentTab = search.tab || "invitation";
   return (
     <AppShell>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto min-h-screen">
-        <PageTemplatesHub initialTab={search.tab || "invitation"} />
+        <PageTemplatesHub key={currentTab} initialTab={currentTab} />
       </div>
     </AppShell>
   );

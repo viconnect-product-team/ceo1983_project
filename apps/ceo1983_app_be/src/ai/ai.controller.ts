@@ -40,6 +40,40 @@ export class AiController {
     return { ok: true, data: res };
   }
 
+  /** POST /api/ai/deal-advisor — Cố vấn Thẩm định Deal, Khớp Vốn & Dòng Tiền Super Premium */
+  @Post('deal-advisor')
+  async getDealAdvisor(
+    @Request() req: any,
+    @Body() body: { capital?: number; prompt?: string; opportunityId?: string },
+  ) {
+    const res = await this.aiService.getDealAdvisorAnalysis(
+      req.user.id,
+      body.capital,
+      body.prompt,
+      body.opportunityId,
+    );
+    return { ok: true, data: res };
+  }
+
+  /** POST /api/ai/extract-tasks-from-document — Tự động bóc tách task, phân tích giải pháp & chia việc cho các Ban từ file Word/Excel/văn bản họp */
+  @Post('extract-tasks-from-document')
+  async extractTasksFromMeetingDocument(
+    @Request() req: any,
+    @Body()
+    body: {
+      documentText: string;
+      fileName?: string;
+      department?: string;
+      customPrompt?: string;
+    },
+  ) {
+    const res = await this.aiService.extractTasksFromMeetingDocument(
+      req?.user?.id || 'admin',
+      body,
+    );
+    return { ok: true, data: res };
+  }
+
   /** POST /api/ai/ask-voice — Hỏi đáp bằng giọng nói (nhận file audio base64) */
   @Post('ask-voice')
   async askVoiceAssistant(

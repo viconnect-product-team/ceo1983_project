@@ -28,7 +28,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useFmt } from "@/lib/i18n";
-import type { Transaction } from "@/lib/finance.functions";
+import type { Transaction } from "@/types/finance.types";
+import { ChartAdaptiveTooltip } from "@/components/common/ChartAdaptiveTooltip";
 
 interface FinanceChartsSectionProps {
   transactions: Transaction[];
@@ -352,19 +353,14 @@ export function FinanceChartsSection({
                   }}
                 />
                 <Tooltip
-                  formatter={(value: any, name: any) => [
-                    `${fmt.money(Number(value))} VNĐ`,
-                    name,
-                  ]}
-                  contentStyle={{
-                    backgroundColor: "rgba(15, 23, 42, 0.95)",
-                    borderColor: "rgba(245, 158, 11, 0.4)",
-                    borderRadius: "16px",
-                    color: "#ffffff",
-                    fontSize: "12px",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
-                  }}
-                  itemStyle={{ padding: "2px 0" }}
+                  content={
+                    <ChartAdaptiveTooltip
+                      formatter={(value: any, name: any) => [
+                        `${fmt.money(Number(value))} VNĐ`,
+                        name,
+                      ]}
+                    />
+                  }
                 />
                 <Bar dataKey="Khoản Thu" fill="url(#incomeBarGrad)" radius={[6, 6, 0, 0]} maxBarSize={32} />
                 <Bar dataKey="Khoản Chi" fill="url(#expenseBarGrad)" radius={[6, 6, 0, 0]} maxBarSize={32} />
@@ -425,14 +421,11 @@ export function FinanceChartsSection({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(val: any) => [`${fmt.money(Number(val))} đ`, "Số tiền"]}
-                        contentStyle={{
-                          backgroundColor: "rgba(15, 23, 42, 0.95)",
-                          borderColor: "rgba(245, 158, 11, 0.4)",
-                          borderRadius: "14px",
-                          color: "#fff",
-                          fontSize: "11px",
-                        }}
+                        content={
+                          <ChartAdaptiveTooltip
+                            formatter={(val: any) => [`${fmt.money(Number(val))} đ`, "Số tiền"]}
+                          />
+                        }
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -513,14 +506,11 @@ export function FinanceChartsSection({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(val: any) => [`${fmt.money(Number(val))} đ`, "Chi phí"]}
-                        contentStyle={{
-                          backgroundColor: "rgba(15, 23, 42, 0.95)",
-                          borderColor: "rgba(244, 63, 94, 0.4)",
-                          borderRadius: "14px",
-                          color: "#fff",
-                          fontSize: "11px",
-                        }}
+                        content={
+                          <ChartAdaptiveTooltip
+                            formatter={(val: any) => [`${fmt.money(Number(val))} đ`, "Chi phí"]}
+                          />
+                        }
                       />
                     </PieChart>
                   </ResponsiveContainer>

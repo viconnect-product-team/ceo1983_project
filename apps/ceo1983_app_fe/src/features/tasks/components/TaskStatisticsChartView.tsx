@@ -32,6 +32,7 @@ import {
   ChevronRight,
   Calendar,
 } from 'lucide-react';
+import { ChartAdaptiveTooltip } from '@/components/common/ChartAdaptiveTooltip';
 import type { TaskItem } from '../types';
 import {
   TASK_DEPARTMENTS,
@@ -370,13 +371,11 @@ export function TaskStatisticsChartView({ tasks, onTaskClick }: TaskStatisticsCh
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(val: any, name: any) => [`${val} công việc`, name]}
-                        contentStyle={{
-                          borderRadius: '12px',
-                          border: '1px solid #E2E8F0',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                        }}
+                        content={
+                          <ChartAdaptiveTooltip
+                            formatter={(val: any, name: any) => [`${val} công việc`, name]}
+                          />
+                        }
                       />
                       <Legend
                         verticalAlign="bottom"
@@ -426,12 +425,11 @@ export function TaskStatisticsChartView({ tasks, onTaskClick }: TaskStatisticsCh
                       />
                       <YAxis tick={{ fontSize: 10.5, fill: '#64748B' }} allowDecimals={false} />
                       <Tooltip
-                        formatter={(val: any, name: any) => [`${val} việc`, name]}
-                        contentStyle={{
-                          borderRadius: '12px',
-                          border: '1px solid #E2E8F0',
-                          fontSize: '12px',
-                        }}
+                        content={
+                          <ChartAdaptiveTooltip
+                            formatter={(val: any, name: any) => [`${val} việc`, name]}
+                          />
+                        }
                       />
                       <Legend
                         verticalAlign="top"
@@ -527,12 +525,11 @@ export function TaskStatisticsChartView({ tasks, onTaskClick }: TaskStatisticsCh
                       />
                       <YAxis tick={{ fontSize: 10, fill: '#64748B' }} domain={[0, 100]} />
                       <Tooltip
-                        formatter={(val: any) => [`${val}%`, 'Tiến độ TB']}
-                        contentStyle={{
-                          borderRadius: '12px',
-                          border: '1px solid #E2E8F0',
-                          fontSize: '12px',
-                        }}
+                        content={
+                          <ChartAdaptiveTooltip
+                            formatter={(val: any) => [`${val}%`, 'Tiến độ TB']}
+                          />
+                        }
                       />
                       <Area
                         type="monotone"

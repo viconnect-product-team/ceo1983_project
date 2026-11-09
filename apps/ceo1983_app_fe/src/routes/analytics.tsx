@@ -872,11 +872,11 @@ export function AnalyticsDashboardPage() {
                           if (active && payload && payload.length) {
                             const d = payload[0].payload;
                             return (
-                              <div className="p-2.5 rounded-xl bg-slate-900/95 text-white text-xs shadow-xl border border-slate-700 space-y-1">
-                                <p className="font-bold text-slate-200">{d.name}</p>
-                                <p className="text-amber-400 font-black">{d.value}% phân bổ tỷ trọng</p>
+                              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs shadow-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                                <p className="font-bold text-slate-900 dark:text-slate-100">{d.name}</p>
+                                <p className="text-amber-600 dark:text-amber-400 font-black">{d.value}% phân bổ tỷ trọng</p>
                                 {d.raw !== undefined && (
-                                  <p className="text-[11px] text-slate-300">Giá trị: {d.raw} {d.unit}</p>
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Giá trị: {d.raw} {d.unit}</p>
                                 )}
                               </div>
                             );
@@ -903,10 +903,10 @@ export function AnalyticsDashboardPage() {
                       content={({ active, payload, label }: any) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="p-3 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-xl text-xs space-y-1.5 min-w-[220px]">
-                              <div className="font-bold border-b border-slate-800 pb-1 text-slate-200 flex items-center justify-between">
+                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xl text-xs space-y-1.5 min-w-[220px]">
+                              <div className="font-bold border-b border-slate-100 dark:border-slate-800 pb-1 text-slate-900 dark:text-slate-100 flex items-center justify-between">
                                 <span>Mốc: {label}</span>
-                                <span className="text-[10px] text-slate-400 font-normal">Thời gian thực</span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">Thời gian thực</span>
                               </div>
                               {payload.map((p: any, idx: number) => {
                                 const itemUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
@@ -919,9 +919,9 @@ export function AnalyticsDashboardPage() {
                                   <div key={idx} className="flex justify-between items-center text-xs">
                                     <span className="flex items-center gap-1.5" style={{ color: p.color || p.fill || p.stroke }}>
                                       <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.fill || p.stroke }} />
-                                      <span>{p.name}:</span>
+                                      <span className="text-slate-700 dark:text-slate-300 font-medium">{p.name}:</span>
                                     </span>
-                                    <strong className="text-white">{p.value} {itemUnit}</strong>
+                                    <strong className="text-slate-900 dark:text-white font-mono">{p.value} {itemUnit}</strong>
                                   </div>
                                 );
                               })}
