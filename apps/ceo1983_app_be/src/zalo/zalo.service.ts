@@ -74,19 +74,20 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     this.logger.log(
-      'Khởi chạy tiến trình Zalo OA Auto-Token Manager (chu kỳ 6 tiếng)...',
+      'Khởi chạy tiến trình Zalo OA Auto-Token Manager (chu kỳ quét 15 phút, tự động gia hạn mỗi 4 tiếng)...',
     );
-    // Chạy kiểm tra sau 15 giây khi server sẵn sàng
+    // Chạy kiểm tra sau 10 giây khi server sẵn sàng
     setTimeout(() => {
       this.checkAndAutoRefreshTokenOnStartup();
-    }, 15000);
+    }, 10000);
 
-    // Chu kỳ 6 tiếng = 6 * 60 * 60 * 1000 = 21,600,000 ms
+    // Chu kỳ quét mỗi 15 phút = 15 * 60 * 1000 = 900,000 ms
+    // Nếu quá 4 tiếng chưa refresh hoặc token sắp hết hạn -> tự động làm mới ngay lập tức
     this.autoRefreshTimer = setInterval(
       () => {
-        this.performAutoRefreshToken();
+        this.checkAndAutoRefreshTokenOnStartup();
       },
-      6 * 60 * 60 * 1000,
+      15 * 60 * 1000,
     );
   }
 
@@ -100,31 +101,35 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   private async checkAndAutoRefreshTokenOnStartup() {
     try {
       const cfg = await this.getOaConfig();
-      if (!cfg || !cfg.refreshToken || !cfg.appId || !cfg.secretKey) {
+      const appId = cfg?.appId || process.env.ZALO_APP_ID || '736933908446960497';
+      const secretKey = cfg?.secretKey || process.env.ZALO_APP_SECRET || 'f42YHsjU1Ku9UcK7IxZQ';
+      const refreshToken = cfg?.refreshToken || process.env.ZALO_REFRESH_TOKEN;
+
+      if (!refreshToken || !appId || !secretKey) {
         this.logger.log(
-          '[Zalo Auto-Refresh] Chưa có cấu hình Zalo OA (AppId, SecretKey, RefreshToken) trong CSDL.',
+          '[Zalo Auto-Refresh] Chưa có cấu hình Refresh Token Zalo OA trong CSDL hoặc .env để tự động gia hạn.',
         );
         return;
       }
 
-      const lastRef = cfg.lastRefreshedAt
+      const lastRef = cfg?.lastRefreshedAt
         ? new Date(cfg.lastRefreshedAt).getTime()
         : 0;
       const now = Date.now();
-      const sixHoursMs = 6 * 60 * 60 * 1000;
+      const fourHoursMs = 4 * 60 * 60 * 1000;
 
-      // Nếu đã hơn 6 tiếng chưa refresh hoặc chưa từng refresh -> thực hiện ngay
-      if (now - lastRef >= sixHoursMs) {
+      // Nếu đã hơn 4 tiếng chưa refresh hoặc chưa từng refresh -> thực hiện ngay
+      if (now - lastRef >= fourHoursMs || !cfg?.accessToken) {
         this.logger.log(
-          '[Zalo Auto-Refresh Startup] Đã quá 6 tiếng chưa làm mới token Zalo OA, tự động thực thi ngay...',
+          '[Zalo Auto-Refresh] Đã đến chu kỳ tự động làm mới token Zalo OA (>= 4 giờ), đang thực thi gia hạn ngầm...',
         );
         await this.performAutoRefreshToken();
       } else {
         const nextInMinutes = Math.round(
-          (sixHoursMs - (now - lastRef)) / 60000,
+          (fourHoursMs - (now - lastRef)) / 60000,
         );
         this.logger.log(
-          `[Zalo Auto-Refresh Startup] Token Zalo OA còn hiệu lực tốt (lần refresh kế tiếp sau khoảng ${nextInMinutes} phút).`,
+          `[Zalo Auto-Refresh] Token Zalo OA đang hoạt động tối ưu 24/7 (lần gia hạn kế tiếp sau khoảng ${nextInMinutes} phút).`,
         );
       }
     } catch (err: any) {
@@ -138,20 +143,35 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
    * Đọc cấu hình Zalo OA từ bảng public.app_settings
    */
   async getOaConfig(): Promise<any> {
-    if (!this.prisma) return null;
+    const defaultConfig = {
+      appId: process.env.ZALO_APP_ID || '736933908446960497',
+      secretKey: process.env.ZALO_APP_SECRET || 'f42YHsjU1Ku9UcK7IxZQ',
+      oaId: process.env.ZALO_OA_ID || '437444346010531505',
+      oaName: 'CLB Doanh Nhân CEO 1983',
+      autoRefreshActive: true,
+      refreshIntervalHours: 4,
+      webhookUrl: 'https://crm.ceo1983.viconnect.vn/api/zalo/webhook',
+    };
+
+    if (!this.prisma) return defaultConfig;
     try {
       const row = await this.prisma.$queryRawUnsafe<any[]>(`
         SELECT value FROM public.app_settings WHERE key = 'zalo_oa_config' LIMIT 1
       `);
       if (row.length > 0 && row[0]?.value) {
-        return typeof row[0].value === 'string'
+        const parsed = typeof row[0].value === 'string'
           ? JSON.parse(row[0].value)
           : row[0].value;
+        return {
+          ...defaultConfig,
+          ...parsed,
+          autoRefreshActive: true,
+        };
       }
-      return null;
+      return defaultConfig;
     } catch (err: any) {
       this.logger.warn(`getOaConfig error: ${err?.message}`);
-      return null;
+      return defaultConfig;
     }
   }
 

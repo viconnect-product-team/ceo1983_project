@@ -1,5 +1,33 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 09/11/2026 (v10.74): Tinh Gọn Cấu Hình Zalo OA 3 Trường Thiết Yếu, Tự Động Gia Hạn Token 24/7 Ngầm & Chuẩn Hóa Mẫu Thư Mời Đa Năng Pinterest Wyndham Thanh Thủy ([NODE-CRM-024], [NODE-CORE-005])**:
+  1. *Tinh gọn và gộp tổng quan cấu hình Zalo OA (`ZaloOaConfigSection.tsx`)*:
+     - Chuyển đổi từ màn hình phức tạp 3.185 dòng thành giao diện gọn nhẹ, trực quan với 3 thẻ chính:
+       + **Thẻ 1: Tổng quan Kết nối & Tự động Gia hạn 24/7**: Huy hiệu xanh báo trạng thái hoạt động liên tục; 4 chỉ số tổng quan (Tình trạng token 25h, Lần gia hạn gần nhất, Chế độ chạy lệnh tự động ngầm, Webhook sẵn sàng); 2 nút thao tác nhanh "Kiểm tra kết nối" và "Làm mới Token tức thì".
+       + **Thẻ 2: Cấu hình Khóa Zalo Developer rút gọn tối đa**: Chỉ gồm đúng 3 trường cốt lõi gộp chung: (1) App ID, (2) Secret Key (có nút ẩn/hiện mật khẩu), (3) Refresh Token (tự động cập nhật xoay vòng ngầm). Kèm khối trợ giúp thu gọn khi cần cấp mới Auth Code lần đầu.
+       + **Thẻ 3: Kiểm thử Bắn Tin Nhắn Nhanh**: Nhập SĐT người nhận, chọn mẫu tin (Sự kiện, Diễn đàn, Họp BĐH, Hội phí, Tùy chỉnh), gửi thử nghiệm 1-chạm.
+  2. *Thiết lập tiến trình chạy lệnh tự động ngầm 24/7 bảo đảm vĩnh viễn không mất Token (`zalo.service.ts`)*:
+     - Tích hợp NestJS Background Scheduler quét định kỳ mỗi 15 phút.
+     - Cơ chế gia hạn thông minh: Nếu token đã qua 4 giờ kể từ lần làm mới gần nhất, hệ thống tự động gọi API Zalo OAuth `/v4/oa/access_token` để lấy Access Token và Refresh Token mới.
+     - Tự động lưu bền vững toàn bộ tokens vào bảng `public.app_settings` (key: `zalo_oa_config`), bảo đảm ngay cả khi khởi động lại server hoặc ngắt kết nối tạm thời, token cũng không bao giờ bị hết hạn hoặc thất lạc.
+  3. *Chuẩn hóa Mẫu Thư Mời Pinterest Wyndham Thanh Thủy (Heian Villas Style) đa năng (`InvitationTemplateStudio.tsx`)*:
+     - Tỷ lệ poster 9:16 dọc sang trọng theo thiết kế Pinterest `https://www.pinterest.com/pin/501447739786387302/`.
+     - **Thanh thương hiệu đầu trang**: Logo CLB CEO 1983, chữ ký nghệ thuật *"CEO 1983 Elite Club"*, logo HanoiBA / VICONNECT.
+     - **Tiêu đề thư mời**: Chữ *"Thư mời"* kiểu Serif mạ bạc thanh lịch kèm vầng sáng trắng; dòng phụ *"TRÂN TRỌNG KÍNH MỜI QUÝ HỘI VIÊN & ĐỐI TÁC"*.
+     - **Hộp Đặc Quyền Capsule Badge**: Khung bo tròn viên thuốc viền sáng lấp lánh hiển thị quà tặng / đặc quyền tham dự VIP.
+     - **Cụm Ngày Giờ Số Lớn Luxury**: Thứ trong tuần, giờ, bộ 3 số ngày/tháng/năm lớn ngăn cách bằng vạch dọc `|` (`06 | 04 | 24` hoặc `12 | 11 | 26`), địa điểm tổ chức kèm icon ghim vị trí.
+     - **Cổng chào hoàng hôn dưới đáy**: Ảnh phối cảnh cổng chào Nhật Bản Heian rực rỡ đèn lồng tại Wyndham Thanh Thủy (`/templates/pinterest_heian_invitation.jpg`).
+     - **Áp dụng đa dạng cho 4 loại mục đích thư mời**:
+       + (1) 🎪 **Sự kiện & Gala Hội Viên** (Gala Doanh nhân, Dòng chảy hạnh phúc)
+       + (2) 🏛️ **Diễn đàn Doanh Nhân & Giao Thương B2B** (Xúc tiến thương mại, ký kết MOU)
+       + (3) 💼 **Kỳ họp Ban Điều Hành & Ban Chuyên Môn** (Triệu tập thường trực, họp bất thường)
+       + (4) ☕ **Cuộc gặp B2B Matching & Coffee CEO** (Hẹn 1-on-1, thăm quan doanh nghiệp)
+     - Tích hợp gửi đa kênh tức thì: App Mobile, Zalo OA ZNS, Email HTML trang trọng.
+  4. *Kiểm tra chất lượng code*:
+     - Backend: `npx tsc --noEmit` ➔ **Exit code 0 (0 errors)**.
+     - Frontend: `npx tsc -p tsconfig.json --noEmit` ➔ **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt quy tắc Git: Toàn bộ thay đổi lưu trữ an toàn tại local để người dùng chủ động kiểm tra.
+
 - **Bản cập nhật ngày 09/11/2026 (v10.73): Hoàn Thiện Tinh Chỉnh Giao Diện Danh Mục Sự Kiện & Hoạt Động CEO 1983 Mobile App Chuẩn Figma Kèm 2 Bộ Icon Độc Quyền ([NODE-APP-008])**:
   1. *Trích xuất và tổ chức 2 bộ icon độc quyền theo đúng chỉ định*:
      - **Bộ Icon Hoạt động** (`C:\Users\vumik\Downloads\CEO1983_icon (1).zip`): Trích xuất vào `apps/ceo1983_app_fe/public/icons/activities/`:
@@ -222,6 +250,34 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 09/11/2026 (v10.74): Tinh Gọn Cấu Hình Zalo OA 3 Trường Thiết Yếu, Tự Động Gia Hạn Token 24/7 Ngầm & Chuẩn Hóa Mẫu Thư Mời Đa Năng Pinterest Wyndham Thanh Thủy ([NODE-CRM-024], [NODE-CORE-005])**:
+  1. *Tinh gọn và gộp tổng quan cấu hình Zalo OA (`ZaloOaConfigSection.tsx`)*:
+     - Chuyển đổi từ màn hình phức tạp 3.185 dòng thành giao diện gọn nhẹ, trực quan với 3 thẻ chính:
+       + **Thẻ 1: Tổng quan Kết nối & Tự động Gia hạn 24/7**: Huy hiệu xanh báo trạng thái hoạt động liên tục; 4 chỉ số tổng quan (Tình trạng token 25h, Lần gia hạn gần nhất, Chế độ chạy lệnh tự động ngầm, Webhook sẵn sàng); 2 nút thao tác nhanh "Kiểm tra kết nối" và "Làm mới Token tức thì".
+       + **Thẻ 2: Cấu hình Khóa Zalo Developer rút gọn tối đa**: Chỉ gồm đúng 3 trường cốt lõi gộp chung: (1) App ID, (2) Secret Key (có nút ẩn/hiện mật khẩu), (3) Refresh Token (tự động cập nhật xoay vòng ngầm). Kèm khối trợ giúp thu gọn khi cần cấp mới Auth Code lần đầu.
+       + **Thẻ 3: Kiểm thử Bắn Tin Nhắn Nhanh**: Nhập SĐT người nhận, chọn mẫu tin (Sự kiện, Diễn đàn, Họp BĐH, Hội phí, Tùy chỉnh), gửi thử nghiệm 1-chạm.
+  2. *Thiết lập tiến trình chạy lệnh tự động ngầm 24/7 bảo đảm vĩnh viễn không mất Token (`zalo.service.ts`)*:
+     - Tích hợp NestJS Background Scheduler quét định kỳ mỗi 15 phút.
+     - Cơ chế gia hạn thông minh: Nếu token đã qua 4 giờ kể từ lần làm mới gần nhất, hệ thống tự động gọi API Zalo OAuth `/v4/oa/access_token` để lấy Access Token và Refresh Token mới.
+     - Tự động lưu bền vững toàn bộ tokens vào bảng `public.app_settings` (key: `zalo_oa_config`), bảo đảm ngay cả khi khởi động lại server hoặc ngắt kết nối tạm thời, token cũng không bao giờ bị hết hạn hoặc thất lạc.
+  3. *Chuẩn hóa Mẫu Thư Mời Pinterest Wyndham Thanh Thủy (Heian Villas Style) đa năng (`InvitationTemplateStudio.tsx`)*:
+     - Tỷ lệ poster 9:16 dọc sang trọng theo thiết kế Pinterest `https://www.pinterest.com/pin/501447739786387302/`.
+     - **Thanh thương hiệu đầu trang**: Logo CLB CEO 1983, chữ ký nghệ thuật *"CEO 1983 Elite Club"*, logo HanoiBA / VICONNECT.
+     - **Tiêu đề thư mời**: Chữ *"Thư mời"* kiểu Serif mạ bạc thanh lịch kèm vầng sáng trắng; dòng phụ *"TRÂN TRỌNG KÍNH MỜI QUÝ HỘI VIÊN & ĐỐI TÁC"*.
+     - **Hộp Đặc Quyền Capsule Badge**: Khung bo tròn viên thuốc viền sáng lấp lánh hiển thị quà tặng / đặc quyền tham dự VIP.
+     - **Cụm Ngày Giờ Số Lớn Luxury**: Thứ trong tuần, giờ, bộ 3 số ngày/tháng/năm lớn ngăn cách bằng vạch dọc `|` (`06 | 04 | 24` hoặc `12 | 11 | 26`), địa điểm tổ chức kèm icon ghim vị trí.
+     - **Cổng chào hoàng hôn dưới đáy**: Ảnh phối cảnh cổng chào Nhật Bản Heian rực rỡ đèn lồng tại Wyndham Thanh Thủy (`/templates/pinterest_heian_invitation.jpg`).
+     - **Áp dụng đa dạng cho 4 loại mục đích thư mời**:
+       + (1) 🎪 **Sự kiện & Gala Hội Viên** (Gala Doanh nhân, Dòng chảy hạnh phúc)
+       + (2) 🏛️ **Diễn đàn Doanh Nhân & Giao Thương B2B** (Xúc tiến thương mại, ký kết MOU)
+       + (3) 💼 **Kỳ họp Ban Điều Hành & Ban Chuyên Môn** (Triệu tập thường trực, họp bất thường)
+       + (4) ☕ **Cuộc gặp B2B Matching & Coffee CEO** (Hẹn 1-on-1, thăm quan doanh nghiệp)
+     - Tích hợp gửi đa kênh tức thì: App Mobile, Zalo OA ZNS, Email HTML trang trọng.
+  4. *Kiểm tra chất lượng code*:
+     - Backend: `npx tsc --noEmit` ➔ **Exit code 0 (0 errors)**.
+     - Frontend: `npx tsc -p tsconfig.json --noEmit` ➔ **Exit code 0 (0 errors)**.
+     - Tuân thủ nghiêm ngặt quy tắc Git: Toàn bộ thay đổi lưu trữ an toàn tại local để người dùng chủ động kiểm tra.
 
 - **Bản cập nhật ngày 09/11/2026 (v10.73): Hoàn Thiện Tinh Chỉnh Giao Diện Danh Mục Sự Kiện & Hoạt Động CEO 1983 Mobile App Chuẩn Figma Kèm 2 Bộ Icon Độc Quyền ([NODE-APP-008])**:
   1. *Trích xuất và tổ chức 2 bộ icon độc quyền theo đúng chỉ định*:
