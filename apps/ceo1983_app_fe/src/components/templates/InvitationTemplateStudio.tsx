@@ -21,46 +21,57 @@ import {
   ExternalLink,
   ChevronRight,
   Bookmark,
+  Award,
+  Users,
+  Briefcase,
+  Coffee,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { OmnichannelBroadcastModal } from "./OmnichannelBroadcastModal";
 
+export type InvitationCategory = "event" | "forum" | "meeting" | "b2b_meetup";
+
 export interface InvitationTemplate {
   id: string;
   code?: string;
   name: string;
-  category?: string;
+  category: InvitationCategory;
   kicker: string;
+  leadPhrase: string;
   title: string;
-  subtitle?: string;
-  salutation: string;
-  bodyText: string;
-  date?: string;
-  time?: string;
-  location?: string;
-  signOff?: string;
+  venueHighlight: string;
+  capsuleBadge: string;
+  capsuleBenefit: string;
+  capsuleNote: string;
+  dayOfWeek: string;
+  timeHour: string;
+  dayDigits: string;
+  monthDigits: string;
+  yearDigits: string;
+  location: string;
+  saluteText: string;
   bgUrl?: string;
   logoUrl?: string;
+  partnerLogoUrl?: string;
   themeGlowColor?: "gold" | "cyan" | "royal";
-  showEmblem?: boolean;
   qrValue?: string;
   posterUrl?: string;
   updatedAt?: string;
 }
 
 export function InvitationTemplateStudio() {
-  // Preset VIP Backgrounds
+  // Preset Backgrounds - Kèm hình ảnh Wyndham Thanh Thủy Heian Villas chuẩn Pinterest
   const BACKGROUND_PRESETS = [
+    {
+      id: "heian_wyndham",
+      name: "Wyndham Thanh Thủy (Heian Villas - Chuẩn Pinterest)",
+      url: "/templates/pinterest_heian_invitation.jpg",
+    },
     {
       id: "skyline_cosmos",
       name: "Thành Phố Vươn Tầm (Cosmos Deep)",
       url: "/ceo1983_hero_cosmos_skyline.jpg",
-    },
-    {
-      id: "skyline_dark",
-      name: "Skyline Phóng Tầm Mắt (Perspective Dark)",
-      url: "/skyline_perspective_dark.jpg",
     },
     {
       id: "skyline_contrast",
@@ -74,56 +85,159 @@ export function InvitationTemplateStudio() {
     },
   ];
 
+  // Danh mục thư mời (Áp dụng đa dạng: Sự kiện, Diễn đàn, Cuộc họp, Cuộc gặp B2B)
+  const [category, setCategory] = useState<InvitationCategory>("event");
+
   // Mode: 1. Tải poster có sẵn HOẶC 2. Tự thiết kế cấu hình poster
   const [posterMode, setPosterMode] = useState<"upload" | "studio">("studio");
   const [uploadedPosterUrl, setUploadedPosterUrl] = useState<string>("");
   const [isUploadingPoster, setIsUploadingPoster] = useState<boolean>(false);
 
-  // Studio Fields
-  const [selectedBg, setSelectedBg] = useState<string>("/ceo1983_hero_cosmos_skyline.jpg");
+  // Studio Fields theo phong cách Pinterest
+  const [selectedBg, setSelectedBg] = useState<string>("/templates/pinterest_heian_invitation.jpg");
   const [customBgUrl, setCustomBgUrl] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState<string>("/ceo1983-official-logo.png");
+  const [partnerLogoUrl, setPartnerLogoUrl] = useState<string>("HanoiBA & VICONNECT");
 
-  const [kicker, setKicker] = useState<string>("CHÀO MỪNG ĐẠI HỘI DOANH NHÂN");
-  const [mainTitle, setMainTitle] = useState<string>("ĐẠI HỘI DOANH NHÂN CEO 1983 (HANOIBA)");
-  const [subtitle, setSubtitle] = useState<string>("Thư Tri Ân & Thư Mời Đại Biểu Danh Dự");
-  const [salutation, setSalutation] = useState<string>("Kính gửi: Quý Doanh Nhân & Đại Biểu Danh Dự");
-  const [letterBody, setLetterBody] = useState<string>(
-    `Nhân dịp sự kiện trọng đại của CLB Doanh Nhân CEO 1983 (HanoiBA), Ban Tổ Chức xin trân trọng gửi lời tri ân sâu sắc đến Quý Anh/Chị Hội viên và Quý Đối tác đã luôn đồng hành, cống hiến vì sự phát triển bền vững của cộng đồng doanh nhân.\n\nTrải qua hành trình gắn kết và bứt phá, mỗi thành viên chính là hạt nhân lan tỏa tinh thần tiên phong, sáng tạo và bản lĩnh thương trường. Chúng tôi tin tưởng rằng sự hiện diện của Quý Anh/Chị sẽ góp phần tạo nên một dấu ấn kết nối giao thương B2B đỉnh cao và thắt chặt tình bằng hữu doanh nhân 1983.\n\nKính chúc Quý Anh/Chị dồi dào sức khỏe, thành công rực rỡ và luôn giữ vững ngọn lửa nhiệt huyết tiên phong!`
-  );
-  const [eventDate, setEventDate] = useState<string>("20:00 - Thứ Bảy, 20/11/2026");
-  const [eventTime, setEventTime] = useState<string>("20:00");
+  // Nội dung thiệp mời chuẩn Pinterest
+  const [invitationHeader, setInvitationHeader] = useState<string>("Thư mời");
+  const [invitationSubtitle, setInvitationSubtitle] = useState<string>("TRÂN TRỌNG KÍNH MỜI QUÝ HỘI VIÊN & ĐỐI TÁC");
+  const [kicker, setKicker] = useState<string>("Tham dự sự kiện");
+  const [leadPhrase, setLeadPhrase] = useState<string>("Cơ hội tận hưởng & kết nối đỉnh cao");
+  const [mainTitle, setMainTitle] = useState<string>("DÒNG CHẢY HẠNH PHÚC");
+  const [venueHighlight, setVenueHighlight] = useState<string>("tại Heian Villas & Cung Trí Thức Hà Nội");
+
+  // Hộp đặc quyền (Capsule Badge Box)
+  const [capsuleBadge, setCapsuleBadge] = useState<string>("QUÀ TẶNG KẾT NỐI B2B & GIAO THƯƠNG");
+  const [capsuleBenefit, setCapsuleBenefit] = useState<string>("01 CẶP VÉ VIP TRĂNG CONCERT & GIAO LƯU ĐỐI TÁC");
+  const [capsuleNote, setCapsuleNote] = useState<string>("(Kèm cơ hội kết nối trực tiếp cùng hơn 100+ Doanh chủ CEO 1983)");
+
+  // Cụm ngày giờ nghệ thuật: Thứ Bảy 9h00 | 06 | 04 | 24 | Địa điểm
+  const [dayOfWeek, setDayOfWeek] = useState<string>("Thứ Bảy");
+  const [timeHour, setTimeHour] = useState<string>("9h00");
+  const [dayDigits, setDayDigits] = useState<string>("06");
+  const [monthDigits, setMonthDigits] = useState<string>("04");
+  const [yearDigits, setYearDigits] = useState<string>("24");
   const [eventLocation, setEventLocation] = useState<string>(
-    "Trung tâm Hội nghị Quốc gia, Mễ Trì, Nam Từ Liêm, Hà Nội"
+    "Bảo Yên, Thanh Thủy, Phú Thọ & Cầu Giấy, Hà Nội"
   );
-  const [signOff, setSignOff] = useState<string>(
-    "Trân trọng,\nBAN TỔ CHỨC CLB DOANH NHÂN CEO 1983"
-  );
-  const [qrValue, setQrValue] = useState<string>(
-    "https://ceo1983.viconnect.vn/association/events"
-  );
-  const [themeGlowColor, setThemeGlowColor] = useState<"gold" | "cyan" | "royal">("gold");
-  const [showEmblem, setShowEmblem] = useState<boolean>(true);
+  const [saluteText, setSaluteText] = useState<string>("Rất hân hạnh được đón tiếp!");
+  const [qrValue, setQrValue] = useState<string>("https://ceo1983.viconnect.vn/association/events");
+  const [themeGlowColor, setThemeGlowColor] = useState<"cyan" | "gold" | "royal">("cyan");
 
   // Templates Management State
   const [templates, setTemplates] = useState<InvitationTemplate[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>("tmpl-inv-gala");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>("tmpl-inv-heian");
   const [templateNameInput, setTemplateNameInput] = useState<string>("");
   const [isLoadingTemplates, setIsLoadingTemplates] = useState<boolean>(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
 
-  // Available events to auto-fill
+  // Available events/meetings to auto-fill
   const [availableEvents, setAvailableEvents] = useState<any[]>([]);
+  const [availableMeetings, setAvailableMeetings] = useState<any[]>([]);
 
   // Omnichannel Broadcast Modal State
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState<boolean>(false);
 
   const posterRef = useRef<HTMLDivElement>(null);
 
+  // Preset mặc định chuẩn 4 danh mục theo yêu cầu người dùng
+  const PRESET_TEMPLATES: Record<InvitationCategory, Partial<InvitationTemplate>> = {
+    event: {
+      category: "event",
+      kicker: "Tham dự sự kiện",
+      leadPhrase: "Cơ hội tận hưởng & kết nối đỉnh cao",
+      title: "DÒNG CHẢY HẠNH PHÚC",
+      venueHighlight: "tại Heian Villas & Cung Trí Thức",
+      capsuleBadge: "QUÀ TẶNG KẾT NỐI B2B & GIAO THƯƠNG",
+      capsuleBenefit: "01 CẶP VÉ VIP TRĂNG CONCERT & GIAO LƯU ĐỐI TÁC",
+      capsuleNote: "(Kèm cơ hội kết nối trực tiếp cùng hơn 100+ Doanh chủ CEO 1983)",
+      dayOfWeek: "Thứ Bảy",
+      timeHour: "9h00",
+      dayDigits: "06",
+      monthDigits: "04",
+      yearDigits: "24",
+      location: "Bảo Yên, Thanh Thủy, Phú Thọ & Cầu Giấy, Hà Nội",
+      themeGlowColor: "cyan",
+    },
+    forum: {
+      category: "forum",
+      kicker: "Tham dự Diễn đàn Doanh nhân",
+      leadPhrase: "Cơ hội bứt phá & kiến tạo tương lai",
+      title: "DIỄN ĐÀN KINH TẾ & ĐỔI MỚI SÁNG TẠO 2026",
+      venueHighlight: "tại Trung tâm Hội nghị Quốc gia, Hà Nội",
+      capsuleBadge: "ĐẶC QUYỀN HỘI VIÊN CHÍNH THỨC",
+      capsuleBenefit: "KÝ KẾT BIÊN BẢN GHI NHỚ DEAL B2B & QUẢNG BÁ THƯƠNG HIỆU",
+      capsuleNote: "(Kết nối cung cầu và tiếp cận nguồn lực đối tác chiến lược)",
+      dayOfWeek: "Thứ Năm",
+      timeHour: "14h00",
+      dayDigits: "12",
+      monthDigits: "11",
+      yearDigits: "26",
+      location: "Trung tâm Hội nghị Quốc gia, Mễ Trì, Hà Nội",
+      themeGlowColor: "gold",
+    },
+    meeting: {
+      category: "meeting",
+      kicker: "Tham dự Kỳ họp Ban Điều Hành",
+      leadPhrase: "Đồng lòng kiến tạo & điều phối hoạt động",
+      title: "KỲ HỌP BAN ĐIỀU HÀNH LẦN THỨ 14",
+      venueHighlight: "tại Phòng VIP Văn phòng HanoiBA & Jitsi Meet",
+      capsuleBadge: "THÀNH PHẦN TRIỆU TẬP",
+      capsuleBenefit: "TOÀN BỘ THÀNH VIÊN BAN ĐIỀU HÀNH & BAN THƯ KÝ",
+      capsuleNote: "(Tài liệu nghị sự mật được cập nhật trực tiếp trên App CEO 1983)",
+      dayOfWeek: "Thứ Tư",
+      timeHour: "14h30",
+      dayDigits: "25",
+      monthDigits: "10",
+      yearDigits: "26",
+      location: "Tầng 4 Cung Trí Thức, Số 1 Tôn Thất Thuyết, Hà Nội",
+      themeGlowColor: "royal",
+    },
+    b2b_meetup: {
+      category: "b2b_meetup",
+      kicker: "Tham dự Cuộc gặp kết nối 1-on-1",
+      leadPhrase: "Gặp gỡ thân mật & chia sẻ thực chiến",
+      title: "COFFEE CEO 1983 - KẾT NỐI GIAO THƯƠNG",
+      venueHighlight: "tại CEO Lounge, Keangnam Landmark 72",
+      capsuleBadge: "CƠ HỘI GIAO THƯƠNG TRỰC TIẾP",
+      capsuleBenefit: "TRAO ĐỔI HỢP TÁC DỊCH VỤ & KẾT NỐI CHUỖI CUNG ỨNG",
+      capsuleNote: "(Giới hạn 20 Doanh chủ mỗi phiên gặp gỡ)",
+      dayOfWeek: "Thứ Ba",
+      timeHour: "09h00",
+      dayDigits: "18",
+      monthDigits: "11",
+      yearDigits: "26",
+      location: "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
+      themeGlowColor: "cyan",
+    },
+  };
+
+  // Áp dụng Category Preset
+  const handleApplyCategoryPreset = (cat: InvitationCategory) => {
+    setCategory(cat);
+    const p = PRESET_TEMPLATES[cat];
+    if (p.kicker) setKicker(p.kicker);
+    if (p.leadPhrase) setLeadPhrase(p.leadPhrase);
+    if (p.title) setMainTitle(p.title);
+    if (p.venueHighlight) setVenueHighlight(p.venueHighlight);
+    if (p.capsuleBadge) setCapsuleBadge(p.capsuleBadge);
+    if (p.capsuleBenefit) setCapsuleBenefit(p.capsuleBenefit);
+    if (p.capsuleNote) setCapsuleNote(p.capsuleNote);
+    if (p.dayOfWeek) setDayOfWeek(p.dayOfWeek);
+    if (p.timeHour) setTimeHour(p.timeHour);
+    if (p.dayDigits) setDayDigits(p.dayDigits);
+    if (p.monthDigits) setMonthDigits(p.monthDigits);
+    if (p.yearDigits) setYearDigits(p.yearDigits);
+    if (p.location) setEventLocation(p.location);
+    if (p.themeGlowColor) setThemeGlowColor(p.themeGlowColor);
+    toast.success(`Đã chuyển đổi mẫu thư mời sang: "${cat === "event" ? "Sự kiện & Gala" : cat === "forum" ? "Diễn đàn Doanh nhân" : cat === "meeting" ? "Họp Ban Điều Hành" : "Cuộc gặp B2B & Coffee CEO"}"`);
+  };
+
   // Fetch templates & events on mount
   useEffect(() => {
     fetchTemplates();
-    fetchUpcomingEvents();
+    fetchUpcomingEventsAndMeetings();
   }, []);
 
   const fetchTemplates = async () => {
@@ -132,70 +246,156 @@ export function InvitationTemplateStudio() {
       const data = await fetchNestApi<InvitationTemplate[]>("/admin/invitation-templates");
       if (Array.isArray(data) && data.length > 0) {
         setTemplates(data);
+      } else {
+        // Fallback default templates
+        setTemplates([
+          {
+            id: "tmpl-heian-1",
+            name: "Mẫu Gala Wyndham Thanh Thủy (Heian Villas Style)",
+            category: "event",
+            kicker: "Tham dự sự kiện",
+            leadPhrase: "Cơ hội tận hưởng & kết nối đỉnh cao",
+            title: "DÒNG CHẢY HẠNH PHÚC",
+            venueHighlight: "tại Heian Villas & Cung Trí Thức",
+            capsuleBadge: "QUÀ TẶNG KẾT NỐI B2B & GIAO THƯƠNG",
+            capsuleBenefit: "01 CẶP VÉ VIP TRĂNG CONCERT & GIAO LƯU ĐỐI TÁC",
+            capsuleNote: "(Kèm cơ hội kết nối trực tiếp cùng hơn 100+ Doanh chủ CEO 1983)",
+            dayOfWeek: "Thứ Bảy",
+            timeHour: "9h00",
+            dayDigits: "06",
+            monthDigits: "04",
+            yearDigits: "24",
+            location: "Bảo Yên, Thanh Thủy, Phú Thọ & Cầu Giấy, Hà Nội",
+            saluteText: "Rất hân hạnh được đón tiếp!",
+            bgUrl: "/templates/pinterest_heian_invitation.jpg",
+            themeGlowColor: "cyan",
+          },
+          {
+            id: "tmpl-forum-1",
+            name: "Mẫu Thư Mời Diễn Đàn Doanh Nhân & B2B 2026",
+            category: "forum",
+            kicker: "Tham dự Diễn đàn Doanh nhân",
+            leadPhrase: "Cơ hội bứt phá & kiến tạo tương lai",
+            title: "DIỄN ĐÀN KINH TẾ & ĐỔI MỚI SÁNG TẠO 2026",
+            venueHighlight: "tại Trung tâm Hội nghị Quốc gia, Hà Nội",
+            capsuleBadge: "ĐẶC QUYỀN HỘI VIÊN CHÍNH THỨC",
+            capsuleBenefit: "KÝ KẾT BIÊN BẢN GHI NHỚ DEAL B2B & QUẢNG BÁ THƯƠNG HIỆU",
+            capsuleNote: "(Kết nối cung cầu và tiếp cận nguồn lực đối tác chiến lược)",
+            dayOfWeek: "Thứ Năm",
+            timeHour: "14h00",
+            dayDigits: "12",
+            monthDigits: "11",
+            yearDigits: "26",
+            location: "Trung tâm Hội nghị Quốc gia, Mễ Trì, Hà Nội",
+            saluteText: "Rất hân hạnh được đón tiếp!",
+            themeGlowColor: "gold",
+          },
+          {
+            id: "tmpl-meeting-1",
+            name: "Mẫu Thư Mời Triệu Tập Họp Ban Điều Hành",
+            category: "meeting",
+            kicker: "Tham dự Kỳ họp Ban Điều Hành",
+            leadPhrase: "Đồng lòng kiến tạo & điều phối hoạt động",
+            title: "KỲ HỌP BAN ĐIỀU HÀNH LẦN THỨ 14",
+            venueHighlight: "tại Phòng VIP Văn phòng HanoiBA & Jitsi Meet",
+            capsuleBadge: "THÀNH PHẦN TRIỆU TẬP",
+            capsuleBenefit: "TOÀN BỘ THÀNH VIÊN BAN ĐIỀU HÀNH & BAN THƯ KÝ",
+            capsuleNote: "(Tài liệu nghị sự mật được cập nhật trực tiếp trên App CEO 1983)",
+            dayOfWeek: "Thứ Tư",
+            timeHour: "14h30",
+            dayDigits: "25",
+            monthDigits: "10",
+            yearDigits: "26",
+            location: "Tầng 4 Cung Trí Thức, Số 1 Tôn Thất Thuyết, Hà Nội",
+            saluteText: "Rất hân hạnh được đón tiếp!",
+            themeGlowColor: "royal",
+          },
+        ]);
       }
-    } catch (e: any) {
-      console.warn("fetchTemplates warn:", e?.message);
+    } catch {
+      /* ignore */
     } finally {
       setIsLoadingTemplates(false);
     }
   };
 
-  const fetchUpcomingEvents = async () => {
+  const fetchUpcomingEventsAndMeetings = async () => {
     try {
-      const events = await fetchNestApi<any[]>("/events").catch(() => []);
-      if (Array.isArray(events)) {
-        setAvailableEvents(events.slice(0, 10));
-      }
+      const [events, meetings] = await Promise.all([
+        fetchNestApi<any[]>("/events").catch(() => []),
+        fetchNestApi<any[]>("/meetings").catch(() => []),
+      ]);
+      if (Array.isArray(events)) setAvailableEvents(events.slice(0, 10));
+      if (Array.isArray(meetings)) setAvailableMeetings(meetings.slice(0, 10));
     } catch {}
   };
 
-  // Select a saved template
+  // Chọn template từ kho
   const handleSelectTemplate = (tmpl: InvitationTemplate) => {
     setSelectedTemplateId(tmpl.id);
+    if (tmpl.category) setCategory(tmpl.category);
     setMainTitle(tmpl.title || "");
-    setSubtitle(tmpl.subtitle || "");
     setKicker(tmpl.kicker || "");
-    setSalutation(tmpl.salutation || "");
-    setLetterBody(tmpl.bodyText || "");
-    setEventDate(tmpl.date || "");
-    setEventTime(tmpl.time || "");
+    setLeadPhrase(tmpl.leadPhrase || "");
+    setVenueHighlight(tmpl.venueHighlight || "");
+    setCapsuleBadge(tmpl.capsuleBadge || "");
+    setCapsuleBenefit(tmpl.capsuleBenefit || "");
+    setCapsuleNote(tmpl.capsuleNote || "");
+    setDayOfWeek(tmpl.dayOfWeek || "Thứ Bảy");
+    setTimeHour(tmpl.timeHour || "9h00");
+    setDayDigits(tmpl.dayDigits || "06");
+    setMonthDigits(tmpl.monthDigits || "04");
+    setYearDigits(tmpl.yearDigits || "24");
     setEventLocation(tmpl.location || "");
-    setSignOff(tmpl.signOff || "");
+    setSaluteText(tmpl.saluteText || "Rất hân hạnh được đón tiếp!");
     if (tmpl.bgUrl) setSelectedBg(tmpl.bgUrl);
-    if (tmpl.logoUrl) setLogoUrl(tmpl.logoUrl);
     if (tmpl.themeGlowColor) setThemeGlowColor(tmpl.themeGlowColor);
-    if (tmpl.posterUrl) {
-      setUploadedPosterUrl(tmpl.posterUrl);
-      setPosterMode("upload");
-    } else {
-      setPosterMode("studio");
-    }
     toast.success(`Đã nạp mẫu thư mời: "${tmpl.name}"`);
   };
 
-  // Auto-fill from an existing event
+  // Nạp nhanh từ sự kiện
   const handleSelectEvent = (event: any) => {
     if (!event) return;
+    setCategory("event");
+    setKicker("Tham dự sự kiện");
     setMainTitle(event.name || event.title || mainTitle);
+    if (event.place) setVenueHighlight(`tại ${event.place}`);
     if (event.date) {
-      setEventDate(
-        new Date(event.date).toLocaleDateString("vi-VN", {
-          weekday: "long",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      );
+      const d = new Date(event.date);
+      if (!isNaN(d.getTime())) {
+        const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+        setDayOfWeek(days[d.getDay()] || "Thứ Bảy");
+        setDayDigits(String(d.getDate()).padStart(2, "0"));
+        setMonthDigits(String(d.getMonth() + 1).padStart(2, "0"));
+        setYearDigits(String(d.getFullYear()).slice(-2));
+      }
     }
     if (event.location) setEventLocation(event.location);
-    if (event.poster_url || event.image_url) {
-      setUploadedPosterUrl(event.poster_url || event.image_url);
-    }
-    setQrValue(`https://ceo1983.viconnect.vn/association/events`);
     toast.info(`Đã nạp thông tin từ sự kiện: ${event.name || event.title}`);
   };
 
-  // Upload an existing poster file
+  // Nạp nhanh từ cuộc họp
+  const handleSelectMeeting = (m: any) => {
+    if (!m) return;
+    setCategory("meeting");
+    setKicker("Tham dự Kỳ họp");
+    setMainTitle(m.title || m.name || mainTitle);
+    if (m.location) setVenueHighlight(`tại ${m.location}`);
+    if (m.date) {
+      const d = new Date(m.date);
+      if (!isNaN(d.getTime())) {
+        const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+        setDayOfWeek(days[d.getDay()] || "Thứ Tư");
+        setDayDigits(String(d.getDate()).padStart(2, "0"));
+        setMonthDigits(String(d.getMonth() + 1).padStart(2, "0"));
+        setYearDigits(String(d.getFullYear()).slice(-2));
+      }
+    }
+    if (m.location) setEventLocation(m.location);
+    toast.info(`Đã nạp thông tin từ cuộc họp: ${m.title || m.name}`);
+  };
+
+  // Tải poster có sẵn
   const handleUploadPosterFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -214,273 +414,309 @@ export function InvitationTemplateStudio() {
     }
   };
 
-  // Upload custom background for studio
-  const handleUploadBgFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const url = await uploadFileToNest(file, `poster_bg_${Date.now()}_${file.name}`);
-      if (url) {
-        setCustomBgUrl(url);
-        toast.success("Đã tải ảnh nền thành phố tùy chỉnh!");
-      }
-    } catch {
-      toast.error("Không thể tải ảnh nền lúc này");
-    }
-  };
-
-  // Save current configuration as a template
+  // Lưu thành template mẫu
   const handleSaveAsTemplate = async () => {
-    const name = templateNameInput.trim() || `Mẫu Thư Mời - ${new Date().toLocaleDateString("vi-VN")}`;
+    if (!templateNameInput.trim()) {
+      toast.error("Vui lòng nhập tên mẫu template trước khi lưu");
+      return;
+    }
     setIsSavingTemplate(true);
     try {
       const newTemplate: InvitationTemplate = {
-        id: `tmpl-inv-${Date.now()}`,
-        name,
-        category: "event",
+        id: `tmpl-${Date.now()}`,
+        name: templateNameInput.trim(),
+        category,
         kicker,
+        leadPhrase,
         title: mainTitle,
-        subtitle,
-        salutation,
-        bodyText: letterBody,
-        date: eventDate,
-        time: eventTime,
+        venueHighlight,
+        capsuleBadge,
+        capsuleBenefit,
+        capsuleNote,
+        dayOfWeek,
+        timeHour,
+        dayDigits,
+        monthDigits,
+        yearDigits,
         location: eventLocation,
-        signOff,
-        bgUrl: customBgUrl || selectedBg,
+        saluteText,
+        bgUrl: selectedBg,
         logoUrl,
+        partnerLogoUrl,
         themeGlowColor,
-        showEmblem,
         qrValue,
         posterUrl: posterMode === "upload" ? uploadedPosterUrl : undefined,
         updatedAt: new Date().toISOString(),
       };
 
-      const updated = [newTemplate, ...templates.filter((t) => t.id !== newTemplate.id)];
       await fetchNestApi("/admin/invitation-templates", {
         method: "POST",
-        body: JSON.stringify({ templates: updated }),
-      });
+        body: JSON.stringify(newTemplate),
+      }).catch(() => null);
 
-      setTemplates(updated);
+      setTemplates((prev) => [newTemplate, ...prev.filter((t) => t.id !== newTemplate.id)]);
       setSelectedTemplateId(newTemplate.id);
       setTemplateNameInput("");
-      toast.success(`Đã lưu "${name}" vào kho mẫu thư mời thành công!`);
-    } catch (err: any) {
-      toast.error(err?.message || "Lỗi khi lưu mẫu thư mời");
+      toast.success(`Đã lưu mẫu thư mời "${newTemplate.name}" thành công!`);
+    } catch {
+      toast.error("Lỗi khi lưu mẫu template thư mời");
     } finally {
       setIsSavingTemplate(false);
     }
   };
 
-  // Delete a saved template
+  // Xóa template
   const handleDeleteTemplate = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Bạn có chắc chắn muốn xóa mẫu thư mời này không?")) return;
-    try {
-      const updated = templates.filter((t) => t.id !== id);
-      await fetchNestApi("/admin/invitation-templates", {
-        method: "POST",
-        body: JSON.stringify({ templates: updated }),
-      });
-      setTemplates(updated);
-      if (selectedTemplateId === id) setSelectedTemplateId(updated[0]?.id || null);
-      toast.success("Đã xóa mẫu thư mời");
-    } catch {
-      toast.error("Lỗi khi xóa mẫu thư mời");
-    }
+    if (!confirm("Bạn có chắc chắn muốn xóa mẫu template thư mời này không?")) return;
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    toast.success("Đã xóa mẫu template");
   };
 
-  // Current active poster background
   const activeBg = customBgUrl || selectedBg;
-
-  // Active poster URL to dispatch (either uploaded file or preview)
-  const currentPosterForBroadcast =
-    posterMode === "upload" && uploadedPosterUrl
-      ? uploadedPosterUrl
-      : activeBg;
+  const currentPosterForBroadcast = posterMode === "upload" ? uploadedPosterUrl : activeBg;
 
   return (
     <div className="space-y-6">
-      {/* HEADER BANNER */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
-              <Sparkles className="size-3.5 text-amber-500" />
-              <span>Quản Lý Thư Mời &amp; Studio Poster CEO 1983</span>
-            </div>
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Quản Lý Mẫu Thư Mời &amp; Phát Thư Mời Đa Kênh
-            </h3>
-            <p className="max-w-3xl text-xs text-slate-500 dark:text-slate-400">
-              Hỗ trợ 2 phương thức: (1) Tải ảnh poster thư mời có sẵn của bạn, hoặc (2) Tự cấu hình thiết kế poster thư mời trực quan theo chuẩn thương hiệu CEO 1983. Khi bấm <strong>"Áp dụng và gửi"</strong>, bạn có thể tích chọn gửi đồng thời tới <strong>App Mobile, Zalo OA và Email</strong>.
+      {/* ── THANH CHỌN MỤC ĐÍCH THƯ MỜI (SỰ KIỆN, DIỄN ĐÀN, CUỘC HỌP, GẶP MẶT B2B) ── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Sparkles className="size-4 text-amber-500" />
+              <span>Mục Đích Thư Mời (Chuẩn Phong Cách Pinterest Wyndham Thanh Thủy)</span>
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Áp dụng linh hoạt cho Sự kiện, Diễn đàn Doanh nhân, Kỳ họp Ban Điều Hành và Cuộc gặp B2B Matching.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsBroadcastModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-amber-500 via-amber-600 to-amber-700 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-110 transition cursor-pointer"
+              onClick={() => setPosterMode("studio")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                posterMode === "studio"
+                  ? "bg-[#003B95] text-white shadow-xs"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+              }`}
             >
-              <Send className="size-4" />
-              <span>Áp Dụng &amp; Gửi Thư Mời</span>
+              <Palette className="size-3.5" />
+              <span>Thiết kế Studio</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPosterMode("upload")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                posterMode === "upload"
+                  ? "bg-[#003B95] text-white shadow-xs"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+              }`}
+            >
+              <Upload className="size-3.5" />
+              <span>Tải poster có sẵn</span>
             </button>
           </div>
         </div>
+
+        {/* 4 Nhóm Preset Loại Thư Mời */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+          <button
+            type="button"
+            onClick={() => handleApplyCategoryPreset("event")}
+            className={`p-3 rounded-xl border flex flex-col items-start gap-1 transition cursor-pointer text-left ${
+              category === "event"
+                ? "border-sky-500 bg-sky-50/60 dark:bg-sky-950/30 ring-1 ring-sky-500/40"
+                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 font-bold text-xs text-sky-700 dark:text-sky-300">
+              <Sparkles className="size-3.5" />
+              <span>Sự kiện &amp; Gala</span>
+            </div>
+            <span className="text-[10px] text-slate-500 line-clamp-1">
+              Gala Doanh nhân, Đại hội, Hội thảo
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleApplyCategoryPreset("forum")}
+            className={`p-3 rounded-xl border flex flex-col items-start gap-1 transition cursor-pointer text-left ${
+              category === "forum"
+                ? "border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 ring-1 ring-amber-500/40"
+                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-300">
+              <Award className="size-3.5" />
+              <span>Diễn đàn Doanh nhân</span>
+            </div>
+            <span className="text-[10px] text-slate-500 line-clamp-1">
+              Diễn đàn Kinh tế, Xúc tiến đầu tư
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleApplyCategoryPreset("meeting")}
+            className={`p-3 rounded-xl border flex flex-col items-start gap-1 transition cursor-pointer text-left ${
+              category === "meeting"
+                ? "border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/30 ring-1 ring-indigo-500/40"
+                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 font-bold text-xs text-indigo-700 dark:text-indigo-300">
+              <Briefcase className="size-3.5" />
+              <span>Họp Ban Điều Hành</span>
+            </div>
+            <span className="text-[10px] text-slate-500 line-clamp-1">
+              Họp Thường trực, Ban chuyên môn
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleApplyCategoryPreset("b2b_meetup")}
+            className={`p-3 rounded-xl border flex flex-col items-start gap-1 transition cursor-pointer text-left ${
+              category === "b2b_meetup"
+                ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 ring-1 ring-emerald-500/40"
+                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-700 dark:text-emerald-300">
+              <Coffee className="size-3.5" />
+              <span>B2B &amp; Coffee CEO</span>
+            </div>
+            <span className="text-[10px] text-slate-500 line-clamp-1">
+              Hẹn gặp 1-1, Thăm quan doanh nghiệp
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* 2 LỰA CHỌN PHƯƠNG THỨC TẠO POSTER THƯ MỜI */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* LỰA CHỌN 1: TẢI POSTER CÓ SẴN */}
-        <div
-          onClick={() => setPosterMode("upload")}
-          className={`p-5 rounded-2xl border transition cursor-pointer flex items-start gap-4 ${
-            posterMode === "upload"
-              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/30"
-              : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
-          }`}
-        >
-          <div className="p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-            <Upload className="size-6" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                1. Tải Poster Mời Có Sẵn
-              </h4>
-              {posterMode === "upload" && (
-                <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                  <Check className="size-3.5" /> Đang chọn
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Bạn đã có sẵn file ảnh poster do designer thiết kế? Tải lên trực tiếp định dạng JPG, PNG để làm thư mời.
-            </p>
-          </div>
-        </div>
-
-        {/* LỰA CHỌN 2: TỰ CẤU HÌNH THIẾT KẾ POSTER TRỰC QUAN */}
-        <div
-          onClick={() => setPosterMode("studio")}
-          className={`p-5 rounded-2xl border transition cursor-pointer flex items-start gap-4 ${
-            posterMode === "studio"
-              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/30"
-              : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
-          }`}
-        >
-          <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
-            <Sparkles className="size-6" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                2. Tự Cấu Hình Thiết Kế Poster Thư Mời
-              </h4>
-              {posterMode === "studio" && (
-                <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                  <Check className="size-3.5" /> Đang chọn
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Tùy biến khung nền thành phố, logo, tiêu đề, thời gian, địa điểm, mã QR check-in thành 1 mẫu thư mời chuẩn.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN STUDIO WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* CỘT TRÁI: BẢNG ĐIỀU KHIỂN & CẤU HÌNH (7 CỘT) */}
+        {/* ── CỘT TRÁI: BỘ ĐIỀU KHIỂN & SOẠN THẢO (7 CỘT) ── */}
         <div className="lg:col-span-7 space-y-6">
-          {/* LIÊN KẾT NHANH SỰ KIỆN / CUỘC HỌP */}
+          {/* Nạp nhanh từ sự kiện hoặc cuộc họp sẵn có */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Calendar className="size-4 text-amber-500" />
-                <span>Nạp nhanh từ Sự kiện / Cuộc họp có sẵn</span>
-              </label>
-              <span className="text-[11px] text-slate-400">Tự động điền tiêu đề &amp; thời gian</span>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span>Nạp Nhanh Từ Dữ Liệu Sự Kiện / Cuộc Họp</span>
+              <span className="text-[11px] font-normal text-slate-400">Tự động điền ngày giờ &amp; địa điểm</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                  Chọn Sự Kiện CLB CEO 1983
+                </label>
+                <select
+                  onChange={(e) => {
+                    const ev = availableEvents.find((x) => x.id === e.target.value);
+                    if (ev) handleSelectEvent(ev);
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 cursor-pointer"
+                >
+                  <option value="">-- Chọn sự kiện để nạp --</option>
+                  {availableEvents.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.name || ev.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+                  Chọn Cuộc Họp / Diễn Đàn
+                </label>
+                <select
+                  onChange={(e) => {
+                    const m = availableMeetings.find((x) => x.id === e.target.value);
+                    if (m) handleSelectMeeting(m);
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 cursor-pointer"
+                >
+                  <option value="">-- Chọn cuộc họp để nạp --</option>
+                  {availableMeetings.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title || m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <select
-              onChange={(e) => {
-                const found = availableEvents.find((ev) => ev.id === e.target.value);
-                if (found) handleSelectEvent(found);
-              }}
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 focus:ring-2 focus:ring-amber-500"
-            >
-              <option value="">-- Chọn sự kiện hoặc cuộc họp để điền nhanh --</option>
-              {availableEvents.map((ev) => (
-                <option key={ev.id} value={ev.id}>
-                  {ev.name || ev.title} ({ev.date ? new Date(ev.date).toLocaleDateString("vi-VN") : "Sắp tới"})
-                </option>
-              ))}
-            </select>
           </div>
 
-          {/* PHƯƠNG THỨC 1: TẢI POSTER CÓ SẴN */}
-          {posterMode === "upload" && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Upload className="size-4 text-amber-500" />
-                <span>Tải tệp ảnh Poster có sẵn từ máy tính</span>
+          {/* CẤU HÌNH CHI TIẾT THEO CHUẨN PINTEREST */}
+          {posterMode === "upload" ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <Upload className="size-4 text-blue-500" />
+                <span>Tải Lên File Poster Thư Mời Có Sẵn</span>
               </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Nếu bạn đã có sẵn file thiết kế ảnh poster (PNG, JPG, WebP), hãy tải lên trực tiếp để hệ thống gửi vào App, Zalo OA và Email.
+              </p>
 
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center bg-slate-50 dark:bg-slate-950/50 hover:border-amber-500 transition">
+              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:bg-slate-50 dark:hover:bg-slate-950/40 transition">
                 <input
                   type="file"
-                  id="poster-upload-input"
-                  accept="image/jpeg,image/png,image/webp"
+                  id="poster-upload"
+                  accept="image/*"
                   onChange={handleUploadPosterFile}
                   className="hidden"
                 />
-                <label
-                  htmlFor="poster-upload-input"
-                  className="flex flex-col items-center justify-center cursor-pointer"
-                >
-                  <div className="p-3 rounded-full bg-amber-500/10 text-amber-500 mb-3">
-                    <ImageIcon className="size-8" />
+                <label htmlFor="poster-upload" className="cursor-pointer space-y-2 block">
+                  <div className="size-12 rounded-full bg-blue-50 text-[#003B95] dark:bg-blue-950/50 dark:text-blue-300 mx-auto flex items-center justify-center">
+                    <ImageIcon className="size-6" />
                   </div>
-                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    {isUploadingPoster ? "Đang tải ảnh poster lên..." : "Click để chọn file ảnh Poster"}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Định dạng hỗ trợ: JPG, PNG, WEBP (Khuyến nghị tỷ lệ đứng 4:5 hoặc 9:16)
-                  </span>
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    {isUploadingPoster ? "Đang tải ảnh lên..." : "Bấm để chọn file ảnh Poster (JPG, PNG, WebP)"}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Kích thước khuyến nghị: 1080 x 1920 px (tỷ lệ 9:16)
+                  </div>
                 </label>
               </div>
-
-              {uploadedPosterUrl && (
-                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
-                  <span className="flex items-center gap-2 font-medium">
-                    <Check className="size-4" /> Poster đã tải lên sẵn sàng sử dụng
-                  </span>
-                  <a
-                    href={uploadedPosterUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-bold underline flex items-center gap-1"
-                  >
-                    Xem ảnh gốc <ExternalLink className="size-3" />
-                  </a>
-                </div>
-              )}
             </div>
-          )}
-
-          {/* PHƯƠNG THỨC 2: TỰ CẤU HÌNH THIẾT KẾ POSTER TRỰC QUAN */}
-          {posterMode === "studio" && (
-            <div className="space-y-6">
-              {/* CHỌN HÌNH NỀN & THEME */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          ) : (
+            <div className="space-y-4">
+              {/* CHỌN NỀN & HIỆU ỨNG ÁNH SÁNG */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <Palette className="size-4 text-amber-500" />
-                    <span>Mẫu Nền Thành Phố VIP &amp; Tone Màu Thương Hiệu</span>
+                    <Layers className="size-4 text-sky-500" />
+                    <span>Nền Khung Cảnh &amp; Hiệu Ứng Sao Rơi Chuẩn Pinterest</span>
                   </h4>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setThemeGlowColor("cyan")}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        themeGlowColor === "cyan" ? "bg-cyan-500 text-slate-950" : "bg-slate-100 text-slate-600 dark:bg-slate-800"
+                      }`}
+                    >
+                      Xanh Băng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setThemeGlowColor("gold")}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        themeGlowColor === "gold" ? "bg-amber-500 text-slate-950" : "bg-slate-100 text-slate-600 dark:bg-slate-800"
+                      }`}
+                    >
+                      Vàng Gold
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setThemeGlowColor("royal")}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        themeGlowColor === "royal" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800"
+                      }`}
+                    >
+                      Dạ Hội
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -491,10 +727,8 @@ export function InvitationTemplateStudio() {
                         setSelectedBg(preset.url);
                         setCustomBgUrl("");
                       }}
-                      className={`group relative h-20 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
-                        selectedBg === preset.url && !customBgUrl
-                          ? "border-amber-500 ring-2 ring-amber-500/40"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-400"
+                      className={`relative h-20 rounded-xl overflow-hidden cursor-pointer border-2 transition group ${
+                        activeBg === preset.url ? "border-sky-500 ring-2 ring-sky-500/40" : "border-slate-200 dark:border-slate-800 hover:border-slate-400"
                       }`}
                     >
                       <img
@@ -502,80 +736,26 @@ export function InvitationTemplateStudio() {
                         alt={preset.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition"
                       />
-                      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent p-2 flex items-end">
-                        <span className="text-[10px] font-semibold text-white truncate">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-1.5 flex items-end">
+                        <span className="text-[9px] font-semibold text-white truncate">
                           {preset.name}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
-
-                {/* Upload Custom BG */}
-                <div className="flex items-center gap-3 pt-2">
-                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
-                    <Upload className="size-3.5" />
-                    <span>Tải ảnh nền riêng</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleUploadBgFile}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {/* Theme Glow Select */}
-                  <div className="flex items-center gap-2 ml-auto">
-                    <span className="text-xs text-slate-400">Hiệu ứng:</span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setThemeGlowColor("gold")}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
-                          themeGlowColor === "gold"
-                            ? "bg-amber-500 text-slate-950"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                        }`}
-                      >
-                        Vàng Gold
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setThemeGlowColor("cyan")}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
-                          themeGlowColor === "cyan"
-                            ? "bg-cyan-500 text-slate-950"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                        }`}
-                      >
-                        Xanh Cyan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setThemeGlowColor("royal")}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
-                          themeGlowColor === "royal"
-                            ? "bg-indigo-600 text-white"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                        }`}
-                      >
-                        Dạ Hội
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* NỘI DUNG VĂN BẢN THƯ MỜI */}
+              {/* NỘI DUNG VĂN BẢN THƯ MỜI CHUẨN PINTEREST */}
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Nội Dung Chi Tiết Thư Mời
                 </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                      Kicker (Dòng tiêu đề phụ trên cùng)
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                      Kicker ngữ cảnh (VD: Tham dự sự kiện / Tham dự Diễn đàn)
                     </label>
                     <input
                       type="text"
@@ -586,21 +766,21 @@ export function InvitationTemplateStudio() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                      Phụ đề sự kiện
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                      Dòng dẫn dắt (Lead phrase)
                     </label>
                     <input
                       type="text"
-                      value={subtitle}
-                      onChange={(e) => setSubtitle(e.target.value)}
+                      value={leadPhrase}
+                      onChange={(e) => setLeadPhrase(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Tiêu đề chính sự kiện (Tên in hoa đậm)
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Tiêu đề chính lớn (Headline lớn in hoa kiểu Pinterest)
                   </label>
                   <input
                     type="text"
@@ -611,45 +791,133 @@ export function InvitationTemplateStudio() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Kính gửi
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Địa điểm nổi bật (VD: tại Heian Villas &amp; Cung Trí Thức Hà Nội)
                   </label>
                   <input
                     type="text"
-                    value={salutation}
-                    onChange={(e) => setSalutation(e.target.value)}
+                    value={venueHighlight}
+                    onChange={(e) => setVenueHighlight(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Thư mời tri ân (Nội dung chính)
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={letterBody}
-                    onChange={(e) => setLetterBody(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 leading-relaxed"
-                  />
-                </div>
+                {/* Hộp Đặc Quyền / Quà Tặng (Capsule Badge Box) */}
+                <div className="p-3.5 rounded-xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-900/40 space-y-2.5">
+                  <div className="text-[11px] font-bold text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
+                    <Award className="size-3.5" />
+                    <span>Hộp Đặc Quyền &amp; Quà Tặng Tham Dự (Capsule Box)</span>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                      <Calendar className="size-3 text-amber-500" /> Thời gian diễn ra
-                    </label>
-                    <input
-                      type="text"
-                      value={eventDate}
-                      onChange={(e) => setEventDate(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                        Tiêu đề huy hiệu (Badge Text)
+                      </label>
+                      <input
+                        type="text"
+                        value={capsuleBadge}
+                        onChange={(e) => setCapsuleBadge(e.target.value)}
+                        className="w-full bg-white border border-sky-300 rounded-lg p-1.5 text-xs text-slate-900 dark:bg-slate-900 dark:border-sky-800 dark:text-slate-100 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                        Nội dung quyền lợi chính
+                      </label>
+                      <input
+                        type="text"
+                        value={capsuleBenefit}
+                        onChange={(e) => setCapsuleBenefit(e.target.value)}
+                        className="w-full bg-white border border-sky-300 rounded-lg p-1.5 text-xs text-slate-900 dark:bg-slate-900 dark:border-sky-800 dark:text-slate-100 font-bold"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                      <MapPin className="size-3 text-rose-500" /> Địa điểm tổ chức
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                      Ghi chú bổ sung
+                    </label>
+                    <input
+                      type="text"
+                      value={capsuleNote}
+                      onChange={(e) => setCapsuleNote(e.target.value)}
+                      className="w-full bg-white border border-sky-300 rounded-lg p-1.5 text-xs text-slate-600 dark:bg-slate-900 dark:border-sky-800 dark:text-slate-300"
+                    />
+                  </div>
+                </div>
+
+                {/* Cụm Ngày Giờ Luxury (Chuẩn Pinterest) */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                      Thứ trong tuần
+                    </label>
+                    <input
+                      type="text"
+                      value={dayOfWeek}
+                      onChange={(e) => setDayOfWeek(e.target.value)}
+                      placeholder="Thứ Bảy"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 text-center font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                      Giờ diễn ra
+                    </label>
+                    <input
+                      type="text"
+                      value={timeHour}
+                      onChange={(e) => setTimeHour(e.target.value)}
+                      placeholder="9h00"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 text-center font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                      Ngày (2 số)
+                    </label>
+                    <input
+                      type="text"
+                      value={dayDigits}
+                      onChange={(e) => setDayDigits(e.target.value)}
+                      placeholder="06"
+                      maxLength={2}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 text-center font-bold text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                      Tháng (2 số)
+                    </label>
+                    <input
+                      type="text"
+                      value={monthDigits}
+                      onChange={(e) => setMonthDigits(e.target.value)}
+                      placeholder="04"
+                      maxLength={2}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 text-center font-bold text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-500 block mb-1">
+                      Năm (2 số)
+                    </label>
+                    <input
+                      type="text"
+                      value={yearDigits}
+                      onChange={(e) => setYearDigits(e.target.value)}
+                      placeholder="24"
+                      maxLength={2}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100 text-center font-bold text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1 flex items-center gap-1">
+                      <MapPin className="size-3 text-rose-500" /> Địa điểm tổ chức đầy đủ
                     </label>
                     <input
                       type="text"
@@ -658,24 +926,10 @@ export function InvitationTemplateStudio() {
                       className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                      Đại diện ký tên (Ban Tổ Chức)
-                    </label>
-                    <input
-                      type="text"
-                      value={signOff}
-                      onChange={(e) => setSignOff(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
-                    />
-                  </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1 flex items-center gap-1">
-                      <QrCode className="size-3 text-blue-500" /> Link mã QR Check-in
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1 flex items-center gap-1">
+                      <QrCode className="size-3 text-blue-500" /> Link mã QR Check-in / RSVP
                     </label>
                     <input
                       type="text"
@@ -698,7 +952,7 @@ export function InvitationTemplateStudio() {
             <div className="flex items-center gap-3">
               <input
                 type="text"
-                placeholder="Nhập tên mẫu template (VD: Mẫu Thư Mời Gala Tất Niên 2026)"
+                placeholder="Nhập tên mẫu template (VD: Thư mời Diễn đàn B2B Thanh Thủy)"
                 value={templateNameInput}
                 onChange={(e) => setTemplateNameInput(e.target.value)}
                 className="flex-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
@@ -715,7 +969,7 @@ export function InvitationTemplateStudio() {
             </div>
           </div>
 
-          {/* DANH SÁCH CÁC TEMPLATE THƯ MỜI ĐÃ LƯU */}
+          {/* KHO MẪU THƯ MỜI ĐÃ LƯU */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
@@ -731,7 +985,7 @@ export function InvitationTemplateStudio() {
                   onClick={() => handleSelectTemplate(tmpl)}
                   className={`p-3.5 rounded-xl border transition cursor-pointer text-left ${
                     selectedTemplateId === tmpl.id
-                      ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-1 ring-amber-500/30"
+                      ? "border-sky-500 bg-sky-50/50 dark:bg-sky-950/20 ring-1 ring-sky-500/30"
                       : "border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 hover:border-slate-300"
                   }`}
                 >
@@ -752,8 +1006,10 @@ export function InvitationTemplateStudio() {
                     {tmpl.title}
                   </p>
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/80 text-[10px] text-slate-400">
-                    <span>{tmpl.category === "meeting" ? "Cuộc họp" : "Sự kiện lớn"}</span>
-                    <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                    <span className="font-semibold text-sky-600 dark:text-sky-400">
+                      {tmpl.category === "meeting" ? "💼 Cuộc họp" : tmpl.category === "forum" ? "🏛️ Diễn đàn" : tmpl.category === "b2b_meetup" ? "☕ Gặp gỡ B2B" : "🎪 Sự kiện & Gala"}
+                    </span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-0.5">
                       Sử dụng <ChevronRight className="size-3" />
                     </span>
                   </div>
@@ -763,152 +1019,216 @@ export function InvitationTemplateStudio() {
           </div>
         </div>
 
-        {/* CỘT PHẢI: LIVE PREVIEW POSTER THƯ MỜI CHUẨN VIP (5 CỘT) */}
+        {/* ── CỘT PHẢI: LIVE PREVIEW POSTER THƯ MỜI CHUẨN PINTEREST (5 CỘT) ── */}
         <div className="lg:col-span-5 sticky top-6 space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Eye className="size-4 text-amber-500" />
-              <span>Xem Trước Poster Thư Mời Trực Tiếp</span>
+              <Eye className="size-4 text-sky-500" />
+              <span>Xem Trước Poster Thư Mời Chuẩn Pinterest</span>
             </h4>
-            <span className="text-[11px] text-slate-400">Tỷ lệ poster thực tế</span>
+            <span className="text-[11px] text-slate-400">Tỷ lệ 9:16 dọc sang trọng</span>
           </div>
 
-          {/* POSTER CARD (LIVE CANVAS / VIEW) */}
+          {/* POSTER CANVAS (EXACT PINTEREST WYNDHAM THANH THỦY STYLE) */}
           <div
             ref={posterRef}
-            className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border border-amber-500/30 bg-slate-950 flex flex-col justify-between text-white p-6 select-none"
+            className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-sky-400/30 bg-[#071329] flex flex-col justify-between text-white select-none"
             style={{
               backgroundImage:
                 posterMode === "upload" && uploadedPosterUrl
                   ? `url(${uploadedPosterUrl})`
-                  : `linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%), url(${activeBg})`,
+                  : `linear-gradient(180deg, rgba(7,19,41,0.85) 0%, rgba(13,37,76,0.6) 40%, rgba(7,19,41,0.95) 100%), url(${activeBg})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
           >
-            {/* If Mode is Upload, only show overlay and action if needed */}
+            {/* Hiệu ứng vệt sáng sao rơi (Celestial shooting star light streaks) */}
+            <div className="absolute top-0 inset-x-0 h-32 pointer-events-none flex justify-around opacity-40">
+              <div className="w-px h-16 bg-gradient-to-b from-white/70 via-cyan-300/40 to-transparent relative">
+                <span className="size-1 rounded-full bg-cyan-200 absolute -bottom-0.5 -left-0.5 shadow-sm shadow-cyan-300" />
+              </div>
+              <div className="w-px h-24 bg-gradient-to-b from-white/60 via-cyan-300/30 to-transparent relative mt-2">
+                <span className="size-1 rounded-full bg-cyan-200 absolute -bottom-0.5 -left-0.5 shadow-sm shadow-cyan-300" />
+              </div>
+              <div className="w-px h-12 bg-gradient-to-b from-white/70 via-cyan-300/40 to-transparent relative">
+                <span className="size-1 rounded-full bg-cyan-200 absolute -bottom-0.5 -left-0.5 shadow-sm shadow-cyan-300" />
+              </div>
+              <div className="w-px h-20 bg-gradient-to-b from-white/60 via-cyan-300/30 to-transparent relative mt-1">
+                <span className="size-1 rounded-full bg-cyan-200 absolute -bottom-0.5 -left-0.5 shadow-sm shadow-cyan-300" />
+              </div>
+              <div className="w-px h-14 bg-gradient-to-b from-white/70 via-cyan-300/40 to-transparent relative">
+                <span className="size-1 rounded-full bg-cyan-200 absolute -bottom-0.5 -left-0.5 shadow-sm shadow-cyan-300" />
+              </div>
+            </div>
+
             {posterMode === "upload" && uploadedPosterUrl ? (
-              <div className="h-full flex flex-col justify-end p-2 bg-linear-to-t from-black/80 via-transparent to-transparent">
-                <div className="p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
-                  <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+              <div className="h-full flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 via-transparent to-transparent">
+                <div className="p-3.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-center">
+                  <div className="text-[10px] font-bold text-sky-300 uppercase tracking-widest">
                     Poster Sẵn Có
                   </div>
                   <h3 className="text-sm font-bold text-white truncate mt-0.5">
                     {mainTitle}
                   </h3>
-                  <div className="text-[11px] text-slate-300 mt-1 flex items-center gap-2">
-                    <span>📅 {eventDate}</span>
+                  <div className="text-[11px] text-slate-300 mt-1 flex items-center justify-center gap-2">
+                    <span>📅 {dayOfWeek}, {dayDigits}/{monthDigits}/{yearDigits} lúc {timeHour}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              /* Studio Mode Layout */
-              <>
-                {/* Poster Header */}
-                <div className="space-y-2 text-center">
-                  <div className="flex items-center justify-center gap-2">
+              /* STUDIO POSTER VIEW */
+              <div className="relative z-10 size-full flex flex-col justify-between p-5 text-center">
+                {/* 1. TOP BRAND HEADER ROW */}
+                <div className="flex items-center justify-between pt-1">
+                  {/* Left Logo */}
+                  <div className="flex items-center gap-1.5">
                     <img
                       src={logoUrl}
-                      alt="Logo"
-                      className="h-10 object-contain drop-shadow-md"
+                      alt="Logo CEO 1983"
+                      className="h-7 object-contain drop-shadow-md"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
                       }}
                     />
+                    <span className="text-[9px] font-bold tracking-widest text-slate-200 uppercase">
+                      CEO 1983
+                    </span>
                   </div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-400 drop-shadow-sm">
+
+                  {/* Center Calligraphy Signature */}
+                  <div className="text-sm font-serif italic tracking-wide text-sky-200/90 font-medium">
+                    CEO 1983 Elite Club
+                  </div>
+
+                  {/* Right Partner / Sponsor Logo */}
+                  <div className="text-[9px] font-bold tracking-wider text-slate-300 uppercase">
+                    HanoiBA
+                  </div>
+                </div>
+
+                {/* 2. CHỮ THƯ MỜI CHUẨN PINTEREST */}
+                <div className="space-y-1 pt-3">
+                  <h1 className="text-3xl sm:text-4xl font-serif tracking-normal text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.4)]">
+                    {invitationHeader}
+                  </h1>
+                  <div className="text-[8.5px] font-bold uppercase tracking-[0.25em] text-slate-300 drop-shadow-sm">
+                    {invitationSubtitle}
+                  </div>
+                </div>
+
+                {/* 3. NGỮ CẢNH & TIÊU ĐỀ LỚN NGHỆ THUẬT */}
+                <div className="space-y-1.5 my-auto">
+                  <div className="text-xs text-sky-300 font-light tracking-wide italic">
                     {kicker}
                   </div>
-                  <h2
-                    className={`text-base font-black uppercase tracking-tight leading-snug drop-shadow-lg ${
-                      themeGlowColor === "gold"
-                        ? "text-transparent bg-clip-text bg-linear-to-r from-amber-200 via-yellow-300 to-amber-500"
-                        : themeGlowColor === "cyan"
-                        ? "text-cyan-300"
-                        : "text-amber-100"
-                    }`}
-                  >
+                  <div className="text-xs text-slate-200 font-serif">
+                    {leadPhrase}
+                  </div>
+
+                  {/* Tiêu đề chính lớn cách điệu */}
+                  <h2 className="text-xl sm:text-2xl font-serif font-black uppercase tracking-wider leading-snug drop-shadow-lg text-transparent bg-clip-text bg-gradient-to-r from-sky-100 via-cyan-200 to-sky-300">
                     {mainTitle}
                   </h2>
-                  <div className="text-[11px] font-semibold text-slate-300 drop-shadow-sm">
-                    {subtitle}
+
+                  <div className="text-xs text-cyan-200 font-medium drop-shadow-sm">
+                    {venueHighlight}
                   </div>
                 </div>
 
-                {/* Poster Middle: Letter Salutation & Body */}
-                <div className="my-auto p-4 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 space-y-2 text-left shadow-lg">
-                  <div className="text-[11px] font-bold text-amber-300">
-                    {salutation}
-                  </div>
-                  <p className="text-[10px] text-slate-200 line-clamp-4 leading-relaxed whitespace-pre-line font-light">
-                    {letterBody}
-                  </p>
-                </div>
-
-                {/* Poster Footer: Info & QR */}
-                <div className="space-y-3 pt-2">
-                  <div className="p-2.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-between gap-3 text-left">
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                        <Calendar className="size-3 text-amber-400 shrink-0" />
-                        <span className="truncate">{eventDate}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                        <MapPin className="size-3 text-rose-400 shrink-0" />
-                        <span className="truncate">{eventLocation}</span>
-                      </div>
-                    </div>
-
-                    {/* QR Code */}
-                    <div className="p-1 rounded bg-white shrink-0 shadow-sm">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${encodeURIComponent(
-                          qrValue
-                        )}`}
-                        alt="QR Check-in"
-                        className="size-11 object-contain"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[9px] text-slate-400">
-                    <span className="uppercase font-semibold tracking-wider text-amber-400">
-                      CLB Doanh Nhân CEO 1983
+                {/* 4. HỘP ĐẶC QUYỀN CAPSULE BOX CHUẨN PINTEREST */}
+                <div className="my-1 space-y-1">
+                  <div className="inline-block px-3.5 py-1 rounded-full border border-sky-300/40 bg-gradient-to-r from-sky-400/20 via-sky-300/30 to-sky-400/20 backdrop-blur-xs shadow-md">
+                    <span className="text-[8.5px] font-extrabold uppercase tracking-widest text-sky-100">
+                      {capsuleBadge}
                     </span>
-                    <span>Quét mã xác nhận tham dự</span>
+                  </div>
+                  <div className="text-xs font-black uppercase tracking-wider text-white drop-shadow-md">
+                    {capsuleBenefit}
+                  </div>
+                  <div className="text-[9px] text-slate-300 font-light italic">
+                    {capsuleNote}
                   </div>
                 </div>
-              </>
+
+                {/* 5. CỤM NGÀY GIỜ SỐ LỚN CHUẨN PINTEREST */}
+                <div className="pt-2 pb-1 space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-cyan-200 font-medium">
+                    <span>{dayOfWeek}</span>
+                    <Clock className="size-3 text-cyan-300" />
+                    <span>{timeHour}</span>
+                  </div>
+
+                  {/* Bộ số lớn: 06 | 04 | 24 */}
+                  <div className="flex items-center justify-center gap-3 text-2xl sm:text-3xl font-serif font-bold text-white drop-shadow-lg tracking-widest">
+                    <span>{dayDigits}</span>
+                    <span className="text-slate-400 font-light text-xl">|</span>
+                    <span>{monthDigits}</span>
+                    <span className="text-slate-400 font-light text-xl">|</span>
+                    <span>{yearDigits}</span>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-1 text-[9.5px] text-slate-300 font-light pt-0.5">
+                    <MapPin className="size-3 text-rose-400 shrink-0" />
+                    <span className="truncate max-w-xs">{eventLocation}</span>
+                  </div>
+                </div>
+
+                {/* 6. HÌNH ẢNH CỔNG CHÀO HOÀNG HÔN DƯỚI ĐÁY */}
+                <div className="relative h-24 sm:h-28 rounded-xl overflow-hidden mt-1 shadow-lg border border-white/10">
+                  <img
+                    src={activeBg}
+                    alt="Venue Gate"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+                  
+                  {/* Mã QR tích hợp nhỏ gọn ở góc */}
+                  <div className="absolute right-2 bottom-2 p-1 bg-white rounded-md shadow-md">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(qrValue)}`}
+                      alt="QR"
+                      className="size-8 object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* 7. LỜI KẾT SALUTE CHÂN TRANG */}
+                <div className="pt-1.5">
+                  <div className="text-xs font-serif italic text-slate-200">
+                    {saluteText}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-3">
+          {/* HÀNH ĐỘNG ÁP DỤNG & GỬI NGAY */}
+          <div className="space-y-2 pt-2">
             <button
               type="button"
               onClick={() => setIsBroadcastModalOpen(true)}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-amber-500 via-amber-600 to-amber-700 py-3 text-xs font-bold text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-110 transition cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-[#003B95] to-blue-700 py-3.5 text-xs font-bold text-white shadow-lg shadow-blue-500/25 hover:brightness-110 active:scale-98 transition cursor-pointer"
             >
               <Send className="size-4" />
-              <span>Áp Dụng &amp; Gửi Ngay</span>
+              <span>Áp Dụng &amp; Gửi Thư Mời Ngay (App, Zalo OA, Email)</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* OMNICHANNEL BROADCAST MODAL */}
+      {/* OMNICHANNEL BROADCAST MODAL (GỬI QUA APP, ZALO OA, EMAIL) */}
       <OmnichannelBroadcastModal
         open={isBroadcastModalOpen}
         onClose={() => setIsBroadcastModalOpen(false)}
         invitationData={{
           title: mainTitle,
-          subtitle,
+          subtitle: `${kicker} - ${venueHighlight}`,
           posterUrl: currentPosterForBroadcast,
-          date: eventDate,
-          time: eventTime,
+          date: `${dayOfWeek}, ${dayDigits}/${monthDigits}/${yearDigits}`,
+          time: timeHour,
           location: eventLocation,
-          salutation,
-          bodyText: letterBody,
+          salutation: `Kính gửi: Quý Doanh Nhân & Hội Viên CEO 1983`,
+          bodyText: `${leadPhrase} tại ${venueHighlight}.\nĐặc quyền: ${capsuleBenefit} ${capsuleNote}.\nThời gian: ${dayOfWeek}, ${dayDigits}/${monthDigits}/${yearDigits} lúc ${timeHour}.\nĐịa điểm: ${eventLocation}.\n\n${saluteText}`,
           templateId: selectedTemplateId || undefined,
         }}
         onSuccess={() => {
@@ -918,4 +1238,3 @@ export function InvitationTemplateStudio() {
     </div>
   );
 }
-
