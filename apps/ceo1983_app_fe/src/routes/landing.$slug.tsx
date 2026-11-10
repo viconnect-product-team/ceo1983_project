@@ -8,6 +8,7 @@ import {
 } from "@/components/landing/TimedCardsOpeningLanding";
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
 import { ForgeLuxuryAtelierLanding } from "@/components/landing/ForgeLuxuryAtelierLanding";
+import { ModernLuxuryEstateLanding } from "@/components/landing/ModernLuxuryEstateLanding";
 import { Globe, ArrowLeft } from "lucide-react";
 
 const FALLBACK_V1_CONFIG: LandingWebConfig = {
@@ -149,6 +150,41 @@ const FALLBACK_V3_CONFIG: LandingWebConfig = {
   },
 };
 
+const FALLBACK_V4_CONFIG: LandingWebConfig = {
+  id: "lw_modern_luxury_estate_default",
+  name: "Dinh Thự Kiến Trúc Siêu Sang — Luxury Estates (Mẫu 4)",
+  slug: "web-v4",
+  subdomain: "web-v4",
+  isPublished: true,
+  template: "modern_luxury_estate",
+  theme: {
+    primaryColor: "#C5A880",
+    secondaryColor: "#0D0E11",
+    textColor: "#FAF8F5",
+    backgroundColor: "#0D0E11",
+    fontFamily: "Playfair Display, Inter, sans-serif",
+  },
+  brand: {
+    logoText: "CEO 1983 Estates",
+    logoIcon: "building",
+    contactPhone: "0973.205.683",
+    contactEmail: "estate@ceo1983.viconnect.vn",
+  },
+  navMenu: [
+    { id: "m1", label: "Bộ Sưu Tập", url: "#portfolio" },
+    { id: "m2", label: "Kiến Trúc & Thủ Công", url: "#philosophy" },
+    { id: "m3", label: "360° Virtual Tour", url: "#virtual-tour" },
+    { id: "m4", label: "Đặc Quyền Hội Viên", url: "#privileges" },
+  ],
+  slides: [],
+  subScreens: [],
+  apiConfig: {
+    enabled: false,
+    endpointUrl: "",
+    rootPath: "",
+  },
+};
+
 export const Route = createFileRoute("/landing/$slug")({
   ssr: false,
   component: PublicLandingPage,
@@ -175,10 +211,12 @@ function PublicLandingPage() {
     );
   }
 
-  // Active configuration: prioritize server data, fallback to predefined templates for web-v1, web-v2, web-v3
+  // Active configuration: prioritize server data, fallback to predefined templates for web-v1, web-v2, web-v3, web-v4
   const effectiveConfig =
     landingWeb ||
-    (["web-v3", "web3", "web-3", "v3", "forge-atelier", "luxury-atelier"].includes(cleanSlug)
+    (["web-v4", "web4", "web-4", "v4", "estate", "real-estate", "residence", "luxury-estate"].includes(cleanSlug)
+      ? FALLBACK_V4_CONFIG
+      : ["web-v3", "web3", "web-3", "v3", "forge-atelier", "luxury-atelier"].includes(cleanSlug)
       ? FALLBACK_V3_CONFIG
       : ["web-v2", "web2", "web-2", "v2", "app-ceo1983", "startup-mobile-showcase"].includes(cleanSlug)
       ? FALLBACK_V2_CONFIG
@@ -209,6 +247,10 @@ function PublicLandingPage() {
         </a>
       </div>
     );
+  }
+
+  if (effectiveConfig.template === "modern_luxury_estate") {
+    return <ModernLuxuryEstateLanding config={effectiveConfig} />;
   }
 
   if (effectiveConfig.template === "forge_luxury_atelier") {

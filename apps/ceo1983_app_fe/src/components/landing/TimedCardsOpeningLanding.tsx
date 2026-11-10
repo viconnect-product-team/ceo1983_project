@@ -565,7 +565,7 @@ export interface LandingWebConfig {
   slug?: string;
   subdomain?: string;
   isPublished?: boolean;
-  template?: 'timed_cards_opening' | 'ceo1983_executive' | 'startup_mobile_showcase' | 'forge_luxury_atelier';
+  template?: 'timed_cards_opening' | 'ceo1983_executive' | 'startup_mobile_showcase' | 'forge_luxury_atelier' | 'modern_luxury_estate';
   theme?: {
     primaryColor: string;
     secondaryColor?: string;
@@ -586,6 +586,7 @@ export interface LandingWebConfig {
   apiConfig?: LandingApiConfig;
   startupConfig?: StartupMobileTemplateConfig;
   forgeAtelierConfig?: ForgeLuxuryAtelierTemplateConfig;
+  modernEstateConfig?: any;
 }
 
 interface TimedCardsOpeningLandingProps {

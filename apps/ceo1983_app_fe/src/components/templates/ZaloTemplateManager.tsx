@@ -34,13 +34,47 @@ export function ZaloTemplateManager() {
     {
       id: "zns-inv-event",
       templateId: "348912",
-      name: "Thư Mời Sự Kiện & QR Check-in",
+      name: "Thư Mời Tham Dự Sự Kiện & QR Vé Mời",
       category: "event",
-      title: "THƯ MỜI THAM DỰ SỰ KIỆN CEO 1983",
-      body: "Kính gửi Anh/Chị {{ho_ten}},\nBan Tổ Chức CLB Doanh Nhân CEO 1983 trân trọng kính mời Anh/Chị tham dự sự kiện \"{{ten_su_kien}}\".\n\n- Thời gian: {{thoi_gian}}\n- Địa điểm: {{dia_diem}}\n\nVui lòng bấm vào nút bên dưới để mở form đăng ký hoặc xuất trình mã QR tại bàn tiếp đón.",
-      ctaText: "Mở Form Đăng Ký & Nhận Vé",
+      title: "THƯ MỜI THAM DỰ SỰ KIỆN DOANH NHÂN CEO 1983",
+      body: `- Kính gửi Anh/Chị: {{attendee_name}}
+- Ban Tổ Chức trân trọng kính mời Anh/Chị tham dự sự kiện:
+- Tên sự kiện: {{event_title}}
+- Thông tin sự kiện:
+  + Diễn giả: {{speakers}}
+  + Nội dung chính: {{summary}}
+  + Thời gian: {{datetime}}
+  + Địa điểm: {{venue}}
+  + Chi phí: {{fee}}
+  + Google Maps: {{map_link}}
+  + Trang phục: {{dress_code}}
+  + Gửi xe: {{parking_info}}
+  + Lưu ý quan trọng từ BTC: {{important_notes}}
+- Xác nhận tham dự: {{rsvp_action_url}}
+- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
+- Trân trọng!
+
+[MÃ VÉ QR CHECK-IN VÀO CỬA ĐÍNH KÈM]: {{qr_code_url}}
+Mã vé: {{ticket_code}} | Chỗ ngồi: {{seat_assignment}}`,
+      ctaText: "Xác Nhận Tham Dự & Xem Vé QR",
       ctaUrl: "https://ceo1983.viconnect.vn/association/events?action=register",
-      variables: ["ho_ten", "ten_su_kien", "thoi_gian", "dia_diem"],
+      variables: [
+        "attendee_name",
+        "event_title",
+        "speakers",
+        "summary",
+        "datetime",
+        "venue",
+        "fee",
+        "map_link",
+        "dress_code",
+        "parking_info",
+        "important_notes",
+        "rsvp_action_url",
+        "qr_code_url",
+        "ticket_code",
+        "seat_assignment",
+      ],
     },
     {
       id: "zns-fee-due",

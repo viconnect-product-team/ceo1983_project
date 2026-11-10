@@ -1,5 +1,53 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 10/11/2026 (v10.92): Nâng Cấp Toàn Diện Mini Photoshop & Canva Studio Poster Thư Mời, Xóa Mẫu Kho Template, Ra Mắt Landing Page Dinh Thự Mẫu 4 Chuẩn Pinterest Pin 955748352150056573, Chuẩn Hóa Mẫu Thư Mời Sự Kiện Đa Kênh Kèm Vé QR & Siết Chặt Bảo Mật Mail CRM ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CORE-003])**:
+  1. *CRM - Nâng Cấp Poster Studio Thành Mini Photoshop & Canva Studio Hoàn Chỉnh (`InvitationTemplateStudio.tsx`, `admin.controller.ts`, `admin.service.ts`)*:
+     - **Tab "Ảnh Nền (Background)" Chuyên Biệt**: Khắc phục dứt điểm lỗi không thay đổi được ảnh nền. Cho phép:
+       + Tải ảnh nền trực tiếp từ máy tính (File Upload PNG/JPG/WebP) tức thì.
+       + Dán đường dẫn URL ảnh nền tùy chỉnh với nút xóa nhanh.
+       + Bộ sưu tập 8+ Preset ảnh nền sự kiện hoàng gia chọn lọc (Cung điện Atlantis, Heian Thanh Thủy, Cosmos Deep, Sân khấu Gala, Dạ tiệc Hoàng Kim, Thảm đỏ Ruby VIP).
+       + Thanh trượt điều chỉnh Độ tối phủ nền (Overlay Darkness: 0-90%) và Độ mờ nhòe nền (Background Blur: 0-15px) chuẩn Photoshop.
+     - **Hệ Thống Lớp Ảnh Tự Do Đa Lớp (Multi-Image Layers with Resize & Drag)**:
+       + Cho phép thêm nhiều ảnh tùy ý (logo tài trợ, sticker, huy hiệu, ảnh diễn giả phụ, con dấu vàng CEO 1983).
+       + Kéo dãn tỷ lệ kích thước: Chiều rộng (40-450px), Chiều cao (40-450px), Khóa tỷ lệ khung hình (Lock Aspect Ratio), Tỷ lệ Scale (30-200%), Góc xoay (-180° đến +180°).
+       + Độ trong suốt (Opacity: 10-100%), Mờ viền lông vũ hòa nền tự nhiên (Feather Blur: 0-30px).
+       + 5 kiểu hình dáng cắt viền: Chữ nhật, Bo góc 24px, Hình tròn 3D, Cổng vòm Heian, Bầu dục.
+       + Kéo thả di chuyển vị trí tự do trên Canvas, có nút xóa / gỡ ảnh trực tiếp ngay trên góc ảnh và trong bảng điều khiển.
+     - **Quản Lý Văn Bản & Thêm / Sửa / Xóa Dòng Chữ Tự Do**:
+       + Cho phép bật/tắt (Ẩn / Hiện) hoặc xóa từng trường thông tin mặc định nếu không sử dụng (Tiêu đề, Kicker, Hộp đặc quyền Capsule, Ngày giờ, Địa điểm, Khối đại biểu, Lời kết, Mã QR).
+       + Nút **"+ Thêm Dòng Chữ Mới"**: Tự do tạo dòng chữ mới trên poster, đổi font chữ (Cinzel, Playfair, Cormorant, Be Vietnam Pro, Montserrat, Orbitron, Dancing Script), cỡ chữ (XS - 5XL), gradient màu sắc (Gold, Cyan, Platinum, Ruby, White), dập nổi 3D, kéo thả tới bất kỳ vị trí nào trên poster.
+     - **Kho Mẫu Template & Chức Năng XÓA MẪU KHỎI KHO**:
+       + Bổ sung endpoint backend `DELETE /admin/invitation-templates/:id` trong `AdminController` và `AdminService`.
+       + Nút thùng rác đỏ trên từng mẫu template trong Kho Mẫu (`handleDeleteTemplate`), có hộp thoại xác nhận an toàn, gọi API xóa và loại bỏ vĩnh viễn khỏi hệ thống.
+  2. *CRM - Ra Mắt Landing Page Mẫu 4: Dinh Thự Kiến Trúc Siêu Sang Chuẩn Pinterest Pin 955748352150056573 (`ModernLuxuryEstateLanding.tsx`, `landing.$slug.tsx`, `TimedCardsOpeningLanding.tsx`)*:
+     - Xây dựng hoàn chỉnh phân hệ Landing Web giới thiệu Bất Động Sản Siêu Sang & Dinh Thự Nghỉ Dưỡng CEO 1983:
+       + **Nhận diện thương hiệu & Bảng màu**: Tone màu Warm Ivory `#FAF8F5`, Deep Obsidian `#0D0E11`, Brushed Champagne Gold `#C5A880`, Forest Bronze `#2C3531`.
+       + **Hero Section**: Hiệu ứng Parallax 3D xoay nhẹ theo chuyển động chuột, visual dinh thự triệu đô, thẻ badge VIP nổi, thanh thống kê thông số (Diện tích 1,450m², 6 Suites VIP, Bể bơi chân mây, Bãi đáp trực thăng riêng).
+       + **Bộ lọc tìm kiếm bất động sản VIP**: Lọc theo Vị trí (Hà Nội, Phú Thọ, Hạ Long, Đà Nẵng), Loại hình kiến trúc (Sky Penthouse, Dinh thự khoáng nóng Onsen, Biệt thự bán đảo Hồ Tây, Dinh thự biển Tuần Châu), Khoảng giá.
+       + **Portfolio 4 Kiệt Tác Bất Động Sản**: The Celestial Sky Villa (185 Tỷ), Heian Onsen Royal Residence (68.5 Tỷ), Lakeside Imperial Manor (295 Tỷ), Azure Oceanfront Sanctuary (340 Tỷ) kèm thông số chi tiết và thư viện ảnh.
+       + **Triết Lý Kiến Trúc & Thủ Công**: Tôn vinh Đá cẩm thạch Calacatta nhập khẩu Ý, Gỗ óc chó Bắc Mỹ & Da bò thuộc thảo mộc Tuscany, Smart Home AI an ninh 5 lớp.
+       + **360° Virtual Tour Interactive**: Trải nghiệm thực tế ảo chuyển đổi đa phòng (Đại sảnh, Master Suite, Hầm rượu & Cigar Lounge, Bể bơi chân mây).
+       + **Đặc Quyền Hội Viên CEO 1983**: Chiết khấu trực tiếp 5% (lên đến 15 Tỷ), Butler quản gia & Đầu bếp Michelin 24/7, Bảo hành kiến trúc 10 năm, Bảo lãnh tín dụng VIP.
+       + **Modal Đặt Lịch Khảo Sát Riêng Tư**: Đưa đón xe Maybach/Rolls-Royce riêng, bảo mật danh tính NDA.
+       + Đăng ký route `/landing/$slug` với slug: `web-v4`, `estate`, `real-estate`, `residence`, `luxury-estate`.
+  3. *CRM - Chuẩn Hóa Mẫu Thư Mời Sự Kiện Đa Kênh & Khối Mã Vé QR Check-In (`ZaloTemplateManager.tsx`, `MailTemplateManager.tsx`, `InvitationSetupManager.tsx`)*:
+     - Chuẩn hóa nội dung mẫu thư mời sự kiện trên toàn bộ các kênh (Email HTML Navy-Gold, Zalo OA ZNS, In-App Notification):
+       * Kính gửi Anh/Chị {{attendee_name}}
+       * BTC trân trọng kính mời Anh/Chị tham dự sự kiện:
+       * Tên sự kiện: {{event_title}}
+       * Thông tin sự kiện: Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC
+       * Xác nhận tham dự (RSVP link)
+       * Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
+       * Trân trọng!
+     - Tích hợp khối hiển thị mã QR Vé mời điện tử check-in tự động bên dưới thư mời.
+  4. *CRM - Bảo Mật Mail Hệ Thống: Chặn Tuyệt Đối Gửi Vào Tài Khoản Đã Xóa Hoặc Ngừng Hoạt Động (`mail.service.ts`, `admin.service.ts`)*:
+     - Bổ sung hàm `verifyActiveRecipient(email, context)` trong `MailService`: Kiểm tra đồng thời bảng `members` và `users` trong PostgreSQL. Nếu tài khoản mang trạng thái `deleted`, `inactive`, `dormant`, `da_xoa`, `khoa`, `tam_khoa` hoặc `is_active === false`, tự động hủy lệnh gửi thư và ghi log cảnh báo bảo mật.
+     - Trong `admin.service.ts`: Xóa bỏ toàn bộ việc fallback tự ý gửi mail vào email admin/test, chỉ gửi thông báo hội phí và sự kiện cho chính hội viên đang hoạt động (`status = 'active'`, `is_active = true`).
+  5. *Kiểm Tra Mã Nguồn (Strict Type Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc -p tsconfig.json` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 10/11/2026 (v10.91): Đồng Bộ Toàn Diện Nhật Ký Thao Tác, Cấu Hình Hệ Thống Riêng Biệt, Dynamic Theme Thẻ Hội Viên & Hoàn Thiện Trải Nghiệm Mobile App ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-012], [NODE-APP-014])**:
   1. *Mobile App - Đồng Bộ Triệt Để Nhật Ký Thao Tác & Hoạt Động (`association.history.tsx`, `user-activity-logger.ts`)*:
      - Khắc phục triệt để tình trạng người dùng thực hiện bình luận, xóa bài viết, like, chia sẻ nhưng không thấy hiển thị trong tab "Lịch sử hoạt động":
@@ -780,6 +828,54 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 10/11/2026 (v10.92): Nâng Cấp Toàn Diện Mini Photoshop & Canva Studio Poster Thư Mời, Xóa Mẫu Kho Template, Ra Mắt Landing Page Dinh Thự Mẫu 4 Chuẩn Pinterest Pin 955748352150056573, Chuẩn Hóa Mẫu Thư Mời Sự Kiện Đa Kênh Kèm Vé QR & Siết Chặt Bảo Mật Mail CRM ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CORE-003])**:
+  1. *CRM - Nâng Cấp Poster Studio Thành Mini Photoshop & Canva Studio Hoàn Chỉnh (`InvitationTemplateStudio.tsx`, `admin.controller.ts`, `admin.service.ts`)*:
+     - **Tab "Ảnh Nền (Background)" Chuyên Biệt**: Khắc phục dứt điểm lỗi không thay đổi được ảnh nền. Cho phép:
+       + Tải ảnh nền trực tiếp từ máy tính (File Upload PNG/JPG/WebP) tức thì.
+       + Dán đường dẫn URL ảnh nền tùy chỉnh với nút xóa nhanh.
+       + Bộ sưu tập 8+ Preset ảnh nền sự kiện hoàng gia chọn lọc (Cung điện Atlantis, Heian Thanh Thủy, Cosmos Deep, Sân khấu Gala, Dạ tiệc Hoàng Kim, Thảm đỏ Ruby VIP).
+       + Thanh trượt điều chỉnh Độ tối phủ nền (Overlay Darkness: 0-90%) và Độ mờ nhòe nền (Background Blur: 0-15px) chuẩn Photoshop.
+     - **Hệ Thống Lớp Ảnh Tự Do Đa Lớp (Multi-Image Layers with Resize & Drag)**:
+       + Cho phép thêm nhiều ảnh tùy ý (logo tài trợ, sticker, huy hiệu, ảnh diễn giả phụ, con dấu vàng CEO 1983).
+       + Kéo dãn tỷ lệ kích thước: Chiều rộng (40-450px), Chiều cao (40-450px), Khóa tỷ lệ khung hình (Lock Aspect Ratio), Tỷ lệ Scale (30-200%), Góc xoay (-180° đến +180°).
+       + Độ trong suốt (Opacity: 10-100%), Mờ viền lông vũ hòa nền tự nhiên (Feather Blur: 0-30px).
+       + 5 kiểu hình dáng cắt viền: Chữ nhật, Bo góc 24px, Hình tròn 3D, Cổng vòm Heian, Bầu dục.
+       + Kéo thả di chuyển vị trí tự do trên Canvas, có nút xóa / gỡ ảnh trực tiếp ngay trên góc ảnh và trong bảng điều khiển.
+     - **Quản Lý Văn Bản & Thêm / Sửa / Xóa Dòng Chữ Tự Do**:
+       + Cho phép bật/tắt (Ẩn / Hiện) hoặc xóa từng trường thông tin mặc định nếu không sử dụng (Tiêu đề, Kicker, Hộp đặc quyền Capsule, Ngày giờ, Địa điểm, Khối đại biểu, Lời kết, Mã QR).
+       + Nút **"+ Thêm Dòng Chữ Mới"**: Tự do tạo dòng chữ mới trên poster, đổi font chữ (Cinzel, Playfair, Cormorant, Be Vietnam Pro, Montserrat, Orbitron, Dancing Script), cỡ chữ (XS - 5XL), gradient màu sắc (Gold, Cyan, Platinum, Ruby, White), dập nổi 3D, kéo thả tới bất kỳ vị trí nào trên poster.
+     - **Kho Mẫu Template & Chức Năng XÓA MẪU KHỎI KHO**:
+       + Bổ sung endpoint backend `DELETE /admin/invitation-templates/:id` trong `AdminController` và `AdminService`.
+       + Nút thùng rác đỏ trên từng mẫu template trong Kho Mẫu (`handleDeleteTemplate`), có hộp thoại xác nhận an toàn, gọi API xóa và loại bỏ vĩnh viễn khỏi hệ thống.
+  2. *CRM - Ra Mắt Landing Page Mẫu 4: Dinh Thự Kiến Trúc Siêu Sang Chuẩn Pinterest Pin 955748352150056573 (`ModernLuxuryEstateLanding.tsx`, `landing.$slug.tsx`, `TimedCardsOpeningLanding.tsx`)*:
+     - Xây dựng hoàn chỉnh phân hệ Landing Web giới thiệu Bất Động Sản Siêu Sang & Dinh Thự Nghỉ Dưỡng CEO 1983:
+       + **Nhận diện thương hiệu & Bảng màu**: Tone màu Warm Ivory `#FAF8F5`, Deep Obsidian `#0D0E11`, Brushed Champagne Gold `#C5A880`, Forest Bronze `#2C3531`.
+       + **Hero Section**: Hiệu ứng Parallax 3D xoay nhẹ theo chuyển động chuột, visual dinh thự triệu đô, thẻ badge VIP nổi, thanh thống kê thông số (Diện tích 1,450m², 6 Suites VIP, Bể bơi chân mây, Bãi đáp trực thăng riêng).
+       + **Bộ lọc tìm kiếm bất động sản VIP**: Lọc theo Vị trí (Hà Nội, Phú Thọ, Hạ Long, Đà Nẵng), Loại hình kiến trúc (Sky Penthouse, Dinh thự khoáng nóng Onsen, Biệt thự bán đảo Hồ Tây, Dinh thự biển Tuần Châu), Khoảng giá.
+       + **Portfolio 4 Kiệt Tác Bất Động Sản**: The Celestial Sky Villa (185 Tỷ), Heian Onsen Royal Residence (68.5 Tỷ), Lakeside Imperial Manor (295 Tỷ), Azure Oceanfront Sanctuary (340 Tỷ) kèm thông số chi tiết và thư viện ảnh.
+       + **Triết Lý Kiến Trúc & Thủ Công**: Tôn vinh Đá cẩm thạch Calacatta nhập khẩu Ý, Gỗ óc chó Bắc Mỹ & Da bò thuộc thảo mộc Tuscany, Smart Home AI an ninh 5 lớp.
+       + **360° Virtual Tour Interactive**: Trải nghiệm thực tế ảo chuyển đổi đa phòng (Đại sảnh, Master Suite, Hầm rượu & Cigar Lounge, Bể bơi chân mây).
+       + **Đặc Quyền Hội Viên CEO 1983**: Chiết khấu trực tiếp 5% (lên đến 15 Tỷ), Butler quản gia & Đầu bếp Michelin 24/7, Bảo hành kiến trúc 10 năm, Bảo lãnh tín dụng VIP.
+       + **Modal Đặt Lịch Khảo Sát Riêng Tư**: Đưa đón xe Maybach/Rolls-Royce riêng, bảo mật danh tính NDA.
+       + Đăng ký route `/landing/$slug` với slug: `web-v4`, `estate`, `real-estate`, `residence`, `luxury-estate`.
+  3. *CRM - Chuẩn Hóa Mẫu Thư Mời Sự Kiện Đa Kênh & Khối Mã Vé QR Check-In (`ZaloTemplateManager.tsx`, `MailTemplateManager.tsx`, `InvitationSetupManager.tsx`)*:
+     - Chuẩn hóa nội dung mẫu thư mời sự kiện trên toàn bộ các kênh (Email HTML Navy-Gold, Zalo OA ZNS, In-App Notification):
+       * Kính gửi Anh/Chị {{attendee_name}}
+       * BTC trân trọng kính mời Anh/Chị tham dự sự kiện:
+       * Tên sự kiện: {{event_title}}
+       * Thông tin sự kiện: Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC
+       * Xác nhận tham dự (RSVP link)
+       * Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
+       * Trân trọng!
+     - Tích hợp khối hiển thị mã QR Vé mời điện tử check-in tự động bên dưới thư mời.
+  4. *CRM - Bảo Mật Mail Hệ Thống: Chặn Tuyệt Đối Gửi Vào Tài Khoản Đã Xóa Hoặc Ngừng Hoạt Động (`mail.service.ts`, `admin.service.ts`)*:
+     - Bổ sung hàm `verifyActiveRecipient(email, context)` trong `MailService`: Kiểm tra đồng thời bảng `members` và `users` trong PostgreSQL. Nếu tài khoản mang trạng thái `deleted`, `inactive`, `dormant`, `da_xoa`, `khoa`, `tam_khoa` hoặc `is_active === false`, tự động hủy lệnh gửi thư và ghi log cảnh báo bảo mật.
+     - Trong `admin.service.ts`: Xóa bỏ toàn bộ việc fallback tự ý gửi mail vào email admin/test, chỉ gửi thông báo hội phí và sự kiện cho chính hội viên đang hoạt động (`status = 'active'`, `is_active = true`).
+  5. *Kiểm Tra Mã Nguồn (Strict Type Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc -p tsconfig.json` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 10/11/2026 (v10.91): Đồng Bộ Toàn Diện Nhật Ký Thao Tác, Cấu Hình Hệ Thống Riêng Biệt, Dynamic Theme Thẻ Hội Viên & Hoàn Thiện Trải Nghiệm Mobile App ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-012], [NODE-APP-014])**:
   1. *Mobile App - Đồng Bộ Triệt Để Nhật Ký Thao Tác & Hoạt Động (`association.history.tsx`, `user-activity-logger.ts`)*:
