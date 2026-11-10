@@ -21,7 +21,7 @@
 
 **Hệ Thống CRM CEO 1983:**
 - ✅ Hồ sơ doanh nghiệp 360° chính danh, chuẩn hóa
-- ✅ Tự động sinh mã VietQR Napas 247, gạch nợ tức thì
+- ✅ Tự động sinh mã QR ngân hàng Napas 247, gạch nợ tức thì
 - ✅ Sơ đồ xếp chỗ Cinema Map & Soát vé QR 0.1s
 - ✅ Ma trận phân quyền Sticky 2 cột cho 10 vai trò
 
@@ -31,7 +31,7 @@
 *Các chỉ số ấn tượng khẳng định năng lực quản trị vượt bậc của hệ sinh thái*
 
 - **500+** | Doanh Nghiệp Hội Viên: Thẩm định pháp lý chính danh 100%
-- **100%** | Đối Soát Tự Động: Gạch nợ hội phí tức thời qua VietQR
+- **100%** | Đối Soát Tự Động: Gạch nợ hội phí tức thời qua Mã QR Ngân Hàng
 - **0.1s** | Tốc Độ Soát Vé QR: Check-in sự kiện không chạm qua camera
 - **0** | Sai Sót Xếp Chỗ: Khán phòng trực quan Cinema Seating Map
 
@@ -67,10 +67,10 @@
 
 ---
 
-### SLIDE 7: QUẢN TRỊ TÀI CHÍNH & ĐỐI SOÁT HỘI PHÍ VIETQR
+### SLIDE 7: QUẢN TRỊ TÀI CHÍNH & ĐỐI SOÁT HỘI PHÍ MÃ QR NGÂN HÀNG
 *Minh bạch từng đồng thu chi, gạch nợ tự động không cần kế toán kiểm đếm*
 
-- **Mã VietQR động Napas 247:** Nhúng sẵn số tiền và cú pháp hóa đơn, quét là chuyển tiền chuẩn 100%.
+- **mã QR ngân hàng động Napas 247:** Nhúng sẵn số tiền và cú pháp hóa đơn, quét là chuyển tiền chuẩn 100%.
 - **Gạch nợ tức thời:** Hệ thống tự động kích hoạt trạng thái hội viên ngay khi tiền về tài khoản.
 - **Sổ quỹ thu chi minh bạch:** Theo dõi quỹ hoạt động, tài trợ sự kiện và giải ngân chi tiết.
 - **Xuất báo cáo tài chính:** Trích xuất báo cáo kế toán chuẩn mực phục vụ đại hội thường niên.

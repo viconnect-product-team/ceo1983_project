@@ -15,7 +15,7 @@
 4. Bật quyền nhận thông báo và quyền mic/camera để sẵn sàng kết nối.
 
 ### BÀI 2: SỬ DỤNG THẺ HỘI VIÊN ĐIỆN TỬ & CHẠM DANH THIẾP NFC
-1. Tại màn hình chính, thẻ hội viên VIP điện tử hiển thị trang trọng.
+1. Tại màn hình chính, thẻ hội viên điện tử điện tử hiển thị trang trọng.
 2. Bật tính năng NFC trên điện thoại, chạm lưng máy vào điện thoại đối tác để trao đổi danh thiếp số.
 3. Hoặc nhấn vào thẻ để phóng to mã QR kết nối.
 
@@ -83,10 +83,10 @@
 
 ### BÀI 9: HỒ SƠ DOANH NGHIỆP TẠI THẺ HỘI VIÊN, ĐĂNG KÝ SỰ KIỆN CÓ PHÍ & GIAN HÀNG ĐA PHƯƠNG TIỆN
 1. **Hồ Sơ Năng Lực Doanh Nghiệp (Brochure / Flyer) Tại Thẻ Hội Viên (`/association/card`)**:
-   - Khối hồ sơ doanh nghiệp được tích hợp hiển thị ngay bên dưới Thẻ hội viên VIP điện tử.
+   - Khối hồ sơ doanh nghiệp được tích hợp hiển thị ngay bên dưới thẻ hội viên điện tử điện tử.
    - Hội viên có thể xem trực quan thông tin giới thiệu, lĩnh vực kinh doanh, quy mô, brochure năng lực của công ty và chia sẻ nhanh cho đối tác khi gặp gỡ.
 2. **Quy Trình Đăng Ký Sự Kiện Có Phí & Nhận Vé E-Ticket**:
-   - Khi chọn đăng ký sự kiện có phí: Ứng dụng cung cấp mã VietQR thanh toán chuẩn số tiền vé về tài khoản MB Bank `1983000000` kèm cú pháp chuyển khoản định danh.
+   - Khi chọn đăng ký sự kiện có phí: Ứng dụng cung cấp mã QR ngân hàng thanh toán chuẩn số tiền vé về tài khoản MB Bank `1983000000` kèm cú pháp chuyển khoản định danh.
    - Vé tham dự chỉ được kích hoạt (sinh mã QR check-in vào ví vé) sau khi Ban Tổ Chức / Admin xác nhận thanh toán trên hệ thống; đồng thời hệ thống tự động gửi email E-ticket chứa mã QR vé check-in về email của hội viên.
 3. **Đăng Sản Phẩm & Cơ Hội Hợp Tác Đa Phương Tiện**:
    - Gian hàng Marketplace: Đăng tải nhiều ảnh sản phẩm sắc nét, chèn link video giới thiệu (YouTube hoặc video trực tiếp) để tăng tính sinh động và uy tín cho sản phẩm.

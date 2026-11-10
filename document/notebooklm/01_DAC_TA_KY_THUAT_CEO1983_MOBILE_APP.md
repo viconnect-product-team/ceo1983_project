@@ -28,7 +28,7 @@
 
 ## 2. ĐẶC TẢ CHI TIẾT THEO TỪNG NODE CHỨC NĂNG
 
-### `[NODE-APP-001]` Trang Chủ Hội Viên, Thẻ Hội Viên VIP Đồng Bộ & Giao Diện Figma Theme Cam Tiên Phong
+### `[NODE-APP-001]` Trang Chủ Hội Viên, thẻ hội viên điện tử Đồng Bộ & Giao Diện Figma Theme Cam Tiên Phong
 - **Route Frontend**: `/association` (`src/routes/association.index.tsx`).
 - **Thành phần**: `CustomHomeShortcutsModal.tsx`, `WelcomeMemberModal.tsx`, `SeasonalEventHeader.tsx`, `OpportunityCandleWidget.tsx`.
 - **API Backend**: `GET /association/home-feed`, `GET /association/home-stats`, `PATCH /members/me` (`feed.service.ts`, `opportunity.service.ts`, `members.service.ts`).
@@ -36,14 +36,14 @@
 - **Luồng xử lý & Thiết kế Chuẩn Figma**:
   - **Giao Diện Chuẩn Figma Tone Cam Tiên Phong**: Toàn bộ thẻ Doanh Nhân Hero Card, khối Tính Năng Nhanh, Banner Sự Kiện, Tin Tức CLB và Quét Mã Check-in QR áp dụng chuẩn tone màu cam (`#EA580C`, `#F97316`, `orange-500`, `orange-600`) kết hợp dải gradient chuyển màu dịu mắt và bóng đổ cam nhẹ.
   - **Hệ Thống Icon SVG Độc Quyền Cục Bộ**: Tích hợp trực tiếp bộ SVG từ `/icons/home/` gồm chuông thông báo (`notification-01.svg`), khiên xác thực doanh nhân (`security-check.svg`), nút chỉnh sửa (`edit-04.svg`), hotline (`call-02.svg`), 4 phím tắt nhanh (Tin nhắn `bubble-chat.svg`, Danh bạ CEO `contact-book.svg`, Báo cáo `chart-breakout-circle.svg`, Giao thương B2B `briefcase-04.svg`) và đồng hồ đếm ngược sự kiện (`Clock.svg`).
-  - **Nút Chỉnh Sửa Trên Thẻ Hội Viên Tối Giản**: Nút chỉnh sửa thông tin trên Thẻ Hội Viên chỉ hiển thị biểu tượng icon bút chì bo viền (`edit-04.svg`), loại bỏ hoàn toàn chữ text để tối ưu không gian thẻ VIP sang trọng.
+  - **Nút Chỉnh Sửa Trên Thẻ Hội Viên Tối Giản**: Nút chỉnh sửa thông tin trên Thẻ Hội Viên chỉ hiển thị biểu tượng icon bút chì bo viền (`edit-04.svg`), loại bỏ hoàn toàn chữ text để tối ưu không gian thẻ doanh nhân số sang trọng.
   - **Cơ Chế Đồng Bộ Avatar & Ảnh Bìa Realtime**: Khi thay đổi Avatar hoặc Ảnh bìa tại màn Cá nhân (`/association/profile`), hệ thống cập nhật đồng thời lên CSDL qua `PATCH /members/me` và phát sự kiện `profile-updated` / `vba_member_avatar_updated`. Trang chủ lập tức lắng nghe và phản ánh Avatar cùng Ảnh bìa mới nhất trên Thẻ Hội Viên mà không cần tải lại toàn bộ trang.
   - Dải Cơ Hội Kinh Doanh Kéo Full-Width: Tích hợp widget Biểu đồ nến Candlestick thời gian thực biểu thị biến động giao thương theo từng khung giờ trong ngày (Open, High, Low, Close, Volume).
   - Khối Sàn Giao Thương B2B được đẩy xuống ngay bên dưới dạng thẻ full-width card dễ quan sát.
   - Tải số liệu thống kê thật 100% từ CSDL (tổng số deal, tổng giá trị, sản phẩm). Tuyệt đối không dùng số fallback giả.
   - Modal tùy biến phím tắt (`CustomHomeShortcutsModal.tsx`) chuẩn hóa lối tắt **"Tin nhắn"** (`/association/messages?tab=messages`).
 
-### `[NODE-APP-002]` Thẻ Hội Viên VIP Số & QR Cá Nhân
+### `[NODE-APP-002]` thẻ hội viên điện tử Số & QR Cá Nhân
 - **Route Frontend**: `/association/card` (`src/routes/association.card.tsx`).
 - **Thành phần**: `Ceo1983BusinessCardVisit.tsx`, `QrEnlargeModal.tsx`.
 - **API Backend**: `GET /association/card-profile`, `PUT /association/card-privacy` (`card.service.ts`).

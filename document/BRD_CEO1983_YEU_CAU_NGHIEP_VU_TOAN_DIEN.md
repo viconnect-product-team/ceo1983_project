@@ -36,7 +36,7 @@ Với sứ mệnh "Bản lĩnh - Tiên phong - Kết nối - Phát triển", CLB
 | Mã KPI | Mục Tiêu Chiến Lược | Chỉ Số Đo Lường Cụ Thể (SLA) |
 | --- | --- | --- |
 | OBJ-01 | Số hóa 100% Hồ Sơ Hội Viên | Định danh điện tử (e-KYC Doanh nghiệp) cho toàn bộ 500+ hội viên với mã định danh chuẩn `CEO-83xxx` trước Quý 4/2026. |
-| OBJ-02 | Tự Động Hóa 100% Thu - Nộp Hội Phí Qua VietQR | Sinh mã VietQR động Napas 24/7 chứa chính xác mã hội viên và số tiền; kế toán đối soát gạch nợ trên CRM giảm 95% thời gian xử lý thủ công. |
+| OBJ-02 | Tự Động Hóa 100% Thu - Nộp Hội Phí Qua Mã QR Ngân Hàng | Sinh mã QR ngân hàng động Napas 24/7 chứa chính xác mã hội viên và số tiền; kế toán đối soát gạch nợ trên CRM giảm 95% thời gian xử lý thủ công. |
 | OBJ-03 | Soát Vé An Ninh QR Gate < 0.2 Giây/Đại Biểu | Tốc độ quét nhận diện vé điện tử E-Ticket tại cửa sự kiện đạt dưới 200ms; hiển thị trực quan thông tin đại biểu và số bàn tiệc VIP; triệt tiêu 100% gian lận trùng vé. |
 | OBJ-04 | Tăng Trưởng Giao Thương Nội Khối B2B +45% | Thiết lập sàn thương mại B2B và kênh kết nối Cung - Cầu 1-on-1, thúc đẩy doanh số giao thương nội khối đạt tối thiểu 50 tỷ VNĐ trong năm đầu vận hành. |
 | OBJ-05 | Kiểm Phiếu Đại Hội Thời Gian Thực (Live 1s) | 100% đại biểu biểu quyết trực tuyến trên thiết bị di động cá nhân theo nguyên tắc 1 người 1 phiếu; tổng hợp kết quả chính xác 100% trong 1 giây sau khi đóng hòm phiếu. |
@@ -121,7 +121,7 @@ Hệ sinh thái số hóa được thiết kế chuẩn hóa bám sát cơ cấu
 | PROC-06 | Lên lịch họp & Thuật toán chống trùng phòng Sapphire Hub | A | I | A / R | I | I | I | I |
 | PROC-07 | Điểm danh đại biểu tham gia cuộc họp bằng mã QR động (30s) | I | I | A / R | I | I | I | R (Quét QR) |
 | PROC-08 | Giao nhiệm vụ & Đánh giá tiến độ công việc (Tasks 5 Views) | A | R | A / R | R | R | R | R (Được giao) |
-| PROC-09 | Thu hội phí thường niên qua Cổng VietQR Napas 24/7 | A | C | I | A / R | I | I | R (Chuyển khoản) |
+| PROC-09 | Thu hội phí thường niên qua cổng thanh toán QR ngân hàng Napas 24/7 | A | C | I | A / R | I | I | R (Chuyển khoản) |
 | PROC-10 | Đối soát sao kê ngân hàng & Duyệt gạch nợ hội phí (+365 ngày) | A | I | I | A / R | I | I | I |
 | PROC-11 | Kiểm soát phiếu chi 3 cấp (Lập -> Thẩm định -> Phê duyệt) | A | I | I | A / R | I | I | I |
 | PROC-12 | Kiểm duyệt sản phẩm niêm yết trên Sàn Thương Mại B2B | I | C | I | I | I | A / R | R (Đăng bán) |
@@ -148,17 +148,17 @@ Hệ sinh thái số hóa được thiết kế chuẩn hóa bám sát cơ cấu
 
 
 
-### FLOW-02: Quy Trình Quản Trị Hội Phí Thường Niên & Thu Nộp Qua VietQR Napas 24/7
+### FLOW-02: Quy Trình Quản Trị Hội Phí Thường Niên & Thu Nộp Qua Mã QR Ngân Hàng Napas 24/7
 
-**Chủ thể tham gia:** Hội viên chính thức, Ban Tài chính / Kế toán, Cổng thanh toán VietQR
+**Chủ thể tham gia:** Hội viên chính thức, Ban Tài chính / Kế toán, Cổng thanh toán Mã QR Ngân Hàng
 
 | Bước | Tên Thao Tác Nghiệp Vụ | Mô Tả Chi Tiết Quy Trình & Tiêu Chuẩn Thực Hiện |
 | --- | --- | --- |
-| 1 | Thông báo nghĩa vụ hội phí | Hằng năm, hệ thống tự động quét ngày hết hạn thẻ VIP (`term_end`). Trước 30 ngày, hệ thống kích hoạt thông báo đẩy trên Mobile App và email nhắc nhở nghĩa vụ hoàn thành hội phí thường niên (5.000.000 VNĐ/năm). |
-| 2 | Sinh mã VietQR động Napas 24/7 | Hội viên mở mục 'Hội Phí' trên Mobile App, nhấn 'Thanh Toán VietQR'. Hệ thống sinh mã QR động chuẩn Napas 24/7 chứa đầy đủ: Số tiền chính xác (5.000.000 VNĐ), Số tài khoản thụ hưởng của CLB CEO 1983 và Cú pháp chuẩn hóa: `HOIPHI CEO1983 [MÃ_HỘI_VIÊN] [HỌ_TÊN]`. |
-| 3 | Chuyển khoản liên ngân hàng | Hội viên sử dụng ứng dụng Mobile Banking của bất kỳ ngân hàng thương mại nào tại Việt Nam, quét mã VietQR và xác nhận chuyển khoản nhanh 24/7 không cần nhập tay. |
+| 1 | Thông báo nghĩa vụ hội phí | Hằng năm, hệ thống tự động quét ngày hết hạn thẻ doanh nhân số (`term_end`). Trước 30 ngày, hệ thống kích hoạt thông báo đẩy trên Mobile App và email nhắc nhở nghĩa vụ hoàn thành hội phí thường niên (5.000.000 VNĐ/năm). |
+| 2 | Sinh mã QR ngân hàng động Napas 24/7 | Hội viên mở mục 'Hội Phí' trên Mobile App, nhấn 'Thanh Toán Mã QR Ngân Hàng'. Hệ thống sinh mã QR động chuẩn Napas 24/7 chứa đầy đủ: Số tiền chính xác (5.000.000 VNĐ), Số tài khoản thụ hưởng của CLB CEO 1983 và Cú pháp chuẩn hóa: `HOIPHI CEO1983 [MÃ_HỘI_VIÊN] [HỌ_TÊN]`. |
+| 3 | Chuyển khoản liên ngân hàng | Hội viên sử dụng ứng dụng Mobile Banking của bất kỳ ngân hàng thương mại nào tại Việt Nam, quét mã QR ngân hàng và xác nhận chuyển khoản nhanh 24/7 không cần nhập tay. |
 | 4 | Đối soát sao kê ngân hàng & Gạch nợ thủ công trên CRM | Kế toán câu lạc bộ truy cập màn hình 'Quản Lý Hội Phí' (`/fees`) trên Web CRM. Đối soát số tiền và cú pháp giao dịch trên sao kê tài khoản ngân hàng thực tế. Khi khớp lệnh, kế toán bấm nút 'Duyệt Gạch Nợ' tương ứng với bản ghi hội viên. |
-| 5 | Kích hoạt gia hạn Thẻ VIP & Xuất hóa đơn điện tử | Hệ thống tự động chuyển trạng thái bản ghi sang `paid`, cộng thêm +365 ngày vào hạn dùng của Thẻ hội viên VIP (`term_end`), đồng thời tạo hóa đơn điện tử (`invoices`) và gửi thông báo xác nhận đã hoàn thành nghĩa vụ tài chính đến hội viên. |
+| 5 | Kích hoạt gia hạn Thẻ Doanh Nhân Số & Xuất hóa đơn điện tử | Hệ thống tự động chuyển trạng thái bản ghi sang `paid`, cộng thêm +365 ngày vào hạn dùng của thẻ hội viên điện tử (`term_end`), đồng thời tạo hóa đơn điện tử (`invoices`) và gửi thông báo xác nhận đã hoàn thành nghĩa vụ tài chính đến hội viên. |
 
 
 
@@ -198,7 +198,7 @@ Hệ sinh thái số hóa được thiết kế chuẩn hóa bám sát cơ cấu
 | RULE-STRUCT-6-COMMITTEES | Quy Tắc Chuẩn Hóa Danh Mục 6 Ban Chuyên Môn | Toàn bộ cơ sở dữ liệu, bộ lọc giao diện, phân bổ công việc và báo cáo chỉ được phép sử dụng đúng danh mục 6 ban chuyên môn chính thức: 1. Ban Quản Trị; 2. Ban Thư Ký; 3. Ban Thành Viên; 4. Ban Thiện Nguyện; 5. Ban Truyền Thông; 6. Ban Xúc Tiến Thương Mại. Tuyệt đối không tự ý thêm bớt hoặc đổi tên ban. |
 | RULE-TERMINOLOGY-HOIPHI | Quy Tắc Chuẩn Hóa Thuật Ngữ Hội Phí Thường Niên | Tuyệt đối KHÔNG sử dụng từ ngữ 'niên liễm' trong bất kỳ tài liệu kỹ thuật, giao diện người dùng, mã nguồn hay thông báo của hệ thống. Bắt buộc chuẩn hóa 100% bằng thuật ngữ 'Hội phí' hoặc 'Hội phí thường niên'. |
 | RULE-MEMBER-BIRTHYEAR-1983 | Quy Tắc Ràng Buộc Năm Sinh Hội Viên Chính Thức (Quý Hợi 1983) | Biểu mẫu đăng ký gia nhập hội viên chính thức bắt buộc kiểm tra trường năm sinh của người đại diện pháp luật phải chính xác là năm 1983. Mọi trường hợp sinh năm khác 1983 chỉ được tiếp nhận ở tư cách 'Khách mời danh dự' hoặc 'Đối tác liên kết' sau khi có nghị quyết phê duyệt riêng của Ban Quản Trị. |
-| RULE-FEE-VIETQR-AUTO-MATCH | Quy Tắc Quản Trị Hội Phí & Gạch Nợ Thủ Công | Mức hội phí thường niên được ấn định là 5.000.000 VNĐ/năm. Mã thanh toán VietQR Napas 24/7 phải chứa cú pháp chuẩn định danh. Do hệ thống chưa tích hợp Webhook gạch nợ tự động với cổng ngân hàng lõi, kế toán BẮT BUỘC phải kiểm tra sổ phụ/sao kê thực tế trước khi bấm nút 'Duyệt Gạch Nợ' trên CRM. Khi duyệt, hạn dùng thẻ VIP tự động cộng thêm chính xác +365 ngày. |
+| RULE-FEE-MÃ QR NGÂN HÀNG-AUTO-MATCH | Quy Tắc Quản Trị Hội Phí & Gạch Nợ Thủ Công | Mức hội phí thường niên được ấn định là 5.000.000 VNĐ/năm. Mã thanh toán Mã QR Ngân Hàng Napas 24/7 phải chứa cú pháp chuẩn định danh. Do hệ thống chưa tích hợp Webhook gạch nợ tự động với cổng ngân hàng lõi, kế toán BẮT BUỘC phải kiểm tra sổ phụ/sao kê thực tế trước khi bấm nút 'Duyệt Gạch Nợ' trên CRM. Khi duyệt, hạn dùng thẻ doanh nhân số tự động cộng thêm chính xác +365 ngày. |
 | RULE-EVENT-SINGLE-CHECKIN | Quy Tắc Soát Vé Một Lần Duy Nhất (Single Check-in) | Mỗi mã vé điện tử E-Ticket QR chỉ được phép qua cổng soát vé thành công đúng 01 lần duy nhất trong suốt thời gian diễn ra sự kiện. Lần quét thứ hai bắt buộc kích hoạt cảnh báo đỏ gian lận kèm âm báo cảnh báo và hiển thị thời gian đã check-in trước đó. |
 | RULE-VOTING-ONE-PERSON-ONE-VOTE | Quy Tắc Biểu Quyết Đại Hội 1 Người 1 Phiếu | Mỗi hội viên chính thức (`member`) có trạng thái hội phí `paid` chỉ sở hữu đúng 01 phiếu biểu quyết duy nhất cho mỗi nghị quyết đại hội. Phiếu bầu được mã hóa một chiều đảm bảo tính ẩn danh tuyệt đối và không thể sửa đổi sau khi đã bấm xác nhận gửi phiếu. |
 | RULE-FIN-CASHBOOK-3-LEVELS | Quy Tắc Sổ Quỹ Thu Chi Kiểm Soát 3 Cấp | Mọi khoản chi tiêu từ quỹ câu lạc bộ vượt quá 2.000.000 VNĐ bắt buộc phải trải qua quy trình kiểm soát 3 cấp nghiêm ngặt trên Web CRM: Cấp 1: Cán bộ đề xuất lập phiếu (`pending`); Cấp 2: Trưởng ban phụ trách hoặc Tổng Thư Ký thẩm tra (`reviewed`); Cấp 3: Chủ tịch CLB hoặc Trưởng Ban Tài chính phê duyệt xuất quỹ (`approved`). |
@@ -217,7 +217,7 @@ Hệ sinh thái số hóa được thiết kế chuẩn hóa bám sát cơ cấu
 
 | Hạng Mục Tích Hợp | Kỳ Vọng Thiết Kế Hoàn Chỉnh | Hiện Trạng Kết Nối Thực Tế | Giải Pháp Vận Hành Tác Nghiệp |
 | --- | --- | --- | --- |
-| Cổng Thanh Toán VietQR | Tự động gạch nợ công nợ hội phí sang trạng thái `paid` trong 1 giây qua Webhook ngân hàng. | Đã sinh mã VietQR động chuẩn Napas 24/7 chứa đúng số tiền và nội dung chuyển khoản; tuy nhiên chưa có kết nối Webhook gạch nợ tự động. | Kế toán / Thủ quỹ đối soát biến động số dư trên sao kê tài khoản ngân hàng thực tế, sau đó truy cập Web CRM (`/fees`) và bấm nút 'Duyệt Gạch Nợ' thủ công. |
+| Cổng Thanh Toán Mã QR Ngân Hàng | Tự động gạch nợ công nợ hội phí sang trạng thái `paid` trong 1 giây qua Webhook ngân hàng. | Đã sinh mã QR ngân hàng động chuẩn Napas 24/7 chứa đúng số tiền và nội dung chuyển khoản; tuy nhiên chưa có kết nối Webhook gạch nợ tự động. | Kế toán / Thủ quỹ đối soát biến động số dư trên sao kê tài khoản ngân hàng thực tế, sau đó truy cập Web CRM (`/fees`) và bấm nút 'Duyệt Gạch Nợ' thủ công. |
 | Trợ Lý AI Điều Hành & Dẫn Đường Thao Tác Trực Tiếp (Turn-by-Turn Voice GPS) | Người dùng phải đọc tài liệu văn bản tĩnh hoặc xem video hướng dẫn rời rạc, tự tìm kiếm các nút bấm phức tạp trên giao diện. | Đã tích hợp Trợ lý AI giọng nói tiếng Việt 100% miễn phí (Gemini 2.0 Flash Free Tier + Web Speech API); cơ chế 2 pha đàm thoại thông minh; tự động lái màn hình và chiếu Spotlight viền vàng nhấp nháy vào đúng nút cần thao tác khi người dùng đồng ý. | Hội viên và cán bộ quản trị chỉ cần mở micro nói khẩu lệnh (ví dụ: 'Đăng ký sự kiện như nào', 'Tạo sự kiện mới kiểu gì', 'Có'), AI tự động giải thích và dẫn đường tận tay. |
 | Đăng Nhập Một Chạm (SSO Google / Apple) | Đăng nhập tức thì chỉ với một chạm qua Google OAuth 2.0 hoặc Apple Sign-In. | Đã thiết kế nút bấm UI trên màn hình đăng nhập; chưa cấu hình chính thức Google Client ID và Apple Developer Service ID. | Hội viên và cán bộ quản lý đăng nhập ổn định bằng Số điện thoại / Email kết hợp Mật khẩu tài khoản cá nhân. |
 | Phòng Họp Trực Tuyến Trực Tiếp (In-app Video Call) | Nhúng trực tiếp khung hình hội nghị truyền hình WebRTC đa điểm ngay bên trong ứng dụng di động. | Chưa tích hợp SDK Video Conference trực tiếp vào bundle ứng dụng di động để tối ưu dung lượng tải app. | Khi đến giờ họp, ứng dụng hiển thị nút mở trực tiếp liên kết phòng họp ngoài (Zoom Meetings, Google Meet hoặc UniWork Platform). |

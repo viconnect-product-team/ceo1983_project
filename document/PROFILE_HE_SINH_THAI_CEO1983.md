@@ -42,7 +42,7 @@ Hệ sinh thái chuyển đổi số của CLB Doanh Nhân CEO 1983 được ngh
   - **Sơ Đồ Xếp Chỗ Rạp Chiếu Phim (Cinema Seating Studio)**: Bố trí phân khu VIP, hàng ghế A-D trực quan, gán chỗ tự động và chống nhầm chỗ tại các đại tiệc Gala.
   - **Cổng Soát Vé QR Gatekeeper & Standee Zalo**: Soát vé camera 0.1 giây, quản lý danh sách đại biểu trực tiếp theo thời gian thực.
   - **Ma Trận Phân Quyền Cố Định (Sticky RBAC Matrix)**: 10 vai trò quản trị hành chính, 11 module chức năng, chống trôi bảng tiêu đề.
-  - **Kế Toán Hội Phí & Quản Trị Tài Chính Minh Bạch**: Tự động sinh mã VietQR theo chuẩn Napas 247, đối soát nộp phí và báo cáo thu chi tự động.
+  - **Kế Toán Hội Phí & Quản Trị Tài Chính Minh Bạch**: Tự động sinh mã QR ngân hàng theo chuẩn Napas 247, đối soát nộp phí và báo cáo thu chi tự động.
   - **Điều Hành Công Việc Kanban & Biểu Quyết Số**: Giao việc theo chuyên ban, nhắc việc tự động và bỏ phiếu tín nhiệm bảo mật cao.
 
 ### Trụ Cột 2: Ứng Dụng Di Động Hội Viên Kết Nối Giao Thương (CEO 1983 Mobile App)

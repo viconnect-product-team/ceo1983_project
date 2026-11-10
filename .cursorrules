@@ -25,8 +25,8 @@
 #   * QUY TẮC BÌNH LUẬN & MENTION (STRICT): Hệ thống bình luận phải tổ chức dạng cây phân cấp (Threaded Comment Tree) hiển thị tất cả bình luận; bình luận mới nhất hoặc luồng thảo luận có tương tác mới phải được tự động đẩy lên đầu; hỗ trợ tag tên @ hội viên (lấy từ danh sách kết nối connectedOnly=true) kèm gửi thông báo đẩy (push notification) thời gian thực tới người được nhắc tên. Đồng bộ hóa 100% trải nghiệm bình luận giữa Mạng lưới và Thống kê.
 #   * QUY CHUẨN TRÌNH XEM TÀI LIỆU TOÀN NĂNG ([NODE-CRM-014]): Mọi tính năng mở tệp tài liệu CLB BẮT BUỘC hỗ trợ xem chi tiết tối thiểu 3 định dạng Word (.docx, .doc theo layout giấy in A4 chuẩn hoặc Office/Google Docs), Excel (.xlsx, .xls, .csv phân tích đa sheet bằng SheetJS kèm bộ lọc tìm kiếm dòng) và PDF (.pdf nhúng điều hướng zoom in/out, in ấn).
 #   * QUY CHUẨN LANDING WEB DYNAMIC ([NODE-CRM-021], [NODE-CRM-023], [NODE-CRM-026], [NODE-CRM-027]): Cổng quản trị Web CRM hỗ trợ tạo, quản lý và hiển thị 4 bản mẫu chuẩn: Mẫu 1 (Timed Cards Opening - Pinterest Giulio Cuscito), Mẫu 2 (Startup Mobile Showcase - Pinterest Pin 234398355598861981), Mẫu 3 (Forge Luxury Atelier - Pinterest Pin 569353577917214566 Award Winner) và Mẫu 4 (Modern Luxury Estate & Architectural Showcase - Pinterest Pin 955748352150056573 phong cách Dinh Thự Nghỉ Dưỡng Triệu Đô). Mẫu 4 gồm: Hero Section Parallax 3D xoay theo chuột, Bộ lọc tìm kiếm BĐS VIP đa khu vực, Portfolio 4 kiệt tác dinh thự kèm specs diện tích, phòng ngủ, bể bơi, bãi đáp trực thăng; Triết lý đá cẩm thạch Calacatta Ý & da bò Tuscany; 360° Virtual Tour đa phòng; và Modal đặt lịch khảo sát VIP đưa đón xe riêng Maybach. Đường dẫn truy cập path-based: /landing/web-v1, /landing/web-v2, /landing/web-v3 và /landing/web-v4 (hoặc /landing/[slug]).
-#   * QUY CHUẨN MINI PHOTOSHOP & CANVA STUDIO POSTER THƯ MỜI ([NODE-CRM-017]): Studio tạo poster thư mời sự kiện nâng cấp thành một Photoshop thu nhỏ hoàn chỉnh: (1) Tab Ảnh Nền (Background): Tự do upload ảnh nền từ máy tính (PNG/JPG/WebP), dán link ảnh tùy chỉnh, chọn từ 8 preset nền sự kiện hoàng gia chọn lọc, thanh trượt chỉnh độ tối overlay (0-90%) và độ mờ blur (0-15px); (2) Tab Lớp Ảnh (Multi-Image Layers): Cho phép thêm nhiều ảnh tùy ý (logo tài trợ, sticker, huy hiệu, con dấu vàng CEO 1983), kéo dãn tỷ lệ (Width, Height, Scale, Xoay góc, Opacity, Feather Blur, Shape bo góc), kéo thả di chuyển vị trí, gỡ bỏ ảnh (xóa ảnh); (3) Tab Văn Bản: Cho phép ẩn/hiện hoặc xóa từng trường thông tin mặc định, và nút "+ Thêm Dòng Chữ Mới" tự do chọn font chữ, cỡ chữ, màu sắc gradient, dập nổi 3D, kéo thả tự do; (4) Tab Kho Mẫu: Lưu mẫu mới đầy đủ thông số nền, các lớp ảnh, text, tỷ lệ khung hình, và nút XÓA MẪU KHỎI KHO gọi API DELETE /admin/invitation-templates/:id; (5) Tích hợp đại biểu VIP: 5 chế độ khung ảnh (Tròn Hoàng Gia 3D, Vòm Cung Heian, Bầu Dục Ngọc Trai, Mờ Viền Lông Vũ, Thẻ Nổi 3D), upload ảnh trực tiếp từ máy, khay avatar mẫu VIP, loại bỏ hoàn toàn lỗi làm mờ khuôn mặt và chống loop call API.
-#   * QUY CHUẨN POSTER HỆ THỐNG CHÀO HÀNG ĐỐI TÁC ([NODE-CRM-019]): Xây dựng 2 bản poster hệ thống đan xen mobile chuẩn Pinterest Pin 754493743866082637: (1) Bản 1 "Navy Midnight Cosmic Executive" (Deep Cosmic Navy, Thẻ Doanh Nhân Số 3D, 4 màn hình mobile B2B & Đại hội, dành cho CLB Doanh Nhân & Hiệp hội); (2) Bản 2 "Modern High-Tech Minimalist Ivory & Obsidian" (Obsidian & Champagne Gold, Dashboard CRM Recharts, Trợ lý AI 24/7, Sổ quỹ VietQR, dành cho Enterprise & Bán giải pháp SaaS chuyển đổi số). Hỗ trợ chế độ Thuyết trình Toàn Màn Hình, Xuất ảnh 4K in ấn, và link công khai /landing/pitch-deck.
+#   * QUY CHUẨN MINI PHOTOSHOP & CANVA STUDIO POSTER THƯ MỜI ([NODE-CRM-017]): Studio tạo poster thư mời sự kiện nâng cấp thành một Photoshop thu nhỏ hoàn chỉnh: (1) Tab Ảnh Nền (Background): Tự do upload ảnh nền từ máy tính (PNG/JPG/WebP), dán link ảnh tùy chỉnh, chọn từ 8 preset nền sự kiện hoàng gia chọn lọc, thanh trượt chỉnh độ tối overlay (0-90%) và độ mờ blur (0-15px); (2) Tab Lớp Ảnh (Multi-Image Layers): Cho phép thêm nhiều ảnh tùy ý (logo tài trợ, sticker, huy hiệu, con dấu vàng CEO 1983), kéo dãn tỷ lệ (Width, Height, Scale, Xoay góc, Opacity, Feather Blur, Shape bo góc), kéo thả di chuyển vị trí, gỡ bỏ ảnh (xóa ảnh); (3) Tab Văn Bản: Cho phép ẩn/hiện hoặc xóa từng trường thông tin mặc định, và nút "+ Thêm Dòng Chữ Mới" tự do chọn font chữ, cỡ chữ, màu sắc gradient, dập nổi 3D, kéo thả tự do; (4) Tab Kho Mẫu: Lưu mẫu mới đầy đủ thông số nền, các lớp ảnh, text, tỷ lệ khung hình, và nút XÓA MẪU KHỎI KHO gọi API DELETE /admin/invitation-templates/:id; (5) Tích hợp đại biểu danh dự: 5 chế độ khung ảnh (Tròn Hoàng Gia 3D, Vòm Cung Heian, Bầu Dục Ngọc Trai, Mờ Viền Lông Vũ, Thẻ Nổi 3D), upload ảnh trực tiếp từ máy, khay avatar mẫu doanh nhân, loại bỏ hoàn toàn lỗi làm mờ khuôn mặt và chống loop call API.
+#   * QUY CHUẨN BỘ 5 POSTER PR CHÀO HÀNG ĐỐI TÁC ([NODE-CRM-019]): Xây dựng trọn bộ 5 bản poster PR hệ thống chào hàng chuẩn 5 Pinterest URLs (1116189088939047069, 1126533294319507400, 1116189088942752029, 1108378158348955419, 1116189088941957181): (1) Đa Thiết Bị 3D Isometric Ecosystem Hub; (2) Watermark CEO 1983 & Trụ Sở 3D; (3) Bục Neon Tròn & Trợ Lý Cá Nhân Hóa ViOne AI; (4) 4 Màn Hình Glassmorphism 2x2 Grid; (5) Design System & Khối Kính 3D. Hỗ trợ chế độ Thuyết trình Toàn Màn Hình, Xuất ảnh 4K độ phân giải 3x in ấn không vỡ hạt, và link công khai /templates?tab=ecosystem-pitch.
 #   * QUY CHUẨN MẪU THƯ MỜI SỰ KIỆN ĐA KÊNH & KHỐI VÉ QR ([NODE-CRM-025]): Thư mời sự kiện đa kênh (Email, Zalo OA ZNS, In-App, Push) chuẩn hóa 10 trường thông số: Kính gửi Anh/Chị, Tên sự kiện, Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý từ BTC, Link xác nhận tham dự, Hotline BTC (0973.205.683 / 0903.205.683 / 0903.203.204) và tích hợp khối hiển thị mã QR Vé mời điện tử check-in tự động bên dưới.
 #   * QUY CHUẨN BẢO MẬT EMAIL CRM ([NODE-CORE-003]): Tuyệt đối không gửi email vào các tài khoản đã xóa (status in 'deleted', 'inactive', 'dormant', 'da_xoa', 'khoa', 'tam_khoa' hoặc is_active === false). Hàm verifyActiveRecipient kiểm tra đồng thời cả bảng members và users trước khi chạm vào SMTP Transporter; chỉ gửi thông báo hội phí và sự kiện cho chính hội viên đang hoạt động hợp lệ.
 #   * QUY CHUẨN GIAO DIỆN MẠNG LƯỚI & BOTTOM SHEET BÌNH LUẬN MOBILE ([NODE-APP-003], [NODE-APP-004]): Giao diện Mạng lưới tuân thủ thiết kế chuẩn: Header gồm nút Menu trái, ô tìm kiếm capsule `rounded-[99px]`, chuông thông báo badge `9+`; Thanh đăng bài mới với avatar TA pill; Thanh danh mục pill `rounded-[99px]` kèm nút mở cây danh mục `CategoryTreeModal`; Card bài viết `rounded-3xl` kèm khối thành viên tham dự & đăng ký cuộc họp; Footer bài viết sử dụng bộ icon SVG chuẩn (`favourite.svg`, `comment add-02.svg`, `share-01.svg`). Bottom Sheet bình luận có pull handle, bong bóng bình luận xanh pastel, và menu 3 chấm phân quyền (sao chép, phản hồi với người khác; sao chép, chỉnh sửa, xóa với chính chủ).
@@ -34,11 +34,12 @@
 #   * QUY CHUẨN THỐNG KÊ QUẢN TRỊ & BIỂU ĐỒ CỘT ([NODE-CRM-001], [NODE-APP-004]): Mọi phân hệ thống kê (CRM & Mobile App) chuẩn hóa 3 mốc chu kỳ: Tháng (12 tháng trong năm), Quý (4 quý tài khóa), và Năm (5 năm liên tiếp). Toàn bộ biểu đồ xu hướng (Line / đường kẻ) chuyển đổi thành Biểu đồ Cột (Bar Chart với `<Bar ... radius={[4, 4, 0, 0]} />`). Tích hợp Bộ chọn lịch kỳ lịch sử (AnalyticsPeriodPicker) cho phép chuyển đổi nhanh qua nút ◀ / ▶ hoặc mở Popover chọn tháng cũ (T1-T12), quý cũ (Q1-Q4) và năm cũ kèm cảnh báo và nút quay về kỳ hiện tại 1 chạm.
 #   * QUY CHUẨN TỰ ĐỘNG ĐỒNG BỘ ĐA KÊNH ZALO OA & EMAIL TỰ ĐỘNG ([NODE-CORE-001], [NODE-CRM-011]): 100% thông báo hệ thống (kết nạp hội viên mới, cấp tài khoản & mật khẩu, đăng ký vé sự kiện kèm mã QR check-in, duyệt hồ sơ, thư mời họp BĐH, lịch hẹn 1-on-1, thanh toán hội phí & biên nhận, phân công & nhắc nhở nhiệm vụ, trúng thưởng Lucky Draw, direct broadcast) khi gửi Email HTML BẮT BUỘC tự động đồng bộ gửi đồng thời qua Zalo OA (ZNS hoặc Customer Support CS API v3.0/v2.0) tới tài khoản Zalo của người nhận. Mọi logic dispatch Zalo OA phải chạy theo cơ chế non-blocking, tự động refresh access token và tra cứu SĐT/UID hội viên.
 #   * QUY CHUẨN BẢO VỆ ASSET & CHỐNG LOOP AVATAR POSTER STUDIO ([NODE-CRM-017]): Tất cả các thẻ hiển thị ảnh đại biểu/avatar BẮT BUỘC sử dụng handler `onError` có cơ chế ngắt đệ quy `e.currentTarget.onerror = null` và gán fallback bằng SVG Data URI an toàn (`SAFE_FALLBACK_AVATAR`), cấm sử dụng ảnh nội bộ có khoảng trắng trong đường dẫn hoặc trỏ nhầm sang MinIO endpoint gây lỗi 404 và loop đệ quy console. Đồng thời Socket.IO client (`use-connect-app-socket.ts`) BẮT BUỘC chỉ sử dụng `transports: ["websocket"]` (không dùng polling fallback) để triệt tiêu vĩnh viễn bão lỗi HTTP polling (1048 errors) khi socket server chưa mở port.
-#   * QUY CHUẨN TỶ LỆ VÀNG & ZOOM CANVAS PHOTOSHOP POSTER STUDIO ([NODE-CRM-017]): Khung thiết kế poster BẮT BUỘC tích hợp bộ điều khiển Zoom Canvas (50% - 150%, mặc định 100%, có nút Zoom In, Zoom Out, Reset) kèm `transform: scale(zoomLevel / 100)` và `sticky top-20` giúp người dùng trên màn hình nhỏ hoặc khi mở Chrome DevTools dock bên cạnh luôn quan sát được 100% poster mà không bị che khuất hay tràn màn hình. Tọa độ các khối mặc định tuân thủ tỷ lệ vàng không chồng lấn: Tiêu đề lớn (headline) tại y=25% (cỡ chữ xl/2xl), Thẻ Đại Biểu VIP (attendee) tại y=45%, Hộp Đặc Quyền (capsule) tại y=63%, Ngày Giờ (datetime) tại y=72-74%, và Lời Chào (salute) tại y=93% (không chạm mép đáy). Kéo thả trực tiếp trên Canvas phải đồng bộ 2 chiều tức thì với thanh trượt tọa độ bên trái.
+#   * QUY CHUẨN TỶ LỆ VÀNG & ZOOM CANVAS PHOTOSHOP POSTER STUDIO ([NODE-CRM-017]): Khung thiết kế poster BẮT BUỘC tích hợp bộ điều khiển Zoom Canvas (50% - 150%, mặc định 85% tối ưu tầm nhìn toàn bộ chiều cao poster, có nút Zoom In, Zoom Out, Vừa Khung, Reset 100%) kèm `transform: scale(zoomLevel / 100)` và `sticky top-16 max-h-[calc(100vh-4.5rem)] overflow-y-auto` giúp người dùng trên màn hình nhỏ hoặc khi mở Chrome DevTools dock bên cạnh luôn quan sát và cuộn mượt mà xem 100% poster mà không bị che khuất hay tràn màn hình. Tọa độ các khối mặc định tuân thủ tỷ lệ vàng không chồng lấn: Tiêu đề lớn (headline) tại y=25% (cỡ chữ xl/2xl), Thẻ Đại Biểu Danh Dự (attendee) tại y=45%, Hộp Đặc Quyền (capsule) tại y=63%, Ngày Giờ (datetime) tại y=72-74%, và Lời Chào (salute) tại y=93% (không chạm mép đáy). Kéo thả trực tiếp trên Canvas phải đồng bộ 2 chiều tức thì với thanh trượt tọa độ bên trái.
 #   * QUY CHUẨN LUỒNG ƯU ĐÃI & VOUCHER MÃ QR ĐỘNG MOBILE APP ([NODE-APP-005]): Slide Trang chủ (MemberPerksCarousel) luôn nạp và hiển thị các ưu đãi mới nhất do hội viên đăng lên ĐẦU slide (prepend từ vba_member_custom_perks và API /content/perks). Trên từng slide Trang chủ và từng card ở màn danh sách ưu đãi BẮT BUỘC có nút Lưu / Bỏ lưu (Heart icon). Khi hội viên bấm "Lưu", hệ thống lập tức mở Voucher Modal chứa mã QR động (<QrCanvas />) và mã số voucher (CEO1983-PROMO-...) để hội viên sử dụng ngay tại quầy đối tác. Đồng bộ hóa toàn diện sự kiện vba:saved_perks_updated và vba:member_custom_perk_created.
 #   * QUY CHUẨN HỦY GIA HẠN HỘI VIÊN & ĐỒNG BỘ CSDL ([NODE-CRM-004]): Thao tác Hủy gia hạn hội viên tại màn Gia Hạn (/renewal) BẮT BUỘC kết nối trực tiếp đến backend endpoint POST & PATCH /members/:id/cancel-renewal, cập nhật trạng thái gia hạn về 'cancelled' / 'unpaid', hủy giao dịch nợ phí chưa hoàn tất, ghi nhật ký kiểm toán và trả về thông báo phản hồi thời gian thực.
 #   * QUY CHUẨN GỠ BỎ PHÂN KHÚC HỘI VIÊN ([NODE-CRM-008]): Phân hệ Phân khúc hội viên (/segments) đã được loại bỏ hoàn toàn khỏi kiến trúc điều hướng CRM. Toàn bộ các luồng quản lý hội viên tập trung tại màn Quản lý Hội viên (/members).
-#   * QUY CHUẨN KIỂM THỬ TOÀN DIỆN HỆ THỐNG ([NODE-CORE-005]): Bộ kiểm thử tự động Master Test Suite (`scripts/run_full_system_test_suite.cjs`) bao phủ 50 test cases CRUD, RBAC Add Quyền, Task Assignee, Tin nhắn DM, Sự kiện QR Gate, Cơ hội Deal %, Sàn TMĐT, Mạng lưới Feed, Sổ quỹ VietQR, Tài liệu số và Zalo OA với 3 tài khoản thực tế (`admin@connect.vn`, `vumikasa6@gmail.com`, `vupv090120@gmail.com`), tự động chụp 50 ảnh minh chứng HUD Banner và xuất báo cáo nghiệm thu Markdown & HTML.
+#   * QUY CHUẨN TRIỆT TIÊU TỪ KHÓA CẤM: TUYỆT ĐỐI KHÔNG dùng từ "thẻ VIP", "the_vip" (thay thế 100% bằng "Thẻ Doanh Nhân Số", "Thẻ Hội Viên Điện Tử", "Đại Biểu Danh Dự"). TUYỆT ĐỐI KHÔNG dùng từ "VietQR", "vietqr" (thay thế 100% bằng "Mã QR Ngân Hàng Napas247", "Cổng Thanh Toán QR", "Mã QR Thanh Toán Tự Động").
+#   * QUY CHUẨN KIỂM THỬ TOÀN DIỆN HỆ THỐNG ([NODE-CORE-005]): Bộ kiểm thử tự động Master Test Suite (`scripts/run_full_system_test_suite.cjs`) bao phủ 50 test cases CRUD, RBAC Add Quyền, Task Assignee, Tin nhắn DM, Sự kiện QR Gate, Cơ hội Deal %, Sàn TMĐT, Mạng lưới Feed, Sổ quỹ mã QR ngân hàng, Tài liệu số và Zalo OA với 3 tài khoản thực tế (`admin@connect.vn`, `vumikasa6@gmail.com`, `vupv090120@gmail.com`), tự động chụp 50 ảnh minh chứng HUD Banner và xuất báo cáo nghiệm thu Markdown & HTML.
 # [BẮT BUỘC BƯỚC 5] Kiểm tra lỗi: Chạy `npx tsc --noEmit` exit code 0 trên cả BE và FE. Cập nhật `MEMORY.md`, `.cursorrules`, và tài liệu NotebookLM.
 # [QUY TẮC CẬP NHẬT TÀI LIỆU SRS/ĐẶC TẢ]: Khi có yêu cầu mới hoặc nâng cấp chức năng, BẮT BUỘC tra cứu, tìm đúng mục Use Case / Chức năng đã mô tả trong tài liệu để sửa và cập nhật cục bộ theo phong cách giới thiệu tổng quan nghiệp vụ. TUYỆT ĐỐI KHÔNG xóa sạch (clear) file để viết lại từ đầu.
 # TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`.
@@ -60,7 +61,7 @@
 # - Kiến trúc Thuần NestJS (Pure NestJS Architecture): 100% dữ liệu nghiệp vụ (Meetings, Opportunities, Marketplace, News, Events, Documents, Sponsors, Members) phải đi qua NestJS REST API (`fetchNestApiFromServer` / `fetchNestApi`) kết nối trực tiếp đến PostgreSQL `ceo1983_project` trên `14.225.217.232:5436`. TUYỆT ĐỐI KHÔNG dùng Supabase PostgREST client (`supabaseAdmin.from(...)`, `getDb.from(...)`) trong các server function nghiệp vụ nhằm tránh lỗi PostgREST schema cache.
 # - Chuẩn Nhập Ngày Tháng Di Động & Mở Picker Native (Standard Date Input & Native Mobile Picker): Khi tạo trường nhập ngày tháng (`StandardDateInput`), BẮT BUỘC phải có cơ chế tự động mask/chèn dấu `/` khi người dùng gõ số trên bàn phím số di động (`inputMode="numeric"`) do iOS không có phím gạch chéo. Icon lịch BẮT BUỘC sử dụng Native `<input type="date">` overlay trong suốt (`opacity-0 absolute inset-0`) để cử chỉ chạm vật lý kích hoạt trực tiếp picker native của iOS/Android mà không bị WebKit chặn `.showPicker()`.
 # - Tiêu Chuẩn Responsive Di Động & Thanh Cuộn Danh Bạ (Mobile Responsiveness & Viewport Adaptability): Mọi màn hình danh bạ/danh sách dài TUYỆT ĐỐI KHÔNG dùng thanh dải chữ cái A-Z dọc cố định trên màn hình điện thoại (gây đè nội dung và lỗi chạm). Phải dùng thanh A-Z cuộn ngang (`sm:hidden overflow-x-auto`), thanh dọc chỉ hiện từ màn hình tablet/desktop (`hidden sm:flex`). Các nút thao tác trên thẻ hội viên phải dàn lưới cân đối (`grid grid-cols-5 sm:flex`), container phải responsive `flex-col sm:flex-row` để đảm bảo tương thích 100% các dòng điện thoại từ 320px đến 430px+.
-# - Quy Chuẩn Thanh Toán & Mã QR (Payment Standards - Strictly MoMo & VNPay): TUYỆT ĐỐI KHÔNG SỬ DỤNG THUẬT NGỮ "VietQR" TRONG TOÀN BỘ TÀI LIỆU VÀ GIAO DIỆN. Mọi giao dịch thanh toán (hội phí, sự kiện, đóng góp) chỉ áp dụng mã QR MoMo và cổng thanh toán VNPay. Mọi email có mã QR thanh toán hoặc vé QR BẮT BUỘC phải đính kèm dưới dạng MIME Attachment Inline CID (`cid:payment_qr`, `cid:event_ticket_qr`) bằng thư viện `qrcode` hoặc tải buffer.
+# - Quy Chuẩn Thanh Toán & Mã QR (Payment Standards - Strictly MoMo & VNPay): TUYỆT ĐỐI KHÔNG SỬ DỤNG THUẬT NGỮ "Mã QR Ngân Hàng" TRONG TOÀN BỘ TÀI LIỆU VÀ GIAO DIỆN. Mọi giao dịch thanh toán (hội phí, sự kiện, đóng góp) chỉ áp dụng mã QR MoMo và cổng thanh toán VNPay. Mọi email có mã QR thanh toán hoặc vé QR BẮT BUỘC phải đính kèm dưới dạng MIME Attachment Inline CID (`cid:payment_qr`, `cid:event_ticket_qr`) bằng thư viện `qrcode` hoặc tải buffer.
 # - Quy Chuẩn Danh Xưng Hội Viên (Member Terminology Standards): TUYỆT ĐỐI KHÔNG DÙNG TỪ "VIP". Bắt buộc sử dụng các danh xưng trang trọng, chuẩn mực hiệp hội doanh nhân: "Hội viên chính thức", "Doanh nhân tiêu biểu", "Hạng thành viên cao cấp", "Đặc quyền thành viên".
 # - Quy Chuẩn Giao Tiếp & Trợ Lý AI (Customer-Facing & AI Assistant Standards): TUYỆT ĐỐI KHÔNG hiển thị các cụm từ kỹ thuật máy chủ ("100% dữ liệu sống PostgreSQL", "PostgreSQL realtime", "Database", "REST API") lên giao diện CRM hay hội thoại của Trợ lý AI. Ngôn từ phải 100% hành chính, kinh doanh, trang trọng.
 # - Quy Chuẩn Bộ 3 Kịch Bản Lên Lịch Hẹn 1-on-1 & Tự Động Nhắn Tin (3-Case Meeting Setup & Auto-Messaging Standards):
@@ -185,11 +186,11 @@
 #   + Xem file trực tiếp trong popup giao việc (`TaskFormModal`): Từng file đính kèm BẮT BUỘC có nút "Xem file" (icon `Eye`), hỗ trợ xem bảng tính Excel bằng `ExcelViewerModal`, xem ảnh trong lightbox chuyên dụng, và xem tài liệu PDF/doc qua modal tương tác.
 # - Quy Chuẩn Slide Thuyết Trình Chuẩn Nhận Diện & Dual-Tone Nửa Xanh Nửa Trắng (Master Presentation Standards):
 #   + Bố cục Dual-Tone Corporate Split: Nửa trái (40%) là dải Xanh Navy Doanh nhân lịch lãm (`#001F54` đến `#002B7F`) phủ chìm ảnh nền background chân thực (Skyline Hà Nội ban đêm, Phòng họp Ban điều hành, Dạ tiệc Gala sang trọng, Trung tâm giám sát vận hành); Nửa phải (60%) là sân khấu nền trắng ngọc trai tinh khiết (`#FFFFFF` / `#F8FAFC`) chứa khung mockup trình duyệt macOS hoặc điện thoại iPhone cực lớn (`1150px × 700px`).
-#   + Hiển thị giao diện CRM to rõ toàn cảnh: Đảm bảo người xem đọc được 100% từng cột dữ liệu, nút bấm, số liệu KPI, sơ đồ xếp bàn tiệc Gala, sổ quỹ tài chính VietQR mà không bị che khuất hay vỡ nét.
+#   + Hiển thị giao diện CRM to rõ toàn cảnh: Đảm bảo người xem đọc được 100% từng cột dữ liệu, nút bấm, số liệu KPI, sơ đồ xếp bàn tiệc Gala, sổ quỹ tài chính Mã QR Ngân Hàng mà không bị che khuất hay vỡ nét.
 #   + Xuất bản đồng bộ: Định dạng PDF Vector 1920x1080px (`SLIDE_TONG_THE_HE_SINH_THAI_CEO1983.pdf`), HTML tương tác (`.html`), tài liệu tóm tắt (`.md`) và PowerPoint (`.pptx`).
 # - Quy Chuẩn Poster Showcase Panorama & Khổ Lớn Hệ Sinh Thái (Panorama Showcase Poster Standards):
-#   + Poster App Panorama (`POSTER_SHOWCASE_APP_PANORAMA`): Bố cục dàn 4 điện thoại iPhone nằm ngang song song, thể hiện 4 luồng quan trọng nhất (Trang chủ doanh nhân, Thẻ hội viên VIP QR/NFC NameDrop kết nối 1s, Sàn B2B kết nối Deal 11 ngành nghề, Soát vé sự kiện QR Gatekeeper).
-#   + Poster CRM Panorama (`POSTER_SHOWCASE_CRM_PANORAMA`): Bố cục dàn 3 màn hình Desktop macOS CRM nằm ngang song song, thể hiện 3 phân hệ cốt lõi (Executive Dashboard BI 360°, Quản trị 500+ Doanh nghiệp & Phân quyền RBAC 6 Ban, Sơ đồ xếp bàn tiệc Gala VIP & Tài chính VietQR tự động).
+#   + Poster App Panorama (`POSTER_SHOWCASE_APP_PANORAMA`): Bố cục dàn 4 điện thoại iPhone nằm ngang song song, thể hiện 4 luồng quan trọng nhất (Trang chủ doanh nhân, thẻ hội viên điện tử QR/NFC NameDrop kết nối 1s, Sàn B2B kết nối Deal 11 ngành nghề, Soát vé sự kiện QR Gatekeeper).
+#   + Poster CRM Panorama (`POSTER_SHOWCASE_CRM_PANORAMA`): Bố cục dàn 3 màn hình Desktop macOS CRM nằm ngang song song, thể hiện 3 phân hệ cốt lõi (Executive Dashboard BI 360°, Quản trị 500+ Doanh nghiệp & Phân quyền RBAC 6 Ban, Sơ đồ xếp bàn tiệc Gala VIP & Tài chính Mã QR Ngân Hàng tự động).
 #   + Poster Master A3/A2 (`POSTER_MASTER_HE_SINH_THAI_CEO1983`): Nửa trên nền Xanh Navy với dàn 3 màn hình CRM; Nửa dưới nền Trắng ngọc trai với dàn 4 iPhone Mobile App; đồng bộ dữ liệu thời gian thực. Xuất bản đầy đủ PDF vector, PNG 300 DPI, và HTML nguồn tại cả `document/` và `apps/ceo1983_app_fe/public/docs/`.
 
 # ------------------------------------------------------------------------------
@@ -312,7 +313,7 @@
 #   - Cổng Đăng Ký Sự Kiện Khách Mời Độc Lập (/guest-event-register/$eventId):
 #     + Khi quét mã QR từ Zalo hay ứng dụng khác, TUYỆT ĐỐI KHÔNG chuyển hướng vào web CRM hay bắt đăng nhập tài khoản.
 #     + Form khách mời độc lập gồm đủ 8 trường tương đương hội viên: Họ tên, Điện thoại, Email, Doanh nghiệp, Chức vụ, Ngành nghề, Hạng vé, Ghi chú.
-#     + Tự động phát sinh mã QR E-ticket, mã quay thưởng Lucky Draw (#8388) và tích hợp VietQR MB Bank `1983000000` (Chủ TK: `CLB DOANH NHAN CEO 1983`) đối với sự kiện có phí.
+#     + Tự động phát sinh mã QR E-ticket, mã quay thưởng Lucky Draw (#8388) và tích hợp Mã QR Ngân Hàng MB Bank `1983000000` (Chủ TK: `CLB DOANH NHAN CEO 1983`) đối với sự kiện có phí.
 #     + Tự động gửi email xác nhận thành công tức thì đính kèm E-Ticket và mã QR thanh toán.
 #   - Quy Định Xếp Chỗ Ngồi Sự Kiện (Strict Seat Allocation Rule):
 #     + TUYỆT ĐỐI KHÔNG TỰ ĐỘNG XẾP CHỖ NGỒI từ hệ thống backend tới app CEO 1983 mobile.
@@ -383,7 +384,7 @@
 #     + Bộ lọc định dạng tài liệu: Tất cả, PDF, DOCX, XLSX, PPTX.
 #     + Sắp xếp thời gian: Mới nhất / Cũ nhất kết hợp ô tìm kiếm trực tiếp.
 #   - Chuẩn Trình Soạn Email Mẫu (CRM Mail Template Manager):
-#     + Sử dụng các thẻ chip tiếng Việt trực quan, thân thiện (`[Họ và tên hội viên]`, `[Tên doanh nghiệp]`, `[Số tiền hội phí]`, `[Hạn thanh toán]`, `[Mã VietQR tự động]`).
+#     + Sử dụng các thẻ chip tiếng Việt trực quan, thân thiện (`[Họ và tên hội viên]`, `[Tên doanh nghiệp]`, `[Số tiền hội phí]`, `[Hạn thanh toán]`, `[mã QR ngân hàng tự động]`).
 #     + Tuyệt đối không dùng mã code ngoặc nhọn kỹ thuật `{variable}` gây khó hiểu cho người dùng doanh nghiệp. Nền thẻ executive trắng tinh tế, nút bấm nổi bật.
 #   - Chuẩn Mạng Lưới & Nhắn Tin Công Việc CRM (`/network`):
 #     + Gom nhóm nhân sự theo Ban chuyên môn (`CRM_COMMITTEES`), hiển thị badge Ban rõ ràng.
@@ -496,7 +497,7 @@
 # ❌ KHÔNG hiển thị chuỗi chức vụ/vai trò (như "Hội viên chính thức") ở vị trí tên người đăng sản phẩm: Bắt buộc lấy tên người thật từ user_profiles.display_name, users.name, members.name hoặc members.contact.
 # ❌ KHÔNG dùng định dạng ngày tháng mm/dd/yyyy trên giao diện người dùng; bắt buộc 100% sử dụng format dd/mm/yyyy thông qua StandardDateInput.
 # ❌ KHÔNG để lỗi giật con trỏ chuột hay đúp số (nhảy con trỏ, tự sinh thêm số) khi nhập tiền tệ: Toàn bộ ô nhập giá phải dùng FormattedCurrencyInput với thuật toán neo khoảng cách con trỏ từ bên phải (digitsToRight) và bảo vệ isFocusedRef để không bị useEffect ghi đè khi đang gõ; parse giá an toàn bằng parsePriceToNumber (tránh lỗi Number("11.100.000") = NaN dẫn đến sai badge "Miễn phí"); tuyệt đối không bọc FormattedCurrencyInput cho ô nhập số lượng/suất vé.
-# ❌ KHÔNG bỏ sót luồng gửi email tự động: Khi ứng viên nộp form đăng ký trên Landing Page (publicRegister), BẮT BUỘC gọi mailService.sendRegistrationReceivedEmail gửi email xác nhận đã tiếp nhận hồ sơ ngay lập tức về email ứng viên; khi Admin phê duyệt (approveMemberAndSendCredentials), BẮT BUỘC gửi email cấp tài khoản và mật khẩu tạm; khi khách ngoài/hội viên đăng ký sự kiện, BẮT BUỘC gửi email cuống vé QR E-Ticket (hoặc hóa đơn thanh toán VietQR) đồng thời ghi log chi tiết.
+# ❌ KHÔNG bỏ sót luồng gửi email tự động: Khi ứng viên nộp form đăng ký trên Landing Page (publicRegister), BẮT BUỘC gọi mailService.sendRegistrationReceivedEmail gửi email xác nhận đã tiếp nhận hồ sơ ngay lập tức về email ứng viên; khi Admin phê duyệt (approveMemberAndSendCredentials), BẮT BUỘC gửi email cấp tài khoản và mật khẩu tạm; khi khách ngoài/hội viên đăng ký sự kiện, BẮT BUỘC gửi email cuống vé QR E-Ticket (hoặc hóa đơn thanh toán Mã QR Ngân Hàng) đồng thời ghi log chi tiết.
 # ❌ KHÔNG cho phép Ban Thư Ký phê duyệt hồ sơ kết nạp hội viên: Thẩm quyền duyệt hội viên thuộc về Ban Thành Viên hoặc Ban Quản Trị. Nếu Ban Thư Ký hoặc ban khác thực hiện phê duyệt, backend BẮT BUỘC ném lỗi 403 Forbidden.
 # ❌ KHÔNG sử dụng từ "niên liễm" trong bất kỳ tài liệu, giao diện hay mã nguồn nào; bắt buộc thay bằng "hội phí" hoặc "hội phí thường niên".
 # ❌ KHÔNG sử dụng WidthType.PERCENTAGE trong thư viện docx khi tạo bảng mà không chỉ định rõ kích thước DXA của từng cột (tránh lỗi Microsoft Word render cột 100 twips thành 1 ký tự dọc). Bắt buộc dùng WidthType.DXA với TABLE_WIDTH_DXA = 9200.
@@ -508,12 +509,12 @@
 #   - Ban Thành Viên (ceo.thanhvien@ceo1983.com): Thẩm quyền độc quyền kiểm duyệt hồ sơ ứng viên đăng ký mới, thẩm định điều kiện doanh nghiệp, cấp mã số hội viên (CEO-83xxx) và phê duyệt kết nạp chính thức.
 #   - Ban Thư Ký (ceo.tongthuky@ceo1983.com): Phụ trách triệu tập đại biểu, khởi tạo cuộc họp, điểm danh QR, biên bản cuộc họp và lưu trữ nghị quyết. Tuyệt đối KHÔNG có quyền duyệt hội viên (bị chặn 403).
 #   - Ban Quản Trị (admin@connect.vn): Toàn quyền quản trị hệ thống, cấu hình tham số, phân quyền vai trò và phê duyệt cấp cao.
-#   - Ban Thiện Nguyện (ceo.thiennguyen@ceo1983.com): Điều hành quỹ an sinh, quản trị sổ quỹ thu chi 3 cấp duyệt, thanh toán VietQR 24/7.
+#   - Ban Thiện Nguyện (ceo.thiennguyen@ceo1983.com): Điều hành quỹ an sinh, quản trị sổ quỹ thu chi 3 cấp duyệt, thanh toán Mã QR Ngân Hàng 24/7.
 #   - Ban Truyền Thông (ceo.truyenthong@ceo1983.com): Quản lý banner marketing, truyền thông sự kiện, điểm danh soát vé an ninh QR cổng vào.
 #   - Ban Xúc Tiến (ceo.xuctien@ceo1983.com): Quản trị sàn B2B, kiểm duyệt sản phẩm thương mại, khớp nối cơ hội Cung - Cầu 1-on-1.
 #
 # [BẮT BUỘC 12] Chuẩn Hóa 52 Use Cases Toàn Diện, Tài Liệu BRD Word/MD, Báo Cáo Tiến Độ 42 Work Packages & Bộ Slide Master 28 Trang CRM / App:
-#   - Hệ thống UCs bao phủ đủ 52 Use Cases: 28 UCs cho Web CRM (Cuộc họp BQT, Event Wizard, Chi tiết hội viên 360°, Cinema Seating Map, Soát vé cổng, Lucky Draw, Nhà tài trợ, Sổ quỹ 3 cấp, VietQR Napas 24/7, RBAC 6 Ban) và 24 UCs cho App Hiệp Hội (Hẹn gặp 1-on-1, Chat realtime WebSocket 1-1 & nhóm, Quét QR WebRTC 0.1s, QuickProfileEditModal, Thẻ VIP Titanium 3D & NFC, Ví vé E-Ticket, Bầu cử 1 người 1 phiếu, Sàn Shopee-style, Cơ hội Cung-Cầu).
+#   - Hệ thống UCs bao phủ đủ 52 Use Cases: 28 UCs cho Web CRM (Cuộc họp BQT, Event Wizard, Chi tiết hội viên 360°, Cinema Seating Map, Soát vé cổng, Lucky Draw, Nhà tài trợ, Sổ quỹ 3 cấp, Mã QR Ngân Hàng Napas 24/7, RBAC 6 Ban) và 24 UCs cho App Hiệp Hội (Hẹn gặp 1-on-1, Chat realtime WebSocket 1-1 & nhóm, Quét QR WebRTC 0.1s, QuickProfileEditModal, Thẻ Doanh Nhân Số Titanium 3D & NFC, Ví vé E-Ticket, Bầu cử 1 người 1 phiếu, Sàn Shopee-style, Cơ hội Cung-Cầu).
 #   - Tài liệu BRD: Lưu tại document/BRD_CEO1983_YEU_CAU_NGHIEP_VU_TOAN_DIEN.docx & .md, đồng bộ public/docs/.
 #   - Báo cáo tiến độ công việc: 42 Work Packages lưu tại document/TIEN_DO_CONG_VIEC_CEO1983.xlsx, .docx, .md.
 #   - Slide Thuyết Trình: Bộ đôi 28 slide Master (document/SLIDE_THUYET_TRINH_CRM_QUAN_TRI_CEO1983.pptx/.html & document/SLIDE_THUYET_TRINH_APP_HIEP_HOI_CEO1983.pptx/.html).
@@ -584,7 +585,7 @@
 #     + Tab 3 Phân quyền chuẩn hóa thành Catalog 5 Vai trò Cốt lõi & 6 Ban Chuyên môn, hiển thị Thẩm quyền (✅), Giới hạn (🚫), số lượng hội viên và nút lọc tức thì sang Tab 2.
 #   - Bộ Soạn Thảo Template Mail CRM:
 #     + Bắt buộc hỗ trợ song song 2 chế độ: "Chế Độ Trực Quan Dễ Dùng (Không Cần Code)" và "Mã Nguồn HTML Nâng Cao".
-#     + Hỗ trợ các khối trực quan: Banner Tiêu Đề, Lời Chào & Thân Bài, Hộp Chi Tiết Điểm Nhấn (thêm/xóa dòng tùy biến), Mã QR Tự Động (VietQR / Vé QR), và Chân Trang / Ký Tên.
+#     + Hỗ trợ các khối trực quan: Banner Tiêu Đề, Lời Chào & Thân Bài, Hộp Chi Tiết Điểm Nhấn (thêm/xóa dòng tùy biến), Mã QR Tự Động (Mã QR Ngân Hàng / Vé QR), và Chân Trang / Ký Tên.
 #     + Thanh công cụ 1-Click Variable Pills: Bấm chèn biến tức thì kèm toast thông báo.
 #   - Tải Dữ Liệu Sự Kiện & Đăng Ký:
 #     + Backend `events.controller.ts` phải cấu hình `@Roles` cho phép các vai trò quản trị chuyên ban truy cập danh sách đăng ký.
@@ -675,7 +676,7 @@
 # [BẮT BUỘC 23] Quy Chuẩn Tinh Gọn Trang Chủ Hội Viên, Đưa Lịch Sử Ra Trang Chủ, Trải Nghiệm Thẻ Hội Viên & Chống Tràn Mobile:
 #   - Tinh Gọn Trang Chủ & Xóa Bỏ Khối Trùng Lặp (`association.index.tsx`):
 #     + Khi các tính năng đã nằm trong Lưới 10 Tính năng nhanh (Sự kiện, Ưu đãi, Chợ B2B, Cơ hội hợp tác, Quét Check-in), TUYỆT ĐỐI KHÔNG render lại các khối banner/card lớn trùng lặp trên trang chủ.
-#     + Bố cục trang chủ chuẩn hóa tinh gọn: Header -> Thẻ Hội Viên VIP Executive -> Lưới 10 Tính Năng Nhanh -> Doanh Nghiệp Mới Gia Nhập -> Lịch Sử Hoạt Động & Giao Dịch -> Tin Hoạt Động CLB -> Footer padding.
+#     + Bố cục trang chủ chuẩn hóa tinh gọn: Header -> thẻ hội viên điện tử Executive -> Lưới 10 Tính Năng Nhanh -> Doanh Nghiệp Mới Gia Nhập -> Lịch Sử Hoạt Động & Giao Dịch -> Tin Hoạt Động CLB -> Footer padding.
 #   - Đưa Tính Năng Lịch Sử Ra Màn Hình Trang Chủ:
 #     + Tích hợp tại vị trí số 7 trong Lưới 10 Tính năng nhanh cốt lõi (`qaHistory`).
 #     + Xây dựng khối "Lịch sử hoạt động & Giao dịch" (`tour-recent-history`) ngay trên trang chủ gồm: 3 phím tắt nhanh 1-chạm (Kết nối B2B, Vé sự kiện, Hội phí & Quỹ), danh sách 3 hoạt động/giao dịch mới nhất kèm trạng thái và liên kết "Xem chi tiết" dẫn thẳng tới `/association/history`.
@@ -758,7 +759,7 @@
 #   - Mô Hình AI Cốt Lõi (Free 100%): Google Gemini 2.0 Flash Free Tier (kết nối qua Google AI Studio API key) kết hợp Smart Hybrid NLP Engine dự phòng nội bộ đảm bảo 100% không phụ thuộc dịch vụ ngoài.
 #   - Tự Động Nắm Bắt Phiên Đăng Nhập (`/api/ai/live-context`):
 #     + AI tự động nhận diện danh tính hội viên: Tên, Mã hội viên (`M1983-xxx`), Doanh nghiệp, Chức vụ, Cấp bậc, Ban chuyên môn.
-#     + Trạng thái tài chính & Hội phí: Tình trạng đã đóng / còn nợ, kỳ thu, số tiền nợ, hạn nộp và thông tin chuyển khoản VietQR.
+#     + Trạng thái tài chính & Hội phí: Tình trạng đã đóng / còn nợ, kỳ thu, số tiền nợ, hạn nộp và thông tin chuyển khoản Mã QR Ngân Hàng.
 #     + Thông báo chưa đọc: Số lượng thông báo mới và nội dung thông báo tiêu biểu từ Ban Thư ký.
 #     + Sự kiện cá nhân & Sự kiện toàn khối: Danh sách sự kiện hội viên đã có vé tham dự và Top 5 sự kiện có số người đăng ký đông nhất toàn Hiệp hội.
 #   - Trả Lời Trực Tiếp Mọi Câu Hỏi Dữ Liệu Thời Gian Thực (`/api/ai/ask`):
@@ -779,7 +780,7 @@
 #       * Sự kiện & Vé mời: Đăng ký vé sự kiện (`event-register`), Xem vé QR Check-in & Bàn VIP (`checkin-ticket`), Quét vé QR & NFC đa năng (`checkin-scanner`).
 #       * Danh thiếp số 5.0 & Công nghệ AI: Mở danh thiếp cá nhân (`card-show`), Ghi thẻ cứng NFC (`card-nfc`), Chụp & Quét card visit giấy bằng AI OCR (`card-ai-scan`), Bảo mật số điện thoại & CCCD (`card-privacy`).
 #       * Kết nối Doanh nhân & Giao thương: Tìm kiếm & Tra cứu danh bạ CEO (`member-search`), Lọc ngành nghề & Ban chuyên môn (`member-filter`), Gửi lời mời gặp gỡ 1-on-1 (`meeting-1on1`), Đăng cơ hội kinh doanh B2B (`opportunity-post`), Khám phá cơ hội hợp tác (`opportunity-connect`), Đăng bán sản phẩm B2B (`b2b-sell`), Sàn thương mại B2B (`b2b-explore`), Báo giá & Kết nối sỉ (`b2b-quote`).
-#       * Đại hội & Tiện ích CLB: Biểu quyết đại hội trực tuyến (`voting-poll`), Quay số may mắn Lucky Draw Gala (`voting-lucky`), Nộp hội phí thường niên qua VietQR MB Bank (`dues-pay`), Thư viện điều lệ & Kỷ yếu số (`documents-download`), Đổi ảnh đại diện & Phôi thẻ VIP (`profile-avatar`), Chế độ giao diện & Lễ hội (`profile-theme`), Cài đặt ứng dụng PWA lên màn hình chính (`pwa-install`), Đường dây nóng 5 Ban chuyên môn (`hotline-support`), Hộp thư & Nhắn tin B2B (`messages-b2b`).
+#       * Đại hội & Tiện ích CLB: Biểu quyết đại hội trực tuyến (`voting-poll`), Quay số may mắn Lucky Draw Gala (`voting-lucky`), Nộp hội phí thường niên qua Mã QR Ngân Hàng MB Bank (`dues-pay`), Thư viện điều lệ & Kỷ yếu số (`documents-download`), Đổi ảnh đại diện & Phôi thẻ doanh nhân số (`profile-avatar`), Chế độ giao diện & Lễ hội (`profile-theme`), Cài đặt ứng dụng PWA lên màn hình chính (`pwa-install`), Đường dây nóng 5 Ban chuyên môn (`hotline-support`), Hộp thư & Nhắn tin B2B (`messages-b2b`).
 #     + Phân hệ Quản Trị Hệ Thống CRM (External / CRM Admin Modules - 8 tính năng):
 #       * Quản lý sự kiện BTC (`event-create`, route `/events`), Quản lý & Duyệt hội viên CRM (`members-crm`, route `/members`), Kế toán & Đối soát hội phí MB Bank (`finance-mgmt`, route `/fees`), Giao việc & Điều hành ban thư ký Kanban (`tasks-mgmt`, route `/tasks`), Phân quyền RBAC & Ủy quyền soát vé (`permissions-mgmt`, route `/permissions`), Quản lý nhà tài trợ & Quyền lợi thương hiệu (`sponsors-mgmt`, route `/sponsors`), Kho văn bản & Quyết định ban hành (`documents-mgmt`, route `/documents`), Trung tâm thông báo & Nhắc việc (`association-notifications`, route `/association/notifications`).
 #   - Cơ Chế 2 Pha Tương Tác Giọng Nói & Trực Tiếp (Two-Phase Guidance Flow):
@@ -827,7 +828,7 @@
 #   - Triệt Tiêu 100% Lỗi Thoát App Khi Vuốt Mép Trái / Mép Phải:
 #     + TUYỆT ĐỐI KHÔNG tự tiện gọi `window.history.back()` khi vuốt mép trái màn hình trong bất kỳ gesture handler nào.
 #     + Mặc định TẮT hoàn toàn cử chỉ vuốt ngang chuyển tab toàn màn hình (`enableSwipeNav = false`) trong `PullToRefresh.tsx` và `MemberShell.tsx`.
-#     + Hội viên chuyển tab bằng thanh TabBar bên dưới để nhường 100% cử chỉ lướt ngang cho các Carousel sự kiện, Thẻ VIP và Card slider, không bao giờ bị nhảy tab ngoài ý muốn.
+#     + Hội viên chuyển tab bằng thanh TabBar bên dưới để nhường 100% cử chỉ lướt ngang cho các Carousel sự kiện, Thẻ Doanh Nhân Số và Card slider, không bao giờ bị nhảy tab ngoài ý muốn.
 #     + Chặn Browser Navigation Gestures bằng CSS: `html:has(.vba-app), body:has(.vba-app), .vba-app` BẮT BUỘC có `overscroll-behavior-x: none !important; overscroll-behavior-y: none !important; touch-action: pan-y pinch-zoom;`.
 #     + Chặn Edge Swipe ở tầng Touch Event: Khi ngón tay chạm vùng sát mép viền (<= 18px), tự động `preventDefault()` khi kéo ngang để ngăn Safari/Chrome kích hoạt History Swipe.
 #   - Cơ Chế Native Navigation Guard (Double-Tap Back To Exit & Close Popup First):
@@ -1077,7 +1078,7 @@
 #     + Toàn bộ AI Assistant khi làm việc trên phân hệ nào bắt buộc phải đọc và tuân thủ tuyệt đối bộ tài liệu trong thư mục `docs/` của phân hệ đó.
 #   - ĐÚNG 3 MÀU CHUẨN CEO 1983 DUY NHẤT - CẤM TỰ BỊA MÀU LINH TINH:
 #     1. Màu 1 - Deep Cobalt Navy: `#003B95` / `#002B70` / `#0A1A3A` (Header, Nút bấm chính, Huy hiệu hội viên).
-#     2. Màu 2 - Warm Amber Gold: `#F59E0B` / `#D97706` / `#B45309` (Viền thẻ VIP, Icon nổi bật, Nút quan tâm, Deal CRM).
+#     2. Màu 2 - Warm Amber Gold: `#F59E0B` / `#D97706` / `#B45309` (Viền thẻ doanh nhân số, Icon nổi bật, Nút quan tâm, Deal CRM).
 #     3. Màu 3 - Neutral Contrast: `#FFFFFF` / `#0F172A` / `#1E293B` (Nền sáng trắng thanh lịch hoặc thẻ đen sang trọng).
 #     + CẤM TUYỆT ĐỐI: Màu tím (purple), hồng (pink), xanh chuối (lime), xanh neon, dải màu cầu vồng.
 #   - CẤM TUYỆT ĐỐI HARD DỮ LIỆU & MOCK DATA (ZERO MOCK DATA):
@@ -1497,7 +1498,7 @@
 # [BẮT BUỘC 69] Quy Chuẩn 8 Hạng Mục Cốt Lõi Web CRM & Mobile App CEO 1983:
 #   1. Đăng Ký QR Sự Kiện Cho Khách Mời (/events/:eventId/register):
 #      - Thiết kế container chuẩn Google Forms/CEO Forms: Header ảnh banner bo tròn, thẻ mô tả sự kiện, trường thông tin có dấu sao đỏ bắt buộc, nút Gửi màu Amber Gold.
-#      - Kiểm tra sức chứa (`capacity`): Nếu `registered_count >= capacity` (hết chỗ), hiển thị màn hình Thông báo Lễ Phép ("Sự kiện đã đủ số lượng đại biểu...") và backend tự động gửi email thông báo hết chỗ lịch sự (`sendEventSoldOutEmail`); nếu còn chỗ: vé 0đ sinh mã vé `REG-EV-xxxx`, số may mắn Lucky Draw `#xxxx` và gửi email vé điện tử kèm QR; vé >0đ lưu trạng thái chờ thanh toán kèm mã VietQR Napas chuẩn.
+#      - Kiểm tra sức chứa (`capacity`): Nếu `registered_count >= capacity` (hết chỗ), hiển thị màn hình Thông báo Lễ Phép ("Sự kiện đã đủ số lượng đại biểu...") và backend tự động gửi email thông báo hết chỗ lịch sự (`sendEventSoldOutEmail`); nếu còn chỗ: vé 0đ sinh mã vé `REG-EV-xxxx`, số may mắn Lucky Draw `#xxxx` và gửi email vé điện tử kèm QR; vé >0đ lưu trạng thái chờ thanh toán kèm mã QR ngân hàng Napas chuẩn.
 #   2. Đồng Bộ Trạng Thái Xóa Hội Viên Cục Bộ & Không Reload Trang (/accounts):
 #      - Khi xóa hội viên tại `/members`, cập nhật `deletedIds` ngay trên frontend để dòng vừa xóa biến mất tức thì khỏi bảng; backend hỗ trợ xóa theo cả id UUID, id text và code.
 #      - Tại `/accounts`, ngăn chặn hiển thị modal cảnh báo `GlobalPermissionRevokedModal` gây reload trang khó chịu.
@@ -1560,7 +1561,7 @@
 #      - Tải ảnh tin tức: Hiển thị ngay ảnh thumbnail xem trước kèm nút xóa `X` nổi bật để người dùng có thể xóa ảnh hoặc chọn lại ảnh khác trước khi đăng.
 #      - Tính năng Sửa (Pencil) và Xóa (Trash2) tin tức trực tiếp trên Mobile App: Cập nhật CSDL qua API NestJS `/connect-app/admin/news/:id` (PATCH & DELETE) kèm đồng bộ danh sách bài viết cục bộ tức thì.
 #   5. Chuẩn Hóa Thẻ Điện Tử & Quét Mã QR Kết Nối Động (Loại Bỏ Hoàn Toàn NFC):
-#      - Toàn bộ tài liệu, giao diện và luồng kết nối thay thế triệt để các khái niệm thẻ vật lý NFC ("chạm thẻ NFC", "chip NFC", "chạm lưng máy") bằng "Thẻ điện tử hội viên & Quét mã QR kết nối động" hoặc "Thẻ VIP 3D & Mã QR kết nối động".
+#      - Toàn bộ tài liệu, giao diện và luồng kết nối thay thế triệt để các khái niệm thẻ vật lý NFC ("chạm thẻ NFC", "chip NFC", "chạm lưng máy") bằng "Thẻ điện tử hội viên & Quét mã QR kết nối động" hoặc "thẻ doanh nhân số 3D & Mã QR kết nối động".
 #
 # [BẮT BUỘC 72] Quy Chuẩn Subdomain Kép (ceo1983.viconnect.vn & crm.ceo1983.viconnect.vn), Sơ Đồ Xếp Chỗ Linh Hoạt & Quy Trình Deploy Tự Động:
 #   1. Định Tuyến Subdomain Kép Độc Quyền (Single-Codebase Subdomain Routing):
@@ -1718,7 +1719,7 @@
   + Truyền đủ các props: `page`, `pageCount`, `pageSize`, `total`, `from`, `to`, `onPage`, `onPageSize`, `pageSizeOptions`.
 - Xóa Bỏ Hoàn Toàn Nền Trắng Giao Diện Đăng Ký Sự Kiện (`events.$eventId.register.tsx` & `EventRegistrationModal.tsx`):
   + Tuyệt đối không dùng nền trắng sáng hoặc nền xám công cộng (`bg-[#F0F4F9]`, `bg-white`) trong giao diện đăng ký sự kiện.
-  + Toàn bộ giao diện (Màn hình Đăng ký, Màn hình Sold Out, Màn hình Kết quả E-Ticket / VietQR) bắt buộc phủ tone màu nhận diện Deep Cobalt Navy (`#001026` via `#001D4A` to `#0A192F`) kết hợp dải thẻ kính mờ cao cấp `bg-[#0A1E3D]/90`, viền xanh đen `border-blue-800/60`, focus viền vàng hoàng gia `focus:border-amber-400`, thẻ Lucky Draw mạ vàng `border-2 border-amber-400/60` và input nền đen ánh kim `#001229`.
+  + Toàn bộ giao diện (Màn hình Đăng ký, Màn hình Sold Out, Màn hình Kết quả E-Ticket / Mã QR Ngân Hàng) bắt buộc phủ tone màu nhận diện Deep Cobalt Navy (`#001026` via `#001D4A` to `#0A192F`) kết hợp dải thẻ kính mờ cao cấp `bg-[#0A1E3D]/90`, viền xanh đen `border-blue-800/60`, focus viền vàng hoàng gia `focus:border-amber-400`, thẻ Lucky Draw mạ vàng `border-2 border-amber-400/60` và input nền đen ánh kim `#001229`.
 - Form Đăng Ký Hội Viên (`Ceo1983MemberRegistrationForm.tsx` & `StandardDateInput.tsx`):
   + Trường Chức danh *: Bắt buộc có tùy chọn "Khác" (`<option value="Khác">Khác (Tự nhập chức danh...)</option>`). Khi người dùng chọn "Khác", hiển thị ô nhập tự do `customPosition`, validate bắt buộc không được để trống và submit giá trị chức danh tự nhập.
   + Trường Ngày sinh: Đặt mặc định ban đầu là `00/00/1983`. Component `StandardDateInput.tsx` bắt buộc nhận dạng và hợp lệ hóa chuỗi ngày sinh tượng trưng `00/00/1983` (d=0, m=0, y=1983) mà không báo lỗi đỏ invalid date.
@@ -1939,12 +1940,12 @@
     * Thư mời họp `sendMeetingInvitationEmail` phải chứa: Tiêu đề cuộc họp, Mã cuộc họp, Thời gian (ngày + giờ), Địa điểm tổ chức (Sapphire Hub / Văn phòng) hoặc Link phòng họp Online (Google Meet / Zoom), Host cuộc họp và Ban chuyên môn phụ trách.
   + **2. Cuộc gặp đã lên lịch (Kết nối B2B 1-on-1)**:
     * Thư thông báo lịch hẹn `sendConnectionAppointmentEmail` gửi cho cả 2 bên khi tạo lịch hẹn (`requested`) và khi được đối tác xác nhận đồng ý (`confirmed`), kèm địa điểm/link họp và mục đích kết nối.
-  + **3. Đăng ký vé sự kiện thành công & Hướng dẫn thanh toán phí (VietQR)**:
+  + **3. Đăng ký vé sự kiện thành công & Hướng dẫn thanh toán phí (Mã QR Ngân Hàng)**:
     * Đăng ký vé miễn phí: Gửi vé điện tử E-Ticket kèm mã QR check-in và số may mắn Lucky Draw.
-    * Đăng ký vé có phí: Gửi hướng dẫn thanh toán VietQR Napas động (số tài khoản MB Bank, số tiền, cú pháp) đến hội viên và đồng thời gửi đến hòm thư quản trị đại diện (`vupv090120@gmail.com`).
+    * Đăng ký vé có phí: Gửi hướng dẫn thanh toán Mã QR Ngân Hàng Napas động (số tài khoản MB Bank, số tiền, cú pháp) đến hội viên và đồng thời gửi đến hòm thư quản trị đại diện (`vupv090120@gmail.com`).
     * Xác nhận thanh toán vé thành công (`recordWalkInCashPayment`): Bắn ngay `sendEventPaymentSuccessEmail` kèm mã hóa đơn và số tiền đã thanh toán.
   + **4. Thông báo niên liễm hội phí & Xác nhận thanh toán thành công**:
-    * Khi tạo hóa đơn hoặc gửi nhắc nhở: Bắn `sendMembershipFeeNotificationEmail` kèm ảnh VietQR động và thông tin tài khoản ngân hàng.
+    * Khi tạo hóa đơn hoặc gửi nhắc nhở: Bắn `sendMembershipFeeNotificationEmail` kèm ảnh Mã QR Ngân Hàng động và thông tin tài khoản ngân hàng.
     * Khi hội viên hoàn tất thanh toán (`markInvoicePaid`, `payMyRenewal`): Bắn ngay `sendMembershipFeeSuccessEmail` xác nhận đã gạch nợ thành công, niên khóa gia hạn và thời hạn thẻ mới.
   + **5. Phân công công việc & Nhắc nhở đôn đốc tiến độ**:
     * Khi giao việc (`dispatchTaskAssignmentNotification`): Bắn `sendTaskAssignmentEmail` đến hòm thư người được giao việc với đầy đủ mô tả, thời hạn hoàn thành và sản phẩm bàn giao.
@@ -2036,8 +2037,8 @@
   + Bố cục đa dạng độc bản ("1 Slide 1 Kiểu"): Mỗi slide mang một cấu trúc trình bày riêng biệt (Hero cover, Trục timeline 7 mốc ngang, So sánh nỗi đau 3 cột, Khối đối xứng hệ sinh thái kép, Quy trình 5 bước dòng tiền, Báo cáo kế toán mẫu S07-DN, Bố cục 4 cánh buồm giao thương, Mockup thẻ 3D, v.v.).
   + Hiệu ứng chuyển slide 3D thú vị khi thuyết trình (Interactive HTML Presentation): File HTML trình chiếu hỗ trợ 4 chế độ hiệu ứng 3D (Cube Flip, Slide Push, Parallax Zoom, Card Flip 3D), điều khiển mượt mà bằng phím mũi tên `←` `→`, `Space`, `Enter`, phím `F` Toàn màn hình và đồng hồ đếm ngược 180 phút (09:00 - 12:00).
 - Khẳng Định 2 Luồng Trọng Tâm Huyết Mạch Của Toàn Bộ Hệ Thống:
-  + Luồng 1: **Thanh Toán & Tài Chính Toàn Diện**: Sự kiện không chỉ là soát vé mà gắn liền chặt chẽ với dòng tiền (Dự toán ➔ Thu VietQR 1s ➔ Thu tiền mặt bàn tiếp đón ➔ Tạm ứng Ban Sự kiện ➔ Hoàn ứng tiền thừa ➔ Quyết toán thực chi ➔ Kết chuyển tự động vào Sổ Quỹ Tiền Mặt Thông tư 200/2014/TT-BTC Mẫu S07-DN nộp HanoiBA).
-  + Luồng 2: **Xúc Tiến Thương Mại & Giao Thương B2B**: Trái tim của tổ chức doanh nhân (Thẻ VIP vCard 1 chạm, Company Profile 2 trang, Sàn Marketplace ưu đãi nội bộ, Bảng Deal Cung - Cầu thời gian thực, Lịch hẹn B2B 1-on-1).
+  + Luồng 1: **Thanh Toán & Tài Chính Toàn Diện**: Sự kiện không chỉ là soát vé mà gắn liền chặt chẽ với dòng tiền (Dự toán ➔ Thu Mã QR Ngân Hàng 1s ➔ Thu tiền mặt bàn tiếp đón ➔ Tạm ứng Ban Sự kiện ➔ Hoàn ứng tiền thừa ➔ Quyết toán thực chi ➔ Kết chuyển tự động vào Sổ Quỹ Tiền Mặt Thông tư 200/2014/TT-BTC Mẫu S07-DN nộp HanoiBA).
+  + Luồng 2: **Xúc Tiến Thương Mại & Giao Thương B2B**: Trái tim của tổ chức doanh nhân (Thẻ Doanh Nhân Số vCard 1 chạm, Company Profile 2 trang, Sàn Marketplace ưu đãi nội bộ, Bảng Deal Cung - Cầu thời gian thực, Lịch hẹn B2B 1-on-1).
 - Tư Duy Người Làm Hệ Thống & Quản Lý Dự Án Về Bộ Công Cụ Thực Tế:
   + TUYỆT ĐỐI KHÔNG sử dụng từ "miễn phí" hay "tặng kèm miễn phí" khi nói về các tính năng bổ trợ.
   + Trình bày từ góc nhìn của **người làm hệ thống, quản lý dự án am hiểu vận hành thực tế**: Đội ngũ đã chủ động tích hợp sẵn **Bộ Công Cụ Hỗ Trợ Công Việc Thực Tế (Practical Operations Suite)** gồm Lịch họp số Sapphire Hub điểm danh QR động 30s chống gian lận, Bảng giao việc Kanban 6 Ban, VoIP nội bộ mã hóa đổ chuông nền native, và Mạng xã hội Moments B2B để BĐH giải quyết ngay các bài toán thường nhật mà không bị phân tán thông tin.
@@ -2062,15 +2063,15 @@
   + Phân tích Bộ công cụ vận hành thực tế (Quản lý công việc Kanban, Cuộc họp & Điểm danh QR động 30s Sapphire Hub, Kho tài liệu số, VoIP): Khẳng định rõ ràng đây là các tính năng NẰM NGOÀI PHẠM VI YÊU CẦU BAN ĐẦU (BRD GỐC) của CEO 1983, nhưng dưới góc nhìn phát triển kỹ thuật và năng lực công nghệ lõi của ViConnect, đội ngũ đã chủ động kiến tạo sẵn để giải quyết bài toán vận hành 365 ngày của BĐH, không để công việc bị phân tán trên Zalo hay Google Drive.
   + File Word lời thoại cập nhật: `document/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983_MOI.docx` và `apps/ceo1983_app_fe/public/docs/KICH_BAN_LOI_NOI_HOC_THUOC_THUYET_TRINH_CEO1983.docx`.
 
-# [BẮT BUỘC 106] Quy Chuẩn Loại Bỏ ViOne Tại Cổng /register, Chuẩn Hóa Luồng Đăng Ký Sự Kiện Có Phí Gửi Mã VietQR Về Email & Khôi Phục Giao Diện Profile CEO 1983 Chuẩn Gốc
+# [BẮT BUỘC 106] Quy Chuẩn Loại Bỏ ViOne Tại Cổng /register, Chuẩn Hóa Luồng Đăng Ký Sự Kiện Có Phí Gửi mã QR ngân hàng Về Email & Khôi Phục Giao Diện Profile CEO 1983 Chuẩn Gốc
 - Cổng Đăng Ký Hội Viên `/register` & Điều Hướng Danh Thiếp:
   + Tuyệt đối KHÔNG nhúng component ViOne (`ConnectAppSignUp`) hay các liên kết sang app ViOne (`https://14.225.217.232:5445/connect-app`).
   + Đường dẫn `/register` là Cổng Tiếp Nhận Hồ Sơ Gia Nhập CLB Doanh Nhân CEO 1983 chính thức (`Ceo1983MemberRegistrationForm`).
   + Các nút CTA kêu gọi đăng ký hội viên từ popup lưu danh thiếp (`AssociationCardCaptureModal.tsx`) hay trang giới thiệu BẮT BUỘC sử dụng điều hướng nội bộ `<Link to="/register">` dẫn thẳng form đăng ký hội viên CEO 1983.
-- Quy Chuẩn Luồng Đăng Ký Sự Kiện Có Phí & Gửi Mã VietQR Về Email:
-  + Khi sự kiện có phí (`ticket_price > 0` hoặc `fee > 0`), backend `events.service.ts` hàm `guestRegister` BẮT BUỘC phải tạo mã QR VietQR (MB Bank `1983000000`, cú pháp `EV{regId} {phone}`) và gọi `mailService.sendEventTicketEmail(...)` gửi email thực tế đính kèm mã VietQR tới người đăng ký.
+- Quy Chuẩn Luồng Đăng Ký Sự Kiện Có Phí & Gửi mã QR ngân hàng Về Email:
+  + Khi sự kiện có phí (`ticket_price > 0` hoặc `fee > 0`), backend `events.service.ts` hàm `guestRegister` BẮT BUỘC phải tạo mã QR Mã QR Ngân Hàng (MB Bank `1983000000`, cú pháp `EV{regId} {phone}`) và gọi `mailService.sendEventTicketEmail(...)` gửi email thực tế đính kèm mã QR ngân hàng tới người đăng ký.
   + Lưu ý Schema Database PostgreSQL: Bảng `public.events` KHÔNG CÓ cột `slug` và KHÔNG CÓ cột `title` (chỉ có cột `id`, `name`, `fee`, `ticket_price`). Mọi câu SQL `$queryRaw` tuyệt đối không được dùng cột `slug` trên bảng `events`.
-  + Phía Frontend, `EventSuccessNoticeModal.tsx` tự động hiển thị mã QR VietQR MB Bank thanh toán ngay trên modal khi sự kiện có phí kèm thông báo nổi bật "Đã gửi mã VietQR thanh toán về email!".
+  + Phía Frontend, `EventSuccessNoticeModal.tsx` tự động hiển thị mã QR Mã QR Ngân Hàng MB Bank thanh toán ngay trên modal khi sự kiện có phí kèm thông báo nổi bật "Đã gửi mã QR ngân hàng thanh toán về email!".
 - Quy Chuẩn Giao Diện Trang Cá Nhân Chuẩn App CEO 1983:
   + Giao diện Trang cá nhân Profile trên App CEO 1983 (`association.profile.tsx`) phải tuân thủ chuẩn thiết kế tài liệu `document/images/guide_mobile/18_ho_so_ca_nhan.png`:
     * Top bar `MemberHeader` với tiêu đề "Trang cá nhân" + icon Cài đặt (⚙️).
@@ -2095,7 +2096,7 @@
   + Bảng màu chuẩn nhận diện CEO 1983: Deep Cobalt Navy (`#003B95`), Warm Amber Gold (`#D97706`/`#B45309`), Neutral White & Obsidian Dark (`#0F172A`).
   + Tương thích 100% cả 2 theme **Sáng (Light)** và **Tối (Dark)**.
 - Quy Chuẩn Xem Trước Thẻ Danh Thiếp Số (`CardPreviewModal.tsx`):
-  + BẮT BUỘC hiển thị đồng thời cả **Thẻ hội viên VIP (`Ceo1983BusinessCardVisit`)** và **Profile chi tiết của hội viên** (Avatar, Tên, Tích xanh, Chức danh, Doanh nghiệp, Badge hội viên, Nút Gọi điện, Gửi thư, Zalo, Lưu danh bạ vCard, Bảng thông tin xác thực).
+  + BẮT BUỘC hiển thị đồng thời cả **thẻ hội viên điện tử (`Ceo1983BusinessCardVisit`)** và **Profile chi tiết của hội viên** (Avatar, Tên, Tích xanh, Chức danh, Doanh nghiệp, Badge hội viên, Nút Gọi điện, Gửi thư, Zalo, Lưu danh bạ vCard, Bảng thông tin xác thực).
   + Hỗ trợ nút chuyển đổi theme Sáng/Tối trực tiếp trong modal để người dùng xem trước diện mạo thẻ trong mọi điều kiện ánh sáng.
 
 # [BẮT BUỘC 109] Quy Chuẩn Khóa Đổi Mật Khẩu Bắt Buộc Trên App, Gỡ Bỏ Phân Quyền Mobile & Quản Lý Quyền Theo Ban Chuyên Môn Trên Web CRM
@@ -2110,7 +2111,7 @@
   + Tuyến `/association/permissions` tự động chuyển hướng an toàn về trang chủ `/association`.
 - Quản Lý Phân Quyền Theo Ban Chuyên Môn & Ma Trận 10 Nhóm Tính Năng Mobile Tại CRM (`/permissions`):
   + Tab 1: Phân quyền theo Ban chuyên môn (`MemberPermissionsByCommittee.tsx`): Tự động gom nhóm hội viên theo 7 Ban (Ban Điều Hành, Ban Thư Ký, Ban Thành Viên, Ban Xúc Tiến Thương Mại, Ban Truyền Thông, Ban Tài Chính, Ban Thiện Nguyện). Quyền hạn của ban được kế thừa tức thời; hỗ trợ cập nhật vai trò và ban chuyên môn qua API `PATCH /api/members/:id/role-dept`.
-  + Tab 2: Ma trận RBAC Nâng cao (`RbacPermissionMatrix.tsx`): Bổ sung Nhóm 9 (Mobile App) bao quát 10 nhóm tính năng cốt lõi (Profile & Thẻ VIP, Danh bạ, Kết nối 1-on-1, Moments B2B, Tin tức & Thông báo, Sự kiện & Quét vé QR, Họp BCH & Điểm danh Sapphire Hub, Gian hàng Marketplace & Báo giá, Quản lý công việc Kanban, Khảo sát số).
+  + Tab 2: Ma trận RBAC Nâng cao (`RbacPermissionMatrix.tsx`): Bổ sung Nhóm 9 (Mobile App) bao quát 10 nhóm tính năng cốt lõi (Profile & Thẻ Doanh Nhân Số, Danh bạ, Kết nối 1-on-1, Moments B2B, Tin tức & Thông báo, Sự kiện & Quét vé QR, Họp BCH & Điểm danh Sapphire Hub, Gian hàng Marketplace & Báo giá, Quản lý công việc Kanban, Khảo sát số).
   + Hội viên phổ thông (Role `member`): Mặc định chỉ có quyền xem danh bạ cá nhân và giao thương, tuyệt đối không có quyền quản trị hay truy cập menu tài chính, nhà tài trợ, cài đặt.
 
 # [BẮT BUỘC 110] Quy Chuẩn Không Tạo Hội Viên Thủ Công Trên CRM & Chuẩn Hóa Xuất/Nhập Dữ Liệu Excel (.xlsx) Báo Cáo Tài Chính & Nhà Tài Trợ
@@ -2180,10 +2181,10 @@
   + 4 nút chức năng cốt lõi (`Danh thiếp`, `Sửa hồ sơ`, `Chia sẻ`, `Mã QR`) phải được thiết kế nhỏ gọn, tinh tế, không chiếm dụng chiều cao màn hình.
   + TUYỆT ĐỐI KHÔNG sử dụng khung màu nền lớn (`bg-slate-50`, `bg-blue-50`, `bg-amber-50`, v.v.) và không bọc icon trong các ô vuông cồng kềnh.
   + Sử dụng phong cách phẳng trong suốt (`bg-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/60`), icon thanh mảnh trực tiếp (`size-4.5`), nhãn chữ nhỏ tinh gọn (`text-[10.5px] font-semibold`).
-# [BẮT BUỘC 115] Quy Chuẩn Tái Cấu Trúc Luồng Nhà Tài Trợ & Gói Tài Trợ: Phân Định 3 Hình Thức Riêng Biệt, Tích Hợp API Gói & Tạo Nhanh, Cho Phép Nhập Số Tiền Thực Tế Tùy Biến, Tự Động Bắn Email VietQR
+# [BẮT BUỘC 115] Quy Chuẩn Tái Cấu Trúc Luồng Nhà Tài Trợ & Gói Tài Trợ: Phân Định 3 Hình Thức Riêng Biệt, Tích Hợp API Gói & Tạo Nhanh, Cho Phép Nhập Số Tiền Thực Tế Tùy Biến, Tự Động Bắn Email Mã QR Ngân Hàng
 - Phân Định Rõ Ràng 3 Hình Thức Tài Trợ Riêng Biệt:
   + Toàn bộ hệ sinh thái (DB, NestJS Backend, TanStack Router Frontend, Excel Export/Import, Event Sponsors) phải phân chia dứt khoát 3 hình thức đóng góp qua kiểu `PackageType = "bank_transfer" | "cash" | "in_kind"`:
-    1. **Chuyển khoản (VietQR)**: Quét mã QR thanh toán định danh ngân hàng MB Bank 1983000000.
+    1. **Chuyển khoản (Mã QR Ngân Hàng)**: Quét mã QR thanh toán định danh ngân hàng MB Bank 1983000000.
     2. **Tiền mặt**: Nộp tiền mặt trực tiếp tại văn phòng hiệp hội hoặc quầy lễ tân sự kiện.
     3. **Hiện vật**: Đóng góp sản phẩm, dịch vụ, trang thiết bị, quà tặng có quy đổi giá trị và mô tả chi tiết.
   + Bộ lọc thống kê, tab bảng dữ liệu và mẫu xuất/nhập Excel bắt buộc phản ánh chuẩn xác 3 hình thức này.
@@ -2194,9 +2195,9 @@
 - Cho Phép Nhập Giá Trị Thực Tế Tùy Biến Theo Số Tiền Nhà Tài Trợ Mong Muốn:
   + Khi chọn gói tài trợ, hệ thống tự động gợi ý giá niêm yết của gói nhưng TUYỆT ĐỐI KHÔNG ép buộc/khóa cứng số tiền.
   + Phải cho phép người dùng tự do nhập/điều chỉnh giá trị tài trợ thực tế theo đúng số tiền mà nhà tài trợ mong muốn (`VndCurrencyInput`).
-- Tự Động Bắn Email Kèm Mã VietQR Đúng Số Tiền Khai Báo Về Email Nhà Tài Trợ (`sponsors.service.ts`):
-  + Ngay sau khi tạo mới thành công nhà tài trợ (hoặc khi bấm nút "Gửi lại thư tri ân"), Backend NestJS tự động tạo và gửi email HTML cao cấp kèm mã VietQR động:
-    * API VietQR: `https://img.vietqr.io/image/MB-1983000000-compact2.png?amount=${numAmount}&addInfo=${encodedAddInfo}`
+- Tự Động Bắn Email Kèm mã QR ngân hàng Đúng Số Tiền Khai Báo Về Email Nhà Tài Trợ (`sponsors.service.ts`):
+  + Ngay sau khi tạo mới thành công nhà tài trợ (hoặc khi bấm nút "Gửi lại thư tri ân"), Backend NestJS tự động tạo và gửi email HTML cao cấp kèm mã QR ngân hàng động:
+    * API Mã QR Ngân Hàng: `https://img.mã QR ngân hàng.io/image/MB-1983000000-compact2.png?amount=${numAmount}&addInfo=${encodedAddInfo}`
     * Ngân hàng thụ hưởng: **MB Bank (Ngân hàng TMCP Quân Đội)**
     * Số tài khoản: **1983000000**
     * Tên thụ hưởng: **CLB DOANH NHAN CEO 1983**
@@ -2205,7 +2206,7 @@
 
 # [BẮT BUỘC 116] Quy Chuẩn Luồng Sự Kiện Có Phí, Đa Phương Tiện Marketplace/B2B, Mạng Xã Hội Web CRM 3 Tab & Lên Lịch Gặp 1-on-1
 - Luồng Sự Kiện Có Phí & Kích Hoạt Vé QR Kèm Email:
-  + Khi hội viên đăng ký sự kiện có phí: hệ thống đánh dấu trạng thái chưa thanh toán (`registered: false`), TUYỆT ĐỐI KHÔNG sinh mã QR vé check-in, chỉ hiển thị mã VietQR thanh toán MB Bank kèm hướng dẫn nộp phí.
+  + Khi hội viên đăng ký sự kiện có phí: hệ thống đánh dấu trạng thái chưa thanh toán (`registered: false`), TUYỆT ĐỐI KHÔNG sinh mã QR vé check-in, chỉ hiển thị mã QR ngân hàng thanh toán MB Bank kèm hướng dẫn nộp phí.
   + Tại Web CRM Quản trị (`/event-registrations`): Ban Truyền Thông / Admin có 2 nút hành động:
     * `[✓ Đã thanh toán]`: Cập nhật trạng thái vé sang `paid`, kích hoạt vé (`registered: true`), sinh mã QR vé check-in chuẩn và tự động bắn Email E-ticket HTML kèm mã QR check-in về email người tham gia.
     * `[🔍 Đối soát]`: Mở modal đối soát chi tiết dòng tiền, mã giao dịch ngân hàng và đối chiếu số tiền thực tế.
@@ -2240,7 +2241,7 @@
     8. Địa chỉ trụ sở (`officeAddress`)
 - Quy Chuẩn 3: Luồng Sự Kiện Có Phí Bỏ Tự Động Thanh Toán, Chờ Ban Duyệt & Bắn Mail E-Ticket (`events.service.ts`, `events.controller.ts`):
   + Khi đăng ký sự kiện có phí (`!isFree`): Hệ thống lưu trạng thái `status: 'pending'`, `payment_status: 'pending'`. TUYỆT ĐỐI KHÔNG tự động đánh dấu đã thanh toán, không tăng bộ đếm đăng ký sự kiện và không gửi email vé check-in ngay.
-  + Màn hình sau đăng ký chỉ hiển thị thông tin chuyển khoản VietQR MB Bank 1983000000 kèm hướng dẫn chờ Ban Truyền thông & Ban Tài chính đối soát.
+  + Màn hình sau đăng ký chỉ hiển thị thông tin chuyển khoản Mã QR Ngân Hàng MB Bank 1983000000 kèm hướng dẫn chờ Ban Truyền thông & Ban Tài chính đối soát.
   + Ban Truyền thông / Ban Tài chính kiểm tra chứng từ tại CRM và bấm "Xác nhận đã thanh toán" (`POST /events/registrations/:id/confirm-payment`): Lúc này hệ thống mới chuyển `payment_status = 'paid'`, `status = 'confirmed'`, tăng số lượng đại biểu và lập tức bắn Email xác nhận vé kèm mã QR Check-in đến người tham dự.
   + Sự kiện miễn phí (`isFree`): Vẫn tiếp tục xác nhận tự động và gửi email vé ngay lập tức.
 - Quy Chuẩn 4: Xác Thực Mật Khẩu Đa Tầng Cho Hội Viên Mới & Nút Ẩn/Hiện Mật Khẩu (`users.service.ts`, `auth.service.ts`, `association.settings.tsx`, `AssociationAppSignIn.tsx`):

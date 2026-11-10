@@ -36,7 +36,7 @@
   - [2.8. Nghiệp Vụ Điều Hành Cuộc Họp Ban (Cố Định vs Bất Thường) & Phòng Họp Jitsi](#28-nghiệp-vụ-điều-hành-cuộc-họp-ban-cố-định-vs-bất-thường--phòng-họp-jitsi)
   - [2.9. Nghiệp Vụ Giao Việc Kanban & AI Gemini Bóc Tách Task Từ Biên Bản Họp](#29-nghiệp-vụ-giao-việc-kanban--ai-gemini-bóc-tách-task-từ-biên-bản-họp)
   - [2.10. Nghiệp Vụ Quản Lý Sổ Quỹ Thu - Chi, Hoàn Ứng 6 Ban & Recharts Thích Ứng Theme](#210-nghiệp-vụ-quản-lý-sổ-quỹ-thu---chi-hoàn-ứng-6-ban--recharts-thích-ứng-theme)
-  - [2.11. Nghiệp Vụ Quản Lý Kỳ Thu Hội Phí Thường Niên & Gạch Nợ VietQR / MoMo](#211-nghiệp-vụ-quản-lý-kỳ-thu-hội-phí-thường-niên--gạch-nợ-vietqr--momo)
+  - [2.11. Nghiệp Vụ Quản Lý Kỳ Thu Hội Phí Thường Niên & Gạch Nợ Mã QR Ngân Hàng / MoMo](#211-nghiệp-vụ-quản-lý-kỳ-thu-hội-phí-thường-niên--gạch-nợ-mã QR ngân hàng--momo)
   - [2.12. Nghiệp Vụ Studio Thiết Kế Poster Pinterest & Quản Lý Mẫu Trang](#212-nghiệp-vụ-studio-thiết-kế-poster-pinterest--quản-lý-mẫu-trang)
   - [2.13. Nghiệp Vụ Kho Văn Thư Số Hóa & Trình Xem Tài Liệu Toàn Năng Word/Excel/PDF](#213-nghiệp-vụ-kho-văn-thư-số-hóa--trình-xem-tài-liệu-toàn-năng-wordexcelpdf)
   - [2.14. Nghiệp Vụ Tin Nhắn Mạng Lưới & Quản Trị Đối Tác Tài Trợ](#214-nghiệp-vụ-tin-nhắn-mạng-lưới--quản-trị-đối-tác-tài-trợ)
@@ -52,7 +52,7 @@
   - [3.8. Nghiệp Vụ Sàn Giao Thương B2B, Cơ Hội Hợp Tác & Gian Hàng Ưu Đãi](#38-nghiệp-vụ-sàn-giao-thương-b2b-cơ-hội-hợp-tác--gian-hàng-ưu-đãi)
   - [3.9. Nghiệp Vụ Đặt Lịch Hẹn Gặp 1-on-1 Trong 3 Tình Huống Kết Nối](#39-nghiệp-vụ-đặt-lịch-hẹn-gặp-1-on-1-trong-3-tình-huống-kết-nối)
   - [3.10. Nghiệp Vụ Bình Chọn Biểu Quyết Đại Hội & Bầu Cử Số (1 Người - 1 Phiếu)](#310-nghiệp-vụ-bình-chọn-biểu-quyet-đại-hội--bầu-cử-số-1-người---1-phiếu)
-  - [3.11. Nghiệp Vụ Nộp Hội Phí Thường Niên Trực Tuyến VietQR / MoMo / VNPay](#311-nghiệp-vụ-nộp-hội-phí-thường-niên-trực-tuyến-vietqr--momo--vnpay)
+  - [3.11. Nghiệp Vụ Nộp Hội Phí Thường Niên Trực Tuyến Mã QR Ngân Hàng / MoMo / VNPay](#311-nghiệp-vụ-nộp-hội-phí-thường-niên-trực-tuyến-mã QR ngân hàng--momo--vnpay)
   - [3.12. Nghiệp Vụ Trợ Lý Cố Vấn AI Phân Tích Dòng Tiền & Thẩm Định Lời Lỗ Deal B2B](#312-nghiệp-vụ-trợ-lý-cố-vấn-ai-phân-tích-dòng-tiền--thẩm-định-lời-lỗ-deal-b2b)
   - [3.13. Nghiệp Vụ Chương Trình Đào Tạo Doanh Nghiệp & Workshop B2B](#313-nghiệp-vụ-chương-trình-đào-tạo-doanh-nghiệp--workshop-b2b)
 - [PHẦN IV: MA TRẬN 10 QUY TRÌNH NGHIỆP VỤ ĐẦU-CUỐI (END-TO-END WORKFLOWS)](#phần-iv-ma-trận-10-quy-trình-nghiệp-vụ-đầu-cuối-end-to-end-workflows)
@@ -98,7 +98,7 @@ Nhằm đưa hoạt động của hiệp hội lên tầm cao mới, CLB triển
 ### 1.3. Mục Tiêu Chiến Lược & Chỉ Số Đo Lường Hiệu Quả (Strategic KPIs)
 
 * **Số hóa 100% hồ sơ hội viên:** Thay thế hoàn toàn danh thiếp giấy và hồ sơ vật lý bằng Danh thiếp số vCard QR và Hồ sơ doanh nghiệp đa phương tiện.
-* **Tự động hóa 98% công tác thu nộp hội phí:** 100% giao dịch thanh toán qua VietQR động, MoMo và VNPay được gạch nợ tự động trong vòng 2 giây không cần kế toán đối soát thủ công.
+* **Tự động hóa 98% công tác thu nộp hội phí:** 100% giao dịch thanh toán qua Mã QR Ngân Hàng động, MoMo và VNPay được gạch nợ tự động trong vòng 2 giây không cần kế toán đối soát thủ công.
 * **Tốc độ đón tiếp sự kiện < 0.5 giây/người:** Triệt tiêu hoàn toàn hiện tượng xếp hàng ùn tắc tại các sự kiện Gala lớn (500 khách tại Keangnam Landmark72).
 * **Thúc đẩy giao thương B2B nội khối đạt tối thiểu 50 tỷ VNĐ/năm:** Tối ưu hóa khớp lệnh cơ hội kinh doanh giữa 6 Ban chuyên môn nhờ AI Matching và lịch hẹn doanh nhân 1-on-1 có giám sát.
 
@@ -186,7 +186,7 @@ flowchart LR
         UC_B2B[UC-13: Sàn Giao thương B2B & Gian hàng]
         UC_Meeting[UC-14: Đặt Lịch hẹn 1-on-1 trong 3 tình huống]
         UC_Ticket[UC-15: Nhận Vé điện tử & Check-in QR Keangnam]
-        UC_PayApp[UC-16: Nộp Hội phí MoMo/VNPay/VietQR]
+        UC_PayApp[UC-16: Nộp Hội phí MoMo/VNPay/Mã QR Ngân Hàng]
         UC_Vote[UC-17: Biểu quyết Đại hội 1 Người - 1 Phiếu]
         UC_AIApp[UC-18: Cố vấn AI Dòng tiền & Deal B2B]
         UC_RegApp[UC-19: Đăng ký Gia nhập CLB Trực tuyến]
@@ -499,24 +499,24 @@ Bảo đảm tính minh bạch tuyệt đối 100% trong thu chi tài chính hi�
 
 ---
 
-### 2.11. Nghiệp Vụ Quản Lý Kỳ Thu Hội Phí Thường Niên & Gạch Nợ VietQR / MoMo
+### 2.11. Nghiệp Vụ Quản Lý Kỳ Thu Hội Phí Thường Niên & Gạch Nợ Mã QR Ngân Hàng / MoMo
 
 #### 1. Mô tả nghiệp vụ
-Tự động hóa hoàn toàn quy trình thu hội phí niên khóa. Ban Tài chính thiết lập kỳ thu, hệ thống phát hành hóa đơn tự động cho 500+ hội viên trong 3 giây. Tích hợp mã VietQR Động theo chuẩn Napas247; tiền về tài khoản là hệ thống tự động gạch nợ `PAID` và phát hành biên lai ngay lập tức.
+Tự động hóa hoàn toàn quy trình thu hội phí niên khóa. Ban Tài chính thiết lập kỳ thu, hệ thống phát hành hóa đơn tự động cho 500+ hội viên trong 3 giây. Tích hợp mã QR ngân hàng Động theo chuẩn Napas247; tiền về tài khoản là hệ thống tự động gạch nợ `PAID` và phát hành biên lai ngay lập tức.
 
 #### 2. Ảnh chụp màn hình thực tế
 
-![Quản Lý Hội Phí & Hóa Đơn VietQR](../images/guide_crm/20_quan_ly_hoi_phi_hoa_don.png)
+![Quản Lý Hội Phí & Hóa Đơn Mã QR Ngân Hàng](../images/guide_crm/20_quan_ly_hoi_phi_hoa_don.png)
 *Hình 2.11.1: Quản lý Kỳ thu Hội phí Niên khóa - Thống kê công nợ, tỷ lệ đã nộp và danh sách quá hạn*
 
-![Chi Tiết Quản Lý Hội Phí Thực Tế](../images/live_captures_fresh/crm_07_quanly_hoiphi_vietqr.png)
-*Hình 2.11.2: Bảng theo dõi hóa đơn hội phí chi tiết từng hội viên, mã VietQR và trạng thái thanh toán*
+![Chi Tiết Quản Lý Hội Phí Thực Tế](../images/live_captures_fresh/crm_07_quanly_hoiphi_mã QR ngân hàng.png)
+*Hình 2.11.2: Bảng theo dõi hóa đơn hội phí chi tiết từng hội viên, mã QR ngân hàng và trạng thái thanh toán*
 
 #### 3. Luồng xử lý chi tiết (Flow of Events)
 * **Luồng chính:**
   1. Kế toán bấm **"Phát hành Hóa đơn Niên khóa 2026"** -> Hệ thống duyệt toàn bộ hội viên `ACTIVE` và tạo 500 hóa đơn `invoices` trong CSDL với mã hóa đơn duy nhất `INV-2026-XXXX`.
-  2. Hệ thống tự động phát lệnh gửi thông báo nộp phí đồng loạt qua Zalo ZNS và Email kèm mã VietQR động chứa chính xác số tiền (VD: 10.000.000 VNĐ) và cú pháp nội dung `CEO1983 [MÃ_HÓA_ĐƠN]`.
-  3. Hội viên mở app ngân hàng bất kỳ, quét mã VietQR và xác nhận chuyển tiền.
+  2. Hệ thống tự động phát lệnh gửi thông báo nộp phí đồng loạt qua Zalo ZNS và Email kèm mã QR ngân hàng động chứa chính xác số tiền (VD: 10.000.000 VNĐ) và cú pháp nội dung `CEO1983 [MÃ_HÓA_ĐƠN]`.
+  3. Hội viên mở app ngân hàng bất kỳ, quét mã QR ngân hàng và xác nhận chuyển tiền.
   4. Webhook IPN từ cổng thanh toán/ngân hàng bắn tín hiệu về Backend NestJS kèm chữ ký số HMAC-SHA512.
   5. Backend xác thực chữ ký số -> Gạch nợ hóa đơn sang trạng thái `PAID` -> Thêm bản ghi vào `transactions` -> Gửi tin nhắn Zalo xác nhận biên lai điện tử -> Đổi huy hiệu trên Mobile App thành "Đã hoàn thành hội phí 2026" trong thời gian < 2 giây.
 
@@ -533,7 +533,7 @@ Cung cấp Studio Đồ Họa Cao Cấp cho phép Ban Thư ký thiết kế post
 *Hình 2.12.1: Studio Thiết Kế Poster Thư Mời Gala Wyndham Thanh Thủy - Bóc tách ảnh khách mời & Hiệu ứng 3D*
 
 ![Quản Lý Mẫu Email Tự Động](../images/guide_crm/22_mau_email_tu_dong.png)
-*Hình 2.12.2: Trung tâm Quản lý Mẫu Trang: Mẫu Email HTML v3, Mẫu Zalo ZNS, Mẫu Thông báo VietQR*
+*Hình 2.12.2: Trung tâm Quản lý Mẫu Trang: Mẫu Email HTML v3, Mẫu Zalo ZNS, Mẫu Thông báo Mã QR Ngân Hàng*
 
 #### 3. Luồng xử lý chi tiết
 * Thư ký vào "Studio Thư Mời" trên Sidebar menu -> Chọn Mẫu Wyndham Thanh Thủy hoặc tải ảnh mẫu tùy ý lên.
@@ -576,7 +576,7 @@ Kênh trao đổi thông tin thời gian thực giữa Ban Quản Trị và các
 ### 2.15. Nghiệp Vụ Cài Đặt Hệ Thống Toàn Diện & Xoay Vòng Token Zalo OA 24/7
 
 #### 1. Mô tả nghiệp vụ
-Trung tâm cấu hình kỹ thuật toàn diện cho Cổng Web CRM: Cấu hình thông số máy chủ SMTP gửi mail, cấu hình danh mục tài khoản ngân hàng thụ hưởng VietQR, thiết lập ngưỡng cảnh báo quá hạn công nợ và cơ chế **Tự Động Xoay Vòng Token Zalo OA 24/7/365** bảo đảm không bao giờ gián đoạn kênh thông báo ZNS.
+Trung tâm cấu hình kỹ thuật toàn diện cho Cổng Web CRM: Cấu hình thông số máy chủ SMTP gửi mail, cấu hình danh mục tài khoản ngân hàng thụ hưởng Mã QR Ngân Hàng, thiết lập ngưỡng cảnh báo quá hạn công nợ và cơ chế **Tự Động Xoay Vòng Token Zalo OA 24/7/365** bảo đảm không bao giờ gián đoạn kênh thông báo ZNS.
 
 #### 2. Ảnh chụp màn hình thực tế
 
@@ -610,7 +610,7 @@ flowchart TD
         UC_A7["Sàn Giao Thương B2B, Đăng Tin Cơ Hội & Gian Hàng Ưu Đãi"]
         UC_A8["Đặt Lịch Hẹn Gặp Doanh Nhân 1-on-1 trong 3 Tình Huống"]
         UC_A9["Bình Chọn Biểu Quyết Đại Hội Số (1 Người - 1 Phiếu)"]
-        UC_A10["Nộp Hội Phí Thường Niên Trực Tuyến VietQR / MoMo / VNPay"]
+        UC_A10["Nộp Hội Phí Thường Niên Trực Tuyến Mã QR Ngân Hàng / MoMo / VNPay"]
         UC_A11["Cố Vấn Trí Tuệ Nhân Tạo AI Phân Tích Dòng Tiền & Deal B2B"]
         UC_A12["Tham gia Đào Tạo, Khóa Học & Workshop Chuyên Đề"]
     end
@@ -686,7 +686,7 @@ Màn hình trung tâm của hội viên khi mở ứng dụng. Hiển thị thô
 
 #### 2. Ảnh chụp màn hình thực tế
 
-![Thẻ Hội Viên VIP Mặt Trước](../images/guide_mobile/05_the_hoi_vien_vip_mat_truoc.png)
+![thẻ hội viên điện tử Mặt Trước](../images/guide_mobile/05_the_hoi_vien_vip_mat_truoc.png)
 *Hình 3.4.1: Thẻ Hội Viên Số Mặt Trước - Thiết kế Hoàng Gia Navy & Gold sang trọng*
 
 ![Thẻ Hội Viên Mặt Sau Kèm Mã QR vCard](../images/guide_mobile/06_the_hoi_vien_vip_mat_sau_qr.png)
@@ -762,7 +762,7 @@ Hội viên theo dõi lịch các sự kiện Gala, Diễn đàn, Hội thảo c
 
 #### 3. Luồng xử lý chi tiết
 * Hội viên vào mục "Sự kiện" -> Chọn "Gala Chào Xuân 2026 tại Khách sạn InterContinental Hanoi Landmark72" -> Bấm "Đăng ký tham gia".
-* Nếu là hội viên đã đóng hội phí: Nhận vé miễn phí ngay lập tức; Nếu là khách mời: Chọn thanh toán VietQR / MoMo.
+* Nếu là hội viên đã đóng hội phí: Nhận vé miễn phí ngay lập tức; Nếu là khách mời: Chọn thanh toán Mã QR Ngân Hàng / MoMo.
 * Vé điện tử lưu trong mục "Vé của tôi". Khi đến cửa Keangnam, hội viên mở vé trình mã QR động trước máy quét lễ tân -> Xác thực thành công trong 0.5 giây và xem ngay số bàn tiệc đã được Ban tổ chức xếp chỗ.
 
 ---
@@ -815,15 +815,15 @@ Chuẩn hóa văn hóa kết nối doanh nhân qua tính năng **Đặt Lịch H
 
 ---
 
-### 3.11. Nghiệp Vụ Nộp Hội Phí Thường Niên Trực Tuyến VietQR / MoMo / VNPay
+### 3.11. Nghiệp Vụ Nộp Hội Phí Thường Niên Trực Tuyến Mã QR Ngân Hàng / MoMo / VNPay
 
 #### 1. Mô tả nghiệp vụ
-Hội viên nộp hội phí thường niên 100% không tiền mặt ngay trên điện thoại. Chọn hóa đơn niên khóa -> Chọn phương thức (VietQR động, Ví MoMo, VNPay) -> Quét mã hoặc bấm Deep Link -> Tiền vào tài khoản hiệp hội là hệ thống tự động gạch nợ `PAID` và cập nhật thẻ hội viên sang trạng thái hoàn thành phí trong 2 giây.
+Hội viên nộp hội phí thường niên 100% không tiền mặt ngay trên điện thoại. Chọn hóa đơn niên khóa -> Chọn phương thức (Mã QR Ngân Hàng động, Ví MoMo, VNPay) -> Quét mã hoặc bấm Deep Link -> Tiền vào tài khoản hiệp hội là hệ thống tự động gạch nợ `PAID` và cập nhật thẻ hội viên sang trạng thái hoàn thành phí trong 2 giây.
 
 #### 2. Ảnh chụp màn hình thực tế
 
-![Gia Hạn Hội Phí Bằng VietQR Động](../images/guide_mobile/17_gia_han_hoi_phi_vietqr.png)
-*Hình 3.11.1: Màn hình Gia hạn Hội phí Niên khóa - Mã VietQR Napas247 động gạch nợ tự động trong 2 giây*
+![Gia Hạn Hội Phí Bằng Mã QR Ngân Hàng Động](../images/guide_mobile/17_gia_han_hoi_phi_mã QR ngân hàng.png)
+*Hình 3.11.1: Màn hình Gia hạn Hội phí Niên khóa - Mã Mã QR Ngân Hàng Napas247 động gạch nợ tự động trong 2 giây*
 
 ---
 
@@ -879,7 +879,7 @@ sequenceDiagram
     end
 ```
 
-### 4.2. Quy Trình 2: Thu Hội Phí Thường Niên, VietQR Động & Gạch Nợ Tự Động
+### 4.2. Quy Trình 2: Thu Hội Phí Thường Niên, Mã QR Ngân Hàng Động & Gạch Nợ Tự Động
 
 ```mermaid
 sequenceDiagram
@@ -889,14 +889,14 @@ sequenceDiagram
     participant DB as CSDL PostgreSQL
     actor Mem as Hội Viên
     participant App as Mobile App
-    participant Napas as Cổng VietQR Napas247 / MoMo / VNPay
+    participant Napas as Cổng Mã QR Ngân Hàng Napas247 / MoMo / VNPay
 
     Acc->>CRM: Bấm "Phát hành hóa đơn Niên khóa 2026"
     CRM->>DB: Tạo 500 hóa đơn nợ invoices (status: PENDING)
-    DB->>Mem: Bắn Zalo ZNS & Email kèm link mã VietQR động
+    DB->>Mem: Bắn Zalo ZNS & Email kèm link mã QR ngân hàng động
     Mem->>App: Mở app, chọn Hóa đơn nộp phí
-    App->>CRM: Yêu cầu sinh mã VietQR Napas247 đúng số tiền
-    CRM-->>App: Hiển thị mã VietQR động (hạn 15 phút)
+    App->>CRM: Yêu cầu sinh mã Mã QR Ngân Hàng Napas247 đúng số tiền
+    CRM-->>App: Hiển thị mã QR ngân hàng động (hạn 15 phút)
     Mem->>Napas: Mở app Ngân hàng quét mã & chuyển khoản
     Napas->>CRM: Bắn Webhook IPN Server-to-Server kèm chữ ký số HMAC
     CRM->>CRM: Xác thực chữ ký HMAC-SHA512 & kiểm tra trùng lặp
@@ -1057,7 +1057,7 @@ flowchart TD
 | Mã UAT | Tiêu chí nghiệm thu cốt lõi | Chỉ số đo lường nghiệm thu | Đánh giá |
 | :--- | :--- | :--- | :---: |
 | `UAT-01` | Tốc độ soát vé QR Động Keangnam | < 0.5 giây/khách, hiển thị đúng số Bàn VIP | **ĐẠT** |
-| `UAT-02` | Gạch nợ tự động VietQR / MoMo / VNPay | Webhook gạch nợ thành công trong < 2.0 giây | **ĐẠT** |
+| `UAT-02` | Gạch nợ tự động Mã QR Ngân Hàng / MoMo / VNPay | Webhook gạch nợ thành công trong < 2.0 giây | **ĐẠT** |
 | `UAT-03` | Studio Poster Pinterest & Gửi đa kênh | Xuất ảnh 9:16 chuẩn, bắn Zalo ZNS/Email < 60s | **ĐẠT** |
 | `UAT-04` | AI Gemini bóc tách task biên bản họp | Đọc file Word/Excel và chia task đúng người | **ĐẠT** |
 | `UAT-05` | Biểu đồ Recharts thích ứng Dark/Light | Tooltip hiển thị rõ ràng, không lỗi chữ tối | **ĐẠT** |
@@ -1123,7 +1123,7 @@ flowchart TD
 
 ### 6.3. Mẫu 03 (BM-03): Hóa Đơn Điện Tử & Biên Lai Thu Hội Phí Thường Niên
 * **Mã biểu mẫu:** `BM-CEO1983-FIN-03`
-* **Mục đích:** Phát hành tự động khi hội viên thanh toán thành công qua mã VietQR Napas247, MoMo hoặc VNPay.
+* **Mục đích:** Phát hành tự động khi hội viên thanh toán thành công qua mã Mã QR Ngân Hàng Napas247, MoMo hoặc VNPay.
 * **Cấu trúc giao diện biên lai:**
   ```
   +--------------------------------------------------------------------------+
@@ -1138,7 +1138,7 @@ flowchart TD
   |  Nội dung thu: Hội Phí Niên Khóa 2026 - 2027 (12 Tháng)                  |
   |  Số tiền thanh toán: 10.000.000 VNĐ                                      |
   |  (Viết bằng chữ: Mười triệu đồng chẵn)                                   |
-  |  Phương thức thanh toán: VietQR Ngân Hàng (Napas247)                     |
+  |  Phương thức thanh toán: Mã QR Ngân Hàng Ngân Hàng (Napas247)                     |
   |  Mã giao dịch ngân hàng: VCB-20260408-992147                             |
   |  Thời gian thanh toán: 14:32:05 ngày 08/11/2026                          |
   |  Trạng thái giao dịch: ĐÃ HOÀN TẤT (GẠCH NỢ TỰ ĐỘNG)                     |
@@ -1197,7 +1197,7 @@ flowchart TD
   - Doanh nghiệp: `<ten_cong_ty>`
   - Số tiền: `<so_tien> VNĐ`
   - Hạn thanh toán: `<han_nop>`
-  - Nút bấm CTA: "Thanh Toán VietQR Ngay" (Dẫn trực tiếp vào màn hình QR nộp phí).
+  - Nút bấm CTA: "Thanh Toán Mã QR Ngân Hàng Ngay" (Dẫn trực tiếp vào màn hình QR nộp phí).
 
 ---
 

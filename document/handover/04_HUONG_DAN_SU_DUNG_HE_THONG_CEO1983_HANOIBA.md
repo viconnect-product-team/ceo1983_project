@@ -27,7 +27,7 @@
   - [6. Quản Lý Cuộc Họp Ban Điều Hành & Điều Phối Công Việc Kanban](#6-hop-ban-kanban)
   - [7. Quản Lý Check-in Độc Lập Cho Sự Kiện, Họp Mặt & Diễn Đàn](#7-checkin-doc-lap)
   - [8. Quản Lý Cơ Hội Giao Thương B2B, Chia Sẻ Bảo Mật & Sàn TMĐT](#8-giao-thuong-b2b)
-  - [9. Quản Trị Tài Chính: Thu Hội Phí Tự Động VietQR / MoMo & Đối Soát Sổ Quỹ](#9-tai-chinh-hoi-phi)
+  - [9. Quản Trị Tài Chính: Thu Hội Phí Tự Động Mã QR Ngân Hàng / MoMo & Đối Soát Sổ Quỹ](#9-tai-chinh-hoi-phi)
   - [10. Nhập - Xuất Báo Cáo Excel Chuẩn Biểu Mẫu Doanh Nghiệp](#10-excel-import-export)
   - [11. Đăng Bài Truyền Thông Đa Kênh 1-Chạm (Facebook, Zalo OA, Website)](#11-dang-bai-da-kenh)
   - [12. Cấu Hình Hệ Thống, Quản Lý Tự Động Refresh Token Zalo OA 6 Giờ & Audit Logs](#12-cai-dat-zalo-audit)
@@ -36,7 +36,7 @@
   - [1. Hướng Dẫn Cài Đặt 1-Chạm (iOS Safari, Android Chrome PWA & APK Native)](#1-cai-dat-app)
   - [2. Đăng Nhập An Toàn & Kích Hoạt Sinh Trắc Học FaceID / Vân Tay](#2-dang-nhap-faceid)
   - [3. Trang Chủ Di Động: Banner Tin Tức Tự Động Trượt Ngang Full-Width & Popup Sinh Nhật](#3-trang-chu-tin-tuc)
-  - [4. Thẻ Danh Thiếp Số VIP QR 3D Gyroscope & Mã Số May Mắn](#4-the-vip-3d)
+  - [4. Thẻ Danh Thiếp Số VIP QR 3D Gyroscope & Mã Số May Mắn](#4-the-doanh-nhan-so-3d)
   - [5. Danh Bạ Đồng Niên 1983 & Bộ Lọc Ngành Nghề Thông Minh](#5-danh-ba-dong-nien)
   - [6. Đặt Lịch Hẹn Kết Nối 1-on-1 trong 3 Kịch Bản & Tự Động Nhắn Tin](#6-hen-gap-1on1)
   - [7. Đăng Ký Sự Kiện, Vé Điện Tử E-Ticket QR & Biểu Quyết Trực Tiếp (Live Voting)](#7-ve-su-kien-voting)
@@ -44,7 +44,7 @@
   - [9. Mua Sắm Nội Khối Trên Sàn Thương Mại Điện Tử Doanh Nhân 1983](#9-san-tmdt)
   - [10. Bảng Tin Mạng Lưới: Đăng Bài QR, Quét QR Tham Gia Họp, Bình Luận Cây 3 Cấp & Tag `@`](#10-mang-luoi-feed)
   - [11. Nhắn Tin Trực Tiếp & Gọi Điện Trao Đổi Cơ Hội Giao Thương](#11-tin-nhan-chat)
-  - [12. Nộp Hội Phí Trực Tuyến Qua VietQR Napas247 / MoMo / VNPay](#12-nop-hoi-phi-app)
+  - [12. Nộp Hội Phí Trực Tuyến Qua Mã QR Ngân Hàng Napas247 / MoMo / VNPay](#12-nop-hoi-phi-app)
   - [13. Báo Cáo Thống Kê Cá Nhân & Hiệp Hội Chuẩn Hóa 2 Cột (Số Lượng & Giá Trị)](#13-thong-ke-2-cot)
   - [14. Cài Đặt Bảo Mật Tinh Giản, Đổi Mật Khẩu, Nút Đăng Xuất & Chọn Màu Theme Swatches](#14-cai-dat-theme)
 
@@ -146,7 +146,7 @@ Tuyến đường chức năng: `/members` và `/companies`.
 3. **Bước 3 - Phê duyệt kết nạp**:
    - Quản trị viên kiểm tra tính xác thực về năm sinh (1983), giấy phép kinh doanh và chức danh C-Level.
    - Bấm nút **"Phê duyệt Hội viên"**. Hệ thống tự động gán mã hội viên tuần tự (`M1983-001`, `M1983-002`,...), cập nhật trạng thái **"Đang hoạt động" (Active)** và kích hoạt quyền truy cập App Di Động.
-4. **Bước 4 - Phân ban & Cấp thẻ**: Gán hội viên vào 1 trong 6 Ban chuyên môn và phát hành Thẻ Hội viên VIP 3D.
+4. **Bước 4 - Phân ban & Cấp thẻ**: Gán hội viên vào 1 trong 6 Ban chuyên môn và phát hành thẻ hội viên điện tử 3D.
 
 ### 4.2. Quản lý Doanh nghiệp Thành viên (`/companies`)
 Hệ thống cung cấp danh bạ pháp nhân doanh nghiệp thuộc sở hữu của các hội viên:
@@ -183,7 +183,7 @@ Tuyến đường chức năng: `/events`, `/event-registrations`, `/checkin-qr`
 ### 5.2. Màn hình Standee QR Check-in Điểm danh Tốc độ cao (`/checkin-qr`)
 - Hệ thống tự sinh mã QR sự kiện chất lượng cao dành riêng cho Lễ tân đón tiếp.
 - Khách mới quét mã QR bằng camera điện thoại/Zalo để mở trang đăng ký nhanh:
-  + Nếu sự kiện **Có phí**: Tự động hiển thị Template VietQR Napas MB Bank `1983000000` kèm cú pháp `EV[MÃ_VÉ] [SĐT]`.
+  + Nếu sự kiện **Có phí**: Tự động hiển thị Template Mã QR Ngân Hàng Napas MB Bank `1983000000` kèm cú pháp `EV[MÃ_VÉ] [SĐT]`.
   + Nếu sự kiện **Miễn phí**: Nhận ngay Vé điện tử E-Ticket và mã QR điểm danh cùng số Lucky Draw.
 - Ban Lễ tân sử dụng máy quét hoặc App di động quét mã vé của người tham dự; hệ thống gạch điểm danh dưới 0.5 giây và cập nhật sĩ số trực tiếp lên màn hình lớn.
 
@@ -220,7 +220,7 @@ Tuyến đường chức năng: `/fees`, `/income`, `/expenses`, `/finance-repor
 
 ### 7.1. Quản lý Hội phí Thường niên (`/fees`)
 - Theo dõi danh sách hội viên theo kỳ hạn đóng phí: **Đã nộp**, **Chờ thanh toán**, **Quá hạn**.
-- Khi hội viên quét mã VietQR trên App chuyển khoản vào tài khoản MB Bank `1983000000`, Kế toán đối soát sao kê ngân hàng và bấm nút **"Xác nhận Thu Phí (+1 Năm)"**; hệ thống tự động cộng 365 ngày vào hạn sử dụng thẻ hội viên và gửi thông báo chúc mừng.
+- Khi hội viên quét mã QR ngân hàng trên App chuyển khoản vào tài khoản MB Bank `1983000000`, Kế toán đối soát sao kê ngân hàng và bấm nút **"Xác nhận Thu Phí (+1 Năm)"**; hệ thống tự động cộng 365 ngày vào hạn sử dụng thẻ hội viên và gửi thông báo chúc mừng.
 
 ![Quản lý Hội phí Thường niên CRM CEO 1983](images/evidence/crm1983_11_fees_management.png)
 *Hình 7.1: Quản lý Hội phí Thường niên & Đối soát Gạch nợ*
@@ -341,8 +341,8 @@ Hệ thống cố định duy nhất đúng 5 vai trò hệ thống (đã loại
 
 # 12. QUY TRÌNH ĐỐI SOÁT THỦ CÔNG & XỬ LÝ SỰ CỐ (TROUBLESHOOTING)
 
-### 12.1. Quy trình Đối soát Gạch nợ Hội phí VietQR
-1. **Bước 1**: Hội viên chuyển khoản quét mã VietQR MB Bank `1983000000` với cú pháp `HP[MÃ_HV] [SĐT]`.
+### 12.1. Quy trình Đối soát Gạch nợ Hội phí Mã QR Ngân Hàng
+1. **Bước 1**: Hội viên chuyển khoản quét mã QR ngân hàng MB Bank `1983000000` với cú pháp `HP[MÃ_HV] [SĐT]`.
 2. **Bước 2**: Kế toán mở màn hình `/fees`, đối chiếu mã giao dịch trên sao kê ngân hàng với danh sách chờ.
 3. **Bước 3**: Bấm nút **"Xác nhận Đã nộp"**. Hệ thống cập nhật trạng thái hóa đơn thành `PAID`, gia hạn thời hạn hội viên thêm 1 năm và gửi thông báo xác nhận thành công.
 
@@ -369,9 +369,9 @@ Hệ thống cố định duy nhất đúng 5 vai trò hệ thống (đã loại
 2. [HƯỚNG DẪN CÀI ĐẶT & ĐĂNG NHẬP ỨNG DỤNG](#2-hướng-dẫn-cài-đặt--đăng-nhập-ứng-dụng)
 3. [TRANG CHỦ HỘI VIÊN (EXECUTIVE HOME FEED)](#3-trang-chủ-hội-viên-executive-home-feed)
 4. [DANH BẠ HỘI VIÊN 360° & KẾT NỐI ĐỒNG NIÊN](#4-danh-bạ-hội-viên-360-kết-nối-đồng-niên)
-5. [THẺ HỘI VIÊN VIP 3D GYROSCOPE & DANH THIẾP SỐ DOANH NHÂN](#5-thẻ-hội-viên-vip-3d-gyroscope--danh-thiếp-số-doanh-nhân)
+5. [thẻ hội viên điện tử 3D GYROSCOPE & DANH THIẾP SỐ DOANH NHÂN](#5-thẻ-hội-viên-vip-3d-gyroscope--danh-thiếp-số-doanh-nhân)
 6. [SỰ KIỆN CLB, VÉ ĐIỆN TỬ E-TICKET & QUÉT MÃ CHECK-IN](#6-sự-kiện-clb-vé-điện-tử-e-ticket--quét-mã-check-in)
-7. [TRA CỨU & NỘP HỘI PHÍ THƯỜNG NIÊN VIETQR NAPAS 24/7](#7-tra-cứu--nộp-hội-phí-thường-niên-vietqr-napas-247)
+7. [TRA CỨU & NỘP HỘI PHÍ THƯỜNG NIÊN MÃ QR NGÂN HÀNG NAPAS 24/7](#7-tra-cứu--nộp-hội-phí-thường-niên-mã QR ngân hàng-napas-247)
 8. [SÀN GIAO THƯƠNG B2B MARKETPLACE CHUẨN SHOPEE](#8-sàn-giao-thương-b2b-marketplace-chuẩn-shopee)
 9. [KHO ĐẶC QUYỀN DOANH NGHIỆP & ƯU ĐÃI NỘI BỘ](#9-kho-đặc-quyền-doanh-nghiệp--ưu-đãi-nội-bộ)
 10. [BẢNG TIN TỨC HIỆP HỘI, BIỂU QUYẾT ĐẠI HỘI & LỊCH HỌP](#10-bảng-tin-tức-hiệp-hội-biểu-quyết-đại-hội--lịch-họp)
@@ -420,16 +420,16 @@ Hệ thống cố định duy nhất đúng 5 vai trò hệ thống (đã loại
 Sau khi đăng nhập, hội viên bước vào không gian trang chủ điều hành độc quyền tại `/association`.
 
 ![Trang chủ Hội viên CLB CEO 1983](images/evidence/app1983_02_home_feed.png)
-*Hình 3.1: Giao diện Trang chủ Hội viên với Thẻ hội viên VIP Gold mạ vàng và các lối tắt tiện ích*
+*Hình 3.1: Giao diện Trang chủ Hội viên với thẻ hội viên điện tử Gold mạ vàng và các lối tắt tiện ích*
 
 ### 3.1. Các Thành phần Giao diện Trang chủ
 1. **Header Chào mừng Doanh nhân**: Hiển thị họ tên, chức danh C-Level và ảnh đại diện có tích xanh hội viên chính thức.
-2. **Thẻ Hội viên VIP Gold Tương tác**: Thẻ hiển thị mã số hội viên (`M1983-001`), hạn hội phí, mã QR định danh và logo doanh nghiệp của hội viên được lồng khung kính mờ sắc nét.
+2. **thẻ hội viên điện tử Gold Tương tác**: Thẻ hiển thị mã số hội viên (`M1983-001`), hạn hội phí, mã QR định danh và logo doanh nghiệp của hội viên được lồng khung kính mờ sắc nét.
 3. **Thanh Lối tắt Tiện ích Nhanh (Quick Actions)**:
    - **Thẻ 3D**: Mở thẻ hội viên 3D có cảm biến con quay gyroscope.
    - **Danh bạ**: Mở danh sách kết nối toàn thể hội viên đồng niên.
    - **Sự kiện**: Xem lịch hội thảo và vé tham gia.
-   - **Hội phí**: Quét mã VietQR gia hạn hội phí thường niên.
+   - **Hội phí**: Quét mã QR ngân hàng gia hạn hội phí thường niên.
 4. **Bảng tin Nổi bật & Sự kiện Sắp diễn ra**: Cập nhật các thông báo quan trọng nhất từ Ban Chấp Hành.
 
 ---
@@ -457,18 +457,18 @@ Bấm vào card bất kỳ để mở modal chi tiết:
 
 ---
 
-# 5. THẺ HỘI VIÊN VIP 3D GYROSCOPE & DANH THIẾP SỐ DOANH NHÂN
+# 5. thẻ hội viên điện tử 3D GYROSCOPE & DANH THIẾP SỐ DOANH NHÂN
 
 Tuyến đường chức năng: `/association/card` và `/association/business-cards`.
 
-### 5.1. Thẻ Hội viên VIP 3D Gyroscope (`/association/card`)
+### 5.1. thẻ hội viên điện tử 3D Gyroscope (`/association/card`)
 - Ứng dụng công nghệ đồ họa 3D mô phỏng chất liệu thẻ kim loại mạ vàng sang trọng.
 - Khi nghiêng điện thoại, hiệu ứng phản chiếu ánh sáng và con quay hồi chuyển (gyroscope) làm cho thẻ lấp lánh như thẻ vật lý thật.
 - Mặt trước hiển thị: Logo dập nổi CEO 1983, Họ tên hội viên, Tên doanh nghiệp, Số thẻ và Hạn hiệu lực.
 - Bấm vào thẻ để lật mặt sau: Hiển thị mã QR định danh cá nhân phục vụ check-in sự kiện và chia sẻ thông tin.
 
-![Thẻ Hội viên VIP 3D Gyroscope](images/evidence/app1983_05_vip_card_3d.png)
-*Hình 5.1: Thẻ Hội viên VIP 3D Gyroscope phản chiếu ánh sáng sang trọng*
+![thẻ hội viên điện tử 3D Gyroscope](images/evidence/app1983_05_vip_card_3d.png)
+*Hình 5.1: thẻ hội viên điện tử 3D Gyroscope phản chiếu ánh sáng sang trọng*
 
 ### 5.2. Danh thiếp Số Doanh Nhân Digital Visit Card (`/association/business-cards`)
 - Thay thế hoàn toàn danh thiếp giấy truyền thống: Không sợ rách, không sợ thất lạc và cập nhật thông tin tức thì.
@@ -502,22 +502,22 @@ Tuyến đường chức năng: `/association/events` và `/association/checkin`
 
 ---
 
-# 7. TRA CỨU & NỘP HỘI PHÍ THƯỜNG NIÊN VIETQR NAPAS 24/7
+# 7. TRA CỨU & NỘP HỘI PHÍ THƯỜNG NIÊN MÃ QR NGÂN HÀNG NAPAS 24/7
 
 Tuyến đường chức năng: `/association/renew`.
 
-![Màn hình Tra cứu & Nộp Hội phí VietQR Napas](images/evidence/app1983_09_fees_vietqr.png)
-*Hình 7.1: Màn hình Tra cứu & Nộp Hội phí Thường niên qua mã VietQR MB Bank*
+![Màn hình Tra cứu & Nộp Hội phí Mã QR Ngân Hàng Napas](images/evidence/app1983_09_fees_mã QR ngân hàng.png)
+*Hình 7.1: Màn hình Tra cứu & Nộp Hội phí Thường niên qua mã QR ngân hàng MB Bank*
 
-### 7.1. Các bước Nộp Hội phí Thường niên bằng VietQR
+### 7.1. Các bước Nộp Hội phí Thường niên bằng Mã QR Ngân Hàng
 1. Truy cập mục **Hội phí** hoặc `/association/renew`.
 2. Màn hình hiển thị: Số tiền hội phí niêm yết (Ví dụ: `5.000.000 đ / năm`), Ngày hết hạn hiện tại và Thông tin tài khoản tiếp nhận.
-3. Hệ thống tạo **Mã VietQR Napas 24/7 động**:
+3. Hệ thống tạo **mã QR ngân hàng Napas 24/7 động**:
    - **Ngân hàng thụ hưởng**: MB Bank (Ngân hàng Quân Đội).
    - **Số tài khoản chính thức**: `1983000000`.
    - **Chủ tài khoản**: `CLB DOANH NHAN CEO 1983`.
    - **Cú pháp chuyển khoản tự động**: `HP[MÃ_HỘI_VIÊN] [SỐ_ĐIỆN_THOẠI]`.
-4. Hội viên mở ứng dụng ngân hàng bất kỳ, quét mã VietQR và bấm xác nhận chuyển khoản.
+4. Hội viên mở ứng dụng ngân hàng bất kỳ, quét mã QR ngân hàng và bấm xác nhận chuyển khoản.
 5. Sau khi chuyển khoản thành công, hệ thống ghi nhận và chuyển trạng thái "Chờ kế toán gạch nợ"; khi kế toán duyệt, hạn thẻ sẽ tự động cộng thêm 12 tháng.
 
 ---

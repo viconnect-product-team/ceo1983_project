@@ -38,7 +38,7 @@
   - [4.3. Quản Trị Thu - Chi Sổ Quỹ Hiệp Hội (GET /api/admin/transactions)](#43-quản-trị-thu---chi-sổ-quỹ-hiệp-hội-get-apiadmintransactions)
   - [4.4. Đề Xuất Tạm Ứng & Hoàn Ứng Ngân Sách 6 Ban (POST /api/admin/expenses)](#44-đề-xuất-tạm-ứng--hoàn-ứng-ngân-sách-6-ban-post-apiadminexpenses)
 - [CHƯƠNG 5: CỔNG THANH TOÁN ĐA KÊNH & WEBHOOK IPN (PAYMENTS & WEBHOOKS)](#chương-5-cổng-thanh-toán-đa-kênh--webhook-ipn-payments--webhooks)
-  - [5.1. Tạo Mã Thanh Toán VietQR Chuẩn Napas247 (POST /api/payment/create-qr)](#51-tạo-mã-thanh-toán-vietqr-chuẩn-napas247-post-apipaymentcreate-qr)
+  - [5.1. Tạo Mã Thanh Toán Mã QR Ngân Hàng Chuẩn Napas247 (POST /api/payment/create-qr)](#51-tạo-mã-thanh-toán-mã QR ngân hàng-chuẩn-napas247-post-apipaymentcreate-qr)
   - [5.2. Khởi Tạo Giao Dịch Cổng MoMo (POST /api/payment/momo-url)](#52-khởi-tạo-giao-dịch-cổng-momo-post-apipaymentmomo-url)
   - [5.3. Khởi Tạo Giao Dịch Cổng VNPay (POST /api/payment/vnpay-url)](#53-khởi-tạo-giao-dịch-cổng-vnpay-post-apipaymentvnpay-url)
   - [5.4. Webhook IPN Tiếp Nhận & Xác Thực Chữ Ký HMAC-SHA512 (POST /api/payment/webhook/ipn)](#54-webhook-ipn-tiếp-nhận--xác-thực-chữ-ký-hmac-sha512-post-apipaymentwebhookipn)
@@ -330,7 +330,7 @@ Hệ thống tuân thủ nghiêm ngặt các mã trạng thái chuẩn HTTP:
     "membershipCode": "CEO1983-216",
     "status": "ACTIVE",
     "invoiceCode": "INV-2026-0216",
-    "qrPaymentUrl": "https://api.vietqr.io/image/970422-11320107184-Napas247.jpg?amount=10000000&addInfo=HOIPHI%20CEO1983-216",
+    "qrPaymentUrl": "https://api.mã QR ngân hàng.io/image/970422-11320107184-Napas247.jpg?amount=10000000&addInfo=HOIPHI%20CEO1983-216",
     "approvedAt": "2026-11-10T08:40:00.000Z"
   },
   "message": "Đã phê duyệt kết nạp hội viên thành công. Thông báo chào mừng và hóa đơn hội phí đã được gửi qua đa kênh."
@@ -370,7 +370,7 @@ Hệ thống tuân thủ nghiêm ngặt các mã trạng thái chuẩn HTTP:
     "totalAmount": 2150000000,
     "generatedAt": "2026-11-10T08:45:00.000Z"
   },
-  "message": "Đã phát hành 215 hóa đơn hội phí niên khóa 2026 thành công kèm mã VietQR cá nhân hóa."
+  "message": "Đã phát hành 215 hóa đơn hội phí niên khóa 2026 thành công kèm mã QR ngân hàng cá nhân hóa."
 }
 ```
 
@@ -396,14 +396,14 @@ Hệ thống tuân thủ nghiêm ngặt các mã trạng thái chuẩn HTTP:
         "type": "INCOME",
         "category": "MEMBERSHIP_FEE",
         "amount": 10000000,
-        "paymentMethod": "VIETQR",
+        "paymentMethod": "MÃ QR NGÂN HÀNG",
         "referenceId": "INV-2026-0089",
         "member": {
           "membershipCode": "CEO1983-089",
           "fullName": "Lê Văn Hùng",
           "companyName": "Công Ty TNHH Xây Dựng & Địa Ốc Thủ Đô"
         },
-        "description": "Nộp hội phí niên khóa 2026 qua VietQR Napas247",
+        "description": "Nộp hội phí niên khóa 2026 qua Mã QR Ngân Hàng Napas247",
         "status": "COMPLETED",
         "bankTransactionId": "FT263158912389",
         "createdAt": "2026-11-10T07:15:30.000Z"
@@ -417,7 +417,7 @@ Hệ thống tuân thủ nghiêm ngặt các mã trạng thái chuẩn HTTP:
 
 # CHƯƠNG 5: CỔNG THANH TOÁN ĐA KÊNH & WEBHOOK IPN (PAYMENTS & WEBHOOKS)
 
-### 5.1. Tạo Mã Thanh Toán VietQR Chuẩn Napas247 (POST /api/payment/create-qr)
+### 5.1. Tạo Mã Thanh Toán Mã QR Ngân Hàng Chuẩn Napas247 (POST /api/payment/create-qr)
 * **Mô tả:** Khởi tạo chuỗi EMVCo QR Code động chuẩn Napas247 chứa chính xác số tài khoản ngân hàng CLB, số tiền cần thanh toán và nội dung cú pháp chuyển khoản định danh để tự động gạch nợ.
 * **Quyền hạn:** Hội viên hoặc Khách mời đã xác thực.
 * **Request Body:**
@@ -434,7 +434,7 @@ Hệ thống tuân thủ nghiêm ngặt các mã trạng thái chuẩn HTTP:
   "success": true,
   "data": {
     "qrCodeString": "00020101021238570010A000000727012700069704220113113201071845204599953037045408100000005802VN62250821HOIPHI CEO1983 00896304E8A1",
-    "qrImageUrl": "https://api.vietqr.io/image/970422-11320107184-compact.jpg?amount=10000000&addInfo=HOIPHI%20CEO1983%200089&accountName=CLB%20DOANH%20NHAN%20CEO%201983",
+    "qrImageUrl": "https://api.mã QR ngân hàng.io/image/970422-11320107184-compact.jpg?amount=10000000&addInfo=HOIPHI%20CEO1983%200089&accountName=CLB%20DOANH%20NHAN%20CEO%201983",
     "transferSyntax": "HOIPHI CEO1983 0089",
     "bankInfo": {
       "bankName": "Ngân Hàng TMCP Quân Đội (MBBank)",
@@ -457,7 +457,7 @@ Hệ thống tuân thủ nghiêm ngặt các mã trạng thái chuẩn HTTP:
 * **Request Body (Ví dụ từ Cổng Thanh Toán):**
 ```json
 {
-  "gateway": "VIETQR_CASSO",
+  "gateway": "MÃ QR NGÂN HÀNG_CASSO",
   "transactionId": "FT263158912389",
   "accountNumber": "11320107184",
   "amount": 10000000,
@@ -645,7 +645,7 @@ if (computedSignature !== req.headers['x-signature']) {
 ```json
 {
   "boardId": "BAN_SU_KIEN",
-  "documentText": "Biên bản họp Ban Sự Kiện ngày 08/11/2026: 1. Đ/c Nguyễn Hoàng Long chỉ đạo chốt hợp đồng thuê sảnh Keangnam trước 15/11; 2. Đ/c Phạm Minh Đức phụ trách kết nối cổng thanh toán VietQR trước 20/11; 3. Đ/c Trần Thu Hà thiết kế 3 mẫu thư mời gửi duyệt trước 12/11."
+  "documentText": "Biên bản họp Ban Sự Kiện ngày 08/11/2026: 1. Đ/c Nguyễn Hoàng Long chỉ đạo chốt hợp đồng thuê sảnh Keangnam trước 15/11; 2. Đ/c Phạm Minh Đức phụ trách kết nối cổng thanh toán Mã QR Ngân Hàng trước 20/11; 3. Đ/c Trần Thu Hà thiết kế 3 mẫu thư mời gửi duyệt trước 12/11."
 }
 ```
 * **Response Success (200 OK):**
@@ -664,7 +664,7 @@ if (computedSignature !== req.headers['x-signature']) {
         "status": "TODO"
       },
       {
-        "title": "Tích hợp cổng thanh toán VietQR Napas247 cho sự kiện Gala",
+        "title": "Tích hợp cổng thanh toán Mã QR Ngân Hàng Napas247 cho sự kiện Gala",
         "assignedMemberId": "mem_012_83",
         "assignedMemberName": "Phạm Minh Đức",
         "board": "BAN_GIAO_THUONG",

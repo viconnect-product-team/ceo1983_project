@@ -47,7 +47,7 @@
   - [3.9. Màn Hình Sự Kiện Gala Keangnam & Mua Vé Trực Tuyến](#39-màn-hình-sự-kiện-gala-keangnam--mua-vé-trực-tuyến)
   - [3.10. Màn Hình Trình Vé QR Động Xoay Vòng 30s & Tra Cứu Vị Trí Bàn](#310-màn-hình-trình-vé-qr-động-xoay-vòng-30s--tra-cứu-vị-trí-bàn)
   - [3.11. Màn Hình Lịch Họp Ban & Phòng Họp Trực Tuyến Jitsi Meet](#311-màn-hình-lịch-họp-ban--phòng-họp-trực-tuyến-jitsi-meet)
-  - [3.12. Màn Hình Nộp Hội Phí VietQR Napas247, MoMo & VNPay](#312-màn-hình-nộp-hội-phí-vietqr-napas247-momo--vnpay)
+  - [3.12. Màn Hình Nộp Hội Phí Mã QR Ngân Hàng Napas247, MoMo & VNPay](#312-màn-hình-nộp-hội-phí-mã QR ngân hàng-napas247-momo--vnpay)
   - [3.13. Màn Hình Nhắn Tin B2B Thời Gian Thực & Kênh Thảo Luận Ban](#313-màn-hình-nhắn-tin-b2b-thời-gian-thực--kênh-thảo-luận-ban)
   - [3.14. Màn Hình Biểu Quyết Đại Hội Số (1 Doanh Nhân - 1 Phiếu)](#314-màn-hình-biểu-quyết-đại-hội-số-1-doanh-nhân---1-phiếu)
   - [3.15. Màn Hình Cố Vấn Trí Tuệ Nhân Tạo AI Gemini](#315-màn-hình-cố-vấn-trí-tuệ-nhân-tạo-ai-gemini)
@@ -99,7 +99,7 @@ Hệ sinh thái số CLB Doanh Nhân CEO 1983 (HanoiBA) được xây dựng tr�
 ### 1.3. Quy Chuẩn Kiểu Chữ & Phông Chữ (Typography)
 * **Phông chữ Hệ Thống Tiêu Chuẩn:** `Inter`, `Montserrat` (hoặc font mặc định hệ điều hành: `-apple-system`, `SF Pro Display`, `Segoe UI`, `Roboto`).
 * **Hệ Thống Thang Kích Thước Chữ (Type Scale):**
-  - **Display / Poster Title:** 28pt – 36pt (Bold 800), Line-height 1.2. Áp dụng cho Tiêu đề Studio Thư Mời & Thẻ Hội Viên VIP.
+  - **Display / Poster Title:** 28pt – 36pt (Bold 800), Line-height 1.2. Áp dụng cho Tiêu đề Studio Thư Mời & thẻ hội viên điện tử.
   - **Heading 1 (H1):** 20pt – 24pt (Bold 700), Line-height 1.3. Áp dụng cho Tiêu đề Trang Dashboard CRM, Trang Chủ App.
   - **Heading 2 (H2):** 16pt – 18pt (Semi-bold 600), Line-height 1.4. Áp dụng cho Tên các Phân Hệ, Tiêu đề Card thông tin.
   - **Heading 3 (H3):** 13pt – 15pt (Semi-bold 600), Line-height 1.4. Áp dụng cho Tiêu đề Cột Kanban, Bảng Excel.
@@ -144,7 +144,7 @@ Hệ sinh thái số CLB Doanh Nhân CEO 1983 (HanoiBA) được xây dựng tr�
   9. `[Soát Vé QR Cổng]` (Check-in tốc độ cao < 0.5s)
   10. `[Điều Hành Cuộc Họp]` (Lịch họp Ban, Jitsi Meet)
   11. `[Quản Lý Thu Chi]` (Sổ quỹ hiệp hội, Hóa đơn)
-  12. `[Hội Phí Niên Khóa]` (Phát hành nợ, VietQR gạch nợ)
+  12. `[Hội Phí Niên Khóa]` (Phát hành nợ, Mã QR Ngân Hàng gạch nợ)
   13. `[Báo Cáo Phân Tích]` (Xuất nhập Excel SheetJS)
   14. `[Kho Văn Thư Số]` (Trình đọc Word, Excel, PDF)
   15. `[Giao Việc Kanban]` (Bảng thẻ việc & AI Parse Task)
@@ -169,7 +169,7 @@ Hệ sinh thái số CLB Doanh Nhân CEO 1983 (HanoiBA) được xây dựng tr�
   - Tiêu đề cột cố định (Sticky Header) khi cuộn dọc hàng nghìn dòng.
   - Định dạng số tiền tự động phân cách hàng nghìn (`10.000.000 đ`).
   - Màu sắc dòng tiền: Thu tiền có màu Xanh Ngọc Lục Bảo (`#00A86B`), Chi tiền có màu Xanh Navy hoặc Đỏ Muted.
-  - Cửa sổ Modal Chi Tiết Hóa Đơn: Hiển thị mã QR VietQR Napas247, lịch sử thanh toán, mã tham chiếu ngân hàng và nút In Biên Lai PDF.
+  - Cửa sổ Modal Chi Tiết Hóa Đơn: Hiển thị mã QR Mã QR Ngân Hàng Napas247, lịch sử thanh toán, mã tham chiếu ngân hàng và nút In Biên Lai PDF.
 
 ### 2.7. Studio Thiết Kế Poster Thư Mời Wyndham Thanh Thủy 9:16 Pinterest
 * **Mô tả giao diện:** Không gian làm việc đồ họa trực quan (Studio Canvas) phục vụ tạo thiệp mời và poster chuyên nghiệp:
@@ -203,8 +203,8 @@ Hệ sinh thái số CLB Doanh Nhân CEO 1983 (HanoiBA) được xây dựng tr�
   1. `[Trang Chủ]` (Icon Home) - Bảng tin giao lưu nội bộ, bài viết chia sẻ, sự kiện nổi bật.
   2. `[Danh Bạ]` (Icon Users / Directory) - Bản đồ kết nối doanh nhân, định vị GPS bán kính 10km.
   3. `[Giao Thương]` (Icon Handshake / B2B) - Sàn đăng tin mua bán, gian hàng ưu đãi hội viên.
-  4. `[Thẻ VIP]` (Icon CreditCard / QR) - Thẻ hội viên số Hoàng Gia mạ vàng ánh kim, mã QR vCard danh thiếp.
-  5. `[Tài Khoản]` (Icon UserCircle) - Quản lý hồ sơ công ty, nộp hội phí VietQR, lịch họp Ban, cài đặt.
+  4. `[Thẻ Doanh Nhân Số]` (Icon CreditCard / QR) - Thẻ hội viên số Hoàng Gia mạ vàng ánh kim, mã QR vCard danh thiếp.
+  5. `[Tài Khoản]` (Icon UserCircle) - Quản lý hồ sơ công ty, nộp hội phí Mã QR Ngân Hàng, lịch họp Ban, cài đặt.
 
 ### 3.3. Màn Hình Trang Chủ & Bảng Tin Giao Lưu (Feed 3 Cấp & Menu 3 Chấm)
 * **Mô tả giao diện:** Mạng xã hội nội bộ dành riêng cho giới tinh hoa doanh nhân 1983:
@@ -232,10 +232,10 @@ Hệ sinh thái số CLB Doanh Nhân CEO 1983 (HanoiBA) được xây dựng tr�
     * Vị trí sảnh: **Grand Ballroom, Tầng 5, Tháp Keangnam Landmark72**
     * Mã vé: `TKT-2026-0112`
 
-### 3.12. Màn Hình Nộp Hội Phí VietQR Napas247, MoMo & VNPay
+### 3.12. Màn Hình Nộp Hội Phí Mã QR Ngân Hàng Napas247, MoMo & VNPay
 * **Mô tả giao diện:** Trung tâm nộp phí niên khóa và vé sự kiện tiện lợi:
   - Hiển thị tóm tắt công nợ: Số tiền cần nộp, Niên khóa 2026-2027, Hạn chót thanh toán.
-  - Khung mã VietQR trung tâm: Tự động render mã QR Napas247 cá nhân hóa. Doanh nhân chỉ cần mở bất kỳ ứng dụng ngân hàng nào (MBBank, Vietcombank, Techcombank, BIDV,...) quét mã là thông tin tài khoản và cú pháp chuyển khoản được điền chính xác 100%.
+  - Khung mã QR ngân hàng trung tâm: Tự động render mã QR Napas247 cá nhân hóa. Doanh nhân chỉ cần mở bất kỳ ứng dụng ngân hàng nào (MBBank, Vietcombank, Techcombank, BIDV,...) quét mã là thông tin tài khoản và cú pháp chuyển khoản được điền chính xác 100%.
   - Nút "Mở App Ngân Hàng Thanh Toán Ngay" (Deep-link ngân hàng).
   - Nút chọn phương thức ví điện tử: MoMo, VNPay-QR.
   - Trạng thái kiểm tra thanh toán thời gian thực (Polling & WebSocket): Ngay khi tài khoản ngân hàng báo có tiền, màn hình tự động chuyển sang hiệu ứng pháo hoa chúc mừng màu xanh ngọc lục bảo và thông báo gạch nợ thành công!
@@ -246,8 +246,8 @@ Hệ sinh thái số CLB Doanh Nhân CEO 1983 (HanoiBA) được xây dựng tr�
 
 ### 4.1. Quy Tắc 3-Click (3-Click Rule) Cho Mọi Thao Tác Trọng Yếu
 Mọi tác vụ cốt lõi của doanh nhân trên ứng dụng bắt buộc phải hoàn tất trong tối đa 3 lần chạm (3 Clicks):
-1. **Trình thẻ VIP:** Mở App -> Chạm tab `Thẻ VIP` -> Hiện mã QR vCard (2 chạm).
-2. **Nộp hội phí:** Mở App -> Chạm `Nộp Phí Ngay` tại Trang Chủ -> Hiện mã VietQR sẵn sàng quét (2 chạm).
+1. **Trình thẻ doanh nhân số:** Mở App -> Chạm tab `Thẻ Doanh Nhân Số` -> Hiện mã QR vCard (2 chạm).
+2. **Nộp hội phí:** Mở App -> Chạm `Nộp Phí Ngay` tại Trang Chủ -> Hiện mã QR ngân hàng sẵn sàng quét (2 chạm).
 3. **Quét vé vào cổng Keangnam:** Mở App Quản Trị -> Chạm `Quét Vé` -> Camera mở sẵn sàng quét (2 chạm).
 4. **Đăng tin B2B:** Chạm tab `Giao Thương` -> Chạm `Đăng Nhu Cầu` -> Điền thông tin & Đăng (3 bước).
 

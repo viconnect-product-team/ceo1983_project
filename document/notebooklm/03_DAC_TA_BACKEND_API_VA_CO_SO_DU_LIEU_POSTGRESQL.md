@@ -96,7 +96,7 @@ Mỗi tính năng backend nằm trong một module độc lập tại `apps/ceo1
 ### Endpoints Phân Hệ Mobile App CEO 1983
 - `GET /association/home-feed`: Bảng tin hoạt động trang chủ
 - `GET /association/home-stats`: Số liệu thống kê thật 100% CSDL
-- `GET /association/card-profile`: Thẻ hội viên VIP và thông tin công ty
+- `GET /association/card-profile`: thẻ hội viên điện tử và thông tin công ty
 - `PUT /association/card-privacy`: Cập nhật công tắc ẩn/hiện SĐT & Email
 - `GET /card/public/:code`: Xem danh thiếp số công khai
 - `GET /association/members`: Danh bạ doanh nhân kèm lọc ngành

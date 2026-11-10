@@ -209,7 +209,7 @@ const DEFAULT_BLOCKS: Record<string, TextBlockLayout> = {
   atlantis_wings: { id: "atlantis_wings", name: "Cánh Gà Trái Phải Atlantis", x: 50, y: 8, hasFrostedBg: false, zIndex: 9, visible: true },
   title: { id: "title", name: "Tiêu đề 'Thư mời' / 'ATLANTIS'", x: 50, y: 13, hasFrostedBg: false, zIndex: 12, visible: true },
   headline: { id: "headline", name: "Cụm Tiêu Đề Lớn 'KẾT NỐI DOANH NHÂN'", x: 50, y: 22, hasFrostedBg: false, zIndex: 11, visible: true },
-  attendee: { id: "attendee", name: "Đại Biểu VIP / Diễn Giả Khách Mời", x: 50, y: 48, hasFrostedBg: false, zIndex: 15, visible: true },
+  attendee: { id: "attendee", name: "Đại Biểu Danh Dự / Diễn Giả Khách Mời", x: 50, y: 48, hasFrostedBg: false, zIndex: 15, visible: true },
   capsule: { id: "capsule", name: "Hộp Quà Tặng / Đặc Quyền Capsule", x: 50, y: 66, hasFrostedBg: false, zIndex: 10, visible: true },
   datetime: { id: "datetime", name: "Cụm Ngày Giờ Số Lớn 06 | 04 | 24", x: 50, y: 76, hasFrostedBg: false, zIndex: 10, visible: true },
   cutout: { id: "cutout", name: "Khối Ảnh Bóc Tách / Cổng Chào Venue", x: 50, y: 85, hasFrostedBg: false, zIndex: 8, visible: true },
@@ -217,7 +217,7 @@ const DEFAULT_BLOCKS: Record<string, TextBlockLayout> = {
   qr: { id: "qr", name: "Mã QR Check-in Đăng Ký", x: 86, y: 88, hasFrostedBg: false, zIndex: 12, visible: true },
 };
 
-// Preset Thư Viện Ảnh Nền Sự Kiện & Hội Nghị VIP
+// Preset Thư Viện Ảnh Nền Sự Kiện & Hội Nghị Doanh Nhân
 const BACKGROUND_PRESETS = [
   {
     id: "atlantis_royal_palace",
@@ -263,13 +263,13 @@ const BACKGROUND_PRESETS = [
   },
   {
     id: "velvet_ruby",
-    name: "Thảm Đỏ Danh Vọng & Ruby VIP",
+    name: "Thảm Đỏ Danh Vọng & Dạ Tiệc Doanh Nhân",
     tag: "Red Carpet",
     url: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80",
   },
 ];
 
-// Preset Sticker / Con Dấu & Huy Hiệu VIP Sẵn Có
+// Preset Sticker / Con Dấu & Huy Hiệu Doanh Nhân Sẵn Có
 const STICKER_PRESETS = [
   { id: "heian_gate", name: "Cổng Vòm Heian Venue", url: "/templates/heian_gate_venue.jpg" },
   { id: "ceo1983_crest", name: "Huy Hiệu Vàng CEO 1983", url: "/app-icon.png" },
@@ -281,11 +281,11 @@ let globalMembersCache: any[] | null = null;
 let globalEventsCache: any[] | null = null;
 let globalTemplatesCache: InvitationTemplate[] | null = null;
 
-// Preset Avatar Đại Biểu Doanh Nhân VIP (Ảnh an toàn tuyệt đối, chân dung doanh nhân sắc nét chuẩn mực)
+// Preset Avatar Đại Biểu Doanh Nhân (Ảnh vector doanh nhân cao cấp, ánh sáng tương phản sắc nét chuẩn mực)
 const SAFE_FALLBACK_AVATAR =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Cdefs%3E%3ClinearGradient id='bgGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23002366'/%3E%3Cstop offset='100%25' stop-color='%23001033'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FDE68A'/%3E%3Cstop offset='40%25' stop-color='%23F59E0B'/%3E%3Cstop offset='100%25' stop-color='%23D97706'/%3E%3C/linearGradient%3E%3ClinearGradient id='skinGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FDE047'/%3E%3Cstop offset='100%25' stop-color='%23EAB308'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='160' height='160' fill='url(%23bgGrad)' rx='80'/%3E%3Ccircle cx='80' cy='80' r='76' fill='none' stroke='url(%23goldGrad)' stroke-width='3' stroke-dasharray='6 3'/%3E%3Ccircle cx='80' cy='56' r='28' fill='url(%23skinGrad)'/%3E%3Cpath d='M58 44 C62 30, 98 30, 102 44 C96 38, 64 38, 58 44 Z' fill='%231E293B'/%3E%3Cpath d='M32 142 C32 104, 54 94, 80 94 C106 94, 128 104, 128 142 Z' fill='url(%23goldGrad)'/%3E%3Cpolygon points='80,94 70,116 80,126 90,116' fill='%23002366'/%3E%3Cpolygon points='76,126 80,140 84,126' fill='%23DC2626'/%3E%3Ccircle cx='96' cy='112' r='4' fill='url(%23goldGrad)' stroke='%23FFFFFF' stroke-width='1'/%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Cdefs%3E%3ClinearGradient id='bgGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230f172a'/%3E%3Cstop offset='100%25' stop-color='%23020617'/%3E%3C/linearGradient%3E%3ClinearGradient id='skinGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fde0d0'/%3E%3Cstop offset='100%25' stop-color='%23f6ad92'/%3E%3C/linearGradient%3E%3ClinearGradient id='hairGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e293b'/%3E%3Cstop offset='100%25' stop-color='%230f172a'/%3E%3C/linearGradient%3E%3ClinearGradient id='suitGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23002B66'/%3E%3Cstop offset='100%25' stop-color='%23001433'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fde68a'/%3E%3Cstop offset='50%25' stop-color='%23f59e0b'/%3E%3Cstop offset='100%25' stop-color='%23b45309'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='160' height='160' fill='url(%23bgGrad)' rx='80'/%3E%3Ccircle cx='80' cy='80' r='76' fill='none' stroke='url(%23goldGrad)' stroke-width='3'/%3E%3Cpath d='M24 160 C24 118, 52 108, 80 108 C108 108, 136 118, 136 160 Z' fill='url(%23suitGrad)'/%3E%3Cpolygon points='80,106 64,122 80,132 96,122' fill='%23FFFFFF'/%3E%3Cpolygon points='80,118 75,126 80,154 85,126' fill='url(%23goldGrad)'/%3E%3Crect x='72' y='86' width='16' height='24' fill='url(%23skinGrad)' rx='4'/%3E%3Cellipse cx='80' cy='64' rx='28' ry='32' fill='url(%23skinGrad)'/%3E%3Cpath d='M52 56 C52 32, 70 26, 80 26 C94 26, 108 34, 108 54 C104 46, 92 42, 80 44 C68 46, 58 50, 52 56 Z' fill='url(%23hairGrad)'/%3E%3Cpath d='M52 56 C51 68, 54 74, 55 76 C56 68, 57 60, 59 58 Z' fill='url(%23hairGrad)'/%3E%3Cpath d='M108 54 C109 66, 106 72, 105 76 C104 68, 103 60, 101 58 Z' fill='url(%23hairGrad)'/%3E%3Cpath d='M62 58 Q70 54 75 58' stroke='%231e293b' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M85 58 Q90 54 98 58' stroke='%231e293b' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='69' cy='65' rx='3.5' ry='2' fill='%230f172a'/%3E%3Cellipse cx='91' cy='65' rx='3.5' ry='2' fill='%230f172a'/%3E%3Cpath d='M72 82 Q80 88 88 82' stroke='%23b45309' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='104' cy='128' r='4' fill='url(%23goldGrad)' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E";
 
-const VIP_AVATAR_PRESETS = [
+const EXECUTIVE_AVATAR_PRESETS = [
   { id: "ceo_pham_vu", name: "Chủ tịch Phạm Vũ", url: "/ceo-portrait-default.png" },
   { id: "female_ceo", name: "Chân Dung CEO Nữ", url: "/landing_web_vione/professional-portrait.png" },
   { id: "saas_ceo", name: "Doanh Nhân Công Nghệ", url: "/landing_web_vione/saas-portrait.png" },
@@ -347,7 +347,7 @@ export function InvitationTemplateStudio() {
   const [mainTitleLine2, setMainTitleLine2] = useState<string>("THỊNH VƯỢNG 1983");
   const [venueHighlight, setVenueHighlight] = useState<string>("tại HABBLET HOTEL & LANDMARK 72");
   const [capsuleBadge, setCapsuleBadge] = useState<string>("+ 2 EMBLEMAS EXCLUSIVOS PARA OS PARTICIPANTES");
-  const [capsuleBenefit, setCapsuleBenefit] = useState<string>("ĐẶC QUYỀN VIP PASS & BỘ QUÀ TẶNG DOANH NHÂN HERA");
+  const [capsuleBenefit, setCapsuleBenefit] = useState<string>("ĐẶC QUYỀN DOANH NHÂN SỐ & BỘ QUÀ TẶNG THÀNH VIÊN HERA");
   const [capsuleNote, setCapsuleNote] = useState<string>("(Trang sức ngọc trai và huy hiệu đinh ba mạ vàng)");
   const [dayOfWeek, setDayOfWeek] = useState<string>("DATA");
   const [timeHour, setTimeHour] = useState<string>("21:30");
@@ -401,7 +401,7 @@ export function InvitationTemplateStudio() {
 
   // ── 5. TỶ LỆ POSTER, ZOOM & CẮT ẢNH ──
   const [posterRatio, setPosterRatio] = useState<"9:16" | "1:1" | "16:9" | "3:4" | "4:3">("9:16");
-  const [zoomLevel, setZoomLevel] = useState<number>(100); // 50% - 150%
+  const [zoomLevel, setZoomLevel] = useState<number>(85); // 50% - 150%, mặc định 85% tối ưu hiển thị trọn vẹn toàn bộ poster trong tầm nhìn
   const [isCropOpen, setIsCropOpen] = useState<boolean>(false);
   const [cropImageUrl, setCropImageUrl] = useState<string>("");
   const [cropTarget, setCropTarget] = useState<"avatar" | "layer" | null>(null);
@@ -812,7 +812,7 @@ export function InvitationTemplateStudio() {
             title: "ATLANTIS THỊNH VƯỢNG",
             venueHighlight: "tại HABBLET HOTEL & LANDMARK 72",
             capsuleBadge: "+ 2 EMBLEMAS EXCLUSIVOS PARA OS PARTICIPANTES",
-            capsuleBenefit: "ĐẶC QUYỀN VIP PASS & BỘ QUÀ TẶNG DOANH NHÂN HERA",
+            capsuleBenefit: "ĐẶC QUYỀN DOANH NHÂN SỐ & BỘ QUÀ TẶNG THÀNH VIÊN HERA",
             capsuleNote: "(Trang sức ngọc trai và huy hiệu đinh ba mạ vàng)",
             dayOfWeek: "DATA",
             timeHour: "21:30",
@@ -834,7 +834,7 @@ export function InvitationTemplateStudio() {
             title: "DÒNG CHẢY HẠNH PHÚC",
             venueHighlight: "tại Heian Villas",
             capsuleBadge: "QUÀ TẶNG CHO KH BOOKING & CHUYỂN CỌC THÀNH CÔNG",
-            capsuleBenefit: "01 CẶP VÉ VIP TRĂNG CONCERT NGÀY 30/4",
+            capsuleBenefit: "01 CẶP VÉ MỜI DANH DỰ TRĂNG CONCERT NGÀY 30/4",
             capsuleNote: "(với sự tham gia của ca sĩ Giang Hồng Ngọc và Quốc Thiên)",
             dayOfWeek: "Thứ Bảy",
             timeHour: "9h00",
@@ -2083,7 +2083,7 @@ export function InvitationTemplateStudio() {
           )}
 
           {/* ══════════════════════════════════════════════════════════════
-              TAB 4: ĐẠI BIỂU VIP & CALL API NGƯỜI ĐÃ ĐĂNG KÝ
+              TAB 4: ĐẠI BIỂU DANH DỰ & CALL API NGƯỜI ĐÃ ĐĂNG KÝ
           ══════════════════════════════════════════════════════════════ */}
           {activeTab === "attendee" && (
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
@@ -2091,7 +2091,7 @@ export function InvitationTemplateStudio() {
                 <div className="flex items-center gap-2">
                   <Users className="size-4 text-amber-500" />
                   <span className="text-xs font-black uppercase text-slate-900 dark:text-slate-100">
-                    Đại Biểu VIP / Diễn Giả Khách Mời
+                    Đại Biểu Danh Dự / Diễn Giả Khách Mời
                   </span>
                 </div>
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
@@ -2268,7 +2268,7 @@ export function InvitationTemplateStudio() {
                             }`}
                           />
                           <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase shadow-xs">
-                            VIP
+                            CEO
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
@@ -2335,13 +2335,13 @@ export function InvitationTemplateStudio() {
                       </button>
                     </div>
 
-                    {/* Khay chọn nhanh Avatar Doanh Nhân VIP mẫu */}
+                    {/* Khay chọn nhanh Avatar Doanh Nhân mẫu */}
                     <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
                       <span className="text-[10.5px] font-bold text-amber-900 dark:text-amber-200 block mb-1.5">
-                        Chọn Avatar Mẫu VIP Sẵn Có (1 chạm):
+                        Chọn Avatar Doanh Nhân Sẵn Có (1 chạm):
                       </span>
                       <div className="grid grid-cols-4 gap-1.5">
-                        {VIP_AVATAR_PRESETS.map((p) => (
+                        {EXECUTIVE_AVATAR_PRESETS.map((p) => (
                           <button
                             key={p.id}
                             type="button"
@@ -2442,7 +2442,7 @@ export function InvitationTemplateStudio() {
                 ) : (
                   <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-center space-y-2">
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Chưa chọn đại biểu VIP nào cho poster. Bấm chọn từ danh sách bên trên hoặc tải ảnh lên.
+                      Chưa chọn đại biểu nào cho poster. Bấm chọn từ danh sách bên trên hoặc tải ảnh lên.
                     </p>
                   </div>
                 )}
@@ -2707,7 +2707,7 @@ export function InvitationTemplateStudio() {
         {/* ══════════════════════════════════════════════════════════════
             CỘT PHẢI: KHUNG CANVAS PHOTOSHOP PREVIEW TƯƠNG TÁC (7 CỘT)
         ══════════════════════════════════════════════════════════════ */}
-        <div className="lg:col-span-7 flex flex-col items-center sticky top-20 z-10 w-full">
+        <div className="lg:col-span-7 flex flex-col items-center sticky top-16 z-10 w-full max-h-[calc(100vh-4.5rem)] overflow-y-auto pr-1 pb-16">
           {/* BỘ CHỌN TỶ LỆ POSTER & ZOOM CANVAS */}
           <div className="w-full max-w-[560px] mb-3 flex items-center justify-between p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex-wrap gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -2758,6 +2758,14 @@ export function InvitationTemplateStudio() {
                 title="Phóng to (+10%)"
               >
                 <ZoomIn className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(85)}
+                className="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-[10.5px] font-bold text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                title="Vừa màn hình (85%)"
+              >
+                Vừa Khung
               </button>
               <button
                 type="button"
@@ -2986,7 +2994,7 @@ export function InvitationTemplateStudio() {
               </div>
             )}
 
-            {/* ── KHỐI ĐẠI BIỂU VIP ── */}
+            {/* ── KHỐI ĐẠI BIỂU DANH DỰ ── */}
             {attendeeConfig.enabled &&
               blocksLayout.attendee?.visible !== false &&
               attendeeConfig.attendees.length > 0 && (
@@ -3021,7 +3029,7 @@ export function InvitationTemplateStudio() {
                             className="size-14 rounded-full object-cover border-2 border-amber-400 ring-2 ring-amber-300/40 shadow-[0_0_16px_rgba(251,191,36,0.6)]"
                           />
                           <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 text-[7px] font-black uppercase tracking-wider shadow-sm">
-                            VIP
+                            CEO
                           </span>
                         </div>
                       )}
@@ -3039,7 +3047,7 @@ export function InvitationTemplateStudio() {
                             className="w-13 h-16 rounded-t-[26px] rounded-b-lg object-cover border-2 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.5)]"
                           />
                           <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase">
-                            VIP
+                            CEO
                           </span>
                         </div>
                       )}
@@ -3057,7 +3065,7 @@ export function InvitationTemplateStudio() {
                             className="w-13 h-16 rounded-[45%] object-cover border-2 border-amber-200 shadow-[0_0_18px_rgba(254,240,138,0.55)]"
                           />
                           <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[7px] font-black uppercase">
-                            VIP
+                            CEO
                           </span>
                         </div>
                       )}
@@ -3085,7 +3093,7 @@ export function InvitationTemplateStudio() {
                             className="size-14 rounded-full object-cover"
                           />
                           <span className="absolute -bottom-0.5 -right-0.5 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase">
-                            VIP
+                            CEO
                           </span>
                         </div>
                       )}
@@ -3103,7 +3111,7 @@ export function InvitationTemplateStudio() {
                             className="size-14 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_18px_rgba(103,232,249,0.5)]"
                           />
                           <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-cyan-400 text-slate-950 text-[7px] font-black uppercase">
-                            VIP
+                            CEO
                           </span>
                         </div>
                       )}
@@ -3347,7 +3355,7 @@ export function InvitationTemplateStudio() {
         isOpen={isCropOpen}
         imageUrl={cropImageUrl}
         initialShape={cropShape}
-        title={cropTarget === "avatar" ? "Cắt Ảnh Avatar Đại Biểu VIP" : "Cắt & Bo Viền Ảnh Poster"}
+        title={cropTarget === "avatar" ? "Cắt Ảnh Avatar Đại Biểu Danh Dự" : "Cắt & Bo Viền Ảnh Poster"}
         onClose={() => setIsCropOpen(false)}
         onCropComplete={(croppedDataUrl) => {
           if (cropTarget === "avatar") {

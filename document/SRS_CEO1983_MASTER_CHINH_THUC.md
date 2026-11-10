@@ -1319,7 +1319,7 @@ flowchart TD
   - *3a. Hội viên chuyển khoản trực tiếp qua ngân hàng không qua cổng: Kế toán bấm 'Xác nhận thu tiền thủ công' -> Tải ảnh ủy nhiệm chi -> Hệ thống gạch nợ kèm ghi chú kiểm toán.*
 
 * **Quy tắc nghiệp vụ chi phối (Business Rules):**
-  - **BR-26:**  Tuyệt đối không sử dụng dịch vụ VietQR trong toàn bộ tài liệu và giao diện, chỉ áp dụng Mã QR MoMo và Cổng VNPay.
+  - **BR-26:**  Tuyệt đối không sử dụng dịch vụ Mã QR Ngân Hàng trong toàn bộ tài liệu và giao diện, chỉ áp dụng Mã QR MoMo và Cổng VNPay.
   - **BR-27:**  Mọi khoản chi ngân sách từ 20.000.000 VNĐ trở lên bắt buộc phải có chữ ký điện tử hoặc phê duyệt của Chủ tịch CLB.
 
 * **Liên kết kỹ thuật (Technical Implementation):**
@@ -2077,7 +2077,7 @@ flowchart TD
 
 * **Quy tắc nghiệp vụ chi phối (Business Rules):**
   - **BR-56:**  Chỉ những đại biểu thuộc thành phần triệu tập mới nhìn thấy nút bấm vào phòng họp trực tuyến.
-  - **BR-57:**  Tuyệt đối không dùng thuật ngữ 'VietQR' trên giao diện thanh toán.
+  - **BR-57:**  Tuyệt đối không dùng thuật ngữ 'Mã QR Ngân Hàng' trên giao diện thanh toán.
 
 * **Liên kết kỹ thuật (Technical Implementation):**
   - **Giao diện (Frontend UI):** `apps/ceo1983_app_fe/src/routes/association.meetings.tsx, PaymentModal.tsx`
@@ -2089,7 +2089,7 @@ flowchart TD
 ## CHƯƠNG 4: ĐẶC TẢ CỔNG THANH TOÁN ĐIỆN TỬ (MÃ QR MOMO & CỔNG VNPAY)
 
 1. **Chuẩn Hóa Cổng Thanh Toán Độc Lập:**
-   - Hệ thống loại bỏ hoàn toàn dịch vụ VietQR, chuyển sang tích hợp trực tiếp 2 giải pháp thanh toán điện tử hàng đầu Việt Nam:
+   - Hệ thống loại bỏ hoàn toàn dịch vụ Mã QR Ngân Hàng, chuyển sang tích hợp trực tiếp 2 giải pháp thanh toán điện tử hàng đầu Việt Nam:
      * **Mã QR Ví Điện Tử MoMo:** Tự động phát sinh mã QR MoMo mang mã hóa định danh hội viên và số tiền chính xác, tương thích ứng dụng Ví MoMo và 40+ ứng dụng ngân hàng.
      * **Cổng Thanh Toán Quốc Gia VNPay:** Hỗ trợ thanh toán bảo mật đa kênh qua thẻ ATM nội địa, thẻ quốc tế (Visa, Mastercard, JCB) và quét mã VNPay-QR trên ứng dụng ngân hàng.
 2. **Cơ Chế Gạch Nợ & Đối Soát Tự Động:**
