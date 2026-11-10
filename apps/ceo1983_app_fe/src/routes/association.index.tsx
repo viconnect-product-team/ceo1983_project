@@ -110,7 +110,20 @@ import { useT, useLang } from "@/lib/i18n";
 import { AssociationContactSheet } from "@/components/member/AssociationContactSheet";
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi } from "@/lib/api-client";
 import { compressImage } from "@/lib/image";
+import { ImageCropModal } from "@/components/templates/ImageCropModal";
 const appIcon = "/ceo1983-emblem-8.png";
+
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
 
 export const Route = createFileRoute("/association/")({
   component: Home,
@@ -807,26 +820,60 @@ function Home() {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDirectAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropTarget, setCropTarget] = useState<"avatar" | "cover">("avatar");
+  const [cropImageUrl, setCropImageUrl] = useState("");
+
+  const handleDirectAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    try {
-      const { dataUrl, blob } = await compressImage(file, 600, 600, 0.85);
-      setAvatarPhoto(dataUrl);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      if (dataUrl) {
+        setCropImageUrl(dataUrl);
+        setCropTarget("avatar");
+        setCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (e.target) e.target.value = "";
+  };
+
+  const handleDirectCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      if (dataUrl) {
+        setCropImageUrl(dataUrl);
+        setCropTarget("cover");
+        setCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (e.target) e.target.value = "";
+  };
+
+  const handleHomeCropComplete = async (croppedDataUrl: string) => {
+    if (cropTarget === "avatar") {
+      setAvatarPhoto(croppedDataUrl);
       setAvatarError(false);
       try {
-        localStorage.setItem("vba_member_avatar_photo", dataUrl);
-        setCustomProfile((prev) => ({ ...(prev || {}), avatar: dataUrl }));
+        localStorage.setItem("vba_member_avatar_photo", croppedDataUrl);
+        setCustomProfile((prev) => ({ ...(prev || {}), avatar: croppedDataUrl }));
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
-        mem.avatar = dataUrl;
+        mem.avatar = croppedDataUrl;
         localStorage.setItem("vba_my_member", JSON.stringify(mem));
       } catch {}
 
-      window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: dataUrl }));
-      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { avatar: dataUrl } }));
+      window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: croppedDataUrl }));
+      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { avatar: croppedDataUrl } }));
       toast.success("Đã cập nhật ảnh đại diện thành công!");
 
-      uploadFileToNest(blob, file.name || "avatar.jpg")
+      const file = dataUrlToFile(croppedDataUrl, `avatar-${Date.now()}.png`);
+      uploadFileToNest(file, "avatars")
         .then((uploadedUrl) => {
           if (uploadedUrl) {
             fetchNestApi("/members/me", {
@@ -836,33 +883,23 @@ function Home() {
           }
         })
         .catch(() => {});
-    } catch {
-      toast.error("Không thể tải ảnh đại diện");
-    } finally {
-      if (e.target) e.target.value = "";
-    }
-  };
-
-  const handleDirectCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const { dataUrl, blob } = await compressImage(file, 1200, 675, 0.85);
-      setCoverPhoto(dataUrl);
+    } else {
+      setCoverPhoto(croppedDataUrl);
       setCoverError(false);
       try {
-        localStorage.setItem("vba_member_cover_photo", dataUrl);
-        setCustomProfile((prev) => ({ ...(prev || {}), cover: dataUrl }));
+        localStorage.setItem("vba_member_cover_photo", croppedDataUrl);
+        setCustomProfile((prev) => ({ ...(prev || {}), cover: croppedDataUrl }));
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
-        mem.coverUrl = dataUrl;
+        mem.coverUrl = croppedDataUrl;
         localStorage.setItem("vba_my_member", JSON.stringify(mem));
       } catch {}
 
-      window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: dataUrl }));
-      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { cover: dataUrl } }));
+      window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: croppedDataUrl }));
+      window.dispatchEvent(new CustomEvent("profile-updated", { detail: { cover: croppedDataUrl } }));
       toast.success("Đã cập nhật ảnh bìa thành công!");
 
-      uploadFileToNest(blob, file.name || "cover.jpg")
+      const file = dataUrlToFile(croppedDataUrl, `cover-${Date.now()}.png`);
+      uploadFileToNest(file, "covers")
         .then((uploadedUrl) => {
           if (uploadedUrl) {
             fetchNestApi("/members/me/cover", {
@@ -872,10 +909,6 @@ function Home() {
           }
         })
         .catch(() => {});
-    } catch {
-      toast.error("Không thể tải ảnh bìa");
-    } finally {
-      if (e.target) e.target.value = "";
     }
   };
 
@@ -2101,6 +2134,16 @@ function Home() {
           onClose={() => setSelectedMemberForProfile(null)}
         />
       )}
+
+      {/* ── CĂN CHỈNH & CẮT ẢNH STUDIO (AVATAR & COVER) ── */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageUrl={cropImageUrl}
+        initialShape={cropTarget === "avatar" ? "circle" : "banner"}
+        title={cropTarget === "avatar" ? "Căn Chỉnh & Cắt Ảnh Đại Diện" : "Căn Chỉnh & Cắt Ảnh Bìa"}
+        onClose={() => setCropModalOpen(false)}
+        onCropComplete={handleHomeCropComplete}
+      />
     </div>
   );
 }

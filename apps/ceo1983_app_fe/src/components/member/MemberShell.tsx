@@ -26,7 +26,7 @@ import { CeoFacebookReminderBanner } from "@/components/calendar/CeoFacebookRemi
 import { Ceo1983ColorThemeModal } from "@/components/member/Ceo1983ColorThemeModal";
 import { FirstDayAiWelcomeModal } from "@/components/member/FirstDayAiWelcomeModal";
 import { ViOneAiTutorGuide } from "@/components/common/ViOneAiTutorGuide";
-import { applyCeo1983ColorTheme, getActiveCeo1983ColorThemeId } from "@/lib/ceo1983-color-theme";
+import { applyCeo1983ColorTheme, getActiveCeo1983ColorThemeId, getActiveCeo1983ColorTheme, COLOR_THEME_EVENT, type Ceo1983ColorTheme } from "@/lib/ceo1983-color-theme";
 import { SeasonalThemeAmbientOverlay } from "@/components/member/SeasonalThemeAmbientOverlay";
 import { getEffectiveThemeOption, isEventThemeEnabled } from "@/components/member/SeasonalEventHeader";
 
@@ -508,47 +508,45 @@ export function MemberHeader({
   );
 }
 
-function FooterHomeIcon({ active }: { active: boolean }) {
+function FooterHomeIcon({ active, brandColor }: { active: boolean; brandColor?: string }) {
+  const activeColor = brandColor || "var(--vba-navy)";
   return (
-    <Home
-      className={`size-6 transition-all duration-200 ${active
-          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
-          : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
-        }`}
-    />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-6 transition-all duration-200">
+      <path d="M10 18L14 18" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.02099 4.6L5.58114 5.64106C3.65403 7.03443 2.69047 7.73112 2.25617 8.74938C1.82186 9.76763 1.99837 10.9162 2.35139 13.2135L2.65243 15.1724C3.15287 18.4289 3.40309 20.0572 4.571 21.0286C5.73891 22 7.44633 22 10.8612 22H13.1388C16.5537 22 18.2611 22 19.429 21.0286C20.5969 20.0572 20.8471 18.4289 21.3476 15.1724L21.6486 13.2135C22.0016 10.9162 22.1781 9.76763 21.7438 8.74938C21.3095 7.73112 20.346 7.03443 18.4189 5.64106L16.979 4.6C14.5817 2.86667 13.3831 2 12 2C10.6169 2 9.41829 2.86667 7.02099 4.6Z" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} strokeLinejoin="round" />
+    </svg>
   );
 }
 
-function FooterAnalyticsIcon({ active }: { active: boolean }) {
+function FooterAnalyticsIcon({ active, brandColor }: { active: boolean; brandColor?: string }) {
+  const activeColor = brandColor || "var(--vba-navy)";
   return (
-    <BarChart3
-      className={`size-6 transition-all duration-200 ${active
-          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
-          : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
-        }`}
-    />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-6 transition-all duration-200">
+      <path d="M8.05653 3.5C2.04493 6.12883 0.629484 14.3347 5.20143 18.8641C9.86407 23.4835 17.9985 21.756 20.5 15.8278" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} strokeLinecap="round" />
+      <path d="M20.9063 8.60378C20.3946 7.36853 19.6447 6.24615 18.6993 5.30073C17.7538 4.35531 16.6315 3.60536 15.3962 3.0937C14.034 2.52946 13.3529 2.24733 12.4664 2.79477C12.4333 2.81523 12.3766 2.85309 12.345 2.87587C11.5 3.4854 11.5 4.42922 11.5 6.31686V8.42748C11.5 10.3473 11.5 11.3072 12.0964 11.9036C12.6928 12.5 13.6527 12.5 15.5725 12.5H17.6831C19.5708 12.5 20.5146 12.5 21.1241 11.655C21.1469 11.6234 21.1848 11.5667 21.2052 11.5336C21.7527 10.6471 21.4705 9.966 20.9063 8.60378Z" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} />
+    </svg>
   );
 }
 
-function FooterSocialNetworkIcon({ active }: { active: boolean }) {
+function FooterSocialNetworkIcon({ active, brandColor }: { active: boolean; brandColor?: string }) {
+  const activeColor = brandColor || "var(--vba-navy)";
   return (
-    <MessageSquare
-      className={`size-6 transition-all duration-200 ${active
-          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
-          : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
-        }`}
-    />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-6 transition-all duration-200">
+      <circle cx="12" cy="12" r="10" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} />
+      <path d="M12 22C12 22 8 18 8 12C8 6 12 2 12 2C12 2 16 6 16 12C16 18 12 22 12 22Z" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} strokeLinejoin="round" />
+      <path d="M22 12L2 12" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2" : "1.5"} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
-function FooterUserIcon({ active }: { active: boolean }) {
+function FooterUserIcon({ active, brandColor }: { active: boolean; brandColor?: string }) {
+  const activeColor = brandColor || "var(--vba-navy)";
   return (
-    <User
-      className={`size-6 transition-all duration-200 ${active
-          ? "text-[var(--vba-navy)] dark:text-[var(--vba-gold)] scale-105 stroke-[2.3]"
-          : "text-slate-500 dark:text-slate-400 stroke-[1.8]"
-        }`}
-    />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="size-6 transition-all duration-200">
+      <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2.2" : "1.75"} />
+      <path d="M14.75 9.5C14.75 11.0188 13.5188 12.25 12 12.25C10.4812 12.25 9.25 11.0188 9.25 9.5C9.25 7.98122 10.4812 6.75 12 6.75C13.5188 6.75 14.75 7.98122 14.75 9.5Z" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2.2" : "1.75"} />
+      <path d="M5.5 19L6.0604 18.0193C6.95061 16.4614 8.60733 15.5 10.4016 15.5H13.5984C15.3927 15.5 17.0494 16.4614 17.9396 18.0193L18.5 19" stroke={active ? activeColor : "#8F8F8F"} strokeWidth={active ? "2.2" : "1.75"} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -611,6 +609,23 @@ function MemberTabBar() {
   // Yêu cầu 3: Chu kỳ quét QR (2.5s thanh ngang quét + icon Scan vuông -> 2s hiện mã QR tĩnh)
   const [isScanningPhase, setIsScanningPhase] = useState(true);
 
+  // Màu thương hiệu động theo cài đặt hệ thống tại màn cá nhân (Yêu cầu nút Quét QR và Active tab)
+  const [brandColorTheme, setBrandColorTheme] = useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
+  useEffect(() => {
+    const handleThemeChange = (e: any) => {
+      if (e?.detail) setBrandColorTheme(e.detail);
+      else setBrandColorTheme(getActiveCeo1983ColorTheme());
+    };
+    window.addEventListener(COLOR_THEME_EVENT, handleThemeChange);
+    window.addEventListener("theme-color-changed", handleThemeChange);
+    window.addEventListener("storage", handleThemeChange);
+    return () => {
+      window.removeEventListener(COLOR_THEME_EVENT, handleThemeChange);
+      window.removeEventListener("theme-color-changed", handleThemeChange);
+      window.removeEventListener("storage", handleThemeChange);
+    };
+  }, []);
+
   useEffect(() => {
     let timer: any;
     if (isScanningPhase) {
@@ -665,7 +680,7 @@ function MemberTabBar() {
     "/association": { vi: "Trang chủ", en: "Home" },
     "/association/analytics": { vi: "Thống kê", en: "Analytics" },
     "/association/events": { vi: "Thống kê", en: "Analytics" },
-    "/association/card": { vi: "Check-in", en: "Check-in" },
+    "/association/card": { vi: "Quét QR", en: "Scan QR" },
     "/association/messages": { vi: "Mạng lưới", en: "Network" },
     "/association/profile": { vi: "Cá nhân", en: "Profile" },
   };
@@ -909,6 +924,11 @@ function MemberTabBar() {
             };
 
             if (tab.center) {
+              const primaryColor = brandColorTheme?.primaryColor || "#003B95";
+              const primaryDeep = brandColorTheme?.primaryDeep || "#001D4A";
+              const accentLight = brandColorTheme?.accentLight || "#FBBF24";
+              const accentColor = brandColorTheme?.accentColor || "#F59E0B";
+
               return (
                 <div key={tab.to} className="relative flex flex-1 flex-col items-center justify-center">
                   <button
@@ -921,22 +941,21 @@ function MemberTabBar() {
                     aria-label="Quét mã QR Check-in"
                     className="-mt-6 relative flex flex-col items-center group active:scale-95 transition-transform cursor-pointer border-0 bg-transparent p-0 outline-none"
                   >
-                    {/* Nút tròn Quét mã QR: Quét hiện icon hình vuông, quét xong hiện icon QR 2s (Yêu cầu 3) */}
+                    {/* Nút tròn Quét mã QR: Nền radial đổi màu tự động theo cài đặt hệ thống tại màn cá nhân */}
                     <span
-                      className="relative grid h-14 w-14 place-items-center rounded-full shadow-lg group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-3"
+                      className="relative grid h-14 w-14 place-items-center rounded-full shadow-lg group-hover:scale-105 group-active:scale-95 transition-all overflow-hidden p-2.5"
                       style={{
-                        background: "var(--theme-primary-gradient, linear-gradient(135deg, #001D4A 0%, #003B95 50%, #002B70 100%))",
-                        border: "3px solid #F59E0B",
-                        boxShadow: "0 6px 18px rgba(0, 59, 149, 0.45)",
+                        background: `radial-gradient(circle at 45% 35%, ${accentLight} 0%, ${primaryColor} 60%, ${primaryDeep} 100%)`,
+                        border: `2.5px solid ${accentColor}`,
+                        boxShadow: `0 6px 18px ${primaryColor}66`,
                       }}
                     >
-                      {isScanningPhase ? (
-                        <Scan className="size-7 text-white stroke-[2.2] relative z-10 animate-pulse" />
-                      ) : (
-                        <QrCode className="size-7 text-white stroke-[2.2] relative z-10 animate-in fade-in zoom-in-95 duration-200" />
-                      )}
+                      {/* Icon QR-code-02 từ bộ icon CEO1983_icon (5).zip */}
+                      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white relative z-10 shrink-0">
+                        <path d="M9.53727 9.53727H9.55195M25.6772 9.53727H25.6918M9.53727 25.6772H9.55195M19.0745 19.0745H19.0891M25.6772 25.6772H25.6918M24.9435 30.8126H30.8126V24.9435M20.5417 24.2099V30.8126M30.8126 20.5417H24.2099M22.8894 14.6727H28.465C29.2867 14.6727 29.6976 14.6727 30.0114 14.5128C30.2875 14.3721 30.512 14.1476 30.6526 13.8715C30.8126 13.5577 30.8126 13.1468 30.8126 12.3251V6.74947C30.8126 5.92773 30.8126 5.51686 30.6526 5.20299C30.512 4.92691 30.2875 4.70245 30.0114 4.56178C29.6976 4.40186 29.2867 4.40186 28.465 4.40186H22.8894C22.0676 4.40186 21.6567 4.40186 21.3429 4.56178C21.0668 4.70245 20.8423 4.92691 20.7017 5.20299C20.5417 5.51686 20.5417 5.92773 20.5417 6.74947V12.3251C20.5417 13.1468 20.5417 13.5577 20.7017 13.8715C20.8423 14.1476 21.0668 14.3721 21.3429 14.5128C21.6567 14.6727 22.0676 14.6727 22.8894 14.6727ZM6.74947 14.6727H12.3251C13.1468 14.6727 13.5577 14.6727 13.8715 14.5128C14.1476 14.3721 14.3721 14.1476 14.5128 13.8715C14.6727 13.5577 14.6727 13.1468 14.6727 12.3251V6.74947C14.6727 5.92773 14.6727 5.51686 14.5128 5.20299C14.3721 4.92691 14.1476 4.70245 13.8715 4.56178C13.5577 4.40186 13.1468 4.40186 12.3251 4.40186H6.74947C5.92773 4.40186 5.51686 4.40186 5.20299 4.56178C4.92691 4.70245 4.70245 4.92691 4.56178 5.20299C4.40186 5.51686 4.40186 5.92773 4.40186 6.74947V12.3251C4.40186 13.1468 4.40186 13.5577 4.56178 13.8715C4.70245 14.1476 4.92691 14.3721 4.56178 14.5128C4.70245 14.1476 4.92691 14.3721 4.92691 14.3721L6.74947 14.6727ZM6.74947 30.8126H12.3251C13.1468 30.8126 13.5577 30.8126 13.8715 30.6526C14.1476 30.512 14.3721 30.2875 14.5128 30.0114C14.6727 29.6976 14.6727 29.2867 14.6727 28.465V22.8894C14.6727 22.0676 14.6727 21.6567 14.5128 21.3429C14.3721 21.0668 14.1476 20.8423 13.8715 20.7017C13.5577 20.5417 13.1468 20.5417 12.3251 20.5417H6.74947C5.92773 20.5417 5.51686 20.5417 5.20299 20.7017C4.92691 20.8423 4.70245 21.0668 4.56178 21.3429C4.40186 21.6567 4.40186 22.0676 4.40186 22.8894V28.465C4.40186 29.2867 4.40186 29.6976 4.56178 30.0114C4.70245 30.2875 4.92691 30.512 5.20299 30.6526C5.51686 30.8126 5.92773 30.8126 6.74947 30.8126Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
 
-                      {/* MoMo-style Scanning Laser Beam: Chỉ hiện khi đang trong pha quét (Yêu cầu 3) */}
+                      {/* MoMo-style Scanning Laser Beam */}
                       {isScanningPhase && (
                         <>
                           <div
@@ -972,6 +991,12 @@ function MemberTabBar() {
                             : activeThemeOption.iconEmoji || "✨"}
                         </span>
                       )}
+                    </span>
+                    <span
+                      className="self-stretch text-center justify-start text-xs font-semibold font-['Inter'] leading-4 mt-1 transition-colors"
+                      style={{ color: primaryColor }}
+                    >
+                      Quét QR
                     </span>
                   </button>
                 </div>
@@ -1070,14 +1095,14 @@ function MemberTabBar() {
                 className="relative flex flex-1 flex-col items-center justify-end gap-1 py-1 transition-all touch-press select-none-touch active:scale-92 cursor-pointer"
               >
                 <div className="relative">
-                  {Icon && <Icon active={active} />}
+                  {Icon && <Icon active={active} brandColor={brandColorTheme?.primaryColor} />}
                   {notificationBadge || seasonalBadge}
                 </div>
                 <span
-                  className={`text-[11px] transition-colors select-none ${active
-                      ? "font-bold text-[var(--vba-navy)] dark:text-[var(--vba-gold)]"
-                      : "font-normal text-slate-500 dark:text-slate-400"
-                    }`}
+                  className={`text-xs transition-colors select-none font-['Inter'] leading-4 ${
+                    active ? "font-semibold" : "font-normal text-slate-500 dark:text-slate-400"
+                  }`}
+                  style={active ? { color: brandColorTheme?.primaryColor || "var(--vba-navy)" } : undefined}
                 >
                   {lang === "en"
                     ? tabLabels[tab.to]?.en || t(tab.label)
@@ -1085,7 +1110,10 @@ function MemberTabBar() {
                 </span>
                 {/* Dot indicator khi tab active */}
                 {active && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--vba-navy)] dark:bg-[var(--vba-gold)] shadow-sm shadow-[var(--vba-border)] -mt-0.5 animate-in fade-in zoom-in duration-200" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full shadow-sm -mt-0.5 animate-in fade-in zoom-in duration-200"
+                    style={{ backgroundColor: brandColorTheme?.primaryColor || "var(--vba-navy)" }}
+                  />
                 )}
               </Link>
             );

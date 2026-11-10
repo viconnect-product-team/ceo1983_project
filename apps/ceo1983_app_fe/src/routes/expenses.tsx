@@ -70,6 +70,23 @@ const initialExpenseColWidths: Record<ExpenseColKey, number> = {
   actions: 110,
 };
 
+function getCategoryLabel(cat: string) {
+  switch (cat) {
+    case "operation":
+      return "Vận hành thường xuyên";
+    case "event":
+      return "Tổ chức sự kiện";
+    case "marketing":
+      return "Truyền thông & quảng bá";
+    case "advance":
+      return "Tạm ứng công tác / sự kiện";
+    case "hospitality":
+      return "Tiếp khách & đối ngoại";
+    default:
+      return cat || "Chi khác";
+  }
+}
+
 export const Route = createFileRoute("/expenses")({
   ssr: false,
   loader: async () => {
@@ -428,23 +445,6 @@ function ExpensesPage() {
     },
     { initialSortKey: "date", initialSortDir: "desc", initialPageSize: 20 },
   );
-
-  const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case "operation":
-        return "Vận hành thường xuyên";
-      case "event":
-        return "Tổ chức sự kiện";
-      case "marketing":
-        return "Truyền thông & quảng bá";
-      case "advance":
-        return "Tạm ứng công tác / sự kiện";
-      case "hospitality":
-        return "Tiếp khách & đối ngoại";
-      default:
-        return cat || "Chi khác";
-    }
-  };
 
   const handleExport = () => {
     const totalAmount = tc.sorted.reduce((acc, tx) => acc + Number(tx.amount || 0), 0);

@@ -477,6 +477,18 @@ export class MembersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/cancel-renewal')
+  async cancelRenewal(@Request() req: any, @Param('id') id: string) {
+    return this.membersService.cancelRenewal(req.user.id, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/cancel-renewal')
+  async cancelRenewalPost(@Request() req: any, @Param('id') id: string) {
+    return this.membersService.cancelRenewal(req.user.id, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/payment-status')
   async updatePaymentStatus(
     @Request() req: any,

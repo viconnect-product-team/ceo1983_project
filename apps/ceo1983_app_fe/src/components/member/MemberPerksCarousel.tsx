@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -19,8 +19,10 @@ import {
   Phone,
   User,
   ShieldCheck,
+  Heart,
+  Bookmark,
 } from "lucide-react";
-import { resolveMediaUrl } from "@/lib/api-client";
+import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { listMembers } from "@/lib/member-app.functions";
 import { useAuth } from "@/context/AuthContext";
 import { QrCanvas } from "@/components/member/QrCanvas";
@@ -180,25 +182,210 @@ export function MemberPerksCarousel() {
     },
   ];
 
+  // ── ĐỒNG BỘ ƯU ĐÃI DO HỘI VIÊN ĐĂNG (LUÔN ĐƯA ƯU ĐÃI MỚI NHẤT LÊN ĐẦU SLIDE) ──
+  const [memberCustomSlides, setMemberCustomSlides] = useState<PerkSlide[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vba_member_custom_perks");
+      if (!stored) return [];
+      const parsed: any[] = JSON.parse(stored);
+      return parsed.map((m) => ({
+        id: String(m.id),
+        type: "sponsor" as const,
+        category: m.category || "HỘI VIÊN ĐĂNG",
+        categoryBadge: "ƯU ĐÃI NỘI KHỐI MỚI",
+        categoryBadgeBg: "bg-blue-600 text-white font-black",
+        title: m.title || "Ưu đãi hội viên tài trợ",
+        subtitle: m.description ? m.description.slice(0, 90) : (m.summary || ""),
+        discountTag: m.discountValue || m.discount || "ƯU ĐÃI VIP",
+        sponsorName: m.partner || m.creatorName || "Hội viên CEO 1983",
+        discountPercent: m.discountValue || m.discount || "10%",
+        voucherCode: m.voucherCode || `CEO1983-${String(m.id).toUpperCase()}`,
+        validUntil: m.validUntil || "31/12/2026",
+        image: m.image || "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=900&auto=format&fit=crop&q=80",
+        details: m.description || m.summary || "Đặc quyền ưu đãi độc quyền dành cho hội viên CLB CEO 1983.",
+        terms: [
+          `Doanh nghiệp tài trợ: ${m.partner || m.creatorName || "CLB CEO 1983"}`,
+          `Nơi áp dụng: ${m.applicableLocation || m.address || "Hà Nội & Hệ thống đối tác"}`,
+          "Xuất trình mã QR hoặc mã voucher khi thanh toán để hưởng chiết khấu",
+        ],
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+  const [serverSlides, setServerSlides] = useState<PerkSlide[]>([]);
+
+  // Nạp ưu đãi mới nhất từ máy chủ API
+  useEffect(() => {
+    fetchNestApi<any[]>("/content/perks")
+      .then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          const mapped: PerkSlide[] = res.slice(0, 4).map((p) => ({
+            id: `server-${p.id}`,
+            type: "sponsor" as const,
+            category: p.category || "ĐẶC QUYỀN ĐỐI TÁC",
+            categoryBadge: "ĐỐI TÁC CHÍNH THỨC",
+            categoryBadgeBg: "bg-indigo-600 text-white font-black",
+            title: p.title || "Ưu đãi đối tác liên kết",
+            subtitle: p.summary || p.description?.slice(0, 90) || "",
+            discountTag: p.discount || "ƯU ĐÃI",
+            sponsorName: p.partner || "Đối tác CEO 1983",
+            discountPercent: p.discount || "",
+            voucherCode: p.voucherCode || `CEO1983-V${p.id}`,
+            validUntil: p.validUntil || "31/12/2026",
+            image: p.image || "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=900&auto=format&fit=crop&q=80",
+            details: p.description || p.summary || "Ưu đãi đối tác đồng hành cùng CLB Doanh Nhân CEO 1983.",
+            terms: [
+              "Áp dụng cho mọi hội viên chính thức thuộc CLB CEO 1983",
+              "Xuất trình mã QR ưu đãi hoặc voucher khi áp dụng",
+            ],
+          }));
+          setServerSlides(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Lắng nghe sự kiện khi có ưu đãi mới được hội viên đăng lên
+  useEffect(() => {
+    const handleReloadCustomPerks = () => {
+      try {
+        const stored = localStorage.getItem("vba_member_custom_perks");
+        if (stored) {
+          const parsed: any[] = JSON.parse(stored);
+          setMemberCustomSlides(
+            parsed.map((m) => ({
+              id: String(m.id),
+              type: "sponsor" as const,
+              category: m.category || "HỘI VIÊN ĐĂNG",
+              categoryBadge: "ƯU ĐÃI NỘI KHỐI MỚI",
+              categoryBadgeBg: "bg-blue-600 text-white font-black",
+              title: m.title || "Ưu đãi hội viên tài trợ",
+              subtitle: m.description ? m.description.slice(0, 90) : (m.summary || ""),
+              discountTag: m.discountValue || m.discount || "ƯU ĐÃI VIP",
+              sponsorName: m.partner || m.creatorName || "Hội viên CEO 1983",
+              discountPercent: m.discountValue || m.discount || "10%",
+              voucherCode: m.voucherCode || `CEO1983-${String(m.id).toUpperCase()}`,
+              validUntil: m.validUntil || "31/12/2026",
+              image: m.image || "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=900&auto=format&fit=crop&q=80",
+              details: m.description || m.summary || "Đặc quyền ưu đãi độc quyền dành cho hội viên CLB CEO 1983.",
+              terms: [
+                `Doanh nghiệp tài trợ: ${m.partner || m.creatorName || "CLB CEO 1983"}`,
+                `Nơi áp dụng: ${m.applicableLocation || m.address || "Hà Nội & Hệ thống đối tác"}`,
+                "Xuất trình mã QR hoặc mã voucher khi thanh toán để hưởng chiết khấu",
+              ],
+            }))
+          );
+        }
+      } catch {}
+    };
+
+    window.addEventListener("vba:saved_perks_updated", handleReloadCustomPerks);
+    window.addEventListener("vba:member_custom_perk_created", handleReloadCustomPerks);
+    window.addEventListener("storage", handleReloadCustomPerks);
+    return () => {
+      window.removeEventListener("vba:saved_perks_updated", handleReloadCustomPerks);
+      window.removeEventListener("vba:member_custom_perk_created", handleReloadCustomPerks);
+      window.removeEventListener("storage", handleReloadCustomPerks);
+    };
+  }, []);
+
+  // ── DANH SÁCH SLIDE HOÀN CHỈNH (ƯU ĐÃI MỚI NHẤT LUÔN ĐỨNG ĐẦU) ──
+  const allSlides: PerkSlide[] = useMemo(() => {
+    return [...memberCustomSlides, ...serverSlides, ...slides];
+  }, [memberCustomSlides, serverSlides, slides]);
+
+  // ── QUẢN LÝ TRẠNG THÁI LƯU / BỎ LƯU ƯU ĐÃI ──
+  const [savedPerkIds, setSavedPerkIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vba_my_saved_perks");
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed.map((p: any) => p.id) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const handleSyncSaved = () => {
+      try {
+        const stored = localStorage.getItem("vba_my_saved_perks");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) setSavedPerkIds(parsed.map((p: any) => p.id));
+        }
+      } catch {}
+    };
+    window.addEventListener("vba:saved_perks_updated", handleSyncSaved);
+    return () => window.removeEventListener("vba:saved_perks_updated", handleSyncSaved);
+  }, []);
+
+  const handleToggleSaveSlide = (s: PerkSlide, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const isSaved = savedPerkIds.includes(s.id);
+    let nextIds: string[];
+    let nextSavedPerks: any[];
+    try {
+      const stored = localStorage.getItem("vba_my_saved_perks");
+      const currentSaved: any[] = stored ? JSON.parse(stored) : [];
+      if (isSaved) {
+        nextIds = savedPerkIds.filter((id) => id !== s.id);
+        nextSavedPerks = currentSaved.filter((p) => p.id !== s.id);
+        toast.info(`Đã bỏ lưu ưu đãi "${s.title}" khỏi ví.`);
+      } else {
+        nextIds = [s.id, ...savedPerkIds];
+        const newSavedItem = {
+          id: s.id,
+          title: s.title,
+          category: s.category,
+          partner: s.sponsorName || s.memberName || "CEO 1983",
+          summary: s.subtitle,
+          description: s.details,
+          discount: s.discountTag || s.discountPercent || "Ưu đãi VIP",
+          icon: "gift",
+          voucherCode: s.voucherCode || `CEO1983-${s.id.toUpperCase()}`,
+          validUntil: s.validUntil || "31/12/2026",
+          qrPayload: `https://ceo1983.viconnect.vn/perk/${s.id}?user=${userCode}&code=${s.voucherCode || "PERK1983"}`,
+        };
+        nextSavedPerks = [newSavedItem, ...currentSaved.filter((p) => p.id !== s.id)];
+        toast.success(`Đã lưu ưu đãi "${s.title}"! Đang mở voucher và mã QR...`);
+        // Khi lưu ưu đãi, lập tức mở voucher kèm mã QR & mã số để áp dụng ngay!
+        setDetailModalSlide(s);
+      }
+      setSavedPerkIds(nextIds);
+      localStorage.setItem("vba_my_saved_perks", JSON.stringify(nextSavedPerks));
+      window.dispatchEvent(new CustomEvent("vba:saved_perks_updated"));
+    } catch (err) {
+      console.error("Lỗi khi lưu ưu đãi:", err);
+    }
+  };
+
   // Auto slide vertically from bottom to top (Yêu cầu 2)
   useEffect(() => {
     if (isHovered || detailModalSlide !== null) return;
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
+      setCurrentIndex((prev) => (prev + 1) % allSlides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isHovered, detailModalSlide, slides.length]);
+  }, [isHovered, detailModalSlide, allSlides.length]);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? allSlides.length - 1 : prev - 1));
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
+    setCurrentIndex((prev) => (prev + 1) % allSlides.length);
   };
 
   // Touch vertical swipe
@@ -211,14 +398,14 @@ export function MemberPerksCarousel() {
     const diffY = touchStartYRef.current - e.changedTouches[0].clientY;
     // Swipe Up -> Next slide (from bottom up)
     if (diffY > 40) {
-      setCurrentIndex((prev) => (prev + 1) % slides.length);
+      setCurrentIndex((prev) => (prev + 1) % allSlides.length);
     } else if (diffY < -40) {
-      setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+      setCurrentIndex((prev) => (prev === 0 ? allSlides.length - 1 : prev - 1));
     }
     touchStartYRef.current = null;
   };
 
-  const currentSlide = slides[currentIndex];
+  const currentSlide = allSlides[currentIndex] || allSlides[0];
 
   const handleCopyVoucher = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -247,7 +434,7 @@ export function MemberPerksCarousel() {
         </div>
         <div className="flex items-center gap-1">
           <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
-            {currentIndex + 1} / {slides.length}
+            {currentIndex + 1} / {allSlides.length}
           </span>
           <button
             type="button"
@@ -274,7 +461,7 @@ export function MemberPerksCarousel() {
           className="w-full h-full transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{ transform: `translateY(-${currentIndex * 100}%)` }}
         >
-          {slides.map((s, idx) => {
+          {allSlides.map((s, idx) => {
             return (
               <div
                 key={s.id}
@@ -307,12 +494,31 @@ export function MemberPerksCarousel() {
                     <span>{s.category}</span>
                   </span>
 
-                  {/* Right side tag: Discount or Member tag */}
-                  {s.discountTag && (
-                    <span className="px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider shadow-md border border-amber-400/40 backdrop-blur-md">
-                      {s.discountTag}
-                    </span>
-                  )}
+                  {/* Right side tag: Discount or Member tag & Save Button */}
+                  <div className="flex items-center gap-1.5">
+                    {s.discountTag && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-extrabold text-[9.5px] uppercase tracking-wider shadow-md border border-amber-400/40 backdrop-blur-md">
+                        {s.discountTag}
+                      </span>
+                    )}
+
+                    {/* Nút Lưu / Bỏ lưu ưu đãi trên mỗi slide */}
+                    {s.type !== "gold_member" && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleSaveSlide(s, e)}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md backdrop-blur-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                          savedPerkIds.includes(s.id)
+                            ? "bg-rose-600 text-white ring-1 ring-white/50"
+                            : "bg-black/45 hover:bg-black/60 text-white/90 border border-white/30"
+                        }`}
+                        title={savedPerkIds.includes(s.id) ? "Bỏ lưu ưu đãi" : "Lưu ưu đãi & nhận mã voucher"}
+                      >
+                        <Heart className={`size-3 ${savedPerkIds.includes(s.id) ? "fill-white text-white" : "text-white"}`} />
+                        <span>{savedPerkIds.includes(s.id) ? "Đã lưu" : "Lưu"}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* UNIQUE SLIDE LAYOUTS (Yêu cầu 2: Mỗi slide 1 bố cục riêng) */}
@@ -443,15 +649,31 @@ export function MemberPerksCarousel() {
           >
             {/* Modal Header */}
             <div className="relative overflow-hidden bg-gradient-to-r from-[#00224F] via-[#003B95] to-[#0A192F] p-4 text-white">
-              <button
-                type="button"
-                onClick={() => setDetailModalSlide(null)}
-                className="absolute top-3.5 right-3.5 grid h-7 w-7 place-items-center rounded-full bg-white/15 text-white/90 hover:bg-white/25 transition cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                {detailModalSlide.type !== "gold_member" && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleToggleSaveSlide(detailModalSlide, e)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition cursor-pointer active:scale-95 ${
+                      savedPerkIds.includes(detailModalSlide.id)
+                        ? "bg-rose-600 text-white shadow-xs"
+                        : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                    }`}
+                  >
+                    <Heart className={`size-3 ${savedPerkIds.includes(detailModalSlide.id) ? "fill-white text-white" : "text-white"}`} />
+                    <span>{savedPerkIds.includes(detailModalSlide.id) ? "Đã lưu" : "Lưu ưu đãi"}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setDetailModalSlide(null)}
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white/15 text-white/90 hover:bg-white/25 transition cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 pr-28">
                 <span className={`px-2 py-0.5 rounded-full text-[9.5px] uppercase font-black ${detailModalSlide.categoryBadgeBg}`}>
                   {detailModalSlide.category}
                 </span>

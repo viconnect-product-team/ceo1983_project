@@ -203,17 +203,17 @@ export interface InvitationTemplate {
   updatedAt?: string;
 }
 
-// Bố cục mặc định chuẩn Pinterest (Tọa độ phần trăm X, Y)
+// Bố cục mặc định chuẩn Pinterest (Tọa độ phần trăm X, Y - Căn chỉnh khoảng cách vàng không chồng lấn)
 const DEFAULT_BLOCKS: Record<string, TextBlockLayout> = {
   header: { id: "header", name: "Thanh Logo & Chữ ký", x: 50, y: 3.5, hasFrostedBg: false, zIndex: 10, visible: true },
-  atlantis_wings: { id: "atlantis_wings", name: "Cánh Gà Trái Phải Atlantis", x: 50, y: 9, hasFrostedBg: false, zIndex: 9, visible: true },
-  title: { id: "title", name: "Tiêu đề 'Thư mời' / 'ATLANTIS'", x: 50, y: 15, hasFrostedBg: false, zIndex: 12, visible: true },
-  headline: { id: "headline", name: "Cụm Tiêu Đề Lớn 'DÒNG CHẢY HẠNH PHÚC'", x: 50, y: 32, hasFrostedBg: false, zIndex: 11, visible: true },
-  attendee: { id: "attendee", name: "Đại Biểu VIP / Diễn Giả Khách Mời", x: 50, y: 47, hasFrostedBg: false, zIndex: 15, visible: true },
-  capsule: { id: "capsule", name: "Hộp Quà Tặng / Đặc Quyền Capsule", x: 50, y: 60, hasFrostedBg: false, zIndex: 10, visible: true },
-  datetime: { id: "datetime", name: "Cụm Ngày Giờ Số Lớn 06 | 04 | 24", x: 50, y: 72, hasFrostedBg: false, zIndex: 10, visible: true },
-  cutout: { id: "cutout", name: "Khối Ảnh Bóc Tách / Cổng Chào Venue", x: 50, y: 86, hasFrostedBg: false, zIndex: 8, visible: true },
-  salute: { id: "salute", name: "Lời kết 'Rất hân hạnh được đón tiếp!'", x: 50, y: 96, hasFrostedBg: false, zIndex: 10, visible: true },
+  atlantis_wings: { id: "atlantis_wings", name: "Cánh Gà Trái Phải Atlantis", x: 50, y: 8, hasFrostedBg: false, zIndex: 9, visible: true },
+  title: { id: "title", name: "Tiêu đề 'Thư mời' / 'ATLANTIS'", x: 50, y: 13, hasFrostedBg: false, zIndex: 12, visible: true },
+  headline: { id: "headline", name: "Cụm Tiêu Đề Lớn 'KẾT NỐI DOANH NHÂN'", x: 50, y: 22, hasFrostedBg: false, zIndex: 11, visible: true },
+  attendee: { id: "attendee", name: "Đại Biểu VIP / Diễn Giả Khách Mời", x: 50, y: 48, hasFrostedBg: false, zIndex: 15, visible: true },
+  capsule: { id: "capsule", name: "Hộp Quà Tặng / Đặc Quyền Capsule", x: 50, y: 66, hasFrostedBg: false, zIndex: 10, visible: true },
+  datetime: { id: "datetime", name: "Cụm Ngày Giờ Số Lớn 06 | 04 | 24", x: 50, y: 76, hasFrostedBg: false, zIndex: 10, visible: true },
+  cutout: { id: "cutout", name: "Khối Ảnh Bóc Tách / Cổng Chào Venue", x: 50, y: 85, hasFrostedBg: false, zIndex: 8, visible: true },
+  salute: { id: "salute", name: "Lời kết 'Rất hân hạnh được đón tiếp!'", x: 50, y: 94, hasFrostedBg: false, zIndex: 10, visible: true },
   qr: { id: "qr", name: "Mã QR Check-in Đăng Ký", x: 86, y: 88, hasFrostedBg: false, zIndex: 12, visible: true },
 };
 
@@ -276,15 +276,23 @@ const STICKER_PRESETS = [
   { id: "official_logo", name: "Logo HanoiBA & CEO 1983", url: "/ceo1983-official-logo.png" },
 ];
 
-// Preset Avatar Đại Biểu Doanh Nhân VIP (Ảnh an toàn tuyệt đối, không lỗi vỡ ảnh)
+// Module-level in-memory cache chống loop call API tuyệt đối
+let globalMembersCache: any[] | null = null;
+let globalEventsCache: any[] | null = null;
+let globalTemplatesCache: InvitationTemplate[] | null = null;
+
+// Preset Avatar Đại Biểu Doanh Nhân VIP (Ảnh an toàn tuyệt đối, chân dung doanh nhân sắc nét chuẩn mực)
 const SAFE_FALLBACK_AVATAR =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='bgGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23002366'/%3E%3Cstop offset='100%25' stop-color='%23001033'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23F59E0B'/%3E%3Cstop offset='100%25' stop-color='%23D97706'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23bgGrad)' rx='50'/%3E%3Ccircle cx='50' cy='38' r='20' fill='url(%23goldGrad)'/%3E%3Cpath d='M18 90 C 18 66, 32 60, 50 60 C 68 60, 82 66, 82 90 Z' fill='url(%23goldGrad)'/%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Cdefs%3E%3ClinearGradient id='bgGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23002366'/%3E%3Cstop offset='100%25' stop-color='%23001033'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FDE68A'/%3E%3Cstop offset='40%25' stop-color='%23F59E0B'/%3E%3Cstop offset='100%25' stop-color='%23D97706'/%3E%3C/linearGradient%3E%3ClinearGradient id='skinGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FDE047'/%3E%3Cstop offset='100%25' stop-color='%23EAB308'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='160' height='160' fill='url(%23bgGrad)' rx='80'/%3E%3Ccircle cx='80' cy='80' r='76' fill='none' stroke='url(%23goldGrad)' stroke-width='3' stroke-dasharray='6 3'/%3E%3Ccircle cx='80' cy='56' r='28' fill='url(%23skinGrad)'/%3E%3Cpath d='M58 44 C62 30, 98 30, 102 44 C96 38, 64 38, 58 44 Z' fill='%231E293B'/%3E%3Cpath d='M32 142 C32 104, 54 94, 80 94 C106 94, 128 104, 128 142 Z' fill='url(%23goldGrad)'/%3E%3Cpolygon points='80,94 70,116 80,126 90,116' fill='%23002366'/%3E%3Cpolygon points='76,126 80,140 84,126' fill='%23DC2626'/%3E%3Ccircle cx='96' cy='112' r='4' fill='url(%23goldGrad)' stroke='%23FFFFFF' stroke-width='1'/%3E%3C/svg%3E";
 
 const VIP_AVATAR_PRESETS = [
-  { id: "male_ceo", name: "Chân Dung CEO Nam", url: "/vietnamese-young-male-ceo-avatar.png" },
+  { id: "ceo_pham_vu", name: "Chủ tịch Phạm Vũ", url: "/ceo-portrait-default.png" },
   { id: "female_ceo", name: "Chân Dung CEO Nữ", url: "/landing_web_vione/professional-portrait.png" },
+  { id: "saas_ceo", name: "Doanh Nhân Công Nghệ", url: "/landing_web_vione/saas-portrait.png" },
+  { id: "young_ceo", name: "Doanh Nhân Trẻ", url: "/landing_web_vione/avatar-ceo.png" },
+  { id: "male_young", name: "Doanh Nhân Nam", url: "/vietnamese-young-male-ceo-avatar.png" },
   { id: "crest_gold", name: "Huy Hiệu Vàng 3D", url: "/app-icon.png" },
-  { id: "official_logo", name: "Logo HanoiBA", url: "/ceo1983-official-logo.png" },
+  { id: "official_logo", name: "Logo HanoiBA & CEO 1983", url: "/ceo1983-official-logo.png" },
 ];
 
 export function InvitationTemplateStudio() {
@@ -362,7 +370,7 @@ export function InvitationTemplateStudio() {
   const [attendeeConfig, setAttendeeConfig] = useState<AttendeeBlockConfig>({
     enabled: true,
     x: 50,
-    y: 47,
+    y: 48,
     scale: 100,
     featherBlur: 14,
     style: "royal_circle",
@@ -372,7 +380,7 @@ export function InvitationTemplateStudio() {
         name: "Phạm Vũ",
         title: "Chủ tịch HĐQT & Sáng Lập",
         company: "VICONNECT GROUP",
-        avatar: "/vietnamese-young-male-ceo-avatar.png",
+        avatar: "/ceo-portrait-default.png",
         memberCode: "CEO1983-088",
         roleInEvent: "Diễn giả chính (Keynote Speaker)",
       },
@@ -381,8 +389,8 @@ export function InvitationTemplateStudio() {
     showTitle: true,
     showCompany: true,
   });
-  const [allMembers, setAllMembers] = useState<any[]>([]);
-  const [eventsList, setEventsList] = useState<any[]>([]);
+  const [allMembers, setAllMembers] = useState<any[]>(() => globalMembersCache || []);
+  const [eventsList, setEventsList] = useState<any[]>(() => globalEventsCache || []);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [loadingEventAttendees, setLoadingEventAttendees] = useState<boolean>(false);
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
@@ -391,8 +399,9 @@ export function InvitationTemplateStudio() {
   const [isUploadingAttendeeAvatar, setIsUploadingAttendeeAvatar] = useState<boolean>(false);
   const attendeeFileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── 5. TỶ LỆ POSTER & CẮT ẢNH ──
+  // ── 5. TỶ LỆ POSTER, ZOOM & CẮT ẢNH ──
   const [posterRatio, setPosterRatio] = useState<"9:16" | "1:1" | "16:9" | "3:4" | "4:3">("9:16");
+  const [zoomLevel, setZoomLevel] = useState<number>(100); // 50% - 150%
   const [isCropOpen, setIsCropOpen] = useState<boolean>(false);
   const [cropImageUrl, setCropImageUrl] = useState<string>("");
   const [cropTarget, setCropTarget] = useState<"avatar" | "layer" | null>(null);
@@ -407,7 +416,7 @@ export function InvitationTemplateStudio() {
 
   // ── 7. TEMPLATES WAREHOUSE (KHO MẪU & XÓA MẪU) ──
   const [templateNameInput, setTemplateNameInput] = useState<string>("");
-  const [templates, setTemplates] = useState<InvitationTemplate[]>([]);
+  const [templates, setTemplates] = useState<InvitationTemplate[]>(() => globalTemplatesCache || []);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
   const [isDeletingTemplateId, setIsDeletingTemplateId] = useState<string | null>(null);
@@ -418,37 +427,50 @@ export function InvitationTemplateStudio() {
   const activeBg = customBgUrl.trim() || selectedBg;
   const didInitRef = useRef<boolean>(false);
 
-  // Nạp danh sách hội viên & sự kiện (1 lần duy nhất, chống loop call API)
+  // Nạp danh sách hội viên & sự kiện (1 lần duy nhất, module cache chống loop call API)
   useEffect(() => {
     if (didInitRef.current) return;
     didInitRef.current = true;
 
-    fetchNestApi<any[]>("/members")
-      .then((res) => {
-        if (Array.isArray(res)) setAllMembers(res);
-      })
-      .catch(() => {});
-
-    fetchNestApi<any>("/events")
-      .then((res) => {
-        const list = Array.isArray(res) ? res : res?.items || res?.data || [];
-        if (Array.isArray(list)) {
-          setEventsList(list);
-          if (list.length > 0) {
-            const firstId = list[0].id;
-            setSelectedEventId(firstId);
-            fetchNestApi<any>(`/events/registrations?eventId=${firstId}`)
-              .then((r) => {
-                const regList = Array.isArray(r) ? r : r?.items || r?.data || [];
-                if (Array.isArray(regList)) setEventRegistrations(regList);
-              })
-              .catch(() => {});
+    if (!globalMembersCache) {
+      fetchNestApi<any[]>("/members")
+        .then((res) => {
+          const list = Array.isArray(res) ? res : (res as any)?.items || (res as any)?.data || [];
+          if (Array.isArray(list)) {
+            globalMembersCache = list;
+            setAllMembers(list);
           }
-        }
-      })
-      .catch(() => {});
+        })
+        .catch(() => {});
+    }
 
-    loadTemplatesFromBackend();
+    if (!globalEventsCache) {
+      fetchNestApi<any>("/events")
+        .then((res) => {
+          const list = Array.isArray(res) ? res : res?.items || res?.data || [];
+          if (Array.isArray(list)) {
+            globalEventsCache = list;
+            setEventsList(list);
+            if (list.length > 0) {
+              const firstId = list[0].id;
+              setSelectedEventId(firstId);
+              fetchNestApi<any>(`/events/registrations?eventId=${firstId}`)
+                .then((r) => {
+                  const regList = Array.isArray(r) ? r : r?.items || r?.data || [];
+                  if (Array.isArray(regList)) setEventRegistrations(regList);
+                })
+                .catch(() => {});
+            }
+          }
+        })
+        .catch(() => {});
+    } else if (globalEventsCache.length > 0 && !selectedEventId) {
+      setSelectedEventId(globalEventsCache[0].id);
+    }
+
+    if (!globalTemplatesCache) {
+      loadTemplatesFromBackend();
+    }
   }, []);
 
   // Lọc đại biểu đã đăng ký khi chọn sự kiện cụ thể
@@ -734,6 +756,9 @@ export function InvitationTemplateStudio() {
             y: newY,
           },
         }));
+        if (activeDraggingId === "attendee") {
+          setAttendeeConfig((prev) => ({ ...prev, x: newX, y: newY }));
+        }
       } else if (draggingType === "image") {
         setImageLayers((prev) =>
           prev.map((l) => (l.id === activeDraggingId ? { ...l, x: newX, y: newY } : l))
@@ -773,14 +798,15 @@ export function InvitationTemplateStudio() {
       const res = await fetchNestApi<any>("/admin/invitation-templates");
       const list = Array.isArray(res) ? res : res?.data || [];
       if (Array.isArray(list) && list.length > 0) {
+        globalTemplatesCache = list;
         setTemplates(list);
       } else {
-        setTemplates([
+        const defaults = [
           {
             id: "tpl_atlantis_default",
             name: "Mẫu Cung Điện Atlantis Hoàng Gia (Pinterest 374009944081934333)",
-            category: "event",
-            presetKey: "atlantis",
+            category: "event" as const,
+            presetKey: "atlantis" as const,
             kicker: "O OLIMPO SE ABRE MAIS UMA VEZ.",
             leadPhrase: "Venha vivenciar Atlantis, a nova coleção da Hera",
             title: "ATLANTIS THỊNH VƯỢNG",
@@ -801,8 +827,8 @@ export function InvitationTemplateStudio() {
           {
             id: "tpl_wyndham_default",
             name: "Mẫu Thư Mời Wyndham Thanh Thủy (Pinterest 501447739786387302)",
-            category: "event",
-            presetKey: "wyndham",
+            category: "event" as const,
+            presetKey: "wyndham" as const,
             kicker: "Tham dự sự kiện",
             leadPhrase: "Cơ hội tận hưởng",
             title: "DÒNG CHẢY HẠNH PHÚC",
@@ -820,7 +846,9 @@ export function InvitationTemplateStudio() {
             bgUrl: "/templates/pinterest_heian_invitation.jpg",
             blocksLayout: DEFAULT_BLOCKS,
           },
-        ]);
+        ];
+        globalTemplatesCache = defaults;
+        setTemplates(defaults);
       }
     } catch {}
   };
@@ -2184,43 +2212,95 @@ export function InvitationTemplateStudio() {
               </div>
 
               {/* Thông tin đại biểu đang hiển thị */}
-              {attendeeConfig.attendees.length > 0 && (
-                <div className="p-3.5 rounded-2xl border border-amber-400 bg-amber-50/50 dark:bg-amber-950/30 space-y-3 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="relative">
-                        <img
-                          src={attendeeConfig.attendees[0].avatar}
-                          alt=""
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
-                          }}
-                          className={`size-12 object-cover border-2 border-amber-500 shadow-sm ${
-                            attendeeConfig.style === "royal_circle" || attendeeConfig.style === "soft_feather"
-                              ? "rounded-full"
-                              : attendeeConfig.style === "heian_arch"
-                              ? "rounded-t-2xl rounded-b-md"
-                              : attendeeConfig.style === "oval_luxury"
-                              ? "rounded-[45%]"
-                              : "rounded-xl"
-                          }`}
-                        />
-                        <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase shadow-xs">
-                          VIP
-                        </span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase text-amber-900 dark:text-amber-300">
+                    Đại Biểu / Diễn Giả Đã Chọn ({attendeeConfig.attendees.length}):
+                  </span>
+                  {attendeeConfig.attendees.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAttendeeConfig((prev) => ({
+                          ...prev,
+                          enabled: true,
+                          attendees: [
+                            {
+                              id: "att-default",
+                              name: "Phạm Vũ",
+                              title: "Chủ tịch HĐQT & Sáng Lập",
+                              company: "VICONNECT GROUP",
+                              avatar: "/ceo-portrait-default.png",
+                              memberCode: "CEO1983-088",
+                              roleInEvent: "Diễn giả chính (Keynote Speaker)",
+                            },
+                          ],
+                        }));
+                        toast.success("✓ Đã thêm đại biểu mặc định (Chủ tịch Phạm Vũ)!");
+                      }}
+                      className="text-[10px] font-bold text-amber-600 hover:text-amber-700 cursor-pointer underline"
+                    >
+                      + Thêm mặc định
+                    </button>
+                  )}
+                </div>
+
+                {attendeeConfig.attendees.length > 0 ? (
+                  <div className="p-3.5 rounded-2xl border border-amber-400 bg-amber-50/50 dark:bg-amber-950/30 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="relative shrink-0">
+                          <img
+                            src={resolveMediaUrl(attendeeConfig.attendees[0].avatar) || SAFE_FALLBACK_AVATAR}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className={`size-12 object-cover border-2 border-amber-500 shadow-sm ${
+                              attendeeConfig.style === "royal_circle" || attendeeConfig.style === "soft_feather"
+                                ? "rounded-full"
+                                : attendeeConfig.style === "heian_arch"
+                                ? "rounded-t-2xl rounded-b-md"
+                                : attendeeConfig.style === "oval_luxury"
+                                ? "rounded-[45%]"
+                                : "rounded-xl"
+                            }`}
+                          />
+                          <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase shadow-xs">
+                            VIP
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
+                            {attendeeConfig.attendees[0].name}
+                          </div>
+                          <div className="text-[10.5px] font-bold text-amber-700 dark:text-amber-400 truncate">
+                            {attendeeConfig.attendees[0].roleInEvent || "Diễn giả chính"}
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                            {attendeeConfig.attendees[0].title ? `${attendeeConfig.attendees[0].title} · ` : ""}
+                            {attendeeConfig.attendees[0].company}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-black text-slate-900 dark:text-slate-100">
-                          {attendeeConfig.attendees[0].name}
-                        </div>
-                        <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
-                          {attendeeConfig.attendees[0].company}
-                        </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAttendeeConfig((prev) => ({ ...prev, attendees: [] }));
+                            toast.info("Đã gỡ đại biểu khỏi poster");
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                          title="Gỡ đại biểu này khỏi poster"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2 pt-1 border-t border-amber-200/60 dark:border-amber-900/40">
                       <input
                         ref={attendeeFileInputRef}
                         type="file"
@@ -2232,7 +2312,7 @@ export function InvitationTemplateStudio() {
                         type="button"
                         disabled={isUploadingAttendeeAvatar}
                         onClick={() => attendeeFileInputRef.current?.click()}
-                        className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        className="flex-1 py-1.5 px-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
                         title="Tải ảnh chân dung từ máy tính lên"
                       >
                         <Upload className="size-3" />
@@ -2247,120 +2327,126 @@ export function InvitationTemplateStudio() {
                           setCropShape(attendeeConfig.style === "royal_circle" ? "circle" : "square");
                           setIsCropOpen(true);
                         }}
-                        className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="flex-1 py-1.5 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
                         title="Mở công cụ cắt và căn chỉnh khung ảnh"
                       >
                         <Scissors className="size-3" />
-                        <span>Cắt Ảnh</span>
+                        <span>Cắt & Căn Chỉnh</span>
                       </button>
                     </div>
-                  </div>
 
-                  {/* Khay chọn nhanh Avatar Doanh Nhân VIP mẫu */}
-                  <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
-                    <span className="text-[10.5px] font-bold text-amber-900 dark:text-amber-200 block mb-1.5">
-                      Chọn Avatar Mẫu VIP Sẵn Có (1 chạm):
-                    </span>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {VIP_AVATAR_PRESETS.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
+                    {/* Khay chọn nhanh Avatar Doanh Nhân VIP mẫu */}
+                    <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
+                      <span className="text-[10.5px] font-bold text-amber-900 dark:text-amber-200 block mb-1.5">
+                        Chọn Avatar Mẫu VIP Sẵn Có (1 chạm):
+                      </span>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {VIP_AVATAR_PRESETS.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setAttendeeConfig((prev) => ({
+                                ...prev,
+                                attendees: prev.attendees.map((a, idx) => (idx === 0 ? { ...a, avatar: p.url } : a)),
+                              }));
+                              toast.success(`✓ Đã áp dụng avatar ${p.name}!`);
+                            }}
+                            className={`p-1 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                              attendeeConfig.attendees[0]?.avatar === p.url
+                                ? "border-amber-500 bg-amber-100/80 dark:bg-amber-900/50 ring-2 ring-amber-400"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-amber-50/50"
+                            }`}
+                          >
+                            <img
+                              src={p.url}
+                              alt=""
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                              }}
+                              className="size-7 rounded-full object-cover border border-amber-300"
+                            />
+                            <span className="text-[9px] font-medium text-slate-700 dark:text-slate-300 truncate w-full text-center">
+                              {p.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Form sửa thông tin đại biểu */}
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Tên Đại Biểu:</label>
+                        <input
+                          type="text"
+                          value={attendeeConfig.attendees[0]?.name || ""}
+                          onChange={(e) =>
                             setAttendeeConfig((prev) => ({
                               ...prev,
-                              attendees: prev.attendees.map((a, idx) => (idx === 0 ? { ...a, avatar: p.url } : a)),
-                            }));
-                            toast.success(`✓ Đã áp dụng avatar ${p.name}!`);
-                          }}
-                          className={`p-1 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
-                            attendeeConfig.attendees[0]?.avatar === p.url
-                              ? "border-amber-500 bg-amber-100/80 dark:bg-amber-900/50 ring-2 ring-amber-400"
-                              : "border-slate-200 dark:border-slate-800 hover:bg-amber-50/50"
-                          }`}
-                        >
-                          <img
-                            src={p.url}
-                            alt=""
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
-                            }}
-                            className="size-7 rounded-full object-cover border border-amber-300"
-                          />
-                          <span className="text-[9px] font-medium text-slate-700 dark:text-slate-300 truncate w-full text-center">
-                            {p.name}
-                          </span>
-                        </button>
-                      ))}
+                              attendees: [{ ...prev.attendees[0], name: e.target.value }],
+                            }))
+                          }
+                          placeholder="Tên Đại Biểu"
+                          className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Vai Trò / Danh Hiệu:</label>
+                        <input
+                          type="text"
+                          value={attendeeConfig.attendees[0]?.roleInEvent || ""}
+                          onChange={(e) =>
+                            setAttendeeConfig((prev) => ({
+                              ...prev,
+                              attendees: [{ ...prev.attendees[0], roleInEvent: e.target.value }],
+                            }))
+                          }
+                          placeholder="Vai trò (Diễn giả chính...)"
+                          className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 font-bold text-amber-700 dark:text-amber-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Chức Danh Doanh Nghiệp:</label>
+                        <input
+                          type="text"
+                          value={attendeeConfig.attendees[0]?.title || ""}
+                          onChange={(e) =>
+                            setAttendeeConfig((prev) => ({
+                              ...prev,
+                              attendees: [{ ...prev.attendees[0], title: e.target.value }],
+                            }))
+                          }
+                          placeholder="Chủ tịch / CEO..."
+                          className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Tên Công Ty / Doanh Nghiệp:</label>
+                        <input
+                          type="text"
+                          value={attendeeConfig.attendees[0]?.company || ""}
+                          onChange={(e) =>
+                            setAttendeeConfig((prev) => ({
+                              ...prev,
+                              attendees: [{ ...prev.attendees[0], company: e.target.value }],
+                            }))
+                          }
+                          placeholder="Tên Công Ty..."
+                          className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 text-xs"
+                        />
+                      </div>
                     </div>
                   </div>
-
-                  {/* Form sửa thông tin đại biểu */}
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Tên Đại Biểu:</label>
-                      <input
-                        type="text"
-                        value={attendeeConfig.attendees[0].name}
-                        onChange={(e) =>
-                          setAttendeeConfig((prev) => ({
-                            ...prev,
-                            attendees: [{ ...prev.attendees[0], name: e.target.value }],
-                          }))
-                        }
-                        placeholder="Tên Đại Biểu"
-                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 font-bold"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Vai Trò / Danh Hiệu:</label>
-                      <input
-                        type="text"
-                        value={attendeeConfig.attendees[0].roleInEvent || ""}
-                        onChange={(e) =>
-                          setAttendeeConfig((prev) => ({
-                            ...prev,
-                            attendees: [{ ...prev.attendees[0], roleInEvent: e.target.value }],
-                          }))
-                        }
-                        placeholder="Vai trò (Diễn giả chính...)"
-                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 font-bold text-amber-700 dark:text-amber-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Chức Danh Doanh Nghiệp:</label>
-                      <input
-                        type="text"
-                        value={attendeeConfig.attendees[0].title || ""}
-                        onChange={(e) =>
-                          setAttendeeConfig((prev) => ({
-                            ...prev,
-                            attendees: [{ ...prev.attendees[0], title: e.target.value }],
-                          }))
-                        }
-                        placeholder="Chủ tịch / CEO..."
-                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Tên Công Ty / Doanh Nghiệp:</label>
-                      <input
-                        type="text"
-                        value={attendeeConfig.attendees[0].company || ""}
-                        onChange={(e) =>
-                          setAttendeeConfig((prev) => ({
-                            ...prev,
-                            attendees: [{ ...prev.attendees[0], company: e.target.value }],
-                          }))
-                        }
-                        placeholder="Tên Công Ty..."
-                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 text-xs"
-                      />
-                    </div>
+                ) : (
+                  <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-center space-y-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Chưa chọn đại biểu VIP nào cho poster. Bấm chọn từ danh sách bên trên hoặc tải ảnh lên.
+                    </p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* ── CHẾ ĐỘ KHUNG ẢNH & BÓC TÁCH AVATAR ── */}
               <div>
@@ -2621,39 +2707,80 @@ export function InvitationTemplateStudio() {
         {/* ══════════════════════════════════════════════════════════════
             CỘT PHẢI: KHUNG CANVAS PHOTOSHOP PREVIEW TƯƠNG TÁC (7 CỘT)
         ══════════════════════════════════════════════════════════════ */}
-        <div className="lg:col-span-7 flex flex-col items-center">
-          {/* BỘ CHỌN TỶ LỆ POSTER */}
-          <div className="w-full max-w-[540px] mb-3 flex items-center justify-between p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
-              Tỷ Lệ Poster:
-            </span>
-            <div className="flex items-center gap-1 flex-wrap">
-              {[
-                { id: "9:16", label: "📱 Dọc 9:16" },
-                { id: "3:4", label: "📄 Đứng 3:4" },
-                { id: "1:1", label: "⏹️ Vuông 1:1" },
-                { id: "16:9", label: "🖥️ Ngang 16:9" },
-                { id: "4:3", label: "📺 Ngang 4:3" },
-              ].map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setPosterRatio(r.id as any)}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                    posterRatio === r.id
-                      ? "bg-[#003B95] text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <span>{r.label}</span>
-                </button>
-              ))}
+        <div className="lg:col-span-7 flex flex-col items-center sticky top-20 z-10 w-full">
+          {/* BỘ CHỌN TỶ LỆ POSTER & ZOOM CANVAS */}
+          <div className="w-full max-w-[560px] mb-3 flex items-center justify-between p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
+                Tỷ Lệ:
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {[
+                  { id: "9:16", label: "📱 9:16" },
+                  { id: "3:4", label: "📄 3:4" },
+                  { id: "1:1", label: "⏹️ 1:1" },
+                  { id: "16:9", label: "🖥️ 16:9" },
+                  { id: "4:3", label: "📺 4:3" },
+                ].map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setPosterRatio(r.id as any)}
+                    className={`px-2 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                      posterRatio === r.id
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span>{r.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* BỘ ĐIỀU KHIỂN ZOOM PHOTOSHOP */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
+                className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                title="Thu nhỏ (-10%)"
+              >
+                <ZoomOut className="size-3.5" />
+              </button>
+              <span className="text-[11px] font-mono font-bold px-1 min-w-[38px] text-center text-slate-700 dark:text-slate-300">
+                {zoomLevel}%
+              </span>
+              <button
+                type="button"
+                onClick={() => setZoomLevel((z) => Math.min(150, z + 10))}
+                className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                title="Phóng to (+10%)"
+              >
+                <ZoomIn className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(100)}
+                className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                title="Đặt lại 100%"
+              >
+                <RotateCcw className="size-3" />
+              </button>
             </div>
           </div>
 
-          {/* KHUNG POSTER CHÍNH CANVAS */}
+          {/* KHUNG POSTER CHÍNH CANVAS CÓ ZOOM */}
           <div
-            ref={posterRef}
+            style={{
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: "top center",
+              transition: "transform 0.15s ease-out",
+            }}
+            className="flex justify-center w-full"
+          >
+            <div
+              ref={posterRef}
             style={{
               backgroundImage: `url(${activeBg})`,
               backgroundSize: "cover",
@@ -2817,7 +2944,7 @@ export function InvitationTemplateStudio() {
                 style={{
                   position: "absolute",
                   left: `${blocksLayout.headline?.x ?? 50}%`,
-                  top: `${blocksLayout.headline?.y ?? 31}%`,
+                  top: `${blocksLayout.headline?.y ?? 25}%`,
                   transform: "translate(-50%, 0)",
                   zIndex: blocksLayout.headline?.zIndex ?? 11,
                 }}
@@ -2827,16 +2954,16 @@ export function InvitationTemplateStudio() {
                     : "hover:outline hover:outline-1 hover:outline-sky-400/50"
                 }`}
               >
-                <div className="text-xs text-[#85bfe8] font-light tracking-wide italic drop-shadow-sm">
+                <div className="text-[11px] sm:text-xs text-[#85bfe8] font-light tracking-wide italic drop-shadow-sm">
                   {kicker}
                 </div>
-                <div className="text-xs sm:text-[13px] text-slate-100 font-serif mt-0.5 drop-shadow-sm">
+                <div className="text-[11px] sm:text-xs text-slate-100 font-serif mt-0.5 drop-shadow-sm">
                   {leadPhrase}
                 </div>
                 <h2
                   className={`${getFontSizeClass(
                     blocksLayout.headline?.fontSize,
-                    "text-2xl sm:text-3xl"
+                    "text-xl sm:text-2xl"
                   )} font-black uppercase tracking-[0.06em] leading-tight mt-1 ${getFontFamilyClass(
                     blocksLayout.headline?.fontFamily
                   )} ${getGradientClass(blocksLayout.headline?.colorGradient || "cyan")}`}
@@ -2846,14 +2973,14 @@ export function InvitationTemplateStudio() {
                 <h2
                   className={`${getFontSizeClass(
                     blocksLayout.headline?.fontSize,
-                    "text-2xl sm:text-3xl"
+                    "text-xl sm:text-2xl"
                   )} font-black uppercase tracking-[0.06em] leading-tight ${getFontFamilyClass(
                     blocksLayout.headline?.fontFamily
                   )} ${getGradientClass(blocksLayout.headline?.colorGradient || "cyan")}`}
                 >
                   {mainTitleLine2}
                 </h2>
-                <div className="text-xs text-[#80c5f0] font-medium tracking-wide mt-1 drop-shadow-sm">
+                <div className="text-[10px] sm:text-[11px] text-[#80c5f0] font-medium tracking-wide mt-0.5 drop-shadow-sm">
                   {venueHighlight}
                 </div>
               </div>
@@ -2869,7 +2996,7 @@ export function InvitationTemplateStudio() {
                   style={{
                     position: "absolute",
                     left: `${blocksLayout.attendee?.x ?? 50}%`,
-                    top: `${blocksLayout.attendee?.y ?? 47}%`,
+                    top: `${blocksLayout.attendee?.y ?? 45}%`,
                     transform: `translate(-50%, 0) scale(${attendeeConfig.scale / 100})`,
                     zIndex: blocksLayout.attendee?.zIndex ?? 15,
                   }}
@@ -2885,7 +3012,7 @@ export function InvitationTemplateStudio() {
                       {attendeeConfig.style === "royal_circle" && (
                         <div className="relative">
                           <img
-                            src={attendeeConfig.attendees[0].avatar}
+                            src={resolveMediaUrl(attendeeConfig.attendees[0].avatar) || SAFE_FALLBACK_AVATAR}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.onerror = null;
@@ -2903,7 +3030,7 @@ export function InvitationTemplateStudio() {
                       {attendeeConfig.style === "heian_arch" && (
                         <div className="relative">
                           <img
-                            src={attendeeConfig.attendees[0].avatar}
+                            src={resolveMediaUrl(attendeeConfig.attendees[0].avatar) || SAFE_FALLBACK_AVATAR}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.onerror = null;
@@ -2921,7 +3048,7 @@ export function InvitationTemplateStudio() {
                       {attendeeConfig.style === "oval_luxury" && (
                         <div className="relative">
                           <img
-                            src={attendeeConfig.attendees[0].avatar}
+                            src={resolveMediaUrl(attendeeConfig.attendees[0].avatar) || SAFE_FALLBACK_AVATAR}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.onerror = null;
@@ -2949,7 +3076,7 @@ export function InvitationTemplateStudio() {
                           }}
                         >
                           <img
-                            src={attendeeConfig.attendees[0].avatar}
+                            src={resolveMediaUrl(attendeeConfig.attendees[0].avatar) || SAFE_FALLBACK_AVATAR}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.onerror = null;
@@ -2967,7 +3094,7 @@ export function InvitationTemplateStudio() {
                       {attendeeConfig.style === "3d_card" && (
                         <div className="relative">
                           <img
-                            src={attendeeConfig.attendees[0].avatar}
+                            src={resolveMediaUrl(attendeeConfig.attendees[0].avatar) || SAFE_FALLBACK_AVATAR}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.onerror = null;
@@ -3012,7 +3139,7 @@ export function InvitationTemplateStudio() {
                 style={{
                   position: "absolute",
                   left: `${blocksLayout.capsule?.x ?? 50}%`,
-                  top: `${blocksLayout.capsule?.y ?? 60}%`,
+                  top: `${blocksLayout.capsule?.y ?? 63}%`,
                   transform: "translate(-50%, 0)",
                   zIndex: blocksLayout.capsule?.zIndex ?? 10,
                 }}
@@ -3174,7 +3301,7 @@ export function InvitationTemplateStudio() {
                 style={{
                   position: "absolute",
                   left: `${blocksLayout.salute?.x ?? 50}%`,
-                  top: `${blocksLayout.salute?.y ?? 96}%`,
+                  top: `${blocksLayout.salute?.y ?? 93}%`,
                   transform: "translate(-50%, 0)",
                   zIndex: blocksLayout.salute?.zIndex ?? 10,
                 }}
@@ -3213,6 +3340,7 @@ export function InvitationTemplateStudio() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* ── MODAL CẮT ẢNH CHUYÊN NGHIỆP ── */}
       <ImageCropModal

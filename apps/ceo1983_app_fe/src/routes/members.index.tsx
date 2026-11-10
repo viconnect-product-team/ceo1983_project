@@ -1331,6 +1331,9 @@ function MembersPage() {
                       </select>
                     </div>
                   </th>
+                  <th className="px-4 py-3 border-r border-b border-slate-200 dark:border-slate-800 text-right min-w-[130px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                    Số tiền hội phí
+                  </th>
                   <SortHeader
                     label={t("tbl.joined")}
                     columnKey="joined"
@@ -1403,6 +1406,11 @@ function MembersPage() {
                         onChange={(s) => handleUpdatePaymentStatus(m, s)}
                         disabled={!can(PERMISSIONS.FINANCE_MANAGE) && !can("FEE_EDIT")}
                       />
+                    </td>
+                    <td className="px-4 py-3.5 border-r border-b border-slate-200 dark:border-slate-800 text-right font-mono font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                      {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                        (m as any).feeAmount || (m as any).fee_amount || (m.level === "vip" ? 15000000 : 10000000)
+                      )}
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground border-r border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                       {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString("vi-VN") : "—"}

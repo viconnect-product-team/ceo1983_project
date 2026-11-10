@@ -7,7 +7,6 @@ export const DEFAULT_SIDEBAR_LABELS: Record<string, string> = {
   "/": "Tổng quan",
   "/members": "Hội viên",
   "/companies": "Doanh nghiệp",
-  "/segments": "Phân khúc hội viên",
   "/renewal": "Gia hạn hội viên",
   "/events": "Sự kiện",
   "/events-overview": "Tổng quan sự kiện",

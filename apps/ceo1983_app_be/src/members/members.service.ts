@@ -2458,6 +2458,44 @@ export class MembersService {
     return this.getMemberById(userId, current.id);
   }
 
+  async cancelRenewal(userId: string, id: string) {
+    const cleanId = String(id || '').replace(/^RNW-/, '');
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.members 
+      WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} 
+      LIMIT 1
+    `.catch(() => []);
+
+    if (rows.length === 0)
+      throw new NotFoundException('Không tìm thấy hội viên');
+    const current = rows[0];
+
+    const isAdmin = await this.checkIsAdmin(userId, current.association_id);
+    if (!isAdmin)
+      throw new ForbiddenException('Chỉ quản trị viên mới có quyền hủy gia hạn');
+
+    await this.prisma.$executeRaw`
+      UPDATE public.members SET
+        fee_paid = false,
+        renewed_at = null,
+        new_term_end = null,
+        payment_status = 'unpaid',
+        updated_at = now()
+      WHERE id = ${current.id}
+    `;
+
+    // Activity log
+    await this.logActivity(
+      'Hủy gia hạn hội viên',
+      `${current.name} (${current.code || cleanId})`,
+      'fee',
+      'admin@connect.vn',
+      current.association_id,
+    );
+
+    return this.getMemberById(userId, current.id);
+  }
+
   async updatePaymentStatus(
     userId: string,
     id: string,
@@ -4341,8 +4379,8 @@ Trân trọng cảm ơn Anh/Chị!`;
         status = 'active',
         code = ${memberCode},
         user_id = ${assignedUserId}::uuid,
-        fee_paid = true,
-        payment_status = 'paid',
+        fee_paid = false,
+        payment_status = 'unpaid',
         updated_at = NOW()
       WHERE id::text = ${memberId}::text
     `;

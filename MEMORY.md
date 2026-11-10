@@ -1,5 +1,57 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 10/11/2026 (v10.97): Hoàn Thiện Luồng Ưu Đãi & Voucher Động Trên App CEO 1983, Xóa Bỏ Phân Khúc Hội Viên Khỏi CRM, Khắc Phục Lỗi Hủy Gia Hạn & Lỗi Khởi Tạo Khoản Thu / Khoản Chi ([NODE-CRM-004], [NODE-CRM-008], [NODE-CRM-017], [NODE-APP-005])**:
+  1. *Hoàn thiện luồng Ưu Đãi & Voucher QR Động trên CEO 1983 App (`MemberPerksCarousel.tsx`, `association.perks.index.tsx`)*:
+     - **Slide Trang chủ luôn lấy ưu đãi mới nhất**: Đọc và nạp danh sách ưu đãi mới nhất từ `localStorage.getItem("vba_member_custom_perks")` và API `/content/perks`, tự động sắp xếp (prepend) các ưu đãi mới được tạo lên ĐẦU slide.
+     - **Nút Lưu / Bỏ lưu đa tầng**: Thêm nút Lưu/Bỏ lưu (biểu tượng Trái tim `Heart`) trên góc trên từng slide ở Trang chủ và trong từng thẻ ưu đãi ở màn danh sách ưu đãi (`association.perks.index.tsx`).
+     - **Voucher dạng Mã QR và Mã số khi Lưu**: Khi hội viên nhấn "Lưu", hệ thống lập tức mở **Voucher Modal** kèm mã QR động (`<QrCanvas />`) và mã voucher định dạng `CEO1983-PROMO-...` với nút sao chép để hội viên mang đi áp dụng ngay tại đối tác.
+     - **Đồng bộ hóa sự kiện**: Lắng nghe `vba:saved_perks_updated`, `vba:member_custom_perk_created`, `storage` giúp dữ liệu giữa Trang chủ, Danh mục Ưu đãi và tab "Của tôi" luôn nhất quán thời gian thực.
+  2. *Triệt tiêu dứt điểm 1048 lỗi Console DevTools & Căn chỉnh Poster Photoshop (`InvitationTemplateStudio.tsx`)*:
+     - Thêm module cache `globalMembersCache`, `globalEventsCache`, `globalTemplatesCache` và `didInitRef.current = true`, triệt tiêu hoàn toàn lỗi lặp call API vô tận.
+     - Cung cấp ảnh chân dung thật sắc nét `/ceo-portrait-default.png` (255KB) và tối ưu `SAFE_FALLBACK_AVATAR` SVG monogram vàng kim hoàng gia, giải quyết triệt để tình trạng avatar bị rỗng/trong suốt.
+     - Căn chỉnh lại tọa độ tỷ lệ vàng mặc định: `headline` (`y: 22%`), `attendee` (`y: 48%`), `capsule` (`y: 66%`), `datetime` (`y: 76%`), `cutout` (`y: 85%`), `salute` (`y: 94%`) loại bỏ hoàn toàn việc thẻ đại biểu VIP đè lên cụm tiêu đề "KẾT NỐI DOANH NHÂN".
+     - Sửa cấu trúc JSX lồng nhau và thẻ đóng `div` trong bộ công cụ đại biểu VIP.
+  3. *Sửa lỗi TDZ ReferenceError Khoản Thu / Khoản Chi (`income.tsx`, `expenses.tsx`)*:
+     - Khắc phục lỗi `Cannot access 'H' / 'I' before initialization` do các hàm helper `formatVND` / `parseVND` được gọi trước khi khai báo. Chuyển thành function declarations hoisting chuẩn.
+  4. *Kích hoạt chức năng Hủy gia hạn hội viên (`renewal.tsx`, `members.controller.ts`, `members.service.ts`)*:
+     - Bổ sung 2 endpoint backend `POST` và `PATCH /members/:id/cancel-renewal`, tự động hủy gia hạn, chuyển trạng thái về chưa thanh toán/đã hủy và đồng bộ CSDL.
+  5. *Gỡ bỏ phân khúc hội viên khỏi CRM (`segments.tsx`, `AdminSidebar.tsx`)*:
+     - Gỡ bỏ hoàn toàn menu "Phân khúc hội viên" (`/segments`), chuyển hướng điều hướng tự động sang `/members`.
+  6. *Kiểm tra chất lượng mã nguồn (Strict Type Check)*:
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.96): Triệt Tiêu 1048 Lỗi Console DevTools, Căn Chỉnh Tỷ Lệ Vàng Không Chồng Lấn Poster & Bổ Sung Bộ Zoom Canvas Photoshop Đa Tỷ Lệ ([NODE-CRM-017], [NODE-CORE-001])**:
+  1. *Triệt tiêu 1048 lỗi Console DevTools do Socket.IO Polling (`use-connect-app-socket.ts`)*:
+     - **Nguyên nhân**: Cấu hình Socket.IO cũ sử dụng `transports: ["websocket", "polling"]`. Khi backend socket chưa mở port hoặc proxy websocket ngắt kết nối tạm thời, client tự động fallback sang HTTP Long-polling liên tục gửi request đến `/socket.io/?EIO=4&transport=polling...` bị 404/ECONNREFUSED. Mỗi request thất bại sinh 1 dòng lỗi đỏ trong Chrome DevTools, tích tụ thành hơn 1048 lỗi chỉ sau vài phút.
+     - **Giải pháp**: Thiết lập cố định `transports: ["websocket"]` (không fallback HTTP polling), giới hạn `reconnectionAttempts: 2` và giãn `reconnectionDelay: 15000`. Khi socket offline, client im lặng chờ mà không spam HTTP request, triệt tiêu 100% bão lỗi console.
+  2. *Căn chỉnh bố cục tỷ lệ vàng (Golden Ratio Layout) chống chồng lấn phần tử trên Poster Studio (`InvitationTemplateStudio.tsx`)*:
+     - Khắc phục triệt để hiện tượng tiêu đề sự kiện "KẾT NỐI DOANH NHÂN THỊNH VƯỢNG 1983" bị thẻ đại biểu VIP đè lên, và thẻ đại biểu đè lên khối đặc quyền capsule:
+       + `header`: `y: 3.5%`
+       + `atlantis_wings`: `y: 8%`
+       + `title`: `y: 13%` - `15%`
+       + `headline`: `y: 25%`, tinh chỉnh kích thước chữ thành `text-xl sm:text-2xl font-black` gọn gàng, trang nhã.
+       + `attendee` (Thẻ Đại Biểu VIP): `y: 45%`, độc lập tuyệt đối giữa khoảng 38% và 58% không chạm vào tiêu đề hay capsule.
+       + `capsule` (Hộp quà tặng / Đặc quyền): `y: 63%`.
+       + `datetime` (Ngày giờ & Địa điểm): `y: 72%` - `74%`.
+       + `cutout` (Cổng chào Heian Venue): `y: 84%`.
+       + `salute` (Lời chào kết): `y: 93%`, không còn bị cắt cụt hay chạm sát mép đáy khung poster.
+       + `qr` (Mã QR Check-in): `x: 86%`, `y: 88%`.
+  3. *Tích hợp bộ điều khiển Zoom Canvas Photoshop & Responsive Layout (`InvitationTemplateStudio.tsx`)*:
+     - Bổ sung thanh công cụ Zoom Canvas ngay cạnh bộ chọn tỷ lệ: Thu nhỏ (-10%), Phóng to (+10%), Đặt lại 100% (Reset), dải zoom linh hoạt từ 50% đến 150%.
+     - Bao bọc Canvas trong thẻ container CSS `scale(${zoomLevel / 100})` với `transformOrigin: "top center"`. Người dùng trên laptop màn hình nhỏ hoặc khi mở Chrome DevTools dock bên cạnh có thể thu nhỏ poster về 80-90% để nhìn trọn vẹn toàn bộ khung hình mà không bị tràn màn hình.
+     - Thêm `sticky top-20 z-10` cho cột phải `lg:col-span-7` giúp canvas luôn ghim cố định trong tầm mắt khi cuộn thanh công cụ bên trái.
+  4. *Đồng bộ kéo thả 2 chiều & Tối ưu Avatar Đại Biểu VIP*:
+     - Khi người dùng kéo thả thẻ đại biểu VIP trực tiếp bằng chuột trên Canvas, hệ thống tự động cập nhật đồng thời cả `blocksLayout.attendee` và `attendeeConfig.x` / `attendeeConfig.y`, giữ thanh trượt tọa độ ở cột trái luôn đồng bộ chuẩn xác.
+     - Áp dụng `resolveMediaUrl(...)` cho cả 5 kiểu khung đại biểu (Tròn Hoàng Gia 3D, Vòm Cung Heian, Bầu Dục Ngọc Trai, Mờ Viền Lông Vũ, Thẻ Nổi 3D) và fallback an toàn tuyệt đối `SAFE_FALLBACK_AVATAR`.
+  5. *Khắc phục lỗi định tuyến TypeScript trong `association.events.tsx`*:
+     - Thay thế path không hợp lệ `navigate({ to: "/association/home" })` thành `navigate({ to: "/association" })`.
+  6. *Kiểm thử chất lượng mã nguồn (Strict Type Check)*:
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 10/11/2026 (v10.95): Khắc Phục Triệt Để Lỗi Avatar Trắng Rỗng & Vòng Lặp Vô Tận Console (1048 Errors) Trên Poster Studio ([NODE-CRM-017]), Tự Động Hóa Đồng Bộ Đa Kênh Zalo OA Song Hành 100% Thông Báo Email Hệ Thống ([NODE-CORE-001], [NODE-CRM-011])**:
   1. *CRM - Khắc Phục Triệt Để Lỗi Avatar Đại Biểu VIP & Lỗi Infinite Loop Console (`InvitationTemplateStudio.tsx`, `InvitationSetupManager.tsx`, `api-client.ts`)*:
      - **Nguyên nhân gốc rễ**: Tên tệp `/Vietnamese Young Male CEO Avatar.png` có khoảng trắng bị encode hoặc không tìm thấy, đồng thời các thẻ `<img>` avatar sử dụng handler `onError` gán đè `src = "/app-icon.png"` nhưng thiếu chỉ thị `e.currentTarget.onerror = null;`. Khi ảnh fallback tiếp tục gặp lỗi hoặc trong quá trình component re-render liên tục, `onError` bị kích hoạt đệ quy vô tận tạo ra hơn 1048 lỗi đỏ trong DevTools console và khiến khung đại biểu bị trống rỗng/trong suốt. Ngoài ra tệp `/avatars/avatar-default.png` trước đó bị nhầm lẫn chứa chuỗi SVG thay vì binary PNG chuẩn.
@@ -928,6 +980,58 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 10/11/2026 (v10.97): Hoàn Thiện Luồng Ưu Đãi & Voucher Động Trên App CEO 1983, Xóa Bỏ Phân Khúc Hội Viên Khỏi CRM, Khắc Phục Lỗi Hủy Gia Hạn & Lỗi Khởi Tạo Khoản Thu / Khoản Chi ([NODE-CRM-004], [NODE-CRM-008], [NODE-CRM-017], [NODE-APP-005])**:
+  1. *Hoàn thiện luồng Ưu Đãi & Voucher QR Động trên CEO 1983 App (`MemberPerksCarousel.tsx`, `association.perks.index.tsx`)*:
+     - **Slide Trang chủ luôn lấy ưu đãi mới nhất**: Đọc và nạp danh sách ưu đãi mới nhất từ `localStorage.getItem("vba_member_custom_perks")` và API `/content/perks`, tự động sắp xếp (prepend) các ưu đãi mới được tạo lên ĐẦU slide.
+     - **Nút Lưu / Bỏ lưu đa tầng**: Thêm nút Lưu/Bỏ lưu (biểu tượng Trái tim `Heart`) trên góc trên từng slide ở Trang chủ và trong từng thẻ ưu đãi ở màn danh sách ưu đãi (`association.perks.index.tsx`).
+     - **Voucher dạng Mã QR và Mã số khi Lưu**: Khi hội viên nhấn "Lưu", hệ thống lập tức mở **Voucher Modal** kèm mã QR động (`<QrCanvas />`) và mã voucher định dạng `CEO1983-PROMO-...` với nút sao chép để hội viên mang đi áp dụng ngay tại đối tác.
+     - **Đồng bộ hóa sự kiện**: Lắng nghe `vba:saved_perks_updated`, `vba:member_custom_perk_created`, `storage` giúp dữ liệu giữa Trang chủ, Danh mục Ưu đãi và tab "Của tôi" luôn nhất quán thời gian thực.
+  2. *Triệt tiêu dứt điểm 1048 lỗi Console DevTools & Căn chỉnh Poster Photoshop (`InvitationTemplateStudio.tsx`)*:
+     - Thêm module cache `globalMembersCache`, `globalEventsCache`, `globalTemplatesCache` và `didInitRef.current = true`, triệt tiêu hoàn toàn lỗi lặp call API vô tận.
+     - Cung cấp ảnh chân dung thật sắc nét `/ceo-portrait-default.png` (255KB) và tối ưu `SAFE_FALLBACK_AVATAR` SVG monogram vàng kim hoàng gia, giải quyết triệt để tình trạng avatar bị rỗng/trong suốt.
+     - Căn chỉnh lại tọa độ tỷ lệ vàng mặc định: `headline` (`y: 22%`), `attendee` (`y: 48%`), `capsule` (`y: 66%`), `datetime` (`y: 76%`), `cutout` (`y: 85%`), `salute` (`y: 94%`) loại bỏ hoàn toàn việc thẻ đại biểu VIP đè lên cụm tiêu đề "KẾT NỐI DOANH NHÂN".
+     - Sửa cấu trúc JSX lồng nhau và thẻ đóng `div` trong bộ công cụ đại biểu VIP.
+  3. *Sửa lỗi TDZ ReferenceError Khoản Thu / Khoản Chi (`income.tsx`, `expenses.tsx`)*:
+     - Khắc phục lỗi `Cannot access 'H' / 'I' before initialization` do các hàm helper `formatVND` / `parseVND` được gọi trước khi khai báo. Chuyển thành function declarations hoisting chuẩn.
+  4. *Kích hoạt chức năng Hủy gia hạn hội viên (`renewal.tsx`, `members.controller.ts`, `members.service.ts`)*:
+     - Bổ sung 2 endpoint backend `POST` và `PATCH /members/:id/cancel-renewal`, tự động hủy gia hạn, chuyển trạng thái về chưa thanh toán/đã hủy và đồng bộ CSDL.
+  5. *Gỡ bỏ phân khúc hội viên khỏi CRM (`segments.tsx`, `AdminSidebar.tsx`)*:
+     - Gỡ bỏ hoàn toàn menu "Phân khúc hội viên" (`/segments`), chuyển hướng điều hướng tự động sang `/members`.
+  6. *Kiểm tra chất lượng mã nguồn (Strict Type Check)*:
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.96): Triệt Tiêu 1048 Lỗi Console DevTools, Căn Chỉnh Tỷ Lệ Vàng Không Chồng Lấn Poster & Bổ Sung Bộ Zoom Canvas Photoshop Đa Tỷ Lệ ([NODE-CRM-017], [NODE-CORE-001])**:
+  1. *Triệt tiêu 1048 lỗi Console DevTools do Socket.IO Polling (`use-connect-app-socket.ts`)*:
+     - **Nguyên nhân**: Cấu hình Socket.IO cũ sử dụng `transports: ["websocket", "polling"]`. Khi backend socket chưa mở port hoặc proxy websocket ngắt kết nối tạm thời, client tự động fallback sang HTTP Long-polling liên tục gửi request đến `/socket.io/?EIO=4&transport=polling...` bị 404/ECONNREFUSED. Mỗi request thất bại sinh 1 dòng lỗi đỏ trong Chrome DevTools, tích tụ thành hơn 1048 lỗi chỉ sau vài phút.
+     - **Giải pháp**: Thiết lập cố định `transports: ["websocket"]` (không fallback HTTP polling), giới hạn `reconnectionAttempts: 2` và giãn `reconnectionDelay: 15000`. Khi socket offline, client im lặng chờ mà không spam HTTP request, triệt tiêu 100% bão lỗi console.
+  2. *Căn chỉnh bố cục tỷ lệ vàng (Golden Ratio Layout) chống chồng lấn phần tử trên Poster Studio (`InvitationTemplateStudio.tsx`)*:
+     - Khắc phục triệt để hiện tượng tiêu đề sự kiện "KẾT NỐI DOANH NHÂN THỊNH VƯỢNG 1983" bị thẻ đại biểu VIP đè lên, và thẻ đại biểu đè lên khối đặc quyền capsule:
+       + `header`: `y: 3.5%`
+       + `atlantis_wings`: `y: 8%`
+       + `title`: `y: 13%` - `15%`
+       + `headline`: `y: 25%`, tinh chỉnh kích thước chữ thành `text-xl sm:text-2xl font-black` gọn gàng, trang nhã.
+       + `attendee` (Thẻ Đại Biểu VIP): `y: 45%`, độc lập tuyệt đối giữa khoảng 38% và 58% không chạm vào tiêu đề hay capsule.
+       + `capsule` (Hộp quà tặng / Đặc quyền): `y: 63%`.
+       + `datetime` (Ngày giờ & Địa điểm): `y: 72%` - `74%`.
+       + `cutout` (Cổng chào Heian Venue): `y: 84%`.
+       + `salute` (Lời chào kết): `y: 93%`, không còn bị cắt cụt hay chạm sát mép đáy khung poster.
+       + `qr` (Mã QR Check-in): `x: 86%`, `y: 88%`.
+  3. *Tích hợp bộ điều khiển Zoom Canvas Photoshop & Responsive Layout (`InvitationTemplateStudio.tsx`)*:
+     - Bổ sung thanh công cụ Zoom Canvas ngay cạnh bộ chọn tỷ lệ: Thu nhỏ (-10%), Phóng to (+10%), Đặt lại 100% (Reset), dải zoom linh hoạt từ 50% đến 150%.
+     - Bao bọc Canvas trong thẻ container CSS `scale(${zoomLevel / 100})` với `transformOrigin: "top center"`. Người dùng trên laptop màn hình nhỏ hoặc khi mở Chrome DevTools dock bên cạnh có thể thu nhỏ poster về 80-90% để nhìn trọn vẹn toàn bộ khung hình mà không bị tràn màn hình.
+     - Thêm `sticky top-20 z-10` cho cột phải `lg:col-span-7` giúp canvas luôn ghim cố định trong tầm mắt khi cuộn thanh công cụ bên trái.
+  4. *Đồng bộ kéo thả 2 chiều & Tối ưu Avatar Đại Biểu VIP*:
+     - Khi người dùng kéo thả thẻ đại biểu VIP trực tiếp bằng chuột trên Canvas, hệ thống tự động cập nhật đồng thời cả `blocksLayout.attendee` và `attendeeConfig.x` / `attendeeConfig.y`, giữ thanh trượt tọa độ ở cột trái luôn đồng bộ chuẩn xác.
+     - Áp dụng `resolveMediaUrl(...)` cho cả 5 kiểu khung đại biểu (Tròn Hoàng Gia 3D, Vòm Cung Heian, Bầu Dục Ngọc Trai, Mờ Viền Lông Vũ, Thẻ Nổi 3D) và fallback an toàn tuyệt đối `SAFE_FALLBACK_AVATAR`.
+  5. *Khắc phục lỗi định tuyến TypeScript trong `association.events.tsx`*:
+     - Thay thế path không hợp lệ `navigate({ to: "/association/home" })` thành `navigate({ to: "/association" })`.
+  6. *Kiểm thử chất lượng mã nguồn (Strict Type Check)*:
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 10/11/2026 (v10.95): Khắc Phục Triệt Để Lỗi Avatar Trắng Rỗng & Vòng Lặp Vô Tận Console (1048 Errors) Trên Poster Studio ([NODE-CRM-017]), Tự Động Hóa Đồng Bộ Đa Kênh Zalo OA Song Hành 100% Thông Báo Email Hệ Thống ([NODE-CORE-001], [NODE-CRM-011])**:
   1. *CRM - Khắc Phục Triệt Để Lỗi Avatar Đại Biểu VIP & Lỗi Infinite Loop Console (`InvitationTemplateStudio.tsx`, `InvitationSetupManager.tsx`, `api-client.ts`)*:

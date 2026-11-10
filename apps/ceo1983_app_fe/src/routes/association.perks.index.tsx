@@ -390,7 +390,8 @@ function PerksScreen() {
       toast.info(`Đã bỏ lưu ưu đãi "${p.title}" khỏi mục Của tôi.`);
     } else {
       next = [p, ...savedPerks.filter((x) => x.id !== p.id)];
-      toast.success(`Đã lưu ưu đãi "${p.title}" vào mục Của tôi thành công!`);
+      toast.success(`Đã lưu ưu đãi "${p.title}"! Đang mở voucher và mã QR...`);
+      setQrPerkModal(p);
     }
     setSavedPerks(next);
     try {

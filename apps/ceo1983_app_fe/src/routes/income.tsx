@@ -66,6 +66,21 @@ const initialIncomeColWidths: Record<IncomeColKey, number> = {
   actions: 110,
 };
 
+function getCategoryLabel(cat: string) {
+  switch (cat) {
+    case "membership_fee":
+      return "Phí hội viên";
+    case "event_ticket":
+      return "Vé sự kiện";
+    case "event_walkin":
+      return "Thu đột xuất (Tại sự kiện)";
+    case "sponsor":
+      return "Tài trợ";
+    default:
+      return cat;
+  }
+}
+
 export const Route = createFileRoute("/income")({
   ssr: false,
   loader: async () => {
@@ -433,21 +448,6 @@ function IncomePage() {
       },
     });
     toast.success("Đã xuất file Excel Sổ Quỹ Thu Nội Bộ chuẩn Thông tư 200/2014/TT-BTC!");
-  };
-
-  const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case "membership_fee":
-        return "Phí hội viên";
-      case "event_ticket":
-        return "Vé sự kiện";
-      case "event_walkin":
-        return "Thu đột xuất (Tại sự kiện)";
-      case "sponsor":
-        return "Tài trợ";
-      default:
-        return cat;
-    }
   };
 
   return (
