@@ -1323,6 +1323,159 @@ Trân trọng cảm ơn Anh/Chị!`;
   }
 
   /**
+   * Phương thức cấp cao: Tự động gửi thông báo qua Zalo OA (CS Message hoặc ZNS)
+   * Đồng bộ toàn diện 100% với các luồng gửi Email thông báo của hệ thống CEO 1983
+   */
+  async sendAutoNotification(options: {
+    recipientPhone?: string;
+    recipientEmail?: string;
+    recipientName?: string;
+    recipientZaloUid?: string;
+    title: string;
+    content: string;
+    ctaText?: string;
+    ctaUrl?: string;
+    qrCodeUrl?: string;
+    trackingType?: string;
+    templateId?: string;
+    templateData?: Record<string, any>;
+  }): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      // 1. Lấy OA Access Token hợp lệ từ CSDL hoặc biến môi trường
+      const cfg = await this.getOaConfig();
+      let accessToken = cfg?.accessToken || process.env.ZALO_ACCESS_TOKEN;
+      if (!accessToken && cfg?.refreshToken) {
+        try {
+          const refRes = await this.performAutoRefreshToken();
+          if (refRes.ok && (refRes.data?.access_token || refRes.data?.accessToken)) {
+            accessToken = refRes.data.access_token || refRes.data.accessToken;
+          }
+        } catch (rErr: any) {
+          this.logger.warn(
+            `[Zalo OA Auto-Notify] Không thể auto refresh token: ${rErr.message}`,
+          );
+        }
+      }
+
+      if (!accessToken?.trim()) {
+        this.logger.debug(
+          `[Zalo OA Auto-Notify] Bỏ qua gửi Zalo OA: Chưa có Access Token hợp lệ`,
+        );
+        return { success: false, message: 'Chưa có Zalo OA Access Token' };
+      }
+
+      let targetPhone = (options.recipientPhone || '').trim();
+      let recipientName = (options.recipientName || '').trim();
+      let targetUserId = (options.recipientZaloUid || '').trim();
+
+      // 2. Tra cứu Số điện thoại, Tên, Zalo User ID từ CSDL nếu chưa có
+      if (
+        this.prisma &&
+        options.recipientEmail &&
+        (!targetPhone || !targetUserId)
+      ) {
+        try {
+          const cleanEmail = options.recipientEmail.trim().toLowerCase();
+          const members: any[] = await this.prisma.$queryRawUnsafe(
+            `SELECT phone, name, zalo_user_id FROM public.members WHERE LOWER(email) = $1 LIMIT 1`,
+            cleanEmail,
+          );
+          if (members.length > 0) {
+            if (!targetPhone && members[0].phone) targetPhone = members[0].phone;
+            if (!recipientName && members[0].name)
+              recipientName = members[0].name;
+            if (!targetUserId && members[0].zalo_user_id)
+              targetUserId = members[0].zalo_user_id;
+          } else {
+            const users: any[] = await this.prisma.$queryRawUnsafe(
+              `SELECT phone, name, email FROM public.users WHERE LOWER(email) = $1 LIMIT 1`,
+              cleanEmail,
+            );
+            if (users.length > 0) {
+              if (!targetPhone && users[0].phone) targetPhone = users[0].phone;
+              if (!recipientName && users[0].name) recipientName = users[0].name;
+            }
+          }
+        } catch (dbErr: any) {
+          this.logger.warn(
+            `[Zalo OA Auto-Notify] Tra cứu user thất bại: ${dbErr.message}`,
+          );
+        }
+      }
+
+      // 3. Nếu có templateId và có số điện thoại -> Ưu tiên bắn ZNS
+      if (options.templateId && targetPhone) {
+        try {
+          const znsRes = await this.sendZns({
+            templateId: options.templateId,
+            phone: targetPhone,
+            templateData: options.templateData || {
+              name: recipientName || 'Quý Hội viên',
+              title: options.title,
+              content: options.content,
+              qr_code: options.qrCodeUrl || '',
+            },
+            accessToken,
+            trackingId: `zns_auto_${Date.now()}`,
+          });
+          if (znsRes.success) {
+            this.logger.log(
+              `[Zalo OA Auto-Notify] Đã bắn ZNS thành công tới ${targetPhone}`,
+            );
+            return znsRes;
+          }
+        } catch (znsErr: any) {
+          this.logger.warn(
+            `[Zalo OA Auto-Notify] Bắn ZNS không thành công, chuyển sang gửi CS tin nhắn OA: ${znsErr.message}`,
+          );
+        }
+      }
+
+      // 4. Soạn thảo tin nhắn Zalo OA chuẩn nhận diện thương hiệu CLB Doanh Nhân CEO 1983
+      const msgLines: string[] = [
+        `🔔 [CLB DOANH NHÂN CEO 1983 - THÔNG BÁO]`,
+        `Kính gửi: ${recipientName || 'Quý Doanh Nhân & Hội Viên'}`,
+        ``,
+        `📌 ${options.title}`,
+        options.content,
+      ];
+
+      if (options.qrCodeUrl) {
+        msgLines.push(`🎫 Vé QR Check-in: ${options.qrCodeUrl}`);
+      }
+      if (options.ctaUrl) {
+        msgLines.push(
+          `👉 ${options.ctaText || 'Chi tiết & Thao tác'}: ${options.ctaUrl}`,
+        );
+      }
+      msgLines.push(``);
+      msgLines.push(`📞 Hotline BTC hỗ trợ: 0973.205.683 / 0903.205.683`);
+      msgLines.push(`Trân trọng!`);
+
+      const finalMessage = msgLines.join('\n');
+
+      // 5. Gửi qua Zalo OA CS Message (tự động fallback v3 -> v2 nếu cần)
+      const sendRes = await this.sendMessage({
+        accessToken,
+        userId: targetUserId || undefined,
+        targetPhone: targetPhone || undefined,
+        targetName: recipientName || undefined,
+        message: finalMessage,
+      });
+
+      this.logger.log(
+        `[Zalo OA Auto-Notify] Đã gửi thông báo Zalo OA (${options.title}) tới ${recipientName || targetPhone || targetUserId || 'Hội viên'}: ${sendRes.success ? 'Thành công' : 'Thất bại'}`,
+      );
+      return sendRes;
+    } catch (err: any) {
+      this.logger.warn(
+        `[Zalo OA Auto-Notify] Ngoại lệ gửi tin Zalo: ${err.message}`,
+      );
+      return { success: false, message: err.message };
+    }
+  }
+
+  /**
    * Liên kết Zalo User ID (UID) với Hội viên hoặc Số Điện Thoại trong CRM
    */
   async bindMemberUid(body: {

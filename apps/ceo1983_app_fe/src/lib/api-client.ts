@@ -112,6 +112,29 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     return trimmed.replace(/^\/?uploads\//, "");
   }
 
+  // Tệp tĩnh nội bộ thuộc Frontend (public folder): Không bao giờ chuyển đổi sang MinIO backend!
+  if (
+    trimmed.startsWith("/avatars/avatar-default") ||
+    trimmed.startsWith("avatars/avatar-default") ||
+    trimmed.includes("avatar-default") ||
+    trimmed.startsWith("/assets/") ||
+    trimmed.startsWith("/icons/") ||
+    trimmed.startsWith("/images/") ||
+    trimmed.startsWith("/landing/") ||
+    trimmed.startsWith("/templates/") ||
+    trimmed.startsWith("/favicon") ||
+    trimmed.startsWith("/app-icon") ||
+    trimmed.startsWith("/ceo1983") ||
+    trimmed.startsWith("/skyline") ||
+    trimmed.startsWith("/business_connect") ||
+    trimmed.toLowerCase().includes("vietnamese") ||
+    trimmed.startsWith("/vietnamese") ||
+    trimmed.startsWith("/Vietnamese") ||
+    trimmed.startsWith("/user-check")
+  ) {
+    return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  }
+
   // Tự động chuyển đổi sang Origin hiện tại để tránh lỗi Mixed Content hoặc vỡ ảnh khi mang cổng nội bộ khác
   if (typeof window !== "undefined") {
     if (
@@ -199,8 +222,7 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
 
   // 7. Nếu là file trong avatars/ hoặc documents/ hoặc products/ hoặc events/ hoặc association-logos/
   if (
-    trimmed.startsWith("avatars/") ||
-    trimmed.startsWith("/avatars/") ||
+    ((trimmed.startsWith("avatars/") || trimmed.startsWith("/avatars/")) && !trimmed.includes("default")) ||
     trimmed.startsWith("association-logos/") ||
     trimmed.startsWith("/association-logos/") ||
     trimmed.startsWith("logos/") ||
@@ -247,8 +269,7 @@ function transformUrls(obj: any, parentKey?: string): any {
       obj.startsWith("uploads/") ||
       obj.startsWith("/api/upload/") ||
       obj.startsWith("api/upload/") ||
-      obj.startsWith("avatars/") ||
-      obj.startsWith("/avatars/") ||
+      ((obj.startsWith("avatars/") || obj.startsWith("/avatars/")) && !obj.includes("default")) ||
       (!obj.includes("/") && MEDIA_EXT_REGEX.test(obj)) ||
       obj.includes("backend:4000") ||
       obj.includes("127.0.0.1:4000") ||

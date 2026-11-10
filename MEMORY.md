@@ -1,5 +1,105 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 10/11/2026 (v10.95): Khắc Phục Triệt Để Lỗi Avatar Trắng Rỗng & Vòng Lặp Vô Tận Console (1048 Errors) Trên Poster Studio ([NODE-CRM-017]), Tự Động Hóa Đồng Bộ Đa Kênh Zalo OA Song Hành 100% Thông Báo Email Hệ Thống ([NODE-CORE-001], [NODE-CRM-011])**:
+  1. *CRM - Khắc Phục Triệt Để Lỗi Avatar Đại Biểu VIP & Lỗi Infinite Loop Console (`InvitationTemplateStudio.tsx`, `InvitationSetupManager.tsx`, `api-client.ts`)*:
+     - **Nguyên nhân gốc rễ**: Tên tệp `/Vietnamese Young Male CEO Avatar.png` có khoảng trắng bị encode hoặc không tìm thấy, đồng thời các thẻ `<img>` avatar sử dụng handler `onError` gán đè `src = "/app-icon.png"` nhưng thiếu chỉ thị `e.currentTarget.onerror = null;`. Khi ảnh fallback tiếp tục gặp lỗi hoặc trong quá trình component re-render liên tục, `onError` bị kích hoạt đệ quy vô tận tạo ra hơn 1048 lỗi đỏ trong DevTools console và khiến khung đại biểu bị trống rỗng/trong suốt. Ngoài ra tệp `/avatars/avatar-default.png` trước đó bị nhầm lẫn chứa chuỗi SVG thay vì binary PNG chuẩn.
+     - **Giải pháp xử lý toàn diện**:
+       + Đặt tên tệp chuẩn không khoảng trắng `apps/ceo1983_app_fe/public/vietnamese-young-male-ceo-avatar.png` (30,319 bytes PNG chuẩn).
+       + Cập nhật `apps/ceo1983_app_fe/public/avatars/avatar-default.png` thành định dạng PNG hợp lệ (30,319 bytes).
+       + Cập nhật hàm `resolveMediaUrl` trong `api-client.ts` bổ sung whitelist `vietnamese` để không bao giờ bị biến đổi nhầm sang backend MinIO URL.
+       + Tạo hằng số `SAFE_FALLBACK_AVATAR` dạng SVG Data URI trực tiếp (`data:image/svg+xml,...`) với biểu tượng Monogram CEO Vàng Kim trên nền Xanh Navy Hoàng Gia, đảm bảo 100% không bao giờ sinh ra HTTP request thất bại và không thể loop.
+       + Cập nhật tất cả các chế độ render đại biểu (Tròn Hoàng Gia 3D, Vòm Cung Heian, Bầu Dục Ngọc Trai, Mờ Viền Lông Vũ, Thẻ Nổi 3D) và nút preset avatar: `e.currentTarget.onerror = null; e.currentTarget.src = SAFE_FALLBACK_AVATAR;`.
+  2. *Core & CRM - Tự Động Đồng Bộ Đa Kênh Zalo OA Song Hành 100% Thông Báo Email (`zalo.service.ts`, `mail.service.ts`, `mail.module.ts`)*:
+     - **Kiến trúc đồng bộ trung tâm (Omni-Channel Synchronization)**: Thay vì can thiệp rải rác vào từng Controller, toàn bộ thông báo hệ thống được đồng bộ hóa tại tầng `MailService` thông qua phương thức non-blocking `dispatchZaloOaNotification`.
+     - **Nâng cấp `ZaloService.sendAutoNotification`**:
+       + Tự động lấy Access Token Zalo OA hiện hữu; nếu hết hạn sẽ tự động kích hoạt `performAutoRefreshToken()`.
+       + Tự động tra cứu SĐT, Tên hội viên hoặc UID Zalo từ bảng `members` / `users` nếu chỉ có email.
+       + Ưu tiên gửi qua ZNS (Zalo Notification Service) nếu có `templateId` tương ứng; nếu không sẽ gửi qua Zalo Customer Support API (v3.0 và v2.0 fallback).
+     - **Tự động gửi tin nhắn Zalo OA cho 15 luồng sự kiện trọng yếu**:
+       1. Hội viên mới đăng ký tài khoản / cấp mật khẩu (`sendRegistrationAccountEmail`)
+       2. Đăng ký vé sự kiện thành công kèm mã QR check-in (`sendEventTicketEmail`)
+       3. Chào mừng đăng ký App CEO 1983 (`sendAppWelcomeRegistrationEmail`)
+       4. Kích hoạt tài khoản App thành công (`sendAppAccountActivatedEmail`)
+       5. Chuẩn y kết nạp hội viên chính thức (`sendMemberApprovedEmail`)
+       6. Tiếp nhận hồ sơ gia nhập CLB (`sendRegistrationReceivedEmail`)
+       7. Thư mời họp Ban Điều Hành / Họp Online (`sendMeetingInvitationEmail`)
+       8. Lịch hẹn kết nối giao thương B2B 1-on-1 (`sendConnectionAppointmentEmail`)
+       9. Thanh toán vé sự kiện thành công (`sendEventPaymentSuccessEmail`)
+       10. Thông báo hội phí niên liễm (`sendMembershipFeeNotificationEmail`)
+       11. Biên nhận nộp hội phí thành công & gia hạn hội viên (`sendMembershipFeeSuccessEmail`)
+       12. Phân công nhiệm vụ mới (`sendTaskAssignmentEmail`)
+       13. Nhắc nhở hạn chót công việc (`sendTaskReminderEmail`)
+       14. Chúc mừng trúng thưởng may mắn Lucky Draw (`sendLuckyDrawWinnerEmail`)
+       15. Thông báo trực tiếp từ CRM (`sendDirectEmail`)
+  3. *Kiểm Tra Mã Nguồn & Độ Ổn Định (Strict Quality & Type Check)*:
+     - Backend: `apps/ceo1983_app_be` - `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Đảm bảo tính bất đồng bộ hoàn toàn (non-blocking) - việc gửi Zalo OA không làm gián đoạn hay ảnh hưởng đến luồng gửi Email và phản hồi API.
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.94): Chuẩn Hóa 3 Bộ Hiển Thị Thống Kê Tháng - Quý - Năm, Chuyển Toàn Bộ Biểu Đồ Xu Hướng Thành Biểu Đồ Cột, Xây Dựng Bộ Chọn Lịch Thống Kê Kỳ Cũ (Historical Period Picker) Trên Toàn Hệ Thống ([NODE-CRM-001], [NODE-APP-004], [NODE-CORE-001])**:
+  1. *Chuẩn Hóa 3 Bộ Hiển Thị Thống Kê: Tháng, Quý, Năm (`routes/analytics.tsx`, `routes/association.analytics.tsx`, `AnalyticsPeriodPicker.tsx`, `analytics.service.ts`)*:
+     - Tinh giản và chuẩn hóa toàn bộ các phân hệ thống kê trên cả **Web CRM Quản Trị** và **CEO 1983 Mobile App** thành đúng 3 mốc chu kỳ theo yêu cầu người dùng:
+       + **Tháng**: Xem chi tiết diễn biến theo 12 tháng (T1 -> T12) của năm được chọn.
+       + **Quý**: Xem chi tiết cơ cấu theo 4 quý tài khóa (Q1, Q2, Q3, Q4) của năm được chọn.
+       + **Năm**: Xem biến động tổng quan theo 5 năm liên tiếp kết thúc tại năm được chọn.
+  2. *Chuyển Toàn Bộ Biểu Đồ Xu Hướng Thành Biểu Đồ Cột (Bar Chart)*:
+     - Loại bỏ triệt để các đường kẻ line xu hướng (`<Line type="monotone" ... />`) trong biểu đồ Recharts của cả Web CRM và Mobile App.
+     - Chuyển đổi chỉ số tổng hợp / timeline (`timelineVal`) thành **Cột biểu đồ (`<Bar ... />`)** độc lập với bo góc đỉnh `radius={[4, 4, 0, 0]}`, maxBarSize chuẩn mực và màu sắc thương hiệu nổi bật.
+     - Cập nhật tiêu đề từ *"Biểu Đồ Xu Hướng"* thành **"Biểu Đồ Cột"**, đổi nút bấm chuyển đổi từ *"Cột & Xu Hướng"* thành **"Biểu Đồ Cột"**.
+     - Cập nhật toàn bộ khối chú thích (legend) dưới biểu đồ thành các icon khối Cột vuông (`rounded-xs`), loại bỏ các biểu tượng đường kẻ line.
+  3. *Bộ Chọn Lịch & Điều Hướng Thống Kê Kỳ Cũ (Historical Period Picker)*:
+     - Tạo component chuyên biệt `AnalyticsPeriodPicker.tsx` dùng chung cho cả Web CRM và Mobile App:
+       + **Thanh điều hướng nhanh**: Nút `◀` (Kỳ trước) và `▶` (Kỳ sau) cho phép lùi/tiến từng tháng cũ, quý cũ, năm cũ với 1 click.
+       + **Hộp chọn lịch Popover thông minh**:
+         * Stepper chuyển năm `◀ Năm YYYY ▶` kèm dải nút chọn nhanh năm (2022, 2023, 2024, 2025, 2026, 2027).
+         * Grid 12 tháng (T1 đến T12) khi đang ở chế độ xem Tháng, có đánh dấu tháng hiện tại.
+         * Grid 4 quý (Quý 1: T1-T3, Quý 2: T4-T6, Quý 3: T7-T9, Quý 4: T10-T12) khi ở chế độ Quý.
+         * Grid các năm tài khóa khi ở chế độ Năm.
+       + **Cảnh báo và nút khôi phục kỳ lịch sử**: Khi người dùng chọn xem tháng cũ, quý cũ hoặc năm cũ, hệ thống tự động hiển thị dải thông báo *"Đang xem dữ liệu lịch sử"* kèm nút **"Quay về kỳ hiện tại"** 1 chạm.
+  4. *Nâng Cấp Backend NestJS (`analytics.controller.ts`, `analytics.service.ts`)*:
+     - API `GET /analytics/overview` nhận thêm các tham số query: `year`, `month`, `quarter`.
+     - `getBuckets`: Tạo đúng 12 buckets cho chế độ Tháng, 4 buckets cho chế độ Quý và 5 buckets cho chế độ Năm theo năm được chọn.
+     - Trả về metadata `selectedPeriod` (`year`, `month`, `quarter`, `label`) để frontend đồng bộ hiển thị mốc thời gian thực tế.
+     - Bộ lọc thống kê tự động tính toán chính xác dữ liệu của kỳ lịch sử được chọn.
+  5. *Khắc Phục Hoàn Toàn Avatar Mẫu Đại Biểu VIP*:
+     - Sao chép tệp `Vietnamese Young Male CEO Avatar.png` trực tiếp vào thư mục gốc `apps/ceo1983_app_fe/public/` để cả đường dẫn `/Vietnamese Young Male CEO Avatar.png` và `/landing_page_ceo1983/Vietnamese Young Male CEO Avatar.png` đều hoạt động ổn định 100%, không bị lỗi 404 hoặc vòng tròn trống rỗng.
+  6. *Kiểm Tra Mã Nguồn (Strict Type Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc -p tsconfig.json` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.93): Khắc Phục Triệt Để Lỗi Avatar Trắng Rỗng & Mờ Khuôn Mặt Trên Poster, Xử Lý Lỗi API 404 Console, Ra Mắt 2 Bản Poster Hệ Thống Đan Xen Mobile Chào Hàng Khách Hàng Chuẩn Pinterest Pin 754493743866082637 ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-019])**:
+  1. *CRM - Khắc Phục Triệt Để Lỗi Avatar Đại Biểu VIP & Lỗi API Console (`api-client.ts`, `InvitationTemplateStudio.tsx`, `InvitationSetupManager.tsx`)*:
+     - **Sửa hàm `resolveMediaUrl` và `transformUrls` trong `api-client.ts`**: Bổ sung whitelist nhận diện tệp tĩnh nội bộ thuộc frontend (`/avatars/avatar-default.svg`, `/avatars/avatar-default.png`, `/avatars/default*`), ngăn chặn việc tự ý chuyển đổi sang URL upload của MinIO backend (`/api/upload/file/avatars/...`), chấm dứt triệt để lỗi 404 và hàng loạt thông báo lỗi lặp lại trong browser console.
+     - **Khôi phục bộ điều khiển Chế độ Khung ảnh & Bóc tách Avatar trong Tab Đại biểu VIP (`InvitationTemplateStudio.tsx`)**:
+       + Cung cấp 5 chế độ khung ảnh: Tròn Hoàng Gia 3D (👑), Vòm Cung Heian (⛩️), Bầu Dục Ngọc Trai (✨), Mờ Viền Lông Vũ (🪶), Thẻ Nổi 3D (🧊).
+       + Khắc phục hoàn toàn lỗi làm mờ: Bỏ `filter: blur(...)` tác động lên toàn bộ khung avatar. Khuôn mặt đại biểu luôn hiển thị sắc nét 100%, chỉ làm mờ mềm viền ngoài khi chọn chế độ Mờ Viền Lông Vũ thông qua `radial-gradient` mask.
+       + Bổ sung nút **"Tải Ảnh"** trực tiếp từ máy tính lên backend MinIO cho khối Đại biểu.
+       + Bổ sung **Khay chọn nhanh Avatar VIP Mẫu** (Chân dung CEO Nam, CEO Nữ VIP, Huy hiệu Vàng 3D, Logo HanoiBA) 1-chạm áp dụng ngay.
+       + Khắc phục lỗi vòng rỗng/ảnh vỡ: Thêm trình bắt lỗi `onError` tự động chuyển đổi sang `/app-icon.png` an toàn.
+       + Slider tinh chỉnh: Độ mờ viền hòa nền (0-30px), Kích thước thẻ đại biểu (60%-140%), Bật/tắt hiển thị chức danh và tên doanh nghiệp.
+  2. *CRM & Public Showcase - Ra Mắt 2 Bản Poster Hệ Thống Đan Xen Mobile Chào Hàng Khách Hàng Chuẩn Pinterest Pin 754493743866082637 (`EcosystemPitchPosters.tsx`, `PageTemplatesHub.tsx`, `templates.tsx`, `Sidebar.tsx`, `landing.$slug.tsx`)*:
+     - Tạo mới component `EcosystemPitchPosters.tsx` với 2 bản poster chào hàng chuyên nghiệp:
+       + **Bản 1: "Navy Midnight Cosmic Executive" (CLB Doanh Nhân & Hiệp Hội)**:
+         * Tone màu Đêm Hoàng Gia Deep Cosmic Navy & Vàng Kim.
+         * Hero: Bàn tay cầm điện thoại iPhone hiển thị Thẻ Doanh Nhân Số 3D Holographic.
+         * 3 Floating Cards kính mờ: Thẻ Doanh Nhân 3D & NFC 1 Giây, Sàn Giao Thương B2B 105.8 Tỷ, Check-in Sự Kiện 0.5 Giây.
+         * 4 Màn hình Mobile đan xen: (1) Sàn B2B & Cơ Hội Hợp Tác; (2) Lịch Gặp 1-on-1 & Xúc Tiến Doanh Nghiệp; (3) Đại Hội Doanh Nhân & Vé Mời QR; (4) Mạng Lưới Hội Viên & Moments.
+         * Thanh chỉ số: 1.250+ Doanh Chủ | 105.8 Tỷ Giao Thương B2B | 48+ Sự Kiện Mỗi Năm | 99.8% Tỷ Lệ Tín Nhiệm.
+       + **Bản 2: "Modern High-Tech Minimalist Ivory & Obsidian" (Enterprise & SaaS B2B)**:
+         * Tone màu Slate Obsidian & Champagne Gold.
+         * Hero: Bàn tay cầm điện thoại hiển thị CRM Executive Dashboard & Recharts thời gian thực.
+         * 3 Floating Cards kính mờ: Mini Photoshop Studio & Poster Thư Mời 60s, Trợ Lý AI 24/7 & Voice Assistant, Sổ Quỹ Tự Động Hóa & VietQR Động.
+         * 4 Màn hình Mobile đan xen: (1) Danh Thiếp NFC Thông Minh; (2) Khảo Sát & Bầu Cử Biểu Quyết Số; (3) Kho Tri Thức VIP & CEO Talk; (4) Trung Tâm Phát Sóng Đa Kênh Tức Thì.
+         * Thanh chỉ số ROI: Tiết kiệm 80% thời gian | Tăng 300% tương tác | 100% tự động hóa kế toán | 24/7 Trợ lý AI.
+     - Tích hợp tính năng: Chuyển đổi linh hoạt giữa Bản 1 & Bản 2, Chế độ trình chiếu toàn màn hình (Presentation Mode), Xuất ảnh Poster 4K / In ấn chất lượng cao bằng `html2canvas-pro`, Sao chép liên kết trực tiếp gửi đối tác.
+     - Tích hợp vào menu CRM: Tab `"ecosystem-pitch"` trong Quản lý Mẫu Trang, Sidebar mục "Poster Hệ Thống Chào Hàng (Pitch Deck)".
+     - Route công khai: Truy cập trực tiếp tại `/landing/pitch-deck` hoặc `/landing/ecosystem-poster` mà không cần đăng nhập CRM.
+  3. *Kiểm Tra Mã Nguồn (Strict Type Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc -p tsconfig.json` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 10/11/2026 (v10.92): Nâng Cấp Toàn Diện Mini Photoshop & Canva Studio Poster Thư Mời, Xóa Mẫu Kho Template, Ra Mắt Landing Page Dinh Thự Mẫu 4 Chuẩn Pinterest Pin 955748352150056573, Chuẩn Hóa Mẫu Thư Mời Sự Kiện Đa Kênh Kèm Vé QR & Siết Chặt Bảo Mật Mail CRM ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CORE-003])**:
   1. *CRM - Nâng Cấp Poster Studio Thành Mini Photoshop & Canva Studio Hoàn Chỉnh (`InvitationTemplateStudio.tsx`, `admin.controller.ts`, `admin.service.ts`)*:
      - **Tab "Ảnh Nền (Background)" Chuyên Biệt**: Khắc phục dứt điểm lỗi không thay đổi được ảnh nền. Cho phép:
@@ -828,6 +928,106 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 10/11/2026 (v10.95): Khắc Phục Triệt Để Lỗi Avatar Trắng Rỗng & Vòng Lặp Vô Tận Console (1048 Errors) Trên Poster Studio ([NODE-CRM-017]), Tự Động Hóa Đồng Bộ Đa Kênh Zalo OA Song Hành 100% Thông Báo Email Hệ Thống ([NODE-CORE-001], [NODE-CRM-011])**:
+  1. *CRM - Khắc Phục Triệt Để Lỗi Avatar Đại Biểu VIP & Lỗi Infinite Loop Console (`InvitationTemplateStudio.tsx`, `InvitationSetupManager.tsx`, `api-client.ts`)*:
+     - **Nguyên nhân gốc rễ**: Tên tệp `/Vietnamese Young Male CEO Avatar.png` có khoảng trắng bị encode hoặc không tìm thấy, đồng thời các thẻ `<img>` avatar sử dụng handler `onError` gán đè `src = "/app-icon.png"` nhưng thiếu chỉ thị `e.currentTarget.onerror = null;`. Khi ảnh fallback tiếp tục gặp lỗi hoặc trong quá trình component re-render liên tục, `onError` bị kích hoạt đệ quy vô tận tạo ra hơn 1048 lỗi đỏ trong DevTools console và khiến khung đại biểu bị trống rỗng/trong suốt. Ngoài ra tệp `/avatars/avatar-default.png` trước đó bị nhầm lẫn chứa chuỗi SVG thay vì binary PNG chuẩn.
+     - **Giải pháp xử lý toàn diện**:
+       + Đặt tên tệp chuẩn không khoảng trắng `apps/ceo1983_app_fe/public/vietnamese-young-male-ceo-avatar.png` (30,319 bytes PNG chuẩn).
+       + Cập nhật `apps/ceo1983_app_fe/public/avatars/avatar-default.png` thành định dạng PNG hợp lệ (30,319 bytes).
+       + Cập nhật hàm `resolveMediaUrl` trong `api-client.ts` bổ sung whitelist `vietnamese` để không bao giờ bị biến đổi nhầm sang backend MinIO URL.
+       + Tạo hằng số `SAFE_FALLBACK_AVATAR` dạng SVG Data URI trực tiếp (`data:image/svg+xml,...`) với biểu tượng Monogram CEO Vàng Kim trên nền Xanh Navy Hoàng Gia, đảm bảo 100% không bao giờ sinh ra HTTP request thất bại và không thể loop.
+       + Cập nhật tất cả các chế độ render đại biểu (Tròn Hoàng Gia 3D, Vòm Cung Heian, Bầu Dục Ngọc Trai, Mờ Viền Lông Vũ, Thẻ Nổi 3D) và nút preset avatar: `e.currentTarget.onerror = null; e.currentTarget.src = SAFE_FALLBACK_AVATAR;`.
+  2. *Core & CRM - Tự Động Đồng Bộ Đa Kênh Zalo OA Song Hành 100% Thông Báo Email (`zalo.service.ts`, `mail.service.ts`, `mail.module.ts`)*:
+     - **Kiến trúc đồng bộ trung tâm (Omni-Channel Synchronization)**: Thay vì can thiệp rải rác vào từng Controller, toàn bộ thông báo hệ thống được đồng bộ hóa tại tầng `MailService` thông qua phương thức non-blocking `dispatchZaloOaNotification`.
+     - **Nâng cấp `ZaloService.sendAutoNotification`**:
+       + Tự động lấy Access Token Zalo OA hiện hữu; nếu hết hạn sẽ tự động kích hoạt `performAutoRefreshToken()`.
+       + Tự động tra cứu SĐT, Tên hội viên hoặc UID Zalo từ bảng `members` / `users` nếu chỉ có email.
+       + Ưu tiên gửi qua ZNS (Zalo Notification Service) nếu có `templateId` tương ứng; nếu không sẽ gửi qua Zalo Customer Support API (v3.0 và v2.0 fallback).
+     - **Tự động gửi tin nhắn Zalo OA cho 15 luồng sự kiện trọng yếu**:
+       1. Hội viên mới đăng ký tài khoản / cấp mật khẩu (`sendRegistrationAccountEmail`)
+       2. Đăng ký vé sự kiện thành công kèm mã QR check-in (`sendEventTicketEmail`)
+       3. Chào mừng đăng ký App CEO 1983 (`sendAppWelcomeRegistrationEmail`)
+       4. Kích hoạt tài khoản App thành công (`sendAppAccountActivatedEmail`)
+       5. Chuẩn y kết nạp hội viên chính thức (`sendMemberApprovedEmail`)
+       6. Tiếp nhận hồ sơ gia nhập CLB (`sendRegistrationReceivedEmail`)
+       7. Thư mời họp Ban Điều Hành / Họp Online (`sendMeetingInvitationEmail`)
+       8. Lịch hẹn kết nối giao thương B2B 1-on-1 (`sendConnectionAppointmentEmail`)
+       9. Thanh toán vé sự kiện thành công (`sendEventPaymentSuccessEmail`)
+       10. Thông báo hội phí niên liễm (`sendMembershipFeeNotificationEmail`)
+       11. Biên nhận nộp hội phí thành công & gia hạn hội viên (`sendMembershipFeeSuccessEmail`)
+       12. Phân công nhiệm vụ mới (`sendTaskAssignmentEmail`)
+       13. Nhắc nhở hạn chót công việc (`sendTaskReminderEmail`)
+       14. Chúc mừng trúng thưởng may mắn Lucky Draw (`sendLuckyDrawWinnerEmail`)
+       15. Thông báo trực tiếp từ CRM (`sendDirectEmail`)
+  3. *Kiểm Tra Mã Nguồn & Độ Ổn Định (Strict Quality & Type Check)*:
+     - Backend: `apps/ceo1983_app_be` - `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Đảm bảo tính bất đồng bộ hoàn toàn (non-blocking) - việc gửi Zalo OA không làm gián đoạn hay ảnh hưởng đến luồng gửi Email và phản hồi API.
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.94): Chuẩn Hóa 3 Bộ Hiển Thị Thống Kê Tháng - Quý - Năm, Chuyển Toàn Bộ Biểu Đồ Xu Hướng Thành Biểu Đồ Cột, Xây Dựng Bộ Chọn Lịch Thống Kê Kỳ Cũ (Historical Period Picker) Trên Toàn Hệ Thống ([NODE-CRM-001], [NODE-APP-004], [NODE-CORE-001])**:
+  1. *Chuẩn Hóa 3 Bộ Hiển Thị Thống Kê: Tháng, Quý, Năm (`routes/analytics.tsx`, `routes/association.analytics.tsx`, `AnalyticsPeriodPicker.tsx`, `analytics.service.ts`)*:
+     - Tinh giản và chuẩn hóa toàn bộ các phân hệ thống kê trên cả **Web CRM Quản Trị** và **CEO 1983 Mobile App** thành đúng 3 mốc chu kỳ theo yêu cầu người dùng:
+       + **Tháng**: Xem chi tiết diễn biến theo 12 tháng (T1 -> T12) của năm được chọn.
+       + **Quý**: Xem chi tiết cơ cấu theo 4 quý tài khóa (Q1, Q2, Q3, Q4) của năm được chọn.
+       + **Năm**: Xem biến động tổng quan theo 5 năm liên tiếp kết thúc tại năm được chọn.
+  2. *Chuyển Toàn Bộ Biểu Đồ Xu Hướng Thành Biểu Đồ Cột (Bar Chart)*:
+     - Loại bỏ triệt để các đường kẻ line xu hướng (`<Line type="monotone" ... />`) trong biểu đồ Recharts của cả Web CRM và Mobile App.
+     - Chuyển đổi chỉ số tổng hợp / timeline (`timelineVal`) thành **Cột biểu đồ (`<Bar ... />`)** độc lập với bo góc đỉnh `radius={[4, 4, 0, 0]}`, maxBarSize chuẩn mực và màu sắc thương hiệu nổi bật.
+     - Cập nhật tiêu đề từ *"Biểu Đồ Xu Hướng"* thành **"Biểu Đồ Cột"**, đổi nút bấm chuyển đổi từ *"Cột & Xu Hướng"* thành **"Biểu Đồ Cột"**.
+     - Cập nhật toàn bộ khối chú thích (legend) dưới biểu đồ thành các icon khối Cột vuông (`rounded-xs`), loại bỏ các biểu tượng đường kẻ line.
+  3. *Bộ Chọn Lịch & Điều Hướng Thống Kê Kỳ Cũ (Historical Period Picker)*:
+     - Tạo component chuyên biệt `AnalyticsPeriodPicker.tsx` dùng chung cho cả Web CRM và Mobile App:
+       + **Thanh điều hướng nhanh**: Nút `◀` (Kỳ trước) và `▶` (Kỳ sau) cho phép lùi/tiến từng tháng cũ, quý cũ, năm cũ với 1 click.
+       + **Hộp chọn lịch Popover thông minh**:
+         * Stepper chuyển năm `◀ Năm YYYY ▶` kèm dải nút chọn nhanh năm (2022, 2023, 2024, 2025, 2026, 2027).
+         * Grid 12 tháng (T1 đến T12) khi đang ở chế độ xem Tháng, có đánh dấu tháng hiện tại.
+         * Grid 4 quý (Quý 1: T1-T3, Quý 2: T4-T6, Quý 3: T7-T9, Quý 4: T10-T12) khi ở chế độ Quý.
+         * Grid các năm tài khóa khi ở chế độ Năm.
+       + **Cảnh báo và nút khôi phục kỳ lịch sử**: Khi người dùng chọn xem tháng cũ, quý cũ hoặc năm cũ, hệ thống tự động hiển thị dải thông báo *"Đang xem dữ liệu lịch sử"* kèm nút **"Quay về kỳ hiện tại"** 1 chạm.
+  4. *Nâng Cấp Backend NestJS (`analytics.controller.ts`, `analytics.service.ts`)*:
+     - API `GET /analytics/overview` nhận thêm các tham số query: `year`, `month`, `quarter`.
+     - `getBuckets`: Tạo đúng 12 buckets cho chế độ Tháng, 4 buckets cho chế độ Quý và 5 buckets cho chế độ Năm theo năm được chọn.
+     - Trả về metadata `selectedPeriod` (`year`, `month`, `quarter`, `label`) để frontend đồng bộ hiển thị mốc thời gian thực tế.
+     - Bộ lọc thống kê tự động tính toán chính xác dữ liệu của kỳ lịch sử được chọn.
+  5. *Khắc Phục Hoàn Toàn Avatar Mẫu Đại Biểu VIP*:
+     - Sao chép tệp `Vietnamese Young Male CEO Avatar.png` trực tiếp vào thư mục gốc `apps/ceo1983_app_fe/public/` để cả đường dẫn `/Vietnamese Young Male CEO Avatar.png` và `/landing_page_ceo1983/Vietnamese Young Male CEO Avatar.png` đều hoạt động ổn định 100%, không bị lỗi 404 hoặc vòng tròn trống rỗng.
+  6. *Kiểm Tra Mã Nguồn (Strict Type Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc -p tsconfig.json` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.93): Khắc Phục Triệt Để Lỗi Avatar Trắng Rỗng & Mờ Khuôn Mặt Trên Poster, Xử Lý Lỗi API 404 Console, Ra Mắt 2 Bản Poster Hệ Thống Đan Xen Mobile Chào Hàng Khách Hàng Chuẩn Pinterest Pin 754493743866082637 ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-019])**:
+  1. *CRM - Khắc Phục Triệt Để Lỗi Avatar Đại Biểu VIP & Lỗi API Console (`api-client.ts`, `InvitationTemplateStudio.tsx`, `InvitationSetupManager.tsx`)*:
+     - **Sửa hàm `resolveMediaUrl` và `transformUrls` trong `api-client.ts`**: Bổ sung whitelist nhận diện tệp tĩnh nội bộ thuộc frontend (`/avatars/avatar-default.svg`, `/avatars/avatar-default.png`, `/avatars/default*`), ngăn chặn việc tự ý chuyển đổi sang URL upload của MinIO backend (`/api/upload/file/avatars/...`), chấm dứt triệt để lỗi 404 và hàng loạt thông báo lỗi lặp lại trong browser console.
+     - **Khôi phục bộ điều khiển Chế độ Khung ảnh & Bóc tách Avatar trong Tab Đại biểu VIP (`InvitationTemplateStudio.tsx`)**:
+       + Cung cấp 5 chế độ khung ảnh: Tròn Hoàng Gia 3D (👑), Vòm Cung Heian (⛩️), Bầu Dục Ngọc Trai (✨), Mờ Viền Lông Vũ (🪶), Thẻ Nổi 3D (🧊).
+       + Khắc phục hoàn toàn lỗi làm mờ: Bỏ `filter: blur(...)` tác động lên toàn bộ khung avatar. Khuôn mặt đại biểu luôn hiển thị sắc nét 100%, chỉ làm mờ mềm viền ngoài khi chọn chế độ Mờ Viền Lông Vũ thông qua `radial-gradient` mask.
+       + Bổ sung nút **"Tải Ảnh"** trực tiếp từ máy tính lên backend MinIO cho khối Đại biểu.
+       + Bổ sung **Khay chọn nhanh Avatar VIP Mẫu** (Chân dung CEO Nam, CEO Nữ VIP, Huy hiệu Vàng 3D, Logo HanoiBA) 1-chạm áp dụng ngay.
+       + Khắc phục lỗi vòng rỗng/ảnh vỡ: Thêm trình bắt lỗi `onError` tự động chuyển đổi sang `/app-icon.png` an toàn.
+       + Slider tinh chỉnh: Độ mờ viền hòa nền (0-30px), Kích thước thẻ đại biểu (60%-140%), Bật/tắt hiển thị chức danh và tên doanh nghiệp.
+  2. *CRM & Public Showcase - Ra Mắt 2 Bản Poster Hệ Thống Đan Xen Mobile Chào Hàng Khách Hàng Chuẩn Pinterest Pin 754493743866082637 (`EcosystemPitchPosters.tsx`, `PageTemplatesHub.tsx`, `templates.tsx`, `Sidebar.tsx`, `landing.$slug.tsx`)*:
+     - Tạo mới component `EcosystemPitchPosters.tsx` với 2 bản poster chào hàng chuyên nghiệp:
+       + **Bản 1: "Navy Midnight Cosmic Executive" (CLB Doanh Nhân & Hiệp Hội)**:
+         * Tone màu Đêm Hoàng Gia Deep Cosmic Navy & Vàng Kim.
+         * Hero: Bàn tay cầm điện thoại iPhone hiển thị Thẻ Doanh Nhân Số 3D Holographic.
+         * 3 Floating Cards kính mờ: Thẻ Doanh Nhân 3D & NFC 1 Giây, Sàn Giao Thương B2B 105.8 Tỷ, Check-in Sự Kiện 0.5 Giây.
+         * 4 Màn hình Mobile đan xen: (1) Sàn B2B & Cơ Hội Hợp Tác; (2) Lịch Gặp 1-on-1 & Xúc Tiến Doanh Nghiệp; (3) Đại Hội Doanh Nhân & Vé Mời QR; (4) Mạng Lưới Hội Viên & Moments.
+         * Thanh chỉ số: 1.250+ Doanh Chủ | 105.8 Tỷ Giao Thương B2B | 48+ Sự Kiện Mỗi Năm | 99.8% Tỷ Lệ Tín Nhiệm.
+       + **Bản 2: "Modern High-Tech Minimalist Ivory & Obsidian" (Enterprise & SaaS B2B)**:
+         * Tone màu Slate Obsidian & Champagne Gold.
+         * Hero: Bàn tay cầm điện thoại hiển thị CRM Executive Dashboard & Recharts thời gian thực.
+         * 3 Floating Cards kính mờ: Mini Photoshop Studio & Poster Thư Mời 60s, Trợ Lý AI 24/7 & Voice Assistant, Sổ Quỹ Tự Động Hóa & VietQR Động.
+         * 4 Màn hình Mobile đan xen: (1) Danh Thiếp NFC Thông Minh; (2) Khảo Sát & Bầu Cử Biểu Quyết Số; (3) Kho Tri Thức VIP & CEO Talk; (4) Trung Tâm Phát Sóng Đa Kênh Tức Thì.
+         * Thanh chỉ số ROI: Tiết kiệm 80% thời gian | Tăng 300% tương tác | 100% tự động hóa kế toán | 24/7 Trợ lý AI.
+     - Tích hợp tính năng: Chuyển đổi linh hoạt giữa Bản 1 & Bản 2, Chế độ trình chiếu toàn màn hình (Presentation Mode), Xuất ảnh Poster 4K / In ấn chất lượng cao bằng `html2canvas-pro`, Sao chép liên kết trực tiếp gửi đối tác.
+     - Tích hợp vào menu CRM: Tab `"ecosystem-pitch"` trong Quản lý Mẫu Trang, Sidebar mục "Poster Hệ Thống Chào Hàng (Pitch Deck)".
+     - Route công khai: Truy cập trực tiếp tại `/landing/pitch-deck` hoặc `/landing/ecosystem-poster` mà không cần đăng nhập CRM.
+  3. *Kiểm Tra Mã Nguồn (Strict Type Check)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc -p tsconfig.json` -> Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 10/11/2026 (v10.92): Nâng Cấp Toàn Diện Mini Photoshop & Canva Studio Poster Thư Mời, Xóa Mẫu Kho Template, Ra Mắt Landing Page Dinh Thự Mẫu 4 Chuẩn Pinterest Pin 955748352150056573, Chuẩn Hóa Mẫu Thư Mời Sự Kiện Đa Kênh Kèm Vé QR & Siết Chặt Bảo Mật Mail CRM ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CORE-003])**:
   1. *CRM - Nâng Cấp Poster Studio Thành Mini Photoshop & Canva Studio Hoàn Chỉnh (`InvitationTemplateStudio.tsx`, `admin.controller.ts`, `admin.service.ts`)*:

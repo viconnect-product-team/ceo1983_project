@@ -9,6 +9,7 @@ import {
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
 import { ForgeLuxuryAtelierLanding } from "@/components/landing/ForgeLuxuryAtelierLanding";
 import { ModernLuxuryEstateLanding } from "@/components/landing/ModernLuxuryEstateLanding";
+import { EcosystemPitchPosters } from "@/components/showcase/EcosystemPitchPosters";
 import { Globe, ArrowLeft } from "lucide-react";
 
 const FALLBACK_V1_CONFIG: LandingWebConfig = {
@@ -193,6 +194,15 @@ export const Route = createFileRoute("/landing/$slug")({
 function PublicLandingPage() {
   const { slug } = Route.useParams();
   const cleanSlug = (slug || "").toLowerCase().trim();
+
+  // Public pitch deck / sales posters for B2B presentation
+  if (["pitch-deck", "pitch", "ecosystem-poster", "chao-hang", "presentation"].includes(cleanSlug)) {
+    return (
+      <div className="min-h-screen bg-[#020817] p-4 sm:p-6 lg:p-8">
+        <EcosystemPitchPosters />
+      </div>
+    );
+  }
 
   const { data: landingWeb, loading } = useServerData(
     () => getPublicLandingWebFn({ data: { slugOrSubdomain: cleanSlug } }),

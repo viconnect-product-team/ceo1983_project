@@ -276,6 +276,17 @@ const STICKER_PRESETS = [
   { id: "official_logo", name: "Logo HanoiBA & CEO 1983", url: "/ceo1983-official-logo.png" },
 ];
 
+// Preset Avatar Đại Biểu Doanh Nhân VIP (Ảnh an toàn tuyệt đối, không lỗi vỡ ảnh)
+const SAFE_FALLBACK_AVATAR =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='bgGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23002366'/%3E%3Cstop offset='100%25' stop-color='%23001033'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23F59E0B'/%3E%3Cstop offset='100%25' stop-color='%23D97706'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23bgGrad)' rx='50'/%3E%3Ccircle cx='50' cy='38' r='20' fill='url(%23goldGrad)'/%3E%3Cpath d='M18 90 C 18 66, 32 60, 50 60 C 68 60, 82 66, 82 90 Z' fill='url(%23goldGrad)'/%3E%3C/svg%3E";
+
+const VIP_AVATAR_PRESETS = [
+  { id: "male_ceo", name: "Chân Dung CEO Nam", url: "/vietnamese-young-male-ceo-avatar.png" },
+  { id: "female_ceo", name: "Chân Dung CEO Nữ", url: "/landing_web_vione/professional-portrait.png" },
+  { id: "crest_gold", name: "Huy Hiệu Vàng 3D", url: "/app-icon.png" },
+  { id: "official_logo", name: "Logo HanoiBA", url: "/ceo1983-official-logo.png" },
+];
+
 export function InvitationTemplateStudio() {
   const [category, setCategory] = useState<InvitationCategory>("event");
 
@@ -361,7 +372,7 @@ export function InvitationTemplateStudio() {
         name: "Phạm Vũ",
         title: "Chủ tịch HĐQT & Sáng Lập",
         company: "VICONNECT GROUP",
-        avatar: "/avatars/avatar-default.svg",
+        avatar: "/vietnamese-young-male-ceo-avatar.png",
         memberCode: "CEO1983-088",
         roleInEvent: "Diễn giả chính (Keynote Speaker)",
       },
@@ -377,6 +388,8 @@ export function InvitationTemplateStudio() {
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
   const [selectedSourceType, setSelectedSourceType] = useState<"members" | "registrations">("members");
   const [attendeeSearchQuery, setAttendeeSearchQuery] = useState<string>("");
+  const [isUploadingAttendeeAvatar, setIsUploadingAttendeeAvatar] = useState<boolean>(false);
+  const attendeeFileInputRef = useRef<HTMLInputElement>(null);
 
   // ── 5. TỶ LỆ POSTER & CẮT ẢNH ──
   const [posterRatio, setPosterRatio] = useState<"9:16" | "1:1" | "16:9" | "3:4" | "4:3">("9:16");
@@ -462,6 +475,30 @@ export function InvitationTemplateStudio() {
       toast.error("Không thể tải danh sách đăng ký của sự kiện này");
     } finally {
       setLoadingEventAttendees(false);
+    }
+  };
+
+  // ── XỬ LÝ TẢI ẢNH ĐẠI BIỂU TỪ MÁY TÍNH ──
+  const handleUploadAttendeeAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAttendeeAvatar(true);
+    try {
+      const res = await uploadFileToNest(file, "avatars");
+      const uploadedUrl = (res as any)?.url || (res as any)?.data?.url || (typeof res === "string" ? res : "");
+      if (uploadedUrl) {
+        setAttendeeConfig((prev) => ({
+          ...prev,
+          enabled: true,
+          attendees: prev.attendees.map((a, idx) => (idx === 0 ? { ...a, avatar: uploadedUrl } : a)),
+        }));
+        toast.success("✓ Đã tải ảnh đại biểu lên thành công!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Tải ảnh đại biểu thất bại");
+    } finally {
+      setIsUploadingAttendeeAvatar(false);
+      if (attendeeFileInputRef.current) attendeeFileInputRef.current.value = "";
     }
   };
 
@@ -2102,7 +2139,7 @@ export function InvitationTemplateStudio() {
                   {filteredList.slice(0, 20).map((item: any) => {
                     const itemName = item.name || item.full_name || item.member?.name || "Hội viên";
                     const itemCompany = item.company || item.member?.company || "CEO 1983";
-                    const itemAvatar = resolveMediaUrl(item.avatar || item.member?.avatar) || "/avatars/avatar-default.svg";
+                    const itemAvatar = resolveMediaUrl(item.avatar || item.member?.avatar) || "/vietnamese-young-male-ceo-avatar.png";
                     return (
                       <div
                         key={item.id || itemName}
@@ -2125,7 +2162,15 @@ export function InvitationTemplateStudio() {
                         }}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <img src={itemAvatar} alt="" className="size-7 rounded-full object-cover shrink-0" />
+                          <img
+                            src={itemAvatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="size-7 rounded-full object-cover shrink-0"
+                          />
                           <div className="min-w-0">
                             <div className="text-xs font-bold truncate">{itemName}</div>
                             <div className="text-[10px] text-slate-500 truncate">{itemCompany}</div>
@@ -2140,62 +2185,285 @@ export function InvitationTemplateStudio() {
 
               {/* Thông tin đại biểu đang hiển thị */}
               {attendeeConfig.attendees.length > 0 && (
-                <div className="p-3.5 rounded-2xl border border-amber-400 bg-amber-50/40 dark:bg-amber-950/30 space-y-3">
+                <div className="p-3.5 rounded-2xl border border-amber-400 bg-amber-50/50 dark:bg-amber-950/30 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <img
-                        src={attendeeConfig.attendees[0].avatar}
-                        alt=""
-                        className="size-11 rounded-full object-cover border-2 border-amber-500"
-                      />
+                      <div className="relative">
+                        <img
+                          src={attendeeConfig.attendees[0].avatar}
+                          alt=""
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                          }}
+                          className={`size-12 object-cover border-2 border-amber-500 shadow-sm ${
+                            attendeeConfig.style === "royal_circle" || attendeeConfig.style === "soft_feather"
+                              ? "rounded-full"
+                              : attendeeConfig.style === "heian_arch"
+                              ? "rounded-t-2xl rounded-b-md"
+                              : attendeeConfig.style === "oval_luxury"
+                              ? "rounded-[45%]"
+                              : "rounded-xl"
+                          }`}
+                        />
+                        <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase shadow-xs">
+                          VIP
+                        </span>
+                      </div>
                       <div>
-                        <div className="text-xs font-black">{attendeeConfig.attendees[0].name}</div>
-                        <div className="text-[10px] text-slate-500">{attendeeConfig.attendees[0].company}</div>
+                        <div className="text-xs font-black text-slate-900 dark:text-slate-100">
+                          {attendeeConfig.attendees[0].name}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
+                          {attendeeConfig.attendees[0].company}
+                        </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCropImageUrl(attendeeConfig.attendees[0].avatar);
-                        setCropTarget("avatar");
-                        setCropShape(attendeeConfig.style === "royal_circle" ? "circle" : "square");
-                        setIsCropOpen(true);
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                    >
-                      <Scissors className="size-3" />
-                      <span>Cắt Ảnh</span>
-                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        ref={attendeeFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadAttendeeAvatar}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        disabled={isUploadingAttendeeAvatar}
+                        onClick={() => attendeeFileInputRef.current?.click()}
+                        className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        title="Tải ảnh chân dung từ máy tính lên"
+                      >
+                        <Upload className="size-3" />
+                        <span>{isUploadingAttendeeAvatar ? "Đang tải..." : "Tải Ảnh"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCropImageUrl(attendeeConfig.attendees[0].avatar);
+                          setCropTarget("avatar");
+                          setCropShape(attendeeConfig.style === "royal_circle" ? "circle" : "square");
+                          setIsCropOpen(true);
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        title="Mở công cụ cắt và căn chỉnh khung ảnh"
+                      >
+                        <Scissors className="size-3" />
+                        <span>Cắt Ảnh</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <input
-                      type="text"
-                      value={attendeeConfig.attendees[0].name}
-                      onChange={(e) =>
-                        setAttendeeConfig((prev) => ({
-                          ...prev,
-                          attendees: [{ ...prev.attendees[0], name: e.target.value }],
-                        }))
-                      }
-                      placeholder="Tên Đại Biểu"
-                      className="bg-white dark:bg-slate-900 border border-amber-200 rounded-lg p-1.5 font-bold"
-                    />
-                    <input
-                      type="text"
-                      value={attendeeConfig.attendees[0].roleInEvent || ""}
-                      onChange={(e) =>
-                        setAttendeeConfig((prev) => ({
-                          ...prev,
-                          attendees: [{ ...prev.attendees[0], roleInEvent: e.target.value }],
-                        }))
-                      }
-                      placeholder="Vai trò (Diễn giả chính...)"
-                      className="bg-white dark:bg-slate-900 border border-amber-200 rounded-lg p-1.5 font-bold text-amber-700"
-                    />
+                  {/* Khay chọn nhanh Avatar Doanh Nhân VIP mẫu */}
+                  <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
+                    <span className="text-[10.5px] font-bold text-amber-900 dark:text-amber-200 block mb-1.5">
+                      Chọn Avatar Mẫu VIP Sẵn Có (1 chạm):
+                    </span>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {VIP_AVATAR_PRESETS.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setAttendeeConfig((prev) => ({
+                              ...prev,
+                              attendees: prev.attendees.map((a, idx) => (idx === 0 ? { ...a, avatar: p.url } : a)),
+                            }));
+                            toast.success(`✓ Đã áp dụng avatar ${p.name}!`);
+                          }}
+                          className={`p-1 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                            attendeeConfig.attendees[0]?.avatar === p.url
+                              ? "border-amber-500 bg-amber-100/80 dark:bg-amber-900/50 ring-2 ring-amber-400"
+                              : "border-slate-200 dark:border-slate-800 hover:bg-amber-50/50"
+                          }`}
+                        >
+                          <img
+                            src={p.url}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="size-7 rounded-full object-cover border border-amber-300"
+                          />
+                          <span className="text-[9px] font-medium text-slate-700 dark:text-slate-300 truncate w-full text-center">
+                            {p.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Form sửa thông tin đại biểu */}
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Tên Đại Biểu:</label>
+                      <input
+                        type="text"
+                        value={attendeeConfig.attendees[0].name}
+                        onChange={(e) =>
+                          setAttendeeConfig((prev) => ({
+                            ...prev,
+                            attendees: [{ ...prev.attendees[0], name: e.target.value }],
+                          }))
+                        }
+                        placeholder="Tên Đại Biểu"
+                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Vai Trò / Danh Hiệu:</label>
+                      <input
+                        type="text"
+                        value={attendeeConfig.attendees[0].roleInEvent || ""}
+                        onChange={(e) =>
+                          setAttendeeConfig((prev) => ({
+                            ...prev,
+                            attendees: [{ ...prev.attendees[0], roleInEvent: e.target.value }],
+                          }))
+                        }
+                        placeholder="Vai trò (Diễn giả chính...)"
+                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 font-bold text-amber-700 dark:text-amber-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Chức Danh Doanh Nghiệp:</label>
+                      <input
+                        type="text"
+                        value={attendeeConfig.attendees[0].title || ""}
+                        onChange={(e) =>
+                          setAttendeeConfig((prev) => ({
+                            ...prev,
+                            attendees: [{ ...prev.attendees[0], title: e.target.value }],
+                          }))
+                        }
+                        placeholder="Chủ tịch / CEO..."
+                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-0.5">Tên Công Ty / Doanh Nghiệp:</label>
+                      <input
+                        type="text"
+                        value={attendeeConfig.attendees[0].company || ""}
+                        onChange={(e) =>
+                          setAttendeeConfig((prev) => ({
+                            ...prev,
+                            attendees: [{ ...prev.attendees[0], company: e.target.value }],
+                          }))
+                        }
+                        placeholder="Tên Công Ty..."
+                        className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg p-1.5 text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
+
+              {/* ── CHẾ ĐỘ KHUNG ẢNH & BÓC TÁCH AVATAR ── */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                  Chế Độ Khung Ảnh &amp; Bóc Tách Avatar:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { id: "royal_circle", name: "Tròn Hoàng Gia 3D", icon: "👑" },
+                    { id: "heian_arch", name: "Vòm Cung Heian", icon: "⛩️" },
+                    { id: "oval_luxury", name: "Bầu Dục Ngọc Trai", icon: "✨" },
+                    { id: "soft_feather", name: "Mờ Viền Lông Vũ", icon: "🪶" },
+                    { id: "3d_card", name: "Thẻ Nổi 3D", icon: "🧊" },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() =>
+                        setAttendeeConfig((prev) => ({
+                          ...prev,
+                          style: st.id as AttendeeCardStyle,
+                        }))
+                      }
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition cursor-pointer ${
+                        attendeeConfig.style === st.id
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 ring-2 ring-amber-500/30 shadow-xs"
+                          : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="text-base mb-1">{st.icon}</div>
+                      <div>{st.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Slider Mờ Viền Ảnh (Soft Feather), Tỉ lệ Scale & Tọa độ */}
+              <div className="space-y-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <div>
+                  <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    <span>Độ Mờ Viền Hòa Nền (Soft Feathering Blur):</span>
+                    <span className="font-mono text-amber-600 font-bold">{attendeeConfig.featherBlur}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="30"
+                    value={attendeeConfig.featherBlur}
+                    onChange={(e) =>
+                      setAttendeeConfig((prev) => ({
+                        ...prev,
+                        featherBlur: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-0.5">
+                    Làm 4 cạnh của ảnh mờ dần hòa tan tự nhiên vào poster mà không làm mờ khuôn mặt!
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    <span>Kích Thước Thẻ Đại Biểu:</span>
+                    <span className="font-mono text-amber-600 font-bold">{attendeeConfig.scale}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="60"
+                    max="140"
+                    value={attendeeConfig.scale}
+                    onChange={(e) =>
+                      setAttendeeConfig((prev) => ({
+                        ...prev,
+                        scale: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Tùy chọn hiển thị chi tiết */}
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={attendeeConfig.showTitle}
+                      onChange={(e) => setAttendeeConfig((prev) => ({ ...prev, showTitle: e.target.checked }))}
+                      className="size-3.5 rounded text-amber-600"
+                    />
+                    <span>Hiện Chức Danh</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={attendeeConfig.showCompany}
+                      onChange={(e) => setAttendeeConfig((prev) => ({ ...prev, showCompany: e.target.checked }))}
+                      className="size-3.5 rounded text-amber-600"
+                    />
+                    <span>Hiện Tên Công Ty</span>
+                  </label>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2611,21 +2879,107 @@ export function InvitationTemplateStudio() {
                       : "hover:outline hover:outline-1 hover:outline-amber-400/50"
                   }`}
                 >
-                  <div className="p-2.5 rounded-2xl flex items-center gap-3 backdrop-blur-md bg-slate-950/50 border border-amber-400/40 shadow-2xl">
-                    <div
-                      style={{
-                        filter: `blur(${attendeeConfig.featherBlur > 0 ? attendeeConfig.featherBlur / 5 : 0}px)`,
-                      }}
-                      className="relative shrink-0"
-                    >
-                      <img
-                        src={attendeeConfig.attendees[0].avatar}
-                        alt=""
-                        className="size-13 rounded-full object-cover border-2 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.6)]"
-                      />
-                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase">
-                        VIP
-                      </span>
+                  <div className="p-2.5 rounded-2xl flex items-center gap-3 backdrop-blur-md bg-slate-950/65 border border-amber-400/50 shadow-2xl">
+                    <div className="relative shrink-0">
+                      {/* 1. Tròn Hoàng Gia 3D */}
+                      {attendeeConfig.style === "royal_circle" && (
+                        <div className="relative">
+                          <img
+                            src={attendeeConfig.attendees[0].avatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="size-14 rounded-full object-cover border-2 border-amber-400 ring-2 ring-amber-300/40 shadow-[0_0_16px_rgba(251,191,36,0.6)]"
+                          />
+                          <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 text-[7px] font-black uppercase tracking-wider shadow-sm">
+                            VIP
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 2. Vòm Cung Heian */}
+                      {attendeeConfig.style === "heian_arch" && (
+                        <div className="relative">
+                          <img
+                            src={attendeeConfig.attendees[0].avatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="w-13 h-16 rounded-t-[26px] rounded-b-lg object-cover border-2 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.5)]"
+                          />
+                          <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase">
+                            VIP
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 3. Bầu Dục Ngọc Trai */}
+                      {attendeeConfig.style === "oval_luxury" && (
+                        <div className="relative">
+                          <img
+                            src={attendeeConfig.attendees[0].avatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="w-13 h-16 rounded-[45%] object-cover border-2 border-amber-200 shadow-[0_0_18px_rgba(254,240,138,0.55)]"
+                          />
+                          <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[7px] font-black uppercase">
+                            VIP
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 4. Mờ Viền Lông Vũ (Mép hòa tan mềm mại, mặt sắc nét) */}
+                      {attendeeConfig.style === "soft_feather" && (
+                        <div
+                          className="relative"
+                          style={{
+                            maskImage: `radial-gradient(circle at center, black 65%, transparent 100%)`,
+                            WebkitMaskImage: `radial-gradient(circle at center, black 65%, transparent 100%)`,
+                            filter:
+                              attendeeConfig.featherBlur > 0
+                                ? `drop-shadow(0 0 ${attendeeConfig.featherBlur / 2}px rgba(251,191,36,0.6))`
+                                : undefined,
+                          }}
+                        >
+                          <img
+                            src={attendeeConfig.attendees[0].avatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="size-14 rounded-full object-cover"
+                          />
+                          <span className="absolute -bottom-0.5 -right-0.5 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase">
+                            VIP
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 5. Thẻ Nổi 3D */}
+                      {attendeeConfig.style === "3d_card" && (
+                        <div className="relative">
+                          <img
+                            src={attendeeConfig.attendees[0].avatar}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = SAFE_FALLBACK_AVATAR;
+                            }}
+                            className="size-14 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_18px_rgba(103,232,249,0.5)]"
+                          />
+                          <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-cyan-400 text-slate-950 text-[7px] font-black uppercase">
+                            VIP
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex-1 text-left min-w-0">

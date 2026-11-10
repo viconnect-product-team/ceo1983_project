@@ -21,10 +21,17 @@ export class AnalyticsController {
     @Request() req: any,
     @Query('period') period?: string,
     @Query('granularity') granularity?: string,
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+    @Query('quarter') quarter?: string,
   ) {
     const userId = req.user?.id || req.user?.sub;
     const selectedGranularity = (granularity || period || 'month') as any;
-    return this.analyticsService.getOverview(userId, selectedGranularity);
+    return this.analyticsService.getOverview(userId, selectedGranularity, {
+      year: year ? parseInt(year, 10) : undefined,
+      month: month ? parseInt(month, 10) : undefined,
+      quarter: quarter ? parseInt(quarter, 10) : undefined,
+    });
   }
 
   @UseGuards(OptionalJwtAuthGuard)

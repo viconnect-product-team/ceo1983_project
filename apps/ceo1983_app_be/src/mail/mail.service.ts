@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 import { PrismaService } from '../prisma/prisma.service';
+import { ZaloService } from '../zalo/zalo.service';
 
 const DEFAULT_APP_URL = process.env.APP_URL
   ? process.env.APP_URL.replace(/\/$/, '')
@@ -243,9 +244,56 @@ export class MailService {
     'mail_suppression_list.json',
   );
 
-  constructor(@Optional() private readonly prisma?: PrismaService) {
+  constructor(
+    @Optional() private readonly prisma?: PrismaService,
+    @Optional() private readonly zaloService?: ZaloService,
+  ) {
     this.initTransporter();
     this.loadSuppressionList();
+  }
+
+  /**
+   * Tự động gửi thông báo đồng bộ qua Zalo OA (Non-blocking, an toàn tuyệt đối)
+   * Phục vụ yêu cầu: Khi có hội viên mới tham gia, đăng ký sự kiện thành công,
+   * hoặc bất kỳ thông báo gửi mail nào cũng đồng thời gửi về tài khoản Zalo của người nhận qua Zalo OA.
+   */
+  private dispatchZaloOaNotification(payload: {
+    recipientPhone?: string;
+    recipientEmail?: string;
+    recipientName?: string;
+    recipientZaloUid?: string;
+    title: string;
+    content: string;
+    ctaText?: string;
+    ctaUrl?: string;
+    qrCodeUrl?: string;
+    trackingType?: string;
+    templateId?: string;
+    templateData?: Record<string, any>;
+  }) {
+    if (!this.zaloService) return;
+    try {
+      this.zaloService
+        .sendAutoNotification(payload)
+        .then((res) => {
+          if (res.success) {
+            this.logger.log(
+              `[Zalo OA Multi-channel] Đã gửi thành công tới: ${payload.recipientName || payload.recipientEmail || payload.recipientPhone} (${payload.title})`,
+            );
+          } else {
+            this.logger.debug(
+              `[Zalo OA Multi-channel] Ghi nhận: ${res.message}`,
+            );
+          }
+        })
+        .catch((err) => {
+          this.logger.warn(
+            `[Zalo OA Multi-channel] Lỗi khi gửi thông báo Zalo OA: ${err.message}`,
+          );
+        });
+    } catch (e: any) {
+      this.logger.warn(`[Zalo OA Multi-channel] Ngoại lệ: ${e.message}`);
+    }
   }
 
   /**
@@ -658,6 +706,16 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: fullName,
+      title: 'THÔNG TIN TÀI KHOẢN HỘI VIÊN CEO 1983',
+      content: `Kính gửi Quý Doanh nhân ${fullName},\nBan Thư Ký trân trọng gửi thông tin tài khoản đăng nhập Cổng Hội viên CLB Doanh Nhân CEO 1983:\n- Tên đăng nhập: ${username}\n- Mật khẩu: ${passwordRaw}\n- Mã hội viên: ${memberCode || 'Đang cập nhật'}\nQuý Anh/Chị vui lòng đăng nhập để đổi mật khẩu và cập nhật hồ sơ doanh nghiệp.`,
+      ctaText: 'Đăng Nhập Cổng Hội Viên',
+      ctaUrl: portalUrl || DEFAULT_APP_URL,
+      trackingType: 'account_created',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -1025,6 +1083,18 @@ export class MailService {
     if (qrAttachment) attachments.push(qrAttachment);
     if (vietQrAttachment) attachments.push(vietQrAttachment);
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientPhone: phone,
+      recipientName: fullName,
+      title: `VÉ THAM DỰ SỰ KIỆN: ${eventTitle}`,
+      content: `Kính gửi Anh/Chị ${fullName},\nBan Tổ Chức CLB CEO 1983 xác nhận đăng ký thành công vé tham dự sự kiện:\n- Tên sự kiện: ${eventTitle}\n- Thời gian: ${eventTime || '08h30'}, ngày ${eventDate || 'Theo thông báo'}\n- Địa điểm: ${eventLocation || 'Hội trường CEO 1983'}\n- Hạng vé: ${ticketType || 'Vé tham dự'}\n- Trạng thái: ${paymentConfirmed || isFree ? '✓ ĐÃ XÁC NHẬN HỢP LỆ' : '⏳ CHỜ THANH TOÁN'}\n- Mã vé / Số may mắn: ${luckyNumber || registrationId}\nAnh/Chị vui lòng xuất trình mã QR tại bàn đón tiếp để check-in vào cửa.`,
+      qrCodeUrl: qrCodeUrl,
+      ctaText: 'Xem Vé Điện Tử & Mã QR',
+      ctaUrl: `${DEFAULT_APP_URL}/association/events?id=${registrationId}`,
+      trackingType: 'event_ticket',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -1313,6 +1383,17 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientPhone: phone,
+      recipientName: fullName,
+      title: 'CHÀO MỪNG ĐẾN VỚI CLB DOANH NHÂN CEO 1983',
+      content: `Kính gửi Quý Doanh nhân ${fullName},\nChúc mừng Quý Doanh nhân đã đăng ký tài khoản thành công trên App CEO 1983.\n- Tài khoản: ${username}\n${passwordRaw ? `- Mật khẩu: ${passwordRaw}\n` : ''}- Trạng thái: ✓ Đã kích hoạt sẵn sàng truy cập\nQuý Anh/Chị vui lòng đăng nhập để hoàn thiện hồ sơ doanh nghiệp và nhận đặc quyền hội viên.`,
+      ctaText: 'Mở App CEO 1983',
+      ctaUrl: appLoginUrl,
+      trackingType: 'app_welcome',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -1481,6 +1562,17 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientPhone: phone,
+      recipientName: fullName,
+      title: 'KÍCH HOẠT TÀI KHOẢN APP CEO 1983 THÀNH CÔNG',
+      content: `Kính gửi Quý Doanh nhân ${fullName},\nTài khoản App CEO 1983 của Quý Anh/Chị đã được kích hoạt thành công:\n- Tài khoản: ${username || cleanTo}\n${newPassword ? `- Mật khẩu mới: ${newPassword}\n` : ''}${memberCode ? `- Mã hội viên: ${memberCode}\n` : ''}- Trạng thái: ✓ Đã kích hoạt hoàn tất.\nQuý Anh/Chị có thể đăng nhập ngay để trải nghiệm danh thiếp điện tử và giao thương B2B.`,
+      ctaText: 'Đăng Nhập App',
+      ctaUrl: appLoginUrl,
+      trackingType: 'app_activated',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -1618,6 +1710,16 @@ export class MailService {
 </body>
 </html>
     `;
+
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: fullName,
+      title: 'QUYẾT ĐỊNH KẾT NẠP HỘI VIÊN CHÍNH THỨC CEO 1983',
+      content: `Kính gửi Quý Doanh nhân ${fullName},\nBan Điều Hành ${assocTitle} xin trân trọng chúc mừng Quý Doanh nhân đã chính thức được chuẩn y kết nạp là Hội viên Chính thức.\n- Mã hội viên: ${memberCode}\n${companyName ? `- Doanh nghiệp: ${companyName}\n` : ''}- Tài khoản: ${username || cleanTo}\n${passwordRaw ? `- Mật khẩu: ${passwordRaw}\n` : ''}- Trạng thái: ✓ Đã phê duyệt chính thức.\nTrân trọng chào đón Quý Doanh nhân gia nhập ngôi nhà chung CEO 1983!`,
+      ctaText: 'Đăng Nhập App Hội Viên',
+      ctaUrl: appUrl,
+      trackingType: 'member_approved',
+    });
 
     return this.dispatchSmtpEmail({
       to: cleanTo,
@@ -1785,6 +1887,17 @@ export class MailService {
 </body>
 </html>
     `;
+
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientPhone: phone,
+      recipientName: fullName,
+      title: 'TIẾP NHẬN HỒ SƠ ĐĂNG KÝ GIA NHẬP CLB CEO 1983',
+      content: `Kính gửi Quý Doanh nhân ${fullName},\nBan Thư Ký CLB Doanh Nhân CEO 1983 (HanoiBA) xác nhận đã tiếp nhận thành công hồ sơ đăng ký của Quý Doanh nhân:\n- Doanh nghiệp: ${companyName}\n${position ? `- Chức vụ: ${position}\n` : ''}${memberId ? `- Mã hồ sơ tham chiếu: #${memberId}\n` : ''}- Trạng thái: Ban Kiểm Soát đang thẩm định hồ sơ (xét duyệt trong vòng 24h làm việc).\nBan Thư Ký sẽ liên hệ sớm nhất với Quý Anh/Chị!`,
+      ctaText: 'Xem Cổng Thông Tin CLB',
+      ctaUrl: DEFAULT_APP_URL,
+      trackingType: 'registration_received',
+    });
 
     return this.dispatchSmtpEmail({
       to: cleanTo,
@@ -2084,6 +2197,16 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName,
+      title: `THƯ MỜI THAM DỰ CUỘC HỌP: ${meetingTitle}`,
+      content: `Kính gửi Anh/Chị ${recipientName},\nBan Tổ chức trân trọng kính mời Anh/Chị tham dự cuộc họp:\n- Tên cuộc họp: ${meetingTitle}\n- Thời gian: ${time} ngày ${date}\n- Hình thức: ${isOnline ? '💻 Trực tuyến (Online)' : '🏢 Trực tiếp (Offline)'}\n- ${isOnline ? 'Link phòng họp' : 'Địa điểm'}: ${venueOrLink || 'Trụ sở CLB CEO 1983'}\n- Chủ trì: ${hostName}${hostCompany ? ` (${hostCompany})` : ''}\nAnh/Chị vui lòng xác nhận tham dự đúng giờ!`,
+      ctaText: isOnline ? 'Vào Phòng Họp Online' : 'Xem Lịch Họp Trên App',
+      ctaUrl: isOnline && venueOrLink?.startsWith('http') ? venueOrLink : appUrl,
+      trackingType: 'meeting_invitation',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -2196,6 +2319,22 @@ export class MailService {
 </body>
 </html>
     `;
+
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName,
+      title: isConfirmed
+        ? `LỊCH HẸN KẾT NỐI B2B ĐÃ XÁC NHẬN: ${partnerName}`
+        : `LỜI MỜI KẾT NỐI GIAO THƯƠNG 1-1 TỪ ${partnerName}`,
+      content: `Kính gửi Anh/Chị ${recipientName},\n${
+        isConfirmed
+          ? `Lịch hẹn kết nối giao thương 1-1 với ${partnerName} đã được xác nhận thành công:`
+          : `Doanh nhân ${partnerName} ${partnerCompany ? `(${partnerCompany})` : ''} vừa gửi lời mời hẹn gặp giao thương 1-1:`
+      }\n- Thời gian: ${time} ngày ${date}\n- Hình thức: ${isOnline ? '💻 Trực tuyến (Online)' : '🏢 Gặp mặt trực tiếp (Offline)'}\n- ${isOnline ? 'Đường link họp' : 'Địa điểm'}: ${venueOrLink || 'Không gian Doanh Nhân CEO 1983'}\n- Mục đích: ${purpose || notes || 'Gặp gỡ giao thương và xúc tiến hợp tác'}.`,
+      ctaText: 'Xem Lịch Hẹn & Phản Hồi',
+      ctaUrl: appUrl,
+      trackingType: 'connection_appointment',
+    });
 
     return this.dispatchSmtpEmail({
       to: cleanTo,
@@ -2341,6 +2480,17 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: fullName,
+      title: `THANH TOÁN THÀNH CÔNG VÉ SỰ KIỆN: ${eventTitle}`,
+      content: `Kính gửi Anh/Chị ${fullName},\nKhoản thanh toán vé tham dự sự kiện "${eventTitle}" của Anh/Chị đã được xác nhận thành công:\n- Mã vé: #${registrationId}\n- Hạng vé: ${ticketType} (x${ticketCount})\n- Số tiền đã thanh toán: ${amountPaid.toLocaleString('vi-VN')} VNĐ\n- Phương thức: ${paymentMethod}\n${luckyNumber ? `- Số may mắn Lucky Draw: #${luckyNumber}\n` : ''}- Trạng thái: ✓ Vé hợp lệ sẵn sàng check-in.\nAnh/Chị vui lòng xuất trình mã QR tại quầy đón tiếp để in thẻ đại biểu.`,
+      qrCodeUrl: qrCodeUrl,
+      ctaText: 'Xem Vé Điện Tử Trên App',
+      ctaUrl: appUrl,
+      trackingType: 'event_payment_success',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -2471,6 +2621,16 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: memberName,
+      title: `THÔNG BÁO HỘI PHÍ THƯỜNG NIÊN NĂM ${year}`,
+      content: `Kính gửi Anh/Chị ${memberName},\nBan Tài chính CLB Doanh Nhân CEO 1983 kính gửi thông báo hội phí:\n- Số tiền cần đóng: ${Number(amount || 0).toLocaleString('vi-VN')} VNĐ\n- Hạn thanh toán: ${dueDate}\n- Mã hóa đơn: #${invoiceNo}\n- Số tài khoản: 1983.888.888 tại Vietcombank (CLB Doanh Nhân CEO 1983)\n- Cú pháp CK: ${memberCode || memberName} dong hoi phi ${year}.\nAnh/Chị vui lòng hoàn tất hội phí để duy trì đầy đủ đặc quyền hội viên.`,
+      ctaText: 'Đóng Phí Online / Xem Chi Tiết',
+      ctaUrl: appUrl,
+      trackingType: 'dues_notification',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -2577,6 +2737,16 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: memberName,
+      title: `XÁC NHẬN HOÀN THÀNH HỘI PHÍ NĂM ${year}`,
+      content: `Kính gửi Anh/Chị ${memberName},\nBan Tài chính CLB Doanh Nhân CEO 1983 xác nhận đã nhận đủ số tiền: ${Number(amount || 0).toLocaleString('vi-VN')} VNĐ cho kỳ hội phí năm ${year}.\n- Mã biên lai: #${invoiceNo}\n- Ngày thanh toán: ${paidDate}\n${newTermEnd ? `- Hạn hội viên mới: ${newTermEnd}\n` : ''}- Trạng thái: ✓ Đã gia hạn quyền lợi hội viên chính thức.\nTrân trọng cảm ơn sự đồng hành của Quý Doanh nhân!`,
+      ctaText: 'Xem Hồ Sơ & Quyền Lợi',
+      ctaUrl: appUrl,
+      trackingType: 'dues_success',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -2680,6 +2850,16 @@ export class MailService {
 </body>
 </html>
     `;
+
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: assigneeName,
+      title: `GIAO VIỆC MỚI: [${taskCode}] ${taskTitle}`,
+      content: `Kính gửi Anh/Chị ${assigneeName},\nAnh/Chị vừa được phân công công việc mới trên hệ thống CEO 1983:\n- Nhiệm vụ: ${taskTitle}\n- Người giao việc: ${assignedBy} (${assignedByRole})\n- Ban phụ trách: ${department}\n- Hạn chót hoàn thành: ${dueDate}\n- Mức độ ưu tiên: ${priority}\nAnh/Chị vui lòng kiểm tra và cập nhật tiến độ định kỳ.`,
+      ctaText: 'Cập Nhật Tiến Độ Công Việc',
+      ctaUrl: appUrl,
+      trackingType: 'task_assigned',
+    });
 
     return this.dispatchSmtpEmail({
       to: cleanTo,
@@ -2793,6 +2973,16 @@ export class MailService {
 </html>
     `;
 
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: assigneeName,
+      title: `NHẮC VIỆC & HẠN CHÓT: [${taskCode}] ${taskTitle}`,
+      content: `Kính gửi Anh/Chị ${assigneeName},\nBan Điều Hành xin gửi thông báo nhắc nhở tiến độ công việc:\n- Nhiệm vụ: ${taskTitle}\n- Hạn chót: ${dueDate}\n- Trạng thái hiện tại: ${status}\n- Tiến độ: ${currentProgress}%\n${evaluationFeedback ? `- Ý kiến chỉ đạo: ${evaluationFeedback}\n` : ''}Anh/Chị vui lòng cập nhật tiến độ hoặc nộp báo cáo sớm nhất.`,
+      ctaText: 'Cập Nhật Tiến Độ Ngay',
+      ctaUrl: appUrl,
+      trackingType: 'task_reminder',
+    });
+
     return this.dispatchSmtpEmail({
       to: cleanTo,
       subject,
@@ -2847,6 +3037,15 @@ export class MailService {
     templateCode?: string;
     fromName?: string;
   }) {
+    this.dispatchZaloOaNotification({
+      recipientEmail: options.to,
+      title: options.subject,
+      content: options.subject,
+      ctaText: 'Chi Tiết Thông Báo',
+      ctaUrl: DEFAULT_APP_URL,
+      trackingType: 'direct_email',
+    });
+
     return this.dispatchSmtpEmail({
       to: options.to,
       subject: options.subject,
@@ -2972,6 +3171,16 @@ export class MailService {
 </body>
 </html>
     `;
+
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: winnerName,
+      title: `CHÚC MỪNG TRÚNG THƯỞNG: ${prizeTitle}`,
+      content: `Kính gửi Quý Doanh nhân ${winnerName},\nChúc mừng Quý Anh/Chị đã may mắn trúng giải thưởng "${prizeTitle}" ${prizeValue ? `(${prizeValue})` : ''} tại sự kiện "${eventName}".\n${luckyNumber ? `- Con số may mắn: #${luckyNumber}\n` : ''}- Ngày trao giải: ${eventDate}\nPhần thưởng đã được lưu vào mục Ưu Đãi trên App CEO 1983!`,
+      ctaText: 'Xem Phần Thưởng Trên App',
+      ctaUrl: perkUrl,
+      trackingType: 'lucky_draw_winner',
+    });
 
     return this.dispatchSmtpEmail({
       to: cleanTo,

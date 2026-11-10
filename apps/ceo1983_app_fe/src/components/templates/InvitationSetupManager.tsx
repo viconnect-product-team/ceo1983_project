@@ -125,7 +125,7 @@ export function InvitationSetupManager() {
             phone: m.phone,
             company: m.company || m.company_name,
             position: m.position || m.title || "Doanh nhân",
-            avatar: m.avatar || "/avatars/avatar-default.svg",
+            avatar: m.avatar || "/vietnamese-young-male-ceo-avatar.png",
           }));
           setAllMembers(mapped);
         }
@@ -160,7 +160,7 @@ export function InvitationSetupManager() {
             position: r.position || r.ticket_name || "Đại biểu",
             ticketType: r.ticket_name || "Vé VIP",
             qrCode: r.qr_code || r.ticket_code || "CEO1983-VIP",
-            avatar: r.avatar || r.member?.avatar || "/avatars/avatar-default.svg",
+            avatar: r.avatar || r.member?.avatar || "/vietnamese-young-male-ceo-avatar.png",
           }));
           setRegisteredAttendees(mapped);
           setSelectedRecipientIds(mapped.map((m: SetupRecipient) => m.id));
