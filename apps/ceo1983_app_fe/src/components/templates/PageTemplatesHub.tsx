@@ -5,6 +5,7 @@ import { MailTemplateManager } from "@/components/documents/MailTemplateManager"
 import { ZaloTemplateManager } from "./ZaloTemplateManager";
 import { DuesTemplateManager } from "./DuesTemplateManager";
 import { ForumMeetingTemplateManager } from "./ForumMeetingTemplateManager";
+import { EcosystemPitchPosters } from "@/components/showcase/EcosystemPitchPosters";
 
 export type TemplateTab =
   | "invitation"
@@ -12,7 +13,8 @@ export type TemplateTab =
   | "email"
   | "zalo"
   | "dues"
-  | "forum-meetings";
+  | "forum-meetings"
+  | "ecosystem-pitch";
 
 export interface PageTemplatesHubProps {
   initialTab?: TemplateTab;
@@ -29,7 +31,7 @@ export function PageTemplatesHub({ initialTab = "invitation" }: PageTemplatesHub
         const tabParam = sp.get("tab") as TemplateTab;
         if (
           tabParam &&
-          ["invitation", "invitation-setup", "email", "zalo", "dues", "forum-meetings"].includes(tabParam)
+          ["invitation", "invitation-setup", "email", "zalo", "dues", "forum-meetings", "ecosystem-pitch"].includes(tabParam)
         ) {
           setActiveTab(tabParam);
         } else if (!tabParam) {
@@ -53,6 +55,7 @@ export function PageTemplatesHub({ initialTab = "invitation" }: PageTemplatesHub
         {activeTab === "zalo" && <ZaloTemplateManager />}
         {activeTab === "dues" && <DuesTemplateManager />}
         {activeTab === "forum-meetings" && <ForumMeetingTemplateManager />}
+        {activeTab === "ecosystem-pitch" && <EcosystemPitchPosters />}
       </div>
     </div>
   );

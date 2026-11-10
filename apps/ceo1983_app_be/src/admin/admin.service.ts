@@ -591,38 +591,43 @@ export class AdminService implements OnModuleInit {
           }
 
           if (this.mailService) {
-            const recipientEmail = (
-              existing.invoice.member?.email ||
-              memberRows[0]?.email ||
-              process.env.ADMIN_NOTIFY_EMAIL ||
-              'vupv090120@gmail.com'
-            ).trim();
-            const memberName =
-              existing.invoice.member?.name ||
-              memberRows[0]?.name ||
-              'Quý Hội viên';
+            const mem = existing.invoice.member || memberRows[0];
+            const memStatus = String(mem?.status || '').toLowerCase().trim();
+            const isMemInactive =
+              mem?.is_active === false ||
+              memStatus === 'deleted' ||
+              memStatus === 'inactive' ||
+              memStatus === 'dormant' ||
+              memStatus === 'da_xoa' ||
+              memStatus === 'khoa';
 
-            this.mailService
-              .sendMembershipFeeNotificationEmail({
-                to: recipientEmail,
-                memberName,
-                invoiceNo,
-                year: existing.invoice.year || new Date().getFullYear(),
-                amount: invoiceAmount,
-                dueDate: existing.invoice.dueDate || 'Hôm nay',
-                vietQrUrl: vnpayQrUrl,
-                bankAccount: '0988888888',
-                bankOwner: 'CLB DOANH NHAN CEO 1983',
-                bankName: 'MB Bank',
-                reminderCount:
-                  (existing.invoice.member?.reminderCount || 0) + 1,
-              })
-              .catch((err) =>
-                console.warn(
-                  '[addInvoiceReminder] sendMembershipFeeNotificationEmail error:',
-                  err?.message,
-                ),
-              );
+            const recipientEmail = (mem?.email || '').trim();
+
+            if (recipientEmail && !isMemInactive) {
+              const memberName = mem?.name || 'Quý Hội viên';
+
+              this.mailService
+                .sendMembershipFeeNotificationEmail({
+                  to: recipientEmail,
+                  memberName,
+                  invoiceNo,
+                  year: existing.invoice.year || new Date().getFullYear(),
+                  amount: invoiceAmount,
+                  dueDate: existing.invoice.dueDate || 'Hôm nay',
+                  vietQrUrl: vnpayQrUrl,
+                  bankAccount: '0988888888',
+                  bankOwner: 'CLB DOANH NHAN CEO 1983',
+                  bankName: 'MB Bank',
+                  reminderCount:
+                    (existing.invoice.member?.reminderCount || 0) + 1,
+                })
+                .catch((err) =>
+                  console.warn(
+                    '[addInvoiceReminder] sendMembershipFeeNotificationEmail error:',
+                    err?.message,
+                  ),
+                );
+            }
           }
         }
       } catch (e: any) {
@@ -662,33 +667,41 @@ export class AdminService implements OnModuleInit {
       const invoiceAmount = Number(created.invoice.amount || 0);
       const invoiceNo = created.invoice.invoiceNo || id;
       const vnpayQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`VNPAYQR|FEE|${invoiceNo}|${invoiceAmount}`)}`;
-      const recipientEmail = (
-        created.invoice.member?.email ||
-        process.env.ADMIN_NOTIFY_EMAIL ||
-        'vupv090120@gmail.com'
-      ).trim();
-      const memberName = created.invoice.member?.name || 'Quý Hội viên';
+      const memStatus = String(created.invoice.member?.status || '').toLowerCase().trim();
+      const isMemInactive =
+        created.invoice.member?.is_active === false ||
+        memStatus === 'deleted' ||
+        memStatus === 'inactive' ||
+        memStatus === 'dormant' ||
+        memStatus === 'da_xoa' ||
+        memStatus === 'khoa';
 
-      this.mailService
-        .sendMembershipFeeNotificationEmail({
-          to: recipientEmail,
-          memberName,
-          invoiceNo,
-          year: created.invoice.year || new Date().getFullYear(),
-          amount: invoiceAmount,
-          dueDate: created.invoice.dueDate || `${year}-12-31`,
-          vietQrUrl: vnpayQrUrl,
-          bankAccount: '0988888888',
-          bankOwner: 'CLB DOANH NHAN CEO 1983',
-          bankName: 'MB Bank',
-          reminderCount: 0,
-        })
-        .catch((err) =>
-          console.warn(
-            '[createInvoice] sendMembershipFeeNotificationEmail error:',
-            err?.message,
-          ),
-        );
+      const recipientEmail = (created.invoice.member?.email || '').trim();
+
+      if (recipientEmail && !isMemInactive) {
+        const memberName = created.invoice.member?.name || 'Quý Hội viên';
+
+        this.mailService
+          .sendMembershipFeeNotificationEmail({
+            to: recipientEmail,
+            memberName,
+            invoiceNo,
+            year: created.invoice.year || new Date().getFullYear(),
+            amount: invoiceAmount,
+            dueDate: created.invoice.dueDate || `${year}-12-31`,
+            vietQrUrl: vnpayQrUrl,
+            bankAccount: '0988888888',
+            bankOwner: 'CLB DOANH NHAN CEO 1983',
+            bankName: 'MB Bank',
+            reminderCount: 0,
+          })
+          .catch((err) =>
+            console.warn(
+              '[createInvoice] sendMembershipFeeNotificationEmail error:',
+              err?.message,
+            ),
+          );
+      }
     }
 
     return created.invoice;
@@ -3316,6 +3329,26 @@ export class AdminService implements OnModuleInit {
     };
   }
 
+  async deleteInvitationTemplate(id: string, userId?: string) {
+    try {
+      const templates = await this.getInvitationTemplates();
+      const list = Array.isArray(templates) ? templates : [];
+      const filtered = list.filter((t: any) => String(t.id) !== String(id));
+      await this.saveInvitationTemplates(filtered, userId);
+      return {
+        success: true,
+        remainingCount: filtered.length,
+        deletedId: id,
+        message: `Đã xóa mẫu template ${id} khỏi kho thành công`,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Không thể xóa mẫu template',
+      };
+    }
+  }
+
   async broadcastInvitation(dto: any, userId?: string) {
     const channels = dto.channels || {
       sendToApp: true,
@@ -3381,9 +3414,13 @@ export class AdminService implements OnModuleInit {
     // 3. KÊNH 3: GỬI VÀO EMAIL (Gửi HTML Email kèm poster)
     if (channels.sendToEmail && this.mailService) {
       try {
-        // Lấy danh sách hội viên nhận email
+        // Lấy danh sách hội viên thực sự HOẠT ĐỘNG (loại bỏ hoàn toàn tài khoản đã xóa/ngừng hoạt động)
         const members = await this.prisma.$queryRawUnsafe<any[]>(
-          `SELECT name, email, company_name FROM public.members WHERE is_active = true AND email IS NOT NULL AND email != '' LIMIT 50;`
+          `SELECT name, email, company_name FROM public.members 
+           WHERE is_active = true 
+             AND (status IS NULL OR LOWER(status) NOT IN ('deleted', 'inactive', 'dormant', 'da_xoa', 'khoa', 'tam_khoa')) 
+             AND email IS NOT NULL AND email != '' 
+           LIMIT 50;`
         ).catch(() => []);
 
         const htmlBody = `

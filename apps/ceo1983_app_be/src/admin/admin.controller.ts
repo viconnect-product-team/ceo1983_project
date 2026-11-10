@@ -342,6 +342,12 @@ export class AdminController {
     );
   }
 
+  @Delete('invitation-templates/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteInvitationTemplate(@Request() req: any, @Param('id') id: string) {
+    return this.adminService.deleteInvitationTemplate(id, req.user?.id);
+  }
+
   @Post('invitation-templates/broadcast')
   @UseGuards(JwtAuthGuard)
   async broadcastInvitation(@Request() req: any, @Body() body: any) {

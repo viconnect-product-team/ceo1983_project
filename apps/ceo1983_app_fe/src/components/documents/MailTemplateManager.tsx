@@ -233,48 +233,86 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     id: "tmpl-event-invite-qr",
     code: "EVENT_TICKET_QR",
     category: "event",
-    name: "Thư Mời Tham Dự Sự Kiện & Mã QR Vé Điện Tử",
-    description: "Phát hành thư mời chính thức kèm mã QR check-in vào cửa và vị trí bàn ghế chi tiết.",
+    name: "Thư Mời Tham Dự Sự Kiện & Mã QR Vé Điện Tử (Chuẩn Toàn Diện)",
+    description: "Phát hành thư mời chính thức chuẩn đa kênh (Diễn giả, nội dung, trang phục, gửi xe, hotline) kèm mã QR check-in vào cửa.",
     channels: ["email", "in_app", "push"],
-    subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Vé tham dự của Đại biểu {{full_name}}",
-    inAppTitle: "Vé mời tham gia sự kiện: {{event_title}}",
-    inAppBody: "Vé tham dự sự kiện '{{event_title}}' vào ngày {{event_date}} đã sẵn sàng. Vị trí chỗ ngồi của bạn: {{seat_assignment}}.",
+    subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Kính gửi Anh/Chị {{full_name}}",
+    inAppTitle: "Thư mời tham dự sự kiện: {{event_title}}",
+    inAppBody: "BTC trân trọng kính mời Anh/Chị tham dự sự kiện '{{event_title}}' vào {{event_date}}. Xuất trình mã QR trên vé để check-in tại quầy VIP.",
     variables: [
-      { key: "full_name", label: "Tên đại biểu", example: "Dương Thị Huệ" },
+      { key: "full_name", label: "Tên đại biểu (Kính gửi Anh/Chị)", example: "Dương Thị Huệ" },
       { key: "member_code", label: "Mã hội viên", example: "M1983-016" },
       { key: "event_title", label: "Tên sự kiện", example: "Diễn Đàn Chuyển Đổi Số Doanh Nghiệp 2026 & Gala Kết Nối" },
-      { key: "event_date", label: "Thời gian tổ chức", example: "14:00 Ngày 20/10/2026" },
-      { key: "event_location", label: "Địa điểm tổ chức", example: "Khách Sạn Melia Hà Nội - 44 Lý Thường Kiệt" },
+      { key: "speakers", label: "Diễn giả", example: "Chủ tịch HĐQT & Sáng Lập VICONNECT GROUP, Chuyên gia Kinh tế trưởng" },
+      { key: "summary", label: "Nội dung chính", example: "Chiến lược tăng trưởng doanh nghiệp 2026, Xúc tiến thương mại đa kênh, Ký kết hợp tác B2B" },
+      { key: "event_date", label: "Thời gian", example: "18:30 - 21:30 Thứ Bảy, 10/09/2026" },
+      { key: "event_location", label: "Địa điểm", example: "Habblet Hotel & Cung Điện Atlantis, Hà Nội" },
+      { key: "fee", label: "Chi phí", example: "Miễn phí dành cho Hội viên chính thức CEO 1983" },
+      { key: "google_maps_link", label: "Google Maps", example: "https://maps.google.com/?q=Habblet+Hotel+Hanoi" },
+      { key: "dress_code", label: "Trang phục", example: "Black Tie / Vest / Dạ tiệc lịch sự" },
+      { key: "parking_info", label: "Gửi xe", example: "Tầng hầm B1-B2 khách sạn, miễn phí vé xe" },
+      { key: "important_notes", label: "Lưu ý quan trọng từ BTC", example: "Quý Anh/Chị vui lòng có mặt trước 15 phút và xuất trình mã QR trên vé để được hỗ trợ đón tiếp chu đáo nhất" },
+      { key: "rsvp_action_url", label: "Link xác nhận tham dự", example: "https://ceo1983.viconnect.vn/association/events?action=register" },
       { key: "seat_assignment", label: "Vị trí chỗ ngồi / Bàn tiệc", example: "Bàn VIP 02 - Ghế 05" },
-      { key: "ticket_type", label: "Hạng vé", example: "VIP Pass" },
+      { key: "ticket_type", label: "Hạng vé", example: "VIP Pass Gold" },
       { key: "qr_code_url", label: "Ảnh mã QR Check-in", example: "https://ceo1983.viconnect.vn/api/events/qr?data=TICKET-CEO1983-M016&size=250" },
     ],
-    updatedAt: "2026-10-01",
+    updatedAt: "2026-11-10",
     htmlBody: `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-  <div style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
-    <div style="display: inline-block; padding: 4px 14px; background: rgba(234, 179, 8, 0.25); border: 1px solid rgba(234, 179, 8, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #fde047; margin-bottom: 12px; text-transform: uppercase;">
-      VÉ THAM DỰ CHÍNH THỨC
+  <div style="background: linear-gradient(135deg, #001D4A 0%, #003B95 50%, #0A2540 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(234, 179, 8, 0.25); border: 1px solid rgba(234, 179, 8, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #fde047; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
+      THƯ MỜI THAM DỰ SỰ KIỆN CHÍNH THỨC
     </div>
-    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff;">{{event_title}}</h1>
-    <p style="margin: 8px 0 0; font-size: 13px; color: #94a3b8;">Ban Tổ Chức CLB Doanh Nhân CEO 1983 kính mời</p>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 900; color: #ffffff; text-transform: uppercase;">{{event_title}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #93c5fd;">Ban Tổ Chức CLB Doanh Nhân CEO 1983 (HanoiBA) kính mời</p>
   </div>
   <div style="padding: 28px 24px; color: #1e293b;">
     <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
-      Trân trọng kính mời: <strong>Anh/Chị {{full_name}}</strong>,
+      <strong>Kính gửi Anh/Chị:</strong> <span style="color: #003B95; font-weight: 800;">{{full_name}}</span>,
     </p>
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 22px;">
+    <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #334155;">
+      Ban Tổ Chức trân trọng kính mời Anh/Chị tham dự chương trình giao thương và kết nối đặc quyền:
+    </p>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 22px;">
       <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
-        <tr><td style="padding: 5px 0; color: #64748b; width: 130px;">Thời gian:</td><td style="padding: 5px 0; font-weight: 700; color: #0f172a;">{{event_date}}</td></tr>
-        <tr><td style="padding: 5px 0; color: #64748b;">Địa điểm:</td><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
-        <tr><td style="padding: 5px 0; color: #64748b;">Hạng vé:</td><td style="padding: 5px 0; font-weight: 700; color: #d97706;">{{ticket_type}}</td></tr>
-        <tr><td style="padding: 5px 0; color: #64748b;">Vị trí chỗ ngồi:</td><td style="padding: 5px 0; font-weight: 800; color: #16a34a; font-size: 14.5px;">{{seat_assignment}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b; width: 140px;">📌 <strong>Tên sự kiện:</strong></td><td style="padding: 6px 0; font-weight: 800; color: #001D4A;">{{event_title}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">🎙️ <strong>Diễn giả:</strong></td><td style="padding: 6px 0; font-weight: 700; color: #0f172a;">{{speakers}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">📝 <strong>Nội dung chính:</strong></td><td style="padding: 6px 0; color: #334155; line-height: 1.5;">{{summary}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">⏰ <strong>Thời gian:</strong></td><td style="padding: 6px 0; font-weight: 700; color: #003B95;">{{event_date}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">📍 <strong>Địa điểm:</strong></td><td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">💰 <strong>Chi phí:</strong></td><td style="padding: 6px 0; font-weight: 700; color: #16a34a;">{{fee}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">🗺️ <strong>Google Maps:</strong></td><td style="padding: 6px 0;"><a href="{{google_maps_link}}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">Xem bản đồ chỉ đường &rarr;</a></td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">👔 <strong>Trang phục:</strong></td><td style="padding: 6px 0; color: #475569;">{{dress_code}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">🚗 <strong>Gửi xe:</strong></td><td style="padding: 6px 0; color: #475569;">{{parking_info}}</td></tr>
+        <tr><td style="padding: 6px 0; color: #64748b;">⚠️ <strong>Lưu ý từ BTC:</strong></td><td style="padding: 6px 0; color: #b45309; font-weight: 600;">{{important_notes}}</td></tr>
       </table>
     </div>
-    <div style="text-align: center; margin: 24px 0; padding: 18px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fafafa;">
-      <p style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #0f172a;">MÃ QR CHECK-IN NHẬN THẺ ĐẠI BIỂU TẠI BÀN ĐÓN TIẾP</p>
-      <img src="{{qr_code_url}}" alt="QR Checkin" style="max-width: 190px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); display: block; margin: 0 auto;" />
-      <p style="margin: 8px 0 0; font-size: 11px; color: #64748b;">Quý đại biểu vui lòng xuất trình mã này cho nhân viên lễ tân khi đến tham dự.</p>
+
+    <!-- Nút xác nhận tham dự -->
+    <div style="text-align: center; margin: 24px 0 16px;">
+      <a href="{{rsvp_action_url}}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; font-weight: 900; font-size: 14px; text-decoration: none; padding: 14px 36px; border-radius: 9999px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
+        ✓ XÁC NHẬN THAM DỰ SỰ KIỆN
+      </a>
+    </div>
+
+    <!-- KHỐI MÃ QR VÉ ĐIỆN TỬ -->
+    <div style="text-align: center; margin: 24px 0; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 14px; background: #fafafa;">
+      <p style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: #001D4A; text-transform: uppercase;">MÃ QR VÉ CHECK-IN VÀO CỬA</p>
+      <p style="margin: 0 0 12px; font-size: 11.5px; color: #64748b;">Quý Anh/Chị vui lòng xuất trình mã này tại quầy đón tiếp VIP</p>
+      <img src="{{qr_code_url}}" alt="QR Check-in" style="width: 180px; height: 180px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: block; margin: 0 auto; background: #ffffff; padding: 8px;" />
+      <div style="margin-top: 10px; font-size: 12px; font-weight: bold; color: #003B95;">
+        Hạng vé: {{ticket_type}} · Chỗ ngồi: {{seat_assignment}}
+      </div>
+    </div>
+
+    <!-- HOTLINE LIÊN HỆ -->
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+      <p style="margin: 0 0 4px;"><strong>📞 Hotline BTC khi cần hỗ trợ:</strong></p>
+      <p style="margin: 0; font-weight: bold; color: #001D4A;">
+        0973.205.683 &nbsp;|&nbsp; 0903.205.683 &nbsp;|&nbsp; 0903.203.204
+      </p>
+      <p style="margin: 12px 0 0; font-style: italic; color: #64748b;">Trân trọng cảm ơn Quý Anh/Chị!</p>
     </div>
   </div>
 </div>

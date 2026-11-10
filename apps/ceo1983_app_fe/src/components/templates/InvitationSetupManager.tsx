@@ -58,7 +58,15 @@ export function InvitationSetupManager() {
   const [eventDate, setEventDate] = useState<string>("10/09/2026");
   const [eventTime, setEventTime] = useState<string>("18:30 - 21:30");
   const [eventLocation, setEventLocation] = useState<string>("Habblet Hotel & Cung Điện Atlantis, Hà Nội");
+  const [speakers, setSpeakers] = useState<string>("Chủ tịch HĐQT & Sáng Lập VICONNECT GROUP, Chuyên gia Kinh tế");
+  const [summary, setSummary] = useState<string>("Chiến lược tăng trưởng 2026, Xúc tiến thương mại đa kênh, Ký kết hợp tác B2B");
+  const [fee, setFee] = useState<string>("Miễn phí dành cho Hội viên chính thức CEO 1983");
+  const [googleMaps, setGoogleMaps] = useState<string>("https://maps.google.com/?q=Habblet+Hotel+Hanoi");
   const [dressCode, setDressCode] = useState<string>("Black Tie / Trang phục dạ tiệc lịch sự");
+  const [parkingInfo, setParkingInfo] = useState<string>("Tầng hầm B1-B2 khách sạn, miễn phí vé xe");
+  const [importantNotes, setImportantNotes] = useState<string>("Quý Anh/Chị vui lòng có mặt trước 15 phút và xuất trình mã QR trên vé để được đón tiếp chu đáo nhất.");
+  const [hotline, setHotline] = useState<string>("0973.205.683 / 0903.205.683 / 0903.203.204");
+  const [rsvpActionUrl, setRsvpActionUrl] = useState<string>("https://ceo1983.viconnect.vn/association/events?action=register");
   const [specialNote, setSpecialNote] = useState<string>("Vui lòng mang theo mã QR trên thư mời để check-in tại quầy đón tiếp VIP.");
 
   // Mẫu thiệp đã chọn
@@ -117,7 +125,7 @@ export function InvitationSetupManager() {
             phone: m.phone,
             company: m.company || m.company_name,
             position: m.position || m.title || "Doanh nhân",
-            avatar: m.avatar || "/avatars/avatar-default.svg",
+            avatar: m.avatar || "/vietnamese-young-male-ceo-avatar.png",
           }));
           setAllMembers(mapped);
         }
@@ -152,7 +160,7 @@ export function InvitationSetupManager() {
             position: r.position || r.ticket_name || "Đại biểu",
             ticketType: r.ticket_name || "Vé VIP",
             qrCode: r.qr_code || r.ticket_code || "CEO1983-VIP",
-            avatar: r.avatar || r.member?.avatar || "/avatars/avatar-default.svg",
+            avatar: r.avatar || r.member?.avatar || "/vietnamese-young-male-ceo-avatar.png",
           }));
           setRegisteredAttendees(mapped);
           setSelectedRecipientIds(mapped.map((m: SetupRecipient) => m.id));
@@ -408,7 +416,69 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  Quy định trang phục (Dress code):
+                  🎙️ Diễn giả (Keynote Speakers):
+                </label>
+                <input
+                  type="text"
+                  value={speakers}
+                  onChange={(e) => setSpeakers(e.target.value)}
+                  placeholder="Chủ tịch, Chuyên gia kinh tế..."
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  💰 Chi phí tham dự:
+                </label>
+                <input
+                  type="text"
+                  value={fee}
+                  onChange={(e) => setFee(e.target.value)}
+                  placeholder="Miễn phí / 500.000 VNĐ..."
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  📝 Nội dung chính sự kiện:
+                </label>
+                <textarea
+                  rows={2}
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  🗺️ Link Google Maps chỉ đường:
+                </label>
+                <input
+                  type="text"
+                  value={googleMaps}
+                  onChange={(e) => setGoogleMaps(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  🚗 Hướng dẫn gửi xe:
+                </label>
+                <input
+                  type="text"
+                  value={parkingInfo}
+                  onChange={(e) => setParkingInfo(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  👔 Quy định trang phục (Dress code):
                 </label>
                 <input
                   type="text"
@@ -420,12 +490,36 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  Ghi chú đón tiếp:
+                  📞 Hotline BTC hỗ trợ (0973.205.683...):
                 </label>
                 <input
                   type="text"
-                  value={specialNote}
-                  onChange={(e) => setSpecialNote(e.target.value)}
+                  value={hotline}
+                  onChange={(e) => setHotline(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  🔗 Link xác nhận tham dự (RSVP):
+                </label>
+                <input
+                  type="text"
+                  value={rsvpActionUrl}
+                  onChange={(e) => setRsvpActionUrl(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  ⚠️ Lưu ý quan trọng từ BTC:
+                </label>
+                <input
+                  type="text"
+                  value={importantNotes}
+                  onChange={(e) => setImportantNotes(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
                 />
               </div>
@@ -653,52 +747,66 @@ export function InvitationSetupManager() {
               {/* Delegate Personalization Box */}
               <div className="relative z-10 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center space-y-1 shadow-lg">
                 <div className="text-[8px] font-bold text-amber-400 uppercase tracking-wider">
-                  Trân trọng kính mời Đại biểu VIP:
+                  Kính gửi Quý Anh/Chị:
                 </div>
                 <div className="text-base font-black text-white font-serif">
-                  {registeredAttendees[0]?.name || "Ông/Bà: Doanh Nhân Thành Viên"}
+                  {registeredAttendees[0]?.name || "Doanh Nhân Hội Viên"}
                 </div>
                 <div className="text-[10px] text-cyan-200">
                   {registeredAttendees[0]?.position || "Chủ tịch HĐQT"} · {registeredAttendees[0]?.company || "Doanh nghiệp CLB CEO 1983"}
                 </div>
                 <div className="inline-block px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[8px] font-black uppercase mt-1">
-                  HẠNG VÉ: VIP PASS GOLD
+                  BTC TRÂN TRỌNG KÍNH MỜI THAM DỰ
                 </div>
               </div>
 
-              {/* Time & Location */}
-              <div className="relative z-10 space-y-2 text-center text-xs">
-                <div className="flex items-center justify-center gap-2 text-cyan-300 font-medium">
-                  <Calendar className="size-3.5" />
-                  <span>{eventDate}</span>
-                  <span>·</span>
-                  <Clock className="size-3.5" />
-                  <span>{eventTime}</span>
+              {/* Event Detailed Specs */}
+              <div className="relative z-10 space-y-1.5 text-left text-[9.5px] bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/10">
+                <div className="font-bold text-amber-300 border-b border-white/10 pb-1">
+                  THÔNG TIN SỰ KIỆN CHI TIẾT:
                 </div>
-                <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-200 font-light">
-                  <MapPin className="size-3 text-rose-400 shrink-0" />
-                  <span>{eventLocation}</span>
-                </div>
-                <div className="text-[9px] text-amber-200/90 italic">
-                  Dress Code: {dressCode}
-                </div>
+                <div><span className="text-slate-400">🎙️ Diễn giả:</span> <span className="font-bold text-white">{speakers}</span></div>
+                <div><span className="text-slate-400">📝 Nội dung:</span> <span className="text-slate-200">{summary}</span></div>
+                <div><span className="text-slate-400">⏰ Thời gian:</span> <span className="font-bold text-cyan-300">{eventTime} · {eventDate}</span></div>
+                <div><span className="text-slate-400">📍 Địa điểm:</span> <span className="text-slate-200">{eventLocation}</span></div>
+                <div><span className="text-slate-400">💰 Chi phí:</span> <span className="font-bold text-emerald-400">{fee}</span></div>
+                <div><span className="text-slate-400">👔 Trang phục:</span> <span className="text-slate-200">{dressCode}</span></div>
+                <div><span className="text-slate-400">🚗 Gửi xe:</span> <span className="text-slate-200">{parkingInfo}</span></div>
+                <div className="text-amber-200/90 italic pt-0.5"><span className="text-amber-400 font-bold not-italic">⚠️ Lưu ý:</span> {importantNotes}</div>
+              </div>
+
+              {/* RSVP Action */}
+              <div className="relative z-10 text-center">
+                <a
+                  href={rsvpActionUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[10px] font-black uppercase shadow-lg tracking-wider"
+                >
+                  ✓ XÁC NHẬN THAM DỰ
+                </a>
               </div>
 
               {/* QR Code Check-in */}
               {includeQrCode && (
-                <div className="relative z-10 flex flex-col items-center gap-1">
-                  <div className="p-2 rounded-2xl bg-white text-slate-950 shadow-xl flex items-center justify-center">
+                <div className="relative z-10 flex flex-col items-center gap-1 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/15">
+                  <div className="p-1.5 rounded-xl bg-white text-slate-950 shadow-xl flex items-center justify-center">
                     <QrCode className="size-14 text-slate-900" />
                   </div>
-                  <div className="text-[7.5px] font-mono text-slate-300 text-center">
-                    MÃ CHECK-IN: CEO1983-VIP-088
+                  <div className="text-[7.5px] font-mono text-cyan-200 text-center">
+                    VÉ CHECK-IN: CEO1983-VIP-088 · QUẦY ĐÓN TIẾP
                   </div>
                 </div>
               )}
 
-              {/* Footer */}
-              <div className="relative z-10 text-center text-[8.5px] text-sky-200 font-serif italic border-t border-white/10 pt-2">
-                Rất hân hạnh được đón tiếp Quý Doanh nhân!
+              {/* Hotline & Footer */}
+              <div className="relative z-10 text-center space-y-0.5 border-t border-white/10 pt-2">
+                <div className="text-[8px] text-amber-300 font-bold">
+                  Hotline BTC hỗ trợ: {hotline}
+                </div>
+                <div className="text-[7.5px] text-sky-200/80 font-serif italic">
+                  Trân trọng kính mời Quý Anh/Chị!
+                </div>
               </div>
             </div>
           </div>

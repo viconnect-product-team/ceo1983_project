@@ -187,6 +187,7 @@ const pageTemplates: Item[] = [
     to: "/templates",
     label: "Quản lý mẫu trang",
     children: [
+      { to: "/templates?tab=ecosystem-pitch", label: "Poster Hệ Thống Chào Hàng (Pitch Deck)" },
       { to: "/templates?tab=invitation", label: "Tạo Poster Thư Mời (Studio)" },
       { to: "/templates?tab=invitation-setup", label: "Set Up Thư Mời Sự Kiện" },
       { to: "/admin/landing-webs", label: "Quản Lý Landing Web" },

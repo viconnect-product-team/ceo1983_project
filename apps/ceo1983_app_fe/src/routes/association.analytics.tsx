@@ -40,6 +40,9 @@ import {
   Medal,
   Trophy,
   Gift,
+  RotateCcw,
+  CalendarDays,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -53,10 +56,13 @@ import {
   type Ceo1983ColorTheme,
 } from "@/lib/ceo1983-color-theme";
 import {
+  AnalyticsPeriodPicker,
+  type PeriodGranularity,
+} from "@/components/analytics/AnalyticsPeriodPicker";
+import {
   ResponsiveContainer,
   ComposedChart,
   Bar,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -121,10 +127,42 @@ export function AssociationAnalyticsScreen() {
     wonCount: 0,
   });
 
-  // 5 Mức Granularity Thời gian: Ngày, Tuần, Tháng, Quý, Năm
-  const [granularity, setGranularity] = useState<"day" | "week" | "month" | "quarter" | "year">("month");
+  // 3 Mức Granularity Thời gian Chuẩn: Tháng, Quý, Năm
+  const currentNow = useMemo(() => new Date(), []);
+  const defaultYear = currentNow.getFullYear();
+  const defaultMonth = currentNow.getMonth() + 1;
+  const defaultQuarter = Math.ceil((currentNow.getMonth() + 1) / 3);
+
+  const [granularity, setGranularity] = useState<PeriodGranularity>("month");
+  const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
+  const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
+  const [selectedQuarter, setSelectedQuarter] = useState<number>(defaultQuarter);
+
+  const isHistorical = useMemo(() => {
+    if (granularity === "year") return selectedYear !== defaultYear;
+    if (granularity === "quarter") return selectedYear !== defaultYear || selectedQuarter !== defaultQuarter;
+    return selectedYear !== defaultYear || selectedMonth !== defaultMonth;
+  }, [granularity, selectedYear, selectedMonth, selectedQuarter, defaultYear, defaultMonth, defaultQuarter]);
+
+  const selectedPeriodLabel = useMemo(() => {
+    if (granularity === "year") return `Năm ${selectedYear}`;
+    if (granularity === "quarter") return `Quý ${selectedQuarter}/${selectedYear}`;
+    return `Tháng ${selectedMonth}/${selectedYear}`;
+  }, [granularity, selectedYear, selectedMonth, selectedQuarter]);
+
+  const handleResetToCurrent = () => {
+    setSelectedYear(defaultYear);
+    setSelectedMonth(defaultMonth);
+    setSelectedQuarter(defaultQuarter);
+    toast.success("Đã quay về kỳ thống kê hiện tại");
+  };
+
   const timeRange = granularity;
-  const setTimeRange = (val: any) => setGranularity(val);
+  const setTimeRange = (val: any) => {
+    if (val === "month" || val === "quarter" || val === "year") {
+      setGranularity(val);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [serverData, setServerData] = useState<any>(null);
 
@@ -194,13 +232,20 @@ export function AssociationAnalyticsScreen() {
       .catch(() => {});
   }, []);
 
-  // Fetch overview from NestJS backend
+  // Fetch overview from NestJS backend theo Tháng / Quý / Năm và kỳ lịch sử
   useEffect(() => {
     let isMounted = true;
     async function loadStats() {
       setLoading(true);
       try {
-        const res = await fetchNestApi<any>(`/analytics/overview?granularity=${granularity}&period=${granularity}`);
+        const params = new URLSearchParams({
+          granularity,
+          period: granularity,
+          year: String(selectedYear),
+          ...(granularity === "month" ? { month: String(selectedMonth) } : {}),
+          ...(granularity === "quarter" ? { quarter: String(selectedQuarter) } : {}),
+        });
+        const res = await fetchNestApi<any>(`/analytics/overview?${params.toString()}`);
         if (isMounted && res && res.ok) {
           setServerData(res);
         }
@@ -214,7 +259,7 @@ export function AssociationAnalyticsScreen() {
     return () => {
       isMounted = false;
     };
-  }, [granularity]);
+  }, [granularity, selectedYear, selectedMonth, selectedQuarter]);
 
   // Case 6: Tiến trình nhiệm vụ 1 đường ngang chia 3 note
   const MILESTONES = useMemo(
@@ -975,40 +1020,50 @@ export function AssociationAnalyticsScreen() {
         back
       />
 
-      {/* ── BỘ LỌC GRANULARITY 5 DẠNG: NGÀY / TUẦN / THÁNG / QUÝ / NĂM ── */}
-      <div className="px-3 sm:px-4 pt-3 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-2">
-        <div className="flex items-center gap-1 shrink-0">
-          <Clock className="size-3.5 text-[#003B95] dark:text-blue-400" />
-          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-            Mốc thời gian:
-          </span>
+      {/* ── BỘ LỌC CHU KỲ THÁNG / QUÝ / NĂM VÀ CHỌN LỊCH THỐNG KÊ LỊCH SỬ ── */}
+      <div className="px-3 sm:px-4 pt-3 flex flex-col gap-2 border-b border-slate-100 dark:border-white/5 pb-2.5">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <CalendarDays className="size-3.5 text-[#003B95] dark:text-blue-400" />
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              Kỳ thống kê:
+            </span>
+            <span className="text-[11px] font-black text-[#003B95] dark:text-amber-400">
+              {selectedPeriodLabel}
+            </span>
+          </div>
+
+          <AnalyticsPeriodPicker
+            granularity={granularity}
+            onGranularityChange={setGranularity}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            selectedMonth={selectedMonth}
+            onMonthChange={setSelectedMonth}
+            selectedQuarter={selectedQuarter}
+            onQuarterChange={setSelectedQuarter}
+            isCompact
+            themeColor={colorTheme.primaryColor}
+          />
         </div>
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar bg-slate-100 dark:bg-white/5 p-0.5 rounded-xl border border-slate-200/60 dark:border-white/10">
-          {[
-            { id: "day", label: "Ngày" },
-            { id: "week", label: "Tuần" },
-            { id: "month", label: "Tháng" },
-            { id: "quarter", label: "Quý" },
-            { id: "year", label: "Năm" },
-          ].map((item) => {
-            const isSelected = granularity === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setGranularity(item.id as any)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  isSelected
-                    ? "text-white shadow-xs font-black"
-                    : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                }`}
-                style={isSelected ? { backgroundColor: colorTheme.primaryColor, color: "#ffffff" } : undefined}
-              >
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+
+        {/* Thông báo khi đang xem kỳ lịch sử cũ */}
+        {isHistorical && (
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 shadow-2xs">
+            <div className="flex items-center gap-1.5 truncate">
+              <History className="size-3.5 shrink-0 text-amber-600" />
+              <span className="truncate">Đang xem dữ liệu lịch sử ({selectedPeriodLabel})</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetToCurrent}
+              className="px-2 py-0.5 rounded-lg bg-amber-600 text-white font-bold text-[10px] shrink-0 hover:bg-amber-700 cursor-pointer flex items-center gap-1"
+            >
+              <RotateCcw className="size-2.5" />
+              <span>Kỳ này</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── 4 TABS DANH MỤC THỐNG KÊ CHI TIẾT ĐỒNG BỘ CRM ── */}
@@ -1098,7 +1153,7 @@ export function AssociationAnalyticsScreen() {
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <BarChart3 className="size-4 text-[#003B95] dark:text-blue-400" />
                   <span>
-                    {chartViewMode === "composed" ? "Biểu Đồ Xu Hướng" : "Cơ Cấu Phân Bổ (Hình Tròn)"} ({timeRange === "month" ? "Tháng Này" : timeRange === "quarter" ? "Quý Này" : timeRange === "year" ? "Năm Tài Khóa" : `Soi ${granularity}`})
+                    {chartViewMode === "composed" ? "Biểu Đồ Cột" : "Cơ Cấu Phân Bổ (Hình Tròn)"} ({selectedPeriodLabel})
                   </span>
                 </h4>
                 {/* Banner nổi bật Hội viên dẫn đầu Top 1 */}
@@ -1115,7 +1170,7 @@ export function AssociationAnalyticsScreen() {
               </div>
             </div>
 
-            {/* Chuyển đổi dạng biểu đồ: Cột & Đường vs Tròn Donut */}
+            {/* Chuyển đổi dạng biểu đồ: Cột vs Tròn Donut */}
             <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200/60 dark:border-white/10">
               <button
                 type="button"
@@ -1127,7 +1182,7 @@ export function AssociationAnalyticsScreen() {
                 }`}
               >
                 <BarChart3 className="size-3" />
-                <span>Xu hướng</span>
+                <span>Biểu đồ Cột</span>
               </button>
               <button
                 type="button"
@@ -1296,21 +1351,19 @@ export function AssociationAnalyticsScreen() {
                       maxBarSize={12}
                     />
                   )}
-                  <Line
-                    type="monotone"
+                  <Bar
                     dataKey="timelineVal"
                     name={activeChartMeta.timelineLabel}
-                    stroke={activeChartMeta.timelineColor}
-                    strokeWidth={2.5}
-                    dot={{ r: 3.5, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 1.5 }}
-                    activeDot={{ r: 5, fill: activeChartMeta.timelineColor, stroke: "#ffffff", strokeWidth: 2 }}
+                    fill={activeChartMeta.timelineColor || "#DC2626"}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={12}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {/* Màu chú thích dưới biểu đồ: Các cột + 1 đường Timeline */}
+          {/* Màu chú thích dưới biểu đồ: Tất cả đều là biểu tượng khối Cột */}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[11px]">
             <div className="flex items-center gap-1">
               <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
@@ -1333,7 +1386,7 @@ export function AssociationAnalyticsScreen() {
               </div>
             )}
             <div className="flex items-center gap-1">
-              <span className="w-3.5 h-0.5 shrink-0 rounded-full" style={{ backgroundColor: activeChartMeta.timelineColor }} />
+              <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
               <span className="text-slate-700 dark:text-slate-300 font-bold">{activeChartMeta.timelineLabel}</span>
             </div>
           </div>

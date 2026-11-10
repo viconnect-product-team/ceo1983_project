@@ -10,7 +10,7 @@ export const Route = createFileRoute("/templates")({
   validateSearch: (search: Record<string, unknown>): TemplatesSearch => {
     const tab = search?.tab as TemplateTab | undefined;
     return {
-      tab: tab && ["invitation", "invitation-setup", "email", "zalo", "dues", "forum-meetings"].includes(tab)
+      tab: tab && ["invitation", "invitation-setup", "email", "zalo", "dues", "forum-meetings", "ecosystem-pitch"].includes(tab)
         ? tab
         : "invitation",
     };

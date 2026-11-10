@@ -102,22 +102,22 @@ export function getBuckets(
       });
     }
   } else if (granularity === 'month') {
-    // 6 tháng gần nhất
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0);
-      const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
-      const label = `T${d.getMonth() + 1}`;
+    // 12 tháng đầy đủ của năm được chọn (T1 -> T12)
+    const y = now.getFullYear();
+    for (let m = 0; m < 12; m++) {
+      const start = new Date(y, m, 1, 0, 0, 0);
+      const end = new Date(y, m + 1, 0, 23, 59, 59);
+      const label = `T${m + 1}`;
       buckets.push({
         name: label,
         label,
         start,
         end,
-        timeLabel: `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`,
+        timeLabel: `Tháng ${m + 1}/${y}`,
       });
     }
   } else if (granularity === 'quarter') {
-    // 4 quý
+    // 4 quý đầy đủ của năm được chọn (Q1 -> Q4)
     const curYear = now.getFullYear();
     for (let q = 0; q < 4; q++) {
       const start = new Date(curYear, q * 3, 1, 0, 0, 0);
@@ -132,9 +132,9 @@ export function getBuckets(
       });
     }
   } else {
-    // year: 3 năm gần nhất
+    // year: 5 năm liên tiếp kết thúc tại năm được chọn
     const curYear = now.getFullYear();
-    for (let yr = curYear - 2; yr <= curYear; yr++) {
+    for (let yr = curYear - 4; yr <= curYear; yr++) {
       const start = new Date(yr, 0, 1, 0, 0, 0);
       const end = new Date(yr, 11, 31, 23, 59, 59);
       const label = String(yr);
@@ -510,11 +510,33 @@ export class AnalyticsService implements OnModuleInit {
     }
   }
 
-  async getOverview(userId?: string, granularity: TimeGranularity = 'month') {
+  async getOverview(
+    userId?: string,
+    granularity: TimeGranularity = 'month',
+    queryOptions?: {
+      year?: number;
+      month?: number;
+      quarter?: number;
+    },
+  ) {
     try {
       await this.ensureTables();
 
-      const now = new Date();
+      let now = new Date();
+      if (queryOptions?.year) {
+        const y = Number(queryOptions.year);
+        if (!isNaN(y) && y >= 2000 && y <= 2100) {
+          if (queryOptions.month) {
+            const m = Number(queryOptions.month);
+            now = new Date(y, m - 1, 15, 12, 0, 0);
+          } else if (queryOptions.quarter) {
+            const q = Number(queryOptions.quarter);
+            now = new Date(y, (q - 1) * 3 + 1, 15, 12, 0, 0);
+          } else {
+            now = new Date(y, 6, 1, 12, 0, 0);
+          }
+        }
+      }
 
       // 1. Fetch all active members (loại bỏ archived, deleted, rejected, closed)
       const members = await this.prisma.$queryRaw<any[]>`
@@ -1080,10 +1102,26 @@ export class AnalyticsService implements OnModuleInit {
           year: 'Theo năm',
         }[granularity] || 'Theo tháng';
 
+      const curSelectedYear = now.getFullYear();
+      const curSelectedMonth = queryOptions?.month || (now.getMonth() + 1);
+      const curSelectedQuarter = queryOptions?.quarter || Math.ceil((now.getMonth() + 1) / 3);
+
       return {
         ok: true,
         granularity,
         period: granularity,
+        selectedPeriod: {
+          granularity,
+          year: curSelectedYear,
+          month: curSelectedMonth,
+          quarter: curSelectedQuarter,
+          label:
+            granularity === 'year'
+              ? `Năm ${curSelectedYear}`
+              : granularity === 'quarter'
+              ? `Quý ${curSelectedQuarter}/${curSelectedYear}`
+              : `Tháng ${curSelectedMonth}/${curSelectedYear}`,
+        },
         kpi: {
           totalMembers: uniqueStats.length,
           totalValueContributed: totalClubValueContributed,
