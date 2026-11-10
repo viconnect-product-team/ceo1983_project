@@ -173,7 +173,7 @@
     + **Tệp Ảnh & Mã Nguồn (`.png`, `.jpg`, `.jpeg`, `.txt`)**: Trình xem ảnh Lightbox xoay góc, phóng to thu nhỏ và bộ đọc văn bản có thanh cuộn mượt mà.
   - Tích hợp đồng bộ cả trong danh sách tài liệu (`documents.index.tsx`) và trang chi tiết tài liệu (`documents.$docId.tsx`).
   - Trình soạn thảo mẫu email v3 bền vững, thay thế các biến raw thành thẻ thân thiện `[Mã hội viên]`, `[Tên hội viên]`.
-  - Email có mã QR thanh toán hoặc vé QR BẮT BUỘC đính kèm MIME Inline CID (`cid:vietqr_payment_qr`) để không bị Google Image Proxy chặn.
+  - Email có mã QR thanh toán hoặc vé QR BẮT BUỘC đính kèm MIME Inline CID (`cid:mã QR ngân hàng_payment_qr`) để không bị Google Image Proxy chặn.
 
 ### `[NODE-CRM-015]` Quản Trị Biểu Quyết & Quay Số May Mắn
 - **Route Frontend**: `/voting` (`src/routes/voting.tsx`).

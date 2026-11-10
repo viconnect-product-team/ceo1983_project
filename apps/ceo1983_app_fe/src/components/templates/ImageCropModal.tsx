@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Scissors, ZoomIn, ZoomOut, RotateCw, Check, X, Move, Sparkles } from "lucide-react";
 
-export type CropShape = "circle" | "square" | "arch" | "oval";
+export type CropShape = "circle" | "square" | "arch" | "oval" | "banner";
 
 interface ImageCropModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ export function ImageCropModal({
   isOpen,
   imageUrl,
   initialShape = "circle",
-  title = "Cắt Ảnh Chuyên Nghiệp (Studio Crop)",
+  title = "Căn Chỉnh & Cắt Ảnh (Studio Crop)",
   onClose,
   onCropComplete,
 }: ImageCropModalProps) {
@@ -62,6 +62,27 @@ export function ImageCropModal({
     setIsDragging(false);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!e.touches[0]) return;
+    setIsDragging(true);
+    setDragStart({
+      x: e.touches[0].clientX - offset.x,
+      y: e.touches[0].clientY - offset.y,
+    });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !e.touches[0]) return;
+    setOffset({
+      x: e.touches[0].clientX - dragStart.x,
+      y: e.touches[0].clientY - dragStart.y,
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   const handleRotate = () => {
     setRotation((prev) => (prev + 90) % 360);
   };
@@ -72,52 +93,64 @@ export function ImageCropModal({
 
     // Create offscreen canvas for output
     const outputCanvas = document.createElement("canvas");
-    const outputSize = 600;
-    outputCanvas.width = outputSize;
-    outputCanvas.height = outputSize;
+    const isBanner = shape === "banner";
+    const outputW = isBanner ? 960 : 600;
+    const outputH = isBanner ? 400 : 600;
+    outputCanvas.width = outputW;
+    outputCanvas.height = outputH;
     const ctx = outputCanvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, outputSize, outputSize);
+    ctx.clearRect(0, 0, outputW, outputH);
 
     // Apply clipping path based on selected shape
     ctx.save();
     if (shape === "circle") {
       ctx.beginPath();
-      ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+      ctx.arc(outputW / 2, outputH / 2, outputW / 2, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
     } else if (shape === "oval") {
       ctx.beginPath();
-      ctx.ellipse(outputSize / 2, outputSize / 2, outputSize / 2, outputSize * 0.4, 0, 0, Math.PI * 2);
+      ctx.ellipse(outputW / 2, outputH / 2, outputW / 2, outputH * 0.4, 0, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
     } else if (shape === "arch") {
       ctx.beginPath();
-      const r = outputSize / 2;
+      const r = outputW / 2;
       ctx.arc(r, r * 0.7, r, Math.PI, 0, false);
-      ctx.lineTo(outputSize, outputSize);
-      ctx.lineTo(0, outputSize);
+      ctx.lineTo(outputW, outputH);
+      ctx.lineTo(0, outputH);
+      ctx.closePath();
+      ctx.clip();
+    } else if (shape === "banner") {
+      ctx.beginPath();
+      ctx.roundRect(0, 0, outputW, outputH, 16);
       ctx.closePath();
       ctx.clip();
     } else {
       // Square with slight rounded corners
       ctx.beginPath();
       const radius = 24;
-      ctx.roundRect(0, 0, outputSize, outputSize, radius);
+      ctx.roundRect(0, 0, outputW, outputH, radius);
       ctx.closePath();
       ctx.clip();
     }
 
-    // Translate to center and draw
-    ctx.translate(outputSize / 2 + offset.x * (outputSize / 260), outputSize / 2 + offset.y * (outputSize / 260));
+    // Scale factors between preview container (280x280 or 320x160) and outputCanvas
+    const previewW = isBanner ? 320 : 280;
+    const previewH = isBanner ? 160 : 280;
+    const scaleToOutputX = outputW / previewW;
+    const scaleToOutputY = outputH / previewH;
+
+    ctx.translate(outputW / 2 + offset.x * scaleToOutputX, outputH / 2 + offset.y * scaleToOutputY);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(zoom, zoom);
 
-    const drawW = img.naturalWidth || 600;
-    const drawH = img.naturalHeight || 600;
+    const drawW = img.naturalWidth || outputW;
+    const drawH = img.naturalHeight || outputH;
     const maxSide = Math.max(drawW, drawH);
-    const scaleFactor = outputSize / maxSide;
+    const scaleFactor = Math.max(outputW, outputH) / maxSide;
     const finalW = drawW * scaleFactor;
     const finalH = drawH * scaleFactor;
 
@@ -129,36 +162,39 @@ export function ImageCropModal({
     onClose();
   };
 
+  const isBanner = shape === "banner";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in select-none">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
-              <Scissors className="size-4" />
+          <div className="flex items-center gap-2.5">
+            <div className="size-9 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+              <Scissors className="size-4.5" />
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                 {title}
               </h3>
-              <p className="text-[11px] text-slate-500">Kéo di chuyển và căn chỉnh khung ảnh theo ý muốn</p>
+              <p className="text-[11px] text-slate-500">Phóng to, di chuyển và cắt ảnh đúng khung hình chuẩn</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="size-5" />
           </button>
         </div>
 
         {/* Shape Picker */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {[
-            { id: "circle", label: "Tròn Hoàng Gia 3D" },
+            { id: "circle", label: "Tròn Avatar" },
             { id: "square", label: "Vuông 1:1" },
+            { id: "banner", label: "Ảnh Bìa (16:9)" },
             { id: "arch", label: "Vòm Cung Heian" },
             { id: "oval", label: "Bầu Dục Luxury" },
           ].map((s) => (
@@ -166,9 +202,9 @@ export function ImageCropModal({
               key={s.id}
               type="button"
               onClick={() => setShape(s.id as CropShape)}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                 shape === s.id
-                  ? "bg-amber-500 text-white shadow-xs"
+                  ? "bg-[#003B95] text-white shadow-xs"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
               }`}
             >
@@ -185,7 +221,12 @@ export function ImageCropModal({
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            className="w-[280px] h-[280px] bg-slate-950 relative overflow-hidden flex items-center justify-center cursor-move select-none rounded-2xl shadow-inner border-2 border-dashed border-amber-400/50"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className={`${
+              isBanner ? "w-[320px] h-[160px]" : "w-[280px] h-[280px]"
+            } bg-slate-950 relative overflow-hidden flex items-center justify-center cursor-move select-none rounded-2xl shadow-inner border-2 border-dashed border-amber-400/60 touch-none`}
           >
             {/* Guide Mask Overlay */}
             <div
@@ -196,6 +237,8 @@ export function ImageCropModal({
                   ? "rounded-[45%]"
                   : shape === "arch"
                   ? "rounded-t-[140px] rounded-b-xl"
+                  : shape === "banner"
+                  ? "rounded-2xl"
                   : "rounded-xl"
               }`}
             />
@@ -212,15 +255,15 @@ export function ImageCropModal({
                 transition: isDragging ? "none" : "transform 0.1s ease-out",
                 maxWidth: "none",
                 maxHeight: "none",
-                width: "240px",
+                width: isBanner ? "300px" : "240px",
                 height: "auto",
               }}
               className="pointer-events-none select-none"
             />
 
-            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 text-[10px] text-white/80 pointer-events-none flex items-center gap-1">
+            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-[10px] text-white/90 pointer-events-none flex items-center gap-1 backdrop-blur-xs">
               <Move className="size-3" />
-              <span>Kéo để di chuyển</span>
+              <span>Chạm / Kéo để di chuyển</span>
             </div>
           </div>
         </div>
@@ -236,10 +279,10 @@ export function ImageCropModal({
               step="0.05"
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 accent-amber-500 cursor-pointer"
+              className="flex-1 accent-[#003B95] cursor-pointer"
             />
             <ZoomIn className="size-4 text-slate-400 shrink-0" />
-            <span className="text-xs font-mono text-slate-600 dark:text-slate-400 w-12 text-right">
+            <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 w-12 text-right">
               {Math.round(zoom * 100)}%
             </span>
           </div>
@@ -248,7 +291,7 @@ export function ImageCropModal({
             <button
               type="button"
               onClick={handleRotate}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer"
             >
               <RotateCw className="size-3.5" />
               <span>Xoay 90°</span>
@@ -258,36 +301,35 @@ export function ImageCropModal({
               type="button"
               onClick={() => {
                 setZoom(1);
-                setRotation(0);
                 setOffset({ x: 0, y: 0 });
+                setRotation(0);
               }}
-              className="text-xs text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              className="text-[11px] text-slate-500 hover:underline cursor-pointer"
             >
               Đặt lại vị trí
             </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
             Hủy Bỏ
           </button>
           <button
             type="button"
             onClick={handleApplyCrop}
-            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold hover:bg-[#002B70] shadow-md transition flex items-center gap-1.5 cursor-pointer"
           >
             <Check className="size-4" />
-            <span>Áp Dụng Ảnh Đã Cắt</span>
+            <span>Cắt & Áp Dụng</span>
           </button>
         </div>
       </div>
     </div>
   );
 }
-

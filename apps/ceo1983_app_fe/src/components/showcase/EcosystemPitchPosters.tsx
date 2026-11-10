@@ -28,19 +28,40 @@ import {
   BellRing,
   Wallet,
   Compass,
+  Layers,
+  Palette,
+  CreditCard,
+  Cpu,
+  MonitorCheck,
+  Award,
 } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas-pro";
 
-export type PitchPosterVersion = "cosmic_executive" | "minimalist_enterprise";
+export type PitchPosterVersion =
+  | "pin_multi_device"      // Pinterest 1116189088939047069 (Isometric Multi-Device Ecosystem)
+  | "pin_hand_watermark"   // Pinterest 1126533294319507400 (Hand holding Phone & Architectural HQ)
+  | "pin_neon_pedestal"    // Pinterest 1116189088942752029 (Floating Phone on Neon Pedestal & Glass Cards)
+  | "pin_grid_screens"     // Pinterest 1108378158348955419 (2x2 Frosted Glass App Screens)
+  | "pin_design_system"    // Pinterest 1116189088941957181 (Design System & Dual Phone Showcase)
+  | "cosmic_executive"     // Alias for pin_multi_device
+  | "minimalist_enterprise"; // Alias for pin_hand_watermark
 
 export function EcosystemPitchPosters() {
-  const [version, setVersion] = useState<PitchPosterVersion>("cosmic_executive");
+  const [version, setVersion] = useState<PitchPosterVersion>("pin_multi_device");
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
 
   const posterContainerRef = useRef<HTMLDivElement>(null);
+
+  // Normalized active version
+  const activeTemplate =
+    version === "cosmic_executive"
+      ? "pin_multi_device"
+      : version === "minimalist_enterprise"
+      ? "pin_hand_watermark"
+      : version;
 
   // Toggle Presentation Fullscreen
   const toggleFullscreen = () => {
@@ -53,28 +74,28 @@ export function EcosystemPitchPosters() {
     }
   };
 
-  // Export 4K PNG
+  // Export 4K PNG (Scale 3x for ultra-sharp zoomable details)
   const handleExportPoster = async () => {
     if (!posterContainerRef.current) return;
     setIsExporting(true);
-    toast.info("Đang xử lý render poster độ phân giải cao...");
+    toast.info("Đang xử lý render poster PR độ phân giải cao 4K...");
 
     try {
       const element = posterContainerRef.current;
       const canvas = await html2canvas(element, {
-        scale: 2.5, // 2.5x retina quality for print & pitch
+        scale: 3, // 3x ultra-sharp resolution for zoomable detail & print
         useCORS: true,
         allowTaint: true,
-        backgroundColor: version === "cosmic_executive" ? "#020817" : "#0f172a",
+        backgroundColor: "#03091e",
         logging: false,
       });
 
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
-      link.download = `CEO1983_Ecosystem_Pitch_Poster_${version}_${Date.now()}.png`;
+      link.download = `CEO1983_PR_Showcase_${activeTemplate}_${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
-      toast.success("✓ Đã xuất ảnh poster thành công! Sẵn sàng chào hàng đối tác.");
+      toast.success("✓ Đã xuất ảnh poster PR 4K sắc nét thành công! Sẵn sàng đi chào hàng đối tác.");
     } catch (err: any) {
       toast.error("Không thể xuất ảnh: " + (err.message || "Lỗi canvas"));
     } finally {
@@ -85,7 +106,7 @@ export function EcosystemPitchPosters() {
   // Copy Direct Public Pitch Link
   const handleCopyPitchLink = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://ceo1983.viconnect.vn";
-    const publicUrl = `${origin}/landing/pitch-deck?mode=${version}`;
+    const publicUrl = `${origin}/landing/pitch-deck?template=${activeTemplate}`;
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     toast.success("✓ Đã sao chép link chào hàng trực tiếp gửi đối tác!");
@@ -94,53 +115,91 @@ export function EcosystemPitchPosters() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* ── TOOLBAR ĐIỀU KHIỂN & CHỌN BẢN CHÀO HÀNG ── */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Sparkles className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Poster Hệ Thống Chào Hàng Đối Tác</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 uppercase">
-                  Pitch Deck
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Được thiết kế theo cấu trúc Pinterest chuẩn: Hero cầm điện thoại & 4 màn hình mobile đan xen.
-              </p>
-            </div>
+      {/* ── TOOLBAR ĐIỀU KHIỂN & CHỌN 5 BẢN POSTER PR CHUẨN PINTEREST ── */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <Sparkles className="size-5" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span>Bộ Poster PR Chào Hàng Hệ Sinh Thái CEO 1983</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 uppercase">
+                5 Phong Cách Pinterest
+              </span>
+            </h2>
+            <p className="text-xs text-slate-500">
+              Thiết kế chuyên biệt cho đi chào hàng đối tác, xuất file PNG 4K zoom cực nét không vỡ hạt.
+            </p>
           </div>
         </div>
 
-        {/* Tab chuyển đổi 2 bản */}
+        {/* Tab chuyển đổi 5 bản mẫu Pinterest */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+          <div className="p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-1">
             <button
               type="button"
-              onClick={() => setVersion("cosmic_executive")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                version === "cosmic_executive"
+              onClick={() => setVersion("pin_multi_device")}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTemplate === "pin_multi_device"
                   ? "bg-[#003B95] text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
               }`}
             >
-              <Crown className="size-3.5 text-amber-300" />
-              <span>Bản 1: Cosmic Executive (VIP CLB)</span>
+              <Crown className="size-3 text-amber-300" />
+              <span>Mẫu 1: Đa Thiết Bị 3D</span>
             </button>
+
             <button
               type="button"
-              onClick={() => setVersion("minimalist_enterprise")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                version === "minimalist_enterprise"
-                  ? "bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 shadow-sm"
+              onClick={() => setVersion("pin_hand_watermark")}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTemplate === "pin_hand_watermark"
+                  ? "bg-[#003B95] text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
               }`}
             >
-              <Laptop className="size-3.5" />
-              <span>Bản 2: High-Tech Enterprise (SaaS B2B)</span>
+              <Smartphone className="size-3 text-cyan-300" />
+              <span>Mẫu 2: Watermark &amp; Trụ Sở</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setVersion("pin_neon_pedestal")}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTemplate === "pin_neon_pedestal"
+                  ? "bg-[#003B95] text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+              }`}
+            >
+              <Cpu className="size-3 text-purple-300" />
+              <span>Mẫu 3: Bục Neon &amp; Trợ Lý</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setVersion("pin_grid_screens")}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTemplate === "pin_grid_screens"
+                  ? "bg-[#003B95] text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+              }`}
+            >
+              <Layers className="size-3 text-emerald-300" />
+              <span>Mẫu 4: 4 Màn Glassmorphism</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setVersion("pin_design_system")}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTemplate === "pin_design_system"
+                  ? "bg-[#003B95] text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+              }`}
+            >
+              <Palette className="size-3 text-rose-300" />
+              <span>Mẫu 5: Design System</span>
             </button>
           </div>
 
@@ -172,7 +231,7 @@ export function EcosystemPitchPosters() {
               className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
             >
               <Download className="size-4" />
-              <span>{isExporting ? "Đang xuất..." : "Xuất Ảnh 4K / In Ấn"}</span>
+              <span>{isExporting ? "Đang xuất 4K..." : "Xuất Ảnh 4K Sắc Nét"}</span>
             </button>
           </div>
         </div>
@@ -185,358 +244,400 @@ export function EcosystemPitchPosters() {
         ref={posterContainerRef}
         className="w-full relative rounded-3xl overflow-hidden shadow-2xl transition-all duration-300"
       >
-        {version === "cosmic_executive" ? (
-          /* ──────────────────────────────────────────────────────────────────
-             BẢN 1: NAVY MIDNIGHT COSMIC EXECUTIVE (CLB DOANH NHÂN & HANOIBA)
-             Phong cách Đêm Hoàng Gia, Deep Cosmic Navy, Sao vàng óng & Ánh kim
-          ────────────────────────────────────────────────────────────────── */
+        {/* ──────────────────────────────────────────────────────────────────
+            MẪU 1: PINTEREST 1116189088939047069 (ISOMETRIC MULTI-DEVICE ECOSYSTEM)
+            "CEO 1983 IS TURNING ASSOCIATION NETWORKING INTO A SMART PLATFORM"
+        ────────────────────────────────────────────────────────────────── */}
+        {activeTemplate === "pin_multi_device" && (
           <div className="w-full bg-[#03091e] text-white relative overflow-hidden px-4 sm:px-8 lg:px-14 py-12 lg:py-16 selection:bg-amber-500 selection:text-black">
-            {/* Lớp lưới nền đồ họa & ánh sáng vũ trụ */}
+            {/* Ambient Lighting */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(0,102,255,0.22),_transparent_65%)] pointer-events-none" />
             <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-sky-500/10 rounded-full blur-[140px] pointer-events-none" />
             <div className="absolute top-10 left-10 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[150px] pointer-events-none" />
-            <div
-              className="absolute inset-0 opacity-[0.035] pointer-events-none"
-              style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)`,
-                backgroundSize: "32px 32px",
-              }}
-            />
 
-            {/* ── HEADER PHÍA TRÊN POSTER: TYPOGRAPHY LỚN HIỆN ĐẠI CHUẨN PINTEREST ── */}
+            {/* Typography Header */}
             <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.25)] backdrop-blur-md">
                 <Crown className="size-4 text-amber-400 animate-pulse" />
-                <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-amber-300">
-                  HỆ SINH THÁI DOANH NHÂN CEO 1983 · HANOIBA
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.18em] text-amber-300">
+                  HỆ SINH THÁI DOANH NHÂN CEO 1983 (HANOIBA)
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                <span className="text-[11px] text-slate-300 font-semibold">Bản Quyền Độc Quyền</span>
+                <span className="text-[11px] text-slate-300 font-semibold">Chuyển Đổi Số Hiệp Hội</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-sky-200 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-                NỀN TẢNG KẾT NỐI DOANH NHÂN &amp; QUẢN TRỊ HIỆP HỘI ĐỈNH CAO
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-amber-200 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                BIẾN MẠNG LƯỚI HIỆP HỘI THÀNH NỀN TẢNG SỐ HÓA THÔNG MINH
               </h1>
 
               <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed drop-shadow-sm">
-                Thiết kế trải nghiệm <strong className="text-white font-bold">Mobile-First</strong> tối ưu. Số hóa 1.250+
-                Doanh chủ Quý Hợi, xúc tiến giao thương B2B hơn 100 Tỷ VNĐ và quản trị sự kiện thông minh không giới hạn.
+                Đồng bộ hoàn hảo giữa <strong className="text-amber-300 font-bold">Cổng Quản Trị Web CRM</strong> và{" "}
+                <strong className="text-sky-300 font-bold">Ứng Dụng Di Động Hội Viên</strong>: Thẻ Doanh Nhân Số,
+                cổng thanh toán QR Napas247, điểm danh QR Gate và sàn kết nối giao thương B2B tự động.
               </p>
             </div>
 
-            {/* ── KHU VỰC TRUNG TÂM (HERO CENTERPIECE): BÀN TAY CẦM ĐIỆN THOẠI & FLOATING CARDS ── */}
+            {/* Central Isometric Devices Hub */}
             <div className="relative z-10 my-10 lg:my-14 max-w-5xl mx-auto flex flex-col items-center">
-              <div className="relative w-full max-w-[420px] sm:max-w-[480px] lg:max-w-[540px] flex justify-center items-center">
-                {/* Vầng hào quang phát sáng sau bàn tay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-600/30 via-amber-400/20 to-transparent rounded-full blur-3xl transform scale-110 pointer-events-none" />
+              <div className="relative w-full max-w-[500px] sm:max-w-[580px] lg:max-w-[640px] flex justify-center items-center">
+                <div className="absolute inset-0 bg-gradient-to-t from-amber-500/20 via-sky-500/15 to-transparent rounded-full blur-3xl transform scale-110 pointer-events-none" />
 
-                {/* Bàn tay người cầm điện thoại */}
-                <div className="relative w-full flex justify-center">
-                  <img
-                    src="/images/landing/hand_holding_phone_transparent.png"
-                    alt="Hand holding mobile phone showing CEO 1983"
-                    className="w-[340px] sm:w-[420px] lg:w-[480px] h-auto object-contain filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)] z-10"
-                  />
-
-                  {/* Nội dung màn hình điện thoại được lồng ghép sống động */}
-                  <div
-                    className="absolute top-[8%] sm:top-[7.5%] w-[190px] sm:w-[235px] lg:w-[270px] h-[350px] sm:h-[430px] lg:h-[490px] rounded-[32px] sm:rounded-[40px] overflow-hidden z-20 pointer-events-none p-3 flex flex-col justify-between"
-                    style={{
-                      background: "linear-gradient(145deg, #021538 0%, #002b66 60%, #001233 100%)",
-                      boxShadow: "inset 0 0 20px rgba(0,0,0,0.8)",
-                    }}
-                  >
-                    {/* Header màn hình con */}
-                    <div className="flex items-center justify-between pb-2 border-b border-amber-400/30">
-                      <div className="flex items-center gap-1.5">
-                        <img src="/app-icon.png" alt="" className="size-5 rounded-full" />
-                        <span className="text-[9px] font-black text-amber-300">CLB CEO 1983</span>
-                      </div>
-                      <span className="text-[7.5px] px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black">
-                        HỘI VIÊN VIP
-                      </span>
-                    </div>
-
-                    {/* Thẻ Doanh Nhân Số 3D lấp lánh */}
-                    <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-500/20 via-sky-500/20 to-indigo-600/30 border border-amber-300/40 shadow-inner space-y-1.5">
-                      <div className="flex justify-between items-start">
+                {/* Main Hero Phone */}
+                <div className="relative w-[280px] sm:w-[320px] lg:w-[360px] aspect-[9/18.5] bg-slate-950 rounded-[44px] p-2.5 border-[4px] border-slate-700/80 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(251,191,36,0.3)] overflow-hidden">
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-30" />
+                  <div className="w-full h-full rounded-[36px] overflow-hidden bg-gradient-to-b from-[#001f54] via-[#001033] to-[#00081a] p-3 flex flex-col justify-between">
+                    {/* Header */}
+                    <div className="pt-5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <img src="/app-icon.png" alt="Logo" className="size-7 rounded-lg" />
                         <div>
-                          <div className="text-[7px] text-slate-300 uppercase">Doanh Nhân Kim Cương</div>
-                          <div className="text-[11px] font-black text-white">NGUYỄN VĂN AN</div>
-                          <div className="text-[7.5px] text-amber-300 font-medium">Tập Đoàn Viconnect Global</div>
+                          <div className="text-[10px] font-black text-amber-400">CLB CEO 1983</div>
+                          <div className="text-[8px] text-slate-400">Hội Doanh Nhân Trẻ Hà Nội</div>
                         </div>
-                        <QrCode className="size-6 text-white shrink-0" />
                       </div>
-                      <div className="flex justify-between items-center text-[7px] text-slate-300 pt-1 border-t border-white/10 font-mono">
-                        <span>ID: CEO1983-088</span>
-                        <span className="text-amber-300 font-bold">Điểm Tín Nhiệm: AAA</span>
-                      </div>
-                    </div>
-
-                    {/* Phím tắt tính năng nhanh */}
-                    <div className="grid grid-cols-3 gap-1">
-                      {[
-                        { label: "Sàn B2B", icon: "🤝" },
-                        { label: "Vé Mời QR", icon: "🎫" },
-                        { label: "Hẹn 1-1", icon: "☕" },
-                      ].map((btn, i) => (
-                        <div
-                          key={i}
-                          className="p-1 rounded-xl bg-slate-900/80 border border-slate-700/60 text-center"
-                        >
-                          <div className="text-[10px]">{btn.icon}</div>
-                          <div className="text-[6.5px] font-bold text-slate-200">{btn.label}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Dòng trạng thái cuối app */}
-                    <div className="p-1.5 rounded-xl bg-blue-950/60 border border-blue-500/30 flex items-center justify-between text-[7px]">
-                      <span className="text-slate-300">Đã kết nối:</span>
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <span className="size-1 rounded-full bg-emerald-400 animate-ping" />
-                        Trực tuyến 1.250+
+                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-amber-500 text-slate-950">
+                        OFFICIAL
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* ── 3 FLOATING GLASSMORPHISM CARDS (THẺ NỔI BAY XUNG QUANH) ── */}
-                {/* Floating Card 1: Thẻ Doanh Nhân Số 3D & NFC */}
-                <div className="hidden md:flex absolute -left-12 lg:-left-24 top-10 z-30 p-3.5 rounded-2xl backdrop-blur-xl bg-slate-900/80 border border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.6)] max-w-[220px] items-center gap-3 animate-in fade-in slide-in-from-left-6 duration-700 hover:scale-105 transition-transform">
-                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shadow-md">
-                    <Crown className="size-5" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-xs font-black text-amber-300">Thẻ Doanh Nhân 3D</div>
-                    <div className="text-[10px] text-slate-300 font-medium">Chạm NFC 1 giây trao danh thiếp</div>
-                    <div className="text-[9px] text-emerald-400 font-bold mt-0.5">✓ Tín nhiệm cấp tổ chức</div>
-                  </div>
-                </div>
-
-                {/* Floating Card 2: Sàn Giao Thương B2B 105.8 Tỷ */}
-                <div className="hidden md:flex absolute -right-12 lg:-right-24 top-24 z-30 p-3.5 rounded-2xl backdrop-blur-xl bg-slate-900/80 border border-sky-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.6)] max-w-[230px] items-center gap-3 animate-in fade-in slide-in-from-right-6 duration-700 hover:scale-105 transition-transform">
-                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white shadow-md">
-                    <TrendingUp className="size-5" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-xs font-black text-white">Sàn Giao Thương B2B</div>
-                    <div className="text-[10px] text-slate-300 font-medium">105.8 Tỷ VNĐ giá trị kết nối</div>
-                    <div className="text-[9px] text-sky-300 font-bold mt-0.5">480+ Cơ hội mua bán sỉ</div>
-                  </div>
-                </div>
-
-                {/* Floating Card 3: Check-in Sự Kiện 0.5s */}
-                <div className="hidden md:flex absolute -bottom-6 left-1/2 -translate-x-1/2 z-30 px-5 py-2.5 rounded-2xl backdrop-blur-xl bg-slate-900/90 border border-amber-400/60 shadow-[0_12px_40px_rgba(251,191,36,0.3)] items-center gap-3 hover:scale-105 transition-transform">
-                  <QrCode className="size-5 text-amber-400" />
-                  <span className="text-xs font-black text-white tracking-wide">
-                    Vé Mời VIP &amp; Check-in 0.5 Giây Không Ùn Tắc
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                    100% Tự Động
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* ── BỐ CỤC 4 MÀN HÌNH MOBILE ĐAN XEN (STAGGERED MULTI-DEVICE MOCKUPS) ── */}
-            <div className="relative z-10 mt-16 max-w-6xl mx-auto space-y-6">
-              <div className="text-center space-y-1">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-amber-400">
-                  CÁC TRỤ CỘT TÍNH NĂNG ĐỘC BẢN
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  Trải Nghiệm Toàn Diện Dành Cho Hội Viên &amp; Ban Điều Hành
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-4">
-                {/* ── MÀN HÌNH 1: SÀN B2B & CƠ HỘI HỢP TÁC ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-amber-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#041a4a] to-[#01091d] border border-blue-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-amber-300 flex items-center gap-1">
-                          <Building2 className="size-3" /> Cơ hội B2B
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[9px]">
-                          2.4 Tỷ
-                        </span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Tìm tổng thầu thi công nội thất chuỗi nhà hàng khách sạn 5 sao
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Đã có 14 chào giá</span>
-                        <span className="text-sky-400 font-semibold">Khớp nối ngay →</span>
+                    {/* Electronic Business Card */}
+                    <div className="my-2 p-3 rounded-2xl bg-gradient-to-br from-amber-500/20 via-slate-900/60 to-sky-900/40 border border-amber-400/50 shadow-lg relative overflow-hidden">
+                      <div className="text-[8px] font-mono text-amber-300">THẺ DOANH NHÂN SỐ</div>
+                      <div className="text-sm font-black text-white mt-0.5">Phạm Văn Vũ</div>
+                      <div className="text-[9px] text-slate-300">Chủ tịch HĐQT · Viconnect Group</div>
+                      <div className="mt-2 flex items-center justify-between pt-2 border-t border-amber-400/20">
+                        <div className="text-[8px] font-mono text-slate-400">ID: CEO1983-088</div>
+                        <QrCode className="size-6 text-amber-300" />
                       </div>
                     </div>
 
+                    {/* 4 Quick Actions */}
+                    <div className="grid grid-cols-4 gap-1 text-center">
+                      <div className="p-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <Calendar className="size-3.5 mx-auto text-amber-400" />
+                        <span className="text-[7.5px] font-bold block mt-0.5">Sự Kiện</span>
+                      </div>
+                      <div className="p-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <Building2 className="size-3.5 mx-auto text-sky-400" />
+                        <span className="text-[7.5px] font-bold block mt-0.5">Giao Thương</span>
+                      </div>
+                      <div className="p-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <Award className="size-3.5 mx-auto text-emerald-400" />
+                        <span className="text-[7.5px] font-bold block mt-0.5">Đặc Quyền</span>
+                      </div>
+                      <div className="p-1.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <Vote className="size-3.5 mx-auto text-purple-400" />
+                        <span className="text-[7.5px] font-bold block mt-0.5">Bầu Cử</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Left Card: CRM Admin */}
+                <div className="hidden md:flex absolute -left-16 top-12 p-3 rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-sky-400/40 shadow-2xl flex-col gap-1 w-52 z-20">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400">
+                      <BarChart3 className="size-4" />
+                    </div>
                     <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-amber-400" />
-                        <h4>Sàn Giao Thương B2B</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Đăng nhu cầu mua bán, đấu thầu sỉ nội bộ, tìm kiếm đối tác tin cậy trong hiệp hội với chi phí 0
-                        đồng.
-                      </p>
+                      <div className="text-[10px] font-bold text-sky-300">Cổng Quản Trị CRM</div>
+                      <div className="text-xs font-black text-white">Recharts &amp; Excel</div>
                     </div>
                   </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-amber-300 font-bold">
-                    <span>Xúc tiến giao thương</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
+                  <div className="text-[9px] text-slate-400 mt-1">
+                    Thu chi minh bạch, gạch nợ tức thì qua cổng QR Napas247, phân quyền 3 cấp độ.
                   </div>
                 </div>
 
-                {/* ── MÀN HÌNH 2: LỊCH HẸN 1-ON-1 & XÚC TIẾN ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-amber-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#041a4a] to-[#01091d] border border-blue-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-sky-300 flex items-center gap-1">
-                          <MessageSquare className="size-3" /> Lịch Hẹn 1-on-1
-                        </span>
-                        <span className="text-amber-400 font-bold text-[9px]">09:30 AM</span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Cà phê đàm phán hợp tác cung ứng vật liệu xây dựng dự án Miền Bắc
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Habblet Hotel &amp; Landmark 72</span>
-                        <span className="text-emerald-400 font-semibold">Đã xác nhận</span>
-                      </div>
+                {/* Floating Right Card: Check-in QR Gate */}
+                <div className="hidden md:flex absolute -right-16 bottom-16 p-3 rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-amber-400/40 shadow-2xl flex-col gap-1 w-52 z-20">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                      <QrCode className="size-4" />
                     </div>
-
                     <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-sky-400" />
-                        <h4>Lịch Gặp &amp; Chat Riêng</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Đặt lịch gặp 1-1, trao đổi hợp đồng bảo mật, gọi thoại trực tiếp mà không cần qua mạng xã hội
-                        ngoài.
-                      </p>
+                      <div className="text-[10px] font-bold text-amber-300">QR Gate Sự Kiện</div>
+                      <div className="text-xs font-black text-white">Điểm Danh 0.1 Giây</div>
                     </div>
                   </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-sky-300 font-bold">
-                    <span>Kết nối sâu 1-on-1</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* ── MÀN HÌNH 3: ĐẠI HỘI DOANH NHÂN & VÉ MỜI QR ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-amber-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#041a4a] to-[#01091d] border border-blue-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-amber-300 flex items-center gap-1">
-                          <Calendar className="size-3" /> Đại Hội Thường Niên
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-black text-[9px]">
-                          VÉ VIP
-                        </span>
-                      </div>
-                      <div className="text-xs font-black text-white line-clamp-2">
-                        ĐẠI HỘI DOANH NHÂN CEO 1983 - GALA VINH DANH HOÀNG GIA
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Bàn VIP 01 · Ghế 06</span>
-                        <span className="text-amber-400 font-bold flex items-center gap-1">
-                          <QrCode className="size-3" /> Mã QR Vé
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-emerald-400" />
-                        <h4>Sự Kiện &amp; Vé Mời QR</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Phát hành thư mời Pinterest cao cấp, sơ đồ bàn tiệc gala VIP, check-in quét QR tự động tại cửa
-                        đón tiếp.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-emerald-300 font-bold">
-                    <span>Quản trị sự kiện</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* ── MÀN HÌNH 4: MẠNG LƯỚI HỘI VIÊN & TƯƠNG TÁC ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-amber-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#041a4a] to-[#01091d] border border-blue-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-amber-300 flex items-center gap-1">
-                          <Users className="size-3" /> Mạng Lưới Hội Viên
-                        </span>
-                        <span className="text-emerald-400 text-[9px]">1.250 Doanh Chủ</span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Bảng tin tương tác thành tựu doanh nghiệp, khen thưởng &amp; vinh danh
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Tra cứu theo ngành nghề</span>
-                        <span className="text-cyan-400 font-semibold">63 Tỉnh Thành →</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-purple-400" />
-                        <h4>Mạng Xã Hội Doanh Nhân</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Cộng đồng doanh nhân tinh hoa, tôn vinh thương hiệu cá nhân và chia sẻ cơ hội đầu tư minh bạch.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-purple-300 font-bold">
-                    <span>Mạng lưới gắn kết</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
+                  <div className="text-[9px] text-slate-400 mt-1">
+                    Sơ đồ bàn tiệc cinema, gán chỗ ngồi chính thức, không ùn tắc cửa đón tiếp.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ── THANH CHỈ SỐ STATS BAR THUYẾT PHỤC KHÁCH HÀNG ── */}
-            <div className="relative z-10 mt-14 pt-8 border-t border-slate-800/80 max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-amber-400 font-mono">1.250+</div>
-                <div className="text-xs text-slate-300 font-semibold">Doanh Chủ &amp; Lãnh Đạo VIP</div>
+            {/* 4 Feature Pillars */}
+            <div className="relative z-10 max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-amber-400/40 transition">
+                <Users className="size-6 text-amber-400 mb-2" />
+                <h3 className="text-sm font-bold text-white">Giao Thương B2B</h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Đăng sản phẩm, tìm kiếm đối tác cung ứng nội bộ CLB với độ tin cậy tuyệt đối.
+                </p>
               </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-sky-400 font-mono">105.8 Tỷ</div>
-                <div className="text-xs text-slate-300 font-semibold">Giá Trị Giao Thương B2B</div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-sky-400/40 transition">
+                <Wallet className="size-6 text-sky-400 mb-2" />
+                <h3 className="text-sm font-bold text-white">Tài Chính Minh Bạch</h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Sổ quỹ thu chi, quản lý hội phí tự động gạch nợ với mã QR Napas247 chính xác từng giao dịch.
+                </p>
               </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-400 font-mono">48+</div>
-                <div className="text-xs text-slate-300 font-semibold">Sự Kiện &amp; Diễn Đàn Mỗi Năm</div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-400/40 transition">
+                <Award className="size-6 text-emerald-400 mb-2" />
+                <h3 className="text-sm font-bold text-white">Đặc Quyền Hội Viên</h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Kho voucher ưu đãi độc quyền, thẻ hội viên điện tử nhận diện 3 màu thương hiệu.
+                </p>
               </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-amber-300 font-mono">99.8%</div>
-                <div className="text-xs text-slate-300 font-semibold">Tỷ Lệ Tín Nhiệm &amp; Tái Tục</div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-purple-400/40 transition">
+                <Zap className="size-6 text-purple-400 mb-2" />
+                <h3 className="text-sm font-bold text-white">Trợ Lý Ảo AI</h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Hỏi đáp điều lệ, tra cứu nhanh lịch hoạt động và gợi ý kết nối doanh nghiệp thông minh.
+                </p>
+              </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="relative z-10 mt-12 pt-8 border-t border-slate-800 max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl lg:text-3xl font-black text-amber-400 font-mono">1.250+</div>
+                <div className="text-xs text-slate-300 mt-1">Doanh Chủ &amp; Lãnh Đạo</div>
+              </div>
+              <div>
+                <div className="text-2xl lg:text-3xl font-black text-sky-400 font-mono">105.8 Tỷ</div>
+                <div className="text-xs text-slate-300 mt-1">Giá Trị Giao Thương B2B</div>
+              </div>
+              <div>
+                <div className="text-2xl lg:text-3xl font-black text-emerald-400 font-mono">48+</div>
+                <div className="text-xs text-slate-300 mt-1">Sự Kiện Mỗi Năm</div>
+              </div>
+              <div>
+                <div className="text-2xl lg:text-3xl font-black text-purple-400 font-mono">99.8%</div>
+                <div className="text-xs text-slate-300 mt-1">Tỷ Lệ Tín Nhiệm &amp; Tái Tục</div>
               </div>
             </div>
           </div>
-        ) : (
-          /* ──────────────────────────────────────────────────────────────────
-             BẢN 2: MODERN HIGH-TECH MINIMALIST (SAAS B2B & ENTERPRISE)
-             Phong cách Công Nghệ Tinh Gọn Hiện Đại, Slate Obsidian & Champagne Gold
-          ────────────────────────────────────────────────────────────────── */
-          <div className="w-full bg-[#0a0f1d] text-white relative overflow-hidden px-4 sm:px-8 lg:px-14 py-12 lg:py-16 selection:bg-cyan-500 selection:text-black">
-            {/* Lớp nền kiến trúc công nghệ */}
+        )}
+
+        {/* ──────────────────────────────────────────────────────────────────
+            MẪU 2: PINTEREST 1126533294319507400 (HAND HOLDING PHONE & HQ ARCHITECTURE)
+            "CEO 1983 - CỔNG KẾT NỐI DOANH NHÂN & THẺ ĐIỆN TỬ"
+        ────────────────────────────────────────────────────────────────── */}
+        {activeTemplate === "pin_hand_watermark" && (
+          <div className="w-full bg-[#080d1e] text-white relative overflow-hidden px-4 sm:px-8 lg:px-14 py-12 lg:py-16 selection:bg-cyan-500 selection:text-black">
+            {/* Watermark "CEO 1983" chìm cực lớn trong nền */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+              <span className="text-[120px] sm:text-[200px] lg:text-[280px] font-black text-white/[0.03] tracking-tighter leading-none whitespace-nowrap">
+                CEO 1983
+              </span>
+            </div>
+
+            {/* Trụ sở 3D mờ ảo & vệt sáng kiến trúc */}
+            <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-gradient-to-b from-cyan-500/10 via-blue-600/5 to-transparent rounded-full blur-[140px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/40 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-md">
+                <Zap className="size-4 text-cyan-400 animate-pulse" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-cyan-300">
+                  MOBILE APP CHÍNH THỨC CỦA HỘI VIÊN
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                <span className="text-[11px] text-slate-300 font-semibold">Cộng Đồng HanoiBA</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-cyan-200 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                KẾT NỐI DOANH CHỦ 1983 TRONG TẦM TAY BẠN
+              </h1>
+
+              <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+                Tất cả đặc quyền, giao thương, lịch họp ban và kết nối kinh doanh tinh hoa được tích hợp trọn vẹn trong một ứng dụng di động thanh lịch và an toàn.
+              </p>
+            </div>
+
+            {/* Hero Hand & Floating Pill Tags */}
+            <div className="relative z-10 my-12 max-w-4xl mx-auto flex flex-col items-center">
+              {/* Tilted Floating Tags */}
+              <div className="w-full flex justify-between items-center px-4 mb-4 text-xs font-bold">
+                <span className="px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 shadow-lg -rotate-3">
+                  ⚡ Check-in Siêu Tốc 0.1s
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-200 shadow-lg rotate-2">
+                  👑 Thẻ Doanh Nhân Số
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 shadow-lg -rotate-2">
+                  🔒 Bảo Mật AES-256
+                </span>
+              </div>
+
+              {/* Central Phone Mockup */}
+              <div className="relative w-[300px] sm:w-[340px] aspect-[9/18.5] bg-slate-950 rounded-[44px] p-2.5 border-[4px] border-cyan-500/60 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(6,182,212,0.35)] overflow-hidden">
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-30" />
+                <div className="w-full h-full rounded-[36px] overflow-hidden bg-gradient-to-b from-[#03152e] via-[#020b18] to-black p-3.5 flex flex-col justify-between">
+                  <div className="pt-4 flex items-center justify-between">
+                    <span className="text-xs font-black text-cyan-300">CLB DOANH NHÂN 1983</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-200">HanoiBA</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-900/40 via-slate-900/80 to-blue-950/60 border border-cyan-400/40 shadow-inner">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-11 rounded-full bg-amber-400/20 border border-amber-400 flex items-center justify-center font-black text-amber-300">
+                        PV
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-white">Phạm Văn Vũ</div>
+                        <div className="text-[10px] text-cyan-300">Chủ tịch Sáng Lập · CEO 1983</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between">
+                      <span className="text-[9px] text-slate-400 font-mono">HẠNG: DOANH NHÂN CHÍNH THỨC</span>
+                      <QrCode className="size-5 text-cyan-300" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-300">Sự kiện sắp tới: Gala Hội Ngộ 1983</span>
+                      <span className="text-[9px] font-bold text-amber-400">Đã đăng ký</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-300">Hội phí thường niên</span>
+                      <span className="text-[9px] font-bold text-emerald-400">Đã hoàn thành</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3-Step Guide Ticker */}
+              <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-xs font-black text-cyan-400 block mb-1">BƯỚC 1</span>
+                  <div className="text-xs font-bold text-white">Tải App &amp; Đăng Nhập</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Xác thực OTP tức thì, phân quyền chuẩn vai trò</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-xs font-black text-amber-400 block mb-1">BƯỚC 2</span>
+                  <div className="text-xs font-bold text-white">Kích Hoạt Thẻ Doanh Nhân Số</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Mã QR cá nhân hóa, điểm danh check-in 1 chạm</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-xs font-black text-emerald-400 block mb-1">BƯỚC 3</span>
+                  <div className="text-xs font-bold text-white">Kết Nối Giao Thương B2B</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Khám phá cơ hội hợp tác và ưu đãi độc quyền</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ──────────────────────────────────────────────────────────────────
+            MẪU 3: PINTEREST 1116189088942752029 (NEON PEDESTAL & FLOATING CARDS)
+            "BIẾN APP DOANH NHÂN THÀNH TRỢ LÝ CÁ NHÂN HÓA"
+        ────────────────────────────────────────────────────────────────── */}
+        {activeTemplate === "pin_neon_pedestal" && (
+          <div className="w-full bg-[#050614] text-white relative overflow-hidden px-4 sm:px-8 lg:px-14 py-12 lg:py-16 selection:bg-purple-500 selection:text-black">
+            {/* Ambient Lighting Purple / Cyan */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-600/15 rounded-full blur-[160px] pointer-events-none" />
+            <div className="absolute top-10 right-10 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
+
+            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-purple-400/40 shadow-[0_0_24px_rgba(168,85,247,0.3)] backdrop-blur-md">
+                <Sparkles className="size-4 text-purple-400 animate-pulse" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-purple-300">
+                  TRỢ LÝ SỐ &amp; BẢN SẮC CÁ NHÂN HÓA
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                <span className="text-[11px] text-slate-300 font-semibold">ViOne AI Engine</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-purple-200 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                BIẾN APP DOANH NHÂN THÀNH TRỢ LÝ CÁ NHÂN HÓA
+              </h1>
+
+              <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+                Tự động đề xuất kết nối kinh doanh, nhắc lịch họp Ban, cảnh báo gia hạn hội phí và phát hành vé mời điện tử chuẩn mực.
+              </p>
+            </div>
+
+            {/* Neon Pedestal Centerpiece with 3 Floating Cards & Connectors */}
+            <div className="relative z-10 my-14 max-w-5xl mx-auto flex flex-col items-center">
+              <div className="relative w-full max-w-[640px] flex justify-center items-center">
+                {/* 3D Circular Multi-Ring Neon Pedestal Base */}
+                <div className="absolute -bottom-10 w-[420px] sm:w-[500px] h-[120px] rounded-[100%] bg-gradient-to-r from-purple-500/30 via-cyan-400/40 to-purple-500/30 blur-md border-t-2 border-cyan-400 shadow-[0_0_60px_rgba(168,85,247,0.6)] transform rotate-x-60 pointer-events-none" />
+
+                {/* Floating Phone on Pedestal */}
+                <div className="relative z-10 w-[290px] sm:w-[330px] aspect-[9/18.5] bg-slate-950 rounded-[44px] p-2.5 border-[4px] border-purple-500/70 shadow-[0_30px_70px_rgba(0,0,0,0.9),0_0_60px_rgba(168,85,247,0.4)] overflow-hidden">
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-30" />
+                  <div className="w-full h-full rounded-[36px] overflow-hidden bg-gradient-to-b from-[#130a2a] via-[#090518] to-black p-3.5 flex flex-col justify-between">
+                    <div className="pt-4 flex items-center justify-between">
+                      <span className="text-xs font-black text-purple-300">TRỢ LÝ VIONE AI</span>
+                      <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-400/30">
+                      <div className="text-[10px] text-purple-300 font-bold">Gợi ý kết nối thông minh hôm nay:</div>
+                      <div className="text-xs font-black text-white mt-1">Hội viên cùng ngành Xây Dựng &amp; Nội Thất</div>
+                      <div className="text-[9px] text-slate-300 mt-1">3 đối tác tiềm năng đang tìm kiếm nhà cung cấp</div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
+                      <div className="text-[9px] text-slate-400">Vé mời Gala Atlantis 2026:</div>
+                      <div className="text-xs font-black text-amber-300 mt-0.5">Bàn Danh Dự 01 · Ghế 08</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Card 1: Left Top (ViOne AI) */}
+                <div className="hidden lg:flex absolute -left-12 top-6 p-3.5 rounded-2xl bg-slate-900/90 backdrop-blur-xl border border-purple-400/50 shadow-2xl flex-col gap-1 w-56 z-20">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="size-4 text-purple-400" />
+                    <span className="text-xs font-black text-white">Trợ Lý Ảo ViOne AI</span>
+                  </div>
+                  <div className="text-[10px] text-slate-300">
+                    Hỏi đáp điều lệ, tra cứu nhanh lịch hoạt động và tự động gợi ý đối tác B2B thông minh.
+                  </div>
+                </div>
+
+                {/* Floating Card 2: Right Center (Thẻ Doanh Nhân Số) */}
+                <div className="hidden lg:flex absolute -right-12 top-24 p-3.5 rounded-2xl bg-slate-900/90 backdrop-blur-xl border border-cyan-400/50 shadow-2xl flex-col gap-1 w-56 z-20">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="size-4 text-cyan-400" />
+                    <span className="text-xs font-black text-white">Thẻ Doanh Nhân Số</span>
+                  </div>
+                  <div className="text-[10px] text-slate-300">
+                    Quẹt mã QR định danh, kết nối NFC 1 chạm và bảo lưu hồ sơ hội viên an toàn.
+                  </div>
+                </div>
+
+                {/* Floating Card 3: Left Bottom (B2B Marketplace) */}
+                <div className="hidden lg:flex absolute -left-8 bottom-12 p-3.5 rounded-2xl bg-slate-900/90 backdrop-blur-xl border border-amber-400/50 shadow-2xl flex-col gap-1 w-56 z-20">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4 text-amber-400" />
+                    <span className="text-xs font-black text-white">Sàn Giao Dịch B2B</span>
+                  </div>
+                  <div className="text-[10px] text-slate-300">
+                    Đăng sản phẩm, tìm kiếm đối tác cung ứng tin cậy với chứng nhận CLB CEO 1983.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ──────────────────────────────────────────────────────────────────
+            MẪU 4: PINTEREST 1108378158348955419 (2X2 FROSTED GLASS APP SCREENS)
+            "TRẢI NGHIỆM MOBILE APP HỘI VIÊN CHUẨN MỰC QUỐC TẾ"
+        ────────────────────────────────────────────────────────────────── */}
+        {activeTemplate === "pin_grid_screens" && (
+          <div className="w-full bg-[#040817] text-white relative overflow-hidden px-4 sm:px-8 lg:px-14 py-12 lg:py-16 selection:bg-cyan-500 selection:text-black">
+            {/* Grid Ambient Background */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),_transparent_70%)] pointer-events-none" />
-            <div className="absolute top-1/4 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
-            <div className="absolute bottom-10 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
             <div
               className="absolute inset-0 opacity-[0.04] pointer-events-none"
               style={{
@@ -545,336 +646,205 @@ export function EcosystemPitchPosters() {
               }}
             />
 
-            {/* ── HEADER PHÍA TRÊN POSTER: HIGH-TECH TYPOGRAPHY ── */}
             <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/40 shadow-[0_0_24px_rgba(34,211,238,0.2)] backdrop-blur-md">
-                <Zap className="size-4 text-cyan-400 animate-pulse" />
+                <Layers className="size-4 text-cyan-400 animate-pulse" />
                 <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-cyan-300">
-                  ALL-IN-ONE ENTERPRISE MANAGEMENT SYSTEM
+                  4 PHÂN HỆ TRẢI NGHIỆM ĐỈNH CAO
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                <span className="text-[11px] text-slate-300 font-semibold">Chuyển Đổi Số Tổ Chức</span>
+                <span className="text-[11px] text-slate-300 font-semibold">Giao Diện Mobile-First</span>
               </div>
 
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-cyan-200 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-                KIẾN TRÚC CHUYỂN ĐỔI SỐ TOÀN DIỆN CHO HIỆP HỘI &amp; DOANH NGHIỆP
+                TRẢI NGHIỆM MOBILE APP HỘI VIÊN CHUẨN MỰC
               </h1>
 
-              <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed drop-shadow-sm">
-                Tự động hóa <strong className="text-white font-bold">80% vận hành</strong>, minh bạch dòng tiền VietQR,
-                tích hợp Trợ lý AI và Studio thiết kế thư mời đa kênh Zalo OA &amp; Email chuẩn Photoshop thu nhỏ.
+              <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+                4 màn hình trọng tâm được thiết kế theo tỷ lệ chuẩn, đường nét sắc sảo, hiệu ứng kính mờ glassmorphism và tương tác thời gian thực.
               </p>
             </div>
 
-            {/* ── KHU VỰC TRUNG TÂM (HERO CENTERPIECE): ĐIỆN THOẠI & CRM DASHBOARD ── */}
-            <div className="relative z-10 my-10 lg:my-14 max-w-5xl mx-auto flex flex-col items-center">
-              <div className="relative w-full max-w-[420px] sm:max-w-[480px] lg:max-w-[540px] flex justify-center items-center">
-                {/* Vầng sáng công nghệ */}
-                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/25 via-indigo-500/20 to-transparent rounded-full blur-3xl transform scale-110 pointer-events-none" />
-
-                {/* Bàn tay người cầm điện thoại */}
-                <div className="relative w-full flex justify-center">
-                  <img
-                    src="/images/landing/hand_holding_phone_transparent.png"
-                    alt="Hand holding mobile phone showing CRM Management"
-                    className="w-[340px] sm:w-[420px] lg:w-[480px] h-auto object-contain filter drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)] z-10"
-                  />
-
-                  {/* Nội dung màn hình điện thoại hiển thị CRM & Metrics */}
-                  <div
-                    className="absolute top-[8%] sm:top-[7.5%] w-[190px] sm:w-[235px] lg:w-[270px] h-[350px] sm:h-[430px] lg:h-[490px] rounded-[32px] sm:rounded-[40px] overflow-hidden z-20 pointer-events-none p-3 flex flex-col justify-between"
-                    style={{
-                      background: "linear-gradient(145deg, #091326 0%, #061e38 60%, #020b17 100%)",
-                      boxShadow: "inset 0 0 20px rgba(0,0,0,0.85)",
-                    }}
-                  >
-                    {/* Header CRM con */}
-                    <div className="flex items-center justify-between pb-2 border-b border-cyan-400/30">
-                      <div className="flex items-center gap-1.5">
-                        <BarChart3 className="size-4 text-cyan-400" />
-                        <span className="text-[9px] font-black text-white">CRM EXECUTIVE HUB</span>
-                      </div>
-                      <span className="text-[7.5px] px-1.5 py-0.5 rounded-full bg-cyan-400 text-slate-950 font-black">
-                        LIVE SYNC
-                      </span>
-                    </div>
-
-                    {/* Chỉ số doanh thu & hội viên */}
-                    <div className="p-2.5 rounded-2xl bg-slate-900/90 border border-cyan-400/30 shadow-inner space-y-1.5">
-                      <div className="flex justify-between items-center text-[7.5px] text-slate-300">
-                        <span>Tổng Thu Quỹ Năm 2026:</span>
-                        <span className="text-emerald-400 font-bold font-mono">1.850.000.000 đ</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 w-[84%]" />
-                      </div>
-                      <div className="flex justify-between text-[7px] text-slate-400 font-mono">
-                        <span>Đã thu 84%</span>
-                        <span className="text-cyan-300">Tự động VietQR</span>
-                      </div>
-                    </div>
-
-                    {/* Lưới tính năng tự động hóa */}
-                    <div className="grid grid-cols-2 gap-1.5 text-[7px]">
-                      <div className="p-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60">
-                        <div className="font-bold text-cyan-300">Trợ Lý AI 24/7</div>
-                        <div className="text-slate-400 text-[6.5px]">Tóm tắt họp &amp; nhắc nợ</div>
-                      </div>
-                      <div className="p-1.5 rounded-xl bg-slate-900/80 border border-slate-700/60">
-                        <div className="font-bold text-amber-300">Photoshop Studio</div>
-                        <div className="text-slate-400 text-[6.5px]">Poster thư mời 1 chạm</div>
-                      </div>
-                    </div>
-
-                    {/* Trạng thái server & docker */}
-                    <div className="p-1.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-[7px]">
-                      <span className="text-slate-400 font-mono">Docker · Nginx SSL</span>
-                      <span className="text-emerald-400 font-bold">Uptime 99.99%</span>
-                    </div>
+            {/* 2x2 Grid of 4 Floating Screens */}
+            <div className="relative z-10 my-12 max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Screen 1: Splash & Identity */}
+              <div className="p-3.5 rounded-3xl bg-slate-900/70 backdrop-blur-xl border border-sky-500/30 shadow-xl space-y-3 hover:border-sky-400 transition-all">
+                <div className="aspect-[9/16] rounded-2xl bg-gradient-to-b from-[#001f54] to-black p-3 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                  <img src="/app-icon.png" alt="Logo" className="size-16 rounded-2xl shadow-2xl mb-3" />
+                  <div className="text-sm font-black text-amber-400">CLB CEO 1983</div>
+                  <div className="text-[10px] text-slate-300 mt-1">Đoàn kết - Tiên phong - Thịnh vượng</div>
+                  <div className="mt-6 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold">
+                    Trực thuộc HanoiBA
                   </div>
                 </div>
+                <div>
+                  <h3 className="text-xs font-black text-white">1. Màn Khởi Động &amp; Bản Sắc</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Khẳng định vị thế và niềm tự hào hội viên</p>
+                </div>
+              </div>
 
-                {/* ── 3 FLOATING GLASSMORPHISM CARDS (BẢN ENTERPRISE) ── */}
-                {/* Floating Card 1: Photoshop Studio & Poster Thư Mời */}
-                <div className="hidden md:flex absolute -left-12 lg:-left-24 top-10 z-30 p-3.5 rounded-2xl backdrop-blur-xl bg-slate-900/85 border border-cyan-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.6)] max-w-[230px] items-center gap-3 animate-in fade-in slide-in-from-left-6 duration-700 hover:scale-105 transition-transform">
-                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-slate-950 shadow-md">
-                    <Laptop className="size-5 text-white" />
+              {/* Screen 2: Executive Dashboard */}
+              <div className="p-3.5 rounded-3xl bg-slate-900/70 backdrop-blur-xl border border-amber-500/30 shadow-xl space-y-3 hover:border-amber-400 transition-all">
+                <div className="aspect-[9/16] rounded-2xl bg-gradient-to-b from-[#0c1a30] to-black p-3 flex flex-col justify-between relative overflow-hidden">
+                  <div className="text-[10px] font-mono text-amber-400">TRANG CHỦ HỘI VIÊN</div>
+                  <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-400/40">
+                    <div className="text-[8px] text-slate-300">THẺ DOANH NHÂN SỐ</div>
+                    <div className="text-xs font-black text-white">Nguyễn Hoàng Long</div>
+                    <div className="text-[8px] text-amber-300">CEO Công Nghệ Số 1983</div>
                   </div>
-                  <div className="text-left">
-                    <div className="text-xs font-black text-cyan-300">Mini Photoshop Studio</div>
-                    <div className="text-[10px] text-slate-300 font-medium">Kéo thả poster, cắt ảnh, bóc tách</div>
-                    <div className="text-[9px] text-emerald-400 font-bold mt-0.5">Tạo thư mời trong 60 giây</div>
+                  <div className="grid grid-cols-2 gap-1 text-[8px] font-bold">
+                    <div className="p-1.5 bg-slate-800 rounded-lg text-center">Giao Thương B2B</div>
+                    <div className="p-1.5 bg-slate-800 rounded-lg text-center">Hội Phí Đã Đóng</div>
                   </div>
                 </div>
+                <div>
+                  <h3 className="text-xs font-black text-white">2. Dashboard Trang Chủ</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Thẻ số đa năng và lối tắt nghiệp vụ nhanh</p>
+                </div>
+              </div>
 
-                {/* Floating Card 2: Trợ Lý AI 24/7 */}
-                <div className="hidden md:flex absolute -right-12 lg:-right-24 top-24 z-30 p-3.5 rounded-2xl backdrop-blur-xl bg-slate-900/85 border border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.6)] max-w-[230px] items-center gap-3 animate-in fade-in slide-in-from-right-6 duration-700 hover:scale-105 transition-transform">
-                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shadow-md">
-                    <Sparkles className="size-5" />
+              {/* Screen 3: Event Detail & QR Gate */}
+              <div className="p-3.5 rounded-3xl bg-slate-900/70 backdrop-blur-xl border border-emerald-500/30 shadow-xl space-y-3 hover:border-emerald-400 transition-all">
+                <div className="aspect-[9/16] rounded-2xl bg-gradient-to-b from-[#03241b] to-black p-3 flex flex-col justify-between relative overflow-hidden">
+                  <div className="text-[10px] font-mono text-emerald-400">CHI TIẾT SỰ KIỆN</div>
+                  <div className="text-center py-2">
+                    <QrCode className="size-16 mx-auto text-emerald-300" />
+                    <div className="text-[9px] font-mono text-emerald-200 mt-1">CHECK-IN GATE 0.1S</div>
                   </div>
-                  <div className="text-left">
-                    <div className="text-xs font-black text-amber-300">Trợ Lý AI &amp; Voice 24/7</div>
-                    <div className="text-[10px] text-slate-300 font-medium">Điều khiển giọng nói &amp; tóm tắt</div>
-                    <div className="text-[9px] text-amber-400 font-bold mt-0.5">Hỗ trợ hội viên tức thì</div>
+                  <div className="text-[8px] text-slate-300 bg-slate-900/90 p-2 rounded-xl">
+                    Sơ đồ bàn tiệc: Bàn Danh Dự 02 · Ghế 05
                   </div>
                 </div>
+                <div>
+                  <h3 className="text-xs font-black text-white">3. Chi Tiết Sự Kiện &amp; QR Gate</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Điểm danh tự động và định vị ghế ngồi gala</p>
+                </div>
+              </div>
 
-                {/* Floating Card 3: Sổ Quỹ Tự Động VietQR */}
-                <div className="hidden md:flex absolute -bottom-6 left-1/2 -translate-x-1/2 z-30 px-5 py-2.5 rounded-2xl backdrop-blur-xl bg-slate-900/90 border border-cyan-400/60 shadow-[0_12px_40px_rgba(34,211,238,0.3)] items-center gap-3 hover:scale-105 transition-transform">
-                  <Wallet className="size-5 text-cyan-400" />
-                  <span className="text-xs font-black text-white tracking-wide">
-                    Sổ Quỹ Tự Động Hóa &amp; VietQR Động Gạch Nợ Tức Thì
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                    Tiết Kiệm 80% Kế Toán
-                  </span>
+              {/* Screen 4: QR Booking & Payment */}
+              <div className="p-3.5 rounded-3xl bg-slate-900/70 backdrop-blur-xl border border-purple-500/30 shadow-xl space-y-3 hover:border-purple-400 transition-all">
+                <div className="aspect-[9/16] rounded-2xl bg-gradient-to-b from-[#1b082e] to-black p-3 flex flex-col justify-between relative overflow-hidden">
+                  <div className="text-[10px] font-mono text-purple-400">CỔNG THANH TOÁN QR</div>
+                  <div className="p-2.5 rounded-xl bg-purple-500/15 border border-purple-400/40 text-center">
+                    <div className="text-[9px] text-slate-300">MÃ QR NAPAS247</div>
+                    <div className="text-sm font-black text-emerald-400">10.000.000 đ</div>
+                    <div className="text-[8px] text-slate-400">Gạch nợ tức thì tự động</div>
+                  </div>
+                  <div className="text-[8px] text-emerald-300 text-center">✓ Đã xác nhận thành công</div>
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-white">4. Đặt Vé &amp; Cổng QR Napas247</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Minh bạch tài chính và tự động gạch nợ</p>
                 </div>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* ── BỐ CỤC 4 MÀN HÌNH ENTERPRISE ĐAN XEN ── */}
-            <div className="relative z-10 mt-16 max-w-6xl mx-auto space-y-6">
-              <div className="text-center space-y-1">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-cyan-400">
-                  CÁC PHÂN HỆ NỀN TẢNG ENTERPRISE
+        {/* ──────────────────────────────────────────────────────────────────
+            MẪU 5: PINTEREST 1116189088941957181 (DESIGN SYSTEMS & DUAL PHONES)
+            "DESIGN SYSTEMS & NỀN TẢNG CÔNG NGHỆ CAO CẤP"
+        ────────────────────────────────────────────────────────────────── */}
+        {activeTemplate === "pin_design_system" && (
+          <div className="w-full bg-[#060814] text-white relative overflow-hidden px-4 sm:px-8 lg:px-14 py-12 lg:py-16 selection:bg-rose-500 selection:text-black">
+            {/* Dark IDE Code Backdrop */}
+            <div className="absolute inset-0 opacity-[0.035] pointer-events-none font-mono text-[10px] p-6 leading-relaxed select-none overflow-hidden">
+              {`// CEO 1983 Design System v5.0 - HanoiBA Core Architecture
+export const theme = {
+  colors: {
+    primaryRed: "#DC2626", // Nhiệt huyết & Đoàn kết
+    royalGold: "#F59E0B", // Tinh hoa & Hoàng gia
+    prosperityBlue: "#003B95", // Thịnh vượng & Tin cậy
+    surfaceDark: "#03091E"
+  },
+  components: {
+    ElectronicBusinessCard: true,
+    CinemaSeatingStudio: true,
+    Napas247QrGate: true,
+    ViOneAssistant: true
+  }
+};`}
+            </div>
+
+            <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-rose-400/40 shadow-[0_0_24px_rgba(244,63,94,0.2)] backdrop-blur-md">
+                <Palette className="size-4 text-rose-400 animate-pulse" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] text-rose-300">
+                  DESIGN SYSTEMS MAKE TEAMS FASTER
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  Tối Ưu Hóa Năng Suất, Tự Động Vận Hành Không Sai Sót
-                </h3>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                <span className="text-[11px] text-slate-300 font-semibold">Quy Chuẩn 3 Màu Thương Hiệu</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-4">
-                {/* ── ENTERPRISE SCREEN 1: DANH THIẾP THÔNG MINH & NFC ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-cyan-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#0c1830] to-[#030914] border border-cyan-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-cyan-300 flex items-center gap-1">
-                          <Compass className="size-3" /> Danh Thiếp Số
-                        </span>
-                        <span className="text-emerald-400 text-[9px] font-bold">NFC Active</span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Đồng bộ tự động thông tin chức danh, website doanh nghiệp &amp; profile PDF
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Chia sẻ Zalo · QR Code</span>
-                        <span className="text-cyan-400 font-semibold">1 chạm lưu danh bạ</span>
-                      </div>
-                    </div>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-rose-200 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                HỆ THỐNG GIAO DIỆN &amp; KIẾN TRÚC MẠNH MẼ
+              </h1>
 
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-cyan-400" />
-                        <h4>Danh Thiếp NFC Thông Minh</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Thay thế 100% card visit giấy truyền thống, bảo vệ môi trường, nâng tầm vị thế thương hiệu
-                        doanh nghiệp.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-cyan-300 font-bold">
-                    <span>Số hóa nhận diện</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* ── ENTERPRISE SCREEN 2: KHẢO SÁT & BẦU CỬ MINH BẠCH ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-cyan-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#0c1830] to-[#030914] border border-cyan-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-amber-300 flex items-center gap-1">
-                          <Vote className="size-3" /> Bầu Cử Ban Điều Hành
-                        </span>
-                        <span className="text-cyan-300 text-[9px] font-mono">Bảo Mật Kép</span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Bỏ phiếu tín nhiệm điện tử minh bạch, kiểm phiếu tức thì không thể can thiệp
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Tỷ lệ tham gia: 98.4%</span>
-                        <span className="text-emerald-400 font-semibold">Công khai kết quả</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-amber-400" />
-                        <h4>Bầu Cử &amp; Khảo Sát Số</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Lấy ý kiến hội viên, biểu quyết nghị quyết đại hội trực tiếp ngay trên smartphone với tính bảo
-                        mật tuyệt đối.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-amber-300 font-bold">
-                    <span>Dân chủ &amp; minh bạch</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* ── ENTERPRISE SCREEN 3: KHO TRI THỨC & CEO TALK ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-cyan-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#0c1830] to-[#030914] border border-cyan-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-purple-300 flex items-center gap-1">
-                          <GraduationCap className="size-3" /> Kho Tri Thức VIP
-                        </span>
-                        <span className="text-amber-400 text-[9px] font-bold">Exclusive</span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Kho tài liệu quản trị, pháp lý doanh nghiệp &amp; video đào tạo Masterclass
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>250+ Tài liệu thực chiến</span>
-                        <span className="text-sky-300 font-semibold">Tải về tức thì</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-purple-400" />
-                        <h4>Kho Tri Thức Doanh Chủ</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Tích lũy tài sản tri thức của hiệp hội, kết nối các chuyên gia đầu ngành cố vấn cho doanh nghiệp
-                        thành viên.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-purple-300 font-bold">
-                    <span>Đào tạo &amp; phát triển</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* ── ENTERPRISE SCREEN 4: TRUNG TÂM PHÁT SÓNG ĐA KÊNH ── */}
-                <div className="p-4 rounded-3xl backdrop-blur-md bg-slate-900/70 border border-slate-800 hover:border-cyan-400/50 transition duration-300 flex flex-col justify-between group">
-                  <div className="space-y-3">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-[#0c1830] to-[#030914] border border-cyan-500/30 shadow-inner space-y-2">
-                      <div className="flex items-center justify-between text-[10px] text-slate-300">
-                        <span className="font-bold text-emerald-300 flex items-center gap-1">
-                          <BellRing className="size-3" /> Đa Kênh Tức Thì
-                        </span>
-                        <span className="text-emerald-400 text-[9px] font-bold">1 Click</span>
-                      </div>
-                      <div className="text-xs font-bold text-white line-clamp-2">
-                        Phát sóng đồng bộ: App Push Notification, Tin nhắn Zalo ZNS và Email HTML
-                      </div>
-                      <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-800">
-                        <span>Tỷ lệ mở thư: 89.2%</span>
-                        <span className="text-emerald-400 font-semibold">Tự động hoá 100%</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-black text-white">
-                        <span className="size-2 rounded-full bg-emerald-400" />
-                        <h4>Truyền Thông Đa Kênh</h4>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                        Ban Thư ký gửi thông báo lịch họp, nhắc nợ hội phí hoặc chúc mừng sinh nhật tự động không sót một
-                        ai.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-emerald-300 font-bold">
-                    <span>Vận hành tự động</span>
-                    <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </div>
+              <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+                Được chuẩn hóa từ các thư viện UI component độc quyền: Nút bấm 3D, thẻ nổi glassmorphism, bảng màu 3 cấp độ (Đỏ - Vàng - Xanh) và tương thích native đa nền tảng.
+              </p>
             </div>
 
-            {/* ── THANH CHỈ SỐ ROI THUYẾT PHỤC DOANH NGHIỆP ── */}
-            <div className="relative z-10 mt-14 pt-8 border-t border-slate-800/80 max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-cyan-400 font-mono">80%</div>
-                <div className="text-xs text-slate-300 font-semibold">Tiết Kiệm Thời Gian Vận Hành</div>
+            {/* Dual Phones on Glass Pedestals & Floating UI Components */}
+            <div className="relative z-10 my-12 max-w-5xl mx-auto flex flex-col items-center">
+              <div className="relative w-full max-w-[700px] flex justify-center items-center gap-6 sm:gap-10">
+                {/* Phone 1: CRM & Statistics */}
+                <div className="relative w-[240px] sm:w-[280px] aspect-[9/18.5] bg-slate-950 rounded-[40px] p-2 border-[3px] border-slate-700 shadow-2xl overflow-hidden transform -rotate-3 hover:rotate-0 transition-transform">
+                  <div className="w-full h-full rounded-[32px] bg-gradient-to-b from-[#021124] to-black p-3 flex flex-col justify-between">
+                    <div className="text-[9px] font-mono text-sky-400">CRM THỐNG KÊ DOANH SỐ</div>
+                    <div className="p-2 rounded-xl bg-sky-950/40 border border-sky-400/30">
+                      <div className="text-[8px] text-slate-400">TỔNG GIAO THƯƠNG QUÝ II</div>
+                      <div className="text-base font-black text-sky-300">42.5 TỶ VNĐ</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-3/4 h-full bg-sky-400" />
+                      </div>
+                      <div className="text-[8px] text-slate-400 text-right">75% Chỉ tiêu năm</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phone 2: Mobile App Member Experience */}
+                <div className="relative w-[240px] sm:w-[280px] aspect-[9/18.5] bg-slate-950 rounded-[40px] p-2 border-[3px] border-amber-500/60 shadow-2xl overflow-hidden transform rotate-3 hover:rotate-0 transition-transform">
+                  <div className="w-full h-full rounded-[32px] bg-gradient-to-b from-[#1f1402] to-black p-3 flex flex-col justify-between">
+                    <div className="text-[9px] font-mono text-amber-400">APP HỘI VIÊN CHÍNH THỨC</div>
+                    <div className="p-2 rounded-xl bg-amber-950/40 border border-amber-400/30">
+                      <div className="text-[8px] text-slate-400">THẺ ĐIỆN TỬ DOANH NHÂN</div>
+                      <div className="text-sm font-black text-white">Chủ tịch Phạm Vũ</div>
+                    </div>
+                    <div className="text-center">
+                      <QrCode className="size-10 mx-auto text-amber-300" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-amber-400 font-mono">300%</div>
-                <div className="text-xs text-slate-300 font-semibold">Gia Tăng Tương Tác Hội Viên</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-400 font-mono">100%</div>
-                <div className="text-xs text-slate-300 font-semibold">Minh Bạch Tài Chính Sổ Quỹ</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-sky-400 font-mono">24/7</div>
-                <div className="text-xs text-slate-300 font-semibold">Trợ Lý AI Sẵn Sàng Phục Vụ</div>
+
+              {/* Floating UI Component Chips */}
+              <div className="mt-8 flex flex-wrap justify-center gap-2 max-w-3xl">
+                <span className="px-3 py-1 rounded-xl bg-red-600/20 border border-red-500/40 text-red-200 text-xs font-bold">
+                  🔴 Đỏ HanoiBA
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-bold">
+                  🟡 Vàng Hoàng Gia
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-blue-600/20 border border-blue-400/40 text-blue-200 text-xs font-bold">
+                  🔵 Xanh Thịnh Vượng
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono">
+                  ⚛️ React Router v7
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono">
+                  🦅 NestJS Core Architecture
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono">
+                  🐘 PostgreSQL Pure 3-Tier
+                </span>
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* ── GỢI Ý CHÀO HÀNG & HƯỚNG DẪN ── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-amber-500 shrink-0" />
-          <span>
-            <strong>Mẹo Chào Hàng:</strong> Bấm <strong>"Thuyết Trình"</strong> để mở toàn màn hình khi pitching trên máy
-            chiếu hoặc tivi phòng họp, hoặc bấm <strong>"Xuất Ảnh 4K"</strong> để in standee/brochure gửi khách hàng.
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={handleExportPoster}
-          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shrink-0 cursor-pointer shadow-xs"
-        >
-          Tải Ảnh Poster Ngay
-        </button>
-      </div>
     </div>
   );
 }
-

@@ -121,10 +121,22 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     trimmed.startsWith("/icons/") ||
     trimmed.startsWith("/images/") ||
     trimmed.startsWith("/landing/") ||
+    trimmed.startsWith("/landing_web_vione") ||
+    trimmed.includes("landing_web_vione") ||
     trimmed.startsWith("/templates/") ||
+    trimmed.startsWith("/posters/") ||
+    trimmed.startsWith("posters/") ||
+    trimmed.includes("pinterest-pin") ||
     trimmed.startsWith("/favicon") ||
     trimmed.startsWith("/app-icon") ||
     trimmed.startsWith("/ceo1983") ||
+    trimmed.startsWith("/ceo-portrait") ||
+    trimmed.startsWith("ceo-portrait") ||
+    trimmed.includes("ceo-portrait") ||
+    trimmed.startsWith("/brand-") ||
+    trimmed.startsWith("/vione-") ||
+    trimmed.startsWith("/Background.png") ||
+    trimmed.startsWith("/bg-crm.png") ||
     trimmed.startsWith("/skyline") ||
     trimmed.startsWith("/business_connect") ||
     trimmed.toLowerCase().includes("vietnamese") ||

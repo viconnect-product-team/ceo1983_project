@@ -34,7 +34,7 @@ Tài liệu này bao gồm đặc tả chi tiết của 59 trường hợp sử 
 | BTT | Media & Event Committee | Ban Truyền Thông & Sự Kiện. |
 | BXT | Trade Promotion Committee | Ban Xúc Tiến Thương Mại & Đầu Tư. |
 | RBAC | Role-Based Access Control | Mô hình kiểm soát truy cập dựa trên vai trò người dùng. |
-| VietQR | Vietnam QR Payment Standard | Chuẩn thanh toán chuyển khoản liên ngân hàng Napas 24/7. |
+| Mã QR Ngân Hàng | Vietnam QR Payment Standard | Chuẩn thanh toán chuyển khoản liên ngân hàng Napas 24/7. |
 | NFC | Near Field Communication | Công nghệ giao tiếp trường gần tần số 13.56MHz chia sẻ danh thiếp. |
 | MECE | Mutually Exclusive, Collectively Exhaustive | Nguyên tắc phân tích không trùng lặp, không bỏ sót chức năng. |
 
@@ -75,15 +75,15 @@ Bước 6: Hệ thống kiểm tra quyền hạn BTV, tự động sinh Mã hộ
 
 Bước 7: Hội viên tải và mở Ứng dụng Di động CEO 1983, đăng nhập bằng Email/SĐT và mật khẩu tạm. Hệ thống chuyển hướng bắt buộc đổi mật khẩu mới tại QuickProfileEditModal trước khi vào trang chủ.
 
-#### UJ-02: Hành Trình Thông Báo Hội Phí ➔ Thanh Toán VietQR 24/7 ➔ Kế Toán Đối Soát Gạch Nợ (+365 Ngày)
+#### UJ-02: Hành Trình Thông Báo Hội Phí ➔ Thanh Toán Mã QR Ngân Hàng 24/7 ➔ Kế Toán Đối Soát Gạch Nợ (+365 Ngày)
 
 **Đối tượng trải nghiệm:** Hội viên chính thức, Ban Tài Chính / Kế Toán
 
-Bước 1: Hệ thống tự động quét ngày hết hạn thẻ VIP (term_end). Trước 30 ngày, hệ thống kích hoạt thông báo đẩy trên Mobile App và email thông báo nộp hội phí thường niên (5.000.000 VNĐ/năm).
+Bước 1: Hệ thống tự động quét ngày hết hạn thẻ doanh nhân số (term_end). Trước 30 ngày, hệ thống kích hoạt thông báo đẩy trên Mobile App và email thông báo nộp hội phí thường niên (5.000.000 VNĐ/năm).
 
-Bước 2: Hội viên mở mục 'Hội Phí' trên Mobile App, nhấn nút 'Thanh Toán VietQR'.
+Bước 2: Hội viên mở mục 'Hội Phí' trên Mobile App, nhấn nút 'Thanh Toán Mã QR Ngân Hàng'.
 
-Bước 3: Hệ thống sinh mã VietQR động chuẩn Napas 24/7 chứa sẵn: Số tiền (5.000.000 VNĐ), Số tài khoản thụ hưởng của CLB CEO 1983 và Cú pháp: HOIPHI CEO1983 [MÃ_HV] [HỌ_TÊN].
+Bước 3: Hệ thống sinh mã QR ngân hàng động chuẩn Napas 24/7 chứa sẵn: Số tiền (5.000.000 VNĐ), Số tài khoản thụ hưởng của CLB CEO 1983 và Cú pháp: HOIPHI CEO1983 [MÃ_HV] [HỌ_TÊN].
 
 Bước 4: Hội viên sử dụng ứng dụng Mobile Banking của ngân hàng cá nhân, quét mã QR và chuyển khoản thành công.
 
@@ -91,7 +91,7 @@ Bước 5: Kế toán câu lạc bộ mở màn hình 'Quản Lý Hội Phí' (/
 
 Bước 6: Khi thông tin khớp đúng, kế toán bấm nút 'Duyệt Gạch Nợ'.
 
-Bước 7: Hệ thống chuyển trạng thái sang paid, cộng dồn +365 ngày vào hạn dùng của Thẻ hội viên VIP (term_end), sinh hóa đơn điện tử (invoices) và gửi thông báo xác nhận thành công cho hội viên.
+Bước 7: Hệ thống chuyển trạng thái sang paid, cộng dồn +365 ngày vào hạn dùng của thẻ hội viên điện tử (term_end), sinh hóa đơn điện tử (invoices) và gửi thông báo xác nhận thành công cho hội viên.
 
 #### UJ-03: Hành Trình Khởi Tạo Sự Kiện Gala ➔ Thiết Kế Sơ Đồ Ghế ➔ Phát Hành E-Ticket ➔ Soát Vé Gate Check-in QR (< 0.2s)
 
@@ -147,7 +147,7 @@ Bước 5: Máy chủ Socket.IO tổng hợp kết quả tức thời. Màn hìn
 
 Bước 1: Người dùng chạm biểu tượng Robot Trợ lý AI ở góc màn hình hoặc dùng phím tắt nổi.
 
-Bước 2: Hệ thống tự động gọi API `/api/ai/live-context`, tải tức thời thông tin phiên đăng nhập: Họ tên, Mã hội viên, Hạng thẻ VIP, Tình trạng hội phí thường niên, Số lượng thông báo chưa đọc, Danh sách sự kiện đã có vé tham dự và Top 5 sự kiện đông nhất.
+Bước 2: Hệ thống tự động gọi API `/api/ai/live-context`, tải tức thời thông tin phiên đăng nhập: Họ tên, Mã hội viên, Hạng thẻ doanh nhân số, Tình trạng hội phí thường niên, Số lượng thông báo chưa đọc, Danh sách sự kiện đã có vé tham dự và Top 5 sự kiện đông nhất.
 
 Bước 3: Người dùng ra lệnh bằng giọng nói tiếng Việt (Microphone) hoặc nhập câu hỏi: 'Sự kiện nào đang được nhiều người đăng ký nhất?', 'Tôi có thông báo nào chưa đọc?' hoặc 'Hướng dẫn tôi đăng ký sự kiện như nào'.
 
@@ -419,9 +419,9 @@ Bước 2: Chọn sự kiện hội nghị / Gala quan tâm, bấm 'Đăng Ký T
 
 Bước 3: Điền thông tin cá nhân và chọn số lượng vé khách mời.
 
-Bước 4: Màn hình hiển thị mã VietQR thanh toán tiền vé theo số lượng.
+Bước 4: Màn hình hiển thị mã QR ngân hàng thanh toán tiền vé theo số lượng.
 
-Bước 5: Khách chuyển khoản quét mã VietQR, hệ thống ghi nhận đăng ký ở trạng thái `pending_payment`.
+Bước 5: Khách chuyển khoản quét mã QR ngân hàng, hệ thống ghi nhận đăng ký ở trạng thái `pending_payment`.
 
 Bước 6: Kế toán đối soát và duyệt phát hành vé E-Ticket QR gửi qua email khách mời.
 
@@ -674,7 +674,7 @@ Bước 1: Người dùng bấm vào dòng hội viên trên bảng danh sách.
 
 Bước 2: Hệ thống mở trang Chi tiết Hội viên 360 độ (/members/$memberId).
 
-Bước 3: Hiển thị khối thông tin tổng quan: Avatar, Họ tên, Chức vụ, Tên công ty, Mã HV, Ban chuyên môn, Hạng thẻ VIP.
+Bước 3: Hiển thị khối thông tin tổng quan: Avatar, Họ tên, Chức vụ, Tên công ty, Mã HV, Ban chuyên môn, Hạng thẻ doanh nhân số.
 
 Bước 4: Hiển thị các tab dữ liệu chuyên sâu:
 
@@ -701,10 +701,10 @@ Bước E1: Hội viên không tồn tại -> Hiển thị thông báo 404 và n
 | Mã Use Case | UC-CRM-MBR-04 |
 | Tên Chức Năng | Phân Khúc Hội Viên & Xếp Hạng Điểm Cống Hiến Thường Niên |
 | Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
-| Mục Tiêu Nghiệp Vụ | Phân loại hội viên theo tiêu chí đóng góp, chuyên cần và khối ngành nghề; tự động xếp hạng thẻ VIP Kim Cương, Vàng, Bạc. |
+| Mục Tiêu Nghiệp Vụ | Phân loại hội viên theo tiêu chí đóng góp, chuyên cần và khối ngành nghề; tự động xếp hạng thẻ doanh nhân số Kim Cương, Vàng, Bạc. |
 | Tác Nhân (Actors) | Ban Thành Viên (BTV), Ban Quản Trị |
 | Tiền Điều Kiện (Pre-conditions) | Dữ liệu hoạt động của hội viên được cập nhật đầy đủ. |
-| Hậu Điều Kiện (Post-conditions) | Hội viên được nâng cấp hạng thẻ VIP tương ứng trên Mobile App. |
+| Hậu Điều Kiện (Post-conditions) | Hội viên được nâng cấp hạng thẻ doanh nhân số tương ứng trên Mobile App. |
 | Quy Tắc Nghiệp Vụ (Business Rules) | Hội viên nợ hội phí không được xét hạng Kim Cương. |
 | Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/segments` | API: `POST /api/association/members/evaluate-tiers` |
 
@@ -1279,14 +1279,14 @@ Bước 3: Thành viên cập nhật tiến độ (0% đến 100%) và tải lê
 
 Bước 4: Ban Thư Ký kiểm tra kết quả và bấm nút 'Nghiệm Thu Hoàn Thành'.
 
-### [UC-CRM-FIN-01] Quản Lý Công Nợ & Thu Hội Phí Thường Niên VietQR Napas 24/7
+### [UC-CRM-FIN-01] Quản Lý Công Nợ & Thu Hội Phí Thường Niên Mã QR Ngân Hàng Napas 24/7
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-CRM-FIN-01 |
-| Tên Chức Năng | Quản Lý Công Nợ & Thu Hội Phí Thường Niên VietQR Napas 24/7 |
+| Tên Chức Năng | Quản Lý Công Nợ & Thu Hội Phí Thường Niên Mã QR Ngân Hàng Napas 24/7 |
 | Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
-| Mục Tiêu Nghiệp Vụ | Hệ thống theo dõi công nợ hội phí thường niên (5.000.000 VNĐ/năm), tự động sinh mã VietQR động định danh cho từng hội viên. |
+| Mục Tiêu Nghiệp Vụ | Hệ thống theo dõi công nợ hội phí thường niên (5.000.000 VNĐ/năm), tự động sinh mã QR ngân hàng động định danh cho từng hội viên. |
 | Tác Nhân (Actors) | Ban Tài Chính, Thủ quỹ, Kế toán |
 | Tiền Điều Kiện (Pre-conditions) | Hội viên có thẻ hội viên sắp hết hạn hoặc trong kỳ thu hội phí thường niên. |
 | Hậu Điều Kiện (Post-conditions) | Thông báo nộp hội phí được phát hành đến toàn thể hội viên. |
@@ -1312,7 +1312,7 @@ Bước 2: Hệ thống liệt kê bảng công nợ: Hội viên đã đóng (X
 
 Bước 3: Kế toán bấm 'Gửi Thông Báo Thu Hội Phí' hàng loạt.
 
-Bước 4: Hệ thống tự động tạo mã VietQR động chứa sẵn số tiền 5.000.000 VNĐ và cú pháp chuyển khoản gửi đến Mobile App của hội viên.
+Bước 4: Hệ thống tự động tạo mã QR ngân hàng động chứa sẵn số tiền 5.000.000 VNĐ và cú pháp chuyển khoản gửi đến Mobile App của hội viên.
 
 Bước 5: Theo dõi trạng thái nộp tiền thời gian thực trên bảng danh sách.
 
@@ -1323,11 +1323,11 @@ Bước 5: Theo dõi trạng thái nộp tiền thời gian thực trên bảng 
 | Mã Use Case | UC-CRM-FIN-02 |
 | Tên Chức Năng | Kế Toán Đối Soát Sao Kê Ngân Hàng & Duyệt Gạch Nợ Thủ Công (+365 Ngày) |
 | Phân Hệ / Module | Phân hệ 2: Cổng Quản Trị Điều Hành Trung Tâm (Web CRM) |
-| Mục Tiêu Nghiệp Vụ | Kế toán kiểm tra biến động số dư tài khoản ngân hàng thực tế và bấm duyệt gạch nợ trên CRM để gia hạn thẻ VIP +365 ngày. |
+| Mục Tiêu Nghiệp Vụ | Kế toán kiểm tra biến động số dư tài khoản ngân hàng thực tế và bấm duyệt gạch nợ trên CRM để gia hạn thẻ doanh nhân số +365 ngày. |
 | Tác Nhân (Actors) | Kế toán / Thủ quỹ CLB Doanh Nhân CEO 1983 |
 | Tiền Điều Kiện (Pre-conditions) | Có giao dịch chuyển khoản hội phí vào tài khoản ngân hàng của CLB. |
-| Hậu Điều Kiện (Post-conditions) | Hội viên được gạch nợ sạch sẽ, thẻ VIP kéo dài hiệu lực thêm 1 năm. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-FEE-VIETQR-AUTO-MATCH: Kế toán bắt buộc kiểm tra sao kê thực tế trước khi bấm duyệt. |
+| Hậu Điều Kiện (Post-conditions) | Hội viên được gạch nợ sạch sẽ, thẻ doanh nhân số kéo dài hiệu lực thêm 1 năm. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | RULE-FEE-MÃ QR NGÂN HÀNG-AUTO-MATCH: Kế toán bắt buộc kiểm tra sao kê thực tế trước khi bấm duyệt. |
 | Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/fees` | API: `POST /api/association/fees/:memberId/pay` | Tables: `members`, `invoices` |
 
 
@@ -1355,7 +1355,7 @@ Bước 5: Hệ thống thực hiện chuỗi cập nhật:
 
    - Chuyển `fee_paid = true`, `payment_status = 'paid'`.
 
-   - Tự động cộng dồn thêm chính xác +365 ngày vào ngày hết hạn thẻ VIP (`term_end`).
+   - Tự động cộng dồn thêm chính xác +365 ngày vào ngày hết hạn thẻ doanh nhân số (`term_end`).
 
    - Sinh bản ghi hóa đơn thu tiền trong bảng `invoices`.
 
@@ -1676,7 +1676,7 @@ Bước 5: Kiểm tra trạng thái hồ sơ trong bảng `members`: Nếu statu
 
 Bước 6: Kiểm tra cờ must_change_password: Nếu là true, chuyển hướng ngay đến modal bắt buộc đổi mật khẩu.
 
-Bước 7: Nếu mật khẩu đã đổi, tải thông tin Thẻ VIP 3D và chuyển hướng vào màn hình chính Hội viên (/association).
+Bước 7: Nếu mật khẩu đã đổi, tải thông tin thẻ doanh nhân số 3D và chuyển hướng vào màn hình chính Hội viên (/association).
 
 #### Luồng Rẽ Nhánh / Thay Thế (Alternative Flows)
 
@@ -1749,7 +1749,7 @@ Bước E3: Mật khẩu mới trùng mật khẩu khởi tạo cũ -> Báo lỗ
 | Mã Use Case | UC-APP-HOME-01 |
 | Tên Chức Năng | Trang Chủ Hội Viên VIP & Lưới Phím Tắt Tiện Ích Đẳng Cấp |
 | Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
-| Mục Tiêu Nghiệp Vụ | Cung cấp bảng điều khiển trung tâm dành cho hội viên: Thẻ VIP danh dự, Lưới phím tắt tiện ích 8 mục, Sự kiện sắp tới, Ưu đãi và Marketplace. |
+| Mục Tiêu Nghiệp Vụ | Cung cấp bảng điều khiển trung tâm dành cho hội viên: Thẻ Doanh Nhân Số danh dự, Lưới phím tắt tiện ích 8 mục, Sự kiện sắp tới, Ưu đãi và Marketplace. |
 | Tác Nhân (Actors) | Hội viên chính thức CLB Doanh Nhân CEO 1983 |
 | Tiền Điều Kiện (Pre-conditions) | Đã đăng nhập thành công vào Mobile App. |
 | Hậu Điều Kiện (Post-conditions) | Hội viên tiếp cận mọi tính năng chỉ trong 1 lần chạm. |
@@ -1762,7 +1762,7 @@ Bước E3: Mật khẩu mới trùng mật khẩu khởi tạo cũ -> Báo lỗ
 
 Bước 1: Hội viên mở màn hình trang chủ (`/association`).
 
-Bước 2: Hệ thống render Thẻ hội viên VIP 3D với mã QR định danh và huy hiệu chuyên ban.
+Bước 2: Hệ thống render thẻ hội viên điện tử 3D với mã QR định danh và huy hiệu chuyên ban.
 
 Bước 3: Hiển thị Lưới 8 tính năng nhanh cân đối: Danh thiếp số, Danh bạ CEO, Quét Check-in, Đặc quyền VIP, Biểu quyết số, Lịch sử hoạt động, Kho tài liệu, Hội phí.
 
@@ -1772,27 +1772,27 @@ Bước 5: Hiển thị Khối Giao thương B2B với tổng giá trị deals t
 
 Bước 6: Người dùng chạm vuốt nhẹ nhàng chuyển đổi giữa các mục.
 
-### [UC-APP-CARD-01] Thẻ Hội Viên VIP 3D Titanium Hiệu Ứng Lật 180 Độ & Quét QR
+### [UC-APP-CARD-01] thẻ hội viên điện tử 3D Titanium Hiệu Ứng Lật 180 Độ & Quét QR
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-APP-CARD-01 |
-| Tên Chức Năng | Thẻ Hội Viên VIP 3D Titanium Hiệu Ứng Lật 180 Độ & Quét QR |
+| Tên Chức Năng | thẻ hội viên điện tử 3D Titanium Hiệu Ứng Lật 180 Độ & Quét QR |
 | Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
-| Mục Tiêu Nghiệp Vụ | Hiển thị Thẻ hội viên VIP 3D công nghệ cao lật 180 độ; hỗ trợ chia sẻ mã QR định danh độc bản tại các sự kiện giao thương. |
+| Mục Tiêu Nghiệp Vụ | Hiển thị thẻ hội viên điện tử 3D công nghệ cao lật 180 độ; hỗ trợ chia sẻ mã QR định danh độc bản tại các sự kiện giao thương. |
 | Tác Nhân (Actors) | Hội viên chính thức CLB Doanh Nhân CEO 1983 |
 | Tiền Điều Kiện (Pre-conditions) | Tài khoản hội viên có trạng thái phí `paid`. |
 | Hậu Điều Kiện (Post-conditions) | Khẳng định đẳng cấp và uy tín cá nhân của doanh nhân 1983. |
-| Quy Tắc Nghiệp Vụ (Business Rules) | Thẻ VIP chỉ kích hoạt đầy đủ hiệu ứng 3D khi hội viên đã hoàn thành nghĩa vụ hội phí. |
+| Quy Tắc Nghiệp Vụ (Business Rules) | Thẻ Doanh Nhân Số chỉ kích hoạt đầy đủ hiệu ứng 3D khi hội viên đã hoàn thành nghĩa vụ hội phí. |
 | Ánh Xạ Kỹ Thuật (Tech Mapping) | Route: `/association/card` | Component: `DigitalBusinessCardModal.tsx` |
 
 
 
 #### Luồng Sự Kiện Chính (Step-by-step Main Flow)
 
-Bước 1: Hội viên chạm vào Thẻ VIP tại trang chủ hoặc vào mục 'Thẻ VIP' (`/association/card`).
+Bước 1: Hội viên chạm vào Thẻ Doanh Nhân Số tại trang chủ hoặc vào mục 'Thẻ Doanh Nhân Số' (`/association/card`).
 
-Bước 2: Thẻ VIP 3D hiển thị với chất liệu Titanium mạ vàng Amber Gold dập nổi logo CEO 1983.
+Bước 2: thẻ doanh nhân số 3D hiển thị với chất liệu Titanium mạ vàng Amber Gold dập nổi logo CEO 1983.
 
 Bước 3: Người dùng vuốt ngón tay để xoay lật 180 độ 3D khám phá mặt trước và mặt sau thẻ.
 
@@ -1897,7 +1897,7 @@ Bước 5: Đối tác bấm 'Lưu' hoàn tất trong đúng 1 giây mà không 
 
 #### Luồng Sự Kiện Chính (Step-by-step Main Flow)
 
-Bước 1: Tại trang chủ, hội viên chạm vào Thẻ VIP để mở `PersonalProfileBottomSheet` vuốt xuống.
+Bước 1: Tại trang chủ, hội viên chạm vào Thẻ Doanh Nhân Số để mở `PersonalProfileBottomSheet` vuốt xuống.
 
 Bước 2: Bấm nút 'Chỉnh Sửa Hồ Sơ'.
 
@@ -1944,7 +1944,7 @@ Bước 2: Hệ thống hiển thị thanh tìm kiếm nhạy bén và hàng chi
 
 Bước 3: Nhập từ khóa hoặc chạm chọn chuyên ban.
 
-Bước 4: Danh sách hội viên hiển thị dạng thẻ card sang trọng: Avatar, Họ tên, Chức vụ, Tên công ty, Huy hiệu chuyên ban và Hạng thẻ VIP.
+Bước 4: Danh sách hội viên hiển thị dạng thẻ card sang trọng: Avatar, Họ tên, Chức vụ, Tên công ty, Huy hiệu chuyên ban và Hạng thẻ doanh nhân số.
 
 Bước 5: Bấm vào hội viên bất kỳ để mở hồ sơ chi tiết và các tùy chọn kết nối (Gọi điện, Nhắn tin, Hẹn gặp 1-1).
 
@@ -2198,14 +2198,14 @@ Bước 4: Đưa mã QR trước máy quét tại Cổng an ninh đón tiếp.
 
 Bước 5: Cổng an ninh xác thực thành công trong 0.2s, hội viên bước vào hội trường dự tiệc.
 
-### [UC-APP-FEE-01] Tra Cứu Tình Trạng Hội Phí & Sinh Mã VietQR Động 5.000.000 VNĐ Napas 24/7
+### [UC-APP-FEE-01] Tra Cứu Tình Trạng Hội Phí & Sinh mã QR ngân hàng Động 5.000.000 VNĐ Napas 24/7
 
 | Thuộc Tính | Đặc Tả Kỹ Thuật Chi Tiết |
 | --- | --- |
 | Mã Use Case | UC-APP-FEE-01 |
-| Tên Chức Năng | Tra Cứu Tình Trạng Hội Phí & Sinh Mã VietQR Động 5.000.000 VNĐ Napas 24/7 |
+| Tên Chức Năng | Tra Cứu Tình Trạng Hội Phí & Sinh mã QR ngân hàng Động 5.000.000 VNĐ Napas 24/7 |
 | Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
-| Mục Tiêu Nghiệp Vụ | Hội viên xem thời hạn hiệu lực của thẻ VIP và thanh toán hội phí thường niên nhanh 24/7 qua mã VietQR động. |
+| Mục Tiêu Nghiệp Vụ | Hội viên xem thời hạn hiệu lực của thẻ doanh nhân số và thanh toán hội phí thường niên nhanh 24/7 qua mã QR ngân hàng động. |
 | Tác Nhân (Actors) | Hội viên chính thức CLB Doanh Nhân CEO 1983 |
 | Tiền Điều Kiện (Pre-conditions) | Hội viên truy cập ứng dụng di động. |
 | Hậu Điều Kiện (Post-conditions) | Hội viên thực hiện nghĩa vụ tài chính thuận tiện, không cần gõ tay số tài khoản hay cú pháp. |
@@ -2218,11 +2218,11 @@ Bước 5: Cổng an ninh xác thực thành công trong 0.2s, hội viên bư�
 
 Bước 1: Hội viên mở mục 'Hội Phí' trên Mobile App (`/association/renew`).
 
-Bước 2: Màn hình hiển thị: Ngày hết hạn thẻ VIP hiện tại, Tình trạng công nợ (Đã đóng / Đến hạn).
+Bước 2: Màn hình hiển thị: Ngày hết hạn thẻ doanh nhân số hiện tại, Tình trạng công nợ (Đã đóng / Đến hạn).
 
-Bước 3: Nhấn nút 'Thanh Toán VietQR'.
+Bước 3: Nhấn nút 'Thanh Toán Mã QR Ngân Hàng'.
 
-Bước 4: Hệ thống sinh mã VietQR động chuẩn Napas 24/7 chứa sẵn: 5.000.000 VNĐ, Tên tài khoản CLB CEO 1983 và Cú pháp: `HOIPHI CEO1983 [MÃ_HV] [HỌ_TÊN]`.
+Bước 4: Hệ thống sinh mã QR ngân hàng động chuẩn Napas 24/7 chứa sẵn: 5.000.000 VNĐ, Tên tài khoản CLB CEO 1983 và Cú pháp: `HOIPHI CEO1983 [MÃ_HV] [HỌ_TÊN]`.
 
 Bước 5: Hội viên mở app ngân hàng quét mã hoặc bấm 'Lưu ảnh QR' để chuyển khoản.
 
@@ -2597,7 +2597,7 @@ Bước E1: Mở qua trình duyệt In-App của Zalo / Facebook Messenger -> H�
 | Mã Use Case | UC-APP-AI-01 |
 | Tên Chức Năng | Trợ Lý AI Giọng Nói Tiếng Việt & Nắm Bắt Động Phiên Đăng Nhập (Live Context) |
 | Phân Hệ / Module | Phân hệ 3: Ứng Dụng Di Động Hội Viên CEO 1983 |
-| Mục Tiêu Nghiệp Vụ | Trợ lý AI tự động nhận diện danh tính hội viên, tình trạng nợ hội phí VietQR, thông báo mới chưa đọc, vé sự kiện đã đặt và Top 5 sự kiện có số người đăng ký đông nhất; phản hồi ngôn ngữ tự nhiên bằng văn bản Markdown và giọng đọc tiếng Việt 100% miễn phí. |
+| Mục Tiêu Nghiệp Vụ | Trợ lý AI tự động nhận diện danh tính hội viên, tình trạng nợ hội phí Mã QR Ngân Hàng, thông báo mới chưa đọc, vé sự kiện đã đặt và Top 5 sự kiện có số người đăng ký đông nhất; phản hồi ngôn ngữ tự nhiên bằng văn bản Markdown và giọng đọc tiếng Việt 100% miễn phí. |
 | Tác Nhân (Actors) | Hội viên chính thức, Ban Quản Trị, Cán bộ các Ban Chuyên Môn |
 | Tiền Điều Kiện (Pre-conditions) | Hội viên đã đăng nhập vào Ứng dụng Hiệp hội (`/association/*`) và thiết bị hỗ trợ Web Speech API. |
 | Hậu Điều Kiện (Post-conditions) | Hội viên nắm bắt tức thì mọi thông tin hoạt động hiệp hội mà không cần mở nhiều màn hình tra cứu. |
@@ -2781,7 +2781,7 @@ Bước E1: Tài khoản không đủ quyền hạn RBAC đối với tính năn
   - Bảng sự kiện: `events`, `event_ticket_types`, `event_registrations`, `member_checkins`.
   - Bảng tài chính & hội phí: `invoices`, `associations`.
 * Giao Diện Dịch Vụ Bên Ngoài (External APIs):
-  - Cổng thanh toán VietQR Napas 24/7 (Sinh mã QR động chuyển khoản liên ngân hàng).
+  - Cổng thanh toán Mã QR Ngân Hàng Napas 24/7 (Sinh mã QR động chuyển khoản liên ngân hàng).
   - Dịch vụ thư điện tử SMTP Gmail Relay (`smtp.gmail.com:465`).
   - Dịch vụ lưu trữ đối tượng MinIO S3 Compatible Object Storage.
 

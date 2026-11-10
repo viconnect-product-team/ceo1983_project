@@ -29,7 +29,7 @@
    - 3.2. Quy Trình Giao Thương B2B, Chia Sẻ Cơ Hội & Đặt Lịch Hẹn 1-on-1 trong 3 Tình Huống
    - 3.3. Quy Trình Tổ Chức Sự Kiện Gala & Lưu Vết Kỷ Niệm 5 Hạng Mục
    - 3.4. Quy Trình Điều Hành Hoạt Động Họp Ban (Họp Cố Định vs Họp Bất Thường)
-   - 3.5. Quy Trình Thu Hội Phí Tự Động Qua Mã QR MoMo & Cổng VNPay / VietQR Napas247
+   - 3.5. Quy Trình Thu Hội Phí Tự Động Qua Mã QR MoMo & Cổng VNPay / Mã QR Ngân Hàng Napas247
    - 3.6. Quy Trình Đối Soát Biến Động Tài Chính & Xuất - Nhập Báo Cáo Bảng Tính Excel
    - 3.7. Quy Trình Đăng Bài Đa Kênh Truyền Thông 1-Chạm (Facebook, Group, Zalo OA, Web)
    - 3.8. Quy Trình Trợ Lý Số AI Chào Mừng & Hướng Dẫn Doanh Nhân
@@ -64,7 +64,7 @@ Nhằm đưa hoạt động của hiệp hội lên tầm cao mới, CLB triển
 ### 1.2. Mục Tiêu Chuyển Đổi Số & Tầm Nhìn 2026 - 2030
 * **100% Số hóa hồ sơ hội viên:** Xóa bỏ hoàn toàn việc lưu trữ dữ liệu bằng sổ sách giấy hoặc file Excel rời rạc. Mỗi doanh nhân có một định danh duy nhất (UUID) gắn liền với mã hội viên bất biến định dạng `CEO-83xxx`.
 * **Giao thương nội khối minh bạch & lượng hóa:** Ghi nhận và phân tích tức thời doanh số kết nối, số lượng deal thành công, tỷ lệ sinh lời cho người đăng bài qua hệ thống Matching B2B.
-* **Tự động hóa 100% công tác thu hội phí:** Ứng dụng mã QR động (VietQR Napas247, MoMo QR, VNPay Gateway) với cơ chế Webhook gạch nợ tức thời, loại bỏ sai sót đối soát thủ công.
+* **Tự động hóa 100% công tác thu hội phí:** Ứng dụng mã QR động (Mã QR Ngân Hàng Napas247, MoMo QR, VNPay Gateway) với cơ chế Webhook gạch nợ tức thời, loại bỏ sai sót đối soát thủ công.
 * **Tăng cường tương tác thực chiến:** Hỗ trợ tính năng đặt lịch hẹn 1-on-1 trong 3 kịch bản, nhắn tin trực tiếp, chia sẻ cơ hội kinh doanh công khai hoặc chỉ định người xem.
 
 ---
@@ -75,7 +75,7 @@ Nhằm đưa hoạt động của hiệp hội lên tầm cao mới, CLB triển
 | :--- | :--- | :--- | :--- |
 | **PP-01** | Dữ liệu hội viên lưu phân tán trên nhiều file Excel và nhóm Zalo | Thông tin thất lạc, khó tra cứu năng lực doanh nghiệp khi cần kết nối B2B | Hồ sơ hội viên 360 độ tập trung trên PostgreSQL, bảo mật RBAC |
 | **PP-02** | Phê duyệt kết nạp hội viên thủ công, thiếu quy chuẩn thẩm định | Nguy cơ kết nạp sai đối tượng (không phải năm sinh 1983, không phải C-Level) | Quy trình thẩm định 3 bước: Thư ký kiểm tra MST -> Ban Thành viên duyệt -> Sinh mã `CEO-83xxx` |
-| **PP-03** | Thu hội phí chậm trễ, khó theo dõi ai đã đóng, ai còn nợ | Thất thoát nguồn thu quỹ, kế toán mất nhiều ngày đối soát sao kê | Mã QR thanh toán động VietQR/MoMo, gạch nợ tự động qua Webhook trong 1.5 giây |
+| **PP-03** | Thu hội phí chậm trễ, khó theo dõi ai đã đóng, ai còn nợ | Thất thoát nguồn thu quỹ, kế toán mất nhiều ngày đối soát sao kê | Mã QR thanh toán động Mã QR Ngân Hàng/MoMo, gạch nợ tự động qua Webhook trong 1.5 giây |
 | **PP-04** | Sự kiện đông người (>500 khách) gây ùn tắc điểm danh tại cửa | Mất thời gian, thiếu chuyên nghiệp, không kiểm soát được chỗ ngồi | Trạm soát vé QR Gate quét 0.3s/khách, sơ đồ rạp chiếu Cinema Seating định vị ghế |
 | **PP-05** | Cơ hội kinh doanh đăng tải tự do không bảo mật, lộ thông tin đối tác | Đối thủ cạnh tranh nẫng tay trên, giảm uy tín hiệp hội | Phân quyền hiển thị: Công khai (Public) hoặc Chỉ định (Assigned) đối tác cụ thể |
 
@@ -253,7 +253,7 @@ flowchart TD
 
 ---
 
-### 3.5. Quy Trình Thu Hội Phí Tự Động Qua Mã QR MoMo & Cổng VNPay / VietQR
+### 3.5. Quy Trình Thu Hội Phí Tự Động Qua Mã QR MoMo & Cổng VNPay / Mã QR Ngân Hàng
 
 ```mermaid
 flowchart TD
@@ -263,7 +263,7 @@ flowchart TD
     NOTIF_FEE --> MEM_PAY["Hội viên bấm 'Nộp Hội Phí' trên App"]
     MEM_PAY --> CHOOSE_GATE{"Lựa chọn phương thức thanh toán"}
     
-    CHOOSE_GATE -- "1. VietQR Napas247" --> QR_NAPAS["Sinh mã VietQR động chuẩn EMVCo kèm nội dung tự sinh"]
+    CHOOSE_GATE -- "1. Mã QR Ngân Hàng Napas247" --> QR_NAPAS["Sinh mã QR ngân hàng động chuẩn EMVCo kèm nội dung tự sinh"]
     CHOOSE_GATE -- "2. Ví MoMo" --> QR_MOMO["Mở cổng thanh toán MoMo App hoặc quét QR MoMo"]
     CHOOSE_GATE -- "3. Cổng VNPay" --> GATE_VNPAY["Chuyển hướng cổng thanh toán VNPay (ATM / Visa / QR)"]
     
@@ -340,7 +340,7 @@ flowchart TD
     AI_TRIGGER --> PERSONAL_MSG["Tạo thông điệp chào mừng cá nhân hóa theo Tên & Công ty"]
     PERSONAL_MSG --> POPUP_TOUR["Hiển thị màn hình Tour Hướng Dẫn 1-Chạm"]
     
-    POPUP_TOUR --> STEP_CARD["Bước 1: Hướng dẫn kích hoạt Thẻ VIP 3D Gyroscope"]
+    POPUP_TOUR --> STEP_CARD["Bước 1: Hướng dẫn kích hoạt thẻ doanh nhân số 3D Gyroscope"]
     STEP_CARD --> STEP_DIR["Bước 2: Hướng dẫn tìm kiếm bạn bè đồng niên trong Danh bạ"]
     STEP_DIR --> STEP_OPP["Bước 3: Hướng dẫn đăng cơ hội giao thương đầu tiên"]
     
@@ -387,10 +387,10 @@ flowchart TD
 | **BUC-APP-006** | Đăng ký Sự kiện & Nhận Vé Điện tử E-Ticket QR | Hội viên CEO 1983 | Giữ chỗ trước tại các buổi Gala và hội thảo chuyên đề | Vé điện tử lưu trực tiếp trong ví ứng dụng |
 | **BUC-APP-007** | Quét QR Check-in Siêu tốc & Biểu quyết Trực tiếp | Hội viên CEO 1983 | Điểm danh tại cửa và bầu cử Ban Chấp Hành minh bạch | Kết quả biểu quyết cập nhật trực tiếp trên màn hình |
 | **BUC-APP-008** | Đăng tin Cơ hội B2B & Đàm phán Deal % Lợi nhuận | Hội viên CEO 1983 | Kết nối mua bán thực tế, chọn deal có lợi nhuận cao nhất | Hiển thị bảng đối soát deal theo % lời nhất |
-| **BUC-APP-009** | Sàn TMĐT Nội Khối Doanh Nhân CEO 1983 | Hội viên CEO 1983 | Tiêu dùng sản phẩm của bạn bè đồng niên với giá ưu đãi | Mua sắm an toàn, thanh toán VietQR tức thì |
+| **BUC-APP-009** | Sàn TMĐT Nội Khối Doanh Nhân CEO 1983 | Hội viên CEO 1983 | Tiêu dùng sản phẩm của bạn bè đồng niên với giá ưu đãi | Mua sắm an toàn, thanh toán Mã QR Ngân Hàng tức thì |
 | **BUC-APP-010** | Mạng lưới Tương tác, Bình luận Cây 3 Cấp & Tag `@` | Hội viên CEO 1983 | Trao đổi nghiệp vụ, thảo luận dự án chuyên sâu | Cây phản hồi trực quan, thông báo tag tức thời |
 | **BUC-APP-011** | Tin Nhắn Trực Tiếp & Gọi Điện Trao Đổi Cơ Hội | Hội viên CEO 1983 | Kết nối riêng tư, bảo mật thông tin đàm phán hợp đồng | Điều hướng chính xác vào tab Tin Nhắn nhanh chóng |
-| **BUC-APP-012** | Nộp Hội Phí Trực Tuyến VietQR / MoMo / VNPay | Hội viên CEO 1983 | Hoàn thành nghĩa vụ niên liễm mà không cần đến văn phòng | Nhận ngay biên lai điện tử có chữ ký số |
+| **BUC-APP-012** | Nộp Hội Phí Trực Tuyến Mã QR Ngân Hàng / MoMo / VNPay | Hội viên CEO 1983 | Hoàn thành nghĩa vụ niên liễm mà không cần đến văn phòng | Nhận ngay biên lai điện tử có chữ ký số |
 | **BUC-APP-013** | Xem Thống kê Cá nhân & Hiệp hội Chuẩn hóa 2 Cột | Hội viên CEO 1983 | Theo dõi giá trị giao thương mình đã đóng góp cho CLB | Bảng thống kê rõ ràng: Cột Số lượng & Cột Giá trị |
 | **BUC-APP-014** | Quét QR Bài đăng Mạng lưới Tham gia Họp mặt | Hội viên CEO 1983 | Đăng ký nhanh cuộc họp hoặc diễn đàn ngay từ bài viết | Mở form đăng ký tức thì, tự điền thông tin hội viên |
 | **BUC-APP-015** | Cài đặt Bảo mật, Đổi Mật khẩu & Chọn Theme Màu | Hội viên CEO 1983 | Bảo vệ tài khoản và tùy biến màu sắc thương hiệu cá nhân | Giao diện swatches màu trực quan, nút Đăng xuất ghim |
@@ -443,7 +443,7 @@ flowchart TD
 
 ## CHƯƠNG 6: QUY ĐỊNH PHƯƠNG THỨC THANH TOÁN & ĐỐI SOÁT TÀI CHÍNH
 
-### 6.1. Tiêu Chuẩn VietQR Napas247
+### 6.1. Tiêu Chuẩn Mã QR Ngân Hàng Napas247
 * Tuân thủ chuẩn EMVCo và quy định của Ngân hàng Nhà nước Việt Nam về thanh toán mã QR liên ngân hàng.
 * Nội dung chuyển khoản được sinh tự động theo cú pháp định danh: `CEO1983 <MÃ_HỘI_VIÊN> <MÃ_KHOẢN_THU>` (Ví dụ: `CEO1983 M83001 HP2026`).
 * Tích hợp Webhook kết nối cổng Open Banking của ngân hàng đối tác: Khi có biến động số dư đúng cú pháp và số tiền, hệ thống tự động gạch nợ trong vòng 1.5 giây mà không cần con người can thiệp.
@@ -478,10 +478,10 @@ flowchart TD
 
 ### 2. Giao Diện Ứng Dụng Di Động CEO 1983 Mobile App
 * **Màn hình Đăng nhập Di động Sinh trắc học:** `document/images/evidence/06_app_login_screen.png`
-* **Trang chủ Hội viên & Thẻ VIP 3D Gyroscope:** `document/images/evidence/08_app_home_dashboard.png` & `09_app_vip_card.png`
+* **Trang chủ Hội viên & thẻ doanh nhân số 3D Gyroscope:** `document/images/evidence/08_app_home_dashboard.png` & `09_app_vip_card.png`
 * **Vé Sự kiện Điện tử QR Pass & Biểu quyết Trực tiếp:** `document/images/evidence/14_app_event_checkin_pass.png` & `15_app_live_voting.png`
 * **Sàn TMĐT & Bảng tin Mạng lưới Giao thương B2B:** `document/images/evidence/16_app_products_ecommerce_grid.png` & `20_app_opportunities_feed.png`
-* **Nộp Hội phí VietQR & Báo cáo Thống kê 2 Cột:** `document/images/evidence/08_app_vietqr_payment_modal.png` & `user_trade_indexes_evidence.png`
+* **Nộp Hội phí Mã QR Ngân Hàng & Báo cáo Thống kê 2 Cột:** `document/images/evidence/08_app_mã QR ngân hàng_payment_modal.png` & `user_trade_indexes_evidence.png`
 
 ---
 *Tài liệu BRD được đóng gói và ký duyệt bàn giao chính thức cho Ban Chấp Hành CLB Doanh Nhân CEO 1983 (HanoiBA).*

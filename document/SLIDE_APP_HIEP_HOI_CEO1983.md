@@ -5,7 +5,7 @@
 ---
 
 ### SLIDE 1: CEO 1983 MOBILE APP
-*Hiệp hội Doanh nhân bỏ túi · Thẻ VIP quyền năng · Kết nối giao thương B2B thực chiến*
+*Hiệp hội Doanh nhân bỏ túi · Thẻ Doanh Nhân Số quyền năng · Kết nối giao thương B2B thực chiến*
 
 
 ---
@@ -20,7 +20,7 @@
 - ❌ Khó nhớ lĩnh vực hoạt động của 500+ hội viên
 
 **CEO 1983 Mobile App:**
-- ✅ Thẻ VIP điện tử & Mã QR lưu danh bạ vCard 1 chạm
+- ✅ Thẻ Doanh Nhân Số điện tử & Mã QR lưu danh bạ vCard 1 chạm
 - ✅ Sàn B2B niêm yết sản phẩm ưu đãi đặc quyền
 - ✅ Ví vé E-ticket QR check-in 0.1s kèm số ghế VIP
 - ✅ Danh bạ chính danh 100% tích xanh, hẹn 1-on-1
@@ -102,7 +102,7 @@
 
 - ✨ Quét mã QR để cài đặt ứng dụng CEO 1983 trên iOS và Android
 - ✨ Đăng nhập bằng tài khoản chính danh do Ban Thư Ký hiệp hội cấp
-- ✨ Kích hoạt Thẻ VIP điện tử và bắt đầu hành trình giao thương bứt phá
+- ✨ Kích hoạt Thẻ Doanh Nhân Số điện tử và bắt đầu hành trình giao thương bứt phá
 
 ---
 

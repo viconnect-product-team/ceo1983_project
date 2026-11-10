@@ -57,7 +57,7 @@
   - Giao diện: Desktop PC/Laptop, Sidebar bên trái, Bảng Excel kéo rê cột, Recharts, Xuất/Nhập Excel.
 - **Nếu là Mobile App**:
   - Đối tượng: Hội viên doanh nhân (sinh năm 1983).
-  - Giao diện: Màn hình điện thoại 320px - 430px+, Bottom Nav 5 icon, Thẻ VIP số, B2B Connect, Dải thẻ ngang, 3 màu thương hiệu.
+  - Giao diện: Màn hình điện thoại 320px - 430px+, Bottom Nav 5 icon, Thẻ Doanh Nhân Số số, B2B Connect, Dải thẻ ngang, 3 màu thương hiệu.
 - **Nếu là Core / DevOps**:
   - Đối tượng: Kỹ thuật hệ thống, CSDL PostgreSQL, Docker Deploy, Nginx VPS.
 

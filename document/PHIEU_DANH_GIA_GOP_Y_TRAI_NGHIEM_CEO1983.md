@@ -24,7 +24,7 @@
 | **3** | **Giao Diện & Thẩm Mỹ** | Bố cục đa dạng, câu từ ngắn gọn, thông minh, dễ hiểu | [ 5 ] | Súc tích, mạch lạc |
 | **4** | **Tốc Độ & Hiệu Năng** | Tốc độ tải trang dưới 1.5s, phản hồi tức thì | [ 5 ] | Tải nhanh |
 | **5** | **Tốc Độ & Hiệu Năng** | Thao tác vuốt chạm trên Mobile App mượt mà, không giật trễ | [ 5 ] | 60 FPS rất mượt |
-| **6** | **Mobile App** | Thẻ Hội Viên VIP mạ vàng hiệu ứng lật 2 mặt hoàng gia sang trọng | [ 5 ] | Độc bản, tự hào |
+| **6** | **Mobile App** | thẻ hội viên điện tử mạ vàng hiệu ứng lật 2 mặt hoàng gia sang trọng | [ 5 ] | Độc bản, tự hào |
 | **7** | **Mobile App** | Chia sẻ mã QR & Lưu danh bạ vCard 1 chạm không cần cài app | [ 5 ] | Rất tiện lợi |
 | **8** | **Mobile App** | Sàn giao thương B2B niêm yết sản phẩm, phân trang & lọc ngành nghề | [ 5 ] | Mua bán trực tiếp |
 | **9** | **Mobile App** | Đặt lịch hẹn cà phê 1-on-1 tự động đồng bộ lịch công tác điện thoại | [ 5 ] | Tiết kiệm thời gian |
@@ -35,7 +35,7 @@
 | **14** | **Web CRM** | Quản lý hội viên & hồ sơ doanh nghiệp 360°, duyệt hội viên 3 cấp | [ 5 ] | Chặt chẽ, chính danh |
 | **15** | **Web CRM** | Sơ đồ xếp chỗ Cinema Seating Map phân khu khán phòng trực quan | [ 5 ] | Tránh nhầm chỗ Gala |
 | **16** | **Web CRM** | Cổng soát vé Gatekeeper QR siêu tốc & Standee Zalo cho khách ngoài | [ 5 ] | Đón tiếp chuyên nghiệp |
-| **17** | **Web CRM** | Thu phí VietQR Napas 247 tự động gạch nợ tức thời 24/7 | [ 5 ] | Kế toán minh bạch |
+| **17** | **Web CRM** | Thu phí Mã QR Ngân Hàng Napas 247 tự động gạch nợ tức thời 24/7 | [ 5 ] | Kế toán minh bạch |
 | **18** | **Web CRM** | Ma trận phân quyền Sticky 2 cột cố định gán quyền chi tiết 10 vai trò | [ 5 ] | An toàn bảo mật |
 | **19** | **Web CRM** | Bảng giao việc Kanban theo chuyên ban & Biểu quyết đại hội bảo mật | [ 5 ] | Điều hành khoa học |
 
@@ -45,7 +45,7 @@
 
 ### III. Ý KIẾN ĐÓNG GÓP & ĐỀ XUẤT NÂNG CẤP
 1. **Tính năng Anh/Chị tâm đắc và yêu thích nhất trên hệ thống?**
-   > *Trả lời*: Thẻ VIP điện tử lật 2 mặt rất sang trọng, mã QR lưu danh bạ tức thời và Sơ đồ xếp chỗ sự kiện Cinema Map.
+   > *Trả lời*: Thẻ Doanh Nhân Số điện tử lật 2 mặt rất sang trọng, mã QR lưu danh bạ tức thời và Sơ đồ xếp chỗ sự kiện Cinema Map.
 
 2. **Điểm nào cần cải tiến hoặc có thao tác nào gây bất tiện trong quá trình sử dụng?**
    > *Trả lời*: Hệ thống vận hành rất trơn tru, mong muốn tiếp tục duy trì tính ổn định cao như hiện nay.

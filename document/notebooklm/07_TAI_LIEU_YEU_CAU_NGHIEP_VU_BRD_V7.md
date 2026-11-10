@@ -34,7 +34,7 @@
   - [3.1 Chân dung người dùng (Actor Profiles)](#sec-3-1)
   - [3.2 Ma trận phân công trách nhiệm RACI](#sec-3-2)
 - [4. Đặc tả yêu cầu nghiệp vụ chi tiết theo 11 phân hệ](#sec-4)
-  - [Phân hệ 4.1: Quản lý Định danh Hội viên, Thẻ VIP Số & NFC Tap-to-Connect](#sec-4-1)
+  - [Phân hệ 4.1: Quản lý Định danh Hội viên, Thẻ Doanh Nhân Số Số & NFC Tap-to-Connect](#sec-4-1)
   - [Phân hệ 4.2: Sàn Giao thương B2B, Chia sẻ Cơ hội & Deal Chào giá đúng người đăng](#sec-4-2)
   - [Phân hệ 4.3: Quản lý Sự kiện, Gala Dinner, Sơ đồ bàn tiệc & Check-in QR 1 Giây](#sec-4-3)
   - [Phân hệ 4.4: Danh bạ Doanh nhân 1983 & Bộ lọc Kết nối 2 Cấp](#sec-4-4)
@@ -43,7 +43,7 @@
   - [Phân hệ 4.7: Landing Web Giới thiệu Chính thức & Đăng ký Gia nhập Online](#sec-4-7)
   - [Phân hệ 4.8: Kho Tài liệu Số Đồng bộ Google Drive 2 Chiều](#sec-4-8)
   - [Phân hệ 4.9: Chia sẻ Mạng Xã hội Đa kênh với Thẻ OpenGraph Preview Động](#sec-4-9)
-  - [Phân hệ 4.10: Quản lý Tài chính, Thu Chi & Hội phí VietQR Động](#sec-4-10)
+  - [Phân hệ 4.10: Quản lý Tài chính, Thu Chi & Hội phí Mã QR Ngân Hàng Động](#sec-4-10)
   - [Phân hệ 4.11: Quản trị Cấu hình Hệ thống, Tên miền, Theme Studio & Phân quyền RBAC](#sec-4-11)
 - [5. Yêu cầu về trải nghiệm người dùng & Giao diện (UI/UX)](#sec-5)
   - [5.1 Hệ thống bảng màu thương hiệu 3 cấp độ](#sec-5-1)
@@ -73,7 +73,7 @@
 | **CRM** | Customer / Community Relationship Management | Cổng Quản trị Web tập trung dành cho Chủ tịch, Ban Chấp Hành, Ban Thư Ký, Kế toán và Quản trị viên. |
 | **Mobile App** | CEO 1983 Mobile Application | Ứng dụng di động (iOS & Android) phục vụ hội viên doanh nhân kết nối, chia sẻ cơ hội và điểm danh sự kiện. |
 | **B2B Connect** | Business-to-Business Connection | Sàn kết nối giao thương nội khối, chào giá cơ hội kinh doanh và đặt lịch hẹn 1-on-1 giữa các CEO. |
-| **VietQR Napas247** | Vietnam Quick Response Standard | Chuẩn mã QR thanh toán quốc gia của Napas, tự động sinh mã kèm số tiền, nội dung thanh toán và webhook khớp lệnh. |
+| **Mã QR Ngân Hàng Napas247** | Vietnam Quick Response Standard | Chuẩn mã QR thanh toán quốc gia của Napas, tự động sinh mã kèm số tiền, nội dung thanh toán và webhook khớp lệnh. |
 | **Silent Token Refresh** | Silent JWT Authentication Refresh | Cơ chế làm mới Access Token ngầm dưới nền qua HttpOnly Refresh Cookie, chống văng phiên đăng nhập khi đang thao tác. |
 | **Multi-LLM AI** | Multi Large Language Model Engine | Hệ thống AI tích hợp đa hãng (OpenAI GPT-4o, Google Gemini 1.5 Pro, Anthropic Claude 3.5, Groq, DeepSeek). |
 | **Google Drive Sync** | Bi-directional Google Drive Cloud Storage | Giải pháp đồng bộ hóa tài nguyên văn bản 2 chiều giữa Google Drive của hội viên/câu lạc bộ với kho tài liệu hệ thống. |
@@ -106,7 +106,7 @@ Xây dựng một **Hệ sinh thái số hóa toàn diện (Unified Digital Ecos
 ### 1.3 Mục Tiêu Kinh Doanh Cốt Lõi
 1. **Thúc đẩy Giao thương Nội khối (B2B Commerce)**: Đạt tối thiểu 500+ cơ hội hợp tác kinh doanh được ghi nhận và khớp lệnh thành công mỗi năm, tổng giá trị giao thương đạt trên 500 tỷ VNĐ.
 2. **Số hóa 100% Hoạt động Sự kiện**: Tự động hóa khâu phát hành vé, phân bổ bàn tiệc Gala theo sơ đồ và điểm danh qua mã QR cá nhân trong dưới 1 giây, loại bỏ 100% giấy tờ in ấn.
-3. **Minh bạch hóa 100% Dòng tiền Hội phí**: 100% giao dịch nộp hội phí và đóng góp quỹ thiện nguyện được thực hiện qua VietQR Napas247, tự động đối soát và kích hoạt trạng thái tài khoản tức thì.
+3. **Minh bạch hóa 100% Dòng tiền Hội phí**: 100% giao dịch nộp hội phí và đóng góp quỹ thiện nguyện được thực hiện qua Mã QR Ngân Hàng Napas247, tự động đối soát và kích hoạt trạng thái tài khoản tức thì.
 4. **Tối ưu Hóa Hiệu Quả Điều Hành**: Giảm 85% thời gian tổng hợp báo cáo định kỳ của Ban Thư Ký và Kế toán thông qua Trợ lý AI tích hợp.
 
 ### 1.4 Các Chỉ Số Đo Lường Hiệu Quả (KPIs & OKRs)
@@ -116,7 +116,7 @@ Xây dựng một **Hệ sinh thái số hóa toàn diện (Unified Digital Ecos
 | **Mức độ Sử dụng App** | ≥ 92% Hội viên chính thức kích hoạt & sử dụng App hàng tháng | Thống kê DAU/MAU từ hệ thống Analytics |
 | **Tốc độ Điểm danh Sự kiện** | < 1 giây / 1 lượt quét QR; thời gian chờ check-in sự kiện 500 người < 10 phút | Log thời gian phản hồi Scanner Socket.IO |
 | **Giá trị Giao dịch B2B** | ≥ 500 Tỷ VNĐ tổng giá trị cơ hội được trao qua App | Thống kê Deals đóng thành công trên Sàn B2B |
-| **Tỷ lệ Khớp lệnh Hội phí** | 99.8% Giao dịch VietQR được webhook tự động xử lý không cần can thiệp thủ công | Báo cáo đối soát tài chính tự động trên CRM |
+| **Tỷ lệ Khớp lệnh Hội phí** | 99.8% Giao dịch Mã QR Ngân Hàng được webhook tự động xử lý không cần can thiệp thủ công | Báo cáo đối soát tài chính tự động trên CRM |
 | **Thời gian Trả lời Báo cáo AI** | < 3 giây cho các truy vấn thống kê dữ liệu toàn hệ thống | Benchmark module AI Analytics Controller |
 
 ---
@@ -135,7 +135,7 @@ flowchart TD
       CRM2["Quản lý Hội viên 360 & Duyệt hồ sơ"]
       CRM3["Gala Dinner & Sơ đồ Bàn tiệc"]
       CRM4["Ban Điều hành & Giao việc 6 Ban"]
-      CRM5["Tài chính, Thu chi & Hội phí VietQR"]
+      CRM5["Tài chính, Thu chi & Hội phí Mã QR Ngân Hàng"]
       CRM6["AI Command Center & Xuất Báo cáo"]
       CRM7["Cấu hình Landing Web & SEO"]
       CRM8["Đồng bộ Google Drive 2 Chiều"]
@@ -143,7 +143,7 @@ flowchart TD
     end
     
     subgraph APP["ỨNG DỤNG DI ĐỘNG CEO 1983"]
-      APP1["Trang chủ Doanh nhân & Thẻ VIP QR/NFC"]
+      APP1["Trang chủ Doanh nhân & Thẻ Doanh Nhân Số QR/NFC"]
       APP2["Sàn Giao thương B2B & Deal Chào giá"]
       APP3["Danh bạ Doanh nhân & Lọc 2 Cấp"]
       APP4["Ví Sự kiện & Check-in QR 1 Giây"]
@@ -154,7 +154,7 @@ flowchart TD
     subgraph CORE["HẠ TẦNG KỸ THUẬT & TRỤ CỘT DÙNG CHUNG"]
       C1["Multi-LLM AI Controller (5 Hãng)"]
       C2["PostgreSQL 15 + Redis Cache Cluster"]
-      C3["VietQR Napas247 Webhook Engine"]
+      C3["Mã QR Ngân Hàng Napas247 Webhook Engine"]
       C4["Socket.IO Realtime State Gateway"]
       C5["MinIO S3 Object Storage"]
       C6["OpenGraph Dynamic Rendering Engine"]
@@ -170,7 +170,7 @@ flowchart TD
 - **Hồ sơ Hội viên 360 Độ**: Quản lý toàn bộ thông tin doanh nghiệp, năng lực cốt lõi, mã số thuế, chức vụ, lịch sử đóng phí, lịch sử tham gia sự kiện và đóng góp cộng đồng.
 - **Quản lý Sự kiện, Gala & Bàn tiệc Thông minh**: Thiết lập sự kiện, bán vé hoặc phân bổ thư mời, vẽ sơ đồ bàn tiệc trực quan kéo-thả, gán vị trí ngồi theo sơ đồ danh dự, kiểm soát check-in QR trực tiếp.
 - **Hội đồng Quản trị & Giao việc 6 Ban**: Quản lý cơ cấu 6 Ban chuyên môn (Ban Hội viên, Ban Xúc tiến Thương mại, Ban Sự kiện, Ban Truyền thông, Ban Tài chính, Ban Đào tạo); giao việc, phân quyền và theo dõi tiến độ công việc theo chuẩn Kanban.
-- **Quản lý Tài chính, Thu Chi & Hội phí**: Tạo phiếu thu/chi, quản lý danh sách nợ phí, sinh mã VietQR động đối soát tự động qua webhook ngân hàng, xuất hóa đơn VAT điện tử và sổ quỹ tiền mặt.
+- **Quản lý Tài chính, Thu Chi & Hội phí**: Tạo phiếu thu/chi, quản lý danh sách nợ phí, sinh mã QR ngân hàng động đối soát tự động qua webhook ngân hàng, xuất hóa đơn VAT điện tử và sổ quỹ tiền mặt.
 - **Trợ lý AI Điều hành Toàn diện**: Truy vấn dữ liệu tự nhiên bằng tiếng Việt; hỗ trợ phân tích tài chính, dự báo xu hướng hội viên, phát hiện dấu hiệu hội viên giảm gắn kết và tự động xuất các báo cáo chuyên đề (Excel, PDF, Word).
 - **Cấu hình Multi-LLM AI**: Cho phép nhập API Key và chuyển đổi linh hoạt giữa 5 nhà cung cấp mô hình (OpenAI, Google Gemini, Anthropic Claude, Groq, DeepSeek); theo dõi hạn ngạch Token và tự động cảnh báo khi sắp cạn quota.
 - **Landing Web Chính thức & Quản trị Nội dung**: Quản trị trang chủ công khai (`/intro`) với đầy đủ Header, Hero Banner, Video giới thiệu, Giới thiệu Ban Chấp Hành, Tin tức & Sự kiện, Form đăng ký gia nhập online.
@@ -178,7 +178,7 @@ flowchart TD
 - **Theme Studio & Phân quyền RBAC**: Tùy chỉnh màu sắc thương hiệu (Brand Colors), Logo, Tên miền phụ; cấu hình ma trận phân quyền chi tiết đến từng hành vi Thêm / Sửa / Xóa / Duyệt / Xuất file.
 
 #### B. Ứng Dụng Di Động CEO 1983 (Dành cho Hội viên Doanh nhân)
-- **Trang chủ Doanh nhân & Thẻ VIP QR / NFC**: Giao diện cá nhân hóa theo vai trò hội viên; hiển thị Thẻ danh thiếp số VIP có gắn QR động và chip NFC để chạm truyền dữ liệu (Tap-to-Share).
+- **Trang chủ Doanh nhân & Thẻ Doanh Nhân Số QR / NFC**: Giao diện cá nhân hóa theo vai trò hội viên; hiển thị Thẻ danh thiếp số VIP có gắn QR động và chip NFC để chạm truyền dữ liệu (Tap-to-Share).
 - **Sàn Giao Thương B2B & Deal Chào Giá Chính Xác**: Đăng tin tìm đối tác, bán sỉ sản phẩm/dịch vụ, chia sẻ cơ hội hợp tác kinh doanh. Khi hội viên bấm "Chào giá / Nhận deal", tin nhắn và thông báo được gửi **đích danh 100% đến đúng người đăng**.
 - **Danh Bạ Doanh Nhân 1983 & Bộ Lọc Kết Nối 2 Cấp**: Bộ lọc trực quan phân chia 2 nhóm rõ rệt: **[Đã Kết Nối]** (hiển thị bạn bè, đồng môn, danh thiếp đã lưu) và **[Chưa Kết Nối]** (gợi ý kết nối mở rộng). Cho phép kết nối 1 chạm, gọi điện thoại trực tiếp hoặc nhắn tin Zalo.
 - **Ví Sự Kiện & Điểm Danh Check-in QR 1 Giây**: Lưu trữ vé tham dự sự kiện dưới dạng mã QR động; khi đến địa điểm chỉ cần đưa mã vào máy quét của Ban Lễ tân để điểm danh tức thì và hiển thị số bàn tiệc chỉ định.
@@ -186,7 +186,7 @@ flowchart TD
 - **Kho Tài liệu Cá nhân & Đồng bộ Drive**: Hội viên có thể xem quy chế CLB, tải tài liệu đào tạo hoặc bấm nút đồng bộ tài liệu về Google Drive cá nhân của mình chỉ với 1 thao tác.
 
 ### 2.2 Phân Hệ Ngoài Phạm Vi (Out-of-Scope V7.0)
-- **Cổng Thanh toán Quốc tế Đa ngoại tệ**: V7.0 chỉ tập trung giải quyết chuẩn thanh toán quốc gia VietQR Napas247 (VNĐ); chưa hỗ trợ cổng thanh toán thẻ tín dụng ngoại tệ (Stripe, PayPal, Visa/Mastercard quốc tế trực tiếp).
+- **Cổng Thanh toán Quốc tế Đa ngoại tệ**: V7.0 chỉ tập trung giải quyết chuẩn thanh toán quốc gia Mã QR Ngân Hàng Napas247 (VNĐ); chưa hỗ trợ cổng thanh toán thẻ tín dụng ngoại tệ (Stripe, PayPal, Visa/Mastercard quốc tế trực tiếp).
 - **Sàn Giao dịch Thương mại Điện tử B2C Bán lẻ**: Không xây dựng hệ thống giỏ hàng mua sắm bán lẻ cho người tiêu dùng cuối; nền tảng chỉ phục vụ giao dịch hợp tác bán sỉ, xúc tiến thương mại và phân phối giữa các pháp nhân doanh nghiệp (B2B).
 - **Tổng đài Thoại VoIP Độc lập**: Các cuộc gọi liên hệ từ Danh bạ sử dụng giao thức gọi mạng di động chuẩn (`tel:`) của thiết bị hoặc liên kết mở ứng dụng Zalo/Viber; không triển khai hạ tầng server SIP VoIP riêng.
 
@@ -209,7 +209,7 @@ flowchart TD
 2. **Ban Chấp Hành / Ban Điều Hành (Board Members)**: Các Phó Chủ tịch và Trưởng ban chuyên môn; điều hành các hoạt động hội viên, xúc tiến thương mại, sự kiện và đối ngoại.
 3. **Ban Thư Ký (Secretariat)**: Tiếp nhận và thẩm định hồ sơ đăng ký gia nhập online, phát hành thư mời sự kiện, chuẩn bị danh sách bàn tiệc Gala, soạn thảo biên bản họp.
 4. **Ban Tài Chính / Kế Toán (Treasurer / Accountant)**: Quản lý số dư các quỹ, đối soát hội phí tự động, phê duyệt phiếu chi, xuất hóa đơn VAT điện tử, báo cáo ngân sách.
-5. **Hội Viên Doanh Nhân Chính Thức (Active Business Members)**: Các CEO đã nộp hội phí đầy đủ; sở hữu Thẻ VIP số, đăng tin giao thương, chào giá deals, tham gia sự kiện và kết nối B2B.
+5. **Hội Viên Doanh Nhân Chính Thức (Active Business Members)**: Các CEO đã nộp hội phí đầy đủ; sở hữu Thẻ Doanh Nhân Số số, đăng tin giao thương, chào giá deals, tham gia sự kiện và kết nối B2B.
 6. **Khách Mời / Hội Viên Tiềm Năng (Guests / Prospective Members)**: Người dùng vãng lai truy cập Landing page, nhận link danh thiếp hoặc đăng ký gia nhập; quyền hạn giới hạn.
 7. **Trợ Lý Trí Tuệ Nhân Tạo (Autonomous AI Agent)**: Tác nhân phần mềm hoạt động 24/7 dưới sự giám sát của hệ thống; trả lời truy vấn, phân tích số liệu và tự động cảnh báo.
 
@@ -218,7 +218,7 @@ flowchart TD
 
 | Phân Hệ Nghiệp Vụ Cốt Lõi | Chủ tịch | Ban Chấp Hành | Ban Thư Ký | Kế Toán | Hội Viên CEO | Khách Mời | Trợ lý AI |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1. Định danh Hội viên & Thẻ VIP NFC** | A | C | R | I | I | - | - |
+| **1. Định danh Hội viên & Thẻ Doanh Nhân Số NFC** | A | C | R | I | I | - | - |
 | **2. Sàn B2B & Deal Chào Giá Chính Xác** | I | C | I | - | R/A | - | C |
 | **3. Sự kiện, Gala & Check-in QR 1s** | A | C | R | I | I | I | - |
 | **4. Danh bạ Doanh nhân & Lọc 2 Cấp** | I | I | C | - | R/A | - | - |
@@ -227,7 +227,7 @@ flowchart TD
 | **7. Landing Web & Đăng ký Online** | A | C | R | - | I | R | - |
 | **8. Đồng bộ Google Drive 2 Chiều** | I | C | R | - | R | - | - |
 | **9. Chia sẻ Mạng Xã hội OpenGraph** | I | I | C | - | R | I | - |
-| **10. Tài chính, Thu chi & VietQR** | A | C | I | R | I | - | C |
+| **10. Tài chính, Thu chi & Mã QR Ngân Hàng** | A | C | I | R | I | - | C |
 | **11. Quản trị Cấu hình & RBAC 6 Cấp** | A | C | I | - | - | - | - |
 
 ---
@@ -236,7 +236,7 @@ flowchart TD
 
 ## 4. ĐẶC TẢ YÊU CẦU NGHIỆP VỤ CHI TIẾT THEO 11 PHÂN HỆ
 
-### Phân Hệ 4.1: Quản Lý Định Danh Hội Viên, Thẻ VIP Số & NFC Tap-to-Connect
+### Phân Hệ 4.1: Quản Lý Định Danh Hội Viên, Thẻ Doanh Nhân Số Số & NFC Tap-to-Connect
 
 #### A. Mục Tiêu Nghiệp Vụ
 Hiện đại hóa hoàn toàn hình ảnh doanh nhân thế hệ 1983; thay thế danh thiếp giấy bằng Danh thiếp số VIP đa kênh tích hợp mã QR động và công nghệ thẻ cứng NFC. Giúp hội viên mở rộng quan hệ đối tác mọi lúc mọi nơi chỉ bằng 1 chạm hoặc 1 lượt quét camera.
@@ -247,7 +247,7 @@ Hiện đại hóa hoàn toàn hình ảnh doanh nhân thế hệ 1983; thay th�
 flowchart TD
   A([Hội viên chạm Thẻ NFC vào Smartphone đối tác]) --> B{Thiết bị đối tác có NFC?}
   B -- Có --> C[Hệ điều hành iOS/Android đọc chip NFC]
-  B -- Không --> D[Đối tác quét mã QR trên màn hình Thẻ VIP]
+  B -- Không --> D[Đối tác quét mã QR trên màn hình Thẻ Doanh Nhân Số]
   C --> E[Trình duyệt tự động mở URL danh thiếp: ceo1983.viconnect.vn/u/:code]
   D --> E
   E --> F[Hệ thống hiển thị Danh thiếp Số Doanh nhân Đẳng cấp]
@@ -264,7 +264,7 @@ flowchart TD
 
 #### D. Xử Lý Ngoại Lệ (Exception Handling)
 - **Đối tác dùng điện thoại không có NFC**: Màn hình App của hội viên luôn có sẵn nút bấm mở to Mã QR độ nét cao để đối tác dùng camera quét bình thường.
-- **Không có kết nối mạng Internet tại hiện trường**: Thẻ VIP trên App lưu sẵn thông tin vCard trong bộ nhớ đệm nội bộ (Offline Cache), cho phép quét trực tiếp mã QR vCard để lưu danh bạ mà không cần tải qua internet.
+- **Không có kết nối mạng Internet tại hiện trường**: Thẻ Doanh Nhân Số trên App lưu sẵn thông tin vCard trong bộ nhớ đệm nội bộ (Offline Cache), cho phép quét trực tiếp mã QR vCard để lưu danh bạ mà không cần tải qua internet.
 
 ---
 
@@ -414,7 +414,7 @@ Xây dựng một "bộ mặt thương hiệu" chuyên nghiệp, đẳng cấp v
 
 #### C. Bảng Quy Tắc Nghiệp Vụ (Business Rules)
 - **BR-4.7.1 (Đường Dẫn Chuẩn Xác)**: Landing Web giới thiệu BẮT BUỘC truy cập qua đường dẫn `/intro` hoặc trang chủ chính thức; không sử dụng các đường dẫn tạm thời.
-- **BR-4.7.2 (Quy Trình Duyệt 2 Bước)**: Hồ sơ đăng ký sau khi nộp sẽ ở trạng thái `PENDING_REVIEW`; Ban Thư Ký kiểm tra mã số thuế và lý lịch doanh nghiệp -> Xác nhận hợp lệ -> Chuyển sang Ban Tài Chính gửi thông báo đóng hội phí qua VietQR.
+- **BR-4.7.2 (Quy Trình Duyệt 2 Bước)**: Hồ sơ đăng ký sau khi nộp sẽ ở trạng thái `PENDING_REVIEW`; Ban Thư Ký kiểm tra mã số thuế và lý lịch doanh nghiệp -> Xác nhận hợp lệ -> Chuyển sang Ban Tài Chính gửi thông báo đóng hội phí qua Mã QR Ngân Hàng.
 
 ---
 
@@ -447,13 +447,13 @@ Tối ưu hóa hiệu quả lan tỏa thương hiệu cá nhân của hội viê
 
 ---
 
-### Phân Hệ 4.10: Quản Lý Tài Chính, Thu Chi & Hội Phí VietQR Động
+### Phân Hệ 4.10: Quản Lý Tài Chính, Thu Chi & Hội Phí Mã QR Ngân Hàng Động
 
 #### A. Mục Tiêu Nghiệp Vụ
-Minh bạch hóa 100% dòng tiền của câu lạc bộ, xây dựng niềm tin tuyệt đối giữa Hội viên và Ban Chấp Hành. Tự động hóa hoàn toàn việc thu nộp và gia hạn hội phí hàng năm qua VietQR Napas247, giảm thiểu tối đa sai sót và nhân lực kế toán.
+Minh bạch hóa 100% dòng tiền của câu lạc bộ, xây dựng niềm tin tuyệt đối giữa Hội viên và Ban Chấp Hành. Tự động hóa hoàn toàn việc thu nộp và gia hạn hội phí hàng năm qua Mã QR Ngân Hàng Napas247, giảm thiểu tối đa sai sót và nhân lực kế toán.
 
 #### B. Bảng Quy Tắc Nghiệp Vụ (Business Rules)
-- **BR-4.10.1 (Sinh Mã VietQR Động Theo Chuẩn Napas247)**: Mỗi giao dịch thu hội phí hoặc ủng hộ sự kiện sinh ra một mã QR động chứa sẵn: Số tài khoản ngân hàng thụ hưởng của CLB, Tên ngân hàng, Số tiền chính xác và Nội dung chuyển khoản duy nhất (ví dụ: `CEO1983 HOIPHI 2026 U0089`).
+- **BR-4.10.1 (Sinh mã QR ngân hàng Động Theo Chuẩn Napas247)**: Mỗi giao dịch thu hội phí hoặc ủng hộ sự kiện sinh ra một mã QR động chứa sẵn: Số tài khoản ngân hàng thụ hưởng của CLB, Tên ngân hàng, Số tiền chính xác và Nội dung chuyển khoản duy nhất (ví dụ: `CEO1983 HOIPHI 2026 U0089`).
 - **BR-4.10.2 (Webhook Tự Động Khớp Lệnh Realtime)**: Khi tiền về tài khoản ngân hàng, hệ thống cổng thanh toán gửi webhook thông báo; hệ thống tự động đối soát nội dung chuyển khoản trong vòng 3 giây -> Chuyển trạng thái hóa đơn sang `PAID` -> Kích hoạt niên hạn hội viên trên App và gửi thông báo xác nhận qua Zalo ZNS / Notification.
 
 ---
@@ -523,7 +523,7 @@ Tuân thủ nghiêm ngặt chuẩn nhận diện thương hiệu đã được B
 
 | STT | Phân Hệ Nghiệp Vụ | Tiêu Chí Nghiệm Thu Đạt Yêu Cầu (Pass Criteria) | Trạng Thái |
 | :---: | :--- | :--- | :---: |
-| 1 | Định danh & Thẻ VIP NFC | Chạm thẻ NFC hoặc quét QR mở đúng trang danh thiếp trong < 1.5s; tải vCard chuẩn xác. | **ĐẠT** |
+| 1 | Định danh & Thẻ Doanh Nhân Số NFC | Chạm thẻ NFC hoặc quét QR mở đúng trang danh thiếp trong < 1.5s; tải vCard chuẩn xác. | **ĐẠT** |
 | 2 | Sàn B2B & Deal Chào Giá | Đăng tin thành công; bấm chào giá gửi ĐÍCH DANH 100% đến người đăng; cập nhật doanh số. | **ĐẠT** |
 | 3 | Sự kiện & Check-in QR 1s | Quét mã QR xác thực thành công trong < 1s; hiển thị số bàn Gala; chống quét trùng lặp. | **ĐẠT** |
 | 4 | Danh bạ & Bộ lọc 2 Cấp | Lọc rành mạch [Đã Kết Nối] và [Chưa Kết Nối]; gọi điện/nhắn tin 1 chạm; không double tên. | **ĐẠT** |
@@ -532,11 +532,11 @@ Tuân thủ nghiêm ngặt chuẩn nhận diện thương hiệu đã được B
 | 7 | Landing Web `/intro` | Giao diện hiện đại, đầy đủ các section, form đăng ký gia nhập gửi thông báo tức thì lên CRM. | **ĐẠT** |
 | 8 | Đồng bộ Drive 2 Chiều | Đồng bộ tài nguyên giữa hệ thống và Google Drive mượt mà qua OAuth 2.0. | **ĐẠT** |
 | 9 | Chia sẻ Mạng Xã Hội | Thẻ OpenGraph Preview hiển thị ảnh, tiêu đề và mô tả sắc nét trên Facebook, Zalo. | **ĐẠT** |
-| 10 | Tài chính & VietQR | Sinh mã VietQR Napas247 động; webhook ngân hàng tự động khớp lệnh nộp hội phí trong 3s. | **ĐẠT** |
+| 10 | Tài chính & Mã QR Ngân Hàng | Sinh mã Mã QR Ngân Hàng Napas247 động; webhook ngân hàng tự động khớp lệnh nộp hội phí trong 3s. | **ĐẠT** |
 | 11 | Quản trị RBAC & Code Quality | Phân quyền 6 vai trò nghiêm ngặt; Type check `tsc --noEmit` đạt 0 lỗi (Exit Code 0). | **ĐẠT** |
 
 ### 7.2 Quy Trình Đào Tạo & Bàn Giao 6 Ban
-1. **Đợt 1 (Ngày 1 - 2)**: Đào tạo Quản trị viên cấp cao & Kế toán trưởng: Vận hành module Tài chính, Hội phí VietQR, Phân quyền RBAC và Giám sát AI Engine.
+1. **Đợt 1 (Ngày 1 - 2)**: Đào tạo Quản trị viên cấp cao & Kế toán trưởng: Vận hành module Tài chính, Hội phí Mã QR Ngân Hàng, Phân quyền RBAC và Giám sát AI Engine.
 2. **Đợt 2 (Ngày 3 - 4)**: Đào tạo Ban Thư Ký & Ban Sự kiện: Tiếp nhận duyệt hồ sơ hội viên mới, Quản lý sự kiện, Vẽ sơ đồ bàn tiệc Gala và Vận hành trạm quét check-in QR.
 3. **Đợt 3 (Ngày 5 - 7)**: Hướng dẫn toàn thể Hội viên CEO 1983: Cài đặt ứng dụng trên iOS/Android, kích hoạt Danh thiếp số VIP NFC, đăng tin giao thương B2B và sử dụng vé điện tử.
 
@@ -551,7 +551,7 @@ Tài liệu BRD V7.0 được ánh xạ trực tiếp và truy vết 1-1 với 3
 
 | Phân Nhóm | Mã Functional Node ID | Tên Node Chức Năng Tương Ứng |
 | :--- | :--- | :--- |
-| **Nhóm CRM (17 Nodes)** | `[NODE-CRM-001]` -> `[NODE-CRM-017]` | Dashboard BI, Hội viên 360, Bàn tiệc Gala, 6 Ban Điều Hành, Tài chính Thu chi, Hội phí VietQR, AI Command Center, Cấu hình AI Đa Hãng, Landing Page Editor, Google Drive Sync, Theme Studio, RBAC, v.v. |
+| **Nhóm CRM (17 Nodes)** | `[NODE-CRM-001]` -> `[NODE-CRM-017]` | Dashboard BI, Hội viên 360, Bàn tiệc Gala, 6 Ban Điều Hành, Tài chính Thu chi, Hội phí Mã QR Ngân Hàng, AI Command Center, Cấu hình AI Đa Hãng, Landing Page Editor, Google Drive Sync, Theme Studio, RBAC, v.v. |
 | **Nhóm App (14 Nodes)** | `[NODE-APP-001]` -> `[NODE-APP-014]` | Trang chủ Doanh nhân, Danh thiếp VIP QR/NFC, Sàn B2B, Deal Chào Giá, Danh bạ 2 Cấp, Ví Sự Kiện, Bảng tin Mạng lưới, Kho Tài liệu Cá nhân, v.v. |
 | **Nhóm Hạ Tầng (6 Nodes)** | `[NODE-CORE-001]` -> `[NODE-CORE-006]` | Auth JWT Silent Refresh, PostgreSQL 15, Socket.IO Gateway, MinIO S3, Nginx Reverse Proxy, Docker Compose CI/CD. |
 

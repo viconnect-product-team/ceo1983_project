@@ -65,7 +65,7 @@
 
 ### 8. Vé điện tử & Thanh toán [🔵 KẾ HOẠCH TIẾP THEO]
 - **Vấn đề CLB phản ánh:** Vé chỉ gửi qua email dễ rơi spam; chưa kết nối Zalo OA và VNPAY.
-- **Giải pháp ViConnect đề xuất:** Vé QR gắn mã chống spam + Tự động gửi thông báo vé qua Zalo OA (ZNS) + Sẵn sàng tích hợp cổng VietQR & VNPAY.
+- **Giải pháp ViConnect đề xuất:** Vé QR gắn mã chống spam + Tự động gửi thông báo vé qua Zalo OA (ZNS) + Sẵn sàng tích hợp cổng thanh toán QR ngân hàng & VNPAY.
 - **Thời hạn:** Phối hợp kết nối trước 10/11/2026
 
 ### 9. Check-in gắn 2 dòng lợi ích [🟡 ĐANG TRIỂN KHAI]
@@ -81,7 +81,7 @@
 ---
 
 ## 🔹 NHÓM D: QUẢN TRỊ CRM & BÁO CÁO ĐIỀU HÀNH
-*Chỉ số sức khỏe hội viên, cảnh báo trầm lắng, quản lý niên liễm VietQR & xuất báo cáo*
+*Chỉ số sức khỏe hội viên, cảnh báo trầm lắng, quản lý niên liễm Mã QR Ngân Hàng & xuất báo cáo*
 
 ### 11. Chuẩn hóa CSDL hội viên [🔵 KẾ HOẠCH TIẾP THEO]
 - **Vấn đề CLB phản ánh:** Dữ liệu thành viên và ngày sinh chưa cập nhật đầy đủ, khó chăm sóc.
@@ -93,9 +93,9 @@
 - **Giải pháp ViConnect đề xuất:** Đồ thị Bar & Line tăng/giảm, bục vinh danh Top 3 gọn 1 hàng; tự động gắn cờ hội viên ít tương tác để BĐH chăm sóc.
 - **Thời hạn:** Hoàn thiện trước 05/11/2026
 
-### 13. Quản lý hội phí VietQR [🟡 ĐANG TRIỂN KHAI]
+### 13. Quản lý hội phí Mã QR Ngân Hàng [🟡 ĐANG TRIỂN KHAI]
 - **Vấn đề CLB phản ánh:** Chưa có báo cáo thu phí và cơ chế nhắc phí định kỳ đa kênh.
-- **Giải pháp ViConnect đề xuất:** Theo dõi niên độ 365 ngày (Hiệu lực / Sắp hạn / Nợ phí); tạo thông báo gắn VietQR động khớp tiền tự động; sẵn sàng nhắc Zalo.
+- **Giải pháp ViConnect đề xuất:** Theo dõi niên độ 365 ngày (Hiệu lực / Sắp hạn / Nợ phí); tạo thông báo gắn Mã QR Ngân Hàng động khớp tiền tự động; sẵn sàng nhắc Zalo.
 - **Thời hạn:** Hoàn thiện trước 05/11/2026
 
 ### 14. Bộ Báo cáo Tháng/Quý/Năm [🟡 ĐANG TRIỂN KHAI]

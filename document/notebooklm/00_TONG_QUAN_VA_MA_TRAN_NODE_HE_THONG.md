@@ -41,7 +41,7 @@ Hệ thống chuyển đổi số toàn diện của **CLB Doanh Nhân CEO 1983*
 | **Mục đích cốt lõi** | Quản trị, giám sát chỉ số, phê duyệt hồ sơ, thu/chi, giao việc, phân quyền | Kết nối đối tác, danh thiếp số, chia sẻ cơ hội, giao thương B2B, điểm danh họp |
 | **Môi trường & Thiết bị** | Máy tính để bàn (Desktop PC/Laptop), màn hình lớn >= 1280px | Màn hình cảm ứng di động (320px - 430px+), iOS/Android/PWA |
 | **Khung giao diện (Layout)** | `DashboardLayout`: Sidebar cố định bên trái, Header tìm kiếm & chuông | `MemberShell`: Thanh điều hướng chân trang (Bottom Nav 5 icon) |
-| **Thành phần giao diện đặc trưng**| Bảng Excel kéo rê chuột co dãn cột, Biểu đồ Recharts, Xuất/Nhập Excel | Thẻ VIP số, QR cá nhân popup, Dải thẻ ngang, Icon Lucide 5 cột |
+| **Thành phần giao diện đặc trưng**| Bảng Excel kéo rê chuột co dãn cột, Biểu đồ Recharts, Xuất/Nhập Excel | Thẻ Doanh Nhân Số số, QR cá nhân popup, Dải thẻ ngang, Icon Lucide 5 cột |
 | **Bộ mã định danh Node** | **`[NODE-CRM-001]` đến `[NODE-CRM-021]`** | **`[NODE-APP-001]` đến `[NODE-APP-016]`** |
 | **Cấu hình triển khai Deploy** | Thư mục `deploy/crm/` (Container Port 5005) | Thư mục `deploy/ceo1983/` (Container Port 5002) |
 
@@ -76,7 +76,7 @@ Hệ thống chuyển đổi số toàn diện của **CLB Doanh Nhân CEO 1983*
 
 ### B. Nhóm Node CEO 1983 Mobile App ([NODE-APP-xxx])
 1. **`[NODE-APP-001]` Trang Chủ Ticker Nến Realtime & Shortcut Tin Nhắn**: Số liệu thật 100% từ CSDL. Biểu đồ nến ticker realtime biến động tăng giảm. Quick Shortcut "Tin nhắn" (`/association/messages?tab=messages`). WelcomeMemberModal (Sáng/Tối) & đồng bộ CSS Theme Mùa Lễ Hội (`--festival-bg-image`) (`/association`, `OpportunityCandleWidget.tsx`, `WelcomeMemberModal.tsx`).
-2. **`[NODE-APP-002]` Thẻ Hội Viên VIP Số & QR Cá Nhân**: Logo công ty hội viên ở góc phải trên. Mã QR cá nhân hóa mở popup phóng to. Công tắc bảo mật SĐT và Email. Tích hợp Quét QR thẻ đối tác (`/association/card`, `Ceo1983BusinessCardVisit.tsx`).
+2. **`[NODE-APP-002]` thẻ hội viên điện tử Số & QR Cá Nhân**: Logo công ty hội viên ở góc phải trên. Mã QR cá nhân hóa mở popup phóng to. Công tắc bảo mật SĐT và Email. Tích hợp Quét QR thẻ đối tác (`/association/card`, `Ceo1983BusinessCardVisit.tsx`).
 3. **`[NODE-APP-003]` Trang Quét Danh Thiếp Công Khai Bảo Mật**: Xem công khai danh thiếp. Tuân thủ quyền riêng tư: Ẩn SĐT/Email sẽ hiện "🔒 Đã ẩn theo cài đặt riêng tư" (`/card/$code`).
 4. **`[NODE-APP-004]` Danh Bạ Hội Viên & Bản Đồ 2D Google Maps Dẫn Đường**: 2 chế độ: Danh sách & Bản đồ. Bản đồ 2D Google Maps `CeoInteractiveMapModal` (Leaflet tile `mt1.google.com`), 2 phạm vi "Tổng thể" vs "Cá nhân", GPS Geolocation dẫn đường Google Maps, triệt tiêu lỗi màn hình đen 3D Three.js (`/association/members`, `CeoInteractiveMapModal.tsx`).
 5. **`[NODE-APP-005]` Cơ Hội Giao Thương B2B Strip 3 Thẻ Ngang**: TUYỆT ĐỐI KHÔNG để biểu đồ trong màn này. Dải 3 thẻ ngang: "Tổng chia sẻ", "Deal đã chốt", "Tôi share đi" và nút sang Analytics. Bộ lọc 3 trạng thái: Tất cả, Bên mua, Bên bán (`/association/opportunities`).

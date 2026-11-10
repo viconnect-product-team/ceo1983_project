@@ -26,7 +26,7 @@
 - [CHƯƠNG 3: BỘ KỊCH BẢN KIỂM THỬ CHỨC NĂNG CHI TIẾT (FUNCTIONAL TEST CASES)](#chương-3-bộ-kịch-bản-kiểm-thử-chức-năng-chi-tiết-functional-test-cases)
   - [3.1. Nhóm TC Xác Thực, JWT, Phân Quyền RBAC 5 Cấp (TC-AUTH)](#31-nhóm-tc-xác-thực-jwt-phân-quyền-rbac-5-cấp-tc-auth)
   - [3.2. Nhóm TC Quản Trị Hội Viên & Phê Duyệt Kết Nạp (TC-MEM)](#32-nhóm-tc-quản-trị-hội-viên--phê-duyệt-kết-nạp-tc-mem)
-  - [3.3. Nhóm TC Hội Phí & Gạch Nợ Tự Động VietQR / IPN HMAC-SHA512 (TC-FIN)](#33-nhóm-tc-hội-phí--gạch-nợ-tự-động-vietqr--ipn-hmac-sha512-tc-fin)
+  - [3.3. Nhóm TC Hội Phí & Gạch Nợ Tự Động Mã QR Ngân Hàng / IPN HMAC-SHA512 (TC-FIN)](#33-nhóm-tc-hội-phí--gạch-nợ-tự-động-mã QR ngân hàng--ipn-hmac-sha512-tc-fin)
   - [3.4. Nhóm TC Sự Kiện Gala Keangnam & Soát Vé QR Động < 0.5s (TC-EVT)](#34-nhóm-tc-sự-kiện-gala-keangnam--soát-vé-qr-động--05s-tc-evt)
   - [3.5. Nhóm TC Studio Poster Wyndham 9:16 Pinterest & Zalo OA ZNS (TC-BROADCAST)](#35-nhóm-tc-studio-poster-wyndham-916-pinterest--zalo-oa-zns-tc-broadcast)
   - [3.6. Nhóm TC Giao Việc Kanban Kéo Thả & AI Gemini Bóc Tách Task (TC-TASK)](#36-nhóm-tc-giao-việc-kanban-kéo-thả--ai-gemini-bóc-tách-task-tc-task)
@@ -50,14 +50,14 @@
 ### 1.1. Mục Tiêu & Phạm Vi Kiểm Thử Chất Lượng
 Văn kiện Đặc tả Kiểm thử này thiết lập tiêu chuẩn kỹ thuật nghiêm ngặt nhằm xác nhận toàn diện chất lượng của **Hệ sinh thái Nền tảng số CLB Doanh Nhân CEO 1983 (HanoiBA)**:
 1. **Mục tiêu không lỗi (Zero Defect Policy):** Đảm bảo 100% mã nguồn không còn lỗi cú pháp, không còn biến chưa khai báo, biên dịch TypeScript `tsc --noEmit` đạt Exit Code 0 trên cả hai phân hệ Front-end và Back-end.
-2. **Bảo toàn giao dịch tài chính 100% (Financial Integrity):** Mọi giao dịch nộp hội phí qua VietQR Napas247, MoMo, VNPay đều được gạch nợ chính xác, bảo toàn tính chất ACID và chống xử lý trùng lặp.
+2. **Bảo toàn giao dịch tài chính 100% (Financial Integrity):** Mọi giao dịch nộp hội phí qua Mã QR Ngân Hàng Napas247, MoMo, VNPay đều được gạch nợ chính xác, bảo toàn tính chất ACID và chống xử lý trùng lặp.
 3. **Trải nghiệm tốc độ cao (Sub-second Performance):** Thao tác soát vé QR tại cửa sảnh Keangnam Landmark72 phải trả kết quả trong thời gian `< 0.5 giây` để không gây ùn tắc đại biểu.
 4. **An toàn dữ liệu tuyệt đối (Zero Vulnerabilities):** Bảo mật danh bạ hội viên theo Nghị định 13/2023/NĐ-CP, đạt chuẩn OWASP Top 10 và 0 lỗ hổng bảo mật nghiêm trọng (0 Critical / High Vulnerabilities).
 
 ### 1.2. Các Cấp Độ Kiểm Thử Áp Dụng (Test Levels)
 * **Unit Testing (Kiểm thử đơn vị):** Kiểm tra tính đúng đắn của các hàm tính toán tài chính, thuật toán băm HMAC-SHA512, bộ lọc dữ liệu và logic phân loại task AI.
 * **Integration Testing (Kiểm thử tích hợp):** Kiểm tra sự tương tác thông suốt giữa NestJS Controller -> NestJS Service -> PostgreSQL thông qua PgBouncer cổng `6432`.
-* **System Testing (Kiểm thử hệ thống):** Kiểm thử luồng nghiệp vụ khép kín từ lúc Doanh nhân nộp đơn kết nạp -> Ban Thư ký thẩm định -> Chủ tịch duyệt -> Phát hành VietQR -> Gạch nợ tự động -> Cấp thẻ số Hoàng Gia.
+* **System Testing (Kiểm thử hệ thống):** Kiểm thử luồng nghiệp vụ khép kín từ lúc Doanh nhân nộp đơn kết nạp -> Ban Thư ký thẩm định -> Chủ tịch duyệt -> Phát hành Mã QR Ngân Hàng -> Gạch nợ tự động -> Cấp thẻ số Hoàng Gia.
 * **Performance & Load Testing (Kiểm thử hiệu năng):** Giả lập 2.000 người dùng đồng thời bằng k6 và Apache JMeter.
 * **Security & Penetration Testing (Kiểm thử thâm nhập):** Rà quét lỗ hổng tự động kết hợp tấn công giả lập có kiểm soát (Red Team Pentest).
 * **User Acceptance Testing (UAT - Kiểm thử nghiệm thu người dùng):** Thực hiện trực tiếp bởi Thường trực Ban Điều Hành, Kế toán và các Trưởng Ban CLB CEO 1983.
@@ -115,7 +115,7 @@ Văn kiện Đặc tả Kiểm thử này thiết lập tiêu chuẩn kỹ thu�
 | **App** | `NODE-APP-009` | Đăng ký sự kiện Gala & Mua vé | `TC-TKT-001` đến `TC-TKT-004` | **PASS (100%)** |
 | **App** | `NODE-APP-010` | Trình vé QR động xoay vòng 30s | `TC-QR-001` đến `TC-QR-003` | **PASS (100%)** |
 | **App** | `NODE-APP-011` | Lịch họp Ban & Phòng họp Jitsi | `TC-JITSI-001` đến `TC-JITSI-003` | **PASS (100%)** |
-| **App** | `NODE-APP-012` | Nộp hội phí VietQR / MoMo / VNPay | `TC-PAY-001` đến `TC-PAY-005` | **PASS (100%)** |
+| **App** | `NODE-APP-012` | Nộp hội phí Mã QR Ngân Hàng / MoMo / VNPay | `TC-PAY-001` đến `TC-PAY-005` | **PASS (100%)** |
 | **App** | `NODE-APP-013` | Nhắn tin riêng tư B2B Socket.IO | `TC-CHAT-001` đến `TC-CHAT-003` | **PASS (100%)** |
 | **App** | `NODE-APP-014` | Biểu quyết đại hội số 1 người 1 phiếu | `TC-VOTE-001` đến `TC-VOTE-003` | **PASS (100%)** |
 | **App** | `NODE-APP-015` | Cố vấn AI dòng tiền & Deal B2B | `TC-AI-001` đến `TC-AI-003` | **PASS (100%)** |
@@ -161,7 +161,7 @@ Văn kiện Đặc tả Kiểm thử này thiết lập tiêu chuẩn kỹ thu�
   - Giao diện Web CRM hiển thị thông báo từ chối truy cập hoặc chuyển hướng về trang `/dashboard`.
 * **Kết quả thực tế:** PASS.
 
-### 3.3. Nhóm TC Hội Phí & Gạch Nợ Tự Động VietQR / IPN HMAC-SHA512 (TC-FIN)
+### 3.3. Nhóm TC Hội Phí & Gạch Nợ Tự Động Mã QR Ngân Hàng / IPN HMAC-SHA512 (TC-FIN)
 
 #### Test Case TC-FIN-008: Gạch nợ tự động thành công qua Webhook IPN Napas247
 * **Phân hệ:** Payment Engine & PostgreSQL (`NODE-CRM-012` & `NODE-CORE-004`).
@@ -271,7 +271,7 @@ Văn kiện Đặc tả Kiểm thử này thiết lập tiêu chuẩn kỹ thu�
   - Giai đoạn Ramp-up: Tăng dần từ 0 lên 2.000 Virtual Users (VUs) trong 5 phút.
   - Giai đoạn Hold: Duy trì tải cực đại 2.000 VUs trong 15 phút.
   - Giai đoạn Ramp-down: Giảm dần về 0 trong 3 phút.
-* **Các hành vi mô phỏng:** 40% lướt Bảng tin Feed; 25% tra cứu Danh bạ GPS; 20% xem Thẻ VIP & vé sự kiện; 15% nộp hội phí và nhắn tin B2B.
+* **Các hành vi mô phỏng:** 40% lướt Bảng tin Feed; 25% tra cứu Danh bạ GPS; 20% xem Thẻ Doanh Nhân Số & vé sự kiện; 15% nộp hội phí và nhắn tin B2B.
 * **Kết quả đo đạc thực tế:**
   - Tổng số yêu cầu HTTP xử lý: `1.850.000 requests`.
   - Tỷ lệ lỗi HTTP (Error Rate): `0.00%` (0 failed requests).

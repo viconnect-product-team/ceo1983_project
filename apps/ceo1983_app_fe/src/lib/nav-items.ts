@@ -55,7 +55,6 @@ export const navGroups: NavGroup[] = [
     items: [
       { key: "nav.members", icon: Users, to: "/members" },
       { key: "nav.companies", icon: Building2, to: "/companies" },
-      { key: "nav.memberSeg", icon: Tags, to: "/segments" },
       { key: "nav.renewal", icon: RefreshCw, to: "/renewal" },
     ],
   },

@@ -103,6 +103,7 @@ import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { resolveMediaUrl, uploadFileToNest, fetchNestApi, isDeadAvatarUrl } from "@/lib/api-client";
 import { requestNotificationPermission } from "@/lib/notification-permissions";
 import { Ceo1983ColorThemeSelector } from "@/components/member/Ceo1983ColorThemeSelector";
+import { ImageCropModal, type CropShape } from "@/components/templates/ImageCropModal";
 import { toast } from "sonner";
 // @ts-ignore
 import heroImg from "@/assets/vba-hero.jpg";
@@ -128,6 +129,18 @@ function isDeadAvatar(url?: string | null): boolean {
 function isDeadCover(url?: string | null): boolean {
   if (!url || typeof url !== "string") return true;
   return isDeadAvatarUrl(url);
+}
+
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
 }
 
 export default function ProfileScreen() {
@@ -519,6 +532,9 @@ export default function ProfileScreen() {
   });
   const [avatarError, setAvatarError] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropTarget, setCropTarget] = useState<"avatar" | "cover">("avatar");
+  const [cropImageUrl, setCropImageUrl] = useState("");
 
   useEffect(() => {
     const syncLocalMedia = () => {
@@ -569,16 +585,51 @@ export default function ProfileScreen() {
     };
   }, []);
 
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error(isEn ? "Only image files allowed" : "Chỉ chấp nhận tệp hình ảnh (JPG, PNG, WEBP)");
       return;
     }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      if (dataUrl) {
+        setCropImageUrl(dataUrl);
+        setCropTarget("cover");
+        setCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (e.target) e.target.value = "";
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(isEn ? "Only image files allowed" : "Chỉ chấp nhận tệp hình ảnh");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = evt.target?.result as string;
+      if (dataUrl) {
+        setCropImageUrl(dataUrl);
+        setCropTarget("avatar");
+        setCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (e.target) e.target.value = "";
+  };
+
+  const processCoverUpload = async (croppedDataUrl: string) => {
     setUploadingCover(true);
     const tid = toast.loading(isEn ? "Uploading cover..." : "Đang tải ảnh bìa lên...");
     try {
+      const file = dataUrlToFile(croppedDataUrl, `cover-${Date.now()}.png`);
       const uploadUrl = await uploadFileToNest(file, "covers");
       if (!uploadUrl) throw new Error("Không nhận được URL ảnh từ máy chủ");
 
@@ -614,20 +665,14 @@ export default function ProfileScreen() {
       toast.error(err?.message || (isEn ? "Failed to update cover photo" : "Không thể cập nhật ảnh bìa"), { id: tid });
     } finally {
       setUploadingCover(false);
-      if (e.target) e.target.value = "";
     }
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error(isEn ? "Only image files allowed" : "Chỉ chấp nhận tệp hình ảnh");
-      return;
-    }
+  const processAvatarUpload = async (croppedDataUrl: string) => {
     setUploadingAvatar(true);
     const tid = toast.loading(isEn ? "Uploading avatar..." : "Đang tải ảnh đại diện lên...");
     try {
+      const file = dataUrlToFile(croppedDataUrl, `avatar-${Date.now()}.png`);
       const uploadUrl = await uploadFileToNest(file, "avatars");
       if (!uploadUrl) throw new Error("Không nhận được URL ảnh từ máy chủ");
 
@@ -660,11 +705,18 @@ export default function ProfileScreen() {
 
       toast.success(isEn ? "Avatar updated successfully!" : "Cập nhật ảnh đại diện thành công!", { id: tid });
     } catch (err: any) {
-      console.error("Avatar upload exception:", err);
-      toast.error(err?.message || (isEn ? "Failed to upload avatar" : "Lỗi khi tải ảnh đại diện"), { id: tid });
+      console.error("Error updating avatar:", err);
+      toast.error(err?.message || (isEn ? "Failed to update avatar" : "Không thể cập nhật ảnh đại diện"), { id: tid });
     } finally {
       setUploadingAvatar(false);
-      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleCropComplete = async (croppedDataUrl: string) => {
+    if (cropTarget === "cover") {
+      await processCoverUpload(croppedDataUrl);
+    } else {
+      await processAvatarUpload(croppedDataUrl);
     }
   };
 
@@ -890,12 +942,12 @@ export default function ProfileScreen() {
             </div>
           </div>
 
-          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Chuẩn Figma Vector Outline) */}
-          <div className="self-stretch h-16 px-3 pt-1 border-t border-slate-100 dark:border-slate-800 inline-flex justify-center items-start shrink-0">
+          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Cách đều, fill dài sát 2 lề) */}
+          <div className="w-full self-stretch h-16 px-1 pt-1 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-1 items-center shrink-0">
             <button
               type="button"
               onClick={() => setCardPreviewOpen(true)}
-              className="w-24 self-stretch px-1 py-1.5 bg-black/0 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-full self-stretch px-1 py-1.5 bg-black/0 rounded-2xl flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
               <div className="size-5 relative overflow-hidden">
                 <div className="w-4 h-5 left-[20.17px] top-[3.21px] absolute origin-top-left rotate-90 outline outline-[1.50px] outline-offset-[-0.75px] outline-orange-600 dark:outline-amber-400" />
@@ -910,7 +962,7 @@ export default function ProfileScreen() {
             <button
               type="button"
               onClick={handleShare}
-              className="w-24 self-stretch px-1 py-1.5 bg-black/0 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-full self-stretch px-1 py-1.5 bg-black/0 rounded-2xl flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
               <div className="size-5 relative">
                 <div className="size-3.5 left-[2.29px] top-[4.13px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
@@ -923,7 +975,7 @@ export default function ProfileScreen() {
             <button
               type="button"
               onClick={() => setEditProfileOpen(true)}
-              className="w-24 self-stretch px-1 py-1.5 bg-black/0 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-full self-stretch px-1 py-1.5 bg-black/0 rounded-2xl flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
               <div className="size-5 relative">
                 <div className="size-2.5 left-[5.04px] top-[2.75px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
@@ -2424,6 +2476,16 @@ export default function ProfileScreen() {
       <ContactSupportModal
         open={contactSupportOpen}
         onClose={() => setContactSupportOpen(false)}
+      />
+
+      {/* Modal Căn Chỉnh & Cắt Ảnh Studio (Zoom, Di chuyển, Xoay, Cắt ảnh) */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageUrl={cropImageUrl}
+        initialShape={cropTarget === "avatar" ? "circle" : "banner"}
+        title={cropTarget === "avatar" ? "Căn Chỉnh & Cắt Ảnh Đại Diện" : "Căn Chỉnh & Cắt Ảnh Bìa"}
+        onClose={() => setCropModalOpen(false)}
+        onCropComplete={handleCropComplete}
       />
     </div>
   );

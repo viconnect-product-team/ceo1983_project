@@ -33,7 +33,7 @@
   - Quản lý hồ sơ hội viên 360° & phân quyền RBAC 11 cấp bảo mật.
   - Sơ đồ xếp bàn tiệc Gala trang trọng, phân bổ chỗ ngồi thông minh.
   - Điều hành giao việc Kanban, theo dõi tiến độ các ban thời gian thực.
-  - Quản lý hội phí VietQR tự động, gạch nợ tức thì và minh bạch sổ quỹ.
+  - Quản lý hội phí Mã QR Ngân Hàng tự động, gạch nợ tức thì và minh bạch sổ quỹ.
   - Cấu hình chương trình đào tạo trực tuyến/trực tiếp và mở link tuyển sinh.
 - **2. Văn phòng doanh nhân Mobile App (Smartphone)**:
   - Thẻ hội viên số nhận diện Doanh nhân VIP, danh thiếp số 1 chạm kết nối.
@@ -77,12 +77,12 @@
 ---
 
 ### SLIDE 6: PHÂN HỆ TRỌNG YẾU 04 - CRM
-#### QUẢN LÝ HỘI PHÍ TỰ ĐỘNG VIETQR & SỔ QUỸ THU CHI MINH BẠCH
-- Tạo mã VietQR động chuẩn NAPAS theo từng hội viên kèm cú pháp định danh chính xác.
+#### QUẢN LÝ HỘI PHÍ TỰ ĐỘNG MÃ QR NGÂN HÀNG & SỔ QUỸ THU CHI MINH BẠCH
+- Tạo mã QR ngân hàng động chuẩn NAPAS theo từng hội viên kèm cú pháp định danh chính xác.
 - Webhook ngân hàng kết nối tự động: Nhận tiền về tài khoản là hệ thống tự động gạch nợ hội phí tức thì.
 - Báo cáo dòng tiền thu chi minh bạch: Phân loại các khoản chi hoạt động, tài trợ và quỹ thiện nguyện.
 - Hội viên xem trực tiếp lịch sử đóng phí và tải biên lai thu tiền điện tử trên Mobile App.
-- **Đúc kết chiến lược**: Minh bạch tài chính tuyệt đối: Tự động hóa quy trình thu nộp hội phí qua VietQR động, giảm 95% thời gian đối soát kế toán và loại bỏ sai sót số liệu.
+- **Đúc kết chiến lược**: Minh bạch tài chính tuyệt đối: Tự động hóa quy trình thu nộp hội phí qua Mã QR Ngân Hàng động, giảm 95% thời gian đối soát kế toán và loại bỏ sai sót số liệu.
 
 ---
 

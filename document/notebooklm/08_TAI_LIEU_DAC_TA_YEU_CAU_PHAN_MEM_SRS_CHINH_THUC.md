@@ -75,7 +75,7 @@
 | `v3.5.0` | 22/10/2026 | System Arch | Bổ sung kiến trúc phân tầng NestJS + Next.js + PostgreSQL. |
 | `v5.0.0` | 01/11/2026 | Security Lead | Bổ sung kết quả Pentest, khắc phục 0 vulnerability theo báo cáo SonarQube. |
 | `v8.0.0` | 06/11/2026 | Tech Lead | Tinh giản kiến trúc, chuẩn hóa 37 Functional Nodes truy vết. |
-| `v10.0.0` | 09/11/2026 | Master Team | Tái cấu trúc chuẩn 16 Phần; Chi tiết hóa sâu sắc 6 nhóm chức năng: Hội viên, Hội phí, Thanh toán MoMo/VNPay/VietQR, Sự kiện Keangnam, Thông báo đa kênh (Zalo/Email/App) và Báo cáo tài chính; Tích hợp Trợ lý Cố vấn AI Gemini 2.0/2.5 Flash phân tích dòng tiền và thẩm định dự án B2B. |
+| `v10.0.0` | 09/11/2026 | Master Team | Tái cấu trúc chuẩn 16 Phần; Chi tiết hóa sâu sắc 6 nhóm chức năng: Hội viên, Hội phí, Thanh toán MoMo/VNPay/Mã QR Ngân Hàng, Sự kiện Keangnam, Thông báo đa kênh (Zalo/Email/App) và Báo cáo tài chính; Tích hợp Trợ lý Cố vấn AI Gemini 2.0/2.5 Flash phân tích dòng tiền và thẩm định dự án B2B. |
 
 ### 1.9. Danh sách người nhận tài liệu (Distribution List)
 
@@ -99,7 +99,7 @@ Tài liệu làm căn cứ ràng buộc pháp lý và kỹ thuật giữa Đơn 
 ### 2.2. Phạm vi hệ thống (Project Scope)
 Hệ sinh thái số CEO 1983 bao gồm 2 phân hệ người dùng độc lập và 1 nền tảng hạ tầng trung tâm:
 1. **Cổng Quản trị Web CRM (Desktop Admin Portal):** Dành riêng cho Chủ tịch, Ban Điều Hành, Ban Thư Ký, Kế toán và Trưởng các Ban chuyên môn vận hành trên máy tính để bàn (tối ưu hóa màn hình lớn, bảng tính tương đương Excel, biểu đồ tài chính đa chu kỳ, studio thiết kế thư mời chuẩn Pinterest, quản trị Kanban và duyệt hồ sơ).
-2. **Ứng dụng Di động Hội viên CEO 1983 Mobile App (Mobile-First Native/PWA/Capacitor):** Dành cho hơn 500+ Doanh nhân Hội viên sinh năm 1983 tương tác hàng ngày trên thiết bị cầm tay (mạng lưới doanh nhân, danh thiếp điện tử thông minh QR vCard, sàn cơ hội B2B, đặt lịch hẹn 1-on-1, nộp hội phí trực tuyến MoMo/VNPay/VietQR, soát vé QR động sự kiện Keangnam và cố vấn AI).
+2. **Ứng dụng Di động Hội viên CEO 1983 Mobile App (Mobile-First Native/PWA/Capacitor):** Dành cho hơn 500+ Doanh nhân Hội viên sinh năm 1983 tương tác hàng ngày trên thiết bị cầm tay (mạng lưới doanh nhân, danh thiếp điện tử thông minh QR vCard, sàn cơ hội B2B, đặt lịch hẹn 1-on-1, nộp hội phí trực tuyến MoMo/VNPay/Mã QR Ngân Hàng, soát vé QR động sự kiện Keangnam và cố vấn AI).
 3. **Hạ tầng Dịch vụ Trung tâm (Central Core Engine):** Cung cấp hệ thống REST API thuần khiết NestJS 3 tầng, CSDL PostgreSQL Enterprise `113.20.107.184:6432`, WebSocket Gateway thời gian thực, cơ chế gửi tin đa kênh (Omnichannel Broadcast: Zalo OA ZNS, Email SMTP/SendGrid, Push Notification Web/FCM) và Mô hình Trí tuệ Nhân tạo Gemini 2.0/2.5 Flash.
 
 ### 2.3. Mục tiêu dự án (Project Objectives)
@@ -123,7 +123,7 @@ Hệ sinh thái số CEO 1983 bao gồm 2 phân hệ người dùng độc lập
 | **CEO 1983** | Câu Lạc Bộ Doanh Nhân những người sinh năm 1983 (Quý Hợi), thành viên chính thức trực thuộc HanoiBA. |
 | **CRM** | Customer Relationship Management - Cổng Quản trị Khách hàng & Hội viên trên nền tảng Web Desktop. |
 | **RBAC** | Role-Based Access Control - Cơ chế kiểm soát truy cập dựa trên vai trò phân quyền (5 cấp độ chuẩn hóa). |
-| **VietQR Động** | Mã QR thanh toán tạo tức thời theo chuẩn Napas247, mã hóa số tiền và cú pháp hóa đơn duy nhất `CEO1983...`. |
+| **Mã QR Ngân Hàng Động** | Mã QR thanh toán tạo tức thời theo chuẩn Napas247, mã hóa số tiền và cú pháp hóa đơn duy nhất `CEO1983...`. |
 | **IPN** | Instant Payment Notification - Cơ chế Webhook từ MoMo / VNPay gửi ngầm về Backend để xác thực giao dịch. |
 | **Idempotency Key** | Khóa định danh duy nhất ngăn chặn xử lý giao dịch hoặc lệnh gửi tin nhắn bị lặp lại nhiều lần. |
 | **Dynamic QR Code** | Mã QR biến đổi chu kỳ mỗi 30 - 60 giây, chứa token chữ ký số HMAC-SHA256 chống gian lận check-in. |
@@ -135,7 +135,7 @@ Hệ sinh thái số CEO 1983 bao gồm 2 phân hệ người dùng độc lập
 1. Tiêu chuẩn Quốc tế IEEE Std 830-1998 về Đặc tả Yêu cầu Kỹ thuật Phần mềm (Recommended Practice for SRS).
 2. Điều lệ tổ chức và quy chế hoạt động của Câu Lạc Bộ Doanh Nhân CEO 1983 ban hành năm 2026.
 3. Nghị định 13/2023/NĐ-CP của Chính phủ Việt Nam về Bảo vệ Dữ liệu Cá nhân (Personal Data Protection Regulation).
-4. Tiêu chuẩn Mã phản hồi nhanh VietQR của Công ty Cổ phần Thanh toán Quốc gia Việt Nam (NAPAS).
+4. Tiêu chuẩn Mã phản hồi nhanh Mã QR Ngân Hàng của Công ty Cổ phần Thanh toán Quốc gia Việt Nam (NAPAS).
 5. Tài liệu đặc tả tích hợp Cổng thanh toán VNPay (vnpay_php/java API v2.1) và MoMo Payment Platform (v2 API).
 6. Tài liệu hướng dẫn Zalo Official Account API v3.0 & Zalo Notification Service (ZNS Template API).
 
@@ -170,7 +170,7 @@ Hệ thống là một giải pháp công nghệ toàn diện kết hợp giữa
 | - Quản trị 360 độ Hội viên     |                       | - Thẻ Hội viên số & QR vCard    |
 | - Thu Hội phí & Hóa đơn tự động|                       | - Sàn Giao thương B2B & Deal    |
 | - Studio Poster & Omnichannel  |                       | - Vé Check-in QR Động Keangnam  |
-| - Quản lý Sự kiện & Họp Ban    |                       | - Nộp Hội phí MoMo/VNPay/VietQR |
+| - Quản lý Sự kiện & Họp Ban    |                       | - Nộp Hội phí MoMo/VNPay/Mã QR Ngân Hàng |
 | - Sổ quỹ & Báo cáo Recharts    |                       | - Trợ lý Cố vấn AI Dòng tiền    |
 +-----------+--------------------+                       +------------+--------------------+
             |                                                         |
@@ -179,7 +179,7 @@ Hệ thống là một giải pháp công nghệ toàn diện kết hợp giữa
                                          |
 +----------------------------------------v-----------------------------------------+
 |                    BACKEND API GATEWAY (PURE NESTJS 3-TIER)                      |
-|  - Auth & RBAC Guard                   - Payment Engine (MoMo, VNPay, VietQR)    |
+|  - Auth & RBAC Guard                   - Payment Engine (MoMo, VNPay, Mã QR Ngân Hàng)    |
 |  - Members & Companies Engine          - Omnichannel Broadcast (Zalo OA, Mail)   |
 |  - Events & Smart QR Engine            - AI Engine (Google Gemini 2.0/2.5 Flash) |
 +----------------------------------------+-----------------------------------------+
@@ -203,7 +203,7 @@ Hệ thống là một giải pháp công nghệ toàn diện kết hợp giữa
 
 ### 3.4. Giải pháp đề xuất
 * **Xây dựng Nền tảng Tập trung Tách biệt:** Cổng CRM riêng biệt phục vụ điều hành; Mobile App tối ưu hóa trải nghiệm hội viên di động.
-* **Tự động hóa Thanh toán & Gạch nợ VietQR/VNPay/MoMo:** Khởi tạo mã QR động kèm số tiền và mã hóa đơn chính xác; Webhook tự động cập nhật trạng thái `PAID` và bắn biên lai ngay lập tức.
+* **Tự động hóa Thanh toán & Gạch nợ Mã QR Ngân Hàng/VNPay/MoMo:** Khởi tạo mã QR động kèm số tiền và mã hóa đơn chính xác; Webhook tự động cập nhật trạng thái `PAID` và bắn biên lai ngay lập tức.
 * **Cơ chế Check-in QR Động 0.5 Giây:** Vé mời điện tử sinh mã QR thay đổi liên tục, kiểm soát bàn tiệc VIP tự động khi máy quét CRM quét thành công.
 * **Tích hợp Trợ lý Trí tuệ Nhân tạo Gemini 2.0/2.5 Flash:** Hỗ trợ cố vấn đầu tư, đánh giá dòng tiền hội phí, phân tích độ phù hợp của cơ hội hợp tác B2B dựa trên hồ sơ doanh nghiệp và tự động chia task Kanban từ biên bản họp.
 
@@ -211,7 +211,7 @@ Hệ thống là một giải pháp công nghệ toàn diện kết hợp giữa
 Hệ thống được thiết kế thành 6 nhóm nghiệp vụ trọng tâm và 8 nhóm nghiệp vụ bổ trợ:
 * **Nhóm trọng tâm 1:** Quản trị Hội viên 360 độ, Doanh nghiệp & Phê duyệt kết nạp.
 * **Nhóm trọng tâm 2:** Quản lý Hội phí Niên khóa, Hóa đơn nợ & Lịch sử đóng phí.
-* **Nhóm trọng tâm 3:** Cổng Thanh toán Điện tử VietQR động, MoMo, VNPay & Đối soát tự động.
+* **Nhóm trọng tâm 3:** Cổng Thanh toán Điện tử Mã QR Ngân Hàng động, MoMo, VNPay & Đối soát tự động.
 * **Nhóm trọng tâm 4:** Quản lý Sự kiện, Đăng ký vé có phí & Check-in QR Keangnam.
 * **Nhóm trọng tâm 5:** Truyền thông Đa kênh (Omnichannel), Quản lý Mẫu Trang & Studio Poster Pinterest.
 * **Nhóm trọng tâm 6:** Báo cáo Tài chính Thu - Chi, Hoàn ứng, Phân bổ 6 Ban & Sổ quỹ Hiệp hội.
@@ -231,7 +231,7 @@ Hệ thống phục vụ trực tiếp cho:
 | Thuộc phạm vi dự án (In-Scope) | Nằm ngoài phạm vi dự án (Out-of-Scope) |
 | :--- | :--- |
 | Quản lý hồ sơ hội viên, doanh nghiệp, danh thiếp số vCard. | Hệ thống kế toán thuế chuyên sâu (được xuất file Excel để nhập vào phần mềm MISA/Fast). |
-| Thu hội phí trực tuyến MoMo, VNPay, VietQR động có đối soát. | Cho vay tín dụng nội bộ hoặc đầu tư tài chính phái sinh. |
+| Thu hội phí trực tuyến MoMo, VNPay, Mã QR Ngân Hàng động có đối soát. | Cho vay tín dụng nội bộ hoặc đầu tư tài chính phái sinh. |
 | Quản lý sự kiện, bán vé trực tuyến, check-in QR động Keangnam. | Cung cấp thiết bị phần cứng cửa quay kiểm soát vật lý (hệ thống cung cấp app quét camera). |
 | Gửi thông báo tự động qua App Push, Zalo OA ZNS, Email SMTP. | Can thiệp chính sách giá dịch vụ viễn thông của Zalo hoặc Nhà mạng. |
 | Studio thiết kế thư mời chuẩn Pinterest, bóc tách ảnh AI. | Bộ công cụ biên tập video 3D phức tạp (After Effects). |
@@ -309,7 +309,7 @@ Khi Chủ tịch hoặc Trưởng ban đi công tác, có thể ủy quyền s�
 3. **Kết nối B2B:** Hội viên tự gửi catalogue sản phẩm dạng ảnh/PDF lên nhóm chat chung -> Tin nhắn nhanh chóng bị trôi sau vài giờ -> Các thành viên có nhu cầu hợp tác không tìm lại được thông tin đối tác -> Tỷ lệ chuyển đổi hợp đồng nội khối thấp.
 
 ### 5.2. Quy trình nghiệp vụ mong muốn (TO-BE)
-1. **Tự động hóa Hội phí:** Định kỳ đầu niên khóa, CRM tự động phát hành Hóa đơn hội phí điện tử (E-Invoice) có mã tra cứu duy nhất -> Gửi đồng loạt thông báo Zalo ZNS và Email kèm liên kết thanh toán VietQR động -> Hội viên quét mã thanh toán từ bất kỳ ứng dụng ngân hàng nào -> Tiền về tài khoản hiệp hội, Webhook ngân hàng bắn tín hiệu -> CSDL tự động chuyển trạng thái `PAID`, phát hành Biên lai điện tử và cấp huy hiệu Hội viên tích cực trên Mobile App.
+1. **Tự động hóa Hội phí:** Định kỳ đầu niên khóa, CRM tự động phát hành Hóa đơn hội phí điện tử (E-Invoice) có mã tra cứu duy nhất -> Gửi đồng loạt thông báo Zalo ZNS và Email kèm liên kết thanh toán Mã QR Ngân Hàng động -> Hội viên quét mã thanh toán từ bất kỳ ứng dụng ngân hàng nào -> Tiền về tài khoản hiệp hội, Webhook ngân hàng bắn tín hiệu -> CSDL tự động chuyển trạng thái `PAID`, phát hành Biên lai điện tử và cấp huy hiệu Hội viên tích cực trên Mobile App.
 2. **Soát vé QR Động Keangnam:** Hội viên đăng ký vé sự kiện trên Mobile App -> Nhận ngay Thẻ vé điện tử có mã QR động biến đổi liên tục và định vị số bàn tiệc VIP Keangnam -> Tại cửa hội trường, lễ tân dùng máy quét camera CRM quét mã QR -> Hệ thống kiểm tra tính hợp lệ trong dưới 0.5 giây, hiển thị âm thanh "Ting", màn hình xanh chúc mừng và thông báo số bàn trên màn hình LED chào mừng.
 3. **Sàn Giao thương B2B Thông Minh:** Mọi doanh nghiệp có Gian hàng số chuẩn SEO nội khối -> Đăng nhu cầu mua/bán kèm ngân sách rõ ràng -> Trợ lý Trí tuệ Nhân tạo Gemini AI tự động quét hồ sơ năng lực của hơn 500 thành viên, gợi ý top 3 đối tác tương thích nhất và tự động tạo lịch hẹn 1-on-1 tại Cafe Kết Nối hoặc văn phòng hội viên.
 
@@ -436,14 +436,14 @@ Khi Chủ tịch hoặc Trưởng ban đi công tác, có thể ủy quyền s�
    - Cấu hình kỳ thu hội phí: Ban Tài chính thiết lập kỳ thu (VD: "Hội Phí Niên Khóa 2026 - 2027"), mức phí chuẩn (VD: 10.000.000 VNĐ/năm đối với Hội viên chính thức; 20.000.000 VNĐ/năm đối với Ủy viên Ban Chấp Hành), ngày bắt đầu, ngày hết hạn thanh toán.
    - Phát hành Hóa đơn hàng loạt: Chỉ với 1 nút bấm "Phát hành Hóa đơn Niên khóa", hệ thống tự động sinh hóa đơn nợ cho toàn bộ hội viên đang hoạt động trong bảng `invoices`, gán mã hóa đơn duy nhất dạng `INV-2026-XXXX`.
    - Theo dõi công nợ thời gian thực: CRM hiển thị dashboard tài chính hội phí gồm: Tổng số tiền phải thu, Đã thu thực tế (đã vào tài khoản), Còn nợ, Tỷ lệ hoàn thành (%), Danh sách hội viên chưa nộp kèm số ngày quá hạn.
-   - Nhắc nợ tự động thông minh: Tích hợp lịch tự động gửi tin nhắn Zalo ZNS và Email nhắc nợ định kỳ (Trước hạn 7 ngày, Đúng ngày hết hạn, và Quá hạn 3 ngày) kèm link thanh toán VietQR động.
+   - Nhắc nợ tự động thông minh: Tích hợp lịch tự động gửi tin nhắn Zalo ZNS và Email nhắc nợ định kỳ (Trước hạn 7 ngày, Đúng ngày hết hạn, và Quá hạn 3 ngày) kèm link thanh toán Mã QR Ngân Hàng động.
 4. **Actor thực hiện:** Kế toán Hiệp hội (`ROLE_ACCOUNTANT`), Trưởng Ban Tài chính, Quản trị viên.
 5. **Điều kiện trước:** Kế toán đã cấu hình thông tin tài khoản ngân hàng thụ hưởng của Hiệp hội trong hệ thống.
 6. **Luồng xử lý chính:**
    - Bước 1: Kế toán vào màn hình "Quản lý Hội phí" (`/membership-dues`).
    - Bước 2: Bấm "Tạo kỳ thu mới" -> Nhập tên niên khóa, mức phí, hạn nộp -> Bấm "Xác nhận tạo kỳ thu".
    - Bước 3: Bấm "Sinh hóa đơn tự động" -> Hệ thống duyệt danh sách hội viên `ACTIVE` và tạo các bản ghi `invoices` với trạng thái `PENDING`.
-   - Bước 4: Bấm "Gửi thông báo nộp phí hàng loạt" -> Hệ thống kích hoạt hàng đợi gửi Zalo ZNS và Email chứa mã VietQR động đến từng hội viên.
+   - Bước 4: Bấm "Gửi thông báo nộp phí hàng loạt" -> Hệ thống kích hoạt hàng đợi gửi Zalo ZNS và Email chứa mã QR ngân hàng động đến từng hội viên.
    - Bước 5: Khi hội viên chuyển khoản thành công, Webhook IPN từ cổng thanh toán hoặc ngân hàng gửi tín hiệu về Backend -> Hệ thống so khớp mã hóa đơn trong nội dung chuyển khoản -> Chuyển trạng thái `invoices` thành `PAID`, cập nhật `transactions`, ghi nhận ngày giờ gạch nợ và người xác nhận là `SYSTEM_AUTO`.
 7. **Luồng xử lý thay thế:**
    - Trường hợp hội viên nộp tiền mặt hoặc chuyển khoản trực tiếp qua phòng giao dịch không đúng cú pháp: Kế toán vào danh sách hóa đơn -> Tìm kiếm hội viên -> Bấm "Gạch nợ thủ công" -> Nhập số tham chiếu sao kê, đính kèm ảnh chứng từ -> Bấm "Xác nhận đã thu". Hệ thống chuyển trạng thái sang `PAID` và ghi nhận kế toán thực hiện vào `audit_logs`.
@@ -463,12 +463,12 @@ Khi Chủ tịch hoặc Trưởng ban đi công tác, có thể ủy quyền s�
 
 ## 6.3. Nhóm FR Cốt Lõi 3: Thanh Toán Trực Tuyến & Đối Soát Tự Động
 
-### FR-004: Cổng Thanh Toán Đa Kênh VietQR Động, MoMo, VNPay & Webhook IPN
+### FR-004: Cổng Thanh Toán Đa Kênh Mã QR Ngân Hàng Động, MoMo, VNPay & Webhook IPN
 1. **Mã chức năng:** `FR-CORE-PAY-004`
 2. **Mục đích:** Cung cấp trải nghiệm thanh toán hội phí và vé sự kiện không tiền mặt mượt mà, bảo mật tuyệt đối, tự động đối soát không cần con người can thiệp.
 3. **Mô tả chi tiết:**
    - Trên Mobile App hoặc trang thanh toán Web, khi hội viên cần nộp hội phí hoặc mua vé sự kiện, hệ thống cung cấp 3 phương thức thanh toán linh hoạt:
-     1. **VietQR Động (Khuyến nghị số 1):** Hệ thống tự động tạo mã QR Napas247 chứa chính xác số tiền, số tài khoản hiệp hội và nội dung chuyển khoản duy nhất định dạng: `CEO1983 [MÃ_HÓA_ĐƠN] [SỐ_ĐIỆN_THOẠI]`. Hội viên mở bất kỳ ứng dụng ngân hàng nào (Vietcombank, Techcombank, BIDV, MBBank...) quét mã là thanh toán ngay, không cần gõ tay số tiền hay nội dung.
+     1. **Mã QR Ngân Hàng Động (Khuyến nghị số 1):** Hệ thống tự động tạo mã QR Napas247 chứa chính xác số tiền, số tài khoản hiệp hội và nội dung chuyển khoản duy nhất định dạng: `CEO1983 [MÃ_HÓA_ĐƠN] [SỐ_ĐIỆN_THOẠI]`. Hội viên mở bất kỳ ứng dụng ngân hàng nào (Vietcombank, Techcombank, BIDV, MBBank...) quét mã là thanh toán ngay, không cần gõ tay số tiền hay nội dung.
      2. **Ví Điện Tử MoMo:** Tích hợp MoMo Payment Gateway (All-in-one QR & Deep Link). Trên điện thoại, bấm nút "Thanh toán MoMo" tự động bật ứng dụng MoMo để xác nhận giao dịch bằng vân tay/FaceID.
      3. **Cổng Quốc Gia VNPay:** Hỗ trợ thẻ ATM nội địa 40+ ngân hàng Việt Nam, thẻ quốc tế Visa, MasterCard, JCB và VNPay-QR.
    - Cơ chế Webhook IPN Xử lý Ngầm (Server-to-Server): Cổng thanh toán gọi API an toàn của Backend NestJS (`POST /api/payment/vnpay-ipn`, `POST /api/payment/momo-ipn`). Hệ thống xác thực chữ ký số HMAC-SHA512 với secret key được mã hóa trong biến môi trường.
@@ -476,8 +476,8 @@ Khi Chủ tịch hoặc Trưởng ban đi công tác, có thể ủy quyền s�
 4. **Actor thực hiện:** Hội viên (`ROLE_MEMBER`), Hệ thống Cổng thanh toán (MoMo, VNPay, Ngân hàng).
 5. **Điều kiện trước:** Các tham số kết nối API (`MERCHANT_ID`, `SECRET_KEY`, `IPN_URL`) đã được cấu hình chính xác trên máy chủ Backend.
 6. **Luồng xử lý chính:**
-   - Bước 1: Người dùng chọn hóa đơn cần thanh toán -> Chọn phương thức (VD: VietQR Động).
-   - Bước 2: Hệ thống gọi API `POST /api/payment/create-qr` sinh mã VietQR theo chuẩn Napas.
+   - Bước 1: Người dùng chọn hóa đơn cần thanh toán -> Chọn phương thức (VD: Mã QR Ngân Hàng Động).
+   - Bước 2: Hệ thống gọi API `POST /api/payment/create-qr` sinh mã QR ngân hàng theo chuẩn Napas.
    - Bước 3: Ứng dụng hiển thị mã QR cùng đồng hồ đếm ngược hiệu lực (15 phút) và liên tục lắng nghe sự kiện thành công qua kết nối WebSocket / Polling ngầm.
    - Bước 4: Người dùng chuyển khoản thành công trên app ngân hàng.
    - Bước 5: Cổng thanh toán/Ngân hàng bắn Webhook IPN về Backend NestJS kèm chữ ký số hash.
@@ -525,7 +525,7 @@ Khi Chủ tịch hoặc Trưởng ban đi công tác, có thể ủy quyền s�
 6. **Luồng xử lý chính:**
    - Bước 1: Thư ký tạo sự kiện tại `/events` trên CRM -> Nhập thông tin, cấu hình vé, thiết lập sơ đồ bàn tiệc Keangnam.
    - Bước 2: Sự kiện hiển thị tức thời trên Mobile App của hội viên.
-   - Bước 3: Hội viên bấm "Đăng ký tham gia" -> Nếu vé có phí, thanh toán qua VietQR/MoMo/VNPay; Nếu vé miễn phí, hệ thống cấp vé ngay lập tức.
+   - Bước 3: Hội viên bấm "Đăng ký tham gia" -> Nếu vé có phí, thanh toán qua Mã QR Ngân Hàng/MoMo/VNPay; Nếu vé miễn phí, hệ thống cấp vé ngay lập tức.
    - Bước 4: Vé điện tử được lưu trong mục "Vé của tôi" trên Mobile App, đính kèm số bàn tiệc đã được Ban tổ chức xếp chỗ.
    - Bước 5: Tại sự kiện, Lễ tân kích hoạt chế độ "Quét vé camera" trên CRM -> Quét mã của khách -> Hệ thống ghi nhận trạng thái `CHECKED_IN` và thời gian điểm danh chính xác từng giây.
 7. **Luồng xử lý thay thế:**
@@ -556,7 +556,7 @@ Khi Chủ tịch hoặc Trưởng ban đi công tác, có thể ủy quyền s�
      - Tự động lấy danh sách người tham dự: Cho phép chọn sự kiện -> Hệ thống tự động lấy danh sách hội viên đã đăng ký, bóc tách ảnh đại diện chân dung, hỗ trợ các chế độ làm mờ viền ảnh (Feather/Vignette), xếp ảnh nghệ thuật và gắn vào poster tự động.
      - Tải mẫu người dùng lên & Bóc tách chữ/ảnh bằng AI: Khi người dùng tải một ảnh poster mẫu từ máy tính lên, hệ thống tự động nhận diện bố cục, phân tách các vùng văn bản và cho phép người dùng sửa đổi trực tiếp nội dung trên nền poster mẫu.
    - **Quản Lý Nhóm Mẫu Trang (Templates Hub):**
-     - Gom toàn bộ mẫu vào một trung tâm quản lý thống nhất: Mẫu Poster Thư Mời, Mẫu Email Marketing HTML v3, Mẫu Tin Nhắn Zalo OA ZNS, Mẫu Thông Báo Nộp Phí VietQR, Mẫu Cuộc Họp Diễn Đàn B2B.
+     - Gom toàn bộ mẫu vào một trung tâm quản lý thống nhất: Mẫu Poster Thư Mời, Mẫu Email Marketing HTML v3, Mẫu Tin Nhắn Zalo OA ZNS, Mẫu Thông Báo Nộp Phí Mã QR Ngân Hàng, Mẫu Cuộc Họp Diễn Đàn B2B.
      - Bỏ thanh chọn ngang rời rạc, tích hợp chọn danh mục chuyên nghiệp trên thanh menu sidebar chuẩn CRM.
    - **Phát Lệnh Gửi Thông Báo Đa Kênh Đồng Bộ (Omnichannel Broadcast):**
      - Sau khi thiết kế thư mời xong, người dùng có thể gửi đồng thời qua 3 kênh truyền thông chỉ bằng 1 thao tác:
@@ -871,7 +871,7 @@ erDiagram
 | `bank_reference`| `VARCHAR(150)` | UNIQUE, NULLABLE | Mã tham chiếu ngân hàng/MoMo/VNPay gửi về. |
 | `type` | `VARCHAR(20)` | NOT NULL | Loại giao dịch (`INCOME` - Thu, `EXPENSE` - Chi). |
 | `amount` | `NUMERIC(15,2)`| NOT NULL | Số tiền giao dịch (VNĐ). |
-| `payment_method`| `VARCHAR(50)` | NOT NULL | Phương thức (`VIETQR`, `MOMO`, `VNPAY`, `CASH`). |
+| `payment_method`| `VARCHAR(50)` | NOT NULL | Phương thức (`MÃ QR NGÂN HÀNG`, `MOMO`, `VNPAY`, `CASH`). |
 | `committee_id` | `VARCHAR(50)` | NULLABLE | Gắn với ngân sách của Ban chuyên môn nào. |
 | `status` | `VARCHAR(30)` | DEFAULT 'SUCCESS' | Trạng thái giao dịch (`SUCCESS`, `FAILED`). |
 | `performed_by` | `VARCHAR(100)`| NOT NULL | Người thực hiện (`SYSTEM_AUTO` hoặc Username). |
@@ -898,7 +898,7 @@ erDiagram
 1. **Google Gemini AI 2.0 / 2.5 Flash API:** Mô hình trí tuệ nhân tạo thế hệ mới xử lý tác vụ cố vấn tài chính, thẩm định thương vụ B2B và bóc tách biên bản họp tự động chia task.
 2. **Cổng Thanh toán Điện tử VNPay:** Tích hợp API tạo URL thanh toán và Webhook IPN xử lý kết quả giao dịch thẻ ATM/Visa.
 3. **Ví Điện Tử MoMo Platform:** Tích hợp MoMo Payment v2 (All-in-one QR, App Deep Link và IPN).
-4. **Hệ thống Cổng Ngân hàng VietQR (NAPAS247):** Tạo chuỗi dữ liệu mã QR thanh toán động đạt chuẩn EMVCo quốc tế.
+4. **Hệ thống Cổng Ngân hàng Mã QR Ngân Hàng (NAPAS247):** Tạo chuỗi dữ liệu mã QR thanh toán động đạt chuẩn EMVCo quốc tế.
 5. **Zalo Official Account (Zalo Cloud API & ZNS):** Gửi tin nhắn thông báo chăm sóc khách hàng tự động có thương hiệu bảo hộ.
 6. **Hệ thống Thư Điện Tử Google Workspace SMTP / SendGrid:** Gửi email giao dịch, vé mời điện tử và thư nhắc nợ định dạng HTML.
 
@@ -1009,16 +1009,16 @@ sequenceDiagram
     participant App as CEO 1983 Mobile App
     participant BE as NestJS Backend API
     participant DB as PostgreSQL Database
-    participant Napas as Cổng VietQR / MoMo / VNPay
+    participant Napas as cổng thanh toán QR ngân hàng / MoMo / VNPay
     actor Admin as Kế Toán / Ban Thư Ký (CRM)
 
     Admin->>BE: Bấm "Phát hành hóa đơn niên khóa"
     BE->>DB: Tạo bản ghi invoices (status: PENDING)
     BE->>Member: Bắn thông báo Zalo ZNS & Email kèm mã QR
     Member->>App: Mở app, chọn Hóa đơn hội phí -> Bấm "Thanh toán"
-    App->>BE: Yêu cầu tạo mã thanh toán VietQR động
-    BE->>DB: Lấy thông tin hóa đơn & sinh chuỗi VietQR Napas
-    BE-->>App: Trả về hình ảnh VietQR kèm đồng hồ đếm ngược
+    App->>BE: Yêu cầu tạo mã thanh toán Mã QR Ngân Hàng động
+    BE->>DB: Lấy thông tin hóa đơn & sinh chuỗi Mã QR Ngân Hàng Napas
+    BE-->>App: Trả về hình ảnh Mã QR Ngân Hàng kèm đồng hồ đếm ngược
     Member->>Napas: Mở app Ngân hàng, quét mã QR và xác nhận chuyển tiền
     Napas->>BE: Bắn Webhook IPN Server-to-Server kèm chữ ký HMAC
     BE->>BE: Xác thực chữ ký số HMAC-SHA512
@@ -1101,7 +1101,7 @@ Kiểm thử toàn diện từ mức đơn vị (Unit Test), tích hợp (Integr
 | Test Case ID | Tên kịch bản kiểm thử | Dữ liệu kiểm thử | Kết quả kỳ vọng |
 | :--- | :--- | :--- | :--- |
 | `TC-AUTH-001` | Đăng nhập tài khoản quản trị CRM | Username: `admin`, Mật khẩu chuẩn | Đăng nhập thành công, chuyển hướng vào `/dashboard` trong < 1.0s. |
-| `TC-PAY-002` | Thanh toán VietQR động thành công | Chuyển đúng số tiền và nội dung hóa đơn | Nhận Webhook IPN, gạch nợ `PAID` và cập nhật giao dịch trong < 2.0s. |
+| `TC-PAY-002` | Thanh toán Mã QR Ngân Hàng động thành công | Chuyển đúng số tiền và nội dung hóa đơn | Nhận Webhook IPN, gạch nợ `PAID` và cập nhật giao dịch trong < 2.0s. |
 | `TC-PAY-003` | Chống giả mạo chữ ký IPN | Giả mạo chữ ký HMAC-SHA512 | Backend từ chối với mã lỗi HTTP 400, không cập nhật CSDL. |
 | `TC-EVT-004` | Soát vé QR động Keangnam lần đầu | Mã QR động hợp lệ của hội viên | Phản hồi âm thanh Ting, viền xanh, hiển thị đúng số bàn VIP trong < 0.5s. |
 | `TC-EVT-005` | Ngăn chặn quét lại vé đã check-in | Quét lại mã vé đã quét 5 phút trước | Hiển thị cảnh báo đỏ rực: Vé đã check-in lúc hh:mm, từ chối vào cổng. |
@@ -1199,7 +1199,7 @@ Kiểm thử toàn diện từ mức đơn vị (Unit Test), tích hợp (Integr
 | `FR-CRM-MEM-001` | Quản trị Hội viên 360 & Duyệt kết nạp | Web CRM | `UC-CRM-002`, `003` | `[NODE-CRM-002]`, `003`| Hoàn thành 100% |
 | `FR-APP-MEM-002` | Thẻ Hội viên số & QR vCard B2B | Mobile App | `UC-APP-004`, `005` | `[NODE-APP-004]`, `005`| Hoàn thành 100% |
 | `FR-CRM-FIN-003` | Quản lý Kỳ thu Hội phí & Gạch nợ | Web CRM | `UC-CRM-011`, `012` | `[NODE-CRM-011]`, `012`| Hoàn thành 100% |
-| `FR-CORE-PAY-004` | Thanh toán VietQR / MoMo / VNPay IPN | Core Backend | `UC-APP-012`, Webhook | `[NODE-CORE-004]` | Hoàn thành 100% |
+| `FR-CORE-PAY-004` | Thanh toán Mã QR Ngân Hàng / MoMo / VNPay IPN | Core Backend | `UC-APP-012`, Webhook | `[NODE-CORE-004]` | Hoàn thành 100% |
 | `FR-CRM-EVT-005` | Quản lý Sự kiện & Soát vé QR 0.5s | CRM & App | `UC-CRM-008`, `009` | `[NODE-CRM-008]`, `009`| Hoàn thành 100% |
 | `FR-CRM-NOTIF-006`| Studio Poster & Gửi Đa Kênh Zalo/Mail| Web CRM | `UC-CRM-005`, `006` | `[NODE-CRM-005]`, `006`| Hoàn thành 100% |
 | `FR-CRM-FIN-007` | Báo cáo Tài chính Recharts & Excel | Web CRM | `UC-CRM-013`, `017` | `[NODE-CRM-013]`, `017`| Hoàn thành 100% |
@@ -1215,7 +1215,7 @@ Kiểm thử toàn diện từ mức đơn vị (Unit Test), tích hợp (Integr
 
 1. **BM-01 (Mẫu Đơn Đăng Ký Gia Nhập CLB CEO 1983):** Kê khai họ tên (1983), chức vụ, doanh nghiệp, mã số thuế, CCCD, phân bổ 6 Ban chuyên môn.
 2. **BM-02 (Bản Cam Đoan & Thỏa Thuận Bảo Mật Thông Tin NDA):** Ràng buộc đạo đức doanh nhân, bảo mật dữ liệu theo Nghị định 13/2023/NĐ-CP, chống spam nội bộ.
-3. **BM-03 (Biên Lai Điện Tử Thu Hội Phí Niên Khóa):** Mã hóa VietQR Napas247, gạch nợ tự động trong 2 giây, số tham chiếu ngân hàng, chữ ký số hệ thống.
+3. **BM-03 (Biên Lai Điện Tử Thu Hội Phí Niên Khóa):** Mã hóa Mã QR Ngân Hàng Napas247, gạch nợ tự động trong 2 giây, số tham chiếu ngân hàng, chữ ký số hệ thống.
 4. **BM-04 (Giấy Đề Nghị Tạm Ứng Kinh Phí Hoạt Động Ban):** Dự toán chi tiết sự kiện/giải đấu, kiểm soát trong hạn mức quý của Ban, phê duyệt 2 bước.
 5. **BM-05 (Giấy Thanh Toán & Bảng Kê Quyết Toán Hoàn Ứng):** Quyết toán trong 07 ngày làm việc sau sự kiện, đính kèm hóa đơn đỏ điện tử (GTGT).
 6. **BM-06 (Giấy Mời / Thư Mời Họp Ban Chấp Hành Định Kỳ):** Agenda chi tiết, phòng họp vật lý hoặc liên kết Jitsi Meet bảo mật 1-chạm.

@@ -23,18 +23,18 @@ export function getConnectAppSocket(): Socket {
   }
   if (!globalSocket) {
     globalSocket = io(NEST_API_URL || undefined, {
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 10000,
+      reconnectionAttempts: 2,
+      reconnectionDelay: 15000,
       reconnectionDelayMax: 30000,
-      timeout: 10000,
+      timeout: 8000,
     });
 
     // Gracefully handle connection errors to avoid flooding console with uncaught red errors
     globalSocket.on("connect_error", () => {
-      // Backend is temporarily unreachable or offline — quiet fallback
+      // Backend WebSocket is temporarily unreachable or offline — quiet fallback, do not spam console
     });
 
     // Auto-reconnect immediately when mobile user returns to app, turns on screen, or reconnects WiFi/4G

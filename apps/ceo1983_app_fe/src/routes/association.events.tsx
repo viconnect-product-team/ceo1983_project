@@ -1781,7 +1781,7 @@ function EventsScreen() {
           {/* Back button */}
           <button
             type="button"
-            onClick={() => navigate({ to: "/association/home" })}
+            onClick={() => navigate({ to: "/association" })}
             className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 active:scale-95 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
             title="Quay lại"
           >

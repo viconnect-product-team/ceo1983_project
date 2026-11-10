@@ -691,6 +691,18 @@ export class MailService {
         <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)</a>
       </div>
 
+      <div style="text-align: center; margin: 18px 0 10px 0; padding: 16px; background: #eff6ff; border: 1.5px dashed #0068ff; border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 800; color: #0068ff; text-transform: uppercase; margin-bottom: 6px;">
+          💬 QUAN TÂM (FOLLOW) ZALO OA CEO 1983
+        </div>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 12px;">
+          Bấm nút bên dưới để Quan tâm (Follow) Zalo OA chính thức của CLB. Anh/Chị sẽ nhận ngay thông báo lịch sự kiện, nhắc hạn hội phí và cơ hội B2B tự động về Zalo cá nhân:
+        </div>
+        <a href="https://zalo.me/437444346010531505" target="_blank" style="display: inline-block; background: #0068ff; color: #ffffff !important; font-weight: 800; font-size: 14px; text-decoration: none; padding: 12px 28px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 104, 255, 0.35);">
+          👉 Bấm Vào Đây Để Quan Tâm (Follow) Zalo OA CEO 1983
+        </a>
+      </div>
+
       <div class="note">
         <strong>* Lưu ý bảo mật:</strong> Để đảm bảo an toàn tuyệt đối, Anh/Chị vui lòng đăng nhập vào ứng dụng và thay đổi mật khẩu ngay ở lần truy cập đầu tiên tại mục <em>Tài khoản &gt; Cài đặt mật khẩu</em>.
       </div>
@@ -1368,6 +1380,18 @@ export class MailService {
         <a href="${appLoginUrl}" class="btn-primary" target="_blank">📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)</a>
       </div>
 
+      <div style="text-align: center; margin: 18px 0 10px 0; padding: 16px; background: #eff6ff; border: 1.5px dashed #0068ff; border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 800; color: #0068ff; text-transform: uppercase; margin-bottom: 6px;">
+          💬 QUAN TÂM (FOLLOW) ZALO OA CEO 1983
+        </div>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 12px;">
+          Bấm nút bên dưới để Quan tâm (Follow) Zalo OA chính thức của CLB. Anh/Chị sẽ nhận ngay thông báo lịch sự kiện, nhắc hạn hội phí và cơ hội B2B tự động về Zalo cá nhân:
+        </div>
+        <a href="https://zalo.me/437444346010531505" target="_blank" style="display: inline-block; background: #0068ff; color: #ffffff !important; font-weight: 800; font-size: 14px; text-decoration: none; padding: 12px 28px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 104, 255, 0.35);">
+          👉 Bấm Vào Đây Để Quan Tâm (Follow) Zalo OA CEO 1983
+        </a>
+      </div>
+
       <div class="note">
         <strong>* Hỗ trợ kỹ thuật:</strong> Nếu cần trợ giúp kích hoạt tài khoản hoặc cài đặt ứng dụng lên màn hình chính điện thoại (PWA), Anh/Chị vui lòng liên hệ Ban Thư Ký CLB qua Hotline: <strong>0983 1983 83</strong> hoặc gửi phản hồi trực tiếp qua email này.
       </div>
@@ -1699,6 +1723,18 @@ export class MailService {
 
       <div class="btn-wrap">
         <a href="${appUrl}" class="btn-primary" target="_blank">📲 Mở & Cài Đặt App CEO 1983 (iOS & Android)</a>
+      </div>
+
+      <div style="text-align: center; margin: 18px 0 10px 0; padding: 16px; background: #eff6ff; border: 1.5px dashed #0068ff; border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 800; color: #0068ff; text-transform: uppercase; margin-bottom: 6px;">
+          💬 QUAN TÂM (FOLLOW) ZALO OA CEO 1983
+        </div>
+        <div style="font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 12px;">
+          Bấm nút bên dưới để Quan tâm (Follow) Zalo OA chính thức của CLB. Anh/Chị sẽ nhận ngay thông báo lịch sự kiện, nhắc hạn hội phí và cơ hội B2B tự động về Zalo cá nhân:
+        </div>
+        <a href="https://zalo.me/437444346010531505" target="_blank" style="display: inline-block; background: #0068ff; color: #ffffff !important; font-weight: 800; font-size: 14px; text-decoration: none; padding: 12px 28px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 104, 255, 0.35);">
+          👉 Bấm Vào Đây Để Quan Tâm (Follow) Zalo OA CEO 1983
+        </a>
       </div>
     </div>
 

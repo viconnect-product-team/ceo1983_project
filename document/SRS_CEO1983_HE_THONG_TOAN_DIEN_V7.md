@@ -24,13 +24,13 @@ Hệ thống giải quyết triệt để bài toán phân mảnh trong quản t
 ### 1.2 Phạm Vi Dự Án (Scope)
 Hệ thống bàn giao bao gồm 3 phân hệ cốt lõi hoạt động đồng bộ:
 1. **Web CRM Quản Trị Hiệp Hội (Executive Web CRM)**: Dành cho Chủ tịch, Ban Thường Trực, 6 Ban Chuyên Môn, Ban Thư Ký và Kế toán. Chạy trên nền tảng Web Desktop (React 19, Vite, TanStack Router), cung cấp Dashboard thời gian thực, quản lý 500+ doanh nghiệp hội viên 360 độ, quản trị sự kiện, phê duyệt giao thương, quản lý tài chính thu chi, phân quyền ma trận RBAC, cấu hình AI đa hãng và xuất báo cáo/hóa đơn điện tử.
-2. **Ứng Dụng Di Động Hội Viên CEO 1983 (CEO 1983 Mobile App)**: Dành cho hội viên doanh nhân chính thức. Đóng gói đa nền tảng (iOS, Android qua Capacitor 8 và Progressive Web App), mang giao diện chuẩn di động (Mobile-first Shell, TabBar, TopHeader), tích hợp Thẻ hội viên VIP số, quét NFC/QR, sàn giao thương B2B, điểm danh sự kiện, kho quyền lợi hội viên và kết nối bạn bè 2 cấp.
+2. **Ứng Dụng Di Động Hội Viên CEO 1983 (CEO 1983 Mobile App)**: Dành cho hội viên doanh nhân chính thức. Đóng gói đa nền tảng (iOS, Android qua Capacitor 8 và Progressive Web App), mang giao diện chuẩn di động (Mobile-first Shell, TabBar, TopHeader), tích hợp thẻ hội viên điện tử số, quét NFC/QR, sàn giao thương B2B, điểm danh sự kiện, kho quyền lợi hội viên và kết nối bạn bè 2 cấp.
 3. **Hạ Tầng Dùng Chung (Core Backend, AI Engine & DevOps)**: Backend NestJS 3 tầng thuần khiết, ORM Prisma kết nối PostgreSQL 16, giao thức thời gian thực WebSocket Socket.IO, hệ thống AI đa model (Gemini 2.0 Flash, OpenAI, Claude, DeepSeek) có cơ chế Fallback và đo lường Quota Token, Docker Nginx Reverse Proxy và SSL Let's Encrypt.
 
 **Những gì phần mềm KHÔNG làm (Out of Scope):**
 - Không phải là sàn thương mại điện tử B2C bán lẻ đại trà thu tiền người tiêu dùng cuối.
 - Không phải là mạng xã hội giải trí công cộng (không có thuật toán giữ chân giật gân, không quảng cáo ngoài).
-- Không can thiệp vào tài khoản ngân hàng nội bộ của doanh nghiệp ngoài luồng xác thực chuyển khoản VietQR/MoMo/VNPay.
+- Không can thiệp vào tài khoản ngân hàng nội bộ của doanh nghiệp ngoài luồng xác thực chuyển khoản Mã QR Ngân Hàng/MoMo/VNPay.
 
 ### 1.3 Thuật Ngữ & Từ Viết Tắt (Definitions, Acronyms, and Abbreviations)
 
@@ -43,7 +43,7 @@ Hệ thống bàn giao bao gồm 3 phân hệ cốt lõi hoạt động đồng 
 | **CRM** | Customer Relationship Management | Phân hệ Quản trị Mối quan hệ và Vận hành Hiệp hội trên nền tảng Web Desktop. |
 | **RBAC** | Role-Based Access Control | Mô hình kiểm soát truy cập và phân quyền người dùng dựa trên vai trò. |
 | **NFC** | Near Field Communication | Công nghệ giao tiếp trường gần (13.56 MHz) chạm để truyền danh thiếp số. |
-| **VietQR** | Vietnam National QR Standard | Tiêu chuẩn mã QR thanh toán ngân hàng Napas 24/7 theo quy định Ngân hàng Nhà nước. |
+| **Mã QR Ngân Hàng** | Vietnam National QR Standard | Tiêu chuẩn mã QR thanh toán ngân hàng Napas 24/7 theo quy định Ngân hàng Nhà nước. |
 | **OpenGraph** | Open Graph Protocol | Giao thức thẻ siêu dữ liệu (meta tags) giúp Facebook, Zalo hiển thị Rich Preview Card. |
 | **SPA** | Single Page Application | Ứng dụng web đơn trang tải động không reload trình duyệt. |
 | **JWT** | JSON Web Token | Chuẩn mã hóa token định danh người dùng trong các request API. |
@@ -94,7 +94,7 @@ graph TD
     end
 
     subgraph "DỊCH VỤ & NỀN TẢNG TÍCH HỢP NGOÀI"
-        EXT1["Ngân Hàng & Cổng Thanh Toán<br/>(VietQR / Napas / MoMo / VNPay)"]
+        EXT1["Ngân Hàng & Cổng Thanh Toán<br/>(Mã QR Ngân Hàng / Napas / MoMo / VNPay)"]
         EXT2["Mạng Xã Hội & Đa Kênh<br/>(Facebook Graph / Zalo OA / Zalo Mini App)"]
         EXT3["Hạ Tầng Đám Mây Google Drive<br/>(Google Drive API / Google Picker)"]
         EXT4["Nhà Cung Cấp Trí Tuệ Nhân Tạo<br/>(Google Gemini, OpenAI, Claude, DeepSeek)"]
@@ -119,7 +119,7 @@ graph TD
 
 ### 2.2 Chức Năng Sản Phẩm (Product Functions Summary)
 Hệ thống được tổ chức thành 11 nhóm chức năng lớn (Epics):
-1. **Epic-01: Định Danh Doanh Nhân & Thẻ VIP Thông Minh**: Cấp mã hội viên duy nhất, thẻ hội viên số tích hợp mã QR động chống gian lận, chip NFC một chạm trao đổi danh thiếp số.
+1. **Epic-01: Định Danh Doanh Nhân & Thẻ Doanh Nhân Số Thông Minh**: Cấp mã hội viên duy nhất, thẻ hội viên số tích hợp mã QR động chống gian lận, chip NFC một chạm trao đổi danh thiếp số.
 2. **Epic-02: Sàn Giao Thương B2B & Cơ Hội Kinh Doanh**: Đăng tải nhu cầu hợp tác, deal chào giá trực tiếp người đăng, bộ 6 chỉ số nền trắng minh bạch, popup dẫn chứng thực tế.
 3. **Epic-03: Quản Lý Sự Kiện & Điểm Danh Check-in QR 1s**: Tạo sự kiện, phát hành vé điện tử mã hóa, quét QR xác thực check-in trong 1 giây, bốc thăm trúng thưởng (Lucky Draw).
 4. **Epic-04: Danh Bạ Doanh Nhân 1983 & Kết Nối Bạn Bè 2 Cấp**: Bộ lọc Đã kết nối / Chưa kết nối, hiển thị người mới kết nối nhất trên đầu, bộ 3 nút tối giản (Nhắn tin, Profile, Gọi điện).
@@ -170,7 +170,7 @@ Hệ thống được tổ chức thành 11 nhóm chức năng lớn (Epics):
 - Bộ video clip ngắn 60s hướng dẫn: Quẹt thẻ NFC, Đăng cơ hội B2B, Check-in QR sự kiện và Đồng bộ Google Drive.
 
 ### 2.7 Giả Định và Phụ Thuộc (Assumptions and Dependencies)
-- Cổng dịch vụ VietQR / Napas duy trì thời gian hoạt động tối thiểu 99.5%.
+- Cổng dịch vụ Mã QR Ngân Hàng / Napas duy trì thời gian hoạt động tối thiểu 99.5%.
 - Kết nối Internet di động (4G/5G/Wi-Fi) ổn định tại các địa điểm tổ chức sự kiện để đảm bảo tốc độ check-in 1 giây.
 - Khách hàng và Ban Thư Ký cung cấp đầy đủ thông tin tài khoản Google Drive và Zalo OA chính danh của CLB.
 
@@ -219,7 +219,7 @@ graph TD
     end
 
     subgraph "CÁC USE CASE CỐT LÕI (USE CASE DIAGRAM)"
-        UC1(("UC-01: Định danh Thẻ VIP & Quẹt NFC"))
+        UC1(("UC-01: Định danh Thẻ Doanh Nhân Số & Quẹt NFC"))
         UC2(("UC-02: Giao thương B2B & Deal chào giá"))
         UC3(("UC-03: Đăng ký & Điểm danh QR Sự kiện"))
         UC4(("UC-04: Danh bạ 2 cấp & Kết nối Bạn bè"))
@@ -249,10 +249,10 @@ graph TD
 
 ---
 
-### Module 4.1: Quản Lý Định Danh Hội Viên, Thẻ VIP Số & NFC Tap-to-Connect
+### Module 4.1: Quản Lý Định Danh Hội Viên, Thẻ Doanh Nhân Số Số & NFC Tap-to-Connect
 
 #### 4.1.1 Mô Tả Tính Năng
-Cung cấp cho mỗi hội viên một Thẻ hội viên VIP số độc bản tích hợp chip NFC vật lý và mã QR động bảo mật. Khi hội viên gặp gỡ đối tác, chỉ cần chạm thẻ NFC vào điện thoại đối tác hoặc đưa mã QR cho đối tác quét, toàn bộ hồ sơ năng lực doanh nghiệp, danh mục sản phẩm, liên hệ và chức vị trong CLB CEO 1983 sẽ được truyền tải tức thì mà không cần cài ứng dụng.
+Cung cấp cho mỗi hội viên một thẻ hội viên điện tử số độc bản tích hợp chip NFC vật lý và mã QR động bảo mật. Khi hội viên gặp gỡ đối tác, chỉ cần chạm thẻ NFC vào điện thoại đối tác hoặc đưa mã QR cho đối tác quét, toàn bộ hồ sơ năng lực doanh nghiệp, danh mục sản phẩm, liên hệ và chức vị trong CLB CEO 1983 sẽ được truyền tải tức thì mà không cần cài ứng dụng.
 
 #### 4.1.2 Biểu Đồ Ca Sử Dụng & Kịch Bản Chi Tiết
 
@@ -685,9 +685,9 @@ flowchart TD
     Open_Finance --> Record_Type{"Loại Nghiệp Vụ"}
     
     Record_Type -->|Thu Hội Phí| Scan_Fee["Kiểm Tra Danh Sách Hội Viên Đến Hạn"]
-    Scan_Fee --> Gen_VietQR["Tạo Mã VietQR Đóng Phí Kèm Cú Pháp Tự Động"]
-    Gen_VietQR --> Verify_Paid["Đối Soát & Xác Nhận Đã Đóng Phí"]
-    Verify_Paid --> Active_Member["Gia Hạn Thẻ VIP Số Thêm 1 Năm"]
+    Scan_Fee --> Gen_Mã QR Ngân Hàng["Tạo mã QR ngân hàng Đóng Phí Kèm Cú Pháp Tự Động"]
+    Gen_Mã QR Ngân Hàng --> Verify_Paid["Đối Soát & Xác Nhận Đã Đóng Phí"]
+    Verify_Paid --> Active_Member["Gia Hạn Thẻ Doanh Nhân Số Số Thêm 1 Năm"]
     
     Record_Type -->|Chi Hoạt Động| Create_Expense["Lập Phiếu Chi & Đính Kèm Hóa Đơn"]
     Create_Expense --> Approve_Expense["Chủ Tịch Duyệt Chi"]
@@ -699,8 +699,8 @@ flowchart TD
 - **Post-conditions**: Dòng tiền thu/chi được ghi nhận; số dư quỹ cập nhật tức thời trên báo cáo tài chính.
 - **Basic Flow**:
   1. Ban Tài Chính thiết lập kỳ thu hội phí năm 2026.
-  2. Hệ thống gửi thông báo nhắc đóng phí kèm mã VietQR tự động qua Zalo OA và App.
-  3. Khi hội viên chuyển khoản thành công, hệ thống đối soát tự động cập nhật trạng thái `paid` và tự động gia hạn Thẻ hội viên VIP thêm 365 ngày.
+  2. Hệ thống gửi thông báo nhắc đóng phí kèm mã QR ngân hàng tự động qua Zalo OA và App.
+  3. Khi hội viên chuyển khoản thành công, hệ thống đối soát tự động cập nhật trạng thái `paid` và tự động gia hạn thẻ hội viên điện tử thêm 365 ngày.
   4. Đối với các khoản chi (thuê địa điểm Gala, quà tặng): Ban Tài Chính lập phiếu chi trên CRM, đính kèm chứng từ hóa đơn và trình Chủ tịch phê duyệt.
   5. Sau khi Chủ tịch chuẩn y, số dư quỹ thặng dư trên CRM tự động cập nhật.
 
@@ -982,7 +982,7 @@ sequenceDiagram
 | **CRM** | `[NODE-CRM-011]` | Cấu hình Hệ thống, AI & Tên miền | `routes/settings.tsx`, `AiConfigSection.tsx` | `AiController`, `AiCrmAnalyticsService` | ✅ Pass (0 errors) |
 | **CRM** | `[NODE-CRM-015]` | Trợ lý AI Điều Hành & Báo Cáo Con | `routes/ai-assistant.tsx` | `AiController`, `AiCrmAnalyticsService` | ✅ Pass (0 errors) |
 | **App** | `[NODE-APP-001]` | Trang chủ Doanh nhân & Bottom Bar | `routes/association.index.tsx`, `MemberShell.tsx` | `ConnectAppController`, `ConnectAppService` | ✅ Pass (0 errors) |
-| **App** | `[NODE-APP-003]` | Thẻ Hội viên VIP Số & NFC | `routes/association.card.tsx`, `card.$code.tsx` | `BusinessCardController`, `BusinessCardService` | ✅ Pass (0 errors) |
+| **App** | `[NODE-APP-003]` | thẻ hội viên điện tử Số & NFC | `routes/association.card.tsx`, `card.$code.tsx` | `BusinessCardController`, `BusinessCardService` | ✅ Pass (0 errors) |
 | **App** | `[NODE-APP-004]` | Danh bạ 2 cấp & Bạn bè kết nối | `routes/association.members.tsx` | `ConnectAppController`, `ConnectAppService` | ✅ Pass (0 errors) |
 | **App** | `[NODE-APP-007]` | Sàn Giao thương B2B & Deal chào giá | `routes/association.opportunities.tsx` | `ConnectAppController`, `ConnectAppService` | ✅ Pass (0 errors) |
 | **App** | `[NODE-APP-010]` | Sự kiện & Vé điện tử QR Pass | `routes/association.events.tsx` | `EventsController`, `EventsService` | ✅ Pass (0 errors) |

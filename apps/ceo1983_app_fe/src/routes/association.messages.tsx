@@ -478,13 +478,13 @@ function MessagesScreen() {
                     </div>
                   </div>
 
-                  {/* 3. Nút thông báo / tin nhắn chuông badge 9+ */}
+                  {/* 3. Nút thông báo chuông badge 9+ */}
                   <div className="relative inline-flex flex-col justify-start items-start">
                     <button
                       type="button"
-                      onClick={() => setMainTab("messages")}
+                      onClick={() => navigate({ to: "/association/notifications" })}
                       className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 inline-flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-                      title="Tin nhắn & Thông báo"
+                      title="Thông báo"
                     >
                       <Bell className="size-5 text-slate-800 dark:text-slate-200" />
                     </button>

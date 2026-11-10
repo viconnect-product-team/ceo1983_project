@@ -78,7 +78,7 @@ Cơ cấu tổ chức hiệp hội được chuẩn hóa thành 7 cấp bậc th
 ### CHƯƠNG 5: QUẢN LÝ TÀI CHÍNH, HỘI PHÍ NIÊN LIỄM & THU CHI TẠM ỨNG
 1. **Quản lý hội phí niên liễm**:
    - Phát hành biểu phí niên khóa tự động (mặc định 6.000.000 VNĐ/năm).
-   - Mã QR thanh toán VietQR Napas 24/7 gắn sẵn mã giao dịch định danh, tự động gạch nợ tức thì khi tiền về tài khoản hiệp hội.
+   - Mã QR thanh toán Mã QR Ngân Hàng Napas 24/7 gắn sẵn mã giao dịch định danh, tự động gạch nợ tức thì khi tiền về tài khoản hiệp hội.
 2. **Quản lý khoản thu & khoản chi tạm ứng**:
    - Ghi nhận chi tiết từng khoản thu tài trợ, thu sự kiện, thu thiện nguyện, thu đột xuất tiền mặt tại bàn tiếp đón và chuyển khoản ngân hàng.
    - Đề xuất và giải ngân tạm ứng cho các ban triển khai sự kiện, đối soát hoàn ứng tiền thừa và quyết toán thực chi minh bạch.

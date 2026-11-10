@@ -429,7 +429,7 @@ Nhằm phục vụ công tác điều hành chuẩn mực theo mô hình các hi
 
 ## CHƯƠNG 6: QUY ĐỊNH PHƯƠNG THỨC THANH TOÁN (MÃ QR MOMO & CỔNG VNPAY)
 
-Tài liệu và hệ thống phần mềm tuân thủ nghiêm ngặt quy định không đề cập hoặc sử dụng dịch vụ VietQR, chuyển sang tích hợp trực tiếp 2 phương thức thanh toán điện tử độc lập:
+Tài liệu và hệ thống phần mềm tuân thủ nghiêm ngặt quy định không đề cập hoặc sử dụng dịch vụ Mã QR Ngân Hàng, chuyển sang tích hợp trực tiếp 2 phương thức thanh toán điện tử độc lập:
 1. **Mã QR Ví Điện Tử MoMo:**
    - Hệ thống tự động tạo mã thanh toán QR MoMo chứa sẵn mã định danh hội viên và số tiền cần nộp.
    - Hội viên quét mã nhanh trên ứng dụng MoMo hoặc các ứng dụng ngân hàng liên kết, không phải nhập số tài khoản thủ công.

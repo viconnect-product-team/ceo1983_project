@@ -38,7 +38,7 @@
   - [4.3. Quản Lý Trạng Thái Toàn Cục & Bộ Nhớ Đệm (State Management & Cache Strategy)](#43-quản-lý-trạng-thái-toàn-cục--bộ-nhớ-đệm-state-management--cache-strategy)
 - [CHƯƠNG 5: THIẾT KẾ TÍCH HỢP HỆ THỐNG & MODEL AI (INTEGRATION DESIGN)](#chương-5-thiết-kế-tích-hợp-hệ-thống--model-ai-integration-design)
   - [5.1. Thiết Kế Tích Hợp Google Gemini AI 2.0 / 2.5 Flash API](#51-thiết-kế-tích-hợp-google-gemini-ai-20--25-flash-api)
-  - [5.2. Thiết Kế Cổng Thanh Toán Đa Kênh (VietQR Napas247, MoMo, VNPay IPN)](#52-thiết-kế-cổng-thanh-toán-đa-kênh-vietqr-napas247-momo-vnpay-ipn)
+  - [5.2. Thiết Kế Cổng Thanh Toán Đa Kênh (Mã QR Ngân Hàng Napas247, MoMo, VNPay IPN)](#52-thiết-kế-cổng-thanh-toán-đa-kênh-mã QR ngân hàng-napas247-momo-vnpay-ipn)
   - [5.3. Thiết Kế Kênh Zalo OA Cloud API & ZNS Template](#53-thiết-kế-kênh-zalo-oa-cloud-api--zns-template)
 - [CHƯƠNG 6: AN TOÀN, BẢO MẬT & SAO LƯU PHỤC HỒI (SECURITY & DISASTER RECOVERY)](#chương-6-an-toàn-bảo-mật--sao-lưu-phục-hồi-security--disaster-recovery)
   - [6.1. Thiết Kế Bảo Mật Zero-Trust & Chống Tấn Công OWASP Top 10](#61-thiết-kế-bảo-mật-zero-trust--chống-tấn-công-owasp-top-10)
@@ -89,7 +89,7 @@ flowchart TD
         AuthModule["Auth Module\n(JWT Guard, RBAC 5 Cấp)"]
         MemberModule["Member & Company Module\n(Hồ Sơ 360, Xét Duyệt)"]
         DuesModule["Dues & Invoice Module\n(Kỳ Thu, Hóa Đơn Tự Động)"]
-        PaymentModule["Payment Engine Module\n(VietQR Napas, MoMo, VNPay)"]
+        PaymentModule["Payment Engine Module\n(Mã QR Ngân Hàng Napas, MoMo, VNPay)"]
         EventModule["Event & Keangnam VIP Module\n(Sơ Đồ Bàn, QR Động 0.5s)"]
         TaskModule["Task & Kanban Module\n(Kéo Thả, AI Task Parse)"]
         AIModule["AI Advisory Module\n(Google Gemini 2.0/2.5 Flash)"]
@@ -161,7 +161,7 @@ apps/ceo1983_app_be/src/
 ├── members/                   # Module Quản trị Hội viên 360, Thẩm định duyệt
 ├── companies/                 # Module Hồ sơ Doanh nghiệp & Năng lực B2B
 ├── invoices/                  # Module Kỳ thu Hội phí & Hóa đơn tự động
-├── payment/                   # Module Cổng thanh toán VietQR, MoMo, VNPay
+├── payment/                   # Module Cổng thanh toán Mã QR Ngân Hàng, MoMo, VNPay
 ├── events/                    # Module Sự kiện, Sơ đồ Bàn Keangnam, Check-in
 ├── meetings/                  # Module Cuộc họp Ban (Cố định vs Bất thường), Jitsi
 ├── opportunities/             # Module Sàn Giao Thương B2B, Deal & Gian hàng
@@ -455,7 +455,7 @@ CREATE TABLE public.transactions (
     type VARCHAR(20) NOT NULL, -- INCOME (Thu), EXPENSE (Chi)
     category VARCHAR(100) NOT NULL, -- DUES, EVENT, MEETING, OFFICE, CHARITY
     amount NUMERIC(15,2) NOT NULL,
-    payment_method VARCHAR(50) NOT NULL, -- VIETQR, MOMO, VNPAY, CASH, BANK_TRANSFER
+    payment_method VARCHAR(50) NOT NULL, -- MÃ QR NGÂN HÀNG, MOMO, VNPAY, CASH, BANK_TRANSFER
     committee_name VARCHAR(100), -- Chi theo hạn mức của Ban nào
     performed_by VARCHAR(100) NOT NULL, -- SYSTEM_AUTO hoặc Username
     evidence_url TEXT, -- Link ảnh ủy nhiệm chi hoặc hóa đơn đỏ VAT
@@ -667,8 +667,8 @@ await this.prisma.$transaction(async (tx) => {
 
 ---
 
-### 5.2. Thiết Kế Cổng Thanh Toán Đa Kênh (VietQR Napas247, MoMo, VNPay IPN)
-* **VietQR Napas247:** Tạo chuỗi dữ liệu EMVCo QR tĩnh và động chứa định danh ngân hàng (BIN), số tài khoản hiệp hội, số tiền và nội dung `CEO1983 [MÃ_HÓA_ĐƠN]`.
+### 5.2. Thiết Kế Cổng Thanh Toán Đa Kênh (Mã QR Ngân Hàng Napas247, MoMo, VNPay IPN)
+* **Mã QR Ngân Hàng Napas247:** Tạo chuỗi dữ liệu EMVCo QR tĩnh và động chứa định danh ngân hàng (BIN), số tài khoản hiệp hội, số tiền và nội dung `CEO1983 [MÃ_HÓA_ĐƠN]`.
 * **Webhook IPN Bảo Mật:**
   - MoMo IPN: Kiểm tra chữ ký HMAC-SHA256 với secret key.
   - VNPay IPN: Kiểm tra chuỗi băm `vnp_SecureHash` sử dụng HMAC-SHA512.

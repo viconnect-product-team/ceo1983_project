@@ -42,14 +42,14 @@ Tài liệu Đặc tả Yêu cầu Kỹ thuật và Nghiệp vụ (SRS) này xá
 Hệ sinh thái Số hóa CLB Doanh Nhân CEO 1983 là nền tảng số hóa quản trị và giao thương nội bộ chuyên biệt dành riêng cho cộng đồng các nhà lãnh đạo, chủ tịch hội đồng quản trị, tổng giám đốc sinh năm Quý Hợi 1983. Hệ thống kết nối đồng bộ 3 cấu phần cốt lõi:
 * **Cổng Thông Tin Công Khai & Tiếp Nhận Đơn Đăng Ký:** Giới thiệu tôn chỉ mục đích, cơ cấu 6 Ban điều hành, tiếp nhận hồ sơ gia nhập trực tuyến từ ứng viên đại diện (`vupv090120@gmail.com`) tại [Cổng Tiếp Nhận Hồ Sơ Gia Nhập CLB Doanh Nhân CEO 1983 Trực Tuyến](https://14.225.217.232:5444/landing?apply=%22true%22) (Bảo mật biểu mẫu điện tử chuẩn hóa, tự động gửi email thông báo tiếp nhận hồ sơ).
 * **Cổng Điều Hành & Quản Trị Ban Chấp Hành:** Nền tảng quản trị trung tâm hỗ trợ 6 Ban chuyên môn (Ban Quản Trị, Ban Thư Ký, Ban Thành Viên, Ban Thiện Nguyện, Ban Truyền Thông, Ban Xúc Tiến Thương Mại) với phân quyền RBAC nghiêm ngặt: thẩm định hội viên 360 độ, phát hành vé QR Pass sự kiện Gala, quản lý sơ đồ ghế Cinema Seating Map, điều hành cuộc họp, kiểm duyệt sàn B2B, quản lý sổ quỹ thu chi minh bạch và đối soát tài chính tự động.
-* **Ứng Dụng Doanh Nhân CEO 1983:** Ứng dụng số hóa cao cấp dành riêng cho Hội viên chính thức với Thẻ VIP Hoàng gia Navy & Amber Gold, Danh thiếp điện tử NFC chạm 1 giây, Danh bạ doanh nhân, Gian hàng B2B Doanh nhân CEO 1983, Kết nối Cung - Cầu realtime, Biểu quyết đại hội điện tử và Thanh toán gia hạn hội phí siêu tốc qua VietQR Napas 24/7 tự động gạch nợ.
+* **Ứng Dụng Doanh Nhân CEO 1983:** Ứng dụng số hóa cao cấp dành riêng cho Hội viên chính thức với Thẻ Doanh Nhân Số Hoàng gia Navy & Amber Gold, Danh thiếp điện tử NFC chạm 1 giây, Danh bạ doanh nhân, Gian hàng B2B Doanh nhân CEO 1983, Kết nối Cung - Cầu realtime, Biểu quyết đại hội điện tử và Thanh toán gia hạn hội phí siêu tốc qua Mã QR Ngân Hàng Napas 24/7 tự động gạch nợ.
 
 ### 3.3. Thuật ngữ và định nghĩa chuẩn hóa (Definitions & Terminology)
 * **HanoiBA:** Hội Doanh Nhân Trẻ Hà Nội.
 * **CLB Doanh Nhân CEO 1983:** Câu lạc bộ Doanh nhân 1983 trực thuộc Hội Doanh Nhân Trẻ Hà Nội.
 * **Hội viên Chính thức:** Doanh nhân sinh năm 1983, đại diện pháp nhân doanh nghiệp, được Ban Thành Viên thẩm định và Ban Chấp Hành ban hành quyết định kết nạp kèm cấp Mã hội viên độc bản (ví dụ: CEO-83007).
 * **Gian hàng B2B Doanh nhân CEO 1983:** Không gian giao thương và giới thiệu sản phẩm dịch vụ độc quyền giữa các doanh nghiệp thành viên với cam kết chiết khấu nội bộ ưu đãi.
-* **VietQR:** Chuẩn thanh toán mã QR liên ngân hàng quốc gia Napas 24/7 tự động đối soát và gạch nợ tức thì.
+* **Mã QR Ngân Hàng:** Chuẩn thanh toán mã QR liên ngân hàng quốc gia Napas 24/7 tự động đối soát và gạch nợ tức thì.
 
 ---
 
@@ -63,11 +63,11 @@ Hệ thống được thiết kế theo mô hình Client-Server hiện đại, p
 
 ### 4.2. Các trụ cột chức năng trọng yếu (Core Pillars)
 1. **Quản trị Hội viên 360° & Tiếp nhận Onboarding:** Đăng ký trực tuyến, tự động gửi thư tiếp nhận, thẩm định hồ sơ doanh nghiệp và cấp mật khẩu an toàn gửi về hòm thư đại diện `vupv090120@gmail.com`.
-2. **Thẻ Hội Viên VIP & Danh Thiếp Số Độc Bản:** Thẻ nhận diện danh dự Navy & Amber Gold, công nghệ NFC 1 chạm truyền danh bạ kinh doanh.
+2. **thẻ hội viên điện tử & Danh Thiếp Số Độc Bản:** Thẻ nhận diện danh dự Navy & Amber Gold, công nghệ NFC 1 chạm truyền danh bạ kinh doanh.
 3. **Quản Trị Sự Kiện Gala & Soát Vé An Ninh QR:** Sơ đồ vị trí bàn tiệc Cinema Seating Map, đăng ký vé VIP, vé miễn phí, cấp vé điện tử E-Ticket QR và hệ thống camera quét vé chống gian lận tại cổng đón tiếp.
 4. **Điều Hành Cuộc Họp Ban Chấp Hành:** Lên lịch giao ban, tự động đồng bộ lịch vào ứng dụng đại biểu và quản lý biên bản họp điện tử.
 5. **Gian Hàng B2B Doanh Nhân CEO 1983 & Khớp Lệnh Giao Thương:** Quảng bá hàng hóa, thẩm định chất lượng sản phẩm nội bộ và hỗ trợ kết nối cung - cầu 1-1 giữa các CEO thành viên.
-6. **Tài Chính Minh Bạch & Thanh Toán VietQR 24/7:** Sổ quỹ thu chi đa cấp, hóa đơn hội phí điện tử và tự động gạch nợ sau 1 giây.
+6. **Tài Chính Minh Bạch & Thanh Toán Mã QR Ngân Hàng 24/7:** Sổ quỹ thu chi đa cấp, hóa đơn hội phí điện tử và tự động gạch nợ sau 1 giây.
 
 ---
 
@@ -169,7 +169,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Khám Phá Danh Thiếp Điện Tử Công Khai Của Doanh Nhân 1983 Qua Chạm Thẻ NFC Hoặc Quét QR |
 | **Tác Nhân (Actor)** | Đối tác kinh doanh, Khách hàng, Hội viên khác |
 | **Tiền Điều Kiện (Pre-conditions)** | Người dùng quét mã QR hoặc chạm thẻ vật lý VIP NFC của Doanh nhân Phạm Văn Vũ. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Đối tác dùng điện thoại chạm vào thẻ VIP NFC hoặc quét mã QR in trên danh thiếp.<br>2. Trình duyệt tự động mở Trang Danh Thiếp Doanh Nhân Điện Tử chuyên nghiệp:<br>   - Ảnh chân dung lãnh đạo, Ảnh bìa doanh nghiệp<br>   - Họ tên: Doanh nhân Phạm Văn Vũ<br>   - Chức danh: Tổng Giám đốc • Thành viên Ban Điều Hành CLB CEO 1983<br>   - Doanh nghiệp: Công ty Cổ phần Công nghệ VIO CONNECT<br>   - Mã số hội viên chứng thực: CEO-83007 (Huy hiệu Tích Xanh Chứng Nhận Hội Viên Chính Thức)<br>   - Giới thiệu năng lực doanh nghiệp và danh mục sản phẩm/dịch vụ tiêu biểu.<br>3. Đối tác có thể nhấn các nút hành động nhanh: Gọi điện, Nhắn tin Zalo, Mở chỉ đường bản đồ văn phòng, Truy cập trang chủ công ty. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Đối tác dùng điện thoại chạm vào thẻ doanh nhân số NFC hoặc quét mã QR in trên danh thiếp.<br>2. Trình duyệt tự động mở Trang Danh Thiếp Doanh Nhân Điện Tử chuyên nghiệp:<br>   - Ảnh chân dung lãnh đạo, Ảnh bìa doanh nghiệp<br>   - Họ tên: Doanh nhân Phạm Văn Vũ<br>   - Chức danh: Tổng Giám đốc • Thành viên Ban Điều Hành CLB CEO 1983<br>   - Doanh nghiệp: Công ty Cổ phần Công nghệ VIO CONNECT<br>   - Mã số hội viên chứng thực: CEO-83007 (Huy hiệu Tích Xanh Chứng Nhận Hội Viên Chính Thức)<br>   - Giới thiệu năng lực doanh nghiệp và danh mục sản phẩm/dịch vụ tiêu biểu.<br>3. Đối tác có thể nhấn các nút hành động nhanh: Gọi điện, Nhắn tin Zalo, Mở chỉ đường bản đồ văn phòng, Truy cập trang chủ công ty. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu hội viên kích hoạt chế độ ẩn một số kênh liên hệ cá nhân: Trang danh thiếp chỉ hiển thị các kênh đã được cho phép công khai. |
 | **Hậu Điều Kiện (Post-conditions)** | Đối tác nắm bắt trọn vẹn thông tin doanh nhân và tăng cường uy tín kết nối kinh doanh tức thì. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Trang Danh thiếp Doanh nhân Điện tử công khai chứng thực thành viên CEO 1983* |
@@ -220,7 +220,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Đăng Ký Tham Dự Diễn Đàn Kinh Tế / Sự Kiện Gala Dành Cho Khách Mời Doanh Nghiệp |
 | **Tác Nhân (Actor)** | Khách mời Doanh nhân ngoài CLB (Đại diện: Doanh nhân Hoàng Thủy) |
 | **Tiền Điều Kiện (Pre-conditions)** | CLB Doanh Nhân CEO 1983 công bố sự kiện mở trên Cổng thông tin. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Khách mời mở trang "Sự Kiện & Hội Thảo" trên Cổng thông tin điện tử.<br>2. Chọn sự kiện: "Gala Thường Niên & Diễn Đàn Kinh Tế Doanh Nhân 1983".<br>3. Xem thông tin chương trình: Thời gian, Địa điểm tổ chức, Danh sách Diễn giả, Quyền lợi tham dự và Mức phí tham dự khách mời (1.500.000 VNĐ/đại biểu).<br>4. Điền form đăng ký vé: Họ tên, Số điện thoại, Email, Tên công ty, Chức vụ.<br>5. Chọn hình thức vé và nhấn nút "Xác Nhận Đăng Ký & Thanh Toán".<br>6. Màn hình hiển thị mã VietQR chuyển khoản thanh toán tự động với số tiền và nội dung định danh duy nhất. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Khách mời mở trang "Sự Kiện & Hội Thảo" trên Cổng thông tin điện tử.<br>2. Chọn sự kiện: "Gala Thường Niên & Diễn Đàn Kinh Tế Doanh Nhân 1983".<br>3. Xem thông tin chương trình: Thời gian, Địa điểm tổ chức, Danh sách Diễn giả, Quyền lợi tham dự và Mức phí tham dự khách mời (1.500.000 VNĐ/đại biểu).<br>4. Điền form đăng ký vé: Họ tên, Số điện thoại, Email, Tên công ty, Chức vụ.<br>5. Chọn hình thức vé và nhấn nút "Xác Nhận Đăng Ký & Thanh Toán".<br>6. Màn hình hiển thị mã QR ngân hàng chuyển khoản thanh toán tự động với số tiền và nội dung định danh duy nhất. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Trường hợp sự kiện miễn phí: Hệ thống bỏ qua bước thanh toán và phát hành vé điện tử ngay lập tức. |
 | **Hậu Điều Kiện (Post-conditions)** | Hồ sơ đăng ký vé của khách mời được lưu vào hệ thống, chờ gạch nợ thanh toán. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Biểu mẫu đăng ký vé tham dự sự kiện Gala dành cho Khách mời Doanh nghiệp* |
@@ -373,7 +373,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Xem Hồ Sơ Chi Tiết Hội Viên 360 Độ, Lịch Sử Giao Thương & Đóng Góp Hoạt Động |
 | **Tác Nhân (Actor)** | Ban Lãnh Đạo CLB, Ban Thành Viên |
 | **Tiền Điều Kiện (Pre-conditions)** | Người dùng chọn xem chi tiết một hội viên chính thức trên danh bạ. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm vào tên Hội viên Phạm Văn Vũ (CEO-83007) trên danh bạ.<br>2. Hệ thống chuyển vào giao diện Hồ Sơ Chi Tiết 360 Độ:<br>   - Tab 1 - Thông tin Lãnh đạo & Doanh nghiệp: Chức vụ, MST, Logo, Giới thiệu năng lực<br>   - Tab 2 - Lịch sử Tham dự Sự kiện: Danh sách các sự kiện đã tham gia, vị trí ghế ngồi danh dự, lịch sử quét mã điểm danh<br>   - Tab 3 - Hoạt động Giao thương B2B: Danh mục sản phẩm đã đăng trên Gian hàng Doanh nghiệp, các cơ hội Cung - Cầu đã trao đổi<br>   - Tab 4 - Tài chính & Hội phí: Lịch sử các kỳ đóng phí thường niên, hóa đơn VietQR tương ứng<br>   - Tab 5 - Điểm gắn kết & Thi đua: Số giờ tham gia sinh hoạt, các đóng góp tài trợ cho CLB.<br>3. Người dùng có thể in phiếu tóm tắt hồ sơ phục vụ công tác quy hoạch Ban Chấp Hành. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm vào tên Hội viên Phạm Văn Vũ (CEO-83007) trên danh bạ.<br>2. Hệ thống chuyển vào giao diện Hồ Sơ Chi Tiết 360 Độ:<br>   - Tab 1 - Thông tin Lãnh đạo & Doanh nghiệp: Chức vụ, MST, Logo, Giới thiệu năng lực<br>   - Tab 2 - Lịch sử Tham dự Sự kiện: Danh sách các sự kiện đã tham gia, vị trí ghế ngồi danh dự, lịch sử quét mã điểm danh<br>   - Tab 3 - Hoạt động Giao thương B2B: Danh mục sản phẩm đã đăng trên Gian hàng Doanh nghiệp, các cơ hội Cung - Cầu đã trao đổi<br>   - Tab 4 - Tài chính & Hội phí: Lịch sử các kỳ đóng phí thường niên, hóa đơn Mã QR Ngân Hàng tương ứng<br>   - Tab 5 - Điểm gắn kết & Thi đua: Số giờ tham gia sinh hoạt, các đóng góp tài trợ cho CLB.<br>3. Người dùng có thể in phiếu tóm tắt hồ sơ phục vụ công tác quy hoạch Ban Chấp Hành. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu hội viên mới chưa có lịch sử giao thương: Hệ thống hiển thị trạng thái chờ ghi nhận với gợi ý hỗ trợ từ Ban Xúc Tiến. |
 | **Hậu Điều Kiện (Post-conditions)** | Ban Lãnh đạo nắm trọn vẹn bức tranh cống hiến và mức độ gắn kết của từng hội viên. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện xem hồ sơ chi tiết hội viên 360 độ và lịch sử giao thương, đóng góp* |
@@ -534,21 +534,21 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Cấu hình chính sách vé mời miễn phí dành riêng cho Hội viên đã hoàn thành hội phí](images/evidence/crm_05_events_list.png)
 
 
-### 5.28. Bảng Use Case UC-CRM-18: Cấu Hình Bán Vé Sự Kiện Có Phí Cho Khách Mời & Tích Hợp Cổng VietQR Napas 24/7 Tự Động
+### 5.28. Bảng Use Case UC-CRM-18: Cấu Hình Bán Vé Sự Kiện Có Phí Cho Khách Mời & Tích Hợp cổng thanh toán QR ngân hàng Napas 24/7 Tự Động
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-CRM-18** |
 | **Phân Hệ / Nhóm** | Quản Lý Sự Kiện & Ghế Ngồi |
-| **Tên Chức Năng** | Cấu Hình Bán Vé Sự Kiện Có Phí Cho Khách Mời & Tích Hợp Cổng VietQR Napas 24/7 Tự Động |
+| **Tên Chức Năng** | Cấu Hình Bán Vé Sự Kiện Có Phí Cho Khách Mời & Tích Hợp cổng thanh toán QR ngân hàng Napas 24/7 Tự Động |
 | **Tác Nhân (Actor)** | Ban Tổ Chức Sự Kiện & Ban Tài Chính |
 | **Tiền Điều Kiện (Pre-conditions)** | Sự kiện có mở bán vé dành cho khách mời ngoài CLB. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Trong phần thiết lập vé, chọn thêm loại vé: "Vé Khách Mời Doanh Nghiệp (Có Thu Phí)".<br>2. Nhập đơn giá vé: 1.500.000 VNĐ / vé.<br>3. Kích hoạt cổng thanh toán tự động VietQR Napas 24/7.<br>4. Cấu hình quy tắc sinh mã chuyển khoản định danh duy nhất cho từng đơn vé (định dạng: TIK-xxxxx).<br>5. Thiết lập thời gian tự động giữ chỗ trong 15 phút: Nếu khách quét mã chuyển khoản thành công trong thời gian này, hệ thống tự động gạch nợ trong 1 giây và phát hành vé điện tử.<br>6. Nhấn "Lưu & Xuất Bản Vé Khách Mời". |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Trong phần thiết lập vé, chọn thêm loại vé: "Vé Khách Mời Doanh Nghiệp (Có Thu Phí)".<br>2. Nhập đơn giá vé: 1.500.000 VNĐ / vé.<br>3. Kích hoạt cổng thanh toán tự động Mã QR Ngân Hàng Napas 24/7.<br>4. Cấu hình quy tắc sinh mã chuyển khoản định danh duy nhất cho từng đơn vé (định dạng: TIK-xxxxx).<br>5. Thiết lập thời gian tự động giữ chỗ trong 15 phút: Nếu khách quét mã chuyển khoản thành công trong thời gian này, hệ thống tự động gạch nợ trong 1 giây và phát hành vé điện tử.<br>6. Nhấn "Lưu & Xuất Bản Vé Khách Mời". |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu quá 15 phút khách chưa chuyển khoản: Hệ thống tự động hủy đơn giữ chỗ và giải phóng ghế cho người khác. |
 | **Hậu Điều Kiện (Post-conditions)** | Hệ thống bán vé có phí vận hành tự động 100%, không cần đối soát chuyển khoản thủ công. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Thiết lập loại vé sự kiện có phí và tích hợp cổng thanh toán VietQR tự động* |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Thiết lập loại vé sự kiện có phí và tích hợp cổng thanh toán Mã QR Ngân Hàng tự động* |
 
-![Thiết lập loại vé sự kiện có phí và tích hợp cổng thanh toán VietQR tự động](images/evidence/crm_06b_event_create_paid_modal.png)
+![Thiết lập loại vé sự kiện có phí và tích hợp cổng thanh toán Mã QR Ngân Hàng tự động](images/evidence/crm_06b_event_create_paid_modal.png)
 
 
 ### 5.29. Bảng Use Case UC-CRM-19: Thiết Lập Bản Đồ Chỗ Ngồi Trực Quan (Cinema Seating Map: Bàn Kim Cương, Vàng, Bạc)
@@ -594,7 +594,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Quản Lý Danh Sách Đăng Ký Tham Dự, Lọc Trạng Thái Đã Thanh Toán & Chưa Thanh Toán |
 | **Tác Nhân (Actor)** | Ban Thư Ký, Ban Tài Chính |
 | **Tiền Điều Kiện (Pre-conditions)** | Sự kiện đang trong giai đoạn tiếp nhận đăng ký tham dự. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng truy cập phân hệ "Danh Sách Đăng Ký Sự Kiện".<br>2. Bảng dữ liệu hiển thị toàn bộ danh sách đại biểu đăng ký:<br>   - Tên đại biểu, Số điện thoại, Email, Doanh nghiệp<br>   - Loại vé (Hội viên miễn phí / Khách mời có phí)<br>   - Trạng thái thanh toán (Đã thanh toán qua VietQR, Chờ thanh toán, Miễn phí)<br>   - Vị trí bàn ghế đã phân bổ<br>   - Thời gian đăng ký.<br>3. Sử dụng bộ lọc nhanh để xem riêng danh sách đại biểu đã xác nhận tham dự để chuẩn bị thẻ đeo. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng truy cập phân hệ "Danh Sách Đăng Ký Sự Kiện".<br>2. Bảng dữ liệu hiển thị toàn bộ danh sách đại biểu đăng ký:<br>   - Tên đại biểu, Số điện thoại, Email, Doanh nghiệp<br>   - Loại vé (Hội viên miễn phí / Khách mời có phí)<br>   - Trạng thái thanh toán (Đã thanh toán qua Mã QR Ngân Hàng, Chờ thanh toán, Miễn phí)<br>   - Vị trí bàn ghế đã phân bổ<br>   - Thời gian đăng ký.<br>3. Sử dụng bộ lọc nhanh để xem riêng danh sách đại biểu đã xác nhận tham dự để chuẩn bị thẻ đeo. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Với các đơn vé chờ thanh toán quá hạn: Người dùng có thể nhấn nút gửi email nhắc nhở hoặc giải phóng vé. |
 | **Hậu Điều Kiện (Post-conditions)** | Ban Tổ chức nắm chắc số lượng đại biểu chắc chắn tham dự để điều phối hậu cần tiệc chính xác. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Bảng quản lý danh sách đăng ký tham dự sự kiện và xác nhận thanh toán* |
@@ -908,21 +908,21 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Bảng theo dõi trạng thái đóng hội phí thường niên của toàn thể Hội viên CLB](images/evidence/crm_08_fees_management.png)
 
 
-### 5.50. Bảng Use Case UC-CRM-40: Tạo Thông Báo Thu Hội Phí Nhiệm Kỳ Mới Kèm Mã VietQR Napas 24/7 Tự Động Gạch Nợ
+### 5.50. Bảng Use Case UC-CRM-40: Tạo Thông Báo Thu Hội Phí Nhiệm Kỳ Mới Kèm mã QR ngân hàng Napas 24/7 Tự Động Gạch Nợ
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-CRM-40** |
 | **Phân Hệ / Nhóm** | Quản Lý Hội Phí Thường Niên |
-| **Tên Chức Năng** | Tạo Thông Báo Thu Hội Phí Nhiệm Kỳ Mới Kèm Mã VietQR Napas 24/7 Tự Động Gạch Nợ |
+| **Tên Chức Năng** | Tạo Thông Báo Thu Hội Phí Nhiệm Kỳ Mới Kèm mã QR ngân hàng Napas 24/7 Tự Động Gạch Nợ |
 | **Tác Nhân (Actor)** | Ban Tài Chính (ceo.thiennguyen@ceo1983.com / Thủ Quỹ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Đến kỳ thu hội phí thường niên theo điều lệ CLB. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Ban Tài Chính chọn chức năng "Phát Hành Thông Báo Thu Hội Phí Mới".<br>2. Thiết lập thông số:<br>   - Kỳ hội phí: Niên khóa 2026 - 2027<br>   - Mức hội phí tiêu chuẩn: 10.000.000 VNĐ / năm<br>   - Hạn chót nộp phí: 30 ngày kể từ ngày thông báo<br>3. Nhấn "Phát Hành Hàng Loạt".<br>4. Hệ thống tự động tạo hóa đơn điện tử cho từng hội viên.<br>5. Mỗi hóa đơn được tích hợp sẵn Mã VietQR Napas 24/7 động chứa chính xác số tiền và nội dung chuyển khoản duy nhất (định dạng: FEE-CEO83xxx).<br>6. Khi hội viên quét mã chuyển khoản qua bất kỳ App ngân hàng nào, hệ thống máy chủ tự động đối soát và gạch nợ tức thì trong 1 giây mà không cần con người can thiệp. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Ban Tài Chính chọn chức năng "Phát Hành Thông Báo Thu Hội Phí Mới".<br>2. Thiết lập thông số:<br>   - Kỳ hội phí: Niên khóa 2026 - 2027<br>   - Mức hội phí tiêu chuẩn: 10.000.000 VNĐ / năm<br>   - Hạn chót nộp phí: 30 ngày kể từ ngày thông báo<br>3. Nhấn "Phát Hành Hàng Loạt".<br>4. Hệ thống tự động tạo hóa đơn điện tử cho từng hội viên.<br>5. Mỗi hóa đơn được tích hợp sẵn mã QR ngân hàng Napas 24/7 động chứa chính xác số tiền và nội dung chuyển khoản duy nhất (định dạng: FEE-CEO83xxx).<br>6. Khi hội viên quét mã chuyển khoản qua bất kỳ App ngân hàng nào, hệ thống máy chủ tự động đối soát và gạch nợ tức thì trong 1 giây mà không cần con người can thiệp. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Trường hợp hội viên nộp tiền mặt: Thủ quỹ chọn hóa đơn và nhấn xác nhận thu tiền mặt. |
 | **Hậu Điều Kiện (Post-conditions)** | Hóa đơn hội phí sẵn sàng trên Ứng dụng của từng hội viên, thanh toán tiện lợi 24/7. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện phát hành thông báo thu hội phí và cấu hình mã thanh toán VietQR động* |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện phát hành thông báo thu hội phí và cấu hình mã thanh toán Mã QR Ngân Hàng động* |
 
-![Giao diện phát hành thông báo thu hội phí và cấu hình mã thanh toán VietQR động](images/evidence/sub_50_crm_fees_management.png)
+![Giao diện phát hành thông báo thu hội phí và cấu hình mã thanh toán Mã QR Ngân Hàng động](images/evidence/sub_50_crm_fees_management.png)
 
 
 ### 5.51. Bảng Use Case UC-CRM-41: Tự Động Gửi Email & Thông Báo Đẩy Nhắc Đóng Hội Phí Thường Niên Định Kỳ
@@ -934,12 +934,12 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Tự Động Gửi Email & Thông Báo Đẩy Nhắc Đóng Hội Phí Thường Niên Định Kỳ |
 | **Tác Nhân (Actor)** | Hệ thống Tự Động (Automation Service) & Ban Tài Chính |
 | **Tiền Điều Kiện (Pre-conditions)** | Hóa đơn hội phí đã phát hành và đến các mốc nhắc nợ (còn 15 ngày, còn 3 ngày, ngày hết hạn). |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Hệ thống tự động rà soát danh sách các hội viên chưa hoàn thành hội phí theo lịch trình.<br>2. Tự động kích hoạt gửi Email Nhắc Đóng Phí lịch sự, sang trọng đến hòm thư hội viên: vupv090120@gmail.com.<br>3. Gửi Thông Báo Đẩy trực tiếp lên màn hình điện thoại hội viên: "Kính mời Doanh nhân Phạm Văn Vũ hoàn tất Hội phí thường niên để duy trì đầy đủ đặc quyền kết nối giao thương".<br>4. Bấm vào thông báo sẽ mở ngay màn hình quét mã VietQR thanh toán 1 chạm. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Hệ thống tự động rà soát danh sách các hội viên chưa hoàn thành hội phí theo lịch trình.<br>2. Tự động kích hoạt gửi Email Nhắc Đóng Phí lịch sự, sang trọng đến hòm thư hội viên: vupv090120@gmail.com.<br>3. Gửi Thông Báo Đẩy trực tiếp lên màn hình điện thoại hội viên: "Kính mời Doanh nhân Phạm Văn Vũ hoàn tất Hội phí thường niên để duy trì đầy đủ đặc quyền kết nối giao thương".<br>4. Bấm vào thông báo sẽ mở ngay màn hình quét mã QR ngân hàng thanh toán 1 chạm. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Khi hội viên hoàn tất thanh toán: Hệ thống tự động hủy toàn bộ các lịch nhắc nợ tiếp theo. |
 | **Hậu Điều Kiện (Post-conditions)** | Tỷ lệ thu hội phí đạt trên 95% mà Ban Thư Ký không phải gọi điện đòi nợ thủ công phiền hà. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Thông báo nhắc nhở đóng hội phí thường niên và nút thanh toán VietQR trên ứng dụng* |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Thông báo nhắc nhở đóng hội phí thường niên và nút thanh toán Mã QR Ngân Hàng trên ứng dụng* |
 
-![Thông báo nhắc nhở đóng hội phí thường niên và nút thanh toán VietQR trên ứng dụng](images/evidence/app_step_20_annual_fee_renewal.png)
+![Thông báo nhắc nhở đóng hội phí thường niên và nút thanh toán Mã QR Ngân Hàng trên ứng dụng](images/evidence/app_step_20_annual_fee_renewal.png)
 
 
 ### 5.52. Bảng Use Case UC-CRM-42: Quản Lý Sổ Quỹ Thu: Ghi Nhận Toàn Bộ Các Nguồn Thu Hội Phí, Tài Trợ & Sự Kiện
@@ -951,7 +951,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Quản Lý Sổ Quỹ Thu: Ghi Nhận Toàn Bộ Các Nguồn Thu Hội Phí, Tài Trợ & Sự Kiện |
 | **Tác Nhân (Actor)** | Ban Tài Chính, Kế Toán CLB |
 | **Tiền Điều Kiện (Pre-conditions)** | Người dùng truy cập phân hệ Sổ Quỹ Thu trên Cổng Quản trị. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở mục "Sổ Quỹ Thu" (Income Ledger).<br>2. Hệ thống hiển thị toàn bộ các phiếu thu được phân loại nguồn rõ ràng:<br>   - Thu Hội phí thường niên (Tự động gạch nợ từ VietQR)<br>   - Thu Tài trợ từ các Doanh nghiệp Nhà Tài Trợ<br>   - Thu Tiền vé sự kiện Gala và các khóa đào tạo<br>   - Thu Đóng góp ủng hộ Quỹ Thiện nguyện.<br>3. Người dùng có thể lập phiếu thu thủ công cho các khoản đóng góp trực tiếp.<br>4. Mỗi phiếu thu đều có mã phiếu, ngày thu, người nộp, số tiền và đính kèm ủy nhiệm chi/chứng từ kế toán. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Người dùng mở mục "Sổ Quỹ Thu" (Income Ledger).<br>2. Hệ thống hiển thị toàn bộ các phiếu thu được phân loại nguồn rõ ràng:<br>   - Thu Hội phí thường niên (Tự động gạch nợ từ Mã QR Ngân Hàng)<br>   - Thu Tài trợ từ các Doanh nghiệp Nhà Tài Trợ<br>   - Thu Tiền vé sự kiện Gala và các khóa đào tạo<br>   - Thu Đóng góp ủng hộ Quỹ Thiện nguyện.<br>3. Người dùng có thể lập phiếu thu thủ công cho các khoản đóng góp trực tiếp.<br>4. Mỗi phiếu thu đều có mã phiếu, ngày thu, người nộp, số tiền và đính kèm ủy nhiệm chi/chứng từ kế toán. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu cần hủy phiếu thu lập sai: Người dùng nhập lý do hủy và yêu cầu Trưởng Ban Tài Chính phê duyệt. |
 | **Hậu Điều Kiện (Post-conditions)** | Dòng tiền thu vào của tổ chức được ghi nhận chính xác, chống thất thoát tuyệt đối. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Sổ quỹ Thu ghi nhận toàn diện các nguồn thu hội phí, tài trợ và sự kiện CLB* |
@@ -1359,7 +1359,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Minh Bạch Danh Sách Đóng Góp Quỹ Thiện Nguyện Thời Gian Thực & Tự Động Xuất Thư Tri Ân |
 | **Tác Nhân (Actor)** | Ban Thiện Nguyện, Ban Tài Chính |
 | **Tiền Điều Kiện (Pre-conditions)** | Các nhà hảo tâm và doanh nghiệp thành viên thực hiện chuyển khoản ủng hộ. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Hệ thống tự động bắt tín hiệu giao dịch ngân hàng qua cổng VietQR 24/7 đối với các khoản ủng hộ Quỹ Thiện Nguyện.<br>2. Danh sách ủng hộ tự động cập nhật tên doanh nhân/doanh nghiệp, số tiền và lời nhắn trên Bảng vàng nhân ái.<br>3. Ban Thiện Nguyện kiểm tra đối soát từng khoản đóng góp.<br>4. Nhấn nút "Gửi Thư Tri Ân Tấm Lòng Vàng".<br>5. Hệ thống tự động phát thư cảm ơn trang trọng kèm Giấy chứng nhận đóng góp an sinh xã hội điện tử gửi về email người ủng hộ. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Hệ thống tự động bắt tín hiệu giao dịch ngân hàng qua cổng thanh toán QR ngân hàng 24/7 đối với các khoản ủng hộ Quỹ Thiện Nguyện.<br>2. Danh sách ủng hộ tự động cập nhật tên doanh nhân/doanh nghiệp, số tiền và lời nhắn trên Bảng vàng nhân ái.<br>3. Ban Thiện Nguyện kiểm tra đối soát từng khoản đóng góp.<br>4. Nhấn nút "Gửi Thư Tri Ân Tấm Lòng Vàng".<br>5. Hệ thống tự động phát thư cảm ơn trang trọng kèm Giấy chứng nhận đóng góp an sinh xã hội điện tử gửi về email người ủng hộ. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Trường hợp nhà hảo tâm muốn ẩn danh: Hệ thống tự động ghi nhận là "Doanh nhân hảo tâm ẩn danh" trên bảng công khai nhưng vẫn lưu trữ mã đối soát trong sổ quỹ. |
 | **Hậu Điều Kiện (Post-conditions)** | Quỹ thiện nguyện đạt tính minh bạch 100%, tạo dựng niềm tin tuyệt đối trong cộng đồng. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Báo cáo minh bạch dòng tiền ủng hộ và sao kê tài chính Quỹ Thiện Nguyện* |
@@ -1529,7 +1529,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Thiết Lập Tự Động Hóa Vận Hành: Nhắc Đóng Phí, Chúc Mừng Sinh Nhật Tự Động |
 | **Tác Nhân (Actor)** | Ban Quản Trị, Ban Thư Ký |
 | **Tiền Điều Kiện (Pre-conditions)** | Người quản trị truy cập Trung Tâm Cấu Hình Vận Hành Tự Động. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở mục "Quy Tắc Tự Động Hóa (Automation Rules)" trên Cổng Quản Trị.<br>2. Cấu hình kịch bản nhắc hội phí thường niên: Tự động gửi email và thông báo đẩy trước 30 ngày, 15 ngày và 3 ngày trước khi hết hạn hội viên kèm mã VietQR gạch nợ tự động.<br>3. Cấu hình kịch bản Chúc mừng sinh nhật: Đúng 08:00 sáng ngày sinh nhật của từng hội viên, hệ thống tự động gửi thiệp chúc mừng điện tử mang dấu ấn CEO 1983 kèm thông báo chúc mừng trên bảng tin chung.<br>4. Cấu hình nhắc lịch họp và nhắc giờ tham gia sự kiện Gala tự động.<br>5. Nhấn nút "Lưu & Kích Hoạt Kịch Bản Vận Hành Tự Động". |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở mục "Quy Tắc Tự Động Hóa (Automation Rules)" trên Cổng Quản Trị.<br>2. Cấu hình kịch bản nhắc hội phí thường niên: Tự động gửi email và thông báo đẩy trước 30 ngày, 15 ngày và 3 ngày trước khi hết hạn hội viên kèm mã QR ngân hàng gạch nợ tự động.<br>3. Cấu hình kịch bản Chúc mừng sinh nhật: Đúng 08:00 sáng ngày sinh nhật của từng hội viên, hệ thống tự động gửi thiệp chúc mừng điện tử mang dấu ấn CEO 1983 kèm thông báo chúc mừng trên bảng tin chung.<br>4. Cấu hình nhắc lịch họp và nhắc giờ tham gia sự kiện Gala tự động.<br>5. Nhấn nút "Lưu & Kích Hoạt Kịch Bản Vận Hành Tự Động". |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Quản trị viên có thể tùy biến mẫu nội dung thư và hình ảnh thiệp chúc mừng theo từng mùa sự kiện. |
 | **Hậu Điều Kiện (Post-conditions)** | Bộ máy vận hành CLB hoạt động tự động 24/7, mang lại trải nghiệm ấm áp và chu đáo tối đa cho hội viên. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Thiết lập các chiến dịch thông điệp tự động, chăm sóc hội viên và marketing nội bộ* |
@@ -1695,7 +1695,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-08** |
-| **Phân Hệ / Nhóm** | Thẻ VIP 3D NFC & Danh Thiếp |
+| **Phân Hệ / Nhóm** | thẻ doanh nhân số 3D NFC & Danh Thiếp |
 | **Tên Chức Năng** | Chiêm Ngưỡng Thẻ Hội Viên Điện Tử 3D VIP CEO 1983 Với Hiệu Ứng Ánh Kim Sang Trọng |
 | **Tác Nhân (Actor)** | Hội viên chính thức (Doanh nhân Phạm Văn Vũ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên vào mục Thẻ Doanh Nhân trên Ứng dụng. |
@@ -1712,7 +1712,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-09** |
-| **Phân Hệ / Nhóm** | Thẻ VIP 3D NFC & Danh Thiếp |
+| **Phân Hệ / Nhóm** | thẻ doanh nhân số 3D NFC & Danh Thiếp |
 | **Tên Chức Năng** | Lật Mặt Sau Thẻ Để Hiển Thị Mã QR Động Cá Nhân Hóa Dùng Kết Nối Tức Thì |
 | **Tác Nhân (Actor)** | Hội viên & Đối tác gặp mặt trực tiếp |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên đang mở Thẻ Doanh nhân trên ứng dụng và muốn chia sẻ thông tin cho đối tác. |
@@ -1729,11 +1729,11 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-10** |
-| **Phân Hệ / Nhóm** | Thẻ VIP 3D NFC & Danh Thiếp |
+| **Phân Hệ / Nhóm** | thẻ doanh nhân số 3D NFC & Danh Thiếp |
 | **Tên Chức Năng** | Kích Hoạt Chạm Thẻ Thông Minh Vật Lý NFC (NFC Tap) Để Chia Sẻ Danh Thiếp Không Chạm |
-| **Tác Nhân (Actor)** | Hội viên sở hữu Thẻ VIP vật lý đính chip NFC |
+| **Tác Nhân (Actor)** | Hội viên sở hữu Thẻ Doanh Nhân Số vật lý đính chip NFC |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên cầm thẻ cứng VIP NFC và chạm vào lưng điện thoại của đối tác. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên đưa thẻ VIP vật lý chạm nhẹ vào vùng cảm biến NFC phía sau điện thoại đối tác.<br>2. Không cần cài đặt bất kỳ phần mềm nào, điện thoại đối tác tự động bật thông báo nhận diện liên kết.<br>3. Đối tác nhấp vào thông báo, trang Danh thiếp điện tử của Doanh nhân Phạm Văn Vũ mở ra ngay lập tức.<br>4. Đối tác bấm lưu danh bạ hoặc gửi lời mời hợp tác kinh doanh. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Hội viên đưa thẻ doanh nhân số vật lý chạm nhẹ vào vùng cảm biến NFC phía sau điện thoại đối tác.<br>2. Không cần cài đặt bất kỳ phần mềm nào, điện thoại đối tác tự động bật thông báo nhận diện liên kết.<br>3. Đối tác nhấp vào thông báo, trang Danh thiếp điện tử của Doanh nhân Phạm Văn Vũ mở ra ngay lập tức.<br>4. Đối tác bấm lưu danh bạ hoặc gửi lời mời hợp tác kinh doanh. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Đối với điện thoại không có NFC: Đối tác quét mã QR ở mặt sau thẻ vật lý với hiệu quả tương đương. |
 | **Hậu Điều Kiện (Post-conditions)** | Tạo ấn tượng công nghệ vượt trội và sự chuyên nghiệp đỉnh cao trong mắt đối tác kinh doanh. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Tính năng chia sẻ danh thiếp không chạm bằng công nghệ thẻ thông minh VIP NFC* |
@@ -1887,7 +1887,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tác Nhân (Actor)** | Hội viên chính thức đã hoàn tất hội phí (Doanh nhân Phạm Văn Vũ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên chưa đăng ký vé sự kiện; hội phí thường niên đã được xác nhận hoàn thành. |
 | **Luồng Xử Lý Chính (Main Flow)** | 1. Tại trang chi tiết sự kiện, nút hành động hiển thị: "Nhận Vé Mời Miễn Phí (Đặc Quyền Hội Viên)".<br>2. Hội viên bấm vào nút nhận vé.<br>3. Hệ thống kiểm tra hợp lệ: Xác nhận đúng trạng thái hội viên chính thức, tự động gán vị trí ghế ngồi danh dự tại Bàn VIP.<br>4. Màn hình chúc mừng hiện lên, đồng thời Vé Mời Điện Tử (E-Ticket) xuất hiện ngay trong mục "Vé Của Tôi".<br>5. Quy trình hoàn tất trong 1 giây mà không phát sinh bất kỳ khoản phí nào. |
-| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu hội viên còn nợ phí thường niên: Hệ thống hướng dẫn đóng phí nhanh qua VietQR để mở khóa vé miễn phí. |
+| **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu hội viên còn nợ phí thường niên: Hệ thống hướng dẫn đóng phí nhanh qua Mã QR Ngân Hàng để mở khóa vé miễn phí. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên sở hữu vé mời tham dự sự kiện danh giá một cách tự hào và thuận tiện. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Thao tác nhận vé mời sự kiện miễn phí 1 chạm độc quyền dành cho Hội viên chính thức* |
 
@@ -2129,24 +2129,24 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Hậu Điều Kiện (Post-conditions)** | Hội viên luôn nắm rõ nghĩa vụ tài chính và trạng thái hoạt động của mình trong tổ chức. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Màn hình kiểm tra trạng thái thời hạn hội viên và chi tiết hóa đơn hội phí thường niên* |
 
-![Màn hình kiểm tra trạng thái thời hạn hội viên và chi tiết hóa đơn hội phí thường niên](images/evidence/app1983_09_fees_vietqr.png)
+![Màn hình kiểm tra trạng thái thời hạn hội viên và chi tiết hóa đơn hội phí thường niên](images/evidence/app1983_09_fees_mã QR ngân hàng.png)
 
 
-### 5.122. Bảng Use Case UC-APP-34: Thanh Toán Gia Hạn Hội Phí Siêu Tốc Trong 1 Giây Bằng Mã VietQR Napas 24/7 Tự Động Gạch Nợ
+### 5.122. Bảng Use Case UC-APP-34: Thanh Toán Gia Hạn Hội Phí Siêu Tốc Trong 1 Giây Bằng mã QR ngân hàng Napas 24/7 Tự Động Gạch Nợ
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-34** |
 | **Phân Hệ / Nhóm** | Hội Phí & Đặc Quyền Hội Viên |
-| **Tên Chức Năng** | Thanh Toán Gia Hạn Hội Phí Siêu Tốc Trong 1 Giây Bằng Mã VietQR Napas 24/7 Tự Động Gạch Nợ |
+| **Tên Chức Năng** | Thanh Toán Gia Hạn Hội Phí Siêu Tốc Trong 1 Giây Bằng mã QR ngân hàng Napas 24/7 Tự Động Gạch Nợ |
 | **Tác Nhân (Actor)** | Hội viên thực hiện nghĩa vụ đóng hội phí thường niên (Doanh nhân Phạm Văn Vũ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên có hóa đơn hội phí cần thanh toán. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm nút "Thanh Toán Hội Phí / Gia Hạn Ngay".<br>2. Hộp thoại thanh toán thông minh hiện lên với Mã VietQR Napas 24/7 chuẩn quốc gia:<br>   - Tên ngân hàng thụ hưởng: Ngân hàng TMCP Quân Đội (MB Bank)<br>   - Tên tài khoản: CLB DOANH NHAN CEO 1983 - HANOIBA<br>   - Số tiền chính xác: 10.000.000 VNĐ<br>   - Nội dung chuyển khoản duy nhất: FEE-CEO83007.<br>3. Hội viên mở bất kỳ Ứng dụng Ngân hàng nào trên điện thoại, quét mã QR.<br>4. Mọi thông tin người nhận, số tiền và nội dung tự động điền chính xác 100%.<br>5. Hội viên xác nhận chuyển tiền.<br>6. Máy chủ CLB tự động nhận tín hiệu gạch nợ trong 1 giây, màn hình ứng dụng chuyển sang thông báo XANH LỤC chúc mừng gia hạn thành công. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm nút "Thanh Toán Hội Phí / Gia Hạn Ngay".<br>2. Hộp thoại thanh toán thông minh hiện lên với mã QR ngân hàng Napas 24/7 chuẩn quốc gia:<br>   - Tên ngân hàng thụ hưởng: Ngân hàng TMCP Quân Đội (MB Bank)<br>   - Tên tài khoản: CLB DOANH NHAN CEO 1983 - HANOIBA<br>   - Số tiền chính xác: 10.000.000 VNĐ<br>   - Nội dung chuyển khoản duy nhất: FEE-CEO83007.<br>3. Hội viên mở bất kỳ Ứng dụng Ngân hàng nào trên điện thoại, quét mã QR.<br>4. Mọi thông tin người nhận, số tiền và nội dung tự động điền chính xác 100%.<br>5. Hội viên xác nhận chuyển tiền.<br>6. Máy chủ CLB tự động nhận tín hiệu gạch nợ trong 1 giây, màn hình ứng dụng chuyển sang thông báo XANH LỤC chúc mừng gia hạn thành công. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Nếu thanh toán trên cùng một điện thoại: Hội viên nhấn "Lưu ảnh QR" hoặc bấm nút mở thẳng App ngân hàng liên kết. |
 | **Hậu Điều Kiện (Post-conditions)** | Hội phí được gạch nợ tự động, thẻ hội viên được gia hạn thêm 1 năm hoạt động ngay lập tức. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện thanh toán gia hạn hội phí thường niên siêu tốc bằng mã VietQR tự động gạch nợ* |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Giao diện thanh toán gia hạn hội phí thường niên siêu tốc bằng mã QR ngân hàng tự động gạch nợ* |
 
-![Giao diện thanh toán gia hạn hội phí thường niên siêu tốc bằng mã VietQR tự động gạch nợ](images/evidence/app_step_20_annual_fee_renewal.png)
+![Giao diện thanh toán gia hạn hội phí thường niên siêu tốc bằng mã QR ngân hàng tự động gạch nợ](images/evidence/app_step_20_annual_fee_renewal.png)
 
 
 ### 5.123. Bảng Use Case UC-APP-35: Khám Phá Danh Mục Đặc Quyền & Ưu Đãi VIP Dành Riêng Cho Hội Viên CEO 1983
@@ -2319,21 +2319,21 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 ![Hệ thống quay số may mắn trúng thưởng các phần quà giá trị từ Nhà tài trợ tại Gala](images/evidence/crm_12_voting_luckydraw.png)
 
 
-### 5.133. Bảng Use Case UC-APP-45: Đóng Góp Ủng Hộ Quỹ Thiện Nguyện Bằng Mã VietQR Trực Tiếp Trên Ứng Dụng
+### 5.133. Bảng Use Case UC-APP-45: Đóng Góp Ủng Hộ Quỹ Thiện Nguyện Bằng mã QR ngân hàng Trực Tiếp Trên Ứng Dụng
 
 | Thuộc Tính Nghiệp Vụ | Nội Dung Đặc Tả Chi Tiết |
 | :--- | :--- |
 | **Mã Use Case (ID)** | **UC-APP-45** |
 | **Phân Hệ / Nhóm** | Thiện Nguyện & An Sinh Xã Hội |
-| **Tên Chức Năng** | Đóng Góp Ủng Hộ Quỹ Thiện Nguyện Bằng Mã VietQR Trực Tiếp Trên Ứng Dụng |
+| **Tên Chức Năng** | Đóng Góp Ủng Hộ Quỹ Thiện Nguyện Bằng mã QR ngân hàng Trực Tiếp Trên Ứng Dụng |
 | **Tác Nhân (Actor)** | Hội viên có tấm lòng hảo tâm (Doanh nhân Phạm Văn Vũ) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên xem thông tin chương trình thiện nguyện "Áo Ấm Cho Em" trên app. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm nút "Ủng Hộ Chiến Dịch Ngay".<br>2. Chọn số tiền đóng góp (Ví dụ: 2.000.000 VNĐ, 5.000.000 VNĐ, 10.000.000 VNĐ hoặc nhập số tiền tùy tâm).<br>3. Nhập lời chúc gửi đến các em nhỏ vùng cao.<br>4. Bấm "Tạo Mã VietQR Ủng Hộ".<br>5. Mã VietQR hiện ra với đúng thông tin tài khoản Quỹ Thiện Nguyện CLB và cú pháp giao dịch duy nhất.<br>6. Hội viên quét mã thanh toán trên ứng dụng ngân hàng.<br>7. Sau 1 giây, màn hình hiển thị Thư cảm ơn tấm lòng vàng và tên hội viên xuất hiện trang trọng trên Bảng vàng nhân ái. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Bấm nút "Ủng Hộ Chiến Dịch Ngay".<br>2. Chọn số tiền đóng góp (Ví dụ: 2.000.000 VNĐ, 5.000.000 VNĐ, 10.000.000 VNĐ hoặc nhập số tiền tùy tâm).<br>3. Nhập lời chúc gửi đến các em nhỏ vùng cao.<br>4. Bấm "Tạo mã QR ngân hàng Ủng Hộ".<br>5. mã QR ngân hàng hiện ra với đúng thông tin tài khoản Quỹ Thiện Nguyện CLB và cú pháp giao dịch duy nhất.<br>6. Hội viên quét mã thanh toán trên ứng dụng ngân hàng.<br>7. Sau 1 giây, màn hình hiển thị Thư cảm ơn tấm lòng vàng và tên hội viên xuất hiện trang trọng trên Bảng vàng nhân ái. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Hội viên có thể bấm chia sẻ chứng nhận ủng hộ lên mạng xã hội để lan tỏa tinh thần nhân ái của CLB. |
 | **Hậu Điều Kiện (Post-conditions)** | Khoản đóng góp được chuyển thẳng vào Quỹ An Sinh Xã Hội của CLB một cách an toàn và minh bạch. |
-| **Hình Ảnh Minh Chứng Thực Tế** | *Thao tác đóng góp ủng hộ chương trình thiện nguyện an sinh xã hội siêu tốc qua VietQR* |
+| **Hình Ảnh Minh Chứng Thực Tế** | *Thao tác đóng góp ủng hộ chương trình thiện nguyện an sinh xã hội siêu tốc qua Mã QR Ngân Hàng* |
 
-![Thao tác đóng góp ủng hộ chương trình thiện nguyện an sinh xã hội siêu tốc qua VietQR](images/evidence/app_step_20_annual_fee_renewal.png)
+![Thao tác đóng góp ủng hộ chương trình thiện nguyện an sinh xã hội siêu tốc qua Mã QR Ngân Hàng](images/evidence/app_step_20_annual_fee_renewal.png)
 
 
 ### 5.134. Bảng Use Case UC-APP-46: Đăng Ký Tham Gia Các Câu Lạc Bộ Thể Thao: Golf 1983, Tennis, Chạy Bộ Phong Trào
@@ -2396,7 +2396,7 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 | **Tên Chức Năng** | Tải Xuống Giấy Chứng Nhận Hội Viên Điện Tử Kèm Chữ Ký Số Của Ban Chấp Hành |
 | **Tác Nhân (Actor)** | Hội viên chính thức (Doanh nhân Phạm Văn Vũ - CEO-83007) |
 | **Tiền Điều Kiện (Pre-conditions)** | Hội viên đã được kết nạp chính thức và hoàn tất nghĩa vụ hội phí. |
-| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở mục "Chứng Nhận Hội Viên" trên màn hình Thẻ VIP.<br>2. Hệ thống hiển thị bản xem trước của Giấy Chứng Nhận Hội Viên Chính Thức mang nhận diện Hoàng gia sang trọng:<br>   - Họ và tên: Phạm Văn Vũ<br>   - Chức danh: Tổng Giám Đốc - Công ty Cổ phần Công nghệ VIO CONNECT<br>   - Mã số hội viên: CEO-83007<br>   - Khóa sinh hoạt: Nhiệm kỳ Hội Doanh Nhân Trẻ Hà Nội<br>   - Chữ ký số và con dấu điện tử của Chủ tịch CLB Doanh Nhân CEO 1983<br>   - Mã QR xác thực nguồn gốc điện tử chống giả mạo.<br>3. Bấm nút "Tải File PDF Chất Lượng Cao".<br>4. Tệp chứng nhận được lưu về điện thoại, sẵn sàng in đóng khung treo tại phòng làm việc. |
+| **Luồng Xử Lý Chính (Main Flow)** | 1. Mở mục "Chứng Nhận Hội Viên" trên màn hình Thẻ Doanh Nhân Số.<br>2. Hệ thống hiển thị bản xem trước của Giấy Chứng Nhận Hội Viên Chính Thức mang nhận diện Hoàng gia sang trọng:<br>   - Họ và tên: Phạm Văn Vũ<br>   - Chức danh: Tổng Giám Đốc - Công ty Cổ phần Công nghệ VIO CONNECT<br>   - Mã số hội viên: CEO-83007<br>   - Khóa sinh hoạt: Nhiệm kỳ Hội Doanh Nhân Trẻ Hà Nội<br>   - Chữ ký số và con dấu điện tử của Chủ tịch CLB Doanh Nhân CEO 1983<br>   - Mã QR xác thực nguồn gốc điện tử chống giả mạo.<br>3. Bấm nút "Tải File PDF Chất Lượng Cao".<br>4. Tệp chứng nhận được lưu về điện thoại, sẵn sàng in đóng khung treo tại phòng làm việc. |
 | **Luồng Thay Thế / Ngoại Lệ (Alternative Flows)** | - Bất kỳ ai khi quét mã QR trên bản in chứng nhận đều được dẫn tới trang xác thực công khai xác nhận hội viên thật 100%. |
 | **Hậu Điều Kiện (Post-conditions)** | Khẳng định niềm tự hào và vị thế doanh nhân chính thức trong đại gia đình CEO 1983. |
 | **Hình Ảnh Minh Chứng Thực Tế** | *Mẫu Giấy Chứng Nhận Hội Viên Chính Thức điện tử có mã QR xác thực và chữ ký số* |
@@ -2579,13 +2579,13 @@ Dưới đây là bảng đặc tả chi tiết toàn bộ 138 Use Cases bao ph�
 
 ### 7.1. Bảng màu nhận diện thương hiệu độc quyền CEO 1983
 * **Royal Navy (#0A2540):** Màu xanh biển sâu tượng trưng cho uy tín vững bền, tầm nhìn chiến lược của người lãnh đạo.
-* **Amber Gold (#D97706):** Màu vàng kim vinh danh thẻ VIP, kỷ niệm chương và các gói đối tác chiến lược.
+* **Amber Gold (#D97706):** Màu vàng kim vinh danh thẻ doanh nhân số, kỷ niệm chương và các gói đối tác chiến lược.
 * **Trắng Sứ & Xám Khói (#FFFFFF, #F8FAFC):** Nền tảng thanh lịch, thoáng đãng giúp hiển thị dữ liệu rõ ràng.
 
 ### 7.2. Chuẩn mực phần cứng & giao tiếp ngoại vi
 * **Camera Soát Vé Thông Minh:** Tự động điều chỉnh tiêu cự nhận diện mã QR trong 0.2 giây kể cả trong điều kiện ánh sáng yếu tại sảnh tiệc Gala.
 * **Công Nghệ NFC 1 Chạm:** Trao đổi thông tin danh thiếp điện tử không tiếp xúc tiêu chuẩn quốc tế ISO/IEC 14443.
-* **Máy Chủ Thư Tín Tự Động (SMTP Mailer):** Tự động phát hành email chào mừng, hóa đơn VietQR và vé điện tử E-Ticket tức thời.
+* **Máy Chủ Thư Tín Tự Động (SMTP Mailer):** Tự động phát hành email chào mừng, hóa đơn Mã QR Ngân Hàng và vé điện tử E-Ticket tức thời.
 
 ---
 

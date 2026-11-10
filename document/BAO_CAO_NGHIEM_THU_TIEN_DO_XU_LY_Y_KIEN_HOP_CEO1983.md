@@ -18,7 +18,7 @@
 
 ### 1. Thông Điệp Chuyển Đổi Số Dành Riêng Cho CEO 1983
 Hệ sinh thái công nghệ **CEO 1983 (HanoiBA)** được Viconnect may đo và kiến tạo không đơn thuần là một phần mềm quản lý, mà là một **"Vũ Khí Kết Nối Giao Thương & Trợ Lý Số Toàn Năng"** dành cho các lãnh đạo doanh nghiệp sinh năm 1983:
-1. **Nâng Tầm Đẳng Cấp Thương Hiệu:** Mỗi hội viên sở hữu một Thẻ VIP số hóa kim loại sang trọng, một Hồ sơ Doanh nhân 360 bảo mật tuyệt đối, khẳng định vị thế uy tín trên thương trường.
+1. **Nâng Tầm Đẳng Cấp Thương Hiệu:** Mỗi hội viên sở hữu một Thẻ Doanh Nhân Số số hóa kim loại sang trọng, một Hồ sơ Doanh nhân 360 bảo mật tuyệt đối, khẳng định vị thế uy tín trên thương trường.
 2. **Kích Hoạt Dòng Tiền Giao Thương B2B:** Sàn sản phẩm tinh hoa giới hạn 5 sản phẩm/doanh nghiệp, sàn đấu cơ hội hợp tác phân loại 10 ngành nghề trọng điểm và cơ chế Hẹn gặp 1-on-1 đo lường giá trị hợp đồng thực tế (Deal Value).
 3. **Thanh Toán Chuẩn Mực Quốc Gia VNPAY:** Thay thế hoàn toàn các phương thức chuyển khoản cá nhân thủ công bằng **Cổng thanh toán điện tử VNPAY Gateway (VNPAY-QR, Thẻ ATM/Nội địa, Thẻ quốc tế Visa/MasterCard)** bảo mật mã hóa HMAC-SHA512, vé điện tử tức thì gửi thẳng qua Zalo OA Doanh Nghiệp.
 4. **Giải Phóng 90% Sức Lao Động Cho Ban Thư Ký & Ban Điều Hành:** Tự động hóa từ khâu đón tiếp sự kiện, in thẻ đại biểu, quay số trúng thưởng Lucky Draw, đến tự động gửi thông báo chúc mừng sinh nhật, tự động nhắc hội phí thường niên và trích xuất báo cáo tài chính in ấn A4 chỉ với một phím bấm.
@@ -27,7 +27,7 @@ Hệ sinh thái công nghệ **CEO 1983 (HanoiBA)** được Viconnect may đo v
 
 | Nhóm Tính Năng | Số lượng | Đã Pass (100%) | Đạt 90% (Sẵn Sàng) | Đánh Giá Hiệu Năng Thực Tế |
 | :--- | :---: | :---: | :---: | :--- |
-| **A. Giao Diện & Thẻ Hội Viên VIP** | 03 | 03 | 00 | **100% Hoàn hảo**: Giao diện 1 chạm, Thẻ VIP kim loại, Khiên bảo mật SĐT. |
+| **A. Giao Diện & thẻ hội viên điện tử** | 03 | 03 | 00 | **100% Hoàn hảo**: Giao diện 1 chạm, Thẻ Doanh Nhân Số kim loại, Khiên bảo mật SĐT. |
 | **B. Sàn Giao Thương B2B & Kết Nối** | 04 | 04 | 00 | **100% Hoàn hảo**: Giới hạn 5 sản phẩm, lọc 10 ngành nghề, hẹn gặp 1-on-1. |
 | **C. Sự Kiện, Vé VNPAY & Lịch Họp** | 03 | 02 | 01 *(Chờ VNPAY CLB)* | **Sẵn sàng toàn diện**: Cổng VNPAY và E-Ticket hoàn thiện, chờ kích hoạt merchant. |
 | **D. CRM Quản Trị, BI & Tài Chính** | 04 | 04 | 00 | **100% Hoàn hảo**: Quản lý hội phí, Radar sức khỏe hội viên, Báo cáo A4 & Excel. |
@@ -40,19 +40,19 @@ Hệ sinh thái công nghệ **CEO 1983 (HanoiBA)** được Viconnect may đo v
 
 ### 1. Giao Diện Trang Chủ "1 Chạm Tinh Gọn" Đẳng Cấp Thượng Lưu (Executive One-Touch Portal)
 * **Thách thức Doanh nhân:** Lãnh đạo doanh nghiệp luôn bận rộn, không có thời gian thao tác qua các menu phức tạp. Nếu trang chủ quá tải tính năng phụ sẽ gây ức chế và giảm tần suất sử dụng app.
-* **Giải pháp Đột phá Viconnect:** Tinh giản trang chủ Mobile App thành cổng điều hành "1 Chạm Đẳng Cấp" (Executive One-Touch). Đặt 4 trọng tâm kinh doanh vàng lên hàng đầu: **Thẻ VIP Doanh Nhân**, **Danh Bạ Lãnh Đạo**, **Sự Kiện Đỉnh Cao**, và **Sàn Giao Thương B2B**. Toàn bộ các tiện ích thứ cấp được gói gọn tinh tế trong nút "Xem tất cả", giữ cho giao diện luôn thoáng đãng, sang trọng với tone màu Hoàng Gia Navy & Gold.
+* **Giải pháp Đột phá Viconnect:** Tinh giản trang chủ Mobile App thành cổng điều hành "1 Chạm Đẳng Cấp" (Executive One-Touch). Đặt 4 trọng tâm kinh doanh vàng lên hàng đầu: **Thẻ Doanh Nhân Số Doanh Nhân**, **Danh Bạ Lãnh Đạo**, **Sự Kiện Đỉnh Cao**, và **Sàn Giao Thương B2B**. Toàn bộ các tiện ích thứ cấp được gói gọn tinh tế trong nút "Xem tất cả", giữ cho giao diện luôn thoáng đãng, sang trọng với tone màu Hoàng Gia Navy & Gold.
 * **Giá trị Vàng Mang Lại:** Tiết kiệm 80% thời gian tìm kiếm; mở ứng dụng là chạm ngay tính năng cốt lõi; tạo cảm giác thượng lưu ngay từ lần chạm đầu tiên.
 * **Minh chứng Live Domain:** Đã kiểm thử trực tiếp tại `https://ceo1983.viconnect.vn/association`.
   * *Hình ảnh minh chứng:* `document/evidence_exact_15/req01_app_trangchu_tinhgon.png`
 
 ---
 
-### 2. Thẻ Hội Viên VIP Số Hóa & Khiên Bảo Mật Thông Tin Doanh Nhân (Executive Privacy Shield)
+### 2. thẻ hội viên điện tử Số Hóa & Khiên Bảo Mật Thông Tin Doanh Nhân (Executive Privacy Shield)
 * **Thách thức Doanh nhân:** Nỗi sợ lớn nhất của các Chủ tịch, CEO khi gia nhập các hiệp hội là bị lộ số điện thoại và email cá nhân, dẫn đến tình trạng bị nhân viên telesale mời chào chứng khoán, bất động sản rác quấy rầy ngày đêm.
-* **Giải pháp Đột phá Viconnect:** Thiết kế Thẻ VIP số hóa với chất liệu ánh kim vát cạnh sang trọng, tích hợp mã QR nhận diện một chạm. Đặc biệt, trang bị **"Khiên Bảo Mật Doanh Nhân" (Privacy Shield)**: Hội viên có toàn quyền bật/tắt chế độ ẩn Số điện thoại và Email cá nhân. Khi kích hoạt, người ngoài chỉ có thể liên hệ thông qua cổng tin nhắn nội bộ hoặc gửi thư mời hợp tác lịch thiệp, bảo vệ danh bạ tuyệt đối.
+* **Giải pháp Đột phá Viconnect:** Thiết kế Thẻ Doanh Nhân Số số hóa với chất liệu ánh kim vát cạnh sang trọng, tích hợp mã QR nhận diện một chạm. Đặc biệt, trang bị **"Khiên Bảo Mật Doanh Nhân" (Privacy Shield)**: Hội viên có toàn quyền bật/tắt chế độ ẩn Số điện thoại và Email cá nhân. Khi kích hoạt, người ngoài chỉ có thể liên hệ thông qua cổng tin nhắn nội bộ hoặc gửi thư mời hợp tác lịch thiệp, bảo vệ danh bạ tuyệt đối.
 * **Giá trị Vàng Mang Lại:** Bảo vệ 100% không gian riêng tư cho lãnh đạo cấp cao; loại bỏ hoàn toàn rủi ro spam; tạo niềm tin tối đa để doanh nhân chia sẻ thông tin trong cộng đồng.
 * **Minh chứng Live Domain:** Đã kiểm thử trực tiếp tại `https://ceo1983.viconnect.vn/association/card`.
-  * *Hình ảnh minh chứng:* `document/evidence_exact_15/req02_app_the_vip_baomat.png`
+  * *Hình ảnh minh chứng:* `document/evidence_exact_15/req02_app_the_doanh_nhan_so_baomat.png`
 
 ---
 

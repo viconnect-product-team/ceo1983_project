@@ -310,10 +310,17 @@ function RenewalPage() {
     if (!confirm(t("renewal.confirmCancel"))) return;
     const cleanId = rec.member.id || rec.member.code || rec.id.replace(/^RNW-/, "");
     try {
-      await cancelFn({ data: { id: cleanId } });
+      await fetchNestApi(`/members/${cleanId}/cancel-renewal`, {
+        method: "POST",
+      });
       toast.success(t("renewal.toast.cancelled"));
-    } catch (e: any) {
-      toast.error(e?.message || "Không thể hủy gia hạn");
+    } catch {
+      try {
+        await cancelFn({ data: { id: cleanId } });
+        toast.success(t("renewal.toast.cancelled"));
+      } catch (e: any) {
+        toast.error(e?.message || "Không thể hủy gia hạn");
+      }
     }
     await invalidateAll();
   };
@@ -564,6 +571,9 @@ function RenewalPage() {
                   sortDir={tc.sortDir}
                   onSort={tc.toggleSort}
                 />
+                <th className="px-4 py-3 text-right font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap min-w-[130px] border-b border-border">
+                  Số tiền hội phí
+                </th>
                 <th className="sticky right-0 z-20 min-w-[140px] bg-secondary px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]">
                   {t("renewal.col.actions")}
                 </th>
@@ -572,7 +582,7 @@ function RenewalPage() {
             <tbody>
               {tc.pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={11} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     {t("renewal.empty")}
                   </td>
                 </tr>
@@ -656,6 +666,11 @@ function RenewalPage() {
                       status={r.paymentStatus}
                       onChange={(s) => handlePayment(r, s)}
                     />
+                  </td>
+                  <td className="px-4 py-3 border-b border-border text-right font-mono font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                    {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                      (r.member as any)?.feeAmount || (r.member as any)?.fee_amount || (r.member?.level === "vip" ? 15000000 : 10000000)
+                    )}
                   </td>
                   <td className="sticky right-0 z-10 min-w-[140px] bg-card group-hover:bg-muted/70 px-4 py-3 text-right border-l border-b border-border shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] transition-colors">
                     <div className="flex items-center justify-end gap-1.5">

@@ -22,12 +22,12 @@
   - [Chặng 1: Khởi động, Giới thiệu hai bên & Ấn định thời gian (09:00 - 09:10)](#chặng-1-khởi-động-giới-thiệu-hai-bên--ấn-định-thời-gian-0900---0910)
   - [Chặng 2: Trình bày sản phẩm & Thứ tự thao tác Live Demo Song Song (09:10 - 09:45)](#chặng-2-trình-bày-sản-phẩm--thứ-tự-thao-tác-live-demo-song-song-0910---0945)
     - [Quy trình 1: Đăng ký, Đăng nhập & Thẩm định tài khoản](#quy-trình-1-đăng-ký-đăng-nhập--thẩm-định-tài-khoản)
-    - [Quy trình 2: Quản trị Hội viên, Thẻ VIP số & Danh thiếp thông minh QR vCard](#quy-trình-2-quản-trị-hội-viên-thẻ-vip-số--danh-thiếp-thông-minh-qr-vcard)
+    - [Quy trình 2: Quản trị Hội viên, Thẻ Doanh Nhân Số số & Danh thiếp thông minh QR vCard](#quy-trình-2-quản-trị-hội-viên-thẻ-vip-số--danh-thiếp-thông-minh-qr-vcard)
     - [Quy trình 3: Quản lý Sự kiện, Đăng ký vé điện tử E-Ticket & Soát vé Check-in 1 giây](#quy-trình-3-quản-lý-sự-kiện-đăng-ký-vé-điện-tử-e-ticket--soát-vé-check-in-1-giây)
     - [Quy trình 4: Gian hàng Sản phẩm Marketplace B2B & Gói tài trợ doanh nghiệp](#quy-trình-4-gian-hàng-sản-phẩm-marketplace-b2b--gói-tài-trợ-doanh-nghiệp)
     - [Quy trình 5: Cơ hội kinh doanh & Ghép nối Deal Cung - Cầu thời gian thực](#quy-trình-5-cơ-hội-kinh-doanh--ghép-nối-deal-cung---cầu-thời-gian-thực)
     - [Quy trình 6: Mạng lưới Kết nối Giao thương B2B & Lịch hẹn 1-on-1](#quy-trình-6-mạng-lưới-kết-nối-giao-thương-b2b--lịch-hẹn-1-on-1)
-    - [Quy trình 7 (Điểm sáng ViConnect): Phân hệ Thu - Chi tự động VietQR & Sổ quỹ Thông tư 200](#quy-trình-7-điểm-sáng-viconnect-phân-hệ-thu---chi-tự-động-vietqr--sổ-quỹ-thông-tư-200)
+    - [Quy trình 7 (Điểm sáng ViConnect): Phân hệ Thu - Chi tự động Mã QR Ngân Hàng & Sổ quỹ Thông tư 200](#quy-trình-7-điểm-sáng-viconnect-phân-hệ-thu---chi-tự-động-mã QR ngân hàng--sổ-quỹ-thông-tư-200)
     - [Quy trình 8: Tháp chỉ huy Executive Dashboard 360 độ & Ma trận phân quyền 6 Ban](#quy-trình-8-tháp-chỉ-huy-executive-dashboard-360-độ--ma-trận-phân-quyền-6-ban)
   - [Chặng 3: Điều phối Phiên nhận xét từ Đối tác (09:45 - 10:45)](#chặng-3-điều-phối-phiên-nhận-xét-từ-đối-tác-0945---1045)
   - [Chặng 4: Tổng kết cuộc họp: "Cái gì chốt - Cái gì sửa" & Cam kết văn bản (10:45 - 12:00)](#chặng-4-tổng-kết-cuộc-họp-cái-gì-chốt---cái-gì-sửa--cam-kết-văn-bản-1045---1200)
@@ -81,7 +81,7 @@
 
 ### Slide 5: Tổng Quan Kiến Trúc Song Song (Mobile App vs Web CRM)
 - **Sơ đồ đối sánh 2 luồng trải nghiệm đồng bộ thời gian thực:**
-  - **Phía Hội Viên (Mobile App):** Đăng ký nhanh -> Kích hoạt Thẻ VIP & QR vCard -> Đăng ký Vé sự kiện -> Đăng bán Sản phẩm -> Đăng Deal Cung/Cầu -> Đặt lịch hẹn 1-on-1.
+  - **Phía Hội Viên (Mobile App):** Đăng ký nhanh -> Kích hoạt Thẻ Doanh Nhân Số & QR vCard -> Đăng ký Vé sự kiện -> Đăng bán Sản phẩm -> Đăng Deal Cung/Cầu -> Đặt lịch hẹn 1-on-1.
   - **Phía Ban Điều Hành (Web CRM):** Duyệt hồ sơ & Phân ban -> Cấp mã M1983 tự động -> Cấu hình Sự kiện & Soát vé QR 1 giây -> Duyệt Gian hàng & Tài trợ -> Đo lường Giá trị Deal -> Quản trị Phân quyền RBAC 6 Ban.
 
 ### Slide 6: Song Song 1 - Đăng Ký, Đăng Nhập & Quy Trình Thẩm Định Hội Viên
@@ -93,7 +93,7 @@
   - Ban Thành Viên kiểm tra thông tin, duyệt kết nạp, hệ thống tự sinh mã định danh duy nhất (M1983-xxx).
   - Tự động kích hoạt tài khoản và gửi email thông báo kèm mã QR đăng nhập cho hội viên.
 
-### Slide 7: Song Song 2 - Quản Trị Hội Viên: Thẻ VIP & QR vCard vs Quản Lý Danh Bạ 11 Ngành
+### Slide 7: Song Song 2 - Quản Trị Hội Viên: Thẻ Doanh Nhân Số & QR vCard vs Quản Lý Danh Bạ 11 Ngành
 - **Nửa trái (Mobile App):**
   - **Thẻ Hội Viên Điện Tử Thông Minh:** Nền Obsidian/Cobalt Navy sang trọng, mã số M1983, mã QR cá nhân, hợp đồng hội viên.
   - **Danh thiếp thông minh QR vCard:** Khách quét bằng camera thường lưu thẳng danh bạ điện thoại không cần cài app.
@@ -106,7 +106,7 @@
 ### Slide 8: Song Song 3 - Quản Lý Sự Kiện: Vé E-Ticket vs Thiết Lập Sự Kiện & Soát Vé 1 Giây
 - **Nửa trái (Mobile App):**
   - Danh sách sự kiện sắp diễn ra, xem chi tiết diễn giả và sơ đồ bàn tiệc.
-  - Đăng ký tham dự: Tách bạch vé miễn phí và vé có phí (kèm mã VietQR thanh toán tự động).
+  - Đăng ký tham dự: Tách bạch vé miễn phí và vé có phí (kèm mã QR ngân hàng thanh toán tự động).
   - Ví vé điện tử E-Ticket: Mã QR vé sắc nét (hỗ trợ offline cache), hiển thị vị trí bàn ngồi và số quay thưởng Lucky Draw.
 - **Nửa phải (Web CRM):**
   - Trình tạo sự kiện trực quan: Tự động điền Tagline thông điệp, bản đồ ghim vị trí kéo thả Leaflet OSM.
@@ -146,7 +146,7 @@
 - **Ý nghĩa:** Chức năng xuất phát từ sự thấu hiểu sâu sắc của Đội ngũ Kỹ thuật ViConnect (ngoài 3 yêu cầu ban đầu của CLB).
 - **Quy trình dòng tiền khép kín 4 bước:**
   1. Lập dự toán thu chi cho sự kiện / định kỳ niên khóa.
-  2. Thu tự động qua cổng VietQR Napas 24/7 (gạch nợ tự động sau 1 giây).
+  2. Thu tự động qua cổng thanh toán QR ngân hàng Napas 24/7 (gạch nợ tự động sau 1 giây).
   3. Quản lý Tạm ứng kinh phí cho Ban Sự kiện và các ban chuyên trách.
   4. Hoàn ứng tiền thừa & Tự động kết xuất Sổ Quỹ Tiền Mặt và Tiền Gửi Ngân Hàng chuẩn mẫu S07-DN / S03a-DNN theo Thông tư 200/2014/TT-BTC nộp HanoiBA.
 
@@ -184,7 +184,7 @@
     + Chốt trọn vẹn 30 chức năng cốt lõi (Mobile App & Web CRM).
     + Chốt toàn bộ kiến trúc CSDL PostgreSQL thật, không mock data.
     + Chốt chuẩn nhận diện Deep Cobalt Navy `#003B95` & Warm Amber Gold.
-    + Chốt phân hệ Thu Chi tự động VietQR và Sổ quỹ chuẩn Thông tư 200.
+    + Chốt phân hệ Thu Chi tự động Mã QR Ngân Hàng và Sổ quỹ chuẩn Thông tư 200.
   - **CÁI GÌ SỬA (Tinh chỉnh Minor tiếp thu từ phiên họp):**
     + Tiếp thu toàn bộ các góp ý phân loại P0/P1 tại Phiên nhận xét.
     + Cam kết thời gian hoàn thành xử lý triệt để: **Trong vòng 48 giờ**.
@@ -285,7 +285,7 @@
 
 ---
 
-#### QUY TRÌNH 2: QUẢN TRỊ HỘI VIÊN, THẺ VIP SỐ & DANH THIẾP THÔNG MINH QR vCARD
+#### QUY TRÌNH 2: QUẢN TRỊ HỘI VIÊN, THẺ DOANH NHÂN SỐ SỐ & DANH THIẾP THÔNG MINH QR vCARD
 
 | Thiết Bị | Thao Tác Thao Diễn Thực Tế (Action Steps) | Câu Văn Lời Nói Diễn Giả (Verbatim Script) |
 |---|---|---|
@@ -299,7 +299,7 @@
 | Thiết Bị | Thao Tác Thao Diễn Thực Tế (Action Steps) | Câu Văn Lời Nói Diễn Giả (Verbatim Script) |
 |---|---|---|
 | **Máy tính (CRM)** | 1. Trên Web CRM, bấm vào **Quản lý sự kiện (`/events`)**.<br>2. Bấm [Tạo sự kiện mới].<br>3. Nhập Tên sự kiện: *'Đêm Gala Doanh Nhân 1983 - Hội Tụ Tinh Hoa'*.<br>4. Nhập Tagline khẩu hiệu banner -> Banner xem trước cập nhật ngay tức thì.<br>5. Mở bản đồ Leaflet OSM: gõ địa chỉ hoặc kéo thả điểm ghim đỏ trên bản đồ trực quan.<br>6. Thiết lập 2 hạng vé: Vé Hội viên (0đ) và Vé Khách mời VIP (500.000đ).<br>7. Bấm [Xuất bản sự kiện]. | *“Bây giờ, hãy cùng xem cách Ban Sự Kiện chuẩn bị cho một kỳ Gala. Trên Web CRM, thao tác tạo sự kiện vô cùng nhanh chóng. Bản đồ định vị hỗ trợ kéo thả ghim vị trí chuẩn xác như ứng dụng gọi xe. Tagline hiển thị trực tiếp trên banner xem trước. Ban tổ chức dễ dàng phân tách các hạng vé miễn phí cho hội viên và vé có phí cho đối tác khách mời.”* |
-| **Điện thoại (App)** | 1. Mở App, màn hình Trang chủ lập tức xuất hiện Sự kiện vừa tạo trên Banner nổi bật.<br>2. Chạm vào sự kiện, bấm [Đăng ký vé tham dự].<br>3. Chọn vé có phí -> Hệ thống hiện mã VietQR với đúng số tiền và nội dung chuyển khoản tự động.<br>4. Giả lập thanh toán thành công -> Mở mục **Ví vé của tôi (`/events`)**: Xuất hiện Vé điện tử E-Ticket với mã QR sắc nét, số ghế bàn tiệc Bàn 08 và mã số dự thưởng Lucky Draw số 1983. | *“Phía hội viên, sự kiện hiển thị ngay trên đầu ứng dụng. Khi đăng ký vé có phí, mã VietQR tự động xuất hiện với số tiền và cú pháp chuẩn. Sau khi xác nhận thanh toán, hội viên nhận ngay Vé điện tử E-Ticket hiển thị sắc nét trên điện thoại, ghi rõ vị trí ngồi bàn tiệc và số may mắn Lucky Draw. Mã vé này được lưu đệm offline, kể cả khi vào trung tâm hội nghị mất sóng 4G vẫn mở ra quét bình thường!”* |
+| **Điện thoại (App)** | 1. Mở App, màn hình Trang chủ lập tức xuất hiện Sự kiện vừa tạo trên Banner nổi bật.<br>2. Chạm vào sự kiện, bấm [Đăng ký vé tham dự].<br>3. Chọn vé có phí -> Hệ thống hiện mã QR ngân hàng với đúng số tiền và nội dung chuyển khoản tự động.<br>4. Giả lập thanh toán thành công -> Mở mục **Ví vé của tôi (`/events`)**: Xuất hiện Vé điện tử E-Ticket với mã QR sắc nét, số ghế bàn tiệc Bàn 08 và mã số dự thưởng Lucky Draw số 1983. | *“Phía hội viên, sự kiện hiển thị ngay trên đầu ứng dụng. Khi đăng ký vé có phí, mã QR ngân hàng tự động xuất hiện với số tiền và cú pháp chuẩn. Sau khi xác nhận thanh toán, hội viên nhận ngay Vé điện tử E-Ticket hiển thị sắc nét trên điện thoại, ghi rõ vị trí ngồi bàn tiệc và số may mắn Lucky Draw. Mã vé này được lưu đệm offline, kể cả khi vào trung tâm hội nghị mất sóng 4G vẫn mở ra quét bình thường!”* |
 | **Máy tính (CRM) & Điện thoại soát vé** | 1. Mở màn hình **Quản lý đăng ký sự kiện (`event-registrations.tsx`)** trên Web CRM.<br>2. Bật camera máy quét QR (trên điện thoại ban tổ chức hoặc máy tính).<br>3. Hướng camera quét mã QR trên vé điện thoại vừa mở.<br>4. Âm thanh bíp phát ra, màn hình nhảy thông báo xanh lá: *'Check-in Thành Công: CEO Nguyễn Văn A - Bàn 08'*.<br>5. Danh sách người có mặt trên CRM tăng lên theo thời gian thực.<br>6. Mở tab **Vòng quay may mắn (Lucky Draw)** -> Danh sách người quay thưởng tự động tải 100% những người đã check-in thực tế. | *“Và đây là khoảnh khắc tại cửa đón tiếp sự kiện! Ban Tổ Chức cầm điện thoại quét mã QR trên vé của đại biểu. Tốc độ nhận diện dưới đúng 1 giây! Khách đến đâu, hệ thống điểm danh đến đó, màn hình CRM nhảy số đại biểu có mặt theo thời gian thực. Đặc biệt, danh sách quay thưởng may mắn Lucky Draw tự động đồng bộ đúng những người đã có mặt tại hội trường, tuyệt đối minh bạch, chống hoàn toàn việc người vắng mặt lại trúng giải!”* |
 
 ---
@@ -331,11 +331,11 @@
 
 ---
 
-#### QUY TRÌNH 7 (ĐIỂM SÁNG VICONNECT): PHÂN HỆ THU - CHI TỰ ĐỘNG VIETQR & SỔ QUỸ THÔNG TƯ 200
+#### QUY TRÌNH 7 (ĐIỂM SÁNG VICONNECT): PHÂN HỆ THU - CHI TỰ ĐỘNG MÃ QR NGÂN HÀNG & SỔ QUỸ THÔNG TƯ 200
 
 | Thiết Bị | Thao Tác Thao Diễn Thực Tế (Action Steps) | Câu Văn Lời Nói Diễn Giả (Verbatim Script) |
 |---|---|---|
-| **Máy tính (CRM)** | 1. Mở phân hệ **Tài chính - Thu Chi (`/income`, `/expenses`, `/finance-report`)**.<br>2. Xem danh sách Phiếu Thu: Phí niên liễm, Vé sự kiện, Thu tài trợ.<br>3. Xem danh sách Phiếu Chi: Tạm ứng kinh phí cho Ban Sự Kiện tổ chức Gala, Hoàn ứng tiền thừa khi quyết toán thực tế.<br>4. Mở báo cáo dòng tiền, bấm nút **[Xuất Sổ Quỹ Tiền Mặt (Mẫu S07-DN)]** và **[Sổ Tiền Gửi Ngân Hàng (Mẫu S03a-DNN)]**.<br>5. Mở file Excel vừa xuất: hiển thị đầy đủ công thức Tồn đầu kỳ, Thu, Chi, Tồn cuối kỳ, đọc số tiền bằng chữ tiếng Việt chuẩn xác. | *“Kính thưa anh Chủ tịch và các anh chị! Em xin được nhấn mạnh: **Trong 3 yêu cầu ban đầu của CLB, hoàn toàn chưa có phân hệ Thu - Chi này!** Đây chính là sự trăn trở và nhìn nhận ra từ thực tiễn của đội ngũ kỹ thuật ViConnect! Bởi vì chúng em nhận thấy: Sự kiện và Hội viên không thể nào tách rời khỏi dòng tiền! Nếu không có phân hệ này, sau mỗi kỳ Gala, Ban Tài chính và Ban Sự kiện sẽ rơi vào một ma trận tạm ứng, hoàn ứng, hóa đơn chứng từ vô cùng áp lực. Nhờ phân hệ Thu Chi tích hợp cổng VietQR Napas gạch nợ 1 giây và tự động xuất Sổ Quỹ chuẩn Thông tư 200/2014/TT-BTC có công thức sẵn, CLB có ngay báo cáo tài chính minh bạch 100% để nộp lên HanoiBA bất kỳ lúc nào!”* |
+| **Máy tính (CRM)** | 1. Mở phân hệ **Tài chính - Thu Chi (`/income`, `/expenses`, `/finance-report`)**.<br>2. Xem danh sách Phiếu Thu: Phí niên liễm, Vé sự kiện, Thu tài trợ.<br>3. Xem danh sách Phiếu Chi: Tạm ứng kinh phí cho Ban Sự Kiện tổ chức Gala, Hoàn ứng tiền thừa khi quyết toán thực tế.<br>4. Mở báo cáo dòng tiền, bấm nút **[Xuất Sổ Quỹ Tiền Mặt (Mẫu S07-DN)]** và **[Sổ Tiền Gửi Ngân Hàng (Mẫu S03a-DNN)]**.<br>5. Mở file Excel vừa xuất: hiển thị đầy đủ công thức Tồn đầu kỳ, Thu, Chi, Tồn cuối kỳ, đọc số tiền bằng chữ tiếng Việt chuẩn xác. | *“Kính thưa anh Chủ tịch và các anh chị! Em xin được nhấn mạnh: **Trong 3 yêu cầu ban đầu của CLB, hoàn toàn chưa có phân hệ Thu - Chi này!** Đây chính là sự trăn trở và nhìn nhận ra từ thực tiễn của đội ngũ kỹ thuật ViConnect! Bởi vì chúng em nhận thấy: Sự kiện và Hội viên không thể nào tách rời khỏi dòng tiền! Nếu không có phân hệ này, sau mỗi kỳ Gala, Ban Tài chính và Ban Sự kiện sẽ rơi vào một ma trận tạm ứng, hoàn ứng, hóa đơn chứng từ vô cùng áp lực. Nhờ phân hệ Thu Chi tích hợp cổng thanh toán QR ngân hàng Napas gạch nợ 1 giây và tự động xuất Sổ Quỹ chuẩn Thông tư 200/2014/TT-BTC có công thức sẵn, CLB có ngay báo cáo tài chính minh bạch 100% để nộp lên HanoiBA bất kỳ lúc nào!”* |
 
 ---
 
@@ -381,7 +381,7 @@
 - *Hai bên chính thức thống nhất **chốt Đóng Băng Phạm Vi (Scope Freeze) cho toàn bộ 30 chức năng cốt lõi** của Hệ sinh thái số CEO 1983 trên cả hai nền tảng Mobile App và Web CRM.*
 - *Chốt 100% dữ liệu danh bạ, tài chính, sự kiện chạy trực tiếp trên cơ sở dữ liệu PostgreSQL máy chủ thật, bảo mật an toàn, không có dữ liệu ảo hay mock data.*
 - *Chốt chuẩn nhận diện hình ảnh sang trọng Deep Cobalt Navy `#003B95` và Warm Amber Gold của CEO 1983.*
-- *Chốt phân hệ Quản lý Thu Chi tự động VietQR Napas và trích xuất Sổ Quỹ chuẩn Thông tư 200/2014/TT-BTC là cấu phần chính thức phục vụ báo cáo HanoiBA.*
+- *Chốt phân hệ Quản lý Thu Chi tự động Mã QR Ngân Hàng Napas và trích xuất Sổ Quỹ chuẩn Thông tư 200/2014/TT-BTC là cấu phần chính thức phục vụ báo cáo HanoiBA.*
 
 ### 2. VỀ NHỮNG NỘI DUNG SỬA (CÁC TINH CHỈNH MINOR TIẾP THU TỪ CUỘC HỌP):
 - *Toàn bộ các ý kiến đóng góp được phân loại mức độ **P0 và P1** ghi nhận trong bảng biểu trên màn hình, ViConnect cam kết: **Sẽ hoàn thiện và kiểm thử tự động toàn diện trong vòng 48 giờ tới**!*
