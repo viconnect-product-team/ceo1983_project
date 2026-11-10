@@ -4,8 +4,10 @@ import { getPublicLandingWebFn } from "@/lib/landing-webs.functions";
 import {
   TimedCardsOpeningLanding,
   type LandingWebConfig,
+  DEFAULT_FORGE_LUXURY_ATELIER_CONFIG,
 } from "@/components/landing/TimedCardsOpeningLanding";
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
+import { ForgeLuxuryAtelierLanding } from "@/components/landing/ForgeLuxuryAtelierLanding";
 import { Globe, ArrowLeft } from "lucide-react";
 
 const FALLBACK_V1_CONFIG: LandingWebConfig = {
@@ -110,6 +112,43 @@ const FALLBACK_V2_CONFIG: LandingWebConfig = {
   },
 };
 
+const FALLBACK_V3_CONFIG: LandingWebConfig = {
+  id: "lw_forge_luxury_atelier_default",
+  name: "CEO 1983 Bespoke Atelier — SOTD Award Winner (Mẫu 3)",
+  slug: "web-v3",
+  subdomain: "web-v3",
+  isPublished: true,
+  template: "forge_luxury_atelier",
+  theme: {
+    primaryColor: "#C5A880",
+    secondaryColor: "#0A0A0A",
+    textColor: "#EDEDED",
+    backgroundColor: "#070707",
+    fontFamily: "Cinzel, Inter, sans-serif",
+  },
+  brand: {
+    logoText: "CEO 1983 Atelier",
+    logoIcon: "crown",
+    contactPhone: "0983.1983.83",
+    contactEmail: "contact@ceo1983.viconnect.vn",
+  },
+  navMenu: [
+    { id: "m1", label: "Triết Lý", url: "#approach" },
+    { id: "m2", label: "Phân Hệ Atelier", url: "#specialties" },
+    { id: "m3", label: "Dự Án Đỉnh Cao", url: "#builds" },
+    { id: "m4", label: "Đặc Quyền Hội Viên", url: "#stock" },
+    { id: "m5", label: "Liên Hệ", url: "#enquire" },
+  ],
+  slides: [],
+  subScreens: [],
+  forgeAtelierConfig: DEFAULT_FORGE_LUXURY_ATELIER_CONFIG,
+  apiConfig: {
+    enabled: false,
+    endpointUrl: "",
+    rootPath: "",
+  },
+};
+
 export const Route = createFileRoute("/landing/$slug")({
   ssr: false,
   component: PublicLandingPage,
@@ -136,10 +175,12 @@ function PublicLandingPage() {
     );
   }
 
-  // Active configuration: prioritize server data, fallback to predefined templates for web-v1 & web-v2
+  // Active configuration: prioritize server data, fallback to predefined templates for web-v1, web-v2, web-v3
   const effectiveConfig =
     landingWeb ||
-    (["web-v2", "web2", "web-2", "v2", "app-ceo1983", "startup-mobile-showcase"].includes(cleanSlug)
+    (["web-v3", "web3", "web-3", "v3", "forge-atelier", "luxury-atelier"].includes(cleanSlug)
+      ? FALLBACK_V3_CONFIG
+      : ["web-v2", "web2", "web-2", "v2", "app-ceo1983", "startup-mobile-showcase"].includes(cleanSlug)
       ? FALLBACK_V2_CONFIG
       : ["web-v1", "web1", "web-1", "v1", "kham-pha-toan-cau", "timed-cards-opening"].includes(cleanSlug)
       ? FALLBACK_V1_CONFIG
@@ -168,6 +209,10 @@ function PublicLandingPage() {
         </a>
       </div>
     );
+  }
+
+  if (effectiveConfig.template === "forge_luxury_atelier") {
+    return <ForgeLuxuryAtelierLanding config={effectiveConfig} />;
   }
 
   if (effectiveConfig.template === "startup_mobile_showcase") {

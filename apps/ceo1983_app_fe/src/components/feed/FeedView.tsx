@@ -48,6 +48,9 @@ import { EditPostModal } from "./EditPostModal";
 import { CommentTreeSection } from "./CommentTreeSection";
 import { QuickRegisterMeetingModal } from "./QuickRegisterMeetingModal";
 import { QrCanvas } from "../member/QrCanvas";
+import { CategoryTreeModal } from "./CategoryTreeModal";
+import { CommentBottomSheetModal } from "./CommentBottomSheetModal";
+import { FolderTree } from "lucide-react";
 
 export const COMMENT_EMOTIONS = [
   { id: "like", emoji: "👍", label: "Thích" },
@@ -420,6 +423,8 @@ export function FeedView({
     return Boolean(initialShare?.url || initialShare?.title || initialShare?.text);
   });
   const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
+  const [isTreeModalOpen, setIsTreeModalOpen] = useState(false);
+  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
 
   const handleDeletePost = async (postId: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này khỏi bảng tin?")) return;
@@ -830,22 +835,51 @@ export function FeedView({
 
   return (
     <div className="w-full flex flex-col font-sans">
-      {/* ── TOP ACTION BAR: CATEGORIES & CREATE POST (CLEAN, NO DUPLICATE SEARCH) ── */}
-      <div className="px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+      {/* ── BAR ĐĂNG BÀI VIẾT MỚI (THEO CHUẨN GIAO DIỆN USER) ── */}
+      <div className="w-full px-4 pt-3 flex flex-col justify-start items-start gap-2.5 bg-white dark:bg-slate-900">
+        <div 
+          onClick={() => setCreateModalOpen(true)}
+          className="w-full inline-flex justify-between items-center py-1 cursor-pointer"
+        >
+          <div className="flex justify-start items-center gap-2">
+            <div className="h-9 px-2.5 py-1.5 bg-[#DC2626] rounded-[99px] flex justify-start items-center gap-2.5 shadow-xs">
+              <img src="/icons/feed/TA.svg" alt="TA" className="h-4 w-auto" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+            </div>
+            <div className="text-slate-800 dark:text-slate-200 text-sm font-normal font-['Inter'] leading-5">
+              Đăng bài viết mới...
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCreateModalOpen(true);
+            }}
+            className="p-1.5 rounded-lg outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex justify-start items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+            title="Tạo bài viết mới"
+          >
+            <img src="/icons/feed/add-01.svg" alt="Add" className="size-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── TAB DANH MỤC ROUNDED-[99PX] + NÚT CÂY DANH MỤC CHUYÊN SÂU ── */}
+      <div className="w-full px-4 pt-4 pb-2 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
         <div className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-1.5 py-0.5">
           {CATEGORY_TABS.map((tab) => {
             const isSelected = selectedCategory === tab.id;
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => {
                   setSelectedCategory(tab.id);
                   if (tab.id !== "NEWS") setSelectedDepartment("ALL");
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 ${
+                className={`px-3 py-1.5 rounded-[99px] outline outline-1 outline-offset-[-1px] text-sm transition cursor-pointer shrink-0 ${
                   isSelected
-                    ? "bg-[#1F3864] text-white shadow-xs ring-1 ring-[#1F3864]"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700"
+                    ? "bg-[#DC2626] text-white font-semibold outline-[#DC2626] shadow-xs"
+                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-normal outline-slate-200 dark:outline-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 {tab.label}
@@ -854,13 +888,14 @@ export function FeedView({
           })}
         </div>
 
+        {/* Nút mở Cây danh mục (Category Tree) */}
         <button
           type="button"
-          onClick={() => setCreateModalOpen(true)}
-          className="px-3.5 py-1.5 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition cursor-pointer shrink-0"
+          onClick={() => setIsTreeModalOpen(true)}
+          className="p-1.5 rounded-lg outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-[#003B95] dark:text-amber-400 transition cursor-pointer shrink-0"
+          title="Xem cây danh mục"
         >
-          <Plus className="size-3.5 text-amber-400" />
-          <span>Đăng bài</span>
+          <FolderTree className="size-5" />
         </button>
       </div>
 
@@ -955,7 +990,7 @@ export function FeedView({
                 {/* Post Header: Avatar, Name, Dept, Time, Badge */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="size-10 rounded-2xl overflow-hidden bg-[#1F3864] flex items-center justify-center text-amber-300 font-bold text-xs ring-1 ring-slate-200 dark:ring-slate-700 shrink-0">
+                    <div className="size-10 bg-blue-900 rounded-[20px] flex justify-center items-center overflow-hidden shrink-0">
                       {post.authorAvatar ? (
                         <img
                           src={resolveMediaUrl(post.authorAvatar) || post.authorAvatar}
@@ -963,28 +998,29 @@ export function FeedView({
                           className="size-full object-cover"
                         />
                       ) : (
-                        <span>{(post.authorName || "CEO")[0]}</span>
+                        <span className="text-amber-300 font-bold text-xs">{(post.authorName || "CEO")[0]}</span>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {post.authorName || "Hội viên CLB CEO 1983"}
-                        </h4>
+                    <div className="flex-1 flex flex-col justify-start items-start overflow-hidden">
+                      <h4 className="text-slate-900 dark:text-white text-sm font-semibold font-['Inter'] leading-5 truncate w-full">
+                        {post.authorName || "Hội viên CLB CEO 1983"}
+                      </h4>
+                      <div className="pt-0.5 flex items-center gap-1.5 overflow-hidden text-xs text-slate-400 font-normal font-['Inter'] leading-4">
+                        <span>{formatRelativeTime(post.createdAt)}</span>
                         {post.department && (
-                          <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 whitespace-nowrap">
-                            {post.department}
-                          </span>
+                          <>
+                            <div className="size-[3px] bg-slate-300 dark:bg-slate-600 rounded-[99px]" />
+                            <span className="truncate">{post.department}</span>
+                          </>
                         )}
                       </div>
-                      <span className="text-[10px] text-slate-400 block truncate">
-                        {formatRelativeTime(post.createdAt)}
-                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {renderCategoryBadge(post.category)}
+                    <div className="px-2 py-[3px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 rounded-[99px] text-xs font-medium font-['Inter'] leading-4">
+                      {CATEGORY_TABS.find(t => t.id === post.category)?.label || "Tin tức CLB"}
+                    </div>
                     {(() => {
                       const isMyPost = Boolean(
                         user &&
@@ -1215,41 +1251,74 @@ export function FeedView({
 
                   return (
                     <div className="space-y-2.5">
-                      {/* Danh sách người tham gia được tag tên & check-in */}
-                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                          <span className="flex items-center gap-1.5">
-                            <Users className="size-3.5 text-[#1F3864] dark:text-amber-400" />
-                            <span>
-                              Thành viên tham dự ({checkedInCount}/{attendeesList.length})
-                            </span>
-                          </span>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <CheckCircle2 className="size-3" />
-                            Điểm danh điện tử
-                          </span>
+                      {/* Box thành viên tham dự theo chuẩn mockup user */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl flex flex-col justify-start items-start gap-2 border border-slate-100 dark:border-slate-800">
+                        <div className="w-full inline-flex justify-between items-center">
+                          <div className="text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
+                            Thành viên tham dự ({checkedInCount} / {attendeesList.length})
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRegisteringMeeting({
+                                id: post.id,
+                                title: (post.content || "Cuộc họp / Diễn đàn CLB CEO 1983").slice(0, 80),
+                                time: post.meetingTime,
+                                location: post.meetingLocation,
+                                isOnline: post.isOnline,
+                                department: post.department,
+                                posterName: post.authorName,
+                                qrCodeUrl: post.qrCodeUrl,
+                              })
+                            }
+                            className="inline-flex justify-start items-center gap-1 text-[#003B95] dark:text-blue-400 text-xs font-medium font-['Inter'] leading-4 hover:underline cursor-pointer"
+                          >
+                            <span>Xem tất cả</span>
+                            <img src="/icons/feed/arrow-right-02.svg" alt="Arrow" className="size-3.5" />
+                          </button>
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="w-full inline-flex justify-start items-center gap-1.5 flex-wrap">
                           {attendeesList.map((att) => (
-                            <span
+                            <div
                               key={att.id}
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition ${
-                                att.checkedIn
-                                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                              }`}
+                              className="size-7 bg-blue-900 rounded-[14px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-800"
+                              title={att.name}
                             >
-                              <span className="font-bold">@{att.name}</span>
-                              {att.checkedIn ? (
-                                <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-emerald-900/60 px-1 rounded-md">
-                                  <Check className="size-2.5" />
-                                  Đã Check-in
-                                </span>
+                              {att.avatar ? (
+                                <img src={att.avatar} alt={att.name} className="size-full object-cover" />
                               ) : (
-                                <span className="text-[9.5px] text-slate-400">Chờ Check-in</span>
+                                <span className="text-[10px] font-bold text-white uppercase">{att.name[0]}</span>
                               )}
-                            </span>
+                            </div>
                           ))}
+                        </div>
+                      </div>
+
+                      {/* Dòng đăng ký tham gia */}
+                      <div className="w-full py-1 flex flex-col justify-start items-start">
+                        <div className="w-full inline-flex justify-between items-center">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRegisteringMeeting({
+                                id: post.id,
+                                title: (post.content || "Cuộc họp / Diễn đàn CLB CEO 1983").slice(0, 80),
+                                time: post.meetingTime,
+                                location: post.meetingLocation,
+                                isOnline: post.isOnline,
+                                department: post.department,
+                                posterName: post.authorName,
+                                qrCodeUrl: post.qrCodeUrl,
+                              })
+                            }
+                            className="inline-flex justify-start items-center gap-1.5 text-[#003B95] dark:text-blue-400 text-xs font-semibold font-['Inter'] leading-4 hover:underline cursor-pointer"
+                          >
+                            <span>Đăng ký tham gia</span>
+                            <img src="/icons/feed/arrow-right-02.svg" alt="Arrow" className="size-3.5" />
+                          </button>
+                          <div className="text-slate-400 dark:text-slate-500 text-xs font-normal font-['Inter'] leading-4">
+                            {post.meetingTime ? `Hạn: ${post.meetingTime}` : "Hạn: 15/11/2026"}
+                          </div>
                         </div>
                       </div>
 
@@ -1364,49 +1433,48 @@ export function FeedView({
                   );
                 })()}
 
-                {/* Actions Footer: Like on the left; Comment and Share on the right */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  {/* Like */}
+                {/* Actions Footer: Like on the left; Comment and Share on the right (Chuẩn Mockup User) */}
+                <div className="pt-3 inline-flex justify-between items-center border-t border-slate-100 dark:border-slate-800 text-xs">
+                  {/* Left: Like with favourite.svg */}
                   <button
                     type="button"
                     onClick={() => handleLike(post)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
-                      post.hasLiked
-                        ? "text-amber-600 bg-amber-50 dark:bg-amber-950/20 font-bold"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                    }`}
+                    className="flex justify-start items-center gap-1.5 hover:opacity-80 transition cursor-pointer"
                   >
-                    <Heart
-                      className={`size-4 ${
-                        post.hasLiked ? "fill-amber-500 text-amber-500" : "text-slate-500"
-                      }`}
+                    <img
+                      src="/icons/feed/favourite.svg"
+                      alt="Like"
+                      className={`size-5 transition ${post.hasLiked ? "brightness-75 filter hue-rotate-320" : ""}`}
                     />
-                    <span>{post.likesCount || 0}</span>
+                    <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">
+                      {post.likesCount || 0}
+                    </div>
                   </button>
 
-                  <div className="flex items-center gap-1">
-                    {/* Bấm vào icon bình luận để mở/thu gọn xem tất cả bình luận */}
+                  {/* Right: Comments and Share */}
+                  <div className="flex justify-start items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => toggleCommentsVisibility(post.id)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition cursor-pointer text-xs font-semibold ${
-                        isCommentsOpen
-                          ? "text-[#1F3864] dark:text-amber-400 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300/40"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                      }`}
-                      title="Bấm để xem tất cả bình luận"
+                      onClick={() => setActiveCommentPostId(post.id)}
+                      className="flex justify-start items-center gap-1.5 hover:opacity-80 transition cursor-pointer"
+                      title="Mở tất cả bình luận"
                     >
-                      <MessageCircle className="size-3.5" />
-                      <span>{totalCommentsCount}</span>
+                      <img src="/icons/feed/comment add-02.svg" alt="Comment" className="size-5" />
+                      <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">
+                        {totalCommentsCount}
+                      </div>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleShare(post)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="flex justify-start items-center gap-1.5 hover:opacity-80 transition cursor-pointer"
+                      title="Chia sẻ bài viết"
                     >
-                      <Share2 className="size-4 text-slate-500" />
-                      <span>{post.sharesCount || 0}</span>
+                      <img src="/icons/feed/share-01.svg" alt="Share" className="size-5" />
+                      <div className="text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">
+                        {post.sharesCount || 0}
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -1534,6 +1602,32 @@ export function FeedView({
         post={editingPost}
         onClose={() => setEditingPost(null)}
         onSuccess={handlePostSaved}
+      />
+
+      {/* ── COMMENT BOTTOM SHEET MODAL (THEO CHUẨN DESIGN USER) ── */}
+      {activeCommentPostId && (
+        <CommentBottomSheetModal
+          isOpen={Boolean(activeCommentPostId)}
+          postId={activeCommentPostId}
+          onClose={() => setActiveCommentPostId(null)}
+          onCommentCountChange={(cnt) => {
+            setPosts((prev) =>
+              prev.map((p) => (p.id === activeCommentPostId ? { ...p, commentsCount: cnt } : p))
+            );
+          }}
+        />
+      )}
+
+      {/* ── CATEGORY TREE MODAL ── */}
+      <CategoryTreeModal
+        isOpen={isTreeModalOpen}
+        onClose={() => setIsTreeModalOpen(false)}
+        selectedCategory={selectedCategory}
+        selectedDepartment={selectedDepartment}
+        onSelectCategory={(cat, dept) => {
+          setSelectedCategory(cat);
+          setSelectedDepartment(dept);
+        }}
       />
     </div>
   );

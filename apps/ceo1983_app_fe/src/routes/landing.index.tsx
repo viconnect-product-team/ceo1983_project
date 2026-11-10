@@ -7,9 +7,11 @@ import {
   type LandingWebConfig,
 } from "@/components/landing/TimedCardsOpeningLanding";
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
+import { ForgeLuxuryAtelierLanding } from "@/components/landing/ForgeLuxuryAtelierLanding";
 import {
   DEFAULT_TIMED_CARDS_TEMPLATE,
   DEFAULT_STARTUP_MOBILE_TEMPLATE,
+  DEFAULT_FORGE_LUXURY_ATELIER_TEMPLATE,
 } from "@/routes/admin.landing-webs";
 
 export const Route = createFileRoute("/landing/")({
@@ -62,6 +64,10 @@ function LandingPage() {
     // 3. Mặc định: Bản Mẫu 2 Startup Mobile Showcase đang áp dụng
     return DEFAULT_STARTUP_MOBILE_TEMPLATE;
   })();
+
+  if (activeLanding.template === "forge_luxury_atelier") {
+    return <ForgeLuxuryAtelierLanding config={activeLanding} />;
+  }
 
   if (activeLanding.template === "startup_mobile_showcase") {
     return <StartupMobileShowcaseLanding config={activeLanding} />;

@@ -436,14 +436,14 @@ export const INITIAL_CATEGORIES: TreeCategory[] = [
       },
       {
         id: "feat_perks",
-        name: "Tiện ích",
+        name: "Đặc quyền",
         route: "/perks",
-        description: "Quản lý các tiện ích ưu đãi đặc quyền dành riêng cho hội viên",
+        description: "Quản lý các đặc quyền ưu đãi dành riêng cho hội viên",
         actions: [
-          { id: "act_prk_view", name: "Xem danh sách tiện ích", code: "PRK_VIEW", description: "Xem các tiện ích dịch vụ, phòng chờ VIP, sân golf", apiEndpoint: "GET /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
-          { id: "act_prk_add", name: "Thêm tiện ích mới", code: "PRK_ADD", description: "Tạo dịch vụ tiện ích mới cho hiệp hội", apiEndpoint: "POST /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
-          { id: "act_prk_edit", name: "Chỉnh sửa tiện ích", code: "PRK_EDIT", description: "Cập nhật điều kiện sử dụng tiện ích", apiEndpoint: "PUT /api/perks/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
-          { id: "act_prk_delete", name: "Xóa tiện ích", code: "PRK_DELETE", description: "Xóa tiện ích không còn hiệu lực", apiEndpoint: "DELETE /api/perks/:id", roles: { bqt: true, quan_tri: true, admin: true } },
+          { id: "act_prk_view", name: "Xem danh sách đặc quyền", code: "PRK_VIEW", description: "Xem các đặc quyền dịch vụ, phòng chờ VIP, sân golf", apiEndpoint: "GET /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, xuc_tien: true, truyen_thong: true, thien_nguyen: true, quan_tri: true, admin: true, tong_thu_ky: true, ban_thu_ky: true, member: true } },
+          { id: "act_prk_add", name: "Thêm đặc quyền mới", code: "PRK_ADD", description: "Tạo dịch vụ đặc quyền mới cho hiệp hội", apiEndpoint: "POST /api/perks", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
+          { id: "act_prk_edit", name: "Chỉnh sửa đặc quyền", code: "PRK_EDIT", description: "Cập nhật điều kiện sử dụng đặc quyền", apiEndpoint: "PUT /api/perks/:id", roles: { bqt: true, thu_ky: true, thanh_vien: true, quan_tri: true, admin: true } },
+          { id: "act_prk_delete", name: "Xóa đặc quyền", code: "PRK_DELETE", description: "Xóa đặc quyền không còn hiệu lực", apiEndpoint: "DELETE /api/perks/:id", roles: { bqt: true, quan_tri: true, admin: true } },
         ],
       },
       {

@@ -1200,8 +1200,8 @@ export function StartupMobileShowcaseLanding({
                 Hỏi Đáp Trực Tiếp
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Got A Question <br />
-                For CEO 1983?
+                Bạn Có Thắc Mắc <br />
+                Về CLB CEO 1983?
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                 Nếu bạn có bất kỳ câu hỏi nào cần giải đáp về quy chế gia nhập và quyền lợi hội viên, chúng tôi luôn sẵn sàng hỗ trợ.
@@ -1222,7 +1222,7 @@ export function StartupMobileShowcaseLanding({
                     type="submit"
                     className="px-6 py-2.5 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-bold transition shadow-sm shrink-0 cursor-pointer"
                   >
-                    Submit
+                    Gửi Câu Hỏi
                   </button>
                 </div>
               </form>
@@ -1290,35 +1290,35 @@ export function StartupMobileShowcaseLanding({
 
             {/* Col 2: Hệ Thống Links */}
             <div className="space-y-2">
-              <h5 className="text-xs font-black text-white uppercase tracking-wider mb-3">Company</h5>
+              <h5 className="text-xs font-black text-white uppercase tracking-wider mb-3">Về Hiệp Hội</h5>
               <p>
                 <a href="#home" className="text-blue-100 hover:text-white transition">
-                  About Us
+                  Về Chúng Tôi
                 </a>
               </p>
               <p>
                 <a href="#features" className="text-blue-100 hover:text-white transition">
-                  Features
+                  Tính Năng Nổi Bật
                 </a>
               </p>
               <p>
                 <a href="#map-section" className="text-blue-100 hover:text-white transition">
-                  News &amp; Points
+                  Tin Tức & Điểm Kết Nối
                 </a>
               </p>
               <p>
                 <a href="#faq" className="text-blue-100 hover:text-white transition">
-                  FAQ
+                  Hỏi Đáp FAQ
                 </a>
               </p>
             </div>
 
             {/* Col 3: Resources */}
             <div className="space-y-2">
-              <h5 className="text-xs font-black text-white uppercase tracking-wider mb-3">Resources</h5>
+              <h5 className="text-xs font-black text-white uppercase tracking-wider mb-3">Tài Nguyên & Liên Kết</h5>
               <p>
                 <a href="https://ceo1983.com" target="_blank" rel="noreferrer" className="text-blue-100 hover:text-white transition">
-                  Events
+                  Sự Kiện & Diễn Đàn
                 </a>
               </p>
               <p>
@@ -1328,14 +1328,14 @@ export function StartupMobileShowcaseLanding({
               </p>
               <p>
                 <a href="https://hanoiba.org.vn" target="_blank" rel="noreferrer" className="text-blue-100 hover:text-white transition">
-                  HanoiBA Official
+                  Cổng Thông Tin HanoiBA
                 </a>
               </p>
             </div>
 
             {/* Col 4: Liên Hệ Trụ Sở */}
             <div className="space-y-2">
-              <h5 className="text-xs font-black text-white uppercase tracking-wider mb-3">Contact Info</h5>
+              <h5 className="text-xs font-black text-white uppercase tracking-wider mb-3">Thông Tin Liên Hệ</h5>
               <div className="flex items-start gap-2 text-blue-100">
                 <MapPin className="size-4 shrink-0 mt-0.5" />
                 <span>{footerData.address}</span>

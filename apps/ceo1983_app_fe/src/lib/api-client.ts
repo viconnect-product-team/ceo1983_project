@@ -55,6 +55,9 @@ function mapEndpoint(endpoint: string): string {
   if (mapped === "/profile") {
     mapped = "/me/profile";
   }
+  if (mapped === "/app-settings/invitation-templates") {
+    mapped = "/admin/invitation-templates";
+  }
 
   const clean = mapped.startsWith("/") ? mapped : `/${mapped}`;
   return clean.startsWith("/api") ? clean : `/api${clean}`;

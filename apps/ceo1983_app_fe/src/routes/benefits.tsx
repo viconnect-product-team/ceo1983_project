@@ -30,6 +30,7 @@ import { Pagination } from "@/components/dashboard/DataTablePagination";
 import { fetchNestApi } from "@/lib/api-client";
 import { type AdminBenefit } from "@/lib/benefits.functions";
 import { useT } from "@/lib/i18n";
+import { CreateRewardModal } from "@/components/benefits/CreateRewardModal";
 
 export const Route = createFileRoute("/benefits")({
   component: BenefitsAdminPage,
@@ -75,6 +76,7 @@ function BenefitsAdminPage() {
   const [q, setQ] = useState("");
 
   // State cho chức năng Khen Thưởng Top 10 Thống Kê
+  const [isCreateRewardOpen, setIsCreateRewardOpen] = useState(false);
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
   const [selectedRewardCat, setSelectedRewardCat] = useState<RewardCategory>("top_connections");
   const [analyticsOverview, setAnalyticsOverview] = useState<any>(null);
@@ -339,6 +341,15 @@ function BenefitsAdminPage() {
                 <span>Danh Mục Quyền Lợi Hiệp Hội</span>
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCreateRewardOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-md bg-[#DC2626] hover:bg-red-700 transition cursor-pointer"
+            >
+              <Plus className="h-4 w-4 text-amber-300" />
+              <span>Tạo Khen Thưởng</span>
+            </button>
 
             {activeMainTab === "benefits_crud" && (
               <button
@@ -789,6 +800,15 @@ function BenefitsAdminPage() {
         submitting={submitting}
         submitLabel={editing ? t("common.save") : t("common.create")}
         cancelLabel={t("common.cancel")}
+      />
+      {/* Modal Tạo Khen Thưởng Mới */}
+      <CreateRewardModal
+        isOpen={isCreateRewardOpen}
+        onClose={() => setIsCreateRewardOpen(false)}
+        onSuccess={() => {
+          void loadAnalyticsOverview();
+          void loadBenefits();
+        }}
       />
     </AppShell>
   );

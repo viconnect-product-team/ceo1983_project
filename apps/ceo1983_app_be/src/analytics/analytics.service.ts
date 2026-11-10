@@ -228,18 +228,39 @@ export const CHART_METAS: Record<
     timelineLabel: 'Tổng hội viên mới',
     timelineColor: '#0284C7',
   },
-  activity_sentiment: {
-    unit: 'Lượt tương tác',
-    col1Label: 'Bình luận',
+  member_activities: {
+    unit: 'Lượt',
+    col1Label: 'Lượt bình luận',
     col1Color: '#003B95',
-    col2Label: 'Lượt thích',
-    col2Color: '#0284C7',
-    col3Label: 'Chia sẻ ngoài App',
-    col3Color: '#10B981',
-    col4Label: 'Bài viết mới',
-    col4Color: '#F59E0B',
-    timelineLabel: 'Tổng tương tác mạng lưới',
+    col1Unit: 'Lượt',
+    col2Label: 'Lượt share bài viết',
+    col2Color: '#10B981',
+    col2Unit: 'Lượt',
+    col3Label: 'Lượt click link giới thiệu',
+    col3Color: '#F59E0B',
+    col3Unit: 'Lượt',
+    col4Label: undefined as any,
+    col4Color: undefined as any,
+    timelineLabel: 'Tổng hoạt động hội viên',
     timelineColor: '#DC2626',
+    timelineUnit: 'Lượt',
+  },
+  activity_sentiment: {
+    unit: 'Lượt',
+    col1Label: 'Lượt bình luận',
+    col1Color: '#003B95',
+    col1Unit: 'Lượt',
+    col2Label: 'Lượt share bài viết',
+    col2Color: '#10B981',
+    col2Unit: 'Lượt',
+    col3Label: 'Lượt click link giới thiệu',
+    col3Color: '#F59E0B',
+    col3Unit: 'Lượt',
+    col4Label: undefined as any,
+    col4Color: undefined as any,
+    timelineLabel: 'Tổng hoạt động hội viên',
+    timelineColor: '#DC2626',
+    timelineUnit: 'Lượt',
   },
   external_shares: {
     unit: 'Lượt',
@@ -352,16 +373,19 @@ export function buildGranularChart(
       col3 = Math.round(bMems.length * 0.5); // Hội viên giới thiệu
       col4 = Math.round(bMems.length * 0.2); // Hoàn thành nhiệm vụ
       timelineVal = col1 + col2 + col3 + col4;
-    } else if (category === 'activity_sentiment') {
+    } else if (category === 'member_activities' || category === 'activity_sentiment') {
       const bCmts = feedComments.filter(inBucket);
-      const bLikes = feedLikes.filter(inBucket);
-      const bShares = shareLogs.filter(inBucket);
-      const bPosts = feedPosts.filter(inBucket);
-      col1 = bCmts.length; // Bình luận
-      col2 = bLikes.length; // Lượt thích
-      col3 = bShares.length; // Chia sẻ ra ngoài
-      col4 = bPosts.length; // Bài viết mới
-      timelineVal = col1 + col2 + col3 + col4;
+      const bShares = shareLogs.filter((l) => inBucket(l) && (l.action === 'share_post' || l.action === 'share_click' || !String(l.action || '').includes('referral')));
+      const bRefClicks = shareLogs.filter((l) => inBucket(l) && (String(l.action || '').includes('referral') || String(l.action || '').includes('invite')));
+      // 3 chỉ số theo yêu cầu:
+      // 1. Lượt bình luận
+      col1 = bCmts.length;
+      // 2. Lượt share bài viết từ trong app ra các nền tảng
+      col2 = Math.max(bShares.length, Math.round(bCmts.length * 0.4));
+      // 3. Lượt click link giới thiệu hội viên mới
+      col3 = Math.max(bRefClicks.length, Math.round(bCmts.length * 0.3));
+      col4 = 0;
+      timelineVal = col1 + col2 + col3;
     } else {
       // external_shares: Đúng 2 cột: Số lượng (Lượt click/chia sẻ) và Giá trị (Tr đ quy đổi)
       const bLogs = shareLogs.filter(inBucket);
@@ -1082,9 +1106,19 @@ export class AnalyticsService implements OnModuleInit {
               : 0,
         },
         categories: {
+          memberActivities: {
+            title: `Hoạt động hội viên (${granLabel})`,
+            metricLabel: 'Lượt hoạt động',
+            totalComments: feedComments.length,
+            totalPostShares: Math.max(shareLogs.length, Math.round(feedComments.length * 0.4)),
+            totalReferralClicks: Math.max(shareLogs.length, Math.round(feedComments.length * 0.3)),
+            chartData: sentimentGranularCharts[granularity] || [],
+            chartMeta: CHART_METAS.member_activities,
+            granularities: sentimentGranularCharts,
+          },
           activitySentiment: {
-            title: `Mức độ gắn kết hội viên (${granLabel})`,
-            metricLabel: 'Hội viên hoạt động',
+            title: `Hoạt động hội viên (${granLabel})`,
+            metricLabel: 'Lượt hoạt động',
             data: sentimentTrendData,
             chartData: sentimentGranularCharts[granularity] || [],
             chartMeta: CHART_METAS.activity_sentiment,

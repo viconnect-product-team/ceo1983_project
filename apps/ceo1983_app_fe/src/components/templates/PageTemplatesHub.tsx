@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { InvitationTemplateStudio } from "./InvitationTemplateStudio";
+import { InvitationSetupManager } from "./InvitationSetupManager";
 import { MailTemplateManager } from "@/components/documents/MailTemplateManager";
 import { ZaloTemplateManager } from "./ZaloTemplateManager";
 import { DuesTemplateManager } from "./DuesTemplateManager";
@@ -7,6 +8,7 @@ import { ForumMeetingTemplateManager } from "./ForumMeetingTemplateManager";
 
 export type TemplateTab =
   | "invitation"
+  | "invitation-setup"
   | "email"
   | "zalo"
   | "dues"
@@ -27,7 +29,7 @@ export function PageTemplatesHub({ initialTab = "invitation" }: PageTemplatesHub
         const tabParam = sp.get("tab") as TemplateTab;
         if (
           tabParam &&
-          ["invitation", "email", "zalo", "dues", "forum-meetings"].includes(tabParam)
+          ["invitation", "invitation-setup", "email", "zalo", "dues", "forum-meetings"].includes(tabParam)
         ) {
           setActiveTab(tabParam);
         } else if (!tabParam) {
@@ -46,6 +48,7 @@ export function PageTemplatesHub({ initialTab = "invitation" }: PageTemplatesHub
       {/* RENDER CURRENT ACTIVE SUB-FUNCTION DIRECTLY FROM SIDEBAR SELECTION */}
       <div className="animate-in fade-in-50 duration-200">
         {activeTab === "invitation" && <InvitationTemplateStudio />}
+        {activeTab === "invitation-setup" && <InvitationSetupManager />}
         {activeTab === "email" && <MailTemplateManager />}
         {activeTab === "zalo" && <ZaloTemplateManager />}
         {activeTab === "dues" && <DuesTemplateManager />}
