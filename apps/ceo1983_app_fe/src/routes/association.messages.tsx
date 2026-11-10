@@ -126,18 +126,28 @@ function MessagesScreen() {
     : undefined;
 
   const [mainTab, setMainTab] = useState<"feed" | "messages">(() => {
-    if (hasShare) return "feed";
-    if (search.tab === "feed") return "feed";
-    return "messages";
+    if (search.peerCode || search.tab === "messages") return "messages";
+    return "feed";
   });
 
   useEffect(() => {
-    if (search.tab === "feed") {
-      setMainTab("feed");
-    } else if (search.tab === "messages" || search.peerCode) {
+    if (search.tab === "messages" || search.peerCode) {
       setMainTab("messages");
+    } else {
+      setMainTab("feed");
+      setActive(null);
     }
   }, [search.tab, search.peerCode]);
+
+  // Luôn reset về giao diện Mạng Lưới khi người dùng bấm tab Mạng Lưới ở Footer
+  useEffect(() => {
+    const handleReset = () => {
+      setActive(null);
+      setMainTab("feed");
+    };
+    window.addEventListener("vba:reset_network_tab", handleReset);
+    return () => window.removeEventListener("vba:reset_network_tab", handleReset);
+  }, []);
 
   const [active, setActive] = useState<MyConversation | null>(() => {
     if (search.peerCode) {

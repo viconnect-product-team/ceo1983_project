@@ -1,5 +1,33 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 10/11/2026 (v10.91): Đồng Bộ Toàn Diện Nhật Ký Thao Tác, Cấu Hình Hệ Thống Riêng Biệt, Dynamic Theme Thẻ Hội Viên & Hoàn Thiện Trải Nghiệm Mobile App ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-012], [NODE-APP-014])**:
+  1. *Mobile App - Đồng Bộ Triệt Để Nhật Ký Thao Tác & Hoạt Động (`association.history.tsx`, `user-activity-logger.ts`)*:
+     - Khắc phục triệt để tình trạng người dùng thực hiện bình luận, xóa bài viết, like, chia sẻ nhưng không thấy hiển thị trong tab "Lịch sử hoạt động":
+       + Cập nhật hàm `recordUserActivity` tự động ghi đồng thời vào cả `vba_recent_activities` và `vba_user_activity_history_${userId}`.
+       + Phát sự kiện toàn cục `vba.history.changed` để màn hình `/association/history` lập tức phản hồi mà không cần tải lại trang.
+       + Sửa logic lọc trùng lặp trong `association.history.tsx` từ `seenTitles` sang `seenIds`, đảm bảo các hành động lặp lại (nhiều bình luận, xóa nhiều bài) không bị nuốt mất bản ghi.
+       + Bổ sung tự động ghi nhật ký khi người dùng chia sẻ bài viết ra bên ngoài (`SHARE_POST`).
+  2. *Mobile App - Tách Biệt Chức Năng Cấu Hình Hệ Thống (`/association/system-config`, `association.settings.tsx`)*:
+     - Tách khối cấu hình hệ thống ra khỏi trang Cài đặt thông thường, đưa thành phân hệ chuyên biệt tại route `/association/system-config`:
+       + **Chọn màu giao diện thương hiệu**: Bộ 3 bảng màu Brandbook CEO 1983 (Đỏ Hoàng Gia `#8B0000`, Vàng Kim `#D4AF37`, Xanh Navy `#001B54` kèm các tùy chọn Emerald, Ruby, Sapphire, Amethyst).
+       + **Bật / Tắt Trợ lý AI**: Điều khiển độc lập Trợ lý đàm thoại giọng nói AI (Voice Assistant) và Trợ lý cố vấn kinh doanh AI Chat.
+       + **Chọn ngôn ngữ**: Tiếng Việt (Mặc định) và English với chuyển đổi i18n tức thì.
+       + **Chế độ hiển thị**: Sáng (Light) / Tối (Dark) / Tự động theo hệ điều hành (System).
+     - Nút bánh răng cài đặt ở góc trên màn hình Hồ sơ cá nhân (`association.profile.tsx`) trỏ trực tiếp sang `/association/system-config`.
+  3. *Mobile App - Dynamic Theme Màu Thẻ Hội Viên & Nút Tính Năng Trang Chủ (`association.index.tsx`)*:
+     - Toàn bộ thẻ nhận diện hội viên Hero Member Card tại màn hình trang chủ chuyển sang sử dụng gradient động theo `brandColorTheme` (`gradientCard`, `lightBg`, `primaryColor`, `lightBorder`, `gradientPrimary`, `darkBorder`).
+     - Các nút tính năng nhanh và nút "Xem tất cả" tự động hòa sắc theo chủ đề màu được người dùng lựa chọn trong Cấu hình hệ thống.
+  4. *Mobile App - Căn Chỉnh Giao Diện Hồ Sơ Cá Nhân Dưới Avatar Chuẩn Snippet (`association.profile.tsx`)*:
+     - Căn chỉnh thanh 3 nút thao tác nhanh (Danh thiếp, Chia sẻ, Sửa hồ sơ) dưới avatar với đúng kích thước `w-24`, bo góc `rounded-2xl`, icon căn giữa kèm nhãn font Inter 12px theo mã thiết kế chuẩn.
+  5. *Mobile App - Khắc Phục Dứt Điểm Lỗi Tab Mạng Lưới Nhảy Sang Tin Nhắn (`MemberShell.tsx`, `association.messages.tsx`)*:
+     - Khi người dùng điều hướng từ bất kỳ tab nào quay lại tab Mạng Lưới, router luôn ép query param `search: { tab: "feed" }` và phát sự kiện `vba:reset_network_tab`, đảm bảo luôn mở Bảng tin mạng lưới thay vì kẹt vào thread chat đang mở.
+  6. *Mobile App - Hiệu Ứng Hoạt Ảnh Ambient Độc Đáo Theo Chủ Đề Lễ Hội (`SeasonalThemeAmbientOverlay.tsx`, `MemberShell.tsx`)*:
+     - Tích hợp lớp phủ hoạt ảnh hạt rơi toàn màn hình nhẹ nhàng (`SeasonalThemeAmbientOverlay`): Tuyết rơi (Giáng sinh), Hoa đào rơi (Tết Nguyên Đán), Lồng đèn bay (Trung Thu), Ánh sao lấp lánh (Hoàng Gia), Pháo hoa (Chào Năm Mới).
+     - Tự động gắn emoji chủ đề lên các tab Bottom Navigation Bar.
+  7. *Mobile App - Đồng Bộ Danh Mục Thống Kê Theo CRM & Loại Bỏ Hội Viên Ngủ Đông (`association.analytics.tsx`)*:
+     - Lấy đúng 4 nhóm danh mục thống kê đồng bộ với Web CRM Quản trị.
+     - Loại bỏ hoàn toàn các hội viên không hoạt động hoặc dormant (`!m.isInactive && m.status !== 'inactive' && m.status !== 'dormant' && !m.dormant`) khỏi bảng xếp hạng vinh danh.
+
 - **Bản cập nhật ngày 10/11/2026 (v10.90): Khắc Phục Triệt Để 1048 Lỗi Console Poster Studio, Ra Mắt Landing Page Mẫu 3 Chuẩn Pinterest SOTD, Bổ Sung Set Up Thư Mời Sự Kiện, Tách Biệt Menu Thống Kê & Tái Cấu Trúc Quản Lý Mẫu ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CRM-019])**:
   1. *CRM - Khắc phục triệt để lỗi 1048 console errors & Nâng cấp Poster Studio (`InvitationTemplateStudio.tsx`)*:
      - **Nguyên nhân 1048 console errors**: Các thẻ `<img>` của avatar và logo trong studio có fallback `onError` trỏ vào file ảnh không tồn tại, khiến trình duyệt kích hoạt sự kiện lỗi liên tục ở tần số khung hình (60 FPS) gây nghẽn console và đơ giao diện.
@@ -752,6 +780,34 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 10/11/2026 (v10.91): Đồng Bộ Toàn Diện Nhật Ký Thao Tác, Cấu Hình Hệ Thống Riêng Biệt, Dynamic Theme Thẻ Hội Viên & Hoàn Thiện Trải Nghiệm Mobile App ([NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-APP-012], [NODE-APP-014])**:
+  1. *Mobile App - Đồng Bộ Triệt Để Nhật Ký Thao Tác & Hoạt Động (`association.history.tsx`, `user-activity-logger.ts`)*:
+     - Khắc phục triệt để tình trạng người dùng thực hiện bình luận, xóa bài viết, like, chia sẻ nhưng không thấy hiển thị trong tab "Lịch sử hoạt động":
+       + Cập nhật hàm `recordUserActivity` tự động ghi đồng thời vào cả `vba_recent_activities` và `vba_user_activity_history_${userId}`.
+       + Phát sự kiện toàn cục `vba.history.changed` để màn hình `/association/history` lập tức phản hồi mà không cần tải lại trang.
+       + Sửa logic lọc trùng lặp trong `association.history.tsx` từ `seenTitles` sang `seenIds`, đảm bảo các hành động lặp lại (nhiều bình luận, xóa nhiều bài) không bị nuốt mất bản ghi.
+       + Bổ sung tự động ghi nhật ký khi người dùng chia sẻ bài viết ra bên ngoài (`SHARE_POST`).
+  2. *Mobile App - Tách Biệt Chức Năng Cấu Hình Hệ Thống (`/association/system-config`, `association.settings.tsx`)*:
+     - Tách khối cấu hình hệ thống ra khỏi trang Cài đặt thông thường, đưa thành phân hệ chuyên biệt tại route `/association/system-config`:
+       + **Chọn màu giao diện thương hiệu**: Bộ 3 bảng màu Brandbook CEO 1983 (Đỏ Hoàng Gia `#8B0000`, Vàng Kim `#D4AF37`, Xanh Navy `#001B54` kèm các tùy chọn Emerald, Ruby, Sapphire, Amethyst).
+       + **Bật / Tắt Trợ lý AI**: Điều khiển độc lập Trợ lý đàm thoại giọng nói AI (Voice Assistant) và Trợ lý cố vấn kinh doanh AI Chat.
+       + **Chọn ngôn ngữ**: Tiếng Việt (Mặc định) và English với chuyển đổi i18n tức thì.
+       + **Chế độ hiển thị**: Sáng (Light) / Tối (Dark) / Tự động theo hệ điều hành (System).
+     - Nút bánh răng cài đặt ở góc trên màn hình Hồ sơ cá nhân (`association.profile.tsx`) trỏ trực tiếp sang `/association/system-config`.
+  3. *Mobile App - Dynamic Theme Màu Thẻ Hội Viên & Nút Tính Năng Trang Chủ (`association.index.tsx`)*:
+     - Toàn bộ thẻ nhận diện hội viên Hero Member Card tại màn hình trang chủ chuyển sang sử dụng gradient động theo `brandColorTheme` (`gradientCard`, `lightBg`, `primaryColor`, `lightBorder`, `gradientPrimary`, `darkBorder`).
+     - Các nút tính năng nhanh và nút "Xem tất cả" tự động hòa sắc theo chủ đề màu được người dùng lựa chọn trong Cấu hình hệ thống.
+  4. *Mobile App - Căn Chỉnh Giao Diện Hồ Sơ Cá Nhân Dưới Avatar Chuẩn Snippet (`association.profile.tsx`)*:
+     - Căn chỉnh thanh 3 nút thao tác nhanh (Danh thiếp, Chia sẻ, Sửa hồ sơ) dưới avatar với đúng kích thước `w-24`, bo góc `rounded-2xl`, icon căn giữa kèm nhãn font Inter 12px theo mã thiết kế chuẩn.
+  5. *Mobile App - Khắc Phục Dứt Điểm Lỗi Tab Mạng Lưới Nhảy Sang Tin Nhắn (`MemberShell.tsx`, `association.messages.tsx`)*:
+     - Khi người dùng điều hướng từ bất kỳ tab nào quay lại tab Mạng Lưới, router luôn ép query param `search: { tab: "feed" }` và phát sự kiện `vba:reset_network_tab`, đảm bảo luôn mở Bảng tin mạng lưới thay vì kẹt vào thread chat đang mở.
+  6. *Mobile App - Hiệu Ứng Hoạt Ảnh Ambient Độc Đáo Theo Chủ Đề Lễ Hội (`SeasonalThemeAmbientOverlay.tsx`, `MemberShell.tsx`)*:
+     - Tích hợp lớp phủ hoạt ảnh hạt rơi toàn màn hình nhẹ nhàng (`SeasonalThemeAmbientOverlay`): Tuyết rơi (Giáng sinh), Hoa đào rơi (Tết Nguyên Đán), Lồng đèn bay (Trung Thu), Ánh sao lấp lánh (Hoàng Gia), Pháo hoa (Chào Năm Mới).
+     - Tự động gắn emoji chủ đề lên các tab Bottom Navigation Bar.
+  7. *Mobile App - Đồng Bộ Danh Mục Thống Kê Theo CRM & Loại Bỏ Hội Viên Ngủ Đông (`association.analytics.tsx`)*:
+     - Lấy đúng 4 nhóm danh mục thống kê đồng bộ với Web CRM Quản trị.
+     - Loại bỏ hoàn toàn các hội viên không hoạt động hoặc dormant (`!m.isInactive && m.status !== 'inactive' && m.status !== 'dormant' && !m.dormant`) khỏi bảng xếp hạng vinh danh.
 
 - **Bản cập nhật ngày 10/11/2026 (v10.90): Khắc Phục Triệt Để 1048 Lỗi Console Poster Studio, Ra Mắt Landing Page Mẫu 3 Chuẩn Pinterest SOTD, Bổ Sung Set Up Thư Mời Sự Kiện, Tách Biệt Menu Thống Kê & Tái Cấu Trúc Quản Lý Mẫu ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CRM-019])**:
   1. *CRM - Khắc phục triệt để lỗi 1048 console errors & Nâng cấp Poster Studio (`InvitationTemplateStudio.tsx`)*:

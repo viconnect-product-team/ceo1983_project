@@ -81,6 +81,11 @@ import {
   setVoiceAiEnabled,
   VOICE_AI_EVENT_NAME,
 } from "@/components/ai/Ceo1983ChatAssistant";
+import {
+  getUserActivityHistory,
+  recordUserActivity,
+  type UserActivityItem,
+} from "@/lib/user-activity-logger";
 import { useServerData } from "@/hooks/use-server-data";
 import {
   getMyMember,
@@ -364,39 +369,22 @@ export default function ProfileScreen() {
     },
   ], []);
 
-  // Lịch sử thao tác hội viên (Audit Log - Yêu cầu 3)
-  const auditHistory = useMemo(() => [
-    {
-      id: "act_1",
-      title: "Cập nhật hồ sơ & Quy mô nhân sự doanh nghiệp",
-      time: "Hôm nay, 14:15",
-      badge: "Hồ sơ",
-    },
-    {
-      id: "act_2",
-      title: "Đăng ký tham gia Gala Doanh Nhân CEO 1983",
-      time: "Hôm qua, 16:30",
-      badge: "Sự kiện",
-    },
-    {
-      id: "act_3",
-      title: "Gửi lời mời kết nối hợp tác giao thương 1-on-1",
-      time: "24/10/2026",
-      badge: "Giao thương",
-    },
-    {
-      id: "act_4",
-      title: "Quét mã QR danh thiếp số hội viên CLB",
-      time: "22/10/2026",
-      badge: "Mạng lưới",
-    },
-    {
-      id: "act_5",
-      title: "Chia sẻ danh thiếp số doanh nhân lên Zalo",
-      time: "20/10/2026",
-      badge: "Chia sẻ",
-    },
-  ], []);
+  // Lịch sử thao tác hội viên (Audit Log sống động - Yêu cầu 3)
+  const [auditHistory, setAuditHistory] = useState<UserActivityItem[]>(() =>
+    getUserActivityHistory(user?.id)
+  );
+
+  useEffect(() => {
+    const handleActivityUpdate = () => {
+      setAuditHistory(getUserActivityHistory(user?.id));
+    };
+    window.addEventListener("vba:user_activity_recorded", handleActivityUpdate);
+    window.addEventListener("storage", handleActivityUpdate);
+    return () => {
+      window.removeEventListener("vba:user_activity_recorded", handleActivityUpdate);
+      window.removeEventListener("storage", handleActivityUpdate);
+    };
+  }, [user?.id]);
 
   // AI Assistant Toggle state
   const [voiceAiEnabled, setVoiceAiState] = useState(() => isVoiceAiEnabled());
@@ -799,9 +787,9 @@ export default function ProfileScreen() {
         </div>
         <button
           type="button"
-          onClick={() => setSystemSettingsOpen(true)}
+          onClick={() => navigate({ to: "/association/system-config" })}
           className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-orange-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
-          title="Cài đặt hệ thống"
+          title="Cấu hình hệ thống"
         >
           <img src="/icons/profile/setting-07.svg" className="size-5" alt="settings" />
         </button>
@@ -824,10 +812,10 @@ export default function ProfileScreen() {
           onChange={handleAvatarChange}
         />
 
-        {/* ── 2. CARD PROFILE TONE MÀU CAM NỔI BẬT THEO MOCKUP ── */}
-        <div className="w-full pb-2 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        {/* ── 2. CARD PROFILE TONE MÀU CAM NỔI BẬT THEO MOCKUP (H-80 CHUẨN FIGMA) ── */}
+        <div className="self-stretch h-80 relative bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 inline-flex flex-col justify-between items-start overflow-hidden shadow-xs">
           {/* Ảnh Bìa */}
-          <div className="w-full h-36 relative bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-slate-800 dark:to-slate-900 overflow-hidden">
+          <div className="w-full h-36 relative bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-slate-800 dark:to-slate-900 overflow-hidden shrink-0">
             <img
               src={displayCover || "/icons/profile/Image-2.svg"}
               alt="Cover Photo"
@@ -853,9 +841,9 @@ export default function ProfileScreen() {
           </div>
 
           {/* Avatar & Thông tin Hội viên đè lên ảnh bìa */}
-          <div className="w-full px-4 -mt-12 flex flex-col justify-start items-center z-10">
-            <div className="size-24 relative flex flex-col justify-start items-start mb-1">
-              <div className="size-24 rounded-full outline outline-4 outline-offset-[-4px] outline-white dark:outline-[#0F172A] inline-flex justify-center items-center overflow-hidden bg-slate-900 shadow-md">
+          <div className="w-full px-4 -mt-10 flex flex-col justify-start items-center z-10">
+            <div className="size-20 relative flex flex-col justify-start items-start mb-1">
+              <div className="size-20 rounded-full outline outline-4 outline-offset-[-4px] outline-white dark:outline-[#0F172A] inline-flex justify-center items-center overflow-hidden bg-slate-900 shadow-md">
                 {resolvedAvatar && !avatarError ? (
                   <img
                     src={resolvedAvatar}
@@ -864,7 +852,7 @@ export default function ProfileScreen() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-2xl font-black">
+                  <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-xl font-black">
                     {initials(displayName)}
                   </div>
                 )}
@@ -873,26 +861,26 @@ export default function ProfileScreen() {
                 type="button"
                 disabled={uploadingAvatar}
                 onClick={() => avatarInputRef.current?.click()}
-                className="size-7 right-0 bottom-0 absolute bg-white dark:bg-slate-800 rounded-full outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 inline-flex justify-center items-center shadow-xs hover:scale-110 active:scale-95 transition cursor-pointer"
+                className="size-6 right-0 bottom-0 absolute bg-white dark:bg-slate-800 rounded-full outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 inline-flex justify-center items-center shadow-xs hover:scale-110 active:scale-95 transition cursor-pointer"
                 title="Đổi ảnh đại diện"
               >
-                <img src="/icons/profile/user-edit-01.svg" className="size-3.5" alt="edit avatar" />
+                <img src="/icons/profile/user-edit-01.svg" className="size-3" alt="edit avatar" />
               </button>
             </div>
 
             {/* Tên Hội viên kèm Tích xác thực */}
             <div className="inline-flex items-center gap-1.5">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-white font-['Inter'] leading-6">
+              <h1 className="text-lg font-semibold text-slate-900 dark:text-white font-['Inter'] leading-5">
                 {displayName}
               </h1>
               <img src="/icons/profile/check-verified-02.svg" className="size-4 text-orange-500" alt="verified" />
             </div>
 
             {/* Chức vụ & Doanh nghiệp */}
-            <div className="pt-1 flex flex-col justify-center items-center gap-1">
-              <div className="px-2.5 py-[3px] bg-orange-100 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-500/30 rounded-full inline-flex justify-start items-center gap-1.5">
-                <img src="/icons/profile/briefcase-04.svg" className="size-3.5 text-orange-600 dark:text-orange-400" alt="briefcase" />
-                <span className="text-orange-600 dark:text-orange-400 text-xs font-semibold font-['Inter'] leading-4">
+            <div className="pt-0.5 flex flex-col justify-center items-center gap-0.5">
+              <div className="px-2 py-[2px] bg-orange-100 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-500/30 rounded-full inline-flex justify-start items-center gap-1">
+                <img src="/icons/profile/briefcase-04.svg" className="size-3 text-orange-600 dark:text-orange-400" alt="briefcase" />
+                <span className="text-orange-600 dark:text-orange-400 text-[11px] font-semibold font-['Inter'] leading-4">
                   {displayTitle}
                 </span>
               </div>
@@ -902,35 +890,47 @@ export default function ProfileScreen() {
             </div>
           </div>
 
-          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ */}
-          <div className="self-stretch mt-3 h-16 px-3 pt-1 border-t border-slate-100 dark:border-slate-800 inline-flex justify-center items-start">
+          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Chuẩn Figma Vector Outline) */}
+          <div className="self-stretch h-16 px-3 pt-1 border-t border-slate-100 dark:border-slate-800 inline-flex justify-center items-start shrink-0">
             <button
               type="button"
               onClick={() => setCardPreviewOpen(true)}
-              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-24 self-stretch px-1 py-1.5 bg-black/0 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
-              <img src="/icons/profile/student-card.svg" className="size-5" alt="student-card" />
-              <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+              <div className="size-5 relative overflow-hidden">
+                <div className="w-4 h-5 left-[20.17px] top-[3.21px] absolute origin-top-left rotate-90 outline outline-[1.50px] outline-offset-[-0.75px] outline-orange-600 dark:outline-amber-400" />
+                <div className="size-1.5 left-[4.58px] top-[7.79px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+                <div className="w-1 h-0 left-[13.75px] top-[8.71px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+                <div className="w-0.5 h-0 left-[13.75px] top-[12.38px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+              </div>
+              <div className="text-center justify-start text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
                 Danh thiếp
               </div>
             </button>
             <button
               type="button"
               onClick={handleShare}
-              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-24 self-stretch px-1 py-1.5 bg-black/0 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
-              <img src="/icons/profile/share-01.svg" className="size-5" alt="share" />
-              <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+              <div className="size-5 relative">
+                <div className="size-3.5 left-[2.29px] top-[4.13px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+                <div className="w-3 h-2.5 left-[6.88px] top-[3.21px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+              </div>
+              <div className="text-center justify-start text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
                 Chia sẻ
               </div>
             </button>
             <button
               type="button"
               onClick={() => setEditProfileOpen(true)}
-              className="w-24 self-stretch px-1 py-1.5 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-24 self-stretch px-1 py-1.5 bg-black/0 rounded-2xl inline-flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             >
-              <img src="/icons/profile/user-edit-01.svg" className="size-5" alt="user-edit" />
-              <div className="text-center text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+              <div className="size-5 relative">
+                <div className="size-2.5 left-[5.04px] top-[2.75px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+                <div className="w-2.5 h-1.5 left-[3.21px] top-[11.92px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+                <div className="size-1.5 left-[12.38px] top-[12.83px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
+              </div>
+              <div className="text-center justify-start text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
                 Sửa hồ sơ
               </div>
             </button>
@@ -1934,10 +1934,10 @@ export default function ProfileScreen() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">
-                    Cài đặt &amp; Cấu hình hệ thống
+                    Cài đặt ứng dụng &amp; Nhận diện
                   </h3>
                   <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                    Nhận diện thương hiệu, tiện ích và an toàn tài khoản
+                    Tùy biến màu sắc, trợ lý AI, ngôn ngữ và an toàn tài khoản
                   </p>
                 </div>
               </div>
@@ -1950,275 +1950,223 @@ export default function ProfileScreen() {
               </button>
             </div>
 
-            {/* Scrollable Settings Content */}
+            {/* Scrollable Settings Content - Tách riêng từng chức năng độc lập (Yêu cầu 6) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:none]">
               
-            {/* 3.1. Đầu mục: Chủ đề giao diện CLB (Đồng bộ CRM - Yêu cầu 2) */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("theme_crm")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-500 grid place-items-center shrink-0 border border-amber-500/20">
-                    <Sparkles className="size-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
+              {/* ── CHỨC NĂNG 1: CHỌN MÀU GIAO DIỆN & CHỦ ĐỀ CLB ── */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-8 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-500 grid place-items-center shrink-0 border border-amber-500/20">
+                      <Sparkles className="size-4" />
+                    </div>
+                    <div>
                       <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                        Chủ đề giao diện CLB
+                        Chọn màu giao diện &amp; Chủ đề
                       </h4>
-                      <span className="px-2 py-0.2 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                        ĐỒNG BỘ CRM
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        3 Dạng màu nhận diện CEO 1983 &amp; Chế độ hiển thị
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chế độ Sáng / Tối */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheme("light");
+                      toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                      theme === "light"
+                        ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-extrabold"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <Sun className="size-3.5 text-amber-500" />
+                    <span>Giao diện Sáng</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTheme("dark");
+                      toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                      theme === "dark"
+                        ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-extrabold"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <Moon className="size-3.5 text-sky-400" />
+                    <span>Giao diện Tối</span>
+                  </button>
+                </div>
+
+                {/* 3 Dạng Màu Tiêu Chuẩn CEO 1983 Swatches */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Bảng màu chủ đạo CLB (Xanh Doanh Nhân • Cam Tiên Phong • Đỏ Nhiệt Huyết):
+                  </div>
+                  <Ceo1983ColorThemeSelector />
+                </div>
+
+                {/* Thông tin Chủ đề Lễ hội đồng bộ CRM */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2 mt-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{activeTheme.iconEmoji || "👑"}</span>
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-bold text-slate-800 dark:text-white block truncate">
+                        {activeTheme.name}
+                      </span>
+                      <span className="text-[9.5px] text-slate-500 dark:text-slate-400 block truncate">
+                        {activeTheme.tagline}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
-                      Cấu hình nhận diện thương hiệu bởi Ban Điều Hành
-                    </p>
                   </div>
+                  <button
+                    type="button"
+                    disabled={themeSyncing}
+                    onClick={async () => {
+                      setThemeSyncing(true);
+                      try {
+                        await syncThemeFromBackend();
+                        setActiveTheme(getEffectiveThemeOption());
+                        toast.success("Đã đồng bộ chủ đề giao diện mới nhất từ CRM!");
+                      } catch {
+                        toast.error("Không thể đồng bộ chủ đề lúc này");
+                      } finally {
+                        setThemeSyncing(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[10.5px] shadow-2xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    <RotateCcw className={`size-3 ${themeSyncing ? "animate-spin" : ""}`} />
+                    <span>{themeSyncing ? "Đang tải..." : "Đồng bộ CRM"}</span>
+                  </button>
                 </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["theme_crm"] ? "rotate-180 text-amber-500" : ""
-                  }`}
-                />
-              </button>
+              </div>
 
-              {expandedSections["theme_crm"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-9 rounded-lg flex items-center justify-center text-xl bg-white dark:bg-slate-900 shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0">
-                        {activeTheme.iconEmoji || "👑"}
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                          {activeTheme.name}
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                          {activeTheme.tagline}
-                        </span>
-                      </div>
+              {/* ── CHỨC NĂNG 2: BẬT / TẮT TRỢ LÝ AI CEO 1983 ── */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <div className="size-8 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-500 grid place-items-center shrink-0 border border-sky-500/20">
+                      <Bot className="size-4" />
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span
-                        className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
-                        style={{ backgroundColor: activeTheme.primaryColor }}
-                        title={`Màu chủ đạo: ${activeTheme.primaryColor}`}
-                      />
-                      <span
-                        className="size-3.5 rounded-full border-2 border-white dark:border-slate-900 shadow-xs"
-                        style={{ backgroundColor: activeTheme.accentColor }}
-                        title={`Màu điểm nhấn: ${activeTheme.accentColor}`}
-                      />
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Trợ lý AI CEO 1983
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {voiceAiEnabled ? "Đang bật nút trợ lý AI nổi trên màn hình" : "Đang tắt trợ lý AI"}
+                      </p>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                      Tự động tải bảng màu theo mùa lễ hội CLB
-                    </span>
-                    <button
-                      type="button"
-                      disabled={themeSyncing}
-                      onClick={async () => {
-                        setThemeSyncing(true);
-                        try {
-                          await syncThemeFromBackend();
-                          setActiveTheme(getEffectiveThemeOption());
-                          toast.success("Đã đồng bộ chủ đề giao diện mới nhất từ CRM!");
-                        } catch {
-                          toast.error("Không thể đồng bộ chủ đề lúc này");
-                        } finally {
-                          setThemeSyncing(false);
-                        }
-                      }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-2xs transition cursor-pointer disabled:opacity-50"
-                    >
-                      <RotateCcw className={`size-3.5 ${themeSyncing ? "animate-spin" : ""}`} />
-                      <span>{themeSyncing ? "Đang đồng bộ..." : "Đồng bộ lại"}</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={voiceAiEnabled}
+                    onClick={handleToggleVoiceAi}
+                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                      voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <div
+                      className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                        voiceAiEnabled ? "translate-x-5.5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
                 </div>
-              )}
-            </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-xl">
+                  💡 Hỗ trợ tra cứu quy chế CLB, kết nối B2B và nhắc nhở lịch họp sự kiện thông minh 24/7.
+                </p>
+              </div>
 
-            {/* 3.2. Đầu mục: Cài đặt hệ thống (Ngôn ngữ, Giao diện, AI Bot, Thông báo) */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("system_settings")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 grid place-items-center shrink-0">
-                    <Cog className="size-4" />
+              {/* ── CHỨC NĂNG 3: CHỌN NGÔN NGỮ HIỂN THỊ ── */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0 border border-blue-500/20">
+                    <Globe className="size-4" />
                   </div>
                   <div>
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Cài đặt hệ thống
+                      Ngôn ngữ hiển thị
                     </h4>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
-                      Ngôn ngữ, Giao diện sáng/tối, Trợ lý AI và Thông báo đẩy
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Chọn ngôn ngữ làm việc mặc định trên ứng dụng
                     </p>
                   </div>
                 </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["system_settings"] ? "rotate-180 text-slate-900 dark:text-white" : ""
-                  }`}
-                />
-              </button>
-
-              {expandedSections["system_settings"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-3 animate-in fade-in duration-150">
-                  {/* Ngôn ngữ */}
-                  <div className="space-y-1.5">
-                    <div className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                      <Globe className="size-3.5 text-[#003B95] dark:text-blue-400" />
-                      <span>{isEn ? "Display Language" : "Ngôn ngữ hiển thị"}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLang("vi");
-                          toast.success("Đã chuyển sang Tiếng Việt");
-                        }}
-                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                          lang === "vi"
-                            ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        <span>🇻🇳 Tiếng Việt</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLang("en");
-                          toast.success("Switched to English");
-                        }}
-                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                          lang === "en"
-                            ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        <span>🇬🇧 English</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Trợ lý AI */}
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-                    <div className="flex items-center gap-2 min-w-0 pr-2">
-                      <Bot className="size-4 text-sky-500" />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-800 dark:text-white block">
-                          Trợ lý AI CEO 1983
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                          {voiceAiEnabled ? "Đang bật nút trợ lý nổi" : "Đang tắt"}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={voiceAiEnabled}
-                      onClick={handleToggleVoiceAi}
-                      className={`w-11 h-6 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                        voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-                      }`}
-                    >
-                      <div
-                        className={`size-5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                          voiceAiEnabled ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Chế độ Sáng / Tối */}
-                  <div className="space-y-1.5">
-                    <div className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                      <Sparkles className="size-3.5 text-amber-500" />
-                      <span>{isEn ? "Appearance Mode" : "Giao diện hiển thị"}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTheme("light");
-                          toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
-                        }}
-                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                          theme === "light"
-                            ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-extrabold"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        <Sun className="size-3.5 text-amber-500" />
-                        <span>Sáng</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTheme("dark");
-                          toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
-                        }}
-                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                          theme === "dark"
-                            ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-extrabold"
-                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        <Moon className="size-3.5 text-sky-400" />
-                        <span>Tối</span>
-                      </button>
-                    </div>
-
-                    {/* 4 Dạng Màu Tiêu Chuẩn CEO 1983 */}
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <Ceo1983ColorThemeSelector />
-                    </div>
-                  </div>
-
-                  {/* Thông báo đẩy */}
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-                    <div className="flex items-center gap-2 min-w-0 pr-2">
-                      <Bell className="size-4 text-rose-500" />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-800 dark:text-white block">
-                          Thông báo đẩy &amp; Tin tức
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                          {isNotificationEnabled ? "Đang bật nhận chuông" : "Đang tắt"}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={isNotificationEnabled}
-                      onClick={handleToggleNotification}
-                      className={`w-11 h-6 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                        isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-                      }`}
-                    >
-                      <div
-                        className={`size-5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                          isNotificationEnabled ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLang("vi");
+                      toast.success("Đã chuyển sang Tiếng Việt");
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                      lang === "vi"
+                        ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs font-extrabold"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <span>🇻🇳 Tiếng Việt</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLang("en");
+                      toast.success("Switched to English");
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                      lang === "en"
+                        ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs font-extrabold"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+
+              {/* ── CHỨC NĂNG 4: THÔNG BÁO ĐẨY CLB ── */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <div className="size-8 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-500 grid place-items-center shrink-0 border border-rose-500/20">
+                      <Bell className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Thông báo đẩy &amp; Tin tức
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {isNotificationEnabled ? "Đang bật nhận chuông thông báo" : "Đang tắt thông báo"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isNotificationEnabled}
+                    onClick={handleToggleNotification}
+                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
+                      isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                  >
+                    <div
+                      className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
+                        isNotificationEnabled ? "translate-x-5.5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
 
             {/* 3.4. Đầu mục: Cài đặt ứng dụng PWA / Mobile App */}
             <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">

@@ -174,167 +174,38 @@ function AssociationSettingsScreen() {
           </div>
         </div>
 
-        {/* 1. KHỐI CÀI ĐẶT HỆ THỐNG */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3.5">
+        {/* 1. ĐIỀU HƯỚNG SANG CHỨC NĂNG RIÊNG: CẤU HÌNH HỆ THỐNG (MÀU SẮC, AI, NGÔN NGỮ) */}
+        <Link
+          to="/association/system-config"
+          className="p-4 rounded-3xl bg-gradient-to-r from-orange-50 via-amber-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border border-orange-200 dark:border-amber-400/30 flex items-center justify-between shadow-xs hover:scale-[1.01] active:scale-[0.99] transition cursor-pointer group"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="size-11 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white grid place-items-center shrink-0 shadow-md">
+              <Palette className="size-5.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-slate-900 dark:text-white block truncate group-hover:text-orange-600 dark:group-hover:text-amber-400 transition">
+                {isEn ? "System Configuration (Themes & AI)" : "Cấu hình hệ thống (Giao diện & AI)"}
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block line-clamp-1">
+                {isEn ? "Customize brand color themes, Voice AI, and language" : "Chọn màu giao diện, Bật tắt AI, Chọn ngôn ngữ"}
+              </span>
+            </div>
+          </div>
+          <div className="size-8 rounded-full bg-white dark:bg-slate-800 border border-orange-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 ml-2 group-hover:translate-x-1 transition">
+            <ChevronRight className="size-4 text-orange-600 dark:text-amber-400" />
+          </div>
+        </Link>
+
+        {/* 2. KHỐI THÔNG BÁO ĐẨY */}
+        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-              <Cog className="h-4 w-4 text-amber-500" />
-              <span>{isEn ? "System Settings" : "Cài đặt hệ thống"}</span>
+              <Bell className="h-4 w-4 text-rose-500" />
+              <span>{isEn ? "Notification Settings" : "Cài đặt thông báo"}</span>
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              CEO 1983 App
-            </span>
           </div>
 
-          {/* Mục 1: Chọn ngôn ngữ (Language Selector) */}
-          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
-                  <Globe className="size-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-white block">
-                    {isEn ? "Display Language" : "Ngôn ngữ hiển thị"}
-                  </span>
-                  <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block">
-                    {lang === "vi" ? "Đang chọn Tiếng Việt" : "Selected English"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setLang("vi");
-                  toast.success("Đã chuyển sang Tiếng Việt");
-                }}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                  lang === "vi"
-                    ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <span className="text-sm">🇻🇳</span>
-                <span>Tiếng Việt</span>
-                {lang === "vi" && <Check className="size-3.5 text-[#003B95] dark:text-amber-400 ml-auto" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setLang("en");
-                  toast.success("Switched to English");
-                }}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                  lang === "en"
-                    ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <span className="text-sm">🇬🇧</span>
-                <span>English</span>
-                {lang === "en" && <Check className="size-3.5 text-[#003B95] dark:text-amber-400 ml-auto" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mục 2: Bật/Tắt Trợ lý AI CEO 1983 */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-            <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <div className="size-9 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 grid place-items-center shrink-0">
-                <Bot className="size-4.5" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                  {isEn ? "AI Voice & Chat Assistant" : "Trợ lý điều khiển & Trò chuyện AI"}
-                </span>
-                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block line-clamp-1">
-                  {voiceAiEnabled
-                    ? (isEn ? "Floating AI bot is visible on screen" : "Đang hiển thị trợ lý AI nổi trên màn hình")
-                    : (isEn ? "AI bot is currently hidden" : "Đang tắt / ẩn trợ lý AI")}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={voiceAiEnabled}
-              onClick={handleToggleVoiceAi}
-              className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-              }`}
-              title="Bật/tắt Trợ lý AI"
-            >
-              <div
-                className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                  voiceAiEnabled ? "translate-x-5.5" : "translate-x-0.5"
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Mục 3: Giao diện hiển thị (Theme sáng / tối) */}
-          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                  <Sparkles className="size-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-white block">
-                    {isEn ? "Appearance Mode" : "Giao diện hiển thị"}
-                  </span>
-                  <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block">
-                    {theme === "dark" ? "Chế độ ban đêm (Dark Mode)" : "Chế độ ban ngày (Light Mode)"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme("light");
-                  toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
-                }}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                  theme === "light"
-                    ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-extrabold"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                <Sun className="size-4 text-amber-500" />
-                <span>{isEn ? "Light" : "Giao diện sáng"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme("dark");
-                  toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối chuẩn CEO 1983");
-                }}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                  theme === "dark"
-                    ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-extrabold"
-                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                <Moon className="size-4 text-sky-400" />
-                <span>{isEn ? "Dark" : "Giao diện tối"}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Mục 3.2: 4 Dạng Màu Tiêu Chuẩn CEO 1983 (Brandbook) */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#0E172A] border border-slate-200/80 dark:border-amber-400/25 space-y-3">
-            <Ceo1983ColorThemeSelector />
-          </div>
-
-          {/* Mục 4: Thông báo đẩy & Tin nhắn nền */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
               <div className="size-9 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 grid place-items-center shrink-0">

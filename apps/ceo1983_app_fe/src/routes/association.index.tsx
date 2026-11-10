@@ -1215,14 +1215,26 @@ function Home() {
           </Link>
         </div>
 
-        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE MÀU CAM ── */}
+        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE MÀU ĐỘNG BRAND THEME ── */}
         <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-2.5">
           <div
             onClick={() => setProfileSheetOpen(true)}
-            className="self-stretch h-56 relative bg-gradient-to-r from-orange-100/90 via-amber-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-[20px] shadow-[0px_4px_14px_0px_rgba(234,88,12,0.15)] border border-orange-300/80 dark:border-orange-500/40 overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group"
+            style={{
+              background: !isDark
+                ? `linear-gradient(135deg, ${brandColorTheme.lightBg} 0%, #FFFFFF 65%, ${brandColorTheme.lightBg} 100%)`
+                : brandColorTheme.gradientCard,
+              borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorder,
+              boxShadow: !isDark
+                ? `0px 4px 16px 0px ${brandColorTheme.primaryColor}20`
+                : `0px 4px 16px 0px ${brandColorTheme.primaryColor}35`,
+            }}
+            className="self-stretch h-56 relative rounded-[20px] border overflow-hidden cursor-pointer active:scale-[0.99] transition duration-200 group"
           >
             {/* Cover Banner */}
-            <div className="w-full h-24 left-0 top-0 absolute bg-stone-300 dark:bg-slate-800 rounded-tl-2xl rounded-tr-2xl border-b border-orange-200/60 dark:border-slate-700 overflow-hidden">
+            <div
+              style={{ borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft }}
+              className="w-full h-24 left-0 top-0 absolute bg-stone-300 dark:bg-slate-800 rounded-tl-2xl rounded-tr-2xl border-b overflow-hidden"
+            >
               <img
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
@@ -1245,7 +1257,10 @@ function Home() {
               {displayAvatar && !avatarError ? (
                 <img src={displayAvatar} alt={displayName} onError={() => setAvatarError(true)} className="size-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-base font-black font-sans">
+                <div
+                  style={{ background: brandColorTheme.gradientPrimary }}
+                  className="w-full h-full flex items-center justify-center text-white text-base font-black font-sans"
+                >
                   {initials(displayName)}
                 </div>
               )}
@@ -1257,11 +1272,23 @@ function Home() {
                 <div className="text-slate-900 dark:text-white text-lg font-bold font-['Inter'] leading-6 truncate">
                   {displayName || "Trần Tuấn Anh"}
                 </div>
-                <img src="/icons/home/security-check.svg" className="size-4 shrink-0 text-orange-500" alt="Xác thực" />
+                <img
+                  src="/icons/home/security-check.svg"
+                  className="size-4 shrink-0"
+                  style={{ filter: `drop-shadow(0 0 4px ${brandColorTheme.primaryColor}80)` }}
+                  alt="Xác thực"
+                />
               </div>
-              <div className="px-2 py-[2px] bg-orange-100 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-500/40 rounded-full inline-flex justify-start items-center gap-1.5">
-                <img src="/icons/home/briefcase-04.svg" className="size-3 text-orange-600 dark:text-orange-400" alt="Chức vụ" />
-                <div className="text-orange-600 dark:text-orange-400 text-xs font-semibold font-['Inter'] leading-4">
+              <div
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}25`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                  color: !isDark ? brandColorTheme.primaryColor : brandColorTheme.accentLight,
+                }}
+                className="px-2 py-[2px] border rounded-full inline-flex justify-start items-center gap-1.5"
+              >
+                <img src="/icons/home/briefcase-04.svg" className="size-3" alt="Chức vụ" />
+                <div className="text-xs font-semibold font-['Inter'] leading-4">
                   {displayTitle || "CEO"}
                 </div>
               </div>
@@ -1274,7 +1301,10 @@ function Home() {
                 e.stopPropagation();
                 setQuickEditOpen(true);
               }}
-              className="w-8 h-8 p-1.5 right-4 top-[106px] absolute rounded-xl border border-orange-200 dark:border-orange-500/30 bg-white/95 dark:bg-slate-800/90 shadow-2xs inline-flex justify-center items-center hover:scale-105 active:scale-95 transition cursor-pointer"
+              style={{
+                borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+              }}
+              className="w-8 h-8 p-1.5 right-4 top-[106px] absolute rounded-xl border bg-white/95 dark:bg-slate-800/90 shadow-2xs inline-flex justify-center items-center hover:scale-105 active:scale-95 transition cursor-pointer"
               title="Chỉnh sửa thông tin"
             >
               <img src="/icons/home/edit-04.svg" className="size-4" alt="Chỉnh sửa" />
@@ -1282,7 +1312,7 @@ function Home() {
 
             {/* Member Phone */}
             <div className="left-4 top-[188px] absolute inline-flex justify-start items-center gap-1.5">
-              <img src="/icons/home/call-02.svg" className="size-4 text-orange-600 dark:text-orange-400" alt="Điện thoại" />
+              <Phone className="size-3.5 shrink-0" style={{ color: brandColorTheme.primaryColor }} />
               <div className="text-slate-800 dark:text-slate-200 text-sm font-semibold font-['Inter'] leading-5 tracking-wide">
                 {displayPhone || "0393631546"}
               </div>
@@ -1290,7 +1320,7 @@ function Home() {
           </div>
         </div>
 
-        {/* ── TÍNH NĂNG NHANH THEO MOCKUP JSX & TONE VÀNG CAM ── */}
+        {/* ── TÍNH NĂNG NHANH THEO MOCKUP JSX & TONE THEME ĐỘNG ── */}
         <div id="tour-quick-actions" className="self-stretch flex flex-col justify-start items-start pt-4">
           <div className="self-stretch px-4 inline-flex justify-between items-center">
             <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
@@ -1299,9 +1329,14 @@ function Home() {
             <button
               type="button"
               onClick={() => setAllFeaturesModalOpen(true)}
-              className="px-2.5 py-1 rounded-lg border border-orange-200 dark:border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/30 flex justify-start items-center gap-1.5 cursor-pointer hover:bg-orange-100/50 transition"
+              style={{
+                backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                color: brandColorTheme.primaryColor,
+              }}
+              className="px-2.5 py-1 rounded-lg border flex justify-start items-center gap-1.5 cursor-pointer hover:opacity-90 transition"
             >
-              <div className="text-orange-600 dark:text-orange-400 text-xs font-semibold font-['Inter'] leading-5">
+              <div className="text-xs font-semibold font-['Inter'] leading-5">
                 Xem tất cả
               </div>
               <img src="/icons/home/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
@@ -1315,7 +1350,13 @@ function Home() {
               search={{ tab: "messages" }}
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
             >
-              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
+              <div
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                }}
+                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition"
+              >
                 <img src="/icons/home/bubble-chat.svg" className="size-6" alt="Tin nhắn" />
               </div>
               <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
@@ -1328,7 +1369,13 @@ function Home() {
               to="/association/members"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
             >
-              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
+              <div
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                }}
+                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative"
+              >
                 <img src="/icons/home/contact-book.svg" className="size-6" alt="Danh bạ CEO" />
                 <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
                   <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
@@ -1346,7 +1393,13 @@ function Home() {
               to="/association/analytics"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
             >
-              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition">
+              <div
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                }}
+                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition"
+              >
                 <img src="/icons/home/chart-breakout-circle.svg" className="size-6" alt="Báo cáo" />
               </div>
               <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">

@@ -27,6 +27,8 @@ import { Ceo1983ColorThemeModal } from "@/components/member/Ceo1983ColorThemeMod
 import { FirstDayAiWelcomeModal } from "@/components/member/FirstDayAiWelcomeModal";
 import { ViOneAiTutorGuide } from "@/components/common/ViOneAiTutorGuide";
 import { applyCeo1983ColorTheme, getActiveCeo1983ColorThemeId } from "@/lib/ceo1983-color-theme";
+import { SeasonalThemeAmbientOverlay } from "@/components/member/SeasonalThemeAmbientOverlay";
+import { getEffectiveThemeOption, isEventThemeEnabled } from "@/components/member/SeasonalEventHeader";
 
 /** Mobile-constrained container for the member app. */
 export function MemberScreen({ children }: { children: ReactNode }) {
@@ -385,6 +387,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
           } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)]`}
       >
         <OfflineBanner />
+        <SeasonalThemeAmbientOverlay />
         {/* Tắt hoàn toàn cử chỉ vuốt ngang chuyển tab để tránh xung đột với carousel/card và ngăn thoát app */}
         <PullToRefresh
           enableSwipeNav={false}
@@ -819,6 +822,9 @@ function MemberTabBar() {
     };
   }, [pathname]);
 
+  const [activeThemeOption, setActiveThemeOption] = useState(() => getEffectiveThemeOption());
+  const isThemeActive = isEventThemeEnabled() && activeThemeOption?.id !== "none" && activeThemeOption?.id !== "classic";
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const check = () => {
@@ -826,10 +832,17 @@ function MemberTabBar() {
         const disabled = localStorage.getItem("vba_event_theme_disabled") === "true";
         const type = localStorage.getItem("vba_event_theme_type") || "mid-autumn";
         setIsMidAutumn(enabled && !disabled && type === "mid-autumn");
+        setActiveThemeOption(getEffectiveThemeOption());
       };
       check();
       window.addEventListener("vba-event-theme-changed", check);
-      return () => window.removeEventListener("vba-event-theme-changed", check);
+      window.addEventListener("ceo1983-theme-changed", check);
+      window.addEventListener("storage", check);
+      return () => {
+        window.removeEventListener("vba-event-theme-changed", check);
+        window.removeEventListener("ceo1983-theme-changed", check);
+        window.removeEventListener("storage", check);
+      };
     }
   }, []);
 
@@ -885,6 +898,10 @@ function MemberTabBar() {
                   navigator.vibrate(8);
                 }
               } catch { }
+              // Nếu bấm vào tab Mạng lưới (messages): luôn reset về giao diện Bản tin Mạng Lưới
+              if (tab.to.includes("messages")) {
+                window.dispatchEvent(new CustomEvent("vba:reset_network_tab"));
+              }
               // Bấm lại vào tab đang active -> Cuộn mượt lên đỉnh (chuẩn MoMo / iOS Native)
               if (active) {
                 window.dispatchEvent(new CustomEvent("vba:scroll_to_top"));
@@ -937,12 +954,22 @@ function MemberTabBar() {
                         </>
                       )}
 
-                      {isMidAutumn && (
+                      {isThemeActive && (
                         <span
-                          className="absolute -top-1 -right-1 text-[10px] select-none z-30"
+                          className="absolute -top-1 -right-1 text-[11px] select-none z-30 filter drop-shadow-sm animate-bounce"
                           aria-hidden="true"
                         >
-                          🌕
+                          {activeThemeOption.id === "tet"
+                            ? "🧧"
+                            : activeThemeOption.id === "christmas"
+                            ? "🔔"
+                            : activeThemeOption.id === "national-day"
+                            ? "🇻🇳"
+                            : activeThemeOption.id === "mid-autumn"
+                            ? "🌕"
+                            : activeThemeOption.id === "ceo1983-birthday"
+                            ? "🎂"
+                            : activeThemeOption.iconEmoji || "✨"}
                         </span>
                       )}
                     </span>
@@ -953,7 +980,29 @@ function MemberTabBar() {
 
             // Custom seasonal tab badges
             let seasonalBadge: ReactNode = null;
-            if (isMidAutumn) {
+            if (isThemeActive) {
+              const thId = activeThemeOption.id;
+              let emoji = "";
+              if (tab.to === "/association") {
+                emoji = thId === "tet" ? "🌸" : thId === "christmas" ? "🎄" : thId === "national-day" ? "🇻🇳" : thId === "mid-autumn" ? "🌕" : thId === "ceo1983-birthday" ? "🎂" : "👑";
+              } else if (tab.to.includes("analytics")) {
+                emoji = thId === "tet" ? "🧧" : thId === "christmas" ? "🎁" : thId === "mid-autumn" ? "🥮" : "📊";
+              } else if (tab.to.includes("messages")) {
+                emoji = thId === "tet" ? "🌸" : thId === "christmas" ? "❄️" : thId === "mid-autumn" ? "🐰" : "💬";
+              } else if (tab.to.includes("profile")) {
+                emoji = thId === "tet" ? "🧧" : thId === "christmas" ? "🎅" : thId === "mid-autumn" ? "🏮" : "🎖️";
+              }
+              if (emoji) {
+                seasonalBadge = (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 text-[9px] animate-pulse select-none"
+                    aria-hidden="true"
+                  >
+                    {emoji}
+                  </span>
+                );
+              }
+            } else if (isMidAutumn) {
               if (tab.to.includes("notifications")) {
                 seasonalBadge = (
                   <span
@@ -1011,10 +1060,12 @@ function MemberTabBar() {
               );
             }
 
+            const linkSearch = tab.to === "/association/messages" ? { tab: "feed" } : undefined;
             return (
               <Link
                 key={tab.to}
                 to={tab.to}
+                search={linkSearch as any}
                 onClick={handleTabClick}
                 className="relative flex flex-1 flex-col items-center justify-end gap-1 py-1 transition-all touch-press select-none-touch active:scale-92 cursor-pointer"
               >
