@@ -189,11 +189,21 @@ const pageTemplates: Item[] = [
     children: [
       { to: "/templates?tab=invitation", label: "Tạo Poster Thư Mời (Studio)" },
       { to: "/templates?tab=invitation-setup", label: "Set Up Thư Mời Sự Kiện" },
+      { to: "/admin/landing-webs", label: "Quản Lý Landing Web" },
+      { to: "/landing/web-v1", label: "Xem Landing Page Mẫu 1 (CLB Doanh Nhân)" },
+      { to: "/landing/web-v2", label: "Xem Landing Page Mẫu 2 (Startup Mobile)" },
+      { to: "/landing/web-v3", label: "Xem Landing Page Mẫu 3 (Forge Luxury)" },
       { to: "/templates?tab=email", label: "Template Email" },
       { to: "/templates?tab=zalo", label: "Template Mẫu Tin Nhắn Zalo" },
       { to: "/templates?tab=dues", label: "Thanh Toán Hội Phí" },
       { to: "/templates?tab=forum-meetings", label: "Mẫu Cuộc Gặp Diễn Đàn" },
     ],
+  },
+  {
+    key: "nav.invitationSetup" as TKey,
+    icon: Calendar,
+    to: "/templates?tab=invitation-setup",
+    label: "Set Up Thư Mời Sự Kiện",
   },
   {
     key: "nav.landingWebs" as TKey,

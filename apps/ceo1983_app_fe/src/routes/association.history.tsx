@@ -279,12 +279,13 @@ function HistoryScreen() {
   // 4. All Activities
   const allActivities = useMemo(() => {
     const list: any[] = [];
-    const seenTitles = new Set<string>();
+    const seenIds = new Set<string>();
 
     // From local activities
     for (const a of localActivities) {
-      if (!seenTitles.has(a.title)) {
-        seenTitles.add(a.title);
+      const key = a.id || `${a.title}_${a.date}`;
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
         list.push(a);
       }
     }
@@ -292,8 +293,9 @@ function HistoryScreen() {
     // From server
     if (data?.activities && data.activities.length > 0) {
       for (const s of data.activities) {
-        if (!seenTitles.has(s.title)) {
-          seenTitles.add(s.title);
+        const key = s.id || `${s.title}_${s.date}`;
+        if (!seenIds.has(key)) {
+          seenIds.add(key);
           list.push(s);
         }
       }

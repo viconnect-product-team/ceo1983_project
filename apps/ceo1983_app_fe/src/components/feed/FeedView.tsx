@@ -51,6 +51,7 @@ import { QrCanvas } from "../member/QrCanvas";
 import { CategoryTreeModal } from "./CategoryTreeModal";
 import { CommentBottomSheetModal } from "./CommentBottomSheetModal";
 import { FolderTree } from "lucide-react";
+import { recordUserActivity } from "@/lib/user-activity-logger";
 
 export const COMMENT_EMOTIONS = [
   { id: "like", emoji: "👍", label: "Thích" },
@@ -432,6 +433,11 @@ export function FeedView({
       await fetchNestApi(`/feed/${postId}`, { method: "DELETE" }).catch(() => {});
     } catch {}
     setPosts((prev) => prev.filter((p) => p.id !== postId));
+    recordUserActivity({
+      action: "DELETE_POST",
+      title: "Đã xóa bài viết trên Bảng tin Mạng lưới",
+      badge: "Mạng lưới",
+    });
     try {
       const raw = localStorage.getItem("vba_network_feed_posts");
       if (raw) {
@@ -664,6 +670,14 @@ export function FeedView({
 
     try {
       await fetchNestApi(`/feed/${post.id}/like`, { method: "POST" });
+      if (!isLiked) {
+        recordUserActivity({
+          action: "LIKE_POST",
+          title: `Thích bài viết của ${post.authorName}`,
+          badge: "Tương tác",
+          metadata: { postId: post.id },
+        });
+      }
     } catch {
       setPosts((prev) =>
         prev.map((p) =>
@@ -761,6 +775,13 @@ export function FeedView({
       setPosts((prev) =>
         prev.map((p) => (p.id === post.id ? { ...p, sharesCount: p.sharesCount + 1 } : p))
       );
+
+      recordUserActivity({
+        action: "SHARE_POST",
+        title: `Chia sẻ bài viết của ${post.authorName || "Hội viên"}`,
+        badge: "Chia sẻ",
+        metadata: { postId: post.id },
+      });
 
       await executeShare(
         {
@@ -1507,6 +1528,12 @@ export function FeedView({
         initialShare={initialShare}
         onSuccess={(newPost) => {
           setPosts((prev) => [newPost, ...prev]);
+          recordUserActivity({
+            action: "CREATE_POST",
+            title: `Đã đăng bài viết: "${(newPost.content || newPost.title || "Bài viết mới").slice(0, 35)}..."`,
+            badge: "Mạng lưới",
+            metadata: { postId: newPost.id },
+          });
         }}
       />
 

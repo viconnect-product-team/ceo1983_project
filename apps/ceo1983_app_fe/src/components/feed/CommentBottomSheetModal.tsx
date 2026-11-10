@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { MoreHorizontal, Pencil, Trash2, Copy, Reply, CornerDownRight, Check, X } from "lucide-react";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
+import { recordUserActivity } from "@/lib/user-activity-logger";
 
 export interface BottomSheetComment {
   id: string;
@@ -187,6 +188,12 @@ export function CommentBottomSheetModal({
       }).catch(() => {});
 
       setComments((prev) => prev.filter((c) => c.id !== commentId && c.parentId !== commentId));
+      recordUserActivity({
+        action: "DELETE_COMMENT",
+        title: "Đã xóa bình luận trên Bảng tin Mạng lưới",
+        badge: "Bình luận",
+        userId: currentUserId,
+      });
       toast.success("✓ Đã xóa bình luận!");
       setActiveMenuCommentId(null);
     } catch {
@@ -237,6 +244,13 @@ export function CommentBottomSheetModal({
       setInputText("");
       setAttachedImage(null);
       setReplyingTo(null);
+      recordUserActivity({
+        action: "CREATE_COMMENT",
+        title: `Đã gửi bình luận: "${resolvedComment.content.slice(0, 35)}${resolvedComment.content.length > 35 ? "..." : ""}"`,
+        badge: "Bình luận",
+        userId: currentUserId,
+        metadata: { postId, commentId: resolvedComment.id },
+      });
       toast.success("✓ Đã gửi bình luận!");
     } catch {
       toast.error("Không thể gửi bình luận");

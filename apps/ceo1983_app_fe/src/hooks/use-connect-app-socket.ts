@@ -22,13 +22,13 @@ export function getConnectAppSocket(): Socket {
     } as any;
   }
   if (!globalSocket) {
-    globalSocket = io(NEST_API_URL, {
+    globalSocket = io(NEST_API_URL || undefined, {
       transports: ["websocket", "polling"],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 5000,
-      reconnectionDelayMax: 15000,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 10000,
+      reconnectionDelayMax: 30000,
       timeout: 10000,
     });
 
