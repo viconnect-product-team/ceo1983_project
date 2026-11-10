@@ -14,7 +14,7 @@ export function mapMember(r: Row): Member {
     id: String(r.id || r.member_id || rawCode),
     code: rawCode,
     name: rawName,
-    contact: (r.contact as string) ?? rawName,
+    contact: (r.contact as string) ?? "",
     email: rawEmail,
     phone: rawPhone,
     type: (r.type as Member["type"]) ?? "individual",
@@ -41,7 +41,8 @@ export function mapMember(r: Row): Member {
 export function daysBetween(from: Date, toIso: string) {
   const to = new Date(toIso);
   to.setHours(0, 0, 0, 0);
-  return Math.round((to.getTime() - from.getTime()) / 86400000);
+  const diff = Math.round((to.getTime() - from.getTime()) / 86400000);
+  return diff === 0 ? 0 : diff;
 }
 
 /**

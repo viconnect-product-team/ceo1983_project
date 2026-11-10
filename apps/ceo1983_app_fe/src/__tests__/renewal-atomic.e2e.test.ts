@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { requireStagingSupabase } from "./helpers/test-env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -205,39 +205,28 @@ describe.skipIf(!canRun)("payMyRenewal — atomic on invoice failure (live DB)",
 
 // ---------------------------------------------------------------------------
 // Static invariants — the server fn MUST:
-//   (a) wrap invoices + members writes in a single try block,
-//   (b) throw on invoice write errors BEFORE touching members,
-//   (c) place the members.update AFTER the invoices update in source order.
-// A regression to any of these silently breaks the atomicity guarantee.
+//   (a) delegate securely to NestJS backend /members/me/renewal-payment
+//   (b) enforce requireNestAuth middleware
+//   (c) handle errors safely via try/catch and return success: false
 // ---------------------------------------------------------------------------
 describe("payMyRenewal — atomicity invariants (static)", () => {
-  const source = readFileSync("src/lib/member-app/renewal.functions.ts", "utf8");
+  const fnPath = existsSync("src/lib/member-app/renewal.functions.ts")
+    ? "src/lib/member-app/renewal.functions.ts"
+    : "apps/ceo1983_app_fe/src/lib/member-app/renewal.functions.ts";
+  const source = readFileSync(fnPath, "utf8");
 
-  it("invoice write throws on error before members.update runs", () => {
-    // The invoices update block ends with `if (error) throw new Error(error.message);`
-    // BEFORE the members.update call appears in source.
-    const idxInvoiceThrow = source.indexOf("if (error) throw new Error(error.message);");
-    const idxMembersUpdate = source.indexOf('.from("members")\n        .update({ new_term_end');
-    expect(idxInvoiceThrow).toBeGreaterThan(0);
-    expect(idxMembersUpdate).toBeGreaterThan(idxInvoiceThrow);
+  it("payMyRenewal delegates to NestJS atomic renewal endpoint", () => {
+    expect(source).toMatch(/\/members\/me\/renewal-payment/);
+    expect(source).toMatch(/fetchNestApiFromServer/);
   });
 
-  it("members.update sits inside the same try/catch that catches invoice errors", () => {
-    // Locate the settlement try block (it opens right after settledInvoiceNo).
-    const tryIdx = source.indexOf("try {", source.indexOf("let settledInvoiceNo"));
-    const catchIdx = source.indexOf("} catch (e) {", tryIdx);
-    const membersIdx = source.indexOf('.from("members")\n        .update({ new_term_end', tryIdx);
-    expect(tryIdx).toBeGreaterThan(0);
-    expect(membersIdx).toBeGreaterThan(tryIdx);
-    expect(membersIdx).toBeLessThan(catchIdx);
+  it("payMyRenewal enforces requireNestAuth middleware", () => {
+    expect(source).toMatch(/requireNestAuth/);
   });
 
-  it("catch handler returns failure without extending the term", () => {
-    // The catch branch must return success:false and MUST NOT contain any
-    // subsequent members.update call.
-    const catchIdx = source.indexOf("} catch (e) {");
-    const catchBlock = source.slice(catchIdx, catchIdx + 400);
+  it("catch handler returns failure on unexpected error", () => {
+    const catchIdx = source.indexOf("} catch (err: any) {");
+    const catchBlock = source.slice(catchIdx, catchIdx + 300);
     expect(catchBlock).toMatch(/success:\s*false/);
-    expect(catchBlock).not.toMatch(/\.from\(["']members["']\)/);
   });
 });

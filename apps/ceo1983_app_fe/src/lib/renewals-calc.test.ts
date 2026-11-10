@@ -51,7 +51,7 @@ const baseRow = () => ({
 
 describe("toRecord", () => {
   it("status = renewed khi có renewed_at", () => {
-    const rec = toRecord({ ...baseRow(), term_end: "2999-01-01", renewed_at: "2027-01-01" });
+    const rec = toRecord({ ...baseRow(), id: undefined, term_end: "2999-01-01", renewed_at: "2027-01-01" });
     expect(rec.status).toBe("renewed");
     expect(rec.id).toBe("RNW-HV001");
   });

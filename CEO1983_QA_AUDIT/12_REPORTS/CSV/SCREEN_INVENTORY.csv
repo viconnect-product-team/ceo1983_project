@@ -1,0 +1,249 @@
+SCREEN_ID,SUBSYSTEM,ROUTE_PATH,FILE_NAME,BUTTONS,FORMS,MODALS
+"SCR-001","Web Admin","/account-settings","account-settings.index.tsx",54,10,0
+"SCR-002","Web Admin","/account-settings/notifications","account-settings.notifications.tsx",8,0,0
+"SCR-003","Web Admin","/account-settings","account-settings.tsx",0,0,0
+"SCR-004","Web Admin","/accounts","accounts.tsx",27,2,0
+"SCR-005","Web Admin","/activity-logs","activity-logs.tsx",12,0,0
+"SCR-006","Web Admin","/activity","activity.tsx",7,0,0
+"SCR-007","Web Admin","/admin/business-cards/audit","admin.business-cards.audit.tsx",16,0,0
+"SCR-008","Web Admin","/admin/business-cards","admin.business-cards.index.tsx",32,0,0
+"SCR-009","Web Admin","/admin/business-cards","admin.business-cards.tsx",0,0,0
+"SCR-010","Web Admin","/admin/cta-analytics","admin.cta-analytics.tsx",8,0,0
+"SCR-011","Web Admin","/admin/demo-leads","admin.demo-leads.tsx",17,0,0
+"SCR-012","Web Admin","/admin","admin.index.tsx",0,0,0
+"SCR-013","Web Admin","/admin/landing-templates","admin.landing-templates.tsx",54,0,0
+"SCR-014","Web Admin","/admin/landing-webs","admin.landing-webs.tsx",113,4,0
+"SCR-015","Web Admin","/ai-assistant","ai-assistant.tsx",18,0,0
+"SCR-016","Web Admin","/ai","ai.tsx",43,2,0
+"SCR-017","Web Admin","/analytics","analytics.tsx",20,0,0
+"SCR-018","Nitro Server Function","/api/public/avatar/$owner/$file","avatar.$owner.$file.ts",0,0,0
+"SCR-019","Nitro Server Function","/api/public/card/$slug/contact","card.$slug.contact.ts",0,0,0
+"SCR-020","Nitro Server Function","/api/public/card/{$slug}[/]vcf","card.{$slug}[.]vcf.ts",0,0,0
+"SCR-021","Nitro Server Function","/api/public/hooks/notification-runtime","notification-runtime.ts",0,0,0
+"SCR-022","Nitro Server Function","/api/public/hooks/outcome-consumer","outcome-consumer.ts",0,0,0
+"SCR-023","Nitro Server Function","/api/public/hooks/timeline-projection","timeline-projection.ts",0,0,0
+"SCR-024","Nitro Server Function","/api/public/identity/$token/contact","identity.$token.contact.ts",0,0,0
+"SCR-025","CEO 1983 PWA","/association/analytics","association.analytics.tsx",42,0,0
+"SCR-026","CEO 1983 PWA","/association/benefits","association.benefits.tsx",0,0,0
+"SCR-027","CEO 1983 PWA","/association/business-cards","association.business-cards.tsx",84,0,0
+"SCR-028","CEO 1983 PWA","/association/calendar","association.calendar.tsx",42,0,0
+"SCR-029","CEO 1983 PWA","/association/card","association.card.tsx",38,0,0
+"SCR-030","CEO 1983 PWA","/association/checkin","association.checkin.tsx",30,0,0
+"SCR-031","CEO 1983 PWA","/association/connect","association.connect.tsx",40,4,0
+"SCR-032","CEO 1983 PWA","/association/documents","association.documents.tsx",0,0,0
+"SCR-033","CEO 1983 PWA","/association/events","association.events.tsx",57,1,4
+"SCR-034","CEO 1983 PWA","/association/history","association.history.tsx",40,0,5
+"SCR-035","CEO 1983 PWA","/association","association.index.tsx",20,0,0
+"SCR-036","CEO 1983 PWA","/association/library","association.library.tsx",32,0,0
+"SCR-037","CEO 1983 PWA","/association/login","association.login.tsx",0,1,0
+"SCR-038","CEO 1983 PWA","/association/marketplace","association.marketplace.tsx",0,0,0
+"SCR-039","CEO 1983 PWA","/association/members","association.members.tsx",92,0,0
+"SCR-040","CEO 1983 PWA","/association/messages","association.messages.tsx",26,0,0
+"SCR-041","CEO 1983 PWA","/association/news/$id","association.news.$id.tsx",0,0,0
+"SCR-042","CEO 1983 PWA","/association/news","association.news.tsx",37,2,6
+"SCR-043","CEO 1983 PWA","/association/notifications","association.notifications.tsx",65,0,4
+"SCR-044","CEO 1983 PWA","/association/opportunities","association.opportunities.tsx",58,2,0
+"SCR-045","CEO 1983 PWA","/association/perks/$id","association.perks.$id.tsx",0,0,0
+"SCR-046","CEO 1983 PWA","/association/perks","association.perks.index.tsx",35,0,0
+"SCR-047","CEO 1983 PWA","/association/perks","association.perks.tsx",0,0,0
+"SCR-048","CEO 1983 PWA","/association/permissions","association.permissions.tsx",0,0,0
+"SCR-049","CEO 1983 PWA","/association/products","association.products.tsx",111,4,0
+"SCR-050","CEO 1983 PWA","/association/profile","association.profile.tsx",94,2,0
+"SCR-051","CEO 1983 PWA","/association/renew/audit","association.renew.audit.tsx",8,0,0
+"SCR-052","CEO 1983 PWA","/association/renew/history","association.renew.history.tsx",0,0,0
+"SCR-053","CEO 1983 PWA","/association/renew","association.renew.index.tsx",4,0,0
+"SCR-054","CEO 1983 PWA","/association/renew/pay","association.renew.pay.tsx",4,0,0
+"SCR-055","CEO 1983 PWA","/association/renew/result","association.renew.result.tsx",10,0,0
+"SCR-056","CEO 1983 PWA","/association/renew","association.renew.tsx",0,0,0
+"SCR-057","CEO 1983 PWA","/association/settings","association.settings.tsx",8,0,0
+"SCR-058","CEO 1983 PWA","/association/system-config","association.system-config.tsx",10,0,0
+"SCR-059","CEO 1983 PWA","/association/training","association.training.tsx",33,0,0
+"SCR-060","CEO 1983 PWA","/association/trainings","association.trainings.tsx",0,0,0
+"SCR-061","CEO 1983 PWA","/association","association.tsx",0,0,0
+"SCR-062","CEO 1983 PWA","/association/voting","association.voting.tsx",7,0,0
+"SCR-063","Web Admin","/auth","auth.tsx",5,2,0
+"SCR-064","Public Web","/b/$slug","b.$slug.tsx",0,0,0
+"SCR-065","Web Admin","/benefits","benefits.tsx",24,1,0
+"SCR-066","Web Admin","/business-cards","business-cards.tsx",40,0,0
+"SCR-067","Web Admin","/business-connect/connections/$personNodeId","business-connect.connections.$personNodeId.tsx",1,0,0
+"SCR-068","Web Admin","/business-connect/connections","business-connect.connections.index.tsx",0,0,0
+"SCR-069","Web Admin","/business-connect/connections","business-connect.connections.tsx",0,0,0
+"SCR-070","Web Admin","/business-connect","business-connect.index.tsx",0,0,0
+"SCR-071","Web Admin","/business-connect/introductions/$targetPersonNodeId","business-connect.introductions.$targetPersonNodeId.tsx",0,0,0
+"SCR-072","Web Admin","/business-connect/introductions/analytics","business-connect.introductions.analytics.tsx",0,0,0
+"SCR-073","Web Admin","/business-connect/introductions/deliveries","business-connect.introductions.deliveries.tsx",0,0,0
+"SCR-074","Web Admin","/business-connect/introductions/inbox","business-connect.introductions.inbox.tsx",0,0,0
+"SCR-075","Web Admin","/business-connect/introductions/outcomes","business-connect.introductions.outcomes.tsx",0,0,0
+"SCR-076","Web Admin","/business-connect/introductions/requests","business-connect.introductions.requests.tsx",0,0,0
+"SCR-077","Web Admin","/business-connect/meetings/$meetingId","business-connect.meetings.$meetingId.tsx",1,0,0
+"SCR-078","Web Admin","/business-connect/meetings","business-connect.meetings.index.tsx",24,0,0
+"SCR-079","Web Admin","/business-connect/meetings","business-connect.meetings.tsx",0,0,0
+"SCR-080","Web Admin","/business-connect/memory","business-connect.memory.tsx",0,0,0
+"SCR-081","Web Admin","/business-connect/my-card","business-connect.my-card.tsx",6,0,0
+"SCR-082","Web Admin","/business-connect/notifications","business-connect.notifications.tsx",0,0,0
+"SCR-083","Web Admin","/business-connect/relationship-timeline","business-connect.relationship-timeline.tsx",0,0,0
+"SCR-084","Web Admin","/business-connect/saved-cards","business-connect.saved-cards.tsx",0,0,0
+"SCR-085","Web Admin","/business-connect","business-connect.tsx",0,0,0
+"SCR-086","Web Admin","/c/$token","c.$token.tsx",0,0,0
+"SCR-087","Public Web","/card/$code","card.$code.tsx",8,0,0
+"SCR-088","Web Admin","/checkin-qr","checkin-qr.tsx",14,0,0
+"SCR-089","Web Admin","/checkin","checkin.tsx",18,0,0
+"SCR-090","Web Admin","/companies/$companyId","companies.$companyId.tsx",18,4,0
+"SCR-091","Web Admin","/companies","companies.index.tsx",27,2,0
+"SCR-092","Web Admin","/companies","companies.tsx",0,0,0
+"SCR-093","Web Admin","/company/$slug","company.$slug.tsx",0,0,0
+"SCR-094","Web Admin","/connect-app/activate","connect-app.activate.tsx",3,3,0
+"SCR-095","Web Admin","/connect-app/calendar","connect-app.calendar.tsx",0,0,0
+"SCR-096","Web Admin","/connect-app/card-scan","connect-app.card-scan.tsx",0,0,0
+"SCR-097","Web Admin","/connect-app/community/$communityId/events/$eventRef","connect-app.community.$communityId.events.$eventRef.tsx",0,0,0
+"SCR-098","Web Admin","/connect-app/community/$communityId/events","connect-app.community.$communityId.events.index.tsx",0,0,0
+"SCR-099","Web Admin","/connect-app/community/$communityId/events","connect-app.community.$communityId.events.tsx",0,0,0
+"SCR-100","Web Admin","/connect-app/community/$communityId","connect-app.community.$communityId.index.tsx",0,0,0
+"SCR-101","Web Admin","/connect-app/community/$communityId/members/$memberRef","connect-app.community.$communityId.members.$memberRef.tsx",0,0,0
+"SCR-102","Web Admin","/connect-app/community/$communityId/members","connect-app.community.$communityId.members.index.tsx",0,0,0
+"SCR-103","Web Admin","/connect-app/community/$communityId/members","connect-app.community.$communityId.members.tsx",0,0,0
+"SCR-104","Web Admin","/connect-app/community/$communityId/news/$newsRef","connect-app.community.$communityId.news.$newsRef.tsx",0,0,0
+"SCR-105","Web Admin","/connect-app/community/$communityId/news","connect-app.community.$communityId.news.index.tsx",0,0,0
+"SCR-106","Web Admin","/connect-app/community/$communityId/news","connect-app.community.$communityId.news.tsx",0,0,0
+"SCR-107","Web Admin","/connect-app/community/$communityId/opportunities/$opportunityRef","connect-app.community.$communityId.opportunities.$opportunityRef.tsx",0,0,0
+"SCR-108","Web Admin","/connect-app/community/$communityId/opportunities","connect-app.community.$communityId.opportunities.index.tsx",0,0,0
+"SCR-109","Web Admin","/connect-app/community/$communityId/opportunities","connect-app.community.$communityId.opportunities.tsx",0,0,0
+"SCR-110","Web Admin","/connect-app/community/$communityId","connect-app.community.$communityId.tsx",0,0,0
+"SCR-111","Web Admin","/connect-app/community","connect-app.community.index.tsx",0,0,0
+"SCR-112","Web Admin","/connect-app/community/requests","connect-app.community.requests.tsx",0,0,0
+"SCR-113","Web Admin","/connect-app/community","connect-app.community.tsx",0,0,0
+"SCR-114","Web Admin","/connect-app/inbox/$threadId","connect-app.inbox.$threadId.tsx",62,2,0
+"SCR-115","Web Admin","/connect-app/inbox","connect-app.inbox.index.tsx",8,0,0
+"SCR-116","Web Admin","/connect-app/inbox","connect-app.inbox.tsx",0,0,0
+"SCR-117","Web Admin","/connect-app","connect-app.index.tsx",0,0,0
+"SCR-118","Web Admin","/connect-app/invite/$token","connect-app.invite.$token.tsx",0,0,0
+"SCR-119","Web Admin","/connect-app/me/card","connect-app.me.card.tsx",2,0,0
+"SCR-120","Web Admin","/connect-app/me/cards","connect-app.me.cards.tsx",6,0,0
+"SCR-121","Web Admin","/connect-app/me/edit","connect-app.me.edit.tsx",0,0,0
+"SCR-122","Web Admin","/connect-app/me","connect-app.me.index.tsx",30,0,0
+"SCR-123","Web Admin","/connect-app/me/intel-settings","connect-app.me.intel-settings.tsx",0,0,0
+"SCR-124","Web Admin","/connect-app/me/security","connect-app.me.security.tsx",7,2,0
+"SCR-125","Web Admin","/connect-app/me/sessions","connect-app.me.sessions.tsx",8,0,0
+"SCR-126","Web Admin","/connect-app/me","connect-app.me.tsx",0,0,0
+"SCR-127","Web Admin","/connect-app/moment/$personId","connect-app.moment.$personId.tsx",0,0,0
+"SCR-128","Web Admin","/connect-app/moment","connect-app.moment.index.tsx",0,0,0
+"SCR-129","Web Admin","/connect-app/moment","connect-app.moment.tsx",0,0,0
+"SCR-130","Web Admin","/connect-app/network/$personId","connect-app.network.$personId.tsx",0,0,0
+"SCR-131","Web Admin","/connect-app/network","connect-app.network.index.tsx",0,0,0
+"SCR-132","Web Admin","/connect-app/network/requests","connect-app.network.requests.tsx",0,0,0
+"SCR-133","Web Admin","/connect-app/network","connect-app.network.tsx",0,0,0
+"SCR-134","Web Admin","/connect-app/nfc-tags","connect-app.nfc-tags.tsx",2,0,0
+"SCR-135","Web Admin","/connect-app/notifications","connect-app.notifications.tsx",18,0,0
+"SCR-136","Web Admin","/connect-app","connect-app.tsx",0,0,0
+"SCR-137","Web Admin","/connect/calendar-settings","connect.calendar-settings.tsx",0,0,0
+"SCR-138","Web Admin","/connect/cards/$cardId/edit","connect.cards.$cardId.edit.tsx",0,0,0
+"SCR-139","Web Admin","/connect/cards","connect.cards.index.tsx",2,0,0
+"SCR-140","Web Admin","/connect/connections","connect.connections.tsx",6,0,0
+"SCR-141","Web Admin","/connect/meetings/$section","connect.meetings.$section.tsx",0,0,0
+"SCR-142","Web Admin","/connect/meetings","connect.meetings.index.tsx",0,0,0
+"SCR-143","Web Admin","/connect/meetings","connect.meetings.tsx",0,0,0
+"SCR-144","Web Admin","/connect/network/connections","connect.network.connections.tsx",0,0,0
+"SCR-145","Web Admin","/connect/network","connect.network.index.tsx",0,0,0
+"SCR-146","Web Admin","/connect/network/notifications","connect.network.notifications.tsx",0,0,0
+"SCR-147","Web Admin","/connect/network/requests/incoming","connect.network.requests.incoming.tsx",0,0,0
+"SCR-148","Web Admin","/connect/network/requests/sent","connect.network.requests.sent.tsx",0,0,0
+"SCR-149","Web Admin","/connect/network","connect.network.tsx",0,0,0
+"SCR-150","Web Admin","/connect/saved-cards","connect.saved-cards.tsx",14,0,0
+"SCR-151","Web Admin","/connect","connect.tsx",0,0,0
+"SCR-152","Web Admin","/demo","demo.tsx",7,2,0
+"SCR-153","Web Admin","/departments","departments.tsx",27,2,0
+"SCR-154","Web Admin","/documents/$docId","documents.$docId.tsx",18,1,0
+"SCR-155","Web Admin","/documents","documents.index.tsx",85,2,0
+"SCR-156","Web Admin","/documents","documents.tsx",0,0,0
+"SCR-157","Web Admin","/email-marketing","email-marketing.tsx",12,0,0
+"SCR-158","Web Admin","/event-registrations","event-registrations.tsx",54,2,0
+"SCR-159","Web Admin","/events-overview","events-overview.tsx",2,0,0
+"SCR-160","Web Admin","/events/$eventId/register","events.$eventId.register.tsx",13,2,0
+"SCR-161","Web Admin","/events/$eventId","events.$eventId.tsx",36,2,0
+"SCR-162","Web Admin","/events","events.index.tsx",45,1,0
+"SCR-163","Web Admin","/events","events.tsx",0,0,0
+"SCR-164","Web Admin","/expenses","expenses.tsx",39,6,0
+"SCR-165","Web Admin","/fees/$invoiceId","fees.$invoiceId.tsx",33,0,0
+"SCR-166","Web Admin","/fees","fees.index.tsx",48,1,0
+"SCR-167","Web Admin","/fees","fees.tsx",0,0,0
+"SCR-168","Web Admin","/finance-report","finance-report.tsx",22,0,0
+"SCR-169","Web Admin","/forgot-password","forgot-password.tsx",6,1,0
+"SCR-170","Web Admin","/guest-event-register/$eventId","guest-event-register.$eventId.tsx",13,2,0
+"SCR-171","Web Admin","/h/$slug","h.$slug.tsx",0,0,0
+"SCR-172","Web Admin","/income","income.tsx",43,3,0
+"SCR-173","Web Admin","/","index.tsx",0,0,0
+"SCR-174","Web Admin","/install","install.tsx",0,0,0
+"SCR-175","Web Admin","/intro","intro.tsx",0,0,0
+"SCR-176","Web Admin","/landing/$slug","landing.$slug.tsx",0,0,0
+"SCR-177","Web Admin","/landing","landing.index.tsx",0,0,0
+"SCR-178","Web Admin","/landing","landing.tsx",0,0,0
+"SCR-179","Web Admin","/lucky-draw","lucky-draw.tsx",0,0,0
+"SCR-180","CEO 1983 PWA","/m/business-cards","m.business-cards.tsx",0,0,0
+"SCR-181","CEO 1983 PWA","/m/card","m.card.tsx",0,0,0
+"SCR-182","CEO 1983 PWA","/m/checkin","m.checkin.tsx",0,0,0
+"SCR-183","CEO 1983 PWA","/m/events","m.events.tsx",0,0,0
+"SCR-184","CEO 1983 PWA","/m/history","m.history.tsx",0,0,0
+"SCR-185","CEO 1983 PWA","/m","m.index.tsx",0,0,0
+"SCR-186","CEO 1983 PWA","/m/library","m.library.tsx",0,0,0
+"SCR-187","CEO 1983 PWA","/m/members","m.members.tsx",0,0,0
+"SCR-188","CEO 1983 PWA","/m/messages","m.messages.tsx",0,0,0
+"SCR-189","CEO 1983 PWA","/m/news","m.news.tsx",0,0,0
+"SCR-190","CEO 1983 PWA","/m/notifications","m.notifications.tsx",0,0,0
+"SCR-191","CEO 1983 PWA","/m/opportunities","m.opportunities.tsx",0,0,0
+"SCR-192","CEO 1983 PWA","/m/perks/$id","m.perks.$id.tsx",0,0,0
+"SCR-193","CEO 1983 PWA","/m/perks","m.perks.index.tsx",0,0,0
+"SCR-194","CEO 1983 PWA","/m/perks","m.perks.tsx",0,0,0
+"SCR-195","CEO 1983 PWA","/m/products","m.products.tsx",0,0,0
+"SCR-196","CEO 1983 PWA","/m/profile","m.profile.tsx",0,0,0
+"SCR-197","CEO 1983 PWA","/m/renew/audit","m.renew.audit.tsx",0,0,0
+"SCR-198","CEO 1983 PWA","/m/renew/history","m.renew.history.tsx",0,0,0
+"SCR-199","CEO 1983 PWA","/m/renew","m.renew.index.tsx",0,0,0
+"SCR-200","CEO 1983 PWA","/m/renew/pay","m.renew.pay.tsx",0,0,0
+"SCR-201","CEO 1983 PWA","/m/renew/result","m.renew.result.tsx",0,0,0
+"SCR-202","CEO 1983 PWA","/m/renew","m.renew.tsx",0,0,0
+"SCR-203","CEO 1983 PWA","/m/training","m.training.tsx",0,0,0
+"SCR-204","CEO 1983 PWA","/m","m.tsx",0,0,0
+"SCR-205","CEO 1983 PWA","/marketplace/$productId","marketplace.$productId.tsx",37,0,0
+"SCR-206","CEO 1983 PWA","/marketplace","marketplace.index.tsx",92,0,0
+"SCR-207","CEO 1983 PWA","/marketplace/my-quotes","marketplace.my-quotes.tsx",3,0,0
+"SCR-208","CEO 1983 PWA","/marketplace","marketplace.tsx",0,0,0
+"SCR-209","CEO 1983 PWA","/marketplace/workspace","marketplace.workspace.tsx",4,0,0
+"SCR-210","CEO 1983 PWA","/meetings","meetings.tsx",63,6,0
+"SCR-211","CEO 1983 PWA","/members/$memberId","members.$memberId.tsx",49,0,4
+"SCR-212","CEO 1983 PWA","/members","members.index.tsx",77,1,0
+"SCR-213","CEO 1983 PWA","/my-permissions","my-permissions.tsx",0,0,0
+"SCR-214","Web Admin","/network","network.tsx",113,2,0
+"SCR-215","Web Admin","/news","news.tsx",34,1,0
+"SCR-216","Web Admin","/notifications","notifications.tsx",30,1,0
+"SCR-217","Web Admin","/open-app","open-app.tsx",8,0,0
+"SCR-218","Web Admin","/opportunities/$id/edit","opportunities.$id.edit.tsx",7,2,0
+"SCR-219","Web Admin","/opportunities/$id","opportunities.$id.tsx",15,2,0
+"SCR-220","Web Admin","/opportunities","opportunities.index.tsx",44,4,0
+"SCR-221","Web Admin","/opportunities","opportunities.tsx",0,0,0
+"SCR-222","Web Admin","/perks","perks.tsx",32,1,0
+"SCR-223","Web Admin","/permissions","permissions.tsx",6,0,0
+"SCR-224","Web Admin","/platform/admins","platform.admins.tsx",6,2,0
+"SCR-225","Web Admin","/platform/ai-audit","platform.ai-audit.tsx",10,0,0
+"SCR-226","Web Admin","/platform/ai-users","platform.ai-users.tsx",25,4,0
+"SCR-227","Web Admin","/platform/audit","platform.audit.tsx",0,0,0
+"SCR-228","Web Admin","/platform","platform.index.tsx",6,1,0
+"SCR-229","Web Admin","/platform/introduction-operations","platform.introduction-operations.tsx",14,0,0
+"SCR-230","Web Admin","/platform/permissions","platform.permissions.tsx",0,0,0
+"SCR-231","Web Admin","/platform/renewal-audit","platform.renewal-audit.tsx",3,2,0
+"SCR-232","Web Admin","/profile","profile.tsx",4,1,0
+"SCR-233","Web Admin","/register","register.tsx",0,0,0
+"SCR-234","Web Admin","/renewal","renewal.tsx",16,0,0
+"SCR-235","Web Admin","/reset-password","reset-password.tsx",10,0,0
+"SCR-236","Web Admin","/segments","segments.tsx",0,0,0
+"SCR-237","Web Admin","/settings","settings.tsx",8,0,0
+"SCR-238","Web Admin","/share/$type/$id","share.$type.$id.tsx",4,0,0
+"SCR-239","Web Admin","/sitemap[/]xml","sitemap[.]xml.tsx",0,0,0
+"SCR-240","Web Admin","/sponsor-packages","sponsor-packages.tsx",10,1,0
+"SCR-241","Web Admin","/sponsor-report","sponsor-report.tsx",6,0,0
+"SCR-242","Web Admin","/sponsors","sponsors.tsx",12,1,0
+"SCR-243","Web Admin","/tasks","tasks.tsx",20,1,0
+"SCR-244","Web Admin","/templates","templates.tsx",0,0,0
+"SCR-245","Web Admin","/trainings","trainings.tsx",33,2,0
+"SCR-246","Public Web","/verify","verify.tsx",0,0,0
+"SCR-247","Web Admin","/voting","voting.tsx",36,0,0
+"SCR-248","Web Admin","<RootLayout>","__root.tsx",2,0,0

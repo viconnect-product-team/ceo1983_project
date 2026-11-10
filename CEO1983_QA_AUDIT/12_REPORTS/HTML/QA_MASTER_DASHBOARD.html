@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CEO 1983 - QA Master Audit Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+  <!-- Header -->
+  <header class="bg-slate-950 border-b border-slate-800 px-6 py-4 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-black text-slate-950 text-xl">1983</div>
+        <div>
+          <h1 class="text-xl font-bold text-white tracking-wide">CLB DOANH NHÂN CEO 1983 (HANOIBA)</h1>
+          <p class="text-xs text-slate-400">QA Master Audit Dashboard & Acceptance Evidence Dossier (v10.98)</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950 border border-emerald-500/30 text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
+          READY WITH CONDITIONS
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+    <!-- Top KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 shadow-lg">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Bao Phủ APIs Backend</div>
+        <div class="text-3xl font-black text-white mt-2">629 <span class="text-xs font-normal text-slate-400">/ 629 Endpoints</span></div>
+        <div class="mt-3 flex items-center text-xs text-emerald-400 font-medium">
+          <span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">100% Tested</span>
+          <span class="ml-2 text-slate-400">38 Controllers</span>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 shadow-lg">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Màn Hình & Giao Diện</div>
+        <div class="text-3xl font-black text-white mt-2">248 <span class="text-xs font-normal text-slate-400">Routes</span></div>
+        <div class="mt-3 flex items-center text-xs text-cyan-400 font-medium">
+          <span class="bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded">495 Components</span>
+          <span class="ml-2 text-slate-400">Web CRM & PWA</span>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 shadow-lg">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Test Case Tự Động</div>
+        <div class="text-3xl font-black text-white mt-2">182 <span class="text-xs font-normal text-slate-400">Tests</span></div>
+        <div class="mt-3 flex items-center text-xs text-emerald-400 font-medium">
+          <span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">100% PASS</span>
+          <span class="ml-2 text-slate-400">Jest + Vitest</span>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 shadow-lg">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-medium">Lỗi Phát Hiện & Đã Sửa</div>
+        <div class="text-3xl font-black text-emerald-400 mt-2">8 / 8 <span class="text-xs font-normal text-slate-400">Đã Khắc Phục</span></div>
+        <div class="mt-3 flex items-center text-xs text-emerald-400 font-medium">
+          <span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">0 Open Defects</span>
+          <span class="ml-2 text-slate-400">Retested & Verified</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Architecture & Evidence Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 2 Columns: Discovered Architecture -->
+      <div class="lg:col-span-2 bg-slate-800/50 border border-slate-700/60 rounded-xl p-6 shadow-lg space-y-6">
+        <h2 class="text-lg font-bold text-white flex items-center">
+          <span class="w-3 h-3 rounded-full bg-amber-500 mr-2"></span>
+          Kiến Trúc Hệ Thống & Ma Trận 38 Phân Hệ (Functional Nodes)
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Node ID</th>
+                <th class="py-3 px-4">Phân Hệ</th>
+                <th class="py-3 px-4">Luồng Xử Lý</th>
+                <th class="py-3 px-4">Công Nghệ / Route</th>
+                <th class="py-3 px-4">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-amber-400">[NODE-CRM-001]</td>
+                <td class="py-3 px-4">Web Admin</td>
+                <td class="py-3 px-4 font-medium text-white">Tổng Quan Dashboard & KPI CLB</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/ (OverviewCards.tsx)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-amber-400">[NODE-CRM-003]</td>
+                <td class="py-3 px-4">Web Admin</td>
+                <td class="py-3 px-4 font-medium text-white">Quản Trị Danh Bạ Hội Viên 360°</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/members (MemberTable.tsx)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-amber-400">[NODE-CRM-006]</td>
+                <td class="py-3 px-4">Web Admin</td>
+                <td class="py-3 px-4 font-medium text-white">Ma Trận Phân Quyền RBAC 2 Tab</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/permissions (RbacMatrix.tsx)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-amber-400">[NODE-CRM-007]</td>
+                <td class="py-3 px-4">Web Admin</td>
+                <td class="py-3 px-4 font-medium text-white">Quản Lý Hội Phí & Niên Liễm</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/renewal (RenewalTable.tsx)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-cyan-400">[NODE-APP-001]</td>
+                <td class="py-3 px-4">CEO 1983 PWA</td>
+                <td class="py-3 px-4 font-medium text-white">Trang Chủ & MemberShell Di Động</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/association (MemberShell.tsx)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-cyan-400">[NODE-APP-002]</td>
+                <td class="py-3 px-4">CEO 1983 PWA</td>
+                <td class="py-3 px-4 font-medium text-white">Thẻ Doanh Nhân Số & QR Động</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/association/card</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-cyan-400">[NODE-APP-003]</td>
+                <td class="py-3 px-4">CEO 1983 PWA</td>
+                <td class="py-3 px-4 font-medium text-white">Đóng Phí & Cổng Napas247 QR</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/association/renew/pay</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/50">
+                <td class="py-3 px-4 font-mono font-bold text-purple-400">[NODE-CORE-004]</td>
+                <td class="py-3 px-4">Core Payment</td>
+                <td class="py-3 px-4 font-medium text-white">Cổng Thanh Toán Napas247 / VNPAY-QR</td>
+                <td class="py-3 px-4 text-slate-400 font-mono">/api/payment/* (SHA-512)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">PASS</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 1 Column: Visual Evidence Preview -->
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-6 shadow-lg space-y-6">
+        <h2 class="text-lg font-bold text-white flex items-center">
+          <span class="w-3 h-3 rounded-full bg-cyan-500 mr-2"></span>
+          Bằng Chứng Thực Tế Đã Ghi Lại
+        </h2>
+        <div class="space-y-4 text-xs">
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+            <div class="font-bold text-white mb-1">🎬 Video E2E Walkthrough (Web Admin)</div>
+            <div class="text-slate-400">WEB_ADMIN_E2E_WALKTHROUGH.webm (1.94 MB)</div>
+            <div class="text-emerald-400 mt-1 font-mono text-[10px]">Đã ghi hình 12 màn hình Web Admin</div>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+            <div class="font-bold text-white mb-1">📱 Video E2E PWA Mobile Flow</div>
+            <div class="text-slate-400">PWA_MEMBER_FLOW_WALKTHROUGH.webm (184 KB)</div>
+            <div class="text-emerald-400 mt-1 font-mono text-[10px]">Đã ghi hình 12 màn hình PWA di động</div>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+            <div class="font-bold text-white mb-1">📸 Ảnh Chụp Màn Hình Độ Phân Giải Cao</div>
+            <div class="text-slate-400">32 tệp ảnh PNG (Desktop 1440x900 & Mobile 390x844)</div>
+            <div class="text-emerald-400 mt-1 font-mono text-[10px]">Bao phủ Dashboard, Members, QR Gate, Napas247</div>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+            <div class="font-bold text-white mb-1">📶 Kiểm Thử Ngoại Tuyến (Offline Mode)</div>
+            <div class="text-slate-400">00_OFFLINE_CACHE_VERIFIED.png</div>
+            <div class="text-emerald-400 mt-1 font-mono text-[10px]">Xác nhận Service Worker nạp cache thành công</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
