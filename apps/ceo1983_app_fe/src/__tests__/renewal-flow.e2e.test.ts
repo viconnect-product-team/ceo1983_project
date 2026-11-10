@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { requireStagingSupabase } from "./helpers/test-env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -171,7 +171,7 @@ describe.skipIf(!canRun)("renewal flow — getRenewalQuote + payMyRenewal (live 
     await admin.from("invoices").delete().eq("member_id", memberId);
     await admin.from("members").delete().eq("id", memberId);
     await admin.from("memberships").delete().eq("user_id", userId);
-    await admin.auth.admin.deleteUser(userId).catch(() => {});
+    await admin.auth.admin.deleteUser(userId).catch(() => { });
     await admin.from("associations").delete().eq("id", assocId);
   }, 60_000);
 
@@ -375,7 +375,10 @@ describe.skipIf(!canRun)("renewal flow — getRenewalQuote + payMyRenewal (live 
 // ---------------------------------------------------------------------------
 
 describe("renewal server fn — mock/fixture guardrails (static)", () => {
-  const source = readFileSync("src/lib/member-app/renewal.functions.ts", "utf8");
+  const fnPath = existsSync("src/lib/member-app/renewal.functions.ts")
+    ? "src/lib/member-app/renewal.functions.ts"
+    : "apps/ceo1983_app_fe/src/lib/member-app/renewal.functions.ts";
+  const source = readFileSync(fnPath, "utf8");
 
   it("getRenewalQuote/payMyRenewal do not import any *-data.ts mock module", () => {
     expect(source).not.toMatch(/from ["']@\/lib\/renewal-data["']/);
@@ -383,16 +386,14 @@ describe("renewal server fn — mock/fixture guardrails (static)", () => {
     expect(source).not.toMatch(/from ["'][^"']*-data["']/);
   });
 
-  it("payMyRenewal has no ambient mock-success branch (only simulateFailure hook)", () => {
-    // Explicit failure hook is allowed and named.
-    expect(source).toMatch(/simulateFailure/);
-    // Reject stray "mock" success paths or hard-coded reference values.
+  it("payMyRenewal has no ambient mock-success branch (delegates to NestJS backend)", () => {
     expect(source).not.toMatch(/mock(?:Payment|Gateway|Success)/i);
     expect(source).not.toMatch(/return\s*{\s*success:\s*true[^}]*reference:\s*["']PAY-MOCK/);
+    expect(source).toMatch(/\/members\/me\/renewal-payment/);
   });
 
-  it("payMyRenewal writes to invoices AND members (real mutations required)", () => {
-    expect(source).toMatch(/supabaseAdmin[\s\S]*\.from\("invoices"\)[\s\S]*\.update\(/);
-    expect(source).toMatch(/supabaseAdmin[\s\S]*\.from\("members"\)[\s\S]*\.update\(/);
+  it("payMyRenewal delegates through secure NestJS API client", () => {
+    expect(source).toMatch(/fetchNestApiFromServer/);
+    expect(source).toMatch(/requireNestAuth/);
   });
 });

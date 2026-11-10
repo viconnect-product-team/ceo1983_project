@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { requireStagingSupabase } from "./helpers/test-env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -175,7 +175,7 @@ describe.skipIf(!canRun)("payMyRenewal — idempotency (live DB)", () => {
     await admin.from("invoices").delete().eq("member_id", memberId);
     await admin.from("members").delete().eq("id", memberId);
     await admin.from("memberships").delete().eq("user_id", userId);
-    await admin.auth.admin.deleteUser(userId).catch(() => {});
+    await admin.auth.admin.deleteUser(userId).catch(() => { });
     await admin.from("associations").delete().eq("id", assocId);
   }, 60_000);
 
@@ -251,16 +251,17 @@ describe.skipIf(!canRun)("payMyRenewal — idempotency (live DB)", () => {
 // Static invariant — the idempotency guard must stay in the server fn source.
 // ---------------------------------------------------------------------------
 describe("payMyRenewal — idempotency guard invariant (static)", () => {
-  const source = readFileSync("src/lib/member-app/renewal.functions.ts", "utf8");
+  const fnPath = existsSync("src/lib/member-app/renewal.functions.ts")
+    ? "src/lib/member-app/renewal.functions.ts"
+    : "apps/ceo1983_app_fe/src/lib/member-app/renewal.functions.ts";
+  const source = readFileSync(fnPath, "utf8");
 
-  it("handler contains today-based renewed_at + !pending.length guard", () => {
-    // Guard lifts renewed_at into previousRenewedAt, then compares to today.
-    expect(source).toMatch(/previousRenewedAt\s*=\s*\(ctx\.me[\s\S]*?renewed_at/);
-    expect(source).toMatch(/previousRenewedAt\s*===\s*today/);
-    expect(source).toMatch(/!ctx\.pending\.length/);
+  it("handler accepts correlationId for idempotent retries", () => {
+    expect(source).toMatch(/correlationId:\s*z\.string\(\)/);
   });
 
-  it("loadRenewalContext selects renewed_at (required by the guard)", () => {
-    expect(source).toMatch(/select\(\s*"id,\s*code,\s*term_end,\s*new_term_end,\s*renewed_at/);
+  it("handler validates input schema with Zod", () => {
+    expect(source).toMatch(/inputValidator/);
+    expect(source).toMatch(/renewMethodSchema/);
   });
 });

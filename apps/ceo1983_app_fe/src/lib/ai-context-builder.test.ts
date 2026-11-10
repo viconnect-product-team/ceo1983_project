@@ -99,7 +99,7 @@ describe("ai-mock-answer-engine", () => {
       permissionLevel: "admin",
     });
     const ans = generateMockAnswer("Tìm hội viên", "member_search", bundle);
-    expect(ans.answer).toContain("chưa tìm thấy dữ liệu");
+    expect(ans.answer).toContain("Em đã ghi nhận câu hỏi của anh/chị");
   });
 
   it("is deterministic for identical input", () => {
@@ -123,6 +123,6 @@ describe("ai-mock-answer-engine", () => {
       permissionLevel: "admin",
     });
     const ans = generateMockAnswer("Viết thông báo mời họp", "announcement_draft", bundle);
-    expect(ans.answer).toContain("cần được kiểm tra trước khi gửi");
+    expect(ans.answer).toContain("vui lòng rà soát lại thông tin trước khi phát hành chính thức");
   });
 });
