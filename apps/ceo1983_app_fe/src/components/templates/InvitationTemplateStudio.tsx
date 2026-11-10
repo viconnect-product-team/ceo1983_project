@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Upload,
   Sparkles,
@@ -50,9 +50,24 @@ import {
 import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { OmnichannelBroadcastModal } from "./OmnichannelBroadcastModal";
+import { ImageCropModal } from "./ImageCropModal";
 
 export type InvitationCategory = "event" | "forum" | "meeting" | "b2b_meetup";
-export type FontFamilyType = "serif" | "sans" | "cinzel" | "calligraphy" | "orbitron";
+export type FontFamilyType =
+  | "serif"
+  | "sans"
+  | "cinzel"
+  | "playfair"
+  | "cormorant"
+  | "montserrat"
+  | "vietnam"
+  | "orbitron"
+  | "dancing"
+  | "great_vibes"
+  | "calligraphy"
+  | "oswald"
+  | "merriweather"
+  | "roboto";
 export type TextGradientColor = "gold" | "cyan" | "platinum" | "ruby" | "white";
 export type TopOrnamentType = "baroque_gold" | "diamond_stars" | "royal_crown" | "atlantis_trident" | "art_deco" | "none";
 export type BottomOrnamentType = "pearl_ribbon" | "water_swirl" | "laser_glow" | "none";
@@ -64,7 +79,7 @@ export interface TextBlockLayout {
   y: number; // percentage 0 - 100
   hasFrostedBg: boolean; // có nền mờ hay không có nền mờ
   fontFamily?: FontFamilyType;
-  fontSize?: "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
+  fontSize?: "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl";
   colorGradient?: TextGradientColor;
   is3dEmboss?: boolean;
   zIndex?: number;
@@ -154,6 +169,7 @@ const DEFAULT_BLOCKS: Record<string, TextBlockLayout> = {
   datetime: { id: "datetime", name: "Cụm Ngày Giờ Số Lớn 06 | 04 | 24", x: 50, y: 72, hasFrostedBg: false, zIndex: 10 },
   cutout: { id: "cutout", name: "Khối Ảnh Bóc Tách / Cổng Chào Venue", x: 50, y: 86, hasFrostedBg: false, zIndex: 8 },
   salute: { id: "salute", name: "Lời kết 'Rất hân hạnh được đón tiếp!'", x: 50, y: 96, hasFrostedBg: false, zIndex: 10 },
+  qr: { id: "qr", name: "Mã QR Check-in Đăng Ký", x: 86, y: 88, hasFrostedBg: false, zIndex: 12 },
 };
 
 export function InvitationTemplateStudio() {
@@ -265,7 +281,7 @@ export function InvitationTemplateStudio() {
         name: "Phạm Vũ",
         title: "Chủ tịch HĐQT & Sáng Lập",
         company: "VICONNECT GROUP",
-        avatar: "/avatars/avatar-default.png",
+        avatar: "/avatars/avatar-default.svg",
         memberCode: "CEO1983-088",
         roleInEvent: "Diễn giả chính (Keynote Speaker)",
       },
@@ -276,9 +292,21 @@ export function InvitationTemplateStudio() {
   });
   const [isAttendeeModalOpen, setIsAttendeeModalOpen] = useState<boolean>(false);
   const [allMembers, setAllMembers] = useState<any[]>([]);
+  const [eventsList, setEventsList] = useState<any[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [loadingEventAttendees, setLoadingEventAttendees] = useState<boolean>(false);
   const [eventRegistrations, setEventRegistrations] = useState<any[]>([]);
   const [selectedSourceType, setSelectedSourceType] = useState<"members" | "registrations">("members");
   const [attendeeSearchQuery, setAttendeeSearchQuery] = useState<string>("");
+
+  // ── TỶ LỆ POSTER (ASPECT RATIO: 9:16 DỌC, 1:1 VUÔNG, 16:9 NGANG, 3:4 THIỆP ĐỨNG) ──
+  const [posterRatio, setPosterRatio] = useState<"9:16" | "1:1" | "16:9" | "3:4">("9:16");
+
+  // ── TRẠNG THÁI CẮT ẢNH CHUYÊN NGHIỆP (IMAGE CROPPER) ──
+  const [isCropOpen, setIsCropOpen] = useState<boolean>(false);
+  const [cropImageUrl, setCropImageUrl] = useState<string>("");
+  const [cropTarget, setCropTarget] = useState<"avatar" | "cutout" | null>(null);
+  const [cropShape, setCropShape] = useState<"circle" | "square" | "arch" | "oval">("circle");
 
   // ── CÁC PHẦN TEXT TIÊU ĐỀ BỐ CỤC CÓ THỂ DI CHUỘT TÙY Ý (DRAGGABLE) & NỀN MỜ ──
   const [blocksLayout, setBlocksLayout] = useState<Record<string, TextBlockLayout>>(DEFAULT_BLOCKS);
@@ -305,6 +333,13 @@ export function InvitationTemplateStudio() {
       })
       .catch(() => {});
 
+    fetchNestApi<any>("/events")
+      .then((res) => {
+        const list = Array.isArray(res) ? res : res?.items || res?.data || [];
+        if (Array.isArray(list)) setEventsList(list);
+      })
+      .catch(() => {});
+
     fetchNestApi<any>("/events/registrations")
       .then((res) => {
         const list = Array.isArray(res) ? res : res?.items || res?.data || [];
@@ -312,6 +347,33 @@ export function InvitationTemplateStudio() {
       })
       .catch(() => {});
   }, []);
+
+  // Lọc đại biểu đã đăng ký khi chọn sự kiện cụ thể
+  const handleSelectEventForAttendees = async (eventId: string) => {
+    setSelectedEventId(eventId);
+    if (!eventId) {
+      try {
+        const res = await fetchNestApi<any>("/events/registrations");
+        const list = Array.isArray(res) ? res : res?.items || res?.data || [];
+        if (Array.isArray(list)) setEventRegistrations(list);
+      } catch {}
+      return;
+    }
+
+    setLoadingEventAttendees(true);
+    try {
+      const res = await fetchNestApi<any>(`/events/registrations?eventId=${eventId}`);
+      const list = Array.isArray(res) ? res : res?.items || res?.data || [];
+      if (Array.isArray(list)) {
+        setEventRegistrations(list);
+        toast.info(`Đã nạp ${list.length} người đăng ký từ sự kiện được chọn`);
+      }
+    } catch {
+      toast.error("Không thể tải danh sách đăng ký của sự kiện này");
+    } finally {
+      setLoadingEventAttendees(false);
+    }
+  };
 
   // Preset 1: Atlantis Royal Palace (Pinterest 374009944081934333)
   const applyAtlantisPreset = () => {
@@ -487,7 +549,7 @@ export function InvitationTemplateStudio() {
   // Nạp danh sách template từ backend
   const loadTemplatesFromBackend = async () => {
     try {
-      const res = await fetchNestApi<any>("/app-settings/invitation-templates");
+      const res = await fetchNestApi<any>("/admin/invitation-templates");
       if (res && Array.isArray(res.data) && res.data.length > 0) {
         setTemplates(res.data);
       } else {
@@ -643,25 +705,43 @@ export function InvitationTemplateStudio() {
     });
   };
 
+  // Lắng nghe di chuột toàn màn hình (Window pointer event) để kéo thả mượt mà không bị tuột tay
+  useEffect(() => {
+    if (!activeDraggingId) return;
+
+    const handleWindowPointerMove = (e: MouseEvent) => {
+      if (!posterRef.current) return;
+      const rect = posterRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left - dragOffset.x;
+      const mouseY = e.clientY - rect.top - dragOffset.y;
+
+      const newX = Math.max(2, Math.min(98, Math.round((mouseX / rect.width) * 100)));
+      const newY = Math.max(2, Math.min(98, Math.round((mouseY / rect.height) * 100)));
+
+      setBlocksLayout((prev) => ({
+        ...prev,
+        [activeDraggingId]: {
+          ...prev[activeDraggingId],
+          x: newX,
+          y: newY,
+        },
+      }));
+    };
+
+    const handleWindowPointerUp = () => {
+      setActiveDraggingId(null);
+    };
+
+    window.addEventListener("mousemove", handleWindowPointerMove);
+    window.addEventListener("mouseup", handleWindowPointerUp);
+    return () => {
+      window.removeEventListener("mousemove", handleWindowPointerMove);
+      window.removeEventListener("mouseup", handleWindowPointerUp);
+    };
+  }, [activeDraggingId, dragOffset]);
+
   const handleMouseMovePoster = (e: React.MouseEvent) => {
-    if (!activeDraggingId || !posterRef.current) return;
-
-    const rect = posterRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left - dragOffset.x;
-    const mouseY = e.clientY - rect.top - dragOffset.y;
-
-    // Chuyển đổi thành phần trăm % và giới hạn 0 - 100%
-    const newX = Math.max(5, Math.min(95, Math.round((mouseX / rect.width) * 100)));
-    const newY = Math.max(2, Math.min(98, Math.round((mouseY / rect.height) * 100)));
-
-    setBlocksLayout((prev) => ({
-      ...prev,
-      [activeDraggingId]: {
-        ...prev[activeDraggingId],
-        x: newX,
-        y: newY,
-      },
-    }));
+    // Handled by global window listener
   };
 
   const handleMouseUpPoster = () => {
@@ -772,6 +852,24 @@ export function InvitationTemplateStudio() {
     toast.success(`Đã thêm đại biểu VIP: ${newAtt.name} (${newAtt.company}) vào poster!`);
   };
 
+  // Hoàn tất cắt ảnh (Cropper callback)
+  const handleCropComplete = (croppedDataUrl: string) => {
+    if (cropTarget === "avatar") {
+      setAttendeeConfig((prev) => ({
+        ...prev,
+        attendees: prev.attendees.map((a, idx) => (idx === 0 ? { ...a, avatar: croppedDataUrl } : a)),
+      }));
+      toast.success("✓ Đã áp dụng avatar đại biểu đã cắt thành công!");
+    } else if (cropTarget === "cutout") {
+      setCutoutConfig((prev) => ({
+        ...prev,
+        url: croppedDataUrl,
+        enabled: true,
+      }));
+      toast.success("✓ Đã áp dụng ảnh bóc tách venue đã cắt thành công!");
+    }
+  };
+
   // Lưu template vào hệ thống backend
   const handleSaveAsTemplate = async () => {
     const name = templateNameInput.trim() || `${mainTitleLine1} ${mainTitleLine2} (${category})`;
@@ -811,7 +909,7 @@ export function InvitationTemplateStudio() {
       const updated = [newTemplate, ...templates.filter((t) => t.id !== newTemplate.id)];
       setTemplates(updated);
 
-      await fetchNestApi("/app-settings/invitation-templates", {
+      await fetchNestApi("/admin/invitation-templates", {
         method: "POST",
         body: JSON.stringify({ templates: updated }),
       });
@@ -865,8 +963,10 @@ export function InvitationTemplateStudio() {
     setIsExportingPng(true);
     try {
       const canvas = document.createElement("canvas");
-      canvas.width = 1080;
-      canvas.height = 1920;
+      const exportW = posterRatio === "9:16" ? 1080 : posterRatio === "1:1" ? 1200 : 1920;
+      const exportH = posterRatio === "9:16" ? 1920 : posterRatio === "1:1" ? 1200 : 1080;
+      canvas.width = exportW;
+      canvas.height = exportH;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Không thể khởi tạo Canvas 2D");
 
@@ -874,25 +974,27 @@ export function InvitationTemplateStudio() {
       img.crossOrigin = "anonymous";
       img.src = activeBg;
 
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve) => {
         img.onload = resolve;
         img.onerror = () => resolve(null); // fallback if CORS
       });
 
       ctx.fillStyle = "#071530";
-      ctx.fillRect(0, 0, 1080, 1920);
+      ctx.fillRect(0, 0, exportW, exportH);
 
       if (img.width > 0) {
-        ctx.drawImage(img, 0, 0, 1080, 1920);
+        ctx.drawImage(img, 0, 0, exportW, exportH);
       }
 
       // Vẽ lớp gradient ban đêm và ánh sáng
-      const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+      const grad = ctx.createLinearGradient(0, 0, 0, exportH);
       grad.addColorStop(0, "rgba(7, 21, 48, 0.4)");
       grad.addColorStop(0.5, "rgba(6, 18, 37, 0.15)");
       grad.addColorStop(1, "rgba(7, 21, 48, 0.85)");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1080, 1920);
+      ctx.fillRect(0, 0, exportW, exportH);
+
+      const centerX = exportW / 2;
 
       // Render Title
       ctx.fillStyle = "#FFFFFF";
@@ -900,55 +1002,55 @@ export function InvitationTemplateStudio() {
       ctx.textAlign = "center";
       ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
       ctx.shadowBlur = 24;
-      ctx.fillText(invitationHeader, 540, 280);
+      ctx.fillText(invitationHeader, centerX, exportH * 0.15);
 
       ctx.shadowBlur = 0;
       ctx.font = "bold 28px sans-serif";
       ctx.fillStyle = "#E2E8F0";
-      ctx.fillText(invitationSubtitle, 540, 340);
+      ctx.fillText(invitationSubtitle, centerX, exportH * 0.18);
 
       // Headline
       ctx.fillStyle = "#67e8f9";
       ctx.font = "bold 32px serif";
-      ctx.fillText(kicker, 540, 520);
+      ctx.fillText(kicker, centerX, exportH * 0.27);
 
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "italic 36px serif";
-      ctx.fillText(leadPhrase, 540, 570);
+      ctx.fillText(leadPhrase, centerX, exportH * 0.3);
 
       // 2 Dòng Tiêu Đề Cỡ Đại
       ctx.font = "900 84px serif";
       ctx.fillStyle = "#FFFFFF";
       ctx.shadowColor = "rgba(56, 189, 248, 0.7)";
       ctx.shadowBlur = 32;
-      ctx.fillText(mainTitleLine1, 540, 680);
-      ctx.fillText(mainTitleLine2, 540, 770);
+      ctx.fillText(mainTitleLine1, centerX, exportH * 0.35);
+      ctx.fillText(mainTitleLine2, centerX, exportH * 0.4);
 
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#38bdf8";
       ctx.font = "bold 32px sans-serif";
-      ctx.fillText(venueHighlight, 540, 830);
+      ctx.fillText(venueHighlight, centerX, exportH * 0.43);
 
       // Ngày giờ Luxury
       ctx.fillStyle = "#38bdf8";
       ctx.font = "bold 36px sans-serif";
-      ctx.fillText(`${dayOfWeek}  |  ${timeHour}`, 540, 1260);
+      ctx.fillText(`${dayOfWeek}  |  ${timeHour}`, centerX, exportH * 0.65);
 
       ctx.font = "900 110px serif";
       ctx.fillStyle = "#FFFFFF";
       ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
       ctx.shadowBlur = 20;
-      ctx.fillText(`${dayDigits}  |  ${monthDigits}  |  ${yearDigits}`, 540, 1370);
+      ctx.fillText(`${dayDigits}  |  ${monthDigits}  |  ${yearDigits}`, centerX, exportH * 0.71);
 
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#E2E8F0";
       ctx.font = "28px sans-serif";
-      ctx.fillText(eventLocation, 540, 1430);
+      ctx.fillText(eventLocation, centerX, exportH * 0.74);
 
       // Lời chào
       ctx.fillStyle = "#38bdf8";
       ctx.font = "italic bold 32px serif";
-      ctx.fillText(saluteText, 540, 1820);
+      ctx.fillText(saluteText, centerX, exportH * 0.94);
 
       const link = document.createElement("a");
       link.download = `Poster_${category}_${mainTitleLine1}_${mainTitleLine2}.png`;
@@ -962,20 +1064,64 @@ export function InvitationTemplateStudio() {
     }
   };
 
-  // Helper font class
+  // Helper font class hỗ trợ đa dạng kiểu chữ và font chữ dynamic chuẩn Quốc tế & Việt hóa
   const getFontFamilyClass = (f?: FontFamilyType) => {
     switch (f) {
-      case "serif":
-        return "font-serif";
       case "cinzel":
-        return "font-serif tracking-widest uppercase";
-      case "calligraphy":
-        return "font-serif italic";
+        return "font-cinzel tracking-widest uppercase font-extrabold";
+      case "playfair":
+        return "font-playfair tracking-wide font-bold";
+      case "cormorant":
+        return "font-cormorant tracking-wide italic font-bold";
+      case "montserrat":
+        return "font-montserrat tracking-tight font-black uppercase";
+      case "vietnam":
+        return "font-vietnam font-bold";
       case "orbitron":
-        return "font-mono font-bold tracking-wider";
+        return "font-orbitron tracking-widest font-black uppercase";
+      case "dancing":
+        return "font-dancing text-2xl font-bold";
+      case "great_vibes":
+        return "font-great-vibes text-3xl font-normal";
+      case "calligraphy":
+        return "font-dancing text-2xl font-semibold";
+      case "oswald":
+        return "font-sans font-bold tracking-wider uppercase";
+      case "merriweather":
+        return "font-serif font-light";
+      case "roboto":
+        return "font-sans font-medium";
       case "sans":
+        return "font-sans font-semibold";
+      case "serif":
       default:
-        return "font-sans";
+        return "font-serif";
+    }
+  };
+
+  // Helper font size class dynamic cho từng khối chữ
+  const getFontSizeClass = (size?: string, defaultClass: string = "text-base") => {
+    switch (size) {
+      case "xs":
+        return "text-[11px] leading-tight";
+      case "sm":
+        return "text-xs sm:text-sm leading-snug";
+      case "base":
+        return "text-sm sm:text-base leading-normal";
+      case "lg":
+        return "text-base sm:text-lg leading-normal";
+      case "xl":
+        return "text-lg sm:text-xl leading-relaxed";
+      case "2xl":
+        return "text-xl sm:text-2xl leading-relaxed";
+      case "3xl":
+        return "text-2xl sm:text-3xl leading-tight";
+      case "4xl":
+        return "text-3xl sm:text-4xl leading-tight";
+      case "5xl":
+        return "text-4xl sm:text-5xl leading-tight";
+      default:
+        return defaultClass;
     }
   };
 
@@ -996,15 +1142,24 @@ export function InvitationTemplateStudio() {
     }
   };
 
-  // Lọc danh sách hội viên trong modal
-  const filteredMembers = allMembers.filter((m) => {
+  // Lọc danh sách hiển thị trong modal chọn đại biểu (hội viên CLB hoặc người đăng ký sự kiện)
+  const filteredList = useMemo(() => {
     const q = attendeeSearchQuery.toLowerCase();
-    return (
-      (m.name || m.full_name || "").toLowerCase().includes(q) ||
-      (m.company || "").toLowerCase().includes(q) ||
-      (m.code || "").toLowerCase().includes(q)
-    );
-  });
+    const source = selectedSourceType === "registrations" ? eventRegistrations : allMembers;
+
+    return source.filter((item: any) => {
+      const name = item.name || item.full_name || item.member?.name || item.user?.name || "";
+      const company = item.company || item.member?.company || item.user?.company || "";
+      const code = item.code || item.member_code || item.ticket_code || "";
+      const ticket = item.ticket_name || "";
+      return (
+        name.toLowerCase().includes(q) ||
+        company.toLowerCase().includes(q) ||
+        code.toLowerCase().includes(q) ||
+        ticket.toLowerCase().includes(q)
+      );
+    });
+  }, [selectedSourceType, eventRegistrations, allMembers, attendeeSearchQuery]);
 
   return (
     <div className="space-y-6">
@@ -1516,7 +1671,8 @@ export function InvitationTemplateStudio() {
                         alt={att.name}
                         className="size-10 rounded-full object-cover border-2 border-amber-400 shadow-sm"
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/avatars/avatar-default.png";
+                          e.currentTarget.onerror = null;
+                          (e.currentTarget as HTMLImageElement).src = "/avatars/avatar-default.svg";
                         }}
                       />
                       <div>
@@ -1531,18 +1687,42 @@ export function InvitationTemplateStudio() {
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAttendeeConfig((prev) => ({
-                          ...prev,
-                          attendees: prev.attendees.filter((_, i) => i !== idx),
-                        }))
-                      }
-                      className="text-slate-400 hover:text-rose-500 p-1 transition cursor-pointer"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCropImageUrl(att.avatar);
+                          setCropTarget("avatar");
+                          setCropShape(
+                            attendeeConfig.style === "royal_circle"
+                              ? "circle"
+                              : attendeeConfig.style === "heian_arch"
+                              ? "arch"
+                              : attendeeConfig.style === "oval_luxury"
+                              ? "oval"
+                              : "square"
+                          );
+                          setIsCropOpen(true);
+                        }}
+                        className="text-amber-600 dark:text-amber-400 hover:text-amber-700 p-1.5 rounded-lg hover:bg-amber-100/50 dark:hover:bg-amber-950/30 transition cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                        title="Cắt ảnh avatar đại biểu"
+                      >
+                        <Scissors className="size-3.5" />
+                        <span>Cắt ảnh</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAttendeeConfig((prev) => ({
+                            ...prev,
+                            attendees: prev.attendees.filter((_, i) => i !== idx),
+                          }))
+                        }
+                        className="text-slate-400 hover:text-rose-500 p-1 transition cursor-pointer"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1728,6 +1908,41 @@ export function InvitationTemplateStudio() {
                   />
                 </label>
               </div>
+
+              {/* Nút cắt & bo viền ảnh venue */}
+              {cutoutConfig.url && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={cutoutConfig.url}
+                      alt="Cutout Preview"
+                      className="size-10 rounded-lg object-cover border border-sky-400"
+                    />
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      Ảnh Venue Hiện Tại
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCropImageUrl(cutoutConfig.url);
+                      setCropTarget("cutout");
+                      setCropShape(
+                        cutoutConfig.shape === "arch"
+                          ? "arch"
+                          : cutoutConfig.shape === "oval"
+                          ? "oval"
+                          : "square"
+                      );
+                      setIsCropOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Scissors className="size-3.5" />
+                    <span>Cắt & Bo Viền Ảnh</span>
+                  </button>
+                </div>
+              )}
 
               {/* Kiểu bóc tách cắt hình */}
               <div className="space-y-2">
@@ -1916,7 +2131,7 @@ export function InvitationTemplateStudio() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {/* Font selector */}
                 <select
                   value={blocksLayout[selectedBlockId].fontFamily || "serif"}
@@ -1925,11 +2140,39 @@ export function InvitationTemplateStudio() {
                   }
                   className="bg-slate-800 text-slate-100 border border-slate-700 rounded px-2 py-1 text-[11px]"
                 >
-                  <option value="serif">Playfair (Serif)</option>
-                  <option value="cinzel">Cinzel (La Mã)</option>
-                  <option value="calligraphy">Thư Pháp</option>
-                  <option value="sans">Inter (Hiện đại)</option>
-                  <option value="orbitron">Orbitron (3D)</option>
+                  <option value="cinzel">Cinzel (Hoàng Gia)</option>
+                  <option value="playfair">Playfair Display (Đẳng Cấp)</option>
+                  <option value="cormorant">Cormorant Garamond (Quý Tộc)</option>
+                  <option value="montserrat">Montserrat (Hiện Đại)</option>
+                  <option value="vietnam">Be Vietnam Pro (Việt Hóa)</option>
+                  <option value="orbitron">Orbitron (3D Tech)</option>
+                  <option value="dancing">Dancing Script (Uốn Lượn)</option>
+                  <option value="great_vibes">Great Vibes (Vinh Danh)</option>
+                  <option value="serif">Serif (Cổ Điển)</option>
+                  <option value="sans">Inter (Hiện Đại)</option>
+                  <option value="calligraphy">Thư Pháp (Script)</option>
+                  <option value="oswald">Oswald (Ấn Tượng)</option>
+                  <option value="merriweather">Merriweather (Thanh Thoát)</option>
+                  <option value="roboto">Roboto (Tinh Gọn)</option>
+                </select>
+
+                {/* Font Size selector */}
+                <select
+                  value={blocksLayout[selectedBlockId].fontSize || "base"}
+                  onChange={(e) =>
+                    handleSetBlockFontSize(selectedBlockId, e.target.value as any)
+                  }
+                  className="bg-slate-800 text-slate-100 border border-slate-700 rounded px-1.5 py-1 text-[11px]"
+                >
+                  <option value="xs">Cỡ chữ: XS</option>
+                  <option value="sm">Cỡ chữ: SM</option>
+                  <option value="base">Cỡ chữ: Chuẩn</option>
+                  <option value="lg">Cỡ chữ: LG</option>
+                  <option value="xl">Cỡ chữ: XL</option>
+                  <option value="2xl">Cỡ chữ: 2XL</option>
+                  <option value="3xl">Cỡ chữ: 3XL</option>
+                  <option value="4xl">Cỡ chữ: 4XL</option>
+                  <option value="5xl">Cỡ chữ: 5XL (Cực Lớn)</option>
                 </select>
 
                 {/* Gradient color */}
@@ -1976,7 +2219,60 @@ export function InvitationTemplateStudio() {
             </div>
           )}
 
-          {/* KHUNG POSTER CHÍNH TỶ LỆ 9:16 (360x640) */}
+          {/* ── BỘ CHỌN TỶ LỆ POSTER THƯ MỜI (VUÔNG, CHỮ NHẬT DỌC, CHỮ NHẬT NGANG, THIỆP ĐỨNG) ── */}
+          <div className="w-full max-w-[480px] mb-3 flex items-center justify-between p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
+              Tỷ Lệ Poster:
+            </span>
+            <div className="flex items-center gap-1 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setPosterRatio("9:16")}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  posterRatio === "9:16"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <span>📱 Dọc 9:16</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPosterRatio("3:4")}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  posterRatio === "3:4"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <span>📄 Đứng 3:4</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPosterRatio("1:1")}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  posterRatio === "1:1"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <span>⏹️ Vuông 1:1</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPosterRatio("16:9")}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  posterRatio === "16:9"
+                    ? "bg-[#003B95] text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+              >
+                <span>🖥️ Ngang 16:9</span>
+              </button>
+            </div>
+          </div>
+
+          {/* KHUNG POSTER CHÍNH TỶ LỆ DYNAMIC THEO LỰA CHỌN */}
           <div
             ref={posterRef}
             onMouseMove={handleMouseMovePoster}
@@ -1987,7 +2283,15 @@ export function InvitationTemplateStudio() {
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
-            className="w-[360px] h-[640px] sm:w-[380px] sm:h-[675px] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] relative overflow-hidden select-none border-2 border-white/20 transition-all"
+            className={`${
+              posterRatio === "9:16"
+                ? "w-[360px] h-[640px] sm:w-[380px] sm:h-[675px]"
+                : posterRatio === "1:1"
+                ? "w-[360px] h-[360px] sm:w-[460px] sm:h-[460px]"
+                : posterRatio === "3:4"
+                ? "w-[360px] h-[480px] sm:w-[420px] sm:h-[560px]"
+                : "w-[380px] h-[214px] sm:w-[580px] sm:h-[326px]"
+            } rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] relative overflow-hidden select-none border-2 border-white/20 transition-all`}
           >
             {/* Vệt ánh sáng đêm & Lớp phủ Gradient */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#071530]/40 via-transparent to-[#071530]/80 pointer-events-none" />
@@ -2044,6 +2348,7 @@ export function InvitationTemplateStudio() {
                     alt="Logo"
                     className="h-6 object-contain drop-shadow-md"
                     onError={(e) => {
+                      e.currentTarget.onerror = null;
                       (e.currentTarget as HTMLImageElement).src = "/app-icon.png";
                     }}
                   />
@@ -2111,7 +2416,10 @@ export function InvitationTemplateStudio() {
               }`}
             >
               <h1
-                className={`text-3xl sm:text-4xl ${getFontFamilyClass(
+                className={`${getFontSizeClass(
+                  blocksLayout.title?.fontSize,
+                  "text-3xl sm:text-4xl"
+                )} ${getFontFamilyClass(
                   blocksLayout.title?.fontFamily
                 )} ${getGradientClass(blocksLayout.title?.colorGradient)}`}
               >
@@ -2151,14 +2459,20 @@ export function InvitationTemplateStudio() {
 
               {/* 2 Dòng Tiêu Đề Lớn 3D */}
               <h2
-                className={`text-2xl sm:text-3xl font-black uppercase tracking-[0.06em] leading-tight mt-1 ${getFontFamilyClass(
+                className={`${getFontSizeClass(
+                  blocksLayout.headline?.fontSize,
+                  "text-2xl sm:text-3xl"
+                )} font-black uppercase tracking-[0.06em] leading-tight mt-1 ${getFontFamilyClass(
                   blocksLayout.headline?.fontFamily
                 )} ${getGradientClass(blocksLayout.headline?.colorGradient || "cyan")}`}
               >
                 {mainTitleLine1}
               </h2>
               <h2
-                className={`text-2xl sm:text-3xl font-black uppercase tracking-[0.06em] leading-tight ${getFontFamilyClass(
+                className={`${getFontSizeClass(
+                  blocksLayout.headline?.fontSize,
+                  "text-2xl sm:text-3xl"
+                )} font-black uppercase tracking-[0.06em] leading-tight ${getFontFamilyClass(
                   blocksLayout.headline?.fontFamily
                 )} ${getGradientClass(blocksLayout.headline?.colorGradient || "cyan")}`}
               >
@@ -2210,7 +2524,8 @@ export function InvitationTemplateStudio() {
                           : "rounded-xl border border-white/30"
                       }`}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/avatars/avatar-default.png";
+                        e.currentTarget.onerror = null;
+                        (e.currentTarget as HTMLImageElement).src = "/avatars/avatar-default.svg";
                       }}
                     />
                     <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[7px] font-black uppercase">
@@ -2222,7 +2537,12 @@ export function InvitationTemplateStudio() {
                     <div className="text-[8px] font-bold uppercase tracking-wider text-amber-300">
                       {attendeeConfig.attendees[0].roleInEvent}
                     </div>
-                    <div className="text-sm font-serif font-black text-white truncate drop-shadow-sm">
+                    <div
+                      className={`font-black text-white truncate drop-shadow-sm ${getFontSizeClass(
+                        blocksLayout.attendee?.fontSize,
+                        "text-sm"
+                      )} ${getFontFamilyClass(blocksLayout.attendee?.fontFamily)}`}
+                    >
                       {attendeeConfig.attendees[0].name}
                     </div>
                     {attendeeConfig.showTitle && (
@@ -2377,6 +2697,25 @@ export function InvitationTemplateStudio() {
                 {saluteText}
               </div>
             </div>
+            {/* ── KHỐI 9: MÃ QR CHECK-IN ĐĂNG KÝ (DRAGGABLE BẰNG CHUỘT) ── */}
+            <div
+              onMouseDown={(e) => handleMouseDownBlock("qr", e)}
+              style={{
+                position: "absolute",
+                left: `${blocksLayout.qr?.x ?? 86}%`,
+                top: `${blocksLayout.qr?.y ?? 88}%`,
+                transform: "translate(-50%, -50%)",
+                zIndex: blocksLayout.qr?.zIndex ?? 12,
+              }}
+              className={`cursor-move p-1.5 rounded-xl backdrop-blur-md bg-white/95 shadow-xl transition-all ${
+                selectedBlockId === "qr" ? "ring-2 ring-amber-400 ring-dashed" : "hover:ring-1 hover:ring-sky-400"
+              }`}
+            >
+              <QrCode className="size-8 sm:size-9 text-slate-900" />
+              <div className="text-[6.5px] font-black uppercase text-center text-slate-900 tracking-tighter mt-0.5">
+                Quét QR
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2401,7 +2740,7 @@ export function InvitationTemplateStudio() {
               </button>
             </div>
 
-            {/* Nguồn dữ liệu & Tìm kiếm */}
+            {/* Nguồn dữ liệu & Bộ lọc sự kiện */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <button
@@ -2424,15 +2763,39 @@ export function InvitationTemplateStudio() {
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                   }`}
                 >
-                  Hội Viên Đăng Ký Sự Kiện ({eventRegistrations.length})
+                  Người Đã Đăng Ký Sự Kiện ({eventRegistrations.length})
                 </button>
               </div>
+
+              {/* Lựa chọn sự kiện cụ thể để tải danh sách đăng ký */}
+              {selectedSourceType === "registrations" && (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                  <Calendar className="size-4 text-sky-500 shrink-0" />
+                  <select
+                    value={selectedEventId}
+                    onChange={(e) => void handleSelectEventForAttendees(e.target.value)}
+                    className="flex-1 bg-transparent text-xs font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
+                  >
+                    <option value="">-- Tất cả sự kiện ({eventRegistrations.length} lượt đăng ký) --</option>
+                    {eventsList.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title} ({new Date(ev.start_time || ev.created_at).toLocaleDateString("vi-VN")})
+                      </option>
+                    ))}
+                  </select>
+                  {loadingEventAttendees && (
+                    <span className="text-[10px] text-sky-500 font-bold animate-pulse">
+                      Đang nạp...
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="relative">
                 <Search className="size-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Tìm theo tên hội viên, công ty, chức vụ..."
+                  placeholder="Tìm theo tên hội viên, công ty, chức vụ, loại vé..."
                   value={attendeeSearchQuery}
                   onChange={(e) => setAttendeeSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100"
@@ -2442,48 +2805,74 @@ export function InvitationTemplateStudio() {
 
             {/* Danh sách cuộn */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[260px]">
-              {filteredMembers.length === 0 ? (
+              {filteredList.length === 0 ? (
                 <div className="text-center py-8 text-xs text-slate-400">
-                  Không tìm thấy hội viên nào khớp với từ khóa tìm kiếm.
+                  Không tìm thấy hội viên hoặc người đăng ký nào khớp với từ khóa tìm kiếm.
                 </div>
               ) : (
-                filteredMembers.map((m) => (
-                  <div
-                    key={m.id}
-                    onClick={() => handleSelectAttendeeFromList(m)}
-                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-amber-400 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition cursor-pointer flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={m.avatar || "/avatars/avatar-default.png"}
-                        alt={m.name}
-                        className="size-10 rounded-full object-cover border border-slate-300 dark:border-slate-700"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/avatars/avatar-default.png";
-                        }}
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                          <span>{m.name || m.full_name}</span>
-                          <span className="text-[10px] text-amber-600 font-mono">
-                            {m.code || "CEO1983"}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {m.position || m.title || "Lãnh đạo"} · {m.company || "Doanh nghiệp CLB"}
+                filteredList.map((m: any) => {
+                  const name = m.name || m.full_name || m.member?.name || m.user?.name || "Hội viên CEO 1983";
+                  const avatar = m.avatar || m.member?.avatar || m.user?.avatar || "/avatars/avatar-default.png";
+                  const code = m.code || m.member_code || m.ticket_code || "CEO1983";
+                  const position =
+                    m.position || m.title || m.member?.position || m.user?.position || (m.ticket_name ? `Vé: ${m.ticket_name}` : "Lãnh đạo");
+                  const company = m.company || m.member?.company || m.user?.company || "Doanh nghiệp CLB";
+                  const isReg = selectedSourceType === "registrations" || !!m.ticket_name;
+
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => handleSelectAttendeeFromList(m)}
+                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-amber-400 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition cursor-pointer flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={avatar}
+                          alt={name}
+                          className="size-10 rounded-full object-cover border border-slate-300 dark:border-slate-700"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            (e.currentTarget as HTMLImageElement).src = "/avatars/avatar-default.svg";
+                          }}
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            <span>{name}</span>
+                            <span className="text-[10px] text-amber-600 font-mono">
+                              {code}
+                            </span>
+                            {isReg && m.ticket_name && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-700 dark:text-sky-300 font-semibold">
+                                {m.ticket_name}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {position} · {company}
+                          </div>
                         </div>
                       </div>
+                      <span className="text-xs font-bold text-amber-600 flex items-center gap-1 shrink-0">
+                        Chọn Đưa Lên Poster <ChevronRight className="size-3.5" />
+                      </span>
                     </div>
-                    <span className="text-xs font-bold text-amber-600 flex items-center gap-1 shrink-0">
-                      Chọn <ChevronRight className="size-3.5" />
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* ── MODAL CẮT ẢNH CHUYÊN NGHIỆP (IMAGE CROPPER) ── */}
+      <ImageCropModal
+        isOpen={isCropOpen}
+        imageUrl={cropImageUrl}
+        initialShape={cropShape}
+        title={cropTarget === "avatar" ? "Cắt Ảnh Avatar Đại Biểu VIP" : "Cắt & Bo Viền Ảnh Bóc Tách Venue"}
+        onClose={() => setIsCropOpen(false)}
+        onCropComplete={handleCropComplete}
+      />
 
       {/* ── MODAL PHÁT SÓNG ĐA KÊNH OMNICHANNEL ── */}
       {isBroadcastModalOpen && (

@@ -26,6 +26,7 @@ import {
   ExternalLink,
   ChevronRight,
   Sparkles,
+  Bell,
 } from "lucide-react";
 
 export { isSelfUser } from "@/components/messages/message-utils";
@@ -252,139 +253,23 @@ function MessagesScreen() {
             <>
               <SeasonalEventHeader />
               {/* ── HEADER MẠNG LƯỚI CEO 1983 ── */}
-              <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-3 py-2 shadow-xs transition-all">
+              <header className="sticky top-0 z-40 w-full px-4 pt-1.5 pb-2 bg-white dark:bg-slate-900 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] border-b border-slate-100 dark:border-slate-800 transition-all">
                 <div className="w-full flex items-center justify-between gap-2">
-                  {/* 1. Logo số 8 của CEO 1983 */}
-                  <Link
-                    to="/association"
-                    className="shrink-0 flex items-center gap-1.5 focus:outline-none group cursor-pointer"
-                    title="Về Trang Chủ CEO 1983"
-                  >
-                    <div className="relative size-9 rounded-xl overflow-hidden shadow-xs border border-amber-500/20 group-hover:scale-105 transition-transform flex items-center justify-center bg-gradient-to-br from-[#002855] to-[#001733]">
-                      <img
-                        src="/ceo1983-emblem-8.png"
-                        alt="CEO 1983 Logo số 8"
-                        className="size-8 object-contain drop-shadow"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLElement).style.display = "none";
-                        }}
-                      />
-                      <span className="text-amber-400 font-black text-xs tracking-tighter" style={{ display: "none" }}>
-                        8
-                      </span>
-                    </div>
-                  </Link>
-
-                  {/* 2. Ô Tìm kiếm đa năng (Cơ hội, Bài viết, Sự kiện, Cuộc gặp) - Bỏ viền theo quy chuẩn */}
-                  <div className="flex-1 relative min-w-0">
-                    <div className="w-full h-9 px-2.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 rounded-xl flex items-center gap-2 border-0 shadow-none transition-colors">
-                      <Search className="size-4 text-slate-400 shrink-0" />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={() => setSearchFocused(true)}
-                        placeholder="Tìm cơ hội, bài viết, sự kiện, cuộc gặp..."
-                        className="w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 font-medium"
-                        style={{ border: "none", outline: "none", boxShadow: "none" }}
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setSearchQuery("")}
-                          className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                        >
-                          <X className="size-3.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Dropdown gợi ý / tìm kiếm nhanh khi gõ */}
-                    {searchFocused && searchQuery.trim().length > 0 && (
-                      <div className="absolute top-11 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2.5 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
-                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                            Tìm kiếm trong danh mục
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setSearchFocused(false)}
-                            className="text-xs text-slate-400 hover:text-slate-600"
-                          >
-                            Đóng
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-1.5 text-xs font-semibold">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSearchFocused(false);
-                              navigate({ to: "/association/opportunities" });
-                            }}
-                            className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 flex items-center gap-2 hover:bg-blue-100 transition text-left cursor-pointer"
-                          >
-                            <Briefcase className="size-3.5 text-blue-600 shrink-0" />
-                            <span className="truncate">Cơ hội "{searchQuery}"</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSearchFocused(false);
-                              setMainTab("feed");
-                            }}
-                            className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 flex items-center gap-2 hover:bg-red-100 transition text-left cursor-pointer"
-                          >
-                            <Newspaper className="size-3.5 text-red-600 shrink-0" />
-                            <span className="truncate">Bài viết "{searchQuery}"</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSearchFocused(false);
-                              navigate({ to: "/association/events" });
-                            }}
-                            className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 flex items-center gap-2 hover:bg-amber-100 transition text-left cursor-pointer"
-                          >
-                            <Calendar className="size-3.5 text-amber-600 shrink-0" />
-                            <span className="truncate">Sự kiện "{searchQuery}"</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSearchFocused(false);
-                              navigate({ to: "/association/members", search: { tab: "meetings" } });
-                            }}
-                            className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center gap-2 hover:bg-emerald-100 transition text-left cursor-pointer"
-                          >
-                            <Handshake className="size-3.5 text-emerald-600 shrink-0" />
-                            <span className="truncate">Cuộc gặp "{searchQuery}"</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 3. Icon Menu Dropdown & Icon Tin nhắn */}
-                  <div className="flex items-center gap-1.5 shrink-0" ref={menuRef}>
-                    {/* Icon Menu: Bấm show dropdown 4 danh mục */}
-                    <div className="relative">
+                  <div className="flex-1 flex items-center gap-2">
+                    {/* 1. Nút Menu */}
+                    <div className="relative" ref={menuRef}>
                       <button
                         type="button"
-                        onClick={() => setMenuOpen((prev) => !prev)}
-                        className={`size-9 rounded-xl flex items-center justify-center transition cursor-pointer ${menuOpen
-                            ? "bg-[#002855] text-amber-400 shadow-sm"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-                          }`}
-                        title="Menu danh mục Mạng lưới"
-                        aria-label="Menu Mạng lưới"
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                        title="Menu tính năng"
                       >
-                        <Menu className="size-5" />
+                        <img src="/icons/feed/menu-01.svg" alt="Menu" className="size-5" />
                       </button>
 
                       {/* Dropdown Menu Show xuống 4 danh mục */}
                       {menuOpen && (
-                        <div className="absolute right-0 top-11 z-50 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 px-1 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                        <div className="absolute left-0 top-11 z-50 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 px-1 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150">
                           <div className="px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                             <span className="truncate">Mạng Lưới Hội Viên & Bản Tin CEO 1983</span>
                             <span className="size-1.5 rounded-full bg-red-500 shrink-0"></span>
@@ -493,18 +378,109 @@ function MessagesScreen() {
                       )}
                     </div>
 
-                    {/* 4. Icon Tin nhắn: Bấm vào thì ra màn tin nhắn */}
+                    {/* 2. Ô Tìm kiếm đa năng bo tròn 99px theo chuẩn user */}
+                    <div className="relative flex-1">
+                      <div className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 rounded-[99px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-700 flex items-center gap-2">
+                        <img src="/icons/feed/search-01.svg" alt="Search" className="size-4 shrink-0" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onFocus={() => setSearchFocused(true)}
+                          placeholder="Tìm cơ hội, bài viết, sự kiện, cuộc..."
+                          className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 text-sm font-normal font-['Inter'] leading-5"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery("")}
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Dropdown gợi ý / tìm kiếm nhanh khi gõ */}
+                      {searchFocused && searchQuery.trim().length > 0 && (
+                        <div className="absolute top-11 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2.5 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                              Tìm kiếm trong danh mục
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSearchFocused(false)}
+                              className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              Đóng
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1.5 text-xs font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchFocused(false);
+                                navigate({ to: "/association/opportunities" });
+                              }}
+                              className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 flex items-center gap-2 hover:bg-blue-100 transition text-left cursor-pointer"
+                            >
+                              <Briefcase className="size-3.5 text-blue-600 shrink-0" />
+                              <span className="truncate">Cơ hội "{searchQuery}"</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchFocused(false);
+                                setMainTab("feed");
+                              }}
+                              className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 flex items-center gap-2 hover:bg-red-100 transition text-left cursor-pointer"
+                            >
+                              <Newspaper className="size-3.5 text-red-600 shrink-0" />
+                              <span className="truncate">Bài viết "{searchQuery}"</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchFocused(false);
+                                navigate({ to: "/association/events" });
+                              }}
+                              className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 flex items-center gap-2 hover:bg-amber-100 transition text-left cursor-pointer"
+                            >
+                              <Calendar className="size-3.5 text-amber-600 shrink-0" />
+                              <span className="truncate">Sự kiện "{searchQuery}"</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchFocused(false);
+                                navigate({ to: "/association/members", search: { tab: "meetings" } });
+                              }}
+                              className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center gap-2 hover:bg-emerald-100 transition text-left cursor-pointer"
+                            >
+                              <Handshake className="size-3.5 text-emerald-600 shrink-0" />
+                              <span className="truncate">Cuộc gặp "{searchQuery}"</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3. Nút thông báo / tin nhắn chuông badge 9+ */}
+                  <div className="relative inline-flex flex-col justify-start items-start">
                     <button
                       type="button"
                       onClick={() => setMainTab("messages")}
-                      className="relative size-9 rounded-xl flex items-center justify-center transition cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-                      title="Mở Tin nhắn"
-                      aria-label="Tin nhắn"
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 inline-flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                      title="Tin nhắn & Thông báo"
                     >
-                      <MessageSquare className="size-4.5" />
-                      {/* Chấm thông báo badge tin nhắn */}
-                      <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-amber-400 ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
+                      <Bell className="size-5 text-slate-800 dark:text-slate-200" />
                     </button>
+                    <div className="px-1 left-[14px] -top-1 absolute bg-[#DC2626] rounded-[100px] inline-flex justify-center items-center overflow-hidden pointer-events-none">
+                      <div className="text-center justify-end text-white text-[10px] font-bold font-['Inter'] leading-4">9+</div>
+                    </div>
                   </div>
                 </div>
               </header>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouterState } from "@tanstack/react-router";
 import { listNotificationsFn } from "@/lib/notifications.functions";
@@ -32,6 +32,8 @@ export function markNotificationsSeen() {
  */
 export function useUnreadNotifications() {
   const list = useServerFn(listNotificationsFn);
+  const listRef = useRef(list);
+  listRef.current = list;
   const pathname = useRouterState({ select: (s) => s?.location?.pathname });
   const [count, setCount] = useState(0);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
@@ -46,7 +48,7 @@ export function useUnreadNotifications() {
 
   async function refresh() {
     try {
-      const items = await list({});
+      const items = await listRef.current({});
       const seen = lastSeen();
       // Lấy danh sách ID đã đọc cá nhân từ localStorage nếu có
       let readIds = new Set<string>();

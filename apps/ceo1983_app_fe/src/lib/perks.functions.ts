@@ -138,7 +138,7 @@ export const createPerkFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     await logActivity(getDb(context), {
-      action: "Tạo tiện ích",
+      action: "Tạo đặc quyền",
       target: data.title,
       category: "system",
     });
@@ -172,7 +172,7 @@ export const updatePerkFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     await logActivity(getDb(context), {
-      action: "Cập nhật tiện ích",
+      action: "Cập nhật đặc quyền",
       target: data.title,
       category: "system",
     });
@@ -203,7 +203,7 @@ export const deletePerkFn = createServerFn({ method: "POST" })
     const { error } = await getDb(context).from("perks").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     await logActivity(getDb(context), {
-      action: "Xóa tiện ích",
+      action: "Xóa đặc quyền",
       target: (found.data?.title as string) ?? data.id,
       category: "system",
     });

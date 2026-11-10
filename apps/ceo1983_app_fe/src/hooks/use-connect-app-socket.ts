@@ -26,9 +26,9 @@ export function getConnectAppSocket(): Socket {
       transports: ["websocket", "polling"],
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 5000,
+      reconnectionDelayMax: 15000,
       timeout: 10000,
     });
 

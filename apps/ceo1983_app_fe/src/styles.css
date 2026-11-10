@@ -3173,3 +3173,14 @@ button.bg-\[\#003b95\] *:not([class*="bg-"]) {
 .dark .dark\:text-white {
   color: #FFFFFF;
 }
+
+/* Custom poster & typography font families */
+.font-cinzel { font-family: 'Cinzel', serif; }
+.font-playfair { font-family: 'Playfair Display', Georgia, serif; }
+.font-cormorant { font-family: 'Cormorant Garamond', Georgia, serif; }
+.font-montserrat { font-family: 'Montserrat', sans-serif; }
+.font-orbitron { font-family: 'Orbitron', monospace, sans-serif; }
+.font-dancing { font-family: 'Dancing Script', cursive; }
+.font-great-vibes { font-family: 'Great Vibes', cursive; }
+.font-vietnam { font-family: 'Be Vietnam Pro', sans-serif; }
+

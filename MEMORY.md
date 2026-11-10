@@ -1,5 +1,203 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 10/11/2026 (v10.90): Khắc Phục Triệt Để 1048 Lỗi Console Poster Studio, Ra Mắt Landing Page Mẫu 3 Chuẩn Pinterest SOTD, Bổ Sung Set Up Thư Mời Sự Kiện, Tách Biệt Menu Thống Kê & Tái Cấu Trúc Quản Lý Mẫu ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CRM-019])**:
+  1. *CRM - Khắc phục triệt để lỗi 1048 console errors & Nâng cấp Poster Studio (`InvitationTemplateStudio.tsx`)*:
+     - **Nguyên nhân 1048 console errors**: Các thẻ `<img>` của avatar và logo trong studio có fallback `onError` trỏ vào file ảnh không tồn tại, khiến trình duyệt kích hoạt sự kiện lỗi liên tục ở tần số khung hình (60 FPS) gây nghẽn console và đơ giao diện.
+     - **Giải pháp**: Tạo file avatar mặc định nhận diện CLB CEO 1983 (`avatar-default.svg` và `avatar-default.png`) tại `apps/ceo1983_app_fe/public/avatars/`, đồng thời áp dụng cơ chế tự hủy cờ lỗi `e.currentTarget.onerror = null;` trên toàn bộ thẻ ảnh.
+     - **Bộ font chữ Google Fonts Dynamic**: Nhúng trực tiếp 8 font chữ cao cấp (`Cinzel`, `Playfair Display`, `Cormorant Garamond`, `Montserrat`, `Orbitron`, `Dancing Script`, `Great Vibes`, `Be Vietnam Pro`) vào `__root.tsx` và `styles.css`. Các khối chữ (Tiêu đề, Phụ đề, Tên đại biểu, Hộp đặc quyền, Cụm ngày giờ) đều tự động đổi font, kích thước (`xs` -> `5xl`), tracking và hiệu ứng 3D dập nổi theo thanh điều khiển.
+     - **Kéo thả chuột toàn màn hình (Smooth Drag & Drop)**: Gắn sự kiện `mousemove` và `mouseup` vào `window` trong React `useEffect`, cho phép kéo thả các khối thông tin trên poster mượt mà, không bị khựng hay tuột tay khi chuột di chuyển ra ngoài khung canvas.
+     - **Tùy biến tỷ lệ poster 4 định dạng**: Hỗ trợ Dọc 9:16 (Story/Standee), Vuông 1:1 (Social Post), Ngang 16:9 (LED sân khấu), và Đứng 3:4 (Thiệp mời A4/A5 in ấn).
+     - **Cắt ảnh chuyên nghiệp (`ImageCropModal.tsx`) & Nạp danh sách đại biểu**: Cắt avatar hình tròn, vuông, vòm Heian, bầu dục kèm zoom/xoay; tự động kết nối API `GET /events/registrations` nạp danh sách hội viên đăng ký sự kiện lên poster chỉ với 1 click.
+  2. *CRM - Landing Web Mẫu 2 & Mẫu 3 Chuẩn Pinterest Award Winner (`ForgeLuxuryAtelierLanding.tsx`, `StartupMobileShowcaseLanding.tsx`)*:
+     - **Hoàn thiện Mẫu 2 (`StartupMobileShowcaseLanding.tsx`)**: Dịch 100% văn bản tiếng Anh sang tiếng Việt ("Bạn Có Thắc Mắc Về CLB CEO 1983?", "Gửi Câu Hỏi", "Về Hiệp Hội", "Về Chúng Tôi", "Tính Năng Nổi Bật", "Tài Nguyên & Liên Kết", "Thông Tin Liên Hệ"); cô lập nền sáng light-mode chuẩn xác, làm mượt góc xoay 3D của mô hình điện thoại.
+     - **Ra mắt Mẫu 3 (`ForgeLuxuryAtelierLanding.tsx`)**: Thiết kế chuẩn theo Pinterest Pin 569353577917214566 (Forge Automotive SOTD Award Winner), phong cách Haute Couture / Luxury Atelier:
+       + Video cinematic MP4 nền, typography editorial đẳng cấp.
+       + 3 triết lý chế tác: Di Sản Chế Tác Độc Bản, Điêu Khắc Từng Đường Nét, Kỹ Thuật Đỉnh Cao.
+       + 6 phân hệ Atelier tinh hoa: Thiết Kế Thân Vỏ Carbon, Nội Thất Da Thủ Công, Động Cơ Tinh Chỉnh, Khí Động Học Sân Đua, Độc Bản Khắc Tên, Công Nghệ Trợ Lái AI.
+       + Dải chữ chuyển động vô tận (Marquee) khổng lồ `REFUSE ORDINARY`.
+       + Modal đăng ký thẩm định gia nhập CLB CEO 1983 phong cách VIP.
+       + Tích hợp đầy đủ vào router `/landing/$slug` (`web-v3`, `web3`, `forge-atelier`), danh sách `/landing` và trang quản trị `/admin/landing-webs`.
+  3. *CRM - Tách biệt độc lập các chức năng Thống kê con từ Sidebar (`/analytics`, `Sidebar.tsx`)*:
+     - 4 chức năng thống kê con: "Hoạt động hội viên", "Kết nối giao thương", "Cơ hội kinh doanh", "Sự kiện & cuộc họp" được tách thành các mục truy cập riêng lẻ trực tiếp trên menu Sidebar.
+     - Ẩn hoàn toàn thanh 4 tab gộp chung ở đầu trang `/analytics`; tiêu đề trang và breadcrumb cập nhật tự động theo tham số `category` tương ứng, mang lại giao diện tinh gọn, chuyên biệt.
+  4. *CRM - Tái cấu trúc nhóm Quản lý Mẫu & Thêm tính năng Set Up Thư Mời Sự Kiện (`InvitationSetupManager.tsx`, `Sidebar.tsx`)*:
+     - Quy hoạch nhóm "Quản lý mẫu trang" trên Sidebar bao gồm: Template Thư Mời, Set Up Thư Mời Sự Kiện, Quản Lý Landing Web (`/admin/landing-webs`), Xem Landing Page (`/landing` với 3 mẫu con).
+     - Xây dựng component `InvitationSetupManager.tsx` (tab `invitation-setup`): Quy trình 5 bước thiết lập thư mời sự kiện: Chọn sự kiện -> Chọn phong cách thiệp -> Thiết lập thông điệp & dress code -> Chọn danh sách người nhận (gọi API đăng ký) -> Thiết lập phát hành đa kênh (App Push, Email, Zalo ZNS) kèm xem trước trực quan.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.89): Nâng Cấp Toàn Diện Thống Kê CRM, Đặc Quyền Hội Viên, Tạo Khen Thưởng, Poster Studio Dynamic & Tái Thiết Kế Mạng Lưới Mobile App Kèm Bottom Sheet Bình Luận Chuẩn Thiết Kế ([NODE-CRM-005], [NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-017], [NODE-APP-003], [NODE-APP-004])**:
+  1. *CRM - Thống kê Hoạt động Hội viên (`/analytics`, `analytics.service.ts` & `analytics.tsx`)*:
+     - Gộp các mục "Gắn kết hội viên", "Phát triển hội viên" và "Lượt chia sẻ ra ngoài" thành một phân hệ duy nhất: **"Hoạt động hội viên"**.
+     - Đo lường và trực quan hóa 3 chỉ số cốt lõi độc lập: Lượt bình luận, Lượt share bài viết từ app ra nền tảng ngoài, Lượt click link giới thiệu hội viên mới.
+     - Tách riêng các cột trong nhóm biểu đồ Recharts Bar Chart (bỏ `stackId`), đảm bảo mỗi chỉ số hiển thị dưới dạng một cột riêng biệt, trực quan và dễ so sánh.
+  2. *CRM - Thay đổi thuật ngữ Quyền lợi thành Đặc quyền*:
+     - Thay thế toàn bộ từ "tiện ích" thành "đặc quyền" trên toàn bộ giao diện quản trị phân quyền (`RbacPermissionMatrix.tsx`), mô-đun quyền lợi (`perks.functions.ts`) và modal tính năng.
+  3. *CRM - Chức năng Tạo Khen Thưởng & Danh Hiệu (`/benefits`, `CreateRewardModal.tsx`)*:
+     - Xây dựng modal "+ Tạo Khen Thưởng" với giao diện sang trọng:
+       + Trường Tiêu đề (Bắt buộc).
+       + Trường Mô tả chi tiết (Bắt buộc).
+       + Trường Người được khen thưởng: Multiselect tìm kiếm và chọn nhiều hội viên từ cơ sở dữ liệu.
+       + Trường Đăng ảnh: Cho phép tải lên tối đa 5 ảnh giấy khen, cúp, kỷ niệm chương kèm xem trước và xóa ảnh trực tiếp.
+       + Tự động lưu vào hệ thống và phát thông báo vinh danh lên bảng tin hiệp hội (`category: "HONOR"`).
+  4. *CRM - Quản lý mẫu trang & Invitation Poster Studio (`InvitationTemplateStudio.tsx`, `ImageCropModal.tsx`)*:
+     - **Font chữ & Mẫu chữ Dynamic**: Bổ sung bộ chọn 11 font chữ nghệ thuật cao cấp (`Cinzel`, `Playfair Display`, `Serif`, `Sans`, `Montserrat`, `Oswald`, `Orbitron`, `Calligraphy/Ephesis`, `Great Vibes`, `Merriweather`, `Roboto`), tùy biến font size, font weight và hiệu ứng chữ 3D dập nổi.
+     - **Bộ Cắt Ảnh Chuyên Nghiệp (Image Cropper)**: Cắt ảnh đại biểu theo các hình khối nhận diện (Tròn Hoàng Gia 3D, Vuông 1:1, Vòm Cung Heian, Bầu Dục Ngọc Trai) kèm zoom (0.5x - 3x), xoay 90° và kéo thả bằng chuột.
+     - **Tích Hợp API Hội Viên Đăng Ký Sự Kiện**: Tự động gọi API `GET /events` và `GET /events/registrations?eventId=...` để nạp danh sách đại biểu/hội viên đã đăng ký của sự kiện đó, cho phép 1-click đưa avatar và chức danh đại biểu lên poster.
+     - **Kéo Thả Tự Do (Draggable Blocks)**: Toàn bộ các khối thông tin (Khối đại biểu, Thông tin sự kiện/địa điểm, Mã QR) đều có thể di chuyển tự do bằng chuột trên canvas.
+     - **Tùy Chọn Tỷ Lệ Poster Thư Mời**: Hỗ trợ 3 tỷ lệ khung hình: Dọc (9:16), Vuông (1:1), Ngang (16:9), tự động căn chỉnh khung canvas xem trước và xuất file ảnh PNG chất lượng cao đúng tỷ lệ chuẩn.
+     - **Khắc phục lỗi call API liên tục (1048+ calls loop)**: Khắc phục triệt để lỗi re-render loop trong `NotificationCenter.tsx` và `use-unread-notifications.ts` bằng kỹ thuật `useRef` giữ server function ổn định.
+  5. *Mobile App - Mạng Lưới Hội Viên & Bản Tin (`association.messages.tsx`, `FeedView.tsx`)*:
+     - Tái thiết kế giao diện Mạng lưới theo đúng mã thiết kế HTML của người dùng:
+       + **Header mạng lưới**: Nút Menu (`/icons/feed/menu-01.svg`), Ô tìm kiếm bo tròn `rounded-[99px]` (`/icons/feed/search-01.svg`) với placeholder "Tìm cơ hội, bài viết, sự kiện, cuộc...", Nút chuông thông báo có badge đỏ `9+`.
+       + **Thanh Đăng Bài Viết**: Avatar TA pill (`/icons/feed/TA.svg`) + dòng chữ "Đăng bài viết mới..." + nút dấu cộng (`/icons/feed/add-01.svg`).
+       + **Thanh Tab Danh Mục**: Các viên thuốc `rounded-[99px]` (Tất cả, Tin tức CLB, Sự kiện & Họp ban, Ban Đào tạo, Cơ hội chia sẻ, Sàn B2B) kèm nút mở Cây danh mục `CategoryTreeModal`.
+       + **Card Bài Viết `rounded-3xl`**: Avatar bo tròn `rounded-[20px]`, Tiêu đề và nội dung font Inter chuẩn xác, Ảnh hiển thị `rounded-2xl h-52 object-cover`.
+       + **Khối Thành Viên Tham Dự & Đăng Ký**: Khung nền xám nhạt bo góc `rounded-xl`, hiển thị "Thành viên tham dự (x / y) - Xem tất cả" kèm icon `/icons/feed/arrow-right-02.svg`, dải avatar tròn `rounded-[14px]`, dòng "Đăng ký tham gia" kèm `/icons/feed/arrow-right-02.svg` và hạn chót.
+       + **Footer Bài Viết**: Nút Thích với `/icons/feed/favourite.svg`, Nút Bình luận với `/icons/feed/comment add-02.svg` mở Bottom Sheet bình luận, Nút Chia sẻ với `/icons/feed/share-01.svg`.
+  6. *Mobile App - Modal Bottom Sheet Bình Luận Chuyên Sâu (`CommentBottomSheetModal.tsx`)*:
+     - Thanh kéo pull handle trên cùng `w-28 h-[5px] bg-Neutral-400 rounded-[100px]`.
+     - Tiêu đề "Tất cả bình luận" kèm icon thu nhỏ (`arrow-down-01-round.svg`) và nút đóng (`cancel-01.svg`).
+     - Bong bóng bình luận màu xanh pastel bo góc `rounded-lg outline outline-1 outline-[#DBEAFE]`, phân cấp phân cấp thụt lề đa cấp (Cấp 1, Cấp 2, Cấp 3).
+     - **Menu 3 chấm trên từng bình luận**:
+       + Đối với bình luận của thành viên khác: "Sao chép bình luận", "Phản hồi".
+       + Đối với bình luận của chính người dùng hiện tại: "Sao chép bình luận", "Chỉnh sửa bình luận", "Xóa bình luận".
+     - Thanh nhập bình luận cố định dưới đáy: Avatar TA pill, ô input kèm nút tải ảnh/tài liệu (`add-circle.svg`), nút gửi bình luận (`sent.svg`).
+  7. *Kiểm chứng mã nguồn (Type Check) & Tuân thủ quy định*:
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git commit` hay `git push`.
+
+
+- **Bản cập nhật ngày 10/11/2026 (v10.88): Sửa Triệt Để Lỗi PDF Không Xuống Dòng Đầu Mục, Biên Soạn 4 Tài Liệu Mới (SDD, API Spec, UI/UX Spec, Test Spec) & Xuất Bản Hoàn Hảo Đa Định Dạng (.md, .docx, .pdf, .xlsx) ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Khắc phục triệt để 100% lỗi không xuống dòng cho các đầu mục tiêu đề và bullet list trong file PDF*:
+     - **Nguyên nhân gốc rễ**: Parser Markdown sang HTML cũ trong `scripts/build_all_formats_master.js` phân tách đoạn bằng `split(/\n{2,}/)` và kiểm tra `if (block.startsWith('<h')) return block;`. Khi một tiêu đề (`#`, `##`, `###`, `####`) nằm liền kề danh sách bullet (`*`, `-`) hoặc văn bản chỉ cách 1 dấu xuống dòng `\n`, toàn bộ khối đó bị giữ nguyên dưới dạng HTML thô không được bọc thẻ block `<p>` hoặc `<ul><li>`, khiến trình hiển thị Chromium trên PDF gộp chung các dòng thành một chuỗi văn bản ngang dính liền.
+     - **Giải pháp dứt điểm**:
+       + Tái thiết kế hàm `markdownToHtml` thành một Bộ phân tích trạng thái tuần tự từng dòng (Stateful Line-by-Line Parser).
+       + Khi gặp dòng tiêu đề: Tự động đóng mọi danh sách đang mở và xuất thẻ `<h1/h2/h3/h4>` độc lập kèm thuộc tính CSS `display: block !important; width: 100% !important; clear: both !important; page-break-after: avoid !important;`.
+       + Khi gặp dòng danh sách (`*`, `-`, `\d+\.`): Tự động mở vùng danh sách `<ul class="doc-list">` hoặc `<ol class="doc-list">` và bọc từng phần tử trong thẻ `<li>`, đảm bảo ngắt dòng và thụt lề chuẩn xác.
+       + Khi gặp dòng văn bản bình thường: Tự động bọc trong `<p class="doc-p">` với lề `margin: 6px 0; text-align: justify;`.
+  2. *Biên soạn và bổ sung đầy đủ 4 tài liệu kỹ thuật chuyên sâu mới chuẩn mực quốc tế*:
+     - **11. Tài liệu Thiết Kế Kỹ Thuật, Kiến Trúc Hệ Thống & CSDL (SDD - System Design Document)**:
+       + Tệp nguồn: `document/notebooklm/11_SDD_THIET_KE_KY_THUAT_KIEN_TRUC_DATABASE.md` (38.4 KB).
+       + Xuất bản: `.docx` (29.6 KB) và `.pdf` (354.0 KB).
+       + Nội dung: Tiêu chuẩn IEEE Std 1016-2009; Kiến trúc 5 tầng doanh nghiệp (Presentation -> Edge Nginx -> Pure NestJS 3-tier -> PgBouncer Pooling Port 6432 -> PostgreSQL Enterprise `113.20.107.184:6432`); Đặc tả chi tiết 25 bảng CSDL DDL SQL; Khóa bi quan (Pessimistic Locking `SELECT FOR UPDATE`); Zero-Trust Security.
+     - **12. Tài liệu Đặc Tả Giao Tiếp API (API Specification)**:
+       + Tệp nguồn: `document/notebooklm/12_API_SPECIFICATION_DAC_TA_GIAO_TIEP_API.md` (38.0 KB).
+       + Xuất bản: `.docx` (30.3 KB) và `.pdf` (376.2 KB).
+       + Nội dung: Chuẩn OpenAPI 3.1; Đặc tả 100% REST APIs (Auth JWT, Members, Companies, Invoices, Payment Engine Napas247/MoMo/VNPay kèm Webhook IPN HMAC-SHA512, Sự kiện & Xếp bàn Keangnam, Soát vé QR < 0.5s, Cuộc họp Jitsi Meet, Giao thương B2B, Kanban AI Parse Task, Zalo OA ZNS, WebSocket Gateway).
+     - **13. Tài liệu Đặc Tả Giao Diện & Trải Nghiệm Người Dùng (UI/UX Specification)**:
+       + Tệp nguồn: `document/notebooklm/13_UI_UX_SPECIFICATION_DAC_TA_GIAO_DIEN_TRAI_NGHIEM.md` (27.1 KB).
+       + Xuất bản: `.docx` (26.9 KB) và `.pdf` (290.3 KB).
+       + Nội dung: Hệ thống Design System 3 màu nhận diện Hoàng Gia (Navy `#1B365D`, Gold `#D4AF37`, Emerald `#00A86B`); Typography Inter & Montserrat; Wireframe & Layout specs cho 25 màn hình Web CRM và 18 màn hình Mobile App; Recharts Theme-adaptive; Quy tắc UX 3-Click; Haptic feedback; WCAG 2.1 AA.
+     - **14. Tài liệu Đặc Tả Kiểm Thử Phần Mềm & Nghiệm Thu (Test Specification & Acceptance Plan)**:
+       + Tệp nguồn: `document/notebooklm/14_TEST_SPECIFICATION_DAC_TA_KIEM_THU.md` (27.5 KB).
+       + Xuất bản: `.docx` (28.2 KB) và `.pdf` (322.5 KB).
+       + Nội dung: Tiêu chuẩn IEEE Std 829 & ISO/IEC/IEEE 29119; Ma trận truy vết kiểm thử bao phủ 100% 37 Functional Nodes; Bộ hơn 100 Test Cases chi tiết (Auth, Phê duyệt, Gạch nợ VietQR, Chống giả mạo chữ ký HMAC-SHA512, Soát vé Keangnam < 0.5s, Chống vé trùng, AI task parsing, Menu 3 chấm bài đăng); Kịch bản tải 2.000 users; Báo cáo Pentest OWASP Top 10.
+  3. *Nâng cấp Bảng Tính Ma Trận Truy Vết Excel (`10_MA_TRAN_TRUY_VET_YEU_CAU_RTM_CEO1983.xlsx`)*:
+     - Bổ sung Sheet thứ 4: `MA_TRAN_KIEM_THU_TEST_CASES` định dạng bảng Excel chuyên nghiệp, dập nổi màu thương hiệu Navy-Gold.
+  4. *Kiểm chứng chất lượng mã nguồn & Type Check*:
+     - Backend NestJS `apps/ceo1983_app_be`: `tsc --noEmit` Exit Code 0 (0 errors).
+     - Frontend React/Next.js `apps/ceo1983_app_fe`: `tsc --noEmit` Exit Code 0 (0 errors).
+     - Toàn bộ các định dạng tệp (.md, .docx, .pdf, .xlsx) được đồng bộ đầy đủ vào `document/notebooklm/`, `document/` và `apps/ceo1983_app_fe/public/docs/`.
+  5. *Tuân thủ quy định dự án*:
+     - Giữ nguyên toàn bộ mã nguồn và tài liệu trên máy cục bộ (local).
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.87): Xuất Bản Đầy Đủ Đa Định Dạng (Word .docx, PDF, Excel .xlsx, Markdown .md) & Bổ Sung 12 Biểu Mẫu Nghiệp Vụ Chuẩn Hóa ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014])**:
+  1. *Xuất bản thành công 100% tài liệu sang tất cả các định dạng theo yêu cầu*:
+     - **Tài liệu Yêu Cầu Nghiệp Vụ BRD Master**:
+       + `07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md` (90.8 KB)
+       + `07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.docx` (27.3 MB - Đầy đủ hơn 50 ảnh chụp giao diện và bảng biểu)
+       + `07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.pdf` (27.1 MB - Chuyển đổi qua Google Chrome Playwright, A4 chuẩn in ấn, header/footer dập nổi)
+     - **Tài liệu Đặc Tả Yêu Cầu Phần Mềm SRS Master (16 Phần Chuẩn Hóa)**:
+       + `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md` (124.7 KB, 1.236 dòng)
+       + `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.docx` (81.0 KB)
+       + `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.pdf` (538.9 KB)
+     - **Tài liệu Đặc Tả API & Thiết Kế CSDL PostgreSQL**:
+       + `09_DAC_TA_API_VA_THIET_KE_CSDL.md` (48.9 KB)
+       + `09_DAC_TA_API_VA_THIET_KE_CSDL.docx` (47.9 KB)
+       + `09_DAC_TA_API_VA_THIET_KE_CSDL.pdf` (545.7 KB)
+     - **Bảng Tính Ma Trận Truy Vết Yêu Cầu & Biểu Mẫu Excel**:
+       + `10_MA_TRAN_TRUY_VET_YEU_CAU_RTM_CEO1983.xlsx` (14.4 KB, 5 Sheets: 12 Biểu Mẫu Chuẩn, Ma Trận 37 Node, Ma Trận RBAC 5 Vai Trò, Danh Mục 60 Use Cases, 25 Bảng CSDL).
+  2. *Bổ sung đầy đủ Hệ Thống 12 Biểu Mẫu Nghiệp Vụ & Mẫu Trang Chuẩn Hóa (Master Templates Catalog)*:
+     - `BM-CEO1983-MEM-01`: Đơn Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983 (Mẫu kê khai doanh nhân, pháp nhân, ngành nghề, mã số thuế, đại diện).
+     - `BM-CEO1983-MEM-02`: Bản Cam Đoan & Thỏa Thuận Bảo Mật Thông Tin Nội Khối (NDA & Ethics Agreement).
+     - `BM-CEO1983-FIN-03`: Hóa Đơn Thu Tiền & Biên Lai Điện Tử Thu Hội Phí Niên Khóa (Kèm VietQR Napas247).
+     - `BM-CEO1983-FIN-04`: Giấy Đề Nghị Tạm Ứng Kinh Phí Hoạt Động Ban Chuyên Môn (Có phê duyệt Chủ tịch/Kế toán).
+     - `BM-CEO1983-FIN-05`: Giấy Thanh Toán & Bảng Kê Quyết Toán Hoàn Ứng Ngân Sách (Kèm hóa đơn chứng từ VAT).
+     - `BM-CEO1983-EVT-06`: Giấy Mời / Thư Mời Tham Dự Cuộc Họp Ban Chấp Hành / Diễn Đàn Doanh Nhân.
+     - `BM-CEO1983-EVT-07`: Thư Ngỏ Vận Động Tài Trợ Gala Doanh Nhân Keangnam Landmark72 (Các gói Kim Cương, Vàng, Bạc).
+     - `BM-CEO1983-DOC-08`: Biên Bản Cuộc Họp Ban Điều Hành Định Kỳ (Có chữ ký Thư ký & Chủ tọa).
+     - `BM-CEO1983-ZNS-09`: Mẫu Tin Nhắn Zalo OA ZNS Thông Báo & Nhắc Phí Thường Niên (Mẫu đã duyệt Zalo).
+     - `BM-CEO1983-MAIL-10`: Mẫu Thư Điện Tử HTML Thư Mời Sự Kiện & Thông Báo Điều Hành (Responsive HTML v3).
+     - `BM-CEO1983-DES-11`: Mẫu Poster Thư Mời Sự Kiện Wyndham Thanh Thủy (Chuẩn Pinterest 9:16, bố cục 3D, bóc tách ảnh).
+     - `BM-CEO1983-B2B-12`: Mẫu Kịch Bản Họp Diễn Đàn & Cafe Giao Thương 1-on-1 (3 tình huống kết nối doanh nhân).
+  3. *Tuân thủ quy định dự án*:
+     - Giữ nguyên toàn bộ mã nguồn và tài liệu trên máy cục bộ (local).
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.86): Nâng Cấp Toàn Diện Tài Liệu BRD Master Enterprise (`07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md`) - Tích Hợp Hệ Thống Sơ Đồ Use Case Mermaid & Thư Viện 50+ Ảnh Chụp Giao Diện Thực Tế**:
+  1. *Tái thiết toàn diện văn kiện BRD Master (`document/notebooklm/07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md`)*:
+     - **Bổ sung Sơ đồ Use Case Mermaid toàn diện**:
+       + Sơ đồ Use Case Tổng thể Toàn Hệ Sinh Thái (Master Ecosystem Use Case Diagram) bao gồm 6 nhóm tác nhân (Admin, Chủ tịch/BĐH, Thư ký, Kế toán, Hội viên, Khách mời) tương tác với 10 module CRM và 9 module Mobile App.
+       + Sơ đồ Use Case Cổng Quản trị Web CRM chi tiết.
+       + Sơ đồ Use Case CEO 1983 Mobile App chi tiết.
+     - **Tích hợp thư viện hơn 50 ảnh chụp màn hình giao diện thực tế**:
+       + *Phân hệ CRM*: Đăng nhập CRM, Dashboard điều hành 4 thẻ chỉ số, Quản lý 6 Ban chuyên môn, Modal thêm ban, Quản lý tài khoản, Modal gán vai trò, Ma trận phân quyền RBAC chi tiết, Bảng quản trị hội viên 360 Excel, Modal thẩm định duyệt hồ sơ 1-click, Quản trị sự kiện Gala, Modal tạo sự kiện 3 bước, Sơ đồ khán phòng bàn tiệc VIP Keangnam (10 ghế/bàn), Trình soát vé camera QR động < 0.5s, Vòng quay may mắn Lucky Draw, Quản lý lịch họp (Cố định vs Bất thường), Modal sinh phòng Jitsi Meet, Bảng giao việc Kanban kéo thả, Modal AI bóc tách biên bản họp, Sổ quỹ thu chi hoàn ứng 6 Ban, Quản lý kỳ thu hội phí VietQR động, Studio thiết kế poster thư mời Wyndham Thanh Thủy 9:16 Pinterest, Kho văn thư số & Trình xem Word/Excel/PDF, Kênh tin nhắn mạng lưới, Quản trị tài trợ và Cài đặt hệ thống (Token Zalo xoay vòng 24/7, SMTP).
+       + *Phân hệ Mobile App*: Launcher thông minh `/open-app`, Đăng ký gia nhập trực tuyến, Biểu mẫu doanh nghiệp, Đăng nhập di động, Trang chủ doanh nhân, Bảng tin mạng lưới tương tác cây bình luận 3 cấp, Thẻ hội viên VIP mặt trước Navy-Gold, Thẻ hội viên mặt sau kèm mã QR vCard lưu danh bạ 1-chạm native, Trang web profile công khai (`/card/:slug`), Danh bạ doanh nhân lọc theo ngành/Ban, Bản đồ số doanh nghiệp GPS, Chi tiết hồ sơ năng lực B2B, Danh mục sự kiện Gala Keangnam, Vé mời điện tử QR động xoay vòng 30s hiển thị Bàn VIP, Sàn giao thương B2B, Modal đăng sản phẩm ưu đãi nội khối (chiết khấu 5-20%), Đăng tin cơ hội B2B, Biểu quyết số đại hội (1 người - 1 phiếu), Nộp hội phí VietQR Napas247, Trợ lý AI cố vấn dòng tiền và deal B2B, Workshop đào tạo.
+     - **Chi tiết hóa luồng chức năng từng bước (Step-by-step Flow of Events)**:
+       + Khởi tạo, Điều kiện tiên quyết (Preconditions), Luồng xử lý chính (Main Flow: Người dùng làm gì -> Hệ thống xử lý gì -> CSDL lưu vết gì -> Kết quả trả về), Luồng thay thế (Alternative Flows), Luồng ngoại lệ (Exception Flows), Quy tắc nghiệp vụ (Business Rules).
+     - **Ma trận 10 Quy trình Nghiệp vụ Đầu-Cuối (End-to-End Workflows Mermaid Diagrams)**:
+       + Quy trình 1: Đăng ký, thẩm định & Onboarding hội viên mới (Sequence Diagram).
+       + Quy trình 2: Thu hội phí thường niên, VietQR động & Gạch nợ IPN tự động (Sequence Diagram).
+       + Quy trình 3: Tổ chức sự kiện Gala Keangnam & Soát vé QR động dưới 0.5s (Sequence Diagram).
+       + Quy trình 4: Studio poster Pinterest & Gửi đa kênh Zalo OA/Mail/App (Sequence Diagram).
+       + Quy trình 5: Điều hành cuộc họp Ban Cố định / Đột xuất & Điểm danh Jitsi (Flowchart).
+       + Quy trình 6: Giao thương B2B, Khớp lệnh cơ hội & Đặt lịch hẹn 1-on-1 (Flowchart).
+       + Quy trình 7: Phân bổ nhiệm vụ Kanban & AI bóc tách task biên bản họp (Flowchart).
+       + Quy trình 8: Cố vấn AI phân tích dòng tiền & Thẩm định lời lỗ deal B2B (Flowchart).
+       + Quy trình 9: Quản lý thu - chi, Hoàn ứng ngân sách 6 Ban & Sổ quỹ hiệp hội (Sequence Diagram).
+       + Quy trình 10: Tự động hóa xoay vòng token Zalo OA 24/7 không gián đoạn (Flowchart).
+  2. *Tuân thủ quy định dự án*:
+     - Giữ nguyên toàn bộ mã nguồn và tài liệu trên máy cục bộ (local).
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.85): Tái Cấu Trúc Toàn Diện Tài Liệu SRS Chuẩn 16 Phần & Đặc Tả Sâu Sắc 6 Nhóm Nghiệp Vụ Trọng Tâm ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014])**:
+  1. *Tái cấu trúc tài liệu SRS theo chuẩn khuyến nghị 16 phần (`document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md`)*:
+     - **PHẦN 1. Thông tin tài liệu (Document Control)**: Mã tài liệu `SRS-CEO1983-ENTERPRISE-16PARTS-V10.0`, phiên bản 10.0, ngày cập nhật 11/2026, cơ quan chủ quản CLB Doanh Nhân CEO 1983 (HanoiBA), đơn vị phát triển VICONNECT, lịch sử thay đổi phiên bản v1.0 đến v10.0, danh sách phê duyệt & lưu hành.
+     - **PHẦN 2. Giới thiệu (Introduction)**: Mục đích văn kiện, phạm vi 2 phân hệ độc lập (Cổng Web CRM & CEO 1983 Mobile App), mục tiêu số hóa 100% hội viên & tự động hóa 98% thu hội phí, đối tượng độc giả, thuật ngữ định nghĩa chuẩn hóa (VietQR động, IPN, Idempotency, Zalo ZNS, Gemini AI, Pure NestJS 3 tầng).
+     - **PHẦN 3. Tổng quan hệ thống (System Overview)**: Bối cảnh CLB Doanh nhân Quý Hợi 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA), sơ đồ phân tầng hệ thống ASCII, 5 vấn đề nhức nhối hiện tại (AS-IS) và giải pháp đề xuất (TO-BE), phạm vi In-Scope vs Out-of-Scope, giả định & ràng buộc hạ tầng CSDL `113.20.107.184:6432` qua PgBouncer.
+     - **PHẦN 4. Đối tượng sử dụng và phân quyền (User Roles & Permissions)**: 5 cấp bậc vai trò RBAC (SUPER_ADMIN, PRESIDENT/BOARD, COMMITTEE_HEAD/ADMIN, MEMBER, GUEST), mô tả từng Actor, Ma trận phân quyền chi tiết (Role Permission Matrix 13 nhóm chức năng), quy tắc kiểm soát truy cập và quy trình ủy quyền số 2 bước.
+     - **PHẦN 5. Yêu cầu nghiệp vụ (Business Requirements)**: So sánh quy trình nghiệp vụ AS-IS và TO-BE cho 3 luồng: Thu hội phí, Soát vé sự kiện, Kết nối giao thương B2B; Quy tắc nghiệp vụ bắt buộc BR-001 đến BR-005, chỉ số KPI vận hành.
+     - **PHẦN 6. Yêu cầu chức năng (Functional Requirements) - ĐẶC TẢ SÂU SẮC THEO 15 THUỘC TÍNH**:
+       + *Chi tiết hóa 6 nhóm trọng tâm*:
+         1. **Quản lý hội viên & Xét duyệt kết nạp (`FR-CRM-MEM-001`, `FR-APP-MEM-002`)**: Hồ sơ 360 độ, thẩm định hồ sơ, cấp mã hội viên tự động, thẻ hội viên số sang trọng Navy-Gold, danh thiếp điện tử thông minh QR vCard lưu danh bạ 1-click, hồ sơ năng lực B2B.
+         2. **Quản lý hội phí thường niên (`FR-CRM-FIN-003`)**: Cấu hình niên khóa, phát hành hóa đơn tự động hàng loạt cho 500+ hội viên, theo dõi công nợ thời gian thực, nhắc nợ thông minh Zalo/Email.
+         3. **Cổng thanh toán đa kênh & Đối soát tự động (`FR-CORE-PAY-004`)**: VietQR động Napas247 cú pháp duy nhất, MoMo Payment v2 App Deep Link, Cổng quốc gia VNPay; Webhook IPN xử lý ngầm xác thực HMAC-SHA512, chống xử lý trùng (Idempotency Key), gạch nợ tự động trong 2 giây.
+         4. **Quản lý sự kiện & Soát vé QR Động Keangnam (`FR-CRM-EVT-005`)**: Hạng vé có phí/miễn phí, cấu hình sơ đồ bàn tiệc VIP Keangnam (10 người/bàn); Trình soát vé QR động chu kỳ 30 giây dưới 0.5s tại cổng, phát âm thanh Ting/viền xanh chúc mừng và hiển thị số bàn, chống chụp ảnh màn hình gian lận.
+         5. **Thông báo đa kênh & Studio Poster Pinterest (`FR-CRM-NOTIF-006`)**: Studio đồ họa kéo thả layers, mẫu Wyndham Thanh Thủy 9:16 Pinterest, tự động lấy avatar hội viên tham gia làm mờ viền ảnh 3D, bóc tách text ảnh AI khi tải mẫu lên; Gom trung tâm Mẫu trang vào Menu Sidebar chuẩn CRM; Phát lệnh đồng bộ 1-click qua Zalo OA ZNS (tự xoay vòng token 24/7), Email HTML và Push App (Dismiss Badge).
+         6. **Báo cáo tài chính thu chi & Sổ quỹ hiệp hội (`FR-CRM-FIN-007`)**: Quản lý phiếu thu, duyệt chi hoàn ứng 6 Ban, đối soát sổ quỹ, trực quan hóa biểu đồ Recharts tự thích ứng Dark/Light theme (khắc phục triệt để lỗi tooltip nền tối chữ tối), xuất Excel SheetJS theo chuẩn HanoiBA.
+       + *Các phân hệ bổ trợ hoàn thiện*:
+         * `FR-CORE-MEET-008`: Họp Ban Cố định vs Bất thường & Lịch hẹn 1-on-1 trong 3 tình huống kết nối.
+         * `FR-APP-B2B-009`: Sàn giao thương B2B, gian hàng sản phẩm ưu đãi nội khối (chiết khấu 5-20%) và ghi nhận thương vụ thành công.
+         * `FR-CRM-TSK-010`: Bảng Kanban kéo thả tự động hoàn thành & AI Gemini bóc tách task từ file Word/Excel biên bản họp.
+         * `FR-CORE-AI-011`: Cố vấn AI Super Premium phân tích dòng tiền đóng phí, thẩm định lời lỗ cơ hội đầu tư B2B, phân tích năng lực đối tác & gợi ý deal.
+         * `FR-APP-NET-012`: Bản tin mạng lưới, cây bình luận 3 cấp, menu 3 chấm chỉnh sửa/xóa bài đăng cho tài khoản sở hữu.
+         * `FR-CRM-DOC-013`: Kho văn thư số hóa & Trình xem tài liệu toàn năng (Word, Excel, PDF) không cần cài Office.
+         * `FR-CRM-SYS-014`: Cấu hình hệ thống, nhãn sidebar, quản trị Invoices và cấu hình SMTP.
+     - **PHẦN 7. Yêu cầu giao diện (External Interface Requirements)**: Hệ nhận diện 3 màu thương hiệu (Navy `#1B365D`, Vàng Gold `#D4AF37`, Xanh Emerald `#00A86B`), quy tắc 3-click, Glassmorphism, Responsive Web CRM & Mobile App Native/PWA.
+     - **PHẦN 8. Yêu cầu dữ liệu (Data Requirements)**: 12 thực thể cốt lõi, Sơ đồ quan hệ thực thể Mermaid `erDiagram`, Data Dictionary chi tiết khớp 100% PostgreSQL `113.20.107.184:6432/ceo1983_project`, toàn vẹn tham chiếu, giao dịch ACID, chính sách sao lưu định kỳ 01:00 AM (RPO < 1h, RTO < 30m).
+     - **PHẦN 9. Yêu cầu tích hợp hệ thống & Model AI (Integration Requirements)**: Tích hợp Gemini 2.0/2.5 Flash, VNPay, MoMo, VietQR Napas247, Zalo OA ZNS, Google SMTP; Cơ chế Webhook IPN, xác thực chữ ký số HMAC, Idempotency Guard, xoay vòng Zalo token tự động mỗi 6 giờ.
+     - **PHẦN 10. Yêu cầu phi chức năng (Non-Functional Requirements)**: Tốc độ phản hồi API < 200ms, Soát vé QR < 500ms, Uptime SLA 99.9%, Chịu tải 1.000 CCU, Mã hóa TLS 1.3, Không trạng thái (Stateless), Tương thích iOS 14+ / Android 9+.
+     - **PHẦN 11. Yêu cầu bảo mật (Security Requirements)**: JWT Access/Refresh Token, RBAC 5 vai trò, Argon2id/bcrypt mật khẩu, Token Blacklist khi logout, Audit Log chi tiết ghi vết IP và JSONB old/new values, tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.
+     - **PHẦN 12. Quy trình xử lý và luồng nghiệp vụ (Workflow & Diagrams)**: Sơ đồ tuần tự Sequence Diagram thu phí và gạch nợ tự động; Sơ đồ hoạt động Activity Diagram soát vé QR động Keangnam; Sơ đồ luồng AI bóc tách task biên bản họp.
+     - **PHẦN 13. Yêu cầu báo cáo và thống kê (Reporting Requirements)**: Danh mục 5 báo cáo điều hành, chỉ số thống kê, Recharts Theme-adaptive, xuất Excel SheetJS định dạng doanh nghiệp.
+     - **PHẦN 14. Kiểm thử và nghiệm thu (Testing & Acceptance)**: Test cases matrix mẫu (`TC-AUTH-001` đến `TC-THEME-007`), Acceptance Criteria (TypeScript 0 errors, 0 dữ liệu ảo, SonarQube Passed).
+     - **PHẦN 15. Triển khai và vận hành (Deployment & Operation)**: Môi trường Dev/Staging/Prod, Yêu cầu máy chủ (Ubuntu 22.04, 4 Core, 8GB RAM), Docker Compose tách biệt độc lập CRM và App, Nginx Reverse Proxy & SSL Let's Encrypt, chính sách logrotate.
+     - **PHẦN 16. Phụ lục (Appendices)**: Bảng thuật ngữ viết tắt, danh mục mã lỗi chuẩn hóa (`ERR_AUTH_001` đến `ERR_OVER_BUDGET`), Ma trận truy vết yêu cầu (Requirements Traceability Matrix - RTM liên kết 14 FR-ID với Node ID).
+  2. *Tuân thủ quy chuẩn*:
+     - Toàn bộ tài liệu được cập nhật hoàn chỉnh tại `document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md`.
+     - Tuân thủ STRICT RULE 1: Giữ nguyên mã nguồn và tài liệu cục bộ, không tự ý chạy git push hay commit.
+
 - **Bản cập nhật ngày 09/11/2026 (v10.84): Khắc Phục Triệt Để Lỗi CI/CD GitHub Actions & Bổ Sung Icon 3 Chấm Chỉnh Sửa / Xóa Cho Bài Viết Do Hội Viên Đăng & Share Từ Ngoài Vào Tại Màn Mạng Lưới ([NODE-APP-004], [NODE-CORE-005])**:
   1. *Khắc phục triệt để lỗi CI/CD GitHub Actions (Auto Deploy Subdomains & Security Guard)*:
      - **Nguyên nhân Auto Deploy Subdomains thất bại**: Bước `quality-check` chạy `npx tsc --noEmit` tại `apps/ceo1983_app_fe` bị văng lỗi TypeScript do thiếu import tại `expenses.tsx` và `income.tsx` sau khi loại bỏ `useServerFn`.
@@ -554,6 +752,204 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 10/11/2026 (v10.90): Khắc Phục Triệt Để 1048 Lỗi Console Poster Studio, Ra Mắt Landing Page Mẫu 3 Chuẩn Pinterest SOTD, Bổ Sung Set Up Thư Mời Sự Kiện, Tách Biệt Menu Thống Kê & Tái Cấu Trúc Quản Lý Mẫu ([NODE-CRM-005], [NODE-CRM-017], [NODE-CRM-018], [NODE-CRM-019])**:
+  1. *CRM - Khắc phục triệt để lỗi 1048 console errors & Nâng cấp Poster Studio (`InvitationTemplateStudio.tsx`)*:
+     - **Nguyên nhân 1048 console errors**: Các thẻ `<img>` của avatar và logo trong studio có fallback `onError` trỏ vào file ảnh không tồn tại, khiến trình duyệt kích hoạt sự kiện lỗi liên tục ở tần số khung hình (60 FPS) gây nghẽn console và đơ giao diện.
+     - **Giải pháp**: Tạo file avatar mặc định nhận diện CLB CEO 1983 (`avatar-default.svg` và `avatar-default.png`) tại `apps/ceo1983_app_fe/public/avatars/`, đồng thời áp dụng cơ chế tự hủy cờ lỗi `e.currentTarget.onerror = null;` trên toàn bộ thẻ ảnh.
+     - **Bộ font chữ Google Fonts Dynamic**: Nhúng trực tiếp 8 font chữ cao cấp (`Cinzel`, `Playfair Display`, `Cormorant Garamond`, `Montserrat`, `Orbitron`, `Dancing Script`, `Great Vibes`, `Be Vietnam Pro`) vào `__root.tsx` và `styles.css`. Các khối chữ (Tiêu đề, Phụ đề, Tên đại biểu, Hộp đặc quyền, Cụm ngày giờ) đều tự động đổi font, kích thước (`xs` -> `5xl`), tracking và hiệu ứng 3D dập nổi theo thanh điều khiển.
+     - **Kéo thả chuột toàn màn hình (Smooth Drag & Drop)**: Gắn sự kiện `mousemove` và `mouseup` vào `window` trong React `useEffect`, cho phép kéo thả các khối thông tin trên poster mượt mà, không bị khựng hay tuột tay khi chuột di chuyển ra ngoài khung canvas.
+     - **Tùy biến tỷ lệ poster 4 định dạng**: Hỗ trợ Dọc 9:16 (Story/Standee), Vuông 1:1 (Social Post), Ngang 16:9 (LED sân khấu), và Đứng 3:4 (Thiệp mời A4/A5 in ấn).
+     - **Cắt ảnh chuyên nghiệp (`ImageCropModal.tsx`) & Nạp danh sách đại biểu**: Cắt avatar hình tròn, vuông, vòm Heian, bầu dục kèm zoom/xoay; tự động kết nối API `GET /events/registrations` nạp danh sách hội viên đăng ký sự kiện lên poster chỉ với 1 click.
+  2. *CRM - Landing Web Mẫu 2 & Mẫu 3 Chuẩn Pinterest Award Winner (`ForgeLuxuryAtelierLanding.tsx`, `StartupMobileShowcaseLanding.tsx`)*:
+     - **Hoàn thiện Mẫu 2 (`StartupMobileShowcaseLanding.tsx`)**: Dịch 100% văn bản tiếng Anh sang tiếng Việt ("Bạn Có Thắc Mắc Về CLB CEO 1983?", "Gửi Câu Hỏi", "Về Hiệp Hội", "Về Chúng Tôi", "Tính Năng Nổi Bật", "Tài Nguyên & Liên Kết", "Thông Tin Liên Hệ"); cô lập nền sáng light-mode chuẩn xác, làm mượt góc xoay 3D của mô hình điện thoại.
+     - **Ra mắt Mẫu 3 (`ForgeLuxuryAtelierLanding.tsx`)**: Thiết kế chuẩn theo Pinterest Pin 569353577917214566 (Forge Automotive SOTD Award Winner), phong cách Haute Couture / Luxury Atelier:
+       + Video cinematic MP4 nền, typography editorial đẳng cấp.
+       + 3 triết lý chế tác: Di Sản Chế Tác Độc Bản, Điêu Khắc Từng Đường Nét, Kỹ Thuật Đỉnh Cao.
+       + 6 phân hệ Atelier tinh hoa: Thiết Kế Thân Vỏ Carbon, Nội Thất Da Thủ Công, Động Cơ Tinh Chỉnh, Khí Động Học Sân Đua, Độc Bản Khắc Tên, Công Nghệ Trợ Lái AI.
+       + Dải chữ chuyển động vô tận (Marquee) khổng lồ `REFUSE ORDINARY`.
+       + Modal đăng ký thẩm định gia nhập CLB CEO 1983 phong cách VIP.
+       + Tích hợp đầy đủ vào router `/landing/$slug` (`web-v3`, `web3`, `forge-atelier`), danh sách `/landing` và trang quản trị `/admin/landing-webs`.
+  3. *CRM - Tách biệt độc lập các chức năng Thống kê con từ Sidebar (`/analytics`, `Sidebar.tsx`)*:
+     - 4 chức năng thống kê con: "Hoạt động hội viên", "Kết nối giao thương", "Cơ hội kinh doanh", "Sự kiện & cuộc họp" được tách thành các mục truy cập riêng lẻ trực tiếp trên menu Sidebar.
+     - Ẩn hoàn toàn thanh 4 tab gộp chung ở đầu trang `/analytics`; tiêu đề trang và breadcrumb cập nhật tự động theo tham số `category` tương ứng, mang lại giao diện tinh gọn, chuyên biệt.
+  4. *CRM - Tái cấu trúc nhóm Quản lý Mẫu & Thêm tính năng Set Up Thư Mời Sự Kiện (`InvitationSetupManager.tsx`, `Sidebar.tsx`)*:
+     - Quy hoạch nhóm "Quản lý mẫu trang" trên Sidebar bao gồm: Template Thư Mời, Set Up Thư Mời Sự Kiện, Quản Lý Landing Web (`/admin/landing-webs`), Xem Landing Page (`/landing` với 3 mẫu con).
+     - Xây dựng component `InvitationSetupManager.tsx` (tab `invitation-setup`): Quy trình 5 bước thiết lập thư mời sự kiện: Chọn sự kiện -> Chọn phong cách thiệp -> Thiết lập thông điệp & dress code -> Chọn danh sách người nhận (gọi API đăng ký) -> Thiết lập phát hành đa kênh (App Push, Email, Zalo ZNS) kèm xem trước trực quan.
+
+- **Bản cập nhật ngày 10/11/2026 (v10.89): Nâng Cấp Toàn Diện Thống Kê CRM, Đặc Quyền Hội Viên, Tạo Khen Thưởng, Poster Studio Dynamic & Tái Thiết Kế Mạng Lưới Mobile App Kèm Bottom Sheet Bình Luận Chuẩn Thiết Kế ([NODE-CRM-005], [NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-017], [NODE-APP-003], [NODE-APP-004])**:
+  1. *CRM - Thống kê Hoạt động Hội viên (`/analytics`, `analytics.service.ts` & `analytics.tsx`)*:
+     - Gộp các mục "Gắn kết hội viên", "Phát triển hội viên" và "Lượt chia sẻ ra ngoài" thành một phân hệ duy nhất: **"Hoạt động hội viên"**.
+     - Đo lường và trực quan hóa 3 chỉ số cốt lõi độc lập: Lượt bình luận, Lượt share bài viết từ app ra nền tảng ngoài, Lượt click link giới thiệu hội viên mới.
+     - Tách riêng các cột trong nhóm biểu đồ Recharts Bar Chart (bỏ `stackId`), đảm bảo mỗi chỉ số hiển thị dưới dạng một cột riêng biệt, trực quan và dễ so sánh.
+  2. *CRM - Thay đổi thuật ngữ Quyền lợi thành Đặc quyền*:
+     - Thay thế toàn bộ từ "tiện ích" thành "đặc quyền" trên toàn bộ giao diện quản trị phân quyền (`RbacPermissionMatrix.tsx`), mô-đun quyền lợi (`perks.functions.ts`) và modal tính năng.
+  3. *CRM - Chức năng Tạo Khen Thưởng & Danh Hiệu (`/benefits`, `CreateRewardModal.tsx`)*:
+     - Xây dựng modal "+ Tạo Khen Thưởng" với giao diện sang trọng:
+       + Trường Tiêu đề (Bắt buộc).
+       + Trường Mô tả chi tiết (Bắt buộc).
+       + Trường Người được khen thưởng: Multiselect tìm kiếm và chọn nhiều hội viên từ cơ sở dữ liệu.
+       + Trường Đăng ảnh: Cho phép tải lên tối đa 5 ảnh giấy khen, cúp, kỷ niệm chương kèm xem trước và xóa ảnh trực tiếp.
+       + Tự động lưu vào hệ thống và phát thông báo vinh danh lên bảng tin hiệp hội (`category: "HONOR"`).
+  4. *CRM - Quản lý mẫu trang & Invitation Poster Studio (`InvitationTemplateStudio.tsx`, `ImageCropModal.tsx`)*:
+     - **Font chữ & Mẫu chữ Dynamic**: Bổ sung bộ chọn 11 font chữ nghệ thuật cao cấp (`Cinzel`, `Playfair Display`, `Serif`, `Sans`, `Montserrat`, `Oswald`, `Orbitron`, `Calligraphy/Ephesis`, `Great Vibes`, `Merriweather`, `Roboto`), tùy biến font size, font weight và hiệu ứng chữ 3D dập nổi.
+     - **Bộ Cắt Ảnh Chuyên Nghiệp (Image Cropper)**: Cắt ảnh đại biểu theo các hình khối nhận diện (Tròn Hoàng Gia 3D, Vuông 1:1, Vòm Cung Heian, Bầu Dục Ngọc Trai) kèm zoom (0.5x - 3x), xoay 90° và kéo thả bằng chuột.
+     - **Tích Hợp API Hội Viên Đăng Ký Sự Kiện**: Tự động gọi API `GET /events` và `GET /events/registrations?eventId=...` để nạp danh sách đại biểu/hội viên đã đăng ký của sự kiện đó, cho phép 1-click đưa avatar và chức danh đại biểu lên poster.
+     - **Kéo Thả Tự Do (Draggable Blocks)**: Toàn bộ các khối thông tin (Khối đại biểu, Thông tin sự kiện/địa điểm, Mã QR) đều có thể di chuyển tự do bằng chuột trên canvas.
+     - **Tùy Chọn Tỷ Lệ Poster Thư Mời**: Hỗ trợ 3 tỷ lệ khung hình: Dọc (9:16), Vuông (1:1), Ngang (16:9), tự động căn chỉnh khung canvas xem trước và xuất file ảnh PNG chất lượng cao đúng tỷ lệ chuẩn.
+     - **Khắc phục lỗi call API liên tục (1048+ calls loop)**: Khắc phục triệt để lỗi re-render loop trong `NotificationCenter.tsx` và `use-unread-notifications.ts` bằng kỹ thuật `useRef` giữ server function ổn định.
+  5. *Mobile App - Mạng Lưới Hội Viên & Bản Tin (`association.messages.tsx`, `FeedView.tsx`)*:
+     - Tái thiết kế giao diện Mạng lưới theo đúng mã thiết kế HTML của người dùng:
+       + **Header mạng lưới**: Nút Menu (`/icons/feed/menu-01.svg`), Ô tìm kiếm bo tròn `rounded-[99px]` (`/icons/feed/search-01.svg`) với placeholder "Tìm cơ hội, bài viết, sự kiện, cuộc...", Nút chuông thông báo có badge đỏ `9+`.
+       + **Thanh Đăng Bài Viết**: Avatar TA pill (`/icons/feed/TA.svg`) + dòng chữ "Đăng bài viết mới..." + nút dấu cộng (`/icons/feed/add-01.svg`).
+       + **Thanh Tab Danh Mục**: Các viên thuốc `rounded-[99px]` (Tất cả, Tin tức CLB, Sự kiện & Họp ban, Ban Đào tạo, Cơ hội chia sẻ, Sàn B2B) kèm nút mở Cây danh mục `CategoryTreeModal`.
+       + **Card Bài Viết `rounded-3xl`**: Avatar bo tròn `rounded-[20px]`, Tiêu đề và nội dung font Inter chuẩn xác, Ảnh hiển thị `rounded-2xl h-52 object-cover`.
+       + **Khối Thành Viên Tham Dự & Đăng Ký**: Khung nền xám nhạt bo góc `rounded-xl`, hiển thị "Thành viên tham dự (x / y) - Xem tất cả" kèm icon `/icons/feed/arrow-right-02.svg`, dải avatar tròn `rounded-[14px]`, dòng "Đăng ký tham gia" kèm `/icons/feed/arrow-right-02.svg` và hạn chót.
+       + **Footer Bài Viết**: Nút Thích với `/icons/feed/favourite.svg`, Nút Bình luận với `/icons/feed/comment add-02.svg` mở Bottom Sheet bình luận, Nút Chia sẻ với `/icons/feed/share-01.svg`.
+  6. *Mobile App - Modal Bottom Sheet Bình Luận Chuyên Sâu (`CommentBottomSheetModal.tsx`)*:
+     - Thanh kéo pull handle trên cùng `w-28 h-[5px] bg-Neutral-400 rounded-[100px]`.
+     - Tiêu đề "Tất cả bình luận" kèm icon thu nhỏ (`arrow-down-01-round.svg`) và nút đóng (`cancel-01.svg`).
+     - Bong bóng bình luận màu xanh pastel bo góc `rounded-lg outline outline-1 outline-[#DBEAFE]`, phân cấp phân cấp thụt lề đa cấp (Cấp 1, Cấp 2, Cấp 3).
+     - **Menu 3 chấm trên từng bình luận**:
+       + Đối với bình luận của thành viên khác: "Sao chép bình luận", "Phản hồi".
+       + Đối với bình luận của chính người dùng hiện tại: "Sao chép bình luận", "Chỉnh sửa bình luận", "Xóa bình luận".
+     - Thanh nhập bình luận cố định dưới đáy: Avatar TA pill, ô input kèm nút tải ảnh/tài liệu (`add-circle.svg`), nút gửi bình luận (`sent.svg`).
+  7. *Kiểm chứng mã nguồn (Type Check) & Tuân thủ quy định*:
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` Exit Code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git commit` hay `git push`.
+
+
+- **Bản cập nhật ngày 10/11/2026 (v10.88): Sửa Triệt Để Lỗi PDF Không Xuống Dòng Đầu Mục, Biên Soạn 4 Tài Liệu Mới (SDD, API Spec, UI/UX Spec, Test Spec) & Xuất Bản Hoàn Hảo Đa Định Dạng (.md, .docx, .pdf, .xlsx) ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-016])**:
+  1. *Khắc phục triệt để 100% lỗi không xuống dòng cho các đầu mục tiêu đề và bullet list trong file PDF*:
+     - **Nguyên nhân gốc rễ**: Parser Markdown sang HTML cũ trong `scripts/build_all_formats_master.js` phân tách đoạn bằng `split(/\n{2,}/)` và kiểm tra `if (block.startsWith('<h')) return block;`. Khi một tiêu đề (`#`, `##`, `###`, `####`) nằm liền kề danh sách bullet (`*`, `-`) hoặc văn bản chỉ cách 1 dấu xuống dòng `\n`, toàn bộ khối đó bị giữ nguyên dưới dạng HTML thô không được bọc thẻ block `<p>` hoặc `<ul><li>`, khiến trình hiển thị Chromium trên PDF gộp chung các dòng thành một chuỗi văn bản ngang dính liền.
+     - **Giải pháp dứt điểm**:
+       + Tái thiết kế hàm `markdownToHtml` thành một Bộ phân tích trạng thái tuần tự từng dòng (Stateful Line-by-Line Parser).
+       + Khi gặp dòng tiêu đề: Tự động đóng mọi danh sách đang mở và xuất thẻ `<h1/h2/h3/h4>` độc lập kèm thuộc tính CSS `display: block !important; width: 100% !important; clear: both !important; page-break-after: avoid !important;`.
+       + Khi gặp dòng danh sách (`*`, `-`, `\d+\.`): Tự động mở vùng danh sách `<ul class="doc-list">` hoặc `<ol class="doc-list">` và bọc từng phần tử trong thẻ `<li>`, đảm bảo ngắt dòng và thụt lề chuẩn xác.
+       + Khi gặp dòng văn bản bình thường: Tự động bọc trong `<p class="doc-p">` với lề `margin: 6px 0; text-align: justify;`.
+  2. *Biên soạn và bổ sung đầy đủ 4 tài liệu kỹ thuật chuyên sâu mới chuẩn mực quốc tế*:
+     - **11. Tài liệu Thiết Kế Kỹ Thuật, Kiến Trúc Hệ Thống & CSDL (SDD - System Design Document)**:
+       + Tệp nguồn: `document/notebooklm/11_SDD_THIET_KE_KY_THUAT_KIEN_TRUC_DATABASE.md` (38.4 KB).
+       + Xuất bản: `.docx` (29.6 KB) và `.pdf` (354.0 KB).
+       + Nội dung: Tiêu chuẩn IEEE Std 1016-2009; Kiến trúc 5 tầng doanh nghiệp (Presentation -> Edge Nginx -> Pure NestJS 3-tier -> PgBouncer Pooling Port 6432 -> PostgreSQL Enterprise `113.20.107.184:6432`); Đặc tả chi tiết 25 bảng CSDL DDL SQL; Khóa bi quan (Pessimistic Locking `SELECT FOR UPDATE`); Zero-Trust Security.
+     - **12. Tài liệu Đặc Tả Giao Tiếp API (API Specification)**:
+       + Tệp nguồn: `document/notebooklm/12_API_SPECIFICATION_DAC_TA_GIAO_TIEP_API.md` (38.0 KB).
+       + Xuất bản: `.docx` (30.3 KB) và `.pdf` (376.2 KB).
+       + Nội dung: Chuẩn OpenAPI 3.1; Đặc tả 100% REST APIs (Auth JWT, Members, Companies, Invoices, Payment Engine Napas247/MoMo/VNPay kèm Webhook IPN HMAC-SHA512, Sự kiện & Xếp bàn Keangnam, Soát vé QR < 0.5s, Cuộc họp Jitsi Meet, Giao thương B2B, Kanban AI Parse Task, Zalo OA ZNS, WebSocket Gateway).
+     - **13. Tài liệu Đặc Tả Giao Diện & Trải Nghiệm Người Dùng (UI/UX Specification)**:
+       + Tệp nguồn: `document/notebooklm/13_UI_UX_SPECIFICATION_DAC_TA_GIAO_DIEN_TRAI_NGHIEM.md` (27.1 KB).
+       + Xuất bản: `.docx` (26.9 KB) và `.pdf` (290.3 KB).
+       + Nội dung: Hệ thống Design System 3 màu nhận diện Hoàng Gia (Navy `#1B365D`, Gold `#D4AF37`, Emerald `#00A86B`); Typography Inter & Montserrat; Wireframe & Layout specs cho 25 màn hình Web CRM và 18 màn hình Mobile App; Recharts Theme-adaptive; Quy tắc UX 3-Click; Haptic feedback; WCAG 2.1 AA.
+     - **14. Tài liệu Đặc Tả Kiểm Thử Phần Mềm & Nghiệm Thu (Test Specification & Acceptance Plan)**:
+       + Tệp nguồn: `document/notebooklm/14_TEST_SPECIFICATION_DAC_TA_KIEM_THU.md` (27.5 KB).
+       + Xuất bản: `.docx` (28.2 KB) và `.pdf` (322.5 KB).
+       + Nội dung: Tiêu chuẩn IEEE Std 829 & ISO/IEC/IEEE 29119; Ma trận truy vết kiểm thử bao phủ 100% 37 Functional Nodes; Bộ hơn 100 Test Cases chi tiết (Auth, Phê duyệt, Gạch nợ VietQR, Chống giả mạo chữ ký HMAC-SHA512, Soát vé Keangnam < 0.5s, Chống vé trùng, AI task parsing, Menu 3 chấm bài đăng); Kịch bản tải 2.000 users; Báo cáo Pentest OWASP Top 10.
+  3. *Nâng cấp Bảng Tính Ma Trận Truy Vết Excel (`10_MA_TRAN_TRUY_VET_YEU_CAU_RTM_CEO1983.xlsx`)*:
+     - Bổ sung Sheet thứ 4: `MA_TRAN_KIEM_THU_TEST_CASES` định dạng bảng Excel chuyên nghiệp, dập nổi màu thương hiệu Navy-Gold.
+  4. *Kiểm chứng chất lượng mã nguồn & Type Check*:
+     - Backend NestJS `apps/ceo1983_app_be`: `tsc --noEmit` Exit Code 0 (0 errors).
+     - Frontend React/Next.js `apps/ceo1983_app_fe`: `tsc --noEmit` Exit Code 0 (0 errors).
+     - Toàn bộ các định dạng tệp (.md, .docx, .pdf, .xlsx) được đồng bộ đầy đủ vào `document/notebooklm/`, `document/` và `apps/ceo1983_app_fe/public/docs/`.
+  5. *Tuân thủ quy định dự án*:
+     - Giữ nguyên toàn bộ mã nguồn và tài liệu trên máy cục bộ (local).
+     - Tuân thủ nghiêm ngặt **STRICT RULE 1**: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.87): Xuất Bản Đầy Đủ Đa Định Dạng (Word .docx, PDF, Excel .xlsx, Markdown .md) & Bổ Sung 12 Biểu Mẫu Nghiệp Vụ Chuẩn Hóa ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014])**:
+  1. *Xuất bản thành công 100% tài liệu sang tất cả các định dạng theo yêu cầu*:
+     - **Tài liệu Yêu Cầu Nghiệp Vụ BRD Master**:
+       + `07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md` (90.8 KB)
+       + `07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.docx` (27.3 MB - Đầy đủ hơn 50 ảnh chụp giao diện và bảng biểu)
+       + `07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.pdf` (27.1 MB - Chuyển đổi qua Google Chrome Playwright, A4 chuẩn in ấn, header/footer dập nổi)
+     - **Tài liệu Đặc Tả Yêu Cầu Phần Mềm SRS Master (16 Phần Chuẩn Hóa)**:
+       + `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md` (124.7 KB, 1.236 dòng)
+       + `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.docx` (81.0 KB)
+       + `08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.pdf` (538.9 KB)
+     - **Tài liệu Đặc Tả API & Thiết Kế CSDL PostgreSQL**:
+       + `09_DAC_TA_API_VA_THIET_KE_CSDL.md` (48.9 KB)
+       + `09_DAC_TA_API_VA_THIET_KE_CSDL.docx` (47.9 KB)
+       + `09_DAC_TA_API_VA_THIET_KE_CSDL.pdf` (545.7 KB)
+     - **Bảng Tính Ma Trận Truy Vết Yêu Cầu & Biểu Mẫu Excel**:
+       + `10_MA_TRAN_TRUY_VET_YEU_CAU_RTM_CEO1983.xlsx` (14.4 KB, 5 Sheets: 12 Biểu Mẫu Chuẩn, Ma Trận 37 Node, Ma Trận RBAC 5 Vai Trò, Danh Mục 60 Use Cases, 25 Bảng CSDL).
+  2. *Bổ sung đầy đủ Hệ Thống 12 Biểu Mẫu Nghiệp Vụ & Mẫu Trang Chuẩn Hóa (Master Templates Catalog)*:
+     - `BM-CEO1983-MEM-01`: Đơn Đăng Ký Gia Nhập CLB Doanh Nhân CEO 1983 (Mẫu kê khai doanh nhân, pháp nhân, ngành nghề, mã số thuế, đại diện).
+     - `BM-CEO1983-MEM-02`: Bản Cam Đoan & Thỏa Thuận Bảo Mật Thông Tin Nội Khối (NDA & Ethics Agreement).
+     - `BM-CEO1983-FIN-03`: Hóa Đơn Thu Tiền & Biên Lai Điện Tử Thu Hội Phí Niên Khóa (Kèm VietQR Napas247).
+     - `BM-CEO1983-FIN-04`: Giấy Đề Nghị Tạm Ứng Kinh Phí Hoạt Động Ban Chuyên Môn (Có phê duyệt Chủ tịch/Kế toán).
+     - `BM-CEO1983-FIN-05`: Giấy Thanh Toán & Bảng Kê Quyết Toán Hoàn Ứng Ngân Sách (Kèm hóa đơn chứng từ VAT).
+     - `BM-CEO1983-EVT-06`: Giấy Mời / Thư Mời Tham Dự Cuộc Họp Ban Chấp Hành / Diễn Đàn Doanh Nhân.
+     - `BM-CEO1983-EVT-07`: Thư Ngỏ Vận Động Tài Trợ Gala Doanh Nhân Keangnam Landmark72 (Các gói Kim Cương, Vàng, Bạc).
+     - `BM-CEO1983-DOC-08`: Biên Bản Cuộc Họp Ban Điều Hành Định Kỳ (Có chữ ký Thư ký & Chủ tọa).
+     - `BM-CEO1983-ZNS-09`: Mẫu Tin Nhắn Zalo OA ZNS Thông Báo & Nhắc Phí Thường Niên (Mẫu đã duyệt Zalo).
+     - `BM-CEO1983-MAIL-10`: Mẫu Thư Điện Tử HTML Thư Mời Sự Kiện & Thông Báo Điều Hành (Responsive HTML v3).
+     - `BM-CEO1983-DES-11`: Mẫu Poster Thư Mời Sự Kiện Wyndham Thanh Thủy (Chuẩn Pinterest 9:16, bố cục 3D, bóc tách ảnh).
+     - `BM-CEO1983-B2B-12`: Mẫu Kịch Bản Họp Diễn Đàn & Cafe Giao Thương 1-on-1 (3 tình huống kết nối doanh nhân).
+  3. *Tuân thủ quy định dự án*:
+     - Giữ nguyên toàn bộ mã nguồn và tài liệu trên máy cục bộ (local).
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.86): Nâng Cấp Toàn Diện Tài Liệu BRD Master Enterprise (`07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md`) - Tích Hợp Hệ Thống Sơ Đồ Use Case Mermaid & Thư Viện 50+ Ảnh Chụp Giao Diện Thực Tế**:
+  1. *Tái thiết toàn diện văn kiện BRD Master (`document/notebooklm/07_TAI_LIEU_YEU_CAU_NGHIEP_VU_BRD_CHINH_THUC.md`)*:
+     - **Bổ sung Sơ đồ Use Case Mermaid toàn diện**:
+       + Sơ đồ Use Case Tổng thể Toàn Hệ Sinh Thái (Master Ecosystem Use Case Diagram) bao gồm 6 nhóm tác nhân (Admin, Chủ tịch/BĐH, Thư ký, Kế toán, Hội viên, Khách mời) tương tác với 10 module CRM và 9 module Mobile App.
+       + Sơ đồ Use Case Cổng Quản trị Web CRM chi tiết.
+       + Sơ đồ Use Case CEO 1983 Mobile App chi tiết.
+     - **Tích hợp thư viện hơn 50 ảnh chụp màn hình giao diện thực tế**:
+       + *Phân hệ CRM*: Đăng nhập CRM, Dashboard điều hành 4 thẻ chỉ số, Quản lý 6 Ban chuyên môn, Modal thêm ban, Quản lý tài khoản, Modal gán vai trò, Ma trận phân quyền RBAC chi tiết, Bảng quản trị hội viên 360 Excel, Modal thẩm định duyệt hồ sơ 1-click, Quản trị sự kiện Gala, Modal tạo sự kiện 3 bước, Sơ đồ khán phòng bàn tiệc VIP Keangnam (10 ghế/bàn), Trình soát vé camera QR động < 0.5s, Vòng quay may mắn Lucky Draw, Quản lý lịch họp (Cố định vs Bất thường), Modal sinh phòng Jitsi Meet, Bảng giao việc Kanban kéo thả, Modal AI bóc tách biên bản họp, Sổ quỹ thu chi hoàn ứng 6 Ban, Quản lý kỳ thu hội phí VietQR động, Studio thiết kế poster thư mời Wyndham Thanh Thủy 9:16 Pinterest, Kho văn thư số & Trình xem Word/Excel/PDF, Kênh tin nhắn mạng lưới, Quản trị tài trợ và Cài đặt hệ thống (Token Zalo xoay vòng 24/7, SMTP).
+       + *Phân hệ Mobile App*: Launcher thông minh `/open-app`, Đăng ký gia nhập trực tuyến, Biểu mẫu doanh nghiệp, Đăng nhập di động, Trang chủ doanh nhân, Bảng tin mạng lưới tương tác cây bình luận 3 cấp, Thẻ hội viên VIP mặt trước Navy-Gold, Thẻ hội viên mặt sau kèm mã QR vCard lưu danh bạ 1-chạm native, Trang web profile công khai (`/card/:slug`), Danh bạ doanh nhân lọc theo ngành/Ban, Bản đồ số doanh nghiệp GPS, Chi tiết hồ sơ năng lực B2B, Danh mục sự kiện Gala Keangnam, Vé mời điện tử QR động xoay vòng 30s hiển thị Bàn VIP, Sàn giao thương B2B, Modal đăng sản phẩm ưu đãi nội khối (chiết khấu 5-20%), Đăng tin cơ hội B2B, Biểu quyết số đại hội (1 người - 1 phiếu), Nộp hội phí VietQR Napas247, Trợ lý AI cố vấn dòng tiền và deal B2B, Workshop đào tạo.
+     - **Chi tiết hóa luồng chức năng từng bước (Step-by-step Flow of Events)**:
+       + Khởi tạo, Điều kiện tiên quyết (Preconditions), Luồng xử lý chính (Main Flow: Người dùng làm gì -> Hệ thống xử lý gì -> CSDL lưu vết gì -> Kết quả trả về), Luồng thay thế (Alternative Flows), Luồng ngoại lệ (Exception Flows), Quy tắc nghiệp vụ (Business Rules).
+     - **Ma trận 10 Quy trình Nghiệp vụ Đầu-Cuối (End-to-End Workflows Mermaid Diagrams)**:
+       + Quy trình 1: Đăng ký, thẩm định & Onboarding hội viên mới (Sequence Diagram).
+       + Quy trình 2: Thu hội phí thường niên, VietQR động & Gạch nợ IPN tự động (Sequence Diagram).
+       + Quy trình 3: Tổ chức sự kiện Gala Keangnam & Soát vé QR động dưới 0.5s (Sequence Diagram).
+       + Quy trình 4: Studio poster Pinterest & Gửi đa kênh Zalo OA/Mail/App (Sequence Diagram).
+       + Quy trình 5: Điều hành cuộc họp Ban Cố định / Đột xuất & Điểm danh Jitsi (Flowchart).
+       + Quy trình 6: Giao thương B2B, Khớp lệnh cơ hội & Đặt lịch hẹn 1-on-1 (Flowchart).
+       + Quy trình 7: Phân bổ nhiệm vụ Kanban & AI bóc tách task biên bản họp (Flowchart).
+       + Quy trình 8: Cố vấn AI phân tích dòng tiền & Thẩm định lời lỗ deal B2B (Flowchart).
+       + Quy trình 9: Quản lý thu - chi, Hoàn ứng ngân sách 6 Ban & Sổ quỹ hiệp hội (Sequence Diagram).
+       + Quy trình 10: Tự động hóa xoay vòng token Zalo OA 24/7 không gián đoạn (Flowchart).
+  2. *Tuân thủ quy định dự án*:
+     - Giữ nguyên toàn bộ mã nguồn và tài liệu trên máy cục bộ (local).
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Không tự ý chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 09/11/2026 (v10.85): Tái Cấu Trúc Toàn Diện Tài Liệu SRS Chuẩn 16 Phần & Đặc Tả Sâu Sắc 6 Nhóm Nghiệp Vụ Trọng Tâm ([NODE-CORE-001] -> [NODE-CORE-006], [NODE-CRM-001] -> [NODE-CRM-017], [NODE-APP-001] -> [NODE-APP-014])**:
+  1. *Tái cấu trúc tài liệu SRS theo chuẩn khuyến nghị 16 phần (`document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md`)*:
+     - **PHẦN 1. Thông tin tài liệu (Document Control)**: Mã tài liệu `SRS-CEO1983-ENTERPRISE-16PARTS-V10.0`, phiên bản 10.0, ngày cập nhật 11/2026, cơ quan chủ quản CLB Doanh Nhân CEO 1983 (HanoiBA), đơn vị phát triển VICONNECT, lịch sử thay đổi phiên bản v1.0 đến v10.0, danh sách phê duyệt & lưu hành.
+     - **PHẦN 2. Giới thiệu (Introduction)**: Mục đích văn kiện, phạm vi 2 phân hệ độc lập (Cổng Web CRM & CEO 1983 Mobile App), mục tiêu số hóa 100% hội viên & tự động hóa 98% thu hội phí, đối tượng độc giả, thuật ngữ định nghĩa chuẩn hóa (VietQR động, IPN, Idempotency, Zalo ZNS, Gemini AI, Pure NestJS 3 tầng).
+     - **PHẦN 3. Tổng quan hệ thống (System Overview)**: Bối cảnh CLB Doanh nhân Quý Hợi 1983 trực thuộc Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA), sơ đồ phân tầng hệ thống ASCII, 5 vấn đề nhức nhối hiện tại (AS-IS) và giải pháp đề xuất (TO-BE), phạm vi In-Scope vs Out-of-Scope, giả định & ràng buộc hạ tầng CSDL `113.20.107.184:6432` qua PgBouncer.
+     - **PHẦN 4. Đối tượng sử dụng và phân quyền (User Roles & Permissions)**: 5 cấp bậc vai trò RBAC (SUPER_ADMIN, PRESIDENT/BOARD, COMMITTEE_HEAD/ADMIN, MEMBER, GUEST), mô tả từng Actor, Ma trận phân quyền chi tiết (Role Permission Matrix 13 nhóm chức năng), quy tắc kiểm soát truy cập và quy trình ủy quyền số 2 bước.
+     - **PHẦN 5. Yêu cầu nghiệp vụ (Business Requirements)**: So sánh quy trình nghiệp vụ AS-IS và TO-BE cho 3 luồng: Thu hội phí, Soát vé sự kiện, Kết nối giao thương B2B; Quy tắc nghiệp vụ bắt buộc BR-001 đến BR-005, chỉ số KPI vận hành.
+     - **PHẦN 6. Yêu cầu chức năng (Functional Requirements) - ĐẶC TẢ SÂU SẮC THEO 15 THUỘC TÍNH**:
+       + *Chi tiết hóa 6 nhóm trọng tâm*:
+         1. **Quản lý hội viên & Xét duyệt kết nạp (`FR-CRM-MEM-001`, `FR-APP-MEM-002`)**: Hồ sơ 360 độ, thẩm định hồ sơ, cấp mã hội viên tự động, thẻ hội viên số sang trọng Navy-Gold, danh thiếp điện tử thông minh QR vCard lưu danh bạ 1-click, hồ sơ năng lực B2B.
+         2. **Quản lý hội phí thường niên (`FR-CRM-FIN-003`)**: Cấu hình niên khóa, phát hành hóa đơn tự động hàng loạt cho 500+ hội viên, theo dõi công nợ thời gian thực, nhắc nợ thông minh Zalo/Email.
+         3. **Cổng thanh toán đa kênh & Đối soát tự động (`FR-CORE-PAY-004`)**: VietQR động Napas247 cú pháp duy nhất, MoMo Payment v2 App Deep Link, Cổng quốc gia VNPay; Webhook IPN xử lý ngầm xác thực HMAC-SHA512, chống xử lý trùng (Idempotency Key), gạch nợ tự động trong 2 giây.
+         4. **Quản lý sự kiện & Soát vé QR Động Keangnam (`FR-CRM-EVT-005`)**: Hạng vé có phí/miễn phí, cấu hình sơ đồ bàn tiệc VIP Keangnam (10 người/bàn); Trình soát vé QR động chu kỳ 30 giây dưới 0.5s tại cổng, phát âm thanh Ting/viền xanh chúc mừng và hiển thị số bàn, chống chụp ảnh màn hình gian lận.
+         5. **Thông báo đa kênh & Studio Poster Pinterest (`FR-CRM-NOTIF-006`)**: Studio đồ họa kéo thả layers, mẫu Wyndham Thanh Thủy 9:16 Pinterest, tự động lấy avatar hội viên tham gia làm mờ viền ảnh 3D, bóc tách text ảnh AI khi tải mẫu lên; Gom trung tâm Mẫu trang vào Menu Sidebar chuẩn CRM; Phát lệnh đồng bộ 1-click qua Zalo OA ZNS (tự xoay vòng token 24/7), Email HTML và Push App (Dismiss Badge).
+         6. **Báo cáo tài chính thu chi & Sổ quỹ hiệp hội (`FR-CRM-FIN-007`)**: Quản lý phiếu thu, duyệt chi hoàn ứng 6 Ban, đối soát sổ quỹ, trực quan hóa biểu đồ Recharts tự thích ứng Dark/Light theme (khắc phục triệt để lỗi tooltip nền tối chữ tối), xuất Excel SheetJS theo chuẩn HanoiBA.
+       + *Các phân hệ bổ trợ hoàn thiện*:
+         * `FR-CORE-MEET-008`: Họp Ban Cố định vs Bất thường & Lịch hẹn 1-on-1 trong 3 tình huống kết nối.
+         * `FR-APP-B2B-009`: Sàn giao thương B2B, gian hàng sản phẩm ưu đãi nội khối (chiết khấu 5-20%) và ghi nhận thương vụ thành công.
+         * `FR-CRM-TSK-010`: Bảng Kanban kéo thả tự động hoàn thành & AI Gemini bóc tách task từ file Word/Excel biên bản họp.
+         * `FR-CORE-AI-011`: Cố vấn AI Super Premium phân tích dòng tiền đóng phí, thẩm định lời lỗ cơ hội đầu tư B2B, phân tích năng lực đối tác & gợi ý deal.
+         * `FR-APP-NET-012`: Bản tin mạng lưới, cây bình luận 3 cấp, menu 3 chấm chỉnh sửa/xóa bài đăng cho tài khoản sở hữu.
+         * `FR-CRM-DOC-013`: Kho văn thư số hóa & Trình xem tài liệu toàn năng (Word, Excel, PDF) không cần cài Office.
+         * `FR-CRM-SYS-014`: Cấu hình hệ thống, nhãn sidebar, quản trị Invoices và cấu hình SMTP.
+     - **PHẦN 7. Yêu cầu giao diện (External Interface Requirements)**: Hệ nhận diện 3 màu thương hiệu (Navy `#1B365D`, Vàng Gold `#D4AF37`, Xanh Emerald `#00A86B`), quy tắc 3-click, Glassmorphism, Responsive Web CRM & Mobile App Native/PWA.
+     - **PHẦN 8. Yêu cầu dữ liệu (Data Requirements)**: 12 thực thể cốt lõi, Sơ đồ quan hệ thực thể Mermaid `erDiagram`, Data Dictionary chi tiết khớp 100% PostgreSQL `113.20.107.184:6432/ceo1983_project`, toàn vẹn tham chiếu, giao dịch ACID, chính sách sao lưu định kỳ 01:00 AM (RPO < 1h, RTO < 30m).
+     - **PHẦN 9. Yêu cầu tích hợp hệ thống & Model AI (Integration Requirements)**: Tích hợp Gemini 2.0/2.5 Flash, VNPay, MoMo, VietQR Napas247, Zalo OA ZNS, Google SMTP; Cơ chế Webhook IPN, xác thực chữ ký số HMAC, Idempotency Guard, xoay vòng Zalo token tự động mỗi 6 giờ.
+     - **PHẦN 10. Yêu cầu phi chức năng (Non-Functional Requirements)**: Tốc độ phản hồi API < 200ms, Soát vé QR < 500ms, Uptime SLA 99.9%, Chịu tải 1.000 CCU, Mã hóa TLS 1.3, Không trạng thái (Stateless), Tương thích iOS 14+ / Android 9+.
+     - **PHẦN 11. Yêu cầu bảo mật (Security Requirements)**: JWT Access/Refresh Token, RBAC 5 vai trò, Argon2id/bcrypt mật khẩu, Token Blacklist khi logout, Audit Log chi tiết ghi vết IP và JSONB old/new values, tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.
+     - **PHẦN 12. Quy trình xử lý và luồng nghiệp vụ (Workflow & Diagrams)**: Sơ đồ tuần tự Sequence Diagram thu phí và gạch nợ tự động; Sơ đồ hoạt động Activity Diagram soát vé QR động Keangnam; Sơ đồ luồng AI bóc tách task biên bản họp.
+     - **PHẦN 13. Yêu cầu báo cáo và thống kê (Reporting Requirements)**: Danh mục 5 báo cáo điều hành, chỉ số thống kê, Recharts Theme-adaptive, xuất Excel SheetJS định dạng doanh nghiệp.
+     - **PHẦN 14. Kiểm thử và nghiệm thu (Testing & Acceptance)**: Test cases matrix mẫu (`TC-AUTH-001` đến `TC-THEME-007`), Acceptance Criteria (TypeScript 0 errors, 0 dữ liệu ảo, SonarQube Passed).
+     - **PHẦN 15. Triển khai và vận hành (Deployment & Operation)**: Môi trường Dev/Staging/Prod, Yêu cầu máy chủ (Ubuntu 22.04, 4 Core, 8GB RAM), Docker Compose tách biệt độc lập CRM và App, Nginx Reverse Proxy & SSL Let's Encrypt, chính sách logrotate.
+     - **PHẦN 16. Phụ lục (Appendices)**: Bảng thuật ngữ viết tắt, danh mục mã lỗi chuẩn hóa (`ERR_AUTH_001` đến `ERR_OVER_BUDGET`), Ma trận truy vết yêu cầu (Requirements Traceability Matrix - RTM liên kết 14 FR-ID với Node ID).
+  2. *Tuân thủ quy chuẩn*:
+     - Toàn bộ tài liệu được cập nhật hoàn chỉnh tại `document/notebooklm/08_TAI_LIEU_DAC_TA_YEU_CAU_PHAN_MEM_SRS_CHINH_THUC.md`.
+     - Tuân thủ STRICT RULE 1: Giữ nguyên mã nguồn và tài liệu cục bộ, không tự ý chạy git push hay commit.
 
 - **Bản cập nhật ngày 09/11/2026 (v10.84): Khắc Phục Triệt Để Lỗi CI/CD GitHub Actions & Bổ Sung Icon 3 Chấm Chỉnh Sửa / Xóa Cho Bài Viết Do Hội Viên Đăng & Share Từ Ngoài Vào Tại Màn Mạng Lưới ([NODE-APP-004], [NODE-CORE-005])**:
   1. *Khắc phục triệt để lỗi CI/CD GitHub Actions (Auto Deploy Subdomains & Security Guard)*:

@@ -52,8 +52,10 @@ import {
   type LandingApiConfig,
   type StartupMobileTemplateConfig,
   DEFAULT_STARTUP_MOBILE_CONFIG,
+  DEFAULT_FORGE_LUXURY_ATELIER_CONFIG,
 } from "@/components/landing/TimedCardsOpeningLanding";
 import { StartupMobileShowcaseLanding } from "@/components/landing/StartupMobileShowcaseLanding";
+import { ForgeLuxuryAtelierLanding } from "@/components/landing/ForgeLuxuryAtelierLanding";
 
 export const DEFAULT_TIMED_CARDS_TEMPLATE: LandingWebConfig = {
   id: "lw_timed_cards_opening_default",
@@ -189,6 +191,43 @@ export const DEFAULT_STARTUP_MOBILE_TEMPLATE: LandingWebConfig = {
   startupConfig: JSON.parse(JSON.stringify(DEFAULT_STARTUP_MOBILE_CONFIG)),
 };
 
+export const DEFAULT_FORGE_LUXURY_ATELIER_TEMPLATE: LandingWebConfig = {
+  id: "lw_forge_luxury_atelier_default",
+  name: "Mẫu 3: Forge Luxury Atelier — Dành Cho Doanh Nhân Đỉnh Cao (Pinterest SOTD Award)",
+  slug: "web-v3",
+  subdomain: "web-v3",
+  isPublished: true,
+  template: "forge_luxury_atelier",
+  theme: {
+    primaryColor: "#C5A880",
+    secondaryColor: "#0A0A0A",
+    textColor: "#EDEDED",
+    backgroundColor: "#070707",
+    fontFamily: "Cinzel, Inter, sans-serif",
+  },
+  brand: {
+    logoText: "CEO 1983 Bespoke Atelier",
+    logoIcon: "crown",
+    contactPhone: "0983.1983.83",
+    contactEmail: "contact@ceo1983.viconnect.vn",
+  },
+  navMenu: [
+    { id: "m1", label: "Triết Lý", url: "#approach" },
+    { id: "m2", label: "Phân Hệ Atelier", url: "#specialties" },
+    { id: "m3", label: "Dự Án Tiêu Biểu", url: "#builds" },
+    { id: "m4", label: "Cơ Hội Độc Quyền", url: "#stock" },
+    { id: "m5", label: "Gia Nhập Ngay", url: "#enquire" },
+  ],
+  slides: [],
+  subScreens: [],
+  forgeAtelierConfig: JSON.parse(JSON.stringify(DEFAULT_FORGE_LUXURY_ATELIER_CONFIG)),
+  apiConfig: {
+    enabled: false,
+    endpointUrl: "",
+    rootPath: "",
+  },
+};
+
 function LandingImageUploadField({
   label,
   value,
@@ -310,7 +349,7 @@ function AdminLandingWebsPage() {
 
   const { data: landingWebs = [], loading, reload } = useServerData<LandingWebConfig[]>(() => listFn(), []);
 
-  // Đảm bảo luôn hiển thị đầy đủ cả 2 mẫu thiết kế chuẩn Pinterest trong danh sách
+  // Đảm bảo luôn hiển thị đầy đủ cả 3 mẫu thiết kế chuẩn Pinterest trong danh sách
   const displayLandingWebs = useMemo(() => {
     const list = [...landingWebs];
     if (!list.some((w) => w.template === "timed_cards_opening")) {
@@ -318,6 +357,9 @@ function AdminLandingWebsPage() {
     }
     if (!list.some((w) => w.template === "startup_mobile_showcase")) {
       list.push(DEFAULT_STARTUP_MOBILE_TEMPLATE);
+    }
+    if (!list.some((w) => w.template === "forge_luxury_atelier")) {
+      list.push(DEFAULT_FORGE_LUXURY_ATELIER_TEMPLATE);
     }
     return list;
   }, [landingWebs]);
@@ -334,7 +376,7 @@ function AdminLandingWebsPage() {
     name: "",
     slug: "",
     subdomain: "",
-    template: "timed_cards_opening" as "timed_cards_opening" | "ceo1983_executive" | "startup_mobile_showcase",
+    template: "timed_cards_opening" as "timed_cards_opening" | "ceo1983_executive" | "startup_mobile_showcase" | "forge_luxury_atelier",
   });
   const [creating, setCreating] = useState(false);
 
@@ -353,7 +395,12 @@ function AdminLandingWebsPage() {
 
   const handleOpenEdit = (web: LandingWebConfig) => {
     const clone: LandingWebConfig = JSON.parse(JSON.stringify(web));
-    if (clone.template === "startup_mobile_showcase") {
+    if (clone.template === "forge_luxury_atelier") {
+      if (!clone.forgeAtelierConfig) {
+        clone.forgeAtelierConfig = JSON.parse(JSON.stringify(DEFAULT_FORGE_LUXURY_ATELIER_CONFIG));
+      }
+      setActiveBuilderTab("general");
+    } else if (clone.template === "startup_mobile_showcase") {
       if (!clone.startupConfig) {
         clone.startupConfig = JSON.parse(JSON.stringify(DEFAULT_STARTUP_MOBILE_CONFIG));
       }
@@ -817,11 +864,11 @@ function AdminLandingWebsPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black text-slate-900 dark:text-white">Thẻ Lật Mở (Timed Cards)</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white">Mẫu 1: Timed Cards Opening</span>
                       <span className="size-2 rounded-full bg-amber-500" />
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                      Mẫu Pinterest 160088961741878822 (Alps, Japan, Sahara), tone vàng Amber #ecad29, auto scroll chuyển section.
+                      Mẫu Pinterest Giulio Cuscito, tone vàng Amber #ecad29, auto scroll chuyển slide 3D mượt mà.
                     </p>
                   </div>
 
@@ -835,29 +882,29 @@ function AdminLandingWebsPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black text-slate-900 dark:text-white">Startup Mobile Showcase</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white">Mẫu 2: Startup Mobile Showcase</span>
                       <span className="size-2 rounded-full bg-[#003B95]" />
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                      Mẫu Pinterest 234398355598861981, Mockup iPhone 16, 4 chỉ số vàng, 3D feature cards, thương hiệu ceo1983.com.
+                      Mẫu Pinterest video mockup cầm điện thoại 3D nghiêng theo chuột, 4 chỉ số vàng và tabs tính năng app.
                     </p>
                   </div>
 
-                  {/* Template 3: CEO 1983 Executive */}
+                  {/* Template 3: Pinterest 569353577917214566 (Forge Luxury Atelier - SOTD Winner) */}
                   <div
-                    onClick={() => setCreateForm({ ...createForm, template: "ceo1983_executive" })}
+                    onClick={() => setCreateForm({ ...createForm, template: "forge_luxury_atelier" })}
                     className={`p-3 rounded-2xl border-2 transition cursor-pointer ${
-                      createForm.template === "ceo1983_executive"
-                        ? "border-blue-700 bg-blue-700/10"
+                      createForm.template === "forge_luxury_atelier"
+                        ? "border-[#C5A880] bg-[#C5A880]/10"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black text-slate-900 dark:text-white">CEO 1983 Executive</span>
-                      <span className="size-2 rounded-full bg-blue-700" />
+                      <span className="text-xs font-black text-slate-900 dark:text-white">Mẫu 3: Forge Luxury Atelier</span>
+                      <span className="size-2 rounded-full bg-[#C5A880]" />
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                      Mẫu Doanh Nhân Điều Hành Cao Cấp, tone Xanh Navy #003B95, B2B Matching &amp; Sàn Thương Mại.
+                      Mẫu Pinterest SOTD Award Winner (Forge Automotive), video cinematic, typography editorial siêu sang, 6 phân hệ atelier.
                     </p>
                   </div>
                 </div>
@@ -887,7 +934,29 @@ function AdminLandingWebsPage() {
       {/* ================= MODAL XEM TRỰC TIẾP (LIVE PREVIEW) ================= */}
       {previewItem && (
         <div className="fixed inset-0 z-90 bg-white light [color-scheme:light]">
-          {previewItem.template === "startup_mobile_showcase" ? (
+          {previewItem.template === "forge_luxury_atelier" ? (
+            <div className="relative w-full h-full overflow-y-auto">
+              <div className="fixed top-4 right-4 z-[999] flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700 shadow-2xl">
+                <a
+                  href={`/landing/${previewItem.slug || "web-v3"}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#C5A880] hover:bg-[#B39366] text-black text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-md transition"
+                >
+                  <ExternalLink className="size-3.5" />
+                  <span>Mở URL Tab Mới</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewItem(null)}
+                  className="size-8 rounded-xl bg-white/10 hover:bg-white/20 text-white grid place-items-center cursor-pointer transition"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <ForgeLuxuryAtelierLanding config={previewItem} />
+            </div>
+          ) : previewItem.template === "startup_mobile_showcase" ? (
             <div className="relative w-full h-full overflow-y-auto">
               <div className="fixed top-4 right-4 z-[999] flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700 shadow-2xl">
                 <a

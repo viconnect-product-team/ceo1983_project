@@ -57,9 +57,12 @@ export function NotificationCenter() {
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
 
+  const listRef = useRef(list);
+  listRef.current = list;
+
   const refresh = useCallback(async () => {
     try {
-      const rows = await list({ data: { appScope: "crm" } as never });
+      const rows = await listRef.current({ data: { appScope: "crm" } as never });
       const uniqueMap = new Map<string, Notification>();
       for (const r of rows) {
         if (r.status !== "sent") continue;
@@ -88,20 +91,24 @@ export function NotificationCenter() {
     } finally {
       setLoading(false);
     }
-  }, [list, canViewStaffNotifs]);
+  }, [canViewStaffNotifs]);
+
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
 
   useEffect(() => {
-    void refresh();
+    void refreshRef.current();
     const onSeen = () => setSeen(getLastSeen());
+    const onRefresh = () => void refreshRef.current();
     window.addEventListener("notifications-seen", onSeen);
-    window.addEventListener("connect-app:notification", refresh);
+    window.addEventListener("connect-app:notification", onRefresh);
 
     const socket = getConnectAppSocket();
     if (!socket.connected) {
       socket.connect();
     }
     const onSocketNotif = () => {
-      void refresh();
+      void refreshRef.current();
     };
     socket.on("notification:new", onSocketNotif);
     socket.on("notification:count", onSocketNotif);
@@ -110,20 +117,20 @@ export function NotificationCenter() {
     socket.on("member:notification_new", onSocketNotif);
 
     const interval = setInterval(() => {
-      void refresh();
+      void refreshRef.current();
     }, 20000);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("notifications-seen", onSeen);
-      window.removeEventListener("connect-app:notification", refresh);
+      window.removeEventListener("connect-app:notification", onRefresh);
       socket.off("notification:new", onSocketNotif);
       socket.off("notification:count", onSocketNotif);
       socket.off("notification:unread_count", onSocketNotif);
       socket.off("notification", onSocketNotif);
       socket.off("member:notification_new", onSocketNotif);
     };
-  }, [refresh]);
+  }, []);
 
 
   useEffect(() => {

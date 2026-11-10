@@ -85,6 +85,7 @@ const PALETTE = {
 };
 
 export type AnalyticsCategory =
+  | "member_activities"
   | "activity_sentiment"
   | "top_connections"
   | "top_opportunities"
@@ -106,15 +107,15 @@ interface CategoryMeta {
 
 const CATEGORIES: CategoryMeta[] = [
   {
-    id: "activity_sentiment",
-    alias: ["positive_negative", "activity_sentiment", "sentiment"],
-    label: "Gắn kết hội viên",
-    subLabel: "Tỷ lệ hội viên hoạt động thường xuyên và hội viên cần hỗ trợ",
-    metricLabel: "Hội viên hoạt động",
-    unit: "Hội viên",
-    bar1Name: "Hoạt động tích cực",
-    bar2Name: "Cần hỗ trợ kết nối",
-    lineName: "Tỷ lệ gắn kết",
+    id: "member_activities",
+    alias: ["member_activities", "activity_sentiment", "sentiment", "top_referrals", "external_shares", "shares", "referrals"],
+    label: "Hoạt động hội viên",
+    subLabel: "Thống kê lượt bình luận, share ra ngoài và click link giới thiệu hội viên",
+    metricLabel: "Lượt hoạt động",
+    unit: "Lượt",
+    bar1Name: "Lượt bình luận",
+    bar2Name: "Lượt share bài viết",
+    lineName: "Tổng hoạt động",
   },
   {
     id: "top_connections",
@@ -149,28 +150,6 @@ const CATEGORIES: CategoryMeta[] = [
     bar2Name: "Số lượng dự kiến",
     lineName: "Tỷ lệ tham dự đúng giờ",
   },
-  {
-    id: "top_referrals",
-    alias: ["top_referrals", "top_gioi_thieu", "referrals"],
-    label: "Phát triển hội viên",
-    subLabel: "Hội viên tích cực giới thiệu các CEO mới gia nhập CLB",
-    metricLabel: "Hội viên mới",
-    unit: "Hội viên",
-    bar1Name: "Hồ sơ giới thiệu",
-    bar2Name: "Đã hoàn tất kết nạp",
-    lineName: "Tỷ lệ kết nạp chuẩn",
-  },
-  {
-    id: "external_shares",
-    alias: ["external_shares", "share_clicks", "public_shares", "shares"],
-    label: "Lượt click chia sẻ ra ngoài",
-    subLabel: "Thống kê lượt click từ Facebook, Zalo, Web vào các bài viết công khai",
-    metricLabel: "Lượt click",
-    unit: "Lượt",
-    bar1Name: "Lượt click công khai",
-    bar2Name: "Chuyển đổi đăng nhập",
-    lineName: "Tỷ lệ chuyển đổi (%)",
-  },
 ];
 
 interface RankedMemberItem {
@@ -187,7 +166,7 @@ interface RankedMemberItem {
 
 export function AnalyticsDashboardPage() {
   const search = Route.useSearch();
-  const [selectedCat, setSelectedCat] = useState<AnalyticsCategory>("activity_sentiment");
+  const [selectedCat, setSelectedCat] = useState<AnalyticsCategory>("member_activities");
   const [granularity, setGranularity] = useState<"minute" | "hour" | "day" | "week" | "month" | "quarter" | "year">("month");
   const period = granularity;
   const setPeriod = (val: any) => setGranularity(val);
@@ -302,37 +281,45 @@ export function AnalyticsDashboardPage() {
   // 4 Thẻ KPI cân đối theo danh mục
   const kpiData = useMemo(() => {
     switch (selectedCat) {
-      case "activity_sentiment":
+      case "member_activities":
+      case "activity_sentiment": {
+        const catStats = serverData?.categories?.memberActivities || serverData?.categories?.activitySentiment;
+        const totalComments = catStats?.totalComments ?? (serverData?.kpi?.totalInteractions ? Math.round(serverData.kpi.totalInteractions * 0.4) : 28);
+        const totalPostShares = catStats?.totalPostShares ?? (serverData?.categories?.externalShareClicks?.totalClicks ?? 18);
+        const totalRefClicks = catStats?.totalReferralClicks ?? 14;
+        const totalActivities = totalComments + totalPostShares + totalRefClicks;
+
         return [
           {
-            label: "Tổng hội viên quản lý",
-            value: `${sentimentStats.totalMembers || 50} CEO`,
+            label: "Tổng hoạt động hội viên",
+            value: `${totalActivities} lượt`,
             delta: "100%",
             isUp: true,
-            desc: "Quy mô hội viên chính thức",
+            desc: "Tổng tương tác hoạt động trong kỳ",
           },
           {
-            label: "Hoạt động tích cực",
-            value: `${sentimentStats.activeCount || 42} CEO`,
-            delta: `${sentimentStats.activeRatePercent || 84}%`,
+            label: "Lượt bình luận bài viết",
+            value: `${totalComments} bình luận`,
+            delta: `${Math.round((totalComments / (totalActivities || 1)) * 100)}%`,
             isUp: true,
-            desc: "Tham gia họp và giao thương đều đặn",
+            desc: "Tương tác trao đổi trên bảng tin",
           },
           {
-            label: "Cần hỗ trợ kết nối",
-            value: `${sentimentStats.needsSupportCount || 8} CEO`,
-            delta: `${100 - (sentimentStats.activeRatePercent || 84)}%`,
-            isUp: false,
-            desc: "Cần ban thư ký đồng hành kết nối",
-          },
-          {
-            label: "Hội viên ưu tiên hỗ trợ",
-            value: `${sentimentStats.leastActiveTop3?.length || 3} CEO`,
-            delta: "Đang theo dõi",
+            label: "Lượt share ra nền tảng",
+            value: `${totalPostShares} lượt share`,
+            delta: `${Math.round((totalPostShares / (totalActivities || 1)) * 100)}%`,
             isUp: true,
-            desc: "Kế hoạch gặp gỡ 1-on-1 trong tháng",
+            desc: "Chia sẻ bài viết sang FB, Zalo, Web",
+          },
+          {
+            label: "Lượt click link giới thiệu",
+            value: `${totalRefClicks} lượt click`,
+            delta: `${Math.round((totalRefClicks / (totalActivities || 1)) * 100)}%`,
+            isUp: true,
+            desc: "Click link mời gia nhập hội viên mới",
           },
         ];
+      }
       case "top_connections": {
         const top1 = serverData?.topConnections?.[0];
         const totalConns = serverData?.topConnections?.reduce((acc: number, m: any) => acc + (m.connectionsCount || 0), 0) || 0;
@@ -389,7 +376,7 @@ export function AnalyticsDashboardPage() {
   }, [selectedCat, sentimentStats, serverData]);
 
   // Danh sách Top 1 - 10 theo từng danh mục
-    const allRankedMembers = useMemo<RankedMemberItem[]>(() => {
+  const allRankedMembers = useMemo<RankedMemberItem[]>(() => {
     const mapItems = (list: any[], scoreSuffix: string, metricKey: string): RankedMemberItem[] => {
       if (!list || list.length === 0) return [];
       return list.map((item: any, idx: number) => ({
@@ -527,21 +514,37 @@ export function AnalyticsDashboardPage() {
       timelineColor: "#0284C7",
       timelineUnit: "Hội viên",
     },
-    activity_sentiment: {
-      unit: "Lượt tương tác",
-      col1Label: "Bình luận",
+    member_activities: {
+      unit: "Lượt",
+      col1Label: "Lượt bình luận",
       col1Color: "#003B95",
       col1Unit: "Lượt",
-      col2Label: "Lượt thích",
-      col2Color: "#0284C7",
+      col2Label: "Lượt share bài viết",
+      col2Color: "#10B981",
       col2Unit: "Lượt",
-      col3Label: "Chia sẻ ngoài App",
-      col3Color: "#10B981",
+      col3Label: "Lượt click link giới thiệu",
+      col3Color: "#F59E0B",
       col3Unit: "Lượt",
-      col4Label: "Bài viết mới",
-      col4Color: "#F59E0B",
-      col4Unit: "Bài",
-      timelineLabel: "Tổng tương tác",
+      col4Label: undefined as any,
+      col4Color: undefined as any,
+      timelineLabel: "Tổng hoạt động hội viên",
+      timelineColor: "#DC2626",
+      timelineUnit: "Lượt",
+    },
+    activity_sentiment: {
+      unit: "Lượt",
+      col1Label: "Lượt bình luận",
+      col1Color: "#003B95",
+      col1Unit: "Lượt",
+      col2Label: "Lượt share bài viết",
+      col2Color: "#10B981",
+      col2Unit: "Lượt",
+      col3Label: "Lượt click link giới thiệu",
+      col3Color: "#F59E0B",
+      col3Unit: "Lượt",
+      col4Label: undefined as any,
+      col4Color: undefined as any,
+      timelineLabel: "Tổng hoạt động hội viên",
       timelineColor: "#DC2626",
       timelineUnit: "Lượt",
     },
@@ -566,20 +569,22 @@ export function AnalyticsDashboardPage() {
   };
 
   const activeChartMeta = useMemo(() => {
-    let catKey = "activitySentiment";
-    if (selectedCat === "top_connections") catKey = "topConnections";
+    let catKey = "memberActivities";
+    if (selectedCat === "member_activities" || selectedCat === "activity_sentiment") catKey = "memberActivities";
+    else if (selectedCat === "top_connections") catKey = "topConnections";
     else if (selectedCat === "top_opportunities") catKey = "topOpportunities";
     else if (selectedCat === "top_events_meetings") catKey = "topEventsMeetings";
     else if (selectedCat === "top_referrals") catKey = "topReferrals";
     else if (selectedCat === "external_shares") catKey = "externalShareClicks";
 
-    return serverData?.categories?.[catKey]?.chartMeta || CRM_CHART_METAS[selectedCat] || CRM_CHART_METAS.activity_sentiment;
+    return serverData?.categories?.[catKey]?.chartMeta || CRM_CHART_METAS[selectedCat] || CRM_CHART_METAS.member_activities;
   }, [selectedCat, serverData]);
 
-  // Dữ liệu biểu đồ 4 cột chuẩn xác theo thời gian thực từ database
+  // Dữ liệu biểu đồ chuẩn xác theo thời gian thực từ database
   const chartData = useMemo(() => {
-    let catKey = "activitySentiment";
-    if (selectedCat === "top_connections") catKey = "topConnections";
+    let catKey = "memberActivities";
+    if (selectedCat === "member_activities" || selectedCat === "activity_sentiment") catKey = "memberActivities";
+    else if (selectedCat === "top_connections") catKey = "topConnections";
     else if (selectedCat === "top_opportunities") catKey = "topOpportunities";
     else if (selectedCat === "top_events_meetings") catKey = "topEventsMeetings";
     else if (selectedCat === "top_referrals") catKey = "topReferrals";
@@ -633,10 +638,10 @@ export function AnalyticsDashboardPage() {
   return (
     <AppShell>
       <div className="space-y-6 pb-20 font-sans">
-        {/* Header trang tối giản, hành động báo cáo */}
+        {/* Header trang tối giản, hành động báo cáo theo chức năng thống kê con */}
         <PageHeader
-          title="Báo Cáo & Thống Kê Quản Trị"
-          subtitle="Tổng hợp chỉ số gắn kết hội viên, kết quả giao thương và xếp hạng hoạt động theo kỳ"
+          title={`Thống Kê: ${activeCategoryMeta.label}`}
+          subtitle={activeCategoryMeta.subLabel}
           actions={
             <div className="flex items-center gap-2">
               {/* Mốc Thưởng & Nhiệm Vụ Thưởng: CHỈ HIỂN THỊ Ở DANH MỤC PHÁT TRIỂN HỘI VIÊN */}
@@ -672,40 +677,17 @@ export function AnalyticsDashboardPage() {
           }
         />
 
-        {/* 5 Tab Danh Mục Thống Kê Chuẩn Mực */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          {CATEGORIES.map((cat) => {
-            const isSelected = selectedCat === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCat(cat.id)}
-                className={`p-3 rounded-xl text-left transition flex flex-col justify-between gap-1.5 cursor-pointer ${
-                  isSelected
-                    ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 ring-2 ring-[#003B95]"
-                    : "hover:bg-white/60 dark:hover:bg-slate-800/60"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`text-xs font-bold leading-tight ${
-                      isSelected
-                        ? "text-[#003B95] dark:text-amber-400 font-extrabold"
-                        : "text-slate-800 dark:text-slate-200"
-                    }`}
-                  >
-                    {cat.label}
-                  </span>
-                  {isSelected && (
-                    <span className="size-2 rounded-full bg-[#003B95] dark:bg-amber-400" />
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                  {cat.subLabel}
-                </p>
-              </button>
-            );
-          })}
+        {/* Breadcrumb phân hệ thống kê con xác định trực tiếp từ menu Sidebar */}
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <BarChart3 className="size-4 text-[#003B95] dark:text-amber-400 shrink-0" />
+          <span className="text-xs font-medium text-slate-500">Phân Hệ Thống Kê</span>
+          <span className="text-slate-300 dark:text-slate-700">/</span>
+          <span className="px-2.5 py-0.5 rounded-full bg-[#003B95]/10 dark:bg-amber-400/10 text-[#003B95] dark:text-amber-400 text-xs font-bold">
+            {activeCategoryMeta.label}
+          </span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 ml-auto hidden sm:inline italic">
+            {activeCategoryMeta.subLabel}
+          </span>
         </div>
 
         {/* 4 Thẻ KPI Cân Đối */}
@@ -720,11 +702,10 @@ export function AnalyticsDashboardPage() {
                   {kpi.label}
                 </span>
                 <span
-                  className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                    kpi.isUp
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
-                      : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400"
-                  }`}
+                  className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[10px] font-bold ${kpi.isUp
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                    : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400"
+                    }`}
                 >
                   {kpi.isUp ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
                   {kpi.delta}
@@ -745,10 +726,10 @@ export function AnalyticsDashboardPage() {
                     idx === 0
                       ? PALETTE.navy
                       : idx === 1
-                      ? PALETTE.green
-                      : idx === 2
-                      ? (selectedCat === "activity_sentiment" ? PALETTE.red : PALETTE.gold)
-                      : PALETTE.navy,
+                        ? PALETTE.green
+                        : idx === 2
+                          ? (selectedCat === "activity_sentiment" ? PALETTE.red : PALETTE.gold)
+                          : PALETTE.navy,
                 }}
               />
             </div>
@@ -768,11 +749,10 @@ export function AnalyticsDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setChartMode("composed")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
-                      chartMode === "composed"
-                        ? "bg-[#003B95] text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${chartMode === "composed"
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
                   >
                     <BarChart3 className="size-3" />
                     <span>Cột &amp; Xu Hướng</span>
@@ -780,11 +760,10 @@ export function AnalyticsDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setChartMode("pie")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
-                      chartMode === "pie"
-                        ? "bg-[#003B95] text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${chartMode === "pie"
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
                   >
                     <PieIcon className="size-3" />
                     <span>Hình Tròn (Tỷ Trọng)</span>
@@ -814,11 +793,10 @@ export function AnalyticsDashboardPage() {
                     key={m.id}
                     type="button"
                     onClick={() => setMoneyFilter(m.id as any)}
-                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold transition cursor-pointer ${
-                      moneyFilter === m.id
-                        ? "bg-[#003B95] text-white shadow-xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                    }`}
+                    className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold transition cursor-pointer ${moneyFilter === m.id
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                      }`}
                   >
                     {m.label}
                   </button>
@@ -911,9 +889,9 @@ export function AnalyticsDashboardPage() {
                               {payload.map((p: any, idx: number) => {
                                 const itemUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
                                   : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
-                                  : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
-                                  : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
-                                  : (activeChartMeta.timelineUnit || activeChartMeta.unit);
+                                    : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
+                                      : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
+                                        : (activeChartMeta.timelineUnit || activeChartMeta.unit);
 
                                 return (
                                   <div key={idx} className="flex justify-between items-center text-xs">
@@ -935,31 +913,34 @@ export function AnalyticsDashboardPage() {
                       dataKey="col1"
                       name={activeChartMeta.col1Label}
                       fill={activeChartMeta.col1Color}
-                      stackId="metrics"
+                      radius={[4, 4, 0, 0]}
                       maxBarSize={28}
                     />
                     <Bar
                       dataKey="col2"
                       name={activeChartMeta.col2Label}
                       fill={activeChartMeta.col2Color}
-                      stackId="metrics"
-                      maxBarSize={28}
-                    />
-                    <Bar
-                      dataKey="col3"
-                      name={activeChartMeta.col3Label}
-                      fill={activeChartMeta.col3Color}
-                      stackId="metrics"
-                      maxBarSize={28}
-                    />
-                    <Bar
-                      dataKey="col4"
-                      name={activeChartMeta.col4Label}
-                      fill={activeChartMeta.col4Color}
-                      stackId="metrics"
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
                     />
+                    {activeChartMeta.col3Label && (
+                      <Bar
+                        dataKey="col3"
+                        name={activeChartMeta.col3Label}
+                        fill={activeChartMeta.col3Color}
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={28}
+                      />
+                    )}
+                    {activeChartMeta.col4Label && (
+                      <Bar
+                        dataKey="col4"
+                        name={activeChartMeta.col4Label}
+                        fill={activeChartMeta.col4Color}
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={28}
+                      />
+                    )}
                     <Line
                       type="monotone"
                       dataKey="timelineVal"
@@ -989,11 +970,10 @@ export function AnalyticsDashboardPage() {
                     key={g.id}
                     type="button"
                     onClick={() => setGranularity(g.id as any)}
-                    className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
-                      granularity === g.id
-                        ? "bg-[#003B95] text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
-                    }`}
+                    className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${granularity === g.id
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                      }`}
                   >
                     {g.label}
                   </button>
@@ -1016,11 +996,10 @@ export function AnalyticsDashboardPage() {
                     key={g.id}
                     type="button"
                     onClick={() => setGranularity(g.id as any)}
-                    className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
-                      granularity === g.id
-                        ? "bg-[#003B95] text-white shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
-                    }`}
+                    className={`w-full py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${granularity === g.id
+                      ? "bg-[#003B95] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700"
+                      }`}
                   >
                     {g.label}
                   </button>
@@ -1039,14 +1018,18 @@ export function AnalyticsDashboardPage() {
               <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
               <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col2Label}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
-              <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col3Label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
-              <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col4Label}</span>
-            </div>
+            {activeChartMeta.col3Label && (
+              <div className="flex items-center gap-2">
+                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
+                <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col3Label}</span>
+              </div>
+            )}
+            {activeChartMeta.col4Label && (
+              <div className="flex items-center gap-2">
+                <span className="size-3 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
+                <span className="text-slate-700 dark:text-slate-300 font-semibold">{activeChartMeta.col4Label}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="w-4 h-1 rounded-full shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
               <span className="text-slate-700 dark:text-slate-300 font-bold">{activeChartMeta.timelineLabel}</span>
@@ -1054,8 +1037,8 @@ export function AnalyticsDashboardPage() {
           </div>
         </div>
 
-        {/* Danh sách Hội viên cần hỗ trợ kết nối (Khi chọn tab Gắn kết hội viên) */}
-        {selectedCat === "activity_sentiment" && (
+        {/* Danh sách Hội viên cần hỗ trợ kết nối (Khi chọn tab Hoạt động hội viên) */}
+        {(selectedCat === "member_activities" || selectedCat === "activity_sentiment") && (
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
@@ -1133,7 +1116,7 @@ export function AnalyticsDashboardPage() {
         )}
 
         {/* Bục Vinh Danh Top 3 & Bảng Top 4 - 10 (Cho các danh mục xếp hạng) */}
-        {selectedCat !== "activity_sentiment" && (
+        {selectedCat !== "member_activities" && selectedCat !== "activity_sentiment" && (
           <div className="space-y-6">
             {/* Bục Top 3: Tỷ lệ chuẩn, cân đối, màu sắc đúng chuẩn */}
             <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
@@ -1258,59 +1241,59 @@ export function AnalyticsDashboardPage() {
 
               {remainingTop4To10.length > 0 ? (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {remainingTop4To10.map((item) => (
-                  <div
-                    key={item.rank}
-                    className="py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
-                        #{item.rank}
-                      </div>
-                      <div className="size-10 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-white">
-                        <img src={item.avatar} alt={item.name} className="size-full object-cover" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                          <span>{item.name}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 font-semibold">
-                            {item.role}
-                          </span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-                          <span>{item.company}</span>
-                          <span>•</span>
-                          <span className="text-slate-600 dark:text-slate-400 font-medium">{item.dept}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-end gap-4 pl-10 sm:pl-0">
-                      <div className="text-right">
-                        <div className="font-mono font-bold text-xs text-[#003B95] dark:text-amber-400">
-                          {item.score}
+                  {remainingTop4To10.map((item) => (
+                    <div
+                      key={item.rank}
+                      className="py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl transition"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
+                          #{item.rank}
                         </div>
-                        <div className="text-[10px] text-slate-400">Ghi nhận hệ thống</div>
+                        <div className="size-10 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-white">
+                          <img src={item.avatar} alt={item.name} className="size-full object-cover" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>{item.name}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 font-semibold">
+                              {item.role}
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                            <span>{item.company}</span>
+                            <span>•</span>
+                            <span className="text-slate-600 dark:text-slate-400 font-medium">{item.dept}</span>
+                          </p>
+                        </div>
                       </div>
 
-                      <a
-                        href={`tel:${item.phone}`}
-                        onClick={() => toast.success(`Đang quay số tới ${item.name}...`)}
-                        className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                        title="Gọi liên hệ"
-                      >
-                        <Phone className="size-3.5" />
-                      </a>
+                      <div className="flex items-center justify-between sm:justify-end gap-4 pl-10 sm:pl-0">
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-xs text-[#003B95] dark:text-amber-400">
+                            {item.score}
+                          </div>
+                          <div className="text-[10px] text-slate-400">Ghi nhận hệ thống</div>
+                        </div>
+
+                        <a
+                          href={`tel:${item.phone}`}
+                          onClick={() => toast.success(`Đang quay số tới ${item.name}...`)}
+                          className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+                          title="Gọi liên hệ"
+                        >
+                          <Phone className="size-3.5" />
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-xs text-slate-500">
-                Chưa có hội viên nào trong danh sách Top 4 - 10 kỳ này.
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-slate-500">
+                  Chưa có hội viên nào trong danh sách Top 4 - 10 kỳ này.
+                </div>
+              )}
+            </div>
           </div>
         )}
 

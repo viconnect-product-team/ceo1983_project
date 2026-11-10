@@ -101,12 +101,10 @@ const finance: Item[] = [
     to: "/analytics",
     label: "Thống kê & Báo cáo",
     children: [
-      { to: "/analytics?category=activity_sentiment", label: "Gắn kết hội viên" },
+      { to: "/analytics?category=member_activities", label: "Hoạt động hội viên" },
       { to: "/analytics?category=top_connections", label: "Kết nối giao thương" },
       { to: "/analytics?category=top_opportunities", label: "Cơ hội kinh doanh" },
       { to: "/analytics?category=top_events_meetings", label: "Sự kiện & cuộc họp" },
-      { to: "/analytics?category=top_referrals", label: "Phát triển hội viên" },
-      { to: "/analytics?category=external_shares", label: "Lượt click chia sẻ ra ngoài" },
     ],
   },
   { key: "nav.fee", icon: Wallet, to: "/fees" },
@@ -161,18 +159,6 @@ const system: Item[] = [
     to: "/admin/landing-templates",
     label: "Quản lý chủ đề",
   },
-  {
-    key: "nav.landingWebs" as TKey,
-    icon: Globe,
-    to: "/admin/landing-webs",
-    label: "Quản lý Landing Web",
-  },
-  {
-    key: "nav.viewLanding" as TKey,
-    icon: ExternalLink,
-    to: "/landing",
-    label: "Xem Landing Page",
-  },
 ];
 const permissionsGroup: Item[] = [
   {
@@ -201,11 +187,29 @@ const pageTemplates: Item[] = [
     to: "/templates",
     label: "Quản lý mẫu trang",
     children: [
-      { to: "/templates?tab=invitation", label: "Template Thư Mời" },
+      { to: "/templates?tab=invitation", label: "Tạo Poster Thư Mời (Studio)" },
+      { to: "/templates?tab=invitation-setup", label: "Set Up Thư Mời Sự Kiện" },
       { to: "/templates?tab=email", label: "Template Email" },
       { to: "/templates?tab=zalo", label: "Template Mẫu Tin Nhắn Zalo" },
       { to: "/templates?tab=dues", label: "Thanh Toán Hội Phí" },
       { to: "/templates?tab=forum-meetings", label: "Mẫu Cuộc Gặp Diễn Đàn" },
+    ],
+  },
+  {
+    key: "nav.landingWebs" as TKey,
+    icon: Globe,
+    to: "/admin/landing-webs",
+    label: "Quản lý Landing Web",
+  },
+  {
+    key: "nav.viewLanding" as TKey,
+    icon: ExternalLink,
+    to: "/landing",
+    label: "Xem Landing Page",
+    children: [
+      { to: "/landing/web-v1", label: "Mẫu 1: Timed Cards (CLB Doanh Nhân)" },
+      { to: "/landing/web-v2", label: "Mẫu 2: Startup Mobile (Showcase)" },
+      { to: "/landing/web-v3", label: "Mẫu 3: Forge Luxury Atelier (SOTD)" },
     ],
   },
 ];
@@ -765,7 +769,25 @@ export function Sidebar({
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
-  const filteredTemplates = pageTemplates.filter((it) => isAllowed(it.to));
+  const filteredTemplates = pageTemplates.filter((it) => {
+    if (!isAllowed(it.to)) return false;
+    if (it.to === "/landing") return true;
+    if (it.to === "/admin/landing-webs") {
+      return (
+        isPlatformAdmin ||
+        isAdmin ||
+        isBQT ||
+        isBTT ||
+        isTongThuKy ||
+        srsRole === "admin" ||
+        srsRole === "ADM" ||
+        srsRole === "quan_tri" ||
+        srsRole === "ban_dieu_hanh" ||
+        srsRole === "chu_tich"
+      );
+    }
+    return true;
+  });
 
   const filteredSystem = system.filter((it) => {
     if (!isAllowed(it.to)) return false;

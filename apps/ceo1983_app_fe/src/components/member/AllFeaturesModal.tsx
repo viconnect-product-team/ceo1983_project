@@ -69,7 +69,7 @@ export function AllFeaturesModal({
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {}
+    } catch { }
     return DEFAULT_SHORTCUT_IDS;
   });
 
@@ -80,7 +80,7 @@ export function AllFeaturesModal({
       localStorage.setItem("vba_user_custom_shortcuts", JSON.stringify(ids));
       window.dispatchEvent(new Event("ceo1983_shortcuts_changed"));
       window.dispatchEvent(new Event("storage"));
-    } catch {}
+    } catch { }
     setCustomShortcutsOpen(false);
   };
   const [brandColorTheme, setBrandColorTheme] = React.useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
@@ -280,7 +280,7 @@ export function AllFeaturesModal({
                 TẤT CẢ TÍNH NĂNG CEO 1983
               </h2>
               <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                Toàn bộ hệ sinh thái dịch vụ &amp; tiện ích dành cho Doanh nhân
+                Toàn bộ hệ sinh thái dịch vụ &amp; đặc quyền dành cho Doanh nhân
               </p>
             </div>
           </div>
@@ -361,8 +361,8 @@ export function AllFeaturesModal({
                         <div className="flex items-start justify-between mb-2">
                           <div className="size-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 group-hover:border-amber-400/80 grid place-items-center shadow-2xs group-hover:scale-105 transition-transform">
                             <span style={{ color: brandColorTheme.primaryColor }}>
-       <Icon className="size-4.5" />
-     </span>
+                              <Icon className="size-4.5" />
+                            </span>
                           </div>
                           {f.badge && (
                             <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black leading-none ${f.badgeColor || "bg-amber-500 text-slate-900"}`}>
@@ -388,13 +388,13 @@ export function AllFeaturesModal({
           })}
         </div>
       </div>
-        <CustomHomeShortcutsModal
-          isOpen={customShortcutsOpen}
-          onClose={() => setCustomShortcutsOpen(false)}
-          selectedIds={selectedShortcuts}
-          onSave={handleSaveShortcuts}
-        />
-      </div>,
+      <CustomHomeShortcutsModal
+        isOpen={customShortcutsOpen}
+        onClose={() => setCustomShortcutsOpen(false)}
+        selectedIds={selectedShortcuts}
+        onSave={handleSaveShortcuts}
+      />
+    </div>,
     document.body
   );
 }

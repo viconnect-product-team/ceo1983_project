@@ -346,13 +346,226 @@ export const DEFAULT_STARTUP_MOBILE_CONFIG: StartupMobileTemplateConfig = {
   },
 };
 
+export interface ForgeLuxuryAtelierTemplateConfig {
+  hero: {
+    badge: string;
+    headline: string;
+    subheadline: string;
+    heroMediaUrl: string;
+    heroPosterUrl?: string;
+    ctaPrimaryText: string;
+    ctaPrimaryLink?: string;
+    ctaSecondaryText: string;
+    ctaSecondaryLink?: string;
+    coordinatesText?: string;
+  };
+  approach: {
+    title: string;
+    quote: string;
+    pillars: Array<{
+      number: string;
+      title: string;
+      desc: string;
+    }>;
+  };
+  specialties: Array<{
+    number: string;
+    category: string;
+    title: string;
+    desc: string;
+    image: string;
+    tag: string;
+  }>;
+  previousBuilds: Array<{
+    id: string;
+    title: string;
+    client: string;
+    year: string;
+    category: string;
+    valuation: string;
+    image: string;
+    link?: string;
+  }>;
+  availableStock: Array<{
+    code: string;
+    title: string;
+    industry: string;
+    value: string;
+    status: string;
+    slots: string;
+  }>;
+  statement: {
+    largeText: string;
+    subText: string;
+  };
+  footer: {
+    headline: string;
+    description: string;
+    address: string;
+    contactPhone: string;
+    contactEmail: string;
+  };
+}
+
+export const DEFAULT_FORGE_LUXURY_ATELIER_CONFIG: ForgeLuxuryAtelierTemplateConfig = {
+  hero: {
+    badge: "ATELIER THƯỢNG ĐỈNH · CEO 1983 HANOIBA",
+    headline: "Chúng tôi không chỉ kết nối doanh nghiệp.\nChúng tôi cùng bạn kiến tạo di sản.",
+    subheadline: "Dành riêng cho những nhà sáng lập và lãnh đạo Quý Hợi 1983 từ chối sự tầm thường. Không gian bespoke chế tác cơ hội giao thương, bọc lót chiến lược và nâng tầm vị thế dẫn dắt.",
+    heroMediaUrl: "https://v1.pinimg.com/videos/iht/expMp4/be/d4/59/bed459b41c0f0a170bd1047ffac6a0d2_720w.mp4",
+    heroPosterUrl: "https://i.pinimg.com/originals/a8/84/f0/a884f0b8f19070c6226a4c1f9c2d60cc.jpg",
+    ctaPrimaryText: "GIA NHẬP ATELIER",
+    ctaPrimaryLink: "#enquire",
+    ctaSecondaryText: "BỘ SƯU TẬP BESPOKE",
+    ctaSecondaryLink: "#specialties",
+    coordinatesText: "21°01'42.8\"N 105°47'18.2\"E · HÀ NỘI · KỶ NGUYÊN 1983 · HANOIBA",
+  },
+  approach: {
+    title: "TRIẾT LÝ CHẾ TÁC GIÁ TRỊ",
+    quote: "Một di sản phải cất lên tiếng nói trước khi bạn bước vào căn phòng. Từng kết nối, chiến lược và cam kết đồng hành đều được trau chuốt đỉnh cao.",
+    pillars: [
+      {
+        number: "01",
+        title: "BẢN SẮC (IDENTITY)",
+        desc: "Khẳng định vị thế, tầm nhìn và triết lý kinh doanh độc bản của từng chủ doanh nghiệp trong liên minh.",
+      },
+      {
+        number: "02",
+        title: "THỰC CHIẾN (INSIGHT)",
+        desc: "Đúc rút tri thức quản trị xương máu từ các phiên cố vấn 1-on-1 cùng lãnh đạo các tập đoàn đầu ngành.",
+      },
+      {
+        number: "03",
+        title: "GẮN KẾT (COHESION)",
+        desc: "Gắn kết tình thân đồng niên chân thành Quý Hợi 1983, cùng bọc lót nguồn vốn và nâng đỡ nhau vươn tầm.",
+      },
+    ],
+  },
+  specialties: [
+    {
+      number: "01",
+      category: "Bespoke Trade",
+      title: "Xúc Tiến Giao Thương B2B Thượng Đỉnh",
+      desc: "Khớp lệnh các gói thầu, chuyển giao công nghệ và phân phối độc quyền với giá trị giao dịch từ vài chục đến hàng trăm tỷ đồng.",
+      image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80",
+      tag: "Verified B2B",
+    },
+    {
+      number: "02",
+      category: "Executive Atelier",
+      title: "Tinh Gọn Quản Trị & Chuyển Đổi Số",
+      desc: "Trang bị công nghệ điều hành ERP tích hợp AI, tối ưu chi phí và tự động hóa quy trình vận hành doanh nghiệp SMEs.",
+      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=80",
+      tag: "AI Powered",
+    },
+    {
+      number: "03",
+      category: "Capital & Growth",
+      title: "Cấu Trúc Dòng Tiền & Quỹ Đầu Tư Đồng Niên",
+      desc: "Huy động nguồn vốn nội khối, hỗ trợ bảo lãnh tín chấp và đồng hành M&A các dự án tiềm năng cao.",
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
+      tag: "Private Equity",
+    },
+    {
+      number: "04",
+      category: "Media & Gala",
+      title: "Diễn Đàn Doanh Nhân & Tỏa Sáng Thương Hiệu",
+      desc: "Tổ chức các sự kiện Diễn đàn, Gala Keangnam Landmark72 và Business Tour vinh danh thương hiệu hội viên trên toàn quốc.",
+      image: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+      tag: "Landmark72",
+    },
+    {
+      number: "05",
+      category: "Expansion",
+      title: "Bứt Phá Quy Mô & Chuỗi Cung Ứng Quốc Tế",
+      desc: "Mở rộng hệ thống điểm cầu giao thương từ Bắc chí Nam, kết nối xuất khẩu nông sản và logistics quốc tế.",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80",
+      tag: "Global Supply",
+    },
+    {
+      number: "06",
+      category: "Legal & Trust",
+      title: "Bảo Trợ Tín Nhiệm & Pháp Lý Vững Chắc",
+      desc: "Được bảo trợ chính thức bởi Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA), đảm bảo an toàn tuyệt đối cho mọi hợp tác.",
+      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
+      tag: "HanoiBA Backed",
+    },
+  ],
+  previousBuilds: [
+    {
+      id: "b-1",
+      title: "Nền Tảng ERP Quản Trị Nguồn Lực AI",
+      client: "ViConnect Technology Group",
+      year: "2026",
+      category: "Công Nghệ & AI",
+      valuation: "45.0 Tỷ VNĐ",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
+    },
+    {
+      id: "b-2",
+      title: "Tổ Hợp Nghỉ Dưỡng Khoáng Nóng Heian",
+      client: "Wyndham Thanh Thủy Luxury",
+      year: "2026",
+      category: "Bất Động Sản Nghỉ Dưỡng",
+      valuation: "180.0 Tỷ VNĐ",
+      image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1000&q=80",
+    },
+    {
+      id: "b-3",
+      title: "Hệ Thống Logistics Cảng Biển Thông Minh",
+      client: "Hải Phòng Logistics Center",
+      year: "2025",
+      category: "Logistics & Cảng Biển",
+      valuation: "85.0 Tỷ VNĐ",
+      image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?auto=format&fit=crop&w=1000&q=80",
+    },
+  ],
+  availableStock: [
+    {
+      code: "ATELIER-8301",
+      title: "Hợp Tác Đầu Tư Chuỗi Khách Sạn & Căn Hộ Dịch Vụ Cao Cấp",
+      industry: "Bất Động Sản",
+      value: "15.0 Tỷ VNĐ",
+      status: "Đang Mở",
+      slots: "2/3 Suất",
+    },
+    {
+      code: "ATELIER-8302",
+      title: "Phân Phối Độc Quyền Thiết Bị Chiếu Sáng IoT Tòa Nhà",
+      industry: "Công Nghệ IoT",
+      value: "8.5 Tỷ VNĐ",
+      status: "Ưu Tiên",
+      slots: "1 Suất",
+    },
+    {
+      code: "ATELIER-8303",
+      title: "Gói Thầu Chuyển Đổi Số Toàn Diện Khu Công Nghiệp Xanh",
+      industry: "Chuyển Đổi Số",
+      value: "22.0 Tỷ VNĐ",
+      status: "Đang Mở",
+      slots: "1/2 Suất",
+    },
+  ],
+  statement: {
+    largeText: "REFUSE ORDINARY",
+    subText: "TỪ CHỐI SỰ TẦM THƯỜNG — BỨT PHÁ CÙNG LIÊN MINH DOANH NHÂN 1983",
+  },
+  footer: {
+    headline: "CEO 1983 BESPOKE ATELIER",
+    description: "Không gian kết nối và chế tác giá trị độc bản dành riêng cho các chủ doanh nghiệp sinh năm 1983 trực thuộc Hội Doanh nghiệp Trẻ Hà Nội (HanoiBA).",
+    address: "Cung Tri Thức Thành Phố, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội",
+    contactPhone: "0983.1983.83",
+    contactEmail: "atelier@ceo1983.com",
+  },
+};
+
 export interface LandingWebConfig {
   id?: string;
   name?: string;
   slug?: string;
   subdomain?: string;
   isPublished?: boolean;
-  template?: 'timed_cards_opening' | 'ceo1983_executive' | 'startup_mobile_showcase';
+  template?: 'timed_cards_opening' | 'ceo1983_executive' | 'startup_mobile_showcase' | 'forge_luxury_atelier';
   theme?: {
     primaryColor: string;
     secondaryColor?: string;
@@ -372,6 +585,7 @@ export interface LandingWebConfig {
   subScreens?: LandingSubScreen[];
   apiConfig?: LandingApiConfig;
   startupConfig?: StartupMobileTemplateConfig;
+  forgeAtelierConfig?: ForgeLuxuryAtelierTemplateConfig;
 }
 
 interface TimedCardsOpeningLandingProps {
