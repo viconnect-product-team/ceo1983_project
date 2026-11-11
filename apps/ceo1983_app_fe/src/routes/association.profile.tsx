@@ -898,7 +898,14 @@ export default function ProfileScreen() {
   return (
     <div className="w-full min-h-screen pb-24 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center font-sans transition-colors duration-300">
       {/* ── 1. HEADER CHUẨN MOCKUP CEO 1983 TONE CAM ── */}
-      <div data-type="2" className="w-full max-w-lg px-4 pt-2 pb-2 bg-white dark:bg-[#070D1A] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center sticky top-0 z-30">
+      <div
+        data-type="2"
+        className="w-full max-w-lg px-4 pb-2 bg-white dark:bg-[#070D1A] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center sticky top-0 z-30"
+        style={{
+          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)",
+          minHeight: "calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)",
+        }}
+      >
         <button
           type="button"
           onClick={() => navigate({ to: "/association" })}
@@ -941,11 +948,20 @@ export default function ProfileScreen() {
         <div className="self-stretch h-80 relative bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-orange-200 dark:outline-orange-500/30 inline-flex flex-col justify-between items-start overflow-hidden shadow-xs">
           {/* Ảnh Bìa */}
           <div className="w-full h-36 relative bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-slate-800 dark:to-slate-900 overflow-hidden shrink-0">
-            <img
-              src={displayCover || "/icons/profile/Image-2.svg"}
-              alt="Cover Photo"
-              className="w-full h-full object-cover"
-            />
+            {displayCover && !isDeadCover(displayCover) && !displayCover.includes("Image-2.svg") ? (
+              <img
+                src={displayCover}
+                alt="Cover Photo"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-[#003B95]/15 via-amber-500/10 to-orange-500/15 dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 border-b border-orange-200/50 dark:border-slate-800">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-xs border border-orange-200/60 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-medium">
+                  <Camera className="size-3.5 text-orange-500" />
+                  <span>Chưa có ảnh bìa</span>
+                </div>
+              </div>
+            )}
             {/* Nút Đổi ảnh bìa */}
             <button
               type="button"
@@ -970,8 +986,9 @@ export default function ProfileScreen() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white text-xl font-black">
-                    {initials(displayName)}
+                  <div className="w-full h-full bg-gradient-to-tr from-orange-600 to-amber-500 flex flex-col items-center justify-center text-white">
+                    <span className="text-base font-black font-sans leading-none">{initials(displayName)}</span>
+                    <span className="text-[8px] font-medium opacity-90 mt-0.5">Chưa có ảnh</span>
                   </div>
                 )}
               </div>

@@ -94,119 +94,6 @@ export function MemberPerksCarousel() {
 
   const userCode = (user as any)?.code || (user as any)?.user_metadata?.member_code || "CEO1983-M83";
 
-  // 3 Ưu đãi mặc định của các đối tác & nhà tài trợ lớn
-  const slideSponsor10: PerkSlide = useMemo(() => ({
-    id: "slide-sponsor-10",
-    type: "sponsor",
-    category: "NHÀ TÀI TRỢ VÀNG",
-    categoryBadge: "TÀI TRỢ ĐỘC QUYỀN",
-    categoryBadgeBg: "bg-amber-500 text-slate-950 font-black",
-    title: "Tập Đoàn Tân Á Đại Thành tài trợ giảm 10% toàn bộ sản phẩm",
-    subtitle: "Ưu đãi chiết khấu trực tiếp 10% thiết bị nước, gia dụng cao cấp cho hội viên CEO 1983",
-    discountTag: "-10% TOÀN BỘ SẢN PHẨM",
-    sponsorName: "Tập Đoàn Tân Á Đại Thành",
-    discountPercent: "10%",
-    voucherCode: `TADT10-${userCode}`,
-    validUntil: "31/12/2026",
-    image: "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=900&auto=format&fit=crop&q=80",
-    details:
-      "Tập Đoàn Tân Á Đại Thành đồng hành cùng CLB Doanh Nhân CEO 1983, trân trọng tài trợ chiết khấu 10% cho tất cả đơn hàng thiết bị, giải pháp xây dựng và gia dụng dành riêng cho hội viên chính thức.",
-    terms: [
-      "Áp dụng cho mọi hội viên chính thức thuộc CLB CEO 1983",
-      "Xuất trình mã QR ưu đãi hoặc voucher khi ký hợp đồng",
-      "Áp dụng đồng thời cùng chính sách bảo hành chính hãng toàn quốc",
-    ],
-  }), [userCode]);
-
-  const slideResort: PerkSlide = useMemo(() => ({
-    id: "slide-resort",
-    type: "resort",
-    category: "ĐẶC QUYỀN NGHỈ DƯỠNG",
-    categoryBadge: "NGHỈ DƯỠNG 5 SAO",
-    categoryBadgeBg: "bg-emerald-600 text-white font-black",
-    title: "Chuỗi Resort & Khách Sạn 5 Sao Toàn Quốc",
-    subtitle: "Ưu đãi giảm 20% đặt phòng nghỉ dưỡng & hội nghị cao cấp cho CEO",
-    discountTag: "GIẢM 20% ĐẶT PHÒNG",
-    voucherCode: `RESORT20-${userCode}`,
-    validUntil: "31/12/2026",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&auto=format&fit=crop&q=80",
-    details:
-      "Đặc quyền độc quyền dành cho Doanh nhân CEO 1983: Giảm ngay 20% giá phòng nghỉ dưỡng và phòng hội nghị VIP tại hệ thống Vinpearl, InterContinental, JW Marriott trên toàn lãnh thổ Việt Nam.",
-    terms: [
-      "Áp dụng khi đặt phòng qua đường dây nóng đối tác CLB",
-      "Quét mã QR tại quầy tiếp tân khi làm thủ tục check-in",
-      "Áp dụng tối đa 3 phòng / kỳ nghỉ",
-    ],
-  }), [userCode]);
-
-  const slideTech: PerkSlide = useMemo(() => ({
-    id: "slide-tech-consulting",
-    type: "sponsor",
-    category: "GIẢI PHÁP DOANH NGHIỆP",
-    categoryBadge: "CHUYỂN ĐỔI SỐ",
-    categoryBadgeBg: "bg-blue-600 text-white font-black",
-    title: "Tư Vấn & Triển Khai Chuyển Đổi Số Doanh Nghiệp SME",
-    subtitle: "Tài trợ giảm 30% gói tư vấn ứng dụng AI và tự động hóa vận hành",
-    discountTag: "GIẢM 30% GÓI AI",
-    sponsorName: "Liên Minh Công Nghệ CEO 1983",
-    discountPercent: "30%",
-    voucherCode: `TECH30-${userCode}`,
-    validUntil: "31/12/2026",
-    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&auto=format&fit=crop&q=80",
-    details:
-      "Gói ưu đãi chuyển đổi số độc quyền cho doanh nghiệp thành viên: Tư vấn lộ trình áp dụng trí tuệ nhân tạo, tối ưu chi phí vận hành và xây dựng hệ thống dữ liệu khách hàng tập trung.",
-    terms: [
-      "Dành riêng cho doanh nghiệp hội viên chính thức CLB CEO 1983",
-      "Đăng ký tư vấn trực tiếp với Ban Công Nghệ & Chuyển Đổi Số",
-      "Hỗ trợ triển khai đồng hành trong 6 tháng",
-    ],
-  }), [userCode]);
-
-  // Slide 4: Sinh nhật hội viên (hiện ưu đãi trực tiếp lên trên ảnh)
-  const slideBirthday: PerkSlide = useMemo(() => ({
-    id: "slide-birthday",
-    type: "birthday",
-    category: "ƯU ĐÃI SINH NHẬT HỘI VIÊN",
-    categoryBadge: "CHÚC MỪNG SINH NHẬT",
-    categoryBadgeBg: "bg-gradient-to-r from-rose-500 to-amber-500 text-white font-black",
-    title: `Chúc Mừng Sinh Nhật: ${bName}`,
-    subtitle: `${bCompany} • Tuổi mới vạn dặm hanh thông, kiến tạo thành công!`,
-    offerOnImage: "TẶNG VOUCHER 2.000.000Đ & BÁNH SINH NHẬT CAO CẤP",
-    memberName: bName,
-    memberCompany: bCompany,
-    voucherCode: `BDAY1983-${userCode}`,
-    validUntil: "Trong tháng sinh nhật",
-    image: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=900&auto=format&fit=crop&q=80",
-    details:
-      "Ban Điều Hành CLB CEO 1983 gửi tặng món quà sinh nhật đặc biệt tri ân hội viên: Voucher quà tặng trị giá 2.000.000đ cùng bánh sinh nhật cao cấp trao tận tay tại doanh nghiệp hoặc sự kiện sinh hoạt định kỳ.",
-    terms: [
-      "Quà tặng trao tặng trong tháng sinh nhật của hội viên",
-      "Quét mã QR tại Văn phòng Ban Thư Ký CLB hoặc đối tác ẩm thực",
-      "Có thể quy đổi thành quyền lợi truyền thông thương hiệu doanh nghiệp",
-    ],
-  }), [bName, bCompany, userCode]);
-
-  // Slide 5: Hội viên đạt danh hiệu top của quý
-  const slideTopQuarter: PerkSlide = useMemo(() => ({
-    id: "slide-gold-member-quarter",
-    type: "gold_member",
-    category: "TOP DOANH NHÂN CỦA QUÝ",
-    categoryBadge: "TOP 1 DOANH NHÂN CỦA QUÝ",
-    categoryBadgeBg: "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-slate-950 font-black",
-    title: "Vinh Danh: CEO Vũ Minh Trí",
-    subtitle: "Top 1 Doanh Nhân Xuất Sắc Quý 1/2026 • Giao thương 32 Tỷ VNĐ",
-    offerOnImage: "CÚP VINH DANH & KỶ NIỆM CHƯƠNG VÀNG DOANH NHÂN",
-    memberName: "CEO Vũ Minh Trí",
-    memberCompany: "Tập Đoàn Đầu Tư & Công Nghệ Trí Việt",
-    memberTitle: "Top 1 Doanh Nhân Của Quý • Phó CT Ban Xúc Tiến Thương Mại",
-    memberAvatar: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=80",
-    memberPhone: "0983 1983 83",
-    memberTenure: "Top 1 Doanh Số Giao Thương Quý 1/2026",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&auto=format&fit=crop&q=80",
-    details:
-      "Vinh danh Hội viên tiêu biểu đạt danh hiệu Top 1 Doanh Nhân Của Quý với những cống hiến vượt bậc trong các hoạt động giao thương nội khối, kết nối hợp tác kinh doanh và gắn kết cộng đồng doanh nhân HanoiBA.",
-  }), []);
-
   // ── ĐỒNG BỘ ƯU ĐÃI DO HỘI VIÊN ĐĂNG (LUÔN ĐƯA ƯU ĐÃI MỚI NHẤT LÊN ĐẦU SLIDE) ──
   const [memberCustomSlides, setMemberCustomSlides] = useState<PerkSlide[]>(() => {
     if (typeof window === "undefined") return [];
@@ -317,22 +204,17 @@ export function MemberPerksCarousel() {
     };
   }, []);
 
-  // ── DANH SÁCH CHUẨN ĐÚNG 5 SLIDE: 1, 2, 3 Ưu đãi mới nhất | 4 Sinh nhật | 5 Top của Quý ──
+  // ── DANH SÁCH ƯU ĐÃI THỰC TẾ TỪ HỘI VIÊN & MÁY CHỦ (KHÔNG HARDCODE FAKE MOCK) ──
   const allSlides: PerkSlide[] = useMemo(() => {
-    const rawOffers = [...memberCustomSlides, ...serverSlides, slideSponsor10, slideResort, slideTech];
+    const rawOffers = [...memberCustomSlides, ...serverSlides];
     const uniqueMap = new Map<string, PerkSlide>();
     for (const item of rawOffers) {
-      if (item.type !== "birthday" && item.type !== "gold_member" && !uniqueMap.has(item.id)) {
+      if (!uniqueMap.has(item.id)) {
         uniqueMap.set(item.id, item);
       }
     }
-    const top3Offers = Array.from(uniqueMap.values()).slice(0, 3);
-    return [
-      ...top3Offers,      // Slide 1, 2, 3: 3 ưu đãi mới nhất
-      slideBirthday,     // Slide 4: Sinh nhật hội viên
-      slideTopQuarter,   // Slide 5: Hội viên đạt danh hiệu top của quý
-    ];
-  }, [memberCustomSlides, serverSlides, slideSponsor10, slideResort, slideTech, slideBirthday, slideTopQuarter]);
+    return Array.from(uniqueMap.values());
+  }, [memberCustomSlides, serverSlides]);
 
   // ── QUẢN LÝ TRẠNG THÁI LƯU / BỎ LƯU ƯU ĐÃI ──
   const [savedPerkIds, setSavedPerkIds] = useState<string[]>(() => {
@@ -451,6 +333,10 @@ export function MemberPerksCarousel() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  if (allSlides.length === 0) {
+    return null;
+  }
+
   return (
     <div
       className="self-stretch w-full flex flex-col gap-2 select-none"
@@ -510,10 +396,10 @@ export function MemberPerksCarousel() {
         }}
       >
         <div
-          className="w-full flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+          className="w-full h-full flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
           style={{
-            transform: `translate3d(0, -${allSlides.length > 0 ? (currentIndex * 100) / allSlides.length : 0}%, 0)`,
-            WebkitTransform: `translate3d(0, -${allSlides.length > 0 ? (currentIndex * 100) / allSlides.length : 0}%, 0)`,
+            transform: `translate3d(0, -${currentIndex * 100}%, 0)`,
+            WebkitTransform: `translate3d(0, -${currentIndex * 100}%, 0)`,
             willChange: "transform",
           }}
         >
@@ -522,7 +408,7 @@ export function MemberPerksCarousel() {
               <div
                 key={s.id}
                 onClick={() => setDetailModalSlide(s)}
-                className="relative w-full h-[165px] sm:h-[180px] shrink-0 cursor-pointer group active:scale-[0.99] overflow-hidden select-none"
+                className="relative w-full h-full shrink-0 cursor-pointer group active:scale-[0.99] overflow-hidden select-none"
                 style={{
                   transform: "translateZ(0)",
                   WebkitTransform: "translateZ(0)",

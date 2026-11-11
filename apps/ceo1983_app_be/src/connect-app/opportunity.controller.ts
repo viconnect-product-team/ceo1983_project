@@ -12,7 +12,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ConnectAppService } from './connect-app.service';
 
-@Controller('opportunities')
+@Controller(['opportunities', 'b2b/opportunities'])
 @UseGuards(JwtAuthGuard)
 export class OpportunityController {
   constructor(private readonly connectAppService: ConnectAppService) {}

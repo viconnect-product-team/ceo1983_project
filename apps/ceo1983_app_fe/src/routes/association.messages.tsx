@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState, useRef, Component, type ReactNode } from "react";
+import { useEffect, useState, useRef, Component, useCallback, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
 import { useServerData } from "@/hooks/use-server-data";
 import { listMembers } from "@/lib/member-app.functions";
+import { fetchNestApi } from "@/lib/api-client";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { ConversationList } from "@/components/messages/ConversationList";
 import { ChatThread } from "@/components/messages/ChatThread";
 import { FeedView } from "@/components/feed/FeedView";
@@ -178,6 +180,81 @@ function MessagesScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Dynamic Realtime Unread Notification and Message Counts
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
+  const [unreadMsgCount, setUnreadMsgCount] = useState<number>(0);
+
+  const refreshUnreadCounters = useCallback(() => {
+    // 1. Unread notifications
+    try {
+      fetchNestApi<any[]>("/notifications")
+        .then((res) => {
+          if (Array.isArray(res)) {
+            const unread = res.filter((n: any) => !n.isRead && !n.is_read).length;
+            setUnreadNotifCount(unread);
+          }
+        })
+        .catch(() => {});
+    } catch {}
+
+    // 2. Unread messages
+    try {
+      const userRecentsKey = user?.id ? `vba.recent_conversations_${user.id}` : "vba.recent_conversations";
+      const raw = localStorage.getItem(userRecentsKey) || localStorage.getItem("vba.recent_conversations");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          const totalUnread = list.reduce((sum: number, c: any) => sum + (Number(c.unread) || 0), 0);
+          setUnreadMsgCount(totalUnread);
+        }
+      }
+    } catch {}
+  }, [user?.id]);
+
+  useEffect(() => {
+    refreshUnreadCounters();
+
+    const socket = getConnectAppSocket();
+    const handleNotifUpdate = (payload?: any) => {
+      if (typeof payload?.unreadCount === "number") {
+        setUnreadNotifCount(payload.unreadCount);
+      } else if (typeof payload?.count === "number") {
+        setUnreadNotifCount(payload.count);
+      } else {
+        refreshUnreadCounters();
+      }
+    };
+    const handleMsgUpdate = () => {
+      refreshUnreadCounters();
+    };
+
+    socket.on("notification:new", handleNotifUpdate);
+    socket.on("notification:unread_count", handleNotifUpdate);
+    socket.on("notification:count", handleNotifUpdate);
+    socket.on("notification:updated", handleNotifUpdate);
+    socket.on("dm:message_received", handleMsgUpdate);
+    socket.on("dm:thread_updated", handleMsgUpdate);
+
+    window.addEventListener("vba.notifications.changed", refreshUnreadCounters);
+    window.addEventListener("notifications-updated", refreshUnreadCounters);
+    window.addEventListener("vba:message:new", refreshUnreadCounters);
+    window.addEventListener("storage", refreshUnreadCounters);
+
+    return () => {
+      socket.off("notification:new", handleNotifUpdate);
+      socket.off("notification:unread_count", handleNotifUpdate);
+      socket.off("notification:count", handleNotifUpdate);
+      socket.off("notification:updated", handleNotifUpdate);
+      socket.off("dm:message_received", handleMsgUpdate);
+      socket.off("dm:thread_updated", handleMsgUpdate);
+
+      window.removeEventListener("vba.notifications.changed", refreshUnreadCounters);
+      window.removeEventListener("notifications-updated", refreshUnreadCounters);
+      window.removeEventListener("vba:message:new", refreshUnreadCounters);
+      window.removeEventListener("storage", refreshUnreadCounters);
+    };
+  }, [refreshUnreadCounters]);
+
   // Set document title chuẩn mực cho Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983
   useEffect(() => {
     document.title = "Mạng Lưới Hội Viên & Bản Tin Doanh Nhân CEO 1983";
@@ -263,7 +340,13 @@ function MessagesScreen() {
             <>
               <SeasonalEventHeader />
               {/* ── HEADER MẠNG LƯỚI CEO 1983 ── */}
-              <header className="sticky top-0 z-40 w-full px-4 pt-1.5 pb-2 bg-white dark:bg-slate-900 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] border-b border-slate-100 dark:border-slate-800 transition-all">
+              <header
+                className="sticky top-0 z-40 w-full px-4 pb-2 bg-white dark:bg-slate-900 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] border-b border-slate-100 dark:border-slate-800 transition-all"
+                style={{
+                  paddingTop: "calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)",
+                  minHeight: "calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)",
+                }}
+              >
                 <div className="w-full flex items-center justify-between gap-2">
                   <div className="flex-1 flex items-center gap-2">
                     {/* 1. Nút Menu */}
@@ -478,17 +561,26 @@ function MessagesScreen() {
                     </div>
                   </div>
 
-                  {/* 3. Cụm nút Tin nhắn & Thông báo chuông badge 9+ */}
+                  {/* 3. Cụm nút Tin nhắn & Thông báo chuông badge realtime */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     {/* Nút Tin nhắn chuyển sang ConversationList */}
-                    <button
-                      type="button"
-                      onClick={() => setMainTab("messages")}
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 inline-flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-                      title="Tin nhắn"
-                    >
-                      <MessageSquare className="size-5 text-slate-800 dark:text-slate-200" />
-                    </button>
+                    <div className="relative inline-flex flex-col justify-start items-start">
+                      <button
+                        type="button"
+                        onClick={() => setMainTab("messages")}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 inline-flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                        title="Tin nhắn"
+                      >
+                        <MessageSquare className="size-5 text-slate-800 dark:text-slate-200" />
+                      </button>
+                      {unreadMsgCount > 0 && (
+                        <div className="px-1 left-[14px] -top-1 absolute bg-[#003B95] rounded-[100px] inline-flex justify-center items-center overflow-hidden pointer-events-none ring-1 ring-white dark:ring-slate-900 shadow-xs">
+                          <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-4">
+                            {unreadMsgCount > 99 ? "99+" : unreadMsgCount}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Nút Thông báo */}
                     <div className="relative inline-flex flex-col justify-start items-start">
@@ -500,9 +592,13 @@ function MessagesScreen() {
                       >
                         <Bell className="size-5 text-slate-800 dark:text-slate-200" />
                       </button>
-                      <div className="px-1 left-[14px] -top-1 absolute bg-[#DC2626] rounded-[100px] inline-flex justify-center items-center overflow-hidden pointer-events-none">
-                        <div className="text-center justify-end text-white text-[10px] font-bold font-['Inter'] leading-4">9+</div>
-                      </div>
+                      {unreadNotifCount > 0 && (
+                        <div className="px-1 left-[14px] -top-1 absolute bg-[#DC2626] rounded-[100px] inline-flex justify-center items-center overflow-hidden pointer-events-none ring-1 ring-white dark:ring-slate-900 shadow-xs">
+                          <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-4">
+                            {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

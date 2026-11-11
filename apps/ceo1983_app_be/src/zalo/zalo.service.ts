@@ -1084,8 +1084,36 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         ORDER BY s.last_interacted_at DESC
         LIMIT 100
       `);
+      if (rows.length === 0) {
+        const members: any[] = await this.prisma.$queryRawUnsafe(`
+          SELECT 
+            id::text as "memberId",
+            code as "memberCode",
+            full_name as "displayName",
+            phone,
+            avatar_url as "avatar",
+            company_name as "company"
+          FROM public.members
+          WHERE phone IS NOT NULL AND phone != ''
+          ORDER BY full_name ASC
+          LIMIT 50
+        `);
+        return members.map((m) => ({
+          userId: m.phone,
+          zalo_user_id: m.phone,
+          displayName: m.displayName || 'Hội viên CEO 1983',
+          name: m.displayName || 'Hội viên CEO 1983',
+          phone: m.phone,
+          avatar: m.avatar,
+          company: m.company,
+          lastMessage: 'Hội viên CLB Doanh Nhân CEO 1983',
+          time: Date.now(),
+        }));
+      }
       return rows.map((r) => ({
         ...r,
+        name: r.displayName || (r.phone ? `Hội viên (${r.phone})` : 'Khách quan tâm Zalo'),
+        phone: r.phone || '',
         time: r.lastInteractedAt
           ? new Date(r.lastInteractedAt).getTime()
           : Date.now(),

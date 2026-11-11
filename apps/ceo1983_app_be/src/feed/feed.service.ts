@@ -13,7 +13,7 @@ export class FeedService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly gateway?: ConnectAppGateway,
-  ) {}
+  ) { }
 
   private async checkIsAdmin(userId: string): Promise<boolean> {
     try {
@@ -43,7 +43,7 @@ export class FeedService {
         )
           return true;
       }
-    } catch {}
+    } catch { }
     return false;
   }
 
@@ -94,7 +94,7 @@ export class FeedService {
           role: u.role || 'Thành viên',
         };
       }
-    } catch {}
+    } catch { }
 
     return {
       id: userId,
@@ -136,172 +136,10 @@ export class FeedService {
         ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS privacy TEXT DEFAULT 'public';
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
 
-      const check = await this.prisma.$queryRaw<any[]>`
-        SELECT COUNT(*)::int as cnt FROM public.feed_posts
-      `.catch(() => [{ cnt: 0 }]);
-
-      if (Number(check[0]?.cnt || 0) > 0) return;
-
-      const seedPosts = [
-        {
-          title:
-            'Nghị quyết kỳ họp Ban Điều Hành: Triển khai chiến lược chuyển đổi số & liên minh giao thương 2026',
-          content:
-            'Ban Điều Hành trân trọng gửi tới toàn thể quý Hội viên Nghị quyết định hướng quý 4/2026. Trọng tâm tập trung vào kết nối giao thương B2B nội bộ, đồng bộ ứng dụng di động hiệp hội và hỗ trợ xúc tiến hợp đồng giá trị cao giữa các doanh nghiệp thành viên.',
-          category: 'news',
-          department: 'Ban Điều Hành',
-          author_name: 'Chủ Tịch & Ban Điều Hành',
-          author_company: 'CLB Doanh Nhân CEO 1983',
-          author_role: 'Chủ tịch CLB',
-          author_avatar:
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop&q=80',
-          ],
-          likes_count: 24,
-          comments_count: 5,
-        },
-        {
-          title:
-            'Khởi động chiến dịch nhận diện thương hiệu và bảo trợ truyền thông Doanh nhân 1983',
-          content:
-            'Ban Truyền Thông chính thức ra mắt gói bảo trợ truyền thông độc quyền cho các hội viên chính thức. Mọi sản phẩm, dịch vụ đạt chuẩn chất lượng sẽ được truyền thông đa kênh trên các ấn phẩm chính thức của HanoiBA và mạng lưới báo đài đối tác.',
-          category: 'news',
-          department: 'Ban truyền thông',
-          author_name: 'Ban Truyền Thông',
-          author_company: 'CLB Doanh Nhân CEO 1983',
-          author_role: 'Trưởng ban Truyền thông',
-          author_avatar:
-            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80',
-          ],
-          likes_count: 18,
-          comments_count: 3,
-        },
-        {
-          title:
-            'Cơ hội cung ứng thiết bị văn phòng & hạ tầng CNTT cho chuỗi dự án mới',
-          content:
-            'Doanh nghiệp chúng tôi đang cần tìm kiếm đối tác cung ứng 50 bộ máy tính trạm và giải pháp mạng bảo mật cho chi nhánh mới tại Hà Nội. Ưu tiên tuyệt đối hợp tác cùng các doanh nghiệp anh chị em trong CLB CEO 1983!',
-          category: 'opportunity',
-          department: 'Ban xúc tiến',
-          author_name: 'Doanh nhân Nguyễn Tuấn Anh',
-          author_company: 'Công ty CP Giải Pháp Công Nghệ Số',
-          author_role: 'Tổng Giám Đốc',
-          author_avatar:
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200&auto=format&fit=crop&q=80',
-          ],
-          likes_count: 31,
-          comments_count: 8,
-        },
-        {
-          title:
-            'Đại tiệc Gala Dinner & Hội Thảo Kết Nối Giao Thương Thường Niên 2026',
-          content:
-            'Sự kiện lớn nhất trong năm của đại gia đình CEO 1983! Đêm hội tụ hơn 250+ CEO lãnh đạo, chương trình vinh danh doanh nghiệp tiêu biểu, quay số trúng thưởng may mắn và cơ hội kết nối đối tác chiến lược.',
-          category: 'event',
-          department: 'Ban Điều Hành',
-          author_name: 'Ban Thư Ký & Sự Kiện',
-          author_company: 'CLB Doanh Nhân CEO 1983',
-          author_role: 'Ban Tổ Chức Sự Kiện',
-          author_avatar:
-            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=80',
-          ],
-          likes_count: 45,
-          comments_count: 12,
-        },
-        {
-          title:
-            'Giới thiệu giải pháp ERP Quản trị Doanh nghiệp tinh gọn cho CEO 1983',
-          content:
-            'Sản phẩm mới trên sàn Marketplace: Phần mềm Quản trị nguồn lực tích hợp AI, tối ưu chi phí vận hành cho doanh nghiệp vừa và nhỏ. Đặc quyền chiết khấu 30% vĩnh viễn và miễn phí triển khai cho toàn thể hội viên CEO 1983.',
-          category: 'marketplace',
-          department: 'Ban xúc tiến',
-          author_name: 'Doanh nhân Trần Đình Khang',
-          author_company: 'Công ty Cổ phần Vione Software',
-          author_role: 'Chủ tịch HĐQT',
-          author_avatar:
-            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&auto=format&fit=crop&q=80',
-          ],
-          likes_count: 22,
-          comments_count: 4,
-        },
-      ];
-
-      for (const p of seedPosts) {
-        const imgsJson = JSON.stringify(p.images || []);
-        const inserted = await this.prisma.$queryRaw<any[]>`
-          INSERT INTO public.feed_posts (
-            author_id, author_name, author_avatar, author_company, author_role,
-            title, content, category, department, images, likes_count, comments_count, shares_count, created_at, updated_at
-          ) VALUES (
-            'seed_author', ${p.author_name}, ${p.author_avatar}, ${p.author_company}, ${p.author_role},
-            ${p.title}, ${p.content}, ${p.category}, ${p.department}, ${imgsJson}::jsonb, ${p.likes_count}, ${p.comments_count}, 5, NOW(), NOW()
-          )
-          RETURNING id
-        `.catch(() => []);
-
-        if (inserted.length > 0) {
-          const postId = inserted[0].id;
-          await this.prisma.$executeRaw`
-            INSERT INTO public.feed_comments (post_id, author_id, author_name, author_avatar, content, created_at)
-            VALUES 
-              (${postId}::uuid, 'seed_c1', 'Phạm An Nam', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', 'Chúc mừng sáng kiến thiết thực của Ban Điều Hành! Chúng tôi sẽ tích cực tham gia kết nối.', NOW() - INTERVAL '1 hour'),
-              (${postId}::uuid, 'seed_c2', 'Lê Hoàng Long', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80', 'Rất đồng tình với định hướng quý này. Doanh nghiệp mình sẵn sàng chia sẻ nguồn lực hợp tác.', NOW() - INTERVAL '30 minutes')
-          `.catch(() => {});
-        }
-      }
-
-      // Đảm bảo các cuộc họp ban / gặp mặt CLB từ public.meetings cũng có bài đăng trong feed_posts (Requirement 4)
-      const meetings = await this.prisma.$queryRaw<any[]>`
-        SELECT id, title, date, time, location, department, status
-        FROM public.meetings
-        WHERE status != 'cancelled'
-        LIMIT 5
-      `.catch(() => []);
-
-      for (const m of meetings) {
-        const titlePost = `[LỊCH HỌP / GẶP MẶT] ${m.title}`;
-        const existing = await this.prisma.$queryRaw<any[]>`
-          SELECT id FROM public.feed_posts WHERE title = ${titlePost} LIMIT 1
-        `.catch(() => []);
-
-        if (existing.length === 0) {
-          const dt = new Date(m.date);
-          const dateStr = !isNaN(dt.getTime())
-            ? dt.toLocaleDateString('vi-VN')
-            : 'Sắp diễn ra';
-          await this.prisma
-            .$executeRawUnsafe(
-              `
-            INSERT INTO public.feed_posts (
-              id, author_id, author_name, author_avatar, author_company, author_role,
-              title, content, category, department, images, likes_count, comments_count, shares_count, created_at, updated_at
-            ) VALUES (
-              gen_random_uuid(), 'meeting_host', $1, '/ceo1983-emblem-8.png', 'CLB Doanh Nhân CEO 1983', 'Ban Điều Hành',
-              $2, $3, 'EVENT_MEETING', $4, '[]'::jsonb, 5, 2, 1, NOW(), NOW()
-            )
-          `,
-              m.department || 'Ban Điều Hành',
-              titlePost,
-              `Cuộc gặp mặt & Họp ban: "${m.title}".\n- Thời gian: ${m.time || '09:30'} ngày ${dateStr}\n- Địa điểm: ${m.location || 'Văn phòng Hiệp hội CEO 1983'}\n- Ban phụ trách: ${m.department || 'Ban Điều Hành'}\n- Trạng thái: ${m.status === 'completed' ? 'Đã hoàn thành' : 'Sắp diễn ra'}`,
-              m.department || 'Ban Điều Hành',
-            )
-            .catch(() => {});
-        }
-      }
+      // Không tự động gieo dữ liệu giả lập
+      return;
     } catch (e: any) {
       console.warn('ensureSeedFeed error:', e?.message);
     }
@@ -330,34 +168,34 @@ export class FeedService {
     const offset = Math.max(0, ((params.page || 1) - 1) * limit);
 
     // Build raw SQL dynamically
-    let queryStr = `SELECT * FROM public.feed_posts WHERE 1=1`;
+    let queryStr = `SELECT * FROM public.feed_posts WHERE 1 = 1`;
     const queryParams: any[] = [];
     let pIdx = 1;
 
     if (category) {
-      queryStr += ` AND category = $${pIdx++}`;
+      queryStr += ` AND category = $${ pIdx++ } `;
       queryParams.push(category);
     }
 
     if (department) {
-      queryStr += ` AND (department ILIKE $${pIdx} OR content ILIKE $${pIdx})`;
-      queryParams.push(`%${department}%`);
+      queryStr += ` AND(department ILIKE $${ pIdx } OR content ILIKE $${ pIdx })`;
+      queryParams.push(`% ${ department }% `);
       pIdx++;
     }
 
     if (params.authorId) {
-      queryStr += ` AND (author_id = ${pIdx} OR author_name ILIKE ${pIdx})`;
+      queryStr += ` AND(author_id = ${ pIdx } OR author_name ILIKE ${ pIdx })`;
       queryParams.push(params.authorId);
       pIdx++;
     }
 
     if (q) {
-      queryStr += ` AND (title ILIKE $${pIdx} OR content ILIKE $${pIdx} OR author_name ILIKE $${pIdx} OR author_company ILIKE $${pIdx})`;
-      queryParams.push(`%${q}%`);
+      queryStr += ` AND(title ILIKE $${ pIdx } OR content ILIKE $${ pIdx } OR author_name ILIKE $${ pIdx } OR author_company ILIKE $${ pIdx })`;
+      queryParams.push(`% ${ q }% `);
       pIdx++;
     }
 
-    queryStr += ` ORDER BY created_at DESC LIMIT $${pIdx++} OFFSET $${pIdx++}`;
+    queryStr += ` ORDER BY created_at DESC LIMIT $${ pIdx++ } OFFSET $${ pIdx++ } `;
     queryParams.push(limit, offset);
 
     const posts = await (this.prisma as any)
@@ -370,8 +208,8 @@ export class FeedService {
       const postIds = posts.map((p: any) => p.id);
       const likes = await this.prisma.$queryRaw<any[]>`
         SELECT post_id FROM public.feed_likes
-        WHERE user_id = ${userId} AND post_id = ANY(${postIds}::uuid[])
-      `.catch(() => []);
+        WHERE user_id = ${ userId } AND post_id = ANY(${ postIds }:: uuid[])
+        `.catch(() => []);
       userLikedPostIds = new Set(likes.map((l: any) => String(l.post_id)));
     }
 
@@ -461,17 +299,17 @@ export class FeedService {
       : null;
 
     const inserted = await this.prisma.$queryRaw<any[]>`
-      INSERT INTO public.feed_posts (
-        author_id, author_name, author_avatar, author_company, author_role,
-        title, content, category, department, images, privacy, external_link, shared_article,
-        likes_count, comments_count, shares_count, created_at, updated_at
-      ) VALUES (
-        ${author.id}, ${author.name}, ${author.avatar}, ${author.company}, ${author.role},
-        ${title}, ${content}, ${category}, ${department}, ${imgArr}::text[], ${privacy}, ${externalLink}, ${sharedArticleJson}::jsonb,
-        0, 0, 0, NOW(), NOW()
-      )
+      INSERT INTO public.feed_posts(
+          author_id, author_name, author_avatar, author_company, author_role,
+          title, content, category, department, images, privacy, external_link, shared_article,
+          likes_count, comments_count, shares_count, created_at, updated_at
+        ) VALUES(
+          ${ author.id }, ${ author.name }, ${ author.avatar }, ${ author.company }, ${ author.role },
+          ${ title }, ${ content }, ${ category }, ${ department }, ${ imgArr }:: text[], ${ privacy }, ${ externalLink }, ${ sharedArticleJson }:: jsonb,
+          0, 0, 0, NOW(), NOW()
+        )
       RETURNING *
-    `;
+        `;
 
     const p = inserted[0];
     return {
@@ -505,40 +343,40 @@ export class FeedService {
 
     const existing = await this.prisma.$queryRaw<any[]>`
       SELECT id FROM public.feed_likes
-      WHERE user_id = ${userId} AND post_id = ${postId}::uuid
+      WHERE user_id = ${ userId } AND post_id = ${ postId }:: uuid
       LIMIT 1
-    `.catch(() => []);
+        `.catch(() => []);
 
     let isLiked = false;
     if (existing.length > 0) {
       // Unlike
       await this.prisma.$executeRaw`
-        DELETE FROM public.feed_likes WHERE id = ${existing[0].id}::uuid
-      `;
+        DELETE FROM public.feed_likes WHERE id = ${ existing[0].id }:: uuid
+        `;
       await this.prisma.$executeRaw`
         UPDATE public.feed_posts
         SET likes_count = GREATEST(0, likes_count - 1), updated_at = NOW()
-        WHERE id = ${postId}::uuid
-      `;
+        WHERE id = ${ postId }:: uuid
+        `;
       isLiked = false;
     } else {
       // Like
       await this.prisma.$executeRaw`
-        INSERT INTO public.feed_likes (post_id, user_id, created_at)
-        VALUES (${postId}::uuid, ${userId}, NOW())
+        INSERT INTO public.feed_likes(post_id, user_id, created_at)
+      VALUES(${ postId }:: uuid, ${ userId }, NOW())
         ON CONFLICT DO NOTHING
-      `;
+        `;
       await this.prisma.$executeRaw`
         UPDATE public.feed_posts
         SET likes_count = likes_count + 1, updated_at = NOW()
-        WHERE id = ${postId}::uuid
-      `;
+        WHERE id = ${ postId }:: uuid
+        `;
       isLiked = true;
     }
 
     const postRow = await this.prisma.$queryRaw<any[]>`
-      SELECT likes_count FROM public.feed_posts WHERE id = ${postId}::uuid LIMIT 1
-    `.catch(() => [{ likes_count: 0 }]);
+      SELECT likes_count FROM public.feed_posts WHERE id = ${ postId }::uuid LIMIT 1
+        `.catch(() => [{ likes_count: 0 }]);
 
     return {
       ok: true,
@@ -551,9 +389,9 @@ export class FeedService {
     if (!postId) return [];
     const comments = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.feed_comments
-      WHERE post_id::text = ${String(postId)}
+      WHERE post_id:: text = ${ String(postId) }
       ORDER BY created_at ASC
-    `.catch((err) => {
+        `.catch((err) => {
       console.error('listComments query error:', err);
       return [];
     });
@@ -611,16 +449,16 @@ export class FeedService {
         : payload?.authorAvatar || author.avatar || '/ceo1983-emblem-8.png';
 
     const inserted = await this.prisma.$queryRaw<any[]>`
-      INSERT INTO public.feed_comments (
-        post_id, author_id, author_name, author_avatar, content,
-        parent_id, level, reply_to_author_name, media_url, media_type, reaction, created_at
-      )
-      VALUES (
-        ${String(postId)}, ${author.id}, ${finalAuthorName}, ${finalAuthorAvatar}, ${text},
-        ${parentId}, ${level}, ${replyToAuthorName}, ${mediaUrl}, ${mediaType}, ${reaction}, NOW()
+      INSERT INTO public.feed_comments(
+          post_id, author_id, author_name, author_avatar, content,
+          parent_id, level, reply_to_author_name, media_url, media_type, reaction, created_at
+        )
+      VALUES(
+        ${ String(postId) }, ${ author.id }, ${ finalAuthorName }, ${ finalAuthorAvatar }, ${ text },
+        ${ parentId }, ${ level }, ${ replyToAuthorName }, ${ mediaUrl }, ${ mediaType }, ${ reaction }, NOW()
       )
       RETURNING *
-    `;
+        `;
 
     const isPostUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -630,8 +468,8 @@ export class FeedService {
       await this.prisma.$executeRaw`
         UPDATE public.feed_posts
         SET comments_count = comments_count + 1, updated_at = NOW()
-        WHERE id = ${postId}::uuid
-      `.catch(() => {});
+        WHERE id = ${ postId }:: uuid
+        `.catch(() => {});
     }
 
     const c = inserted[0];
@@ -650,12 +488,12 @@ export class FeedService {
           const cleanName = rawTag.replace(/^@/, '').trim();
           const matchedMembers = await this.prisma.$queryRaw<any[]>`
             SELECT user_id, id FROM public.members
-            WHERE user_id IS NOT NULL AND (
-              LOWER(contact) ILIKE ${'%' + cleanName.toLowerCase() + '%'} OR
-              LOWER(name) ILIKE ${'%' + cleanName.toLowerCase() + '%'}
-            )
+            WHERE user_id IS NOT NULL AND(
+          LOWER(contact) ILIKE ${ '%' + cleanName.toLowerCase() + '%' } OR
+              LOWER(name) ILIKE ${ '%' + cleanName.toLowerCase() + '%' }
+        )
             LIMIT 1
-          `.catch(() => []);
+        `.catch(() => []);
           if (matchedMembers.length > 0 && matchedMembers[0].user_id) {
             mentionedUserIds.push(String(matchedMembers[0].user_id));
           }
@@ -671,7 +509,7 @@ export class FeedService {
         // Resolve member details
         const memberRows = await this.prisma.$queryRaw<any[]>`
           SELECT id, user_id, code, contact, name FROM public.members
-          WHERE user_id::text = ${targetId} OR id::text = ${targetId} OR code::text = ${targetId}
+          WHERE user_id:: text = ${ targetId } OR id:: text = ${ targetId } OR code:: text = ${ targetId }
           LIMIT 1
         `.catch(() => []);
 
@@ -683,18 +521,18 @@ export class FeedService {
           : targetId;
 
         const notifTitle = 'Bạn được nhắc đến trong một bình luận';
-        const notifBody = `${finalAuthorName} đã nhắc đến bạn trong một bình luận: "${snippet}"`;
+        const notifBody = `${ finalAuthorName } đã nhắc đến bạn trong một bình luận: "${snippet}"`;
 
         // 1. Insert into member_notifications (App Notification Center)
         await this.prisma
           .$executeRawUnsafe(
             `
-          INSERT INTO public.member_notifications (
-            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
-          )
-        `,
+          INSERT INTO public.member_notifications(
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES(
+          gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+        )
+          `,
             targetUserId,
             notifTitle,
             notifBody,
@@ -706,11 +544,11 @@ export class FeedService {
           await this.prisma
             .$executeRawUnsafe(
               `
-            INSERT INTO public.member_notifications (
-              id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-            ) VALUES (
-              gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
-            )
+            INSERT INTO public.member_notifications(
+            id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+          ) VALUES(
+            gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+          )
           `,
               targetMemberId,
               notifTitle,
@@ -727,18 +565,18 @@ export class FeedService {
           );
         if (isTargetUuid) {
           const notifId = require('crypto').randomUUID();
-          const dedupeKey = `mention:${c.id}:${targetUserId}`;
+          const dedupeKey = `mention:${ c.id }:${ targetUserId } `;
           await this.prisma
             .$executeRawUnsafe(
               `
-            INSERT INTO public.business_notifications (
-              id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
-              title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
-            ) VALUES (
-              $1::uuid, $2::uuid, 'feed', $3, 'comment_mention', 'moment_user_mention',
-              $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'ceo1983_app', 'ceo1983_app', NOW(), NOW()
-            )
-          `,
+            INSERT INTO public.business_notifications(
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES(
+            $1:: uuid, $2:: uuid, 'feed', $3, 'comment_mention', 'moment_user_mention',
+            $4, $5, $6:: jsonb, 'normal', 'delivered', $7, 'ceo1983_app', 'ceo1983_app', NOW(), NOW()
+          )
+            `,
               notifId,
               targetUserId,
               String(postId),
@@ -784,7 +622,7 @@ export class FeedService {
       let postAuthorId: string | null = null;
       if (isPostUuid) {
         const postAuthorRow = await this.prisma.$queryRaw<any[]>`
-          SELECT author_id FROM public.feed_posts WHERE id = ${postId}::uuid LIMIT 1
+          SELECT author_id FROM public.feed_posts WHERE id = ${ postId }::uuid LIMIT 1
         `.catch(() => []);
         postAuthorId = postAuthorRow[0]?.author_id
           ? String(postAuthorRow[0].author_id)
@@ -794,7 +632,7 @@ export class FeedService {
       if (postAuthorId) {
         const authorMemberRows = await this.prisma.$queryRaw<any[]>`
           SELECT id, user_id, code FROM public.members
-          WHERE id::text = ${postAuthorId} OR user_id::text = ${postAuthorId} OR code::text = ${postAuthorId}
+          WHERE id:: text = ${ postAuthorId } OR user_id:: text = ${ postAuthorId } OR code:: text = ${ postAuthorId }
           LIMIT 1
         `.catch(() => []);
 
@@ -820,7 +658,7 @@ export class FeedService {
           !uniqueMentionedIds.includes(authorMemberId)
         ) {
           const notifTitle = 'Bình luận mới về bài viết của bạn';
-          const notifBody = `${finalAuthorName} đã bình luận bài viết của bạn: "${snippet}"`;
+          const notifBody = `${ finalAuthorName } đã bình luận bài viết của bạn: "${snippet}"`;
 
           const targets = Array.from(
             new Set([authorUserId, authorMemberId, authorCode].filter(Boolean)),
@@ -829,12 +667,12 @@ export class FeedService {
             await this.prisma
               .$executeRawUnsafe(
                 `
-              INSERT INTO public.member_notifications (
-                id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
-              ) VALUES (
-                gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
-              )
-            `,
+              INSERT INTO public.member_notifications(
+          id, recipient_id, title, body, read, dismissed, ref_type, ref_id, created_at
+        ) VALUES(
+          gen_random_uuid(), $1, $2, $3, false, false, 'feed', $4, NOW()
+        )
+          `,
                 tgt,
                 notifTitle,
                 notifBody,
@@ -852,13 +690,13 @@ export class FeedService {
             await this.prisma
               .$executeRawUnsafe(
                 `
-              INSERT INTO public.business_notifications (
-                id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
-                title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
-              ) VALUES (
-                $1::uuid, $2::uuid, 'feed', $3, 'post_commented', 'moment_new_comment',
-                $4, $5, $6::jsonb, 'normal', 'delivered', $7, 'all', 'all', NOW(), NOW()
-              )
+              INSERT INTO public.business_notifications(
+            id, recipient_user_id, source_domain, source_record_id, event_kind, notification_kind,
+            title_key, body_key, safe_display_data, priority, status, dedupe_key, app_scope, target_app, created_at, updated_at
+          ) VALUES(
+            $1:: uuid, $2:: uuid, 'feed', $3, 'post_commented', 'moment_new_comment',
+            $4, $5, $6:: jsonb, 'normal', 'delivered', $7, 'all', 'all', NOW(), NOW()
+          )
             `,
                 postNotifId,
                 authorUserId,
@@ -871,7 +709,7 @@ export class FeedService {
                   commentSnippet: snippet,
                   url: '/association/messages?tab=feed',
                 }),
-                `post_comment:${c.id}:${authorUserId}`,
+                `post_comment:${ c.id }:${ authorUserId } `,
               )
               .catch(() => {});
           }
@@ -949,9 +787,9 @@ export class FeedService {
     const safeReaction = reaction || null;
     await this.prisma.$executeRaw`
       UPDATE public.feed_comments
-      SET reaction = ${safeReaction}
-      WHERE id = ${commentId}::uuid
-    `.catch(() => {});
+      SET reaction = ${ safeReaction }
+      WHERE id = ${ commentId }:: uuid
+        `.catch(() => {});
 
     return {
       ok: true,
@@ -973,16 +811,16 @@ export class FeedService {
     if (isUuid) {
       await this.prisma.$executeRaw`
         UPDATE public.feed_comments
-        SET content = ${content.trim()}, updated_at = NOW()
-        WHERE id = ${commentId}::uuid
-      `;
+        SET content = ${ content.trim() }, updated_at = NOW()
+        WHERE id = ${ commentId }:: uuid
+        `;
     } else {
       await this.prisma.$executeRawUnsafe(
         `
         UPDATE public.feed_comments
         SET content = $1, updated_at = NOW()
-        WHERE id::text = $2
-      `,
+        WHERE id:: text = $2
+        `,
         content.trim(),
         commentId,
       );
@@ -1003,9 +841,9 @@ export class FeedService {
       const cRows = isUuid
         ? await this.prisma.$queryRaw<
             any[]
-          >`SELECT post_id FROM public.feed_comments WHERE id = ${commentId}::uuid LIMIT 1`
+          >`SELECT post_id FROM public.feed_comments WHERE id = ${ commentId }::uuid LIMIT 1`
         : await this.prisma.$queryRawUnsafe<any[]>(
-            `SELECT post_id FROM public.feed_comments WHERE id::text = $1 LIMIT 1`,
+            `SELECT post_id FROM public.feed_comments WHERE id:: text = $1 LIMIT 1`,
             commentId,
           );
       postId = cRows[0]?.post_id ? String(cRows[0].post_id) : null;
@@ -1013,13 +851,13 @@ export class FeedService {
 
     if (isUuid) {
       await this.prisma
-        .$executeRaw`DELETE FROM public.feed_comments WHERE id = ${commentId}::uuid`.catch(
+        .$executeRaw`DELETE FROM public.feed_comments WHERE id = ${ commentId }:: uuid`.catch(
         () => {},
       );
     } else {
       await this.prisma
         .$executeRawUnsafe(
-          `DELETE FROM public.feed_comments WHERE id::text = $1`,
+          `DELETE FROM public.feed_comments WHERE id:: text = $1`,
           commentId,
         )
         .catch(() => {});
@@ -1034,7 +872,7 @@ export class FeedService {
         await this.prisma.$executeRaw`
           UPDATE public.feed_posts
           SET comments_count = GREATEST(0, comments_count - 1), updated_at = NOW()
-          WHERE id = ${postId}::uuid
+          WHERE id = ${ postId }:: uuid
         `.catch(() => {});
       }
     }
@@ -1045,11 +883,11 @@ export class FeedService {
     await this.prisma.$executeRaw`
       UPDATE public.feed_posts
       SET shares_count = shares_count + 1, updated_at = NOW()
-      WHERE id = ${postId}::uuid
-    `.catch(() => {});
+      WHERE id = ${ postId }:: uuid
+        `.catch(() => {});
 
     const postRow = await this.prisma.$queryRaw<any[]>`
-      SELECT shares_count FROM public.feed_posts WHERE id = ${postId}::uuid LIMIT 1
+      SELECT shares_count FROM public.feed_posts WHERE id = ${ postId }::uuid LIMIT 1
     `.catch(() => [{ shares_count: 0 }]);
 
     return {
@@ -1118,7 +956,7 @@ export class FeedService {
       ) {
         try {
           image = new URL(image, cleanUrl).href;
-        } catch {}
+        } catch { }
       }
 
       return {
@@ -1244,16 +1082,16 @@ export class FeedService {
     }
     await this.prisma
       .$executeRaw`DELETE FROM public.feed_comments WHERE post_id = ${postId}::uuid`.catch(
-      () => {},
-    );
+        () => { },
+      );
     await this.prisma
       .$executeRaw`DELETE FROM public.feed_likes WHERE post_id = ${postId}::uuid`.catch(
-      () => {},
-    );
+        () => { },
+      );
     await this.prisma
       .$executeRaw`DELETE FROM public.feed_posts WHERE id = ${postId}::uuid`.catch(
-      () => {},
-    );
+        () => { },
+      );
     return { ok: true, message: 'Đã xóa bài viết thành công.' };
   }
 

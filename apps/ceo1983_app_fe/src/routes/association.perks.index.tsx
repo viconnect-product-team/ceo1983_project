@@ -84,230 +84,14 @@ export interface ExtendedPerk extends Perk {
   qrPayload?: string;
 }
 
-const DEFAULT_PERKS_SEED: ExtendedPerk[] = [
-  {
-    id: "perk-001",
-    title: "VIP Lounge & Golf Long Biên",
-    category: "Golf & Nghỉ dưỡng",
-    partner: "Sân Golf Long Biên",
-    discount: "Giảm 25%",
-    summary: "Đặc quyền phòng chờ VIP và ưu đãi giá green fee dành riêng cho hội viên CEO 1983",
-    description: "Hội viên xuất trình thẻ doanh nhân CEO 1983 điện tử để nhận đặc quyền phòng chờ VIP, giảm 25% phí green fee tất cả các ngày trong tuần.",
-    icon: "hotel",
-    link: "https://longbiengolf.vn",
-    validUntil: "31/12/2026",
-    locationName: "Sân Golf Long Biên",
-    address: "Khu Trung Đoàn 918, P. Phúc Đồng, Q. Long Biên, Hà Nội",
-    hotline: "02438755959",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=San+Golf+Long+Bien+Ha+Noi",
-    stallUrl: "/association/products",
-  },
-  {
-    id: "perk-002",
-    title: "Nghỉ dưỡng 5 sao Vinpearl & InterContinental",
-    category: "Golf & Nghỉ dưỡng",
-    partner: "Hệ thống Vinpearl & InterContinental",
-    discount: "Ưu đãi 30%",
-    summary: "Ưu đãi đặt phòng và dịch vụ ẩm thực tại hệ thống resort 5 sao trên toàn quốc",
-    description: "Giảm 30% giá phòng công bố và 15% dịch vụ ẩm thực F&B tại tất cả các cơ sở Vinpearl và InterContinental tại Phú Quốc, Nha Trang, Đà Nẵng.",
-    icon: "hotel",
-    link: "https://vinpearl.com",
-    validUntil: "31/12/2026",
-    locationName: "Vinpearl & InterContinental Toàn Quốc",
-    address: "Hà Nội, Phú Quốc, Nha Trang, Đà Nẵng, Hạ Long",
-    hotline: "1900232389",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Vinpearl+Resort",
-    stallUrl: "/association/products",
-  },
-  {
-    id: "perk-003",
-    title: "Gói Pháp lý Doanh nghiệp & M&A",
-    category: "Dịch vụ Doanh nghiệp",
-    partner: "Công ty Luật Trí Minh",
-    discount: "Tặng 100% tư vấn",
-    summary: "Tư vấn rà soát hợp đồng kinh tế và tái cấu trúc doanh nghiệp miễn phí lần đầu",
-    description: "Miễn phí 01 buổi tư vấn chuyên sâu về tái cấu trúc vốn và M&A; giảm 20% phí luật sư cho các vụ việc phát sinh tiếp theo.",
-    icon: "legal",
-    link: "https://luattriminh.vn",
-    validUntil: "31/12/2026",
-    locationName: "Công ty Luật Trí Minh Hà Nội",
-    address: "Tầng 5, Indochina Plaza, 241 Xuân Thủy, Cầu Giấy, Hà Nội",
-    hotline: "02437933838",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Cong+ty+Luat+Tri+Minh+241+Xuan+Thuy",
-    stallUrl: "/association/products",
-  },
-  {
-    id: "perk-004",
-    title: "Dịch vụ Kế toán & Kiểm toán Độc lập",
-    category: "Dịch vụ Doanh nghiệp",
-    partner: "Vaco Auditing",
-    discount: "Chiết khấu 20%",
-    summary: "Kiểm toán báo cáo tài chính và thẩm định định giá doanh nghiệp hội viên",
-    description: "Chiết khấu trực tiếp 20% phí dịch vụ kiểm toán báo cáo tài chính năm và soát xét hệ thống kiểm soát nội bộ cho doanh nghiệp hội viên.",
-    icon: "finance",
-    link: "https://vaco.com.vn",
-    validUntil: "31/12/2026",
-    locationName: "Vaco Auditing & Consulting",
-    address: "Tầng 12, Tòa Licogi 13, 164 Khuất Duy Tiến, Thanh Xuân, Hà Nội",
-    hotline: "02435566886",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Vaco+Auditing+164+Khuat+Duy+Tien",
-    stallUrl: "/association/products",
-  },
-  {
-    id: "perk-005",
-    title: "Hạ tầng Cloud & Chuyển đổi số VNPT",
-    category: "Dịch vụ Doanh nghiệp",
-    partner: "VNPT Cloud",
-    discount: "Tài trợ 15 triệu",
-    summary: "Gói tài trợ giải pháp đám mây Smart Cloud và chữ ký số từ xa SmartCA",
-    description: "Tặng 15.000.000đ cước sử dụng Cloud Server trong 6 tháng đầu tiên kèm gói chữ ký số cá nhân SmartCA dành cho CEO.",
-    icon: "briefcase",
-    link: "https://cloud.vnpt.vn",
-    validUntil: "31/12/2026",
-    locationName: "VNPT Data Center & Smart Cloud",
-    address: "Khu Công nghệ cao Hòa Lạc, Thạch Thất, Hà Nội",
-    hotline: "18001260",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=VNPT+Data+Center+Hoa+Lac",
-    stallUrl: "/association/products",
-  },
-];
-
-const LUCKY_DRAW_PRIZES = [
-  {
-    id: "lucky-prize-1",
-    title: "Giải Đặc Biệt Gala 2026: 01 Chuyến Du Lịch Dubai 5N4Đ + Thẻ Hội Viên Vàng",
-    category: "Trúng thưởng",
-    discount: "Trúng Thưởng 100%",
-    summary: "Dành riêng cho hội viên may mắn tham dự Gala Doanh Nhân CEO 1983. Mã vé: CEO1983-DUBAI-VIP",
-    partner: "Ban Chấp Hành Hiệp Hội CEO 1983",
-    icon: "trophy",
-    code: "CEO1983-DUBAI-VIP",
-    claimed: true,
-    locationName: "Khách Sạn Melia Hà Nội - Đêm Gala CEO 1983",
-    address: "44 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội",
-    hotline: "0901000001",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Melia+Hanoi",
-  },
-  {
-    id: "lucky-prize-2",
-    title: "Giải Nhất Vòng Quay May Mắn: Bộ Quà Tặng Trống Đồng Mạ Vàng 24K",
-    category: "Trúng thưởng",
-    discount: "Đã Trúng",
-    summary: "Vật phẩm phong thủy giới hạn mạ vàng 24K vinh danh kết nối giao thương nội khối xuất sắc.",
-    partner: "CLB Doanh Nhân CEO 1983",
-    icon: "gift",
-    code: "CEO1983-GOLD-GIFT",
-    claimed: true,
-    locationName: "Văn Phòng Ban Thư Ký CEO 1983",
-    address: "Tòa nhà HanoiBA, Q. Nam Từ Liêm, Hà Nội",
-    hotline: "0901000001",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=HanoiBA+Ha+Noi",
-  },
-  {
-    id: "lucky-prize-3",
-    title: "Giải Nhì Bốc Thăm: Voucher Nghỉ Dưỡng Vinpearl 5 Sao Trị Giá 10.000.000đ",
-    category: "Trúng thưởng",
-    discount: "10.000.000đ",
-    summary: "Áp dụng nghỉ dưỡng tại toàn bộ hệ thống resort và villa Vinpearl trên toàn quốc.",
-    partner: "Vinpearl Resort & Spa",
-    icon: "hotel",
-    code: "CEO1983-VINPEARL-VOUCHER",
-    claimed: false,
-    locationName: "Hệ thống Vinpearl Resort Toàn Quốc",
-    address: "Phú Quốc, Nha Trang, Đà Nẵng, Hạ Long",
-    hotline: "1900232389",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Vinpearl+Resort",
-  },
-  {
-    id: "lucky-prize-4",
-    title: "Giải Khuyến Khích: Thẻ Danh Thiếp Điện Tử Thông Minh CEO 1983 Smart NFC Mạ Vàng",
-    category: "Trúng thưởng",
-    discount: "Miễn Phí 100%",
-    summary: "Thẻ NFC kim loại đen bóng viền mạ vàng sang trọng tích hợp công nghệ chạm danh thiếp 1 chạm CLB CEO 1983.",
-    partner: "Ban Công Nghệ & Chuyển Đổi Số CEO 1983",
-    icon: "trophy",
-    code: "CEO1983-NFC-CARD-VIP",
-    claimed: false,
-    locationName: "Trung Tâm Trải Nghiệm Số CEO 1983",
-    address: "Hà Nội",
-    hotline: "0901000001",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Hanoi+Vietnam",
-  },
-];
-
-export const BIRTHDAY_PERKS: ExtendedPerk[] = [
-  {
-    id: "bday-001",
-    title: "Voucher Sinh Nhật Hội Viên: Giảm 50% Tiệc Doanh Nghiệp & Tặng Bánh Khánh Tiết",
-    category: "Ưu đãi sinh nhật",
-    partner: "Ban Chấp Hành CLB CEO 1983",
-    discount: "Giảm 50%",
-    summary: "Đặc quyền mừng sinh nhật hội viên: Giảm 50% chi phí đặt tiệc tại chuỗi khách sạn đối tác & tặng kèm bánh khánh tiết mạ vàng",
-    description: "Ban Chấp Hành CLB CEO 1983 trân trọng chúc mừng sinh nhật Quý Hội viên. Voucher có giá trị sử dụng trọn vẹn trong tháng sinh nhật của bạn.",
-    icon: "gift",
-    link: "",
-    validUntil: "Trong tháng sinh nhật",
-    locationName: "Khách sạn Daewoo & Pullman Hà Nội",
-    address: "360 Kim Mã, Ba Đình, Hà Nội",
-    hotline: "0983 1983 83",
-    voucherCode: "BDAY-CEO1983-50",
-  },
-  {
-    id: "bday-002",
-    title: "Gói Quà Tặng Sinh Nhật Doanh Nhân: Hộp Trà Cổ Thụ & Bình Giữ Nhiệt Khắc Tên",
-    category: "Ưu đãi sinh nhật",
-    partner: "Trà Cổ Thụ & Quà Tặng Doanh Nhân",
-    discount: "Tặng 100%",
-    summary: "Set quà tặng trà Shan tuyết cổ thụ nghìn năm và bình giữ nhiệt mạ vàng khắc tên hội viên độc bản",
-    description: "Hội viên xuất trình thẻ số CEO 1983 tại Văn phòng Ban Thư Ký để nhận bộ quà sinh nhật cao cấp.",
-    icon: "shopping",
-    link: "",
-    validUntil: "31/12/2026",
-    locationName: "Văn phòng Hiệp hội Doanh nhân CEO 1983",
-    address: "Tòa tháp Doanh nhân, Cầu Giấy, Hà Nội",
-    hotline: "1900 1983",
-    voucherCode: "BDAY-GIFT-VIP",
-  },
-];
-
-export const TOP_RANK_PERKS: ExtendedPerk[] = [
-  {
-    id: "rank-001",
-    title: "Cúp Vinh Danh Quán Quân Top 1 & Bài PR Thương Hiệu Trên Tạp Chí Doanh Nhân",
-    category: "Ưu đãi rank cao nhất",
-    partner: "Hiệp hội Doanh nhân CEO 1983",
-    discount: "Đặc quyền Top 1",
-    summary: "Cúp vinh danh mạ vàng & 01 Bài PR chuyên sâu thương hiệu trên Tạp chí Doanh Nhân phát hành toàn quốc",
-    description: "Đặc quyền tối cao dành cho Hội viên đạt Rank 1 trên Bảng xếp hạng Thống kê. Được vinh danh trực tiếp tại Gala doanh nhân định kỳ.",
-    icon: "trophy",
-    link: "",
-    validUntil: "Kỳ xếp hạng 2026",
-    locationName: "Trung tâm Hội nghị Quốc gia Hà Nội",
-    address: "Đại lộ Thăng Long, Mễ Trì, Nam Từ Liêm, Hà Nội",
-    hotline: "0983 1983 83",
-    voucherCode: "RANK1-CHAMPION",
-  },
-  {
-    id: "rank-002",
-    title: "Sử Dụng Miễn Phí 100% Phòng Tiệc VIP Khánh Tiết Hội Nghị Cấp Cao",
-    category: "Ưu đãi rank cao nhất",
-    partner: "Almaz Convention Center",
-    discount: "Tặng 100%",
-    summary: "Miễn phí phòng tiệc khánh tiết cao cấp cho hội nghị cổ đông & tiếp đón đối tác chiến lược",
-    description: "Dành riêng cho Doanh nhân dẫn đầu bảng xếp hạng thành tích kết nối và giao thương B2B của CLB.",
-    icon: "hotel",
-    link: "",
-    validUntil: "31/12/2026",
-    locationName: "Almaz Convention Center, Vinhomes Riverside",
-    address: "Khu đô thị Vinhomes Riverside, Long Biên, Hà Nội",
-    hotline: "024 3657 4455",
-    voucherCode: "RANK1-ALMAZ-VIP",
-  },
-];
+const DEFAULT_PERKS_SEED: ExtendedPerk[] = [];
+const LUCKY_DRAW_PRIZES: any[] = [];
+export const BIRTHDAY_PERKS: ExtendedPerk[] = [];
+export const TOP_RANK_PERKS: ExtendedPerk[] = [];
 
 export function PerksScreen() {
   const t = useT();
-  const [serverPerks, setServerPerks] = useState<ExtendedPerk[]>(DEFAULT_PERKS_SEED);
+  const [serverPerks, setServerPerks] = useState<ExtendedPerk[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Dynamic QR Code Modal State
@@ -1013,7 +797,7 @@ export function PerksScreen() {
 
         return (
           <div className="space-y-6 px-4 pt-4">
-            {/* ── SECTION 1: ƯU ĐÃI HỘI VIÊN KHÁC TÀI TRỢ LÊN CLBCEO1983 ── */}
+            {/* ── SECTION 1: ƯU ĐÃI HỘI VIÊN KHÁC TÀI TRỢ LÊN CLB CEO 1983 ── */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1035,63 +819,73 @@ export function PerksScreen() {
               </div>
 
               <div className="space-y-3">
-                {[...memberCustomPerks, ...DEFAULT_PERKS_SEED.slice(0, 4)].map((p) =>
-                  renderPerkCard({ ...p, isMemberPerk: true }),
+                {[...memberCustomPerks, ...serverPerks].length > 0 ? (
+                  [...memberCustomPerks, ...serverPerks].map((p) =>
+                    renderPerkCard({ ...p, isMemberPerk: true }),
+                  )
+                ) : (
+                  <div className="text-center py-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
+                    <p className="text-xs text-slate-500">Chưa có ưu đãi nào được đăng tải</p>
+                  </div>
                 )}
               </div>
             </div>
 
             {/* ── SECTION 2: ƯU ĐÃI SINH NHẬT ── */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                    <Gift className="size-4" />
+            {BIRTHDAY_PERKS.length > 0 && (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-7 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                      <Gift className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                        Ưu Đãi Sinh Nhật
+                      </h3>
+                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                        Món quà đặc biệt từ Ban Chấp Hành mừng sinh nhật hội viên trong tháng
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
-                      Ưu Đãi Sinh Nhật
-                    </h3>
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                      Món quà đặc biệt từ Ban Chấp Hành mừng sinh nhật hội viên trong tháng
-                    </p>
-                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                    Section 2
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                  Section 2
-                </span>
-              </div>
 
-              <div className="space-y-3">
-                {BIRTHDAY_PERKS.map((p) => renderPerkCard(p))}
+                <div className="space-y-3">
+                  {BIRTHDAY_PERKS.map((p) => renderPerkCard(p))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* ── SECTION 3: ƯU ĐÃI CHO NGƯỜI CÓ RANK CAO NHẤT Ở THỐNG KÊ ── */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-7 rounded-lg bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400 flex items-center justify-center font-bold">
-                    <Trophy className="size-4" />
+            {TOP_RANK_PERKS.length > 0 && (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-7 rounded-lg bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400 flex items-center justify-center font-bold">
+                      <Trophy className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                        Ưu Đãi Cho Người Có Rank Cao Nhất Ở Thống Kê
+                      </h3>
+                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                        Đặc quyền vinh danh Quán quân Bảng Xếp Hạng Doanh Nhân Tiêu Biểu CEO 1983
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
-                      Ưu Đãi Cho Người Có Rank Cao Nhất Ở Thống Kê
-                    </h3>
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                      Đặc quyền vinh danh Quán quân Bảng Xếp Hạng Doanh Nhân Tiêu Biểu CEO 1983
-                    </p>
-                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+                    Section 3
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
-                  Section 3
-                </span>
-              </div>
 
-              <div className="space-y-3">
-                {TOP_RANK_PERKS.map((p) => renderPerkCard(p))}
+                <div className="space-y-3">
+                  {TOP_RANK_PERKS.map((p) => renderPerkCard(p))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         );
       })()}

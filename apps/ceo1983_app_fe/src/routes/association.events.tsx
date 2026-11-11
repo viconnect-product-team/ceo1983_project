@@ -1225,92 +1225,12 @@ function EventsScreen() {
         if (Array.isArray(res) && res.length > 0) {
           setMeetingsList(res);
         } else {
-          // Default meetings following YBA Sài Gòn & CEO 1983 specification (2 phân loại: Họp cố định theo ban & Họp bất thường)
-          setMeetingsList([
-            {
-              id: "meet-bdh-14",
-              title: "Kỳ họp Ban Điều Hành CLB CEO 1983 Định Kỳ Lần Thứ 14",
-              convener: "Chủ tịch CLB & Ban Thường Trực",
-              meetingType: "Họp Ban Điều Hành",
-              category: "fixed_committee",
-              isExtraordinary: false,
-              date: "2026-10-25T14:00:00Z",
-              time: "14:00 - 17:00",
-              location: "Trực tuyến qua Jitsi Meet & Phòng họp Trụ sở HanoiBA",
-              isOnline: true,
-              meetingLink: "https://meet.jit.si/CEO1983_MEET_BAN_DIEU_HANH_14",
-              attendeesRequired: "Toàn bộ Thành viên Ban Điều Hành & Ban Thư Ký",
-              documents: ["Báo cáo tài chính Q3/2026", "Dự thảo kế hoạch Gala kỷ niệm 1983"],
-              confirmed: true,
-            },
-            {
-              id: "meet-bxt-thang10",
-              title: "Kỳ họp Ban Xúc Tiến Thương Mại Định Kỳ Tháng 10: Điều Phối Deal B2B",
-              convener: "Trưởng ban Xúc tiến Thương mại",
-              meetingType: "Họp Ban Chuyên Môn",
-              category: "fixed_committee",
-              isExtraordinary: false,
-              date: "2026-10-28T09:00:00Z",
-              time: "09:00 - 11:30",
-              location: "Trực tuyến qua Jitsi Meet",
-              isOnline: true,
-              meetingLink: "https://meet.jit.si/CEO1983_MEET_BAN_XUC_TIEN",
-              attendeesRequired: "Thành viên Ban Xúc tiến & Hội viên có cơ hội lớn",
-              documents: ["Danh mục 42 Cơ hội hợp tác", "Quy chế chia sẻ hoa hồng B2B"],
-              confirmed: false,
-            },
-            {
-              id: "meet-btv-ketnap",
-              title: "Kỳ họp Ban Thành Viên Định Kỳ: Thẩm Định & Kết Nạp Hội Viên Mới",
-              convener: "Trưởng ban Thành viên",
-              meetingType: "Gặp mặt Chi hội",
-              category: "fixed_committee",
-              isExtraordinary: false,
-              date: "2026-11-05T15:00:00Z",
-              time: "15:00 - 17:30",
-              location: "Trụ sở CLB CEO 1983 & Online Hybrid",
-              isOnline: true,
-              meetingLink: "https://meet.jit.si/CEO1983_MEET_BAN_THANH_VIEN",
-              attendeesRequired: "Ban Thành viên & 12 Doanh nhân ứng viên",
-              documents: ["Hồ sơ doanh nghiệp thẩm định", "Điều lệ CLB CEO 1983"],
-              confirmed: false,
-            },
-            {
-              id: "meet-emergency-bch-01",
-              title: "Cuộc Họp Bất Thường Ban Thường Trực: Phê Chuẩn Ngân Sách Cứu Trợ Bão Lũ Khẩn Cấp",
-              convener: "Chủ tịch CLB CEO 1983",
-              meetingType: "Họp Bất Thường",
-              category: "extraordinary",
-              isExtraordinary: true,
-              date: "2026-10-29T20:00:00Z",
-              time: "20:00 - 21:30",
-              location: "Trực tuyến qua Jitsi Meet (Họp khẩn trực tuyến)",
-              isOnline: true,
-              meetingLink: "https://meet.jit.si/CEO1983_MEET_KHAN_CAP",
-              attendeesRequired: "Thường trực Ban Điều Hành & Ban Thiện Nguyện",
-              documents: ["Tờ trình cứu trợ khẩn cấp số 09/TTr-CEO1983", "Danh mục nhu yếu phẩm & địa bàn tiếp cận"],
-              confirmed: true,
-            },
-            {
-              id: "meet-emergency-b2b-02",
-              title: "Cuộc Họp Bất Thường Ban Xúc Tiến: Hiệp Thương Liên Minh Thầu Dự Án Smart City 50 Tỷ",
-              convener: "Trưởng ban Xúc tiến Thương mại",
-              meetingType: "Họp Bất Thường",
-              category: "extraordinary",
-              isExtraordinary: true,
-              date: "2026-11-02T19:30:00Z",
-              time: "19:30 - 21:00",
-              location: "Trực tuyến qua Jitsi Meet (Phòng bảo mật B2B)",
-              isOnline: true,
-              meetingLink: "https://meet.jit.si/CEO1983_MEET_HIEP_THUONG_B2B",
-              attendeesRequired: "7 Doanh nghiệp Hội viên nộp hồ sơ liên danh thầu",
-              documents: ["Hồ sơ mời thầu dự án Smart City", "Thỏa thuận liên danh bảo mật NDA"],
-              confirmed: false,
-            },
-          ]);
+          setMeetingsList([]);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setMeetingsList([]);
+      })
       .finally(() => setLoadingMeetings(false));
   }, []);
 
@@ -1903,54 +1823,7 @@ function EventsScreen() {
       }
     }
 
-    const defaultCards = [
-      {
-        id: "recent-forum-digital",
-        title: "Diễn đàn kinh tế số",
-        image: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80",
-        fallbackEvent: {
-          id: "ev-digital-forum",
-          title: "Diễn đàn kinh tế số & Quản trị doanh nghiệp",
-          place: "Trung tâm Hội nghị Quốc gia, Hà Nội",
-          date: "2026-10-15T08:30:00Z",
-          time: "08:30",
-          day: 15,
-          month: 10,
-          communityName: "CLB Doanh Nhân CEO 1983",
-        },
-      },
-      {
-        id: "recent-ceo-dinner",
-        title: "CEO Executive Dinner",
-        image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&auto=format&fit=crop&q=80",
-        fallbackEvent: {
-          id: "ev-executive-dinner",
-          title: "CEO Executive Dinner: Kết nối & Dạ tiệc doanh nhân",
-          place: "Khách sạn JW Marriott, Hà Nội",
-          date: "2026-11-20T18:00:00Z",
-          time: "18:00",
-          day: 20,
-          month: 11,
-          communityName: "CLB Doanh Nhân CEO 1983",
-        },
-      },
-    ];
-
-    const result = [...viewed];
-    for (const def of defaultCards) {
-      if (!seenTitles.has(def.title)) {
-        seenTitles.add(def.title);
-        const existingEvent = events.find((e) => e.title.toLowerCase().includes(def.title.toLowerCase()));
-        result.push({
-          id: def.id,
-          title: def.title,
-          image: def.image,
-          event: (existingEvent || def.fallbackEvent) as MyEvent,
-        });
-      }
-    }
-
-    return result;
+    return viewed;
   }, [events, recentEventIds]);
 
   const displayUpcomingList = upcomingEvents;
@@ -1975,7 +1848,13 @@ function EventsScreen() {
   return (
     <div className="vba-animate min-h-full pb-24 bg-white dark:bg-slate-950 font-['Inter']">
       {/* ── TOP APP BAR (HEADER) ── */}
-      <div data-type="2" className="w-full px-4 pt-1.5 pb-2 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 inline-flex justify-between items-center overflow-hidden">
+      <div
+        data-type="2"
+        className="w-full px-4 pb-2 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 inline-flex justify-between items-center overflow-hidden"
+        style={{
+          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)",
+        }}
+      >
         <div className="flex-1 flex justify-between items-center">
           {/* Back button */}
           <button
