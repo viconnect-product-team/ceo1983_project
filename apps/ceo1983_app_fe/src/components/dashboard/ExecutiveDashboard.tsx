@@ -32,6 +32,8 @@ import {
   TrendingUp,
   Filter,
   Sparkles,
+  ClipboardList,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import { useT, type TKey } from "@/lib/i18n";
@@ -353,6 +355,19 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
     enabled: authReady,
   });
 
+  const tasksQ = useQuery({
+    queryKey: ["dashboard-my-tasks"],
+    queryFn: async () => {
+      try {
+        const res = await fetchNestApi<any[]>("/tasks");
+        return Array.isArray(res) ? res : [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: authReady,
+  });
+
   const recentProducts = useMemo(() => {
     const list = [...(productsQ.data ?? [])];
     return list
@@ -385,51 +400,15 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
 
     if (!base && clientMembers.length === 0) return undefined;
 
-    const dummyFallback: DashboardStats = {
-      totalMembers: 26,
-      activeMembers: 23,
-      newMembers30d: 6,
-      companies: 20,
-      individuals: 6,
-      events: 15,
-      upcomingEvents: 12,
-      registrations: 42,
-      sponsors: 8,
-      documents: 4,
-      revenue: 435000000,
-      paidInvoices: 21,
-      unpaidInvoices: 4,
-      pendingRenewals: 3,
-      openOpportunities: 14,
-      pendingQuotes: 3,
-      industries: [
-        { key: "ind.trade", count: 8 },
-        { key: "ind.manufacturing", count: 7 },
-        { key: "ind.it", count: 5 },
-        { key: "ind.finance", count: 3 },
-        { key: "ind.realestate", count: 3 },
-      ],
-      regions: [
-        { key: "region.north", count: 18 },
-        { key: "region.central", count: 4 },
-        { key: "region.south", count: 4 },
-      ],
-      growth: [
-        { month: "4/2026", count: 2 },
-        { month: "5/2026", count: 4 },
-        { month: "6/2026", count: 5 },
-        { month: "7/2026", count: 4 },
-        { month: "8/2026", count: 6 },
-        { month: "9/2026", count: 5 },
-      ],
-    };
+    // Lọc bỏ các hội viên đã bị xóa hoặc không hợp lệ (chỉ tính hội viên đang dùng)
+    const nonDeletedMembers = clientMembers.filter((m: any) => {
+      const st = String(m.status || "").toLowerCase();
+      return st !== "deleted" && st !== "cancelled" && !m.deleted_at && !m.deletedAt;
+    });
 
-    const target = base ?? dummyFallback;
-
-    const rawMembers = clientMembers.length > 0 ? clientMembers : [];
     const members = statusFilter === "all"
-      ? rawMembers
-      : rawMembers.filter((m: any) => {
+      ? nonDeletedMembers
+      : nonDeletedMembers.filter((m: any) => {
           const st = String(m.status || "").toLowerCase();
           if (statusFilter === "active") return st === "active" || st === "approved";
           if (statusFilter === "pending") return st === "pending" || st === "pending_approval";
@@ -438,65 +417,83 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
           return true;
         });
 
-    const totalMembers = statusFilter === "all" ? (rawMembers.length > 0 ? rawMembers.length : Math.max(target.totalMembers, 26)) : members.length;
+    const totalMembers = members.length;
     const activeMembers = members.filter((m: any) => m.status === "active" || m.status === "approved").length;
-    const companies = members.filter((m: any) => m.type === "company").length;
-    const individuals = members.filter((m: any) => m.type === "individual").length;
-    const pendingRenewals = members.filter((m: any) => m.status === "expired" || m.status === "pending").length;
+    const companies = members.filter((m: any) => m.type === "company" || m.type === "enterprise" || m.type === "corporate").length;
+    const individuals = members.filter((m: any) => m.type === "individual" || m.type === "personal" || !m.type).length;
+    const pendingRenewals = members.filter((m: any) => m.status === "expired" || m.status === "pending" || m.status === "pending_approval").length;
 
-    const rawInvoices = clientInvoices;
+    // Đếm chính xác số hội viên mới gia nhập trong vòng 30 ngày (dữ liệu thật từ CSDL)
+    const days30Time = Date.now() - 30 * 24 * 3600 * 1000;
+    const newMembers30d = members.filter((m: any) => {
+      const timeVal = m.joinedAt || m.joined_at || m.createdAt || m.created_at;
+      if (!timeVal) return true;
+      const d = new Date(timeVal).getTime();
+      return !isNaN(d) && d >= days30Time;
+    }).length;
+
+    // Lọc bỏ hóa đơn đã bị xóa hoặc không hợp lệ
+    const nonDeletedInvoices = clientInvoices.filter((i: any) => {
+      const st = String(i.status || "").toLowerCase();
+      return st !== "deleted" && !i.deleted_at && !i.deletedAt;
+    });
+
     const invoices = statusFilter === "all"
-      ? rawInvoices
-      : rawInvoices.filter((i: any) => {
+      ? nonDeletedInvoices
+      : nonDeletedInvoices.filter((i: any) => {
           const st = String(i.status || "").toLowerCase();
           if (statusFilter === "active" || statusFilter === "completed") return st === "paid" || st === "completed";
-          if (statusFilter === "pending") return st === "pending" || st === "unpaid";
+          if (statusFilter === "pending") return st === "pending" || st === "unpaid" || st === "overdue";
           if (statusFilter === "expired") return st === "cancelled" || st === "failed";
           return true;
         });
 
     const paidInvs = invoices.filter((i: any) => i.status === "paid" || i.status === "completed");
-    const unpaidInvs = invoices.filter((i: any) => i.status !== "paid" && i.status !== "completed");
-    const revenue = paidInvs.length > 0
-      ? paidInvs.reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0)
-      : (statusFilter === "all" ? Math.max(target.revenue, 435000000) : 0);
-    const paidInvoices = paidInvs.length > 0 ? paidInvs.length : (statusFilter === "all" ? Math.max(target.paidInvoices, 21) : 0);
-    const unpaidInvoices = unpaidInvs.length > 0 ? unpaidInvs.length : (statusFilter === "all" ? Math.max(target.unpaidInvoices, 4) : 0);
+    const unpaidInvs = invoices.filter((i: any) => i.status === "pending" || i.status === "unpaid" || i.status === "overdue");
+    const revenue = paidInvs.reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+    const paidInvoices = paidInvs.length;
+    const unpaidInvoices = unpaidInvs.length;
 
-    let growth = target.growth;
-    if (members.length > 0) {
-      const gList: { month: string; count: number }[] = [];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i, 1);
-        const start = new Date(d.getFullYear(), d.getMonth(), 1);
-        const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-        const c = members.filter((r: any) => {
-          const j = r.joinedAt ? new Date(r.joinedAt) : null;
-          return j && j >= start && j < end;
-        }).length;
-        gList.push({ month: `${d.getMonth() + 1}/${d.getFullYear()}`, count: Math.max(c, 1) });
-      }
-      growth = gList;
-    } else if (!growth || growth.every((g) => g.count === 0)) {
-      growth = dummyFallback.growth;
+    // Dữ liệu sự kiện và cơ hội lấy đúng số lượng thực tế
+    const events = (eventsQ.data ?? []).length;
+    const upcomingEvents = upcoming.length;
+    const openOpportunities = topOpps.length;
+
+    // Biểu đồ tăng trưởng thực tế (không ép số ảo Math.max)
+    const gList: { month: string; count: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i, 1);
+      const start = new Date(d.getFullYear(), d.getMonth(), 1);
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const c = members.filter((r: any) => {
+        const timeVal = r.joinedAt || r.joined_at || r.createdAt || r.created_at;
+        const j = timeVal ? new Date(timeVal) : null;
+        return j && !isNaN(j.getTime()) && j >= start && j < end;
+      }).length;
+      gList.push({ month: `${d.getMonth() + 1}/${d.getFullYear()}`, count: c });
     }
 
     return {
-      ...target,
       totalMembers,
       activeMembers,
-      newMembers30d: Math.max(target.newMembers30d, 6),
+      newMembers30d,
       companies,
       individuals,
       pendingRenewals,
-      events: Math.max(target.events, eventsQ.data?.length ?? 0, 15),
-      upcomingEvents: Math.max(target.upcomingEvents, upcoming.length, 12),
-      openOpportunities: Math.max(target.openOpportunities, topOpps.length, 14),
+      events,
+      upcomingEvents,
+      registrations: (eventsQ.data ?? []).reduce((acc: number, ev: any) => acc + (ev.attendeesCount || ev.attendee_count || ev.registered || 0), 0),
+      sponsors: base?.sponsors ?? 0,
+      documents: base?.documents ?? 0,
       revenue,
       paidInvoices,
       unpaidInvoices,
-      growth,
+      pendingQuotes: base?.pendingQuotes ?? 0,
+      openOpportunities,
+      industries: base?.industries ?? [],
+      regions: base?.regions ?? [],
+      growth: gList,
     };
   }, [statsQ.data, membersQ.data, invoicesQ.data, eventsQ.data, upcoming.length, topOpps.length, statusFilter]);
 
@@ -973,6 +970,110 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
           </ul>
         </Panel>
       </div>
+
+      {/* Công việc của tôi (My Tasks) */}
+      <Panel
+        title="Công việc của tôi"
+        action={<ViewAll to="/tasks" label="Xem tất cả công việc" />}
+      >
+        {tasksQ.isLoading ? (
+          <ListSkeleton rows={3} />
+        ) : !tasksQ.data || tasksQ.data.length === 0 ? (
+          <div className="py-8 px-4 text-center border border-dashed border-border rounded-xl bg-muted/20 flex flex-col items-center justify-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <ClipboardList className="size-5" />
+            </div>
+            <div className="text-sm font-semibold text-foreground">
+              Hiện tại bạn không có công việc nào cần xử lý
+            </div>
+            <p className="text-xs text-muted-foreground max-w-sm">
+              Mọi nhiệm vụ, công việc được Ban Điều Hành hoặc các Ban chuyên môn phân công sẽ hiển thị đầy đủ tại đây.
+            </p>
+            <Link
+              to="/tasks"
+              className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition shadow-xs cursor-pointer"
+            >
+              <span>Xem danh sách việc chung</span>
+              <ChevronRight className="size-3.5" />
+            </Link>
+          </div>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {tasksQ.data.slice(0, 6).map((task: any) => {
+              const priorityColor =
+                task.priority === "CRITICAL"
+                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                  : task.priority === "HIGH"
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                  : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+              const priorityText =
+                task.priority === "CRITICAL"
+                  ? "Khẩn cấp"
+                  : task.priority === "HIGH"
+                  ? "Ưu tiên cao"
+                  : task.priority === "MEDIUM"
+                  ? "Trung bình"
+                  : "Thấp";
+              const statusText =
+                task.status === "DONE"
+                  ? "Hoàn thành"
+                  : task.status === "REVIEW"
+                  ? "Chờ duyệt"
+                  : task.status === "IN_PROGRESS"
+                  ? "Đang làm"
+                  : "Chưa bắt đầu";
+              const statusColor =
+                task.status === "DONE"
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  : task.status === "REVIEW"
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : task.status === "IN_PROGRESS"
+                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                  : "bg-slate-500/10 text-slate-600 dark:text-slate-400";
+
+              return (
+                <li key={task.id}>
+                  <Link
+                    to="/tasks"
+                    search={{ taskId: task.id } as any}
+                    className="flex flex-col justify-between h-full p-3.5 rounded-xl border border-border bg-background transition-all hover:border-primary/40 hover:bg-muted/40 hover:shadow-sm"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${priorityColor}`}>
+                          {priorityText}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${statusColor}`}>
+                          {statusText}
+                        </span>
+                      </div>
+                      <h4 className="text-[13px] font-bold text-foreground line-clamp-2 leading-snug">
+                        {task.title}
+                      </h4>
+                      {task.department && (
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Building2 className="size-3 shrink-0" />
+                          <span className="truncate">{task.department}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 mt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3.5 text-orange-500" />
+                        <span>Hạn: {task.dueDate || "Chưa đặt"}</span>
+                      </span>
+                      {typeof task.progress === "number" && (
+                        <span className="font-bold text-primary">{task.progress}%</span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
 
       {/* Quick actions */}
       <Panel title={t("exec.quick.title")}>

@@ -1600,15 +1600,23 @@ function Home() {
                         <div className="flex items-center gap-2">
                           <span className="inline-flex items-center gap-1 font-medium text-white">
                             <Clock className="size-3.5 text-orange-400 shrink-0" />
-                            {currentEv.time || "08:30 - 11:30"}
+                            {(() => {
+                              const t = currentEv.time;
+                              if (t && t.includes("-")) return t;
+                              if (t && t !== "00:00") return `${t} - 17:30`;
+                              if (realTitle.toLowerCase().includes("golf")) return "06:00 - 15:30";
+                              if (realTitle.toLowerCase().includes("gala") || realTitle.toLowerCase().includes("kỷ niệm")) return "18:00 - 22:00";
+                              if (realTitle.toLowerCase().includes("tọa đàm") || realTitle.toLowerCase().includes("workshop")) return "08:30 - 11:45";
+                              return "08:00 - 17:30";
+                            })()}
                           </span>
                           <span className="truncate max-w-[150px] text-slate-300 text-[11px]">
                             {(currentEv as any).location || (currentEv as any).place || (currentEv as any).venue || "Hà Nội"}
                           </span>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-[11px] shadow-sm transition">
-                          <span>Chi tiết</span>
-                          <ChevronRight className="size-3 stroke-[3]" />
+                        <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full bg-white hover:bg-slate-100 text-[#003B95] dark:text-[#003B95] font-extrabold text-[11.5px] shadow-md transition border border-white/60">
+                          <span className="text-[#003B95] dark:text-[#003B95]">Chi tiết</span>
+                          <ChevronRight className="size-3.5 stroke-[3] text-[#003B95] dark:text-[#003B95]" />
                         </span>
                       </div>
                     </div>
@@ -1748,11 +1756,12 @@ function Home() {
           </div>
 
           <div className="self-stretch overflow-x-auto no-scrollbar flex items-start gap-2.5 pb-1">
-            {(directoryMembers?.length > 0 ? directoryMembers.slice(0, 8) : [
-              { name: "Cao Văn Mạnh", company: "Cao Văn Mạnh", code: "VM" },
-              { name: "Dương Thị Huệ", company: "Dương Thị Huệ", code: "TH" },
-              { name: "Nguyễn Văn Hùng", company: "Hùng Vương JSC", code: "VH" },
-            ]).map((m, i) => {
+            {(!directoryMembers || directoryMembers.length === 0) ? (
+              <div className="w-full py-4 text-center text-xs text-slate-400">
+                Chưa có doanh nghiệp mới gia nhập trong tháng này
+              </div>
+            ) : (
+              directoryMembers.slice(0, 8).map((m, i) => {
               const pName = (m as any).personName || (m as any).contact || m.name || "Hội viên";
               const cName = (m as any).company || ((m as any).type === 'company' ? m.name : '') || (m as any).companyName || "Doanh nghiệp hội viên";
               return (
@@ -1772,7 +1781,7 @@ function Home() {
                   </div>
                 </button>
               );
-            })}
+            }))}
           </div>
         </div>
 
@@ -1798,33 +1807,15 @@ function Home() {
           </div>
 
           {/* 1 TIN TỨC DUY NHẤT FULL CHIỀU RỘNG MÀN HÌNH VỚI AUTO-SLIDE CAROUSEL */}
-          {(() => {
-            const newsList = combinedNews.length > 0 ? combinedNews : [
-              {
-                id: "1",
-                title: "Hội nghị Xúc tiến Thương mại & Kết nối Đầu tư Quốc tế Quý 3/2026",
-                author: "Ban Thư Ký",
-                time: "2026-09-20",
-                image: "/images/ceo1983/Rectangle 6-1.png",
-                category: "BẢN TIN HOẠT ĐỘNG CLB",
-              },
-              {
-                id: "2",
-                title: "Chương trình Caravan Thiện nguyện & Giao thương Doanh nhân 2026",
-                author: "Ban Truyền Thông",
-                time: "2026-09-18",
-                image: "/images/ceo1983/Rectangle 6-1.png",
-                category: "KẾT NỐI DOANH NHÂN",
-              },
-              {
-                id: "3",
-                title: "Lễ Ký kết Hợp tác Chiến lược & Phát triển Hệ sinh thái CEO 1983",
-                author: "Ban Điều Hành",
-                time: "2026-09-15",
-                image: "/images/ceo1983/Rectangle 6-1.png",
-                category: "XÚC TIẾN THƯƠNG MẠI",
-              },
-            ];
+          {combinedNews.length === 0 ? (
+            <div className="rounded-2xl vba-card p-5 text-center border border-dashed border-orange-200 dark:border-slate-700 bg-orange-50/30 dark:bg-slate-900/50 w-full">
+              <Newspaper className="mx-auto h-7 w-7 text-orange-500/60 mb-1.5" />
+              <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                Chưa có bản tin mới từ CLB
+              </p>
+            </div>
+          ) : (() => {
+            const newsList = combinedNews;
 
             const currentIndex = newsSlideIndex % newsList.length;
             const currentNews = newsList[currentIndex] || newsList[0];

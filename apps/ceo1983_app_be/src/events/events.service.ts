@@ -281,9 +281,10 @@ export class EventsService implements OnModuleInit {
         r.start_time ?? (r.time ? String(r.time).slice(0, 5) : '08:30'),
       endTime: r.end_time ?? '11:30',
       time:
-        r.start_time && r.end_time
+        r.time ||
+        (r.start_time && r.end_time
           ? `${r.start_time} - ${r.end_time}`
-          : r.start_time || '08:30 - 11:30',
+          : r.start_time || '08:30 - 11:30'),
       agenda: parseJsonArraySafe(r.agenda),
       checkinQr: r.checkin_qr ?? null,
       ticketPrice:
@@ -1152,12 +1153,11 @@ export class EventsService implements OnModuleInit {
         isToday,
         isPast,
         status: e.status || (isPast ? 'ended' : 'upcoming'),
-        time: valid
-          ? dt.toLocaleTimeString('vi-VN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : '',
+        time:
+          e.time ||
+          (valid && (dt.getHours() !== 0 || dt.getMinutes() !== 0)
+            ? `${dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - 17:30`
+            : '08:00 - 17:30'),
         place: e.location ?? '',
         image: e.image || e.banner || null,
         banner: e.banner || e.image || null,

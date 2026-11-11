@@ -1,5 +1,55 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.08): Chuẩn Hóa Đồng Bộ Dữ Liệu Thực Tế Khi Xóa Sự Kiện / Cuộc Họp / Tin Tức, Chuẩn 5 Slide Ưu Đãi Trang Chủ, Sửa Lỗi Nút Chi Tiết & Giờ Sự Kiện, Đồng Bộ Số Liệu Tổng Quan CRM & Bổ Sung Khối "Công Việc Của Tôi" ([NODE-APP-001], [NODE-APP-008], [NODE-CRM-001], [NODE-CRM-012], [NODE-CORE-002])**:
+  1. *Đồng bộ triệt để trạng thái xóa Sự kiện / Cuộc họp / Tin tức trên App CEO 1983*:
+     - **Nguyên nhân gốc rễ**:
+       + Backend `content.service.ts`: Trong `listPublishedNews()` và `listAdminNews()` chứa lệnh gọi tự động `await this.ensureSeedNews()` khi bảng `public.news` rỗng. Do đó mỗi khi admin xóa hết tin tức, lệnh GET tiếp theo lại tự động chèn ngược seed data vào CSDL.
+       + Frontend `content.functions.ts`: Hàm `listNews` có vòng lặp tự động nhồi mảng `DEFAULT_CEO1983_NEWS` vào kết quả nếu mảng từ server rỗng.
+       + Frontend `association.events.tsx`: Có các toán tử ternary `events.length > 0 ? events : defaultAllEvents` và `meetingsList.length > 0 ? meetingsList : defaultMeetingsList` khiến ứng dụng tự động hiển thị mock data giả lập khi cơ sở dữ liệu đã bị xóa trống.
+     - **Giải pháp xử lý dứt điểm**:
+       + Backend: Loại bỏ lệnh auto-reseed `ensureSeedNews()` trong các hàm query tin tức.
+       + Frontend `content.functions.ts`: Trả về đúng mảng `serverMapped` từ máy chủ (trả về rỗng `[]` khi đã xóa hết tin tức).
+       + Frontend `association.events.tsx`: Loại bỏ hoàn toàn fallback sang `defaultAllEvents` và `defaultMeetingsList`. Bổ sung giao diện Empty State tinh tế, lịch thiệp khi danh sách sự kiện hoặc cuộc họp trống.
+       + `FeaturedUpcomingEventHero`: Trả về `null` khi không có sự kiện sắp tới nào, không fallback về mảng giả lập.
+  2. *Chuẩn hóa Phần Slide Ưu Đãi Hội Viên Trang Chủ (Đúng chuẩn 5 Slide)*:
+     - **Đặc tả nghiệp vụ chuẩn**:
+       + Slide 1, 2, 3: 3 ưu đãi mới nhất từ hệ thống (ưu tiên ưu đãi do hội viên đăng `memberCustomSlides`, ưu đãi từ máy chủ `serverSlides` và ưu đãi đối tác lớn).
+       + Slide 4: Ưu đãi Sinh nhật hội viên (`type: "birthday"`), hiển thị trực tiếp quà tặng voucher và bánh sinh nhật lên ảnh.
+       + Slide 5: Hội viên đạt danh hiệu Top của Quý (`type: "gold_member"`), tôn vinh doanh nhân tiêu biểu xuất sắc quý với danh hiệu `TOP 1 DOANH NHÂN CỦA QUÝ` và cúp kỷ niệm chương vàng.
+     - **Giao diện**:
+       + Hiển thị chỉ số trang chuẩn `1 / 5`, `2 / 5`,...
+       + Bổ sung thanh 5 Dots Indicator bên dưới viewport giúp người dùng dễ dàng theo dõi và vuốt chạm qua lại.
+  3. *Hiển thị Giờ Bắt Đầu - Giờ Kết Thúc Sự Kiện & Sửa Màu Nút Chi Tiết*:
+     - **Cơ sở dữ liệu**:
+       + Thêm cột `time text` vào bảng `public.events` và cập nhật dải giờ bắt đầu - kết thúc thực tế cho toàn bộ sự kiện (`06:00 - 15:30`, `18:00 - 22:00`, `08:30 - 11:45`, `08:00 - 17:30`, `07:00 - 18:00`, `08:00 - 10:30`).
+     - **Backend `events.service.ts`**:
+       + Cập nhật `mapEventRow` ưu tiên lấy trực tiếp `r.time`.
+     - **Frontend `association.index.tsx`**:
+       + Slide sự kiện tự động format hiển thị khoảng giờ đầy đủ (VD: `06:00 - 15:30`).
+       + Sửa triệt để nút "Chi tiết >" trên slide sự kiện: Chuyển sang nền trắng bo tròn viên thuốc `bg-white hover:bg-slate-100 text-[#003B95] font-extrabold text-[11.5px] shadow-md border border-white/60`, chữ và icon mũi tên màu xanh thương hiệu tương phản cao, triệt tiêu hoàn toàn lỗi tàng hình chữ trắng trên nền trắng.
+  4. *Chuẩn hóa Số Liệu Thực Tế Tổng Quan Web CRM 1983*:
+     - **Nguyên nhân gốc rễ**:
+       + `ExecutiveDashboard.tsx` trước đó bọc hàng loạt hàm `Math.max(..., 4)` (hóa đơn nợ), `Math.max(..., 21)` (hóa đơn đã thanh toán), `Math.max(..., 435000000)` (doanh thu), `Math.max(..., 6)` (hội viên mới), `Math.max(..., 26)` (tổng hội viên), `Math.max(..., 15)` (sự kiện) khiến số liệu hiển thị luôn bị gán cứng số ảo dù database đã bị xóa.
+     - **Giải pháp xử lý dứt điểm**:
+       + Loại bỏ triệt để toàn bộ các hàm `Math.max` và `dummyFallback` số ảo.
+       + Tính toán chính xác từ CSDL PostgreSQL:
+         - `totalMembers`: Đếm đúng số lượng hội viên đang dùng (loại trừ các bản ghi `deleted`). Khi DB có 1 thì hiển thị đúng **1**.
+         - `activeMembers`: Đếm đúng hội viên có trạng thái `active` hoặc `approved`.
+         - `newMembers30d`: Đếm đúng số hội viên gia nhập trong vòng 30 ngày từ ngày tạo bản ghi. Khi có 1 thì hiển thị đúng **1**.
+         - `invoices`: Đếm đúng số lượng hóa đơn chưa thanh toán / đã thanh toán thực tế. Khi DB đã xóa hết thì hiển thị đúng **0** hóa đơn và doanh thu **0 đ**.
+         - `growth`: Biểu đồ tăng trưởng 6 tháng hiển thị đúng số lượng thực tế từng tháng, không ép `Math.max(c, 1)`.
+  5. *Bổ Sung Khối "Công Việc Của Tôi" (My Tasks) Vào Tổng Quan CRM*:
+     - **Frontend `ExecutiveDashboard.tsx`**:
+       + Bổ sung hook `useQuery({ queryKey: ["dashboard-my-tasks"], queryFn: () => fetchNestApi("/tasks") })`.
+       + Thêm Panel "Công việc của tôi" tích hợp ngay trên màn hình tổng quan CRM:
+         - Header: Tiêu đề kèm nút "Xem tất cả công việc" dẫn tới `/tasks`.
+         - Khi có công việc: Hiển thị lưới thẻ công việc trực quan gồm Mã việc, Tiêu đề, Ban phụ trách, Tag mức độ ưu tiên (Khẩn cấp, Cao, Trung bình, Thấp), Tag trạng thái (Chưa bắt đầu, Đang làm, Chờ duyệt, Hoàn thành), Hạn chót và Thanh tiến độ hoàn thành (%).
+         - Khi không có công việc: Hiển thị Empty State trang nhã với icon `ClipboardList`, thông báo "Hiện tại bạn không có công việc nào cần xử lý" và nút "Xem danh sách việc chung".
+  6. *Kiểm chứng Chất lượng Code (Strict Step 5)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.07): Khắc Phục Triệt Để Lỗi Lưu Chỉnh Sửa Nhanh & Màn Cá Nhân Không Đổi Thông Tin, Đồng Thời Nâng Cấp Nút "Xem Tất Cả" Màn Danh Sách Sự Kiện Hiển Thị Mọi Danh Mục ([NODE-APP-011], [NODE-APP-008], [NODE-APP-001], [NODE-CORE-002])**:
   1. *Khắc phục triệt để lỗi không lưu được Chỉnh sửa nhanh & Màn cá nhân*:
      - **Nguyên nhân gốc rễ**:
@@ -1244,6 +1294,56 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.08): Chuẩn Hóa Đồng Bộ Dữ Liệu Thực Tế Khi Xóa Sự Kiện / Cuộc Họp / Tin Tức, Chuẩn 5 Slide Ưu Đãi Trang Chủ, Sửa Lỗi Nút Chi Tiết & Giờ Sự Kiện, Đồng Bộ Số Liệu Tổng Quan CRM & Bổ Sung Khối "Công Việc Của Tôi" ([NODE-APP-001], [NODE-APP-008], [NODE-CRM-001], [NODE-CRM-012], [NODE-CORE-002])**:
+  1. *Đồng bộ triệt để trạng thái xóa Sự kiện / Cuộc họp / Tin tức trên App CEO 1983*:
+     - **Nguyên nhân gốc rễ**:
+       + Backend `content.service.ts`: Trong `listPublishedNews()` và `listAdminNews()` chứa lệnh gọi tự động `await this.ensureSeedNews()` khi bảng `public.news` rỗng. Do đó mỗi khi admin xóa hết tin tức, lệnh GET tiếp theo lại tự động chèn ngược seed data vào CSDL.
+       + Frontend `content.functions.ts`: Hàm `listNews` có vòng lặp tự động nhồi mảng `DEFAULT_CEO1983_NEWS` vào kết quả nếu mảng từ server rỗng.
+       + Frontend `association.events.tsx`: Có các toán tử ternary `events.length > 0 ? events : defaultAllEvents` và `meetingsList.length > 0 ? meetingsList : defaultMeetingsList` khiến ứng dụng tự động hiển thị mock data giả lập khi cơ sở dữ liệu đã bị xóa trống.
+     - **Giải pháp xử lý dứt điểm**:
+       + Backend: Loại bỏ lệnh auto-reseed `ensureSeedNews()` trong các hàm query tin tức.
+       + Frontend `content.functions.ts`: Trả về đúng mảng `serverMapped` từ máy chủ (trả về rỗng `[]` khi đã xóa hết tin tức).
+       + Frontend `association.events.tsx`: Loại bỏ hoàn toàn fallback sang `defaultAllEvents` và `defaultMeetingsList`. Bổ sung giao diện Empty State tinh tế, lịch thiệp khi danh sách sự kiện hoặc cuộc họp trống.
+       + `FeaturedUpcomingEventHero`: Trả về `null` khi không có sự kiện sắp tới nào, không fallback về mảng giả lập.
+  2. *Chuẩn hóa Phần Slide Ưu Đãi Hội Viên Trang Chủ (Đúng chuẩn 5 Slide)*:
+     - **Đặc tả nghiệp vụ chuẩn**:
+       + Slide 1, 2, 3: 3 ưu đãi mới nhất từ hệ thống (ưu tiên ưu đãi do hội viên đăng `memberCustomSlides`, ưu đãi từ máy chủ `serverSlides` và ưu đãi đối tác lớn).
+       + Slide 4: Ưu đãi Sinh nhật hội viên (`type: "birthday"`), hiển thị trực tiếp quà tặng voucher và bánh sinh nhật lên ảnh.
+       + Slide 5: Hội viên đạt danh hiệu Top của Quý (`type: "gold_member"`), tôn vinh doanh nhân tiêu biểu xuất sắc quý với danh hiệu `TOP 1 DOANH NHÂN CỦA QUÝ` và cúp kỷ niệm chương vàng.
+     - **Giao diện**:
+       + Hiển thị chỉ số trang chuẩn `1 / 5`, `2 / 5`,...
+       + Bổ sung thanh 5 Dots Indicator bên dưới viewport giúp người dùng dễ dàng theo dõi và vuốt chạm qua lại.
+  3. *Hiển thị Giờ Bắt Đầu - Giờ Kết Thúc Sự Kiện & Sửa Màu Nút Chi Tiết*:
+     - **Cơ sở dữ liệu**:
+       + Thêm cột `time text` vào bảng `public.events` và cập nhật dải giờ bắt đầu - kết thúc thực tế cho toàn bộ sự kiện (`06:00 - 15:30`, `18:00 - 22:00`, `08:30 - 11:45`, `08:00 - 17:30`, `07:00 - 18:00`, `08:00 - 10:30`).
+     - **Backend `events.service.ts`**:
+       + Cập nhật `mapEventRow` ưu tiên lấy trực tiếp `r.time`.
+     - **Frontend `association.index.tsx`**:
+       + Slide sự kiện tự động format hiển thị khoảng giờ đầy đủ (VD: `06:00 - 15:30`).
+       + Sửa triệt để nút "Chi tiết >" trên slide sự kiện: Chuyển sang nền trắng bo tròn viên thuốc `bg-white hover:bg-slate-100 text-[#003B95] font-extrabold text-[11.5px] shadow-md border border-white/60`, chữ và icon mũi tên màu xanh thương hiệu tương phản cao, triệt tiêu hoàn toàn lỗi tàng hình chữ trắng trên nền trắng.
+  4. *Chuẩn hóa Số Liệu Thực Tế Tổng Quan Web CRM 1983*:
+     - **Nguyên nhân gốc rễ**:
+       + `ExecutiveDashboard.tsx` trước đó bọc hàng loạt hàm `Math.max(..., 4)` (hóa đơn nợ), `Math.max(..., 21)` (hóa đơn đã thanh toán), `Math.max(..., 435000000)` (doanh thu), `Math.max(..., 6)` (hội viên mới), `Math.max(..., 26)` (tổng hội viên), `Math.max(..., 15)` (sự kiện) khiến số liệu hiển thị luôn bị gán cứng số ảo dù database đã bị xóa.
+     - **Giải pháp xử lý dứt điểm**:
+       + Loại bỏ triệt để toàn bộ các hàm `Math.max` và `dummyFallback` số ảo.
+       + Tính toán chính xác từ CSDL PostgreSQL:
+         - `totalMembers`: Đếm đúng số lượng hội viên đang dùng (loại trừ các bản ghi `deleted`). Khi DB có 1 thì hiển thị đúng **1**.
+         - `activeMembers`: Đếm đúng hội viên có trạng thái `active` hoặc `approved`.
+         - `newMembers30d`: Đếm đúng số hội viên gia nhập trong vòng 30 ngày từ ngày tạo bản ghi. Khi có 1 thì hiển thị đúng **1**.
+         - `invoices`: Đếm đúng số lượng hóa đơn chưa thanh toán / đã thanh toán thực tế. Khi DB đã xóa hết thì hiển thị đúng **0** hóa đơn và doanh thu **0 đ**.
+         - `growth`: Biểu đồ tăng trưởng 6 tháng hiển thị đúng số lượng thực tế từng tháng, không ép `Math.max(c, 1)`.
+  5. *Bổ Sung Khối "Công Việc Của Tôi" (My Tasks) Vào Tổng Quan CRM*:
+     - **Frontend `ExecutiveDashboard.tsx`**:
+       + Bổ sung hook `useQuery({ queryKey: ["dashboard-my-tasks"], queryFn: () => fetchNestApi("/tasks") })`.
+       + Thêm Panel "Công việc của tôi" tích hợp ngay trên màn hình tổng quan CRM:
+         - Header: Tiêu đề kèm nút "Xem tất cả công việc" dẫn tới `/tasks`.
+         - Khi có công việc: Hiển thị lưới thẻ công việc trực quan gồm Mã việc, Tiêu đề, Ban phụ trách, Tag mức độ ưu tiên (Khẩn cấp, Cao, Trung bình, Thấp), Tag trạng thái (Chưa bắt đầu, Đang làm, Chờ duyệt, Hoàn thành), Hạn chót và Thanh tiến độ hoàn thành (%).
+         - Khi không có công việc: Hiển thị Empty State trang nhã với icon `ClipboardList`, thông báo "Hiện tại bạn không có công việc nào cần xử lý" và nút "Xem danh sách việc chung".
+  6. *Kiểm chứng Chất lượng Code (Strict Step 5)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.07): Khắc Phục Triệt Để Lỗi Lưu Chỉnh Sửa Nhanh & Màn Cá Nhân Không Đổi Thông Tin, Đồng Thời Nâng Cấp Nút "Xem Tất Cả" Màn Danh Sách Sự Kiện Hiển Thị Mọi Danh Mục ([NODE-APP-011], [NODE-APP-008], [NODE-APP-001], [NODE-CORE-002])**:
   1. *Khắc phục triệt để lỗi không lưu được Chỉnh sửa nhanh & Màn cá nhân*:

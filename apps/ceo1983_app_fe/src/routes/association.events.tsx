@@ -1016,7 +1016,8 @@ function FeaturedUpcomingEventHero({
   const [activeIdx, setActiveIdx] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const displayList = events.length > 0 ? events : defaultUpcomingEvents;
+  const displayList = events;
+  if (!displayList || displayList.length === 0) return null;
 
   useEffect(() => {
     if (isPaused || displayList.length <= 1) return;
@@ -1450,22 +1451,22 @@ function EventsScreen() {
   const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
 
   const filteredEvents = useMemo(() => {
-    const allList = events.length > 0 ? events : defaultAllEvents;
+    const allList = events;
     switch (eventCategory) {
       case "all":
         return allList;
       case "upcoming":
-        return upcomingEvents.length > 0 ? upcomingEvents : defaultAllEvents.filter((e) => !isEventPast(e));
+        return upcomingEvents;
       case "free":
-        return freeEvents.length > 0 ? freeEvents : defaultAllEvents.filter((e) => isEventFree(e));
+        return freeEvents;
       case "paid":
-        return paidEvents.length > 0 ? paidEvents : defaultAllEvents.filter((e) => !isEventFree(e));
+        return paidEvents;
       case "registered":
         return registeredEvents;
       case "bookmarked":
         return bookmarkedEventsList;
       case "history":
-        return pastEvents.length > 0 ? pastEvents : defaultAllEvents.filter((e) => isEventPast(e));
+        return pastEvents;
       case "b2b":
         return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b")));
       case "gala":
@@ -1865,24 +1866,24 @@ function EventsScreen() {
     return result;
   }, [events, recentEventIds]);
 
-  const displayUpcomingList = upcomingEvents.length > 0 ? upcomingEvents : defaultUpcomingEvents;
+  const displayUpcomingList = upcomingEvents;
   const displayEventsList = filteredEvents;
-  const allEventsCount = events.length > 0 ? events.length : defaultAllEvents.length;
-  const upcomingCount = upcomingEvents.length > 0 ? upcomingEvents.length : defaultAllEvents.filter((e) => !isEventPast(e)).length;
+  const allEventsCount = events.length;
+  const upcomingCount = upcomingEvents.length;
   const registeredCount = registeredEvents.length;
-  const freeCount = events.length > 0 ? freeEvents.length : defaultAllEvents.filter((e) => isEventFree(e)).length;
-  const paidCount = events.length > 0 ? paidEvents.length : defaultAllEvents.filter((e) => !isEventFree(e)).length;
-  const pastCount = pastEvents.length > 0 ? pastEvents.length : defaultAllEvents.filter((e) => isEventPast(e)).length;
-  const b2bCount = (events.length > 0 ? events : defaultAllEvents).filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b"))).length;
-  const galaCount = (events.length > 0 ? events : defaultAllEvents).filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("gala") || (e.category || e.type || "").toLowerCase().includes("đại hội"))).length;
-  const trainingCount = (events.length > 0 ? events : defaultAllEvents).filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("đào tạo") || (e.category || e.type || "").toLowerCase().includes("tọa đàm") || (e.category || e.type || "").toLowerCase().includes("workshop"))).length;
+  const freeCount = freeEvents.length;
+  const paidCount = paidEvents.length;
+  const pastCount = pastEvents.length;
+  const b2bCount = events.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b"))).length;
+  const galaCount = events.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("gala") || (e.category || e.type || "").toLowerCase().includes("đại hội"))).length;
+  const trainingCount = events.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("đào tạo") || (e.category || e.type || "").toLowerCase().includes("tọa đàm") || (e.category || e.type || "").toLowerCase().includes("workshop"))).length;
 
-  const displayMeetingsList = filteredMeetings.length > 0 ? filteredMeetings : defaultMeetingsList;
-  const allMeetingsCount = meetingsList.length > 0 ? meetingsList.length : 8;
-  const fixedMeetingsCount = meetingsList.length > 0 ? meetingsList.filter((m: any) => m.category === "fixed_committee" || !m.isExtraordinary).length : 8;
-  const extraordinaryMeetingsCount = meetingsList.length > 0 ? meetingsList.filter((m: any) => m.category === "extraordinary" || m.isExtraordinary).length : 0;
+  const displayMeetingsList = filteredMeetings;
+  const allMeetingsCount = meetingsList.length;
+  const fixedMeetingsCount = meetingsList.filter((m: any) => m.category === "fixed_committee" || !m.isExtraordinary).length;
+  const extraordinaryMeetingsCount = meetingsList.filter((m: any) => m.category === "extraordinary" || m.isExtraordinary).length;
 
-  const recentItems = displayedRecentItems.length > 0 ? displayedRecentItems : defaultRecentEvents;
+  const recentItems = displayedRecentItems;
 
   return (
     <div className="vba-animate min-h-full pb-24 bg-white dark:bg-slate-950 font-['Inter']">
@@ -2478,7 +2479,20 @@ function EventsScreen() {
 
           {/* Activities List Cards */}
           <div className="self-stretch px-3 flex flex-col justify-start items-start gap-2">
-            {displayMeetingsList.map((m: any, idx: number) => {
+            {displayMeetingsList.length === 0 ? (
+              <div className="self-stretch py-10 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-[#003B95] dark:text-blue-400">
+                  <Calendar className="size-6" />
+                </div>
+                <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Chưa có cuộc họp nào trong danh mục này
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+                  Hiện chưa có lịch họp định kỳ hoặc bất thường nào được lên lịch từ Ban Điều Hành.
+                </p>
+              </div>
+            ) : (
+              displayMeetingsList.map((m: any, idx: number) => {
               const isOnline = m.isOnline;
               const times = (m.time || "09:00 - 10:30").split("-").map((s: string) => s.trim());
               const startTime = times[0] || "09:00";
@@ -2558,7 +2572,7 @@ function EventsScreen() {
                   </div>
                 </div>
               );
-            })}
+            }))}
 
             {/* Footer disclaimer */}
             <div className="self-stretch pt-2 pb-8 flex flex-col justify-start items-center">

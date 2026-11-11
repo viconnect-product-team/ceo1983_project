@@ -104,16 +104,9 @@ export const listNews = createServerFn({ method: "GET" })
         image: n.image || n.thumbnail || n.cover_url || n.cover_image || DEFAULT_NEWS_IMAGES[idx % DEFAULT_NEWS_IMAGES.length],
       }));
 
-      // Combine server news with curated defaults so there are always at least 5 rich articles
-      const combined: NewsItem[] = [...serverMapped];
-      for (const defItem of DEFAULT_CEO1983_NEWS) {
-        if (!combined.some((item) => item.id === defItem.id || item.title === defItem.title)) {
-          combined.push(defItem);
-        }
-      }
-      return combined;
+      return serverMapped;
     } catch {
-      return DEFAULT_CEO1983_NEWS;
+      return [];
     }
   });
 
