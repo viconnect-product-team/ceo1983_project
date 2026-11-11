@@ -49,6 +49,7 @@ import { executeShare } from "@/lib/share-helper";
 import { saveCalendarItem } from "@/lib/calendar-reminder";
 import { useT, useLang } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { recordUserActivity } from "@/lib/user-activity-logger";
 import eventImg from "@/assets/vba-event.jpg";
 import {
   Dialog,
@@ -1062,15 +1063,16 @@ function FeaturedUpcomingEventHero({
   const [isPaused, setIsPaused] = useState(false);
 
   const displayList = events;
-  if (!displayList || displayList.length === 0) return null;
 
   useEffect(() => {
-    if (isPaused || displayList.length <= 1) return;
+    if (isPaused || !displayList || displayList.length <= 1) return;
     const timer = setInterval(() => {
       setActiveIdx((prev) => (prev + 1) % displayList.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [isPaused, displayList.length]);
+  }, [isPaused, displayList?.length]);
+
+  if (!displayList || displayList.length === 0) return null;
 
   const activeEvent = displayList[activeIdx] || displayList[0];
   const rawImg = (activeEvent as any).image;
@@ -1662,6 +1664,19 @@ function EventsScreen() {
           const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
           localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
 
+          recordUserActivity({
+            action: "REGISTER_EVENT",
+            title: `Đã đăng ký tham gia sự kiện: ${registeringEvent.title}`,
+            badge: "Sự kiện",
+            userId: user?.id,
+            metadata: {
+              eventId,
+              eventTitle: registeringEvent.title,
+              ticketCode: tempInvNo,
+              ticketCount: actualTicketCount,
+            },
+          });
+
           const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
           const newAct = {
             id: `act-${Date.now()}`,
@@ -1746,6 +1761,19 @@ function EventsScreen() {
           const updatedRecords = [newRecord, ...existingRecords.filter((r: any) => r.eventId !== eventId)];
           localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
 
+          recordUserActivity({
+            action: "REGISTER_EVENT",
+            title: `Đã đăng ký tham gia sự kiện: ${registeringEvent.title}`,
+            badge: "Sự kiện",
+            userId: user?.id,
+            metadata: {
+              eventId,
+              eventTitle: registeringEvent.title,
+              ticketCode: tempInvNo,
+              ticketCount: actualTicketCount,
+            },
+          });
+
           const existingActivities = JSON.parse(localStorage.getItem("vba_recent_activities") || "[]");
           const newAct = {
             id: `act-${Date.now()}`,
@@ -1806,6 +1834,13 @@ function EventsScreen() {
         localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
         window.dispatchEvent(new Event("vba.events.changed"));
         window.dispatchEvent(new Event("vba.history.changed"));
+        recordUserActivity({
+          action: "CANCEL_EVENT",
+          title: `Hủy đăng ký sự kiện: ${cancellingEvent.title}`,
+          badge: "Sự kiện",
+          userId: user?.id,
+          metadata: { eventId: id, eventTitle: cancellingEvent.title, reason: cancelReason },
+        });
       } catch {}
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
       setCancellingEvent(null);
@@ -1821,6 +1856,13 @@ function EventsScreen() {
         localStorage.setItem("vba_registered_event_records", JSON.stringify(updatedRecords));
         window.dispatchEvent(new Event("vba.events.changed"));
         window.dispatchEvent(new Event("vba.history.changed"));
+        recordUserActivity({
+          action: "CANCEL_EVENT",
+          title: `Hủy đăng ký sự kiện: ${cancellingEvent.title}`,
+          badge: "Sự kiện",
+          userId: user?.id,
+          metadata: { eventId: id, eventTitle: cancellingEvent.title, reason: cancelReason },
+        });
       } catch {}
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
       setCancellingEvent(null);

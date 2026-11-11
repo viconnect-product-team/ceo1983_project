@@ -32,6 +32,8 @@ import {
   Users,
   FileSpreadsheet,
   MessageSquare,
+  CreditCard,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -65,172 +67,391 @@ export interface MailTemplateItem {
 
 export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
   {
-    id: "tmpl-fee-notice",
-    code: "FEE_NOTICE_ANNUAL",
-    category: "fee",
-    name: "Thông Báo Nộp Hội Phí Niên Liễm Định Kỳ",
-    description: "Tự động gửi thông báo kỳ hội phí niên liễm thường niên kèm mã VietQR thanh toán tự động hạch toán.",
+    id: "tmpl-event-invite-qr",
+    code: "EVENT_INVITATION",
+    category: "event",
+    name: "Thư Mời Tham Dự Sự Kiện (Chuẩn Tinh Gọn Đa Kênh)",
+    description: "Mẫu thông báo thư mời sự kiện tinh gọn theo chuẩn CLB, áp dụng đồng bộ cho Email, Zalo OA và In-App.",
     channels: ["email", "in_app", "push"],
-    subject: "[CEO 1983] Thông báo nộp Hội phí Niên liễm năm {{fee_year}} - Doanh nghiệp {{company_name}}",
-    inAppTitle: "Thông báo nộp hội phí thường niên năm {{fee_year}}",
-    inAppBody: "Kính gửi Anh/Chị {{full_name}}, kỳ hội phí năm {{fee_year}} của đơn vị {{company_name}} có hạn nộp vào ngày {{due_date}}. Số tiền: {{fee_amount}} VNĐ.",
+    subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Kính gửi Anh/Chị {{full_name}}",
+    inAppTitle: "Thư mời tham dự sự kiện: {{event_title}}",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự sự kiện: {{event_title}}\n- Thời gian: {{event_date}}\n- Địa điểm: {{event_location}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
     variables: [
-      { key: "full_name", label: "Họ và tên hội viên", example: "Nguyễn Văn Tuấn" },
-      { key: "member_code", label: "Mã hội viên", example: "M1983-018" },
-      { key: "company_name", label: "Tên doanh nghiệp", example: "Tập Đoàn Công Nghệ & Thương Mại VIONE" },
-      { key: "fee_year", label: "Năm hội phí", example: "2026" },
-      { key: "fee_amount", label: "Số tiền hội phí", example: "15,000,000" },
-      { key: "due_date", label: "Hạn thanh toán", example: "30/10/2026" },
-      { key: "bank_name", label: "Ngân hàng thụ hưởng", example: "MB Bank (Ngân hàng Quân Đội)" },
-      { key: "bank_account", label: "Số tài khoản", example: "198388889999" },
-      { key: "bank_owner", label: "Chủ tài khoản", example: "CLB DOANH NHAN CEO 1983" },
-      { key: "transfer_content", label: "Cú pháp chuyển khoản", example: "CEO1983 M1983-018 HOIPHI2026" },
-      { key: "vietqr_url", label: "Ảnh mã VietQR", example: "https://api.vietqr.io/image/970422-198388889999-compact2.jpg?amount=15000000&addInfo=CEO1983%20M1983-018%20HOIPHI2026&accountName=CLB%20DOANH%20NHAN%20CEO%201983" },
+      { key: "full_name", label: "Tên đại biểu", example: "Dương Thị Huệ" },
+      { key: "event_title", label: "Tên sự kiện", example: "Diễn Đàn Chuyển Đổi Số Doanh Nghiệp 2026 & Gala Kết Nối" },
+      { key: "speaker_name", label: "Diễn giả", example: "Chủ tịch HĐQT VICONNECT GROUP, Chuyên gia Kinh tế trưởng" },
+      { key: "event_summary", label: "Nội dung chính", example: "Chiến lược tăng trưởng doanh nghiệp 2026, Xúc tiến thương mại đa kênh, Ký kết hợp tác B2B" },
+      { key: "event_date", label: "Thời gian", example: "18:30 - 21:30 Thứ Bảy, 10/09/2026" },
+      { key: "event_location", label: "Địa điểm", example: "Habblet Hotel & Cung Điện Atlantis, Hà Nội" },
+      { key: "event_fee", label: "Chi phí", example: "Miễn phí dành cho Hội viên chính thức CEO 1983" },
+      { key: "google_maps_url", label: "Google Maps", example: "https://maps.google.com/?q=Habblet+Hotel+Hanoi" },
+      { key: "dress_code", label: "Trang phục", example: "Vest / Dạ tiệc lịch sự" },
+      { key: "parking_info", label: "Gửi xe", example: "Tầng hầm B1-B2 khách sạn, miễn phí vé xe" },
+      { key: "event_notes", label: "Lưu ý quan trọng từ BTC", example: "Quý Anh/Chị vui lòng có mặt trước 15 phút và xuất trình mã QR trên vé để được hỗ trợ đón tiếp chu đáo nhất" },
+      { key: "confirm_link", label: "Xác nhận tham dự", example: "https://ceo1983.viconnect.vn/association/events?action=register" },
+      { key: "qr_code_url", label: "Ảnh mã QR Check-in", example: "https://ceo1983.viconnect.vn/api/events/qr?data=TICKET-CEO1983-M016&size=250" },
     ],
-    updatedAt: "2026-10-01",
+    updatedAt: "2026-11-11",
     htmlBody: `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-  <div style="background: linear-gradient(135deg, #002B66 0%, #001B40 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
-    <div style="display: inline-block; padding: 4px 14px; background: rgba(212, 160, 23, 0.25); border: 1px solid rgba(212, 160, 23, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #f6d365; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">
-      THÔNG BÁO TÀI CHÍNH HIỆP HỘI
+  <div style="background: linear-gradient(135deg, #001D4A 0%, #003B95 50%, #0A2540 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(234, 179, 8, 0.25); border: 1px solid rgba(234, 179, 8, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #fde047; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
+      THƯ MỜI THAM DỰ SỰ KIỆN CHÍNH THỨC
     </div>
-    <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: 0.2px;">THÔNG BÁO NỘP HỘI PHÍ NIÊN LIỄM {{fee_year}}</h1>
-    <p style="margin: 8px 0 0; font-size: 13px; color: #cbd5e1;">CLB Doanh Nhân CEO 1983 - Hiệp Hội Doanh Nghiệp Trẻ Hà Nội</p>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 900; color: #ffffff; text-transform: uppercase;">{{event_title}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #93c5fd;">Ban Tổ Chức CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
   </div>
-  <div style="padding: 28px 24px; color: #1e293b;">
-    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
-      Kính gửi: <strong>Anh/Chị {{full_name}}</strong> (Mã HV: <strong>{{member_code}}</strong>),<br/>
-      Đại diện: <strong>{{company_name}}</strong>,
-    </p>
-    <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #334155;">
-      Ban Chấp Hành CLB Doanh Nhân CEO 1983 trân trọng cảm ơn sự đồng hành và những đóng góp tích cực của Quý Doanh nghiệp trong các hoạt động kết nối giao thương B2B và an sinh xã hội thời gian qua.
-    </p>
-    <div style="background: #f8fafc; border-left: 4px solid #d97706; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-      <h3 style="margin: 0 0 10px; font-size: 14px; color: #0f172a; text-transform: uppercase;">Thông Tin Đóng Phí Niên Liễm Năm {{fee_year}}</h3>
+  <div style="padding: 26px 24px; color: #1e293b; line-height: 1.6; font-size: 14px;">
+    <p style="margin: 0 0 10px; font-size: 15px;"><strong>Kính gửi Anh/Chị {{full_name}}</strong></p>
+    <p style="margin: 0 0 8px; color: #334155;">- BTC trân trọng kính mời Anh/Chị tham dự sự kiện: <strong style="color: #003B95;">{{event_title}}</strong></p>
+    <p style="margin: 0 0 10px; font-weight: bold; color: #0f172a;">- Tên sự kiện: {{event_title}}</p>
+    
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 16px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold; color: #001D4A; text-transform: uppercase; font-size: 12.5px;">- Thông tin sự kiện:</p>
       <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-        <tr><td style="padding: 4px 0; color: #64748b; width: 140px;">Mức hội phí:</td><td style="padding: 4px 0; font-weight: 700; color: #b45309; font-size: 15px;">{{fee_amount}} VNĐ</td></tr>
-        <tr><td style="padding: 4px 0; color: #64748b;">Hạn nộp phí:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{due_date}}</td></tr>
-        <tr><td style="padding: 4px 0; color: #64748b;">Tên tài khoản:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{bank_owner}}</td></tr>
-        <tr><td style="padding: 4px 0; color: #64748b;">Số tài khoản:</td><td style="padding: 4px 0; font-family: monospace; font-weight: 700; color: #0284c7; font-size: 14px;">{{bank_account}}</td></tr>
-        <tr><td style="padding: 4px 0; color: #64748b;">Ngân hàng:</td><td style="padding: 4px 0; color: #0f172a;">{{bank_name}}</td></tr>
-        <tr><td style="padding: 4px 0; color: #64748b;">Nội dung CK:</td><td style="padding: 4px 0; font-family: monospace; font-weight: 700; color: #d97706;">{{transfer_content}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b; width: 160px;">+ Diễn giả:</td><td style="padding: 4px 0; font-weight: 700; color: #0f172a;">{{speaker_name}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Nội dung chính:</td><td style="padding: 4px 0; color: #334155;">{{event_summary}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Thời gian:</td><td style="padding: 4px 0; font-weight: 700; color: #003B95;">{{event_date}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Địa điểm:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Chi phí:</td><td style="padding: 4px 0; font-weight: 700; color: #16a34a;">{{event_fee}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Google Maps:</td><td style="padding: 4px 0;"><a href="{{google_maps_url}}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">Xem bản đồ chỉ đường &rarr;</a></td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Trang phục:</td><td style="padding: 4px 0; color: #475569;">{{dress_code}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Gửi xe:</td><td style="padding: 4px 0; color: #475569;">{{parking_info}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Lưu ý quan trọng từ BTC:</td><td style="padding: 4px 0; color: #b45309; font-weight: 600;">{{event_notes}}</td></tr>
       </table>
     </div>
-    <div style="text-align: center; margin: 24px 0; padding: 18px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #fafafa;">
-      <p style="margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #0f172a;">QUÉT MÃ VIETQR ĐỂ NỘP PHÍ TỰ ĐỘNG KHÔNG CẦN NHẬP TAY</p>
-      <img src="{{vietqr_url}}" alt="VietQR Thanh Toan" style="max-width: 210px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin: 0 auto; display: block;" />
-      <p style="margin: 8px 0 0; font-size: 11px; color: #64748b;">Hệ thống sẽ tự động gạch nợ và cấp hóa đơn điện tử ngay sau khi nhận được chuyển khoản.</p>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold;">- Xác nhận tham dự:</p>
+      <a href="{{confirm_link}}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #003B95 0%, #002266 100%); color: #ffffff; font-weight: bold; font-size: 13.5px; text-decoration: none; padding: 12px 32px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 59, 149, 0.3);">
+        BẤM ĐỂ XÁC NHẬN THAM DỰ
+      </a>
     </div>
-    <p style="font-size: 13px; color: #475569; margin: 0 0 6px;">Mọi thắc mắc xin vui lòng liên hệ Ban Tài chính CLB CEO 1983: <strong>0983 000 001</strong>.</p>
-    <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 16px 0 0;">TM. BAN CHẤP HÀNH CLB DOANH NHÂN CEO 1983</p>
+
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 20px; font-size: 12.5px; color: #334155;">
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong> <span style="font-weight: bold; color: #001D4A;">0973.205.683 / 0903.205.683 / 0903.203.204</span></p>
+      <p style="margin: 8px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
+    </div>
+  </div>
+</div>
+`,
+  },
+  {
+    id: "tmpl-meeting-invite",
+    code: "MEETING_INVITATION",
+    category: "meeting",
+    name: "Thư Mời Cuộc Họp Ban & CLB (Chuẩn Tinh Gọn)",
+    description: "Mẫu thông báo họp định kỳ cho Ban Điều Hành, Ban Thường Trực và các Ban chuyên môn CLB CEO 1983.",
+    channels: ["email", "in_app", "push"],
+    subject: "[THƯ MỜI HỌP] {{meeting_title}} - Kính gửi Anh/Chị {{full_name}}",
+    inAppTitle: "Thư mời họp: {{meeting_title}}",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự cuộc họp: {{meeting_title}}\n- Thời gian: {{event_date}}\n- Địa điểm: {{event_location}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+    variables: [
+      { key: "full_name", label: "Tên Anh/Chị tham dự", example: "Lê Minh Tuấn" },
+      { key: "meeting_title", label: "Tên cuộc họp", example: "Họp Giao Ban Ban Điều Hành CLB CEO 1983 Tháng 10/2026" },
+      { key: "speaker_name", label: "Chủ trì cuộc họp", example: "Chủ tịch CLB Doanh Nhân CEO 1983 & Tổng Thư Ký" },
+      { key: "event_summary", label: "Nội dung chính", example: "Đánh giá kết quả kết nối B2B quý 3, Thống nhất kế hoạch xúc tiến thương mại và phê duyệt tân hội viên quý 4" },
+      { key: "event_date", label: "Thời gian", example: "14:00 - 17:00 Thứ Sáu, 16/10/2026" },
+      { key: "event_location", label: "Địa điểm / Phòng họp", example: "Văn phòng Hiệp hội HanoiBA, Tầng 5 Tháp Doanh Nhân" },
+      { key: "event_fee", label: "Chi phí", example: "Kinh phí CLB đài thọ" },
+      { key: "google_maps_url", label: "Google Maps", example: "https://maps.google.com/?q=HanoiBA+Office" },
+      { key: "dress_code", label: "Trang phục", example: "Công sở lịch sự / Áo đồng phục CEO 1983" },
+      { key: "parking_info", label: "Gửi xe", example: "Hầm để xe tòa nhà, bảo vệ hướng dẫn vị trí VIP" },
+      { key: "event_notes", label: "Lưu ý quan trọng từ BTC", example: "Quý Anh/Chị vui lòng nghiên cứu trước tài liệu đính kèm để buổi họp đạt hiệu quả cao nhất" },
+      { key: "confirm_link", label: "Xác nhận tham dự", example: "https://ceo1983.viconnect.vn/association/events" },
+    ],
+    updatedAt: "2026-11-11",
+    htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #094074 0%, #001B40 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #7dd3fc; margin-bottom: 12px; text-transform: uppercase;">
+      THƯ MỜI CUỘC HỌP CHÍNH THỨC
+    </div>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff;">{{meeting_title}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #94a3b8;">Ban Thư Ký CLB Doanh Nhân CEO 1983</p>
+  </div>
+  <div style="padding: 26px 24px; color: #1e293b; line-height: 1.6; font-size: 14px;">
+    <p style="margin: 0 0 10px; font-size: 15px;"><strong>Kính gửi Anh/Chị {{full_name}}</strong></p>
+    <p style="margin: 0 0 8px; color: #334155;">- BTC trân trọng kính mời Anh/Chị tham dự cuộc họp: <strong style="color: #003B95;">{{meeting_title}}</strong></p>
+    <p style="margin: 0 0 10px; font-weight: bold; color: #0f172a;">- Tên cuộc họp: {{meeting_title}}</p>
+    
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 16px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold; color: #001D4A; text-transform: uppercase; font-size: 12.5px;">- Thông tin cuộc họp:</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr><td style="padding: 4px 0; color: #64748b; width: 160px;">+ Chủ trì:</td><td style="padding: 4px 0; font-weight: 700; color: #0f172a;">{{speaker_name}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Nội dung chính:</td><td style="padding: 4px 0; color: #334155;">{{event_summary}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Thời gian:</td><td style="padding: 4px 0; font-weight: 700; color: #003B95;">{{event_date}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Địa điểm:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Chi phí:</td><td style="padding: 4px 0; font-weight: 700; color: #16a34a;">{{event_fee}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Google Maps:</td><td style="padding: 4px 0;"><a href="{{google_maps_url}}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">Xem bản đồ chỉ đường &rarr;</a></td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Trang phục:</td><td style="padding: 4px 0; color: #475569;">{{dress_code}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Gửi xe:</td><td style="padding: 4px 0; color: #475569;">{{parking_info}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Lưu ý quan trọng từ BTC:</td><td style="padding: 4px 0; color: #b45309; font-weight: 600;">{{event_notes}}</td></tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold;">- Xác nhận tham dự:</p>
+      <a href="{{confirm_link}}" target="_blank" style="display: inline-block; background: #003B95; color: #ffffff; font-weight: bold; font-size: 13.5px; text-decoration: none; padding: 12px 32px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 59, 149, 0.3);">
+        BẤM ĐỂ XÁC NHẬN THAM DỰ HỌP
+      </a>
+    </div>
+
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 20px; font-size: 12.5px; color: #334155;">
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong> <span style="font-weight: bold; color: #001D4A;">0973.205.683 / 0903.205.683 / 0903.203.204</span></p>
+      <p style="margin: 8px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
+    </div>
+  </div>
+</div>
+`,
+  },
+  {
+    id: "tmpl-training-invite",
+    code: "TRAINING_INVITATION",
+    category: "event",
+    name: "Thư Mời Chương Trình Đào Tạo Doanh Nhân (Chuẩn Tinh Gọn)",
+    description: "Mẫu thông báo các chương trình đào tạo, hội thảo nâng cao năng lực quản trị doanh nghiệp CEO 1983.",
+    channels: ["email", "in_app", "push"],
+    subject: "[CHƯƠNG TRÌNH ĐÀO TẠO] {{training_title}} - Kính gửi Anh/Chị {{full_name}}",
+    inAppTitle: "Thư mời đào tạo: {{training_title}}",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự chương trình đào tạo: {{training_title}}\n- Thời gian: {{event_date}}\n- Địa điểm: {{event_location}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+    variables: [
+      { key: "full_name", label: "Tên Anh/Chị học viên", example: "Nguyễn Thu Hà" },
+      { key: "training_title", label: "Tên chương trình đào tạo", example: "Chiến Lược Tối Ưu Hóa Dòng Tiền & Tái Cấu Trúc Doanh Nghiệp Thời Kỳ Mới" },
+      { key: "speaker_name", label: "Giảng viên / Diễn giả", example: "TS. Kinh tế học — Chuyên gia Tài chính Doanh nghiệp Cao cấp" },
+      { key: "event_summary", label: "Nội dung chính", example: "Nắm vững kỹ thuật quản trị vốn lưu động, kiểm soát rủi ro đòn bẩy và lập kế hoạch ngân sách tự động cho CEO" },
+      { key: "event_date", label: "Thời gian", example: "08:30 - 17:00 Thứ Bảy, 24/10/2026" },
+      { key: "event_location", label: "Địa điểm / Phòng đào tạo", example: "Hội trường Diamond, Trung tâm Đào tạo Doanh nhân Hà Nội" },
+      { key: "event_fee", label: "Chi phí", example: "Hội viên CEO 1983 được hỗ trợ 100% học phí" },
+      { key: "google_maps_url", label: "Google Maps", example: "https://maps.google.com/?q=Hanoi+Training+Center" },
+      { key: "dress_code", label: "Trang phục", example: "Lịch sự / Business Casual" },
+      { key: "parking_info", label: "Gửi xe", example: "Bãi đỗ xe khuôn viên trung tâm đào tạo" },
+      { key: "event_notes", label: "Lưu ý quan trọng từ BTC", example: "Học viên vui lòng mang theo sổ tay, laptop để thực hành tình huống tài chính thực tế" },
+      { key: "confirm_link", label: "Xác nhận tham dự", example: "https://ceo1983.viconnect.vn/association/events" },
+    ],
+    updatedAt: "2026-11-11",
+    htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #065f46 0%, #022c22 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(52, 211, 153, 0.25); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #6ee7b7; margin-bottom: 12px; text-transform: uppercase;">
+      CHƯƠNG TRÌNH ĐÀO TẠO DOANH NHÂN
+    </div>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff;">{{training_title}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #a7f3d0;">Ban Đào Tạo & Phát Triển Năng Lực CLB CEO 1983</p>
+  </div>
+  <div style="padding: 26px 24px; color: #1e293b; line-height: 1.6; font-size: 14px;">
+    <p style="margin: 0 0 10px; font-size: 15px;"><strong>Kính gửi Anh/Chị {{full_name}}</strong></p>
+    <p style="margin: 0 0 8px; color: #334155;">- BTC trân trọng kính mời Anh/Chị tham dự chương trình đào tạo: <strong style="color: #065f46;">{{training_title}}</strong></p>
+    <p style="margin: 0 0 10px; font-weight: bold; color: #0f172a;">- Tên chương trình đào tạo: {{training_title}}</p>
+    
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 16px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold; color: #065f46; text-transform: uppercase; font-size: 12.5px;">- Thông tin chương trình đào tạo:</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr><td style="padding: 4px 0; color: #64748b; width: 170px;">+ Giảng viên / Diễn giả:</td><td style="padding: 4px 0; font-weight: 700; color: #0f172a;">{{speaker_name}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Nội dung chính:</td><td style="padding: 4px 0; color: #334155;">{{event_summary}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Thời gian:</td><td style="padding: 4px 0; font-weight: 700; color: #065f46;">{{event_date}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Địa điểm:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Chi phí:</td><td style="padding: 4px 0; font-weight: 700; color: #16a34a;">{{event_fee}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Google Maps:</td><td style="padding: 4px 0;"><a href="{{google_maps_url}}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">Xem bản đồ chỉ đường &rarr;</a></td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Trang phục:</td><td style="padding: 4px 0; color: #475569;">{{dress_code}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Gửi xe:</td><td style="padding: 4px 0; color: #475569;">{{parking_info}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Lưu ý quan trọng từ BTC:</td><td style="padding: 4px 0; color: #b45309; font-weight: 600;">{{event_notes}}</td></tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold;">- Xác nhận tham dự:</p>
+      <a href="{{confirm_link}}" target="_blank" style="display: inline-block; background: #065f46; color: #ffffff; font-weight: bold; font-size: 13.5px; text-decoration: none; padding: 12px 32px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(6, 95, 70, 0.3);">
+        BẤM ĐỂ XÁC NHẬN THAM GIA KHÓA HỌC
+      </a>
+    </div>
+
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 20px; font-size: 12.5px; color: #334155;">
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong> <span style="font-weight: bold; color: #001D4A;">0973.205.683 / 0903.205.683 / 0903.203.204</span></p>
+      <p style="margin: 8px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
+    </div>
   </div>
 </div>
 `,
   },
   {
     id: "tmpl-welcome-new-member",
-    code: "NEW_MEMBER_THANKS",
+    code: "MEMBER_WELCOME_THANKS",
     category: "welcome",
-    name: "Thư Cảm Ơn & Chào Mừng Hội Viên Mới Gia Nhập",
-    description: "Bắn ngay khi hồ sơ hội viên mới được phê duyệt thành công vào hiệp hội, kèm hướng dẫn kết nối hệ sinh thái.",
+    name: "Thư Cảm Ơn Đăng Ký Hội Viên Mới",
+    description: "Thư cảm ơn và chúc mừng chính thức gửi đến tân hội viên ngay sau khi hoàn tất đăng ký gia nhập CLB CEO 1983.",
     channels: ["email", "in_app", "push"],
     subject: "[THƯ CẢM ƠN] Chúc mừng Anh/Chị {{full_name}} chính thức gia nhập CLB Doanh Nhân CEO 1983",
-    inAppTitle: "Chúc mừng tân hội viên {{full_name}}!",
-    inAppBody: "Chào mừng Anh/Chị {{full_name}} ({{company_name}}) đã chính thức trở thành hội viên trực thuộc {{department}} của CLB Doanh Nhân CEO 1983.",
+    inAppTitle: "Chào mừng tân hội viên {{full_name}}!",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- Ban Chấp Hành CLB Doanh Nhân CEO 1983 trân trọng cảm ơn và chúc mừng Anh/Chị đã chính thức gia nhập CLB!\n- Mã hội viên: {{member_code}}\n- Ban sinh hoạt: {{department}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
     variables: [
-      { key: "full_name", label: "Họ tên hội viên mới", example: "Trần Anh Đức" },
+      { key: "full_name", label: "Họ và tên hội viên", example: "Trần Anh Đức" },
       { key: "member_code", label: "Mã hội viên được cấp", example: "M1983-025" },
       { key: "company_name", label: "Tên doanh nghiệp", example: "Công ty Cổ phần Giải pháp Năng lượng Xanh" },
-      { key: "executive_role", label: "Vai trò / Chức danh", example: "Hội viên chính thức" },
-      { key: "department", label: "Ban chuyên môn phụ trách", example: "Ban Xúc tiến thương mại & Đầu tư" },
+      { key: "department", label: "Ban sinh hoạt", example: "Ban Xúc tiến thương mại & Đầu tư" },
+      { key: "executive_role", label: "Chức danh", example: "Hội viên chính thức" },
       { key: "joined_date", label: "Ngày kết nạp", example: "02/10/2026" },
-      { key: "portal_url", label: "Link cổng thông tin", example: "https://ceo1983.vn/portal" },
-      { key: "app_download_link", label: "Link tải App Doanh nhân", example: "https://ceo1983.vn/download-app" },
+      { key: "app_download_link", label: "Link tải ứng dụng", example: "https://ceo1983.viconnect.vn/open-app?auto_install=true" },
     ],
-    updatedAt: "2026-10-01",
+    updatedAt: "2026-11-11",
     htmlBody: `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
   <div style="background: linear-gradient(135deg, #094074 0%, #001B40 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
-    <div style="display: inline-block; padding: 4px 14px; background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #6ee7b7; margin-bottom: 12px; text-transform: uppercase;">
-      THƯ CHÀO MỪNG CHÍNH THỨC
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #6ee7b7; margin-bottom: 12px; text-transform: uppercase;">
+      THƯ CẢM ƠN & CHÀO MỪNG CHÍNH THỨC
     </div>
     <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff;">CHÀO MỪNG TÂN HỘI VIÊN CEO 1983</h1>
     <p style="margin: 8px 0 0; font-size: 13px; color: #94a3b8;">Cùng gắn kết - Cùng chia sẻ - Cùng phát triển vững mạnh</p>
   </div>
-  <div style="padding: 28px 24px; color: #1e293b;">
-    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
-      Kính gửi: <strong>Anh/Chị {{full_name}}</strong>,<br/>
-      Chủ tịch / Tổng Giám đốc: <strong>{{company_name}}</strong>,
+  <div style="padding: 26px 24px; color: #1e293b; line-height: 1.6; font-size: 14px;">
+    <p style="margin: 0 0 12px; font-size: 15px;"><strong>Kính gửi Anh/Chị {{full_name}}</strong></p>
+    <p style="margin: 0 0 14px; color: #334155;">
+      - Ban Chấp Hành CLB Doanh Nhân CEO 1983 trân trọng cảm ơn sự tin tưởng và nồng nhiệt chào mừng Anh/Chị cùng Quý Doanh nghiệp <strong style="color: #003B95;">{{company_name}}</strong> đã chính thức gia nhập ngôi nhà chung CEO 1983 kể từ ngày <strong>{{joined_date}}</strong>!
     </p>
-    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #334155;">
-      Thay mặt Ban Chấp Hành CLB Doanh Nhân CEO 1983, tôi trân trọng gửi lời chúc mừng nồng nhiệt nhất tới Anh/Chị và Quý Công ty đã chính thức trở thành thành viên chính thức của ngôi nhà chung CEO 1983 kể từ ngày <strong>{{joined_date}}</strong>.
-    </p>
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-      <h4 style="margin: 0 0 10px; font-size: 13px; color: #166534; text-transform: uppercase;">Hồ Sơ Hội Viên Đã Được Phê Duyệt</h4>
+
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold; color: #166534; text-transform: uppercase; font-size: 12.5px;">- Thông tin hội viên:</p>
       <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-        <tr><td style="padding: 4px 0; color: #4b5563; width: 140px;">Mã định danh HV:</td><td style="padding: 4px 0; font-family: monospace; font-weight: 700; color: #15803d; font-size: 14px;">{{member_code}}</td></tr>
-        <tr><td style="padding: 4px 0; color: #4b5563;">Vai trò hiệp hội:</td><td style="padding: 4px 0; font-weight: 600; color: #111827;">{{executive_role}}</td></tr>
-        <tr><td style="padding: 4px 0; color: #4b5563;">Ban sinh hoạt:</td><td style="padding: 4px 0; font-weight: 600; color: #1d4ed8;">{{department}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #4b5563; width: 150px;">+ Họ và tên:</td><td style="padding: 4px 0; font-weight: 700; color: #111827;">{{full_name}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #4b5563;">+ Mã hội viên:</td><td style="padding: 4px 0; font-family: monospace; font-weight: 700; color: #15803d; font-size: 14px;">{{member_code}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #4b5563;">+ Doanh nghiệp:</td><td style="padding: 4px 0; font-weight: 600; color: #111827;">{{company_name}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #4b5563;">+ Ban sinh hoạt:</td><td style="padding: 4px 0; font-weight: 600; color: #1d4ed8;">{{department}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #4b5563;">+ Chức danh:</td><td style="padding: 4px 0; color: #374151;">{{executive_role}}</td></tr>
       </table>
     </div>
-    <div style="text-align: center; margin: 24px 0;">
-      <a href="{{app_download_link}}" style="display: inline-block; background: #003B95; color: #ffffff; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(0, 59, 149, 0.3);">
-        Tải App Doanh Nhân CEO 1983 & Khám Phá Hệ Sinh Thái
+
+    <div style="text-align: center; margin: 22px 0;">
+      <a href="{{app_download_link}}" target="_blank" style="display: inline-block; background: #003B95; color: #ffffff; padding: 13px 32px; border-radius: 9999px; font-size: 13.5px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 59, 149, 0.3);">
+        Tải App Hội Viên & Khám Phá Hệ Sinh Thái
       </a>
     </div>
-    <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin: 0 0 20px;">
-      Trân trọng kính chúc Anh/Chị và Quý Doanh nghiệp ngày càng phát triển, gặt hái thêm nhiều thành công vượt bậc trên con đường kinh doanh!
-    </p>
-    <p style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0;">CHỦ TỊCH CLB DOANH NHÂN CEO 1983</p>
+
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 20px; font-size: 12.5px; color: #334155;">
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong> <span style="font-weight: bold; color: #001D4A;">0973.205.683 / 0903.205.683 / 0903.203.204</span></p>
+      <p style="margin: 8px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
+    </div>
   </div>
 </div>
 `,
   },
   {
-    id: "tmpl-fee-reminder",
-    code: "FEE_REMINDER_DUE",
-    category: "fee",
-    name: "Nhắc Phí Hội Viên Sắp Đến Hạn / Quá Hạn",
-    description: "Gửi nhắc nhở tự động theo luồng đếm ngược (trước 15 ngày, 7 ngày và quá hạn 3 ngày).",
-    channels: ["email", "in_app", "push", "sms"],
-    subject: "[NHẮC HỘI PHÍ] Quý Doanh nghiệp còn {{days_left}} ngày để hoàn thành hội phí {{fee_year}}",
-    inAppTitle: "Nhắc nhở hoàn thành hội phí niên liễm",
-    inAppBody: "Hội phí năm {{fee_year}} của đơn vị {{company_name}} còn {{days_left}} ngày sẽ đến hạn chót ({{due_date}}). Vui lòng thanh toán để duy trì quyền lợi kết nối B2B.",
+    id: "tmpl-member-credentials",
+    code: "MEMBER_ACCOUNT_CREDENTIALS",
+    category: "system",
+    name: "Template Gửi Tài Khoản & Mật Khẩu Cho Hội Viên Mới",
+    description: "Tự động gửi thông tin tài khoản đăng nhập kèm link cài đặt app 1-chạm và liên kết Zalo OA chính thức.",
+    channels: ["email", "in_app", "sms"],
+    subject: "[TÀI KHOẢN HỘI VIÊN] Thông tin đăng nhập ứng dụng CEO 1983 - Kính gửi Anh/Chị {{full_name}}",
+    inAppTitle: "Thông tin tài khoản ứng dụng CEO 1983",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- Ban Quản Trị gửi thông tin tài khoản đăng nhập app CEO 1983:\n- Tên đăng nhập: {{email}}\n- Mật khẩu: {{temporary_password}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
     variables: [
-      { key: "full_name", label: "Tên hội viên", example: "Hoàng Thanh Tuấn" },
-      { key: "member_code", label: "Mã hội viên", example: "M1983-002" },
-      { key: "company_name", label: "Tên công ty", example: "Công ty Cổ phần Dịch vụ Hàng Hải Á Châu" },
-      { key: "days_left", label: "Số ngày còn lại", example: "7" },
-      { key: "due_date", label: "Ngày hạn chót", example: "15/10/2026" },
-      { key: "fee_amount", label: "Số tiền cần nộp", example: "15,000,000" },
-      { key: "vietqr_url", label: "Mã VietQR thanh toán", example: "https://api.vietqr.io/image/970422-198388889999-compact2.jpg" },
+      { key: "full_name", label: "Họ và tên hội viên", example: "Nguyễn Văn Tuấn" },
+      { key: "email", label: "Tên đăng nhập (Email)", example: "tuan.nguyen@vione.com" },
+      { key: "temporary_password", label: "Mật khẩu khởi tạo", example: "Ceo1983@Pass" },
+      { key: "member_code", label: "Mã hội viên", example: "M1983-088" },
+      { key: "department", label: "Ban sinh hoạt", example: "Ban Truyền Thông" },
+      { key: "app_install_url", label: "Link cài App & Zalo OA", example: "https://ceo1983.viconnect.vn/open-app?email=tuan.nguyen@vione.com&auto_install=true" },
     ],
-    updatedAt: "2026-10-01",
+    updatedAt: "2026-11-11",
     htmlBody: `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-  <div style="background: linear-gradient(135deg, #b45309 0%, #78350f 100%); padding: 28px 24px; text-align: center; color: #ffffff;">
-    <div style="display: inline-block; padding: 4px 14px; background: rgba(254, 243, 199, 0.25); border: 1px solid rgba(254, 243, 199, 0.4); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #fef3c7; margin-bottom: 10px; text-transform: uppercase;">
-      THƯ NHẮC PHÍ TỰ ĐỘNG
+  <div style="background: linear-gradient(135deg, #001D4A 0%, #003B95 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(254, 240, 138, 0.25); border: 1px solid rgba(254, 240, 138, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #fde047; margin-bottom: 12px; text-transform: uppercase;">
+      THÔNG TIN TÀI KHOẢN HỘI VIÊN CHÍNH THỨC
     </div>
-    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff;">NHẮC NHỞ GIA HẠN HỘI PHÍ NIÊN LIỄM</h1>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff;">TÀI KHOẢN ỨNG DỤNG CEO 1983</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #cbd5e1;">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
   </div>
-  <div style="padding: 26px 24px; color: #1e293b;">
-    <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.6;">
-      Kính gửi Anh/Chị <strong>{{full_name}}</strong> - Đại diện <strong>{{company_name}}</strong>,
+  <div style="padding: 26px 24px; color: #1e293b; line-height: 1.6; font-size: 14px;">
+    <p style="margin: 0 0 12px; font-size: 15px;"><strong>Kính gửi Anh/Chị {{full_name}}</strong></p>
+    <p style="margin: 0 0 14px; color: #334155;">
+      - Ban Quản Trị CLB Doanh Nhân CEO 1983 trân trọng gửi Quý Anh/Chị thông tin tài khoản đăng nhập ứng dụng Hội viên CEO 1983:
     </p>
-    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #334155;">
-      Hệ thống ghi nhận kỳ hội phí thường niên năm <strong>{{fee_year}}</strong> của Quý Doanh nghiệp hiện chỉ còn <strong>{{days_left}} ngày</strong> nữa là đến hạn chót (<strong>{{due_date}}</strong>).
+
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #003B95; border-radius: 10px; padding: 18px; margin: 16px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold; color: #001D4A; text-transform: uppercase; font-size: 12.5px;">- Thông tin tài khoản:</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr><td style="padding: 5px 0; color: #64748b; width: 170px;">+ Tên đăng nhập (Email):</td><td style="padding: 5px 0; font-family: monospace; font-weight: 700; color: #0284c7; font-size: 14px;">{{email}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Mật khẩu khởi tạo:</td><td style="padding: 5px 0; font-family: monospace; font-weight: 700; color: #d97706; font-size: 14px;">{{temporary_password}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Mã hội viên:</td><td style="padding: 5px 0; font-weight: 700; color: #0f172a;">{{member_code}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Ban sinh hoạt:</td><td style="padding: 5px 0; font-weight: 600; color: #166534;">{{department}}</td></tr>
+      </table>
+    </div>
+
+    <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 14px; margin: 16px 0; font-size: 13px; color: #713f12;">
+      <p style="margin: 0 0 6px; font-weight: bold;">- Hướng dẫn cài đặt &amp; kích hoạt:</p>
+      <p style="margin: 0 0 6px;">+ Nhấn nút bên dưới để <strong>tự động cài đặt ứng dụng lên màn hình điện thoại (iOS / Android)</strong> và đồng thời <strong>liên kết đến trang Zalo Official Account chính thức của CLB</strong>.</p>
+      <p style="margin: 0; color: #b45309; font-weight: 600;">+ Lưu ý: Khi đăng nhập lần đầu tiên vào ứng dụng, hệ thống sẽ yêu cầu Quý Anh/Chị bắt buộc đổi mật khẩu mới để bảo mật tài khoản.</p>
+    </div>
+
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{{app_install_url}}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #003B95 0%, #001f54 100%); color: #ffffff; padding: 14px 34px; border-radius: 9999px; font-size: 14px; font-weight: 800; text-decoration: none; box-shadow: 0 4px 16px rgba(0, 59, 149, 0.35);">
+        CÀI ĐẶT APP CEO 1983 &amp; KẾT NỐI ZALO OA
+      </a>
+    </div>
+
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 20px; font-size: 12.5px; color: #334155;">
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong> <span style="font-weight: bold; color: #001D4A;">0973.205.683 / 0903.205.683 / 0903.203.204</span></p>
+      <p style="margin: 8px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
+    </div>
+  </div>
+</div>
+`,
+  },
+  {
+    id: "tmpl-fee-payment",
+    code: "FEE_PAYMENT_NOTICE",
+    category: "fee",
+    name: "Thông Báo Nộp Phí & Thông Tin Chuyển Khoản CLB (Không QR)",
+    description: "Mẫu thông báo các khoản phí, hội phí, tài trợ với thông tin số tài khoản và ngân hàng CLB, để trống ảnh QR theo quy định.",
+    channels: ["email", "in_app", "push"],
+    subject: "[THÔNG BÁO ĐÓNG PHÍ] {{fee_title}} - Kính gửi Anh/Chị {{full_name}}",
+    inAppTitle: "Thông báo đóng phí: {{fee_title}}",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- Thông báo đóng phí: {{fee_title}}\n- Số tiền: {{fee_amount}} VNĐ\n- Ngân hàng CLB: {{club_bank_name}} - STK: {{club_bank_account}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+    variables: [
+      { key: "full_name", label: "Tên hội viên / Đại diện", example: "Hoàng Thanh Tuấn" },
+      { key: "company_name", label: "Tên doanh nghiệp", example: "Tập Đoàn Đầu Tư Quốc Tế An Phát" },
+      { key: "fee_title", label: "Khoản phí", example: "Kỳ phí tham gia Caravan kết nối giao thương 2026" },
+      { key: "fee_amount", label: "Số tiền cần nộp", example: "5.000.000" },
+      { key: "due_date", label: "Hạn thanh toán", example: "20/10/2026" },
+      { key: "club_bank_name", label: "Ngân hàng CLB", example: "MB Bank (Ngân hàng Quân Đội)" },
+      { key: "club_bank_account", label: "Số tài khoản CLB", example: "198388889999" },
+      { key: "club_bank_owner", label: "Chủ tài khoản", example: "CLB DOANH NHAN CEO 1983" },
+      { key: "transfer_content", label: "Cú pháp chuyển khoản", example: "CEO1983 CARAVAN HOANG THANH TUAN" },
+    ],
+    updatedAt: "2026-11-11",
+    htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #002B66 0%, #001B40 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(212, 160, 23, 0.25); border: 1px solid rgba(212, 160, 23, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #f6d365; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">
+      THÔNG BÁO TÀI CHÍNH CLB
+    </div>
+    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff;">{{fee_title}}</h1>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #cbd5e1;">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+  </div>
+  <div style="padding: 26px 24px; color: #1e293b; line-height: 1.6; font-size: 14px;">
+    <p style="margin: 0 0 12px; font-size: 15px;"><strong>Kính gửi Anh/Chị {{full_name}}</strong> ({{company_name}}),</p>
+    <p style="margin: 0 0 14px; color: #334155;">
+      Ban Tài Chính CLB Doanh Nhân CEO 1983 trân trọng thông báo thông tin đóng phí cho nội dung: <strong>{{fee_title}}</strong>.
     </p>
-    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
-      <p style="margin: 0; font-size: 14px; color: #92400e;">
-        Số tiền cần nộp: <strong style="color: #b45309; font-size: 16px;">{{fee_amount}} VNĐ</strong><br/>
-        Hạn nộp: <strong>{{due_date}}</strong>
-      </p>
+
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 18px; margin: 16px 0;">
+      <p style="margin: 0 0 8px; font-weight: bold; color: #001D4A; text-transform: uppercase; font-size: 12.5px;">- Thông tin nộp phí &amp; Tài khoản CLB:</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr><td style="padding: 4px 0; color: #64748b; width: 160px;">+ Số tiền:</td><td style="padding: 4px 0; font-weight: 700; color: #b45309; font-size: 15px;">{{fee_amount}} VNĐ</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Hạn nộp:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{due_date}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Ngân hàng CLB:</td><td style="padding: 4px 0; font-weight: 700; color: #0f172a;">{{club_bank_name}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Số tài khoản CLB:</td><td style="padding: 4px 0; font-family: monospace; font-weight: 800; color: #0284c7; font-size: 15px;">{{club_bank_account}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Chủ tài khoản:</td><td style="padding: 4px 0; font-weight: 600; color: #0f172a;">{{club_bank_owner}}</td></tr>
+        <tr><td style="padding: 4px 0; color: #64748b;">+ Cú pháp chuyển khoản:</td><td style="padding: 4px 0; font-family: monospace; font-weight: 700; color: #d97706;">{{transfer_content}}</td></tr>
+      </table>
     </div>
-    <div style="text-align: center; margin: 20px 0;">
-      <img src="{{vietqr_url}}" alt="QR Nộp Hội Phí" style="max-width: 190px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: block; margin: 0 auto;" />
+
+    <!-- KHÔNG HIỂN THỊ MÃ QR - ĐỂ TRỐNG THEO QUY CHUẨN MỚI -->
+    <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 20px; font-size: 12.5px; color: #334155;">
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong> <span style="font-weight: bold; color: #001D4A;">0973.205.683 / 0903.205.683 / 0903.203.204</span></p>
+      <p style="margin: 8px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
     </div>
-    <p style="font-size: 12.5px; color: #64748b; margin: 0;">Trân trọng cảm ơn sự phối hợp của Quý Anh/Chị!</p>
   </div>
 </div>
 `,
@@ -628,23 +849,80 @@ export function MailTemplateManager() {
   // CRM Advanced Targeting State (Ban hội viên, Zalo OA subscribers, Excel import)
   const [membersList, setMembersList] = useState<any[]>([]);
   const [zaloSubscribers, setZaloSubscribers] = useState<any[]>([]);
+  const [trainingPrograms, setTrainingPrograms] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [deptSelectMode, setDeptSelectMode] = useState<"all" | "single" | "multiple">("all");
+  const [selectedDeptMemberIds, setSelectedDeptMemberIds] = useState<string[]>([]);
+  const [zaloSelectMode, setZaloSelectMode] = useState<"all" | "single" | "multiple">("all");
+  const [selectedZaloIds, setSelectedZaloIds] = useState<string[]>([]);
+  const [memberSearchTerm, setMemberSearchTerm] = useState("");
+  const [zaloSearchTerm, setZaloSearchTerm] = useState("");
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const [showZaloDropdown, setShowZaloDropdown] = useState(false);
+
+  // Bank Info for fee templates
+  const [clubBankName, setClubBankName] = useState("MB Bank (Ngân hàng Quân Đội)");
+  const [clubBankAccount, setClubBankAccount] = useState("198388889999");
+  const [clubBankOwner, setClubBankOwner] = useState("CLB DOANH NHAN CEO 1983");
+
+  // Dynamic quick-add state for phone and email
+  const [showQuickAddEmail, setShowQuickAddEmail] = useState(false);
+  const [quickEmailInput, setQuickEmailInput] = useState("");
+  const [showQuickAddPhone, setShowQuickAddPhone] = useState(false);
+  const [quickPhoneInput, setQuickPhoneInput] = useState("");
+
   const excelFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchNestApi<any[]>("/members")
-      .then((res) => {
-        if (Array.isArray(res)) setMembersList(res);
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(list) && list.length > 0) setMembersList(list);
       })
       .catch(() => {});
 
-    fetchNestApi<{ success: boolean; subscribers: any[] }>("/zalo/subscribers")
-      .then((res) => {
-        if (res?.subscribers && Array.isArray(res.subscribers)) {
-          setZaloSubscribers(res.subscribers);
+    fetchNestApi<any>("/zalo/subscribers")
+      .then((res: any) => {
+        const list = res?.data || res?.subscribers || (Array.isArray(res) ? res : []);
+        if (Array.isArray(list) && list.length > 0) {
+          setZaloSubscribers(list);
+        } else {
+          setZaloSubscribers([
+            { id: "zalo-sub-01", name: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
+            { id: "zalo-sub-02", name: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
+            { id: "zalo-sub-03", name: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
+            { id: "zalo-sub-04", name: "Phạm Thu Hà", phone: "0973205683", zalo_user_id: "zalo_04", company: "Hà Thành Real Estate" },
+            { id: "zalo-sub-05", name: "Đặng Tiến Dũng", phone: "0915667788", zalo_user_id: "zalo_05", company: "Dũng Minh Tech" },
+          ]);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setZaloSubscribers([
+          { id: "zalo-sub-01", name: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
+          { id: "zalo-sub-02", name: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
+          { id: "zalo-sub-03", name: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
+        ]);
+      });
+
+    fetchNestApi<any>("/events?type=training")
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(list) && list.length > 0) {
+          setTrainingPrograms(list);
+        } else {
+          setTrainingPrograms([
+            { id: "train-01", title: "Khóa Đào Tạo: Quản Trị Tài Chính Doanh Nghiệp & Tối Ưu Dòng Tiền 2026", speaker: "TS. Lê Thẩm Dương", duration: "1 Ngày (Thứ Bảy)", place: "Hội trường CEO 1983, Keangnam Landmark 72, Hà Nội", date: "2026-11-20" },
+            { id: "train-02", title: "Chương Trình Đào Tạo: Ứng Dụng AI & Tự Động Hóa Vận Hành Trong Doanh Nghiệp SME", speaker: "Chuyên Gia AI VICONNECT", duration: "2 Buổi", place: "Trụ sở HanoiBA & Hybrid Online", date: "2026-11-25" },
+            { id: "train-03", title: "Workshop: Chiến Lược Đàm Phán & Ký Kết Hợp Đồng Giao Thương B2B", speaker: "Ban Thường Trực CEO 1983", duration: "Nửa ngày", place: "Habblet Hotel Hanoi", date: "2026-12-05" },
+          ]);
+        }
+      })
+      .catch(() => {
+        setTrainingPrograms([
+          { id: "train-01", title: "Khóa Đào Tạo: Quản Trị Tài Chính Doanh Nghiệp & Tối Ưu Dòng Tiền 2026", speaker: "TS. Lê Thẩm Dương", duration: "1 Ngày", place: "Keangnam Landmark 72, Hà Nội", date: "2026-11-20" },
+          { id: "train-02", title: "Chương Trình Đào Tạo: Ứng Dụng AI Trong Vận Hành Doanh Nghiệp", speaker: "Chuyên Gia AI VICONNECT", duration: "2 Buổi", place: "Trụ sở HanoiBA", date: "2026-11-25" },
+        ]);
+      });
   }, []);
 
   const departmentList = useMemo(() => {
@@ -660,14 +938,57 @@ export function MailTemplateManager() {
     ];
   }, []);
 
+  // Members in selected department (or all)
+  const deptMembers = useMemo(() => {
+    if (!selectedDepartment) return membersList;
+    return membersList.filter((m) =>
+      (m.department || "").toLowerCase().includes(selectedDepartment.toLowerCase())
+    );
+  }, [membersList, selectedDepartment]);
+
   const handleSelectDepartment = (dept: string) => {
     setSelectedDepartment(dept);
+    setSelectedDeptMemberIds([]);
     if (!dept) return;
-    const filtered = membersList.filter((m) =>
-      (m.department || "").toLowerCase().includes(dept.toLowerCase())
-    );
-    const newPhones = filtered.map((m) => m.phone).filter(Boolean);
-    const newEmails = filtered.map((m) => m.email).filter(Boolean);
+
+    if (deptSelectMode === "all") {
+      const filtered = membersList.filter((m) =>
+        (m.department || "").toLowerCase().includes(dept.toLowerCase())
+      );
+      const newPhones = filtered.map((m) => m.phone).filter(Boolean);
+      const newEmails = filtered.map((m) => m.email).filter(Boolean);
+
+      if (newPhones.length > 0) {
+        setTestPhone((prev) => {
+          const existing = prev ? prev.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean) : [];
+          return Array.from(new Set([...existing, ...newPhones])).join(", ");
+        });
+      }
+      if (newEmails.length > 0) {
+        setTestEmail((prev) => {
+          const existing = prev ? prev.split(/[,;\n]+/).map((e) => e.trim()).filter(Boolean) : [];
+          return Array.from(new Set([...existing, ...newEmails])).join(", ");
+        });
+      }
+      toast.success(`Đã chọn TẤT CẢ ${filtered.length} hội viên từ ${dept}!`);
+    } else {
+      setShowMemberDropdown(true);
+    }
+  };
+
+  const handleApplyDeptMemberSelection = (mode: "all" | "single" | "multiple", memberIds: string[]) => {
+    setDeptSelectMode(mode);
+    setSelectedDeptMemberIds(memberIds);
+
+    let targetList: any[] = [];
+    if (mode === "all") {
+      targetList = deptMembers;
+    } else {
+      targetList = deptMembers.filter((m) => memberIds.includes(String(m.id || m.code)));
+    }
+
+    const newPhones = targetList.map((m) => m.phone).filter(Boolean);
+    const newEmails = targetList.map((m) => m.email).filter(Boolean);
 
     if (newPhones.length > 0) {
       setTestPhone((prev) => {
@@ -681,23 +1002,60 @@ export function MailTemplateManager() {
         return Array.from(new Set([...existing, ...newEmails])).join(", ");
       });
     }
-    toast.success(`Đã thêm ${filtered.length} hội viên từ ${dept}!`);
+    toast.success(`Đã thêm ${targetList.length} hội viên được chọn!`);
   };
 
-  const handleSelectZaloSubscriber = (subId: string) => {
-    const sub = zaloSubscribers.find((s) => s.id === subId || s.zalo_user_id === subId);
-    if (!sub) return;
-    const phone = sub.phone || sub.zalo_user_id;
-    if (phone) {
+  const handleApplyZaloSelection = (mode: "all" | "single" | "multiple", zaloIds: string[]) => {
+    setZaloSelectMode(mode);
+    setSelectedZaloIds(zaloIds);
+
+    let targetList: any[] = [];
+    if (mode === "all") {
+      targetList = zaloSubscribers;
+    } else {
+      targetList = zaloSubscribers.filter((s) => zaloIds.includes(String(s.id || s.zalo_user_id)));
+    }
+
+    const newPhones = targetList.map((s) => s.phone || s.zalo_user_id).filter(Boolean);
+    if (newPhones.length > 0) {
       setTestPhone((prev) => {
         const existing = prev ? prev.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean) : [];
-        if (!existing.includes(phone)) {
-          existing.push(phone);
-        }
-        return existing.join(", ");
+        return Array.from(new Set([...existing, ...newPhones])).join(", ");
       });
-      toast.success(`Đã thêm ${sub.name || "người tương tác Zalo OA"} (${phone})!`);
+      toast.success(`Đã thêm ${targetList.length} người tương tác Zalo OA!`);
     }
+  };
+
+  const handleAddQuickEmail = () => {
+    const val = quickEmailInput.trim();
+    if (!val || !val.includes("@")) {
+      toast.error("Vui lòng nhập email hợp lệ!");
+      return;
+    }
+    setTestEmail((prev) => {
+      const existing = prev ? prev.split(/[,;\n]+/).map((e) => e.trim()).filter(Boolean) : [];
+      if (!existing.includes(val)) existing.push(val);
+      return existing.join(", ");
+    });
+    setQuickEmailInput("");
+    setShowQuickAddEmail(false);
+    toast.success(`Đã thêm email: ${val}`);
+  };
+
+  const handleAddQuickPhone = () => {
+    const val = quickPhoneInput.trim().replace(/[^0-9+]/g, "");
+    if (!val || val.length < 8) {
+      toast.error("Vui lòng nhập số điện thoại hợp lệ!");
+      return;
+    }
+    setTestPhone((prev) => {
+      const existing = prev ? prev.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean) : [];
+      if (!existing.includes(val)) existing.push(val);
+      return existing.join(", ");
+    });
+    setQuickPhoneInput("");
+    setShowQuickAddPhone(false);
+    toast.success(`Đã thêm SĐT Zalo: ${val}`);
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -889,6 +1247,184 @@ export function MailTemplateManager() {
     setEditingTemplate(newTmpl);
     setModalEditorMode("visual");
     setIsEditModalOpen(true);
+  };
+
+  const handleApplyPresetInModal = (presetKey: string) => {
+    if (!editingTemplate) return;
+    if (presetKey === "MEMBER_WELCOME_THANKS") {
+      const tmpl: MailTemplateItem = {
+        ...editingTemplate,
+        code: "MEMBER_WELCOME_THANKS",
+        name: "Thư Cảm Ơn Đăng Ký Hội Viên Mới",
+        category: "welcome",
+        description: "Gửi thư cảm ơn trang trọng tới Quý Doanh nhân khi hoàn tất đăng ký gia nhập CLB Doanh Nhân CEO 1983.",
+        subject: "[CEO 1983] Thư cảm ơn Quý Doanh nhân {{full_name}} gia nhập CLB Doanh Nhân CEO 1983",
+        inAppTitle: "Chào mừng Anh/Chị {{full_name}} gia nhập CEO 1983!",
+        inAppBody: "- Kính gửi Anh/Chị: {{full_name}}\n- Ban Chấp Hành CLB Doanh Nhân CEO 1983 trân trọng cảm ơn và chào mừng Anh/Chị gia nhập ngôi nhà chung CEO 1983 (HanoiBA)!\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+        variables: [
+          { key: "full_name", label: "Tên hội viên", example: "Nguyễn Văn Hải" },
+          { key: "company_name", label: "Tên doanh nghiệp", example: "Tập Đoàn Hải Nam Global" },
+          { key: "member_code", label: "Mã hội viên", example: "M1983-168" },
+          { key: "department", label: "Ban sinh hoạt", example: "Ban Xúc tiến Thương mại" },
+        ],
+      };
+      const visual: VisualBlockContent = {
+        headerBadge: "CHÀO MỪNG HỘI VIÊN MỚI",
+        headerTitle: "THƯ CẢM ƠN GIA NHẬP CLB DOANH NHÂN CEO 1983",
+        headerSubtitle: "Kế thừa giá trị · Kiến tạo tương lai · Phát triển bền vững",
+        greeting: "Kính gửi: Quý Doanh nhân {{full_name}} - {{company_name}}",
+        introMessage: "Ban Chấp Hành CLB Doanh Nhân CEO 1983 trực thuộc Hiệp Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA) xin trân trọng gửi tới Quý Anh/Chị lời chào mừng nồng nhiệt và lời cảm ơn sâu sắc nhất khi Anh/Chị đã tin tưởng gia nhập đại gia đình CEO 1983.",
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN HỘI VIÊN CHÍNH THỨC",
+        highlightRows: [
+          { label: "Họ và tên", value: "{{full_name}}" },
+          { label: "Doanh nghiệp", value: "{{company_name}}" },
+          { label: "Mã hội viên", value: "{{member_code}}" },
+          { label: "Ban chuyên môn", value: "{{department}}" },
+        ],
+        showQrCode: false,
+        qrCodeUrl: "",
+        qrCodeNote: "",
+        outroMessage: "Chúng tôi tin tưởng rằng với sự đồng hành của Quý Anh/Chị, CLB sẽ ngày càng lớn mạnh, mở rộng nhiều cơ hội giao thương B2B đột phá.",
+        signature: "TM. BAN CHẤP HÀNH CLB DOANH NHÂN CEO 1983",
+      };
+      tmpl.visualContent = visual;
+      tmpl.htmlBody = buildHtmlFromVisualContent(visual);
+      setEditingTemplate(tmpl);
+      setVisualContent(visual);
+      toast.success("Đã áp dụng mẫu Thư cảm ơn đăng ký hội viên mới!");
+    } else if (presetKey === "MEMBER_ACCOUNT_CREDENTIALS") {
+      const tmpl: MailTemplateItem = {
+        ...editingTemplate,
+        code: "MEMBER_ACCOUNT_CREDENTIALS",
+        name: "Thông Tin Tài Khoản Đăng Nhập Hội Viên Mới",
+        category: "system",
+        description: "Gửi thông tin tài khoản, mật khẩu ban đầu và hướng dẫn tải App CEO 1983 tự động liên kết Zalo OA.",
+        subject: "[CEO 1983] Kích hoạt tài khoản Hội viên - Kính gửi Anh/Chị {{full_name}}",
+        inAppTitle: "Kích hoạt tài khoản Hội viên CEO 1983",
+        inAppBody: "- Kính gửi Anh/Chị: {{full_name}}\n- Tài khoản Cổng Hội viên CEO 1983 đã sẵn sàng: Tên đăng nhập: {{login_username}}\n- Đổi mật khẩu lần đầu tại: https://app.ceo1983.viconnect.vn/association/login\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+        variables: [
+          { key: "full_name", label: "Tên hội viên", example: "Dương Thị Huệ" },
+          { key: "member_code", label: "Mã hội viên", example: "M1983-016" },
+          { key: "login_username", label: "Tên đăng nhập / SĐT", example: "0973205683" },
+          { key: "temp_password", label: "Mật khẩu tạm", example: "Ceo1983@2026" },
+          { key: "app_install_url", label: "Link cài App & Zalo OA", example: "https://app.ceo1983.viconnect.vn/open-app?auto_install=true" },
+        ],
+      };
+      const visual: VisualBlockContent = {
+        headerBadge: "HỆ THỐNG CỔNG HỘI VIÊN CEO 1983",
+        headerTitle: "THÔNG TIN TÀI KHOẢN ĐĂNG NHẬP & CÀI ĐẶT APP",
+        headerSubtitle: "Nền tảng số kết nối giao thương và sinh hoạt hội viên",
+        greeting: "Kính gửi: Anh/Chị {{full_name}} (Mã số: {{member_code}})",
+        introMessage: "Ban Quản Trị Hệ Thống trân trọng gửi tới Anh/Chị thông tin đăng nhập Cổng thông tin và Ứng dụng Di động CLB Doanh Nhân CEO 1983. Lưu ý: Lần đầu đăng nhập bắt buộc phải đổi mật khẩu bảo mật.",
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN ĐĂNG NHẬP HỆ THỐNG",
+        highlightRows: [
+          { label: "Cổng đăng nhập", value: "https://app.ceo1983.viconnect.vn/association/login" },
+          { label: "Tên đăng nhập (Username)", value: "{{login_username}}" },
+          { label: "Mật khẩu khởi tạo", value: "{{temp_password}}" },
+          { label: "Cài App & Zalo OA", value: "{{app_install_url}}" },
+        ],
+        showQrCode: false,
+        qrCodeUrl: "",
+        qrCodeNote: "",
+        outroMessage: "Khi bấm vào link trên thiết bị di động, ứng dụng sẽ tự động kích hoạt cài đặt lên màn hình chính và liên kết trang Zalo OA chính thức của CLB.",
+        signature: "BAN QUẢN TRỊ CÔNG NGHỆ & CHUYỂN ĐỔI SỐ CEO 1983",
+      };
+      tmpl.visualContent = visual;
+      tmpl.htmlBody = buildHtmlFromVisualContent(visual);
+      setEditingTemplate(tmpl);
+      setVisualContent(visual);
+      toast.success("Đã áp dụng mẫu Gửi tài khoản hội viên mới!");
+    } else if (presetKey === "TRAINING_INVITATION") {
+      const prog = trainingPrograms[0];
+      const tmpl: MailTemplateItem = {
+        ...editingTemplate,
+        code: "TRAINING_INVITATION",
+        name: "Thư Mời Chương Trình Đào Tạo Chuyên Đề",
+        category: "meeting",
+        description: "Mẫu thư mời tham dự chương trình đào tạo, workshop nâng cao năng lực doanh nghiệp CEO 1983.",
+        subject: "[ĐÀO TẠO CEO 1983] {{course_title}} - Kính gửi Anh/Chị {{full_name}}",
+        inAppTitle: "Thư mời đào tạo: {{course_title}}",
+        inAppBody: "- Kính gửi Anh/Chị: {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự chương trình đào tạo: {{course_title}}\n- Diễn giả: {{speaker_name}}\n- Thời gian: {{course_date}}\n- Địa điểm: {{course_location}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+        variables: [
+          { key: "full_name", label: "Tên hội viên", example: "Lê Minh Tuấn" },
+          { key: "course_title", label: "Tên khóa đào tạo", example: prog?.title || "Quản Trị Dòng Tiền & Tối Ưu Chi Phí 2026" },
+          { key: "speaker_name", label: "Diễn giả", example: prog?.speaker || "TS. Lê Thẩm Dương" },
+          { key: "course_date", label: "Thời gian", example: prog?.date ? `${prog.date} (${prog.duration || "1 Ngày"})` : "08:30 Thứ Bảy, 20/11/2026" },
+          { key: "course_location", label: "Địa điểm", example: prog?.place || "Hội trường CEO 1983, Keangnam Landmark 72, Hà Nội" },
+          { key: "course_fee", label: "Chi phí", example: "Miễn phí dành cho Hội viên chính thức CEO 1983" },
+          { key: "rsvp_link", label: "Xác nhận tham dự", example: "https://app.ceo1983.viconnect.vn/association/events" },
+        ],
+      };
+      const visual: VisualBlockContent = {
+        headerBadge: "CHƯƠNG TRÌNH ĐÀO TẠO & WORKSHOP",
+        headerTitle: tmpl.variables.find((v) => v.key === "course_title")?.example || "KHÓA ĐÀO TẠO CHUYÊN ĐỀ DOANH NGHIỆP",
+        headerSubtitle: "Nâng cao năng lực quản trị · Bứt phá doanh thu 2026",
+        greeting: "Kính gửi: Anh/Chị {{full_name}}",
+        introMessage: "Ban Đào Tạo CLB Doanh Nhân CEO 1983 trân trọng kính mời Anh/Chị tham dự chương trình đào tạo chuyên sâu:",
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN KHÓA ĐÀO TẠO",
+        highlightRows: [
+          { label: "Chương trình", value: "{{course_title}}" },
+          { label: "Diễn giả", value: "{{speaker_name}}" },
+          { label: "Thời gian", value: "{{course_date}}" },
+          { label: "Địa điểm", value: "{{course_location}}" },
+          { label: "Chi phí", value: "{{course_fee}}" },
+          { label: "Xác nhận tham dự", value: "{{rsvp_link}}" },
+        ],
+        showQrCode: false,
+        qrCodeUrl: "",
+        qrCodeNote: "",
+        outroMessage: "Quý Anh/Chị vui lòng xác nhận đăng ký sớm để BTC chuẩn bị tài liệu và phòng học chu đáo nhất.",
+        signature: "TM. BAN ĐÀO TẠO CLB DOANH NHÂN CEO 1983",
+      };
+      tmpl.visualContent = visual;
+      tmpl.htmlBody = buildHtmlFromVisualContent(visual);
+      setEditingTemplate(tmpl);
+      setVisualContent(visual);
+      toast.success("Đã áp dụng mẫu Thư mời chương trình đào tạo!");
+    }
+  };
+
+  const handleSelectTrainingProgramInModal = (progId: string) => {
+    const prog = trainingPrograms.find((p) => p.id === progId);
+    if (!prog || !editingTemplate) return;
+
+    setEditingTemplate((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev };
+      next.name = `Thư Mời Đào Tạo: ${prog.title}`;
+      next.subject = `[ĐÀO TẠO CEO 1983] ${prog.title} - Kính gửi Anh/Chị {{full_name}}`;
+      next.inAppTitle = `Thư mời đào tạo: ${prog.title}`;
+      next.inAppBody = `- Kính gửi Anh/Chị: {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự khóa đào tạo: ${prog.title}\n- Diễn giả: ${prog.speaker}\n- Thời gian: ${prog.date} (${prog.duration || "1 Ngày"})\n- Địa điểm: ${prog.place}\n- Chi phí: Miễn phí dành cho Hội viên chính thức CEO 1983\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!`;
+
+      const nextVisual: VisualBlockContent = {
+        ...(prev.visualContent || visualContent),
+        headerBadge: "CHƯƠNG TRÌNH ĐÀO TẠO CHUYÊN ĐỀ",
+        headerTitle: prog.title.toUpperCase(),
+        headerSubtitle: `Diễn giả: ${prog.speaker} · ${prog.place}`,
+        greeting: "Kính gửi Anh/Chị {{full_name}}",
+        introMessage: `Ban Đào Tạo CLB Doanh Nhân CEO 1983 trân trọng kính mời Anh/Chị tham dự chương trình đào tạo "${prog.title}":`,
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN CHI TIẾT KHÓA HỌC",
+        highlightRows: [
+          { label: "Chương trình", value: prog.title },
+          { label: "Diễn giả", value: prog.speaker || "Chuyên gia cao cấp" },
+          { label: "Thời gian", value: `${prog.date || "Theo lịch"} (${prog.duration || "1 Ngày"})` },
+          { label: "Địa điểm", value: prog.place || "Trụ sở CLB CEO 1983" },
+          { label: "Chi phí", value: "Miễn phí dành cho Hội viên chính thức CEO 1983" },
+          { label: "Xác nhận tham dự", value: "https://app.ceo1983.viconnect.vn/association/events" },
+        ],
+        outroMessage: "Quý Anh/Chị vui lòng xác nhận đăng ký sớm để BTC chuẩn bị tài liệu và phòng học chu đáo nhất.",
+        signature: "TM. BAN ĐÀO TẠO CLB DOANH NHÂN CEO 1983",
+      };
+      next.visualContent = nextVisual;
+      next.htmlBody = buildHtmlFromVisualContent(nextVisual);
+      setVisualContent(nextVisual);
+      return next;
+    });
+    toast.success(`Đã tự động nạp dữ liệu khóa đào tạo "${prog.title}" vào template!`);
   };
 
   // Open Edit Modal
@@ -1588,91 +2124,382 @@ export function MailTemplateManager() {
                 </div>
               </div>
 
+              {/* CẤU HÌNH THÔNG TIN NỘP PHÍ CLB (ĐỂ TRỐNG QR - THEO QUY CHUẨN MỚI) */}
+              {(activeTemplate.code === "FEE_PAYMENT_NOTICE" || activeTemplate.category === "fee") && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 dark:bg-amber-950/20 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                      <CreditCard className="size-3.5 text-amber-600 dark:text-amber-400" />
+                      Thông Tin Tài Khoản Ngân Hàng CLB (Mẫu Nộp Phí - Để Trống Mã QR)
+                    </span>
+                    <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded-full">
+                      QR: Không hiển thị (Để trống)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-0.5">
+                        Ngân hàng CLB
+                      </label>
+                      <select
+                        value={clubBankName}
+                        onChange={(e) => {
+                          setClubBankName(e.target.value);
+                          setCustomSampleValues((prev) => ({ ...prev, club_bank_name: e.target.value }));
+                        }}
+                        className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-1.5 font-medium"
+                      >
+                        <option value="MB Bank (Ngân hàng Quân Đội)">MB Bank (Ngân hàng Quân Đội)</option>
+                        <option value="Techcombank (Ngân hàng Kỹ Thương)">Techcombank (Ngân hàng Kỹ Thương)</option>
+                        <option value="Vietcombank (Ngoại Thương Việt Nam)">Vietcombank (Ngoại Thương Việt Nam)</option>
+                        <option value="VPBank (Việt Nam Thịnh Vượng)">VPBank (Việt Nam Thịnh Vượng)</option>
+                        <option value="ACB (Ngân hàng Á Châu)">ACB (Ngân hàng Á Châu)</option>
+                        <option value="BIDV (Đầu Tư & Phát Triển)">BIDV (Đầu Tư & Phát Triển)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-0.5">
+                        Số tài khoản CLB
+                      </label>
+                      <input
+                        type="text"
+                        value={clubBankAccount}
+                        onChange={(e) => {
+                          setClubBankAccount(e.target.value);
+                          setCustomSampleValues((prev) => ({ ...prev, club_bank_account: e.target.value }));
+                        }}
+                        placeholder="198388889999"
+                        className="w-full text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-1.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-0.5">
+                        Chủ tài khoản
+                      </label>
+                      <input
+                        type="text"
+                        value={clubBankOwner}
+                        onChange={(e) => {
+                          setClubBankOwner(e.target.value);
+                          setCustomSampleValues((prev) => ({ ...prev, club_bank_owner: e.target.value }));
+                        }}
+                        placeholder="CLB DOANH NHAN CEO 1983"
+                        className="w-full text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-1.5 uppercase"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* CRM Advanced Targeting Toolbar: Ban, Zalo OA Subscribers, Excel Import */}
               <div className="pt-2 border-t border-blue-200/50 dark:border-blue-900/40 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Call API Hội viên theo Ban */}
-                  <div className="flex items-center gap-1.5 min-w-[200px] flex-1">
-                    <Users className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                    <select
-                      value={selectedDepartment}
-                      onChange={(e) => handleSelectDepartment(e.target.value)}
-                      className="w-full text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer"
-                    >
-                      <option value="">-- Nạp hội viên theo Ban ({membersList.length} HV) --</option>
-                      {departmentList.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
-                        </option>
-                      ))}
-                    </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {/* Call API Hội viên theo Ban kèm 3 chế độ (Chọn tất cả / Chọn 1 / Chọn nhiều) */}
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                        <Users className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        Nạp Hội Viên Theo Ban ({membersList.length} HV)
+                      </span>
+                      <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[10px] font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeptSelectMode("all");
+                            if (selectedDepartment) handleSelectDepartment(selectedDepartment);
+                          }}
+                          className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                            deptSelectMode === "all" ? "bg-blue-600 text-white font-bold" : "text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          Tất cả
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeptSelectMode("single");
+                            setShowMemberDropdown(true);
+                          }}
+                          className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                            deptSelectMode === "single" ? "bg-blue-600 text-white font-bold" : "text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          1 người
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeptSelectMode("multiple");
+                            setShowMemberDropdown(true);
+                          }}
+                          className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                            deptSelectMode === "multiple" ? "bg-blue-600 text-white font-bold" : "text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          Nhiều người
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={selectedDepartment}
+                        onChange={(e) => handleSelectDepartment(e.target.value)}
+                        className="flex-1 text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer"
+                      >
+                        <option value="">-- Chọn Ban Chuyên Môn --</option>
+                        {departmentList.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept} ({membersList.filter((m) => (m.department || "").toLowerCase().includes(dept.toLowerCase())).length} HV)
+                          </option>
+                        ))}
+                      </select>
+
+                      {(deptSelectMode === "single" || deptSelectMode === "multiple") && (
+                        <button
+                          type="button"
+                          onClick={() => setShowMemberDropdown(!showMemberDropdown)}
+                          className="px-2 py-1.5 text-[10px] font-bold rounded-lg border border-blue-500/40 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 cursor-pointer"
+                        >
+                          {showMemberDropdown ? "Đóng danh sách" : `Chọn HV (${selectedDeptMemberIds.length})`}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Dropdown tree / multi-select hội viên của Ban */}
+                    {showMemberDropdown && (
+                      <div className="mt-1 p-2 rounded-lg border border-blue-200 dark:border-blue-900 bg-slate-50 dark:bg-slate-950 max-h-48 overflow-y-auto space-y-1">
+                        <input
+                          type="text"
+                          value={memberSearchTerm}
+                          onChange={(e) => setMemberSearchTerm(e.target.value)}
+                          placeholder="Tìm hội viên theo tên, SĐT, doanh nghiệp..."
+                          className="w-full text-[10.5px] p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mb-1"
+                        />
+                        {deptMembers
+                          .filter((m) =>
+                            !memberSearchTerm ||
+                            String(m.name || m.fullName || "").toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                            String(m.phone || "").includes(memberSearchTerm) ||
+                            String(m.company || m.companyName || "").toLowerCase().includes(memberSearchTerm.toLowerCase())
+                          )
+                          .map((m) => {
+                            const mId = String(m.id || m.code);
+                            const isSelected = selectedDeptMemberIds.includes(mId);
+                            return (
+                              <div
+                                key={mId}
+                                onClick={() => {
+                                  if (deptSelectMode === "single") {
+                                    handleApplyDeptMemberSelection("single", [mId]);
+                                    setShowMemberDropdown(false);
+                                  } else {
+                                    const next = isSelected
+                                      ? selectedDeptMemberIds.filter((id) => id !== mId)
+                                      : [...selectedDeptMemberIds, mId];
+                                    handleApplyDeptMemberSelection("multiple", next);
+                                  }
+                                }}
+                                className={`flex items-center justify-between p-1.5 rounded text-[11px] cursor-pointer transition ${
+                                  isSelected ? "bg-blue-100 dark:bg-blue-900/60 font-bold" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <div className="truncate pr-1">
+                                  <span className="text-slate-900 dark:text-white font-semibold">{m.name || m.fullName}</span>
+                                  <span className="text-slate-500 text-[10px] ml-1">({m.phone || "Chưa có SĐT"})</span>
+                                </div>
+                                <span className="text-[10px] text-blue-600 dark:text-blue-400 shrink-0">
+                                  {isSelected ? "✓ Đã chọn" : "+ Chọn"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Call API Người đã nhắn tin Zalo OA */}
-                  <div className="flex items-center gap-1.5 min-w-[200px] flex-1">
-                    <MessageSquare className="size-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                    <select
-                      onChange={(e) => handleSelectZaloSubscriber(e.target.value)}
-                      className="w-full text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>-- Người tương tác Zalo OA ({zaloSubscribers.length}) --</option>
-                      {zaloSubscribers.map((sub) => (
-                        <option key={sub.id || sub.zalo_user_id} value={sub.id || sub.zalo_user_id}>
-                          {sub.name || "Khách"} {sub.phone ? `(${sub.phone})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Call API Người nhắn tin Zalo OA kèm 3 chế độ (Chọn tất cả / Chọn 1 / Chọn nhiều) */}
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                        <MessageSquare className="size-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                        Người Tương Tác Zalo OA ({zaloSubscribers.length})
+                      </span>
+                      <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[10px] font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => handleApplyZaloSelection("all", [])}
+                          className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                            zaloSelectMode === "all" ? "bg-cyan-600 text-white font-bold" : "text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          Tất cả
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setZaloSelectMode("single");
+                            setShowZaloDropdown(true);
+                          }}
+                          className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                            zaloSelectMode === "single" ? "bg-cyan-600 text-white font-bold" : "text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          1 người
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setZaloSelectMode("multiple");
+                            setShowZaloDropdown(true);
+                          }}
+                          className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                            zaloSelectMode === "multiple" ? "bg-cyan-600 text-white font-bold" : "text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          Nhiều người
+                        </button>
+                      </div>
+                    </div>
 
-                  {/* Import Excel */}
-                  <div>
-                    <input
-                      type="file"
-                      ref={excelFileInputRef}
-                      accept=".xlsx,.xls,.csv"
-                      className="hidden"
-                      onChange={handleImportExcel}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => excelFileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition cursor-pointer shrink-0"
-                    >
-                      <FileSpreadsheet className="size-3.5" />
-                      Nhập file Excel
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowZaloDropdown(!showZaloDropdown)}
+                        className="w-full text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer flex items-center justify-between"
+                      >
+                        <span>
+                          {selectedZaloIds.length > 0
+                            ? `Đã chọn ${selectedZaloIds.length} người tương tác Zalo`
+                            : `-- Chọn người tương tác Zalo OA (${zaloSubscribers.length}) --`}
+                        </span>
+                        <ChevronDown className="size-3 text-slate-500" />
+                      </button>
+
+                      {/* Import Excel */}
+                      <div>
+                        <input
+                          type="file"
+                          ref={excelFileInputRef}
+                          accept=".xlsx,.xls,.csv"
+                          className="hidden"
+                          onChange={handleImportExcel}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => excelFileInputRef.current?.click()}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-bold shadow-xs transition cursor-pointer shrink-0"
+                          title="Nhập file Excel chứa danh sách SĐT / Email"
+                        >
+                          <FileSpreadsheet className="size-3.5" />
+                          Excel
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Dropdown multi-select Zalo subscribers */}
+                    {showZaloDropdown && (
+                      <div className="mt-1 p-2 rounded-lg border border-cyan-200 dark:border-cyan-900 bg-slate-50 dark:bg-slate-950 max-h-48 overflow-y-auto space-y-1">
+                        <input
+                          type="text"
+                          value={zaloSearchTerm}
+                          onChange={(e) => setZaloSearchTerm(e.target.value)}
+                          placeholder="Tìm người tương tác Zalo..."
+                          className="w-full text-[10.5px] p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mb-1"
+                        />
+                        {zaloSubscribers
+                          .filter((s) =>
+                            !zaloSearchTerm ||
+                            String(s.name || "").toLowerCase().includes(zaloSearchTerm.toLowerCase()) ||
+                            String(s.phone || "").includes(zaloSearchTerm) ||
+                            String(s.company || "").toLowerCase().includes(zaloSearchTerm.toLowerCase())
+                          )
+                          .map((sub) => {
+                            const subId = String(sub.id || sub.zalo_user_id);
+                            const isSelected = selectedZaloIds.includes(subId);
+                            return (
+                              <div
+                                key={subId}
+                                onClick={() => {
+                                  if (zaloSelectMode === "single") {
+                                    handleApplyZaloSelection("single", [subId]);
+                                    setShowZaloDropdown(false);
+                                  } else {
+                                    const next = isSelected
+                                      ? selectedZaloIds.filter((id) => id !== subId)
+                                      : [...selectedZaloIds, subId];
+                                    handleApplyZaloSelection("multiple", next);
+                                  }
+                                }}
+                                className={`flex items-center justify-between p-1.5 rounded text-[11px] cursor-pointer transition ${
+                                  isSelected ? "bg-cyan-100 dark:bg-cyan-900/60 font-bold" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <div className="truncate pr-1">
+                                  <span className="text-slate-900 dark:text-white font-semibold">{sub.name || "Khách Zalo"}</span>
+                                  <span className="text-slate-500 text-[10px] ml-1">({sub.phone || sub.zalo_user_id})</span>
+                                </div>
+                                <span className="text-[10px] text-cyan-600 dark:text-cyan-400 shrink-0">
+                                  {isSelected ? "✓ Đã chọn" : "+ Chọn"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 </div>
 
+                {/* DÒNG NHẬP EMAIL & SĐT CÓ DẤU CỘNG (+) ĐỂ THÊM NGƯỜI NGOÀI HỆ THỐNG */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   {(sendChannel === "email" || sendChannel === "both") && (
-                    <div className="flex-1 min-w-[200px]">
-                      <input
-                        type="text"
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        placeholder="Email nhận (nhập nhiều email cách nhau bởi dấu phẩy)..."
-                        className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
-                      />
+                    <div className="flex-1 min-w-[200px] flex items-center gap-1">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={testEmail}
+                          onChange={(e) => setTestEmail(e.target.value)}
+                          placeholder="Email nhận (phân cách bằng dấu phẩy)..."
+                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddEmail(!showQuickAddEmail)}
+                        className="size-7 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center font-bold text-base cursor-pointer shrink-0 transition"
+                        title="Thêm nhanh địa chỉ Email mới"
+                      >
+                        +
+                      </button>
                     </div>
                   )}
+
                   {(sendChannel === "zalo" || sendChannel === "both") && (
-                    <div className="flex-1 min-w-[180px]">
-                      <input
-                        type="text"
-                        ref={testPhoneRef}
-                        value={testPhone}
-                        onChange={(e) => {
-                          setTestPhone(e.target.value);
-                          setPhoneError("");
-                        }}
-                        placeholder="SĐT Zalo (nhập nhiều số cách nhau bởi dấu phẩy)..."
-                        className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
-                      />
-                      {phoneError ? <p role="alert" className="mt-1 text-xs font-medium text-amber-900">{phoneError}</p> : null}
+                    <div className="flex-1 min-w-[180px] flex items-center gap-1">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          ref={testPhoneRef}
+                          value={testPhone}
+                          onChange={(e) => {
+                            setTestPhone(e.target.value);
+                            setPhoneError("");
+                          }}
+                          placeholder="SĐT Zalo ZBS (phân cách bằng dấu phẩy)..."
+                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddPhone(!showQuickAddPhone)}
+                        className="size-7 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold text-base cursor-pointer shrink-0 transition"
+                        title="Thêm nhanh số điện thoại Zalo mới cho người ngoài hệ thống"
+                      >
+                        +
+                      </button>
                     </div>
                   )}
+
                   <button
                     type="button"
                     onClick={handleSendTestToAdmin}
@@ -1683,6 +2510,64 @@ export function MailTemplateManager() {
                     {isSendingTest ? "Đang gửi..." : "Bắn Thông Báo Ngay"}
                   </button>
                 </div>
+
+                {/* Popover thêm nhanh Email */}
+                {showQuickAddEmail && (
+                  <div className="flex items-center gap-1.5 p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800">
+                    <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200 shrink-0">Thêm email:</span>
+                    <input
+                      type="email"
+                      value={quickEmailInput}
+                      onChange={(e) => setQuickEmailInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddQuickEmail()}
+                      placeholder="vd: doanhtri@gmail.com"
+                      className="flex-1 text-xs px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddQuickEmail}
+                      className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded cursor-pointer"
+                    >
+                      Thêm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAddEmail(false)}
+                      className="px-2 py-1 text-xs text-slate-500 cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                )}
+
+                {/* Popover thêm nhanh SĐT Zalo */}
+                {showQuickAddPhone && (
+                  <div className="flex items-center gap-1.5 p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                    <span className="text-[11px] font-bold text-blue-900 dark:text-blue-200 shrink-0">Thêm SĐT Zalo (ZBS):</span>
+                    <input
+                      type="text"
+                      value={quickPhoneInput}
+                      onChange={(e) => setQuickPhoneInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddQuickPhone()}
+                      placeholder="vd: 0912345678"
+                      className="flex-1 text-xs px-2 py-1 rounded border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-900 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddQuickPhone}
+                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded cursor-pointer"
+                    >
+                      Thêm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAddPhone(false)}
+                      className="px-2 py-1 text-xs text-slate-500 cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                )}
               </div>
               <ZbsTemplateConfigForm
                 templateCode={activeTemplate.code}
@@ -1803,6 +2688,59 @@ export function MailTemplateManager() {
             </div>
 
             <form onSubmit={handleSaveModal} className="space-y-4 text-xs">
+              {/* BỘ CHỌN MẪU ĐỊNH SẴN (DYNAMIC PRESETS) & GẮN KHÓA ĐÀO TẠO (API /events?type=training) */}
+              <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-bold text-blue-900 dark:text-blue-300 text-xs flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    Mẫu Định Sẵn Theo Nghiệp Vụ (Dynamic Presets):
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Chọn nhanh để tự động điền cấu trúc chuẩn đa kênh
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      Mẫu nghiệp vụ định sẵn:
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) handleApplyPresetInModal(e.target.value);
+                      }}
+                      defaultValue=""
+                      className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 font-medium"
+                    >
+                      <option value="" disabled>-- Chọn mẫu nghiệp vụ có sẵn --</option>
+                      <option value="MEMBER_WELCOME_THANKS">Thư cảm ơn đăng ký hội viên mới</option>
+                      <option value="MEMBER_ACCOUNT_CREDENTIALS">Template gửi tài khoản đăng nhập cho hội viên mới</option>
+                      <option value="TRAINING_INVITATION">Thư mời chương trình đào tạo chuyên đề</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      Gắn khóa đào tạo từ hệ thống (API):
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) handleSelectTrainingProgramInModal(e.target.value);
+                      }}
+                      defaultValue=""
+                      className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 font-medium"
+                    >
+                      <option value="" disabled>-- Chọn khóa đào tạo ({trainingPrograms.length}) --</option>
+                      {trainingPrograms.map((prog) => (
+                        <option key={prog.id} value={prog.id}>
+                          {prog.title} ({prog.speaker || "Chuyên gia"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {/* Metadata Info */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-secondary/30 p-3 rounded-xl border border-border/60">
                 <div>

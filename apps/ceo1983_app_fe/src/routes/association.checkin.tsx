@@ -198,7 +198,18 @@ function CheckinScreen() {
     }
 
     // 3. VÀ BẮT BUỘC phải được tick chọn ở popup tạo/sửa sự kiện trên CRM (nằm trong qrStaff)
-    return serverEventsData.filter((ev: any) => isUserAssignedToEvent(user, ev, member));
+    // hoặc được Ban Điều Hành gán quyền quét mã Checkin sự kiện
+    const isAssignedLocally =
+      typeof window !== "undefined" &&
+      (localStorage.getItem("vba_assigned_event_scanner") === "true" ||
+        localStorage.getItem(`vba_media_scanner_${user?.id}`) === "true" ||
+        localStorage.getItem(`vba_media_scanner_${member?.id}`) === "true" ||
+        localStorage.getItem(`vba_media_scanner_${member?.code}`) === "true");
+
+    const filtered = serverEventsData.filter((ev: any) => isUserAssignedToEvent(user, ev, member));
+    if (filtered.length > 0) return filtered;
+    if (isAssignedLocally) return serverEventsData;
+    return [];
   }, [serverEventsData, member, user, mediaOverride]);
 
   const [selectedScannerEventId, setSelectedScannerEventId] = useState<string>("");
@@ -219,8 +230,17 @@ function CheckinScreen() {
   // Must be strictly selected in assignedEvents (qr_scanners of an event)
   const isMediaDepartment = useMemo(() => {
     if (mediaOverride) return true;
+    if (isPrivilegedAdminOrPresident(user, member)) return true;
+    if (typeof window !== "undefined") {
+      const isAssignedLocally =
+        localStorage.getItem("vba_assigned_event_scanner") === "true" ||
+        localStorage.getItem(`vba_media_scanner_${user?.id}`) === "true" ||
+        localStorage.getItem(`vba_media_scanner_${member?.id}`) === "true" ||
+        localStorage.getItem(`vba_media_scanner_${member?.code}`) === "true";
+      if (isMediaDepartmentMember(user, member) && isAssignedLocally) return true;
+    }
     return assignedEvents.length > 0;
-  }, [mediaOverride, assignedEvents]);
+  }, [mediaOverride, assignedEvents, user, member]);
 
   const toggleMediaOverride = () => {
     const next = !mediaOverride;
@@ -730,6 +750,96 @@ function CheckinScreen() {
       try {
         void reloadRegistrations();
       } catch {}
+
+      // 3. Bắn thông báo chỗ ngồi và mã số vé (để quay trúng thưởng) về Mail và App CEO 1983 cho hội viên; đối với khách ngoài thì bắn về email của khách
+      const seat = updatedTicket.seatAssignment || "Khu vực VIP • Bàn 01";
+      const luckyCode = updatedTicket.luckyNumber || updatedTicket.ticketCode;
+      const isMember = Boolean(updatedTicket.memberCode);
+
+      if (isMember) {
+        // App Notification cho Hội viên
+        fetchNestApi("/notifications", {
+          method: "POST",
+          body: JSON.stringify({
+            memberCode: updatedTicket.memberCode,
+            title: `Check-in thành công: ${updatedTicket.eventTitle}`,
+            body: `Chào mừng ${updatedTicket.attendeeName}! Vị trí chỗ ngồi của bạn: ${seat}. Mã số vé quay trúng thưởng: ${luckyCode}.`,
+            type: "CHECKIN_SEAT_LUCKY_DRAW",
+            data: {
+              ticketCode: updatedTicket.ticketCode,
+              seat,
+              luckyCode,
+              eventId: updatedTicket.eventId,
+            },
+          }),
+        }).catch(() => null);
+
+        // Email cho Hội viên
+        const memberEmail = (updatedTicket as any).attendeeEmail || (member as any)?.email;
+        if (memberEmail) {
+          fetchNestApi("/mail/send-test", {
+            method: "POST",
+            body: JSON.stringify({
+              to: memberEmail,
+              subject: `[CEO 1983] Check-in thành công - Chỗ ngồi: ${seat} · Mã quay thưởng: ${luckyCode}`,
+              templateCode: "CHECKIN_SUCCESS_MEMBER",
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
+                  <div style="background: #003B95; color: #fff; padding: 20px; border-radius: 12px; text-align: center;">
+                    <h2 style="margin: 0; font-size: 18px;">XÁC NHẬN ĐIỂM DANH CHECK-IN THÀNH CÔNG</h2>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #93c5fd;">${updatedTicket.eventTitle}</p>
+                  </div>
+                  <div style="padding: 20px 0; color: #1e293b; font-size: 14px; line-height: 1.6;">
+                    <p>Kính gửi Anh/Chị <strong>${updatedTicket.attendeeName}</strong>,</p>
+                    <p>Ban Tổ Chức CLB Doanh Nhân CEO 1983 xác nhận Anh/Chị đã hoàn tất thủ tục check-in tại sự kiện.</p>
+                    <div style="background: #f8fafc; border-left: 4px solid #003B95; padding: 14px; margin: 16px 0; border-radius: 6px;">
+                      <p style="margin: 0 0 6px;"><strong>- Vị trí chỗ ngồi:</strong> <span style="color: #003B95; font-weight: bold; font-size: 15px;">${seat}</span></p>
+                      <p style="margin: 0 0 6px;"><strong>- Mã số vé / Mã quay trúng thưởng:</strong> <span style="color: #d97706; font-weight: bold; font-size: 16px;">${luckyCode}</span></p>
+                      <p style="margin: 0;"><strong>- Mã vé điện tử:</strong> ${updatedTicket.ticketCode}</p>
+                    </div>
+                    <p style="font-size: 12.5px; color: #64748b;">Mã số vé của Anh/Chị sẽ được sử dụng trực tiếp trong chương trình Quay Số May Mắn Trúng Thưởng tại sự kiện.</p>
+                    <p style="font-size: 12.5px; color: #64748b;">Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204</p>
+                    <p style="margin-top: 16px;">Trân trọng,<br/><strong>Ban Tổ Chức CLB Doanh Nhân CEO 1983</strong></p>
+                  </div>
+                </div>
+              `,
+            }),
+          }).catch(() => null);
+        }
+      } else {
+        // Đối với Khách ngoài không thuộc CEO 1983: Bắn về email của khách
+        const guestEmail = (updatedTicket as any).attendeeEmail || (updatedTicket as any).email;
+        if (guestEmail) {
+          fetchNestApi("/mail/send-test", {
+            method: "POST",
+            body: JSON.stringify({
+              to: guestEmail,
+              subject: `[CEO 1983] Chào mừng Quý khách tham dự ${updatedTicket.eventTitle} - Chỗ ngồi: ${seat}`,
+              templateCode: "CHECKIN_SUCCESS_GUEST",
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
+                  <div style="background: #003B95; color: #fff; padding: 20px; border-radius: 12px; text-align: center;">
+                    <h2 style="margin: 0; font-size: 18px;">XÁC NHẬN CHECK-IN ĐẠI BIỂU KHÁCH MỜI</h2>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #93c5fd;">${updatedTicket.eventTitle}</p>
+                  </div>
+                  <div style="padding: 20px 0; color: #1e293b; font-size: 14px; line-height: 1.6;">
+                    <p>Kính gửi Quý Đại biểu <strong>${updatedTicket.attendeeName}</strong>,</p>
+                    <p>Ban Tổ Chức CLB Doanh Nhân CEO 1983 trân trọng cảm ơn Quý Đại biểu đã đến tham dự sự kiện.</p>
+                    <div style="background: #f8fafc; border-left: 4px solid #003B95; padding: 14px; margin: 16px 0; border-radius: 6px;">
+                      <p style="margin: 0 0 6px;"><strong>- Vị trí chỗ ngồi của Quý khách:</strong> <span style="color: #003B95; font-weight: bold; font-size: 15px;">${seat}</span></p>
+                      <p style="margin: 0 0 6px;"><strong>- Mã số tham dự / Quay thưởng:</strong> <span style="color: #d97706; font-weight: bold; font-size: 16px;">${luckyCode}</span></p>
+                      <p style="margin: 0;"><strong>- Mã vé:</strong> ${updatedTicket.ticketCode}</p>
+                    </div>
+                    <p style="font-size: 12.5px; color: #64748b;">Mã số của Quý Đại biểu sẽ được sử dụng trong phiên Quay Số May Mắn của chương trình.</p>
+                    <p style="font-size: 12.5px; color: #64748b;">Hotline BTC hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204</p>
+                    <p style="margin-top: 16px;">Trân trọng cảm ơn,<br/><strong>Ban Tổ Chức CLB Doanh Nhân CEO 1983</strong></p>
+                  </div>
+                </div>
+              `,
+            }),
+          }).catch(() => null);
+        }
+      }
 
       // Add to local history list for display
       const newRec: MyCheckinRecord = {

@@ -1400,112 +1400,131 @@ function Home() {
             <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
               Tính năng nhanh
             </div>
-            <button
-              type="button"
-              onClick={() => setAllFeaturesModalOpen(true)}
-              style={{
-                backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                color: brandColorTheme.primaryColor,
-              }}
-              className="px-2.5 py-1 rounded-lg border flex justify-start items-center gap-1.5 cursor-pointer hover:opacity-90 transition"
-            >
-              <div className="text-xs font-semibold font-['Inter'] leading-5">
-                Xem tất cả
-              </div>
-              <img src="/icons/home/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCustomShortcutsModalOpen(true)}
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                  color: brandColorTheme.primaryColor,
+                }}
+                className="px-2.5 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-xs font-semibold"
+                title="Tùy chỉnh 4 phím tắt"
+              >
+                <Pencil className="size-3" />
+                <span>Tùy chỉnh</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllFeaturesModalOpen(true)}
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                  color: brandColorTheme.primaryColor,
+                }}
+                className="px-2.5 py-1 rounded-lg border flex justify-start items-center gap-1.5 cursor-pointer hover:opacity-90 transition"
+              >
+                <div className="text-xs font-semibold font-['Inter'] leading-5">
+                  Xem tất cả
+                </div>
+                <img src="/icons/home/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
+              </button>
+            </div>
           </div>
 
-          <div className="self-stretch px-4 pt-3.5 pb-2 flex justify-between items-start gap-2">
-            {/* 1. Tin nhắn */}
-            <Link
-              to="/association/messages"
-              search={{ tab: "messages" }}
-              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
-            >
-              <div
-                style={{
-                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                }}
-                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition"
-              >
-                <BubbleChatIcon color={brandColorTheme.primaryColor} className="size-6" />
-              </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
-                Tin nhắn
-              </div>
-            </Link>
+          <div className="self-stretch px-4 pt-3.5 pb-2 grid grid-cols-4 gap-2">
+            {activeShortcutIds.slice(0, 4).map((id) => {
+              const item = ALL_SHORTCUT_OPTIONS.find((s) => s.id === id) || {
+                id,
+                name: "Tính năng",
+                desc: "",
+                to: "/association",
+                iconName: "Sparkles",
+              };
 
-            {/* 2. Danh bạ CEO */}
-            <Link
-              to="/association/members"
-              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
-            >
-              <div
-                style={{
-                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                }}
-                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative"
-              >
-                <ContactBookIcon color={brandColorTheme.primaryColor} className="size-6" />
-                <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
-                  <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
-                    {directoryMembers.length > 0 ? directoryMembers.length : "10"}
+              const isConnectModal = item.to === "#connect";
+              const isAlarmModal = item.to === "#alarm";
+
+              const badgeCount =
+                item.id === "members"
+                  ? (directoryMembers.length > 0 ? directoryMembers.length : null)
+                  : item.id === "opportunities"
+                  ? (totalOpportunitiesCount > 0 ? totalOpportunitiesCount : null)
+                  : null;
+
+              const content = (
+                <div className="w-full inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative">
+                  <div
+                    style={{
+                      backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                      borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                    }}
+                    className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative"
+                  >
+                    {getShortcutIcon(item.iconName, "size-6", brandColorTheme.primaryColor)}
+
+                    {badgeCount !== null && (
+                      <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
+                        <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
+                          {badgeCount}
+                        </div>
+                      </div>
+                    )}
+                    {item.badge && badgeCount === null && (
+                      <div className={`px-1.5 py-0.2 right-[-4px] top-[-6px] absolute ${item.badgeColor || "bg-amber-500 text-slate-900"} rounded-full text-[9px] font-black uppercase ring-1 ring-white dark:ring-slate-900 shadow-xs`}>
+                        {item.badge}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4 line-clamp-1 truncate max-w-full">
+                    {item.name}
                   </div>
                 </div>
-              </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
-                Danh bạ CEO
-              </div>
-            </Link>
+              );
 
-            {/* 3. Báo cáo */}
-            <Link
-              to="/association/analytics"
-              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer"
-            >
-              <div
-                style={{
-                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                }}
-                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition"
-              >
-                <ChartBreakoutCircleIcon color={brandColorTheme.primaryColor} className="size-6" />
-              </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
-                Báo cáo
-              </div>
-            </Link>
+              if (isConnectModal) {
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setCreateConnectionModalOpen(true)}
+                    className="w-full text-center p-0 bg-transparent border-none cursor-pointer"
+                  >
+                    {content}
+                  </button>
+                );
+              }
 
-            {/* 4. Giao thương B2B */}
-            <Link
-              to="/association/opportunities"
-              className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
-            >
-              <div
-                style={{
-                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                }}
-                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative"
-              >
-                <Briefcase04Icon color={brandColorTheme.primaryColor} className="size-6" />
-                {totalOpportunitiesCount > 0 && (
-                  <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
-                    <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
-                      {totalOpportunitiesCount}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
-                Giao thương
-              </div>
-            </Link>
+              if (isAlarmModal) {
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setAlarmModalOpen(true)}
+                    className="w-full text-center p-0 bg-transparent border-none cursor-pointer"
+                  >
+                    {content}
+                  </button>
+                );
+              }
+
+              const [path, queryString] = item.to.split("?");
+              const searchObj = queryString
+                ? Object.fromEntries(new URLSearchParams(queryString))
+                : undefined;
+
+              return (
+                <Link
+                  key={id}
+                  to={path}
+                  search={searchObj}
+                  className="w-full text-center cursor-pointer block"
+                >
+                  {content}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

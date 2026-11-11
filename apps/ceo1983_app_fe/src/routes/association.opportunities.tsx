@@ -72,6 +72,7 @@ import { fetchNestApi, resolveMediaUrl, uploadFileToNest } from "@/lib/api-clien
 import { useT, useFmt } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { formatDisplayDate } from "@/lib/date-format";
+import { recordUserActivity } from "@/lib/user-activity-logger";
 import { StandardCurrencyInput } from "@/components/common/StandardCurrencyInput";
 import { BusinessConnectBottomSheet, type BusinessConnectTarget } from "@/components/common/BusinessConnectBottomSheet";
 import {
@@ -380,6 +381,20 @@ function OpportunitiesScreen() {
       localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
       window.dispatchEvent(new CustomEvent("notifications-updated"));
 
+      recordUserActivity({
+        action: "PROPOSE_DEAL",
+        title: `Đề xuất Deal cho cơ hội: ${dealModalOpp.title}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: {
+          oppId: dealModalOpp.id,
+          oppTitle: dealModalOpp.title,
+          dealPrice,
+          dealMessage,
+          detail: `Giá chào: ${Number(dealPrice).toLocaleString("vi-VN")} đ. Lời nhắn: "${dealMessage}"`,
+        },
+      });
+
       toast.success("Đã gửi đề xuất Deal chào giá tới người đăng cơ hội thành công!");
       setDealModalOpp(null);
     } catch {
@@ -408,6 +423,20 @@ function OpportunitiesScreen() {
       localStorage.setItem("vba_notifications", JSON.stringify(notifs.slice(0, 50)));
       window.dispatchEvent(new CustomEvent("notifications-updated"));
     } catch {}
+
+    recordUserActivity({
+      action: "APPROVE_DEAL",
+      title: `Đồng ý deal cơ hội: ${oppTitle}`,
+      badge: "Giao thương",
+      userId: user?.id,
+      metadata: {
+        oppId,
+        oppTitle,
+        partnerName,
+        partnerCompany,
+        detail: `Chấp thuận đề xuất thương vụ với ${partnerName} (${partnerCompany})`,
+      },
+    });
 
     toast.success("Đã đồng ý deal chào giá! Hệ thống đã gửi thông báo đến đối tác để kết nối cuộc gặp.");
   };
@@ -1111,10 +1140,32 @@ function OpportunitiesScreen() {
     try {
       await doInterest({ data: { opportunityId: id } });
       setInterestedIds((prev) => Array.from(new Set([...prev, id])));
+      recordUserActivity({
+        action: "INTEREST_OPPORTUNITY",
+        title: `Quan tâm cơ hội: ${opp?.title || id}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: {
+          oppId: id,
+          oppTitle: opp?.title,
+          detail: `Hội viên bấm quan tâm cơ hội: "${opp?.title || id}"`,
+        },
+      });
       toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
       reload();
     } catch (e) {
       setInterestedIds((prev) => Array.from(new Set([...prev, id])));
+      recordUserActivity({
+        action: "INTEREST_OPPORTUNITY",
+        title: `Quan tâm cơ hội: ${opp?.title || id}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: {
+          oppId: id,
+          oppTitle: opp?.title,
+          detail: `Hội viên bấm quan tâm cơ hội: "${opp?.title || id}"`,
+        },
+      });
       toast.success("Đã ghi nhận sự quan tâm kết nối của Quý CEO!");
     } finally {
       setBusy(null);
@@ -1130,10 +1181,24 @@ function OpportunitiesScreen() {
         return fetchNestApi(`/opportunities/${id}/uninterest`, { method: "POST" });
       });
       setInterestedIds((prev) => prev.filter((x) => x !== id));
+      recordUserActivity({
+        action: "UNINTEREST_OPPORTUNITY",
+        title: `Hủy quan tâm cơ hội: ${targetOpp?.title || id}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: { oppId: id, oppTitle: targetOpp?.title },
+      });
       toast.success("Đã hủy quan tâm cơ hội!");
       reload();
     } catch (e) {
       setInterestedIds((prev) => prev.filter((x) => x !== id));
+      recordUserActivity({
+        action: "UNINTEREST_OPPORTUNITY",
+        title: `Hủy quan tâm cơ hội: ${targetOpp?.title || id}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: { oppId: id, oppTitle: targetOpp?.title },
+      });
       toast.success("Đã hủy quan tâm cơ hội!");
     } finally {
       setBusy(null);
@@ -1196,6 +1261,17 @@ function OpportunitiesScreen() {
       return;
     try {
       await fetchNestApi(`/opportunities/${id}`, { method: "DELETE" });
+      recordUserActivity({
+        action: "DELETE_OPPORTUNITY",
+        title: `Đã đóng/xóa cơ hội: ${selectedOpp?.title || id}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: {
+          oppId: id,
+          title: selectedOpp?.title,
+          detail: `Hội viên đã đóng/xóa cơ hội giao thương khỏi sàn B2B`,
+        },
+      });
       toast.success("Đã xóa cơ hội thành công!");
       setLocalOpps((prev) => (prev || []).filter((o) => o.id !== id));
       if (selectedOpp?.id === id) {
@@ -1203,6 +1279,17 @@ function OpportunitiesScreen() {
       }
       reload();
     } catch {
+      recordUserActivity({
+        action: "DELETE_OPPORTUNITY",
+        title: `Đã đóng/xóa cơ hội: ${selectedOpp?.title || id}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: {
+          oppId: id,
+          title: selectedOpp?.title,
+          detail: `Hội viên đã đóng/xóa cơ hội giao thương khỏi sàn B2B`,
+        },
+      });
       toast.error("Không thể xóa cơ hội. Vui lòng thử lại!");
     }
   };
@@ -1395,6 +1482,20 @@ function OpportunitiesScreen() {
       };
 
       setLocalOpps((prev) => [newOppItem, ...(prev || [])]);
+
+      recordUserActivity({
+        action: "CREATE_OPPORTUNITY",
+        title: `Tạo cơ hội giao thương: ${newTitle.trim()}`,
+        badge: "Giao thương",
+        userId: user?.id,
+        metadata: {
+          oppId: String(createdId),
+          title: newTitle.trim(),
+          budget: newOppVal,
+          industry: newIndustry,
+          detail: `Quy mô: ${newOppVal}. Ngành nghề: ${newIndustry}.`,
+        },
+      });
 
       toast.success("Đã đăng cơ hội thành công lên hệ thống!");
       setCreateModalOpen(false);
@@ -2179,6 +2280,17 @@ function OpportunitiesScreen() {
         initialOpportunityId={negotiateOpp?.id}
         initialOpportunityTitle={negotiateOpp?.title}
         onSuccess={() => {
+          recordUserActivity({
+            action: "SETUP_MEETING",
+            title: `Hẹn gặp 1-1 với ${negotiateTarget?.name || "đối tác"}`,
+            badge: "Kết nối",
+            userId: user?.id,
+            metadata: {
+              targetName: negotiateTarget?.name,
+              oppTitle: negotiateOpp?.title,
+              detail: `Hẹn gặp 1-1 đàm phán cơ hội: "${negotiateOpp?.title || "Hợp tác B2B"}"`,
+            },
+          });
           toast.success("Đã gửi đề xuất lịch hẹn đàm phán 1-1 thành công!");
           setNegotiateTarget(null);
           setNegotiateOpp(null);

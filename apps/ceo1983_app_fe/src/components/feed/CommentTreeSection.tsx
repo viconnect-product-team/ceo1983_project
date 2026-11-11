@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
 import { MEMBERS } from "@/lib/members-data";
+import { recordUserActivity } from "@/lib/user-activity-logger";
 
 export const COMMENT_EMOTIONS = [
   { id: "like", emoji: "👍", label: "Thích" },
@@ -794,6 +795,18 @@ export function CommentTreeSection({
       });
 
       if (onCommentCountChange) onCommentCountChange(comments.length + 1);
+
+      recordUserActivity({
+        action: "POST_COMMENT",
+        title: replyingTo ? `Phản hồi bình luận của ${replyingTo.authorName}` : "Đăng bình luận bài viết",
+        badge: "Bình luận",
+        userId: user?.id,
+        metadata: {
+          postId,
+          content: text,
+          detail: `Nội dung: "${text.length > 60 ? text.slice(0, 60) + '...' : text}"`,
+        },
+      });
 
       // Reset form
       setInputText("");

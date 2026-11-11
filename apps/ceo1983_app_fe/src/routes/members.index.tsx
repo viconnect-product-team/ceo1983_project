@@ -441,6 +441,7 @@ function MembersPage() {
         feePaid: pStatus === "paid" || pStatus === "cash",
         address: v.address ? String(v.address).trim() : undefined,
         about: v.about ? String(v.about).trim() : undefined,
+        department: (v as any).department ? String((v as any).department).trim() : (editing?.department || undefined),
       };
 
       if (editing) {
@@ -452,6 +453,48 @@ function MembersPage() {
           method: "PUT",
           body: JSON.stringify(payload),
         });
+
+        // 1. Khi được thay đổi quyền add vào 1 Ban: Gửi thông báo về App CEO 1983
+        const targetDept = payload.department;
+        if (targetDept && targetDept !== editing.department) {
+          const deptName = targetDept;
+          try {
+            await fetchNestApi("/notifications", {
+              method: "POST",
+              body: JSON.stringify({
+                memberId: editing.id,
+                userId: (editing as any).userId || editing.id,
+                memberCode: editing.code,
+                title: "Thông báo phân công Ban chuyên môn",
+                body: `Bạn đã được thêm vào ${deptName} của CLB Doanh Nhân CEO 1983.`,
+                type: "DEPARTMENT_ASSIGNED",
+                data: {
+                  department: deptName,
+                  memberCode: editing.code,
+                },
+              }),
+            });
+          } catch {}
+
+          // 2. Đặc biệt nếu ở Ban Truyền Thông khi được gán quyền quét mã checkin sự kiện
+          const isMedia = /truyền thông|media|btt/i.test(deptName);
+          if (isMedia) {
+            try {
+              localStorage.setItem("vba_assigned_event_scanner", "true");
+              localStorage.setItem(`vba_media_scanner_${editing.id}`, "true");
+              localStorage.setItem(`vba_media_scanner_${editing.code}`, "true");
+              await fetchNestApi(`/members/${editing.id}/roles`, {
+                method: "POST",
+                body: JSON.stringify({
+                  role: "MEDIA_SCANNER",
+                  canScanCheckin: true,
+                  department: deptName,
+                }),
+              }).catch(() => null);
+            } catch {}
+          }
+        }
+
         toast.success(t("members.updated") || "Cập nhật thông tin hội viên thành công");
         setEditing(null);
       }

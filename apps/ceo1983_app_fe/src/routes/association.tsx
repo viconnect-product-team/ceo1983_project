@@ -275,7 +275,7 @@ function MemberRoot() {
     if (typeof window === "undefined") return false;
     const flag = localStorage.getItem("vba_must_change_password");
     if (flag === "true") return true;
-    const rawUser = localStorage.getItem("auth_user");
+    const rawUser = localStorage.getItem("auth_user") || localStorage.getItem("vibe_user");
     if (rawUser) {
       try {
         const u = JSON.parse(rawUser);
@@ -288,11 +288,34 @@ function MemberRoot() {
           u.role === "admin" ||
           u.role === "quan_tri";
         if (isSysAdmin) return false;
-        return Boolean(u.mustChangePassword || u.must_change_password || u.onboarding_status === "new");
+        return Boolean(
+          u.mustChangePassword ||
+          u.must_change_password ||
+          u.isFirstLogin ||
+          u.firstLogin ||
+          u.onboarding_status === "new"
+        );
       } catch { }
     }
     return false;
   });
+
+  // Đồng bộ thêm nếu user từ AuthContext cập nhật có mustChangePassword
+  useEffect(() => {
+    if (!user) return;
+    const email = (user.email || "").toLowerCase().trim();
+    const isSysAdmin =
+      email === "admin@connect.vn" ||
+      email === "admin@ceo1983.com" ||
+      email === "ceo.tongthuky@ceo1983.com" ||
+      user.isAdmin ||
+      user.role === "admin" ||
+      user.role === "quan_tri";
+    if (isSysAdmin) return;
+    if (user.mustChangePassword || (user as any).must_change_password || (user as any).isFirstLogin || (user as any).firstLogin) {
+      setMustChangePassword(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     const handlePasswordChanged = () => {

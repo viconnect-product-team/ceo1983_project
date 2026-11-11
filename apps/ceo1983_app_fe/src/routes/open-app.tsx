@@ -15,14 +15,16 @@ import {
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 
+const ZALO_OA_URL = "https://zalo.me/ceo1983";
+
 export const Route = createFileRoute("/open-app")({
   head: () => ({
     meta: [
-      { title: "Mở & Cài Đặt Ứng Dụng CEO 1983 — CLB Doanh Nhân CEO 1983 (HanoiBA)" },
+      { title: "Cài Đặt Ứng Dụng & Kết Nối Zalo OA — CLB Doanh Nhân CEO 1983 (HanoiBA)" },
       {
         name: "description",
         content:
-          "Cài đặt ứng dụng Hội viên CEO 1983 lên điện thoại di động iOS (iPhone/iPad) và Android chỉ với 1 chạm.",
+          "Cài đặt ứng dụng Hội viên CEO 1983 lên thiết bị di động iOS và Android chỉ với 1 chạm, kết nối trực tiếp đến Zalo Official Account chính thức của CLB.",
       },
     ],
   }),
@@ -38,12 +40,25 @@ function OpenAppLauncherPage() {
   const [targetEmail, setTargetEmail] = useState("");
   const [currentUrl, setCurrentUrl] = useState("https://ceo1983.viconnect.vn/association/login");
 
+  const openZaloOa = (openInNewTab = true) => {
+    try {
+      if (typeof window !== "undefined") {
+        if (openInNewTab) {
+          window.open(ZALO_OA_URL, "_blank");
+        } else {
+          window.location.href = ZALO_OA_URL;
+        }
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     // 1. Đọc query params
     const params = new URLSearchParams(window.location.search);
     const email = params.get("email") || "";
+    const autoInstall = params.get("auto_install") === "true" || params.get("ref") === "email_account";
     setTargetEmail(email);
 
     const origin = window.location.origin;
@@ -65,7 +80,17 @@ function OpenAppLauncherPage() {
       setDeviceType("desktop");
     }
 
-    // 3. Kiểm tra xem đã chạy ở chế độ App Standalone (PWA đã cài đặt hoặc Capacitor Native) chưa
+    // 3. Nếu bấm từ email thông báo tài khoản: Tự động link đến trang Zalo OA CEO 1983 sau 1.2s
+    if (autoInstall) {
+      const zaloTimer = setTimeout(() => {
+        try {
+          window.open(ZALO_OA_URL, "_blank");
+        } catch {}
+      }, 1500);
+      return () => clearTimeout(zaloTimer);
+    }
+
+    // 4. Kiểm tra xem đã chạy ở chế độ App Standalone (PWA đã cài đặt hoặc Capacitor Native) chưa
     const standaloneMode =
       window.matchMedia("(display-mode: standalone)").matches ||
       (navigator as any).standalone === true ||
@@ -74,14 +99,13 @@ function OpenAppLauncherPage() {
 
     if (standaloneMode) {
       setIsStandalone(true);
-      // Nếu đã ở trong App độc lập, tự động chuyển hướng vào màn hình đăng nhập luôn sau 800ms
       setTimeout(() => {
         window.location.href = loginTarget;
       }, 800);
       return;
     }
 
-    // 4. Bắt sự kiện PWA beforeinstallprompt từ window hoặc global cache
+    // 5. Bắt sự kiện PWA beforeinstallprompt từ window hoặc global cache
     const globalPrompt = (window as any).__pwaInstallPrompt;
     if (globalPrompt) {
       setInstallPrompt(globalPrompt);
@@ -106,8 +130,12 @@ function OpenAppLauncherPage() {
     return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
   }, []);
 
-  // Xử lý khi nhấn nút Cài Đặt Android (1 chạm)
+  // Xử lý khi nhấn nút Cài Đặt Android (1 chạm) + Tự động mở link Zalo OA
   const handleInstallAndroid = async () => {
+    // 1. Mở song song link Zalo OA CEO 1983
+    openZaloOa(true);
+
+    // 2. Kích hoạt cài đặt PWA
     if (installPrompt) {
       try {
         installPrompt.prompt();
@@ -118,16 +146,14 @@ function OpenAppLauncherPage() {
           setInstallPrompt(null);
         }
       } catch {
-        // Fallback: điều hướng vào login
         window.location.href = currentUrl;
       }
     } else {
-      // Nếu trình duyệt không hỗ trợ prompt PWA hoặc đã từ chối: Điều hướng vào App trực tiếp
       window.location.href = currentUrl;
     }
   };
 
-  // Vào App ngay trên trình duyệt
+  // Vào App ngay trên trình duyệt (kèm mở Zalo OA nếu chưa quan tâm)
   const handleOpenDirectly = () => {
     window.location.href = currentUrl;
   };
@@ -215,7 +241,18 @@ function OpenAppLauncherPage() {
                   className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 cursor-pointer transition active:scale-95"
                 >
                   <Download className="size-4.5" />
-                  <span>Cài Đặt App CEO 1983 Ngay</span>
+                  <span>Cài Đặt App CEO 1983 & Mở Zalo OA</span>
+                </button>
+
+                {/* Nút Quan Tâm Zalo OA CEO 1983 */}
+                <button
+                  type="button"
+                  onClick={() => openZaloOa(true)}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#0068FF] to-[#004DC7] hover:from-[#005FE8] hover:to-[#0042AC] text-white font-bold text-xs shadow-md shadow-blue-900/30 flex items-center justify-center gap-2 cursor-pointer transition active:scale-95"
+                >
+                  <span className="size-5 rounded-full bg-white text-[#0068FF] font-black text-[11px] grid place-items-center">Z</span>
+                  <span>Quan Tâm Zalo OA CEO 1983 Ngay</span>
+                  <ExternalLink className="size-3.5 ml-0.5 opacity-80" />
                 </button>
 
                 {/* Nút Vào App Trực Tiếp */}
@@ -270,10 +307,24 @@ function OpenAppLauncherPage() {
                   </div>
                 </div>
 
+                {/* Nút Quan Tâm Zalo OA CEO 1983 iOS */}
+                <button
+                  type="button"
+                  onClick={() => openZaloOa(true)}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#0068FF] to-[#004DC7] hover:from-[#005FE8] hover:to-[#0042AC] text-white font-bold text-xs shadow-md shadow-blue-900/30 flex items-center justify-center gap-2 cursor-pointer transition active:scale-95"
+                >
+                  <span className="size-5 rounded-full bg-white text-[#0068FF] font-black text-[11px] grid place-items-center">Z</span>
+                  <span>Quan Tâm Zalo OA CEO 1983 Ngay</span>
+                  <ExternalLink className="size-3.5 ml-0.5 opacity-80" />
+                </button>
+
                 {/* Nút Vào App Trực Tiếp iOS */}
                 <button
                   type="button"
-                  onClick={handleOpenDirectly}
+                  onClick={() => {
+                    openZaloOa(true);
+                    handleOpenDirectly();
+                  }}
                   className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#003B95] to-[#002B70] hover:from-[#002766] hover:to-[#001A4D] text-white font-extrabold text-sm shadow-lg shadow-blue-950/50 flex items-center justify-center gap-2 cursor-pointer transition active:scale-95"
                 >
                   <ExternalLink className="size-4" />
@@ -298,6 +349,17 @@ function OpenAppLauncherPage() {
                   Dùng Camera điện thoại quét mã QR trên để tự động mở và cài đặt App CEO 1983 lên thiết bị di động.
                 </p>
 
+                {/* Nút Quan Tâm Zalo OA CEO 1983 Desktop */}
+                <button
+                  type="button"
+                  onClick={() => openZaloOa(true)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#0068FF] to-[#004DC7] hover:from-[#005FE8] hover:to-[#0042AC] text-white font-bold text-xs shadow-md shadow-blue-900/30 flex items-center justify-center gap-2 cursor-pointer transition active:scale-95"
+                >
+                  <span className="size-4 rounded-full bg-white text-[#0068FF] font-black text-[10px] grid place-items-center">Z</span>
+                  <span>Liên Kết Trang Zalo OA CLB CEO 1983</span>
+                  <ExternalLink className="size-3.5 ml-0.5 opacity-80" />
+                </button>
+
                 <button
                   type="button"
                   onClick={handleOpenDirectly}
@@ -311,14 +373,17 @@ function OpenAppLauncherPage() {
           </div>
         )}
 
-        {/* Footer cam kết bảo mật */}
+        {/* Footer cam kết bảo mật & Hotline */}
         <div className="mt-8 text-center space-y-1">
           <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
             <ShieldCheck className="size-3.5 text-emerald-400" />
             <span>Ứng dụng bảo mật độc quyền CLB Doanh Nhân CEO 1983</span>
           </div>
           <p className="text-[10px] text-slate-400">
-            Bản quyền © 2026 CLB Doanh Nhân CEO 1983 (HanoiBA). Hotline: 0983 1983 83
+            Bản quyền © 2026 CLB Doanh Nhân CEO 1983 (HanoiBA)
+          </p>
+          <p className="text-[10.5px] text-amber-400/90 font-mono font-bold">
+            Hotline Hỗ Trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
           </p>
         </div>
       </div>

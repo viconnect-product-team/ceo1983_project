@@ -95,6 +95,7 @@ import { toast } from "sonner";
 import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { sendExternalNotification } from "@/lib/notification-permissions";
+import { recordUserActivity } from "@/lib/user-activity-logger";
 
 export function ChatThread({
   peer,
@@ -1288,6 +1289,18 @@ export function ChatThread({
     }
     setText("");
     saveRecentConversation(peer, finalPayload, user?.id);
+
+    recordUserActivity({
+      action: "SEND_MESSAGE",
+      title: `Nhắn tin cho ${peer.name || peer.peerCode}`,
+      badge: "Tin nhắn",
+      userId: user?.id,
+      metadata: {
+        peerCode: peer.peerCode,
+        peerName: peer.name,
+        detail: `Nội dung: "${value.length > 50 ? value.slice(0, 50) + "..." : value}"`,
+      },
+    });
 
     try {
       const res: any = await send({ data: { peerCode: peer.peerCode, text: finalPayload } });

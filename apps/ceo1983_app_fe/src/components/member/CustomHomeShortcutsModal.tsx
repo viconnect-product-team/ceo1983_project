@@ -19,6 +19,7 @@ import {
   PhoneCall,
   MapPin,
   BellRing,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,6 +63,15 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     desc: "Sàn kết nối cơ hội kinh doanh B2B",
     to: "/association/opportunities",
     iconName: "TrendingUp",
+  },
+  {
+    id: "analytics",
+    name: "Báo cáo",
+    desc: "Báo cáo số liệu giao thương & hoạt động",
+    to: "/association/analytics",
+    iconName: "BarChart3",
+    badge: "Số liệu",
+    badgeColor: "bg-blue-600 text-white",
   },
   {
     id: "connect",
@@ -144,7 +154,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     badgeColor: "bg-emerald-600 text-white",
   },
   {
-    id: "connect",
+    id: "connect-1on1",
     name: "Gặp gỡ 1-1",
     desc: "Hẹn kết nối & chốt deal B2B",
     to: "/association/connect",
@@ -163,42 +173,45 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
 ];
 
-export const DEFAULT_SHORTCUT_IDS = ["messages", "members", "opportunities", "connect"];
+export const DEFAULT_SHORTCUT_IDS = ["messages", "members", "analytics", "opportunities"];
 
-export function getShortcutIcon(iconName: string, className = "size-6") {
+export function getShortcutIcon(iconName: string, className = "size-6", color?: string) {
+  const style = color ? { color } : undefined;
   switch (iconName) {
     case "Calendar":
-      return <Calendar className={className} />;
+      return <Calendar className={className} style={style} />;
     case "Users":
-      return <Users className={className} />;
+      return <Users className={className} style={style} />;
     case "Handshake":
-      return <Handshake className={className} />;
+      return <Handshake className={className} style={style} />;
     case "IdCard":
-      return <IdCard className={className} />;
+      return <IdCard className={className} style={style} />;
     case "TrendingUp":
-      return <TrendingUp className={className} />;
+      return <TrendingUp className={className} style={style} />;
     case "MessageSquare":
-      return <MessageSquare className={className} />;
+      return <MessageSquare className={className} style={style} />;
     case "CreditCard":
-      return <CreditCard className={className} />;
+      return <CreditCard className={className} style={style} />;
     case "Crown":
-      return <Crown className={className} />;
+      return <Crown className={className} style={style} />;
     case "Vote":
-      return <Vote className={className} />;
+      return <Vote className={className} style={style} />;
     case "ShoppingBag":
-      return <ShoppingBag className={className} />;
+      return <ShoppingBag className={className} style={style} />;
     case "FolderOpen":
-      return <FolderOpen className={className} />;
+      return <FolderOpen className={className} style={style} />;
     case "GraduationCap":
-      return <GraduationCap className={className} />;
+      return <GraduationCap className={className} style={style} />;
     case "PhoneCall":
-      return <PhoneCall className={className} />;
+      return <PhoneCall className={className} style={style} />;
     case "MapPin":
-      return <MapPin className={className} />;
+      return <MapPin className={className} style={style} />;
     case "BellRing":
-      return <BellRing className={className} />;
+      return <BellRing className={className} style={style} />;
+    case "BarChart3":
+      return <BarChart3 className={className} style={style} />;
     default:
-      return <Sparkles className={className} />;
+      return <Sparkles className={className} style={style} />;
   }
 }
 

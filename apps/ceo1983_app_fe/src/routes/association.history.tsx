@@ -162,7 +162,7 @@ function HistoryScreen() {
         } else {
           setLocalActivities([]);
         }
-      } catch {}
+      } catch { }
     };
 
     window.addEventListener("vba.connection.changed", handleSync);
@@ -186,7 +186,7 @@ function HistoryScreen() {
       localStorage.setItem("vba_sent_connection_requests", JSON.stringify(updated));
       window.dispatchEvent(new Event("vba.connection.changed"));
       toast.success(`Đã hủy yêu cầu kết nối tới ${targetName}`);
-    } catch {}
+    } catch { }
   };
 
   // COMBINED DATA CALCULATIONS
@@ -308,7 +308,35 @@ function HistoryScreen() {
     return allActivities.filter((a) => {
       if (activityFilter !== "all") {
         const cat = (a.category || a.type || "").toLowerCase();
-        if (!cat.includes(activityFilter.toLowerCase())) return false;
+        const act = (a.action || "").toLowerCase();
+        const title = (a.title || "").toLowerCase();
+        const target = activityFilter.toLowerCase();
+
+        if (target === "giao thương") {
+          const match =
+            cat.includes("giao thương") ||
+            cat.includes("cơ hội") ||
+            cat.includes("deal") ||
+            act.includes("deal") ||
+            act.includes("opp") ||
+            title.includes("cơ hội") ||
+            title.includes("deal");
+          if (!match) return false;
+        } else if (target === "sự kiện") {
+          const match = cat.includes("sự kiện") || act.includes("event") || title.includes("sự kiện");
+          if (!match) return false;
+        } else if (target === "kết nối") {
+          const match = cat.includes("kết nối") || act.includes("connect") || act.includes("meeting") || title.includes("kết nối") || title.includes("hẹn");
+          if (!match) return false;
+        } else if (target === "tin nhắn") {
+          const match = cat.includes("tin nhắn") || act.includes("message") || title.includes("tin nhắn");
+          if (!match) return false;
+        } else if (target === "bình luận") {
+          const match = cat.includes("bình luận") || act.includes("comment") || title.includes("bình luận");
+          if (!match) return false;
+        } else {
+          if (!cat.includes(target) && !act.includes(target) && !title.includes(target)) return false;
+        }
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -361,11 +389,10 @@ function HistoryScreen() {
                 setTab(tb.key);
                 setSearchQuery("");
               }}
-              className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-[12.5px] font-semibold transition outline-none focus:outline-none cursor-pointer ${
-                active
+              className={`flex shrink-0 items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-[12.5px] font-semibold transition outline-none focus:outline-none cursor-pointer ${active
                   ? "border-[#001B54] bg-[#001B54] text-white shadow-sm font-bold"
                   : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300"
-              }`}
+                }`}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{tb.label}</span>
@@ -412,33 +439,30 @@ function HistoryScreen() {
               <button
                 type="button"
                 onClick={() => setConnectionFilter("all")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  connectionFilter === "all"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${connectionFilter === "all"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Tất cả ({allConnections.length})
               </button>
               <button
                 type="button"
                 onClick={() => setConnectionFilter("accepted")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  connectionFilter === "accepted"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${connectionFilter === "accepted"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Đã kết nối ({allConnections.filter((c) => c.status === "accepted").length})
               </button>
               <button
                 type="button"
                 onClick={() => setConnectionFilter("pending")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  connectionFilter === "pending"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${connectionFilter === "pending"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Đang chờ ({allConnections.filter((c) => c.status === "pending").length})
               </button>
@@ -450,33 +474,30 @@ function HistoryScreen() {
               <button
                 type="button"
                 onClick={() => setEventFilter("all")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  eventFilter === "all"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${eventFilter === "all"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Tất cả ({allEvents.length})
               </button>
               <button
                 type="button"
                 onClick={() => setEventFilter("upcoming")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  eventFilter === "upcoming"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${eventFilter === "upcoming"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Sắp diễn ra ({allEvents.filter((e) => !e.checkedIn).length})
               </button>
               <button
                 type="button"
                 onClick={() => setEventFilter("checkedIn")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  eventFilter === "checkedIn"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${eventFilter === "checkedIn"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Đã tham gia ({allEvents.filter((e) => e.checkedIn).length})
               </button>
@@ -488,35 +509,62 @@ function HistoryScreen() {
               <button
                 type="button"
                 onClick={() => setActivityFilter("all")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  activityFilter === "all"
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer whitespace-nowrap ${activityFilter === "all"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
                 Tất cả ({allActivities.length})
               </button>
               <button
                 type="button"
-                onClick={() => setActivityFilter("kết nối")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  activityFilter === "kết nối"
+                onClick={() => setActivityFilter("giao thương")}
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer whitespace-nowrap ${activityFilter === "giao thương"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
+              >
+                Cơ hội / Deal
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivityFilter("sự kiện")}
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer whitespace-nowrap ${activityFilter === "sự kiện"
+                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                  }`}
+              >
+                Sự kiện
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivityFilter("kết nối")}
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer whitespace-nowrap ${activityFilter === "kết nối"
+                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                  }`}
               >
                 Kết nối
               </button>
               <button
                 type="button"
-                onClick={() => setActivityFilter("sự kiện")}
-                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  activityFilter === "sự kiện"
+                onClick={() => setActivityFilter("tin nhắn")}
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer whitespace-nowrap ${activityFilter === "tin nhắn"
                     ? "bg-[#001B54] text-white border-[#001B54] font-bold"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
-                }`}
+                  }`}
               >
-                Sự kiện
+                Tin nhắn
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivityFilter("bình luận")}
+                className={`px-2.5 py-1 rounded-lg border transition cursor-pointer whitespace-nowrap ${activityFilter === "bình luận"
+                    ? "bg-[#001B54] text-white border-[#001B54] font-bold"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                  }`}
+              >
+                Bình luận
               </button>
             </>
           )}
@@ -712,9 +760,8 @@ function HistoryScreen() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <span
-                    className={`absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold text-white backdrop-blur-md border border-white/20 ${
-                      e.checkedIn ? "bg-emerald-600/80" : "bg-[#001B54]/80"
-                    }`}
+                    className={`absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold text-white backdrop-blur-md border border-white/20 ${e.checkedIn ? "bg-emerald-600/80" : "bg-[#001B54]/80"
+                      }`}
                   >
                     {e.checkedIn ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                     <span>{e.checkedIn ? "Đã check-in" : "Chờ tham gia"}</span>
@@ -782,24 +829,53 @@ function HistoryScreen() {
           ) : (
             <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
               {filteredActivities.map((act) => {
-                const isEvt = act.type === "event" || (act.category && act.category.includes("Sự kiện"));
+                const isEvt = act.type === "event" || (act.category && act.category.includes("Sự kiện")) || (act.action && act.action.includes("EVENT"));
                 const isPay = act.type === "payment" || (act.category && act.category.includes("Đóng phí"));
-                const isConn = act.type === "connection" || (act.category && act.category.includes("Kết nối"));
+                const isConn = act.type === "connection" || (act.category && act.category.includes("Kết nối")) || (act.action && (act.action.includes("CONNECT") || act.action.includes("MEETING")));
+                const isDeal = act.type === "deal" || (act.category && (act.category.includes("Giao thương") || act.category.includes("Cơ hội") || act.category.includes("Deal"))) || (act.action && (act.action.includes("DEAL") || act.action.includes("OPP")));
+                const isMsg = act.type === "message" || (act.category && act.category.includes("Tin nhắn")) || (act.action && act.action.includes("MESSAGE"));
+                const isCmt = act.type === "comment" || (act.category && act.category.includes("Bình luận")) || (act.action && act.action.includes("COMMENT"));
+
+                const dotColor = isDeal
+                  ? "border-amber-500 bg-amber-500"
+                  : isEvt
+                    ? "border-[#003B95] bg-[#003B95]"
+                    : isConn
+                      ? "border-sky-500 bg-sky-500"
+                      : isMsg
+                        ? "border-indigo-500 bg-indigo-500"
+                        : isCmt
+                          ? "border-emerald-500 bg-emerald-500"
+                          : "border-slate-500 bg-slate-500";
+
+                const badgeBg = isDeal
+                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                  : isEvt
+                    ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                    : isConn
+                      ? "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30"
+                      : isMsg
+                        ? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30"
+                        : isCmt
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                          : "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30";
+
+                const categoryLabel = act.category || (isDeal ? "Giao thương" : isEvt ? "Sự kiện" : isConn ? "Kết nối" : isMsg ? "Tin nhắn" : isCmt ? "Bình luận" : isPay ? "Đóng phí" : "Hệ thống");
 
                 return (
                   <div key={act.id} className="relative">
-                    <div className="absolute -left-6 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white dark:bg-slate-900 border-2 border-[#001B54] dark:border-blue-400">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#001B54] dark:bg-blue-400" />
+                    <div className="absolute -left-6 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700">
+                      <div className={`h-2 w-2 rounded-full ${dotColor}`} />
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-xs">
                       <div className="flex items-center justify-between gap-1 text-[10.5px]">
-                        <span className="font-bold text-[#001B54] dark:text-blue-300 uppercase tracking-wide">
-                          {act.category || (isEvt ? "Sự kiện" : isPay ? "Đóng phí" : isConn ? "Kết nối" : "Hệ thống")}
+                        <span className={`px-2 py-0.5 rounded-full border font-bold uppercase tracking-wide text-[9.5px] ${badgeBg}`}>
+                          {categoryLabel}
                         </span>
-                        <span className="text-slate-400">{fmtDate(act.date)} {fmtTime(act.date)}</span>
+                        <span className="text-slate-400 font-mono text-[10px]">{fmtDate(act.date)} {fmtTime(act.date)}</span>
                       </div>
-                      <h4 className="text-[12.5px] font-bold text-slate-900 dark:text-white mt-1">
+                      <h4 className="text-[12.5px] font-bold text-slate-900 dark:text-white mt-1.5">
                         {act.title}
                       </h4>
                       {act.detail && (

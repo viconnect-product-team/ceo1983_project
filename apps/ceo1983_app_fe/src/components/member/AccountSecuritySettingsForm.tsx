@@ -260,38 +260,40 @@ export function AccountSecuritySettingsForm({
         </form>
       </div>
 
-      {/* ── 2. SINH TRẮC HỌC (FACEID / VÂN TAY) ── */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="size-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 grid place-items-center shrink-0">
-              <Fingerprint className="size-4" />
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Khóa Sinh Trắc Học (FaceID / Vân tay)
-              </h4>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                Mở khóa nhanh trên thiết bị điện thoại của bạn
-              </p>
+      {!isRequired && (
+        <>
+          {/* ── 2. SINH TRẮC HỌC (FACEID / VÂN TAY) ── */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 grid place-items-center shrink-0">
+                  <Fingerprint className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Khóa Sinh Trắc Học (FaceID / Vân tay)
+                  </h4>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                    Mở khóa nhanh trên thiết bị điện thoại của bạn
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleBiometric}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  biometricEnabled ? "bg-[#003B95]" : "bg-slate-300 dark:bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    biometricEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleToggleBiometric}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              biometricEnabled ? "bg-[#003B95]" : "bg-slate-300 dark:bg-slate-700"
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                biometricEnabled ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-      </div>
 
       {/* ── 3. QUYỀN RIÊNG TƯ DANH THIẾP SỐ ── */}
       <div className="p-4 rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
@@ -398,6 +400,8 @@ export function AccountSecuritySettingsForm({
           Đăng xuất khỏi tất cả thiết bị khác
         </button>
       </div>
+        </>
+      )}
     </div>
   );
 }
