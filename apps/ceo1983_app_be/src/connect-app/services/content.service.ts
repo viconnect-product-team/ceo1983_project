@@ -156,7 +156,6 @@ export class ConnectContentService {
   }
 
   async listPublishedNews() {
-    await this.ensureSeedNews();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, title, category, author, excerpt, cover_image, images, views, created_at
       FROM public.news
@@ -463,7 +462,6 @@ export class ConnectContentService {
   // ---------------------------------------------------------------------------
 
   async listAdminNews() {
-    await this.ensureSeedNews();
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, code, title, category, author, published_at, views, status, excerpt, content, cover_image, images, association_id, created_at, updated_at
       FROM public.news
