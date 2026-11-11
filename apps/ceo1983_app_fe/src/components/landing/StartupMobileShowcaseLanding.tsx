@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "@tanstack/react-router";
 import { sanitizeHtml } from "../../lib/sanitize";
 import {
   Smartphone,
@@ -435,13 +436,12 @@ export function StartupMobileShowcaseLanding({
             >
               Đăng Nhập CRM
             </a>
-            <button
-              type="button"
-              onClick={() => setIsRegisterModalOpen(true)}
-              className="px-6 py-2.5 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition shadow-2xs cursor-pointer"
+            <Link
+              to="/register"
+              className="px-6 py-2.5 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition shadow-2xs cursor-pointer inline-flex items-center justify-center"
             >
               Đăng Ký Hội Viên
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -499,16 +499,13 @@ export function StartupMobileShowcaseLanding({
               >
                 Đăng Nhập CRM Quản Trị
               </a>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setIsRegisterModalOpen(true);
-                }}
-                className="w-full py-2.5 text-center text-xs font-bold rounded-full border border-slate-300 text-slate-800"
+              <Link
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-2.5 text-center text-xs font-bold rounded-full border border-slate-300 text-slate-800 inline-block"
               >
                 Đăng Ký Hội Viên Mới
-              </button>
+              </Link>
             </div>
           </div>
         )}

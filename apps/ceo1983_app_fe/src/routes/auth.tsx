@@ -360,6 +360,18 @@ function CrmAdminAuthPage() {
               )}
             </button>
           </form>
+
+          {/* Member Registration Link -> /register */}
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+            <Link
+              to="/register"
+              search={email.includes("@") ? { email: email.trim() } : undefined}
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+            >
+              <span>Quý Doanh nhân chưa có tài khoản?</span>
+              <span className="font-bold underline">Đăng ký mới tại đây</span>
+            </Link>
+          </div>
         </div>
 
         {/* Bottom subtle copyright note */}

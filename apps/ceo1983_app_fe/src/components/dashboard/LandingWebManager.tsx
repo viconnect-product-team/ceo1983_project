@@ -140,7 +140,7 @@ export const DEFAULT_LANDING_CONFIG: LandingWebConfig = {
   cta1Text: "Mở App Hội Viên",
   cta1Link: "/association",
   cta2Text: "Đăng Ký Gia Nhập",
-  cta2Link: "/association/register",
+  cta2Link: "/register",
 
   metrics: [
     { id: "m-1", label: "Hội viên chính thức", value: "500+", sub: "Doanh nhân chủ doanh nghiệp" },

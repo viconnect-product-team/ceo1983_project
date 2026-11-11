@@ -13,12 +13,14 @@ import {
 } from "lucide-react";
 import { QrCanvas } from "@/components/member/QrCanvas";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 export interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   memberCode?: string;
   memberName?: string;
+  memberEmail?: string;
 }
 
 export function InviteMemberModal({
@@ -26,15 +28,18 @@ export function InviteMemberModal({
   onClose,
   memberCode = "M1983-002",
   memberName = "Hội viên CEO 1983",
+  memberEmail,
 }: InviteMemberModalProps) {
+  const { user } = useAuth();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<"formal" | "friendly">("formal");
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  // Redirect to official landing registration link with apply="true"
-  const inviteUrl = `https://ceo1983.viconnect.vn/landing?apply=%22true%22`;
+  // Link đăng ký chính thức cố định chuẩn theo yêu cầu: https://ceo1983.viconnect.vn/register?email=...
+  const effectiveEmail = (memberEmail || user?.email || "admin@connect.vn").trim();
+  const inviteUrl = `https://ceo1983.viconnect.vn/register?email=${encodeURIComponent(effectiveEmail)}`;
 
   const templates = {
     formal: `Kính gửi Quý Doanh nhân, tôi là ${memberName} (Mã HV: ${memberCode}). Trân trọng kính mời Anh/Chị gia nhập CLB Doanh nhân CEO 1983 — Hệ sinh thái kết nối giao thương, nâng tầm giá trị và mở rộng cơ hội kinh doanh hàng đầu. Đăng ký tham gia trực tuyến tại: ${inviteUrl}`,
@@ -135,13 +140,34 @@ export function InviteMemberModal({
 
           {/* Referral Link Box */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1.5">
-              Liên kết giới thiệu độc quyền
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                Liên kết đăng ký hội viên mới
+              </label>
+              <a
+                href={inviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span>Mở link đăng ký</span>
+              </a>
+            </div>
             <div className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-white/5 p-1.5 pl-3 border border-slate-200 dark:border-white/10">
               <span className="text-[11.5px] font-medium text-slate-700 dark:text-slate-300 truncate flex-1 font-mono">
                 {inviteUrl}
               </span>
+              <a
+                href={inviteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 transition active:scale-95 cursor-pointer shadow-xs"
+                title="Mở tab mới"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>Mở</span>
+              </a>
               <button
                 type="button"
                 onClick={handleCopyLink}

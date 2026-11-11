@@ -125,6 +125,46 @@ function dataUrlToFile(dataUrl: string, filename: string): File {
   return new File([u8arr], filename, { type: mime });
 }
 
+function BubbleChatIcon({ color = "currentColor", className = "size-6" }: { color?: string; className?: string }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.0052 12H12.0142M16.0007 12H16.0097M8.00973 12H8.0187" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M12 21.5C17.2467 21.5 21.5 17.2467 21.5 12C21.5 6.75329 17.2467 2.5 12 2.5C6.75329 2.5 2.5 6.75329 2.5 12C2.5 13.0483 2.6698 14.057 2.98341 15C3.5282 16.6382 3.12865 18.5818 2.6935 19.6074C2.59266 19.8451 2.62741 20.1274 2.80997 20.31C2.93024 20.4302 3.09774 20.4913 3.26592 20.4658C4.37462 20.2979 5.63177 19.362 7.5 20.3687C8.8394 21.0904 10.3719 21.5 12 21.5Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+    </svg>
+  );
+}
+
+function ContactBookIcon({ color = "currentColor", className = "size-6" }: { color?: string; className?: string }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M4.5 10C4.5 6.22876 4.5 4.34315 5.67157 3.17157C6.84315 2 8.72876 2 12.5 2H14C17.7712 2 19.6569 2 20.8284 3.17157C22 4.34315 22 6.22876 22 10V14C22 17.7712 22 19.6569 20.8284 20.8284C19.6569 22 17.7712 22 14 22H12.5C8.72876 22 6.84315 22 5.67157 20.8284C4.5 19.6569 4.5 17.7712 4.5 14V10Z" strokeWidth="1.5" stroke={color} />
+      <path d="M4.5 6H2M4.5 12H2M4.5 18H2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M15.2758 8.49261C15.2758 9.59715 14.3804 10.4926 13.2759 10.4926C12.1714 10.4926 11.2759 9.59715 11.2759 8.49261C11.2759 7.38808 12.1714 6.49268 13.2759 6.49268C14.3804 6.49268 15.2758 7.38808 15.2758 8.49261ZM13.2759 13.4774C12.0598 13.4762 10.3791 14.0868 9.3208 15.7161C9.25237 15.8215 9.23351 15.9512 9.29526 16.0607C9.54278 16.4996 10.3113 17.3705 10.8663 17.4296C11.5044 17.4974 13.2242 17.5069 13.2772 17.5072C13.3301 17.5069 14.9984 17.4974 15.6362 17.4296C16.1913 17.3705 16.9597 16.4996 17.2073 16.0607C17.269 15.9512 17.2502 15.8215 17.1817 15.7161C16.1234 14.0868 14.4919 13.4787 13.2759 13.4774Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+    </svg>
+  );
+}
+
+function ChartBreakoutCircleIcon({ color = "currentColor", className = "size-6" }: { color?: string; className?: string }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 3.38462V2M19.6306 4.36369L20.6081 3.38462M20.6176 8H22" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M11.8537 8.00684H15.0758C15.4546 8.00684 15.7617 8.32175 15.7617 8.71022V12.0354M2.76172 13.9583C5.03496 14.2241 10.7393 13.5137 14.8933 8.88963" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+    </svg>
+  );
+}
+
+function Briefcase04Icon({ color = "currentColor", className = "size-6" }: { color?: string; className?: string }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M8.5 6.5C8.5 5.093 8.5 4.389 8.837 3.883C8.983 3.665 9.17 3.477 9.389 3.337C9.893 3 10.595 3 12 3C13.404 3 14.106 3 14.611 3.337C14.829 3.477 15.017 3.665 15.163 3.883C15.5 4.389 15.5 5.093 15.5 6.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M22 13.5V14C22 17.2998 22 18.9497 20.975 19.9745C19.95 21 18.3 21 15 21H9C5.7 21 4.05 21 3.025 19.9745C2 18.9497 2 17.2998 2 14V13.5C2 10.2002 2 8.55025 3.025 7.52513C4.05 6.5 5.7 6.5 9 6.5H15C18.3 6.5 19.95 6.5 20.975 7.52513C22 8.55025 22 10.2002 22 13.5Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M13.5 14C19.573 13.51 21.75 10 21.75 10M2.25 10C2.25 10 4.427 13.51 10.5 14" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+      <path d="M10.5 13V14C10.5 14.8284 11.1716 15.5 12 15.5C12.8284 15.5 13.5 14.8284 13.5 14V13C13.5 12.7239 13.2761 12.5 13 12.5H11C10.7239 12.5 10.5 12.7239 10.5 13Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke={color} />
+    </svg>
+  );
+}
+
 export const Route = createFileRoute("/association/")({
   component: Home,
 });
@@ -1390,7 +1430,7 @@ function Home() {
                 }}
                 className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition"
               >
-                <img src="/icons/home/bubble-chat.svg" className="size-6" alt="Tin nhắn" />
+                <BubbleChatIcon color={brandColorTheme.primaryColor} className="size-6" />
               </div>
               <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
                 Tin nhắn
@@ -1409,7 +1449,7 @@ function Home() {
                 }}
                 className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative"
               >
-                <img src="/icons/home/contact-book.svg" className="size-6" alt="Danh bạ CEO" />
+                <ContactBookIcon color={brandColorTheme.primaryColor} className="size-6" />
                 <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
                   <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
                     {directoryMembers.length > 0 ? directoryMembers.length : "10"}
@@ -1433,7 +1473,7 @@ function Home() {
                 }}
                 className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition"
               >
-                <img src="/icons/home/chart-breakout-circle.svg" className="size-6" alt="Báo cáo" />
+                <ChartBreakoutCircleIcon color={brandColorTheme.primaryColor} className="size-6" />
               </div>
               <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4">
                 Báo cáo
@@ -1445,8 +1485,14 @@ function Home() {
               to="/association/opportunities"
               className="flex-1 inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative"
             >
-              <div className="size-14 bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-500/30 rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative">
-                <img src="/icons/home/briefcase-04.svg" className="size-6" alt="Giao thương B2B" />
+              <div
+                style={{
+                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                }}
+                className="size-14 border rounded-2xl inline-flex justify-center items-center shadow-xs group-hover:scale-105 transition relative"
+              >
+                <Briefcase04Icon color={brandColorTheme.primaryColor} className="size-6" />
                 {totalOpportunitiesCount > 0 && (
                   <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
                     <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">

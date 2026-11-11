@@ -1,5 +1,48 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.04): Ép Buộc Toàn Bộ Luồng Đăng Ký Mới & Lời Mời Hội Viên Mở Trực Tiếp Cổng Đăng Ký Chuẩn (`https://ceo1983.viconnect.vn/register?email=...`), Tuyệt Đối Không Redirect Vào Hệ Thống ([NODE-APP-001], [NODE-APP-002], [NODE-CRM-001])**:
+  1. *Ép buộc đường dẫn Lời mời & Giới thiệu trong Danh bạ Hội viên (`InviteMemberModal.tsx` & `association.members.tsx`)*:
+     - **Hiện trạng trước sửa**: Hộp thoại mời hội viên (`InviteMemberModal.tsx`) dùng liên kết cũ `https://ceo1983.viconnect.vn/landing?apply=%22true%22`, dẫn người được mời tới trang Landing Web giới thiệu thay vì mở trực tiếp form đăng ký.
+     - **Giải pháp xử lý**:
+       + Cập nhật `inviteUrl` chuẩn cố định: `https://ceo1983.viconnect.vn/register?email=${encodeURIComponent(effectiveEmail)}` (tự động nhận diện email người mời hoặc tài khoản quản trị `admin@connect.vn`).
+       + Bổ sung nút **"Mở link đăng ký"** (`ExternalLink`) ngay trong hộp thoại để người dùng và admin có thể mở tab mới truy cập ngay form đăng ký.
+       + Đồng bộ toàn bộ các hành động: Sao chép liên kết, sao chép văn bản lời mời, chia sẻ Zalo và Web Share API đều gửi đúng đường dẫn đăng ký trực tiếp.
+  2. *Triệt tiêu hoàn toàn lỗi Redirect vào màn hệ thống khi bấm Đăng ký mới*:
+     - **Tạo Route `/association/register`**: Tạo file `association.register.tsx` làm cổng tiếp nhận hồ sơ gia nhập đồng bộ, render trực tiếp `Ceo1983MemberRegistrationForm`. Bất kỳ liên kết nào trỏ vào `/association/register` đều không bị guard chuyển hướng về login hay dashboard hệ thống.
+     - **Bổ sung liên kết Đăng ký mới trên Cổng Auth CRM (`auth.tsx`)**: Bổ sung liên kết "Đăng ký mới tại đây" trỏ về `/register`, kèm tự động điền email nếu người dùng đã nhập.
+     - **Đồng bộ các nút Đăng ký trên Landing Web (`StartupMobileShowcaseLanding.tsx`, `landing.index.tsx`, `LandingWebManager.tsx`)**:
+       + Thay thế toàn bộ modal rời bằng liên kết chuẩn `<Link to="/register">`.
+       + Cập nhật guard trong `landing.index.tsx` tự động chuyển tiếp cả `email` và `ref` sang `/register`.
+       + Trong `__root.tsx`, bảo vệ route `/register` và `/association/register` trong danh sách `isPublic` và loại trừ khỏi logic chuyển hướng của `status === "out"`.
+  3. *Bảo toàn luồng Bắn thông tin đăng ký về chức năng Quản lý Hội viên CRM để duyệt tài khoản*:
+     - Form đăng ký gửi thông tin qua endpoint `/members/public-register` lưu vào bảng `public.members` với trạng thái `pending`.
+     - Hệ thống tự động tạo bản ghi thông báo trong `public.notifications` gửi tới Ban Quản Trị và Ban Thành Viên.
+     - Màn hình Quản lý Hội viên CRM (`members.index.tsx` `[NODE-CRM-001]`) tự động cập nhật số lượng "Chờ phê duyệt" và kích hoạt nút **"Phê duyệt & Gửi tài khoản"** (`approve-and-send-credentials`) để cấp mã hội viên chính thức và gửi email thông tin đăng nhập tự động.
+  4. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - Đã sinh lại cây định tuyến `npm run routes:gen` với exit code 0.
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.03): Đồng Bộ Màu Sắc Toàn Diện Icon Tính Năng Nhanh Theo Theme Động & Khôi Phục Nút Tin Nhắn Header Mạng Lưới ([NODE-APP-001], [NODE-APP-003])**:
+  1. *Đồng bộ màu sắc 4 Icon Tính Năng Nhanh trên Trang Chủ App (`association.index.tsx` & `briefcase-04.svg`)*:
+     - **Hiện trạng trước sửa**: Dòng "Tính năng nhanh" (Tin nhắn, Danh bạ CEO, Báo cáo, Giao thương) sử dụng thẻ `<img>` load file tĩnh. Khi hội viên chọn tone màu thương hiệu (ví dụ Cam Tiên Phong `#EA580C` `dynamic-orange`), 3 icon đầu mang stroke cam nhưng icon thứ 4 (Giao thương B2B) mang stroke xanh navy `#2E3192`, và container của nút thứ 4 bị gán cứng `bg-orange-50` không đồng bộ với các theme khác.
+     - **Giải pháp xử lý**:
+       + Cập nhật stroke của icon `public/icons/home/briefcase-04.svg` đồng bộ bảng màu.
+       + Khai báo các component SVG vector chuẩn (`BubbleChatIcon`, `ContactBookIcon`, `ChartBreakoutCircleIcon`, `Briefcase04Icon`) nhận trực tiếp thuộc tính `color={brandColorTheme.primaryColor}`.
+       + Đồng bộ container style của cả 4 nút dùng `brandColorTheme.lightBg` và `brandColorTheme.lightBorder` (ở Light mode) và nền bán trong suốt `brandColorTheme.primaryColor` (ở Dark mode).
+       + Đảm bảo khi chọn bất kỳ màu nào (Cam Tiên Phong, Xanh Doanh Nhân, Đỏ Nhiệt Huyết), cả 4 icon và khối nền đều biến đổi đồng bộ 100%.
+  2. *Khôi phục Icon Tin Nhắn ở Header Mạng Lưới (`association.messages.tsx`)*:
+     - **Hiện trạng trước sửa**: Header Mạng lưới hội viên (`/association/messages`) trước đó chỉ hiển thị nút Chuông thông báo (`Bell`), làm mất nút Tin nhắn khiến người dùng không thể chuyển từ Bảng tin (Feed) sang danh sách hội thoại trò chuyện (ConversationList).
+     - **Giải pháp xử lý**:
+       + Bổ sung cụm điều khiển action buttons bên phải Header chứa song song 2 nút:
+         * Nút **Tin nhắn** (`MessageSquare` size-5) với tương tác `onClick={() => setMainTab("messages")}`, cho phép người dùng mở ngay màn hình chat/hội thoại với các CEO.
+         * Nút **Thông báo** (`Bell` size-5) kèm huy hiệu số `9+` màu đỏ (`#DC2626`), bấm chuyển tới `/association/notifications`.
+       + Giữ nguyên cơ chế nút Back trong `ConversationList` quay ngược về tab `feed`.
+  3. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe` bundle & type check sạch sẽ.
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.02): Sửa Gấp Luồng Đăng Ký Tài Khoản Ở App Chuyển Về Cổng Form Đăng Ký Hội Viên Chuẩn (`/register`) Thay Vì Link Ra Landing Web ([NODE-APP-001], [NODE-CORE-001])**:
   1. *Khắc phục lỗi điều hướng đăng ký trên Mobile App (`AssociationAppSignIn.tsx` & `ConnectAppSignIn.tsx`)*:
      - **Hiện trạng trước sửa**: Nút *"Đăng ký hội viên mới"* tại màn hình đăng nhập hội viên (`/association/login`) bị gán nhầm liên kết tới `to="/landing"` với query `search={{ apply: "true" }}`, dẫn đến khi hội viên bấm đăng ký trong App thì bị văng ra trang chủ Landing Web bán hàng/giới thiệu thay vì mở form tiếp nhận thông tin gia nhập.
@@ -1117,6 +1160,49 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.04): Ép Buộc Toàn Bộ Luồng Đăng Ký Mới & Lời Mời Hội Viên Mở Trực Tiếp Cổng Đăng Ký Chuẩn (`https://ceo1983.viconnect.vn/register?email=...`), Tuyệt Đối Không Redirect Vào Hệ Thống ([NODE-APP-001], [NODE-APP-002], [NODE-CRM-001])**:
+  1. *Ép buộc đường dẫn Lời mời & Giới thiệu trong Danh bạ Hội viên (`InviteMemberModal.tsx` & `association.members.tsx`)*:
+     - **Hiện trạng trước sửa**: Hộp thoại mời hội viên (`InviteMemberModal.tsx`) dùng liên kết cũ `https://ceo1983.viconnect.vn/landing?apply=%22true%22`, dẫn người được mời tới trang Landing Web giới thiệu thay vì mở trực tiếp form đăng ký.
+     - **Giải pháp xử lý**:
+       + Cập nhật `inviteUrl` chuẩn cố định: `https://ceo1983.viconnect.vn/register?email=${encodeURIComponent(effectiveEmail)}` (tự động nhận diện email người mời hoặc tài khoản quản trị `admin@connect.vn`).
+       + Bổ sung nút **"Mở link đăng ký"** (`ExternalLink`) ngay trong hộp thoại để người dùng và admin có thể mở tab mới truy cập ngay form đăng ký.
+       + Đồng bộ toàn bộ các hành động: Sao chép liên kết, sao chép văn bản lời mời, chia sẻ Zalo và Web Share API đều gửi đúng đường dẫn đăng ký trực tiếp.
+  2. *Triệt tiêu hoàn toàn lỗi Redirect vào màn hệ thống khi bấm Đăng ký mới*:
+     - **Tạo Route `/association/register`**: Tạo file `association.register.tsx` làm cổng tiếp nhận hồ sơ gia nhập đồng bộ, render trực tiếp `Ceo1983MemberRegistrationForm`. Bất kỳ liên kết nào trỏ vào `/association/register` đều không bị guard chuyển hướng về login hay dashboard hệ thống.
+     - **Bổ sung liên kết Đăng ký mới trên Cổng Auth CRM (`auth.tsx`)**: Bổ sung liên kết "Đăng ký mới tại đây" trỏ về `/register`, kèm tự động điền email nếu người dùng đã nhập.
+     - **Đồng bộ các nút Đăng ký trên Landing Web (`StartupMobileShowcaseLanding.tsx`, `landing.index.tsx`, `LandingWebManager.tsx`)**:
+       + Thay thế toàn bộ modal rời bằng liên kết chuẩn `<Link to="/register">`.
+       + Cập nhật guard trong `landing.index.tsx` tự động chuyển tiếp cả `email` và `ref` sang `/register`.
+       + Trong `__root.tsx`, bảo vệ route `/register` và `/association/register` trong danh sách `isPublic` và loại trừ khỏi logic chuyển hướng của `status === "out"`.
+  3. *Bảo toàn luồng Bắn thông tin đăng ký về chức năng Quản lý Hội viên CRM để duyệt tài khoản*:
+     - Form đăng ký gửi thông tin qua endpoint `/members/public-register` lưu vào bảng `public.members` với trạng thái `pending`.
+     - Hệ thống tự động tạo bản ghi thông báo trong `public.notifications` gửi tới Ban Quản Trị và Ban Thành Viên.
+     - Màn hình Quản lý Hội viên CRM (`members.index.tsx` `[NODE-CRM-001]`) tự động cập nhật số lượng "Chờ phê duyệt" và kích hoạt nút **"Phê duyệt & Gửi tài khoản"** (`approve-and-send-credentials`) để cấp mã hội viên chính thức và gửi email thông tin đăng nhập tự động.
+  4. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - Đã sinh lại cây định tuyến `npm run routes:gen` với exit code 0.
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.03): Đồng Bộ Màu Sắc Toàn Diện Icon Tính Năng Nhanh Theo Theme Động & Khôi Phục Nút Tin Nhắn Header Mạng Lưới ([NODE-APP-001], [NODE-APP-003])**:
+  1. *Đồng bộ màu sắc 4 Icon Tính Năng Nhanh trên Trang Chủ App (`association.index.tsx` & `briefcase-04.svg`)*:
+     - **Hiện trạng trước sửa**: Dòng "Tính năng nhanh" (Tin nhắn, Danh bạ CEO, Báo cáo, Giao thương) sử dụng thẻ `<img>` load file tĩnh. Khi hội viên chọn tone màu thương hiệu (ví dụ Cam Tiên Phong `#EA580C` `dynamic-orange`), 3 icon đầu mang stroke cam nhưng icon thứ 4 (Giao thương B2B) mang stroke xanh navy `#2E3192`, và container của nút thứ 4 bị gán cứng `bg-orange-50` không đồng bộ với các theme khác.
+     - **Giải pháp xử lý**:
+       + Cập nhật stroke của icon `public/icons/home/briefcase-04.svg` đồng bộ bảng màu.
+       + Khai báo các component SVG vector chuẩn (`BubbleChatIcon`, `ContactBookIcon`, `ChartBreakoutCircleIcon`, `Briefcase04Icon`) nhận trực tiếp thuộc tính `color={brandColorTheme.primaryColor}`.
+       + Đồng bộ container style của cả 4 nút dùng `brandColorTheme.lightBg` và `brandColorTheme.lightBorder` (ở Light mode) và nền bán trong suốt `brandColorTheme.primaryColor` (ở Dark mode).
+       + Đảm bảo khi chọn bất kỳ màu nào (Cam Tiên Phong, Xanh Doanh Nhân, Đỏ Nhiệt Huyết), cả 4 icon và khối nền đều biến đổi đồng bộ 100%.
+  2. *Khôi phục Icon Tin Nhắn ở Header Mạng Lưới (`association.messages.tsx`)*:
+     - **Hiện trạng trước sửa**: Header Mạng lưới hội viên (`/association/messages`) trước đó chỉ hiển thị nút Chuông thông báo (`Bell`), làm mất nút Tin nhắn khiến người dùng không thể chuyển từ Bảng tin (Feed) sang danh sách hội thoại trò chuyện (ConversationList).
+     - **Giải pháp xử lý**:
+       + Bổ sung cụm điều khiển action buttons bên phải Header chứa song song 2 nút:
+         * Nút **Tin nhắn** (`MessageSquare` size-5) với tương tác `onClick={() => setMainTab("messages")}`, cho phép người dùng mở ngay màn hình chat/hội thoại với các CEO.
+         * Nút **Thông báo** (`Bell` size-5) kèm huy hiệu số `9+` màu đỏ (`#DC2626`), bấm chuyển tới `/association/notifications`.
+       + Giữ nguyên cơ chế nút Back trong `ConversationList` quay ngược về tab `feed`.
+  3. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - `apps/ceo1983_app_fe` bundle & type check sạch sẽ.
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.02): Sửa Gấp Luồng Đăng Ký Tài Khoản Ở App Chuyển Về Cổng Form Đăng Ký Hội Viên Chuẩn (`/register`) Thay Vì Link Ra Landing Web ([NODE-APP-001], [NODE-CORE-001])**:
   1. *Khắc phục lỗi điều hướng đăng ký trên Mobile App (`AssociationAppSignIn.tsx` & `ConnectAppSignIn.tsx`)*:

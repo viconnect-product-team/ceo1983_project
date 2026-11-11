@@ -622,7 +622,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (status === "out" && !isPublic) {
       const search = window.location.pathname + window.location.search;
-      if (pathname.startsWith("/association") && !pathname.startsWith("/association/login")) {
+      if (
+        pathname.startsWith("/association") &&
+        !pathname.startsWith("/association/login") &&
+        !pathname.startsWith("/association/register")
+      ) {
         navigate({
           to: "/association/login" as any,
           search: {
@@ -630,7 +634,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           } as any,
           replace: true,
         });
-      } else if (!pathname.startsWith("/association/login")) {
+      } else if (!pathname.startsWith("/association/login") && !pathname.startsWith("/association/register")) {
         navigate({
           to: "/auth",
           search: {
