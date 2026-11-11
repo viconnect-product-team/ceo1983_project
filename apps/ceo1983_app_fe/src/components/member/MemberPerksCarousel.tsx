@@ -84,7 +84,7 @@ export function MemberPerksCarousel() {
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const bName = upcomingBirthdayMember?.name || "CEO Nguyễn Minh Tuấn";
@@ -268,7 +268,7 @@ export function MemberPerksCarousel() {
           setServerSlides(mapped);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Lắng nghe sự kiện khi có ưu đãi mới được hội viên đăng lên
@@ -302,7 +302,7 @@ export function MemberPerksCarousel() {
             }))
           );
         }
-      } catch {}
+      } catch { }
     };
 
     window.addEventListener("vba:saved_perks_updated", handleReloadCustomPerks);
@@ -353,7 +353,7 @@ export function MemberPerksCarousel() {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) setSavedPerkIds(parsed.map((p: any) => p.id));
         }
-      } catch {}
+      } catch { }
     };
     window.addEventListener("vba:saved_perks_updated", handleSyncSaved);
     return () => window.removeEventListener("vba:saved_perks_updated", handleSyncSaved);
@@ -560,11 +560,10 @@ export function MemberPerksCarousel() {
                       <button
                         type="button"
                         onClick={(e) => handleToggleSaveSlide(s, e)}
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
-                          savedPerkIds.includes(s.id)
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${savedPerkIds.includes(s.id)
                             ? "bg-rose-600 text-white ring-1 ring-white/50"
                             : "bg-black/60 hover:bg-black/80 text-white/90 border border-white/30"
-                        }`}
+                          }`}
                         title={savedPerkIds.includes(s.id) ? "Bỏ lưu ưu đãi" : "Lưu ưu đãi & nhận mã voucher"}
                       >
                         <Heart className={`size-3 ${savedPerkIds.includes(s.id) ? "fill-white text-white" : "text-white"}`} />
@@ -705,11 +704,10 @@ export function MemberPerksCarousel() {
             key={idx}
             type="button"
             onClick={() => setCurrentIndex(idx)}
-            className={`transition-all duration-300 rounded-full cursor-pointer ${
-              currentIndex === idx
+            className={`transition-all duration-300 rounded-full cursor-pointer ${currentIndex === idx
                 ? "w-6 h-1.5 bg-amber-500"
                 : "w-1.5 h-1.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400"
-            }`}
+              }`}
             title={`Slide ${idx + 1}`}
           />
         ))}
@@ -732,11 +730,10 @@ export function MemberPerksCarousel() {
                   <button
                     type="button"
                     onClick={(e) => handleToggleSaveSlide(detailModalSlide, e)}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition cursor-pointer active:scale-95 ${
-                      savedPerkIds.includes(detailModalSlide.id)
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition cursor-pointer active:scale-95 ${savedPerkIds.includes(detailModalSlide.id)
                         ? "bg-rose-600 text-white shadow-xs"
                         : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
-                    }`}
+                      }`}
                   >
                     <Heart className={`size-3 ${savedPerkIds.includes(detailModalSlide.id) ? "fill-white text-white" : "text-white"}`} />
                     <span>{savedPerkIds.includes(detailModalSlide.id) ? "Đã lưu" : "Lưu ưu đãi"}</span>
