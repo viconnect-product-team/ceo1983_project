@@ -96,7 +96,7 @@ export const Route = createFileRoute("/association")({
         if (rawUser) {
           try {
             parsedUser = JSON.parse(rawUser);
-          } catch {}
+          } catch { }
         }
         const userEmail = (parsedUser?.email || "").toLowerCase().trim();
         const userRole = (parsedUser?.role || parsedUser?.user_metadata?.role || "").toLowerCase().trim();
@@ -112,7 +112,7 @@ export const Route = createFileRoute("/association")({
           mustChange = false;
           try {
             localStorage.removeItem("vba_must_change_password");
-          } catch {}
+          } catch { }
         } else {
           const flag = localStorage.getItem("vba_must_change_password");
           if (flag === "true") {
@@ -128,7 +128,7 @@ export const Route = createFileRoute("/association")({
             }
           }
         }
-      } catch {}
+      } catch { }
 
       if (mustChange) {
         const isSettingsChangePass =
@@ -289,7 +289,7 @@ function MemberRoot() {
           u.role === "quan_tri";
         if (isSysAdmin) return false;
         return Boolean(u.mustChangePassword || u.must_change_password || u.onboarding_status === "new");
-      } catch {}
+      } catch { }
     }
     return false;
   });
@@ -299,7 +299,7 @@ function MemberRoot() {
       setMustChangePassword(false);
       try {
         localStorage.removeItem("vba_must_change_password");
-      } catch {}
+      } catch { }
     };
     window.addEventListener("password-changed", handlePasswordChanged);
     return () => window.removeEventListener("password-changed", handlePasswordChanged);
@@ -307,6 +307,23 @@ function MemberRoot() {
 
   useRenewalReminder();
   useAssociationRealtimeNotifications();
+
+  // Mặc định vào App CEO 1983 luôn là Theme Sáng chuẩn nhận diện thương hiệu
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      const root = document.documentElement;
+      root.classList.remove("dark");
+      root.classList.remove("hc");
+      root.classList.add("light");
+      root.dataset.theme = "light";
+      root.style.colorScheme = "light";
+    }
+    if (typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem("vba.theme", "light");
+      } catch { }
+    }
+  }, []);
 
   // Trang đăng nhập hoặc tiếp nhận hồ sơ đăng ký Hiệp hội hiển thị độc lập, không hiển thị thanh Tab Bar hay layout hội viên đã đăng nhập
   if (isLoginPage || isRegisterPage) {
@@ -322,7 +339,7 @@ function MemberRoot() {
             setMustChangePassword(false);
             try {
               localStorage.removeItem("vba_must_change_password");
-            } catch {}
+            } catch { }
           }}
           onLogout={() => {
             logout?.();

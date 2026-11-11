@@ -293,7 +293,7 @@ export function CustomTable<T>({
                     }`}
                   >
                     {showStt && (
-                      <td className="w-12 px-3 text-center text-slate-500 text-xs font-semibold border-r border-slate-200 dark:border-slate-800">
+                      <td className="w-12 px-3 text-center text-slate-500 dark:text-slate-400 text-xs font-semibold border-r border-slate-200 dark:border-slate-800">
                         {stt}
                       </td>
                     )}
@@ -306,7 +306,7 @@ export function CustomTable<T>({
                       return (
                         <td
                           key={col.key}
-                          className={`px-4 border-r border-slate-200 dark:border-slate-800 last:border-r-0 ${
+                          className={`px-4 text-slate-800 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 last:border-r-0 ${
                             col.align === "right"
                               ? "text-right"
                               : col.align === "center"

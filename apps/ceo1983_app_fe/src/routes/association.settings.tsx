@@ -7,8 +7,6 @@ import {
   Globe,
   Bot,
   Sparkles,
-  Sun,
-  Moon,
   Bell,
   Headphones,
   Phone,
@@ -163,11 +161,11 @@ function AssociationSettingsScreen() {
                 {member?.name || user?.name || "Hội viên Doanh nhân"}
               </h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="inline-flex items-center gap-1 rounded bg-amber-400/20 px-1.5 py-0.5 text-[9.5px] font-bold text-amber-300 border border-amber-400/40">
-                  <ShieldCheck className="h-3 w-3 text-amber-300" /> {(user as any)?.code || member?.code || "M1983-MEMBER"}
+                <span className="inline-flex items-center gap-1 rounded bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-400/40">
+                  <ShieldCheck className="h-3 w-3 text-amber-300" /> Hội viên chính thức
                 </span>
                 <span className="text-[11px] text-blue-100 truncate">
-                  {member?.title || "Hội viên chính thức"}
+                  {member?.title || "CLB CEO 1983"}
                 </span>
               </div>
             </div>

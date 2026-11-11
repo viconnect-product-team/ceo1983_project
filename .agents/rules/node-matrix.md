@@ -88,3 +88,9 @@ Dành cho: DevOps, Quản trị hệ thống, Backend Core.
 1. **Xác Định Node Đầu Tiên**: Trước khi viết bất kỳ dòng mã nào, Agent phải thông báo cho người dùng biết yêu cầu đang được map vào `[NODE-xxx]` nào.
 2. **Đọc File Trước Khi Sửa**: Chỉ sửa đúng các tệp đã được liệt kê trong bảng Node tương ứng. Nếu cần tạo tệp mới, phải khai báo bổ sung vào Node.
 3. **Kiểm Tra Biên Dịch**: Chạy `npx tsc --noEmit` xác nhận 0 lỗi (Exit Code 0) trước khi báo hoàn thành.
+
+## Cập nhật 11/11/2026 — ZBS Template Message ([NODE-CRM-014], [NODE-CRM-024])
+- Frontend: `components/documents/MailTemplateManager.tsx`, giữ giao diện và số nhận nhập trực tiếp.
+- API/Service: `POST /zalo/send-zns`, `zalo.controller.ts`, `zalo.service.ts`, `zbs-template.config.ts`.
+- Cấu hình: `app_settings.zalo_oa_config.zbsTemplates` hoặc `ZALO_ZBS_TEMPLATES`; mã mẫu CRM ánh xạ tới `templateId` đã duyệt và `parameterMap`. Token lưu phía backend; không cần thêm bảng hay tra UID người nhận.
+- Hướng dẫn và cấu hình mẫu: `apps/ceo1983_app_be/docs/ZBS_TEMPLATE_MESSAGE.md`, `zbs-templates.example.json`. ID thật để quản trị viên điền sau khi Zalo duyệt; lỗi gửi phải được phản ánh đúng trên CRM.

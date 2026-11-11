@@ -21,8 +21,6 @@ import {
   Bell,
   Settings as Cog,
   LogOut,
-  Sun,
-  Moon,
   Share2,
   QrCode,
   Copy,
@@ -948,13 +946,6 @@ export default function ProfileScreen() {
               alt="Cover Photo"
               className="w-full h-full object-cover"
             />
-            {/* Mã Hội Viên */}
-            <div className="absolute top-3 left-3 z-10">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white shadow-xs">
-                <span className="size-1.5 rounded-full bg-orange-400 animate-pulse" />
-                <span className="text-[10px] font-mono font-bold">{memberCode}</span>
-              </div>
-            </div>
             {/* Nút Đổi ảnh bìa */}
             <button
               type="button"
@@ -1017,47 +1008,35 @@ export default function ProfileScreen() {
             </div>
           </div>
 
-          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Cách đều, fill dài sát 2 lề) */}
-          <div className="w-full self-stretch h-16 px-1 pt-1 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-1 items-center shrink-0">
+          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Nền trong suốt, tone màu Xanh & Cam CEO 1983) */}
+          <div className="w-full self-stretch h-14 px-2 pt-1 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 items-center shrink-0">
             <button
               type="button"
               onClick={() => setCardPreviewOpen(true)}
-              className="w-full self-stretch px-1 py-1.5 bg-black/0 rounded-2xl flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-full self-stretch bg-transparent hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl flex flex-col justify-center items-center gap-1 transition cursor-pointer border-0 outline-none"
             >
-              <div className="size-5 relative overflow-hidden">
-                <div className="w-4 h-5 left-[20.17px] top-[3.21px] absolute origin-top-left rotate-90 outline outline-[1.50px] outline-offset-[-0.75px] outline-orange-600 dark:outline-amber-400" />
-                <div className="size-1.5 left-[4.58px] top-[7.79px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-                <div className="w-1 h-0 left-[13.75px] top-[8.71px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-                <div className="w-0.5 h-0 left-[13.75px] top-[12.38px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-              </div>
-              <div className="text-center justify-start text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+              <CreditCard className="size-5 text-[#003B95] dark:text-[#38BDF8]" strokeWidth={2.2} />
+              <div className="text-center justify-start text-[#003B95] dark:text-[#38BDF8] text-xs font-bold font-['Inter'] leading-4">
                 Danh thiếp
               </div>
             </button>
             <button
               type="button"
               onClick={handleShare}
-              className="w-full self-stretch px-1 py-1.5 bg-black/0 rounded-2xl flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-full self-stretch bg-transparent hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl flex flex-col justify-center items-center gap-1 transition cursor-pointer border-0 outline-none"
             >
-              <div className="size-5 relative">
-                <div className="size-3.5 left-[2.29px] top-[4.13px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-                <div className="w-3 h-2.5 left-[6.88px] top-[3.21px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-              </div>
-              <div className="text-center justify-start text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+              <Share2 className="size-5 text-[#E0592A] dark:text-orange-400" strokeWidth={2.2} />
+              <div className="text-center justify-start text-[#E0592A] dark:text-orange-400 text-xs font-bold font-['Inter'] leading-4">
                 Chia sẻ
               </div>
             </button>
             <button
               type="button"
               onClick={() => setEditProfileOpen(true)}
-              className="w-full self-stretch px-1 py-1.5 bg-black/0 rounded-2xl flex flex-col justify-center items-center gap-1 hover:bg-orange-50/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+              className="w-full self-stretch bg-transparent hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl flex flex-col justify-center items-center gap-1 transition cursor-pointer border-0 outline-none"
             >
-              <div className="size-5 relative">
-                <div className="size-2.5 left-[5.04px] top-[2.75px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-                <div className="w-2.5 h-1.5 left-[3.21px] top-[11.92px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-                <div className="size-1.5 left-[12.38px] top-[12.83px] absolute outline outline-[1.25px] outline-offset-[-0.63px] outline-orange-600 dark:outline-amber-400" />
-              </div>
-              <div className="text-center justify-start text-slate-700 dark:text-slate-300 text-xs font-medium font-['Inter'] leading-4">
+              <Edit3 className="size-5 text-[#003B95] dark:text-[#38BDF8]" strokeWidth={2.2} />
+              <div className="text-center justify-start text-[#003B95] dark:text-[#38BDF8] text-xs font-bold font-['Inter'] leading-4">
                 Sửa hồ sơ
               </div>
             </button>
@@ -2092,45 +2071,10 @@ export default function ProfileScreen() {
                         Chọn màu giao diện &amp; Chủ đề
                       </h4>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        3 Dạng màu nhận diện CEO 1983 &amp; Chế độ hiển thị
+                        3 Dạng màu nhận diện thương hiệu CEO 1983
                       </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Chế độ Sáng / Tối */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheme("light");
-                      toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      theme === "light"
-                        ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-extrabold"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    <Sun className="size-3.5 text-amber-500" />
-                    <span>Giao diện Sáng</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTheme("dark");
-                      toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      theme === "dark"
-                        ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-extrabold"
-                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    <Moon className="size-3.5 text-sky-400" />
-                    <span>Giao diện Tối</span>
-                  </button>
                 </div>
 
                 {/* 3 Dạng Màu Tiêu Chuẩn CEO 1983 Swatches */}

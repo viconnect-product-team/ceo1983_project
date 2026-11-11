@@ -11,12 +11,61 @@ type Variant = "default" | "overlay";
  * Keeps the indigo enterprise identity in every mode.
  */
 export function ThemeSwitcher({
-  variant: _variant = "default",
-  className: _className = "",
+  variant = "default",
+  className = "",
 }: {
   variant?: Variant;
   className?: string;
 }) {
-  // Gỡ bỏ hoàn toàn giao diện theme tối - Mặc định app luôn là theme sáng
-  return null;
+  const { theme, setTheme } = useTheme();
+  const t = useT();
+
+  // App CEO 1983 Mobile luôn dùng theme sáng, không hiển thị nút đổi theme
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/association")) {
+    return null;
+  }
+
+  const isOverlay = variant === "overlay";
+
+  const wrap = isOverlay
+    ? "inline-flex items-center rounded-lg bg-foreground/40 p-0.5 backdrop-blur-md gap-0.5"
+    : "inline-flex items-center rounded-lg bg-card p-0.5 gap-0.5 border border-border";
+
+  const baseBtn =
+    "inline-flex h-7 w-8 items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 cursor-pointer";
+
+  const activeCls = isOverlay
+    ? "bg-card text-foreground shadow-sm"
+    : "bg-primary text-primary-foreground shadow-sm";
+
+  const idleCls = isOverlay
+    ? "text-primary-foreground/70 hover:text-primary-foreground"
+    : "text-muted-foreground hover:text-foreground";
+
+  const opts: { mode: Theme; icon: typeof Sun; labelKey: TKey }[] = [
+    { mode: "light", icon: Sun, labelKey: "theme.light" },
+    { mode: "dark", icon: Moon, labelKey: "theme.dark" },
+  ];
+
+  return (
+    <div role="group" aria-label={t("theme.label")} className={`${wrap} ${className}`}>
+      {opts.map((o) => {
+        const Icon = o.icon;
+        const active = theme === o.mode;
+        return (
+          <button
+            key={o.mode}
+            type="button"
+            onClick={() => setTheme(o.mode)}
+            aria-pressed={active}
+            aria-label={t(o.labelKey)}
+            title={t(o.labelKey)}
+            className={`${baseBtn} ${active ? activeCls : idleCls}`}
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        );
+      })}
+    </div>
+  );
 }

@@ -510,7 +510,7 @@ function EventPosterCard({
           </div>
           <div className="flex justify-start items-center gap-1 text-slate-500 dark:text-slate-400">
             <Clock className="size-3 text-slate-400" />
-            <span className="text-xs font-normal font-sans leading-4">{event.time || "00:00"}</span>
+            <span className="text-xs font-normal font-sans leading-4">{formatEventTimeRange(event, event.title)}</span>
           </div>
         </div>
 
@@ -809,6 +809,38 @@ function formatEventDayOfWeekAndDate(dateVal: any): string {
   } catch {
     return "T5, 12/11/2026";
   }
+}
+
+export function formatEventTimeRange(ev: any, title?: string): string {
+  const sTime = ev?.startTime || ev?.start_time;
+  const eTime = ev?.endTime || ev?.end_time;
+  if (sTime && eTime && sTime !== "00:00" && eTime !== "00:00") {
+    return `${sTime} - ${eTime}`;
+  }
+  if (sTime && sTime !== "00:00") {
+    return `${sTime} - 17:30`;
+  }
+  const t = ev?.time;
+  if (t && t.includes("-") && !t.includes("00:00 - 00:00")) return t;
+  if (t && t !== "00:00") return `${t} - 17:30`;
+
+  if (ev?.date) {
+    try {
+      const d = new Date(ev.date);
+      if (!isNaN(d.getTime()) && (d.getHours() !== 0 || d.getMinutes() !== 0)) {
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return `${hh}:${mm} - 21:30`;
+      }
+    } catch {}
+  }
+
+  const tl = (title || ev?.title || ev?.name || "").toLowerCase();
+  if (tl.includes("golf")) return "06:00 - 15:30";
+  if (tl.includes("gala") || tl.includes("kỷ niệm") || tl.includes("đại hội")) return "18:00 - 22:00";
+  if (tl.includes("tọa đàm") || tl.includes("workshop") || tl.includes("diễn đàn")) return "08:30 - 11:45";
+  if (tl.includes("caravan")) return "07:00 - 18:00";
+  return "08:00 - 17:30";
 }
 
 const defaultUpcomingEvents: MyEvent[] = [
@@ -2205,7 +2237,7 @@ function EventsScreen() {
                 const rawImg = (e as any).image;
                 const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
                 const dateFormatted = formatEventDayOfWeekAndDate(e.date);
-                const timeStr = (e as any).time || "00:00";
+                const timeStr = formatEventTimeRange(e, e.title);
                 const statusText = (e as any).statusText || (isFree ? "Miễn phí" : `${rawPrice.toLocaleString("vi-VN")} đ`);
 
                 return (

@@ -173,6 +173,7 @@
     + **Tệp Ảnh & Mã Nguồn (`.png`, `.jpg`, `.jpeg`, `.txt`)**: Trình xem ảnh Lightbox xoay góc, phóng to thu nhỏ và bộ đọc văn bản có thanh cuộn mượt mà.
   - Tích hợp đồng bộ cả trong danh sách tài liệu (`documents.index.tsx`) và trang chi tiết tài liệu (`documents.$docId.tsx`).
   - Trình soạn thảo mẫu email v3 bền vững, thay thế các biến raw thành thẻ thân thiện `[Mã hội viên]`, `[Tên hội viên]`.
+  - **Cập nhật 11/11/2026 — ZBS Template Message qua số điện thoại**: Nút gửi thử kênh Zalo dùng `POST /zalo/send-zns` với `templateCode`, `phone`, `templateData`. Backend chọn `templateId` đã duyệt và ánh xạ biến bằng `parameterMap` từ `zbsTemplates` trong cấu hình OA hoặc `ZALO_ZBS_TEMPLATES`; chỉ gửi các biến đã ánh xạ, không gửi HTML email. Token lấy từ backend, số nhận không cần UID trong danh bạ. Thiếu cấu hình hoặc Zalo trả lỗi phải báo thất bại; `error: 0` chỉ xác nhận tiếp nhận yêu cầu. ID mẫu thật do quản trị viên điền sau khi Zalo duyệt. Hướng dẫn: `apps/ceo1983_app_be/docs/ZBS_TEMPLATE_MESSAGE.md`.
   - Email có mã QR thanh toán hoặc vé QR BẮT BUỘC đính kèm MIME Inline CID (`cid:mã QR ngân hàng_payment_qr`) để không bị Google Image Proxy chặn.
 
 ### `[NODE-CRM-015]` Quản Trị Biểu Quyết & Quay Số May Mắn

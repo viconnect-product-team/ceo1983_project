@@ -276,6 +276,71 @@ html.dark .bg-crm-system,
   --chart-5: #38BDF8;
 }
 
+/* ============================================================
+   BẮT BUỘC MÀU TEXT LUÔN SÁNG TRÊN THEME TỐI (CRM DARK MODE)
+   Tự động nâng màu toàn bộ text tối (slate/gray/zinc/neutral/black)
+   lên màu sáng tương phản cao khi ở chế độ Dark Theme.
+   ============================================================ */
+html.dark .text-slate-950:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-slate-900:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-slate-800:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-gray-950:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-gray-900:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-gray-800:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-zinc-950:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-zinc-900:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-zinc-800:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-neutral-950:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-neutral-900:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-neutral-800:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-black:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-\[\#0f172a\]:not([class*="dark:text-"]),
+html.dark .text-\[\#0F172A\]:not([class*="dark:text-"]),
+html.dark .text-\[\#1e293b\]:not([class*="dark:text-"]),
+html.dark .text-\[\#1E293B\]:not([class*="dark:text-"]),
+html.dark .text-\[\#111827\]:not([class*="dark:text-"]),
+html.dark .text-\[\#1F2937\]:not([class*="dark:text-"]) {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-slate-700:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-gray-700:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-zinc-700:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-neutral-700:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-\[\#334155\]:not([class*="dark:text-"]),
+html.dark .text-\[\#374151\]:not([class*="dark:text-"]) {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-slate-600:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-gray-600:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-zinc-600:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-neutral-600:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-\[\#475569\]:not([class*="dark:text-"]) {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-slate-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-gray-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-zinc-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
+html.dark .text-neutral-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *) {
+  color: #94A3B8 !important;
+}
+
+/* Đảm bảo toàn bộ bảng, thẻ card, modal, dropdown trên CRM hiển thị chữ sáng rõ nét trên dark theme */
+html.dark table tbody tr td:not([class*="text-amber"]):not([class*="text-yellow"]):not([class*="text-emerald"]):not([class*="text-green"]):not([class*="text-rose"]):not([class*="text-red"]):not([class*="text-blue"]):not([class*="text-cyan"]):not([class*="text-sky"]) {
+  color: #F8FAFC;
+}
+
+html.dark table thead th {
+  color: #E2E8F0 !important;
+}
+
+html.dark .bg-card,
+html.dark [class*="bg-card"] {
+  color: #F8FAFC;
+}
+
 /* ------------------------------------------------------------------
    High contrast — layered on top of .dark (html gets `dark hc`).
    Keeps the indigo enterprise identity while pushing every
@@ -1230,8 +1295,8 @@ html.hc .bc-app {
   --bc-mobile-shadow-v: 0 0 20px rgba(216, 178, 130, 0.35);
 
   --bc-mobile-nav-h: 64px;
-  --bc-mobile-safe-top: env(safe-area-inset-top, 0px);
-  --bc-mobile-safe-top-compact: calc(max(env(safe-area-inset-top, 0px), 12px) + 4px);
+  --bc-mobile-safe-top: calc(max(env(safe-area-inset-top, 0px), 44px));
+  --bc-mobile-safe-top-compact: calc(max(env(safe-area-inset-top, 0px), 44px) + 4px);
   --bc-mobile-safe-right: env(safe-area-inset-right, 0px);
   --bc-mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
   --bc-mobile-safe-left: env(safe-area-inset-left, 0px);

@@ -446,13 +446,8 @@ export function MemberProfileModal({
                 )}
               </div>
 
-              {/* Status / Member code badge */}
+              {/* Status badge */}
               <div className="flex flex-col items-end gap-1 mb-1">
-                {member.code && (
-                  <span className="rounded-lg bg-[#001B54] dark:bg-amber-500 px-2.5 py-1 text-[11px] font-black text-white dark:text-slate-950 shadow-xs tracking-wider">
-                    {member.code}
-                  </span>
-                )}
                 {connected && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-300/40">
                     <Check className="size-2.5" />

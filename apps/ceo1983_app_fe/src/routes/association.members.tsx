@@ -1479,9 +1479,6 @@ function MembersScreen() {
                           >
                             {personDisplayName}
                           </button>
-                          <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white shadow-2xs">
-                            {m.code}
-                          </span>
                           {isFriend && (
                             <span className="rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 text-[9px] font-bold">
                               Bạn bè
@@ -1654,9 +1651,6 @@ function MembersScreen() {
                         <span className="font-black text-[13px] text-slate-900 dark:text-white truncate">
                           {item.name}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 font-bold border border-blue-200/50">
-                          {item.code}
-                        </span>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-300 font-medium truncate">
                         {item.title} • {item.company}
@@ -1730,9 +1724,6 @@ function MembersScreen() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-black text-[13px] text-slate-900 dark:text-white truncate">
                           {item.name}
-                        </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 font-bold">
-                          {item.code}
                         </span>
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                           <Clock className="h-2.5 w-2.5" />
@@ -1826,9 +1817,6 @@ function MembersScreen() {
                             >
                               {personDisplayName}
                             </button>
-                            <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white">
-                              {m.code}
-                            </span>
                             <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
                               Mới kết nối
                             </span>
@@ -2026,9 +2014,6 @@ function MembersScreen() {
                                     >
                                       {personDisplayName}
                                     </button>
-                                    <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white shadow-2xs">
-                                      {m.code}
-                                    </span>
                                     <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                                       <CheckCircle2 className="h-2.5 w-2.5" />
                                       <span>Đã kết nối</span>
@@ -2238,9 +2223,6 @@ function MembersScreen() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[14px] font-bold text-slate-900 dark:text-white whitespace-normal break-words">
                               {card.name}
-                            </span>
-                            <span className="rounded-md bg-[#003B95] px-1.5 py-0.2 text-[9px] font-black text-white shadow-2xs">
-                              {card.code}
                             </span>
                             <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                               <BadgeCheck className="size-2.5" />

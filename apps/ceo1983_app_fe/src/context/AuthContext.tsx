@@ -109,7 +109,7 @@ export interface AppUser {
   phone?: string;
   permissions?: string[];
   /** Alias cho các nơi dùng user.user_metadata.full_name */
-  user_metadata?: { full_name?: string; avatar_url?: string; [key: string]: any };
+  user_metadata?: { full_name?: string; avatar_url?: string;[key: string]: any };
   [key: string]: any;
 }
 
@@ -176,10 +176,10 @@ function tokenToUser(decoded: Record<string, any>): AppUser {
   const permissions: string[] = Array.isArray(decoded.permissions)
     ? decoded.permissions
     : Array.isArray(decoded.user_metadata?.permissions)
-    ? decoded.user_metadata.permissions
-    : isAdmin
-    ? ['admin:full_access', 'marketplace:manage', 'event:manage', 'news:manage', 'member:manage', 'event:scan_qr']
-    : ['marketplace:view', 'marketplace:post', 'event:view', 'news:view', 'member:view'];
+      ? decoded.user_metadata.permissions
+      : isAdmin
+        ? ['admin:full_access', 'marketplace:manage', 'event:manage', 'news:manage', 'member:manage', 'event:scan_qr']
+        : ['marketplace:view', 'marketplace:post', 'event:view', 'news:view', 'member:view'];
 
   return {
     id: decoded.sub || decoded.id || '',
@@ -244,10 +244,10 @@ function clearSessionCookies() {
 
 const API_BASE =
   typeof window !== 'undefined' &&
-  (window.location.protocol === 'https:' ||
-    window.location.port === '5443' ||
-    window.location.port === '5444' ||
-    window.location.port === '5445')
+    (window.location.protocol === 'https:' ||
+      window.location.port === '5443' ||
+      window.location.port === '5444' ||
+      window.location.port === '5445')
     ? ''
     : ((import.meta.env.VITE_API_URL as string | undefined) ?? '');
 
@@ -284,10 +284,10 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
   const permissions: string[] = Array.isArray(apiUser?.permissions)
     ? apiUser.permissions
     : Array.isArray(decoded.permissions)
-    ? decoded.permissions
-    : isAdmin
-    ? ['admin:full_access', 'marketplace:manage', 'event:manage', 'news:manage', 'member:manage', 'event:scan_qr']
-    : ['marketplace:view', 'marketplace:post', 'event:view', 'news:view', 'member:view'];
+      ? decoded.permissions
+      : isAdmin
+        ? ['admin:full_access', 'marketplace:manage', 'event:manage', 'news:manage', 'member:manage', 'event:scan_qr']
+        : ['marketplace:view', 'marketplace:post', 'event:view', 'news:view', 'member:view'];
 
   // TUYỆT ĐỐI KHÔNG lưu các cờ bảo mật (isAdmin, role, department) thành các key riêng lẻ ở localStorage
   // Dọn dẹp triệt để các key thừa nếu từng tồn tại để đảm bảo tuân thủ nghiêm ngặt về an toàn thông tin
@@ -302,7 +302,7 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
       localStorage.removeItem('vba_member_phone');
       localStorage.removeItem('vba_is_event_qr_scanner');
       localStorage.removeItem('vba_is_media_department_member');
-    } catch {}
+    } catch { }
   }
 
   const isSystemAdmin =
@@ -314,13 +314,13 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
   const mustChangePassword = isSystemAdmin
     ? false
     : Boolean(
-        apiUser?.mustChangePassword ||
-          apiUser?.must_change_password ||
-          decoded.mustChangePassword ||
-          decoded.must_change_password ||
-          (typeof window !== 'undefined' &&
-            localStorage.getItem('vba_must_change_password') === 'true'),
-      );
+      apiUser?.mustChangePassword ||
+      apiUser?.must_change_password ||
+      decoded.mustChangePassword ||
+      decoded.must_change_password ||
+      (typeof window !== 'undefined' &&
+        localStorage.getItem('vba_must_change_password') === 'true'),
+    );
 
   return {
     id: apiUser?.id || decoded.sub || '',
@@ -376,7 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const decoded = decodeJwt(accessToken);
     if (!decoded?.exp) return;
     const msUntilExpiry = decoded.exp * 1000 - Date.now();
-    
+
     // Nếu token đã hết hạn hoặc thời gian còn lại không hợp lệ, không lên lịch ngắn hạn
     if (msUntilExpiry <= 0) return;
 
@@ -411,7 +411,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('vibe_refresh_token', sess.refresh_token);
     try {
       localStorage.setItem('vibe_user', JSON.stringify(sess.user));
-    } catch {}
+    } catch { }
     setSession(sess);
     setUser(sess.user);
     setStatus('in');
@@ -431,7 +431,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           window.dispatchEvent(new Event('role-changed'));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // Làm giàu thông tin quyền hạn và avatar từ API /users/me
     fetch(`${API_BASE}/api/users/me`, {
@@ -452,7 +452,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(enrichedUser);
           try {
             localStorage.setItem('vibe_user', JSON.stringify(enrichedUser));
-          } catch {}
+          } catch { }
           if (fresh.permissionMatrix) {
             const matrixData = fresh.permissionMatrix.categories || fresh.permissionMatrix.rows || fresh.permissionMatrix;
             localStorage.setItem(RBAC_MATRIX_STORAGE_KEY, JSON.stringify(matrixData));
@@ -460,7 +460,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // Chỉ phát sự kiện làm mới giao diện khi có thay đổi danh tính thực sự hoặc đăng nhập mới
     // Tuyệt đối không broadcast trong quá trình refresh token nền định kỳ để tránh nhấp nháy UI
@@ -493,7 +493,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       insecureKeys.forEach((k) => {
         try {
           localStorage.removeItem(k);
-        } catch {}
+        } catch { }
       });
     }
 
@@ -548,7 +548,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       appUser.must_change_password = true;
       try {
         localStorage.setItem('vba_must_change_password', 'true');
-      } catch {}
+      } catch { }
     }
     const sess = buildSession(
       data.access_token,

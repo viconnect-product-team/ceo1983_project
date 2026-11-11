@@ -9,6 +9,12 @@ import {
 export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "vba.theme";
+const CRM_THEME_KEY = "vba.crm_theme";
+
+function isAssociationApp(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname.startsWith("/association");
+}
 
 type ThemeCtx = {
   theme: Theme;
@@ -21,25 +27,46 @@ type ThemeCtx = {
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
 
-function applyTheme(_theme: Theme) {
+function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  // Gỡ bỏ hoàn toàn class dark - Chuẩn hóa 100% theme sáng (Light Theme)
-  root.classList.remove("dark");
-  root.classList.remove("hc");
-  root.classList.add("light");
-  root.dataset.theme = "light";
-  root.style.colorScheme = "light";
 
-  // Re-apply CEO 1983 Color theme variables so brand colors remain vibrant on Light Theme
+  // Nếu đang ở App CEO 1983 Mobile (/association), LUÔN LUÔN là theme sáng (Light Theme) theo yêu cầu
+  if (isAssociationApp()) {
+    root.classList.remove("dark");
+    root.classList.remove("hc");
+    root.classList.add("light");
+    root.dataset.theme = "light";
+    root.style.colorScheme = "light";
+    applyCeo1983ColorTheme(getActiveCeo1983ColorThemeId());
+    return;
+  }
+
+  // Trên CRM Web: Hỗ trợ chuyển đổi Theme sáng / tối theo lựa chọn của quản trị viên
+  if (theme === "dark") {
+    root.classList.add("dark");
+    root.classList.remove("light");
+    root.dataset.theme = "dark";
+    root.style.colorScheme = "dark";
+  } else {
+    root.classList.remove("dark");
+    root.classList.add("light");
+    root.dataset.theme = "light";
+    root.style.colorScheme = "light";
+  }
+
+  // Re-apply CEO 1983 Color theme variables so brand colors remain vibrant
   applyCeo1983ColorTheme(getActiveCeo1983ColorThemeId());
 }
 
 function readInitial(): Theme {
   if (typeof window !== "undefined") {
+    if (isAssociationApp()) {
+      return "light";
+    }
     try {
-      // Dọn dẹp key cũ nếu từng lưu dark mode
-      localStorage.setItem(STORAGE_KEY, "light");
+      const stored = localStorage.getItem(CRM_THEME_KEY) || localStorage.getItem(STORAGE_KEY);
+      if (stored === "dark" || stored === "light") return stored;
     } catch {
       /* ignore */
     }
@@ -54,9 +81,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initial = readInitial();
     const initialColor = getActiveCeo1983ColorThemeId();
-    setThemeState("light");
+    setThemeState(initial);
     setColorThemeState(initialColor);
-    applyTheme("light");
+    applyTheme(initial);
     applyCeo1983ColorTheme(initialColor);
 
     const handleColorChanged = (e: any) => {
@@ -68,11 +95,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(COLOR_THEME_EVENT, handleColorChanged);
   }, []);
 
-  const setTheme = (_t: Theme) => {
-    setThemeState("light");
-    applyTheme("light");
+  const setTheme = (t: Theme) => {
+    if (isAssociationApp()) {
+      setThemeState("light");
+      applyTheme("light");
+      return;
+    }
+    setThemeState(t);
+    applyTheme(t);
     try {
-      localStorage.setItem(STORAGE_KEY, "light");
+      localStorage.setItem(CRM_THEME_KEY, t);
+      localStorage.setItem(STORAGE_KEY, t);
     } catch {
       /* ignore */
     }
@@ -83,7 +116,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyCeo1983ColorTheme(ct);
   };
 
-  const toggle = () => setTheme("light");
+  const toggle = () => {
+    if (isAssociationApp()) return;
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggle, colorTheme, setColorTheme }}>

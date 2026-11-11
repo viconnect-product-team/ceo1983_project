@@ -4,8 +4,6 @@ import {
   Settings as Cog,
   Globe,
   Bot,
-  Sun,
-  Moon,
   Check,
   Palette,
   Sparkles,
@@ -13,7 +11,6 @@ import {
 import { MemberHeader } from "@/components/member/MemberShell";
 import { Ceo1983ColorThemeSelector } from "@/components/member/Ceo1983ColorThemeSelector";
 import { useLang } from "@/lib/i18n";
-import { useTheme } from "@/lib/theme";
 import {
   isVoiceAiEnabled,
   setVoiceAiEnabled,
@@ -31,7 +28,6 @@ export function AssociationSystemConfigScreen() {
   const navigate = useNavigate();
   const { lang, setLang } = useLang();
   const isEn = lang === "en";
-  const { theme, setTheme } = useTheme();
 
   // Active brand color theme
   const [brandColorTheme, setBrandColorTheme] = useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
@@ -101,7 +97,7 @@ export function AssociationSystemConfigScreen() {
                 Giao Diện &amp; Trợ Lý AI
               </h2>
               <p className="text-[11px] text-slate-200 mt-0.5">
-                Thiết lập nhận diện màu sắc, chế độ sáng/tối và AI thông minh
+                Thiết lập nhận diện màu sắc, ngôn ngữ và Trợ lý AI thông minh
               </p>
             </div>
           </div>
@@ -209,53 +205,6 @@ export function AssociationSystemConfigScreen() {
               <span className="text-base">🇬🇧</span>
               <span>English</span>
               {lang === "en" && <Check className="size-4 text-[#003B95] dark:text-amber-400 ml-auto" />}
-            </button>
-          </div>
-        </div>
-
-        {/* 4. CHẾ ĐỘ HIỂN THỊ (SÁNG / TỐI) */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-2">
-              <Sun className="size-4 text-amber-500" />
-              <span>{isEn ? "Appearance Mode" : "Chế độ hiển thị"}</span>
-            </h3>
-            <span className="text-[11px] font-bold text-slate-400">
-              {theme === "dark" ? "Ban đêm" : "Ban ngày"}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => {
-                setTheme("light");
-                toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
-              }}
-              className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                theme === "light"
-                  ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-black"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-              }`}
-            >
-              <Sun className="size-4 text-amber-500" />
-              <span>{isEn ? "Light Mode" : "Giao diện sáng"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setTheme("dark");
-                toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
-              }}
-              className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                theme === "dark"
-                  ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-black"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-              }`}
-            >
-              <Moon className="size-4 text-sky-400" />
-              <span>{isEn ? "Dark Mode" : "Giao diện tối"}</span>
             </button>
           </div>
         </div>

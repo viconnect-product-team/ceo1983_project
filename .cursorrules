@@ -1,6 +1,7 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 11/11/2026 — [NODE-CRM-014], [NODE-CRM-024]: Gửi thử Zalo từ Mẫu Email CRM dùng ZBS qua SĐT, ánh xạ mã CRM -> templateId đã duyệt + parameterMap trong zbsTemplates/ZALO_ZBS_TEMPLATES. Token lấy phía backend; không dùng token localStorage. Chỉ báo API tiếp nhận khi Zalo trả error=0; thiếu cấu hình phải báo lỗi, không fallback CS. Giữ ID ví dụ trống đến khi có mẫu thật của OA/App.
 # ==============================================================================
 # CẬP NHẬT 03/11/2026 — [NODE-CORE-006], ưu tiên hơn quy hoạch cổng cũ bên dưới:
 # ceo1983-ssl-proxy chỉ publish 5443/5444; 5445/5446 thuộc vione-ssl-proxy độc lập.
