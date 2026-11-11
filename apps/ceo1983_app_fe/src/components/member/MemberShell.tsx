@@ -950,24 +950,26 @@ function MemberTabBar() {
                         boxShadow: `0 6px 18px ${primaryColor}66`,
                       }}
                     >
-                      {/* Icon QR-code-02 từ bộ icon CEO1983_icon (5).zip */}
-                      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white relative z-10 shrink-0">
-                        <path d="M9.53727 9.53727H9.55195M25.6772 9.53727H25.6918M9.53727 25.6772H9.55195M19.0745 19.0745H19.0891M25.6772 25.6772H25.6918M24.9435 30.8126H30.8126V24.9435M20.5417 24.2099V30.8126M30.8126 20.5417H24.2099M22.8894 14.6727H28.465C29.2867 14.6727 29.6976 14.6727 30.0114 14.5128C30.2875 14.3721 30.512 14.1476 30.6526 13.8715C30.8126 13.5577 30.8126 13.1468 30.8126 12.3251V6.74947C30.8126 5.92773 30.8126 5.51686 30.6526 5.20299C30.512 4.92691 30.2875 4.70245 30.0114 4.56178C29.6976 4.40186 29.2867 4.40186 28.465 4.40186H22.8894C22.0676 4.40186 21.6567 4.40186 21.3429 4.56178C21.0668 4.70245 20.8423 4.92691 20.7017 5.20299C20.5417 5.51686 20.5417 5.92773 20.5417 6.74947V12.3251C20.5417 13.1468 20.5417 13.5577 20.7017 13.8715C20.8423 14.1476 21.0668 14.3721 21.3429 14.5128C21.6567 14.6727 22.0676 14.6727 22.8894 14.6727ZM6.74947 14.6727H12.3251C13.1468 14.6727 13.5577 14.6727 13.8715 14.5128C14.1476 14.3721 14.3721 14.1476 14.5128 13.8715C14.6727 13.5577 14.6727 13.1468 14.6727 12.3251V6.74947C14.6727 5.92773 14.6727 5.51686 14.5128 5.20299C14.3721 4.92691 14.1476 4.70245 13.8715 4.56178C13.5577 4.40186 13.1468 4.40186 12.3251 4.40186H6.74947C5.92773 4.40186 5.51686 4.40186 5.20299 4.56178C4.92691 4.70245 4.70245 4.92691 4.56178 5.20299C4.40186 5.51686 4.40186 5.92773 4.40186 6.74947V12.3251C4.40186 13.1468 4.40186 13.5577 4.56178 13.8715C4.70245 14.1476 4.92691 14.3721 4.56178 14.5128C4.70245 14.1476 4.92691 14.3721 4.92691 14.3721L6.74947 14.6727ZM6.74947 30.8126H12.3251C13.1468 30.8126 13.5577 30.8126 13.8715 30.6526C14.1476 30.512 14.3721 30.2875 14.5128 30.0114C14.6727 29.6976 14.6727 29.2867 14.6727 28.465V22.8894C14.6727 22.0676 14.6727 21.6567 14.5128 21.3429C14.3721 21.0668 14.1476 20.8423 13.8715 20.7017C13.5577 20.5417 13.1468 20.5417 12.3251 20.5417H6.74947C5.92773 20.5417 5.51686 20.5417 5.20299 20.7017C4.92691 20.8423 4.70245 21.0668 4.56178 21.3429C4.40186 21.6567 4.40186 22.0676 4.40186 22.8894V28.465C4.40186 29.2867 4.40186 29.6976 4.56178 30.0114C4.70245 30.2875 4.92691 30.512 5.20299 30.6526C5.51686 30.8126 5.92773 30.8126 6.74947 30.8126Z" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      {/* Icon Quét Scan khi đang quét -> Icon Mã QR tĩnh 2s khi quét xong (Yêu cầu 1) */}
+                      {isScanningPhase ? (
+                        <Scan className="size-7 text-white stroke-[2.3] relative z-10 animate-pulse shrink-0" />
+                      ) : (
+                        <QrCode className="size-7 text-white stroke-[2.3] relative z-10 animate-in fade-in zoom-in-95 duration-200 shrink-0" />
+                      )}
 
-                      {/* MoMo-style Scanning Laser Beam */}
+                      {/* MoMo-style Scanning Laser Beam: Chỉ hiện và quét từ trên xuống khi trong chu kỳ quét */}
                       {isScanningPhase && (
                         <>
                           <div
-                            className="absolute inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_8px_#38bdf8] pointer-events-none z-20"
+                            className="absolute inset-x-1.5 h-[3px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_10px_#38bdf8] pointer-events-none z-20"
                             style={{
-                              animation: "momoLaserScan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+                              animation: "momoLaserScan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite",
                             }}
                           />
                           <div
-                            className="absolute inset-0 bg-cyan-400/10 pointer-events-none z-10"
+                            className="absolute inset-0 bg-cyan-400/15 pointer-events-none z-10"
                             style={{
-                              animation: "momoLaserPulse 2.5s ease-in-out infinite",
+                              animation: "momoLaserPulse 2s ease-in-out infinite",
                             }}
                           />
                         </>

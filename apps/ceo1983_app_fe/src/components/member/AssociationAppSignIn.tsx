@@ -323,11 +323,11 @@ export function AssociationAppSignIn({
           </button>
         </form>
 
-        {/* Member Activation & Register Button -> Chuyển đến Landing Page CEO 1983 theo Figma (/landing) */}
+        {/* Member Activation & Register Button -> Cổng Tiếp Nhận Hồ Sơ Đăng Ký Hội Viên (/register) */}
         <div className="shrink-0 mt-0.5">
           <Link
-            to="/landing"
-            search={{ apply: "true" }}
+            to="/register"
+            search={identifier.includes("@") ? { email: identifier.trim() } : undefined}
             className="relative flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-50/70 hover:bg-amber-100/90 text-[13.5px] font-semibold text-amber-900 transition-all active:scale-[0.99] cursor-pointer shadow-xs"
           >
             <Shield className="h-4 w-4 text-amber-600" aria-hidden="true" />

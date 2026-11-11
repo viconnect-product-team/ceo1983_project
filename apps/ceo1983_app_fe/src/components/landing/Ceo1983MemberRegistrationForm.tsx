@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   Building2,
   User,
@@ -10,6 +11,7 @@ import {
   Users,
   HeartHandshake,
   CheckCircle2,
+  ChevronLeft,
   ExternalLink,
   Send,
   Sparkles,
@@ -29,10 +31,18 @@ import { toast } from "sonner";
 import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 
-export function Ceo1983MemberRegistrationForm() {
+interface Ceo1983MemberRegistrationFormProps {
+  initialEmail?: string;
+  referrerCodeProp?: string;
+}
+
+export function Ceo1983MemberRegistrationForm({
+  initialEmail,
+  referrerCodeProp,
+}: Ceo1983MemberRegistrationFormProps = {}) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail || "");
   const [position, setPosition] = useState("Tổng Giám Đốc / CEO");
   const [customPosition, setCustomPosition] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -51,7 +61,7 @@ export function Ceo1983MemberRegistrationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [registeredData, setRegisteredData] = useState<any>(null);
-  const [referrerCode, setReferrerCode] = useState<string>("");
+  const [referrerCode, setReferrerCode] = useState<string>(referrerCodeProp || "");
 
   const [landingConfig, setLandingConfig] = useState<any>(() => {
     if (typeof window !== "undefined") {
@@ -75,11 +85,15 @@ export function Ceo1983MemberRegistrationForm() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const ref = params.get("ref") || params.get("referral") || params.get("referrer") || "";
-      if (ref) {
+      if (ref && !referrerCode) {
         setReferrerCode(ref.trim());
       }
+      const paramEmail = params.get("email") || "";
+      if (paramEmail && !email) {
+        setEmail(paramEmail.trim());
+      }
     }
-  }, []);
+  }, [referrerCode, email]);
 
   const industries = [
     { value: "ind.trade", label: "Thương mại & Bán lẻ" },
@@ -281,13 +295,17 @@ export function Ceo1983MemberRegistrationForm() {
                 <ExternalLink className="w-3.5 h-3.5 opacity-80" />
               </a>
 
-              <a
-                href="/association/login"
+              <Link
+                to="/association/login"
+                search={{
+                  email: registeredData?.email || undefined,
+                  registered: "true",
+                }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-all"
               >
                 Cổng Đăng Nhập App
                 <ArrowRight className="w-4 h-4" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -326,8 +344,22 @@ export function Ceo1983MemberRegistrationForm() {
         />
       )}
 
-      <div className="py-8 sm:py-12 px-3 sm:px-6 relative z-10">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="py-6 sm:py-10 px-3 sm:px-6 relative z-10">
+      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+        {/* Navigation Bar: Quay lại Đăng nhập App */}
+        <div className="flex items-center justify-between">
+          <Link
+            to="/association/login"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs text-xs font-bold text-[#003B95] hover:text-[#002B70] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 text-amber-500" />
+            <span>← Quay lại Đăng nhập App</span>
+          </Link>
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            CEO 1983 • HanoiBA
+          </span>
+        </div>
+
         {/* Header Branding Card - Clean CEO 1983 Brand */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
           {/* Top CEO1983 Navy Accent Strip */}

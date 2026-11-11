@@ -86,6 +86,32 @@
   animation: subtle-bounce 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+@keyframes momoLaserScan {
+  0% {
+    top: 6px;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: calc(100% - 8px);
+    opacity: 0;
+  }
+}
+
+@keyframes momoLaserPulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .bg-crm-system {
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.02), rgba(248, 250, 252, 0.05)), url('/Background.png');
   background-repeat: no-repeat;

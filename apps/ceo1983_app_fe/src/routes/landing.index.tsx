@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useServerData } from "@/hooks/use-server-data";
 import { listLandingWebsFn } from "@/lib/landing-webs.functions";
@@ -16,6 +17,10 @@ import {
 
 export const Route = createFileRoute("/landing/")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { apply?: string; ref?: string } => ({
+    apply: typeof search.apply === "string" ? search.apply : undefined,
+    ref: typeof search.ref === "string" ? search.ref : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "CLB Doanh Nhân CEO 1983 (HanoiBA) — Cổng Thông Tin & Kết Nối Giao Thương" },
@@ -35,6 +40,19 @@ export const Route = createFileRoute("/landing/")({
 });
 
 function LandingPage() {
+  const { apply, ref } = Route.useSearch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (apply === "true") {
+      navigate({
+        to: "/register",
+        search: ref ? { ref } : undefined,
+        replace: true,
+      });
+    }
+  }, [apply, ref, navigate]);
+
   const listFn = useServerFn(listLandingWebsFn);
   const { data: landingWebs = [] } = useServerData<LandingWebConfig[]>(() => listFn(), []);
 

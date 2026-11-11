@@ -1,5 +1,48 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.02): Sửa Gấp Luồng Đăng Ký Tài Khoản Ở App Chuyển Về Cổng Form Đăng Ký Hội Viên Chuẩn (`/register`) Thay Vì Link Ra Landing Web ([NODE-APP-001], [NODE-CORE-001])**:
+  1. *Khắc phục lỗi điều hướng đăng ký trên Mobile App (`AssociationAppSignIn.tsx` & `ConnectAppSignIn.tsx`)*:
+     - **Hiện trạng trước sửa**: Nút *"Đăng ký hội viên mới"* tại màn hình đăng nhập hội viên (`/association/login`) bị gán nhầm liên kết tới `to="/landing"` với query `search={{ apply: "true" }}`, dẫn đến khi hội viên bấm đăng ký trong App thì bị văng ra trang chủ Landing Web bán hàng/giới thiệu thay vì mở form tiếp nhận thông tin gia nhập.
+     - **Giải pháp xử lý**:
+       + Cập nhật nút trong [`AssociationAppSignIn.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/member/AssociationAppSignIn.tsx#L328-L337) liên kết trực tiếp tới Cổng Tiếp Nhận Hồ Sơ Gia Nhập [`/register`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/routes/register.tsx), tự động truyền kèm email đã gõ trong ô đăng nhập (`search: { email }`).
+       + Đồng bộ nút tạo tài khoản trong [`ConnectAppSignIn.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/business-connect/mobile/ConnectAppSignIn.tsx#L368-L379) liên kết chuẩn về `/register`.
+  2. *Nâng cấp & Hoàn thiện Trải nghiệm Cổng Đăng Ký Gia Nhập (`Ceo1983MemberRegistrationForm.tsx` & `register.tsx`)*:
+     - Bổ sung thanh điều hướng trên cùng kèm nút **"← Quay lại Đăng nhập App"** (`/association/login`), giúp hội viên trên thiết bị di động có thể quay về màn hình đăng nhập chỉ với một chạm.
+     - Tiếp nhận và khởi tạo sẵn giá trị `initialEmail` và `referrerCodeProp` từ URL params hoặc TanStack Router `useSearch()`.
+     - Sau khi gửi đơn đăng ký thành công, nút *"Cổng Đăng Nhập App"* tự động đính kèm `registered: "true"` và `email` để màn hình đăng nhập hiển thị thông báo chào đón và điền sẵn tài khoản.
+  3. *Cơ chế Chuyển tiếp Tự động Phòng vệ trên Landing Web (`landing.index.tsx`)*:
+     - Bổ sung `validateSearch` nhận diện tham số `apply` và `ref`.
+     - Nếu bất kỳ người dùng nào truy cập vào link cũ hoặc phím tắt `/landing?apply=true`, hệ thống sẽ lập tức chuyển hướng (`navigate({ to: "/register", replace: true })`) sang form đăng ký chính thức, triệt tiêu 100% tình trạng người dùng bị lạc tại trang Landing.
+  4. *Khắc phục lỗi Khởi tạo DB ở Backend PgBouncer (`connect-app.service.ts`)*:
+     - Tách rời các câu lệnh SQL đa dòng thành các truy vấn đơn lẻ trong `onModuleInit`, khắc phục lỗi chuẩn PostgreSQL `ERROR: cannot insert multiple commands into a prepared statement` (code `42601`).
+     - Đảm bảo Backend NestJS khởi động sạch sẽ và ổn định 100% trên cổng 4000.
+  5. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - `tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - Bộ kiểm thử tự động toàn diện `deep_qa_full_verification.cjs`: **51/51 PASSED (100%)**.
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.01): Khôi Phục Hiệu Ứng Nút Quét QR Check-in & Khắc Phục Triệt Để Lỗi Nhòe Chuyển Slide Ưu Đãi ([NODE-APP-001], [NODE-APP-003], [NODE-APP-012])**:
+  1. *Khôi phục hiệu ứng Nút Quét QR Check-in Bottom Tab Bar (`MemberShell.tsx` & `styles.css`)*:
+     - **Pha 1 (Đang quét - 2.5s)**: Hiển thị icon quét `Scan` (khung ngắm vuông viền góc mở) với hiệu ứng `animate-pulse`, kèm thanh ngang laser cyan 3px (`momoLaserScan`) quét từ trên xuống dưới và hiệu ứng xung ánh sáng (`momoLaserPulse`).
+     - **Pha 2 (Quét xong - 2.0s)**: Chuyển sang hiển thị icon mã QR `QrCode` tĩnh trong đúng 2 giây (`animate-in fade-in zoom-in-95`), ẩn thanh ngang laser.
+     - **Tự động lặp lại**: Hết 2 giây tĩnh, nút tự động kích hoạt lại chu kỳ quét tiếp (`setIsScanningPhase(true)`).
+     - **Bổ sung CSS Keyframes**: Thêm `@keyframes momoLaserScan` và `@keyframes momoLaserPulse` vào `styles.css` đảm bảo hiệu ứng laser chuyển động mượt mà trên mọi thiết bị và trình duyệt.
+  2. *Khắc phục triệt để lỗi nhòe giao diện khi chuyển Slide Ưu đãi (`MemberPerksCarousel.tsx`)*:
+     - **Nguyên nhân gốc**: Mobile GPU (Chromium / WebKit) gặp lỗi buffer smear feedback loop khi di chuyển phần tử có `backdrop-blur-md` lồng nhau qua `translateY`. Hơn nữa, container trượt dạng block thiếu `flex flex-col` và `shrink-0` khiến kích thước slide bị co giãn không đồng đều trong quá trình trượt.
+     - **Giải pháp xử lý**:
+       + Bổ sung cơ chế cách ly raster GPU trên viewport ngoài: `contain: "paint"`, `isolation: "isolate"`, `transform: "translateZ(0)"`, `backface-visibility: "hidden"`.
+       + Chuẩn hóa container trượt thành `flex flex-col` với `translate3d(0, -${currentIndex * 100}%, 0)` và gán cứng `h-[165px] sm:h-[180px] shrink-0` cho từng slide, đảm bảo tính toán tọa độ chính xác tuyệt đối.
+       + Loại bỏ hoàn toàn `backdrop-blur-md` trên các nhãn (badge) và nút bấm bên trong slide con, thay thế bằng màu nền bán trong suốt sang trọng có viền sắc nét (`bg-slate-900/85 border border-white/20`), triệt tiêu 100% hiện tượng bóng ma và nhòe sọc.
+  3. *Khắc phục lỗi text `trúng undefined!` trong mục Ưu Đãi (`voting.service.ts` & CSDL PostgreSQL)*:
+     - Bổ sung fallback an toàn `effectivePrize = data.prize || data.prizeName || 'Kỷ niệm chương Doanh nhân Xuất sắc 1983'` trong `voting.service.ts` và `deep_qa_full_verification.cjs`.
+     - Cập nhật dọn sạch 8 bản ghi trong bảng `public.perks` đang hiển thị `trúng undefined!` thành tên giải thưởng vinh danh rõ ràng.
+  4. *Kiểm thử & Đảm bảo chất lượng (Strict Code Quality)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - `tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - Bộ kiểm thử `deep_qa_full_verification.cjs`: 51/51 tests PASS (100%).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.00): Tổng Kiểm Thử Độc Lập Toàn Diện Đa Vai Trò (Multi-Role Deep QA & E2E Verification) Sẵn Sàng Bàn Giao Khách Hàng ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-015])**:
   1. *Khởi tạo & Chuẩn hóa 3 Tài khoản Kiểm thử Độc lập theo yêu cầu*:
      - **Admin (`admin@connect.vn`, Pass: `123456`)**: Quản Trị Viên Hệ Thống (M1983-268), toàn quyền Quản trị Web CRM, Tài chính S07-DN, Quản lý Hội viên, Tổ chức Sự kiện, Phân quyền RBAC.
@@ -1074,6 +1117,49 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.02): Sửa Gấp Luồng Đăng Ký Tài Khoản Ở App Chuyển Về Cổng Form Đăng Ký Hội Viên Chuẩn (`/register`) Thay Vì Link Ra Landing Web ([NODE-APP-001], [NODE-CORE-001])**:
+  1. *Khắc phục lỗi điều hướng đăng ký trên Mobile App (`AssociationAppSignIn.tsx` & `ConnectAppSignIn.tsx`)*:
+     - **Hiện trạng trước sửa**: Nút *"Đăng ký hội viên mới"* tại màn hình đăng nhập hội viên (`/association/login`) bị gán nhầm liên kết tới `to="/landing"` với query `search={{ apply: "true" }}`, dẫn đến khi hội viên bấm đăng ký trong App thì bị văng ra trang chủ Landing Web bán hàng/giới thiệu thay vì mở form tiếp nhận thông tin gia nhập.
+     - **Giải pháp xử lý**:
+       + Cập nhật nút trong [`AssociationAppSignIn.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/member/AssociationAppSignIn.tsx#L328-L337) liên kết trực tiếp tới Cổng Tiếp Nhận Hồ Sơ Gia Nhập [`/register`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/routes/register.tsx), tự động truyền kèm email đã gõ trong ô đăng nhập (`search: { email }`).
+       + Đồng bộ nút tạo tài khoản trong [`ConnectAppSignIn.tsx`](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/business-connect/mobile/ConnectAppSignIn.tsx#L368-L379) liên kết chuẩn về `/register`.
+  2. *Nâng cấp & Hoàn thiện Trải nghiệm Cổng Đăng Ký Gia Nhập (`Ceo1983MemberRegistrationForm.tsx` & `register.tsx`)*:
+     - Bổ sung thanh điều hướng trên cùng kèm nút **"← Quay lại Đăng nhập App"** (`/association/login`), giúp hội viên trên thiết bị di động có thể quay về màn hình đăng nhập chỉ với một chạm.
+     - Tiếp nhận và khởi tạo sẵn giá trị `initialEmail` và `referrerCodeProp` từ URL params hoặc TanStack Router `useSearch()`.
+     - Sau khi gửi đơn đăng ký thành công, nút *"Cổng Đăng Nhập App"* tự động đính kèm `registered: "true"` và `email` để màn hình đăng nhập hiển thị thông báo chào đón và điền sẵn tài khoản.
+  3. *Cơ chế Chuyển tiếp Tự động Phòng vệ trên Landing Web (`landing.index.tsx`)*:
+     - Bổ sung `validateSearch` nhận diện tham số `apply` và `ref`.
+     - Nếu bất kỳ người dùng nào truy cập vào link cũ hoặc phím tắt `/landing?apply=true`, hệ thống sẽ lập tức chuyển hướng (`navigate({ to: "/register", replace: true })`) sang form đăng ký chính thức, triệt tiêu 100% tình trạng người dùng bị lạc tại trang Landing.
+  4. *Khắc phục lỗi Khởi tạo DB ở Backend PgBouncer (`connect-app.service.ts`)*:
+     - Tách rời các câu lệnh SQL đa dòng thành các truy vấn đơn lẻ trong `onModuleInit`, khắc phục lỗi chuẩn PostgreSQL `ERROR: cannot insert multiple commands into a prepared statement` (code `42601`).
+     - Đảm bảo Backend NestJS khởi động sạch sẽ và ổn định 100% trên cổng 4000.
+  5. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - `tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - Bộ kiểm thử tự động toàn diện `deep_qa_full_verification.cjs`: **51/51 PASSED (100%)**.
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.01): Khôi Phục Hiệu Ứng Nút Quét QR Check-in & Khắc Phục Triệt Để Lỗi Nhòe Chuyển Slide Ưu Đãi ([NODE-APP-001], [NODE-APP-003], [NODE-APP-012])**:
+  1. *Khôi phục hiệu ứng Nút Quét QR Check-in Bottom Tab Bar (`MemberShell.tsx` & `styles.css`)*:
+     - **Pha 1 (Đang quét - 2.5s)**: Hiển thị icon quét `Scan` (khung ngắm vuông viền góc mở) với hiệu ứng `animate-pulse`, kèm thanh ngang laser cyan 3px (`momoLaserScan`) quét từ trên xuống dưới và hiệu ứng xung ánh sáng (`momoLaserPulse`).
+     - **Pha 2 (Quét xong - 2.0s)**: Chuyển sang hiển thị icon mã QR `QrCode` tĩnh trong đúng 2 giây (`animate-in fade-in zoom-in-95`), ẩn thanh ngang laser.
+     - **Tự động lặp lại**: Hết 2 giây tĩnh, nút tự động kích hoạt lại chu kỳ quét tiếp (`setIsScanningPhase(true)`).
+     - **Bổ sung CSS Keyframes**: Thêm `@keyframes momoLaserScan` và `@keyframes momoLaserPulse` vào `styles.css` đảm bảo hiệu ứng laser chuyển động mượt mà trên mọi thiết bị và trình duyệt.
+  2. *Khắc phục triệt để lỗi nhòe giao diện khi chuyển Slide Ưu đãi (`MemberPerksCarousel.tsx`)*:
+     - **Nguyên nhân gốc**: Mobile GPU (Chromium / WebKit) gặp lỗi buffer smear feedback loop khi di chuyển phần tử có `backdrop-blur-md` lồng nhau qua `translateY`. Hơn nữa, container trượt dạng block thiếu `flex flex-col` và `shrink-0` khiến kích thước slide bị co giãn không đồng đều trong quá trình trượt.
+     - **Giải pháp xử lý**:
+       + Bổ sung cơ chế cách ly raster GPU trên viewport ngoài: `contain: "paint"`, `isolation: "isolate"`, `transform: "translateZ(0)"`, `backface-visibility: "hidden"`.
+       + Chuẩn hóa container trượt thành `flex flex-col` với `translate3d(0, -${currentIndex * 100}%, 0)` và gán cứng `h-[165px] sm:h-[180px] shrink-0` cho từng slide, đảm bảo tính toán tọa độ chính xác tuyệt đối.
+       + Loại bỏ hoàn toàn `backdrop-blur-md` trên các nhãn (badge) và nút bấm bên trong slide con, thay thế bằng màu nền bán trong suốt sang trọng có viền sắc nét (`bg-slate-900/85 border border-white/20`), triệt tiêu 100% hiện tượng bóng ma và nhòe sọc.
+  3. *Khắc phục lỗi text `trúng undefined!` trong mục Ưu Đãi (`voting.service.ts` & CSDL PostgreSQL)*:
+     - Bổ sung fallback an toàn `effectivePrize = data.prize || data.prizeName || 'Kỷ niệm chương Doanh nhân Xuất sắc 1983'` trong `voting.service.ts` và `deep_qa_full_verification.cjs`.
+     - Cập nhật dọn sạch 8 bản ghi trong bảng `public.perks` đang hiển thị `trúng undefined!` thành tên giải thưởng vinh danh rõ ràng.
+  4. *Kiểm thử & Đảm bảo chất lượng (Strict Code Quality)*:
+     - `tsc --project apps/ceo1983_app_be/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - `tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> Exit Code 0 (0 errors).
+     - Bộ kiểm thử `deep_qa_full_verification.cjs`: 51/51 tests PASS (100%).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.00): Tổng Kiểm Thử Độc Lập Toàn Diện Đa Vai Trò (Multi-Role Deep QA & E2E Verification) Sẵn Sàng Bàn Giao Khách Hàng ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-015])**:
   1. *Khởi tạo & Chuẩn hóa 3 Tài khoản Kiểm thử Độc lập theo yêu cầu*:
