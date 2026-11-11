@@ -1,5 +1,38 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.14): Hoàn Thiện Bộ 5 Tính Năng & Khắc Phục Lỗi Toàn Diện Cho CEO 1983 Mobile App ([NODE-APP-001], [NODE-APP-002], [NODE-APP-003], [NODE-APP-005], [NODE-APP-008])**:
+  1. *Lỗi Màn Hình Sự Kiện (React Error #310)*:
+     - **Nguyên nhân**: Trong component `FeaturedUpcomingEventHero` (`association.events.tsx`), điều kiện `if (!displayList || displayList.length === 0) return null;` được đặt phía TRƯỚC hook `useEffect` xoay vòng slide tự động, vi phạm nghiêm ngặt Rules of Hooks của React (Rendered fewer/more hooks than during previous render) dẫn đến `EventsErrorBoundary` bắt lỗi và hiện màn hình *"Không thể tải giao diện sự kiện"*.
+     - **Giải pháp**: Di chuyển hook `useEffect` lên trước câu lệnh return điều kiện, đảm bảo tất cả hook của component luôn được gọi theo đúng thứ tự ổn định trong mọi chu kỳ render.
+  2. *AI Cố Vấn Số Chào Mừng Ban Đầu Vào App (`FirstDayAiWelcomeModal.tsx`)*:
+     - **Realtime Greeting theo khung giờ**: Chào buổi sáng (05:00 - 11:59), Chào buổi chiều (12:00 - 17:59), Chào buổi tối (18:00 - 04:59) kèm thông điệp truyền cảm hứng phù hợp với sinh hoạt doanh nhân.
+     - **Thay thế Avatar Người**: Loại bỏ hoàn toàn hình ảnh người phụ nữ Unsplash, thay thế bằng Icon AI Cố Vấn Số 3D hiện đại trên nền dải màu thương hiệu `#003B95` kết hợp hiệu ứng hào quang chuyển động và đèn báo trực tuyến xanh ngọc.
+     - **Chỉ xuất hiện đúng 1 lần trong ngày**: Lưu trữ tức thì khóa ngày `vba_daily_ai_welcomed_${userId}` và `vba_daily_ai_welcomed_date` vào `localStorage` ngay khi modal được kích hoạt lần đầu trong ngày, ngăn chặn triệt để tình trạng reload hoặc chuyển trang bị nhảy lại popup.
+  3. *Lỗi Màn Trắng Slide Ưu Đãi (`MemberPerksCarousel.tsx`)*:
+     - **Nguyên nhân**: Thuộc tính CSS `transform: translate3d(0, -${currentIndex * 100}%, 0)` tính toán tỷ lệ % dựa trên toàn bộ chiều cao của phần tử cha (vốn chứa tất cả các slide gộp lại). Khi `currentIndex >= 1`, giá trị `-100%` đã đẩy toàn bộ khối container vượt khỏi khung nhìn viewport (165px), gây ra hiện tượng slide 2, 3, 4, 5 bị trắng trơn.
+     - **Giải pháp**: Sửa tỷ lệ tịnh tiến thành `-(currentIndex * 100) / allSlides.length %`. Đảm bảo mỗi bước chuyển chỉ tịnh tiến đúng chính xác chiều cao của 1 slide đơn lẻ, hiển thị đầy đủ và mượt mà tất cả các ưu đãi.
+  4. *Tùy Chỉnh & Hiển Thị Động 4 Tính Năng Nhanh Trang Chủ (`association.index.tsx` & `CustomHomeShortcutsModal.tsx`)*:
+     - Bổ sung nút *"Tùy chỉnh"* trực quan với biểu tượng cây bút ngay cạnh *"Xem tất cả"* tại thanh tiêu đề *"Tính năng nhanh"*.
+     - Xóa bỏ việc hardcode 4 ô tĩnh, chuyển sang render động từ danh sách `activeShortcutIds.slice(0, 4)` do hội viên tự cấu hình.
+     - Bổ sung tính năng *"Báo cáo"* (`analytics`) vào `ALL_SHORTCUT_OPTIONS`, xử lý trùng lặp mã định danh, hiển thị badge đếm số lượng realtime (số thành viên danh bạ, số cơ hội mở) và liên kết deep route chính xác.
+  5. *Lưu Vết Đầy Đủ Lịch Sử Thao Tác Toàn Diện (`user-activity-logger.ts`, `association.history.tsx`, `ChatThread.tsx`, `CommentTreeSection.tsx`, `association.opportunities.tsx`)*:
+     - **Giao thương & Deal B2B**: Ghi nhận toàn diện các hành động Đề xuất deal (`PROPOSE_DEAL`), Đồng ý deal (`APPROVE_DEAL`), Tạo cơ hội mới (`CREATE_OPPORTUNITY`), Đóng/xóa cơ hội (`DELETE_OPPORTUNITY`), Bấm quan tâm/hủy quan tâm cơ hội (`INTEREST_OPPORTUNITY`), Thiết lập lịch hẹn 1-1 đàm phán (`SETUP_MEETING`).
+     - **Sự kiện CLB**: Ghi nhận Đăng ký vé tham gia (`REGISTER_EVENT`) và Hủy tham gia sự kiện (`CANCEL_EVENT`).
+     - **Tin nhắn & Bình luận**: Ghi nhận Gửi tin nhắn trò chuyện cá nhân (`SEND_MESSAGE` trong `ChatThread`) và Đăng bình luận thảo luận bài viết (`POST_COMMENT` trong `CommentTreeSection`).
+     - **Bộ lọc & Giao diện Lịch sử**: Màn hình `/association/history` bổ sung các chip lọc chuyên biệt *"Cơ hội / Deal"*, *"Sự kiện"*, *"Kết nối"*, *"Tin nhắn"*, *"Bình luận"* với màu sắc và huy hiệu đồng bộ, cập nhật tức thì qua event `vba.history.changed` và `vba:user_activity_recorded`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.13): Triển Khai Thành Công Toàn Diện Cả Hai Phân Hệ Lên Subdomains VPS ([NODE-CORE-006], [NODE-APP-001..014], [NODE-CRM-001..017])**:
+  1. *Triển khai & CI/CD*:
+     - Đồng bộ và merge toàn bộ tính năng và sửa lỗi từ nhánh `dev` vào `main`.
+     - Kích hoạt thành công GitHub Actions Workflow Run [#129](https://github.com/viconnect-product-team/ceo1983_project/actions/runs/43041731782):
+       * `Kiểm Tra Chất Lượng Mã Nguồn (TypeScript Typecheck)`: Passed (0 errors).
+       * `Đóng Gói Docker & Triển Khai Lên Subdomains`: Passed - Build Docker Frontend & Backend images, nén và truyền qua SCP sang VPS `14.225.217.232`, nạp image và kích hoạt container thành công.
+     - Sau khi deploy hoàn tất, Repository được bảo vệ chuyển trở lại trạng thái `Private: True` an toàn 100%.
+  2. *Kiểm thử trực tiếp môi trường Production*:
+     - 📱 **Mobile App Subdomain**: `https://ceo1983.viconnect.vn/association` trả về HTTP 200 OK.
+     - 💻 **Web CRM Subdomain**: `https://crm.ceo1983.viconnect.vn` trả về HTTP 200 OK.
+     - Toàn bộ giao diện mới nhất, các bản sửa lỗi chớp màn hình, mã hội viên, xếp chỗ sự kiện, quản lý mẫu thư mời đã được cập nhật trực tiếp trên VPS.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.12): Triệt Tiêu Hoàn Toàn Lỗi Chớp Giao Diện Cũ Trên Màn Thống Kê Mobile App CEO 1983 ([NODE-APP-004])**:
   1. *Nguyên Nhân Gốc Rễ (Root Cause)*:
      - Biến `serverData` khởi tạo bằng `null` nhưng các biến tính toán giao diện (`kpiCards`, `chartData`, `pieChartData`) trước đây chứa các giá trị fallback hardcode số liệu ảo (`?? 245`, `?? 128`, `?? 86`, `totalActs: 459`, tỷ trọng 35%, 15%, 10%). Khi vừa bấm vào tab Thống kê, component mount và ngay lập tức render các con số ảo này trong 0.5s - 1s trước khi API `/analytics/overview` trả về dữ liệu thật, gây cảm giác "hiện giao diện cũ 1 giây xong mới cập nhật".
@@ -1451,8 +1484,6 @@
   5. *Đảm Bảo Chất Lượng Code (Code Quality)*:
      - Chạy `npx tsc --noEmit` cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều đạt **Exit code 0 (0 errors)**.
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
-
-# System Memory & Architecture
 
 - **Bản cập nhật ngày 11/11/2026 (v11.12): Triệt Tiêu Hoàn Toàn Lỗi Chớp Giao Diện Cũ Trên Màn Thống Kê Mobile App CEO 1983 ([NODE-APP-004])**:
   1. *Nguyên Nhân Gốc Rễ (Root Cause)*:

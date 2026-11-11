@@ -19,6 +19,32 @@ interface FirstDayAiWelcomeModalProps {
   onOpenTour?: () => void;
 }
 
+function getRealtimeGreeting(): { badge: string; greeting: string; message: string; subBadge: string } {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return {
+      badge: "Chào Buổi Sáng",
+      greeting: "Chào buổi sáng Doanh nhân",
+      message: "Chúc Bạn một ngày mới tràn đầy năng lượng, vạn sự hanh thông và kết nối giao thương thắng lợi cùng mạng lưới CEO 1983!",
+      subBadge: "Khởi đầu ngày mới",
+    };
+  } else if (hour >= 12 && hour < 18) {
+    return {
+      badge: "Chào Buổi Chiều",
+      greeting: "Chào buổi chiều Doanh nhân",
+      message: "Chúc Bạn một buổi chiều làm việc hiệu quả, chốt thêm nhiều hợp đồng giá trị và gặt hái thành công bứt phá!",
+      subBadge: "Tăng tốc giao thương",
+    };
+  } else {
+    return {
+      badge: "Chào Buổi Tối",
+      greeting: "Chào buổi tối Doanh nhân",
+      message: "Chúc Bạn một buổi tối an lành, ấm áp bên gia đình và luôn dồi dào nhiệt huyết cùng cộng đồng doanh nhân!",
+      subBadge: "Kết nối bền chặt",
+    };
+  }
+}
+
 export function FirstDayAiWelcomeModal({ onOpenTour }: FirstDayAiWelcomeModalProps) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -29,15 +55,21 @@ export function FirstDayAiWelcomeModal({ onOpenTour }: FirstDayAiWelcomeModalPro
   const [hotOpportunity, setHotOpportunity] = useState<any>(null);
   const [loadingRealtime, setLoadingRealtime] = useState(false);
 
+  const greetingInfo = getRealtimeGreeting();
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const welcomedKey = "vba_daily_ai_welcomed_date";
-      const welcomedDate = localStorage.getItem(welcomedKey);
+      const userKey = user?.id ? `vba_daily_ai_welcomed_${user.id}` : "vba_daily_ai_welcomed_date";
+      const welcomedDate = localStorage.getItem(userKey) || localStorage.getItem("vba_daily_ai_welcomed_date");
       const todayStr = new Date().toISOString().slice(0, 10);
 
       // Nếu lần đầu tiên đăng nhập / mở app trong ngày hôm nay
       if (welcomedDate !== todayStr) {
+        // Đánh dấu ngay lập tức để chỉ hiện đúng 1 lần trong ngày, kể cả khi refresh
+        localStorage.setItem(userKey, todayStr);
+        localStorage.setItem("vba_daily_ai_welcomed_date", todayStr);
+
         // Tải dữ liệu realtime sự kiện và cơ hội
         loadRealtimeData(todayStr);
 
@@ -48,7 +80,7 @@ export function FirstDayAiWelcomeModal({ onOpenTour }: FirstDayAiWelcomeModalPro
         return () => clearTimeout(timer);
       }
     } catch {}
-  }, []);
+  }, [user?.id]);
 
   const loadRealtimeData = async (todayStr: string) => {
     setLoadingRealtime(true);
@@ -149,24 +181,33 @@ export function FirstDayAiWelcomeModal({ onOpenTour }: FirstDayAiWelcomeModalPro
 
         {/* THIẾT KẾ: ICON AI MỘT BÊN - BẢNG TIN NHẮN MỘT BÊN ("GIÁO VIÊN ĐỨNG CẠNH BẢNG", KHÔNG DÙNG BORDER) */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 sm:gap-6 items-center">
-          {/* CỘT TRÁI: AVATAR AI GIÁO VIÊN ĐỨNG CHÀO (KHÔNG BORDER) */}
+          {/* CỘT TRÁI: ICON CON AI CỐ VẤN SỐ HIỆN ĐẠI (KHÔNG DÙNG AVATAR NGƯỜI) */}
           <div className="sm:col-span-4 flex flex-col items-center justify-center text-center">
-            <div className="relative mb-2">
-              <div className="size-24 sm:size-28 rounded-2xl overflow-hidden shadow-lg shadow-blue-900/10 dark:shadow-black/40">
-                <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80"
-                  alt="AI Tutor Avatar"
-                  className="size-full object-cover object-top"
-                />
+            <div className="relative mb-3">
+              <div className="size-24 sm:size-28 rounded-3xl bg-gradient-to-tr from-[#003B95] via-blue-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-blue-900/25 text-white relative group overflow-hidden border border-white/20">
+                {/* Hiệu ứng hào quang AI */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300 opacity-25 blur-sm" />
+                <div className="relative flex flex-col items-center justify-center">
+                  <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/30 shadow-inner">
+                    <Bot className="size-9 sm:size-10 text-white drop-shadow-md animate-pulse" />
+                  </div>
+                </div>
+                {/* Đèn báo AI trực tuyến */}
+                <div className="absolute top-2.5 right-2.5 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </div>
               </div>
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 shadow-sm whitespace-nowrap">
-                <Heart className="size-2.5 fill-current text-white" />
-                <span>Chào Buổi Sáng</span>
+
+              {/* Huy hiệu thời gian realtime: Sáng / Chiều / Tối */}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#003B95] to-indigo-700 text-white font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 shadow-md whitespace-nowrap border border-white/20">
+                <Sparkles className="size-2.5 text-amber-300 fill-amber-300" />
+                <span>{greetingInfo.badge}</span>
               </div>
             </div>
 
             <h4 className="font-bold text-xs text-blue-900 dark:text-amber-300 mt-1">Cố Vấn Số CEO 1983</h4>
-            <span className="text-[10.5px] text-slate-500 dark:text-slate-400">Đồng hành cùng Doanh nhân</span>
+            <span className="text-[10.5px] text-slate-500 dark:text-slate-400">Trí tuệ nhân tạo đồng hành</span>
           </div>
 
           {/* CỘT PHẢI: BẢNG LỜI NHẮN THỜI GIAN THỰC (KHÔNG BORDER) */}
@@ -174,17 +215,17 @@ export function FirstDayAiWelcomeModal({ onOpenTour }: FirstDayAiWelcomeModalPro
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-300 font-extrabold text-[10px] uppercase">
-                  Điểm Tin Hôm Nay
+                  {greetingInfo.subBadge}
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">Hiệp hội Doanh nhân CEO 1983</span>
               </div>
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1">
-                Chào mừng Doanh nhân {memberName}!
+                {greetingInfo.greeting} {memberName}!
               </h3>
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Hôm nay Bạn có khỏe không? Chúc Bạn một ngày tràn đầy năng lượng, vạn sự hanh thông và kết nối giao thương thắng lợi cùng mạng lưới!
+              {greetingInfo.message}
             </p>
 
             {/* KHỐI LỊCH TRÌNH & CƠ HỘI REALTIME NỔI BẬT (KHÔNG DÙNG BORDER CẮT RỜI) */}

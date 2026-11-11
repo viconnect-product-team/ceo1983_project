@@ -159,6 +159,7 @@ export function recordUserActivity(params: {
         new CustomEvent("vba:user_activity_recorded", { detail: newItem })
       );
       window.dispatchEvent(new Event("vba.history.changed"));
+      window.dispatchEvent(new Event("storage"));
     } catch {}
   }
 

@@ -512,8 +512,8 @@ export function MemberPerksCarousel() {
         <div
           className="w-full flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
           style={{
-            transform: `translate3d(0, -${currentIndex * 100}%, 0)`,
-            WebkitTransform: `translate3d(0, -${currentIndex * 100}%, 0)`,
+            transform: `translate3d(0, -${allSlides.length > 0 ? (currentIndex * 100) / allSlides.length : 0}%, 0)`,
+            WebkitTransform: `translate3d(0, -${allSlides.length > 0 ? (currentIndex * 100) / allSlides.length : 0}%, 0)`,
             willChange: "transform",
           }}
         >
