@@ -22,6 +22,12 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  Phone,
+  PhoneCall,
+  MessageCircle,
+  UserCheck,
+  MessageSquare,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -57,6 +63,15 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [customMessage, setCustomMessage] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
 
+  // Danh sách hội viên / người dùng đã quan tâm hoặc nhắn tin Zalo OA
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [loadingSubs, setLoadingSubs] = useState(false);
+  const [isSyncingFollowers, setIsSyncingFollowers] = useState(false);
+  const [directMsgModalOpen, setDirectMsgModalOpen] = useState(false);
+  const [targetSubscriber, setTargetSubscriber] = useState<any | null>(null);
+  const [subscriberMsg, setSubscriberMsg] = useState("");
+  const [sendingSubMsg, setSendingSubMsg] = useState(false);
+
   // Nạp cấu hình từ Backend khi mở trang
   const loadConfig = async () => {
     try {
@@ -81,8 +96,80 @@ export const ZaloOaConfigSection: React.FC = () => {
     }
   };
 
+  const loadSubscribers = async () => {
+    setLoadingSubs(true);
+    try {
+      const res = await fetchNestApi<any>("/zalo/subscribers");
+      if (res && Array.isArray(res.data)) {
+        setSubscribers(res.data);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingSubs(false);
+    }
+  };
+
+  const handleSyncFollowers = async () => {
+    setIsSyncingFollowers(true);
+    try {
+      const res = await fetchNestApi<any>("/zalo/sync-followers", { method: "POST" });
+      if (res && res.ok) {
+        toast.success(res.message || `Đã đồng bộ thành công ${res.count || 0} tài khoản từ Zalo OA!`);
+        if (Array.isArray(res.subscribers)) {
+          setSubscribers(res.subscribers);
+        } else {
+          await loadSubscribers();
+        }
+      } else {
+        toast.error(res?.message || "Không thể đồng bộ người quan tâm từ Zalo OA");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi đồng bộ danh sách quan tâm Zalo OA");
+    } finally {
+      setIsSyncingFollowers(false);
+    }
+  };
+
+  const handleOpenDirectMsg = (sub: any) => {
+    setTargetSubscriber(sub);
+    setSubscriberMsg(`[CLB Doanh Nhân CEO 1983] Kính chào Anh/Chị ${sub.displayName}!`);
+    setDirectMsgModalOpen(true);
+  };
+
+  const handleSendDirectMsg = async () => {
+    if (!targetSubscriber || !subscriberMsg.trim()) {
+      toast.error("Vui lòng nhập nội dung tin nhắn gửi qua Zalo");
+      return;
+    }
+    setSendingSubMsg(true);
+    try {
+      const res = await fetchNestApi<any>("/zalo/send-message", {
+        method: "POST",
+        body: JSON.stringify({
+          accessToken,
+          userId: targetSubscriber.userId,
+          message: subscriberMsg.trim(),
+        }),
+      });
+      if (res && (res.ok || res.success || res.error === 0)) {
+        toast.success(`Đã gửi tin nhắn Zalo thành công tới ${targetSubscriber.displayName}!`);
+        setDirectMsgModalOpen(false);
+        setSubscriberMsg("");
+        await loadSubscribers();
+      } else {
+        toast.error(res?.message || "Không thể gửi tin nhắn qua Zalo OA");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi gửi tin nhắn Zalo");
+    } finally {
+      setSendingSubMsg(false);
+    }
+  };
+
   useEffect(() => {
     loadConfig();
+    loadSubscribers();
   }, []);
 
   // Lưu cấu hình
@@ -610,6 +697,177 @@ ${qrImageUrl}
           </button>
         </div>
       </div>
+
+      {/* ── THẺ 4: TÀI KHOẢN ĐÃ NHẮN TIN HOẶC QUAN TÂM ZALO OA (KÈM NÚT CALL & NHẮN TIN) ── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-0.5">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="size-4 text-[#003B95] dark:text-blue-400" />
+              <span>Danh Sách Tài Khoản Đã Nhắn Tin Hoặc Quan Tâm Zalo OA</span>
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-[#003B95] dark:bg-blue-950 dark:text-blue-300 text-[11px] font-bold">
+                {subscribers.length} người
+              </span>
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Quản lý danh bạ hội viên &amp; khách hàng đã tương tác qua Zalo OA. Bấm nút để gọi điện thoại hoặc gửi tin nhắn chăm sóc trực tiếp.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={isSyncingFollowers}
+            onClick={handleSyncFollowers}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 text-[#003B95] border border-blue-200 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900 text-xs font-bold transition cursor-pointer shrink-0 active:scale-95"
+          >
+            <RefreshCw className={`size-3.5 ${isSyncingFollowers ? "animate-spin" : ""}`} />
+            <span>{isSyncingFollowers ? "Đang đồng bộ..." : "Đồng bộ từ Zalo OA"}</span>
+          </button>
+        </div>
+
+        {loadingSubs ? (
+          <div className="py-8 text-center text-xs text-slate-500">Đang tải danh sách người quan tâm Zalo OA...</div>
+        ) : subscribers.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <Users className="size-8 mx-auto text-slate-300 dark:text-slate-600" />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Chưa có tài khoản nào được lưu. Bấm nút <strong>"Đồng bộ từ Zalo OA"</strong> ở trên để nạp danh sách người quan tâm mới nhất.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {subscribers.map((sub) => (
+              <div
+                key={sub.userId}
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="size-11 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0 border border-slate-300 dark:border-slate-600">
+                    {sub.avatar ? (
+                      <img src={sub.avatar} alt={sub.displayName} className="size-full object-cover" />
+                    ) : (
+                      <div className="size-full flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 text-xs">
+                        {sub.displayName?.charAt(0) || "Z"}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {sub.displayName}
+                      </span>
+                      {sub.memberCode && (
+                        <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] font-semibold shrink-0">
+                          {sub.memberCode}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {sub.company || sub.lastMessage || "Đang quan tâm OA"}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      UID: {sub.userId} {sub.phone && `• SĐT: ${sub.phone}`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cặp nút hành động Call & Nhắn tin */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {sub.phone ? (
+                    <a
+                      href={`tel:${sub.phone}`}
+                      className="p-2 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 transition cursor-pointer flex items-center gap-1 text-xs font-bold"
+                      title={`Gọi điện tới ${sub.phone}`}
+                    >
+                      <PhoneCall className="size-3.5" />
+                      <span className="hidden sm:inline">Gọi điện</span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toast.info(
+                          `Tài khoản Zalo "${sub.displayName}" chưa cung cấp số điện thoại. Bạn có thể gửi tin nhắn Zalo trực tiếp!`,
+                          { duration: 4000 }
+                        )
+                      }
+                      className="p-2 rounded-lg bg-slate-200/80 text-slate-500 dark:bg-slate-700 dark:text-slate-400 transition cursor-pointer flex items-center gap-1 text-xs"
+                      title="Chưa có số điện thoại để gọi trực tiếp"
+                    >
+                      <Phone className="size-3.5" />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDirectMsg(sub)}
+                    className="p-2 rounded-lg bg-[#003B95] text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 transition cursor-pointer flex items-center gap-1 text-xs font-bold"
+                    title="Gửi tin nhắn qua Zalo OA"
+                  >
+                    <MessageSquare className="size-3.5" />
+                    <span className="hidden sm:inline">Nhắn Zalo</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal gửi tin nhắn trực tiếp qua Zalo OA */}
+      {directMsgModalOpen && targetSubscriber && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="size-4 text-[#003B95] dark:text-blue-400" />
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  Gửi Tin Nhắn Zalo OA Cho: {targetSubscriber.displayName}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDirectMsgModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                Nội dung tin nhắn
+              </label>
+              <textarea
+                rows={4}
+                value={subscriberMsg}
+                onChange={(e) => setSubscriberMsg(e.target.value)}
+                placeholder="Nhập nội dung tin nhắn gửi tới khách hàng..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDirectMsgModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={sendingSubMsg}
+                onClick={handleSendDirectMsg}
+                className="px-4 py-2 rounded-xl bg-[#003B95] hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5"
+              >
+                <Send className="size-3.5" />
+                <span>{sendingSubMsg ? "Đang gửi..." : "Gửi Tin Zalo"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

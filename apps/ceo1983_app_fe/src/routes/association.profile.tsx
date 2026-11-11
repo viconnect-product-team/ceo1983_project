@@ -518,15 +518,15 @@ export default function ProfileScreen() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [coverPhoto, setCoverPhoto] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_member_cover_photo");
+    if (typeof window !== "undefined" && user?.id) {
+      return localStorage.getItem(`vba_member_cover_photo_${user.id}`);
     }
     return null;
   });
   const [uploadingCover, setUploadingCover] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("vba_member_avatar_photo");
+    if (typeof window !== "undefined" && user?.id) {
+      return localStorage.getItem(`vba_member_avatar_photo_${user.id}`);
     }
     return null;
   });
@@ -536,18 +536,32 @@ export default function ProfileScreen() {
   const [cropTarget, setCropTarget] = useState<"avatar" | "cover">("avatar");
   const [cropImageUrl, setCropImageUrl] = useState("");
 
-  // Local responsive profile state (instant reactivity on Quick Edit & Save)
+  // Local responsive profile state (STRICTLY SCOPED TO CURRENT USER - No stale cross-contamination)
   const [localProfile, setLocalProfile] = useState<any>(() => {
-    if (typeof window === "undefined") return {};
+    if (typeof window === "undefined" || !user?.id) return {};
     try {
-      const uId = user?.id;
-      const userCp = uId ? localStorage.getItem(`vba_custom_profile_${uId}`) : null;
-      const genCp = localStorage.getItem("vba_custom_profile");
-      const saved = userCp || genCp;
-      if (saved) return JSON.parse(saved);
+      const userCp = localStorage.getItem(`vba_custom_profile_${user.id}`);
+      if (userCp) return JSON.parse(userCp);
     } catch {}
     return {};
   });
+
+  // Re-sync when user ID changes
+  useEffect(() => {
+    if (typeof window === "undefined" || !user?.id) return;
+    try {
+      const userCp = localStorage.getItem(`vba_custom_profile_${user.id}`);
+      if (userCp) {
+        setLocalProfile(JSON.parse(userCp));
+      } else {
+        setLocalProfile({});
+      }
+      const uCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
+      if (uCover) setCoverPhoto(uCover);
+      const uAvatar = localStorage.getItem(`vba_member_avatar_photo_${user.id}`);
+      if (uAvatar) setCustomAvatar(uAvatar);
+    } catch {}
+  }, [user?.id]);
 
   useEffect(() => {
     const handleProfileUpdated = (e: any) => {
@@ -561,6 +575,7 @@ export default function ProfileScreen() {
         if (detail.cover) {
           setCoverPhoto(detail.cover);
         }
+        reloadMember?.();
       }
     };
     window.addEventListener("profile-updated", handleProfileUpdated);
@@ -569,7 +584,7 @@ export default function ProfileScreen() {
       window.removeEventListener("profile-updated", handleProfileUpdated);
       window.removeEventListener("vba_profile_updated", handleProfileUpdated);
     };
-  }, []);
+  }, [reloadMember]);
 
   useEffect(() => {
     const syncLocalMedia = () => {

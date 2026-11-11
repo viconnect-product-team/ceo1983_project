@@ -305,12 +305,31 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
     } catch {}
   }
 
+  const isSystemAdmin =
+    email.toLowerCase() === 'admin@connect.vn' ||
+    email.toLowerCase() === 'admin@ceo1983.com' ||
+    email.toLowerCase() === 'ceo.tongthuky@ceo1983.com' ||
+    isAdmin;
+
+  const mustChangePassword = isSystemAdmin
+    ? false
+    : Boolean(
+        apiUser?.mustChangePassword ||
+          apiUser?.must_change_password ||
+          decoded.mustChangePassword ||
+          decoded.must_change_password ||
+          (typeof window !== 'undefined' &&
+            localStorage.getItem('vba_must_change_password') === 'true'),
+      );
+
   return {
     id: apiUser?.id || decoded.sub || '',
     email,
     username: apiUser?.username || decoded.username,
     name: apiUser?.name || decoded.name || '',
     avatar_url: apiUser?.avatar_url || decoded.avatar_url || '',
+    mustChangePassword,
+    must_change_password: mustChangePassword,
     role,
     roles,
     permissions,
@@ -524,6 +543,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearUserSessionData();
 
     const appUser = mapApiUser(data.user, data.access_token);
+    if (data.mustChangePassword || data.user?.mustChangePassword) {
+      appUser.mustChangePassword = true;
+      appUser.must_change_password = true;
+      try {
+        localStorage.setItem('vba_must_change_password', 'true');
+      } catch {}
+    }
     const sess = buildSession(
       data.access_token,
       data.refresh_token ?? localStorage.getItem('vibe_refresh_token') ?? '',

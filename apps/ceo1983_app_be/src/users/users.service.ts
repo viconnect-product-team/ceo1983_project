@@ -1472,12 +1472,20 @@ export class UsersService {
         user_id: newUser.id,
         display_name: newUser.name,
         account_status: accountStatus,
-        onboarding_status: 'completed',
+        onboarding_status: 'new',
+        must_change_password: true,
       },
       {
         account_status: accountStatus,
+        onboarding_status: 'new',
+        must_change_password: true,
       },
     );
+
+    // Bắt buộc đổi mật khẩu khởi tạo khi lần đầu đăng nhập
+    await this.prisma.$executeRaw`
+      UPDATE public.vione_users SET must_change_password = true WHERE id = ${newUser.id}::uuid
+    `.catch(() => {});
 
     if (data.role) {
       await this.usersRepo.createUserRole(newUser.id, data.role);

@@ -685,16 +685,9 @@ function Home() {
           return;
         }
       }
-      // Dọn dẹp cache rác nếu không đúng user
-      const generic = localStorage.getItem("vba_custom_profile");
-      if (generic) {
-        const parsedGen = JSON.parse(generic);
-        if (parsedGen?.userId && parsedGen.userId !== user.id) {
-          localStorage.removeItem("vba_custom_profile");
-        } else if (parsedGen) {
-          setCustomProfile(parsedGen);
-          return;
-        }
+      // Xóa bỏ hoàn toàn cache dùng chung vba_custom_profile để không nhiễm thông tin giữa các tài khoản
+      if (localStorage.getItem("vba_custom_profile")) {
+        localStorage.removeItem("vba_custom_profile");
       }
     } catch {
       /* ignore */
@@ -702,11 +695,9 @@ function Home() {
   }, [user?.id]);
 
   const [coverPhoto, setCoverPhoto] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      const uId = user?.id;
-      const userCover = uId ? localStorage.getItem(`vba_member_cover_photo_${uId}`) : null;
-      const genCover = localStorage.getItem("vba_member_cover_photo");
-      if (userCover || genCover) return userCover || genCover;
+    if (typeof window !== "undefined" && user?.id) {
+      const userCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
+      if (userCover) return userCover;
     }
     return effectiveMember?.coverUrl || (effectiveMember as any)?.cover_url || null;
   });
@@ -718,17 +709,14 @@ function Home() {
       setCoverPhoto(rawCover);
     } else if (user?.id) {
       const userCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
-      const genCover = localStorage.getItem("vba_member_cover_photo");
-      if (userCover || genCover) setCoverPhoto(userCover || genCover);
+      if (userCover) setCoverPhoto(userCover);
     }
   }, [effectiveMember?.coverUrl, (effectiveMember as any)?.cover_url, user?.id]);
 
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      const uId = user?.id;
-      const userAvatar = uId ? localStorage.getItem(`vba_member_avatar_photo_${uId}`) : null;
-      const genAvatar = localStorage.getItem("vba_member_avatar_photo");
-      if (userAvatar || genAvatar) return userAvatar || genAvatar;
+    if (typeof window !== "undefined" && user?.id) {
+      const userAvatar = localStorage.getItem(`vba_member_avatar_photo_${user.id}`);
+      if (userAvatar) return userAvatar;
     }
     return effectiveMember?.avatar || (effectiveMember as any)?.avatarUrl || user?.avatar_url || (user as any)?.user_metadata?.avatar_url || null;
   });
@@ -827,13 +815,11 @@ function Home() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const uId = user?.id;
-    const userLogo = uId ? localStorage.getItem(`vba_member_company_logo_${uId}`) : null;
-    const genLogo = localStorage.getItem("vba_member_company_logo");
+    const userLogo = user?.id ? localStorage.getItem(`vba_member_company_logo_${user.id}`) : null;
     const cpLogo = customProfile?.companyLogo;
     const sLogo = (effectiveMember as any)?.companyLogoUrl || (effectiveMember as any)?.companyLogo;
 
-    const resolved = userLogo || genLogo || cpLogo || sLogo;
+    const resolved = userLogo || cpLogo || sLogo;
     if (resolved && !isBlackBackgroundLogo(resolved)) {
       setCompanyLogo(resolved);
     }
@@ -1253,34 +1239,40 @@ function Home() {
       <input type="file" ref={coverFileInputRef} className="hidden" accept="image/*" onChange={handleDirectCoverUpload} />
       <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
 
-      {/* ── TOP HEADER (Logo + Xin chào, MemberName + Chuông thông báo) ── */}
+      {/* ── TOP HEADER (Logo + Xin chào, MemberName + Chuông thông báo - Chuẩn iOS Safe Area) ── */}
       <div className="self-stretch flex flex-col justify-start items-center">
-        <div data-type="1" className="self-stretch px-4 pt-2 pb-2 bg-white dark:bg-slate-900 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800">
+        <div
+          data-type="1"
+          style={{
+            paddingTop: "calc(max(env(safe-area-inset-top, 0px), 16px) + 8px)",
+          }}
+          className="self-stretch px-4 pb-2.5 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-30 border-b border-slate-100"
+        >
           <div className="flex justify-start items-center gap-2.5">
             <div className="w-14 h-9 relative shrink-0">
               <img
-                className="w-14 h-9 left-0 top-0 absolute object-contain"
+                className="w-14 h-9 left-0 top-0 absolute object-contain mix-blend-multiply"
                 src="/images/ceo1983/logo-ceo-1983.png"
                 alt="Logo CEO 1983"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/ceo1983-logo.png";
+                  (e.currentTarget as HTMLImageElement).src = "/ceo1983-official-logo.png";
                 }}
               />
             </div>
             <div className="inline-flex flex-col justify-center items-start gap-px">
-              <div className="text-slate-600 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">Xin chào,</div>
-              <div className="text-slate-900 dark:text-white text-sm font-semibold font-['Inter'] leading-5 truncate max-w-[170px]">
+              <div className="text-slate-600 text-xs font-normal font-['Inter'] leading-4">Xin chào,</div>
+              <div className="text-slate-900 text-sm font-semibold font-['Inter'] leading-5 truncate max-w-[170px]">
                 {displayName || "Trần Tuấn Anh"}
               </div>
             </div>
           </div>
           <Link
             to="/association/notifications"
-            className="relative p-2 rounded-xl border border-orange-200 dark:border-orange-500/30 bg-orange-50/50 dark:bg-slate-800 inline-flex justify-center items-center hover:scale-105 active:scale-95 transition shadow-xs"
+            className="relative p-2 rounded-xl border border-orange-200 bg-orange-50/50 inline-flex justify-center items-center hover:scale-105 active:scale-95 transition shadow-xs"
             aria-label="Thông báo"
           >
             <img src="/icons/home/notification-01.svg" className="size-5" alt="Thông báo" />
-            <div className="px-1.5 py-0.5 -right-1.5 -top-1.5 absolute bg-[#EF4444] rounded-[100px] inline-flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
+            <div className="px-1.5 py-0.5 -right-1.5 -top-1.5 absolute bg-[#EF4444] rounded-[100px] inline-flex justify-center items-center overflow-hidden ring-1 ring-white shadow-xs">
               <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
                 {unreadNotifCount > 9 ? "9+" : (unreadNotifCount || "9+")}
               </div>
@@ -1614,9 +1606,9 @@ function Home() {
                             {(currentEv as any).location || (currentEv as any).place || (currentEv as any).venue || "Hà Nội"}
                           </span>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full bg-white hover:bg-slate-100 text-[#003B95] dark:text-[#003B95] font-extrabold text-[11.5px] shadow-md transition border border-white/60">
-                          <span className="text-[#003B95] dark:text-[#003B95]">Chi tiết</span>
-                          <ChevronRight className="size-3.5 stroke-[3] text-[#003B95] dark:text-[#003B95]" />
+                        <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full bg-gradient-to-r from-[#E0592A] to-[#f97316] hover:from-[#c94b20] hover:to-[#ea580c] text-white font-extrabold text-[11.5px] shadow-md transition border border-white/20">
+                          <span className="text-white font-bold">Chi tiết</span>
+                          <ChevronRight className="size-3.5 stroke-[3] text-white" />
                         </span>
                       </div>
                     </div>

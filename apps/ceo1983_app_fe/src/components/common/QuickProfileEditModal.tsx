@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadFileToNest, fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
+import { setServerDataCache } from "@/hooks/use-server-data";
 import { compressImage } from "@/lib/image";
 import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 
@@ -396,9 +397,18 @@ export function QuickProfileEditModal({
           zaloPhone: updatedData.zalo || existingMem.zaloPhone,
         };
         localStorage.setItem("vba_my_member", JSON.stringify(newMem));
+        setServerDataCache("vba_my_member", newMem);
         if (userId) {
           localStorage.setItem(`vba_my_member_${userId}`, JSON.stringify(newMem));
+          setServerDataCache(`vba_my_member_${userId}`, newMem);
         }
+        // Dọn dẹp key dùng chung để tránh nhiễm cache giữa các tài khoản khác nhau
+        try {
+          localStorage.removeItem("vba_custom_profile");
+          localStorage.removeItem("vba_member_name");
+          localStorage.removeItem("vba_member_company");
+          localStorage.removeItem("vba_member_title");
+        } catch {}
       } catch (storageErr) {
         console.warn("Storage save error:", storageErr);
       }

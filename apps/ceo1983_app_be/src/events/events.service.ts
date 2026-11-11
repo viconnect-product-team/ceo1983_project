@@ -1153,11 +1153,16 @@ export class EventsService implements OnModuleInit {
         isToday,
         isPast,
         status: e.status || (isPast ? 'ended' : 'upcoming'),
-        time:
-          e.time ||
-          (valid && (dt.getHours() !== 0 || dt.getMinutes() !== 0)
-            ? `${dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - 17:30`
-            : '08:00 - 17:30'),
+        time: (() => {
+          const t = (e.time || '').trim();
+          if (t && t.includes('-')) return t;
+          if (t && t !== '00:00' && t !== '0:00') return `${t} - 17:30`;
+          const name = (e.name || '').toLowerCase();
+          if (name.includes('golf')) return '06:00 - 15:30';
+          if (name.includes('gala') || name.includes('kỷ niệm')) return '18:00 - 22:00';
+          if (name.includes('tọa đàm') || name.includes('workshop')) return '08:30 - 11:45';
+          return '08:00 - 17:30';
+        })(),
         place: e.location ?? '',
         image: e.image || e.banner || null,
         banner: e.banner || e.image || null,

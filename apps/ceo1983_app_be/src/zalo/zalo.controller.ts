@@ -85,11 +85,28 @@ export class ZaloController {
     @Query('accessToken') queryToken?: string,
     @Headers('x-zalo-access-token') headerToken?: string,
   ) {
-    const token = queryToken || headerToken;
+    let token = queryToken || headerToken;
+    if (!token) {
+      const cfg = await this.zaloService.getOaConfig();
+      token = cfg?.accessToken;
+    }
     if (!token) {
       return { success: false, message: 'Thiếu Access Token', data: [] };
     }
     return this.zaloService.getRecentChats(token);
+  }
+
+  @Post('sync-followers')
+  @UseGuards(JwtAuthGuard)
+  async syncFollowers() {
+    return this.zaloService.syncFollowersFromZalo();
+  }
+
+  @Get('subscribers')
+  @UseGuards(JwtAuthGuard)
+  async getSubscribers() {
+    const list = await this.zaloService.getSubscribers();
+    return { ok: true, count: list.length, data: list };
   }
 
   @Post('send-message')
