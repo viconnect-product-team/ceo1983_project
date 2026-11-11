@@ -17,9 +17,10 @@ import {
 
 export const Route = createFileRoute("/landing/")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>): { apply?: string; ref?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { apply?: string; ref?: string; email?: string } => ({
     apply: typeof search.apply === "string" ? search.apply : undefined,
     ref: typeof search.ref === "string" ? search.ref : undefined,
+    email: typeof search.email === "string" ? search.email : undefined,
   }),
   head: () => ({
     meta: [
@@ -40,18 +41,21 @@ export const Route = createFileRoute("/landing/")({
 });
 
 function LandingPage() {
-  const { apply, ref } = Route.useSearch();
+  const { apply, ref, email } = Route.useSearch();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (apply === "true") {
+    if (apply) {
       navigate({
         to: "/register",
-        search: ref ? { ref } : undefined,
+        search: {
+          ...(email ? { email } : {}),
+          ...(ref ? { ref } : {}),
+        },
         replace: true,
       });
     }
-  }, [apply, ref, navigate]);
+  }, [apply, ref, email, navigate]);
 
   const listFn = useServerFn(listLandingWebsFn);
   const { data: landingWebs = [] } = useServerData<LandingWebConfig[]>(() => listFn(), []);

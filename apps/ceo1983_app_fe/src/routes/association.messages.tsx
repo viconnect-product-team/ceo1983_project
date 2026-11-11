@@ -478,18 +478,31 @@ function MessagesScreen() {
                     </div>
                   </div>
 
-                  {/* 3. Nút thông báo chuông badge 9+ */}
-                  <div className="relative inline-flex flex-col justify-start items-start">
+                  {/* 3. Cụm nút Tin nhắn & Thông báo chuông badge 9+ */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Nút Tin nhắn chuyển sang ConversationList */}
                     <button
                       type="button"
-                      onClick={() => navigate({ to: "/association/notifications" })}
+                      onClick={() => setMainTab("messages")}
                       className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 inline-flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-                      title="Thông báo"
+                      title="Tin nhắn"
                     >
-                      <Bell className="size-5 text-slate-800 dark:text-slate-200" />
+                      <MessageSquare className="size-5 text-slate-800 dark:text-slate-200" />
                     </button>
-                    <div className="px-1 left-[14px] -top-1 absolute bg-[#DC2626] rounded-[100px] inline-flex justify-center items-center overflow-hidden pointer-events-none">
-                      <div className="text-center justify-end text-white text-[10px] font-bold font-['Inter'] leading-4">9+</div>
+
+                    {/* Nút Thông báo */}
+                    <div className="relative inline-flex flex-col justify-start items-start">
+                      <button
+                        type="button"
+                        onClick={() => navigate({ to: "/association/notifications" })}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 inline-flex items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                        title="Thông báo"
+                      >
+                        <Bell className="size-5 text-slate-800 dark:text-slate-200" />
+                      </button>
+                      <div className="px-1 left-[14px] -top-1 absolute bg-[#DC2626] rounded-[100px] inline-flex justify-center items-center overflow-hidden pointer-events-none">
+                        <div className="text-center justify-end text-white text-[10px] font-bold font-['Inter'] leading-4">9+</div>
+                      </div>
                     </div>
                   </div>
                 </div>

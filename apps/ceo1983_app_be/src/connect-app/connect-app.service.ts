@@ -53,7 +53,7 @@ export class ConnectAppService implements OnModuleInit {
     private networkService: ConnectNetworkService,
     private connectAppRepo: ConnectAppRepository,
     private mailService?: MailService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     try {
@@ -68,7 +68,7 @@ export class ConnectAppService implements OnModuleInit {
           location TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
-      `).catch(() => {});
+      `).catch(() => { });
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_comments (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -80,13 +80,13 @@ export class ConnectAppService implements OnModuleInit {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
-      `).catch(() => {});
+      `).catch(() => { });
       await this.prisma.$executeRawUnsafe(`
         CREATE INDEX IF NOT EXISTS idx_brmc_moment_id ON public.business_relationship_moment_comments (moment_id, created_at ASC);
-      `).catch(() => {});
+      `).catch(() => { });
       await this.prisma.$executeRawUnsafe(`
         CREATE INDEX IF NOT EXISTS idx_brmc_parent_id ON public.business_relationship_moment_comments (parent_id);
-      `).catch(() => {});
+      `).catch(() => { });
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_comment_likes (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -95,7 +95,7 @@ export class ConnectAppService implements OnModuleInit {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           CONSTRAINT uq_brm_comment_like UNIQUE (comment_id, user_id)
         );
-      `).catch(() => {});
+      `).catch(() => { });
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_likes (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,7 +104,7 @@ export class ConnectAppService implements OnModuleInit {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           CONSTRAINT uq_brm_moment_like UNIQUE (moment_id, user_id)
         );
-      `).catch(() => {});
+      `).catch(() => { });
 
       const alterStatements = [
         "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS image TEXT",
@@ -131,7 +131,7 @@ export class ConnectAppService implements OnModuleInit {
         "ALTER TABLE public.business_relationship_moment_comments ADD COLUMN IF NOT EXISTS photo_url TEXT",
       ];
       for (const sql of alterStatements) {
-        await this.prisma.$executeRawUnsafe(sql).catch(() => {});
+        await this.prisma.$executeRawUnsafe(sql).catch(() => { });
       }
       await this.prisma
         .$executeRawUnsafe(
@@ -139,7 +139,7 @@ export class ConnectAppService implements OnModuleInit {
         ALTER TABLE public.associations ADD COLUMN IF NOT EXISTS banner_url text;
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
       await this.prisma
         .$executeRawUnsafe(
           `
@@ -155,35 +155,35 @@ export class ConnectAppService implements OnModuleInit {
         );
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
       await this.prisma
         .$executeRawUnsafe(
           `
         ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'crm';
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
       await this.prisma
         .$executeRawUnsafe(
           `
         ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'crm';
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
       await this.prisma
         .$executeRawUnsafe(
           `
         ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS app_scope text DEFAULT 'ceo1983_app';
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
       await this.prisma
         .$executeRawUnsafe(
           `
         ALTER TABLE public.business_notifications ADD COLUMN IF NOT EXISTS target_app text DEFAULT 'ceo1983_app';
       `,
         )
-        .catch(() => {});
+        .catch(() => { });
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.direct_message_threads (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1482,7 +1482,7 @@ export class ConnectAppService implements OnModuleInit {
           UPDATE public.business_notifications
           SET status = 'read', read_at = now()
           WHERE recipient_user_id = ${userId}::uuid AND id = ANY(${uuidIds}::uuid[])
-        `.catch(() => {});
+        `.catch(() => { });
       }
     } else {
       await this.prisma.$executeRaw`
@@ -1521,16 +1521,16 @@ export class ConnectAppService implements OnModuleInit {
         UPDATE public.user_connections
         SET status = 'declined'::public.global_connection_status, responded_at = now(), updated_at = now()
         WHERE id = ${connId}::uuid AND recipient_user_id = ${userId}::uuid
-      `.catch(() => {});
+      `.catch(() => { });
     } else {
       await this.prisma.$executeRaw`
         DELETE FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid AND id = ${id}::uuid
-      `.catch(() => {});
+      `.catch(() => { });
       await this.prisma.$executeRaw`
         DELETE FROM public.member_notifications
         WHERE user_id = ${userId}::uuid AND id = ${id}::uuid
-      `.catch(() => {});
+      `.catch(() => { });
     }
 
     try {
@@ -1568,18 +1568,18 @@ export class ConnectAppService implements OnModuleInit {
         UPDATE public.user_connections
         SET status = 'declined'::public.global_connection_status, responded_at = now(), updated_at = now()
         WHERE id = ANY(${connIds}::uuid[]) AND recipient_user_id = ${userId}::uuid
-      `.catch(() => {});
+      `.catch(() => { });
     }
 
     if (notifIds.length > 0) {
       await this.prisma.$executeRaw`
         DELETE FROM public.business_notifications
         WHERE recipient_user_id = ${userId}::uuid AND id = ANY(${notifIds}::uuid[])
-      `.catch(() => {});
+      `.catch(() => { });
       await this.prisma.$executeRaw`
         DELETE FROM public.member_notifications
         WHERE user_id = ${userId}::uuid AND id = ANY(${notifIds}::uuid[])
-      `.catch(() => {});
+      `.catch(() => { });
     }
 
     this.gateway.server?.to(`user:${userId}`).emit('notification:deleted', {
@@ -2606,8 +2606,8 @@ export class ConnectAppService implements OnModuleInit {
         typeof appSettingRow[0].value === 'string'
           ? appSettingRow[0].value
           : appSettingRow[0].value?.name ||
-            appSettingRow[0].value?.orgName ||
-            '';
+          appSettingRow[0].value?.orgName ||
+          '';
     }
 
     const finalOrgName =
@@ -2711,8 +2711,8 @@ export class ConnectAppService implements OnModuleInit {
     if (!path) return { signedUrl: null };
     const signedUrl =
       path.startsWith('http') ||
-      path.startsWith('data:') ||
-      path.startsWith('blob:')
+        path.startsWith('data:') ||
+        path.startsWith('blob:')
         ? path
         : path.startsWith('/')
           ? path
@@ -2802,13 +2802,13 @@ export class ConnectAppService implements OnModuleInit {
       const [members, assocs] = await Promise.all([
         memberIds.length
           ? this.prisma.$queryRaw<
-              any[]
-            >`SELECT id, name, code FROM public.members WHERE id = ANY(${memberIds}::uuid[])`
+            any[]
+          >`SELECT id, name, code FROM public.members WHERE id = ANY(${memberIds}::uuid[])`
           : Promise.resolve([] as any[]),
         assocIds.length
           ? this.prisma.$queryRaw<
-              any[]
-            >`SELECT id, name FROM public.associations WHERE id = ANY(${assocIds}::uuid[])`
+            any[]
+          >`SELECT id, name FROM public.associations WHERE id = ANY(${assocIds}::uuid[])`
           : Promise.resolve([] as any[]),
       ]).catch(() => [[], []] as any[][]);
 
@@ -3022,7 +3022,7 @@ export class ConnectAppService implements OnModuleInit {
         params.priority || 'normal',
         dedupeKey,
       )
-      .catch(() => {});
+      .catch(() => { });
 
     // 2. Association member_notifications
     const recipientId = params.memberId || params.userId;
@@ -3041,7 +3041,7 @@ export class ConnectAppService implements OnModuleInit {
         params.sourceDomain,
         params.sourceRecordId,
       )
-      .catch(() => {});
+      .catch(() => { });
 
     // 3. Realtime gateway emit
     try {
@@ -3052,7 +3052,7 @@ export class ConnectAppService implements OnModuleInit {
         action: { targetRoute: params.targetRoute || '/connect-app' },
         safeDisplayData: { title: params.title, body: params.body },
       });
-    } catch {}
+    } catch { }
 
     return { ok: true, notifId };
   }
@@ -3163,7 +3163,7 @@ export class ConnectAppService implements OnModuleInit {
           INSERT INTO public.association_logo_history (id, association_id, changed_by, changed_by_name, old_logo_url, new_logo_url, action, created_at)
           VALUES (gen_random_uuid(), ${targetId}::uuid, ${userId}::uuid, ${actorName}, ${oldUrl}, ${logoUrl || null}, ${!logoUrl ? 'remove' : !oldUrl ? 'set' : 'change'}, NOW())
         `;
-      } catch {}
+      } catch { }
     }
     return { ok: true, logoUrl: logoUrl || null };
   }

@@ -2443,6 +2443,7 @@ function MembersScreen() {
         onClose={() => setInviteModalOpen(false)}
         memberCode={myMember?.code || "M1983-292"}
         memberName={myMember?.name || "Lãnh đạo Doanh nghiệp"}
+        memberEmail={myMember?.email || "admin@connect.vn"}
       />
 
       {/* Business Meeting Connection Bottom Sheet */}
