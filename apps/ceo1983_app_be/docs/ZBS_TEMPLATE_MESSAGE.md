@@ -23,6 +23,38 @@ và [API gửi tin](https://docs.zaloplatforms.com/docs/ZBS/gui-tin-template-qua
 
 ## 2. Cấu hình OA và ánh xạ mẫu
 
+### Thao tác trực tiếp trên CRM
+
+1. Mở **Mẫu Email CRM** và chọn đúng mẫu/trường hợp gửi ở danh sách bên trái.
+2. Trong **Cấu hình ZBS cho mẫu này**, nhập **Template ID đã được Zalo duyệt**.
+3. Nhấn **Thêm ánh xạ** cho từng tham số: nhập tên biến ZBS không kèm dấu ngoặc,
+   rồi chọn biến CRM tương ứng. Giá trị gửi thử được hiển thị ngay dưới ô chọn.
+   Có thể xóa ánh xạ không dùng bằng nút thùng rác của dòng đó.
+4. Nhấn **Lưu cấu hình ZBS** để lưu dùng chung trên hệ thống. Hoặc nhập
+   **Số điện thoại nhận ZBS thử** phía trên và nhấn **Lưu và gửi thử ZBS** để
+   lưu cấu hình hiện tại trước khi gửi một tin ZBS tới số vừa nhập.
+5. Chọn mẫu khác và cấu hình ID/ánh xạ riêng cho mẫu đó. Ví dụ
+   `FEE_NOTICE_ANNUAL` dùng ID Hội phí, `NEW_MEMBER_THANKS` dùng ID Chào mừng,
+   `EVENT_TICKET_QR` dùng ID Vé sự kiện. Không cần gọi API thủ công.
+
+Mã mẫu CRM là khóa xác định trường hợp gửi. Khi tạo/sửa mẫu, mã phải duy nhất;
+đổi mã sẽ chuyển sang một cấu hình ZBS khác. Bản nháp được giữ riêng khi chuyển
+qua lại giữa các mẫu trong trang; chỉ cấu hình đã lưu mới được nạp lại sau F5.
+
+Nút **Bắn Thông Báo Ngay** cũng lưu cấu hình đang sửa trước khi gửi nếu chọn
+Zalo OA hoặc Cả 2 Kênh. Nếu ID/ánh xạ chưa hợp lệ hoặc lưu thất bại, hệ thống
+chặn gửi, hiển thị lỗi và giữ dữ liệu đang nhập. Biến `vietqr_url` không xuất
+hiện trong danh sách ánh xạ, theo quy ước CRM hiện có.
+
+Các API cấu hình dành cho vai trò quản trị CRM:
+
+- `GET /api/zalo/template-configs`: nạp cấu hình hiệu lực; không trả token/secret OA.
+- `PUT /api/zalo/template-configs/:templateCode`: lưu ID và ánh xạ của một mã mẫu.
+  SQL cập nhật nguyên tử nhánh JSONB tương ứng, giữ các mẫu khác và thông tin OA.
+- Các lần lưu cấu hình OA/làm mới token không ghi đè ánh xạ ZBS đã lưu đồng thời.
+
+### Thông tin OA và cấu hình qua môi trường (tùy chọn)
+
 OA/App cần được cấp quyền gửi tin qua số điện thoại, liên kết tài khoản ZBS và có
 số dư/hạn mức phù hợp. Số nhận phải có tài khoản Zalo và đáp ứng điều kiện nhận
 tin của loại mẫu. Việc nhập một số điện thoại không bảo đảm số đó được phép nhận
@@ -84,7 +116,7 @@ Sau khi cài dependency và sinh Prisma Client (không cần kết nối databas
 ```powershell
 # Trong apps/ceo1983_app_be
 npx tsc --noEmit
-npx jest --runInBand zbs-template.spec.ts system-zalo-oa.spec.ts
+npx jest --runInBand zbs-template-config.spec.ts zbs-template.spec.ts system-zalo-oa.spec.ts
 
 # Trong apps/ceo1983_app_fe
 npx tsc --noEmit

@@ -94,3 +94,8 @@ Dành cho: DevOps, Quản trị hệ thống, Backend Core.
 - API/Service: `POST /zalo/send-zns`, `zalo.controller.ts`, `zalo.service.ts`, `zbs-template.config.ts`.
 - Cấu hình: `app_settings.zalo_oa_config.zbsTemplates` hoặc `ZALO_ZBS_TEMPLATES`; mã mẫu CRM ánh xạ tới `templateId` đã duyệt và `parameterMap`. Token lưu phía backend; không cần thêm bảng hay tra UID người nhận.
 - Hướng dẫn và cấu hình mẫu: `apps/ceo1983_app_be/docs/ZBS_TEMPLATE_MESSAGE.md`, `zbs-templates.example.json`. ID thật để quản trị viên điền sau khi Zalo duyệt; lỗi gửi phải được phản ánh đúng trên CRM.
+
+### Form cấu hình ZBS trên CRM — 11/11/2026 ([NODE-CRM-014], [NODE-CRM-024])
+- Thêm `components/documents/ZbsTemplateConfigForm.tsx`, `hooks/useZbsTemplateConfigs.ts`; tích hợp trong `MailTemplateManager.tsx` và kiểm thử `__tests__/mail-template-zbs.test.tsx`.
+- API quản trị cấu hình từng trường hợp: `GET /zalo/template-configs`, `PUT /zalo/template-configs/:templateCode`; `zalo.controller.ts`, `zalo.service.ts`, `zbs-template.config.ts`, `zbs-template-config.spec.ts`.
+- Lưu nguyên tử một mã mẫu trong `app_settings.zalo_oa_config.zbsTemplates`; không ghi đè các mẫu khác hoặc token OA. Gửi thử dùng mã mẫu đang chọn và cấu hình đã lưu.

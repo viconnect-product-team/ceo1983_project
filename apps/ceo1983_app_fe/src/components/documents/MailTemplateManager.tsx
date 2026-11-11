@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
+import { useZbsTemplateConfigs } from "@/hooks/useZbsTemplateConfigs";
+import { ZbsTemplateConfigForm } from "./ZbsTemplateConfigForm";
 
 export type MailCategory = "fee" | "welcome" | "event" | "meeting" | "system" | "birthday" | "marketing";
 
@@ -601,6 +603,9 @@ export function MailTemplateManager() {
   const [testPhone, setTestPhone] = useState<string>("0973924819");
   const [sendChannel, setSendChannel] = useState<"both" | "email" | "zalo">("both");
   const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
+  const [phoneError, setPhoneError] = useState("");
+  const testPhoneRef = useRef<HTMLInputElement>(null);
+  const zbs = useZbsTemplateConfigs();
 
   // Edit / Create Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -830,11 +835,21 @@ export function MailTemplateManager() {
   const handleSaveModal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTemplate) return;
+    const code = editingTemplate.code.trim();
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(code)) {
+      toast.error("Mã mẫu chỉ gồm chữ, số, dấu gạch ngang hoặc gạch dưới, tối đa 100 ký tự.");
+      return;
+    }
+    if (templates.some((template) => template.id !== editingTemplate.id && template.code === code)) {
+      toast.error("Mã mẫu này đã được dùng. Mỗi trường hợp gửi cần một mã riêng để chọn đúng template ZBS.");
+      return;
+    }
     const compiledHtml = modalEditorMode === "visual"
       ? buildHtmlFromVisualContent(visualContent)
       : editingTemplate.htmlBody;
     const templateToSave: MailTemplateItem = {
       ...editingTemplate,
+      code,
       visualContent: JSON.parse(JSON.stringify(visualContent)),
       htmlBody: compiledHtml,
       updatedAt: new Date().toISOString().slice(0, 10),
@@ -853,6 +868,55 @@ export function MailTemplateManager() {
     setIsEditModalOpen(false);
   };
 
+  const saveSelectedZbsConfig = (force = false) => zbs.save(
+    activeTemplate.code,
+    activeTemplate.variables.filter((variable) => variable.key !== "vietqr_url").map((variable) => variable.key),
+    force,
+  );
+
+  const validateTestPhone = () => {
+    if (testPhone.trim()) return true;
+    setPhoneError("Nhập số điện thoại nhận tin ZBS thử.");
+    testPhoneRef.current?.focus();
+    return false;
+  };
+
+  const sendSelectedZbsTest = async () => {
+    const templateData = Object.fromEntries(
+      (activeTemplate.variables || [])
+        .filter((variable) => variable.key !== "vietqr_url")
+        .map((variable) => [variable.key, sampleValues[variable.key] ?? variable.example])
+    );
+    const result = await fetchNestApi<{ success: boolean; message?: string; guide?: string }>("/zalo/send-zns", {
+      method: "POST",
+      body: JSON.stringify({ templateCode: activeTemplate.code, phone: testPhone.trim(), templateData }),
+    });
+    if (!result?.success) throw new Error(result?.guide || result?.message || "Zalo chưa chấp nhận yêu cầu gửi ZBS");
+  };
+
+  const handleSaveZbsConfig = async () => {
+    try {
+      await saveSelectedZbsConfig(true);
+      toast.success(`Đã lưu cấu hình ZBS cho mẫu ${activeTemplate.code}.`);
+    } catch (error: any) {
+      toast.error(error?.message || "Không lưu được cấu hình ZBS");
+    }
+  };
+
+  const handleSaveAndSendZbsTest = async () => {
+    if (!validateTestPhone()) return;
+    setIsSendingTest(true);
+    try {
+      await saveSelectedZbsConfig();
+      await sendSelectedZbsTest();
+      toast.success(`Zalo đã tiếp nhận gửi thử mẫu ${activeTemplate.code} tới ${testPhone.trim()}.`);
+    } catch (error: any) {
+      toast.error(error?.message || "Không gửi được tin ZBS thử");
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
   // Gửi Thông Báo Hợp Nhất (Email / Zalo OA / Cả Hai)
   const handleSendTestToAdmin = async () => {
     const targetEmail = testEmail.trim();
@@ -862,16 +926,15 @@ export function MailTemplateManager() {
       toast.error("Vui lòng nhập địa chỉ email người nhận!");
       return;
     }
-    if ((sendChannel === "zalo" || sendChannel === "both") && !targetPhone) {
-      toast.error("Vui lòng nhập số điện thoại Zalo người nhận!");
-      return;
-    }
+    if ((sendChannel === "zalo" || sendChannel === "both") && !validateTestPhone()) return;
 
     setIsSendingTest(true);
     const sentChannels: string[] = [];
     let emailError = "";
 
     try {
+      // Lưu đúng cấu hình mẫu đang chọn trước khi gửi bất kỳ kênh nào.
+      if (sendChannel === "zalo" || sendChannel === "both") await saveSelectedZbsConfig();
       // 1. Gửi qua Email nếu chọn Email hoặc Cả hai
       if (sendChannel === "email" || sendChannel === "both") {
         try {
@@ -893,23 +956,7 @@ export function MailTemplateManager() {
 
       // 2. Gửi qua Zalo OA nếu chọn Zalo hoặc Cả hai
       if (sendChannel === "zalo" || sendChannel === "both") {
-        // Backend ánh xạ mã mẫu CRM sang template ZBS đã duyệt và dùng OA token đã lưu.
-        const templateData = Object.fromEntries(
-          (activeTemplate.variables || [])
-            .filter((variable) => variable.key !== "vietqr_url")
-            .map((variable) => [variable.key, sampleValues[variable.key] ?? variable.example])
-        );
-        const result = await fetchNestApi<{ success: boolean; message?: string; guide?: string }>("/zalo/send-zns", {
-          method: "POST",
-          body: JSON.stringify({
-            templateCode: activeTemplate.code,
-            phone: targetPhone,
-            templateData,
-          }),
-        });
-        if (!result?.success) {
-          throw new Error(result?.guide || result?.message || "Zalo chưa chấp nhận yêu cầu gửi ZBS");
-        }
+        await sendSelectedZbsTest();
         sentChannels.push(`ZBS (${targetPhone})`);
       }
 
@@ -1353,7 +1400,9 @@ export function MailTemplateManager() {
               <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-blue-200/50 dark:border-blue-900/40">
                 {(sendChannel === "email" || sendChannel === "both") && (
                   <div className="flex-1 min-w-[200px]">
+                    <label htmlFor="mail-template-test-email" className="mb-1 block text-xs font-medium text-foreground">Email nhận thử</label>
                     <input
+                      id="mail-template-test-email"
                       type="email"
                       value={testEmail}
                       onChange={(e) => setTestEmail(e.target.value)}
@@ -1362,27 +1411,49 @@ export function MailTemplateManager() {
                     />
                   </div>
                 )}
-                {(sendChannel === "zalo" || sendChannel === "both") && (
-                  <div className="flex-1 min-w-[180px]">
+                  <div className="min-w-0 flex-1 basis-[180px]">
+                    <label htmlFor="mail-template-test-phone" className="mb-1 block text-xs font-medium text-foreground">Số điện thoại nhận ZBS thử</label>
                     <input
+                      id="mail-template-test-phone"
+                      ref={testPhoneRef}
                       type="tel"
                       value={testPhone}
-                      onChange={(e) => setTestPhone(e.target.value)}
+                      onChange={(e) => { setTestPhone(e.target.value); setPhoneError(""); }}
+                      aria-invalid={Boolean(phoneError)}
+                      aria-describedby={phoneError ? "mail-template-phone-error" : undefined}
                       placeholder="SĐT Zalo nhận test..."
                       className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
                     />
+                    {phoneError ? <p id="mail-template-phone-error" role="alert" className="mt-1 text-xs font-medium text-amber-900">{phoneError}</p> : null}
                   </div>
-                )}
                 <button
                   type="button"
                   onClick={handleSendTestToAdmin}
-                  disabled={isSendingTest}
+                  disabled={isSendingTest || Boolean(zbs.savingCode) || (sendChannel !== "email" && (zbs.loading || Boolean(zbs.loadError)))}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#003B95] hover:bg-blue-900 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   <Send className={`w-3.5 h-3.5 ${isSendingTest ? "animate-spin" : ""}`} />
                   {isSendingTest ? "Đang gửi..." : "Bắn Thông Báo Ngay"}
                 </button>
               </div>
+              <ZbsTemplateConfigForm
+                templateCode={activeTemplate.code}
+                draft={zbs.draftFor(activeTemplate.code)}
+                variables={activeTemplate.variables}
+                sampleValues={sampleValues}
+                dirty={zbs.isDirty(activeTemplate.code)}
+                configured={Boolean(zbs.configs[activeTemplate.code]?.templateId)}
+                busy={isSendingTest || Boolean(zbs.savingCode)}
+                loading={zbs.loading}
+                loadError={zbs.loadError}
+                saveError={zbs.saveErrors[activeTemplate.code]}
+                errors={zbs.errors[activeTemplate.code]}
+                phone={testPhone}
+                onChange={(update) => zbs.updateDraft(activeTemplate.code, update)}
+                onSave={handleSaveZbsConfig}
+                onSendTest={handleSaveAndSendZbsTest}
+                onRetry={zbs.reload}
+              />
             </div>
 
             {/* Subject and In-App Push Details */}
