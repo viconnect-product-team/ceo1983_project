@@ -1280,17 +1280,6 @@ function MembersScreen() {
             </button>
           )}
         </div>
-
-        {/* Nút Quét Danh Thiếp QR (Req 10 - Đã bỏ nút Thêm CEO theo quy chuẩn) */}
-        <button
-          type="button"
-          onClick={() => setScanModalOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] px-3.5 py-2.5 text-[12px] font-bold text-white shadow-xs active:scale-95 transition cursor-pointer whitespace-nowrap"
-          title="Quét danh thiếp QR hội viên CEO 1983"
-        >
-          <QrCode className="h-4 w-4 text-white shrink-0" />
-          <span className="hidden sm:inline">Quét QR</span>
-        </button>
       </div>
 
       {/* ── BỘ LỌC CẤP 1: (ĐÃ KẾT NỐI) | (CHƯA KẾT NỐI) (Yêu cầu 2) ── */}
@@ -1918,14 +1907,6 @@ function MembersScreen() {
                   >
                     <Users className="h-4 w-4 text-white" />
                     <span>Tìm CEO để kết nối ngay</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInviteModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-800 text-[#003B95] dark:text-blue-300 px-4 py-2.5 text-[12px] font-bold transition active:scale-95 cursor-pointer hover:bg-blue-100/60"
-                  >
-                    <UserPlus className="h-4 w-4 text-[#003B95] dark:text-blue-400" />
-                    <span>Giới thiệu hội viên</span>
                   </button>
                 </div>
               </div>

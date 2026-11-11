@@ -1,6 +1,67 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.12): Triệt Tiêu Hoàn Toàn Lỗi Chớp Giao Diện Cũ Trên Màn Thống Kê Mobile App CEO 1983 ([NODE-APP-004])**:
+  1. *Nguyên Nhân Gốc Rễ (Root Cause)*:
+     - Biến `serverData` khởi tạo bằng `null` nhưng các biến tính toán giao diện (`kpiCards`, `chartData`, `pieChartData`) trước đây chứa các giá trị fallback hardcode số liệu ảo (`?? 245`, `?? 128`, `?? 86`, `totalActs: 459`, tỷ trọng 35%, 15%, 10%). Khi vừa bấm vào tab Thống kê, component mount và ngay lập tức render các con số ảo này trong 0.5s - 1s trước khi API `/analytics/overview` trả về dữ liệu thật, gây cảm giác "hiện giao diện cũ 1 giây xong mới cập nhật".
+     - Khi người dùng chuyển đổi chu kỳ (Tháng, Quý, Năm) hoặc mốc năm/tháng lịch sử, nếu chu kỳ mới chưa có trong cache thì `serverData` cũ không được reset về trạng thái loading mà tiếp tục hiển thị dữ liệu của chu kỳ trước đó trong 1 giây trước khi API hoàn tất.
+     - Thiếu cơ chế bộ nhớ đệm đa tầng (SWR In-Memory Cache + SessionStorage Cache) khiến mỗi lần chuyển tab di động component đều phải tải lại từ đầu.
+  2. *Giải Pháp & Khắc Phục Triệt Để*:
+     - **Bộ nhớ đệm đa tầng SWR tức thì**: Triển khai `analyticsOverviewMemoryCache = new Map<string, any>()` kết hợp `sessionStorage` fallback theo từng chu kỳ (`analytics_${granularity}_${selectedYear}_${selectedMonth}_${selectedQuarter}`). Ngay khi component mount, state `serverData` được nạp lập tức (0ms) từ cache nếu đã từng tải, loại bỏ 100% độ trễ và không bị flash.
+     - **Xóa bỏ triệt để toàn bộ Mock Data / Fallback số liệu ảo**:
+       * `kpiCards`: Chuyển toàn bộ fallback về `0` (`totalComments ?? 0`, `totalShares ?? 0`, `totalRefClicks ?? 0`, `totalActs ?? 0`).
+       * `chartData` & `pieChartData`: Trả về mảng rỗng `[]` khi chưa có dữ liệu thật thay vì vẽ các cột giả 245, 128, 86.
+       * `podiumTop3`: Gỡ bỏ các số fallback `180`, `250`, `140`, đưa về `score: top.score || 0`.
+       * `currentAwardProgress` & `currentTaskCompletedCount`: Liên kết trực tiếp với dữ liệu hoạt động thực tế từ `serverData` và `oppStats`, loại bỏ hardcode `4`, `8`, `3`, `6`.
+       * `selectedKpiProof`: Loại bỏ các mục minh chứng mẫu (`proof-opp-1`, `ev-1`, `ev-2`), chỉ dùng dữ liệu thực từ danh sách đã lọc.
+     - **Hiệu ứng Skeleton Loading mượt mà**: Khi `loading && !serverData` (lần đầu tiên truy cập chưa có cache), hệ thống hiển thị Skeleton Loader (khung hình mờ nhấp nháy tinh tế cho Biểu đồ, 4 Thẻ KPI và Bục Podium) thay vì render số liệu 0 hay dữ liệu cũ, mang lại trải nghiệm mượt mà chuẩn mobile-first.
+  3. *Kiểm chứng*:
+     - `npx tsc --noEmit` tại cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
 - **11/11/2026 — Form ZBS theo từng mẫu ngay trên CRM ([NODE-CRM-014], [NODE-CRM-024])**: `MailTemplateManager.tsx` tích hợp `ZbsTemplateConfigForm.tsx` và `useZbsTemplateConfigs.ts` để nhập ID đã duyệt, thêm/xóa ánh xạ, xem giá trị thử, lưu và gửi tới SĐT được nhập. Mỗi mã mẫu có bản nháp/cấu hình độc lập; mã mẫu trùng bị chặn. `GET /zalo/template-configs` chỉ trả ánh xạ; `PUT /zalo/template-configs/:templateCode` cập nhật nguyên tử đúng nhánh JSONB trong `app_settings.zalo_oa_config`, giữ mẫu khác/token OA. Token refresh/lưu OA bỏ qua bản sao ánh xạ cũ để tránh ghi đè khi thao tác đồng thời. Lưu thất bại/biến sai phải chặn gửi; nút gửi đa kênh cũng lưu ZBS trước khi gửi. Đã kiểm tra trình duyệt desktop/390px và SQL PostgreSQL cục bộ; Zalo/email trong kiểm tra được giả lập, chưa gửi tin thật.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.11): Hoàn Thiện Bộ 10 Yêu Cầu Mobile App CEO 1983 & CRM Quản Trị: Sửa Màn Hệ Thống, Leaf Routing Ưu Đãi, Link Sự Kiện Khách Ngoài, Làm Sạch CSDL 2 Tài Khoản, Ẩn Triệt Để Thông Tin Riêng Tư, Parse Giới Thiệu Hội Viên, Placeholder Ảnh Trang Chủ, Danh Bạ Tối Giản, Đăng Ký & Xếp Chỗ Sự Kiện CRM, Thay Ảnh Nền & Poster Thư Mời, Zalo OA Subscribers, Multi-Phone/Email & Import Excel, Format Thư Mời Chuẩn Không Icon, Tinh Gọn Quản Lý Mẫu ([NODE-CRM-003], [NODE-CRM-010], [NODE-CRM-014], [NODE-APP-001], [NODE-APP-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-008], [NODE-APP-011])**:
+  1. *Mobile App - Khắc phục chớp giật giao diện Màn Hệ thống (`association.system-config.tsx` & `association.settings.tsx`)*:
+     - Gỡ bỏ hoàn toàn `ssr: false` ở các route config, loại bỏ độ trễ hydration gây chớp giao diện cũ trước khi hiện giao diện mới.
+  2. *Mobile App - Sửa lỗi xem Danh sách ưu đãi (`association.perks.tsx` & `MemberPerksCarousel.tsx`)*:
+     - Khắc phục leaf routing: `association.perks.tsx` trực tiếp render `PerksScreen` khi truy cập đường dẫn `/association/perks`.
+     - Thêm nút liên kết *"Xem tất cả >"* tại tiêu đề carousel ưu đãi trên Trang chủ.
+  3. *Mobile App - Danh sách sự kiện & Gửi link cho khách ngoài (`association.events.tsx`, `EventDetailModal.tsx`)*:
+     - Bổ sung `validateSearch` an toàn cho route `/association/events`.
+     - Chuyển toàn bộ các nút chia sẻ mạng xã hội (Facebook, Zalo, Sao chép link) trỏ sang đường dẫn công khai `/guest-event-register/${event.id}` không yêu cầu đăng nhập hội viên.
+  4. *CSDL - Làm sạch cơ sở dữ liệu*:
+     - Toàn bộ cơ sở dữ liệu `ceo1983_users` và `public.members` được bảo lưu duy nhất 2 tài khoản quản trị và hội viên chính thức: `admin@connect.vn` và `info@viconnect.vn`.
+  5. *Mobile App - Ẩn triệt để thông tin riêng tư (Email, SĐT, Địa chỉ) khỏi giao diện*:
+     - Tại `card.$code.tsx`, `CardPreviewModal.tsx`, `AssociationQrScanModal.tsx`: Khi thuộc tính bị ẩn riêng tư, hệ thống loại bỏ hoàn toàn thẻ div khỏi DOM thay vì in dòng chữ *"Đã ẩn theo cài đặt riêng tư"* hay biểu tượng ổ khóa.
+  6. *Mobile App - Khắc phục lỗi trường Giới thiệu khi xem Profile hội viên (`MemberProfileModal.tsx`)*:
+     - Xây dựng hàm `parseMemberAbout` phân tách chuỗi JSON an toàn thành các trường: Chức danh, Người đại diện, Năm sinh, Lĩnh vực, Quy mô nhân sự; loại bỏ tình trạng hiển thị JSON thô. Gỡ bỏ badge mã hội viên. Cập nhật chuỗi giới thiệu sạch vào CSDL.
+  7. *Mobile App - Placeholder ảnh bìa và avatar Trang chủ (`association.index.tsx`)*:
+     - Khi chưa tải hoặc chưa có ảnh bìa/avatar, hệ thống hiển thị văn bản trạng thái *"Chưa có ảnh bìa"*, *"Chưa có avatar"* thay vì các ảnh demo che mắt.
+  8. *Mobile App - Danh bạ CEO 1983 (`association.members.tsx`)*:
+     - Bỏ nút quét QR ở header danh bạ; bỏ nút *"Giới thiệu hội viên"* ở giữa màn hình khi danh bạ rỗng, chỉ giữ nút giới thiệu cố định ở footer.
+  9. *CRM - Đăng ký sự kiện & Lưu xếp chỗ (`event-registrations.tsx`, `events.controller.ts`)*:
+     - Bổ sung bộ lọc sự kiện gọi API nạp đại biểu theo sự kiện đã chọn.
+     - Nới lỏng phân quyền endpoint `PUT registrations/:id/seating` sang `JwtAuthGuard`.
+     - Frontend gọi trực tiếp API `fetchNestApi` kèm fallback và cập nhật tức thì state `registrationsList` để lưu giữ vĩnh viễn vị trí ghế trên Cinema Seating Map.
+  10. *CRM - Quản lý thư mời: Thay ảnh nền & Poster (`InvitationSetupManager.tsx`)*:
+      - Bổ sung ô tải ảnh/link ảnh nền thư mời (`customBgUrl`) và poster sự kiện (`posterUrl`), hiển thị trực tiếp trên Card Preview.
+      - Gỡ bỏ hoàn toàn icon emoji hardcode ở các nhãn nhập liệu và phong cách thiệp.
+  11. *CRM - Cấu hình Zalo OA & Quản lý mẫu (`zalo.service.ts`, `MailTemplateManager.tsx`)*:
+      - Sửa lỗi cú pháp SQL join `uuid = text` trong `zalo.service.ts` giúp API `/zalo/subscribers` trả về đầy đủ 5 tài khoản tương tác thực tế.
+      - Trong `MailTemplateManager.tsx`: Bổ sung dropdown gọi API hội viên theo từng Ban chuyên môn, dropdown người tương tác Zalo OA, trường nhập multi-phone/multi-email (hỗ trợ phân tách bằng dấu phẩy hoặc xuống dòng), và nút Import file Excel (`.xlsx, .xls, .csv`) tự động nạp danh sách khách mời.
+  12. *CRM - Chuẩn hóa định dạng mẫu thông báo sự kiện (`MailTemplateManager.tsx`, `InvitationSetupManager.tsx`)*:
+      - Loại bỏ mọi icon emoji hardcode, chuẩn hóa toàn diện theo khung văn bản chuẩn:
+        * - Kính gửi Anh/Chị
+        * - BTC trân trọng kính mời Anh/Chị tham dự sự kiện:
+        * - Tên sự kiện:
+        * - Thông tin sự kiện: Diễn giả, Nội dung chính, Thời gian, địa điểm, chi phí, google maps, trang phục, gửi xe, lưu ý quan trọng từ BTC
+        * - Xác nhận tham dự
+        * - Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
+        * - Trân trọng!
+        * Bổ sung trường hiển thị Poster sự kiện.
+  13. *CRM - Tinh gọn Quản lý mẫu (`PageTemplatesHub.tsx`, `routes/templates.tsx`, `Sidebar.tsx`)*:
+      - Tại `Sidebar.tsx`: Trong nhóm Quản lý mẫu, chỉ giữ 2 mục duy nhất: *"Quản lý Template"* (`/templates?tab=email`) và *"Quản lý Thư Mời"* (`/templates?tab=invitation-setup`), xóa bỏ toàn bộ các mục demo thừa khác.
+      - Tại `PageTemplatesHub.tsx`: Cung cấp bộ chuyển tab 2 nút chuẩn và chỉ render `<MailTemplateManager />` hoặc `<InvitationSetupManager />`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.10): Hoàn Thiện Giao Diện CRM Dark Theme Text Sáng & Màu Thông Báo Chưa Đọc, Bỏ Hoàn Toàn Mã Hội Viên Trên Mobile App, Tinh Chỉnh Nút Hồ Sơ Cá Nhân Xanh - Cam, Chuẩn Hóa Giờ Sự Kiện & Nút Chi Tiết, Tối Ưu Header iOS Safe Area Notch & Dynamic Island, Gỡ Bỏ Theme Tối Trong Cài Đặt Hệ Thống Mobile ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-001], [NODE-APP-003], [NODE-APP-008], [NODE-APP-011])**:
   1. *Khắc Phục Màu Thông Báo Chưa Đọc Tại Cổng Quản Trị CRM (`NotificationCenter.tsx`)*:
@@ -1392,6 +1453,67 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.12): Triệt Tiêu Hoàn Toàn Lỗi Chớp Giao Diện Cũ Trên Màn Thống Kê Mobile App CEO 1983 ([NODE-APP-004])**:
+  1. *Nguyên Nhân Gốc Rễ (Root Cause)*:
+     - Biến `serverData` khởi tạo bằng `null` nhưng các biến tính toán giao diện (`kpiCards`, `chartData`, `pieChartData`) trước đây chứa các giá trị fallback hardcode số liệu ảo (`?? 245`, `?? 128`, `?? 86`, `totalActs: 459`, tỷ trọng 35%, 15%, 10%). Khi vừa bấm vào tab Thống kê, component mount và ngay lập tức render các con số ảo này trong 0.5s - 1s trước khi API `/analytics/overview` trả về dữ liệu thật, gây cảm giác "hiện giao diện cũ 1 giây xong mới cập nhật".
+     - Khi người dùng chuyển đổi chu kỳ (Tháng, Quý, Năm) hoặc mốc năm/tháng lịch sử, nếu chu kỳ mới chưa có trong cache thì `serverData` cũ không được reset về trạng thái loading mà tiếp tục hiển thị dữ liệu của chu kỳ trước đó trong 1 giây trước khi API hoàn tất.
+     - Thiếu cơ chế bộ nhớ đệm đa tầng (SWR In-Memory Cache + SessionStorage Cache) khiến mỗi lần chuyển tab di động component đều phải tải lại từ đầu.
+  2. *Giải Pháp & Khắc Phục Triệt Để*:
+     - **Bộ nhớ đệm đa tầng SWR tức thì**: Triển khai `analyticsOverviewMemoryCache = new Map<string, any>()` kết hợp `sessionStorage` fallback theo từng chu kỳ (`analytics_${granularity}_${selectedYear}_${selectedMonth}_${selectedQuarter}`). Ngay khi component mount, state `serverData` được nạp lập tức (0ms) từ cache nếu đã từng tải, loại bỏ 100% độ trễ và không bị flash.
+     - **Xóa bỏ triệt để toàn bộ Mock Data / Fallback số liệu ảo**:
+       * `kpiCards`: Chuyển toàn bộ fallback về `0` (`totalComments ?? 0`, `totalShares ?? 0`, `totalRefClicks ?? 0`, `totalActs ?? 0`).
+       * `chartData` & `pieChartData`: Trả về mảng rỗng `[]` khi chưa có dữ liệu thật thay vì vẽ các cột giả 245, 128, 86.
+       * `podiumTop3`: Gỡ bỏ các số fallback `180`, `250`, `140`, đưa về `score: top.score || 0`.
+       * `currentAwardProgress` & `currentTaskCompletedCount`: Liên kết trực tiếp với dữ liệu hoạt động thực tế từ `serverData` và `oppStats`, loại bỏ hardcode `4`, `8`, `3`, `6`.
+       * `selectedKpiProof`: Loại bỏ các mục minh chứng mẫu (`proof-opp-1`, `ev-1`, `ev-2`), chỉ dùng dữ liệu thực từ danh sách đã lọc.
+     - **Hiệu ứng Skeleton Loading mượt mà**: Khi `loading && !serverData` (lần đầu tiên truy cập chưa có cache), hệ thống hiển thị Skeleton Loader (khung hình mờ nhấp nháy tinh tế cho Biểu đồ, 4 Thẻ KPI và Bục Podium) thay vì render số liệu 0 hay dữ liệu cũ, mang lại trải nghiệm mượt mà chuẩn mobile-first.
+  3. *Kiểm chứng*:
+     - `npx tsc --noEmit` tại cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.11): Hoàn Thiện Bộ 10 Yêu Cầu Mobile App CEO 1983 & CRM Quản Trị: Sửa Màn Hệ Thống, Leaf Routing Ưu Đãi, Link Sự Kiện Khách Ngoài, Làm Sạch CSDL 2 Tài Khoản, Ẩn Triệt Để Thông Tin Riêng Tư, Parse Giới Thiệu Hội Viên, Placeholder Ảnh Trang Chủ, Danh Bạ Tối Giản, Đăng Ký & Xếp Chỗ Sự Kiện CRM, Thay Ảnh Nền & Poster Thư Mời, Zalo OA Subscribers, Multi-Phone/Email & Import Excel, Format Thư Mời Chuẩn Không Icon, Tinh Gọn Quản Lý Mẫu ([NODE-CRM-003], [NODE-CRM-010], [NODE-CRM-014], [NODE-APP-001], [NODE-APP-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-008], [NODE-APP-011])**:
+  1. *Mobile App - Khắc phục chớp giật giao diện Màn Hệ thống (`association.system-config.tsx` & `association.settings.tsx`)*:
+     - Gỡ bỏ hoàn toàn `ssr: false` ở các route config, loại bỏ độ trễ hydration gây chớp giao diện cũ trước khi hiện giao diện mới.
+  2. *Mobile App - Sửa lỗi xem Danh sách ưu đãi (`association.perks.tsx` & `MemberPerksCarousel.tsx`)*:
+     - Khắc phục leaf routing: `association.perks.tsx` trực tiếp render `PerksScreen` khi truy cập đường dẫn `/association/perks`.
+     - Thêm nút liên kết *"Xem tất cả >"* tại tiêu đề carousel ưu đãi trên Trang chủ.
+  3. *Mobile App - Danh sách sự kiện & Gửi link cho khách ngoài (`association.events.tsx`, `EventDetailModal.tsx`)*:
+     - Bổ sung `validateSearch` an toàn cho route `/association/events`.
+     - Chuyển toàn bộ các nút chia sẻ mạng xã hội (Facebook, Zalo, Sao chép link) trỏ sang đường dẫn công khai `/guest-event-register/${event.id}` không yêu cầu đăng nhập hội viên.
+  4. *CSDL - Làm sạch cơ sở dữ liệu*:
+     - Toàn bộ cơ sở dữ liệu `ceo1983_users` và `public.members` được bảo lưu duy nhất 2 tài khoản quản trị và hội viên chính thức: `admin@connect.vn` và `info@viconnect.vn`.
+  5. *Mobile App - Ẩn triệt để thông tin riêng tư (Email, SĐT, Địa chỉ) khỏi giao diện*:
+     - Tại `card.$code.tsx`, `CardPreviewModal.tsx`, `AssociationQrScanModal.tsx`: Khi thuộc tính bị ẩn riêng tư, hệ thống loại bỏ hoàn toàn thẻ div khỏi DOM thay vì in dòng chữ *"Đã ẩn theo cài đặt riêng tư"* hay biểu tượng ổ khóa.
+  6. *Mobile App - Khắc phục lỗi trường Giới thiệu khi xem Profile hội viên (`MemberProfileModal.tsx`)*:
+     - Xây dựng hàm `parseMemberAbout` phân tách chuỗi JSON an toàn thành các trường: Chức danh, Người đại diện, Năm sinh, Lĩnh vực, Quy mô nhân sự; loại bỏ tình trạng hiển thị JSON thô. Gỡ bỏ badge mã hội viên. Cập nhật chuỗi giới thiệu sạch vào CSDL.
+  7. *Mobile App - Placeholder ảnh bìa và avatar Trang chủ (`association.index.tsx`)*:
+     - Khi chưa tải hoặc chưa có ảnh bìa/avatar, hệ thống hiển thị văn bản trạng thái *"Chưa có ảnh bìa"*, *"Chưa có avatar"* thay vì các ảnh demo che mắt.
+  8. *Mobile App - Danh bạ CEO 1983 (`association.members.tsx`)*:
+     - Bỏ nút quét QR ở header danh bạ; bỏ nút *"Giới thiệu hội viên"* ở giữa màn hình khi danh bạ rỗng, chỉ giữ nút giới thiệu cố định ở footer.
+  9. *CRM - Đăng ký sự kiện & Lưu xếp chỗ (`event-registrations.tsx`, `events.controller.ts`)*:
+     - Bổ sung bộ lọc sự kiện gọi API nạp đại biểu theo sự kiện đã chọn.
+     - Nới lỏng phân quyền endpoint `PUT registrations/:id/seating` sang `JwtAuthGuard`.
+     - Frontend gọi trực tiếp API `fetchNestApi` kèm fallback và cập nhật tức thì state `registrationsList` để lưu giữ vĩnh viễn vị trí ghế trên Cinema Seating Map.
+  10. *CRM - Quản lý thư mời: Thay ảnh nền & Poster (`InvitationSetupManager.tsx`)*:
+      - Bổ sung ô tải ảnh/link ảnh nền thư mời (`customBgUrl`) và poster sự kiện (`posterUrl`), hiển thị trực tiếp trên Card Preview.
+      - Gỡ bỏ hoàn toàn icon emoji hardcode ở các nhãn nhập liệu và phong cách thiệp.
+  11. *CRM - Cấu hình Zalo OA & Quản lý mẫu (`zalo.service.ts`, `MailTemplateManager.tsx`)*:
+      - Sửa lỗi cú pháp SQL join `uuid = text` trong `zalo.service.ts` giúp API `/zalo/subscribers` trả về đầy đủ 5 tài khoản tương tác thực tế.
+      - Trong `MailTemplateManager.tsx`: Bổ sung dropdown gọi API hội viên theo từng Ban chuyên môn, dropdown người tương tác Zalo OA, trường nhập multi-phone/multi-email (hỗ trợ phân tách bằng dấu phẩy hoặc xuống dòng), và nút Import file Excel (`.xlsx, .xls, .csv`) tự động nạp danh sách khách mời.
+  12. *CRM - Chuẩn hóa định dạng mẫu thông báo sự kiện (`MailTemplateManager.tsx`, `InvitationSetupManager.tsx`)*:
+      - Loại bỏ mọi icon emoji hardcode, chuẩn hóa toàn diện theo khung văn bản chuẩn:
+        * - Kính gửi Anh/Chị
+        * - BTC trân trọng kính mời Anh/Chị tham dự sự kiện:
+        * - Tên sự kiện:
+        * - Thông tin sự kiện: Diễn giả, Nội dung chính, Thời gian, địa điểm, chi phí, google maps, trang phục, gửi xe, lưu ý quan trọng từ BTC
+        * - Xác nhận tham dự
+        * - Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
+        * - Trân trọng!
+        * Bổ sung trường hiển thị Poster sự kiện.
+  13. *CRM - Tinh gọn Quản lý mẫu (`PageTemplatesHub.tsx`, `routes/templates.tsx`, `Sidebar.tsx`)*:
+      - Tại `Sidebar.tsx`: Trong nhóm Quản lý mẫu, chỉ giữ 2 mục duy nhất: *"Quản lý Template"* (`/templates?tab=email`) và *"Quản lý Thư Mời"* (`/templates?tab=invitation-setup`), xóa bỏ toàn bộ các mục demo thừa khác.
+      - Tại `PageTemplatesHub.tsx`: Cung cấp bộ chuyển tab 2 nút chuẩn và chỉ render `<MailTemplateManager />` hoặc `<InvitationSetupManager />`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.10): Hoàn Thiện Giao Diện CRM Dark Theme Text Sáng & Màu Thông Báo Chưa Đọc, Bỏ Hoàn Toàn Mã Hội Viên Trên Mobile App, Tinh Chỉnh Nút Hồ Sơ Cá Nhân Xanh - Cam, Chuẩn Hóa Giờ Sự Kiện & Nút Chi Tiết, Tối Ưu Header iOS Safe Area Notch & Dynamic Island, Gỡ Bỏ Theme Tối Trong Cài Đặt Hệ Thống Mobile ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-001], [NODE-APP-003], [NODE-APP-008], [NODE-APP-011])**:
   1. *Khắc Phục Màu Thông Báo Chưa Đọc Tại Cổng Quản Trị CRM (`NotificationCenter.tsx`)*:

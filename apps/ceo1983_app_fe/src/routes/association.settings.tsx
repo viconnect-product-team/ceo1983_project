@@ -40,7 +40,6 @@ import { requestNotificationPermission } from "@/lib/notification-permissions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/association/settings")({
-  ssr: false,
   validateSearch: (search: Record<string, unknown>): {
     action?: string;
     required?: string;

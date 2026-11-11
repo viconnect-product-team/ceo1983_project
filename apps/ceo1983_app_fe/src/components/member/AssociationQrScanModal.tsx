@@ -679,57 +679,59 @@ export function AssociationQrScanModal({
               {/* Detailed Contact & Profile Fields (Privacy-enforced) */}
               <div className="rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3 text-left space-y-2">
                 {/* Phone */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
-                      <Phone className="h-3.5 w-3.5" />
+                {scannedPartner.phone && !scannedPartner.phone.includes("Đã ẩn") && (
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <Phone className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Hotline:</span>
+                      <span className="font-semibold truncate text-slate-900 dark:text-white">
+                        {scannedPartner.phone}
+                      </span>
                     </div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Hotline:</span>
-                    <span className={`font-semibold truncate ${scannedPartner.phone?.includes("Đã ẩn") ? "text-slate-400 italic text-[11px]" : "text-slate-900 dark:text-white"}`}>
-                      {scannedPartner.phone || "Đã ẩn theo cài đặt riêng tư"}
-                    </span>
-                  </div>
-                  {scannedPartner.phone && !scannedPartner.phone.includes("Đã ẩn") && (
                     <a
                       href={`tel:${scannedPartner.phone}`}
                       className="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-600 text-[10.5px] font-bold hover:bg-emerald-500/25 shrink-0"
                     >
                       Gọi
                     </a>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Email */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="grid h-6 w-6 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
-                      <Mail className="h-3.5 w-3.5" />
+                {scannedPartner.email && !scannedPartner.email.includes("Đã ẩn") && (
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="grid h-6 w-6 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                        <Mail className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Email:</span>
+                      <span className="font-semibold truncate text-slate-900 dark:text-white">
+                        {scannedPartner.email}
+                      </span>
                     </div>
-                    <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Email:</span>
-                    <span className={`font-semibold truncate ${scannedPartner.email?.includes("Đã ẩn") ? "text-slate-400 italic text-[11px]" : "text-slate-900 dark:text-white"}`}>
-                      {scannedPartner.email || "Đã ẩn theo cài đặt riêng tư"}
-                    </span>
-                  </div>
-                  {scannedPartner.email && !scannedPartner.email.includes("Đã ẩn") && (
                     <a
                       href={`mailto:${scannedPartner.email}`}
                       className="px-2 py-0.5 rounded-lg bg-blue-500/15 text-blue-600 text-[10.5px] font-bold hover:bg-blue-500/25 shrink-0"
                     >
                       Gửi
                     </a>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Address */}
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="grid h-6 w-6 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-                    <MapPin className="h-3.5 w-3.5" />
+                {scannedPartner.address && !scannedPartner.address.includes("Đã ẩn") && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="grid h-6 w-6 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                      <MapPin className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Trụ sở:</span>
+                    <span className="font-semibold truncate text-slate-900 dark:text-white">
+                      {scannedPartner.address}
+                    </span>
                   </div>
-                  <span className="text-slate-500 dark:text-slate-400 text-[11px] shrink-0">Trụ sở:</span>
-                  <span className={`font-semibold truncate ${scannedPartner.address?.includes("Đã ẩn") ? "text-slate-400 italic text-[11px]" : "text-slate-900 dark:text-white"}`}>
-                    {scannedPartner.address || "Đã ẩn theo cài đặt riêng tư"}
-                  </span>
-                </div>
+                )}
               </div>
 
               {/* Privacy Notice Banner */}

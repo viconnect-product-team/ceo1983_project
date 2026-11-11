@@ -103,6 +103,25 @@ function RegPage() {
     }
   };
 
+  const fetchLiveRegistrationsForEvent = async (selectedEvtId: string) => {
+    if (!selectedEvtId || selectedEvtId === "all") {
+      return fetchLiveRegistrations();
+    }
+    try {
+      setIsLoadingLive(true);
+      const res = await fetchNestApi<any[]>(`/events/${selectedEvtId}/registrations`).catch(async () => {
+        return fetchNestApi<any[]>(`/events/registrations?eventId=${selectedEvtId}`).catch(() => []);
+      });
+      if (Array.isArray(res)) {
+        setRegistrationsList(res);
+      }
+    } catch (err) {
+      console.warn("[event-registrations] Load registrations for event failed:", err);
+    } finally {
+      setIsLoadingLive(false);
+    }
+  };
+
   useEffect(() => {
     fetchLiveRegistrations();
   }, []);
@@ -293,19 +312,30 @@ function RegPage() {
     );
 
     try {
-      await updateSeating({
-        data: {
-          registrationId: targetReg.id,
-          seatAssignment: toSeat,
-        },
+      // 1. Gửi trực tiếp API với token của phiên đăng nhập hiện tại
+      await fetchNestApi(`/events/registrations/${encodeURIComponent(targetReg.id)}/seating`, {
+        method: "PUT",
+        body: JSON.stringify({ seatAssignment: toSeat }),
+      }).catch(async () => {
+        return updateSeating({
+          data: {
+            registrationId: targetReg.id,
+            seatAssignment: toSeat,
+          },
+        });
       });
 
       if (destReg) {
-        await updateSeating({
-          data: {
-            registrationId: destReg.id,
-            seatAssignment: fromSeat,
-          },
+        await fetchNestApi(`/events/registrations/${encodeURIComponent(destReg.id)}/seating`, {
+          method: "PUT",
+          body: JSON.stringify({ seatAssignment: fromSeat }),
+        }).catch(async () => {
+          return updateSeating({
+            data: {
+              registrationId: destReg.id,
+              seatAssignment: fromSeat,
+            },
+          });
         });
       }
 
@@ -346,17 +376,27 @@ function RegPage() {
       return;
     }
     setSubmitting(true);
+    const assignedSeat = seatInput.trim();
     try {
-      await updateSeating({
-        data: {
-          registrationId: selectedReg.id,
-          seatAssignment: seatInput.trim(),
-        },
+      // 1. Direct fetch to Nest API with token
+      await fetchNestApi(`/events/registrations/${encodeURIComponent(selectedReg.id)}/seating`, {
+        method: "PUT",
+        body: JSON.stringify({ seatAssignment: assignedSeat }),
+      }).catch(async (clientErr) => {
+        console.warn("Direct fetch failed, falling back to serverFn:", clientErr);
+        return updateSeating({
+          data: {
+            registrationId: selectedReg.id,
+            seatAssignment: assignedSeat,
+          },
+        });
       });
+
+      // 2. Cập nhật state ngay lập tức để bảng và sơ đồ rạp hiển thị chỗ ngồi mới
       setRegistrationsList((prev) =>
-        prev.map((r) => (r.id === selectedReg.id ? { ...r, seatAssignment: seatInput.trim() } : r)),
+        prev.map((r) => (r.id === selectedReg.id ? { ...r, seatAssignment: assignedSeat } : r)),
       );
-      toast.success(`Đã xếp chỗ cho ${selectedReg.memberName}: ${seatInput.trim()}`);
+      toast.success(`Đã xếp chỗ cho ${selectedReg.memberName}: ${assignedSeat}`);
       setSeatingModalOpen(false);
       await router.invalidate();
     } catch {
@@ -711,13 +751,17 @@ function RegPage() {
         </div>
         <select
           value={eventId}
-          onChange={(e) => setEventId(e.target.value)}
+          onChange={(e) => {
+            const nextEvtId = e.target.value;
+            setEventId(nextEvtId);
+            fetchLiveRegistrationsForEvent(nextEvtId);
+          }}
           className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-[var(--shadow-card)]"
         >
           <option value="all">{t("reg.allEvents")}</option>
           {EVENTS.map((e: any) => (
             <option key={e.id} value={e.id}>
-              {e.name}
+              {e.name || e.title}
             </option>
           ))}
         </select>

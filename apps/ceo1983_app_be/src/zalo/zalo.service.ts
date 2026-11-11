@@ -1080,7 +1080,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
           m.code as "memberCode",
           m.company_name as "company"
         FROM public.zalo_subscribers s
-        LEFT JOIN public.members m ON s.member_id = m.id OR s.zalo_user_id = m.zalo_user_id
+        LEFT JOIN public.members m ON s.member_id::text = m.id::text
         ORDER BY s.last_interacted_at DESC
         LIMIT 100
       `);

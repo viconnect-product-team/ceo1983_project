@@ -97,6 +97,9 @@ export interface TopPerformer {
   phone?: string;
 }
 
+// Module-level in-memory cache to eliminate tab switching flashes and render instantly
+const analyticsOverviewMemoryCache = new Map<string, any>();
+
 export function AssociationAnalyticsScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -138,6 +141,25 @@ export function AssociationAnalyticsScreen() {
   const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(defaultQuarter);
 
+  const cacheKey = `analytics_${granularity}_${selectedYear}_${selectedMonth}_${selectedQuarter}`;
+  const [serverData, setServerData] = useState<any>(() => {
+    if (analyticsOverviewMemoryCache.has(cacheKey)) {
+      return analyticsOverviewMemoryCache.get(cacheKey);
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem(`vba_cache_${cacheKey}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          analyticsOverviewMemoryCache.set(cacheKey, parsed);
+          return parsed;
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => !analyticsOverviewMemoryCache.has(cacheKey));
+
   const isHistorical = useMemo(() => {
     if (granularity === "year") return selectedYear !== defaultYear;
     if (granularity === "quarter") return selectedYear !== defaultYear || selectedQuarter !== defaultQuarter;
@@ -163,8 +185,6 @@ export function AssociationAnalyticsScreen() {
       setGranularity(val);
     }
   };
-  const [loading, setLoading] = useState(false);
-  const [serverData, setServerData] = useState<any>(null);
 
   // Giải thưởng Gamification đồng bộ từ Web CRM
   const [awardsUpdatedTick, setAwardsUpdatedTick] = useState(0);
@@ -232,11 +252,36 @@ export function AssociationAnalyticsScreen() {
       .catch(() => {});
   }, []);
 
-  // Fetch overview from NestJS backend theo Tháng / Quý / Năm và kỳ lịch sử
+  // Fetch overview from NestJS backend theo Tháng / Quý / Năm và kỳ lịch sử với SWR Cache
   useEffect(() => {
     let isMounted = true;
+    const currentKey = `analytics_${granularity}_${selectedYear}_${selectedMonth}_${selectedQuarter}`;
+
+    // Nạp ngay dữ liệu từ cache RAM / Session nếu có để loại bỏ 100% hiện tượng chớp giật giao diện cũ
+    if (analyticsOverviewMemoryCache.has(currentKey)) {
+      setServerData(analyticsOverviewMemoryCache.get(currentKey));
+      setLoading(false);
+    } else {
+      let foundInSession = false;
+      if (typeof window !== "undefined") {
+        try {
+          const stored = sessionStorage.getItem(`vba_cache_${currentKey}`);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            analyticsOverviewMemoryCache.set(currentKey, parsed);
+            setServerData(parsed);
+            setLoading(false);
+            foundInSession = true;
+          }
+        } catch {}
+      }
+      if (!foundInSession) {
+        setServerData(null);
+        setLoading(true);
+      }
+    }
+
     async function loadStats() {
-      setLoading(true);
       try {
         const params = new URLSearchParams({
           granularity,
@@ -247,6 +292,10 @@ export function AssociationAnalyticsScreen() {
         });
         const res = await fetchNestApi<any>(`/analytics/overview?${params.toString()}`);
         if (isMounted && res && res.ok) {
+          analyticsOverviewMemoryCache.set(currentKey, res);
+          try {
+            sessionStorage.setItem(`vba_cache_${currentKey}`, JSON.stringify(res));
+          } catch {}
           setServerData(res);
         }
       } catch (err) {
@@ -336,7 +385,14 @@ export function AssociationAnalyticsScreen() {
     }
   });
 
-  const currentTaskCompletedCount = 8; // Hoàn thành 8/10 nhiệm vụ (đã vượt mốc 1 và mốc 2)
+  const currentTaskCompletedCount = useMemo(() => {
+    const comments = serverData?.sentimentStats?.totalComments ?? (serverData?.kpi?.totalComments ?? 0);
+    const shares = serverData?.externalShareClicks?.totalClicks ?? (serverData?.kpi?.totalPostShares ?? 0);
+    const opps = oppStats.totalOpps ?? 0;
+    const conns = serverData?.kpi?.totalConnections ?? 0;
+    const totalActs = comments + shares + opps + conns;
+    return Math.min(10, Math.max(0, totalActs));
+  }, [serverData, oppStats]);
 
   const handleClaimMilestone = (node: any) => {
     const next = { ...claimedMilestones, [node.id]: true };
@@ -373,9 +429,9 @@ export function AssociationAnalyticsScreen() {
 
     switch (activeCategory) {
       case "member_activities": {
-        const totalComments = serverData?.sentimentStats?.totalComments ?? (serverData?.kpi?.totalComments ?? 245);
-        const totalShares = serverData?.externalShareClicks?.totalClicks ?? (serverData?.kpi?.totalPostShares ?? 128);
-        const totalRefClicks = serverData?.topReferrals?.reduce((acc: number, m: any) => acc + (m.referralsCount || 0), 0) ?? (serverData?.kpi?.totalRefClicks ?? 86);
+        const totalComments = serverData?.sentimentStats?.totalComments ?? (serverData?.kpi?.totalComments ?? 0);
+        const totalShares = serverData?.externalShareClicks?.totalClicks ?? (serverData?.kpi?.totalPostShares ?? 0);
+        const totalRefClicks = serverData?.topReferrals?.reduce((acc: number, m: any) => acc + (m.referralsCount || 0), 0) ?? (serverData?.kpi?.totalRefClicks ?? 0);
         const totalActs = totalComments + totalShares + totalRefClicks;
         return [
           {
@@ -544,23 +600,23 @@ export function AssociationAnalyticsScreen() {
   // Tiến trình giải thưởng Gamification đồng bộ từ CRM cho từng danh mục
   const currentAwardProgress = useMemo(() => {
     let mappedCat: MilestoneAward["category"] = "top_referrals";
-    let defaultCurrent = 4;
+    let defaultCurrent = 0;
     let unitLabel = "người";
     let actionVerb = "giới thiệu";
 
     if (activeCategory === "top_connections") {
       mappedCat = "top_connect";
-      defaultCurrent = 8;
+      defaultCurrent = serverData?.kpi?.totalConnections ?? 0;
       unitLabel = "cuộc gặp 1-on-1";
       actionVerb = "kết nối";
     } else if (activeCategory === "top_opportunities") {
       mappedCat = "top_opportunities";
-      defaultCurrent = 3;
+      defaultCurrent = serverData?.kpi?.totalClubOpportunities ?? oppStats.totalOpps ?? 0;
       unitLabel = "cơ hội B2B";
       actionVerb = "chia sẻ";
     } else if (activeCategory === "top_events_meetings") {
       mappedCat = "top_events_meetings";
-      defaultCurrent = 6;
+      defaultCurrent = (serverData?.kpi?.totalEvents ?? 0) + (serverData?.kpi?.totalMeetings ?? 0);
       unitLabel = "sự kiện & cuộc họp";
       actionVerb = "tham gia";
     } else if (activeCategory === "member_activities") {
@@ -601,7 +657,7 @@ export function AssociationAnalyticsScreen() {
       actionVerb,
       award: nextAward,
     };
-  }, [activeCategory, awardsUpdatedTick, currentMember, user]);
+  }, [activeCategory, awardsUpdatedTick, currentMember, user, serverData, oppStats]);
 
   // Định nghĩa nhãn và mã màu 4 cột đại diện cho từng danh mục
   const APP_CHART_METAS: Record<string, {
@@ -756,13 +812,14 @@ export function AssociationAnalyticsScreen() {
       return apiCategory.chartData;
     }
     if (activeCategory === "member_activities") {
-      const tc = serverData?.sentimentStats?.totalComments ?? 245;
-      const ts = serverData?.externalShareClicks?.totalClicks ?? 128;
-      const tr = serverData?.kpi?.totalRefClicks ?? 86;
+      const tc = serverData?.sentimentStats?.totalComments ?? (serverData?.kpi?.totalComments ?? 0);
+      const ts = serverData?.externalShareClicks?.totalClicks ?? (serverData?.kpi?.totalPostShares ?? 0);
+      const tr = serverData?.kpi?.totalRefClicks ?? 0;
+      if (tc === 0 && ts === 0 && tr === 0) return [];
       return [
-        { name: "Lượt bình luận", col1: tc, col2: 0, col3: 0, timelineVal: tc, isUp: true },
-        { name: "Lượt share bài viết", col1: 0, col2: ts, col3: 0, timelineVal: ts, isUp: true },
-        { name: "Click link giới thiệu", col1: 0, col2: 0, col3: tr, timelineVal: tr, isUp: true },
+        { name: "Lượt bình luận", col1: tc, col2: 0, col3: 0, timelineVal: tc, isUp: tc > 0 },
+        { name: "Lượt share bài viết", col1: 0, col2: ts, col3: 0, timelineVal: ts, isUp: ts > 0 },
+        { name: "Click link giới thiệu", col1: 0, col2: 0, col3: tr, timelineVal: tr, isUp: tr > 0 },
       ];
     }
     return [];
@@ -793,20 +850,17 @@ export function AssociationAnalyticsScreen() {
       return apiCategory.pieChartData;
     }
     if (activeCategory === "member_activities") {
-      const tc = serverData?.sentimentStats?.totalComments ?? 245;
-      const ts = serverData?.externalShareClicks?.totalClicks ?? 128;
-      const tr = serverData?.kpi?.totalRefClicks ?? 86;
+      const tc = serverData?.sentimentStats?.totalComments ?? (serverData?.kpi?.totalComments ?? 0);
+      const ts = serverData?.externalShareClicks?.totalClicks ?? (serverData?.kpi?.totalPostShares ?? 0);
+      const tr = serverData?.kpi?.totalRefClicks ?? 0;
+      if (tc === 0 && ts === 0 && tr === 0) return [];
       return [
         { name: "Lượt bình luận", value: tc, fill: colorTheme.primaryColor },
         { name: "Lượt share bài viết", value: ts, fill: "#10B981" },
         { name: "Click link giới thiệu", value: tr, fill: "#F59E0B" },
       ];
     }
-    return [
-      { name: "Hội viên chính thức", value: 35, fill: "#003B95" },
-      { name: "Ban Điều Hành", value: 15, fill: "#059669" },
-      { name: "Khách mời xúc tiến", value: 10, fill: "#F59E0B" },
-    ];
+    return [];
   }, [activeCategory, serverData, colorTheme]);
 
   // Lọc dữ liệu biểu đồ theo chế độ: Vừa tăng vừa giảm (all) | Tăng (up) | Giảm (down)
@@ -817,19 +871,10 @@ export function AssociationAnalyticsScreen() {
     }
     if (trendFilter === "down") {
       const list = chartData.filter((d: any) => !d.isUp);
-      return list.length > 0
-        ? list
-        : [
-            {
-              name: timeRange === "year" ? "2026 (Điều chỉnh)" : timeRange === "quarter" ? "Q3 (Điều chỉnh)" : "T3 (Điều chỉnh)",
-              columnVal: 16,
-              lineVal: 12,
-              isUp: false,
-            },
-          ];
+      return list;
     }
     return chartData;
-  }, [chartData, trendFilter, timeRange]);
+  }, [chartData, trendFilter]);
 
   // Danh sách Top 1 đến Top 10 đầy đủ thời gian thực từ API cho cả 4 danh mục
   const allRankedList = useMemo(() => {
@@ -907,7 +952,7 @@ export function AssociationAnalyticsScreen() {
         title: top2.title,
         avatar: top2.avatar,
         valueStr: top2.valueStr,
-        score: top2.score || 180,
+        score: top2.score || 0,
         badge: "Bạch Kim 🪙",
         phone: top2.phone,
       });
@@ -922,7 +967,7 @@ export function AssociationAnalyticsScreen() {
         title: top1.title,
         avatar: top1.avatar,
         valueStr: top1.valueStr,
-        score: top1.score || 250,
+        score: top1.score || 0,
         badge: "Kim Cương 💎",
         phone: top1.phone,
       });
@@ -937,7 +982,7 @@ export function AssociationAnalyticsScreen() {
         title: top3.title,
         avatar: top3.avatar,
         valueStr: top3.valueStr,
-        score: top3.score || 140,
+        score: top3.score || 0,
         badge: "Vàng 🥇",
         phone: top3.phone,
       });
@@ -1145,7 +1190,55 @@ export function AssociationAnalyticsScreen() {
       )}
 
       <div className="px-3 sm:px-4 pt-3.5 space-y-4">
-        {/* ── 1. BIỂU ĐỒ CỘT & ĐƯỜNG CÂN ĐỐI KÈM CHỌN DẠNG TRÒN VÀ SOI THỜI GIAN THỰC ── */}
+        {loading && !serverData ? (
+          <div className="space-y-4 animate-pulse">
+            {/* Chart Skeleton */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="h-5 w-48 bg-slate-200 dark:bg-slate-700/50 rounded-lg"></div>
+                <div className="h-7 w-32 bg-slate-200 dark:bg-slate-700/50 rounded-lg"></div>
+              </div>
+              <div className="h-60 w-full bg-slate-100 dark:bg-slate-800/40 rounded-xl flex items-end justify-around p-4 gap-2">
+                <div className="w-10 bg-slate-200 dark:bg-slate-700/50 rounded-t-lg h-24"></div>
+                <div className="w-10 bg-slate-200 dark:bg-slate-700/50 rounded-t-lg h-40"></div>
+                <div className="w-10 bg-slate-200 dark:bg-slate-700/50 rounded-t-lg h-32"></div>
+                <div className="w-10 bg-slate-200 dark:bg-slate-700/50 rounded-t-lg h-48"></div>
+              </div>
+            </div>
+
+            {/* KPI Cards Skeleton */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-3 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
+                  <div className="h-3.5 w-24 bg-slate-200 dark:bg-slate-700/50 rounded"></div>
+                  <div className="h-6 w-16 bg-slate-300 dark:bg-slate-600/50 rounded-lg"></div>
+                  <div className="h-3 w-28 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
+                </div>
+              ))}
+            </div>
+
+            {/* Podium Skeleton */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-4">
+              <div className="h-4 w-40 mx-auto bg-slate-200 dark:bg-slate-700/50 rounded"></div>
+              <div className="grid grid-cols-3 gap-2 items-end pt-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="size-12 rounded-full bg-slate-200 dark:bg-slate-700/50"></div>
+                  <div className="w-full h-16 bg-slate-100 dark:bg-slate-800/50 rounded-t-xl"></div>
+                </div>
+                <div className="flex flex-col items-center gap-2 -mt-4">
+                  <div className="size-15 rounded-full bg-slate-300 dark:bg-slate-600/50"></div>
+                  <div className="w-full h-24 bg-slate-200 dark:bg-slate-700/50 rounded-t-xl"></div>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="size-12 rounded-full bg-slate-200 dark:bg-slate-700/50"></div>
+                  <div className="w-full h-14 bg-slate-100 dark:bg-slate-800/50 rounded-t-xl"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ── 1. BIỂU ĐỒ CỘT & ĐƯỜNG CÂN ĐỐI KÈM CHỌN DẠNG TRÒN VÀ SOI THỜI GIAN THỰC ── */}
         <div className="p-4 rounded-2xl bg-white dark:bg-[#131a26] border border-slate-200/80 dark:border-white/10 shadow-xs space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div>
@@ -1418,16 +1511,7 @@ export function AssociationAnalyticsScreen() {
                       };
                     });
                     if (items.length === 0) {
-                      items = [
-                        {
-                          id: "proof-opp-1",
-                          title: "Xây dựng phần mềm quản lý tòa nhà",
-                          subtitle: "Người đăng: Administrator · Công nghệ & Chuyển đổi số",
-                          value: "2 Tỷ đ",
-                          time: "04/11/2026",
-                          verified: true,
-                        },
-                      ];
+                      items = [];
                     }
                   } else if (activeCategory === "top_connections") {
                     items = (allRankedList.length > 0 ? allRankedList : []).map((m: any, i: number) => ({
@@ -1439,30 +1523,20 @@ export function AssociationAnalyticsScreen() {
                       verified: true,
                     }));
                   } else if (activeCategory === "top_events_meetings") {
-                    items = [
-                      {
-                        id: "ev-1",
-                        title: "Họp Ban Chấp Hành CLB CEO 1983 Định Kỳ",
-                        subtitle: "Ban Thư Ký & Ban Điều Hành · Trực tiếp",
-                        value: "Đã điểm danh",
-                        time: "15:00 - 17:00",
-                        verified: true,
-                      },
-                      {
-                        id: "ev-2",
-                        title: "Diễn đàn Giao thương & Xúc tiến Thương mại Q4",
-                        subtitle: "Ban Xúc Tiến Thương Mại · Khách sạn Melia Hà Nội",
-                        value: "120 đại biểu",
-                        time: "08:30 - 11:30",
-                        verified: true,
-                      },
-                    ];
+                    items = (allRankedList.length > 0 ? allRankedList : []).map((m: any, i: number) => ({
+                      id: `ev-${i}`,
+                      title: `Tham gia sự kiện & họp ban: ${m.name}`,
+                      subtitle: `${m.company} · ${m.title || "Đại biểu chính thức"}`,
+                      value: m.valueStr || "Đã điểm danh",
+                      time: "Hệ thống ghi nhận",
+                      verified: true,
+                    }));
                   } else {
                     items = (allRankedList.length > 0 ? allRankedList : []).map((m: any, i: number) => ({
                       id: `ref-${i}`,
                       title: `Phát triển hội viên mới: ${m.name}`,
                       subtitle: `${m.company} · Giới thiệu gia nhập CLB CEO 1983`,
-                      value: `${m.score || 100} điểm kết nối`,
+                      value: `${m.score || 0} điểm kết nối`,
                       time: "Đã kết nạp chính thức",
                       verified: true,
                     }));
@@ -1856,6 +1930,8 @@ export function AssociationAnalyticsScreen() {
             <span className="uppercase tracking-wider">Trích xuất báo cáo thống kê có xác thực bằng chứng</span>
           </button>
         </div>
+          </>
+        )}
       </div>
 
       {/* ── MODAL MINH CHỨNG DẪN CHỨNG THẬT CỦA CÁC CHỈ SỐ KPI THỐNG KÊ (YÊU CẦU 2) ── */}
