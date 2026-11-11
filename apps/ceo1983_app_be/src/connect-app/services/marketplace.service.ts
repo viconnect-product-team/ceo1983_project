@@ -47,7 +47,7 @@ export class ConnectMarketplaceService {
     private gateway: ConnectAppGateway,
     @Inject(forwardRef(() => ConnectMessengerService))
     private messengerService: ConnectMessengerService,
-  ) {}
+  ) { }
 
   async listActiveProducts() {
     try {
@@ -168,14 +168,14 @@ export class ConnectMarketplaceService {
         : null;
     const cleanOriginalPrice =
       data.originalPrice !== undefined &&
-      data.originalPrice !== null &&
-      data.originalPrice !== ''
+        data.originalPrice !== null &&
+        data.originalPrice !== ''
         ? Number(data.originalPrice)
         : cleanPrice;
     const cleanMemberPrice =
       data.memberPrice !== undefined &&
-      data.memberPrice !== null &&
-      data.memberPrice !== ''
+        data.memberPrice !== null &&
+        data.memberPrice !== ''
         ? Number(data.memberPrice)
         : cleanPrice;
     const imgArr: string[] | null =
@@ -362,7 +362,7 @@ export class ConnectMarketplaceService {
     // Bump views
     await this.prisma.$executeRaw`
       UPDATE public.products SET views = COALESCE(views, 0) + 1 WHERE custom_id = ${id} OR id::text = ${id}
-    `.catch(() => {});
+    `.catch(() => { });
 
     const quotes = await this.prisma.$queryRaw<any[]>`
       SELECT q.*,
@@ -479,14 +479,14 @@ export class ConnectMarketplaceService {
 
     const rows = await this.prisma.$queryRaw<any[]>`
       INSERT INTO public.products (
-        custom_id, seller_id, title, name, description, price, original_price, member_price,
-        category, status, views, emoji, pdf_url, image_urls, image_url, video_url, company, website_url, facebookurl,
+        id, custom_id, seller_id, title, name, description, price, original_price, member_price,
+        category, status, views, emoji, pdf_url, image_urls, image_url, video_url, company, website_url, facebook_url,
         created_at, updated_at
       ) VALUES (
-        ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+        ${id}, ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
         ${originalPrice}, ${memberPrice},
         ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
-        ${data.pdfUrl ?? ''}, ${JSON.stringify(imageUrls)}::jsonb, ${firstImage}, ${videoUrl}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+        ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${firstImage}, ${videoUrl}, ${company}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
         NOW(), NOW()
       )
       RETURNING *
@@ -497,11 +497,11 @@ export class ConnectMarketplaceService {
       );
       return this.prisma.$queryRaw<any[]>`
         INSERT INTO public.products (
-          custom_id, seller_id, title, name, description, price, category, status, views, emoji, pdf_url, image_urls, video_url, website_url, facebookurl, created_at, updated_at
+          id, custom_id, seller_id, title, name, description, price, category, status, views, emoji, pdf_url, image_urls, video_url, website_url, facebook_url, created_at, updated_at
         ) VALUES (
-          ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
+          ${id}, ${id}, ${sellerId}, ${title}, ${title}, ${data.description ?? ''}, ${Number(data.price ?? 0)},
           ${data.category ?? 'mk.cat.other'}, ${data.status ?? 'active'}, 0, ${data.emoji ?? '🛍️'},
-          ${data.pdfUrl ?? ''}, ${JSON.stringify(imageUrls)}::jsonb, ${videoUrl}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
+          ${data.pdfUrl ?? ''}, ${imageUrls}::text[], ${videoUrl}, ${data.websiteUrl ?? ''}, ${data.facebookUrl ?? ''},
           NOW(), NOW()
         )
         RETURNING *
@@ -569,14 +569,14 @@ export class ConnectMarketplaceService {
         : null;
     const cleanOriginalPrice =
       data.originalPrice !== undefined &&
-      data.originalPrice !== null &&
-      data.originalPrice !== ''
+        data.originalPrice !== null &&
+        data.originalPrice !== ''
         ? BigInt(Math.round(Number(data.originalPrice)))
         : null;
     const cleanMemberPrice =
       data.memberPrice !== undefined &&
-      data.memberPrice !== null &&
-      data.memberPrice !== ''
+        data.memberPrice !== null &&
+        data.memberPrice !== ''
         ? BigInt(Math.round(Number(data.memberPrice)))
         : null;
 
@@ -767,7 +767,7 @@ export class ConnectMarketplaceService {
         buyerName = buyerRows[0].name || buyerName;
         buyerPhone = buyerPhone || buyerRows[0].phone || '';
       }
-    } catch {}
+    } catch { }
 
     // 2. Product & seller info already resolved above
 
@@ -832,7 +832,7 @@ export class ConnectMarketplaceService {
             safeData,
             `quote-req-${id}`,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         // member_notifications
         await this.prisma
@@ -849,7 +849,7 @@ export class ConnectMarketplaceService {
             notifBody,
             id,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         // Real-time WebSocket emission
         this.gateway.emitNotification(String(targetUserId), {
@@ -951,7 +951,7 @@ export class ConnectMarketplaceService {
           safeData,
           `quote-status-${id}-${status}`,
         )
-        .catch(() => {});
+        .catch(() => { });
 
       await this.prisma
         .$executeRawUnsafe(
@@ -967,7 +967,7 @@ export class ConnectMarketplaceService {
           notifBody,
           id,
         )
-        .catch(() => {});
+        .catch(() => { });
 
       this.gateway.emitNotification(String(q.buyer_id), {
         id: notifId,
@@ -976,7 +976,7 @@ export class ConnectMarketplaceService {
         action: { targetRoute: '/marketplace' },
         safeDisplayData: { title: notifTitle, body: notifBody },
       });
-    } catch {}
+    } catch { }
 
     return { id: q.id, status: q.status };
   }
@@ -1029,7 +1029,7 @@ export class ConnectMarketplaceService {
             safeData,
             `quote-remind-${id}-${Date.now()}`,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
@@ -1045,7 +1045,7 @@ export class ConnectMarketplaceService {
             notifBody,
             id,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         this.gateway.emitNotification(String(prodRows[0].seller_id), {
           id: notifId,
@@ -1055,7 +1055,7 @@ export class ConnectMarketplaceService {
           safeDisplayData: { title: notifTitle, body: notifBody },
         });
       }
-    } catch {}
+    } catch { }
 
     return { id: q.id, reminderCount: Number(q.reminder_count ?? 1) };
   }
@@ -1074,7 +1074,7 @@ export class ConnectMarketplaceService {
   async deleteQuote(userId: string, id: string) {
     await this.prisma.$executeRaw`
       DELETE FROM public.quote_requests WHERE id = ${id}
-    `.catch(() => {});
+    `.catch(() => { });
     return { ok: true, id };
   }
 
