@@ -1122,21 +1122,21 @@ function Home() {
     };
   }, [reloadNotifs, user?.id]);
 
-  // Priority-driven resolution: Real Member Record from DB > Real Auth User Name > Custom Profile (scoped) > Fallback
+  // Priority-driven resolution: Custom Profile (instant reactivity) > Real Member Record from DB > Real Auth User Name > Fallback
   const realUserName = (user as any)?.name || (user as any)?.user_metadata?.full_name;
   const isGenericMemberName = !effectiveMember?.name || effectiveMember.name === "Thành viên mới" || effectiveMember.name === "Hội viên CLB CEO 1983";
   const validCustomName = (customProfile?.userId === user?.id || !customProfile?.userId) ? customProfile?.name?.trim() : undefined;
   
-  const displayName = (!isGenericMemberName && effectiveMember?.name)
+  const displayName = validCustomName || ((!isGenericMemberName && effectiveMember?.name)
     ? effectiveMember.name
-    : (realUserName || validCustomName || effectiveMember?.name || (user as any)?.username || "Hội viên CLB CEO 1983");
+    : (realUserName || effectiveMember?.name || (user as any)?.username || "Hội viên CLB CEO 1983"));
 
-  const displayTitle = effectiveMember?.title || (effectiveMember as any)?.position || effectiveMember?.industry || customProfile?.title?.trim() || (isEn ? "Official Member" : "Hội viên chính thức");
+  const displayTitle = customProfile?.title?.trim() || effectiveMember?.title || (effectiveMember as any)?.position || (isEn ? "Official Member" : "Hội viên chính thức");
   const displayPhone =
+    (customProfile as any)?.phone?.trim() ||
     effectiveMember?.phone ||
     (user as any)?.phone ||
     (user as any)?.user_metadata?.phone ||
-    (customProfile as any)?.phone?.trim() ||
     "";
   const rawCompany = customProfile?.company?.trim() || (effectiveMember as any)?.companyName || (effectiveMember as any)?.company || (effectiveMember as any)?.businessName;
   const isOldSeedCompany = rawCompany && ((rawCompany.includes("Phạm Văn Vũ") && !displayName.includes("Phạm Văn Vũ")));
@@ -2104,6 +2104,10 @@ function Home() {
             setCompanyLogoError(false);
           }
           setQuickEditOpen(false);
+          if (user?.id) {
+            fetchNestApi<any>("/members/me").then((live) => { if (live) setDirectMember(live); }).catch(() => {});
+          }
+          toast.success("Đã cập nhật thông tin tài khoản thành công!");
         }}
       />
 

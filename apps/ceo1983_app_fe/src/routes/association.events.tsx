@@ -846,37 +846,124 @@ const defaultUpcomingEvents: MyEvent[] = [
 
 const defaultAllEvents: MyEvent[] = [
   {
-    id: "ev-all-01",
-    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983",
-    date: "2026-11-12T00:00:00Z",
-    place: "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội",
-    time: "00:00",
-    ticketPrice: 0,
-    image: defaultEventImages[0],
-    category: "SỰ KIỆN CLB CEO1983",
-    statusText: "Đang mở bán vé",
+    id: "e1983000-0000-4000-8000-000000000001",
+    title: "Đại Hội Thường Niên & Gala Vinh Danh CEO 1983 Xuất Sắc",
+    name: "Đại Hội Thường Niên & Gala Vinh Danh CEO 1983 Xuất Sắc",
+    date: "2026-11-28T18:00:00Z",
+    place: "Trung Tâm Hội Nghị Quốc Gia (NCC), Số 1 Đại Lộ Thăng Long, Hà Nội",
+    location: "Trung Tâm Hội Nghị Quốc Gia (NCC), Số 1 Đại Lộ Thăng Long, Hà Nội",
+    time: "18:00",
+    ticketPrice: 500000,
+    fee: 500000,
+    image: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+    category: "Gala & Đại Hội",
+    type: "Gala & Đại Hội",
+    statusText: "Đang mở bán vé (500.000 đ)",
   } as any,
   {
-    id: "ev-all-02",
-    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983",
-    date: "2026-11-12T00:00:00Z",
-    place: "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội",
-    time: "00:00",
+    id: "e1983000-0000-4000-8000-000000000002",
+    title: "Diễn Đàn Kết Nối Giao Thương B2B & Chuỗi Cung Ứng 2026",
+    name: "Diễn Đàn Kết Nối Giao Thương B2B & Chuỗi Cung Ứng 2026",
+    date: "2026-11-18T08:30:00Z",
+    place: "Khách sạn JW Marriott Hanoi, Số 8 Đỗ Đức Dục, Nam Từ Liêm, Hà Nội",
+    location: "Khách sạn JW Marriott Hanoi, Số 8 Đỗ Đức Dục, Nam Từ Liêm, Hà Nội",
+    time: "08:30",
     ticketPrice: 0,
-    image: defaultEventImages[1],
-    category: "SỰ KIỆN CLB CEO1983",
+    fee: 0,
+    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
+    category: "Giao thương B2B",
+    type: "Giao thương B2B",
     statusText: "Miễn phí",
   } as any,
   {
-    id: "ev-all-03",
-    title: "Hội Thảo Giao Thương & Chuyển Đổi Số CEO 1983",
-    date: "2026-11-12T00:00:00Z",
-    place: "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội",
-    time: "00:00",
-    ticketPrice: 500000,
-    image: defaultEventImages[2],
-    category: "SỰ KIỆN CLB CEO1983",
-    statusText: "500.000 đ",
+    id: "e1983000-0000-4000-8000-000000000003",
+    title: "Tọa Đàm: Quản Trị Tối Ưu Dòng Tiền & Tái Cấu Trúc Vốn Doanh Nghiệp",
+    name: "Tọa Đàm: Quản Trị Tối Ưu Dòng Tiền & Tái Cấu Trúc Vốn Doanh Nghiệp",
+    date: "2026-11-22T14:00:00Z",
+    place: "Cung Tri Thức Thành Phố, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội",
+    location: "Cung Tri Thức Thành Phố, Số 1 Tôn Thất Thuyết, Cầu Giấy, Hà Nội",
+    time: "14:00",
+    ticketPrice: 0,
+    fee: 0,
+    image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80",
+    category: "Đào tạo & Tọa đàm",
+    type: "Đào tạo & Tọa đàm",
+    statusText: "Miễn phí",
+  } as any,
+  {
+    id: "e1983000-0000-4000-8000-000000000004",
+    title: "Caravan Doanh Nhân CEO 1983: Hành Trình Kết Nối & Thiện Nguyện Tây Bắc",
+    name: "Caravan Doanh Nhân CEO 1983: Hành Trình Kết Nối & Thiện Nguyện Tây Bắc",
+    date: "2026-12-05T06:00:00Z",
+    place: "Xuất phát từ Hà Nội - Yên Bái - Sapa (Lào Cai)",
+    location: "Xuất phát từ Hà Nội - Yên Bái - Sapa (Lào Cai)",
+    time: "06:00",
+    ticketPrice: 3500000,
+    fee: 3500000,
+    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=80",
+    category: "Caravan & Xúc tiến",
+    type: "Caravan & Xúc tiến",
+    statusText: "3.500.000 đ",
+  } as any,
+  {
+    id: "e1983000-0000-4000-8000-000000000005",
+    title: "Cafe Doanh Nhân Sáng Thứ 6: Chia Sẻ Cơ Hội Hợp Tác Đầu Tư B2B",
+    name: "Cafe Doanh Nhân Sáng Thứ 6: Chia Sẻ Cơ Hội Hợp Tác Đầu Tư B2B",
+    date: "2026-11-20T07:30:00Z",
+    place: "Trung Nguyên Legend Cafe, Tòa nhà Keangnam Landmark 72, Cầu Giấy, Hà Nội",
+    location: "Trung Nguyên Legend Cafe, Tòa nhà Keangnam Landmark 72, Cầu Giấy, Hà Nội",
+    time: "07:30",
+    ticketPrice: 0,
+    fee: 0,
+    image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
+    category: "Cafe Doanh Nhân",
+    type: "Cafe Doanh Nhân",
+    statusText: "Miễn phí",
+  } as any,
+  {
+    id: "e1983000-0000-4000-8000-000000000006",
+    title: "Workshop: Ứng Dụng AI & Tự Động Hóa Vận Hành Doanh Nghiệp SME",
+    name: "Workshop: Ứng Dụng AI & Tự Động Hóa Vận Hành Doanh Nghiệp SME",
+    date: "2026-11-25T13:30:00Z",
+    place: "Phòng Hội Thảo Tầng 12, Tòa nhà CEO 1983 Tower, Hà Nội & Online Zoom",
+    location: "Phòng Hội Thảo Tầng 12, Tòa nhà CEO 1983 Tower, Hà Nội & Online Zoom",
+    time: "13:30",
+    ticketPrice: 0,
+    fee: 0,
+    image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80",
+    category: "Đào tạo & Tọa đàm",
+    type: "Đào tạo & Tọa đàm",
+    statusText: "Miễn phí",
+  } as any,
+  {
+    id: "e1983000-0000-4000-8000-000000000007",
+    title: "Giải Golf Hữu Nghị CEO 1983 Championship 2026",
+    name: "Giải Golf Hữu Nghị CEO 1983 Championship 2026",
+    date: "2026-12-12T06:30:00Z",
+    place: "Sân Golf Long Biên, Phúc Đồng, Long Biên, Hà Nội",
+    location: "Sân Golf Long Biên, Phúc Đồng, Long Biên, Hà Nội",
+    time: "06:30",
+    ticketPrice: 2800000,
+    fee: 2800000,
+    image: "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=1200&q=80",
+    category: "Thể thao & Giao lưu",
+    type: "Thể thao & Giao lưu",
+    statusText: "2.800.000 đ",
+  } as any,
+  {
+    id: "e1983000-0000-4000-8000-000000000008",
+    title: "Lễ Kỷ Niệm 4 Năm Thành Lập CLB Doanh Nhân CEO 1983 (2022 - 2026)",
+    name: "Lễ Kỷ Niệm 4 Năm Thành Lập CLB Doanh Nhân CEO 1983 (2022 - 2026)",
+    date: "2026-10-15T18:30:00Z",
+    place: "Khách sạn Pan Pacific Hanoi, Số 1 Thanh Niên, Ba Đình, Hà Nội",
+    location: "Khách sạn Pan Pacific Hanoi, Số 1 Thanh Niên, Ba Đình, Hà Nội",
+    time: "18:30",
+    ticketPrice: 0,
+    fee: 0,
+    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80",
+    category: "Gala & Đại Hội",
+    type: "Gala & Đại Hội",
+    statusText: "Đã diễn ra",
   } as any,
 ];
 
@@ -1180,7 +1267,9 @@ function EventsScreen() {
   }, []);
 
   // Category & bookmark state
-  const [eventCategory, setEventCategory] = useState<"all" | "free" | "paid" | "registered" | "bookmarked" | "history">("all");
+  const [eventCategory, setEventCategory] = useState<
+    "all" | "upcoming" | "free" | "paid" | "registered" | "bookmarked" | "history" | "b2b" | "gala" | "training" | "caravan"
+  >("all");
   const [activityFilter, setActivityFilter] = useState<"all" | "fixed_committee" | "extraordinary">("all");
   const [recapModalEvent, setRecapModalEvent] = useState<MyEvent | any | null>(null);
   const [eventsPage, setEventsPage] = useState(1);
@@ -1360,18 +1449,35 @@ function EventsScreen() {
   const registeredEvents = events.filter((e) => isRegistered(e));
   const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
 
-  const filteredEvents =
-    eventCategory === "free"
-      ? freeEvents
-      : eventCategory === "paid"
-      ? paidEvents
-      : eventCategory === "registered"
-      ? registeredEvents
-      : eventCategory === "bookmarked"
-      ? bookmarkedEventsList
-      : eventCategory === "history"
-      ? pastEvents
-      : upcomingEvents;
+  const filteredEvents = useMemo(() => {
+    const allList = events.length > 0 ? events : defaultAllEvents;
+    switch (eventCategory) {
+      case "all":
+        return allList;
+      case "upcoming":
+        return upcomingEvents.length > 0 ? upcomingEvents : defaultAllEvents.filter((e) => !isEventPast(e));
+      case "free":
+        return freeEvents.length > 0 ? freeEvents : defaultAllEvents.filter((e) => isEventFree(e));
+      case "paid":
+        return paidEvents.length > 0 ? paidEvents : defaultAllEvents.filter((e) => !isEventFree(e));
+      case "registered":
+        return registeredEvents;
+      case "bookmarked":
+        return bookmarkedEventsList;
+      case "history":
+        return pastEvents.length > 0 ? pastEvents : defaultAllEvents.filter((e) => isEventPast(e));
+      case "b2b":
+        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b")));
+      case "gala":
+        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("gala") || (e.category || e.type || "").toLowerCase().includes("đại hội")));
+      case "training":
+        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("đào tạo") || (e.category || e.type || "").toLowerCase().includes("tọa đàm") || (e.category || e.type || "").toLowerCase().includes("workshop")));
+      case "caravan":
+        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("caravan") || (e.category || e.type || "").toLowerCase().includes("xúc tiến")));
+      default:
+        return allList;
+    }
+  }, [eventCategory, events, freeEvents, paidEvents, registeredEvents, bookmarkedEventsList, pastEvents, upcomingEvents]);
 
   const filteredMeetings = useMemo(() => {
     if (activityFilter === "fixed_committee") {
@@ -1760,11 +1866,16 @@ function EventsScreen() {
   }, [events, recentEventIds]);
 
   const displayUpcomingList = upcomingEvents.length > 0 ? upcomingEvents : defaultUpcomingEvents;
-  const displayEventsList = filteredEvents.length > 0 ? filteredEvents : (eventCategory === "all" ? defaultAllEvents : []);
-  const allEventsCount = events.length > 0 ? events.length : 22;
+  const displayEventsList = filteredEvents;
+  const allEventsCount = events.length > 0 ? events.length : defaultAllEvents.length;
+  const upcomingCount = upcomingEvents.length > 0 ? upcomingEvents.length : defaultAllEvents.filter((e) => !isEventPast(e)).length;
   const registeredCount = registeredEvents.length;
-  const freeCount = events.length > 0 ? freeEvents.length : 14;
-  const paidCount = events.length > 0 ? paidEvents.length : 8;
+  const freeCount = events.length > 0 ? freeEvents.length : defaultAllEvents.filter((e) => isEventFree(e)).length;
+  const paidCount = events.length > 0 ? paidEvents.length : defaultAllEvents.filter((e) => !isEventFree(e)).length;
+  const pastCount = pastEvents.length > 0 ? pastEvents.length : defaultAllEvents.filter((e) => isEventPast(e)).length;
+  const b2bCount = (events.length > 0 ? events : defaultAllEvents).filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b"))).length;
+  const galaCount = (events.length > 0 ? events : defaultAllEvents).filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("gala") || (e.category || e.type || "").toLowerCase().includes("đại hội"))).length;
+  const trainingCount = (events.length > 0 ? events : defaultAllEvents).filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("đào tạo") || (e.category || e.type || "").toLowerCase().includes("tọa đàm") || (e.category || e.type || "").toLowerCase().includes("workshop"))).length;
 
   const displayMeetingsList = filteredMeetings.length > 0 ? filteredMeetings : defaultMeetingsList;
   const allMeetingsCount = meetingsList.length > 0 ? meetingsList.length : 8;
@@ -1865,6 +1976,19 @@ function EventsScreen() {
               <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
                 Sự kiện sắp tới
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEventCategory("all");
+                  toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
+                  const el = document.getElementById("all-events-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="text-xs font-semibold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer transition active:scale-95"
+              >
+                <span>Xem tất cả ({allEventsCount})</span>
+                <img src="/icons/events/arrow-right-02.svg" className="size-3.5" alt="all" />
+              </button>
             </div>
 
             <FeaturedUpcomingEventHero
@@ -1874,27 +1998,27 @@ function EventsScreen() {
           </div>
 
           {/* Section: Tất cả sự kiện */}
-          <div className="self-stretch px-4 pb-6 flex flex-col justify-start items-center">
+          <div id="all-events-section" className="self-stretch px-4 pb-6 flex flex-col justify-start items-center scroll-mt-16">
             <div className="self-stretch flex flex-col justify-start items-start gap-3">
               <div className="self-stretch inline-flex justify-between items-center">
                 <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
-                  Tất cả sự kiện
+                  Tất cả sự kiện CLB
                 </div>
               </div>
 
-              {/* Filter Pills */}
-              <div className="self-stretch inline-flex justify-start items-center gap-1 overflow-x-auto no-scrollbar">
-                {/* Sắp diễn ra */}
+              {/* Filter Pills Đa Danh Mục */}
+              <div className="self-stretch inline-flex justify-start items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {/* 1. Tất cả */}
                 <button
                   type="button"
                   onClick={() => setEventCategory("all")}
-                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${
                     eventCategory === "all"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
                   }`}
                 >
-                  <span>Sắp diễn ra</span>
+                  <span>Tất cả</span>
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
                     eventCategory === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                   }`}>
@@ -1902,11 +2026,83 @@ function EventsScreen() {
                   </span>
                 </button>
 
-                {/* Đã đăng ký */}
+                {/* 2. Sắp diễn ra */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("upcoming")}
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "upcoming"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Sắp diễn ra</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "upcoming" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {upcomingCount}
+                  </span>
+                </button>
+
+                {/* 3. Giao thương B2B */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("b2b")}
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "b2b"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Giao thương B2B</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "b2b" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {b2bCount}
+                  </span>
+                </button>
+
+                {/* 4. Gala & Đại hội */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("gala")}
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "gala"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Gala & Đại hội</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "gala" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {galaCount}
+                  </span>
+                </button>
+
+                {/* 5. Đào tạo & Tọa đàm */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("training")}
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "training"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Đào tạo & Tọa đàm</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "training" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {trainingCount}
+                  </span>
+                </button>
+
+                {/* 6. Đã đăng ký */}
                 <button
                   type="button"
                   onClick={() => setEventCategory("registered")}
-                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
                     eventCategory === "registered"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
@@ -1920,11 +2116,11 @@ function EventsScreen() {
                   </span>
                 </button>
 
-                {/* Miễn phí */}
+                {/* 7. Miễn phí */}
                 <button
                   type="button"
                   onClick={() => setEventCategory("free")}
-                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
                     eventCategory === "free"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
@@ -1938,11 +2134,11 @@ function EventsScreen() {
                   </span>
                 </button>
 
-                {/* Có phí */}
+                {/* 8. Có phí */}
                 <button
                   type="button"
                   onClick={() => setEventCategory("paid")}
-                  className={`px-2.5 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
                     eventCategory === "paid"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
@@ -1955,12 +2151,53 @@ function EventsScreen() {
                     {paidCount}
                   </span>
                 </button>
+
+                {/* 9. Đã kết thúc / Lịch sử */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("history")}
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
+                    eventCategory === "history"
+                      ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
+                      : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>Lịch sử</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
+                    eventCategory === "history" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
+                    {pastCount}
+                  </span>
+                </button>
               </div>
             </div>
 
             {/* Event Cards List */}
             <div className="self-stretch pt-4 pb-3 flex flex-col justify-start items-start gap-2">
-              {displayEventsList.map((e, idx) => {
+              {displayEventsList.length === 0 ? (
+                <div className="self-stretch py-10 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-[#003B95] dark:text-blue-400">
+                    <Calendar className="size-6" />
+                  </div>
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Chưa có sự kiện nào trong danh mục này
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+                    Vui lòng chọn danh mục khác hoặc bấm xem tất cả sự kiện của CLB Doanh Nhân CEO 1983.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEventCategory("all");
+                      toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
+                    }}
+                    className="mt-1 px-4 py-2 rounded-lg bg-[#003B95] text-white text-xs font-semibold hover:bg-[#002B70] transition cursor-pointer"
+                  >
+                    Xem tất cả ({allEventsCount}) sự kiện
+                  </button>
+                </div>
+              ) : (
+                displayEventsList.map((e, idx) => {
                 const rawPrice = getEventPrice(e);
                 const isFree = isEventFree(e);
                 const registered = isRegistered(e);
@@ -2080,7 +2317,7 @@ function EventsScreen() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
 
             {/* Xem tất cả */}
@@ -2089,12 +2326,14 @@ function EventsScreen() {
                 type="button"
                 onClick={() => {
                   setEventCategory("all");
-                  toast.info("Đang hiển thị toàn bộ sự kiện CLB CEO 1983");
+                  toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
+                  const el = document.getElementById("all-events-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 inline-flex justify-start items-center gap-1.5 active:scale-95 transition cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 inline-flex justify-center items-center gap-2 active:scale-95 transition cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 shadow-2xs"
               >
                 <span className="text-[#003B95] dark:text-blue-400 text-sm font-semibold font-['Inter'] leading-5">
-                  Xem tất cả ({allEventsCount})
+                  Xem tất cả ({allEventsCount}) sự kiện
                 </span>
                 <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
               </button>

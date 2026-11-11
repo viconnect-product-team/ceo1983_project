@@ -536,6 +536,41 @@ export default function ProfileScreen() {
   const [cropTarget, setCropTarget] = useState<"avatar" | "cover">("avatar");
   const [cropImageUrl, setCropImageUrl] = useState("");
 
+  // Local responsive profile state (instant reactivity on Quick Edit & Save)
+  const [localProfile, setLocalProfile] = useState<any>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const uId = user?.id;
+      const userCp = uId ? localStorage.getItem(`vba_custom_profile_${uId}`) : null;
+      const genCp = localStorage.getItem("vba_custom_profile");
+      const saved = userCp || genCp;
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  useEffect(() => {
+    const handleProfileUpdated = (e: any) => {
+      const detail = e?.detail;
+      if (detail) {
+        setLocalProfile((prev: any) => ({ ...prev, ...detail }));
+        if (detail.avatar) {
+          setCustomAvatar(detail.avatar);
+          setAvatarError(false);
+        }
+        if (detail.cover) {
+          setCoverPhoto(detail.cover);
+        }
+      }
+    };
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    window.addEventListener("vba_profile_updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+      window.removeEventListener("vba_profile_updated", handleProfileUpdated);
+    };
+  }, []);
+
   useEffect(() => {
     const syncLocalMedia = () => {
       if (typeof window === "undefined") return;
@@ -720,16 +755,37 @@ export default function ProfileScreen() {
     }
   };
 
-  // Resolved dynamic fields
+  // Resolved dynamic fields with localProfile priority (instant reactivity)
   const memberCode = member?.code || (user as any)?.user_metadata?.member_code || "M1983-268";
   const displayName =
-    member?.name || user?.name || (user as any)?.user_metadata?.full_name || user?.username || "Doanh Nhân CEO 1983";
-  const displayTitle = member?.title || (member as any)?.position || "Tổng Giám Đốc / CEO";
-  const displayCompany = (member as any)?.companyName || (member as any)?.company || "Doanh nghiệp CLB CEO 1983";
-  const displayPhone = member?.phone || (user as any)?.phone || "0988888888";
+    localProfile?.name?.trim() ||
+    member?.name ||
+    user?.name ||
+    (user as any)?.user_metadata?.full_name ||
+    user?.username ||
+    "Doanh Nhân CEO 1983";
+  const displayTitle =
+    localProfile?.title?.trim() ||
+    member?.title ||
+    (member as any)?.position ||
+    "Tổng Giám Đốc / CEO";
+  const displayCompany =
+    localProfile?.company?.trim() ||
+    (member as any)?.companyName ||
+    (member as any)?.company ||
+    "Doanh nghiệp CLB CEO 1983";
+  const displayPhone =
+    localProfile?.phone?.trim() ||
+    member?.phone ||
+    (user as any)?.phone ||
+    "0988888888";
   const displayEmail = member?.email || user?.email || "lienhe@ceo1983club.com";
-  const displayWebsite = (member as any)?.website || "https://ceo1983club.com";
+  const displayWebsite =
+    localProfile?.website?.trim() ||
+    (member as any)?.website ||
+    "https://ceo1983club.com";
   const displayAddress =
+    localProfile?.address?.trim() ||
     (member as any)?.address ||
     (member as any)?.officeAddress ||
     "Tòa nhà CEO 1983 Tower, Cầu Giấy, TP. Hà Nội";
@@ -748,25 +804,29 @@ export default function ProfileScreen() {
   }
 
   const displayBio =
+    localProfile?.bio?.trim() ||
     rawBio ||
     "Hội viên tích cực CLB Doanh Nhân CEO 1983 (HanoiBA). Sẵn sàng giao lưu kết nối, hợp tác kinh doanh và mở rộng chuỗi cung ứng B2B bền vững.";
 
   const displayCompanySize =
+    localProfile?.companySize?.trim() ||
     extractedStaffSize ||
     "20 - 50 nhân sự";
 
   const displayIndustry =
+    localProfile?.industry?.trim() ||
     (member as any)?.industry ||
     (member as any)?.businessField ||
     (member as any)?.business_field ||
     "Sản xuất, Thương mại & Dịch vụ";
 
   const rawCurrentAvatar =
+    localProfile?.avatar ||
+    customAvatar ||
     member?.avatar ||
     (member as any)?.avatarUrl ||
     (user as any)?.avatar_url ||
     (user as any)?.user_metadata?.avatar_url ||
-    customAvatar ||
     null;
   const resolvedAvatar =
     rawCurrentAvatar && !isDeadAvatar(rawCurrentAvatar)
@@ -2446,7 +2506,15 @@ export default function ProfileScreen() {
         initialIndustry={displayIndustry}
         initialBio={displayBio}
         userId={user?.id}
-        onSaved={(_updated) => {
+        onSaved={(updated) => {
+          setLocalProfile((prev: any) => ({ ...prev, ...updated }));
+          if (updated.avatar) {
+            setCustomAvatar(updated.avatar);
+            setAvatarError(false);
+          }
+          if (updated.cover) {
+            setCoverPhoto(updated.cover);
+          }
           setEditProfileOpen(false);
           toast.success("Đã lưu cập nhật hồ sơ doanh nghiệp thành công!");
           reloadMember?.();

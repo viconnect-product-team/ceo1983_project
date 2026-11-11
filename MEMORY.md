@@ -1,5 +1,36 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.07): Khắc Phục Triệt Để Lỗi Lưu Chỉnh Sửa Nhanh & Màn Cá Nhân Không Đổi Thông Tin, Đồng Thời Nâng Cấp Nút "Xem Tất Cả" Màn Danh Sách Sự Kiện Hiển Thị Mọi Danh Mục ([NODE-APP-011], [NODE-APP-008], [NODE-APP-001], [NODE-CORE-002])**:
+  1. *Khắc phục triệt để lỗi không lưu được Chỉnh sửa nhanh & Màn cá nhân*:
+     - **Nguyên nhân gốc rễ**:
+       + Backend `apps/ceo1983_app_be/src/members/members.service.ts`: Trong phương thức `updateMyProfile`, câu lệnh SQL thô có biểu thức `WHERE user_id = ${userId}::uuid OR id::text = ${userId}::text` bị PostgreSQL báo lỗi `operator does not exist: text = uuid` do tham số `$1` bị cast thành `uuid`. Lỗi này bị block `.catch(() => null)` nuốt chửng dẫn tới việc bảng `public.members` không hề được cập nhật dữ liệu.
+       + Bảng `public.members` chưa có cột `title text`, khiến việc lưu chức danh công việc của hội viên không ghi nhận được vào trường riêng biệt.
+       + Frontend `QuickProfileEditModal.tsx`: Lệnh `fetchNestApi("/members/me", { method: "PUT", ... })` được gọi mà không có từ khóa `await`. Do đó, hàm `onSaved` được kích hoạt và trigger `reloadMember?.()` ngay lập tức khi máy chủ backend chưa kịp hoàn tất ghi dữ liệu xuống CSDL PostgreSQL, dẫn tới việc frontend tải lại bản ghi cũ đè lên dữ liệu vừa nhập.
+       + Màn hình cá nhân (`association.profile.tsx`): Trước đó không có local state phản ứng tức thì sau khi modal đóng, phụ thuộc 100% vào phản hồi mạng từ server cache.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database: Thêm cột `title text` vào bảng `public.members` và cập nhật dữ liệu ban đầu cho `admin@connect.vn`.
+       + Backend `members.service.ts`: Tách truy vấn lấy ID thành `SELECT id FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId}::text LIMIT 1` để lấy `memId`, sau đó thực hiện `UPDATE public.members ... WHERE id = ${memId}::text`. Bổ sung cập nhật cột `title = COALESCE(${title || null}, title)`.
+       + Backend `getMyMember`: Ưu tiên lấy `m.title || profile?.professional_title || cardSetting?.professional_title || ...`.
+       + Frontend `QuickProfileEditModal.tsx`: Bổ sung `await` cho lời gọi `fetchNestApi`, đảm bảo backend hoàn tất 100% ghi nhận xuống CSDL trước khi đóng modal và gọi `onSaved`. Phát đầy đủ các custom events (`profile-updated`, `vba_profile_updated`, `vba_member_avatar_updated`, `vba_member_company_logo_updated`, `vba_member_cover_updated`, `storage`).
+       + Frontend `association.profile.tsx` & `association.index.tsx`: Bổ sung `localProfile` state và hook lắng nghe sự kiện đồng bộ, ưu tiên hiển thị ngay lập tức tên, chức danh, công ty, số điện thoại, ảnh đại diện, ảnh bìa, logo công ty vừa lưu mà không bị chớp hay quay về giá trị cũ.
+  2. *Nâng cấp nút "Xem tất cả" màn Danh sách Sự kiện hiển thị trọn vẹn mọi danh mục*:
+     - **Nguyên nhân gốc rễ**:
+       + Trước đó, logic `filteredEvents` khi `eventCategory === "all"` chỉ lấy danh sách `upcomingEvents`, bỏ sót các sự kiện thuộc danh mục B2B, Gala, Caravan, Đào tạo, Có phí hoặc Lịch sử.
+       + Pill button đầu tiên trong thanh lọc trước đó bị gán nhãn "Sắp diễn ra" thay vì "Tất cả".
+       + Nút "Xem tất cả" ở cuối danh sách chỉ set category thành `"all"` (vốn đang là giá trị ban đầu) nên giao diện không có phản ứng rõ ràng.
+       + Sau khi reset DB, bảng `events` không có bản ghi nào, còn fallback `defaultAllEvents` chỉ có 3 mục sơ sài.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database & Data Seed: Thêm cột `title text` và `place text` vào bảng `public.events`. Seed 8 sự kiện chuẩn chỉnh phủ khắp 6 danh mục lớn: Hội nghị Giao thương B2B Quốc tế 2026, Gala Đại hội Doanh Nhân CEO 1983, Tọa đàm Chiến lược Vốn & M&A 2026, Caravan Xúc tiến Thương mại Tây Bắc, Cafe Doanh Nhân CEO 1983, Workshop Tối ưu hóa Vận hành Doanh nghiệp AI, Đêm tiệc CEO Executive Gala Dinner, Diễn đàn Kinh tế Số & Chuyển đổi Xanh.
+       + Mở rộng kiểu dữ liệu `eventCategory`: Hỗ trợ đầy đủ các tab lọc: `"all" | "upcoming" | "b2b" | "gala" | "training" | "caravan" | "registered" | "free" | "paid" | "history"`.
+       + Sửa logic `filteredEvents`: Khi `eventCategory === "all"`, trả về TOÀN BỘ 100% danh sách sự kiện ở tất cả danh mục.
+       + Thiết kế lại thanh Filter Pills: Hiển thị đầy đủ số lượng badge cho từng danh mục (Tất cả, Sắp diễn ra, Giao thương B2B, Gala & Đại hội, Đào tạo & Tọa đàm, Đã đăng ký, Miễn phí, Có phí, Lịch sử).
+       + Bổ sung nút "Xem tất cả ({allEventsCount})" ở cả Hero Header "Sự kiện sắp tới" và cuối danh sách thẻ sự kiện, kèm hiệu ứng cuộn mượt (`scrollIntoView`) và toast thông báo trạng thái.
+       + Bổ sung Empty State trực quan khi một danh mục chưa có sự kiện, kèm nút bấm một chạm quay lại xem toàn bộ sự kiện.
+  3. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.06): Chặn Triệt Để Vòng Lặp Redirect & Ép Buộc Mở Trực Tiếp Form Đăng Ký Hội Viên Gia Nhập (`Ceo1983MemberRegistrationForm`) Khi Bấm Đăng Ký Mới ([NODE-APP-001], [NODE-APP-002], [NODE-CORE-001])**:
   1. *Nguyên nhân cốt lõi gây lỗi Redirect & Phải bấm Back*:
      - Tuyến `/association/register` được lồng dưới Route cha `/association` (`apps/ceo1983_app_fe/src/routes/association.tsx`).
@@ -1213,6 +1244,37 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.07): Khắc Phục Triệt Để Lỗi Lưu Chỉnh Sửa Nhanh & Màn Cá Nhân Không Đổi Thông Tin, Đồng Thời Nâng Cấp Nút "Xem Tất Cả" Màn Danh Sách Sự Kiện Hiển Thị Mọi Danh Mục ([NODE-APP-011], [NODE-APP-008], [NODE-APP-001], [NODE-CORE-002])**:
+  1. *Khắc phục triệt để lỗi không lưu được Chỉnh sửa nhanh & Màn cá nhân*:
+     - **Nguyên nhân gốc rễ**:
+       + Backend `apps/ceo1983_app_be/src/members/members.service.ts`: Trong phương thức `updateMyProfile`, câu lệnh SQL thô có biểu thức `WHERE user_id = ${userId}::uuid OR id::text = ${userId}::text` bị PostgreSQL báo lỗi `operator does not exist: text = uuid` do tham số `$1` bị cast thành `uuid`. Lỗi này bị block `.catch(() => null)` nuốt chửng dẫn tới việc bảng `public.members` không hề được cập nhật dữ liệu.
+       + Bảng `public.members` chưa có cột `title text`, khiến việc lưu chức danh công việc của hội viên không ghi nhận được vào trường riêng biệt.
+       + Frontend `QuickProfileEditModal.tsx`: Lệnh `fetchNestApi("/members/me", { method: "PUT", ... })` được gọi mà không có từ khóa `await`. Do đó, hàm `onSaved` được kích hoạt và trigger `reloadMember?.()` ngay lập tức khi máy chủ backend chưa kịp hoàn tất ghi dữ liệu xuống CSDL PostgreSQL, dẫn tới việc frontend tải lại bản ghi cũ đè lên dữ liệu vừa nhập.
+       + Màn hình cá nhân (`association.profile.tsx`): Trước đó không có local state phản ứng tức thì sau khi modal đóng, phụ thuộc 100% vào phản hồi mạng từ server cache.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database: Thêm cột `title text` vào bảng `public.members` và cập nhật dữ liệu ban đầu cho `admin@connect.vn`.
+       + Backend `members.service.ts`: Tách truy vấn lấy ID thành `SELECT id FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId}::text LIMIT 1` để lấy `memId`, sau đó thực hiện `UPDATE public.members ... WHERE id = ${memId}::text`. Bổ sung cập nhật cột `title = COALESCE(${title || null}, title)`.
+       + Backend `getMyMember`: Ưu tiên lấy `m.title || profile?.professional_title || cardSetting?.professional_title || ...`.
+       + Frontend `QuickProfileEditModal.tsx`: Bổ sung `await` cho lời gọi `fetchNestApi`, đảm bảo backend hoàn tất 100% ghi nhận xuống CSDL trước khi đóng modal và gọi `onSaved`. Phát đầy đủ các custom events (`profile-updated`, `vba_profile_updated`, `vba_member_avatar_updated`, `vba_member_company_logo_updated`, `vba_member_cover_updated`, `storage`).
+       + Frontend `association.profile.tsx` & `association.index.tsx`: Bổ sung `localProfile` state và hook lắng nghe sự kiện đồng bộ, ưu tiên hiển thị ngay lập tức tên, chức danh, công ty, số điện thoại, ảnh đại diện, ảnh bìa, logo công ty vừa lưu mà không bị chớp hay quay về giá trị cũ.
+  2. *Nâng cấp nút "Xem tất cả" màn Danh sách Sự kiện hiển thị trọn vẹn mọi danh mục*:
+     - **Nguyên nhân gốc rễ**:
+       + Trước đó, logic `filteredEvents` khi `eventCategory === "all"` chỉ lấy danh sách `upcomingEvents`, bỏ sót các sự kiện thuộc danh mục B2B, Gala, Caravan, Đào tạo, Có phí hoặc Lịch sử.
+       + Pill button đầu tiên trong thanh lọc trước đó bị gán nhãn "Sắp diễn ra" thay vì "Tất cả".
+       + Nút "Xem tất cả" ở cuối danh sách chỉ set category thành `"all"` (vốn đang là giá trị ban đầu) nên giao diện không có phản ứng rõ ràng.
+       + Sau khi reset DB, bảng `events` không có bản ghi nào, còn fallback `defaultAllEvents` chỉ có 3 mục sơ sài.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database & Data Seed: Thêm cột `title text` và `place text` vào bảng `public.events`. Seed 8 sự kiện chuẩn chỉnh phủ khắp 6 danh mục lớn: Hội nghị Giao thương B2B Quốc tế 2026, Gala Đại hội Doanh Nhân CEO 1983, Tọa đàm Chiến lược Vốn & M&A 2026, Caravan Xúc tiến Thương mại Tây Bắc, Cafe Doanh Nhân CEO 1983, Workshop Tối ưu hóa Vận hành Doanh nghiệp AI, Đêm tiệc CEO Executive Gala Dinner, Diễn đàn Kinh tế Số & Chuyển đổi Xanh.
+       + Mở rộng kiểu dữ liệu `eventCategory`: Hỗ trợ đầy đủ các tab lọc: `"all" | "upcoming" | "b2b" | "gala" | "training" | "caravan" | "registered" | "free" | "paid" | "history"`.
+       + Sửa logic `filteredEvents`: Khi `eventCategory === "all"`, trả về TOÀN BỘ 100% danh sách sự kiện ở tất cả danh mục.
+       + Thiết kế lại thanh Filter Pills: Hiển thị đầy đủ số lượng badge cho từng danh mục (Tất cả, Sắp diễn ra, Giao thương B2B, Gala & Đại hội, Đào tạo & Tọa đàm, Đã đăng ký, Miễn phí, Có phí, Lịch sử).
+       + Bổ sung nút "Xem tất cả ({allEventsCount})" ở cả Hero Header "Sự kiện sắp tới" và cuối danh sách thẻ sự kiện, kèm hiệu ứng cuộn mượt (`scrollIntoView`) và toast thông báo trạng thái.
+       + Bổ sung Empty State trực quan khi một danh mục chưa có sự kiện, kèm nút bấm một chạm quay lại xem toàn bộ sự kiện.
+  3. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.06): Chặn Triệt Để Vòng Lặp Redirect & Ép Buộc Mở Trực Tiếp Form Đăng Ký Hội Viên Gia Nhập (`Ceo1983MemberRegistrationForm`) Khi Bấm Đăng Ký Mới ([NODE-APP-001], [NODE-APP-002], [NODE-CORE-001])**:
   1. *Nguyên nhân cốt lõi gây lỗi Redirect & Phải bấm Back*:

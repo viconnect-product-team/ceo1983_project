@@ -280,14 +280,72 @@ export function QuickProfileEditModal({
         userId: userId || undefined,
       };
 
-      // 1. Save to local storage for instant responsiveness
+      // 1. Sync to Nest backend API FIRST and await to guarantee persistence in PostgreSQL
+      const payload = {
+        name: name.trim(),
+        phone: phone.trim(),
+        company: company.trim(),
+        title: title.trim(),
+        address: address.trim(),
+        latitude: geoLat,
+        longitude: geoLng,
+        website: website.trim(),
+        companySize: companySize.trim(),
+        industry: industry.trim(),
+        bio: bio.trim(),
+        avatar: avatar || null,
+        coverUrl: cover || null,
+        companyLogoUrl: companyLogo || null,
+      };
+
+      if (geoLat && geoLng) {
+        fetchNestApi("/members/my-location", {
+          method: "PUT",
+          body: JSON.stringify({
+            latitude: geoLat,
+            longitude: geoLng,
+            address: address.trim(),
+            isSharing: true,
+          }),
+        }).catch(() => null);
+      }
+
+      let backendResult: any = null;
+      try {
+        backendResult = await fetchNestApi("/members/me", {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        }).catch(async () => {
+          return fetchNestApi("/members/me/profile", {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          });
+        });
+
+        if (cover) {
+          await fetchNestApi("/members/me/cover", {
+            method: "PATCH",
+            body: JSON.stringify({ coverUrl: cover }),
+          }).catch(() => null);
+        }
+      } catch (apiErr) {
+        console.warn("Backend update API warning, continuing with local persistence:", apiErr);
+      }
+
+      // 2. Save to local storage for instant responsiveness & offline resilience
       try {
         if (userId) {
           localStorage.setItem(`vba_custom_profile_${userId}`, JSON.stringify(updatedData));
         }
         localStorage.setItem("vba_custom_profile", JSON.stringify(updatedData));
+        if (name.trim()) {
+          localStorage.setItem("vba_member_name", name.trim());
+        }
         if (title.trim()) {
           localStorage.setItem("vba_member_title", title.trim());
+        }
+        if (company.trim()) {
+          localStorage.setItem("vba_member_company", company.trim());
         }
         if (companySize.trim()) {
           localStorage.setItem("vba_member_company_size", companySize.trim());
@@ -318,6 +376,7 @@ export function QuickProfileEditModal({
         const existingMem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
         const newMem = {
           ...existingMem,
+          ...(backendResult || {}),
           name: updatedData.name || existingMem.name,
           phone: updatedData.phone || existingMem.phone,
           company: updatedData.company || existingMem.company,
@@ -344,67 +403,18 @@ export function QuickProfileEditModal({
         console.warn("Storage save error:", storageErr);
       }
 
-      // 2. Dispatch global events
+      // 3. Dispatch global events to notify all active views & widgets
       window.dispatchEvent(new CustomEvent("profile-updated", { detail: updatedData }));
       window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: updatedData }));
       window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: cover }));
       window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: avatar }));
       window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: companyLogo }));
+      window.dispatchEvent(new Event("storage"));
 
-      // 3. Callback immediately to update parent state in UI
+      // 4. Callback immediately to update parent state in UI
       if (onSaved) onSaved(updatedData);
 
-      // 4. Sync to Nest backend API in background without blocking
-      const payload = {
-        name: name.trim(),
-        phone: phone.trim(),
-        company: company.trim(),
-        title: title.trim(),
-        address: address.trim(),
-        latitude: geoLat,
-        longitude: geoLng,
-        website: website.trim(),
-        companySize: companySize.trim(),
-        industry: industry.trim(),
-        bio: bio.trim(),
-        avatar: avatar,
-        coverUrl: cover,
-        companyLogoUrl: companyLogo,
-      };
-
-      if (geoLat && geoLng) {
-        fetchNestApi("/members/my-location", {
-          method: "PUT",
-          body: JSON.stringify({
-            latitude: geoLat,
-            longitude: geoLng,
-            address: address.trim(),
-            isSharing: true,
-          }),
-        }).catch(() => null);
-      }
-
-      fetchNestApi("/members/me", {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      })
-        .catch(() => {
-          return fetchNestApi("/members/me/profile", {
-            method: "PATCH",
-            body: JSON.stringify(payload),
-          });
-        })
-        .then(() => {
-          if (cover) {
-            fetchNestApi("/members/me/cover", {
-              method: "PATCH",
-              body: JSON.stringify({ coverUrl: cover }),
-            }).catch(() => null);
-          }
-        })
-        .catch(() => null);
-
-      toast.success("Đã cập nhật thông tin nhanh thành công!");
+      toast.success("Đã cập nhật thông tin tài khoản thành công!");
       onClose();
     } catch {
       toast.error("Có lỗi xảy ra khi lưu thông tin");

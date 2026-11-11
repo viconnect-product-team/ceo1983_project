@@ -935,11 +935,12 @@ export class MembersService {
         verified: m.status === 'active',
         type: m.type === 'individual' ? 'individual' : 'company',
         title:
-          m.executive_role ||
-          m.department ||
-          (m.contact && m.contact !== m.name ? m.contact : null) ||
+          m.title ||
           profile?.professional_title ||
-          'Hội viên chính thức',
+          cardSetting?.professional_title ||
+          (m.executive_role && m.executive_role !== 'admin' && m.executive_role !== 'member' ? m.executive_role : null) ||
+          m.department ||
+          'Tổng Giám Đốc / CEO',
         company: unifiedCompanyName,
         companyName: unifiedCompanyName,
         email: m.email ?? user?.email ?? '',
@@ -1121,52 +1122,37 @@ export class MembersService {
 
     // 3. Update members table
     try {
-      await this.prisma.$executeRaw`
-        UPDATE public.members
-        SET
-          name = COALESCE(${name || null}, name),
-          contact = COALESCE(${name || null}, contact),
-          executive_role = COALESCE(${title || null}, executive_role),
-          company_name = COALESCE(${company || null}, company_name),
-          about = COALESCE(${bio || company || null}, about),
-          phone = COALESCE(${phone || null}, phone),
-          email = COALESCE(${email || null}, email),
-          address = COALESCE(${address || null}, address),
-          latitude = COALESCE(${data.latitude !== undefined ? data.latitude : null}, latitude),
-          longitude = COALESCE(${data.longitude !== undefined ? data.longitude : null}, longitude),
-          is_location_sharing = CASE WHEN ${data.latitude !== undefined} THEN true ELSE is_location_sharing END,
-          last_location_updated_at = CASE WHEN ${data.latitude !== undefined} THEN NOW() ELSE last_location_updated_at END,
-          website = COALESCE(${website || null}, website),
-          company_size = COALESCE(${companySize || null}, company_size),
-          industry = COALESCE(${industry || null}, industry),
-          avatar_url = COALESCE(${avatar || null}, avatar_url),
-          avatar = COALESCE(${avatar || null}, avatar),
-          company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
-          updated_at = NOW()
-        WHERE user_id = ${userId}::uuid OR id::text = ${userId}::text
-      `.catch(() => null);
-
-      // Sync to member_business_cards
-      await this.prisma.$executeRaw`
-        UPDATE public.member_business_cards
-        SET
-          display_name = COALESCE(${name || null}, display_name),
-          professional_title = COALESCE(${title || null}, professional_title),
-          company_name = COALESCE(${company || null}, company_name),
-          avatar_url = COALESCE(${avatar || null}, avatar_url),
-          company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
-          work_phone = COALESCE(${phone || null}, work_phone),
-          work_email = COALESCE(${email || null}, work_email),
-          address = COALESCE(${address || null}, address),
-          latitude = COALESCE(${data.latitude !== undefined ? data.latitude : null}, latitude),
-          longitude = COALESCE(${data.longitude !== undefined ? data.longitude : null}, longitude),
-          is_location_sharing = CASE WHEN ${data.latitude !== undefined} THEN true ELSE is_location_sharing END,
-          last_location_updated_at = CASE WHEN ${data.latitude !== undefined} THEN NOW() ELSE last_location_updated_at END,
-          website = COALESCE(${website || null}, website),
-          bio = COALESCE(${bio || null}, bio),
-          updated_at = NOW()
-        WHERE owner_user_id = ${userId}::uuid;
-      `.catch(() => null);
+      const memRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId}::text LIMIT 1
+      `.catch(() => []);
+      if (memRows.length > 0) {
+        const memId = String(memRows[0].id);
+        await this.prisma.$executeRaw`
+          UPDATE public.members
+          SET
+            name = COALESCE(${name || null}, name),
+            contact = COALESCE(${name || null}, contact),
+            title = COALESCE(${title || null}, title),
+            executive_role = COALESCE(${title || null}, executive_role),
+            company_name = COALESCE(${company || null}, company_name),
+            about = COALESCE(${bio || company || null}, about),
+            phone = COALESCE(${phone || null}, phone),
+            email = COALESCE(${email || null}, email),
+            address = COALESCE(${address || null}, address),
+            latitude = COALESCE(${data.latitude !== undefined ? data.latitude : null}, latitude),
+            longitude = COALESCE(${data.longitude !== undefined ? data.longitude : null}, longitude),
+            is_location_sharing = CASE WHEN ${data.latitude !== undefined} THEN true ELSE is_location_sharing END,
+            last_location_updated_at = CASE WHEN ${data.latitude !== undefined} THEN NOW() ELSE last_location_updated_at END,
+            website = COALESCE(${website || null}, website),
+            company_size = COALESCE(${companySize || null}, company_size),
+            industry = COALESCE(${industry || null}, industry),
+            avatar_url = COALESCE(${avatar || null}, avatar_url),
+            avatar = COALESCE(${avatar || null}, avatar),
+            company_logo_url = COALESCE(${companyLogo || null}, company_logo_url),
+            updated_at = NOW()
+          WHERE id = ${memId}::text
+        `;
+      }
     } catch {}
 
     // 4. Update card_settings
