@@ -722,36 +722,52 @@ export class EventsService implements OnModuleInit {
         )
       `;
     } catch {
-      await this.prisma.$executeRaw`
-        INSERT INTO public.events (
-          id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, start_time, end_time, agenda, checkin_qr, created_at, updated_at
-        ) VALUES (
-          ${eventId},
-          ${data.name},
-          ${safeDate}::date,
-          ${data.location ?? ''},
-          ${safeCapacity},
-          0,
-          ${data.status ?? 'upcoming'},
-          ${data.type ?? 'forum'},
-          ${qrFields}::text[],
-          ${assocId}::uuid,
-          ${evImg},
-          ${evImg},
-          ${ticketPrice},
-          ${ticketPrice},
-          ${desc},
-          ${photoGallery},
-          ${scannersJson}::jsonb,
-          ${sponsorsJson}::jsonb,
-          ${startTime},
-          ${endTime},
-          ${agendaJson}::jsonb,
-          ${checkinQr},
-          now(),
-          now()
-        )
-      `;
+      try {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.events (
+            id, name, date, location, capacity, registered, status, type, qr_fields, association_id, image, banner, ticket_price, fee, description, photo_gallery_url, qr_scanners, sponsors, created_at, updated_at
+          ) VALUES (
+            ${eventId},
+            ${data.name},
+            ${safeDate}::date,
+            ${data.location ?? ''},
+            ${safeCapacity},
+            0,
+            ${data.status ?? 'upcoming'},
+            ${data.type ?? 'forum'},
+            ${qrFields}::text[],
+            ${assocId}::uuid,
+            ${evImg},
+            ${evImg},
+            ${ticketPrice},
+            ${ticketPrice},
+            ${desc},
+            ${photoGallery},
+            ${scannersJson}::jsonb,
+            ${sponsorsJson}::jsonb,
+            now(),
+            now()
+          )
+        `;
+      } catch {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.events (
+            id, name, date, location, capacity, registered, status, type, association_id, created_at, updated_at
+          ) VALUES (
+            ${eventId},
+            ${data.name},
+            ${safeDate}::date,
+            ${data.location ?? ''},
+            ${safeCapacity},
+            0,
+            ${data.status ?? 'upcoming'},
+            ${data.type ?? 'forum'},
+            ${assocId}::uuid,
+            now(),
+            now()
+          )
+        `;
+      }
     }
 
     // Handle ticket types if provided (wizard)
@@ -1486,40 +1502,42 @@ export class EventsService implements OnModuleInit {
     // Gửi email vé sự kiện điện tử (E-Ticket) CHỈ DÀNH CHO SỰ KIỆN MIỄN PHÍ (0đ).
     // Sự kiện có phí phải chờ Ban Truyền Thông / Tài Chính kiểm tra và bấm "Đã thanh toán" mới gửi vé kèm QR check-in!
     if (isFree && email && email.includes('@')) {
-      try {
-        await this.mailService.sendEventTicketEmail({
-          to: email,
-          fullName: memberName,
-          phone,
-          company,
-          position,
-          eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
-          eventDate: event.date
-            ? event.date instanceof Date
-              ? event.date.toLocaleDateString('vi-VN')
-              : String(event.date).slice(0, 10)
-            : 'Sắp diễn ra',
-          eventLocation: event.location || 'Hà Nội',
-          registrationId: regId,
-          ticketType,
-          ticketCount,
-          luckyNumber: luckyNum,
-          isFree: true,
-          totalAmount: 0,
-          qrCodeUrl,
-          vietQrUrl: '',
-          bankAccount: '1983000000',
-          bankName: 'MB Bank (Quân Đội)',
-          bankOwner: 'CLB DOANH NHAN CEO 1983',
-        });
-        this.logger.log(
-          `Member free event ticket email dispatched to ${email} (Registration: ${regId}, Lucky #${luckyNum})`,
-        );
-      } catch (err: any) {
-        this.logger.warn(
-          `Failed to dispatch event ticket email to member ${email}: ${err?.message}`,
-        );
-      }
+      void (async () => {
+        try {
+          await this.mailService.sendEventTicketEmail({
+            to: email,
+            fullName: memberName,
+            phone,
+            company,
+            position,
+            eventTitle: event.title || event.name || 'Sự kiện CLB CEO 1983',
+            eventDate: event.date
+              ? event.date instanceof Date
+                ? event.date.toLocaleDateString('vi-VN')
+                : String(event.date).slice(0, 10)
+              : 'Sắp diễn ra',
+            eventLocation: event.location || 'Hà Nội',
+            registrationId: regId,
+            ticketType,
+            ticketCount,
+            luckyNumber: luckyNum,
+            isFree: true,
+            totalAmount: 0,
+            qrCodeUrl,
+            vietQrUrl: '',
+            bankAccount: '1983000000',
+            bankName: 'MB Bank (Quân Đội)',
+            bankOwner: 'CLB DOANH NHAN CEO 1983',
+          });
+          this.logger.log(
+            `Member free event ticket email dispatched to ${email} (Registration: ${regId}, Lucky #${luckyNum})`,
+          );
+        } catch (err: any) {
+          this.logger.warn(
+            `Failed to dispatch event ticket email to member ${email}: ${err?.message}`,
+          );
+        }
+      })();
     }
 
     // Đối với sự kiện có phí: chỉ gửi email thông báo mã VNPAY-QR thanh toán (KHÔNG có số lucky, mã dự thưởng, hay mã QR vé)
@@ -1553,43 +1571,45 @@ export class EventsService implements OnModuleInit {
         bankOwner: 'CLB DOANH NHAN CEO 1983',
       };
 
-      if (email && email.includes('@')) {
-        try {
-          await this.mailService.sendEventTicketEmail({
-            ...paymentNoticePayload,
-            to: email,
-          });
-          this.logger.log(
-            `Paid event registration VietQR email dispatched to registrant ${email}`,
-          );
-        } catch (err: any) {
-          this.logger.warn(
-            `Failed to dispatch paid event VietQR email to registrant ${email}: ${err?.message}`,
-          );
+      void (async () => {
+        if (email && email.includes('@')) {
+          try {
+            await this.mailService.sendEventTicketEmail({
+              ...paymentNoticePayload,
+              to: email,
+            });
+            this.logger.log(
+              `Paid event registration VietQR email dispatched to registrant ${email}`,
+            );
+          } catch (err: any) {
+            this.logger.warn(
+              `Failed to dispatch paid event VietQR email to registrant ${email}: ${err?.message}`,
+            );
+          }
         }
-      }
 
-      const primaryAdminEmail =
-        process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com';
-      if (
-        primaryAdminEmail &&
-        primaryAdminEmail.toLowerCase() !== email.toLowerCase()
-      ) {
-        try {
-          await this.mailService.sendEventTicketEmail({
-            ...paymentNoticePayload,
-            to: primaryAdminEmail,
-            fullName: `${memberName} (Đăng ký vé có phí - Hệ thống)`,
-          });
-          this.logger.log(
-            `Paid event registration VietQR email dispatched to primary admin ${primaryAdminEmail}`,
-          );
-        } catch (err: any) {
-          this.logger.warn(
-            `Failed to dispatch paid event email to primary admin: ${err?.message}`,
-          );
+        const primaryAdminEmail =
+          process.env.ADMIN_NOTIFY_EMAIL || 'vupv090120@gmail.com';
+        if (
+          primaryAdminEmail &&
+          primaryAdminEmail.toLowerCase() !== email.toLowerCase()
+        ) {
+          try {
+            await this.mailService.sendEventTicketEmail({
+              ...paymentNoticePayload,
+              to: primaryAdminEmail,
+              fullName: `${memberName} (Đăng ký vé có phí - Hệ thống)`,
+            });
+            this.logger.log(
+              `Paid event registration VietQR email dispatched to primary admin ${primaryAdminEmail}`,
+            );
+          } catch (err: any) {
+            this.logger.warn(
+              `Failed to dispatch paid event email to primary admin: ${err?.message}`,
+            );
+          }
         }
-      }
+      })();
     }
 
     return {

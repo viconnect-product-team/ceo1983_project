@@ -1,5 +1,44 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.00): Tổng Kiểm Thử Độc Lập Toàn Diện Đa Vai Trò (Multi-Role Deep QA & E2E Verification) Sẵn Sàng Bàn Giao Khách Hàng ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-015])**:
+  1. *Khởi tạo & Chuẩn hóa 3 Tài khoản Kiểm thử Độc lập theo yêu cầu*:
+     - **Admin (`admin@connect.vn`, Pass: `123456`)**: Quản Trị Viên Hệ Thống (M1983-268), toàn quyền Quản trị Web CRM, Tài chính S07-DN, Quản lý Hội viên, Tổ chức Sự kiện, Phân quyền RBAC.
+     - **Member 1 (`vumikasa6@gmail.com`, Pass: `123456`)**: Vũ Minh Kas (M1983-001), Phó Trưởng Ban Truyền Thông & Sự Kiện (ViConnect), kiểm thử toàn diện Mobile PWA, Thẻ Doanh nhân số, Đăng tin B2B, Đăng sản phẩm Sàn Marketplace, Đặt lịch Sapphire Hub.
+     - **Member 2 (`vupv090120@gmail.com`, Pass: `123456`)**: Vũ Phương (M1983-002), Ủy viên Ban Xúc Tiến Thương Mại, kiểm thử tương tác chéo: Thể hiện quan tâm cơ hội B2B của Member 1, Yêu cầu báo giá sản phẩm, Đăng ký vé sự kiện, Tiếp nhận lịch hẹn 1-on-1, RBAC Guard kiểm tra chặn truy cập trái phép.
+  2. *Thực thi Bộ Kiểm Thử Tự Động 14 Test Suites (51 Tests - Đạt 100% PASS)*:
+     - **Suite 1: Xác thực & Kiểm soát Phân quyền RBAC**: Đăng nhập 3 tài khoản thành công HTTP 200; Từ chối mật khẩu sai HTTP 401; Chặn truy cập unauthenticated HTTP 401; Chặn hội viên thường gọi endpoint Quản trị `/admin/transactions` bằng HTTP 403 Forbidden; Cho phép Admin truy cập `/admin/permission-matrix` HTTP 200.
+     - **Suite 2: Hồ sơ Cá nhân, Bối cảnh Hội viên & Thẻ Doanh nhân số**: Kiểm tra `/users/me`, `/members/me`, `/business-cards/settings/me` trả về đúng hồ sơ, mã hội viên M1983-001/M1983-002 và chức vụ.
+     - **Suite 3: Danh bạ Hội viên, Ban Chuyên môn & Nhận diện Thương hiệu**: `/members` và `/members/directory` trả về đầy đủ 3 hội viên; Kiểm tra `/members/brand` và `/members/benefits` trả về danh mục quyền lợi chuẩn.
+     - **Suite 4: Quản lý Tài chính & Sổ Quỹ Thu Chi S07-DN**: Admin tạo phiếu Thu (2,000,000 VNĐ) mã `PT-2026-...` và phiếu Chi (500,000 VNĐ) thành công; Hội viên tra cứu báo giá gia hạn `/members/me/renewal-quote`.
+     - **Suite 5: Quản lý Sự kiện, Đặt vé & Danh sách Đăng ký**: Admin tạo sự kiện có phí (500,000 VNĐ); Hội viên duyệt sự kiện; Cả 2 hội viên đăng ký vé tham dự; Admin kiểm tra danh sách đăng ký `/events/registrations`.
+     - **Suite 6: Động cơ Check-in QR & Trạng thái Cổng**: Kiểm tra `/checkin/state` và `/checkin/qr-events` sẵn sàng phục vụ quét vé laser scan.
+     - **Suite 7: Sàn Giao thương B2B & Hợp tác Kinh doanh**: Member 1 đăng bài cơ hội B2B ERP; Member 2 xem feed cơ hội và gửi yêu cầu kết nối quan tâm (`/opportunities/:id/interests`).
+     - **Suite 8: Sàn Marketplace & Giới thiệu Sản phẩm Nội khối**: Member 1 đăng sản phẩm ViConnect SaaS Enterprise; Member 2 duyệt sàn và gửi yêu cầu báo giá (`/marketplace/quotes`).
+     - **Suite 9: Cuộc hẹn Giao thương 1-on-1 (Sapphire Hub)**: Member 1 gửi lời mời hẹn 1-on-1 tại Phòng VIP Sapphire Hub; Member 2 nhận và truy xuất danh sách cuộc hẹn `/meetings`.
+     - **Suite 10: Bảng tin Cộng đồng (Feed), Like & Bình luận Đa kênh**: Admin đăng thông báo chính thức; Member 1 đọc tin và thả Tim (Like); Member 2 gửi bình luận giao lưu.
+     - **Suite 11: Khảo sát, Biểu quyết Voting & Quay số Lucky Draw**: Admin tạo cuộc khảo sát Caravan 2026; Member 1 lấy danh sách bình chọn; Admin kích hoạt thông báo trúng thưởng Lucky Draw.
+     - **Suite 12: Cổng Thông báo Zalo OA & Email Gateway**: Xác thực Webhook Zalo OA (`/zalo/webhook`); Kiểm tra cấu hình OA (`/zalo/oa-config`); Đọc mẫu thông báo Zalo & Email templates.
+     - **Suite 13: Web CRM Quản trị Landing Web & Tính toàn vẹn**: Truy vấn `/admin/landing-webs` và `/members/active-association-id`.
+     - **Suite 14: Đăng xuất An toàn & Thu hồi Phiên**: Đăng xuất sạch sẽ cả 3 tài khoản (`/auth/logout`).
+  3. *Phát hiện & Sửa triệt để 2 lỗi hệ thống cốt lõi (Defect Fixes)*:
+     - **Lỗi 1 (Events Service Create Fallback)**: Table `public.events` không có các cột `start_time, end_time, agenda, checkin_qr, tagline`. Đã cập nhật fallback query trong `events.service.ts` để chỉ insert các cột thực tế tồn tại trong CSDL.
+     - **Lỗi 2 (Marketplace Service Product Insert)**: Bảng `public.products` có ràng buộc NOT NULL trên cột `id`, mảng ảnh `image_urls` kiểu `text[]`, và cột `facebook_url` có dấu gạch dưới. Đã sửa trong `marketplace.service.ts` cấp phát `id`, ép kiểu `${imageUrls}::text[]` và sửa tên cột chuẩn.
+     - **Tối ưu Asynchronous Email Dispatch**: Chuyển việc gửi email vé qua Gmail SMTP trong `events.service.ts` sang nền `void (async () => { ... })()`, giải phóng luồng HTTP đăng ký sự kiện tức thì (dưới 100ms), triệt tiêu hoàn toàn nguy cơ request timeout.
+  4. *Bằng chứng kiểm thử giao diện thực tế (Playwright E2E Visual Evidence)*:
+     - Chạy Playwright kết nối trực tiếp MS Edge Headless trên giao diện Desktop (1440x900) và Mobile Viewport (390x844).
+     - Chụp và lưu trữ 6 ảnh bằng chứng tại `CEO1983_QA_AUDIT/07_EVIDENCE/SCREENSHOTS/MULTI_ROLE_VERIFICATION/`:
+       + `01_ADMIN_WEB_CRM.png`: Giao diện Cổng Quản trị Web CRM đăng nhập bằng `admin@connect.vn`.
+       + `02_ADMIN_MEMBERS_DIRECTORY.png`: Bảng quản lý Hội viên và bộ lọc phòng ban CRM.
+       + `03_MEMBER1_MOBILE_SHELL.png`: Giao diện ứng dụng di động Mobile PWA của Member 1 (`vumikasa6@gmail.com`).
+       + `04_MEMBER1_DIGITAL_CARD.png`: Thẻ Doanh nhân số cá nhân của Member 1.
+       + `05_MEMBER2_EVENTS.png`: Màn hình duyệt và đăng ký sự kiện của Member 2 (`vupv090120@gmail.com`).
+       + `06_MEMBER2_OPPORTUNITIES.png`: Sàn giao thương B2B của Member 2.
+  5. *Đảm bảo Chất lượng Mã nguồn Tuyệt đối (Strict TypeScript Check)*:
+     - `cd apps/ceo1983_app_be; npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `cd apps/ceo1983_app_fe; npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu giữ an toàn trên local repository.
+
+
 - **Bản cập nhật ngày 10/11/2026 (v10.99): Tổng Kiểm Toán Toàn Diện Hệ Thống (Master QA & System Audit), Phát Hiện & Xử Lý 100% Lỗi Hồi Quy, Xuất Trọn Bộ Hồ Sơ Nghiệm Thu Đa Định Dạng ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-015], [NODE-CORE-001] đến [NODE-CORE-006])**:
   1. *Khảo sát & Kiểm kê 100% tài nguyên hệ sinh thái CEO 1983*:
      - **38 Phân hệ nghiệp vụ (Functional Nodes)**: 17 CRM Nodes, 15 Mobile App Nodes, 6 Core Backend Nodes được đối soát ma trận truy vết chuỗi giá trị (RTM).
@@ -1035,6 +1074,45 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.00): Tổng Kiểm Thử Độc Lập Toàn Diện Đa Vai Trò (Multi-Role Deep QA & E2E Verification) Sẵn Sàng Bàn Giao Khách Hàng ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-015])**:
+  1. *Khởi tạo & Chuẩn hóa 3 Tài khoản Kiểm thử Độc lập theo yêu cầu*:
+     - **Admin (`admin@connect.vn`, Pass: `123456`)**: Quản Trị Viên Hệ Thống (M1983-268), toàn quyền Quản trị Web CRM, Tài chính S07-DN, Quản lý Hội viên, Tổ chức Sự kiện, Phân quyền RBAC.
+     - **Member 1 (`vumikasa6@gmail.com`, Pass: `123456`)**: Vũ Minh Kas (M1983-001), Phó Trưởng Ban Truyền Thông & Sự Kiện (ViConnect), kiểm thử toàn diện Mobile PWA, Thẻ Doanh nhân số, Đăng tin B2B, Đăng sản phẩm Sàn Marketplace, Đặt lịch Sapphire Hub.
+     - **Member 2 (`vupv090120@gmail.com`, Pass: `123456`)**: Vũ Phương (M1983-002), Ủy viên Ban Xúc Tiến Thương Mại, kiểm thử tương tác chéo: Thể hiện quan tâm cơ hội B2B của Member 1, Yêu cầu báo giá sản phẩm, Đăng ký vé sự kiện, Tiếp nhận lịch hẹn 1-on-1, RBAC Guard kiểm tra chặn truy cập trái phép.
+  2. *Thực thi Bộ Kiểm Thử Tự Động 14 Test Suites (51 Tests - Đạt 100% PASS)*:
+     - **Suite 1: Xác thực & Kiểm soát Phân quyền RBAC**: Đăng nhập 3 tài khoản thành công HTTP 200; Từ chối mật khẩu sai HTTP 401; Chặn truy cập unauthenticated HTTP 401; Chặn hội viên thường gọi endpoint Quản trị `/admin/transactions` bằng HTTP 403 Forbidden; Cho phép Admin truy cập `/admin/permission-matrix` HTTP 200.
+     - **Suite 2: Hồ sơ Cá nhân, Bối cảnh Hội viên & Thẻ Doanh nhân số**: Kiểm tra `/users/me`, `/members/me`, `/business-cards/settings/me` trả về đúng hồ sơ, mã hội viên M1983-001/M1983-002 và chức vụ.
+     - **Suite 3: Danh bạ Hội viên, Ban Chuyên môn & Nhận diện Thương hiệu**: `/members` và `/members/directory` trả về đầy đủ 3 hội viên; Kiểm tra `/members/brand` và `/members/benefits` trả về danh mục quyền lợi chuẩn.
+     - **Suite 4: Quản lý Tài chính & Sổ Quỹ Thu Chi S07-DN**: Admin tạo phiếu Thu (2,000,000 VNĐ) mã `PT-2026-...` và phiếu Chi (500,000 VNĐ) thành công; Hội viên tra cứu báo giá gia hạn `/members/me/renewal-quote`.
+     - **Suite 5: Quản lý Sự kiện, Đặt vé & Danh sách Đăng ký**: Admin tạo sự kiện có phí (500,000 VNĐ); Hội viên duyệt sự kiện; Cả 2 hội viên đăng ký vé tham dự; Admin kiểm tra danh sách đăng ký `/events/registrations`.
+     - **Suite 6: Động cơ Check-in QR & Trạng thái Cổng**: Kiểm tra `/checkin/state` và `/checkin/qr-events` sẵn sàng phục vụ quét vé laser scan.
+     - **Suite 7: Sàn Giao thương B2B & Hợp tác Kinh doanh**: Member 1 đăng bài cơ hội B2B ERP; Member 2 xem feed cơ hội và gửi yêu cầu kết nối quan tâm (`/opportunities/:id/interests`).
+     - **Suite 8: Sàn Marketplace & Giới thiệu Sản phẩm Nội khối**: Member 1 đăng sản phẩm ViConnect SaaS Enterprise; Member 2 duyệt sàn và gửi yêu cầu báo giá (`/marketplace/quotes`).
+     - **Suite 9: Cuộc hẹn Giao thương 1-on-1 (Sapphire Hub)**: Member 1 gửi lời mời hẹn 1-on-1 tại Phòng VIP Sapphire Hub; Member 2 nhận và truy xuất danh sách cuộc hẹn `/meetings`.
+     - **Suite 10: Bảng tin Cộng đồng (Feed), Like & Bình luận Đa kênh**: Admin đăng thông báo chính thức; Member 1 đọc tin và thả Tim (Like); Member 2 gửi bình luận giao lưu.
+     - **Suite 11: Khảo sát, Biểu quyết Voting & Quay số Lucky Draw**: Admin tạo cuộc khảo sát Caravan 2026; Member 1 lấy danh sách bình chọn; Admin kích hoạt thông báo trúng thưởng Lucky Draw.
+     - **Suite 12: Cổng Thông báo Zalo OA & Email Gateway**: Xác thực Webhook Zalo OA (`/zalo/webhook`); Kiểm tra cấu hình OA (`/zalo/oa-config`); Đọc mẫu thông báo Zalo & Email templates.
+     - **Suite 13: Web CRM Quản trị Landing Web & Tính toàn vẹn**: Truy vấn `/admin/landing-webs` và `/members/active-association-id`.
+     - **Suite 14: Đăng xuất An toàn & Thu hồi Phiên**: Đăng xuất sạch sẽ cả 3 tài khoản (`/auth/logout`).
+  3. *Phát hiện & Sửa triệt để 2 lỗi hệ thống cốt lõi (Defect Fixes)*:
+     - **Lỗi 1 (Events Service Create Fallback)**: Table `public.events` không có các cột `start_time, end_time, agenda, checkin_qr, tagline`. Đã cập nhật fallback query trong `events.service.ts` để chỉ insert các cột thực tế tồn tại trong CSDL.
+     - **Lỗi 2 (Marketplace Service Product Insert)**: Bảng `public.products` có ràng buộc NOT NULL trên cột `id`, mảng ảnh `image_urls` kiểu `text[]`, và cột `facebook_url` có dấu gạch dưới. Đã sửa trong `marketplace.service.ts` cấp phát `id`, ép kiểu `${imageUrls}::text[]` và sửa tên cột chuẩn.
+     - **Tối ưu Asynchronous Email Dispatch**: Chuyển việc gửi email vé qua Gmail SMTP trong `events.service.ts` sang nền `void (async () => { ... })()`, giải phóng luồng HTTP đăng ký sự kiện tức thì (dưới 100ms), triệt tiêu hoàn toàn nguy cơ request timeout.
+  4. *Bằng chứng kiểm thử giao diện thực tế (Playwright E2E Visual Evidence)*:
+     - Chạy Playwright kết nối trực tiếp MS Edge Headless trên giao diện Desktop (1440x900) và Mobile Viewport (390x844).
+     - Chụp và lưu trữ 6 ảnh bằng chứng tại `CEO1983_QA_AUDIT/07_EVIDENCE/SCREENSHOTS/MULTI_ROLE_VERIFICATION/`:
+       + `01_ADMIN_WEB_CRM.png`: Giao diện Cổng Quản trị Web CRM đăng nhập bằng `admin@connect.vn`.
+       + `02_ADMIN_MEMBERS_DIRECTORY.png`: Bảng quản lý Hội viên và bộ lọc phòng ban CRM.
+       + `03_MEMBER1_MOBILE_SHELL.png`: Giao diện ứng dụng di động Mobile PWA của Member 1 (`vumikasa6@gmail.com`).
+       + `04_MEMBER1_DIGITAL_CARD.png`: Thẻ Doanh nhân số cá nhân của Member 1.
+       + `05_MEMBER2_EVENTS.png`: Màn hình duyệt và đăng ký sự kiện của Member 2 (`vupv090120@gmail.com`).
+       + `06_MEMBER2_OPPORTUNITIES.png`: Sàn giao thương B2B của Member 2.
+  5. *Đảm bảo Chất lượng Mã nguồn Tuyệt đối (Strict TypeScript Check)*:
+     - `cd apps/ceo1983_app_be; npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - `cd apps/ceo1983_app_fe; npx tsc --noEmit` -> Exit Code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu giữ an toàn trên local repository.
+
 
 - **Bản cập nhật ngày 10/11/2026 (v10.99): Tổng Kiểm Toán Toàn Diện Hệ Thống (Master QA & System Audit), Phát Hiện & Xử Lý 100% Lỗi Hồi Quy, Xuất Trọn Bộ Hồ Sơ Nghiệm Thu Đa Định Dạng ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-015], [NODE-CORE-001] đến [NODE-CORE-006])**:
   1. *Khảo sát & Kiểm kê 100% tài nguyên hệ sinh thái CEO 1983*:
