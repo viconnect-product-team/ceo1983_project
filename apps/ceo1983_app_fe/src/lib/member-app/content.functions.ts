@@ -11,9 +11,12 @@ export type NewsItem = {
   category: string;
   author: string;
   excerpt: string;
+  content?: string;
   time: string;
+  publishedAt?: string;
   views: number;
   image?: string;
+  url?: string;
 };
 
 export const DEFAULT_CEO1983_NEWS: NewsItem[] = [
@@ -94,14 +97,23 @@ export const listNews = createServerFn({ method: "GET" })
       const token = context?.token;
       const items = await fetchNestApiFromServer<any[]>("/content/news", token);
       const serverMapped: NewsItem[] = (items ?? []).map((n: any, idx: number) => ({
-        id: n.id,
+        id: String(n.id || n.code),
         title: n.title,
-        category: n.category ?? "",
-        author: n.author ?? "",
+        category: n.category ?? "Hoạt động CLB",
+        author: n.author ?? "Ban Truyền Thông",
         excerpt: n.excerpt ?? "",
+        content: n.content ?? n.excerpt ?? "",
         time: relTime(n.time || n.created_at || n.createdAt),
-        views: n.views ?? 0,
-        image: n.image || n.thumbnail || n.cover_url || n.cover_image || DEFAULT_NEWS_IMAGES[idx % DEFAULT_NEWS_IMAGES.length],
+        publishedAt: n.publishedAt || n.published_at || n.time || "",
+        views: Number(n.views ?? 0),
+        image:
+          n.image ||
+          n.coverImage ||
+          n.cover_image ||
+          n.thumbnail ||
+          n.cover_url ||
+          DEFAULT_NEWS_IMAGES[idx % DEFAULT_NEWS_IMAGES.length],
+        url: n.url || undefined,
       }));
 
       return serverMapped;

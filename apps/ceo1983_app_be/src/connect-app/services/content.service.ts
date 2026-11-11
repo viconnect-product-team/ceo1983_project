@@ -157,10 +157,10 @@ export class ConnectContentService {
 
   async listPublishedNews() {
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, title, category, author, excerpt, cover_image, images, views, created_at
+      SELECT id, code, title, category, author, excerpt, content, cover_image, images, views, published_at, created_at
       FROM public.news
       WHERE status = 'published'
-      ORDER BY created_at DESC
+      ORDER BY published_at DESC NULLS LAST, created_at DESC
     `.catch(() => []);
 
     return rows.map((n) => {
@@ -169,15 +169,24 @@ export class ConnectContentService {
       );
       const firstImg = imgList[0] || n.cover_image || '';
       return {
-        id: n.id,
+        id: n.code || n.id,
+        code: n.code,
         title: n.title,
-        category: n.category ?? '',
-        author: n.author ?? '',
+        category: n.category ?? 'Hoạt động CLB',
+        author: n.author ?? 'Ban Truyền Thông',
         excerpt: n.excerpt ?? '',
+        content: n.content ?? n.excerpt ?? '',
         image: firstImg,
         coverImage: firstImg,
         images: imgList,
-        time: n.created_at ? new Date(n.created_at).toISOString() : '',
+        time: n.published_at
+          ? new Date(n.published_at).toISOString()
+          : n.created_at
+            ? new Date(n.created_at).toISOString()
+            : '',
+        publishedAt: n.published_at
+          ? new Date(n.published_at).toISOString()
+          : '',
         views: Number(n.views ?? 0),
       };
     });
@@ -630,12 +639,26 @@ export class ConnectContentService {
     ];
 
     const foundArticles = new Map<string, string>();
+    const IGNORED_PHRASES = [
+      'trang chủ',
+      'giới thiệu',
+      'hội viên',
+      'danh sách',
+      'thư viện',
+      'liên hệ',
+      'đăng ký',
+      'đăng nhập',
+      'blog',
+      'sự kiện',
+      'tin tức',
+    ];
 
     for (const pageUrl of targetPages) {
       try {
         const res = await fetch(pageUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           },
           signal:
             typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
@@ -645,16 +668,25 @@ export class ConnectContentService {
         if (!res.ok) continue;
         const html = await res.text();
 
+        // Match links that end with -numbers or --numbers (common CMS pattern on ceo1983.com)
         const linkRegex =
-          /href=["']([^"']*(?:--\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+          /href=["']([^"']*(?:--\d+|-+\d{4,})[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
         let m: RegExpExecArray | null;
         while ((m = linkRegex.exec(html)) !== null) {
-          let url = m[1];
+          let url = m[1].trim();
           if (!url.startsWith('http')) {
             url = baseUrl + (url.startsWith('/') ? '' : '/') + url;
           }
-          const rawTitle = m[2].replace(/<[^>]+>/g, '').trim();
-          if (rawTitle.length > 8 && !foundArticles.has(url)) {
+          const cleanedHtml = m[2].replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+          const rawTitle = cleanedHtml.replace(/<[^>]+>/g, '').trim();
+          const lower = rawTitle.toLowerCase();
+          const isMenu =
+            rawTitle.length < 12 ||
+            lower.includes('location.protocol') ||
+            lower.includes('chatwoot') ||
+            lower.includes('function(') ||
+            IGNORED_PHRASES.some((phrase) => lower === phrase);
+          if (!isMenu && !foundArticles.has(url)) {
             foundArticles.set(url, rawTitle);
           }
         }
@@ -670,7 +702,7 @@ export class ConnectContentService {
 
     for (const [articleUrl, initialTitle] of foundArticles.entries()) {
       try {
-        const slugMatch = articleUrl.match(/--(\d+)/);
+        const slugMatch = articleUrl.match(/-+(\d{4,})/);
         const articleId = slugMatch ? slugMatch[1] : null;
         if (!articleId) continue;
 
@@ -678,7 +710,8 @@ export class ConnectContentService {
 
         const artRes = await fetch(articleUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           },
           signal:
             typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
@@ -694,7 +727,10 @@ export class ConnectContentService {
           const artHtml = await artRes.text();
           const h1Match = artHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
           if (h1Match) {
-            title = h1Match[1].replace(/<[^>]+>/g, '').trim() || title;
+            const h1Text = h1Match[1].replace(/<[^>]+>/g, '').trim();
+            if (h1Text && h1Text.length > 10) {
+              title = h1Text;
+            }
           }
 
           const descMatch = artHtml.match(
@@ -714,6 +750,8 @@ export class ConnectContentService {
             }
           }
         }
+
+        if (title.length < 10) continue;
 
         const imgsJson = JSON.stringify(coverImage ? [coverImage] : []);
 
@@ -738,6 +776,7 @@ export class ConnectContentService {
           ON CONFLICT (code) DO UPDATE SET
             title = EXCLUDED.title,
             excerpt = EXCLUDED.excerpt,
+            content = EXCLUDED.content,
             cover_image = CASE WHEN EXCLUDED.cover_image != '' THEN EXCLUDED.cover_image ELSE public.news.cover_image END,
             images = CASE WHEN EXCLUDED.cover_image != '' THEN EXCLUDED.images ELSE public.news.images END,
             updated_at = NOW()

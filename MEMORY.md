@@ -1,5 +1,63 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.09): Đồng Bộ Tin Tức ceo1983.com & CRM, Nâng Cấp Zalo OA Tự Động Giữ Token & Nút Call/Nhắn Tin, Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab, Header iOS Safe Area, Gỡ Bỏ Dark Theme & Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu ([NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-002], [NODE-APP-009], [NODE-APP-011], [NODE-CORE-001], [NODE-CORE-002])**:
+  1. *Đồng bộ Tin tức ceo1983.com & Khắc phục Tin tức trên Mobile App CEO 1983*:
+     - **Nguyên nhân gốc rễ**:
+       + Database `public.news` trước đó thiếu cột `images jsonb`, dẫn đến mọi truy vấn INSERT tin tức đều bị PostgreSQL từ chối.
+       + Hàm `syncNewsFromCeo1983Web()` có regex link quá hẹp, chưa trích xuất đủ bài viết từ các trang chuyên mục, đồng thời thu nạp nhầm script inline Javascript (như `chatwoot`, `location.protocol`) làm tiêu đề bài viết.
+       + Mobile App `association.news.tsx`: Có state `localNews` nạp từ `vba_member_shared_news` trong localStorage đè lên tin tức chính thức từ CRM.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database: Đã chạy `ALTER TABLE public.news ADD COLUMN IF NOT EXISTS images jsonb DEFAULT '[]'::jsonb;`.
+       + Backend `content.service.ts`: Nâng cấp `syncNewsFromCeo1983Web()` crawl đa trang từ `https://ceo1983.com`, `/tin-tuc-blog-25236`, `/tin-tuc-252346`, `/su-kien-252317`. Trích xuất chuẩn xác tiêu đề từ `h1`, mô tả từ `og:description`, ảnh đại diện từ `og:image`. Lọc bỏ sạch sẽ các script inline và link menu.
+       + Đã đồng bộ thành công các bài viết chính thức của CLB (như: *"Chủ tịch CLB CEO 1983 tham gia Hội đồng Giám khảo TMU's Startup 2026"*, *"Giza Group - Nhà tài trợ Kim Cương kỷ niệm 4 năm thành lập CLB"*, *"CLB CEO 1983 đồng hành nâng cao năng lực quản trị nhân sự"*, v.v.).
+       + Nâng cấp `listPublishedNews()` trả về đầy đủ `publishedAt`, `code`, `content`, `image`, sắp xếp theo `published_at DESC NULLS LAST`.
+       + Frontend `association.news.tsx` & `content.functions.ts`: Ưu tiên tuyệt đối `serverNews` từ CSDL PostgreSQL, loại bỏ tình trạng tin cũ ở localStorage đè lên dữ liệu CRM.
+  2. *Cấu hình Zalo OA: Chống Mất Token & Bổ Sung Danh Sách Kèm Nút Call / Nhắn Tin*:
+     - **Nguyên nhân gốc rễ**:
+       + Bảng `public.zalo_subscribers` và `public.zalo_webhook_logs` chưa từng tồn tại trong CSDL PostgreSQL, dẫn tới lỗi truy vấn khi webhook hoặc nạp danh sách tương tác.
+       + Khi lưu cấu hình tại `ZaloOaConfigSection.tsx`, nếu ô input refresh token giữ giá trị cũ thì sẽ ghi đè đè bẹp token mới mà backend vừa tự động gia hạn.
+       + Hàm `getRecentChats` đọc sai key của Zalo OpenAPI (`data.users` thay vì `data.followers`), khiến danh sách người quan tâm từ Zalo OA luôn trả về rỗng.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database: Tạo đầy đủ 2 bảng `public.zalo_subscribers` và `public.zalo_webhook_logs` với khóa chính `zalo_user_id` và các cột liên kết hội viên.
+       + Backend `zalo.service.ts`:
+         * Bổ sung cơ chế auto-create bảng trong `onModuleInit`.
+         * Nâng cấp `saveOaConfig`: Tự động merge an toàn với cấu hình hiện tại trong CSDL, không bao giờ ghi đè giá trị rỗng lên token còn hiệu lực.
+         * Bổ sung phương thức `syncFollowersFromZalo()` và endpoint `@Post('sync-followers')`: Tự động kéo toàn bộ danh sách người quan tâm từ `getfollowers` và `getprofile` Zalo OA, khớp tự động với `public.members`.
+         * Bổ sung endpoint `@Get('subscribers')` lấy danh sách tương tác đầy đủ.
+       + Frontend CRM `ZaloOaConfigSection.tsx`:
+         * Bổ sung Thẻ Quản lý "Danh Sách Tài Khoản Đã Nhắn Tin Hoặc Quan Tâm Zalo OA" với số lượng người quan tâm thực tế.
+         * Nút "Đồng bộ từ Zalo OA" kích hoạt đồng bộ 1-chạm mượt mà.
+         * Hiển thị danh sách tài khoản kèm Avatar, Tên Zalo, User ID, SĐT.
+         * Bổ sung nút **"Gọi điện"** (`tel:...`) và nút **"Nhắn Zalo"** mở Modal gửi tin nhắn Zalo OA trực tiếp cho từng người.
+  3. *Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab Cá Nhân / Trang Chủ (Stale Cache Flashing)*:
+     - **Nguyên nhân gốc rễ**:
+       + Hook `useServerData.ts` duy trì in-memory cache `memoryCache`. Khi người dùng Quick Edit và bấm Lưu, modal cập nhật DB và localStorage nhưng không cập nhật `memoryCache`. Khi người dùng chuyển tab giữa Trang chủ và Cá nhân, component nạp cache cũ trong memoryCache ra trước, rồi vài chục mili-giây sau khi API phản hồi mới cập nhật lại, tạo ra hiện tượng chớp/giật thông tin cũ.
+       + Đồng thời, `association.profile.tsx` và `association.index.tsx` có logic đọc fallback từ `vba_custom_profile` dùng chung không có tiền tố `userId`.
+     - **Giải pháp xử lý dứt điểm**:
+       + `useServerData.ts`: Xuất khẩu hàm `setServerDataCache`, `updateServerDataCache` và bổ sung event listener tự động lắng nghe `vba_profile_updated` để cập nhật đồng bộ tức thì `memoryCache` và state nội bộ.
+       + `QuickProfileEditModal.tsx`: Khi lưu thành công, cập nhật ngay `setServerDataCache("vba_my_member_${userId}", newMem)` và xóa bỏ key dùng chung `vba_custom_profile`.
+       + `association.profile.tsx` & `association.index.tsx`: Xóa bỏ toàn bộ fallback về key dùng chung `vba_custom_profile`. Dữ liệu được cô lập 100% theo `user.id`, hiển thị mượt mà không còn hiện tượng chớp dữ liệu cũ.
+  4. *Sửa Header iOS / iPhone Safe Area & Gỡ Bỏ Giao Diện Theme Tối (Mặc Định Theme Sáng)*:
+     - **Gỡ bỏ Theme Tối**:
+       + `theme.tsx`: Mặc định và khóa cứng theme sang `"light"`. Luôn gỡ bỏ class `dark` khỏi thẻ `<html>`, dọn dẹp các giá trị `"dark"` trong localStorage.
+       + `ThemeSwitcher.tsx`: Vô hiệu hóa và ẩn nút chuyển đổi theme tối.
+     - **Sửa Header iOS / iPhone**:
+       + `association.index.tsx`: Top header được cập nhật style `paddingTop: "calc(max(env(safe-area-inset-top, 0px), 16px) + 8px)"`, tự động đẩy header xuống dưới notch / Dynamic Island và status bar trên tất cả các dòng iPhone.
+       + Logo CEO 1983: Bổ sung `mix-blend-multiply` trên nền trắng tinh tế, loại bỏ hoàn toàn viền trắng tương phản.
+  5. *Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu Đăng Nhập*:
+     - **Backend `users.service.ts`**: Khi admin tạo người dùng (`adminCreateUser`), tự động gán `onboarding_status = 'new'` và `must_change_password = true`.
+     - **Frontend `AuthContext.tsx`**: Gán cờ `mustChangePassword` vào `AppUser` khi ánh xạ JWT token và lưu session.
+     - **Tạo mới component `FirstLoginChangePasswordModal.tsx`**: Modal toàn màn hình, khóa chặt không cho phép đóng hoặc tắt, tích hợp form đổi mật khẩu `AccountSecuritySettingsForm` và nút đăng xuất.
+     - **Nhúng vào `MemberRoot` (`association.tsx`)**: Nếu tài khoản mang cờ `mustChangePassword`, modal lập tức hiển thị chặn toàn bộ thao tác khác cho đến khi người dùng đổi mật khẩu thành công.
+  6. *Slide Sự Kiện: Giờ Bắt Đầu - Kết Thúc & Nút Chi Tiết Nổi Bật Chuẩn Tone Cam*:
+     - Backend events.service.ts & Frontend association.index.tsx: Loại bỏ hoàn toàn giờ 00:00 đơn độc; tự động chuẩn hóa khung giờ start_time - end_time. Nút Chi tiết đổi sang tone cam rực rỡ text trắng font-bold sắc nét.
+  7. *Kiểm Chứng Chất Lượng Mã Nguồn (Strict Step 5 & Rule 4)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
+
+# System Memory & Architecture
+
 - **Bản cập nhật ngày 11/11/2026 (v11.08): Chuẩn Hóa Đồng Bộ Dữ Liệu Thực Tế Khi Xóa Sự Kiện / Cuộc Họp / Tin Tức, Chuẩn 5 Slide Ưu Đãi Trang Chủ, Sửa Lỗi Nút Chi Tiết & Giờ Sự Kiện, Đồng Bộ Số Liệu Tổng Quan CRM & Bổ Sung Khối "Công Việc Của Tôi" ([NODE-APP-001], [NODE-APP-008], [NODE-CRM-001], [NODE-CRM-012], [NODE-CORE-002])**:
   1. *Đồng bộ triệt để trạng thái xóa Sự kiện / Cuộc họp / Tin tức trên App CEO 1983*:
      - **Nguyên nhân gốc rễ**:
@@ -1292,6 +1350,62 @@
   5. *Đảm Bảo Chất Lượng Code (Code Quality)*:
      - Chạy `npx tsc --noEmit` cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều đạt **Exit code 0 (0 errors)**.
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
+
+# System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.09): Đồng Bộ Tin Tức ceo1983.com & CRM, Nâng Cấp Zalo OA Tự Động Giữ Token & Nút Call/Nhắn Tin, Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab, Header iOS Safe Area, Gỡ Bỏ Dark Theme & Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu ([NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-002], [NODE-APP-009], [NODE-APP-011], [NODE-CORE-001], [NODE-CORE-002])**:
+  1. *Đồng bộ Tin tức ceo1983.com & Khắc phục Tin tức trên Mobile App CEO 1983*:
+     - **Nguyên nhân gốc rễ**:
+       + Database `public.news` trước đó thiếu cột `images jsonb`, dẫn đến mọi truy vấn INSERT tin tức đều bị PostgreSQL từ chối.
+       + Hàm `syncNewsFromCeo1983Web()` có regex link quá hẹp, chưa trích xuất đủ bài viết từ các trang chuyên mục, đồng thời thu nạp nhầm script inline Javascript (như `chatwoot`, `location.protocol`) làm tiêu đề bài viết.
+       + Mobile App `association.news.tsx`: Có state `localNews` nạp từ `vba_member_shared_news` trong localStorage đè lên tin tức chính thức từ CRM.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database: Đã chạy `ALTER TABLE public.news ADD COLUMN IF NOT EXISTS images jsonb DEFAULT '[]'::jsonb;`.
+       + Backend `content.service.ts`: Nâng cấp `syncNewsFromCeo1983Web()` crawl đa trang từ `https://ceo1983.com`, `/tin-tuc-blog-25236`, `/tin-tuc-252346`, `/su-kien-252317`. Trích xuất chuẩn xác tiêu đề từ `h1`, mô tả từ `og:description`, ảnh đại diện từ `og:image`. Lọc bỏ sạch sẽ các script inline và link menu.
+       + Đã đồng bộ thành công các bài viết chính thức của CLB (như: *"Chủ tịch CLB CEO 1983 tham gia Hội đồng Giám khảo TMU's Startup 2026"*, *"Giza Group - Nhà tài trợ Kim Cương kỷ niệm 4 năm thành lập CLB"*, *"CLB CEO 1983 đồng hành nâng cao năng lực quản trị nhân sự"*, v.v.).
+       + Nâng cấp `listPublishedNews()` trả về đầy đủ `publishedAt`, `code`, `content`, `image`, sắp xếp theo `published_at DESC NULLS LAST`.
+       + Frontend `association.news.tsx` & `content.functions.ts`: Ưu tiên tuyệt đối `serverNews` từ CSDL PostgreSQL, loại bỏ tình trạng tin cũ ở localStorage đè lên dữ liệu CRM.
+  2. *Cấu hình Zalo OA: Chống Mất Token & Bổ Sung Danh Sách Kèm Nút Call / Nhắn Tin*:
+     - **Nguyên nhân gốc rễ**:
+       + Bảng `public.zalo_subscribers` và `public.zalo_webhook_logs` chưa từng tồn tại trong CSDL PostgreSQL, dẫn tới lỗi truy vấn khi webhook hoặc nạp danh sách tương tác.
+       + Khi lưu cấu hình tại `ZaloOaConfigSection.tsx`, nếu ô input refresh token giữ giá trị cũ thì sẽ ghi đè đè bẹp token mới mà backend vừa tự động gia hạn.
+       + Hàm `getRecentChats` đọc sai key của Zalo OpenAPI (`data.users` thay vì `data.followers`), khiến danh sách người quan tâm từ Zalo OA luôn trả về rỗng.
+     - **Giải pháp xử lý dứt điểm**:
+       + Database: Tạo đầy đủ 2 bảng `public.zalo_subscribers` và `public.zalo_webhook_logs` với khóa chính `zalo_user_id` và các cột liên kết hội viên.
+       + Backend `zalo.service.ts`:
+         * Bổ sung cơ chế auto-create bảng trong `onModuleInit`.
+         * Nâng cấp `saveOaConfig`: Tự động merge an toàn với cấu hình hiện tại trong CSDL, không bao giờ ghi đè giá trị rỗng lên token còn hiệu lực.
+         * Bổ sung phương thức `syncFollowersFromZalo()` và endpoint `@Post('sync-followers')`: Tự động kéo toàn bộ danh sách người quan tâm từ `getfollowers` và `getprofile` Zalo OA, khớp tự động với `public.members`.
+         * Bổ sung endpoint `@Get('subscribers')` lấy danh sách tương tác đầy đủ.
+       + Frontend CRM `ZaloOaConfigSection.tsx`:
+         * Bổ sung Thẻ Quản lý "Danh Sách Tài Khoản Đã Nhắn Tin Hoặc Quan Tâm Zalo OA" với số lượng người quan tâm thực tế.
+         * Nút "Đồng bộ từ Zalo OA" kích hoạt đồng bộ 1-chạm mượt mà.
+         * Hiển thị danh sách tài khoản kèm Avatar, Tên Zalo, User ID, SĐT.
+         * Bổ sung nút **"Gọi điện"** (`tel:...`) và nút **"Nhắn Zalo"** mở Modal gửi tin nhắn Zalo OA trực tiếp cho từng người.
+  3. *Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab Cá Nhân / Trang Chủ (Stale Cache Flashing)*:
+     - **Nguyên nhân gốc rễ**:
+       + Hook `useServerData.ts` duy trì in-memory cache `memoryCache`. Khi người dùng Quick Edit và bấm Lưu, modal cập nhật DB và localStorage nhưng không cập nhật `memoryCache`. Khi người dùng chuyển tab giữa Trang chủ và Cá nhân, component nạp cache cũ trong memoryCache ra trước, rồi vài chục mili-giây sau khi API phản hồi mới cập nhật lại, tạo ra hiện tượng chớp/giật thông tin cũ.
+       + Đồng thời, `association.profile.tsx` và `association.index.tsx` có logic đọc fallback từ `vba_custom_profile` dùng chung không có tiền tố `userId`.
+     - **Giải pháp xử lý dứt điểm**:
+       + `useServerData.ts`: Xuất khẩu hàm `setServerDataCache`, `updateServerDataCache` và bổ sung event listener tự động lắng nghe `vba_profile_updated` để cập nhật đồng bộ tức thì `memoryCache` và state nội bộ.
+       + `QuickProfileEditModal.tsx`: Khi lưu thành công, cập nhật ngay `setServerDataCache("vba_my_member_${userId}", newMem)` và xóa bỏ key dùng chung `vba_custom_profile`.
+       + `association.profile.tsx` & `association.index.tsx`: Xóa bỏ toàn bộ fallback về key dùng chung `vba_custom_profile`. Dữ liệu được cô lập 100% theo `user.id`, hiển thị mượt mà không còn hiện tượng chớp dữ liệu cũ.
+  4. *Sửa Header iOS / iPhone Safe Area & Gỡ Bỏ Giao Diện Theme Tối (Mặc Định Theme Sáng)*:
+     - **Gỡ bỏ Theme Tối**:
+       + `theme.tsx`: Mặc định và khóa cứng theme sang `"light"`. Luôn gỡ bỏ class `dark` khỏi thẻ `<html>`, dọn dẹp các giá trị `"dark"` trong localStorage.
+       + `ThemeSwitcher.tsx`: Vô hiệu hóa và ẩn nút chuyển đổi theme tối.
+     - **Sửa Header iOS / iPhone**:
+       + `association.index.tsx`: Top header được cập nhật style `paddingTop: "calc(max(env(safe-area-inset-top, 0px), 16px) + 8px)"`, tự động đẩy header xuống dưới notch / Dynamic Island và status bar trên tất cả các dòng iPhone.
+       + Logo CEO 1983: Bổ sung `mix-blend-multiply` trên nền trắng tinh tế, loại bỏ hoàn toàn viền trắng tương phản.
+  5. *Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu Đăng Nhập*:
+     - **Backend `users.service.ts`**: Khi admin tạo người dùng (`adminCreateUser`), tự động gán `onboarding_status = 'new'` và `must_change_password = true`.
+     - **Frontend `AuthContext.tsx`**: Gán cờ `mustChangePassword` vào `AppUser` khi ánh xạ JWT token và lưu session.
+     - **Tạo mới component `FirstLoginChangePasswordModal.tsx`**: Modal toàn màn hình, khóa chặt không cho phép đóng hoặc tắt, tích hợp form đổi mật khẩu `AccountSecuritySettingsForm` và nút đăng xuất.
+     - **Nhúng vào `MemberRoot` (`association.tsx`)**: Nếu tài khoản mang cờ `mustChangePassword`, modal lập tức hiển thị chặn toàn bộ thao tác khác cho đến khi người dùng đổi mật khẩu thành công.
+  6. *Kiểm Chứng Chất Lượng Mã Nguồn (Strict Step 5 & Rule 4)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
 

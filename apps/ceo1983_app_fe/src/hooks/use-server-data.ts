@@ -65,16 +65,49 @@ export function useServerData<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, cacheKey, ...deps]);
 
-  // Lắng nghe sự kiện chuyển đổi tài khoản để tự động reload
+  // Lắng nghe sự kiện chuyển đổi tài khoản hoặc cập nhật hồ sơ để tự động đồng bộ cache tức thì
   useEffect(() => {
     const handleAuthChange = () => {
       setTick((t) => t + 1);
     };
+    const handleProfileUpdated = (e: any) => {
+      const detail = e?.detail;
+      if (detail && cacheKey && cacheKey.startsWith("vba_my_member")) {
+        setData((prev: any) => {
+          if (!prev) return prev;
+          const merged = {
+            ...prev,
+            fullName: detail.name || prev.fullName,
+            name: detail.name || prev.name,
+            phone: detail.phone || prev.phone,
+            companyName: detail.company || prev.companyName,
+            company: detail.company || prev.company,
+            title: detail.title || prev.title,
+            address: detail.address || prev.address,
+            bio: detail.bio || prev.bio,
+            companySize: detail.companySize || prev.companySize,
+            industry: detail.industry || prev.industry,
+            avatar: detail.avatar || prev.avatar,
+            avatarUrl: detail.avatar || prev.avatarUrl,
+            coverUrl: detail.cover || prev.coverUrl,
+            companyLogo: detail.companyLogo || prev.companyLogo,
+            companyLogoUrl: detail.companyLogo || prev.companyLogoUrl,
+          };
+          memoryCache.set(cacheKey, merged);
+          return merged;
+        });
+      }
+    };
+
     window.addEventListener("vba_auth_changed", handleAuthChange);
+    window.addEventListener("vba_profile_updated", handleProfileUpdated);
+    window.addEventListener("profile-updated", handleProfileUpdated);
     return () => {
       window.removeEventListener("vba_auth_changed", handleAuthChange);
+      window.removeEventListener("vba_profile_updated", handleProfileUpdated);
+      window.removeEventListener("profile-updated", handleProfileUpdated);
     };
-  }, []);
+  }, [cacheKey]);
 
   return {
     data,
@@ -86,6 +119,17 @@ export function useServerData<T>(
       setTick((t) => t + 1);
     },
   };
+}
+
+export function setServerDataCache(key: string, data: any) {
+  memoryCache.set(key, data);
+}
+
+export function updateServerDataCache<T>(key: string, updater: (prev: T) => T) {
+  if (memoryCache.has(key)) {
+    const prev = memoryCache.get(key);
+    memoryCache.set(key, updater(prev));
+  }
 }
 
 export function clearServerDataCache() {

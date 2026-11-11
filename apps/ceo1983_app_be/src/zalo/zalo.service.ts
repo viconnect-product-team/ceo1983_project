@@ -72,10 +72,39 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
 
   constructor(@Optional() private readonly prisma?: PrismaService) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     this.logger.log(
       'Khởi chạy tiến trình Zalo OA Auto-Token Manager (chu kỳ quét 15 phút, tự động gia hạn mỗi 4 tiếng)...',
     );
+    if (this.prisma) {
+      await this.prisma
+        .$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS public.zalo_webhook_logs (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          event_name text,
+          sender_id text,
+          recipient_id text,
+          message_text text,
+          raw_payload jsonb,
+          created_at timestamptz DEFAULT now()
+        );
+        CREATE TABLE IF NOT EXISTS public.zalo_subscribers (
+          zalo_user_id text PRIMARY KEY,
+          display_name text,
+          avatar_url text,
+          phone text,
+          member_id uuid,
+          last_message text,
+          last_interacted_at timestamptz DEFAULT now(),
+          created_at timestamptz DEFAULT now(),
+          updated_at timestamptz DEFAULT now()
+        );
+      `)
+        .catch((err: any) => {
+          this.logger.warn(`Could not ensure Zalo tables: ${err?.message}`);
+        });
+    }
+
     // Chạy kiểm tra sau 10 giây khi server sẵn sàng
     setTimeout(() => {
       this.checkAndAutoRefreshTokenOnStartup();
@@ -184,6 +213,32 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   ): Promise<{ ok: boolean; message: string; data?: any }> {
     if (!this.prisma) return { ok: true, message: 'No prisma' };
     try {
+      const current = (await this.getOaConfig()) || {};
+      const mergedConfig = {
+        ...current,
+        ...config,
+        refreshToken:
+          typeof config.refreshToken === 'string' && config.refreshToken.trim()
+            ? config.refreshToken.trim()
+            : current.refreshToken,
+        accessToken:
+          typeof config.accessToken === 'string' && config.accessToken.trim()
+            ? config.accessToken.trim()
+            : current.accessToken,
+        appId:
+          typeof config.appId === 'string' && config.appId.trim()
+            ? config.appId.trim()
+            : current.appId,
+        secretKey:
+          typeof config.secretKey === 'string' && config.secretKey.trim()
+            ? config.secretKey.trim()
+            : current.secretKey,
+        oaId:
+          typeof config.oaId === 'string' && config.oaId.trim()
+            ? config.oaId.trim()
+            : current.oaId,
+      };
+
       const validUserId = userId && userId.length === 36 ? userId : null;
       await this.prisma.$executeRawUnsafe(
         `
@@ -192,13 +247,13 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         ON CONFLICT (key) DO UPDATE
         SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
       `,
-        JSON.stringify(config),
+        JSON.stringify(mergedConfig),
         validUserId,
       );
       return {
         ok: true,
         message: 'Đã lưu cấu hình Zalo OA vào CSDL thành công',
-        data: config,
+        data: mergedConfig,
       };
     } catch (err: any) {
       this.logger.warn(`saveOaConfig error: ${err?.message}`);
@@ -745,76 +800,74 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`listrecentchat warning: ${err.message}`);
     }
 
-    // 2. Nếu chưa có tin nhắn, thử lấy qua danh sách người quan tâm (followers)
-    if (chats.length === 0) {
-      try {
-        const followersRes = await axios.get(
-          'https://openapi.zalo.me/v2.0/oa/getfollowers',
-          {
-            headers: { access_token: accessToken.trim() },
-            params: {
-              data: JSON.stringify({ offset: 0, count: 10 }),
-            },
-            timeout: 5000,
+    // 2. Lấy thêm từ danh sách người quan tâm (followers) qua API getfollowers
+    try {
+      const followersRes = await axios.get(
+        'https://openapi.zalo.me/v2.0/oa/getfollowers',
+        {
+          headers: { access_token: accessToken.trim() },
+          params: {
+            data: JSON.stringify({ offset: 0, count: 50 }),
           },
-        );
+          timeout: 5000,
+        },
+      );
 
-        if (followersRes.data) {
-          if (
-            followersRes.data.error === 0 &&
-            Array.isArray(followersRes.data?.data?.users)
-          ) {
-            const users = followersRes.data.data.users;
-            for (const u of users) {
-              const uid = String(u.user_id);
-              if (uid && !seenIds.has(uid)) {
-                seenIds.add(uid);
+      if (followersRes.data) {
+        const followers =
+          followersRes.data?.data?.followers ||
+          followersRes.data?.data?.users ||
+          [];
+        if (followersRes.data.error === 0 && Array.isArray(followers)) {
+          for (const u of followers) {
+            const uid = String(u.user_id || u.id);
+            if (uid && !seenIds.has(uid)) {
+              seenIds.add(uid);
 
-                // Lấy profile
-                let displayName = 'Hội viên Zalo';
-                let avatar = '';
-                try {
-                  const profileRes = await axios.get(
-                    'https://openapi.zalo.me/v2.0/oa/getprofile',
-                    {
-                      headers: { access_token: accessToken.trim() },
-                      params: { data: JSON.stringify({ user_id: uid }) },
-                      timeout: 3000,
-                    },
-                  );
-                  if (profileRes.data && profileRes.data.error === 0) {
-                    displayName =
-                      profileRes.data.data?.display_name || displayName;
-                    avatar = profileRes.data.data?.avatar || '';
-                  }
-                } catch {}
+              // Lấy profile
+              let displayName = 'Hội viên Zalo';
+              let avatar = '';
+              try {
+                const profileRes = await axios.get(
+                  'https://openapi.zalo.me/v2.0/oa/getprofile',
+                  {
+                    headers: { access_token: accessToken.trim() },
+                    params: { data: JSON.stringify({ user_id: uid }) },
+                    timeout: 3000,
+                  },
+                );
+                if (profileRes.data && profileRes.data.error === 0) {
+                  displayName =
+                    profileRes.data.data?.display_name || displayName;
+                  avatar = profileRes.data.data?.avatar || '';
+                }
+              } catch {}
 
-                chats.push({
-                  userId: uid,
-                  displayName,
-                  avatar,
-                  lastMessage: 'Đang theo dõi Official Account',
-                  time: Date.now(),
-                });
-              }
+              chats.push({
+                userId: uid,
+                displayName,
+                avatar,
+                lastMessage: 'Đang theo dõi Official Account',
+                time: Date.now(),
+              });
             }
-          } else if (followersRes.data.error !== 0 && !lastZaloError) {
-            lastZaloError = {
-              code: followersRes.data.error,
-              message: followersRes.data.message || 'Lỗi OpenAPI getfollowers',
-              guide:
-                followersRes.data.error === -216
-                  ? 'Access Token đã hết hạn hoặc không hợp lệ. Vui lòng bấm Gia hạn Access Token!'
-                  : undefined,
-            };
-            this.logger.warn(
-              `[Zalo OA] getfollowers error ${followersRes.data.error}: ${followersRes.data.message}`,
-            );
           }
+        } else if (followersRes.data.error !== 0 && !lastZaloError) {
+          lastZaloError = {
+            code: followersRes.data.error,
+            message: followersRes.data.message || 'Lỗi OpenAPI getfollowers',
+            guide:
+              followersRes.data.error === -216
+                ? 'Access Token đã hết hạn hoặc không hợp lệ. Vui lòng bấm Gia hạn Access Token!'
+                : undefined,
+          };
+          this.logger.warn(
+            `[Zalo OA] getfollowers error ${followersRes.data.error}: ${followersRes.data.message}`,
+          );
         }
-      } catch (err: any) {
-        this.logger.warn(`getfollowers warning: ${err.message}`);
       }
+    } catch (err: any) {
+      this.logger.warn(`getfollowers warning: ${err.message}`);
     }
 
     return {
@@ -823,6 +876,170 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       data: chats,
       zaloError: lastZaloError,
     };
+  }
+
+  /**
+   * Đồng bộ toàn bộ người theo dõi / quan tâm từ Zalo OA vào CSDL
+   */
+  async syncFollowersFromZalo(): Promise<{
+    ok: boolean;
+    count: number;
+    subscribers: any[];
+    message: string;
+  }> {
+    const cfg = await this.getOaConfig();
+    let token = cfg?.accessToken;
+    if (!token) {
+      const ref = await this.performAutoRefreshToken();
+      token = ref?.data?.accessToken;
+    }
+    if (!token) {
+      return {
+        ok: false,
+        count: 0,
+        subscribers: await this.getSubscribers(),
+        message: 'Chưa có Access Token Zalo OA hợp lệ',
+      };
+    }
+
+    try {
+      let followersRes = await axios.get(
+        'https://openapi.zalo.me/v2.0/oa/getfollowers',
+        {
+          headers: { access_token: token.trim() },
+          params: { data: JSON.stringify({ offset: 0, count: 50 }) },
+          timeout: 10000,
+        },
+      );
+
+      if (followersRes.data?.error === -216) {
+        // Token hết hạn -> auto refresh và thử lại
+        const ref = await this.performAutoRefreshToken();
+        if (ref?.ok && ref.data?.accessToken) {
+          token = ref.data.accessToken;
+          followersRes = await axios.get(
+            'https://openapi.zalo.me/v2.0/oa/getfollowers',
+            {
+              headers: { access_token: token.trim() },
+              params: { data: JSON.stringify({ offset: 0, count: 50 }) },
+              timeout: 10000,
+            },
+          );
+        }
+      }
+
+      const followers =
+        followersRes.data?.data?.followers ||
+        followersRes.data?.data?.users ||
+        [];
+
+      let syncedCount = 0;
+      for (const f of followers) {
+        const uid = String(f.user_id || f.id || '');
+        if (!uid) continue;
+
+        let displayName = 'Hội viên Zalo';
+        let avatar = '';
+
+        try {
+          const profRes = await axios.get(
+            'https://openapi.zalo.me/v2.0/oa/getprofile',
+            {
+              headers: { access_token: token.trim() },
+              params: { data: JSON.stringify({ user_id: uid }) },
+              timeout: 5000,
+            },
+          );
+          const p = profRes.data?.data;
+          if (p?.display_name) displayName = p.display_name;
+          if (p?.avatar) avatar = p.avatar;
+        } catch {}
+
+        if (this.prisma) {
+          // Thử tìm hội viên khớp tên hoặc liên kết
+          const memberMatch = (await this.prisma
+            .$queryRawUnsafe<any[]>(
+              `SELECT id, phone FROM public.members WHERE zalo_user_id = $1 OR LOWER(name) = LOWER($2) LIMIT 1`,
+              uid,
+              displayName,
+            )
+            .catch(() => [])) || [];
+
+          const matchedMember = memberMatch[0] || null;
+
+          await this.prisma
+            .$executeRawUnsafe(
+              `
+            INSERT INTO public.zalo_subscribers (
+              zalo_user_id, display_name, avatar_url, phone, member_id, last_message, last_interacted_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, 'Đang quan tâm Official Account CEO 1983', now(), now())
+            ON CONFLICT (zalo_user_id) DO UPDATE SET
+              display_name = EXCLUDED.display_name,
+              avatar_url = CASE WHEN EXCLUDED.avatar_url != '' THEN EXCLUDED.avatar_url ELSE public.zalo_subscribers.avatar_url END,
+              phone = COALESCE(EXCLUDED.phone, public.zalo_subscribers.phone),
+              member_id = COALESCE(EXCLUDED.member_id, public.zalo_subscribers.member_id),
+              last_interacted_at = now(),
+              updated_at = now()
+          `,
+              uid,
+              displayName,
+              avatar,
+              matchedMember?.phone || null,
+              matchedMember?.id || null,
+            )
+            .catch(() => {});
+        }
+        syncedCount++;
+      }
+
+      const allSubs = await this.getSubscribers();
+      return {
+        ok: true,
+        count: syncedCount,
+        subscribers: allSubs,
+        message: `Đã đồng bộ thành công ${syncedCount} tài khoản quan tâm từ Zalo OA`,
+      };
+    } catch (err: any) {
+      return {
+        ok: false,
+        count: 0,
+        subscribers: await this.getSubscribers(),
+        message: err?.message || 'Lỗi khi đồng bộ tài khoản quan tâm từ Zalo OA',
+      };
+    }
+  }
+
+  /**
+   * Lấy danh sách hội viên / người dùng đã tương tác hoặc theo dõi Zalo OA
+   */
+  async getSubscribers(): Promise<any[]> {
+    if (!this.prisma) return [];
+    try {
+      const rows: any[] = await this.prisma.$queryRawUnsafe(`
+        SELECT 
+          s.zalo_user_id as "userId",
+          s.display_name as "displayName",
+          COALESCE(s.avatar_url, m.avatar_url, '') as "avatar",
+          COALESCE(s.phone, m.phone, '') as "phone",
+          COALESCE(s.last_message, 'Đang quan tâm Official Account') as "lastMessage",
+          s.last_interacted_at as "lastInteractedAt",
+          m.id as "memberId",
+          m.code as "memberCode",
+          m.company_name as "company"
+        FROM public.zalo_subscribers s
+        LEFT JOIN public.members m ON s.member_id = m.id OR s.zalo_user_id = m.zalo_user_id
+        ORDER BY s.last_interacted_at DESC
+        LIMIT 100
+      `);
+      return rows.map((r) => ({
+        ...r,
+        time: r.lastInteractedAt
+          ? new Date(r.lastInteractedAt).getTime()
+          : Date.now(),
+      }));
+    } catch {
+      return [];
+    }
   }
 
   /**

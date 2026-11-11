@@ -138,12 +138,11 @@ export default function NewsScreen() {
   const fetchNews = useServerFn(listNews);
   const { data: serverNews = [], loading: newsLoading } = useServerData<NewsItem[]>(() => fetchNews(), []);
 
-  // Merge local shared news and server news, filtering out deleted ones
+  // Merge server news and any local drafts, prioritizing server news
   const allNews: Array<NewsItem & { url?: string }> = useMemo(() => {
-    const combined = [
-      ...localNews,
-      ...serverNews.filter((sn) => !localNews.some((ln) => ln.id === sn.id)),
-    ];
+    const serverIds = new Set(serverNews.map((sn) => sn.id));
+    const extraLocal = localNews.filter((ln) => !serverIds.has(ln.id));
+    const combined = [...serverNews, ...extraLocal];
     return combined.filter((n) => !deletedNewsIds.includes(n.id));
   }, [localNews, serverNews, deletedNewsIds]);
 

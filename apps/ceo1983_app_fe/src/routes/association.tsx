@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberScreen } from "@/components/member/MemberShell";
+import { FirstLoginChangePasswordModal } from "@/components/member/FirstLoginChangePasswordModal";
+import { useAuth } from "@/context/AuthContext";
 import { checkRenewalReminder } from "@/lib/member-app.functions";
 import { MEMBER_MANIFEST_HREF } from "@/lib/pwa-manifest";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
@@ -268,6 +270,41 @@ function MemberRoot() {
     path === "/register" ||
     path.startsWith("/register");
 
+  const { user, logout } = useAuth();
+  const [mustChangePassword, setMustChangePassword] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const flag = localStorage.getItem("vba_must_change_password");
+    if (flag === "true") return true;
+    const rawUser = localStorage.getItem("auth_user");
+    if (rawUser) {
+      try {
+        const u = JSON.parse(rawUser);
+        const email = (u.email || "").toLowerCase().trim();
+        const isSysAdmin =
+          email === "admin@connect.vn" ||
+          email === "admin@ceo1983.com" ||
+          email === "ceo.tongthuky@ceo1983.com" ||
+          u.isAdmin ||
+          u.role === "admin" ||
+          u.role === "quan_tri";
+        if (isSysAdmin) return false;
+        return Boolean(u.mustChangePassword || u.must_change_password || u.onboarding_status === "new");
+      } catch {}
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handlePasswordChanged = () => {
+      setMustChangePassword(false);
+      try {
+        localStorage.removeItem("vba_must_change_password");
+      } catch {}
+    };
+    window.addEventListener("password-changed", handlePasswordChanged);
+    return () => window.removeEventListener("password-changed", handlePasswordChanged);
+  }, []);
+
   useRenewalReminder();
   useAssociationRealtimeNotifications();
 
@@ -279,6 +316,20 @@ function MemberRoot() {
   return (
     <MemberScreen>
       <Outlet />
+      {mustChangePassword && (
+        <FirstLoginChangePasswordModal
+          onSuccess={() => {
+            setMustChangePassword(false);
+            try {
+              localStorage.removeItem("vba_must_change_password");
+            } catch {}
+          }}
+          onLogout={() => {
+            logout?.();
+            window.location.replace("/association/login");
+          }}
+        />
+      )}
     </MemberScreen>
   );
 }
