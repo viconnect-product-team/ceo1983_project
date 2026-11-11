@@ -8,7 +8,9 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import axios from 'axios';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveZbsTemplate } from './zbs-template.config';
 
 export class SendZaloMessageDto {
   accessToken!: string;
@@ -41,7 +43,8 @@ export class SendBulkRecipientDto {
 }
 
 export class SendZnsMessageDto {
-  templateId!: string;
+  templateId?: string;
+  templateCode?: string;
   phone!: string;
   templateData!: Record<string, any>;
   accessToken?: string;
@@ -177,6 +180,8 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       secretKey: process.env.ZALO_APP_SECRET || 'f42YHsjU1Ku9UcK7IxZQ',
       oaId: process.env.ZALO_OA_ID || '437444346010531505',
       oaName: 'CLB Doanh Nhân CEO 1983',
+      accessToken: process.env.ZALO_OA_ACCESS_TOKEN || process.env.ZALO_ACCESS_TOKEN || '',
+      refreshToken: process.env.ZALO_REFRESH_TOKEN || '',
       autoRefreshActive: true,
       refreshIntervalHours: 4,
       webhookUrl: 'https://crm.ceo1983.viconnect.vn/api/zalo/webhook',
@@ -194,6 +199,8 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         return {
           ...defaultConfig,
           ...parsed,
+          accessToken: parsed.accessToken || defaultConfig.accessToken,
+          refreshToken: parsed.refreshToken || defaultConfig.refreshToken,
           autoRefreshActive: true,
         };
       }
@@ -1446,55 +1453,75 @@ Trân trọng cảm ơn Anh/Chị!`;
    * Bắn thông báo ZNS (Zalo Notification Service) theo Số Điện Thoại
    * Chuẩn doanh nghiệp lớn 100%: Không cần Zalo User ID, Hội viên không cần quan tâm OA trước!
    */
-  async sendZns(dto: {
-    templateId: string;
-    phone: string;
-    templateData: Record<string, any>;
-    accessToken: string;
-    trackingId?: string;
-  }) {
-    if (!dto.accessToken?.trim()) {
+  async sendZns(dto: SendZnsMessageDto) {
+    if (typeof dto.phone !== 'string' || !dto.phone.trim()) {
       throw new HttpException(
-        'Thiếu Access Token để gửi ZNS',
+        'Số điện thoại nhận ZBS không được để trống',
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (!dto.phone?.trim()) {
+    const digits = dto.phone.replace(/[\s()+.-]/g, '');
+    const formattedPhone = digits.startsWith('0')
+      ? '84' + digits.slice(1)
+      : digits.length === 9
+        ? '84' + digits
+        : digits;
+    if (!/^[1-9]\d{8,14}$/.test(formattedPhone)) {
       throw new HttpException(
-        'Số điện thoại nhận ZNS không được để trống',
+        'Số điện thoại nhận ZBS không hợp lệ',
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (!dto.templateId?.trim()) {
+    if (
+      !dto.templateData ||
+      typeof dto.templateData !== 'object' ||
+      Array.isArray(dto.templateData)
+    ) {
       throw new HttpException(
-        'Template ID ZNS không được để trống',
+        'templateData ZBS phải là một object',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    let formattedPhone = dto.phone.replace(/\D/g, '');
-    if (formattedPhone.startsWith('0')) {
-      formattedPhone = '84' + formattedPhone.slice(1);
-    } else if (!formattedPhone.startsWith('84')) {
-      formattedPhone = '84' + formattedPhone;
+    const config = await this.getOaConfig();
+    const { templateId, templateData } =
+      typeof dto.templateCode === 'string' && dto.templateCode.trim()
+        ? resolveZbsTemplate(dto.templateCode, dto.templateData, config?.zbsTemplates)
+        : {
+            templateId: typeof dto.templateId === 'string' ? dto.templateId.trim() : '',
+            templateData: dto.templateData,
+          };
+    if (!templateId) {
+      throw new HttpException('Template ID ZBS không được để trống', HttpStatus.BAD_REQUEST);
+    }
+
+    let accessToken =
+      (typeof dto.accessToken === 'string' ? dto.accessToken.trim() : '') ||
+      config?.accessToken?.trim();
+    if (!accessToken && config?.refreshToken) {
+      const refreshed = await this.performAutoRefreshToken();
+      if (refreshed.ok) accessToken = refreshed.data?.accessToken;
+    }
+    if (!accessToken) {
+      throw new HttpException('Thiếu OA Access Token để gửi ZBS', HttpStatus.BAD_REQUEST);
     }
 
     try {
       this.logger.log(
-        `Sending ZNS template ${dto.templateId} to phone: ${formattedPhone}`,
+        `Sending ZBS template ${templateId} to phone: ${formattedPhone}`,
       );
       const response = await axios.post(
         'https://business.openapi.zalo.me/message/template',
         {
           phone: formattedPhone,
-          template_id: dto.templateId.trim(),
-          template_data: dto.templateData || {},
-          tracking_id: dto.trackingId || `ceo1983_${Date.now()}`,
+          template_id: templateId,
+          template_data: templateData,
+          tracking_id: dto.trackingId || `ceo1983${randomUUID().replace(/-/g, '')}`,
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            access_token: dto.accessToken.trim(),
+            access_token: accessToken,
           },
           timeout: 10000,
         },
@@ -1504,7 +1531,7 @@ Trân trọng cảm ơn Anh/Chị!`;
       if (resData && resData.error === 0) {
         return {
           success: true,
-          message: 'Bắn thông báo ZNS tới số điện thoại thành công!',
+          message: 'Zalo đã tiếp nhận yêu cầu gửi ZBS Template Message tới số điện thoại.',
           data: resData.data,
         };
       }
@@ -1521,11 +1548,13 @@ Trân trọng cảm ơn Anh/Chị!`;
             ? 'Access Token hết hạn hoặc không có quyền gửi ZNS.'
             : resData.error === -108
               ? 'Số điện thoại không hợp lệ hoặc chưa đăng ký tài khoản Zalo.'
-              : resData.error === -118
-                ? 'Tài khoản ZCA (Zalo Cloud Account) của Doanh nghiệp không đủ số dư để gửi ZNS.'
-                : resData.error === -114
-                  ? 'Template ID ZNS chưa được Zalo phê duyệt hoặc các biến template_data không khớp.'
-                  : undefined,
+              : resData.error === -115 || resData.error === -137
+                ? 'Kiểm tra số dư tài khoản ZBS của doanh nghiệp.'
+                : resData.error === -118
+                  ? 'Số điện thoại chưa có tài khoản Zalo hoặc tài khoản đã bị vô hiệu hóa.'
+                  : resData.error === -109 || resData.error === -131
+                    ? 'Kiểm tra Template ID ZBS và trạng thái phê duyệt của mẫu.'
+                    : undefined,
       };
     } catch (err: any) {
       this.logger.error(`Error sending ZNS: ${err.message}`);

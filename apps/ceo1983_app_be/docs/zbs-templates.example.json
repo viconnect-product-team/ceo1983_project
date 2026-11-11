@@ -1,0 +1,11 @@
+{
+  "FEE_NOTICE_ANNUAL": {
+    "templateId": "",
+    "parameterMap": {
+      "ho_ten": "full_name",
+      "ma_hoi_vien": "member_code",
+      "so_tien": "fee_amount",
+      "han_thanh_toan": "due_date"
+    }
+  }
+}

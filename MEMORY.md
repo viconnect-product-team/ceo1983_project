@@ -1,5 +1,7 @@
 # System Memory & Architecture
 
+- **11/11/2026 — Cấu hình ZBS Template Message cho mẫu CRM ([NODE-CRM-014], [NODE-CRM-024])**: Nút gửi thử kênh Zalo trong `MailTemplateManager.tsx` gọi `POST /zalo/send-zns` với mã mẫu CRM, số nhận và dữ liệu biến. Backend ánh xạ qua `zbsTemplates` trong `zalo_oa_config` hoặc `ZALO_ZBS_TEMPLATES` (`templateId`, `parameterMap`), sử dụng OA token phía server và cơ chế gia hạn hiện có. Thiếu ID/biến hoặc Zalo từ chối phải báo lỗi; không báo gửi thành công giả hay tự chuyển sang CS. Cấu hình mẫu và hướng dẫn: `apps/ceo1983_app_be/docs/ZBS_TEMPLATE_MESSAGE.md`, `zbs-templates.example.json`. ID để trống chờ mẫu của OA/App được Zalo duyệt; chưa gửi tin thật. Không thay giao diện hoặc schema CSDL.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.09): Đồng Bộ Tin Tức ceo1983.com & CRM, Nâng Cấp Zalo OA Tự Động Giữ Token & Nút Call/Nhắn Tin, Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab, Header iOS Safe Area, Gỡ Bỏ Dark Theme & Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu ([NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-002], [NODE-APP-009], [NODE-APP-011], [NODE-CORE-001], [NODE-CORE-002])**:
   1. *Đồng bộ Tin tức ceo1983.com & Khắc phục Tin tức trên Mobile App CEO 1983*:
      - **Nguyên nhân gốc rễ**:

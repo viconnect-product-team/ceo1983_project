@@ -16,6 +16,7 @@ import {
   RefreshZaloTokenDto,
   ExchangeZaloAuthCodeDto,
   SendBulkZaloMessageDto,
+  SendZnsMessageDto,
 } from './zalo.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -120,16 +121,7 @@ export class ZaloController {
    */
   @Post('send-zns')
   @UseGuards(JwtAuthGuard)
-  async sendZns(
-    @Body()
-    dto: {
-      templateId: string;
-      phone: string;
-      templateData: Record<string, any>;
-      accessToken: string;
-      trackingId?: string;
-    },
-  ) {
+  async sendZns(@Body() dto: SendZnsMessageDto) {
     return this.zaloService.sendZns(dto);
   }
 

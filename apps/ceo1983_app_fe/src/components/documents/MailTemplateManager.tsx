@@ -869,52 +869,58 @@ export function MailTemplateManager() {
 
     setIsSendingTest(true);
     const sentChannels: string[] = [];
+    let emailError = "";
 
     try {
       // 1. Gửi qua Email nếu chọn Email hoặc Cả hai
       if (sendChannel === "email" || sendChannel === "both") {
-        await fetchNestApi("/mail/send-test", {
-          method: "POST",
-          body: JSON.stringify({
-            to: targetEmail,
-            subject: renderedContent.subject,
-            html: renderedContent.html,
-            templateCode: activeTemplate.code,
-          }),
-        }).catch(() => {});
-        sentChannels.push(`Email (${targetEmail})`);
+        try {
+          const result = await fetchNestApi<{ ok: boolean; message?: string }>("/mail/send-test", {
+            method: "POST",
+            body: JSON.stringify({
+              to: targetEmail,
+              subject: renderedContent.subject,
+              html: renderedContent.html,
+              templateCode: activeTemplate.code,
+            }),
+          });
+          if (!result?.ok) throw new Error(result?.message || "Không gửi được email");
+          sentChannels.push(`Email (${targetEmail})`);
+        } catch (err: any) {
+          emailError = err?.message || "Không gửi được email";
+        }
       }
 
       // 2. Gửi qua Zalo OA nếu chọn Zalo hoặc Cả hai
       if (sendChannel === "zalo" || sendChannel === "both") {
-        const zaloAccessToken = typeof window !== "undefined" ? localStorage.getItem("vba_zalo_access_token") || "" : "";
-        // TUYỆT ĐỐI KHÔNG hiện QR thanh toán (vietqr_url) trực tiếp vào Zalo theo yêu cầu CRM
-        const qrUrl = sampleValues.qr_code_url || "";
-        const zaloVariables = activeTemplate.variables?.filter((v) => v.key !== "vietqr_url") || [];
-        const zaloMsg = `📢 [CEO 1983 - ${renderedContent.inAppTitle || renderedContent.subject}]
-${renderedContent.inAppBody || renderedContent.subject}
-
-${zaloVariables.map((v) => `• ${v.label}: ${sampleValues[v.key] || v.example}`).join("\n")}${qrUrl ? `\n\n📱 Link Mã QR Check-in: ${qrUrl}` : ""}`;
-
-        await fetchNestApi("/zalo/send-message", {
+        // Backend ánh xạ mã mẫu CRM sang template ZBS đã duyệt và dùng OA token đã lưu.
+        const templateData = Object.fromEntries(
+          (activeTemplate.variables || [])
+            .filter((variable) => variable.key !== "vietqr_url")
+            .map((variable) => [variable.key, sampleValues[variable.key] ?? variable.example])
+        );
+        const result = await fetchNestApi<{ success: boolean; message?: string; guide?: string }>("/zalo/send-zns", {
           method: "POST",
           body: JSON.stringify({
-            accessToken: zaloAccessToken,
-            targetPhone: targetPhone,
-            targetName: sampleValues.full_name || "Hội viên CEO 1983",
-            message: zaloMsg,
+            templateCode: activeTemplate.code,
+            phone: targetPhone,
+            templateData,
           }),
-        }).catch(() => {});
-        sentChannels.push(`Zalo OA (${targetPhone})`);
+        });
+        if (!result?.success) {
+          throw new Error(result?.guide || result?.message || "Zalo chưa chấp nhận yêu cầu gửi ZBS");
+        }
+        sentChannels.push(`ZBS (${targetPhone})`);
       }
 
+      if (emailError) throw new Error(emailError);
       toast.success(
-        `✓ Đã đẩy thông báo mẫu [${activeTemplate.name}] thành công qua ${sentChannels.join(" & ")}!`
+        `✓ Đã tiếp nhận gửi mẫu [${activeTemplate.name}] qua ${sentChannels.join(" & ")}!`
       );
     } catch (err: any) {
-      toast.success(
-        `✓ Đã gửi thông báo thử nghiệm mẫu [${activeTemplate.code}] tới: ${sentChannels.join(", ") || targetEmail}`
-      );
+      const completed = sentChannels.length ? ` Đã gửi qua ${sentChannels.join(" & ")}.` : "";
+      const detail = err?.message || "Không gửi được thông báo thử nghiệm.";
+      toast.error(`${detail}${emailError && emailError !== detail ? ` Email: ${emailError}.` : ""}${completed}`);
     } finally {
       setIsSendingTest(false);
     }
