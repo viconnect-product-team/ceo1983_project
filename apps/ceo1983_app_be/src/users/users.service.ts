@@ -67,7 +67,7 @@ async function saveBase64AvatarDirectly(
         await fs.promises.writeFile(path.join(dir, filename), buffer);
         written = true;
         break;
-      } catch {}
+      } catch { }
     }
     if (written) {
       return `/upload/file/avatars/${filename}`;
@@ -343,7 +343,7 @@ export class UsersService {
     private readonly usersRepo: UsersRepository,
     private readonly mailService: MailService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async getMemberInfo(userId: string, email?: string) {
     return this.usersRepo.getMemberInfo(userId, email);
@@ -799,17 +799,17 @@ export class UsersService {
         memberId: memberRow?.id || null,
         profile: profile
           ? {
-              display_name: profile.display_name,
-              professional_title: profile.professional_title,
-              company_name: profile.company_name,
-              industry: profile.industry,
-              region: profile.region,
-              bio: profile.bio,
-              locale: profile.locale,
-              timezone: profile.timezone,
-              onboarding_status: profile.onboarding_status,
-              account_status: profile.account_status,
-            }
+            display_name: profile.display_name,
+            professional_title: profile.professional_title,
+            company_name: profile.company_name,
+            industry: profile.industry,
+            region: profile.region,
+            bio: profile.bio,
+            locale: profile.locale,
+            timezone: profile.timezone,
+            onboarding_status: profile.onboarding_status,
+            account_status: profile.account_status,
+          }
           : null,
         roles: roleList,
         role: primaryRole,
@@ -833,9 +833,9 @@ export class UsersService {
           normalizedDept,
           primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
           primaryRole === 'admin' ||
-            primaryRole === 'chu_tich' ||
-            roleList.includes('admin') ||
-            roleList.includes('platform_admin'),
+          primaryRole === 'chu_tich' ||
+          roleList.includes('admin') ||
+          roleList.includes('platform_admin'),
           dynamicMatrix,
         ),
         permissionMatrix: dynamicMatrix,
@@ -1485,7 +1485,7 @@ export class UsersService {
     // Bắt buộc đổi mật khẩu khởi tạo khi lần đầu đăng nhập
     await this.prisma.$executeRaw`
       UPDATE public.vione_users SET must_change_password = true WHERE id = ${newUser.id}::uuid
-    `.catch(() => {});
+    `.catch(() => { });
 
     if (data.role) {
       await this.usersRepo.createUserRole(newUser.id, data.role);
@@ -1562,7 +1562,7 @@ export class UsersService {
           data.role,
           id,
         )
-        .catch(() => {});
+        .catch(() => { });
     }
 
     return this.getAccountDetails(id);
@@ -1597,7 +1597,7 @@ export class UsersService {
     try {
       await this.usersRepo.updateUser(userId, { password: hashedPassword });
       await this.usersRepo.syncAuthUserPassword(userId, hashedPassword);
-    } catch {}
+    } catch { }
   }
 
   async adminToggleStatus(id: string, newStatus?: string) {
@@ -1669,77 +1669,77 @@ export class UsersService {
             `DELETE FROM public.vba_member_permissions WHERE user_id = $1::uuid OR member_id::text = $1`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.memberships WHERE user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.business_relationship_moment_media WHERE owner_user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.business_relationship_moments WHERE owner_user_id = $1::uuid OR target_user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.meeting_participants WHERE user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.business_appointments WHERE host_user_id = $1::uuid OR guest_user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.event_registrations WHERE user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.member_business_cards WHERE user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.card_settings WHERE user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.user_connections WHERE requester_user_id = $1::uuid OR recipient_user_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.direct_messages WHERE sender_id = $1::uuid OR recipient_id = $1::uuid`,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
 
         if (userEmail) {
           await this.prisma
@@ -1748,14 +1748,14 @@ export class UsersService {
               targetId,
               userEmail,
             )
-            .catch(() => {});
+            .catch(() => { });
         } else {
           await this.prisma
             .$executeRawUnsafe(
               `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1`,
               targetId,
             )
-            .catch(() => {});
+            .catch(() => { });
         }
       } else if (userEmail) {
         await this.prisma
@@ -1764,7 +1764,7 @@ export class UsersService {
             userEmail,
             targetId,
           )
-          .catch(() => {});
+          .catch(() => { });
       }
 
       await this.usersRepo.deleteUserRoles(targetId);

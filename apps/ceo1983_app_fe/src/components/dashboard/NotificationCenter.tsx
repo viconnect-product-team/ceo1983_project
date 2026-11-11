@@ -240,26 +240,54 @@ export function NotificationCenter() {
       <div
         key={n.id ?? `${n.title}-${i}`}
         onClick={() => handleItemClick(n)}
-        className={`group flex items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-muted relative cursor-pointer ${
-          unread ? "bg-accent/40" : ""
+        className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors relative cursor-pointer ${
+          unread
+            ? "bg-blue-50/80 hover:bg-blue-100/70 dark:bg-blue-950/30 dark:hover:bg-blue-950/50 border-l-[3px] border-[#003B95] dark:border-l-blue-400 shadow-2xs"
+            : "hover:bg-muted/70"
         }`}
       >
         <span
           className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
-            unread ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+            unread
+              ? "bg-[#003B95]/10 text-[#003B95] dark:bg-blue-500/20 dark:text-blue-300"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground group-hover:text-primary transition-colors">{n.title}</p>
-            {unread && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+            <p
+              className={`min-w-0 flex-1 truncate text-sm transition-colors ${
+                unread
+                  ? "font-bold text-slate-900 dark:text-white group-hover:text-[#003B95] dark:group-hover:text-blue-300"
+                  : "font-medium text-slate-700 dark:text-slate-300 group-hover:text-foreground"
+              }`}
+            >
+              {n.title}
+            </p>
+            {unread && (
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#003B95] dark:bg-blue-400 ring-2 ring-blue-100 dark:ring-blue-900" />
+            )}
           </div>
-          {n.body && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>}
+          {n.body && (
+            <p
+              className={`mt-0.5 line-clamp-2 text-xs ${
+                unread ? "text-slate-600 dark:text-slate-300" : "text-muted-foreground"
+              }`}
+            >
+              {n.body}
+            </p>
+          )}
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                  unread
+                    ? "bg-blue-100/90 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-700/60"
+                    : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                }`}
+              >
                 {n.appScope === 'all' || n.targetApp === 'all' ? 'Toàn hệ thống' : 'CRM Quản trị'}
               </span>
               <p className="text-[11px] text-muted-foreground">{rel(n.sentAt)}</p>

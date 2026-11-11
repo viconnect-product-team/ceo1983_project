@@ -261,11 +261,6 @@ export function IncomingConnectionModal() {
               <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-600 dark:text-amber-400">
                 {title}
               </span>
-              {profile.memberCode && (
-                <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
-                  {profile.memberCode}
-                </span>
-              )}
             </div>
           </div>
 

@@ -984,14 +984,9 @@ function CardScreen() {
                 <p className="text-[11px] text-slate-500">{d.company}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300"
-            >
-              <span>{effectiveMember?.code || currentMemberCode}</span>
-              {copiedCode ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
-            </button>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shadow-2xs">
+              <Check className="h-3 w-3 text-emerald-500" /> Đã xác thực
+            </span>
           </div>
 
           <div className="mt-3 space-y-2 text-[12.5px]">

@@ -1979,8 +1979,8 @@ export function AssociationAnalyticsScreen() {
                     </strong>
                   </div>
                   <div>
-                    <span className="text-slate-400">Mã hội viên: </span>
-                    <strong>{currentMember?.code || "HV-1983"}</strong>
+                    <span className="text-slate-400">Tình trạng: </span>
+                    <strong className="text-emerald-600 dark:text-emerald-400">Đã kích hoạt</strong>
                   </div>
                   <div>
                     <span className="text-slate-400">Tư cách / Ban: </span>

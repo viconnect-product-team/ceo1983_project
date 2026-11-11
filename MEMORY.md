@@ -1,5 +1,41 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.10): Hoàn Thiện Giao Diện CRM Dark Theme Text Sáng & Màu Thông Báo Chưa Đọc, Bỏ Hoàn Toàn Mã Hội Viên Trên Mobile App, Tinh Chỉnh Nút Hồ Sơ Cá Nhân Xanh - Cam, Chuẩn Hóa Giờ Sự Kiện & Nút Chi Tiết, Tối Ưu Header iOS Safe Area Notch & Dynamic Island, Gỡ Bỏ Theme Tối Trong Cài Đặt Hệ Thống Mobile ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-001], [NODE-APP-003], [NODE-APP-008], [NODE-APP-011])**:
+  1. *Khắc Phục Màu Thông Báo Chưa Đọc Tại Cổng Quản Trị CRM (`NotificationCenter.tsx`)*:
+     - Thay đổi sang dải nền xanh thanh lịch: `bg-blue-50/80 hover:bg-blue-100/70 dark:bg-blue-950/30 dark:hover:bg-blue-950/50`.
+     - Dải viền trái thương hiệu CEO 1983: `border-l-[3px] border-[#003B95] dark:border-l-blue-400`.
+     - Icon & chấm unread màu xanh navy `#003B95`, badge phân hệ `bg-blue-100/90 text-blue-700`.
+  2. *Khắc Phục Lỗi Text Tối Màu Khi Bật Dark Theme Trên Web CRM (`styles.css`, `CustomTable.tsx`, `ThemeSwitcher.tsx`)*:
+     - Thêm bộ quy tắc override CSS toàn cục tối cao cho `.dark` / `html.dark` trong `styles.css` tự động nâng tất cả chữ đen/xám tối thành màu sáng tương phản cao: `#F8FAFC` (trắng ngà), `#E2E8F0` (xám sáng), `#CBD5E1`.
+     - Cập nhật bảng dữ liệu `CustomTable.tsx`: Cột STT và các ô nội dung tự động dùng `dark:text-slate-100` / `dark:text-slate-300`.
+     - Khôi phục `ThemeSwitcher.tsx` trên Topbar Web CRM để quản trị viên tự do chuyển đổi giữa Light Theme và Dark Theme.
+     - Cô lập `theme.tsx`: Phân hệ Mobile App (`/association/*`) luôn luôn chạy Light Theme theo chuẩn thương hiệu, trong khi CRM Web hỗ trợ đầy đủ cả 2 chế độ.
+  3. *Loại Bỏ Hoàn Toàn Mã Hội Viên Khỏi Giao Diện Mobile App CEO 1983*:
+     - `association.profile.tsx`: Xóa bỏ hoàn toàn badge `• M1983-xxx` ở góc trái ảnh bìa profile cá nhân.
+     - `association.members.tsx`: Xóa bỏ toàn bộ mã hội viên tại cả 6 khu vực: Tab Yêu cầu kết nối, Tab Lời mời đã gửi, Tab Lời mời nhận được, Tab Gợi ý kết nối, Tab Danh bạ chính, Tab Danh bạ đã quét.
+     - `MemberProfileModal.tsx` & `IncomingConnectionModal.tsx`: Xóa bỏ hiển thị mã hội viên trong popup hồ sơ chi tiết.
+     - `association.index.tsx`: Fallback avatar chữ viết tắt từ tên thật thay vì mã hội viên.
+     - `association.card.tsx`, `association.settings.tsx`, `association.analytics.tsx`: Thay thế hiển thị mã hội viên bằng các badge trạng thái chính thức: *"Hội viên chính thức"*, *"Đã xác thực"*, *"Đã kích hoạt"*.
+  4. *Tinh Chỉnh 3 Nút Hành Động Màn Cá Nhân Mobile (`association.profile.tsx`)*:
+     - Bỏ toàn bộ background nền bao quanh icon, chuyển sang nền trong suốt phẳng `bg-transparent hover:bg-slate-50`.
+     - Sử dụng bộ icon vector Lucide sắc nét:
+       * **Danh thiếp**: Icon `CreditCard` màu Xanh CEO 1983 `#003B95`, chữ xanh đậm.
+       * **Chia sẻ**: Icon `Share2` màu Cam CEO 1983 `#E0592A`, chữ cam nổi bật.
+       * **Sửa hồ sơ**: Icon `Edit3` màu Xanh CEO 1983 `#003B95`, chữ xanh đậm.
+  5. *Chuẩn Hóa Giờ Sự Kiện Bắt Đầu - Kết Thúc & Nút Chi Tiết Nổi Bật (`association.index.tsx`, `association.events.tsx`)*:
+     - Xây dựng hàm chuẩn hóa `formatEventTimeRange(ev, title)`: Ưu tiên lấy dải giờ `startTime - endTime` hoặc `time` từ CSDL; nếu thiếu thì tự động sinh khung giờ thông minh tương ứng loại sự kiện (Golf: `06:00 - 15:30`, Gala/Đại hội: `18:00 - 22:00`, Tọa đàm/Workshop: `08:30 - 11:45`, Caravan: `07:00 - 18:00`, Mặc định: `08:00 - 17:30`). Tuyệt đối không hiển thị `00:00`.
+     - Nút "Chi tiết >": Cố định dải gradient cam sang trọng `from-[#E0592A] to-[#f97316]` kèm chữ trắng `#ffffff` font-extrabold và icon Chevron trắng stroke-[3], đảm bảo tương phản tuyệt đối trên mọi nền ảnh poster.
+  6. *Tối Ưu Header iOS / iPhone Safe Area Notch & Dynamic Island*:
+     - `association.index.tsx` & `styles.css`: Nâng padding-top tối thiểu lên `calc(max(env(safe-area-inset-top, 0px), 48px) + 6px)`, đảm bảo status bar, đồng hồ `14:09`, pin và Dynamic Island không bao giờ che đè lên logo và lời chào "Xin chào, Phạm hồng Nguyên".
+  7. *Gỡ Bỏ Hoàn Toàn Tùy Chọn Theme Tối Trong Cài Đặt Hệ Thống & Cài Đặt Cá Nhân (`association.system-config.tsx`, `association.profile.tsx`, `association.tsx`)*:
+     - `association.system-config.tsx`: Gỡ bỏ hoàn toàn khối chức năng "4. CHẾ ĐỘ HIỂN THỊ (SÁNG / TỐI)" và các nút chọn Light/Dark mode. Cập nhật mô tả banner sang *"Thiết lập nhận diện màu sắc, ngôn ngữ và Trợ lý AI thông minh"*.
+     - `association.profile.tsx`: Xóa bỏ hàng nút chuyển đổi *"Chế độ Sáng / Tối"* trong sheet tùy chỉnh nhanh.
+     - `association.tsx` (`MemberRoot`): Bổ sung `useEffect` cưỡng chế `root.classList.remove("dark")`, `root.classList.add("light")`, `root.style.colorScheme = "light"` và `localStorage.setItem("vba.theme", "light")` ngay khi nạp ứng dụng. Đảm bảo toàn bộ hội viên khi mở ứng dụng luôn luôn trải nghiệm giao diện Theme Sáng thanh lịch, đúng chuẩn nhận diện thương hiệu CLB CEO 1983.
+  8. *Kiểm Chứng Chất Lượng & Tuân Thủ Quy Chuẩn (Strict Step 5)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
 - **11/11/2026 — Cấu hình ZBS Template Message cho mẫu CRM ([NODE-CRM-014], [NODE-CRM-024])**: Nút gửi thử kênh Zalo trong `MailTemplateManager.tsx` gọi `POST /zalo/send-zns` với mã mẫu CRM, số nhận và dữ liệu biến. Backend ánh xạ qua `zbsTemplates` trong `zalo_oa_config` hoặc `ZALO_ZBS_TEMPLATES` (`templateId`, `parameterMap`), sử dụng OA token phía server và cơ chế gia hạn hiện có. Thiếu ID/biến hoặc Zalo từ chối phải báo lỗi; không báo gửi thành công giả hay tự chuyển sang CS. Cấu hình mẫu và hướng dẫn: `apps/ceo1983_app_be/docs/ZBS_TEMPLATE_MESSAGE.md`, `zbs-templates.example.json`. ID để trống chờ mẫu của OA/App được Zalo duyệt; chưa gửi tin thật. Không thay giao diện hoặc schema CSDL.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.09): Đồng Bộ Tin Tức ceo1983.com & CRM, Nâng Cấp Zalo OA Tự Động Giữ Token & Nút Call/Nhắn Tin, Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab, Header iOS Safe Area, Gỡ Bỏ Dark Theme & Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu ([NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-002], [NODE-APP-009], [NODE-APP-011], [NODE-CORE-001], [NODE-CORE-002])**:
@@ -1354,6 +1390,42 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.10): Hoàn Thiện Giao Diện CRM Dark Theme Text Sáng & Màu Thông Báo Chưa Đọc, Bỏ Hoàn Toàn Mã Hội Viên Trên Mobile App, Tinh Chỉnh Nút Hồ Sơ Cá Nhân Xanh - Cam, Chuẩn Hóa Giờ Sự Kiện & Nút Chi Tiết, Tối Ưu Header iOS Safe Area Notch & Dynamic Island, Gỡ Bỏ Theme Tối Trong Cài Đặt Hệ Thống Mobile ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-001], [NODE-APP-003], [NODE-APP-008], [NODE-APP-011])**:
+  1. *Khắc Phục Màu Thông Báo Chưa Đọc Tại Cổng Quản Trị CRM (`NotificationCenter.tsx`)*:
+     - Thay đổi sang dải nền xanh thanh lịch: `bg-blue-50/80 hover:bg-blue-100/70 dark:bg-blue-950/30 dark:hover:bg-blue-950/50`.
+     - Dải viền trái thương hiệu CEO 1983: `border-l-[3px] border-[#003B95] dark:border-l-blue-400`.
+     - Icon & chấm unread màu xanh navy `#003B95`, badge phân hệ `bg-blue-100/90 text-blue-700`.
+  2. *Khắc Phục Lỗi Text Tối Màu Khi Bật Dark Theme Trên Web CRM (`styles.css`, `CustomTable.tsx`, `ThemeSwitcher.tsx`)*:
+     - Thêm bộ quy tắc override CSS toàn cục tối cao cho `.dark` / `html.dark` trong `styles.css` tự động nâng tất cả chữ đen/xám tối thành màu sáng tương phản cao: `#F8FAFC` (trắng ngà), `#E2E8F0` (xám sáng), `#CBD5E1`.
+     - Cập nhật bảng dữ liệu `CustomTable.tsx`: Cột STT và các ô nội dung tự động dùng `dark:text-slate-100` / `dark:text-slate-300`.
+     - Khôi phục `ThemeSwitcher.tsx` trên Topbar Web CRM để quản trị viên tự do chuyển đổi giữa Light Theme và Dark Theme.
+     - Cô lập `theme.tsx`: Phân hệ Mobile App (`/association/*`) luôn luôn chạy Light Theme theo chuẩn thương hiệu, trong khi CRM Web hỗ trợ đầy đủ cả 2 chế độ.
+  3. *Loại Bỏ Hoàn Toàn Mã Hội Viên Khỏi Giao Diện Mobile App CEO 1983*:
+     - `association.profile.tsx`: Xóa bỏ hoàn toàn badge `• M1983-xxx` ở góc trái ảnh bìa profile cá nhân.
+     - `association.members.tsx`: Xóa bỏ toàn bộ mã hội viên tại cả 6 khu vực: Tab Yêu cầu kết nối, Tab Lời mời đã gửi, Tab Lời mời nhận được, Tab Gợi ý kết nối, Tab Danh bạ chính, Tab Danh bạ đã quét.
+     - `MemberProfileModal.tsx` & `IncomingConnectionModal.tsx`: Xóa bỏ hiển thị mã hội viên trong popup hồ sơ chi tiết.
+     - `association.index.tsx`: Fallback avatar chữ viết tắt từ tên thật thay vì mã hội viên.
+     - `association.card.tsx`, `association.settings.tsx`, `association.analytics.tsx`: Thay thế hiển thị mã hội viên bằng các badge trạng thái chính thức: *"Hội viên chính thức"*, *"Đã xác thực"*, *"Đã kích hoạt"*.
+  4. *Tinh Chỉnh 3 Nút Hành Động Màn Cá Nhân Mobile (`association.profile.tsx`)*:
+     - Bỏ toàn bộ background nền bao quanh icon, chuyển sang nền trong suốt phẳng `bg-transparent hover:bg-slate-50`.
+     - Sử dụng bộ icon vector Lucide sắc nét:
+       * **Danh thiếp**: Icon `CreditCard` màu Xanh CEO 1983 `#003B95`, chữ xanh đậm.
+       * **Chia sẻ**: Icon `Share2` màu Cam CEO 1983 `#E0592A`, chữ cam nổi bật.
+       * **Sửa hồ sơ**: Icon `Edit3` màu Xanh CEO 1983 `#003B95`, chữ xanh đậm.
+  5. *Chuẩn Hóa Giờ Sự Kiện Bắt Đầu - Kết Thúc & Nút Chi Tiết Nổi Bật (`association.index.tsx`, `association.events.tsx`)*:
+     - Xây dựng hàm chuẩn hóa `formatEventTimeRange(ev, title)`: Ưu tiên lấy dải giờ `startTime - endTime` hoặc `time` từ CSDL; nếu thiếu thì tự động sinh khung giờ thông minh tương ứng loại sự kiện (Golf: `06:00 - 15:30`, Gala/Đại hội: `18:00 - 22:00`, Tọa đàm/Workshop: `08:30 - 11:45`, Caravan: `07:00 - 18:00`, Mặc định: `08:00 - 17:30`). Tuyệt đối không hiển thị `00:00`.
+     - Nút "Chi tiết >": Cố định dải gradient cam sang trọng `from-[#E0592A] to-[#f97316]` kèm chữ trắng `#ffffff` font-extrabold và icon Chevron trắng stroke-[3], đảm bảo tương phản tuyệt đối trên mọi nền ảnh poster.
+  6. *Tối Ưu Header iOS / iPhone Safe Area Notch & Dynamic Island*:
+     - `association.index.tsx` & `styles.css`: Nâng padding-top tối thiểu lên `calc(max(env(safe-area-inset-top, 0px), 48px) + 6px)`, đảm bảo status bar, đồng hồ `14:09`, pin và Dynamic Island không bao giờ che đè lên logo và lời chào "Xin chào, Phạm hồng Nguyên".
+  7. *Gỡ Bỏ Hoàn Toàn Tùy Chọn Theme Tối Trong Cài Đặt Hệ Thống & Cài Đặt Cá Nhân (`association.system-config.tsx`, `association.profile.tsx`, `association.tsx`)*:
+     - `association.system-config.tsx`: Gỡ bỏ hoàn toàn khối chức năng "4. CHẾ ĐỘ HIỂN THỊ (SÁNG / TỐI)" và các nút chọn Light/Dark mode. Cập nhật mô tả banner sang *"Thiết lập nhận diện màu sắc, ngôn ngữ và Trợ lý AI thông minh"*.
+     - `association.profile.tsx`: Xóa bỏ hàng nút chuyển đổi *"Chế độ Sáng / Tối"* trong sheet tùy chỉnh nhanh.
+     - `association.tsx` (`MemberRoot`): Bổ sung `useEffect` cưỡng chế `root.classList.remove("dark")`, `root.classList.add("light")`, `root.style.colorScheme = "light"` và `localStorage.setItem("vba.theme", "light")` ngay khi nạp ứng dụng. Đảm bảo toàn bộ hội viên khi mở ứng dụng luôn luôn trải nghiệm giao diện Theme Sáng thanh lịch, đúng chuẩn nhận diện thương hiệu CLB CEO 1983.
+  8. *Kiểm Chứng Chất Lượng & Tuân Thủ Quy Chuẩn (Strict Step 5)*:
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.09): Đồng Bộ Tin Tức ceo1983.com & CRM, Nâng Cấp Zalo OA Tự Động Giữ Token & Nút Call/Nhắn Tin, Khắc Phục Lỗi Chớp Dữ Liệu Cũ Khi Chuyển Tab, Header iOS Safe Area, Gỡ Bỏ Dark Theme & Khôi Phục Luồng Bắt Buộc Đổi Mật Khẩu Lần Đầu ([NODE-CRM-009], [NODE-CRM-010], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-002], [NODE-APP-009], [NODE-APP-011], [NODE-CORE-001], [NODE-CORE-002])**:
   1. *Đồng bộ Tin tức ceo1983.com & Khắc phục Tin tức trên Mobile App CEO 1983*:

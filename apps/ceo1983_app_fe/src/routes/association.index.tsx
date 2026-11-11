@@ -1244,7 +1244,7 @@ function Home() {
         <div
           data-type="1"
           style={{
-            paddingTop: "calc(max(env(safe-area-inset-top, 0px), 16px) + 8px)",
+            paddingTop: "calc(max(env(safe-area-inset-top, 0px), 48px) + 6px)",
           }}
           className="self-stretch px-4 pb-2.5 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-30 border-b border-slate-100"
         >
@@ -1593,12 +1593,35 @@ function Home() {
                           <span className="inline-flex items-center gap-1 font-medium text-white">
                             <Clock className="size-3.5 text-orange-400 shrink-0" />
                             {(() => {
+                              const evAny = currentEv as any;
+                              const sTime = evAny?.startTime || evAny?.start_time;
+                              const eTime = evAny?.endTime || evAny?.end_time;
+                              if (sTime && eTime && sTime !== "00:00" && eTime !== "00:00") {
+                                return `${sTime} - ${eTime}`;
+                              }
+                              if (sTime && sTime !== "00:00") {
+                                return `${sTime} - 17:30`;
+                              }
                               const t = currentEv.time;
-                              if (t && t.includes("-")) return t;
+                              if (t && t.includes("-") && !t.includes("00:00 - 00:00")) return t;
                               if (t && t !== "00:00") return `${t} - 17:30`;
-                              if (realTitle.toLowerCase().includes("golf")) return "06:00 - 15:30";
-                              if (realTitle.toLowerCase().includes("gala") || realTitle.toLowerCase().includes("kỷ niệm")) return "18:00 - 22:00";
-                              if (realTitle.toLowerCase().includes("tọa đàm") || realTitle.toLowerCase().includes("workshop")) return "08:30 - 11:45";
+
+                              if (currentEv.date) {
+                                try {
+                                  const d = new Date(currentEv.date);
+                                  if (!isNaN(d.getTime()) && (d.getHours() !== 0 || d.getMinutes() !== 0)) {
+                                    const hh = String(d.getHours()).padStart(2, "0");
+                                    const mm = String(d.getMinutes()).padStart(2, "0");
+                                    return `${hh}:${mm} - 21:30`;
+                                  }
+                                } catch {}
+                              }
+
+                              const tl = realTitle.toLowerCase();
+                              if (tl.includes("golf")) return "06:00 - 15:30";
+                              if (tl.includes("gala") || tl.includes("kỷ niệm") || tl.includes("đại hội")) return "18:00 - 22:00";
+                              if (tl.includes("tọa đàm") || tl.includes("workshop") || tl.includes("diễn đàn")) return "08:30 - 11:45";
+                              if (tl.includes("caravan")) return "07:00 - 18:00";
                               return "08:00 - 17:30";
                             })()}
                           </span>
@@ -1606,9 +1629,11 @@ function Home() {
                             {(currentEv as any).location || (currentEv as any).place || (currentEv as any).venue || "Hà Nội"}
                           </span>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full bg-gradient-to-r from-[#E0592A] to-[#f97316] hover:from-[#c94b20] hover:to-[#ea580c] text-white font-extrabold text-[11.5px] shadow-md transition border border-white/20">
-                          <span className="text-white font-bold">Chi tiết</span>
-                          <ChevronRight className="size-3.5 stroke-[3] text-white" />
+                        <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#E0592A] to-[#f97316] hover:from-[#c94b20] hover:to-[#ea580c] shadow-md transition border border-white/20 select-none">
+                          <span className="font-extrabold text-[11.5px] leading-none text-white" style={{ color: "#ffffff" }}>
+                            Chi tiết
+                          </span>
+                          <ChevronRight className="size-3.5 stroke-[3] text-white" style={{ color: "#ffffff" }} />
                         </span>
                       </div>
                     </div>
@@ -1765,7 +1790,7 @@ function Home() {
                   title={`Xem hồ sơ chi tiết của ${pName}`}
                 >
                   <div className="size-9 bg-orange-500 rounded-xl outline outline-1 outline-orange-300 flex justify-center items-center shrink-0 shadow-2xs">
-                    <span className="text-white text-xs font-bold font-sans">{m.code ? m.code.slice(0, 2).toUpperCase() : initials(pName)}</span>
+                    <span className="text-white text-xs font-bold font-sans">{initials(pName)}</span>
                   </div>
                   <div className="inline-flex flex-col justify-start items-start min-w-0">
                     <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{pName}</span>
