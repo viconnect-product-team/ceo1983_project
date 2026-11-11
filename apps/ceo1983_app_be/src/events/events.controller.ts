@@ -247,8 +247,7 @@ export class EventsController {
     return this.eventsService.updateQrFields(req.user.id, id, qrFields);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt')
+  @UseGuards(JwtAuthGuard)
   @Put('registrations/:id/seating')
   async updateRegistrationSeating(
     @Request() req: any,

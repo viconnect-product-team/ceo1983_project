@@ -232,6 +232,34 @@ function CompanyLocationMap({
   );
 }
 
+// Helper parse chuỗi about từ database (nếu lưu dạng JSON thì parse bóc tách sạch sẽ, tuyệt đối không in JSON thô)
+function parseMemberAbout(rawAbout?: string | null): string {
+  if (!rawAbout) return "";
+  const trimmed = rawAbout.trim();
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.notes && typeof parsed.notes === "string" && parsed.notes.trim()) {
+        return parsed.notes.trim();
+      }
+      const parts: string[] = [];
+      if (parsed.representative && parsed.position) {
+        parts.push(`${parsed.representative} - ${parsed.position}`);
+      } else if (parsed.representative) {
+        parts.push(parsed.representative);
+      }
+      if (parsed.businessField) parts.push(`Ngành nghề / Lĩnh vực: ${parsed.businessField}`);
+      if (parsed.staffSize) parts.push(`Quy mô nhân sự: ${parsed.staffSize}`);
+      if (parsed.needs) parts.push(`Nhu cầu kết nối: ${parsed.needs}`);
+      if (parsed.offers) parts.push(`Thế mạnh cung cấp: ${parsed.offers}`);
+      return parts.length > 0 ? parts.join("\n") : "Hội viên chính thức CLB Doanh Nhân CEO 1983.";
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 export function MemberProfileModal({
   member,
   initialConnected,
@@ -476,12 +504,12 @@ export function MemberProfileModal({
             </div>
 
             {/* Bio / About */}
-            {member.about && (
+            {member.about && parseMemberAbout(member.about) && (
               <div className="rounded-2xl bg-slate-50 dark:bg-white/[0.03] p-2.5 text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed border border-slate-200/60 dark:border-white/5">
                 <p className="font-bold text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">
                   GIỚI THIỆU
                 </p>
-                <p className="line-clamp-4 whitespace-pre-wrap">{member.about}</p>
+                <p className="whitespace-pre-line leading-relaxed">{parseMemberAbout(member.about)}</p>
               </div>
             )}
 

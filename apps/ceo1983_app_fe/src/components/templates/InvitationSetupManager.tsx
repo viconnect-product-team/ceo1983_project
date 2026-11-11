@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Mail,
   Calendar,
@@ -19,6 +19,9 @@ import {
   Smartphone,
   Check,
   ArrowRight,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -69,8 +72,42 @@ export function InvitationSetupManager() {
   const [rsvpActionUrl, setRsvpActionUrl] = useState<string>("https://ceo1983.viconnect.vn/association/events?action=register");
   const [specialNote, setSpecialNote] = useState<string>("Vui lòng mang theo mã QR trên thư mời để check-in tại quầy đón tiếp VIP.");
 
-  // Mẫu thiệp đã chọn
+  // Mẫu thiệp đã chọn & Tùy chỉnh ảnh nền thư mời
   const [selectedTemplatePreset, setSelectedTemplatePreset] = useState<"atlantis" | "wyndham" | "gala" | "minimal">("atlantis");
+  const [customBgUrl, setCustomBgUrl] = useState<string>("");
+  const [posterUrl, setPosterUrl] = useState<string>("");
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const posterFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadBg = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCustomBgUrl(reader.result as string);
+        toast.success("Đã tải ảnh nền thư mời thành công!");
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Lỗi khi tải ảnh nền");
+    }
+  };
+
+  const handleUploadPoster = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPosterUrl(reader.result as string);
+        toast.success("Đã tải poster sự kiện thành công!");
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Lỗi khi tải poster");
+    }
+  };
 
   // Đối tượng người nhận
   const [recipientTarget, setRecipientTarget] = useState<"all" | "registered" | "committee" | "custom">("registered");
@@ -320,35 +357,136 @@ export function InvitationSetupManager() {
               </h2>
             </div>
 
-            {/* Mẫu thiệp Preset */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                Phong cách thiết kế thiệp mời:
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  { id: "atlantis", label: "Cung Điện Atlantis", note: "Hoàng Gia Xanh Đại Dương", icon: "🔱" },
-                  { id: "wyndham", label: "Wyndham Heian", note: "Thanh Thủy Đẳng Cấp", icon: "⛩️" },
-                  { id: "gala", label: "Gala Thượng Đỉnh", note: "Vàng Gold Ánh Kim", icon: "👑" },
-                  { id: "minimal", label: "Editorial Hiện Đại", note: "Tối Giản Doanh Nhân", icon: "✨" },
-                ].map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => setSelectedTemplatePreset(tpl.id as any)}
-                    className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
-                      selectedTemplatePreset === tpl.id
-                        ? "border-[#003B95] bg-blue-50/60 dark:bg-blue-950/30 ring-2 ring-[#003B95]/30"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
-                    }`}
-                  >
-                    <span className="text-xl mb-1">{tpl.icon}</span>
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100">{tpl.label}</div>
-                      <div className="text-[10px] text-slate-500">{tpl.note}</div>
+            {/* Mẫu thiệp Preset & Tùy biến hình ảnh */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                  Phong cách thiết kế thiệp mời:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { id: "atlantis", label: "Cung Điện Atlantis", note: "Hoàng Gia Xanh Đại Dương" },
+                    { id: "wyndham", label: "Wyndham Heian", note: "Thanh Thủy Đẳng Cấp" },
+                    { id: "gala", label: "Gala Thượng Đỉnh", note: "Vàng Gold Ánh Kim" },
+                    { id: "minimal", label: "Editorial Hiện Đại", note: "Tối Giản Doanh Nhân" },
+                  ].map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => setSelectedTemplatePreset(tpl.id as any)}
+                      className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                        selectedTemplatePreset === tpl.id
+                          ? "border-[#003B95] bg-blue-50/60 dark:bg-blue-950/30 ring-2 ring-[#003B95]/30"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="w-6 h-1 bg-[#003B95] rounded-full mb-2" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100">{tpl.label}</div>
+                        <div className="text-[10px] text-slate-500">{tpl.note}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tùy chỉnh ảnh nền và Poster sự kiện */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+                {/* 1. Ảnh nền thiệp mời */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="size-3.5 text-[#003B95] dark:text-blue-400" />
+                      Ảnh nền thiệp mời (Background):
+                    </label>
+                    {customBgUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomBgUrl("")}
+                        className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                      >
+                        Xóa ảnh nền
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={bgFileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadBg}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => bgFileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:border-[#003B95] transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Upload className="size-3.5 text-blue-600" />
+                      Tải ảnh nền
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Hoặc dán link ảnh nền..."
+                      value={customBgUrl}
+                      onChange={(e) => setCustomBgUrl(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                    />
+                  </div>
+                  {customBgUrl && (
+                    <div className="h-14 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative">
+                      <img src={customBgUrl} alt="Ảnh nền preview" className="w-full h-full object-cover" />
                     </div>
-                  </button>
-                ))}
+                  )}
+                </div>
+
+                {/* 2. Poster sự kiện */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="size-3.5 text-amber-500" />
+                      Poster sự kiện (Event Poster):
+                    </label>
+                    {posterUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setPosterUrl("")}
+                        className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                      >
+                        Xóa poster
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={posterFileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadPoster}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => posterFileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:border-amber-500 transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Upload className="size-3.5 text-amber-600" />
+                      Tải poster
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Hoặc dán link poster..."
+                      value={posterUrl}
+                      onChange={(e) => setPosterUrl(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs"
+                    />
+                  </div>
+                  {posterUrl && (
+                    <div className="h-14 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative">
+                      <img src={posterUrl} alt="Poster preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -416,7 +554,7 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  🎙️ Diễn giả (Keynote Speakers):
+                  Diễn giả (Keynote Speakers):
                 </label>
                 <input
                   type="text"
@@ -429,7 +567,7 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  💰 Chi phí tham dự:
+                  Chi phí tham dự:
                 </label>
                 <input
                   type="text"
@@ -442,7 +580,7 @@ export function InvitationSetupManager() {
 
               <div className="sm:col-span-2">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  📝 Nội dung chính sự kiện:
+                  Nội dung chính sự kiện:
                 </label>
                 <textarea
                   rows={2}
@@ -454,7 +592,7 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  🗺️ Link Google Maps chỉ đường:
+                  Link Google Maps chỉ đường:
                 </label>
                 <input
                   type="text"
@@ -466,7 +604,7 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  🚗 Hướng dẫn gửi xe:
+                  Hướng dẫn gửi xe:
                 </label>
                 <input
                   type="text"
@@ -478,7 +616,7 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  👔 Quy định trang phục (Dress code):
+                  Quy định trang phục (Dress code):
                 </label>
                 <input
                   type="text"
@@ -490,7 +628,7 @@ export function InvitationSetupManager() {
 
               <div>
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  📞 Hotline BTC hỗ trợ (0973.205.683...):
+                  Hotline BTC hỗ trợ (0973.205.683...):
                 </label>
                 <input
                   type="text"
@@ -502,7 +640,7 @@ export function InvitationSetupManager() {
 
               <div className="sm:col-span-2">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  🔗 Link xác nhận tham dự (RSVP):
+                  Link xác nhận tham dự (RSVP):
                 </label>
                 <input
                   type="text"
@@ -514,7 +652,7 @@ export function InvitationSetupManager() {
 
               <div className="sm:col-span-2">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                  ⚠️ Lưu ý quan trọng từ BTC:
+                  Lưu ý quan trọng từ BTC:
                 </label>
                 <input
                   type="text"
@@ -723,12 +861,19 @@ export function InvitationSetupManager() {
             </div>
 
             {/* PREVIEW CARD */}
-            <div className="w-full aspect-[9/16] rounded-3xl bg-gradient-to-b from-[#071530] via-[#0A2540] to-[#040C1A] text-white p-6 shadow-2xl border-2 border-white/20 relative overflow-hidden flex flex-col justify-between">
+            <div
+              className="w-full aspect-[9/16] rounded-3xl bg-gradient-to-b from-[#071530] via-[#0A2540] to-[#040C1A] text-white p-5 shadow-2xl border-2 border-white/20 relative overflow-hidden flex flex-col justify-between"
+              style={{
+                backgroundImage: customBgUrl ? `linear-gradient(rgba(7, 21, 48, 0.75), rgba(4, 12, 26, 0.85)), url(${customBgUrl})` : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
               {/* Subtle light effect */}
               <div className="absolute top-0 right-0 size-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute bottom-0 left-0 size-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
-              {/* Header */}
+              {/* Header & Poster */}
               <div className="relative z-10 text-center space-y-1">
                 <div className="inline-block px-3 py-1 rounded-full border border-amber-300/40 bg-amber-400/20 text-amber-300 text-[8px] font-black uppercase tracking-widest">
                   CLB DOANH NHÂN CEO 1983
@@ -736,43 +881,53 @@ export function InvitationSetupManager() {
                 <div className="text-[10px] text-cyan-200 tracking-widest font-serif uppercase mt-1">
                   OFFICIAL INVITATION
                 </div>
-                <h3 className="text-base font-black tracking-tight text-white leading-tight uppercase font-serif drop-shadow-md">
+
+                {posterUrl && (
+                  <div className="w-full h-24 rounded-xl overflow-hidden border border-white/20 shadow-md my-1">
+                    <img src={posterUrl} alt="Poster" className="w-full h-full object-cover" />
+                  </div>
+                )}
+
+                <div className="text-[11px] font-bold text-slate-200">
+                  BTC trân trọng kính mời Anh/Chị tham dự sự kiện:
+                </div>
+                <h3 className="text-sm font-black tracking-tight text-white leading-tight uppercase font-serif drop-shadow-md">
                   {invitationTitle}
                 </h3>
-                <p className="text-[9.5px] text-slate-300 font-light italic">
+                <p className="text-[9px] text-slate-300 font-light italic">
                   {invitationSubtitle}
                 </p>
               </div>
 
               {/* Delegate Personalization Box */}
-              <div className="relative z-10 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center space-y-1 shadow-lg">
+              <div className="relative z-10 p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center space-y-0.5 shadow-lg">
                 <div className="text-[8px] font-bold text-amber-400 uppercase tracking-wider">
-                  Kính gửi Quý Anh/Chị:
+                  - Kính gửi Anh/Chị:
                 </div>
-                <div className="text-base font-black text-white font-serif">
+                <div className="text-sm font-black text-white font-serif">
                   {registeredAttendees[0]?.name || "Doanh Nhân Hội Viên"}
                 </div>
-                <div className="text-[10px] text-cyan-200">
+                <div className="text-[9.5px] text-cyan-200">
                   {registeredAttendees[0]?.position || "Chủ tịch HĐQT"} · {registeredAttendees[0]?.company || "Doanh nghiệp CLB CEO 1983"}
-                </div>
-                <div className="inline-block px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[8px] font-black uppercase mt-1">
-                  BTC TRÂN TRỌNG KÍNH MỜI THAM DỰ
                 </div>
               </div>
 
               {/* Event Detailed Specs */}
-              <div className="relative z-10 space-y-1.5 text-left text-[9.5px] bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/10">
-                <div className="font-bold text-amber-300 border-b border-white/10 pb-1">
-                  THÔNG TIN SỰ KIỆN CHI TIẾT:
+              <div className="relative z-10 space-y-1 text-left text-[9px] bg-black/50 backdrop-blur-md p-2.5 rounded-2xl border border-white/10 max-h-[170px] overflow-y-auto">
+                <div className="font-bold text-amber-300 border-b border-white/10 pb-0.5 uppercase tracking-wide text-[9.5px]">
+                  - Thông tin sự kiện:
                 </div>
-                <div><span className="text-slate-400">🎙️ Diễn giả:</span> <span className="font-bold text-white">{speakers}</span></div>
-                <div><span className="text-slate-400">📝 Nội dung:</span> <span className="text-slate-200">{summary}</span></div>
-                <div><span className="text-slate-400">⏰ Thời gian:</span> <span className="font-bold text-cyan-300">{eventTime} · {eventDate}</span></div>
-                <div><span className="text-slate-400">📍 Địa điểm:</span> <span className="text-slate-200">{eventLocation}</span></div>
-                <div><span className="text-slate-400">💰 Chi phí:</span> <span className="font-bold text-emerald-400">{fee}</span></div>
-                <div><span className="text-slate-400">👔 Trang phục:</span> <span className="text-slate-200">{dressCode}</span></div>
-                <div><span className="text-slate-400">🚗 Gửi xe:</span> <span className="text-slate-200">{parkingInfo}</span></div>
-                <div className="text-amber-200/90 italic pt-0.5"><span className="text-amber-400 font-bold not-italic">⚠️ Lưu ý:</span> {importantNotes}</div>
+                <div className="space-y-0.5 text-slate-200 leading-tight">
+                  <div><span className="text-slate-400">+ Diễn giả:</span> <span className="font-semibold text-white">{speakers}</span></div>
+                  <div><span className="text-slate-400">+ Nội dung chính:</span> <span>{summary}</span></div>
+                  <div><span className="text-slate-400">+ Thời gian:</span> <span className="font-semibold text-cyan-300">{eventTime} | {eventDate}</span></div>
+                  <div><span className="text-slate-400">+ Địa điểm:</span> <span>{eventLocation}</span></div>
+                  <div><span className="text-slate-400">+ Chi phí:</span> <span className="font-semibold text-emerald-400">{fee}</span></div>
+                  <div><span className="text-slate-400">+ Google Maps:</span> <span className="text-sky-300">{googleMaps}</span></div>
+                  <div><span className="text-slate-400">+ Trang phục:</span> <span>{dressCode}</span></div>
+                  <div><span className="text-slate-400">+ Gửi xe:</span> <span>{parkingInfo}</span></div>
+                  <div><span className="text-slate-400">+ Lưu ý quan trọng từ BTC:</span> <span className="text-amber-300 font-medium">{importantNotes}</span></div>
+                </div>
               </div>
 
               {/* RSVP Action */}
@@ -783,29 +938,29 @@ export function InvitationSetupManager() {
                   rel="noreferrer"
                   className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[10px] font-black uppercase shadow-lg tracking-wider"
                 >
-                  ✓ XÁC NHẬN THAM DỰ
+                  Xác nhận tham dự
                 </a>
               </div>
 
               {/* QR Code Check-in */}
               {includeQrCode && (
-                <div className="relative z-10 flex flex-col items-center gap-1 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/15">
-                  <div className="p-1.5 rounded-xl bg-white text-slate-950 shadow-xl flex items-center justify-center">
-                    <QrCode className="size-14 text-slate-900" />
+                <div className="relative z-10 flex flex-col items-center gap-1 bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/15">
+                  <div className="p-1 rounded-xl bg-white text-slate-950 shadow-xl flex items-center justify-center">
+                    <QrCode className="size-11 text-slate-900" />
                   </div>
                   <div className="text-[7.5px] font-mono text-cyan-200 text-center">
-                    VÉ CHECK-IN: CEO1983-VIP-088 · QUẦY ĐÓN TIẾP
+                    MÃ VÉ CHECK-IN: CEO1983-VIP-088
                   </div>
                 </div>
               )}
 
               {/* Hotline & Footer */}
-              <div className="relative z-10 text-center space-y-0.5 border-t border-white/10 pt-2">
+              <div className="relative z-10 text-center space-y-0.5 border-t border-white/10 pt-1.5">
                 <div className="text-[8px] text-amber-300 font-bold">
-                  Hotline BTC hỗ trợ: {hotline}
+                  - Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204
                 </div>
-                <div className="text-[7.5px] text-sky-200/80 font-serif italic">
-                  Trân trọng kính mời Quý Anh/Chị!
+                <div className="text-[8px] text-sky-200/90 font-serif italic">
+                  - Trân trọng!
                 </div>
               </div>
             </div>

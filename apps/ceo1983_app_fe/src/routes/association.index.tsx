@@ -1298,17 +1298,24 @@ function Home() {
             {/* Cover Banner */}
             <div
               style={{ borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft }}
-              className="w-full h-24 left-0 top-0 absolute bg-stone-300 dark:bg-slate-800 rounded-tl-2xl rounded-tr-2xl border-b overflow-hidden"
+              className="w-full h-24 left-0 top-0 absolute bg-slate-100 dark:bg-slate-800/80 rounded-tl-2xl rounded-tr-2xl border-b overflow-hidden"
             >
-              <img
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                src={coverPhoto ? (resolveMediaUrl(coverPhoto) || coverPhoto) : "/images/ceo1983/banner-ceo.png"}
-                alt="Banner"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/images/ceo1983/banner-ceo.png";
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+              {coverPhoto && !coverError ? (
+                <>
+                  <img
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    src={resolveMediaUrl(coverPhoto) || coverPhoto}
+                    alt="Banner"
+                    onError={() => setCoverError(true)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-200/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400 select-none">
+                  <span className="text-xs font-semibold">Chưa có ảnh bìa</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Chạm để tải ảnh bìa</span>
+                </div>
+              )}
             </div>
 
             {/* Avatar overlapping cover */}
@@ -1324,9 +1331,11 @@ function Home() {
               ) : (
                 <div
                   style={{ background: brandColorTheme.gradientPrimary }}
-                  className="w-full h-full flex items-center justify-center text-white text-base font-black font-sans"
+                  className="w-full h-full flex flex-col items-center justify-center text-white text-[9px] font-bold text-center leading-tight p-1 select-none"
+                  title="Chưa có avatar"
                 >
-                  {initials(displayName)}
+                  <span>Chưa có</span>
+                  <span>avatar</span>
                 </div>
               )}
             </div>

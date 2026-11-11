@@ -305,7 +305,7 @@ export const TOP_RANK_PERKS: ExtendedPerk[] = [
   },
 ];
 
-function PerksScreen() {
+export function PerksScreen() {
   const t = useT();
   const [serverPerks, setServerPerks] = useState<ExtendedPerk[]>(DEFAULT_PERKS_SEED);
   const [loading, setLoading] = useState(false);

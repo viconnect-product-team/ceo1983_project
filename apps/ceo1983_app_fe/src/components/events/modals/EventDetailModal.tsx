@@ -464,7 +464,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                       title: selectedEvent.title || 'Sự kiện CEO 1983',
                       desc: selectedEvent.description || 'Tham gia sự kiện kết nối doanh nhân CEO 1983 (HanoiBA)',
                       image: selectedEvent.coverImage || selectedEvent.bannerUrl,
-                      targetPath: `/association/events`
+                      targetPath: `/guest-event-register/${selectedEvent.id}`
                     });
                     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(dynamicUrl)}`, "_blank");
                     toast.success("Đang mở chia sẻ Facebook với thẻ OpenGraph chuẩn...");
@@ -482,7 +482,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                       title: selectedEvent.title || 'Sự kiện CEO 1983',
                       desc: selectedEvent.description || 'Tham gia sự kiện kết nối doanh nhân CEO 1983 (HanoiBA)',
                       image: selectedEvent.coverImage || selectedEvent.bannerUrl,
-                      targetPath: `/association/events`
+                      targetPath: `/guest-event-register/${selectedEvent.id}`
                     });
                     window.open(`https://zalo.me/share?url=${encodeURIComponent(dynamicUrl)}`, "_blank");
                     toast.success("Đang mở chia sẻ Zalo với ảnh đại diện sự kiện...");
@@ -502,7 +502,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                       title: selectedEvent.title || 'Sự kiện CEO 1983',
                       desc: selectedEvent.description || 'Tham gia sự kiện kết nối doanh nhân CEO 1983 (HanoiBA)',
                       image: selectedEvent.coverImage || selectedEvent.bannerUrl,
-                      targetPath: `/association/events`
+                      targetPath: `/guest-event-register/${selectedEvent.id}`
                     });
                     navigator.clipboard.writeText(dynamicUrl);
                     toast.success("Đã sao chép liên kết OpenGraph chuẩn mạng xã hội!", {

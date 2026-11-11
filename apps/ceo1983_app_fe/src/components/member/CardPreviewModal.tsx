@@ -444,42 +444,50 @@ export function CardPreviewModal({
                 <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">{effectiveTitle}</span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 py-2">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">Doanh nghiệp</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
-                  {showCompany ? effectiveCompany : "Đã ẩn theo cài đặt riêng tư"}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 py-2">
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
-                  <Phone className="h-3.5 w-3.5 text-amber-500" />
-                  <span>Điện thoại</span>
+              {showCompany && effectiveCompany && (
+                <div className="flex items-center justify-between gap-3 py-2">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Doanh nghiệp</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                    {effectiveCompany}
+                  </span>
                 </div>
-                <span className={`font-semibold text-right ${showPhone ? "text-slate-800 dark:text-slate-200" : "text-slate-400 italic"}`}>
-                  {showPhone ? effectivePhone : "Đã ẩn theo cài đặt riêng tư"}
-                </span>
-              </div>
+              )}
 
-              <div className="flex items-center justify-between gap-3 py-2">
-                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
-                  <Mail className="h-3.5 w-3.5 text-amber-500" />
-                  <span>Email</span>
+              {showPhone && effectivePhone && (
+                <div className="flex items-center justify-between gap-3 py-2">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
+                    <Phone className="h-3.5 w-3.5 text-amber-500" />
+                    <span>Điện thoại</span>
+                  </div>
+                  <span className="font-semibold text-right text-slate-800 dark:text-slate-200">
+                    {effectivePhone}
+                  </span>
                 </div>
-                <span className={`font-semibold text-right ${showEmail ? "text-slate-800 dark:text-slate-200" : "text-slate-400 italic"}`}>
-                  {showEmail ? effectiveEmail : "Đã ẩn theo cài đặt riêng tư"}
-                </span>
-              </div>
+              )}
 
-              <div className="flex items-center justify-between gap-3 py-2">
-                <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-                  <MapPin className="h-3.5 w-3.5 text-amber-500" />
-                  <span>Địa chỉ</span>
+              {showEmail && effectiveEmail && (
+                <div className="flex items-center justify-between gap-3 py-2">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
+                    <Mail className="h-3.5 w-3.5 text-amber-500" />
+                    <span>Email</span>
+                  </div>
+                  <span className="font-semibold text-right text-slate-800 dark:text-slate-200">
+                    {effectiveEmail}
+                  </span>
                 </div>
-                <span className={`font-semibold text-right max-w-[240px] truncate ${showAddress ? "text-slate-800" : "text-slate-400 italic"}`}>
-                  {showAddress ? effectiveAddress : "Đã ẩn theo cài đặt riêng tư"}
-                </span>
-              </div>
+              )}
+
+              {showAddress && effectiveAddress && (
+                <div className="flex items-center justify-between gap-3 py-2">
+                  <div className="flex items-center gap-1.5 text-slate-500 font-medium">
+                    <MapPin className="h-3.5 w-3.5 text-amber-500" />
+                    <span>Địa chỉ</span>
+                  </div>
+                  <span className="font-semibold text-right max-w-[240px] truncate text-slate-800 dark:text-slate-200">
+                    {effectiveAddress}
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between gap-3 py-2">
                 <div className="flex items-center gap-1.5 text-slate-500 font-medium">

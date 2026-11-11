@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   ChevronUp,
   ChevronDown,
+  ChevronRight,
   Sparkles,
   Cake,
   Crown,
@@ -467,7 +469,14 @@ export function MemberPerksCarousel() {
             ƯU ĐÃI & ĐẶC QUYỀN HỘI VIÊN
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <Link
+            to="/association/perks"
+            className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 cursor-pointer mr-1"
+          >
+            <span>Xem tất cả</span>
+            <ChevronRight className="size-3" />
+          </Link>
           <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
             {currentIndex + 1} / {allSlides.length}
           </span>

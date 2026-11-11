@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import {
   Mail,
   Plus,
@@ -28,6 +29,9 @@ import {
   Image as ImageIcon,
   Gift,
   TrendingUp,
+  Users,
+  FileSpreadsheet,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -236,15 +240,16 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     code: "EVENT_TICKET_QR",
     category: "event",
     name: "Thư Mời Tham Dự Sự Kiện & Mã QR Vé Điện Tử (Chuẩn Toàn Diện)",
-    description: "Phát hành thư mời chính thức chuẩn đa kênh (Diễn giả, nội dung, trang phục, gửi xe, hotline) kèm mã QR check-in vào cửa.",
+    description: "Phát hành thư mời chính thức chuẩn đa kênh (Diễn giả, nội dung, thời gian, địa điểm, chi phí, google maps, trang phục, gửi xe, lưu ý, hotline) kèm poster và mã QR check-in.",
     channels: ["email", "in_app", "push"],
     subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thư mời tham dự sự kiện: {{event_title}}",
-    inAppBody: "BTC trân trọng kính mời Anh/Chị tham dự sự kiện '{{event_title}}' vào {{event_date}}. Xuất trình mã QR trên vé để check-in tại quầy VIP.",
+    inAppBody: "- Kính gửi Anh/Chị: {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự sự kiện: {{event_title}}\n- Thời gian: {{event_date}}\n- Địa điểm: {{event_location}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
     variables: [
       { key: "full_name", label: "Tên đại biểu (Kính gửi Anh/Chị)", example: "Dương Thị Huệ" },
       { key: "member_code", label: "Mã hội viên", example: "M1983-016" },
       { key: "event_title", label: "Tên sự kiện", example: "Diễn Đàn Chuyển Đổi Số Doanh Nghiệp 2026 & Gala Kết Nối" },
+      { key: "poster_url", label: "Ảnh Poster sự kiện", example: "https://ceo1983.viconnect.vn/uploads/events/poster.jpg" },
       { key: "speakers", label: "Diễn giả", example: "Chủ tịch HĐQT & Sáng Lập VICONNECT GROUP, Chuyên gia Kinh tế trưởng" },
       { key: "summary", label: "Nội dung chính", example: "Chiến lược tăng trưởng doanh nghiệp 2026, Xúc tiến thương mại đa kênh, Ký kết hợp tác B2B" },
       { key: "event_date", label: "Thời gian", example: "18:30 - 21:30 Thứ Bảy, 10/09/2026" },
@@ -259,7 +264,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
       { key: "ticket_type", label: "Hạng vé", example: "VIP Pass Gold" },
       { key: "qr_code_url", label: "Ảnh mã QR Check-in", example: "https://ceo1983.viconnect.vn/api/events/qr?data=TICKET-CEO1983-M016&size=250" },
     ],
-    updatedAt: "2026-11-10",
+    updatedAt: "2026-11-11",
     htmlBody: `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
   <div style="background: linear-gradient(135deg, #001D4A 0%, #003B95 50%, #0A2540 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
@@ -267,34 +272,47 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
       THƯ MỜI THAM DỰ SỰ KIỆN CHÍNH THỨC
     </div>
     <h1 style="margin: 0; font-size: 21px; font-weight: 900; color: #ffffff; text-transform: uppercase;">{{event_title}}</h1>
-    <p style="margin: 8px 0 0; font-size: 13px; color: #93c5fd;">Ban Tổ Chức CLB Doanh Nhân CEO 1983 (HanoiBA) kính mời</p>
+    <p style="margin: 8px 0 0; font-size: 13px; color: #93c5fd;">Ban Tổ Chức CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
   </div>
   <div style="padding: 28px 24px; color: #1e293b;">
-    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6;">
-      <strong>Kính gửi Anh/Chị:</strong> <span style="color: #003B95; font-weight: 800;">{{full_name}}</span>,
+    <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">
+      - <strong>Kính gửi Anh/Chị:</strong> <span style="color: #003B95; font-weight: 800;">{{full_name}}</span>
     </p>
-    <p style="margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: #334155;">
-      Ban Tổ Chức trân trọng kính mời Anh/Chị tham dự chương trình giao thương và kết nối đặc quyền:
+    <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #334155;">
+      - <strong>BTC trân trọng kính mời Anh/Chị tham dự sự kiện:</strong>
     </p>
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; font-weight: 800; color: #001D4A;">
+      - <strong>Tên sự kiện:</strong> {{event_title}}
+    </p>
+
+    <!-- Poster nếu có -->
+    <div style="margin-bottom: 18px; text-align: center;">
+      <img src="{{poster_url}}" alt="Poster sự kiện" style="max-width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; display: block; margin: 0 auto;" onerror="this.style.display='none'" />
+    </div>
+
+    <!-- Thông tin sự kiện -->
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin-bottom: 22px;">
-      <table style="width: 100%; font-size: 13.5px; border-collapse: collapse;">
-        <tr><td style="padding: 6px 0; color: #64748b; width: 140px;">📌 <strong>Tên sự kiện:</strong></td><td style="padding: 6px 0; font-weight: 800; color: #001D4A;">{{event_title}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">🎙️ <strong>Diễn giả:</strong></td><td style="padding: 6px 0; font-weight: 700; color: #0f172a;">{{speakers}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">📝 <strong>Nội dung chính:</strong></td><td style="padding: 6px 0; color: #334155; line-height: 1.5;">{{summary}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">⏰ <strong>Thời gian:</strong></td><td style="padding: 6px 0; font-weight: 700; color: #003B95;">{{event_date}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">📍 <strong>Địa điểm:</strong></td><td style="padding: 6px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">💰 <strong>Chi phí:</strong></td><td style="padding: 6px 0; font-weight: 700; color: #16a34a;">{{fee}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">🗺️ <strong>Google Maps:</strong></td><td style="padding: 6px 0;"><a href="{{google_maps_link}}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">Xem bản đồ chỉ đường &rarr;</a></td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">👔 <strong>Trang phục:</strong></td><td style="padding: 6px 0; color: #475569;">{{dress_code}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">🚗 <strong>Gửi xe:</strong></td><td style="padding: 6px 0; color: #475569;">{{parking_info}}</td></tr>
-        <tr><td style="padding: 6px 0; color: #64748b;">⚠️ <strong>Lưu ý từ BTC:</strong></td><td style="padding: 6px 0; color: #b45309; font-weight: 600;">{{important_notes}}</td></tr>
+      <p style="margin: 0 0 10px; font-size: 13.5px; font-weight: 800; color: #001D4A; text-transform: uppercase;">
+        - Thông tin sự kiện:
+      </p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr><td style="padding: 5px 0; color: #64748b; width: 150px;">+ Diễn giả:</td><td style="padding: 5px 0; font-weight: 700; color: #0f172a;">{{speakers}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Nội dung chính:</td><td style="padding: 5px 0; color: #334155; line-height: 1.5;">{{summary}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Thời gian:</td><td style="padding: 5px 0; font-weight: 700; color: #003B95;">{{event_date}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Địa điểm:</td><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">{{event_location}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Chi phí:</td><td style="padding: 5px 0; font-weight: 700; color: #16a34a;">{{fee}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Google Maps:</td><td style="padding: 5px 0;"><a href="{{google_maps_link}}" target="_blank" style="color: #0284c7; font-weight: bold; text-decoration: underline;">Xem bản đồ chỉ đường &rarr;</a></td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Trang phục:</td><td style="padding: 5px 0; color: #475569;">{{dress_code}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Gửi xe:</td><td style="padding: 5px 0; color: #475569;">{{parking_info}}</td></tr>
+        <tr><td style="padding: 5px 0; color: #64748b;">+ Lưu ý quan trọng từ BTC:</td><td style="padding: 5px 0; color: #b45309; font-weight: 600;">{{important_notes}}</td></tr>
       </table>
     </div>
 
-    <!-- Nút xác nhận tham dự -->
+    <!-- Xác nhận tham dự -->
     <div style="text-align: center; margin: 24px 0 16px;">
+      <p style="margin: 0 0 8px; font-size: 13px; font-weight: bold; color: #001D4A;">- Xác nhận tham dự:</p>
       <a href="{{rsvp_action_url}}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; font-weight: 900; font-size: 14px; text-decoration: none; padding: 14px 36px; border-radius: 9999px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">
-        ✓ XÁC NHẬN THAM DỰ SỰ KIỆN
+        XÁC NHẬN THAM DỰ SỰ KIỆN
       </a>
     </div>
 
@@ -310,11 +328,11 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
 
     <!-- HOTLINE LIÊN HỆ -->
     <div style="background: #f1f5f9; border-radius: 12px; padding: 14px 18px; margin-top: 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
-      <p style="margin: 0 0 4px;"><strong>📞 Hotline BTC khi cần hỗ trợ:</strong></p>
-      <p style="margin: 0; font-weight: bold; color: #001D4A;">
-        0973.205.683 &nbsp;|&nbsp; 0903.205.683 &nbsp;|&nbsp; 0903.203.204
+      <p style="margin: 0 0 4px;"><strong>- Hotline BTC khi cần hỗ trợ:</strong></p>
+      <p style="margin: 0; font-weight: bold; color: #001D4A; font-size: 13.5px;">
+        0973.205.683 &nbsp;/&nbsp; 0903.205.683 &nbsp;/&nbsp; 0903.203.204
       </p>
-      <p style="margin: 12px 0 0; font-style: italic; color: #64748b;">Trân trọng cảm ơn Quý Anh/Chị!</p>
+      <p style="margin: 12px 0 0; font-style: italic; color: #64748b;">- Trân trọng!</p>
     </div>
   </div>
 </div>
@@ -606,6 +624,134 @@ export function MailTemplateManager() {
   const [phoneError, setPhoneError] = useState("");
   const testPhoneRef = useRef<HTMLInputElement>(null);
   const zbs = useZbsTemplateConfigs();
+
+  // CRM Advanced Targeting State (Ban hội viên, Zalo OA subscribers, Excel import)
+  const [membersList, setMembersList] = useState<any[]>([]);
+  const [zaloSubscribers, setZaloSubscribers] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const excelFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchNestApi<any[]>("/members")
+      .then((res) => {
+        if (Array.isArray(res)) setMembersList(res);
+      })
+      .catch(() => {});
+
+    fetchNestApi<{ success: boolean; subscribers: any[] }>("/zalo/subscribers")
+      .then((res) => {
+        if (res?.subscribers && Array.isArray(res.subscribers)) {
+          setZaloSubscribers(res.subscribers);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const departmentList = useMemo(() => {
+    return [
+      "Ban Hội Viên",
+      "Ban Truyền Thông",
+      "Ban Xúc Tiến Thương Mại",
+      "Ban Tài Chính",
+      "Ban Đào Tạo",
+      "Ban Sự Kiện",
+      "Ban Điều Hành",
+      "Ban Thư Ký",
+    ];
+  }, []);
+
+  const handleSelectDepartment = (dept: string) => {
+    setSelectedDepartment(dept);
+    if (!dept) return;
+    const filtered = membersList.filter((m) =>
+      (m.department || "").toLowerCase().includes(dept.toLowerCase())
+    );
+    const newPhones = filtered.map((m) => m.phone).filter(Boolean);
+    const newEmails = filtered.map((m) => m.email).filter(Boolean);
+
+    if (newPhones.length > 0) {
+      setTestPhone((prev) => {
+        const existing = prev ? prev.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean) : [];
+        return Array.from(new Set([...existing, ...newPhones])).join(", ");
+      });
+    }
+    if (newEmails.length > 0) {
+      setTestEmail((prev) => {
+        const existing = prev ? prev.split(/[,;\n]+/).map((e) => e.trim()).filter(Boolean) : [];
+        return Array.from(new Set([...existing, ...newEmails])).join(", ");
+      });
+    }
+    toast.success(`Đã thêm ${filtered.length} hội viên từ ${dept}!`);
+  };
+
+  const handleSelectZaloSubscriber = (subId: string) => {
+    const sub = zaloSubscribers.find((s) => s.id === subId || s.zalo_user_id === subId);
+    if (!sub) return;
+    const phone = sub.phone || sub.zalo_user_id;
+    if (phone) {
+      setTestPhone((prev) => {
+        const existing = prev ? prev.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean) : [];
+        if (!existing.includes(phone)) {
+          existing.push(phone);
+        }
+        return existing.join(", ");
+      });
+      toast.success(`Đã thêm ${sub.name || "người tương tác Zalo OA"} (${phone})!`);
+    }
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json<any>(worksheet, { defval: "" });
+
+        const importedPhones: string[] = [];
+        const importedEmails: string[] = [];
+
+        rows.forEach((row: any) => {
+          const phoneKey = Object.keys(row).find((k) =>
+            /sđt|sdt|phone|điện thoại|so_dien_thoai|mobile/i.test(k)
+          );
+          const emailKey = Object.keys(row).find((k) =>
+            /email|mail|thư điện tử/i.test(k)
+          );
+          if (phoneKey && row[phoneKey]) {
+            const cleanP = String(row[phoneKey]).trim().replace(/[^0-9+]/g, "");
+            if (cleanP) importedPhones.push(cleanP);
+          }
+          if (emailKey && row[emailKey]) {
+            const cleanE = String(row[emailKey]).trim();
+            if (cleanE && cleanE.includes("@")) importedEmails.push(cleanE);
+          }
+        });
+
+        if (importedPhones.length > 0) {
+          setTestPhone((prev) => {
+            const existing = prev ? prev.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean) : [];
+            return Array.from(new Set([...existing, ...importedPhones])).join(", ");
+          });
+        }
+        if (importedEmails.length > 0) {
+          setTestEmail((prev) => {
+            const existing = prev ? prev.split(/[,;\n]+/).map((e) => e.trim()).filter(Boolean) : [];
+            return Array.from(new Set([...existing, ...importedEmails])).join(", ");
+          });
+        }
+
+        toast.success(`Đã nạp ${rows.length} dòng từ file: ${importedPhones.length} SĐT, ${importedEmails.length} Email!`);
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      toast.error("Lỗi khi đọc file Excel: " + (err?.message || "File không đúng định dạng"));
+    }
+  };
 
   // Edit / Create Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -917,56 +1063,101 @@ export function MailTemplateManager() {
     }
   };
 
-  // Gửi Thông Báo Hợp Nhất (Email / Zalo OA / Cả Hai)
+  // Gửi Thông Báo Hợp Nhất (Email / Zalo OA / Cả Hai) với Multi-Phone & Multi-Email
   const handleSendTestToAdmin = async () => {
-    const targetEmail = testEmail.trim();
-    const targetPhone = testPhone.trim();
+    const targetEmails = testEmail
+      .split(/[,;\n]+/)
+      .map((e) => e.trim())
+      .filter((e) => e.length > 0 && e.includes("@"));
 
-    if ((sendChannel === "email" || sendChannel === "both") && !targetEmail) {
-      toast.error("Vui lòng nhập địa chỉ email người nhận!");
+    const targetPhones = testPhone
+      .split(/[,;\n]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    if ((sendChannel === "email" || sendChannel === "both") && targetEmails.length === 0) {
+      toast.error("Vui lòng nhập ít nhất một địa chỉ email người nhận hợp lệ!");
       return;
     }
-    if ((sendChannel === "zalo" || sendChannel === "both") && !validateTestPhone()) return;
+    if ((sendChannel === "zalo" || sendChannel === "both") && targetPhones.length === 0) {
+      toast.error("Vui lòng nhập ít nhất một số điện thoại Zalo người nhận!");
+      return;
+    }
 
     setIsSendingTest(true);
     const sentChannels: string[] = [];
     let emailError = "";
+    let emailSuccessCount = 0;
+    let zaloSuccessCount = 0;
 
     try {
       // Lưu đúng cấu hình mẫu đang chọn trước khi gửi bất kỳ kênh nào.
-      if (sendChannel === "zalo" || sendChannel === "both") await saveSelectedZbsConfig();
+      if (sendChannel === "zalo" || sendChannel === "both") {
+        try {
+          await saveSelectedZbsConfig();
+        } catch {}
+      }
       // 1. Gửi qua Email nếu chọn Email hoặc Cả hai
       if (sendChannel === "email" || sendChannel === "both") {
-        try {
-          const result = await fetchNestApi<{ ok: boolean; message?: string }>("/mail/send-test", {
-            method: "POST",
-            body: JSON.stringify({
-              to: targetEmail,
-              subject: renderedContent.subject,
-              html: renderedContent.html,
-              templateCode: activeTemplate.code,
-            }),
-          });
-          if (!result?.ok) throw new Error(result?.message || "Không gửi được email");
-          sentChannels.push(`Email (${targetEmail})`);
-        } catch (err: any) {
-          emailError = err?.message || "Không gửi được email";
+        for (const email of targetEmails) {
+          try {
+            const result = await fetchNestApi<{ ok: boolean; message?: string }>("/mail/send-test", {
+              method: "POST",
+              body: JSON.stringify({
+                to: email,
+                subject: renderedContent.subject,
+                html: renderedContent.html,
+                templateCode: activeTemplate.code,
+              }),
+            });
+            if (result?.ok) {
+              emailSuccessCount++;
+            }
+          } catch (err: any) {
+            emailError = err?.message || "Không gửi được email";
+          }
+        }
+        if (emailSuccessCount > 0) {
+          sentChannels.push(`Email (${emailSuccessCount}/${targetEmails.length})`);
         }
       }
 
       // 2. Gửi qua Zalo OA nếu chọn Zalo hoặc Cả hai
       if (sendChannel === "zalo" || sendChannel === "both") {
-        await sendSelectedZbsTest();
-        sentChannels.push(`ZBS (${targetPhone})`);
+        const templateData = Object.fromEntries(
+          (activeTemplate.variables || [])
+            .filter((variable) => variable.key !== "vietqr_url")
+            .map((variable) => [variable.key, sampleValues[variable.key] ?? variable.example])
+        );
+        for (const phone of targetPhones) {
+          try {
+            const result = await fetchNestApi<{ success: boolean; message?: string; guide?: string }>("/zalo/send-zns", {
+              method: "POST",
+              body: JSON.stringify({
+                templateCode: activeTemplate.code,
+                phone,
+                templateData,
+              }),
+            });
+            if (result?.success) {
+              zaloSuccessCount++;
+            }
+          } catch {}
+        }
+        if (zaloSuccessCount > 0) {
+          sentChannels.push(`ZBS (${zaloSuccessCount}/${targetPhones.length})`);
+        }
       }
 
-      if (emailError) throw new Error(emailError);
+      if (emailSuccessCount === 0 && zaloSuccessCount === 0 && emailError) {
+        throw new Error(emailError);
+      }
       toast.success(
         `✓ Đã tiếp nhận gửi mẫu [${activeTemplate.name}] qua ${sentChannels.join(" & ")}!`
       );
     } catch (err: any) {
       const completed = sentChannels.length ? ` Đã gửi qua ${sentChannels.join(" & ")}.` : "";
-      const detail = err?.message || "Không gửi được thông báo thử nghiệm.";
+      const detail = err?.message || "Không gửi được thông báo.";
       toast.error(`${detail}${emailError && emailError !== detail ? ` Email: ${emailError}.` : ""}${completed}`);
     } finally {
       setIsSendingTest(false);
@@ -1397,44 +1588,101 @@ export function MailTemplateManager() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-blue-200/50 dark:border-blue-900/40">
-                {(sendChannel === "email" || sendChannel === "both") && (
-                  <div className="flex-1 min-w-[200px]">
-                    <label htmlFor="mail-template-test-email" className="mb-1 block text-xs font-medium text-foreground">Email nhận thử</label>
-                    <input
-                      id="mail-template-test-email"
-                      type="email"
-                      value={testEmail}
-                      onChange={(e) => setTestEmail(e.target.value)}
-                      placeholder="Email nhận test..."
-                      className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
-                    />
+              {/* CRM Advanced Targeting Toolbar: Ban, Zalo OA Subscribers, Excel Import */}
+              <div className="pt-2 border-t border-blue-200/50 dark:border-blue-900/40 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Call API Hội viên theo Ban */}
+                  <div className="flex items-center gap-1.5 min-w-[200px] flex-1">
+                    <Users className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <select
+                      value={selectedDepartment}
+                      onChange={(e) => handleSelectDepartment(e.target.value)}
+                      className="w-full text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer"
+                    >
+                      <option value="">-- Nạp hội viên theo Ban ({membersList.length} HV) --</option>
+                      {departmentList.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                )}
-                  <div className="min-w-0 flex-1 basis-[180px]">
-                    <label htmlFor="mail-template-test-phone" className="mb-1 block text-xs font-medium text-foreground">Số điện thoại nhận ZBS thử</label>
-                    <input
-                      id="mail-template-test-phone"
-                      ref={testPhoneRef}
-                      type="tel"
-                      value={testPhone}
-                      onChange={(e) => { setTestPhone(e.target.value); setPhoneError(""); }}
-                      aria-invalid={Boolean(phoneError)}
-                      aria-describedby={phoneError ? "mail-template-phone-error" : undefined}
-                      placeholder="SĐT Zalo nhận test..."
-                      className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
-                    />
-                    {phoneError ? <p id="mail-template-phone-error" role="alert" className="mt-1 text-xs font-medium text-amber-900">{phoneError}</p> : null}
+
+                  {/* Call API Người đã nhắn tin Zalo OA */}
+                  <div className="flex items-center gap-1.5 min-w-[200px] flex-1">
+                    <MessageSquare className="size-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                    <select
+                      onChange={(e) => handleSelectZaloSubscriber(e.target.value)}
+                      className="w-full text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>-- Người tương tác Zalo OA ({zaloSubscribers.length}) --</option>
+                      {zaloSubscribers.map((sub) => (
+                        <option key={sub.id || sub.zalo_user_id} value={sub.id || sub.zalo_user_id}>
+                          {sub.name || "Khách"} {sub.phone ? `(${sub.phone})` : ""}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                <button
-                  type="button"
-                  onClick={handleSendTestToAdmin}
-                  disabled={isSendingTest || Boolean(zbs.savingCode) || (sendChannel !== "email" && (zbs.loading || Boolean(zbs.loadError)))}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#003B95] hover:bg-blue-900 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                  <Send className={`w-3.5 h-3.5 ${isSendingTest ? "animate-spin" : ""}`} />
-                  {isSendingTest ? "Đang gửi..." : "Bắn Thông Báo Ngay"}
-                </button>
+
+                  {/* Import Excel */}
+                  <div>
+                    <input
+                      type="file"
+                      ref={excelFileInputRef}
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                      onChange={handleImportExcel}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => excelFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition cursor-pointer shrink-0"
+                    >
+                      <FileSpreadsheet className="size-3.5" />
+                      Nhập file Excel
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {(sendChannel === "email" || sendChannel === "both") && (
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                        placeholder="Email nhận (nhập nhiều email cách nhau bởi dấu phẩy)..."
+                        className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  )}
+                  {(sendChannel === "zalo" || sendChannel === "both") && (
+                    <div className="flex-1 min-w-[180px]">
+                      <input
+                        type="text"
+                        ref={testPhoneRef}
+                        value={testPhone}
+                        onChange={(e) => {
+                          setTestPhone(e.target.value);
+                          setPhoneError("");
+                        }}
+                        placeholder="SĐT Zalo (nhập nhiều số cách nhau bởi dấu phẩy)..."
+                        className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-mono outline-none focus:border-blue-500"
+                      />
+                      {phoneError ? <p role="alert" className="mt-1 text-xs font-medium text-amber-900">{phoneError}</p> : null}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSendTestToAdmin}
+                    disabled={isSendingTest || Boolean(zbs.savingCode)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#003B95] hover:bg-blue-900 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 shrink-0"
+                  >
+                    <Send className={`w-3.5 h-3.5 ${isSendingTest ? "animate-spin" : ""}`} />
+                    {isSendingTest ? "Đang gửi..." : "Bắn Thông Báo Ngay"}
+                  </button>
+                </div>
               </div>
               <ZbsTemplateConfigForm
                 templateCode={activeTemplate.code}

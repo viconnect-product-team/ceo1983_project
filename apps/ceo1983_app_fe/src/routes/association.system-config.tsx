@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { getActiveCeo1983ColorTheme, COLOR_THEME_EVENT, type Ceo1983ColorTheme } from "@/lib/ceo1983-color-theme";
 
 export const Route = createFileRoute("/association/system-config")({
-  ssr: false,
   component: AssociationSystemConfigScreen,
 });
 

@@ -170,7 +170,20 @@ function EventsRouteComponent() {
   );
 }
 
+interface EventsSearch {
+  id?: string;
+  eventId?: string;
+  filter?: string;
+  tab?: string;
+}
+
 export const Route = createFileRoute("/association/events")({
+  validateSearch: (search: Record<string, unknown>): EventsSearch => ({
+    id: typeof search.id === "string" ? search.id : undefined,
+    eventId: typeof search.eventId === "string" ? search.eventId : undefined,
+    filter: typeof search.filter === "string" ? search.filter : undefined,
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
   component: EventsRouteComponent,
 });
 
@@ -554,7 +567,7 @@ function EventPosterCard({
                       title: `[Sự Kiện CEO 1983] ${event.title}`,
                       desc: `${eventDateStr} tại ${event.place || "Hà Nội"}. ${event.description || ""}`,
                       image: displayImg || undefined,
-                      targetPath: `/association/events?id=${event.id}`,
+                      targetPath: `/guest-event-register/${event.id}`,
                     },
                     () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
                   );
@@ -2273,7 +2286,7 @@ function EventsScreen() {
                                   id: e.id,
                                   title: `[Sự Kiện CEO 1983] ${e.title}`,
                                   desc: `Tham gia sự kiện cùng CLB Doanh Nhân CEO 1983: ${e.title}`,
-                                  targetPath: `/association/events?id=${e.id}`,
+                                  targetPath: `/guest-event-register/${e.id}`,
                                 },
                                 () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
                               );

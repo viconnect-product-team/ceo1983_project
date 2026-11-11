@@ -287,28 +287,28 @@ function PublicCardView() {
     { icon: CalendarClock, label: t("joined"), value: formattedJoinedAt },
     { icon: Building2, label: t("industry"), value: resolvedIndustry },
     { icon: MapPin, label: t("region"), value: resolvedRegion },
-    { icon: MapPin, label: t("address"), value: member.address || "Trụ sở CLB Doanh Nhân CEO 1983" },
-    {
+    ...(member.address ? [{ icon: MapPin, label: t("address"), value: member.address }] : []),
+    ...(member.website ? [{
       icon: Globe,
       label: t("website"),
-      value: member.website || "https://ceo1983club.com",
-      isLink: Boolean(member.website),
-      href: member.website || undefined,
-    },
-    {
+      value: member.website,
+      isLink: true,
+      href: member.website.startsWith("http") ? member.website : `https://${member.website}`,
+    }] : []),
+    ...(hasPhone && member.phone ? [{
       icon: Phone,
       label: t("phone"),
-      value: hasPhone ? member.phone : "🔒 Đã ẩn theo cài đặt riêng tư",
-      isLink: hasPhone,
-      href: hasPhone ? `tel:${cleanPhone}` : undefined,
-    },
-    {
+      value: member.phone,
+      isLink: true,
+      href: `tel:${cleanPhone}`,
+    }] : []),
+    ...(hasEmail && member.email ? [{
       icon: Mail,
       label: t("email"),
-      value: hasEmail ? member.email : "🔒 Đã ẩn theo cài đặt riêng tư",
-      isLink: hasEmail,
-      href: hasEmail ? `mailto:${member.email}` : undefined,
-    },
+      value: member.email,
+      isLink: true,
+      href: `mailto:${member.email}`,
+    }] : []),
   ];
 
   const cardQrUrl =
