@@ -229,8 +229,8 @@ const quickActionDefs = [
     customLabel: "Danh bạ CEO",
     enLabel: "CEO Directory",
     badgeId: "members",
-    badgeText: "100+",
-    badgeTextEn: "100+",
+    badgeText: "",
+    badgeTextEn: "",
   },
   {
     key: "m.index.qaEvents",
@@ -1809,6 +1809,8 @@ function Home() {
               directoryMembers.slice(0, 8).map((m, i) => {
               const pName = (m as any).personName || (m as any).contact || m.name || "Hội viên";
               const cName = (m as any).company || ((m as any).type === 'company' ? m.name : '') || (m as any).companyName || "Doanh nghiệp hội viên";
+              const rawAvatar = (m as any).avatar || (m as any).avatarUrl || (m as any).avatar_url;
+              const resolvedAv = resolveMediaUrl(rawAvatar);
               return (
                 <button
                   type="button"
@@ -1817,8 +1819,12 @@ function Home() {
                   className="w-48 h-14 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-xs outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex justify-start items-center gap-2.5 shrink-0 overflow-hidden hover:border-orange-500 dark:hover:border-orange-500 hover:shadow-md transition cursor-pointer text-left"
                   title={`Xem hồ sơ chi tiết của ${pName}`}
                 >
-                  <div className="size-9 bg-orange-500 rounded-xl outline outline-1 outline-orange-300 flex justify-center items-center shrink-0 shadow-2xs">
-                    <span className="text-white text-xs font-bold font-sans">{initials(pName)}</span>
+                  <div className="size-9 bg-orange-500 rounded-xl outline outline-1 outline-orange-300 overflow-hidden flex justify-center items-center shrink-0 shadow-2xs">
+                    {resolvedAv ? (
+                      <img src={resolvedAv} alt={pName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-xs font-bold font-sans">{initials(pName)}</span>
+                    )}
                   </div>
                   <div className="inline-flex flex-col justify-start items-start min-w-0">
                     <span className="text-slate-800 dark:text-white text-xs font-bold truncate max-w-[120px]">{pName}</span>
@@ -1843,7 +1849,7 @@ function Home() {
             </div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-orange-50 dark:bg-orange-950/60 rounded-full outline outline-1 outline-orange-200 dark:outline-orange-800 text-orange-700 dark:text-orange-300 text-[10px] font-bold">
-                +{combinedNews.length || 5} BẢN TIN
+                {combinedNews.length > 0 ? `+${combinedNews.length} BẢN TIN` : "0 BẢN TIN"}
               </span>
               <Link to="/association/news" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
                 <img src="/icons/home/arrow-right-02.svg" alt="More" className="size-4" />

@@ -787,34 +787,26 @@ function buildHtmlFromVisualContent(c: VisualBlockContent): string {
     </div>`
     : "";
 
-  const formattedIntro = c.introMessage
+  const formattedIntro = (c.introMessage || "")
     .split("\n")
     .filter((line) => line.trim().length > 0)
-    .map((line) => `<p style="margin: 0 0 14px; font-size: 14px; line-height: 1.65; color: #334155;">${line}</p>`)
+    .map((line) => `<p style="margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: #334155;">- ${line.startsWith("-") ? line.substring(1).trim() : line}</p>`)
     .join("\n    ");
 
-  return `<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-  <div style="background: #ffffff; border-bottom: 2px solid #e2e8f0; padding: 28px 24px; text-align: center;">
-    <div style="display: inline-block; padding: 4px 14px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 9999px; font-size: 11px; font-weight: 700; color: #b45309; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-      ${c.headerBadge}
-    </div>
-    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">${c.headerTitle}</h1>
-    <p style="margin: 8px 0 0; font-size: 13px; color: #64748b;">${c.headerSubtitle}</p>
-  </div>
-  <div style="padding: 28px 24px; color: #1e293b;">
-    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; font-weight: 600; color: #0f172a;">
-      ${c.greeting}
-    </p>
-    ${formattedIntro}
-    ${highlightSection}
-    ${qrSection}
-    <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin: 0 0 8px;">
-      ${c.outroMessage}
-    </p>
-    <p style="font-size: 13px; font-weight: 800; color: #002B66; margin: 16px 0 0; text-transform: uppercase;">
-      ${c.signature}
-    </p>
-  </div>
+  return `<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; color: #1e293b; box-shadow: 0 2px 10px rgba(0,0,0,0.04);">
+  <p style="margin: 0 0 14px; font-size: 15px; font-weight: 700; color: #0f172a;">
+    ${c.greeting || "Kính gửi: Anh/Chị {{full_name}},"}
+  </p>
+  ${formattedIntro}
+  ${c.headerTitle ? `<p style="margin: 0 0 14px; font-size: 15px; font-weight: 800; color: #003B95;">- Tên sự kiện/chương trình: ${c.headerTitle}</p>` : ""}
+  ${highlightSection}
+  ${qrSection}
+  <p style="font-size: 13.5px; color: #334155; line-height: 1.6; margin: 16px 0 6px;">
+    - Hotline BTC khi cần hỗ trợ: <strong>${c.outroMessage || "0973.205.683 / 0903.205.683 / 0903.203.204"}</strong>
+  </p>
+  <p style="font-size: 13.5px; font-weight: 700; color: #003B95; margin: 12px 0 0;">
+    - ${c.signature || "Trân trọng!"}
+  </p>
 </div>`;
 }
 
@@ -883,24 +875,33 @@ export function MailTemplateManager() {
 
     fetchNestApi<any>("/zalo/subscribers")
       .then((res: any) => {
-        const list = res?.data || res?.subscribers || (Array.isArray(res) ? res : []);
-        if (Array.isArray(list) && list.length > 0) {
+        const rawList = res?.data || res?.subscribers || (Array.isArray(res) ? res : []);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const list = rawList.map((s: any, idx: number) => ({
+            ...s,
+            id: String(s.id || s.userId || s.zalo_user_id || `zalo-${idx + 1}`),
+            zalo_user_id: String(s.zalo_user_id || s.userId || s.id || `zalo-${idx + 1}`),
+            name: s.displayName || s.name || s.fullName || (s.phone ? `Hội viên (${s.phone})` : `Khách Zalo ${idx + 1}`),
+            displayName: s.displayName || s.name || s.fullName || (s.phone ? `Hội viên (${s.phone})` : `Khách Zalo ${idx + 1}`),
+            phone: s.phone || "",
+            company: s.company || s.companyName || "",
+          }));
           setZaloSubscribers(list);
         } else {
           setZaloSubscribers([
-            { id: "zalo-sub-01", name: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
-            { id: "zalo-sub-02", name: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
-            { id: "zalo-sub-03", name: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
-            { id: "zalo-sub-04", name: "Phạm Thu Hà", phone: "0973205683", zalo_user_id: "zalo_04", company: "Hà Thành Real Estate" },
-            { id: "zalo-sub-05", name: "Đặng Tiến Dũng", phone: "0915667788", zalo_user_id: "zalo_05", company: "Dũng Minh Tech" },
+            { id: "zalo-sub-01", name: "Nguyễn Văn Hải", displayName: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
+            { id: "zalo-sub-02", name: "Trần Thị Mai Lan", displayName: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
+            { id: "zalo-sub-03", name: "Lê Hoàng Quân", displayName: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
+            { id: "zalo-sub-04", name: "Phạm Thu Hà", displayName: "Phạm Thu Hà", phone: "0973205683", zalo_user_id: "zalo_04", company: "Hà Thành Real Estate" },
+            { id: "zalo-sub-05", name: "Đặng Tiến Dũng", displayName: "Đặng Tiến Dũng", phone: "0915667788", zalo_user_id: "zalo_05", company: "Dũng Minh Tech" },
           ]);
         }
       })
       .catch(() => {
         setZaloSubscribers([
-          { id: "zalo-sub-01", name: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
-          { id: "zalo-sub-02", name: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
-          { id: "zalo-sub-03", name: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
+          { id: "zalo-sub-01", name: "Nguyễn Văn Hải", displayName: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
+          { id: "zalo-sub-02", name: "Trần Thị Mai Lan", displayName: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
+          { id: "zalo-sub-03", name: "Lê Hoàng Quân", displayName: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
         ]);
       });
 
@@ -1251,7 +1252,167 @@ export function MailTemplateManager() {
 
   const handleApplyPresetInModal = (presetKey: string) => {
     if (!editingTemplate) return;
-    if (presetKey === "MEMBER_WELCOME_THANKS") {
+    if (presetKey === "EVENT_INVITATION") {
+      const tmpl: MailTemplateItem = {
+        ...editingTemplate,
+        code: "EVENT_INVITATION",
+        name: "Thư Mời Tham Dự Sự Kiện (Tinh Gọn Đa Kênh)",
+        category: "event",
+        description: "Mẫu thư mời sự kiện tinh gọn theo định dạng chuẩn CLB CEO 1983.",
+        subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Kính gửi Anh/Chị {{full_name}}",
+        inAppTitle: "Thư mời tham dự sự kiện: {{event_title}}",
+        inAppBody: "- Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự sự kiện: {{event_title}}\n- Thời gian: {{event_date}}\n- Địa điểm: {{event_location}}\n- Chi phí: {{event_fee}}\n- Hotline BTC: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+        variables: [
+          { key: "full_name", label: "Tên đại biểu", example: "Dương Thị Huệ" },
+          { key: "event_title", label: "Tên sự kiện", example: "Gala Kết Nối Doanh Nhân CEO 1983" },
+          { key: "speaker_name", label: "Diễn giả", example: "Chủ Tịch & Khách Mời VIP" },
+          { key: "main_content", label: "Nội dung chính", example: "Xúc tiến thương mại & Chia sẻ cơ hội B2B" },
+          { key: "event_date", label: "Thời gian", example: "18:00 Thứ Sáu, 28/11/2026" },
+          { key: "event_location", label: "Địa điểm", example: "Trung tâm Hội nghị Quốc gia, Hà Nội" },
+          { key: "event_fee", label: "Chi phí", example: "Miễn phí Hội viên (Khách mời: 500.000 VNĐ)" },
+          { key: "google_maps_url", label: "Google Maps", example: "https://maps.app.goo.gl/ceo1983" },
+          { key: "dress_code", label: "Trang phục", example: "Vest lịch sự / Áo nhận diện CLB" },
+          { key: "parking_note", label: "Gửi xe", example: "Hầm B2 trung tâm hội nghị" },
+          { key: "important_notes", label: "Lưu ý quan trọng", example: "Vui lòng có mặt trước 15 phút để check-in nhận vé QR" },
+          { key: "confirm_url", label: "Xác nhận tham dự", example: "https://app.ceo1983.viconnect.vn/association/events" },
+        ],
+      };
+      const visual: VisualBlockContent = {
+        headerBadge: "VÉ MỜI SỰ KIỆN",
+        headerTitle: "{{event_title}}",
+        headerSubtitle: "CLB Doanh Nhân CEO 1983",
+        greeting: "Kính gửi Anh/Chị {{full_name}},",
+        introMessage: "BTC trân trọng kính mời Anh/Chị tham dự sự kiện:",
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN SỰ KIỆN",
+        highlightRows: [
+          { label: "Diễn giả", value: "{{speaker_name}}" },
+          { label: "Nội dung chính", value: "{{main_content}}" },
+          { label: "Thời gian", value: "{{event_date}}" },
+          { label: "Địa điểm", value: "{{event_location}}" },
+          { label: "Chi phí", value: "{{event_fee}}" },
+          { label: "Google Maps", value: "{{google_maps_url}}" },
+          { label: "Trang phục", value: "{{dress_code}}" },
+          { label: "Gửi xe", value: "{{parking_note}}" },
+          { label: "Lưu ý từ BTC", value: "{{important_notes}}" },
+          { label: "Xác nhận tham dự", value: "{{confirm_url}}" },
+        ],
+        showQrCode: true,
+        qrCodeUrl: "{{qr_code_url}}",
+        qrCodeNote: "Quý đại biểu vui lòng xuất trình mã QR này tại quầy lễ tân để check-in.",
+        outroMessage: "0973.205.683 / 0903.205.683 / 0903.203.204",
+        signature: "Trân trọng! TM. BAN TỔ CHỨC CLB DOANH NHÂN CEO 1983",
+      };
+      tmpl.visualContent = visual;
+      tmpl.htmlBody = buildHtmlFromVisualContent(visual);
+      setEditingTemplate(tmpl);
+      setVisualContent(visual);
+      toast.success("Đã áp dụng mẫu Thư mời sự kiện tinh gọn!");
+      return;
+    } else if (presetKey === "MEETING_INVITATION") {
+      const tmpl: MailTemplateItem = {
+        ...editingTemplate,
+        code: "MEETING_INVITATION",
+        name: "Thư Mời Cuộc Họp Ban Chuyên Môn",
+        category: "meeting",
+        description: "Mẫu thư mời họp ban chuyên môn định kỳ / đột xuất cho CLB Doanh Nhân CEO 1983.",
+        subject: "[THƯ MỜI HỌP] {{meeting_title}} - Kính gửi Anh/Chị {{full_name}}",
+        inAppTitle: "Thư mời họp: {{meeting_title}}",
+        inAppBody: "- Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự cuộc họp: {{meeting_title}}\n- Thời gian: {{meeting_date}}\n- Địa điểm: {{meeting_location}}\n- Hotline BTC: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+        variables: [
+          { key: "full_name", label: "Tên hội viên", example: "Lê Hoàng Quân" },
+          { key: "meeting_title", label: "Tên cuộc họp", example: "Họp Ban Xúc Tiến Thương Mại B2B Tháng 11" },
+          { key: "meeting_chair", label: "Chủ trì cuộc họp", example: "Trưởng Ban & Phó Chủ Tịch CLB" },
+          { key: "main_content", label: "Nội dung chính", example: "Tổng kết giao thương quý 3 và định hướng triển khai quý 4/2026" },
+          { key: "meeting_date", label: "Thời gian", example: "09:00 Thứ Bảy, 22/11/2026" },
+          { key: "meeting_location", label: "Địa điểm", example: "Văn phòng Hiệp hội HanoiBA, Keangnam Landmark 72" },
+          { key: "google_maps_url", label: "Google Maps", example: "https://maps.app.goo.gl/hanoiba" },
+          { key: "dress_code", label: "Trang phục", example: "Lịch sự / Đồng phục CLB" },
+          { key: "parking_note", label: "Gửi xe", example: "Hầm Keangnam B2" },
+          { key: "confirm_url", label: "Xác nhận tham dự", example: "https://app.ceo1983.viconnect.vn/association/events" },
+        ],
+      };
+      const visual: VisualBlockContent = {
+        headerBadge: "THƯ MỜI HỌP",
+        headerTitle: "{{meeting_title}}",
+        headerSubtitle: "CLB Doanh Nhân CEO 1983",
+        greeting: "Kính gửi Anh/Chị {{full_name}},",
+        introMessage: "BTC trân trọng kính mời Anh/Chị tham dự cuộc họp:",
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN CUỘC HỌP",
+        highlightRows: [
+          { label: "Chủ trì", value: "{{meeting_chair}}" },
+          { label: "Nội dung chính", value: "{{main_content}}" },
+          { label: "Thời gian", value: "{{meeting_date}}" },
+          { label: "Địa điểm", value: "{{meeting_location}}" },
+          { label: "Google Maps", value: "{{google_maps_url}}" },
+          { label: "Trang phục", value: "{{dress_code}}" },
+          { label: "Gửi xe", value: "{{parking_note}}" },
+          { label: "Xác nhận tham dự", value: "{{confirm_url}}" },
+        ],
+        showQrCode: false,
+        qrCodeUrl: "",
+        qrCodeNote: "",
+        outroMessage: "0973.205.683 / 0903.205.683 / 0903.203.204",
+        signature: "Trân trọng! TM. BAN TỔ CHỨC CLB DOANH NHÂN CEO 1983",
+      };
+      tmpl.visualContent = visual;
+      tmpl.htmlBody = buildHtmlFromVisualContent(visual);
+      setEditingTemplate(tmpl);
+      setVisualContent(visual);
+      toast.success("Đã áp dụng mẫu Thư mời cuộc họp ban!");
+      return;
+    } else if (presetKey === "ANNUAL_FEE_NOTICE") {
+      const tmpl: MailTemplateItem = {
+        ...editingTemplate,
+        code: "ANNUAL_FEE_NOTICE",
+        name: "Thông Báo Hội Phí Niên Liễm (Để trống QR, thêm STK CLB)",
+        category: "fee",
+        description: "Mẫu thông báo hội phí niên liễm, để trống QR và đầy đủ số tài khoản, ngân hàng CLB.",
+        subject: "[CEO 1983] Thông báo nộp hội phí thường niên năm {{fee_year}} - {{full_name}}",
+        inAppTitle: "Thông báo nộp hội phí năm {{fee_year}}",
+        inAppBody: "- Kính gửi Anh/Chị {{full_name}}\n- Ban Thường Trực CLB Doanh Nhân CEO 1983 trân trọng thông báo quyết toán niên liễm năm {{fee_year}}.\n- Mức phí: {{fee_amount}} VNĐ\n- Số tài khoản: 19832026888 (MB Bank - Chi nhánh Ba Đình)\n- Chủ tài khoản: CLB DOANH NHAN CEO 1983\n- Nội dung CK: CEO1983 {{member_code}} {{full_name}}\n- Hotline Kế toán: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
+        variables: [
+          { key: "full_name", label: "Tên hội viên", example: "Phạm Hồng Nguyên" },
+          { key: "member_code", label: "Mã hội viên", example: "M1983-008" },
+          { key: "fee_year", label: "Năm tài chính", example: "2026" },
+          { key: "fee_amount", label: "Mức hội phí", example: "5.000.000" },
+          { key: "due_date", label: "Hạn thanh toán", example: "31/12/2026" },
+          { key: "bank_account", label: "Số tài khoản CLB", example: "19832026888" },
+          { key: "bank_name", label: "Ngân hàng", example: "MB Bank - CN Ba Đình" },
+          { key: "bank_owner", label: "Chủ tài khoản", example: "CLB DOANH NHAN CEO 1983" },
+          { key: "transfer_content", label: "Nội dung chuyển khoản", example: "CEO1983 {{member_code}} HOIPHI2026" },
+        ],
+      };
+      const visual: VisualBlockContent = {
+        headerBadge: "THÔNG BÁO TÀI CHÍNH",
+        headerTitle: "THÔNG BÁO NỘP HỘI PHÍ NIÊN LIỄM NĂM {{fee_year}}",
+        headerSubtitle: "CLB Doanh Nhân CEO 1983",
+        greeting: "Kính gửi: Anh/Chị {{full_name}} (Mã HV: {{member_code}}),",
+        introMessage: "Ban Thường Trực CLB Doanh Nhân CEO 1983 trân trọng thông báo quyết toán hội phí niên liễm năm {{fee_year}}:",
+        showHighlightBox: true,
+        highlightBoxTitle: "THÔNG TIN NỘP HỘI PHÍ",
+        highlightRows: [
+          { label: "Mức hội phí", value: "{{fee_amount}} VNĐ" },
+          { label: "Hạn nộp", value: "{{due_date}}" },
+          { label: "Số tài khoản CLB", value: "{{bank_account}}" },
+          { label: "Ngân hàng", value: "{{bank_name}}" },
+          { label: "Chủ tài khoản", value: "{{bank_owner}}" },
+          { label: "Nội dung CK", value: "{{transfer_content}}" },
+        ],
+        showQrCode: false,
+        qrCodeUrl: "",
+        qrCodeNote: "Sau khi chuyển khoản, hệ thống sẽ tự động gạch nợ và gửi xác nhận về App Hội viên.",
+        outroMessage: "0973.205.683 / 0903.205.683 / 0903.203.204",
+        signature: "Trân trọng! BAN TÀI CHÍNH & KẾ TOÁN CLB DOANH NHÂN CEO 1983",
+      };
+      tmpl.visualContent = visual;
+      tmpl.htmlBody = buildHtmlFromVisualContent(visual);
+      setEditingTemplate(tmpl);
+      setVisualContent(visual);
+      toast.success("Đã áp dụng mẫu Thông báo hội phí niên liễm!");
+      return;
+    } else if (presetKey === "MEMBER_WELCOME_THANKS") {
       const tmpl: MailTemplateItem = {
         ...editingTemplate,
         code: "MEMBER_WELCOME_THANKS",
@@ -2436,8 +2597,14 @@ export function MailTemplateManager() {
                                 }`}
                               >
                                 <div className="truncate pr-1">
-                                  <span className="text-slate-900 dark:text-white font-semibold">{sub.name || "Khách Zalo"}</span>
-                                  <span className="text-slate-500 text-[10px] ml-1">({sub.phone || sub.zalo_user_id})</span>
+                                  <span className="text-slate-900 dark:text-white font-semibold">
+                                    {sub.displayName || sub.name || (sub.phone ? `Khách (${sub.phone})` : "Khách quan tâm Zalo")}
+                                  </span>
+                                  {(sub.phone || sub.company) && (
+                                    <span className="text-slate-500 text-[10px] ml-1">
+                                      ({sub.phone || sub.company})
+                                    </span>
+                                  )}
                                 </div>
                                 <span className="text-[10px] text-cyan-600 dark:text-cyan-400 shrink-0">
                                   {isSelected ? "✓ Đã chọn" : "+ Chọn"}
@@ -2713,9 +2880,12 @@ export function MailTemplateManager() {
                       className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 font-medium"
                     >
                       <option value="" disabled>-- Chọn mẫu nghiệp vụ có sẵn --</option>
+                      <option value="EVENT_INVITATION">Thư mời tham dự sự kiện (Format chuẩn tinh gọn)</option>
+                      <option value="MEETING_INVITATION">Thư mời cuộc họp ban chuyên môn</option>
+                      <option value="TRAINING_INVITATION">Thư mời chương trình đào tạo chuyên đề</option>
+                      <option value="ANNUAL_FEE_NOTICE">Thông báo hội phí niên liễm (Để trống QR, thêm STK CLB)</option>
                       <option value="MEMBER_WELCOME_THANKS">Thư cảm ơn đăng ký hội viên mới</option>
                       <option value="MEMBER_ACCOUNT_CREDENTIALS">Template gửi tài khoản đăng nhập cho hội viên mới</option>
-                      <option value="TRAINING_INVITATION">Thư mời chương trình đào tạo chuyên đề</option>
                     </select>
                   </div>
 
@@ -2875,70 +3045,61 @@ export function MailTemplateManager() {
                 {/* VISUAL BLOCK MODE */}
                 {modalEditorMode === "visual" ? (
                   <div className="space-y-3.5 bg-slate-50/70 dark:bg-slate-900/40 p-3 sm:p-4 rounded-2xl border border-border">
-                    {/* Block 1: Banner Header */}
-                    <div className="bg-card p-3 rounded-xl border border-border space-y-2">
+                    {/* Khối 1: Lời Chào Mở Đầu */}
+                    <div className="bg-card p-3 rounded-xl border border-border space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-[#003B95]"></span>
-                          Khối 1: Tiêu Đề Banner & Huy Hiệu Đầu Thư
+                          <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                          Khối 1: Lời Chào (Kính gửi Anh/Chị)
                         </span>
-                        <span className="text-[10px] text-muted-foreground">Banner nhận diện CLB CEO 1983</span>
+                        <span className="text-[10px] text-muted-foreground">Định danh hội viên tự động</span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[11px] text-muted-foreground block mb-0.5">Nhãn huy hiệu đầu thư</label>
-                          <input
-                            type="text"
-                            value={visualContent.headerBadge}
-                            onChange={(e) => handleUpdateVisualField("headerBadge", e.target.value)}
-                            placeholder="THÔNG BÁO TÀI CHÍNH HIỆP HỘI"
-                            className="w-full rounded-lg border border-border bg-background p-2 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-muted-foreground block mb-0.5">Tiêu đề lớn trên banner</label>
-                          <input
-                            type="text"
-                            value={visualContent.headerTitle}
-                            onChange={(e) => handleUpdateVisualField("headerTitle", e.target.value)}
-                            placeholder="THÔNG BÁO NỘP HỘI PHÍ NIÊN LIỄM {{fee_year}}"
-                            className="w-full rounded-lg border border-border bg-background p-2 text-xs font-bold"
-                          />
-                        </div>
-                      </div>
+                      <input
+                        type="text"
+                        value={visualContent.greeting}
+                        onChange={(e) => handleUpdateVisualField("greeting", e.target.value)}
+                        placeholder="Kính gửi: Anh/Chị {{full_name}} (Mã HV: {{member_code}}), Đại diện: {{company_name}}"
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-semibold"
+                      />
                     </div>
 
-                    {/* Block 2: Greeting & Main Message */}
-                    <div className="bg-card p-3 rounded-xl border border-border space-y-2">
-                      <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Khối 2: Lời Chào & Thông Điệp Chính (Văn Bản Tự Nhiên)
-                      </span>
-                      <div>
-                        <label className="text-[11px] text-muted-foreground block mb-0.5">Lời chào mở đầu (Kính gửi)</label>
-                        <input
-                          type="text"
-                          value={visualContent.greeting}
-                          onChange={(e) => handleUpdateVisualField("greeting", e.target.value)}
-                          placeholder="Kính gửi: Anh/Chị {{full_name}} (Mã HV: {{member_code}}), Đại diện: {{company_name}}"
-                          className="w-full rounded-lg border border-border bg-background p-2 text-xs font-semibold"
-                        />
+                    {/* Khối 2: Lời Mời / Thông Báo Từ Ban Tổ Chức */}
+                    <div className="bg-card p-3 rounded-xl border border-border space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                          Khối 2: Lời Mời / Thông Điệp Từ Ban Tổ Chức
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">Lời mời tham dự sự kiện/cuộc họp/đào tạo</span>
                       </div>
-                      <div>
-                        <label className="text-[11px] text-muted-foreground block mb-0.5">
-                          Đoạn văn thông điệp chính (Xuống dòng tự do, không cần gõ thẻ html)
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={visualContent.introMessage}
-                          onChange={(e) => handleUpdateVisualField("introMessage", e.target.value)}
-                          placeholder="Nhập nội dung chia sẻ, lời cảm ơn hoặc thông báo gửi tới hội viên..."
-                          className="w-full rounded-lg border border-border bg-background p-2 text-xs leading-relaxed"
-                        />
-                      </div>
+                      <textarea
+                        rows={2}
+                        value={visualContent.introMessage}
+                        onChange={(e) => handleUpdateVisualField("introMessage", e.target.value)}
+                        placeholder="BTC trân trọng kính mời Anh/Chị tham dự sự kiện/cuộc họp/chương trình đào tạo:"
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs leading-relaxed"
+                      />
                     </div>
 
-                    {/* Block 3: Highlight Detail Box */}
+                    {/* Khối 3: Tên Sự Kiện / Cuộc Họp / Chương Trình Đào Tạo */}
+                    <div className="bg-card p-3 rounded-xl border border-border space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                          Khối 3: Tên Sự Kiện / Cuộc Họp / Chương Trình Đào Tạo
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">Tiêu đề chính của hoạt động</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={visualContent.headerTitle}
+                        onChange={(e) => handleUpdateVisualField("headerTitle", e.target.value)}
+                        placeholder="Ví dụ: {{event_title}} hoặc Tọa Đàm Kết Nối Giao Thương B2B CEO 1983"
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-bold text-[#003B95] dark:text-blue-400"
+                      />
+                    </div>
+
+                    {/* Khối 4: Thông Tin Chi Tiết (Diễn giả, Nội dung, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý) */}
                     <div className="bg-card p-3 rounded-xl border border-border space-y-2.5">
                       <div className="flex items-center justify-between">
                         <label className="font-bold text-foreground text-xs flex items-center gap-2 cursor-pointer">
@@ -2948,42 +3109,59 @@ export function MailTemplateManager() {
                             onChange={(e) => handleUpdateVisualField("showHighlightBox", e.target.checked)}
                             className="rounded border-border w-3.5 h-3.5 text-[#003B95]"
                           />
-                          <span>Khối 3: Hộp Bảng Thông Tin Chi Tiết / Điểm Nhấn Nổi Bật</span>
+                          <span>Khối 4: Thông Tin Chi Tiết (Diễn Giả, Nội Dung, Thời Gian, Địa Điểm, Chi Phí...)</span>
                         </label>
-                        <span className="text-[10px] text-muted-foreground">Tùy biến hiển thị số tiền, hạn nộp, tài khoản...</span>
                       </div>
 
                       {visualContent.showHighlightBox && (
                         <div className="space-y-2 pt-1 border-t border-border/60">
-                          <div>
-                            <label className="text-[11px] text-muted-foreground block mb-0.5">Tiêu đề hộp nổi bật</label>
-                            <input
-                              type="text"
-                              value={visualContent.highlightBoxTitle}
-                              onChange={(e) => handleUpdateVisualField("highlightBoxTitle", e.target.value)}
-                              placeholder="Thông Tin Đóng Phí Niên Liễm Năm {{fee_year}}"
-                              className="w-full rounded-lg border border-border bg-background p-2 text-xs font-bold"
-                            />
+                          {/* Nút thêm nhanh trường chuẩn */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[10px] text-muted-foreground font-semibold">Chèn nhanh trường:</span>
+                            {[
+                              { l: "Diễn giả", v: "{{speaker_name}}" },
+                              { l: "Nội dung chính", v: "{{main_content}}" },
+                              { l: "Thời gian", v: "{{event_date}}" },
+                              { l: "Địa điểm", v: "{{event_location}}" },
+                              { l: "Chi phí", v: "{{fee_amount}} VNĐ" },
+                              { l: "Số tài khoản CLB", v: "19832026888" },
+                              { l: "Ngân hàng CLB", v: "MB Bank (Quân Đội)" },
+                              { l: "Google Maps", v: "{{google_maps_url}}" },
+                              { l: "Trang phục", v: "Lịch sự / Vest / Áo CLB" },
+                              { l: "Gửi xe", v: "Hầm B2 tòa nhà Keangnam" },
+                              { l: "Lưu ý quan trọng", v: "Vui lòng có mặt trước 15 phút để check-in" },
+                            ].map((f) => (
+                              <button
+                                key={f.l}
+                                type="button"
+                                onClick={() => {
+                                  setVisualContent((prev) => ({
+                                    ...prev,
+                                    highlightRows: [...(prev.highlightRows || []), { label: f.l, value: f.v }],
+                                  }));
+                                }}
+                                className="px-2 py-0.5 rounded-md bg-secondary hover:bg-primary/10 text-[10.5px] font-medium text-foreground border border-border/70 cursor-pointer"
+                              >
+                                + {f.l}
+                              </button>
+                            ))}
                           </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] text-muted-foreground block">
-                              Các dòng thông tin chi tiết (Tên trường : Giá trị):
-                            </label>
+                          <div className="space-y-1.5 pt-1">
                             {visualContent.highlightRows.map((row, idx) => (
                               <div key={idx} className="flex items-center gap-2">
                                 <input
                                   type="text"
                                   value={row.label}
                                   onChange={(e) => handleUpdateHighlightRow(idx, "label", e.target.value)}
-                                  placeholder="Tên mục (Ví dụ: Hạn nộp)"
-                                  className="w-1/3 rounded-lg border border-border bg-background p-1.5 text-xs text-muted-foreground"
+                                  placeholder="Tên mục (Ví dụ: Thời gian)"
+                                  className="w-1/3 rounded-lg border border-border bg-background p-1.5 text-xs text-muted-foreground font-semibold"
                                 />
                                 <input
                                   type="text"
                                   value={row.value}
                                   onChange={(e) => handleUpdateHighlightRow(idx, "value", e.target.value)}
-                                  placeholder="Giá trị (Ví dụ: {{due_date}})"
+                                  placeholder="Giá trị (Ví dụ: {{event_date}})"
                                   className="flex-1 rounded-lg border border-border bg-background p-1.5 text-xs font-semibold font-mono"
                                 />
                                 <button
@@ -3001,14 +3179,14 @@ export function MailTemplateManager() {
                               onClick={handleAddHighlightRow}
                               className="inline-flex items-center gap-1 px-3 py-1 rounded-lg border border-dashed border-border text-[11px] font-semibold text-primary hover:bg-secondary cursor-pointer mt-1"
                             >
-                              <Plus className="w-3 h-3" /> Thêm Dòng Thông Tin Mới
+                              <Plus className="w-3 h-3" /> Thêm Dòng Thông Tin Khác
                             </button>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Block 4: QR Code & Call To Action */}
+                    {/* Khối 5: Quét Mã QR & Xác Nhận Tham Dự */}
                     <div className="bg-card p-3 rounded-xl border border-border space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="font-bold text-foreground text-xs flex items-center gap-2 cursor-pointer">
@@ -3018,29 +3196,30 @@ export function MailTemplateManager() {
                             onChange={(e) => handleUpdateVisualField("showQrCode", e.target.checked)}
                             className="rounded border-border w-3.5 h-3.5 text-[#003B95]"
                           />
-                          <span>Khối 4: Ảnh Mã QR Quét Tự Động (VietQR / Vé QR Check-in)</span>
+                          <span>Khối 5: Quét Mã QR Tự Động (VietQR / Vé QR Check-in) & Xác Nhận Tham Dự</span>
                         </label>
+                        <span className="text-[10px] text-muted-foreground">Có thể để trống nếu chưa có QR</span>
                       </div>
 
                       {visualContent.showQrCode && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-border/60">
                           <div>
-                            <label className="text-[11px] text-muted-foreground block mb-0.5">Biến chứa URL ảnh QR</label>
+                            <label className="text-[11px] text-muted-foreground block mb-0.5">Biến chứa URL ảnh QR (để trống nếu không dùng)</label>
                             <input
                               type="text"
                               value={visualContent.qrCodeUrl}
                               onChange={(e) => handleUpdateVisualField("qrCodeUrl", e.target.value)}
-                              placeholder="{{vietqr_url}} hoặc link ảnh"
+                              placeholder="{{vietqr_url}} hoặc link ảnh QR"
                               className="w-full rounded-lg border border-border bg-background p-2 font-mono text-xs"
                             />
                           </div>
                           <div>
-                            <label className="text-[11px] text-muted-foreground block mb-0.5">Lời hướng dẫn dưới mã QR</label>
+                            <label className="text-[11px] text-muted-foreground block mb-0.5">Lời hướng dẫn / Lưu ý QR</label>
                             <input
                               type="text"
                               value={visualContent.qrCodeNote}
                               onChange={(e) => handleUpdateVisualField("qrCodeNote", e.target.value)}
-                              placeholder="Hệ thống tự động gạch nợ sau khi nhận chuyển khoản."
+                              placeholder="Xuất trình mã này cho ban lễ tân khi đến sự kiện hoặc chuyển khoản quét VietQR"
                               className="w-full rounded-lg border border-border bg-background p-2 text-xs"
                             />
                           </div>
@@ -3048,34 +3227,39 @@ export function MailTemplateManager() {
                       )}
                     </div>
 
-                    {/* Block 5: Footer & Signoff */}
-                    <div className="bg-card p-3 rounded-xl border border-border space-y-2">
-                      <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                        Khối 5: Lời Kết & Ký Tên Ban Chấp Hành
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[11px] text-muted-foreground block mb-0.5">Thông tin liên hệ / Hotline</label>
-                          <input
-                            type="text"
-                            value={visualContent.outroMessage}
-                            onChange={(e) => handleUpdateVisualField("outroMessage", e.target.value)}
-                            placeholder="Mọi thắc mắc xin liên hệ Ban Thư Ký CLB CEO 1983: 0983 000 001."
-                            className="w-full rounded-lg border border-border bg-background p-2 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-muted-foreground block mb-0.5">Đơn vị ký tên</label>
-                          <input
-                            type="text"
-                            value={visualContent.signature}
-                            onChange={(e) => handleUpdateVisualField("signature", e.target.value)}
-                            placeholder="TM. BAN CHẤP HÀNH CLB DOANH NHÂN CEO 1983"
-                            className="w-full rounded-lg border border-border bg-background p-2 text-xs font-bold"
-                          />
-                        </div>
+                    {/* Khối 6: Hotline BTC Khi Cần Hỗ Trợ */}
+                    <div className="bg-card p-3 rounded-xl border border-border space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                          Khối 6: Hotline BTC Khi Cần Hỗ Trợ
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">Số điện thoại liên hệ trực tiếp</span>
                       </div>
+                      <input
+                        type="text"
+                        value={visualContent.outroMessage}
+                        onChange={(e) => handleUpdateVisualField("outroMessage", e.target.value)}
+                        placeholder="0973.205.683 / 0903.205.683 / 0903.203.204"
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-semibold text-rose-600 dark:text-rose-400"
+                      />
+                    </div>
+
+                    {/* Khối 7: Lời Kết & Đại Diện Ký Tên (Trân trọng!) */}
+                    <div className="bg-card p-3 rounded-xl border border-border space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#003B95]"></span>
+                          Khối 7: Lời Kết & Đơn Vị Ký Tên (Trân trọng!)
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={visualContent.signature}
+                        onChange={(e) => handleUpdateVisualField("signature", e.target.value)}
+                        placeholder="Trân trọng! TM. BAN TỔ CHỨC CLB DOANH NHÂN CEO 1983"
+                        className="w-full rounded-lg border border-border bg-background p-2 text-xs font-bold text-[#003B95] dark:text-blue-400 uppercase"
+                      />
                     </div>
                   </div>
                 ) : (

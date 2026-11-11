@@ -122,37 +122,8 @@ export class ConnectContentService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async ensureSeedNews(): Promise<void> {
-    try {
-      const count = await this.prisma.$queryRaw<any[]>`
-        SELECT COUNT(*)::int as cnt FROM public.news
-      `.catch(() => [{ cnt: 0 }]);
-      if (Number(count[0]?.cnt || 0) === 0) {
-        for (const item of DEFAULT_OFFICIAL_NEWS) {
-          const imgsJson = JSON.stringify([item.cover_image]);
-          await this.prisma.$executeRaw`
-            INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, cover_image, images, views, created_at, updated_at)
-            VALUES (
-              ${item.code},
-              ${item.title},
-              ${item.category},
-              ${item.author},
-              ${item.published_at},
-              'published',
-              ${item.excerpt},
-              ${item.excerpt},
-              ${item.cover_image},
-              ${imgsJson}::jsonb,
-              ${item.views},
-              NOW(),
-              NOW()
-            )
-            ON CONFLICT DO NOTHING
-          `.catch(() => {});
-        }
-      }
-    } catch (e: any) {
-      console.warn('ensureSeedNews warning:', e?.message);
-    }
+    // Không tự động gieo dữ liệu giả lập tin tức
+    return;
   }
 
   async listPublishedNews() {
@@ -193,6 +164,7 @@ export class ConnectContentService {
   }
 
   private async ensureSeedPerks() {
+    return; // Cleared per database cleanup request
     try {
       const existing = await this.prisma.$queryRaw<any[]>`
         SELECT id FROM public.perks LIMIT 1

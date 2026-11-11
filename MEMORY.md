@@ -1,5 +1,27 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.19): Khắc Phục Triệt Để SafeArea iOS, Số Đếm Realtime, Tên Người Zalo OA, Chuẩn Hóa Template 7 Khối CRM & Sửa Lỗi Backend/API ([NODE-APP-001..004], [NODE-CRM-001..017], [NODE-CORE-001..005])**:
+  - **Khắc phục lỗi SafeArea iOS Header (Dynamic Island / Tai Thỏ)**:
+    * Đồng bộ `paddingTop: calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)` và `minHeight: calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)` tại `MemberShell.tsx` (áp dụng cho toàn bộ các màn dùng `MemberHeader` như Thông báo `/association/notifications`), `association.profile.tsx` (Màn cá nhân), `association.messages.tsx` (Màn mạng lưới / tin nhắn), và `association.events.tsx` (Màn sự kiện). Triệt tiêu hoàn toàn hiện tượng header bị tai thỏ đè lên trên thiết bị iOS (iPhone 14 Pro, 15, 16).
+  - **Realtime Số Đếm & Badges theo Dữ Liệu Thực Tế**:
+    * Tại `association.messages.tsx`: Xóa bỏ hoàn toàn số hardcode `"9+"` trên biểu tượng chuông thông báo. Tích hợp state `unreadNotifCount` và `unreadMsgCount` cùng `refreshUnreadCounters()` lắng nghe Socket.IO (`notification:new`, `notification:unread_count`, `notification:count`, `notification:updated`, `dm:message_received`, `dm:thread_updated`) và window events (`vba.notifications.changed`, `notifications-updated`). Ẩn hoàn toàn badge khi số lượng = 0, hiển thị số đếm chuẩn xác khi > 0.
+    * Tại `association.index.tsx`: Xóa bỏ nhãn hardcode `"100+"` tại shortcut "Danh bạ CEO". Bổ sung đếm tin tức realtime `{combinedNews.length > 0 ? `+${combinedNews.length} BẢN TIN` : "0 BẢN TIN"}`.
+  - **Avatar & Ảnh Bìa Sạch Sẽ (Không Hardcode Ảnh Người Mẫu)**:
+    * Tại `association.profile.tsx`: Thay thế ảnh bìa Unsplash người tĩnh bằng banner gradient "Chưa có ảnh bìa" kèm camera icon thanh lịch. Với avatar chưa có ảnh, hiển thị initials kèm huy hiệu "Chưa có ảnh" rõ ràng.
+    * Tại `association.index.tsx` ("DOANH NGHIỆP MỚI GIA NHẬP"): Hiển thị avatar thật của hội viên mới gia nhập thông qua hàm `resolveMediaUrl(m.avatar || m.avatarUrl || (m as any).avatar_url)`.
+  - **Khắc Phục Lỗi Tuyến API B2B & Avatar 500/404**:
+    * Sửa lỗi `GET /api/b2b/opportunities 404`: Thêm alias `@Controller(['opportunities', 'b2b/opportunities'])` tại backend `OpportunityController`, hỗ trợ song song cả 2 đường dẫn.
+    * Sửa lỗi `GET /upload/file/avatars/... 500`: Đăng ký listener `stream.on('error')` tại backend `UploadController` để xử lý ngoại lệ stream và trả về SVG placeholder 200 thay vì văng lỗi 500.
+    * Client-side: Bổ sung chuỗi mã chết `"j01t7w"` vào danh sách `deadMarkers` của `isDeadAvatarUrl()` (`api-client.ts`), ngăn chặn browser gửi request đến ảnh mock đã bị xóa.
+  - **CRM - Chuẩn Hóa Mẫu Thông Báo & Hiển Thị Tên Khách Zalo OA**:
+    * Tại `zalo.service.ts`: Cập nhật `getSubscribers()` luôn trả về các trường chuẩn `displayName`, `name`, `phone`, fallback sang danh sách hội viên nếu bảng `zalo_subscribers` chưa có dữ liệu.
+    * Tại `MailTemplateManager.tsx`: Sửa mapping danh sách người tương tác Zalo OA hiển thị đúng `sub.displayName` và SĐT, xóa bỏ hiện tượng hiển thị `Khách Zalo ()`.
+    * Căn chỉnh giao diện bộ chọn người gửi 2 cột (Hội viên theo Ban & Người tương tác Zalo OA) tinh gọn, đẹp mắt và đồng bộ 3 chế độ "Tất cả", "1 người", "Nhiều người".
+    * Chuẩn hóa form tạo template thông báo theo đúng 7 khối tiêu chuẩn: Kính gửi Anh/Chị, BTC trân trọng kính mời tham dự sự kiện/cuộc họp/đào tạo, Tên sự kiện, Thông tin chi tiết (Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC), Xác nhận tham dự, Hotline BTC (0973.205.683 / 0903.205.683 / 0903.203.204), Trân trọng!
+    * Hỗ trợ quick chips cho thông báo có phí (STK, Ngân hàng CLB), thư cảm ơn, gửi tài khoản và loại bỏ header banner rườm rà.
+  - **Sửa Lỗi Code Backend (`feed.service.ts`)**:
+    * Loại bỏ hoàn toàn khối mã lệnh lỗi cú pháp gạch đỏ trong `ensureSeedFeed()` hiển thị ở ảnh VS Code của người dùng.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.15): Hoàn Thiện Toàn Diện Bộ Yêu Cầu CEO 1983 Mobile App & CRM Quản Trị ([NODE-APP-001..004], [NODE-CRM-001..017])**:
   1. *Khắc Phục Lỗi Vào Màn Sự Kiện (React Error #310)*:
      - **Triệt tiêu toàn diện lỗi Hook Violation**:
@@ -220,6 +242,28 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.19): Khắc Phục Triệt Để SafeArea iOS, Số Đếm Realtime, Tên Người Zalo OA, Chuẩn Hóa Template 7 Khối CRM & Sửa Lỗi Backend/API ([NODE-APP-001..004], [NODE-CRM-001..017], [NODE-CORE-001..005])**:
+  - **Khắc phục lỗi SafeArea iOS Header (Dynamic Island / Tai Thỏ)**:
+    * Đồng bộ `paddingTop: calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)` và `minHeight: calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)` tại `MemberShell.tsx` (áp dụng cho toàn bộ các màn dùng `MemberHeader` như Thông báo `/association/notifications`), `association.profile.tsx` (Màn cá nhân), `association.messages.tsx` (Màn mạng lưới / tin nhắn), và `association.events.tsx` (Màn sự kiện). Triệt tiêu hoàn toàn hiện tượng header bị tai thỏ đè lên trên thiết bị iOS (iPhone 14 Pro, 15, 16).
+  - **Realtime Số Đếm & Badges theo Dữ Liệu Thực Tế**:
+    * Tại `association.messages.tsx`: Xóa bỏ hoàn toàn số hardcode `"9+"` trên biểu tượng chuông thông báo. Tích hợp state `unreadNotifCount` và `unreadMsgCount` cùng `refreshUnreadCounters()` lắng nghe Socket.IO (`notification:new`, `notification:unread_count`, `notification:count`, `notification:updated`, `dm:message_received`, `dm:thread_updated`) và window events (`vba.notifications.changed`, `notifications-updated`). Ẩn hoàn toàn badge khi số lượng = 0, hiển thị số đếm chuẩn xác khi > 0.
+    * Tại `association.index.tsx`: Xóa bỏ nhãn hardcode `"100+"` tại shortcut "Danh bạ CEO". Bổ sung đếm tin tức realtime `{combinedNews.length > 0 ? `+${combinedNews.length} BẢN TIN` : "0 BẢN TIN"}`.
+  - **Avatar & Ảnh Bìa Sạch Sẽ (Không Hardcode Ảnh Người Mẫu)**:
+    * Tại `association.profile.tsx`: Thay thế ảnh bìa Unsplash người tĩnh bằng banner gradient "Chưa có ảnh bìa" kèm camera icon thanh lịch. Với avatar chưa có ảnh, hiển thị initials kèm huy hiệu "Chưa có ảnh" rõ ràng.
+    * Tại `association.index.tsx` ("DOANH NGHIỆP MỚI GIA NHẬP"): Hiển thị avatar thật của hội viên mới gia nhập thông qua hàm `resolveMediaUrl(m.avatar || m.avatarUrl || (m as any).avatar_url)`.
+  - **Khắc Phục Lỗi Tuyến API B2B & Avatar 500/404**:
+    * Sửa lỗi `GET /api/b2b/opportunities 404`: Thêm alias `@Controller(['opportunities', 'b2b/opportunities'])` tại backend `OpportunityController`, hỗ trợ song song cả 2 đường dẫn.
+    * Sửa lỗi `GET /upload/file/avatars/... 500`: Đăng ký listener `stream.on('error')` tại backend `UploadController` để xử lý ngoại lệ stream và trả về SVG placeholder 200 thay vì văng lỗi 500.
+    * Client-side: Bổ sung chuỗi mã chết `"j01t7w"` vào danh sách `deadMarkers` của `isDeadAvatarUrl()` (`api-client.ts`), ngăn chặn browser gửi request đến ảnh mock đã bị xóa.
+  - **CRM - Chuẩn Hóa Mẫu Thông Báo & Hiển Thị Tên Khách Zalo OA**:
+    * Tại `zalo.service.ts`: Cập nhật `getSubscribers()` luôn trả về các trường chuẩn `displayName`, `name`, `phone`, fallback sang danh sách hội viên nếu bảng `zalo_subscribers` chưa có dữ liệu.
+    * Tại `MailTemplateManager.tsx`: Sửa mapping danh sách người tương tác Zalo OA hiển thị đúng `sub.displayName` và SĐT, xóa bỏ hiện tượng hiển thị `Khách Zalo ()`.
+    * Căn chỉnh giao diện bộ chọn người gửi 2 cột (Hội viên theo Ban & Người tương tác Zalo OA) tinh gọn, đẹp mắt và đồng bộ 3 chế độ "Tất cả", "1 người", "Nhiều người".
+    * Chuẩn hóa form tạo template thông báo theo đúng 7 khối tiêu chuẩn: Kính gửi Anh/Chị, BTC trân trọng kính mời tham dự sự kiện/cuộc họp/đào tạo, Tên sự kiện, Thông tin chi tiết (Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC), Xác nhận tham dự, Hotline BTC (0973.205.683 / 0903.205.683 / 0903.203.204), Trân trọng!
+    * Hỗ trợ quick chips cho thông báo có phí (STK, Ngân hàng CLB), thư cảm ơn, gửi tài khoản và loại bỏ header banner rườm rà.
+  - **Sửa Lỗi Code Backend (`feed.service.ts`)**:
+    * Loại bỏ hoàn toàn khối mã lệnh lỗi cú pháp gạch đỏ trong `ensureSeedFeed()` hiển thị ở ảnh VS Code của người dùng.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.15): Hoàn Thiện Toàn Diện Bộ Yêu Cầu CEO 1983 Mobile App & CRM Quản Trị ([NODE-APP-001..004], [NODE-CRM-001..017])**:
   1. *Khắc Phục Lỗi Vào Màn Sự Kiện (React Error #310)*:
@@ -1695,6 +1739,28 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.19): Khắc Phục Triệt Để SafeArea iOS, Số Đếm Realtime, Tên Người Zalo OA, Chuẩn Hóa Template 7 Khối CRM & Sửa Lỗi Backend/API ([NODE-APP-001..004], [NODE-CRM-001..017], [NODE-CORE-001..005])**:
+  - **Khắc phục lỗi SafeArea iOS Header (Dynamic Island / Tai Thỏ)**:
+    * Đồng bộ `paddingTop: calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)` và `minHeight: calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)` tại `MemberShell.tsx` (áp dụng cho toàn bộ các màn dùng `MemberHeader` như Thông báo `/association/notifications`), `association.profile.tsx` (Màn cá nhân), `association.messages.tsx` (Màn mạng lưới / tin nhắn), và `association.events.tsx` (Màn sự kiện). Triệt tiêu hoàn toàn hiện tượng header bị tai thỏ đè lên trên thiết bị iOS (iPhone 14 Pro, 15, 16).
+  - **Realtime Số Đếm & Badges theo Dữ Liệu Thực Tế**:
+    * Tại `association.messages.tsx`: Xóa bỏ hoàn toàn số hardcode `"9+"` trên biểu tượng chuông thông báo. Tích hợp state `unreadNotifCount` và `unreadMsgCount` cùng `refreshUnreadCounters()` lắng nghe Socket.IO (`notification:new`, `notification:unread_count`, `notification:count`, `notification:updated`, `dm:message_received`, `dm:thread_updated`) và window events (`vba.notifications.changed`, `notifications-updated`). Ẩn hoàn toàn badge khi số lượng = 0, hiển thị số đếm chuẩn xác khi > 0.
+    * Tại `association.index.tsx`: Xóa bỏ nhãn hardcode `"100+"` tại shortcut "Danh bạ CEO". Bổ sung đếm tin tức realtime `{combinedNews.length > 0 ? `+${combinedNews.length} BẢN TIN` : "0 BẢN TIN"}`.
+  - **Avatar & Ảnh Bìa Sạch Sẽ (Không Hardcode Ảnh Người Mẫu)**:
+    * Tại `association.profile.tsx`: Thay thế ảnh bìa Unsplash người tĩnh bằng banner gradient "Chưa có ảnh bìa" kèm camera icon thanh lịch. Với avatar chưa có ảnh, hiển thị initials kèm huy hiệu "Chưa có ảnh" rõ ràng.
+    * Tại `association.index.tsx` ("DOANH NGHIỆP MỚI GIA NHẬP"): Hiển thị avatar thật của hội viên mới gia nhập thông qua hàm `resolveMediaUrl(m.avatar || m.avatarUrl || (m as any).avatar_url)`.
+  - **Khắc Phục Lỗi Tuyến API B2B & Avatar 500/404**:
+    * Sửa lỗi `GET /api/b2b/opportunities 404`: Thêm alias `@Controller(['opportunities', 'b2b/opportunities'])` tại backend `OpportunityController`, hỗ trợ song song cả 2 đường dẫn.
+    * Sửa lỗi `GET /upload/file/avatars/... 500`: Đăng ký listener `stream.on('error')` tại backend `UploadController` để xử lý ngoại lệ stream và trả về SVG placeholder 200 thay vì văng lỗi 500.
+    * Client-side: Bổ sung chuỗi mã chết `"j01t7w"` vào danh sách `deadMarkers` của `isDeadAvatarUrl()` (`api-client.ts`), ngăn chặn browser gửi request đến ảnh mock đã bị xóa.
+  - **CRM - Chuẩn Hóa Mẫu Thông Báo & Hiển Thị Tên Khách Zalo OA**:
+    * Tại `zalo.service.ts`: Cập nhật `getSubscribers()` luôn trả về các trường chuẩn `displayName`, `name`, `phone`, fallback sang danh sách hội viên nếu bảng `zalo_subscribers` chưa có dữ liệu.
+    * Tại `MailTemplateManager.tsx`: Sửa mapping danh sách người tương tác Zalo OA hiển thị đúng `sub.displayName` và SĐT, xóa bỏ hiện tượng hiển thị `Khách Zalo ()`.
+    * Căn chỉnh giao diện bộ chọn người gửi 2 cột (Hội viên theo Ban & Người tương tác Zalo OA) tinh gọn, đẹp mắt và đồng bộ 3 chế độ "Tất cả", "1 người", "Nhiều người".
+    * Chuẩn hóa form tạo template thông báo theo đúng 7 khối tiêu chuẩn: Kính gửi Anh/Chị, BTC trân trọng kính mời tham dự sự kiện/cuộc họp/đào tạo, Tên sự kiện, Thông tin chi tiết (Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC), Xác nhận tham dự, Hotline BTC (0973.205.683 / 0903.205.683 / 0903.203.204), Trân trọng!
+    * Hỗ trợ quick chips cho thông báo có phí (STK, Ngân hàng CLB), thư cảm ơn, gửi tài khoản và loại bỏ header banner rườm rà.
+  - **Sửa Lỗi Code Backend (`feed.service.ts`)**:
+    * Loại bỏ hoàn toàn khối mã lệnh lỗi cú pháp gạch đỏ trong `ensureSeedFeed()` hiển thị ở ảnh VS Code của người dùng.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.15): Hoàn Thiện Toàn Diện Bộ Yêu Cầu CEO 1983 Mobile App & CRM Quản Trị ([NODE-APP-001..004], [NODE-CRM-001..017])**:
   1. *Khắc Phục Lỗi Vào Màn Sự Kiện (React Error #310)*:

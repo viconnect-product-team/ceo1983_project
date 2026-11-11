@@ -47,90 +47,17 @@ export const Route = createFileRoute("/perks")({
 
 const ICON_OPTIONS = ["Gift", "Briefcase", "Scale", "Calculator", "Hotel"];
 
-const DEFAULT_FALLBACK_PERKS: AdminPerk[] = [
-  {
-    id: "perk-001",
-    title: "VIP Lounge & Golf Long Biên",
-    category: "Golf & Nghỉ dưỡng",
-    partner: "Sân Golf Long Biên",
-    discount: "Giảm 25%",
-    summary: "Đặc quyền phòng chờ VIP và ưu đãi giá green fee dành riêng cho hội viên CEO 1983",
-    description: "Hội viên xuất trình thẻ doanh nhân CEO 1983 điện tử để nhận đặc quyền phòng chờ VIP, giảm 25% phí green fee tất cả các ngày trong tuần.",
-    icon: "Hotel",
-    link: "https://longbiengolf.vn",
-    validUntil: "2026-12-31",
-    sortOrder: 1,
-    status: "active",
-  },
-  {
-    id: "perk-002",
-    title: "Nghỉ dưỡng 5 sao Vinpearl & InterContinental",
-    category: "Golf & Nghỉ dưỡng",
-    partner: "Hệ thống Vinpearl & InterContinental",
-    discount: "Ưu đãi 30%",
-    summary: "Ưu đãi đặt phòng và dịch vụ ẩm thực tại hệ thống resort 5 sao trên toàn quốc",
-    description: "Giảm 30% giá phòng công bố và 15% dịch vụ ẩm thực F&B tại tất cả các cơ sở Vinpearl và InterContinental tại Phú Quốc, Nha Trang, Đà Nẵng.",
-    icon: "Hotel",
-    link: "https://vinpearl.com",
-    validUntil: "2026-12-31",
-    sortOrder: 2,
-    status: "active",
-  },
-  {
-    id: "perk-003",
-    title: "Gói Pháp lý Doanh nghiệp & M&A",
-    category: "Dịch vụ Doanh nghiệp",
-    partner: "Công ty Luật Trí Minh",
-    discount: "Tặng 100% tư vấn",
-    summary: "Tư vấn rà soát hợp đồng kinh tế và tái cấu trúc doanh nghiệp miễn phí lần đầu",
-    description: "Miễn phí 01 buổi tư vấn chuyên sâu về tái cấu trúc vốn và M&A; giảm 20% phí luật sư cho các vụ việc phát sinh tiếp theo.",
-    icon: "Scale",
-    link: "https://luattriminh.vn",
-    validUntil: "2026-12-31",
-    sortOrder: 3,
-    status: "active",
-  },
-  {
-    id: "perk-004",
-    title: "Dịch vụ Kế toán & Kiểm toán Độc lập",
-    category: "Dịch vụ Doanh nghiệp",
-    partner: "Vaco Auditing",
-    discount: "Chiết khấu 20%",
-    summary: "Kiểm toán báo cáo tài chính và thẩm định định giá doanh nghiệp hội viên",
-    description: "Chiết khấu trực tiếp 20% phí dịch vụ kiểm toán báo cáo tài chính năm và soát xét hệ thống kiểm soát nội bộ cho doanh nghiệp hội viên.",
-    icon: "Calculator",
-    link: "https://vaco.com.vn",
-    validUntil: "2026-12-31",
-    sortOrder: 4,
-    status: "active",
-  },
-  {
-    id: "perk-005",
-    title: "Hạ tầng Cloud & Chuyển đổi số VNPT",
-    category: "Công nghệ & Viễn thông",
-    partner: "VNPT Cloud",
-    discount: "Tài trợ 15 triệu",
-    summary: "Gói tài trợ giải pháp đám mây Smart Cloud và chữ ký số từ xa SmartCA",
-    description: "Tặng 15.000.000đ cước sử dụng Cloud Server trong 6 tháng đầu tiên kèm gói chữ ký số cá nhân SmartCA dành cho CEO.",
-    icon: "Briefcase",
-    link: "https://cloud.vnpt.vn",
-    validUntil: "2026-12-31",
-    sortOrder: 5,
-    status: "active",
-  },
-];
-
 function PerksAdminPage() {
   const t = useT();
   const { isAdmin, can, loading: roleLoading } = useRole();
-  const [perks, setPerks] = useState<AdminPerk[]>(DEFAULT_FALLBACK_PERKS);
+  const [perks, setPerks] = useState<AdminPerk[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadPerks = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchNestApi<any[]>("/content/admin/perks").catch(() => null);
-      if (Array.isArray(res) && res.length > 0) {
+      if (Array.isArray(res)) {
         setPerks(
           res.map((p) => ({
             id: String(p.id),
@@ -147,9 +74,12 @@ function PerksAdminPage() {
             status: p.status === "inactive" ? "inactive" : "active",
           })),
         );
+      } else {
+        setPerks([]);
       }
     } catch (err) {
       console.error("[Perks] Error fetching perks:", err);
+      setPerks([]);
     } finally {
       setLoading(false);
     }

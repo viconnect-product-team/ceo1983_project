@@ -1456,7 +1456,7 @@ export function ChatThread({
       <div
         className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0c121e]/95 px-4 pb-2.5 shrink-0 backdrop-blur-md shadow-xs"
         style={{
-          paddingTop: "max(env(safe-area-inset-top, 0px), 16px)",
+          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 48px) + 6px)",
         }}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">

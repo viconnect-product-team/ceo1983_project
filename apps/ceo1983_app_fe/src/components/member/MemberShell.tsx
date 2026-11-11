@@ -480,10 +480,8 @@ export function MemberHeader({
     <header
       className="w-full sticky top-0 z-50 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/80 dark:border-slate-800/80 bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-xl transition-all shadow-xs select-none"
       style={{
-        paddingTop:
-          "var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 16px) + 4px))",
-        minHeight:
-          "calc(var(--bc-mobile-safe-top-compact, calc(max(env(safe-area-inset-top, 0px), 16px) + 4px)) + var(--bc-mobile-header-h, 56px))",
+        paddingTop: "calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)",
+        minHeight: "calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)",
       }}
     >
       <div className="flex w-9 items-center">

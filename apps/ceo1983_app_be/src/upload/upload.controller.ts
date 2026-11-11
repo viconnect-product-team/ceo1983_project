@@ -316,6 +316,7 @@ export class UploadController {
             timeoutPromise,
           ]);
           if (stream) {
+            try { stream.on('error', () => {}); } catch {}
             const buf = await new Promise<Buffer>((resolve, reject) => {
               const chunks: Buffer[] = [];
               stream.on('data', (c: any) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
