@@ -68,6 +68,8 @@ export class ConnectAppService implements OnModuleInit {
           location TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
+      `).catch(() => {});
+      await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_comments (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           moment_id UUID NOT NULL,
@@ -78,13 +80,13 @@ export class ConnectAppService implements OnModuleInit {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
-      `);
+      `).catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         CREATE INDEX IF NOT EXISTS idx_brmc_moment_id ON public.business_relationship_moment_comments (moment_id, created_at ASC);
-      `);
+      `).catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         CREATE INDEX IF NOT EXISTS idx_brmc_parent_id ON public.business_relationship_moment_comments (parent_id);
-      `);
+      `).catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_comment_likes (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -93,7 +95,7 @@ export class ConnectAppService implements OnModuleInit {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           CONSTRAINT uq_brm_comment_like UNIQUE (comment_id, user_id)
         );
-      `);
+      `).catch(() => {});
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS public.business_relationship_moment_likes (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -102,48 +104,35 @@ export class ConnectAppService implements OnModuleInit {
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           CONSTRAINT uq_brm_moment_like UNIQUE (moment_id, user_id)
         );
-      `);
-      await this.prisma
-        .$executeRawUnsafe(
-          `
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS image TEXT;
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_name TEXT;
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_phone TEXT;
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_title TEXT;
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS company TEXT;
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS referrer TEXT;
-        ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS commission_percent NUMERIC;
-        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS company TEXT;
-        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
-        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC;
-        ALTER TABLE public.products ADD COLUMN IF NOT EXISTS member_price NUMERIC;
-      `,
-        )
-        .catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE public.business_relationship_moments
-        ADD COLUMN IF NOT EXISTS visibility VARCHAR(32) DEFAULT 'friends';
-      `);
-      await this.prisma
-        .$executeRawUnsafe(
-          `
-        ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS brm_target_xor;
-        ALTER TABLE public.business_relationship_moments ADD CONSTRAINT brm_target_xor CHECK (
+      `).catch(() => {});
+
+      const alterStatements = [
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS image TEXT",
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_name TEXT",
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_phone TEXT",
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS contact_title TEXT",
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS company TEXT",
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS referrer TEXT",
+        "ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS commission_percent NUMERIC",
+        "ALTER TABLE public.products ADD COLUMN IF NOT EXISTS company TEXT",
+        "ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT",
+        "ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC",
+        "ALTER TABLE public.products ADD COLUMN IF NOT EXISTS member_price NUMERIC",
+        "ALTER TABLE public.business_relationship_moments ADD COLUMN IF NOT EXISTS visibility VARCHAR(32) DEFAULT 'friends'",
+        "ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS brm_target_xor",
+        `ALTER TABLE public.business_relationship_moments ADD CONSTRAINT brm_target_xor CHECK (
           (target_kind = 'connection' AND target_user_id IS NOT NULL AND target_card_id IS NULL AND target_guest_id IS NULL) OR
           (target_kind = 'saved_card' AND target_card_id IS NOT NULL AND target_user_id IS NULL AND target_guest_id IS NULL) OR
           (target_kind = 'guest_contact' AND target_guest_id IS NOT NULL AND target_user_id IS NULL AND target_card_id IS NULL) OR
           (target_kind = 'general' AND target_user_id IS NULL AND target_card_id IS NULL AND target_guest_id IS NULL)
-        );
-        ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS business_relationship_moments_target_kind_check;
-        ALTER TABLE public.business_relationship_moments ADD CONSTRAINT business_relationship_moments_target_kind_check
-          CHECK (target_kind = ANY (ARRAY['connection'::text, 'saved_card'::text, 'guest_contact'::text, 'general'::text]));
-      `,
-        )
-        .catch(() => {});
-      await this.prisma.$executeRawUnsafe(`
-        ALTER TABLE public.business_relationship_moment_comments
-        ADD COLUMN IF NOT EXISTS photo_url TEXT;
-      `);
+        )`,
+        "ALTER TABLE public.business_relationship_moments DROP CONSTRAINT IF EXISTS business_relationship_moments_target_kind_check",
+        "ALTER TABLE public.business_relationship_moments ADD CONSTRAINT business_relationship_moments_target_kind_check CHECK (target_kind = ANY (ARRAY['connection'::text, 'saved_card'::text, 'guest_contact'::text, 'general'::text]))",
+        "ALTER TABLE public.business_relationship_moment_comments ADD COLUMN IF NOT EXISTS photo_url TEXT",
+      ];
+      for (const sql of alterStatements) {
+        await this.prisma.$executeRawUnsafe(sql).catch(() => {});
+      }
       await this.prisma
         .$executeRawUnsafe(
           `

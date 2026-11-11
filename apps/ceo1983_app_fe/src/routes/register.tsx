@@ -6,6 +6,10 @@ import { Ceo1983MemberRegistrationForm } from "@/components/landing/Ceo1983Membe
 
 export const Route = createFileRoute("/register")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { email?: string; ref?: string } => ({
+    ...(typeof search.email === "string" ? { email: search.email } : {}),
+    ...(typeof search.ref === "string" ? { ref: search.ref } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Đăng Ký Gia Nhập — CLB Doanh Nhân CEO 1983" },
@@ -28,5 +32,6 @@ export const Route = createFileRoute("/register")({
 });
 
 function RegisterPage() {
-  return <Ceo1983MemberRegistrationForm />;
+  const { email, ref } = Route.useSearch();
+  return <Ceo1983MemberRegistrationForm initialEmail={email} referrerCodeProp={ref} />;
 }

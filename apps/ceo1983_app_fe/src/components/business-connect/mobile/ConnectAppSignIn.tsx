@@ -365,11 +365,11 @@ export function ConnectAppSignIn({
           </button>
         </form>
 
-        {/* Sign up -> Chuyển đến Landing Page ViOne Connect theo Figma */}
+        {/* Sign up -> Chuyển đến Cổng Đăng Ký Hội Viên (/register) */}
         <div className="shrink-0 my-1">
           <Link
-            to="/landing"
-            search={{ apply: "true" }}
+            to="/register"
+            search={email.trim() ? { email: email.trim() } : undefined}
             className="relative flex h-10 w-full items-center justify-center gap-2 rounded-xl border text-[13.5px] font-semibold transition-all active:scale-[0.99] cursor-pointer border-[#D8B282]/40 bg-zinc-900/60 backdrop-blur-md text-[#E2D3B3] hover:bg-zinc-800/80"
           >
             <Shield className="h-4 w-4 text-[#E2D3B3]" aria-hidden="true" />

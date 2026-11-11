@@ -455,18 +455,36 @@ export function MemberPerksCarousel() {
         </div>
       </div>
 
-      {/* Main Vertical Slide Viewport (Height 165px) */}
-      <div className="relative w-full h-[165px] sm:h-[180px] rounded-3xl overflow-hidden shadow-lg border border-amber-400/40 dark:border-amber-400/25 bg-slate-950">
+      {/* Main Vertical Slide Viewport (Height 165px) - GPU Isolated, Zero Smear */}
+      <div
+        className="relative w-full h-[165px] sm:h-[180px] rounded-3xl overflow-hidden shadow-lg border border-amber-400/40 dark:border-amber-400/25 bg-slate-950"
+        style={{
+          contain: "paint",
+          isolation: "isolate",
+          transform: "translateZ(0)",
+          WebkitTransform: "translateZ(0)",
+        }}
+      >
         <div
-          className="w-full h-full transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]"
-          style={{ transform: `translateY(-${currentIndex * 100}%)` }}
+          className="w-full flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+          style={{
+            transform: `translate3d(0, -${currentIndex * 100}%, 0)`,
+            WebkitTransform: `translate3d(0, -${currentIndex * 100}%, 0)`,
+            willChange: "transform",
+          }}
         >
           {allSlides.map((s, idx) => {
             return (
               <div
                 key={s.id}
                 onClick={() => setDetailModalSlide(s)}
-                className="relative w-full h-full cursor-pointer group active:scale-[0.99] transition-transform overflow-hidden"
+                className="relative w-full h-[165px] sm:h-[180px] shrink-0 cursor-pointer group active:scale-[0.99] overflow-hidden select-none"
+                style={{
+                  transform: "translateZ(0)",
+                  WebkitTransform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                }}
               >
                 {/* Background Photo */}
                 <img
@@ -482,7 +500,7 @@ export function MemberPerksCarousel() {
                 {/* Top Badge: Clear Category Label */}
                 <div className="absolute top-3 inset-x-3 z-10 flex items-center justify-between">
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider shadow-md backdrop-blur-md flex items-center gap-1 ${s.categoryBadgeBg}`}
+                    className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider shadow-md border border-white/20 flex items-center gap-1 ${s.categoryBadgeBg}`}
                   >
                     {s.type === "birthday" ? (
                       <Cake className="size-3" />
@@ -497,7 +515,7 @@ export function MemberPerksCarousel() {
                   {/* Right side tag: Discount or Member tag & Save Button */}
                   <div className="flex items-center gap-1.5">
                     {s.discountTag && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-extrabold text-[9.5px] uppercase tracking-wider shadow-md border border-amber-400/40 backdrop-blur-md">
+                      <span className="px-2 py-0.5 rounded-full bg-slate-900/85 text-amber-300 font-extrabold text-[9.5px] uppercase tracking-wider shadow-md border border-amber-400/50">
                         {s.discountTag}
                       </span>
                     )}
@@ -507,10 +525,10 @@ export function MemberPerksCarousel() {
                       <button
                         type="button"
                         onClick={(e) => handleToggleSaveSlide(s, e)}
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md backdrop-blur-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
                           savedPerkIds.includes(s.id)
                             ? "bg-rose-600 text-white ring-1 ring-white/50"
-                            : "bg-black/45 hover:bg-black/60 text-white/90 border border-white/30"
+                            : "bg-black/60 hover:bg-black/80 text-white/90 border border-white/30"
                         }`}
                         title={savedPerkIds.includes(s.id) ? "Bỏ lưu ưu đãi" : "Lưu ưu đãi & nhận mã voucher"}
                       >
@@ -605,7 +623,7 @@ export function MemberPerksCarousel() {
                       </div>
                     </div>
 
-                    <span className="shrink-0 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-white text-[11px] font-bold shadow-xs hover:bg-white/25">
+                    <span className="shrink-0 px-3 py-1.5 rounded-full bg-slate-900/85 border border-white/30 text-white text-[11px] font-bold shadow-xs hover:bg-slate-800">
                       Hồ sơ CEO
                     </span>
                   </div>
