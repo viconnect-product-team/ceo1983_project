@@ -10,7 +10,12 @@ import {
 import axios from 'axios';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { resolveZbsTemplate } from './zbs-template.config';
+import {
+  getZbsTemplateConfigurations,
+  normalizeZbsTemplateConfiguration,
+  resolveZbsTemplate,
+  validateZbsTemplateCode,
+} from './zbs-template.config';
 
 export class SendZaloMessageDto {
   accessToken!: string;
@@ -214,6 +219,40 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   /**
    * Lưu cấu hình Zalo OA vào bảng public.app_settings
    */
+  async getTemplateConfigurations() {
+    if (!this.prisma) {
+      throw new HttpException('Chưa kết nối nơi lưu cấu hình ZBS', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ templates: unknown }>>(
+      `SELECT value->'zbsTemplates' AS templates
+       FROM public.app_settings WHERE key = 'zalo_oa_config' LIMIT 1`,
+    );
+    return { ok: true, templates: getZbsTemplateConfigurations(rows[0]?.templates) };
+  }
+
+  async saveTemplateConfiguration(templateCode: string, body: unknown, userId?: string) {
+    const code = validateZbsTemplateCode(templateCode);
+    const config = normalizeZbsTemplateConfiguration(body);
+    if (!this.prisma) {
+      throw new HttpException('Chưa kết nối nơi lưu cấu hình ZBS', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    const validUserId = userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+      ? userId : null;
+    // Only patch this template code, including when token refresh or another editor saves concurrently.
+    await this.prisma.$executeRawUnsafe(
+      `INSERT INTO public.app_settings AS settings (key, value, updated_at, updated_by)
+       VALUES ('zalo_oa_config', jsonb_build_object('zbsTemplates', jsonb_build_object($1::text, $2::jsonb)), now(), $3::uuid)
+       ON CONFLICT (key) DO UPDATE SET
+         value = jsonb_set(settings.value, '{zbsTemplates}',
+           (CASE WHEN jsonb_typeof(settings.value->'zbsTemplates') = 'object'
+             THEN settings.value->'zbsTemplates' ELSE '{}'::jsonb END)
+           || jsonb_build_object($1::text, $2::jsonb), true),
+         updated_at = now(), updated_by = EXCLUDED.updated_by`,
+      code, JSON.stringify(config), validUserId,
+    );
+    return { ok: true, templateCode: code, config };
+  }
+
   async saveOaConfig(
     config: any,
     userId?: string,
@@ -246,15 +285,17 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
             : current.oaId,
       };
 
+      const persistedConfig = { ...mergedConfig };
+      if (!Object.hasOwn(config, 'zbsTemplates')) delete persistedConfig.zbsTemplates;
       const validUserId = userId && userId.length === 36 ? userId : null;
       await this.prisma.$executeRawUnsafe(
         `
-        INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+        INSERT INTO public.app_settings AS settings (key, value, updated_at, updated_by)
         VALUES ('zalo_oa_config', $1::jsonb, now(), $2::uuid)
         ON CONFLICT (key) DO UPDATE
-        SET value = EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
+        SET value = settings.value || EXCLUDED.value, updated_at = now(), updated_by = EXCLUDED.updated_by
       `,
-        JSON.stringify(mergedConfig),
+        JSON.stringify(persistedConfig),
         validUserId,
       );
       return {
@@ -271,6 +312,11 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
   /**
    * Thực hiện làm mới Access Token Zalo OA tự động (Cứ 6 tiếng hoặc kích hoạt tức thì)
    */
+  private saveTokenConfig(config: any) {
+    const { zbsTemplates: _templates, ...tokenConfig } = config;
+    return this.saveOaConfig(tokenConfig);
+  }
+
   async performAutoRefreshToken(): Promise<{
     ok: boolean;
     message: string;
@@ -309,7 +355,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
           lastRefreshError: null,
         };
 
-        await this.saveOaConfig(updatedConfig);
+        await this.saveTokenConfig(updatedConfig);
         this.logger.log(
           `[Zalo Auto-Refresh 6h] ĐÃ TỰ ĐỘNG LÀM MỚI TOKEN THÀNH CÔNG! Token mới hiệu lực thêm ${res.expiresIn}s.`,
         );
@@ -330,7 +376,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
       try {
         const cfg = await this.getOaConfig();
         if (cfg) {
-          await this.saveOaConfig({
+          await this.saveTokenConfig({
             ...cfg,
             lastRefreshStatus: 'error',
             lastRefreshError: errMsg,
@@ -493,7 +539,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         // Tự động lưu bền vững vào CSDL
         try {
           const currentCfg = (await this.getOaConfig()) || {};
-          await this.saveOaConfig({
+          await this.saveTokenConfig({
             ...currentCfg,
             appId: dto.appId.trim(),
             secretKey: dto.secretKey.trim(),
@@ -580,7 +626,7 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
         // Tự động lưu bền vững vào CSDL
         try {
           const currentCfg = (await this.getOaConfig()) || {};
-          await this.saveOaConfig({
+          await this.saveTokenConfig({
             ...currentCfg,
             appId: dto.appId.trim(),
             secretKey: dto.secretKey.trim(),

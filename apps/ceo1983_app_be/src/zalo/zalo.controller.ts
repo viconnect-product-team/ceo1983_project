@@ -9,6 +9,8 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Put,
+  Param,
 } from '@nestjs/common';
 import {
   ZaloService,
@@ -19,6 +21,8 @@ import {
   SendZnsMessageDto,
 } from './zalo.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('zalo')
 export class ZaloController {
@@ -60,6 +64,24 @@ export class ZaloController {
   @UseGuards(JwtAuthGuard)
   async saveOaConfig(@Req() req: any, @Body() body: any) {
     return this.zaloService.saveOaConfig(body, req.user?.id);
+  }
+
+  @Get('template-configs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk')
+  async getTemplateConfigurations() {
+    return this.zaloService.getTemplateConfigurations();
+  }
+
+  @Put('template-configs/:templateCode')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk')
+  async saveTemplateConfiguration(
+    @Param('templateCode') templateCode: string,
+    @Body() body: unknown,
+    @Req() req: any,
+  ) {
+    return this.zaloService.saveTemplateConfiguration(templateCode, body, req.user?.id);
   }
 
   @Post('auto-refresh-now')
@@ -120,7 +142,8 @@ export class ZaloController {
    * Bắn thông báo ZNS qua Số Điện Thoại - Chuẩn Enterprise 100% (Không cần Zalo User ID)
    */
   @Post('send-zns')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk')
   async sendZns(@Body() dto: SendZnsMessageDto) {
     return this.zaloService.sendZns(dto);
   }

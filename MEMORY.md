@@ -1,5 +1,7 @@
 # System Memory & Architecture
 
+- **11/11/2026 — Form ZBS theo từng mẫu ngay trên CRM ([NODE-CRM-014], [NODE-CRM-024])**: `MailTemplateManager.tsx` tích hợp `ZbsTemplateConfigForm.tsx` và `useZbsTemplateConfigs.ts` để nhập ID đã duyệt, thêm/xóa ánh xạ, xem giá trị thử, lưu và gửi tới SĐT được nhập. Mỗi mã mẫu có bản nháp/cấu hình độc lập; mã mẫu trùng bị chặn. `GET /zalo/template-configs` chỉ trả ánh xạ; `PUT /zalo/template-configs/:templateCode` cập nhật nguyên tử đúng nhánh JSONB trong `app_settings.zalo_oa_config`, giữ mẫu khác/token OA. Token refresh/lưu OA bỏ qua bản sao ánh xạ cũ để tránh ghi đè khi thao tác đồng thời. Lưu thất bại/biến sai phải chặn gửi; nút gửi đa kênh cũng lưu ZBS trước khi gửi. Đã kiểm tra trình duyệt desktop/390px và SQL PostgreSQL cục bộ; Zalo/email trong kiểm tra được giả lập, chưa gửi tin thật.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.10): Hoàn Thiện Giao Diện CRM Dark Theme Text Sáng & Màu Thông Báo Chưa Đọc, Bỏ Hoàn Toàn Mã Hội Viên Trên Mobile App, Tinh Chỉnh Nút Hồ Sơ Cá Nhân Xanh - Cam, Chuẩn Hóa Giờ Sự Kiện & Nút Chi Tiết, Tối Ưu Header iOS Safe Area Notch & Dynamic Island, Gỡ Bỏ Theme Tối Trong Cài Đặt Hệ Thống Mobile ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-001], [NODE-APP-003], [NODE-APP-008], [NODE-APP-011])**:
   1. *Khắc Phục Màu Thông Báo Chưa Đọc Tại Cổng Quản Trị CRM (`NotificationCenter.tsx`)*:
      - Thay đổi sang dải nền xanh thanh lịch: `bg-blue-50/80 hover:bg-blue-100/70 dark:bg-blue-950/30 dark:hover:bg-blue-950/50`.
