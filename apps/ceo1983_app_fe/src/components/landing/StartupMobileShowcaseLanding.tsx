@@ -430,12 +430,13 @@ export function StartupMobileShowcaseLanding({
 
           {/* Right Action CTAs: Dark pill + Outlined pill matching Pinterest */}
           <div className="hidden sm:flex items-center gap-3">
-            <a
-              href="/login"
+            <Link
+              to="/auth"
+              search={{ portal: "crm" }}
               className="px-6 py-2.5 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-sm hover:shadow transition"
             >
               Đăng Nhập CRM
-            </a>
+            </Link>
             <Link
               to="/register"
               className="px-6 py-2.5 rounded-full border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition shadow-2xs cursor-pointer inline-flex items-center justify-center"
@@ -493,12 +494,14 @@ export function StartupMobileShowcaseLanding({
               Hỏi Đáp FAQ
             </a>
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-              <a
-                href="/login"
+              <Link
+                to="/auth"
+                search={{ portal: "crm" }}
+                onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-2.5 text-center text-xs font-bold rounded-full bg-slate-900 text-white"
               >
                 Đăng Nhập CRM Quản Trị
-              </a>
+              </Link>
               <Link
                 to="/register"
                 onClick={() => setMobileMenuOpen(false)}
@@ -579,14 +582,13 @@ export function StartupMobileShowcaseLanding({
 
               {/* CTAs: Dark Pill Button "Get Started" + Play Video Button */}
               <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-4">
-                <button
-                  type="button"
-                  onClick={() => setIsRegisterModalOpen(true)}
+                <Link
+                  to="/register"
                   className="px-8 py-4 rounded-full bg-slate-900 hover:bg-black text-white font-black text-sm shadow-xl shadow-slate-900/20 hover:scale-105 active:scale-95 transition flex items-center gap-2 cursor-pointer"
                 >
                   <span>{ctaPrimaryText}</span>
                   <ArrowRight className="size-4" />
-                </button>
+                </Link>
 
                 <button
                   type="button"
@@ -851,14 +853,13 @@ export function StartupMobileShowcaseLanding({
                 Hệ sinh thái công nghệ số hóa hỗ trợ toàn diện từ xúc tiến B2B, quản trị danh thiếp đến kết nối 1-on-1 cùng các chủ doanh nghiệp đầu ngành.
               </p>
               <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsRegisterModalOpen(true)}
+                <Link
+                  to="/register"
                   className="inline-flex items-center gap-2 text-xs font-black text-[#003B95] hover:text-[#002660] group cursor-pointer"
                 >
-                  <span>Tìm hiểu quyền lợi hội viên</span>
+                  <span>Tìm hiểu quyền lợi &amp; Đăng ký hội viên</span>
                   <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -986,14 +987,13 @@ export function StartupMobileShowcaseLanding({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsRegisterModalOpen(true)}
+                <Link
+                  to="/register"
                   className="w-full py-3 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md cursor-pointer"
                 >
                   <Search className="size-4" />
-                  <span>Kết Nối Doanh Nghiệp Tại Điểm Cầu Này</span>
-                </button>
+                  <span>Đăng Ký Tham Gia Điểm Cầu Này</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -1017,13 +1017,12 @@ export function StartupMobileShowcaseLanding({
                 Gia nhập ngay mạng lưới lãnh đạo cùng năm sinh 1983 để kết nối đối tác, mở rộng chuỗi cung ứng và đồng hành phát triển bền vững cùng HanoiBA.
               </p>
               <div>
-                <button
-                  type="button"
-                  onClick={() => setIsRegisterModalOpen(true)}
-                  className="px-8 py-3.5 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer"
+                <Link
+                  to="/register"
+                  className="px-8 py-3.5 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-xl hover:scale-105 active:scale-95 transition cursor-pointer inline-flex items-center justify-center"
                 >
                   Gia Nhập Cộng Đồng Ngay
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -1453,20 +1452,30 @@ export function StartupMobileShowcaseLanding({
                   />
                 </div>
 
-                <div className="pt-2 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
+                <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 mt-2">
+                  <Link
+                    to="/register"
                     onClick={() => setIsRegisterModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[11.5px] font-bold text-[#003B95] hover:underline"
                   >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002660] text-white text-xs font-bold shadow-md transition cursor-pointer"
-                  >
-                    Gửi Hồ Sơ Gia Nhập
-                  </button>
+                    <span>Form đăng ký chính thức</span>
+                    <ArrowRight className="size-3" />
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsRegisterModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 rounded-xl bg-[#003B95] hover:bg-[#002660] text-white text-xs font-bold shadow-md transition cursor-pointer"
+                    >
+                      Gửi Hồ Sơ
+                    </button>
+                  </div>
                 </div>
               </form>
             )}

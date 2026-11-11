@@ -620,6 +620,22 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     (pathname === "/" && tenantHost);
 
   useEffect(() => {
+    // CHẶN HOÀN TOÀN: Tuyệt đối không bao giờ redirect nếu người dùng đang truy cập cổng đăng ký hoặc đăng nhập
+    const isRegisterOrAuthRoute =
+      pathname === "/register" ||
+      pathname.startsWith("/register") ||
+      pathname.includes("/register") ||
+      pathname === "/association/register" ||
+      pathname.startsWith("/association/register") ||
+      pathname === "/association/login" ||
+      pathname.startsWith("/association/login") ||
+      pathname === "/auth" ||
+      pathname.startsWith("/auth");
+
+    if (isRegisterOrAuthRoute) {
+      return;
+    }
+
     if (status === "out" && !isPublic) {
       const search = window.location.pathname + window.location.search;
       if (

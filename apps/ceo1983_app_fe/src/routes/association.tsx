@@ -47,10 +47,15 @@ export const Route = createFileRoute("/association")({
     ],
   }),
   beforeLoad: async ({ location }) => {
-    // Nếu đang ở màn hình đăng nhập Hiệp hội, KHÔNG BAO GIỜ redirect vòng lặp
+    // Nếu đang ở màn hình đăng nhập hoặc đăng ký Hiệp hội, KHÔNG BAO GIỜ redirect vòng lặp
+    const path = location.pathname;
     if (
-      location.pathname === "/association/login" ||
-      location.pathname.startsWith("/association/login")
+      path === "/association/login" ||
+      path.startsWith("/association/login") ||
+      path === "/association/register" ||
+      path.startsWith("/association/register") ||
+      path === "/register" ||
+      path.startsWith("/register")
     ) {
       return;
     }
@@ -255,12 +260,19 @@ function useAssociationRealtimeNotifications() {
 
 function MemberRoot() {
   const routerState = useRouterState();
-  const isLoginPage = routerState.location.pathname.startsWith("/association/login");
+  const path = routerState.location.pathname;
+  const isLoginPage = path === "/association/login" || path.startsWith("/association/login");
+  const isRegisterPage =
+    path === "/association/register" ||
+    path.startsWith("/association/register") ||
+    path === "/register" ||
+    path.startsWith("/register");
+
   useRenewalReminder();
   useAssociationRealtimeNotifications();
 
-  // Trang đăng nhập Hiệp hội hiển thị màn hình riêng, không hiển thị thanh Tab Bar hội viên
-  if (isLoginPage) {
+  // Trang đăng nhập hoặc tiếp nhận hồ sơ đăng ký Hiệp hội hiển thị độc lập, không hiển thị thanh Tab Bar hay layout hội viên đã đăng nhập
+  if (isLoginPage || isRegisterPage) {
     return <Outlet />;
   }
 

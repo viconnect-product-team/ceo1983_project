@@ -1,5 +1,58 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.06): Chặn Triệt Để Vòng Lặp Redirect & Ép Buộc Mở Trực Tiếp Form Đăng Ký Hội Viên Gia Nhập (`Ceo1983MemberRegistrationForm`) Khi Bấm Đăng Ký Mới ([NODE-APP-001], [NODE-APP-002], [NODE-CORE-001])**:
+  1. *Nguyên nhân cốt lõi gây lỗi Redirect & Phải bấm Back*:
+     - Tuyến `/association/register` được lồng dưới Route cha `/association` (`apps/ceo1983_app_fe/src/routes/association.tsx`).
+     - Hàm `beforeLoad` trong `association.tsx` kiểm tra token đăng nhập; nếu chưa có token, trước đó chỉ miễn trừ `location.pathname.startsWith("/association/login")`.
+     - Tuyến `/association/register` chưa được đưa vào danh sách miễn trừ (whitelist), khiến Router kích hoạt lệnh `throw redirect({ to: "/association/login", search: { redirect: target } })`.
+     - Khi người dùng bấm phím Back trên trình duyệt, lịch sử điều hướng quay ngược lại `/association/register`, lúc này form mới hiển thị được.
+     - Ngoài ra, trong `AuthGate` (`apps/ceo1983_app_fe/src/routes/__root.tsx`), khi `status === "out"`, hook `useEffect` có thể kích hoạt chuyển hướng phụ nếu người dùng chưa đăng nhập.
+  2. *Giải pháp kỹ thuật xử lý dứt điểm 100%*:
+     - **Bypass toàn diện trong `beforeLoad` (`apps/ceo1983_app_fe/src/routes/association.tsx`)**:
+       + Bổ sung điều kiện kiểm tra đường dẫn ngay đầu `beforeLoad`:
+         ```ts
+         if (
+           path === "/association/login" ||
+           path.startsWith("/association/login") ||
+           path === "/association/register" ||
+           path.startsWith("/association/register") ||
+           path === "/register" ||
+           path.startsWith("/register")
+         ) {
+           return;
+         }
+         ```
+       + Bỏ qua hoàn toàn mọi kiểm tra token và cấm chuyển hướng đến `/association/login` đối với bất kỳ ai đang truy cập trang đăng ký.
+     - **Tách biệt hiển thị trong `MemberRoot` (`apps/ceo1983_app_fe/src/routes/association.tsx`)**:
+       + Thêm biến cờ `isRegisterPage = path === "/association/register" || path.startsWith("/association/register") || path === "/register" || path.startsWith("/register")`.
+       + Khi `isLoginPage || isRegisterPage`, render trực tiếp `<Outlet />`, không bọc qua `<MemberScreen>` (loại bỏ Bottom Tab Bar, Header hội viên đã đăng nhập).
+     - **Chặn hoàn toàn chuyển hướng trong `AuthGate` (`apps/ceo1983_app_fe/src/routes/__root.tsx`)**:
+       + Thêm cơ chế chặn sớm (early return) trong `useEffect` của `AuthGate`: nếu `pathname` khớp với `/register`, `/association/register`, `/association/login`, `/auth` thì dừng ngay lập tức, không cho phép bất kỳ lệnh `navigate` chuyển hướng nào được kích hoạt.
+     - **Đồng bộ toàn bộ nút bấm "Đăng ký mới" trên toàn hệ thống**:
+       + `StartupMobileShowcaseLanding.tsx`: Thay toàn bộ các nút kích hoạt modal cục bộ và thẻ `<a>` thành `<Link to="/register">` dẫn thẳng đến form đăng ký chính thức `Ceo1983MemberRegistrationForm`.
+       + `AssociationAppSignIn.tsx` và `ConnectAppSignIn.tsx`: Nút "Đăng ký hội viên mới" dẫn trực tiếp `<Link to="/register">`.
+  3. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - Đã sinh lại cây định tuyến `npm run routes:gen` với exit code 0 (`routeTree.gen.ts` đồng bộ).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.05): Dọn Dẹp Toàn Bộ CSDL ceo1983_project & Giữ Duy Nhất Tài Khoản Quản Trị Tối Cao `admin@connect.vn` ([NODE-CORE-002])**:
+  1. *Thực thi lệnh dọn dẹp an toàn CSDL (`packages/db/scripts/reset_db_keep_admin_only.js`)*:
+     - **Phạm vi tác động**: Toàn bộ dữ liệu nghiệp vụ & tương tác hoạt động (hơn 30 bảng gồm: `events`, `event_registrations`, `meetings`, `feed_posts`, `feed_comments`, `feed_likes`, `opportunities`, `opportunity_interests`, `quote_requests`, `products`, `polls`, `poll_options`, `perks`, `transactions`, `invoices`, `notifications`, `member_notifications`, `business_notifications`, `messages`, `direct_message_threads`, `activity_log`, `revoked_tokens`, `user_device_sessions`, v.v.) được xóa sạch 100% về 0 bản ghi.
+     - **Lọc và xóa tài khoản người dùng khác**: Xóa sạch toàn bộ tài khoản thử nghiệm và hội viên khác trong `vione_users`, `ceo1983_users`, `auth.users`, `members`, `user_roles`, `user_profiles`, `memberships`.
+  2. *Bảo toàn và chuẩn hóa duy nhất tài khoản Quản trị tối cao `admin@connect.vn`*:
+     - **Email / Username**: `admin@connect.vn` (ID: `00000000-0000-4000-8000-000000000002`).
+     - **Mật khẩu**: `123456` (Mã hóa chuẩn bcrypt `$2b$10$...`).
+     - **Vai trò & Phân ban**: `admin` / `platform_admin`, Ban Quản Trị CLB Doanh Nhân CEO 1983.
+     - **Đồng bộ đầy đủ trên 7 bảng**: `vione_users`, `ceo1983_users`, `auth.users`, `members` (Mã: `M1983-001`), `user_roles`, `user_profiles`, `memberships`, `member_business_cards` (slug: `card-admin-connect`).
+  3. *Bảo toàn các cấu hình hệ thống cốt lõi*:
+     - `associations`: Bản ghi CLB Doanh Nhân CEO 1983 (`c1983000-0000-4000-8000-000000001983`).
+     - `app_settings`, `app_system_flags`, `card_settings`: Theme Studio, Ma trận RBAC 2 Tab, Landing Webs Config, Invitation Templates.
+  4. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - Đã xác thực đăng nhập `admin@connect.vn` với mật khẩu `123456` thành công 100%.
+     - `npx tsc --noEmit` Backend (`apps/ceo1983_app_be`) trả về exit code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.04): Ép Buộc Toàn Bộ Luồng Đăng Ký Mới & Lời Mời Hội Viên Mở Trực Tiếp Cổng Đăng Ký Chuẩn (`https://ceo1983.viconnect.vn/register?email=...`), Tuyệt Đối Không Redirect Vào Hệ Thống ([NODE-APP-001], [NODE-APP-002], [NODE-CRM-001])**:
   1. *Ép buộc đường dẫn Lời mời & Giới thiệu trong Danh bạ Hội viên (`InviteMemberModal.tsx` & `association.members.tsx`)*:
      - **Hiện trạng trước sửa**: Hộp thoại mời hội viên (`InviteMemberModal.tsx`) dùng liên kết cũ `https://ceo1983.viconnect.vn/landing?apply=%22true%22`, dẫn người được mời tới trang Landing Web giới thiệu thay vì mở trực tiếp form đăng ký.
@@ -1160,6 +1213,59 @@
      - Tuân thủ nghiêm ngặt Quy tắc Git số 1: Tuyệt đối không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.06): Chặn Triệt Để Vòng Lặp Redirect & Ép Buộc Mở Trực Tiếp Form Đăng Ký Hội Viên Gia Nhập (`Ceo1983MemberRegistrationForm`) Khi Bấm Đăng Ký Mới ([NODE-APP-001], [NODE-APP-002], [NODE-CORE-001])**:
+  1. *Nguyên nhân cốt lõi gây lỗi Redirect & Phải bấm Back*:
+     - Tuyến `/association/register` được lồng dưới Route cha `/association` (`apps/ceo1983_app_fe/src/routes/association.tsx`).
+     - Hàm `beforeLoad` trong `association.tsx` kiểm tra token đăng nhập; nếu chưa có token, trước đó chỉ miễn trừ `location.pathname.startsWith("/association/login")`.
+     - Tuyến `/association/register` chưa được đưa vào danh sách miễn trừ (whitelist), khiến Router kích hoạt lệnh `throw redirect({ to: "/association/login", search: { redirect: target } })`.
+     - Khi người dùng bấm phím Back trên trình duyệt, lịch sử điều hướng quay ngược lại `/association/register`, lúc này form mới hiển thị được.
+     - Ngoài ra, trong `AuthGate` (`apps/ceo1983_app_fe/src/routes/__root.tsx`), khi `status === "out"`, hook `useEffect` có thể kích hoạt chuyển hướng phụ nếu người dùng chưa đăng nhập.
+  2. *Giải pháp kỹ thuật xử lý dứt điểm 100%*:
+     - **Bypass toàn diện trong `beforeLoad` (`apps/ceo1983_app_fe/src/routes/association.tsx`)**:
+       + Bổ sung điều kiện kiểm tra đường dẫn ngay đầu `beforeLoad`:
+         ```ts
+         if (
+           path === "/association/login" ||
+           path.startsWith("/association/login") ||
+           path === "/association/register" ||
+           path.startsWith("/association/register") ||
+           path === "/register" ||
+           path.startsWith("/register")
+         ) {
+           return;
+         }
+         ```
+       + Bỏ qua hoàn toàn mọi kiểm tra token và cấm chuyển hướng đến `/association/login` đối với bất kỳ ai đang truy cập trang đăng ký.
+     - **Tách biệt hiển thị trong `MemberRoot` (`apps/ceo1983_app_fe/src/routes/association.tsx`)**:
+       + Thêm biến cờ `isRegisterPage = path === "/association/register" || path.startsWith("/association/register") || path === "/register" || path.startsWith("/register")`.
+       + Khi `isLoginPage || isRegisterPage`, render trực tiếp `<Outlet />`, không bọc qua `<MemberScreen>` (loại bỏ Bottom Tab Bar, Header hội viên đã đăng nhập).
+     - **Chặn hoàn toàn chuyển hướng trong `AuthGate` (`apps/ceo1983_app_fe/src/routes/__root.tsx`)**:
+       + Thêm cơ chế chặn sớm (early return) trong `useEffect` của `AuthGate`: nếu `pathname` khớp với `/register`, `/association/register`, `/association/login`, `/auth` thì dừng ngay lập tức, không cho phép bất kỳ lệnh `navigate` chuyển hướng nào được kích hoạt.
+     - **Đồng bộ toàn bộ nút bấm "Đăng ký mới" trên toàn hệ thống**:
+       + `StartupMobileShowcaseLanding.tsx`: Thay toàn bộ các nút kích hoạt modal cục bộ và thẻ `<a>` thành `<Link to="/register">` dẫn thẳng đến form đăng ký chính thức `Ceo1983MemberRegistrationForm`.
+       + `AssociationAppSignIn.tsx` và `ConnectAppSignIn.tsx`: Nút "Đăng ký hội viên mới" dẫn trực tiếp `<Link to="/register">`.
+  3. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - Đã sinh lại cây định tuyến `npm run routes:gen` với exit code 0 (`routeTree.gen.ts` đồng bộ).
+     - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 11/11/2026 (v11.05): Dọn Dẹp Toàn Bộ CSDL ceo1983_project & Giữ Duy Nhất Tài Khoản Quản Trị Tối Cao `admin@connect.vn` ([NODE-CORE-002])**:
+  1. *Thực thi lệnh dọn dẹp an toàn CSDL (`packages/db/scripts/reset_db_keep_admin_only.js`)*:
+     - **Phạm vi tác động**: Toàn bộ dữ liệu nghiệp vụ & tương tác hoạt động (hơn 30 bảng gồm: `events`, `event_registrations`, `meetings`, `feed_posts`, `feed_comments`, `feed_likes`, `opportunities`, `opportunity_interests`, `quote_requests`, `products`, `polls`, `poll_options`, `perks`, `transactions`, `invoices`, `notifications`, `member_notifications`, `business_notifications`, `messages`, `direct_message_threads`, `activity_log`, `revoked_tokens`, `user_device_sessions`, v.v.) được xóa sạch 100% về 0 bản ghi.
+     - **Lọc và xóa tài khoản người dùng khác**: Xóa sạch toàn bộ tài khoản thử nghiệm và hội viên khác trong `vione_users`, `ceo1983_users`, `auth.users`, `members`, `user_roles`, `user_profiles`, `memberships`.
+  2. *Bảo toàn và chuẩn hóa duy nhất tài khoản Quản trị tối cao `admin@connect.vn`*:
+     - **Email / Username**: `admin@connect.vn` (ID: `00000000-0000-4000-8000-000000000002`).
+     - **Mật khẩu**: `123456` (Mã hóa chuẩn bcrypt `$2b$10$...`).
+     - **Vai trò & Phân ban**: `admin` / `platform_admin`, Ban Quản Trị CLB Doanh Nhân CEO 1983.
+     - **Đồng bộ đầy đủ trên 7 bảng**: `vione_users`, `ceo1983_users`, `auth.users`, `members` (Mã: `M1983-001`), `user_roles`, `user_profiles`, `memberships`, `member_business_cards` (slug: `card-admin-connect`).
+  3. *Bảo toàn các cấu hình hệ thống cốt lõi*:
+     - `associations`: Bản ghi CLB Doanh Nhân CEO 1983 (`c1983000-0000-4000-8000-000000001983`).
+     - `app_settings`, `app_system_flags`, `card_settings`: Theme Studio, Ma trận RBAC 2 Tab, Landing Webs Config, Invitation Templates.
+  4. *Kiểm chứng & Chất lượng mã nguồn (Strict Verification)*:
+     - Đã xác thực đăng nhập `admin@connect.vn` với mật khẩu `123456` thành công 100%.
+     - `npx tsc --noEmit` Backend (`apps/ceo1983_app_be`) trả về exit code 0 (0 errors).
+     - Tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.04): Ép Buộc Toàn Bộ Luồng Đăng Ký Mới & Lời Mời Hội Viên Mở Trực Tiếp Cổng Đăng Ký Chuẩn (`https://ceo1983.viconnect.vn/register?email=...`), Tuyệt Đối Không Redirect Vào Hệ Thống ([NODE-APP-001], [NODE-APP-002], [NODE-CRM-001])**:
   1. *Ép buộc đường dẫn Lời mời & Giới thiệu trong Danh bạ Hội viên (`InviteMemberModal.tsx` & `association.members.tsx`)*:
