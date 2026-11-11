@@ -55,10 +55,10 @@ async function saveBase64AvatarDirectly(
     const path = await import('path');
     const filename = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
     const candidates = [
-      path.join(os.tmpdir(), 'ceo1983_uploads', 'avatars'),
       path.join('/app', 'uploads', 'avatars'),
-      path.join('/tmp', 'uploads', 'avatars'),
       path.join(process.cwd(), 'uploads', 'avatars'),
+      path.join(os.tmpdir(), 'ceo1983_uploads', 'avatars'),
+      path.join('/tmp', 'uploads', 'avatars'),
     ];
     let written = false;
     for (const dir of candidates) {

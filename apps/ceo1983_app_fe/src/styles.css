@@ -1359,6 +1359,17 @@ html:not(.dark) .bc-app .text-neutral-300 {
   color: #000000 !important; /* Pure Crisp Black */
 }
 
+/* STRICT EXCEPTION: [data-dark-card] inside .bc-app MUST preserve crisp white text */
+html:not(.dark) .bc-app [data-dark-card] .text-slate-50,
+html:not(.dark) .bc-app [data-dark-card] .text-slate-100,
+html:not(.dark) .bc-app [data-dark-card] .text-slate-200,
+html:not(.dark) .bc-app [data-dark-card] .text-slate-300,
+html:not(.dark) .bc-app [data-dark-card] .text-white,
+html:not(.dark) .bc-app [data-dark-card] .text-white\/90,
+html:not(.dark) .bc-app [data-dark-card] .text-white\/80 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
 html:not(.dark) .bc-app .text-slate-400,
 html:not(.dark) .bc-app .text-slate-500,
 html:not(.dark) .bc-app .text-slate-600,

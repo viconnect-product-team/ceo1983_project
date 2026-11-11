@@ -232,7 +232,7 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     return publicBase ? `${publicBase}/${trimmed}` : `/${trimmed}`;
   }
 
-  // 7. Nếu là file trong avatars/ hoặc documents/ hoặc products/ hoặc events/ hoặc association-logos/
+  // 7. Nếu là file trong avatars/ hoặc documents/ hoặc products/ hoặc events/ hoặc association-logos/ hoặc trainings/ hoặc meetings/
   if (
     ((trimmed.startsWith("avatars/") || trimmed.startsWith("/avatars/")) && !trimmed.includes("default")) ||
     trimmed.startsWith("association-logos/") ||
@@ -246,7 +246,11 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
     trimmed.startsWith("products/") ||
     trimmed.startsWith("/products/") ||
     trimmed.startsWith("events/") ||
-    trimmed.startsWith("/events/")
+    trimmed.startsWith("/events/") ||
+    trimmed.startsWith("trainings/") ||
+    trimmed.startsWith("/trainings/") ||
+    trimmed.startsWith("meetings/") ||
+    trimmed.startsWith("/meetings/")
   ) {
     const cleanPath = trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;
     return publicBase ? `${publicBase}/api/upload/file/${cleanPath}` : `/api/upload/file/${cleanPath}`;
