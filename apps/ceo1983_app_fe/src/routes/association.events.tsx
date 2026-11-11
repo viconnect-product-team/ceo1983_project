@@ -1075,7 +1075,12 @@ function FeaturedUpcomingEventHero({
   if (!displayList || displayList.length === 0) return null;
 
   const activeEvent = displayList[activeIdx] || displayList[0];
-  const rawImg = (activeEvent as any).image;
+  const rawImg =
+    (activeEvent as any).image ||
+    (activeEvent as any).banner ||
+    (activeEvent as any).posterUrl ||
+    (activeEvent as any).coverImage ||
+    (activeEvent as any).photo_gallery_url;
   const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[activeIdx % defaultEventImages.length];
   const dateStr = safeFormatEventDate(activeEvent.date, "12/11/2026");
   const categoryStr = (activeEvent as any).category || "Giao thương B2B";
@@ -1090,12 +1095,22 @@ function FeaturedUpcomingEventHero({
     >
       <div
         onClick={() => onSelectEvent(activeEvent)}
+        data-dark-card
         className="self-stretch h-44 relative rounded-2xl overflow-hidden cursor-pointer shadow-xs group"
       >
         <img
           className="w-full h-72 left-0 top-[-47px] absolute object-cover group-hover:scale-105 transition-transform duration-500"
           src={imgUrl}
           alt={activeEvent.title}
+          onError={(e) => {
+            const target = e.currentTarget;
+            const currentSrc = target.src;
+            if (currentSrc.includes("ceo1983.viconnect.vn") && !currentSrc.includes("crm.ceo1983.viconnect.vn")) {
+              target.src = currentSrc.replace("ceo1983.viconnect.vn", "crm.ceo1983.viconnect.vn");
+            } else {
+              target.src = defaultEventImages[activeIdx % defaultEventImages.length];
+            }
+          }}
         />
         <div className="w-full h-40 left-0 top-[22px] absolute bg-gradient-to-b from-black/0 via-black/40 to-black/90 pointer-events-none" />
         <div className="w-full h-full left-0 top-0 absolute flex flex-col justify-between p-3">
@@ -1119,8 +1134,8 @@ function FeaturedUpcomingEventHero({
             </div>
             <div className="self-stretch pt-1 inline-flex justify-between items-center gap-2">
               <div className="flex-1 h-4 flex justify-start items-center gap-1 overflow-hidden">
-                <img src="/icons/events/location-01.svg" className="size-4 shrink-0 brightness-0 invert" alt="location" />
-                <span className="flex-1 text-slate-200 text-xs font-normal font-['Inter'] leading-4 truncate">
+                <img src="/icons/events/location-01.svg" className="size-4 shrink-0 brightness-0 invert drop-shadow-sm" alt="location" />
+                <span className="flex-1 !text-white text-xs font-medium font-['Inter'] leading-4 truncate drop-shadow-sm">
                   {activeEvent.place || "Hội trường Cung Tri Thức Thành Phố, Cầu Giấy, Hà Nội"}
                 </span>
               </div>
@@ -2212,9 +2227,11 @@ function EventsScreen() {
                                 () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
                               );
                             }}
-                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 shrink-0 hover:bg-slate-50"
+                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 shrink-0 hover:bg-slate-50 cursor-pointer active:scale-95 transition"
+                            title="Chia sẻ sự kiện"
+                            aria-label="Chia sẻ sự kiện"
                           >
-                            <img src="/icons/events/more-vertical.svg" className="size-4" alt="more" />
+                            <Share2 className="size-4 text-slate-600 dark:text-slate-300" />
                           </button>
                         </div>
 
@@ -2287,24 +2304,26 @@ function EventsScreen() {
               }))}
             </div>
 
-            {/* Xem tất cả */}
-            <div className="self-stretch px-4 flex flex-col justify-start items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setEventCategory("all");
-                  toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
-                  const el = document.getElementById("all-events-section");
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 inline-flex justify-center items-center gap-2 active:scale-95 transition cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 shadow-2xs"
-              >
-                <span className="text-[#003B95] dark:text-blue-400 text-sm font-semibold font-['Inter'] leading-5">
-                  Xem tất cả ({allEventsCount}) sự kiện
-                </span>
-                <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
-              </button>
-            </div>
+            {/* Xem tất cả - Chỉ hiển thị khi đang lọc theo danh mục khác tab Tất cả */}
+            {eventCategory !== "all" && (
+              <div className="self-stretch px-4 flex flex-col justify-start items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEventCategory("all");
+                    toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
+                    const el = document.getElementById("all-events-section");
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 inline-flex justify-center items-center gap-2 active:scale-95 transition cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 shadow-2xs"
+                >
+                  <span className="text-[#003B95] dark:text-blue-400 text-sm font-semibold font-['Inter'] leading-5">
+                    Xem tất cả ({allEventsCount}) sự kiện
+                  </span>
+                  <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Section: Xem gần đây */}

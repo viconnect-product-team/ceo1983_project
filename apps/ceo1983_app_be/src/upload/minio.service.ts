@@ -53,7 +53,9 @@ export class MinioService implements OnModuleInit {
     // 4. Docker container aliases only in Linux/Docker environment (never on Windows host to avoid DNS resolution hangs)
     const isInsideDocker =
       process.platform === 'linux' &&
-      (Boolean(process.env.DOCKER_CONTAINER) ||
+      (require('fs').existsSync('/.dockerenv') ||
+        process.env.NODE_ENV === 'production' ||
+        Boolean(process.env.DOCKER_CONTAINER) ||
         Boolean(process.env.KUBERNETES_SERVICE_HOST));
     if (isInsideDocker) {
       candidateConfigs.push({
@@ -65,6 +67,11 @@ export class MinioService implements OnModuleInit {
         name: 'docker-alias(minio:9000)',
         endPoint: 'minio',
         port: 9000,
+      });
+      candidateConfigs.push({
+        name: 'docker-alias(minio:9050)',
+        endPoint: 'minio',
+        port: 9050,
       });
     }
 

@@ -33,11 +33,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    // Nếu là yêu cầu tệp hình ảnh hoặc tải tệp qua /upload/ bị lỗi, trả SVG fallback 200 OK thay vì ném 500
+    // Nếu là yêu cầu xem/tải tệp hình ảnh qua GET /upload/ bị lỗi, trả SVG fallback 200 OK thay vì ném 500
+    // KHÔNG áp dụng cho phương thức POST/PUT/DELETE upload file để tránh che giấu lỗi trả về cho client
     if (
-      request.url?.includes('/upload/') ||
-      request.url?.includes('upload/file') ||
-      /\.(png|jpe?g|webp|gif|svg|ico)(\?.*)?$/i.test(request.url || '')
+      request.method === 'GET' &&
+      (request.url?.includes('/upload/') ||
+        request.url?.includes('upload/file') ||
+        /\.(png|jpe?g|webp|gif|svg|ico)(\?.*)?$/i.test(request.url || ''))
     ) {
       if (!response.headersSent) {
         const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="100%" height="100%" fill="#0A1A3A"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#F59E0B" font-family="sans-serif" font-size="16" font-weight="bold">CEO 1983</text></svg>`;

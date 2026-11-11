@@ -1,5 +1,31 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.20): Khởi Tạo Sự Kiện Mới Trực Tiếp Trên Subdomain crm.ceo1983.viconnect.vn Bằng Banner Thật & Danh Mục Toàn Diện 13 Mẫu Email Phục Vụ Cấu Hình Zalo ZBS ([NODE-CRM-003], [NODE-CORE-004], [NODE-CORE-005])**:
+  - **Khởi tạo Sự Kiện Trực Tiếp Qua Giao Diện Web CRM (Playwright Automation)**:
+    * Thao tác trực tiếp trên giao diện Cổng Quản trị `https://crm.ceo1983.viconnect.vn/events` thông qua Playwright Browser Automation.
+    * Mở `EventWizardDialog` và nhập liệu chuẩn xác toàn bộ thông tin theo thiết kế banner:
+      - **Tên sự kiện**: "Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí & Tọa Đàm Kinh Tế: Doanh Nghiệp Việt 2027"
+      - **Chủ đề**: "Củng cố nội lực - Tạo đà tăng trưởng | Thị trường - Dòng tiền - Năng suất trong kỷ nguyên AI & Tri ân Ngày Nhà giáo Việt Nam 20/11"
+      - **Thời gian**: `15:00 - 22:00` | Thứ Bảy, 21/11/2026
+      - **Địa điểm**: `Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội`
+      - **Sức chứa**: 200 đại biểu.
+      - **Loại hình**: Diễn đàn & Tọa đàm (`forum`).
+      - **Trạng thái**: Sắp diễn ra (`upcoming`).
+      - **Hạng vé**: Vé Tham Dự (Miễn phí 0đ) dành cho Hội viên CLB CEO 1983 và khách mời danh dự.
+      - **Mã sự kiện cấp mới**: `EV-MWCHPEKG`.
+  - **Tải Ảnh Banner Thật Lên Máy Chủ & Sửa Tận Gốc Lỗi Upload**:
+    * Phát hiện nguyên nhân gốc rễ lỗi upload: `PayloadGuardMiddleware` đăng ký `req.on('data')` làm HTTP stream chuyển sang flowing mode trước khi Multer kịp đọc multipart form-data. Đã bổ sung bypass cho `multipart/form-data`.
+    * Sửa lỗi `AllExceptionsFilter`: Chỉ trả SVG fallback khi phương thức là `GET` xem ảnh, không che giấu lỗi `POST/PUT/DELETE` tải file.
+    * Tải tệp banner độ nét cao (75,797 bytes) lên máy chủ lưu trữ lâu dài tại `/upload/file/avatars/00000000-0000-4000-8000-000000000002-1794424072529-tx43wu.jpg`, kiểm tra HTTP GET trả về chuẩn HTTP 200 `image/jpeg`.
+    * Cập nhật bản ghi CSDL `public.events` cho sự kiện `EV-MWCHPEKG` trỏ trực tiếp vào đường dẫn ảnh banner thật này, loại bỏ 100% ảnh Unsplash và ảnh mock.
+    * Xác nhận hiển thị thực tế bằng ảnh chụp màn hình cả CRM (`scripts/live_crm_events.png`) và Mobile App (`scripts/live_mobile_events.png`).
+  - **Danh Mục 13 Mẫu Email Trong Hệ Thống Phục Vụ Cấu Hình Zalo ZBS**:
+    * Đã tổng hợp đầy đủ 13 mẫu email thông báo tự động từ `mail.service.ts` để người dùng chuẩn bị template đăng ký với Zalo ZNS / ZBS (tối ưu hóa chi phí gửi tin khi người dùng đã quan tâm Zalo OA).
+  - **Kiểm định chất lượng mã nguồn (Strict Code Quality)**:
+    * `apps/ceo1983_app_be`: `tsc --noEmit` Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ nghiêm ngặt Strict Rule 1: Không tự ý `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.19): Khắc Phục Triệt Để SafeArea iOS, Số Đếm Realtime, Tên Người Zalo OA, Chuẩn Hóa Template 7 Khối CRM & Sửa Lỗi Backend/API ([NODE-APP-001..004], [NODE-CRM-001..017], [NODE-CORE-001..005])**:
   - **Khắc phục lỗi SafeArea iOS Header (Dynamic Island / Tai Thỏ)**:
     * Đồng bộ `paddingTop: calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)` và `minHeight: calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)` tại `MemberShell.tsx` (áp dụng cho toàn bộ các màn dùng `MemberHeader` như Thông báo `/association/notifications`), `association.profile.tsx` (Màn cá nhân), `association.messages.tsx` (Màn mạng lưới / tin nhắn), và `association.events.tsx` (Màn sự kiện). Triệt tiêu hoàn toàn hiện tượng header bị tai thỏ đè lên trên thiết bị iOS (iPhone 14 Pro, 15, 16).
@@ -243,6 +269,32 @@
 
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.20): Khởi Tạo Sự Kiện Mới Trực Tiếp Trên Subdomain crm.ceo1983.viconnect.vn Bằng Banner Thật & Danh Mục Toàn Diện 13 Mẫu Email Phục Vụ Cấu Hình Zalo ZBS ([NODE-CRM-003], [NODE-CORE-004], [NODE-CORE-005])**:
+  - **Khởi tạo Sự Kiện Trực Tiếp Qua Giao Diện Web CRM (Playwright Automation)**:
+    * Thao tác trực tiếp trên giao diện Cổng Quản trị `https://crm.ceo1983.viconnect.vn/events` thông qua Playwright Browser Automation.
+    * Mở `EventWizardDialog` và nhập liệu chuẩn xác toàn bộ thông tin theo thiết kế banner:
+      - **Tên sự kiện**: "Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí & Tọa Đàm Kinh Tế: Doanh Nghiệp Việt 2027"
+      - **Chủ đề**: "Củng cố nội lực - Tạo đà tăng trưởng | Thị trường - Dòng tiền - Năng suất trong kỷ nguyên AI & Tri ân Ngày Nhà giáo Việt Nam 20/11"
+      - **Thời gian**: `15:00 - 22:00` | Thứ Bảy, 21/11/2026
+      - **Địa điểm**: `Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội`
+      - **Sức chứa**: 200 đại biểu.
+      - **Loại hình**: Diễn đàn & Tọa đàm (`forum`).
+      - **Trạng thái**: Sắp diễn ra (`upcoming`).
+      - **Hạng vé**: Vé Tham Dự (Miễn phí 0đ) dành cho Hội viên CLB CEO 1983 và khách mời danh dự.
+      - **Mã sự kiện cấp mới**: `EV-MWCHPEKG`.
+  - **Tải Ảnh Banner Thật Lên Máy Chủ & Sửa Tận Gốc Lỗi Upload**:
+    * Phát hiện nguyên nhân gốc rễ lỗi upload: `PayloadGuardMiddleware` đăng ký `req.on('data')` làm HTTP stream chuyển sang flowing mode trước khi Multer kịp đọc multipart form-data. Đã bổ sung bypass cho `multipart/form-data`.
+    * Sửa lỗi `AllExceptionsFilter`: Chỉ trả SVG fallback khi phương thức là `GET` xem ảnh, không che giấu lỗi `POST/PUT/DELETE` tải file.
+    * Tải tệp banner độ nét cao (75,797 bytes) lên máy chủ lưu trữ lâu dài tại `/upload/file/avatars/00000000-0000-4000-8000-000000000002-1794424072529-tx43wu.jpg`, kiểm tra HTTP GET trả về chuẩn HTTP 200 `image/jpeg`.
+    * Cập nhật bản ghi CSDL `public.events` cho sự kiện `EV-MWCHPEKG` trỏ trực tiếp vào đường dẫn ảnh banner thật này, loại bỏ 100% ảnh Unsplash và ảnh mock.
+    * Xác nhận hiển thị thực tế bằng ảnh chụp màn hình cả CRM (`scripts/live_crm_events.png`) và Mobile App (`scripts/live_mobile_events.png`).
+  - **Danh Mục 13 Mẫu Email Trong Hệ Thống Phục Vụ Cấu Hình Zalo ZBS**:
+    * Đã tổng hợp đầy đủ 13 mẫu email thông báo tự động từ `mail.service.ts` để người dùng chuẩn bị template đăng ký với Zalo ZNS / ZBS (tối ưu hóa chi phí gửi tin khi người dùng đã quan tâm Zalo OA).
+  - **Kiểm định chất lượng mã nguồn (Strict Code Quality)**:
+    * `apps/ceo1983_app_be`: `tsc --noEmit` Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ nghiêm ngặt Strict Rule 1: Không tự ý `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.19): Khắc Phục Triệt Để SafeArea iOS, Số Đếm Realtime, Tên Người Zalo OA, Chuẩn Hóa Template 7 Khối CRM & Sửa Lỗi Backend/API ([NODE-APP-001..004], [NODE-CRM-001..017], [NODE-CORE-001..005])**:
   - **Khắc phục lỗi SafeArea iOS Header (Dynamic Island / Tai Thỏ)**:
     * Đồng bộ `paddingTop: calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)` và `minHeight: calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)` tại `MemberShell.tsx` (áp dụng cho toàn bộ các màn dùng `MemberHeader` như Thông báo `/association/notifications`), `association.profile.tsx` (Màn cá nhân), `association.messages.tsx` (Màn mạng lưới / tin nhắn), và `association.events.tsx` (Màn sự kiện). Triệt tiêu hoàn toàn hiện tượng header bị tai thỏ đè lên trên thiết bị iOS (iPhone 14 Pro, 15, 16).
@@ -343,6 +395,34 @@
      - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
      - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
      - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.10): Khắc Phục Lỗi Chữ Địa Điểm Sự Kiện Bị Đen, Đồng Bộ Ảnh Đa Phân Hệ CRM & Mobile App (Peer Sync), Thay Icon Share & Bỏ Nút "Xem tất cả" Tab Tất Cả, Sửa Lỗi 404 `/api/notifications` ([NODE-APP-003], [NODE-APP-004], [NODE-CORE-003], [NODE-CORE-004])**:
+  1. *Khắc phục triệt để lỗi màu chữ địa điểm sự kiện bị màu đen*:
+     - **Nguyên nhân**: Trong `styles.css`, bộ chọn `html:not(.dark) .bc-app .text-slate-200` có quy tắc `color: #000000 !important;`. Trong `FeaturedUpcomingEventHero` (`association.events.tsx`), thẻ `span` chứa địa điểm dùng `text-slate-200` khiến chữ bị ép thành màu đen trên nền gradient tối, không đọc được.
+     - **Giải pháp**:
+       + Thay đổi `text-slate-200` thành `!text-white text-xs font-medium font-['Inter'] leading-4 truncate drop-shadow-sm` và gán thuộc tính `data-dark-card` vào thẻ container.
+       + Bổ sung ngoại lệ nghiêm ngặt trong `styles.css`: `html:not(.dark) .bc-app [data-dark-card] .text-slate-200, ... { color: rgba(255, 255, 255, 0.95) !important; }`.
+  2. *Đồng bộ hình ảnh đa phân hệ (Cross-domain Media Peer Sync - CRM & Mobile App)*:
+     - **Nguyên nhân**: File ảnh (sự kiện, cơ hội B2B, sản phẩm, cuộc họp, đào tạo) được tải lên qua subdomain CRM (`crm.ceo1983.viconnect.vn`). Khi mobile app (`ceo1983.viconnect.vn`) gọi `/api/upload/file/...`, container backend mobile không tìm thấy file cục bộ và trả về SVG fallback (hình nền xanh vòng tròn vàng).
+     - **Giải pháp**:
+       + Backend `upload.controller.ts`: Bổ sung cơ chế Peer Sync tự động kiểm tra container / domain song sinh (`crm-backend`, `crm-backend-prod`, `https://crm.ceo1983.viconnect.vn/api/upload/file/...`). Khi tìm thấy ảnh thật, backend tự động lưu vào disk cache cục bộ `/app/uploads` và trả về buffer ảnh thật (JPEG/PNG) với HTTP 200.
+       + Frontend `association.events.tsx`: Bổ sung `onError` fallback tự động chuyển đổi URL từ `ceo1983.viconnect.vn` sang `crm.ceo1983.viconnect.vn` trước khi fallback về ảnh mẫu.
+       + `api-client.ts`: Mở rộng `resolveMediaUrl` hỗ trợ đầy đủ các thư mục `events/`, `products/`, `opportunities/`, `trainings/`, `meetings/`.
+  3. *Thay icon 3 chấm thành icon Share & Bỏ nút "Xem tất cả" trên tab Tất cả*:
+     - **Thay icon 3 chấm**: Tại thẻ sự kiện trong `association.events.tsx`, thay thế icon 3 chấm dọc (`more-vertical.svg`) bằng icon `Share2` từ thư viện Lucide, kết nối trực tiếp với `executeShare` để chia sẻ liên kết sự kiện.
+     - **Bỏ nút "Xem tất cả"**: Ẩn hoàn toàn nút "Xem tất cả ({allEventsCount}) sự kiện" ở cuối danh sách khi người dùng đang ở tab Tất cả (`eventCategory === "all"`). Nút chỉ xuất hiện khi đang lọc theo các danh mục con (Gala, Workshop, B2B...).
+  4. *Khắc phục lỗi `GET /api/notifications 404 (Not Found)`*:
+     - **Nguyên nhân**: Hệ thống chỉ có route `/admin/notifications` và `/me/notifications`, không có controller nào phục vụ trực tiếp cho tiền tố `/api/notifications` mà frontend gọi tại `association.messages.tsx`, `association.checkin.tsx` và `members.index.tsx`.
+     - **Giải pháp**: Tạo mới `NotificationsController` (`apps/ceo1983_app_be/src/admin/notifications.controller.ts`) với decorator `@Controller('notifications')`, xử lý đầy đủ các endpoint:
+       + `GET /api/notifications`: Tự động nhận diện user đã đăng nhập để trả về thông báo hội viên hoặc thông báo hệ thống / broadcast.
+       + `GET /api/notifications/unread-count`: Trả về số lượng thông báo chưa đọc realtime.
+       + `POST /api/notifications`: Tạo thông báo mới.
+       + `POST /api/notifications/:id/read` & `POST /api/notifications/read-all`: Đánh dấu đã đọc.
+       + `PATCH /api/notifications/:id` & `DELETE /api/notifications/:id`.
+  5. *Kiểm chứng mã nguồn (Strict Verification)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.07): Khắc Phục Triệt Để Lỗi Lưu Chỉnh Sửa Nhanh & Màn Cá Nhân Không Đổi Thông Tin, Đồng Thời Nâng Cấp Nút "Xem Tất Cả" Màn Danh Sách Sự Kiện Hiển Thị Mọi Danh Mục ([NODE-APP-011], [NODE-APP-008], [NODE-APP-001], [NODE-CORE-002])**:
   1. *Khắc phục triệt để lỗi không lưu được Chỉnh sửa nhanh & Màn cá nhân*:
@@ -1740,6 +1820,32 @@
 
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.20): Khởi Tạo Sự Kiện Mới Trực Tiếp Trên Subdomain crm.ceo1983.viconnect.vn Bằng Banner Thật & Danh Mục Toàn Diện 13 Mẫu Email Phục Vụ Cấu Hình Zalo ZBS ([NODE-CRM-003], [NODE-CORE-004], [NODE-CORE-005])**:
+  - **Khởi tạo Sự Kiện Trực Tiếp Qua Giao Diện Web CRM (Playwright Automation)**:
+    * Thao tác trực tiếp trên giao diện Cổng Quản trị `https://crm.ceo1983.viconnect.vn/events` thông qua Playwright Browser Automation.
+    * Mở `EventWizardDialog` và nhập liệu chuẩn xác toàn bộ thông tin theo thiết kế banner:
+      - **Tên sự kiện**: "Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí & Tọa Đàm Kinh Tế: Doanh Nghiệp Việt 2027"
+      - **Chủ đề**: "Củng cố nội lực - Tạo đà tăng trưởng | Thị trường - Dòng tiền - Năng suất trong kỷ nguyên AI & Tri ân Ngày Nhà giáo Việt Nam 20/11"
+      - **Thời gian**: `15:00 - 22:00` | Thứ Bảy, 21/11/2026
+      - **Địa điểm**: `Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội`
+      - **Sức chứa**: 200 đại biểu.
+      - **Loại hình**: Diễn đàn & Tọa đàm (`forum`).
+      - **Trạng thái**: Sắp diễn ra (`upcoming`).
+      - **Hạng vé**: Vé Tham Dự (Miễn phí 0đ) dành cho Hội viên CLB CEO 1983 và khách mời danh dự.
+      - **Mã sự kiện cấp mới**: `EV-MWCHPEKG`.
+  - **Tải Ảnh Banner Thật Lên Máy Chủ & Sửa Tận Gốc Lỗi Upload**:
+    * Phát hiện nguyên nhân gốc rễ lỗi upload: `PayloadGuardMiddleware` đăng ký `req.on('data')` làm HTTP stream chuyển sang flowing mode trước khi Multer kịp đọc multipart form-data. Đã bổ sung bypass cho `multipart/form-data`.
+    * Sửa lỗi `AllExceptionsFilter`: Chỉ trả SVG fallback khi phương thức là `GET` xem ảnh, không che giấu lỗi `POST/PUT/DELETE` tải file.
+    * Tải tệp banner độ nét cao (75,797 bytes) lên máy chủ lưu trữ lâu dài tại `/upload/file/avatars/00000000-0000-4000-8000-000000000002-1794424072529-tx43wu.jpg`, kiểm tra HTTP GET trả về chuẩn HTTP 200 `image/jpeg`.
+    * Cập nhật bản ghi CSDL `public.events` cho sự kiện `EV-MWCHPEKG` trỏ trực tiếp vào đường dẫn ảnh banner thật này, loại bỏ 100% ảnh Unsplash và ảnh mock.
+    * Xác nhận hiển thị thực tế bằng ảnh chụp màn hình cả CRM (`scripts/live_crm_events.png`) và Mobile App (`scripts/live_mobile_events.png`).
+  - **Danh Mục 13 Mẫu Email Trong Hệ Thống Phục Vụ Cấu Hình Zalo ZBS**:
+    * Đã tổng hợp đầy đủ 13 mẫu email thông báo tự động từ `mail.service.ts` để người dùng chuẩn bị template đăng ký với Zalo ZNS / ZBS (tối ưu hóa chi phí gửi tin khi người dùng đã quan tâm Zalo OA).
+  - **Kiểm định chất lượng mã nguồn (Strict Code Quality)**:
+    * `apps/ceo1983_app_be`: `tsc --noEmit` Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ nghiêm ngặt Strict Rule 1: Không tự ý `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.19): Khắc Phục Triệt Để SafeArea iOS, Số Đếm Realtime, Tên Người Zalo OA, Chuẩn Hóa Template 7 Khối CRM & Sửa Lỗi Backend/API ([NODE-APP-001..004], [NODE-CRM-001..017], [NODE-CORE-001..005])**:
   - **Khắc phục lỗi SafeArea iOS Header (Dynamic Island / Tai Thỏ)**:
     * Đồng bộ `paddingTop: calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)` và `minHeight: calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)` tại `MemberShell.tsx` (áp dụng cho toàn bộ các màn dùng `MemberHeader` như Thông báo `/association/notifications`), `association.profile.tsx` (Màn cá nhân), `association.messages.tsx` (Màn mạng lưới / tin nhắn), và `association.events.tsx` (Màn sự kiện). Triệt tiêu hoàn toàn hiện tượng header bị tai thỏ đè lên trên thiết bị iOS (iPhone 14 Pro, 15, 16).
@@ -1840,6 +1946,34 @@
      - Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
      - Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
      - Tuyệt đối tuân thủ STRICT RULE 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.10): Khắc Phục Lỗi Chữ Địa Điểm Sự Kiện Bị Đen, Đồng Bộ Ảnh Đa Phân Hệ CRM & Mobile App (Peer Sync), Thay Icon Share & Bỏ Nút "Xem tất cả" Tab Tất Cả, Sửa Lỗi 404 `/api/notifications` ([NODE-APP-003], [NODE-APP-004], [NODE-CORE-003], [NODE-CORE-004])**:
+  1. *Khắc phục triệt để lỗi màu chữ địa điểm sự kiện bị màu đen*:
+     - **Nguyên nhân**: Trong `styles.css`, bộ chọn `html:not(.dark) .bc-app .text-slate-200` có quy tắc `color: #000000 !important;`. Trong `FeaturedUpcomingEventHero` (`association.events.tsx`), thẻ `span` chứa địa điểm dùng `text-slate-200` khiến chữ bị ép thành màu đen trên nền gradient tối, không đọc được.
+     - **Giải pháp**:
+       + Thay đổi `text-slate-200` thành `!text-white text-xs font-medium font-['Inter'] leading-4 truncate drop-shadow-sm` và gán thuộc tính `data-dark-card` vào thẻ container.
+       + Bổ sung ngoại lệ nghiêm ngặt trong `styles.css`: `html:not(.dark) .bc-app [data-dark-card] .text-slate-200, ... { color: rgba(255, 255, 255, 0.95) !important; }`.
+  2. *Đồng bộ hình ảnh đa phân hệ (Cross-domain Media Peer Sync - CRM & Mobile App)*:
+     - **Nguyên nhân**: File ảnh (sự kiện, cơ hội B2B, sản phẩm, cuộc họp, đào tạo) được tải lên qua subdomain CRM (`crm.ceo1983.viconnect.vn`). Khi mobile app (`ceo1983.viconnect.vn`) gọi `/api/upload/file/...`, container backend mobile không tìm thấy file cục bộ và trả về SVG fallback (hình nền xanh vòng tròn vàng).
+     - **Giải pháp**:
+       + Backend `upload.controller.ts`: Bổ sung cơ chế Peer Sync tự động kiểm tra container / domain song sinh (`crm-backend`, `crm-backend-prod`, `https://crm.ceo1983.viconnect.vn/api/upload/file/...`). Khi tìm thấy ảnh thật, backend tự động lưu vào disk cache cục bộ `/app/uploads` và trả về buffer ảnh thật (JPEG/PNG) với HTTP 200.
+       + Frontend `association.events.tsx`: Bổ sung `onError` fallback tự động chuyển đổi URL từ `ceo1983.viconnect.vn` sang `crm.ceo1983.viconnect.vn` trước khi fallback về ảnh mẫu.
+       + `api-client.ts`: Mở rộng `resolveMediaUrl` hỗ trợ đầy đủ các thư mục `events/`, `products/`, `opportunities/`, `trainings/`, `meetings/`.
+  3. *Thay icon 3 chấm thành icon Share & Bỏ nút "Xem tất cả" trên tab Tất cả*:
+     - **Thay icon 3 chấm**: Tại thẻ sự kiện trong `association.events.tsx`, thay thế icon 3 chấm dọc (`more-vertical.svg`) bằng icon `Share2` từ thư viện Lucide, kết nối trực tiếp với `executeShare` để chia sẻ liên kết sự kiện.
+     - **Bỏ nút "Xem tất cả"**: Ẩn hoàn toàn nút "Xem tất cả ({allEventsCount}) sự kiện" ở cuối danh sách khi người dùng đang ở tab Tất cả (`eventCategory === "all"`). Nút chỉ xuất hiện khi đang lọc theo các danh mục con (Gala, Workshop, B2B...).
+  4. *Khắc phục lỗi `GET /api/notifications 404 (Not Found)`*:
+     - **Nguyên nhân**: Hệ thống chỉ có route `/admin/notifications` và `/me/notifications`, không có controller nào phục vụ trực tiếp cho tiền tố `/api/notifications` mà frontend gọi tại `association.messages.tsx`, `association.checkin.tsx` và `members.index.tsx`.
+     - **Giải pháp**: Tạo mới `NotificationsController` (`apps/ceo1983_app_be/src/admin/notifications.controller.ts`) với decorator `@Controller('notifications')`, xử lý đầy đủ các endpoint:
+       + `GET /api/notifications`: Tự động nhận diện user đã đăng nhập để trả về thông báo hội viên hoặc thông báo hệ thống / broadcast.
+       + `GET /api/notifications/unread-count`: Trả về số lượng thông báo chưa đọc realtime.
+       + `POST /api/notifications`: Tạo thông báo mới.
+       + `POST /api/notifications/:id/read` & `POST /api/notifications/read-all`: Đánh dấu đã đọc.
+       + `PATCH /api/notifications/:id` & `DELETE /api/notifications/:id`.
+  5. *Kiểm chứng mã nguồn (Strict Verification)*:
+     - `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt exit code 0 (0 errors).
+     - Tuyệt đối tuân thủ STRICT RULE 1: Không tự động chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.07): Khắc Phục Triệt Để Lỗi Lưu Chỉnh Sửa Nhanh & Màn Cá Nhân Không Đổi Thông Tin, Đồng Thời Nâng Cấp Nút "Xem Tất Cả" Màn Danh Sách Sự Kiện Hiển Thị Mọi Danh Mục ([NODE-APP-011], [NODE-APP-008], [NODE-APP-001], [NODE-CORE-002])**:
   1. *Khắc phục triệt để lỗi không lưu được Chỉnh sửa nhanh & Màn cá nhân*:

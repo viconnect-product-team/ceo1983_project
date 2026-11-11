@@ -167,16 +167,18 @@ export class UploadController {
     @Param('folder') folder: string,
     @Param('file') file: string,
     @Res() res: any,
+    @Request() req: any,
   ) {
-    return this.serveFile(`${folder}/${file}`, res);
+    return this.serveFile(`${folder}/${file}`, res, req);
   }
 
   @Get('file/:file')
   async getFileSingle(
     @Param('file') file: string,
     @Res() res: any,
+    @Request() req: any,
   ) {
-    return this.serveFile(file, res);
+    return this.serveFile(file, res, req);
   }
 
   @Get('file/*')
@@ -188,7 +190,7 @@ export class UploadController {
     if (!filePathStr && req.url) {
       filePathStr = req.url.replace(/^.*\/file\//, '').split('?')[0];
     }
-    return this.serveFile(filePathStr, res);
+    return this.serveFile(filePathStr, res, req);
   }
 
   @Get(':folder/:file')
@@ -196,25 +198,27 @@ export class UploadController {
     @Param('folder') folder: string,
     @Param('file') file: string,
     @Res() res: any,
+    @Request() req: any,
   ) {
     if (folder === 'file') {
-      return this.serveFile(file, res);
+      return this.serveFile(file, res, req);
     }
-    return this.serveFile(`${folder}/${file}`, res);
+    return this.serveFile(`${folder}/${file}`, res, req);
   }
 
   @Get(':file')
   async getFileDirectSingle(
     @Param('file') file: string,
     @Res() res: any,
+    @Request() req: any,
   ) {
     if (file === 'file') {
       return res.status(404).send('Filename is missing');
     }
-    return this.serveFile(file, res);
+    return this.serveFile(file, res, req);
   }
 
-  private async serveFile(rawPath: any, res: any) {
+  private async serveFile(rawPath: any, res: any, req?: any) {
     let filePathStr = Array.isArray(rawPath) ? rawPath.join('/') : String(rawPath || '');
     if (!filePathStr) {
       return res.status(404).send('Filename is missing');
@@ -241,6 +245,7 @@ export class UploadController {
     }
 
     const contentType = getContentType(filePathStr);
+    const isPeerSync = req?.headers?.['x-peer-sync'] === 'true';
 
     try {
       // 1. Thử tìm tệp trên ổ đĩa cục bộ (disk fallback)
@@ -331,6 +336,56 @@ export class UploadController {
             }
           }
         } catch {}
+      }
+
+      // 2.5. Đồng bộ ảnh chéo giữa các container / phân hệ (CRM & CEO 1983 Mobile App)
+      // Khi CRM tải ảnh lên (sự kiện, cơ hội, sản phẩm, cuộc họp, đào tạo), container Mobile App
+      // có thể kéo trực tiếp file thật về lưu vào disk cache cục bộ rồi trả về cho client.
+      if (!isPeerSync) {
+        const peerCandidates = [
+          `http://crm-backend:4000/api/upload/file/${filePathStr}`,
+          `http://crm-backend-prod:4000/api/upload/file/${filePathStr}`,
+          `http://127.0.0.1:5005/api/upload/file/${filePathStr}`,
+          `http://127.0.0.1:5003/api/upload/file/${filePathStr}`,
+          `https://crm.ceo1983.viconnect.vn/api/upload/file/${filePathStr}`,
+          `https://ceo1983.viconnect.vn/api/upload/file/${filePathStr}`,
+        ];
+
+        for (const peerUrl of peerCandidates) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 1800);
+            const peerRes = await fetch(peerUrl, {
+              signal: controller.signal,
+              headers: { 'x-peer-sync': 'true' },
+            });
+            clearTimeout(timer);
+
+            if (peerRes.ok) {
+              const peerType = peerRes.headers.get('content-type') || '';
+              // Chỉ chấp nhận file thật, bỏ qua nếu peer trả về SVG fallback
+              if (!peerType.includes('image/svg+xml')) {
+                const arrayBuf = await peerRes.arrayBuffer();
+                const peerBuf = Buffer.from(arrayBuf);
+                if (peerBuf && peerBuf.length > 500) {
+                  // Lưu ngay vào disk cache /app/uploads để các lần gọi tiếp theo là tức thì
+                  try {
+                    const fs = await import('fs');
+                    const targetDir = path.join('/app', 'uploads', path.dirname(filePathStr));
+                    if (!fs.existsSync(targetDir)) {
+                      fs.mkdirSync(targetDir, { recursive: true });
+                    }
+                    fs.writeFileSync(path.join('/app', 'uploads', filePathStr), peerBuf);
+                  } catch {}
+
+                  res.setHeader('Content-Type', peerType || contentType);
+                  res.setHeader('Cache-Control', 'public, max-age=86400');
+                  return res.status(200).send(peerBuf);
+                }
+              }
+            }
+          } catch {}
+        }
       }
 
       // 3. Fallback an toàn tuyệt đối: Nếu là tệp hình ảnh, không bao giờ trả 500 hoặc 404 làm vỡ web

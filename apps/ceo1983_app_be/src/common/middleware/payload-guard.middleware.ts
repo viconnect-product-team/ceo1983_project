@@ -16,7 +16,14 @@ export class PayloadGuardMiddleware implements NestMiddleware {
       });
     }
 
-    // Stream byte counter guard
+    // Cho phép multipart/form-data (upload file) đi tiếp mà không gắn listener 'data'
+    // để tránh làm stream chuyển sang flowing mode khiến Multer/Busboy không đọc được file
+    const contentType = req.headers['content-type'] || '';
+    if (contentType.includes('multipart/form-data')) {
+      return next();
+    }
+
+    // Stream byte counter guard cho các payload JSON / urlencoded thông thường
     let receivedBytes = 0;
     const onData = (chunk: Buffer) => {
       receivedBytes += chunk.length;
