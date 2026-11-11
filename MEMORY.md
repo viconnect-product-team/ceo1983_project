@@ -1,5 +1,34 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 11/11/2026 (v11.15): Hoàn Thiện Toàn Diện Bộ Yêu Cầu CEO 1983 Mobile App & CRM Quản Trị ([NODE-APP-001..004], [NODE-CRM-001..017])**:
+  1. *Khắc Phục Lỗi Vào Màn Sự Kiện (React Error #310)*:
+     - **Triệt tiêu toàn diện lỗi Hook Violation**:
+       * Tại `FeaturedUpcomingEventHero` (`association.events.tsx`): Đưa hook `useEffect` lên trước câu lệnh return điều kiện `if (!displayList || displayList.length === 0) return null;`.
+       * Tại `EventDetailModal.tsx`: Di chuyển toàn bộ các hooks `React.useMemo` (`isPastEvent`, `sponsorList`) lên trước câu lệnh early return `if (!selectedEvent) return null;`. Đảm bảo số lượng hook được gọi hoàn toàn bất biến giữa mọi lần render.
+  2. *APP CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu & Bắt Buộc Đăng Nhập Lại*:
+     - Tại `FirstLoginChangePasswordModal.tsx` và `AccountSecuritySettingsForm.tsx`: Khi hội viên đăng nhập lần đầu tiên hoặc có cờ `mustChangePassword`, modal mở ra và CHỈ hiển thị form đổi mật khẩu.
+     - Sau khi đổi mật khẩu thành công: Tự động xóa cờ `vba_must_change_password`, xóa session đăng nhập, hiện thông báo thành công và điều hướng bắt buộc về `/association/login?reason=password_changed`.
+  3. *APP CEO 1983 - Cài Đặt App Từ Email & Tự Động Mở Trang Zalo OA*:
+     - Tại `open-app.tsx`: Tích hợp link Zalo OA chính thức `https://zalo.me/ceo1983`.
+     - Khi bấm nút *"Cài Đặt App CEO 1983 Ngay"* trên thiết bị di động (Android / iOS): Vừa tự động kích hoạt prompt cài đặt App lên màn hình thiết bị, vừa tự động chuyển hướng / mở tab đến trang Zalo OA CEO 1983.
+     - Bổ sung nút CTA nổi bật *"Quan Tâm Zalo OA CEO 1983 Ngay"*.
+  4. *CRM CEO 1983 - Bỏ Chức Năng Quản Lý Template Trong Nhóm Mẫu Trang*:
+     - Tại `Sidebar.tsx`: Trong nhóm Quản lý mẫu (`/templates`), loại bỏ hoàn toàn mục *"Quản lý Template"* (`/templates?tab=email`), chỉ giữ lại duy nhất *"Quản lý Thư Mời"* (`/templates?tab=invitation-setup`).
+     - Tại `PageTemplatesHub.tsx`: Loại bỏ tab `email`, chỉ hiển thị tab cấu hình thư mời.
+  5. *CRM CEO 1983 - Bỏ Tên Miền & Trang Giới Thiệu Ở Cài Đặt Hệ Thống*:
+     - Tại `routes/settings.tsx`: Gỡ bỏ hoàn toàn tab `landing` ("Trang giới thiệu") và `domain` ("Tên miền") khỏi thanh menu và nội dung cấu hình.
+  6. *CRM CEO 1983 - Chuẩn Hóa Mẫu Thông Báo, Bỏ FEE_NOTICE_ANNUAL & Cấu Hình Ngân Hàng Để Trống QR*:
+     - Loại bỏ triệt để mã `FEE_NOTICE_ANNUAL` khỏi danh sách mẫu mặc định.
+     - Với thông báo có phí: Để trống ảnh QR theo yêu cầu, bổ sung các trường cấu hình *"Số tài khoản CLB"* (`198388889999`) và *"Ngân hàng CLB"* (`MB Bank`).
+     - Chuẩn hóa form mẫu tin nhắn Event/Meeting/Training theo đúng quy cách: Kính gửi Anh/Chị, Tên sự kiện, Diễn giả, Nội dung, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC, Hotline BTC: `0973.205.683 / 0903.205.683 / 0903.203.204`, Trân trọng!
+     - Nạp hội viên theo Ban và người tương tác Zalo OA với 3 chế độ: "Tất cả", "1 người", "Nhiều người".
+     - Thêm nút dấu cộng `+` cạnh ô Email và SĐT để thêm nhanh nhiều người nhận ngoài hệ thống qua Zalo ZBS.
+     - Tạo template mẫu mới ở Danh Mục Luồng: Tích hợp API nạp khóa đào tạo (`/events?type=training`), dynamic presets cho Thư cảm ơn hội viên mới (`MEMBER_WELCOME_THANKS`), Gửi tài khoản hội viên mới (`MEMBER_ACCOUNT_CREDENTIALS`), Thư mời đào tạo (`TRAINING_INVITATION`).
+  7. *Thông Báo Đổi Ban & Quét Mã QR Check-in Sự Kiện*:
+     - Tại `members.index.tsx`: Khi thay đổi ban cho hội viên, hệ thống tự động gửi thông báo về App CEO 1983 *"Bạn đã được thêm vào ban [Tên Ban]"*.
+     - Nếu gán vào Ban Truyền Thông: Cấp quyền quét mã QR check-in vé theo luồng cũ (`vba_assigned_event_scanner = true`, `vba_media_scanner_${id} = true`).
+     - Tại `association.checkin.tsx`: Ban Truyền Thông quét mã QR check-in vé thành công -> Lưu dữ liệu check-in -> Tự động gửi thông báo vị trí chỗ ngồi và mã số vé (dùng quay thưởng) về Mail và App CEO 1983 cho hội viên; đối với khách ngoài thì bắn thông báo về Email của khách.
+
 - **Bản cập nhật ngày 11/11/2026 (v11.14): Hoàn Thiện Bộ 5 Tính Năng & Khắc Phục Lỗi Toàn Diện Cho CEO 1983 Mobile App ([NODE-APP-001], [NODE-APP-002], [NODE-APP-003], [NODE-APP-005], [NODE-APP-008])**:
   1. *Lỗi Màn Hình Sự Kiện (React Error #310)*:
      - **Nguyên nhân**: Trong component `FeaturedUpcomingEventHero` (`association.events.tsx`), điều kiện `if (!displayList || displayList.length === 0) return null;` được đặt phía TRƯỚC hook `useEffect` xoay vòng slide tự động, vi phạm nghiêm ngặt Rules of Hooks của React (Rendered fewer/more hooks than during previous render) dẫn đến `EventsErrorBoundary` bắt lỗi và hiện màn hình *"Không thể tải giao diện sự kiện"*.
@@ -191,6 +220,35 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.15): Hoàn Thiện Toàn Diện Bộ Yêu Cầu CEO 1983 Mobile App & CRM Quản Trị ([NODE-APP-001..004], [NODE-CRM-001..017])**:
+  1. *Khắc Phục Lỗi Vào Màn Sự Kiện (React Error #310)*:
+     - **Triệt tiêu toàn diện lỗi Hook Violation**:
+       * Tại `FeaturedUpcomingEventHero` (`association.events.tsx`): Đưa hook `useEffect` lên trước câu lệnh return điều kiện `if (!displayList || displayList.length === 0) return null;`.
+       * Tại `EventDetailModal.tsx`: Di chuyển toàn bộ các hooks `React.useMemo` (`isPastEvent`, `sponsorList`) lên trước câu lệnh early return `if (!selectedEvent) return null;`. Đảm bảo số lượng hook được gọi hoàn toàn bất biến giữa mọi lần render.
+  2. *APP CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu & Bắt Buộc Đăng Nhập Lại*:
+     - Tại `FirstLoginChangePasswordModal.tsx` và `AccountSecuritySettingsForm.tsx`: Khi hội viên đăng nhập lần đầu tiên hoặc có cờ `mustChangePassword`, modal mở ra và CHỈ hiển thị form đổi mật khẩu.
+     - Sau khi đổi mật khẩu thành công: Tự động xóa cờ `vba_must_change_password`, xóa session đăng nhập, hiện thông báo thành công và điều hướng bắt buộc về `/association/login?reason=password_changed`.
+  3. *APP CEO 1983 - Cài Đặt App Từ Email & Tự Động Mở Trang Zalo OA*:
+     - Tại `open-app.tsx`: Tích hợp link Zalo OA chính thức `https://zalo.me/ceo1983`.
+     - Khi bấm nút *"Cài Đặt App CEO 1983 Ngay"* trên thiết bị di động (Android / iOS): Vừa tự động kích hoạt prompt cài đặt App lên màn hình thiết bị, vừa tự động chuyển hướng / mở tab đến trang Zalo OA CEO 1983.
+     - Bổ sung nút CTA nổi bật *"Quan Tâm Zalo OA CEO 1983 Ngay"*.
+  4. *CRM CEO 1983 - Bỏ Chức Năng Quản Lý Template Trong Nhóm Mẫu Trang*:
+     - Tại `Sidebar.tsx`: Trong nhóm Quản lý mẫu (`/templates`), loại bỏ hoàn toàn mục *"Quản lý Template"* (`/templates?tab=email`), chỉ giữ lại duy nhất *"Quản lý Thư Mời"* (`/templates?tab=invitation-setup`).
+     - Tại `PageTemplatesHub.tsx`: Loại bỏ tab `email`, chỉ hiển thị tab cấu hình thư mời.
+  5. *CRM CEO 1983 - Bỏ Tên Miền & Trang Giới Thiệu Ở Cài Đặt Hệ Thống*:
+     - Tại `routes/settings.tsx`: Gỡ bỏ hoàn toàn tab `landing` ("Trang giới thiệu") và `domain` ("Tên miền") khỏi thanh menu và nội dung cấu hình.
+  6. *CRM CEO 1983 - Chuẩn Hóa Mẫu Thông Báo, Bỏ FEE_NOTICE_ANNUAL & Cấu Hình Ngân Hàng Để Trống QR*:
+     - Loại bỏ triệt để mã `FEE_NOTICE_ANNUAL` khỏi danh sách mẫu mặc định.
+     - Với thông báo có phí: Để trống ảnh QR theo yêu cầu, bổ sung các trường cấu hình *"Số tài khoản CLB"* (`198388889999`) và *"Ngân hàng CLB"* (`MB Bank`).
+     - Chuẩn hóa form mẫu tin nhắn Event/Meeting/Training theo đúng quy cách: Kính gửi Anh/Chị, Tên sự kiện, Diễn giả, Nội dung, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC, Hotline BTC: `0973.205.683 / 0903.205.683 / 0903.203.204`, Trân trọng!
+     - Nạp hội viên theo Ban và người tương tác Zalo OA với 3 chế độ: "Tất cả", "1 người", "Nhiều người".
+     - Thêm nút dấu cộng `+` cạnh ô Email và SĐT để thêm nhanh nhiều người nhận ngoài hệ thống qua Zalo ZBS.
+     - Tạo template mẫu mới ở Danh Mục Luồng: Tích hợp API nạp khóa đào tạo (`/events?type=training`), dynamic presets cho Thư cảm ơn hội viên mới (`MEMBER_WELCOME_THANKS`), Gửi tài khoản hội viên mới (`MEMBER_ACCOUNT_CREDENTIALS`), Thư mời đào tạo (`TRAINING_INVITATION`).
+  7. *Thông Báo Đổi Ban & Quét Mã QR Check-in Sự Kiện*:
+     - Tại `members.index.tsx`: Khi thay đổi ban cho hội viên, hệ thống tự động gửi thông báo về App CEO 1983 *"Bạn đã được thêm vào ban [Tên Ban]"*.
+     - Nếu gán vào Ban Truyền Thông: Cấp quyền quét mã QR check-in vé theo luồng cũ (`vba_assigned_event_scanner = true`, `vba_media_scanner_${id} = true`).
+     - Tại `association.checkin.tsx`: Ban Truyền Thông quét mã QR check-in vé thành công -> Lưu dữ liệu check-in -> Tự động gửi thông báo vị trí chỗ ngồi và mã số vé (dùng quay thưởng) về Mail và App CEO 1983 cho hội viên; đối với khách ngoài thì bắn thông báo về Email của khách.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.08): Chuẩn Hóa Đồng Bộ Dữ Liệu Thực Tế Khi Xóa Sự Kiện / Cuộc Họp / Tin Tức, Chuẩn 5 Slide Ưu Đãi Trang Chủ, Sửa Lỗi Nút Chi Tiết & Giờ Sự Kiện, Đồng Bộ Số Liệu Tổng Quan CRM & Bổ Sung Khối "Công Việc Của Tôi" ([NODE-APP-001], [NODE-APP-008], [NODE-CRM-001], [NODE-CRM-012], [NODE-CORE-002])**:
   1. *Đồng bộ triệt để trạng thái xóa Sự kiện / Cuộc họp / Tin tức trên App CEO 1983*:
@@ -1637,6 +1695,35 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 11/11/2026 (v11.15): Hoàn Thiện Toàn Diện Bộ Yêu Cầu CEO 1983 Mobile App & CRM Quản Trị ([NODE-APP-001..004], [NODE-CRM-001..017])**:
+  1. *Khắc Phục Lỗi Vào Màn Sự Kiện (React Error #310)*:
+     - **Triệt tiêu toàn diện lỗi Hook Violation**:
+       * Tại `FeaturedUpcomingEventHero` (`association.events.tsx`): Đưa hook `useEffect` lên trước câu lệnh return điều kiện `if (!displayList || displayList.length === 0) return null;`.
+       * Tại `EventDetailModal.tsx`: Di chuyển toàn bộ các hooks `React.useMemo` (`isPastEvent`, `sponsorList`) lên trước câu lệnh early return `if (!selectedEvent) return null;`. Đảm bảo số lượng hook được gọi hoàn toàn bất biến giữa mọi lần render.
+  2. *APP CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu & Bắt Buộc Đăng Nhập Lại*:
+     - Tại `FirstLoginChangePasswordModal.tsx` và `AccountSecuritySettingsForm.tsx`: Khi hội viên đăng nhập lần đầu tiên hoặc có cờ `mustChangePassword`, modal mở ra và CHỈ hiển thị form đổi mật khẩu.
+     - Sau khi đổi mật khẩu thành công: Tự động xóa cờ `vba_must_change_password`, xóa session đăng nhập, hiện thông báo thành công và điều hướng bắt buộc về `/association/login?reason=password_changed`.
+  3. *APP CEO 1983 - Cài Đặt App Từ Email & Tự Động Mở Trang Zalo OA*:
+     - Tại `open-app.tsx`: Tích hợp link Zalo OA chính thức `https://zalo.me/ceo1983`.
+     - Khi bấm nút *"Cài Đặt App CEO 1983 Ngay"* trên thiết bị di động (Android / iOS): Vừa tự động kích hoạt prompt cài đặt App lên màn hình thiết bị, vừa tự động chuyển hướng / mở tab đến trang Zalo OA CEO 1983.
+     - Bổ sung nút CTA nổi bật *"Quan Tâm Zalo OA CEO 1983 Ngay"*.
+  4. *CRM CEO 1983 - Bỏ Chức Năng Quản Lý Template Trong Nhóm Mẫu Trang*:
+     - Tại `Sidebar.tsx`: Trong nhóm Quản lý mẫu (`/templates`), loại bỏ hoàn toàn mục *"Quản lý Template"* (`/templates?tab=email`), chỉ giữ lại duy nhất *"Quản lý Thư Mời"* (`/templates?tab=invitation-setup`).
+     - Tại `PageTemplatesHub.tsx`: Loại bỏ tab `email`, chỉ hiển thị tab cấu hình thư mời.
+  5. *CRM CEO 1983 - Bỏ Tên Miền & Trang Giới Thiệu Ở Cài Đặt Hệ Thống*:
+     - Tại `routes/settings.tsx`: Gỡ bỏ hoàn toàn tab `landing` ("Trang giới thiệu") và `domain` ("Tên miền") khỏi thanh menu và nội dung cấu hình.
+  6. *CRM CEO 1983 - Chuẩn Hóa Mẫu Thông Báo, Bỏ FEE_NOTICE_ANNUAL & Cấu Hình Ngân Hàng Để Trống QR*:
+     - Loại bỏ triệt để mã `FEE_NOTICE_ANNUAL` khỏi danh sách mẫu mặc định.
+     - Với thông báo có phí: Để trống ảnh QR theo yêu cầu, bổ sung các trường cấu hình *"Số tài khoản CLB"* (`198388889999`) và *"Ngân hàng CLB"* (`MB Bank`).
+     - Chuẩn hóa form mẫu tin nhắn Event/Meeting/Training theo đúng quy cách: Kính gửi Anh/Chị, Tên sự kiện, Diễn giả, Nội dung, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC, Hotline BTC: `0973.205.683 / 0903.205.683 / 0903.203.204`, Trân trọng!
+     - Nạp hội viên theo Ban và người tương tác Zalo OA với 3 chế độ: "Tất cả", "1 người", "Nhiều người".
+     - Thêm nút dấu cộng `+` cạnh ô Email và SĐT để thêm nhanh nhiều người nhận ngoài hệ thống qua Zalo ZBS.
+     - Tạo template mẫu mới ở Danh Mục Luồng: Tích hợp API nạp khóa đào tạo (`/events?type=training`), dynamic presets cho Thư cảm ơn hội viên mới (`MEMBER_WELCOME_THANKS`), Gửi tài khoản hội viên mới (`MEMBER_ACCOUNT_CREDENTIALS`), Thư mời đào tạo (`TRAINING_INVITATION`).
+  7. *Thông Báo Đổi Ban & Quét Mã QR Check-in Sự Kiện*:
+     - Tại `members.index.tsx`: Khi thay đổi ban cho hội viên, hệ thống tự động gửi thông báo về App CEO 1983 *"Bạn đã được thêm vào ban [Tên Ban]"*.
+     - Nếu gán vào Ban Truyền Thông: Cấp quyền quét mã QR check-in vé theo luồng cũ (`vba_assigned_event_scanner = true`, `vba_media_scanner_${id} = true`).
+     - Tại `association.checkin.tsx`: Ban Truyền Thông quét mã QR check-in vé thành công -> Lưu dữ liệu check-in -> Tự động gửi thông báo vị trí chỗ ngồi và mã số vé (dùng quay thưởng) về Mail và App CEO 1983 cho hội viên; đối với khách ngoài thì bắn thông báo về Email của khách.
 
 - **Bản cập nhật ngày 11/11/2026 (v11.08): Chuẩn Hóa Đồng Bộ Dữ Liệu Thực Tế Khi Xóa Sự Kiện / Cuộc Họp / Tin Tức, Chuẩn 5 Slide Ưu Đãi Trang Chủ, Sửa Lỗi Nút Chi Tiết & Giờ Sự Kiện, Đồng Bộ Số Liệu Tổng Quan CRM & Bổ Sung Khối "Công Việc Của Tôi" ([NODE-APP-001], [NODE-APP-008], [NODE-CRM-001], [NODE-CRM-012], [NODE-CORE-002])**:
   1. *Đồng bộ triệt để trạng thái xóa Sự kiện / Cuộc họp / Tin tức trên App CEO 1983*:

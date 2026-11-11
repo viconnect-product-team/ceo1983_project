@@ -24,9 +24,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
 import { AssociationLogoUploader } from "@/components/dashboard/AssociationLogoUploader";
-import { LandingWebManager } from "@/components/dashboard/LandingWebManager";
 import { TrafficManagerSection } from "@/components/dashboard/TrafficManagerSection";
-import { AssociationDomainEditor } from "@/components/dashboard/AssociationDomainEditor";
 import { OmnichannelTemplatesSection } from "@/components/dashboard/OmnichannelTemplatesSection";
 import { ZaloOaConfigSection } from "@/components/dashboard/ZaloOaConfigSection";
 import { VNPayConfigSection } from "@/components/dashboard/VNPayConfigSection";
@@ -39,10 +37,8 @@ export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
 const TABS = [
   { key: "general", labelKey: "set.tab.general", defaultLabel: "Thông tin chung", icon: Building2 },
-  { key: "landing", labelKey: "set.tab.landing", defaultLabel: "Trang giới thiệu", icon: Layout },
   { key: "ai_config", defaultLabel: "Cấu hình AI & Nhật ký", icon: Sparkles },
   { key: "traffic", defaultLabel: "Quản lý lượng truy cập", icon: Activity },
-  { key: "domain", labelKey: "set.tab.domain", defaultLabel: "Tên miền hệ thống", icon: Globe },
   { key: "templates", defaultLabel: "Mẫu thông báo", icon: Mail },
   { key: "syndication", defaultLabel: "Đẩy tin đa kênh (Web, FB, Zalo)", icon: Share2 },
   { key: "zalo_oa", defaultLabel: "Cấu hình Zalo OA", icon: MessageSquareText },
@@ -208,12 +204,8 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab === "landing" && <LandingWebManager onSwitchTab={(newTab) => setTab(newTab as any)} />}
-
           {tab === "ai_config" && <AiConfigSection />}
           {tab === "traffic" && <TrafficManagerSection />}
-
-          {tab === "domain" && <AssociationDomainEditor />}
 
           {tab === "templates" && <OmnichannelTemplatesSection />}
 
@@ -306,7 +298,7 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab !== "landing" && tab !== "domain" && tab !== "templates" && tab !== "zalo_oa" && tab !== "vnpay" && tab !== "momo" && tab !== "zalo_miniapp" && (
+          {tab !== "templates" && tab !== "zalo_oa" && tab !== "vnpay" && tab !== "momo" && tab !== "zalo_miniapp" && (
             <div className="mt-6 flex justify-end">
               <button
                 onClick={save}

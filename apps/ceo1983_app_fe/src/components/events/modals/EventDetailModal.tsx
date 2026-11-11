@@ -85,7 +85,6 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 }) => {
   const [posterOpen, setPosterOpen] = React.useState(false);
   const [historyRecapOpen, setHistoryRecapOpen] = React.useState(false);
-  if (!selectedEvent) return null;
 
   const isPastEvent = React.useMemo(() => {
     if (!selectedEvent) return false;
@@ -100,20 +99,6 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     eventDay.setHours(23, 59, 59, 999);
     return eventDay < today;
   }, [selectedEvent]);
-
-  const selectedIndex = events.findIndex((x: any) => x.id === selectedEvent.id);
-  const rawSelImg = (selectedEvent as any).image;
-  const selectedImg =
-    (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) ||
-    defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
-  const selectedAgenda = getEventAgenda(selectedEvent, selectedIndex >= 0 ? selectedIndex : 0);
-
-  const rawDriveUrl =
-    selectedEvent?.photoGalleryUrl ||
-    (selectedEvent as any)?.photo_gallery_url ||
-    (selectedEvent as any)?.driveUrl ||
-    (selectedAgenda as any)?.photoGalleryUrl;
-  const validDriveUrl = isValidDriveUrl(rawDriveUrl) ? String(rawDriveUrl).trim() : null;
 
   const sponsorList: Array<{ name: string; tier?: string }> = React.useMemo(() => {
     let list = selectedEvent?.sponsors;
@@ -132,6 +117,22 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       }))
       .filter((s) => Boolean(s.name));
   }, [selectedEvent?.sponsors]);
+
+  if (!selectedEvent) return null;
+
+  const selectedIndex = events.findIndex((x: any) => x.id === selectedEvent.id);
+  const rawSelImg = (selectedEvent as any).image;
+  const selectedImg =
+    (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) ||
+    defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];
+  const selectedAgenda = getEventAgenda(selectedEvent, selectedIndex >= 0 ? selectedIndex : 0);
+
+  const rawDriveUrl =
+    selectedEvent?.photoGalleryUrl ||
+    (selectedEvent as any)?.photo_gallery_url ||
+    (selectedEvent as any)?.driveUrl ||
+    (selectedAgenda as any)?.photoGalleryUrl;
+  const validDriveUrl = isValidDriveUrl(rawDriveUrl) ? String(rawDriveUrl).trim() : null;
 
   const eventDesc =
     (selectedEvent.description && selectedEvent.description.trim()) ||

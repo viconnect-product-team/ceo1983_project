@@ -10,7 +10,7 @@ export const Route = createFileRoute("/templates")({
   validateSearch: (search: Record<string, unknown>): TemplatesSearch => {
     const tab = search?.tab as TemplateTab | undefined;
     return {
-      tab: tab && ["email", "invitation-setup"].includes(tab) ? tab : "email",
+      tab: tab && ["invitation-setup"].includes(tab) ? tab : "invitation-setup",
     };
   },
   component: TemplatesRouteComponent,
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/templates")({
 
 function TemplatesRouteComponent() {
   const search = Route.useSearch();
-  const currentTab = search.tab || "email";
+  const currentTab = search.tab || "invitation-setup";
   return (
     <AppShell>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto min-h-screen">

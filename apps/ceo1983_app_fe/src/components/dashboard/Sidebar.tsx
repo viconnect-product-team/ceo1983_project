@@ -184,12 +184,8 @@ const pageTemplates: Item[] = [
   {
     key: "nav.pageTemplates" as TKey,
     icon: LayoutTemplate,
-    to: "/templates",
-    label: "Quản lý mẫu",
-    children: [
-      { to: "/templates?tab=email", label: "Quản lý Template" },
-      { to: "/templates?tab=invitation-setup", label: "Quản lý Thư Mời" },
-    ],
+    to: "/templates?tab=invitation-setup",
+    label: "Quản lý Thư Mời",
   },
 ];
 const admin: Item[] = [
