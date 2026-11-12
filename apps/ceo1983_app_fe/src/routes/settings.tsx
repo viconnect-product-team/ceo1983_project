@@ -216,7 +216,7 @@ function SettingsPage() {
                 >
                   <Icon className={`size-4 shrink-0 ${active ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
                   {!isSidebarCollapsed && (
-                    <span className="whitespace-normal leading-snug py-0.5 break-words">{label}</span>
+                    <span className="whitespace-normal leading-normal py-1 break-words font-medium">{label}</span>
                   )}
                 </button>
               );

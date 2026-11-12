@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState, useMemo } from "react";
 import { X, ImagePlus, Trash2, Loader2, Check, FileText, UploadCloud } from "lucide-react";
 import { uploadFile, resolveMediaUrl } from "@/lib/api-client";
+import { KY_NIEM_4_NAM_BANNER_URL } from "@/assets/ky_niem_4_nam_banner";
 import { toast } from "sonner";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -431,8 +432,13 @@ export function CrudModal({
                           className="h-40 w-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget as HTMLImageElement;
+                            if (String(values[f.name]).includes("ky_niem_4_nam_vien_doanh_tri")) {
+                              target.src = KY_NIEM_4_NAM_BANNER_URL;
+                              return;
+                            }
                             const step = Number(target.dataset.fallbackStep || 0);
                             const fallbacks = [
+                              KY_NIEM_4_NAM_BANNER_URL,
                               "/ky_niem_4_nam_vien_doanh_tri.jpg",
                               "/images/event/ky_niem_4_nam_vien_doanh_tri.jpg",
                               "/images/events/ky_niem_4_nam_vien_doanh_tri.jpg",

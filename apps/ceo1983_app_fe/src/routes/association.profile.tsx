@@ -154,9 +154,33 @@ export default function ProfileScreen() {
   const { user, logout: authLogout } = useAuth();
   const { isSuperAdmin } = useRole();
   const fetchMember = useServerFn(getMyMember);
+
+  // Đọc ngay thông tin hội viên đã lưu từ localStorage để render tức thời, triệt tiêu hoàn toàn nháy giao diện cũ
+  const initialCachedMember = useMemo<MyMember | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("vba_my_member");
+      if (raw) return JSON.parse(raw);
+      const rawUser = localStorage.getItem("vba_auth_user") || localStorage.getItem("auth_user");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        return {
+          id: u.id || u.sub,
+          name: u.name || u.full_name || u.user_metadata?.full_name,
+          title: u.title || u.user_metadata?.title || "Hội viên chính thức",
+          companyName: u.company || u.company_name || u.user_metadata?.company,
+          avatar: u.avatar || u.avatar_url,
+          phone: u.phone,
+          email: u.email,
+        } as any;
+      }
+    } catch { }
+    return null;
+  }, []);
+
   const { data: member, reload: reloadMember } = useServerData<MyMember | null>(
     () => fetchMember(),
-    null,
+    initialCachedMember,
     "vba_my_member"
   );
 
@@ -206,7 +230,7 @@ export default function ProfileScreen() {
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   // Setup 4 tính năng nhanh trang chủ (Yêu cầu 2)
-  
+
   const fetchMyPosts = async () => {
     if (!user) return;
     setLoadingPosts(true);
@@ -219,9 +243,9 @@ export default function ProfileScreen() {
       const mine = allPosts.filter((p: any) => {
         const aId = String(p.author?.id || p.authorId || "").toLowerCase();
         const aName = String(p.author?.name || p.authorName || "").toLowerCase();
-        return (currentUserId && aId === currentUserId) || 
-               (currentCode && aId === currentCode) ||
-               (currentName && aName === currentName);
+        return (currentUserId && aId === currentUserId) ||
+          (currentCode && aId === currentCode) ||
+          (currentName && aName === currentName);
       });
       setMyPosts(mine);
     } catch {
@@ -297,7 +321,7 @@ export default function ProfileScreen() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch {}
+    } catch { }
     return DEFAULT_SHORTCUT_IDS;
   });
 
@@ -308,7 +332,7 @@ export default function ProfileScreen() {
       localStorage.setItem("vba_user_custom_shortcuts", JSON.stringify(ids));
       window.dispatchEvent(new Event("ceo1983_shortcuts_changed"));
       window.dispatchEvent(new Event("storage"));
-    } catch {}
+    } catch { }
     setCustomShortcutsOpen(false);
     toast.success("Đã lưu thiết lập 4 tính năng nhanh trang chủ!");
   };
@@ -497,7 +521,7 @@ export default function ProfileScreen() {
       if (genericCp) return JSON.parse(genericCp);
       const myMem = localStorage.getItem("vba_my_member");
       if (myMem) return JSON.parse(myMem);
-    } catch {}
+    } catch { }
     return {};
   });
 
@@ -525,13 +549,16 @@ export default function ProfileScreen() {
       if (userCp) {
         setLocalProfile(JSON.parse(userCp));
       } else {
-        setLocalProfile({});
+        const myMem = localStorage.getItem("vba_my_member");
+        if (myMem) {
+          setLocalProfile(JSON.parse(myMem));
+        }
       }
       const uCover = localStorage.getItem(`vba_member_cover_photo_${user.id}`);
       if (uCover) setCoverPhoto(uCover);
       const uAvatar = localStorage.getItem(`vba_member_avatar_photo_${user.id}`);
       if (uAvatar) setCustomAvatar(uAvatar);
-    } catch {}
+    } catch { }
   }, [user?.id]);
 
   useEffect(() => {
@@ -667,7 +694,7 @@ export default function ProfileScreen() {
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
         mem.coverUrl = uploadUrl;
         localStorage.setItem("vba_my_member", JSON.stringify(mem));
-      } catch {}
+      } catch { }
 
       window.dispatchEvent(new CustomEvent("vba_member_cover_updated", { detail: uploadUrl }));
       window.dispatchEvent(new CustomEvent("profile-updated", { detail: { cover: uploadUrl } }));
@@ -711,7 +738,7 @@ export default function ProfileScreen() {
         const mem = JSON.parse(localStorage.getItem("vba_my_member") || "{}");
         mem.avatar = uploadUrl;
         localStorage.setItem("vba_my_member", JSON.stringify(mem));
-      } catch {}
+      } catch { }
 
       window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: uploadUrl }));
       window.dispatchEvent(new CustomEvent("profile-updated", { detail: { avatar: uploadUrl } }));
@@ -782,19 +809,19 @@ export default function ProfileScreen() {
     "";
   const displayLat = Number(
     localProfile?.lat ||
-      localProfile?.latitude ||
-      (member as any)?.latitude ||
-      (member as any)?.lat ||
-      (user as any)?.latitude ||
-      21.0175
+    localProfile?.latitude ||
+    (member as any)?.latitude ||
+    (member as any)?.lat ||
+    (user as any)?.latitude ||
+    21.0175
   );
   const displayLng = Number(
     localProfile?.lng ||
-      localProfile?.longitude ||
-      (member as any)?.longitude ||
-      (member as any)?.lng ||
-      (user as any)?.longitude ||
-      105.7838
+    localProfile?.longitude ||
+    (member as any)?.longitude ||
+    (member as any)?.lng ||
+    (user as any)?.longitude ||
+    105.7838
   );
   let rawBio = (member as any)?.bio || (member as any)?.about || "";
   let extractedStaffSize = (member as any)?.companySize || (member as any)?.company_size || (member as any)?.staffSize || "";
@@ -805,7 +832,7 @@ export default function ProfileScreen() {
       if (parsed.staffSize && !extractedStaffSize) {
         extractedStaffSize = parsed.staffSize;
       }
-    } catch {}
+    } catch { }
   }
 
   const displayBio =
@@ -855,7 +882,7 @@ export default function ProfileScreen() {
           url: shareUrl,
         });
         return;
-      } catch {}
+      } catch { }
     }
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -913,7 +940,7 @@ export default function ProfileScreen() {
           type="button"
           onClick={() => navigate({ to: "/association/system-config" })}
           className="size-9 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-orange-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer"
-          title="Cấu hình hệ thống"
+          title="Cài đặt"
         >
           <img src="/icons/profile/setting-07.svg" className="size-5" alt="settings" />
         </button>
@@ -1068,11 +1095,10 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => setActiveTab("overview")}
-                className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
-                  activeTab === "overview"
+                className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${activeTab === "overview"
                     ? "font-semibold"
                     : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
-                }`}
+                  }`}
                 style={activeTab === "overview" ? { color: brandColorTheme.primaryColor } : undefined}
               >
                 <span className="text-sm font-['Inter'] leading-5">Tổng quan bài viết</span>
@@ -1083,11 +1109,10 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => setActiveTab("activities")}
-                className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
-                  activeTab === "activities"
+                className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${activeTab === "activities"
                     ? "font-semibold"
                     : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
-                }`}
+                  }`}
                 style={activeTab === "activities" ? { color: brandColorTheme.primaryColor } : undefined}
               >
                 <span className="text-sm font-['Inter'] leading-5">Giao thương &amp; Sự kiện</span>
@@ -1107,18 +1132,17 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => setSubTab("business")}
-                className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
-                  subTab === "business"
+                className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${subTab === "business"
                     ? "font-semibold shadow-2xs"
                     : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
-                }`}
+                  }`}
                 style={
                   subTab === "business"
                     ? {
-                        backgroundColor: `${brandColorTheme.primaryColor}15`,
-                        outlineColor: brandColorTheme.primaryColor,
-                        color: brandColorTheme.primaryColor,
-                      }
+                      backgroundColor: `${brandColorTheme.primaryColor}15`,
+                      outlineColor: brandColorTheme.primaryColor,
+                      color: brandColorTheme.primaryColor,
+                    }
                     : undefined
                 }
               >
@@ -1127,18 +1151,17 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 onClick={() => setSubTab("posts")}
-                className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
-                  subTab === "posts"
+                className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${subTab === "posts"
                     ? "font-semibold shadow-2xs"
                     : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
-                }`}
+                  }`}
                 style={
                   subTab === "posts"
                     ? {
-                        backgroundColor: `${brandColorTheme.primaryColor}15`,
-                        outlineColor: brandColorTheme.primaryColor,
-                        color: brandColorTheme.primaryColor,
-                      }
+                      backgroundColor: `${brandColorTheme.primaryColor}15`,
+                      outlineColor: brandColorTheme.primaryColor,
+                      color: brandColorTheme.primaryColor,
+                    }
                     : undefined
                 }
               >
@@ -1298,192 +1321,192 @@ export default function ProfileScreen() {
             {/* ── KHI CHỌN SUB-TAB: BÀI VIẾT CỦA BẠN ── */}
             {subTab === "posts" && (
               <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="size-8 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
-                    <FileText className="size-4" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 grid place-items-center shrink-0">
+                      <FileText className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Bài viết đã đăng vào mạng lưới
+                      </h3>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {myPosts.length} bài viết chia sẻ trên bảng tin CLB
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Bài viết đã đăng vào mạng lưới
-                    </h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      {myPosts.length} bài viết chia sẻ trên bảng tin CLB
-                    </p>
-                  </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setCreatePostOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
-                >
-                  <Plus className="size-3.5" />
-                  <span>Đăng bài</span>
-                </button>
-              </div>
-
-              {/* Danh sách bài viết */}
-              {loadingPosts ? (
-                <div className="py-8 flex justify-center text-slate-400">
-                  <span className="text-xs">Đang tải bài viết...</span>
-                </div>
-              ) : myPosts.length === 0 ? (
-                <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
-                  <FileText className="size-8 mx-auto text-slate-300 dark:text-slate-600" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Bạn chưa đăng bài viết nào vào mạng lưới CEO 1983.
-                  </p>
                   <button
                     type="button"
                     onClick={() => setCreatePostOpen(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition active:scale-95 cursor-pointer"
                   >
                     <Plus className="size-3.5" />
-                    <span>Đăng bài viết đầu tiên</span>
+                    <span>Đăng bài</span>
                   </button>
                 </div>
-              ) : (
-                <div className="space-y-3 pt-1">
-                  {myPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2 relative"
+
+                {/* Danh sách bài viết */}
+                {loadingPosts ? (
+                  <div className="py-8 flex justify-center text-slate-400">
+                    <span className="text-xs">Đang tải bài viết...</span>
+                  </div>
+                ) : myPosts.length === 0 ? (
+                  <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                    <FileText className="size-8 mx-auto text-slate-300 dark:text-slate-600" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Bạn chưa đăng bài viết nào vào mạng lưới CEO 1983.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setCreatePostOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline cursor-pointer"
                     >
-                      {/* Post Header */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="size-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 overflow-hidden shrink-0">
-                            {post.author?.avatar ? (
-                              <img
-                                src={resolveMediaUrl(post.author.avatar) || post.author.avatar}
-                                alt={post.author.name}
-                                className="size-full object-cover"
-                              />
-                            ) : (
-                              <div className="size-full flex items-center justify-center text-white text-xs font-bold">
-                                {initials(post.author?.name || displayName)}
+                      <Plus className="size-3.5" />
+                      <span>Đăng bài viết đầu tiên</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    {myPosts.map((post) => (
+                      <div
+                        key={post.id}
+                        className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-2 relative"
+                      >
+                        {/* Post Header */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="size-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 overflow-hidden shrink-0">
+                              {post.author?.avatar ? (
+                                <img
+                                  src={resolveMediaUrl(post.author.avatar) || post.author.avatar}
+                                  alt={post.author.name}
+                                  className="size-full object-cover"
+                                />
+                              ) : (
+                                <div className="size-full flex items-center justify-center text-white text-xs font-bold">
+                                  {initials(post.author?.name || displayName)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                                {post.author?.name || displayName}
+                              </span>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                <span>
+                                  {new Date(post.createdAt).toLocaleDateString("vi-VN", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                                <span>•</span>
+                                {/* Privacy Badge (như Facebook - Yêu cầu 1) */}
+                                <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
+                                  {post.privacy === "friends" ? (
+                                    <>
+                                      <Users className="size-3 text-orange-500" />
+                                      <span>Bạn bè kết nối</span>
+                                    </>
+                                  ) : post.privacy === "only_me" ? (
+                                    <>
+                                      <Lock className="size-3 text-amber-500" />
+                                      <span>Chỉ mình tôi</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Globe className="size-3 text-emerald-500" />
+                                      <span>Công khai</span>
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Menu ... có Chỉnh sửa và Xóa (Yêu cầu 1) */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)
+                              }
+                              className="size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 cursor-pointer transition"
+                              title="Tùy chọn bài viết"
+                            >
+                              <MoreVertical className="size-4" />
+                            </button>
+
+                            {activeMenuPostId === post.id && (
+                              <div
+                                className="absolute right-0 top-8 z-20 w-36 py-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditPost(post)}
+                                  className="w-full px-3 py-1.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Edit3 className="size-3.5 text-orange-600" />
+                                  <span>Chỉnh sửa</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePost(post.id)}
+                                  className="w-full px-3 py-1.5 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                  <span>Xóa bài viết</span>
+                                </button>
                               </div>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
-                              {post.author?.name || displayName}
-                            </span>
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                              <span>
-                                {new Date(post.createdAt).toLocaleDateString("vi-VN", {
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                })}
-                              </span>
-                              <span>•</span>
-                              {/* Privacy Badge (như Facebook - Yêu cầu 1) */}
-                              <span className="inline-flex items-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
-                                {post.privacy === "friends" ? (
-                                  <>
-                                    <Users className="size-3 text-orange-500" />
-                                    <span>Bạn bè kết nối</span>
-                                  </>
-                                ) : post.privacy === "only_me" ? (
-                                  <>
-                                    <Lock className="size-3 text-amber-500" />
-                                    <span>Chỉ mình tôi</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Globe className="size-3 text-emerald-500" />
-                                    <span>Công khai</span>
-                                  </>
-                                )}
-                              </span>
-                            </div>
+                        </div>
+
+                        {/* Title & Content */}
+                        {post.title && (
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                            {post.title}
+                          </h4>
+                        )}
+                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
+                          {post.content}
+                        </p>
+
+                        {/* Images */}
+                        {Array.isArray(post.images) && post.images.length > 0 && (
+                          <div className={`grid gap-1.5 pt-1 ${post.images.length === 1 ? "grid-cols-1" : post.images.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                            {post.images.slice(0, 3).map((imgUrl: string, i: number) => (
+                              <img
+                                key={i}
+                                src={resolveMediaUrl(imgUrl) || imgUrl}
+                                alt="Post attach"
+                                className="rounded-xl w-full h-28 object-cover border border-slate-200/80 dark:border-slate-700"
+                              />
+                            ))}
                           </div>
-                        </div>
+                        )}
 
-                        {/* Menu ... có Chỉnh sửa và Xóa (Yêu cầu 1) */}
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)
-                            }
-                            className="size-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 cursor-pointer transition"
-                            title="Tùy chọn bài viết"
-                          >
-                            <MoreVertical className="size-4" />
-                          </button>
-
-                          {activeMenuPostId === post.id && (
-                            <div
-                              className="absolute right-0 top-8 z-20 w-36 py-1 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-100"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditPost(post)}
-                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Edit3 className="size-3.5 text-orange-600" />
-                                <span>Chỉnh sửa</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePost(post.id)}
-                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Trash2 className="size-3.5" />
-                                <span>Xóa bài viết</span>
-                              </button>
-                            </div>
-                          )}
+                        {/* Footer Stats */}
+                        <div className="flex items-center gap-4 pt-1.5 text-[11px] text-slate-400 font-medium border-t border-slate-200/60 dark:border-slate-700/60">
+                          <span className="flex items-center gap-1">
+                            <Heart className="size-3 text-rose-500 fill-rose-500" />
+                            <span>{post.likesCount || 0}</span>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="size-3 text-orange-500" />
+                            <span>{post.commentsCount || 0}</span>
+                          </span>
                         </div>
                       </div>
-
-                      {/* Title & Content */}
-                      {post.title && (
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
-                          {post.title}
-                        </h4>
-                      )}
-                      <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
-                        {post.content}
-                      </p>
-
-                      {/* Images */}
-                      {Array.isArray(post.images) && post.images.length > 0 && (
-                        <div className={`grid gap-1.5 pt-1 ${post.images.length === 1 ? "grid-cols-1" : post.images.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
-                          {post.images.slice(0, 3).map((imgUrl: string, i: number) => (
-                            <img
-                              key={i}
-                              src={resolveMediaUrl(imgUrl) || imgUrl}
-                              alt="Post attach"
-                              className="rounded-xl w-full h-28 object-cover border border-slate-200/80 dark:border-slate-700"
-                            />
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Footer Stats */}
-                      <div className="flex items-center gap-4 pt-1.5 text-[11px] text-slate-400 font-medium border-t border-slate-200/60 dark:border-slate-700/60">
-                        <span className="flex items-center gap-1">
-                          <Heart className="size-3 text-rose-500 fill-rose-500" />
-                          <span>{post.likesCount || 0}</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="size-3 text-orange-500" />
-                          <span>{post.commentsCount || 0}</span>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── NHÓM 2: GIAO THƯƠNG & SỰ KIỆN TONE CAM ── */}
         {activeTab === "activities" && (
@@ -1509,9 +1532,8 @@ export default function ProfileScreen() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["events"] ? "rotate-180 text-orange-600 dark:text-amber-400" : ""
-                  }`}
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["events"] ? "rotate-180 text-orange-600 dark:text-amber-400" : ""
+                    }`}
                 />
               </button>
 
@@ -1585,9 +1607,8 @@ export default function ProfileScreen() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["committee_meetings"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
-                  }`}
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["committee_meetings"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
+                    }`}
                 />
               </button>
 
@@ -1666,9 +1687,8 @@ export default function ProfileScreen() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["meetings_1on1"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
-                  }`}
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["meetings_1on1"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
+                    }`}
                 />
               </button>
 
@@ -1753,9 +1773,8 @@ export default function ProfileScreen() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["opportunities"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
-                  }`}
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["opportunities"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
+                    }`}
                 />
               </button>
 
@@ -1819,9 +1838,8 @@ export default function ProfileScreen() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["marketplace"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
-                  }`}
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["marketplace"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
+                    }`}
                 />
               </button>
 
@@ -1902,9 +1920,8 @@ export default function ProfileScreen() {
                   </div>
                 </div>
                 <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["audit_history"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
-                  }`}
+                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["audit_history"] ? "rotate-180 text-orange-600 dark:text-orange-400" : ""
+                    }`}
                 />
               </button>
 
@@ -2010,11 +2027,10 @@ export default function ProfileScreen() {
                   <button
                     type="button"
                     onClick={() => setEditPrivacy("public")}
-                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
-                      editPrivacy === "public"
+                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${editPrivacy === "public"
                         ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
                         : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                    }`}
+                      }`}
                   >
                     <Globe className="size-3.5" />
                     <span className="text-[10.5px]">Công khai</span>
@@ -2022,11 +2038,10 @@ export default function ProfileScreen() {
                   <button
                     type="button"
                     onClick={() => setEditPrivacy("friends")}
-                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
-                      editPrivacy === "friends"
+                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${editPrivacy === "friends"
                         ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
                         : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                    }`}
+                      }`}
                   >
                     <Users className="size-3.5" />
                     <span className="text-[10.5px]">Bạn bè</span>
@@ -2034,11 +2049,10 @@ export default function ProfileScreen() {
                   <button
                     type="button"
                     onClick={() => setEditPrivacy("only_me")}
-                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${
-                      editPrivacy === "only_me"
+                    className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition cursor-pointer ${editPrivacy === "only_me"
                         ? "border-[#003B95] bg-blue-50/80 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 font-bold"
                         : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                    }`}
+                      }`}
                   >
                     <Lock className="size-3.5" />
                     <span className="text-[10.5px]">Chỉ mình tôi</span>
@@ -2112,7 +2126,7 @@ export default function ProfileScreen() {
 
             {/* Scrollable Settings Content - Tách riêng từng chức năng độc lập (Yêu cầu 6) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 [scrollbar-width:none]">
-              
+
               {/* ── CHỨC NĂNG 1: CHỌN MÀU GIAO DIỆN & CHỦ ĐỀ CLB ── */}
               <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between">
@@ -2196,14 +2210,12 @@ export default function ProfileScreen() {
                     role="switch"
                     aria-checked={voiceAiEnabled}
                     onClick={handleToggleVoiceAi}
-                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                      voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-                    }`}
+                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                      }`}
                   >
                     <div
-                      className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                        voiceAiEnabled ? "translate-x-5.5" : "translate-x-0"
-                      }`}
+                      className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${voiceAiEnabled ? "translate-x-5.5" : "translate-x-0"
+                        }`}
                     />
                   </button>
                 </div>
@@ -2234,11 +2246,10 @@ export default function ProfileScreen() {
                       setLang("vi");
                       toast.success("Đã chuyển sang Tiếng Việt");
                     }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      lang === "vi"
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${lang === "vi"
                         ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs font-extrabold"
                         : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                    }`}
+                      }`}
                   >
                     <span>🇻🇳 Tiếng Việt</span>
                   </button>
@@ -2248,11 +2259,10 @@ export default function ProfileScreen() {
                       setLang("en");
                       toast.success("Switched to English");
                     }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                      lang === "en"
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${lang === "en"
                         ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs font-extrabold"
                         : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                    }`}
+                      }`}
                   >
                     <span>🇬🇧 English</span>
                   </button>
@@ -2280,214 +2290,209 @@ export default function ProfileScreen() {
                     role="switch"
                     aria-checked={isNotificationEnabled}
                     onClick={handleToggleNotification}
-                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                      isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-                    }`}
+                    className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                      }`}
                   >
                     <div
-                      className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                        isNotificationEnabled ? "translate-x-5.5" : "translate-x-0"
-                      }`}
+                      className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${isNotificationEnabled ? "translate-x-5.5" : "translate-x-0"
+                        }`}
                     />
                   </button>
                 </div>
               </div>
 
-            {/* 3.4. Đầu mục: Cài đặt ứng dụng PWA / Mobile App */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("install_app")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
-                    <Smartphone className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Cài đặt ứng dụng PWA / Mobile App
-                    </h4>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
-                      Cài ứng dụng lên màn hình chính điện thoại
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["install_app"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
-                  }`}
-                />
-              </button>
-
-              {expandedSections["install_app"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  <button
-                    type="button"
-                    onClick={handleFastInstallApp}
-                    className="w-full p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:brightness-105 transition cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="size-8 rounded-xl bg-[#003B95] text-white grid place-items-center shrink-0 shadow-xs">
-                        <Smartphone className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-blue-950 dark:text-blue-200 block truncate">
-                          Cài đặt ứng dụng lên màn hình chính
-                        </span>
-                        <span className="text-[10.5px] text-blue-700 dark:text-blue-300/80 block line-clamp-1">
-                          Tải file APK Android hoặc ghim Icon App lên iOS Safari
-                        </span>
-                      </div>
+              {/* 3.4. Đầu mục: Cài đặt ứng dụng PWA / Mobile App */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("install_app")}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                      <Smartphone className="size-4" />
                     </div>
-                    <ChevronRight className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* 3.5. Đầu mục: Hỗ trợ Ban Thư Ký & Hướng dẫn sử dụng App */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("support_guide")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-500 grid place-items-center shrink-0">
-                    <Headphones className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Hỗ trợ Ban Thư Ký &amp; Cẩm nang App
-                    </h4>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
-                      Hotline: 098.333.1983 • banthuky@ceo1983.vn
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["support_guide"] ? "rotate-180 text-rose-500" : ""
-                  }`}
-                />
-              </button>
-
-              {expandedSections["support_guide"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  <div className="space-y-2 text-xs">
-                    {/* Hotline Ban Thư Ký */}
-                    <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Phone className="size-4 text-emerald-600 shrink-0" />
-                        <span className="font-bold text-slate-800 dark:text-white text-xs truncate">098.333.1983</span>
-                      </div>
-                      <a
-                        href="tel:0983331983"
-                        className="px-2.5 py-1 rounded-xl bg-[#00A86B] text-white font-bold text-xs"
-                      >
-                        Gọi ngay
-                      </a>
-                    </div>
-                    {/* Email */}
-                    <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Mail className="size-4 text-blue-600 shrink-0" />
-                        <span className="font-bold text-slate-800 dark:text-white text-xs truncate">banthuky@ceo1983.vn</span>
-                      </div>
-                      <a
-                        href="mailto:banthuky@ceo1983.vn"
-                        className="px-2.5 py-1 rounded-xl border border-blue-600 text-[#003B95] dark:text-blue-400 font-bold text-xs"
-                      >
-                        Gửi thư
-                      </a>
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Cài đặt ứng dụng PWA / Mobile App
+                      </h4>
+                      <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
+                        Cài ứng dụng lên màn hình chính điện thoại
+                      </p>
                     </div>
                   </div>
+                  <ChevronDown
+                    className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["install_app"] ? "rotate-180 text-[#003B95] dark:text-blue-400" : ""
+                      }`}
+                  />
+                </button>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1">
+                {expandedSections["install_app"] && (
+                  <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
                     <button
                       type="button"
-                      onClick={() => setContactSupportOpen(true)}
-                      className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      onClick={handleFastInstallApp}
+                      className="w-full p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:brightness-105 transition cursor-pointer text-left"
                     >
-                      <Headphones className="size-3.5" />
-                      <span>Gửi phản ánh</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUserGuideOpen(true)}
-                      className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <BookOpen className="size-3.5" />
-                      <span>Xem cẩm nang</span>
-                    </button>
-                  </div>
-
-                  {hasAdminPrivilege && (
-                    <Link
-                      to="/association/permissions"
-                      className="w-full p-2.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="size-4 text-indigo-600" />
-                        <span>Phân quyền Ban Quản Trị &amp; RBAC</span>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="size-8 rounded-xl bg-[#003B95] text-white grid place-items-center shrink-0 shadow-xs">
+                          <Smartphone className="size-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-blue-950 dark:text-blue-200 block truncate">
+                            Cài đặt ứng dụng lên màn hình chính
+                          </span>
+                          <span className="text-[10.5px] text-blue-700 dark:text-blue-300/80 block line-clamp-1">
+                            Tải file APK Android hoặc ghim Icon App lên iOS Safari
+                          </span>
+                        </div>
                       </div>
-                      <ChevronRight className="size-3.5 text-indigo-500" />
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 3.6. Đầu mục: Bảo mật tài khoản & Đổi mật khẩu */}
-            <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
-              <button
-                type="button"
-                onClick={() => toggleSection("account_security")}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
-                    <ShieldCheck className="size-4" />
+                      <ChevronRight className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    </button>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                      Bảo mật tài khoản &amp; Đổi mật khẩu
-                    </h4>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
-                      Quản lý mật khẩu, email và an toàn thông tin
-                    </p>
+                )}
+              </div>
+
+              {/* 3.5. Đầu mục: Hỗ trợ Ban Thư Ký & Hướng dẫn sử dụng App */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("support_guide")}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-500 grid place-items-center shrink-0">
+                      <Headphones className="size-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Hỗ trợ Ban Thư Ký &amp; Cẩm nang App
+                      </h4>
+                      <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
+                        Hotline: 098.333.1983 • banthuky@ceo1983.vn
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <ChevronDown
-                  className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                    expandedSections["account_security"] ? "rotate-180 text-emerald-500" : ""
-                  }`}
-                />
-              </button>
+                  <ChevronDown
+                    className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["support_guide"] ? "rotate-180 text-rose-500" : ""
+                      }`}
+                  />
+                </button>
 
-              {expandedSections["account_security"] && (
-                <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
-                  <AccountSecuritySettingsForm />
-                </div>
-              )}
-            </div>
+                {expandedSections["support_guide"] && (
+                  <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="space-y-2 text-xs">
+                      {/* Hotline Ban Thư Ký */}
+                      <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Phone className="size-4 text-emerald-600 shrink-0" />
+                          <span className="font-bold text-slate-800 dark:text-white text-xs truncate">098.333.1983</span>
+                        </div>
+                        <a
+                          href="tel:0983331983"
+                          className="px-2.5 py-1 rounded-xl bg-[#00A86B] text-white font-bold text-xs"
+                        >
+                          Gọi ngay
+                        </a>
+                      </div>
+                      {/* Email */}
+                      <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Mail className="size-4 text-blue-600 shrink-0" />
+                          <span className="font-bold text-slate-800 dark:text-white text-xs truncate">banthuky@ceo1983.vn</span>
+                        </div>
+                        <a
+                          href="mailto:banthuky@ceo1983.vn"
+                          className="px-2.5 py-1 rounded-xl border border-blue-600 text-[#003B95] dark:text-blue-400 font-bold text-xs"
+                        >
+                          Gửi thư
+                        </a>
+                      </div>
+                    </div>
 
-            {/* Nút Đăng xuất tài khoản */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs"
-              >
-                <LogOut className="size-4 text-rose-500" />
-                <span>Đăng xuất khỏi ứng dụng</span>
-              </button>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setContactSupportOpen(true)}
+                        className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Headphones className="size-3.5" />
+                        <span>Gửi phản ánh</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUserGuideOpen(true)}
+                        className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <BookOpen className="size-3.5" />
+                        <span>Xem cẩm nang</span>
+                      </button>
+                    </div>
+
+                    {hasAdminPrivilege && (
+                      <Link
+                        to="/association/permissions"
+                        className="w-full p-2.5 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 flex items-center justify-between text-xs font-bold text-indigo-900 dark:text-indigo-200 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="size-4 text-indigo-600" />
+                          <span>Phân quyền Ban Quản Trị &amp; RBAC</span>
+                        </div>
+                        <ChevronRight className="size-3.5 text-indigo-500" />
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 3.6. Đầu mục: Bảo mật tài khoản & Đổi mật khẩu */}
+              <div className="rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => toggleSection("account_security")}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                      <ShieldCheck className="size-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Bảo mật tài khoản &amp; Đổi mật khẩu
+                      </h4>
+                      <p className="text-[10px] text-slate-700 dark:text-slate-200 font-medium line-clamp-1">
+                        Quản lý mật khẩu, email và an toàn thông tin
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`size-4 text-slate-400 transition-transform duration-200 shrink-0 ${expandedSections["account_security"] ? "rotate-180 text-emerald-500" : ""
+                      }`}
+                  />
+                </button>
+
+                {expandedSections["account_security"] && (
+                  <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2 animate-in fade-in duration-150">
+                    <AccountSecuritySettingsForm />
+                  </div>
+                )}
+              </div>
+
+              {/* Nút Đăng xuất tài khoản */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs"
+                >
+                  <LogOut className="size-4 text-rose-500" />
+                  <span>Đăng xuất khỏi ứng dụng</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* ── 5. MODALS (DANH THIẾP, SỬA HỒ SƠ, QR CODE, HƯỚNG DẪN SỬ DỤNG) ── */}
 

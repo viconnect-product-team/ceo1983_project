@@ -383,19 +383,21 @@ export function MemberScreen({ children }: { children: ReactNode }) {
       />
 
       <div
-        className={`relative z-10 mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${isLight ? "bg-white" : "bg-[var(--vba-bg)]"
+        className={`relative z-10 mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-[480px] flex-col justify-between overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${isLight ? "bg-white" : "bg-[var(--vba-bg)]"
           } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)]`}
       >
         <OfflineBanner />
         <SeasonalThemeAmbientOverlay />
-        {/* Tắt hoàn toàn cử chỉ vuốt ngang chuyển tab để tránh xung đột với carousel/card và ngăn thoát app */}
-        <PullToRefresh
-          enableSwipeNav={false}
-          pathname={pathname}
-          className="flex-1 pb-[calc(max(env(safe-area-inset-bottom,0px),8px)+58px)]"
-        >
-          {children}
-        </PullToRefresh>
+        {/* Vùng nội dung cuộn chiếm trọn không gian phía trên thanh TabBar */}
+        <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
+          <PullToRefresh
+            enableSwipeNav={false}
+            pathname={pathname}
+            className="flex-1 pb-4"
+          >
+            {children}
+          </PullToRefresh>
+        </div>
         <MemberTabBar />
         <CeoFacebookReminderBanner
           notice={activeNotice}
@@ -873,9 +875,13 @@ function MemberTabBar() {
 
   return (
     <>
-      <nav className="vba-bottom-bar fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none transition-all duration-200 select-none">
+      <nav
+        className="vba-bottom-bar sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none transition-all duration-200"
+        style={{ bottom: 0, marginBottom: 0 }}
+      >
         <div
-          className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-1.5 backdrop-blur-xl transition-all border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]`}
+          className={`relative flex items-end justify-around border-t bg-white dark:bg-[var(--vba-bg-2)] px-2 pt-1.5 backdrop-blur-xl transition-all border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]`}
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)" }}
         >
           {/* Festive Mid-Autumn Corner Dangling Lantern */}
           {isMidAutumn && (

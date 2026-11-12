@@ -1,5 +1,28 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
+  - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
+    * Trong `MemberShell.tsx`: Cố định cấu trúc `flex-1 min-h-0 relative overflow-hidden flex flex-col` cho phần nội dung cuộn `PullToRefresh`.
+    * Chuyển `MemberTabBar` từ dạng detached nổi sang `sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none` với `bottom: 0`, `marginBottom: 0` và khoảng đệm `paddingBottom: max(env(safe-area-inset-bottom, 0px), 8px)`.
+    * Thêm quy chuẩn CSS toàn cục `.vba-bottom-bar { bottom: 0px !important; margin-bottom: 0px !important; transform: translateZ(0); }` trong `styles.css`, triệt tiêu hoàn toàn khoảng trống màu trắng ở chân thanh điều hướng.
+  - **2. Màn Thống Kê Hiệp Hội (`/association/analytics`) ([NODE-APP-006])**:
+    * Biểu đồ Cột (`ComposedChart`): Khi dữ liệu chi tiết theo giờ/ngày là 0, hệ thống tự động tổng hợp các cột chỉ số trực quan sắc nét (#003B95, #059669, #D97706, #DC2626) dựa trên các KPI thực tế của hiệp hội (`totalInteractions`, `totalConnections`, `totalClubOpportunities`, `totalEvents`, `totalMeetings`), loại bỏ hoàn toàn khung trống "Chưa có biến động dữ liệu".
+    * Bỏ 100% icon tại 4 nút danh mục thống kê (Hoạt Động Hội Viên, Kết Nối Giao Thương, Cơ Hội Kinh Doanh, Sự Kiện & Cuộc Họp), mang lại giao diện phẳng, tinh gọn và chuyên nghiệp.
+    * Nâng cấp bộ chọn kỳ (`AnalyticsPeriodPicker`): Thay thế dropdown nhỏ bị tràn thành Modal Dialog toàn màn hình (`z-[100000]`), tích hợp lưới 12 tháng trực quan, nút tăng giảm năm nhanh và ô chọn native `<input type="month" />`.
+  - **3. Xóa bỏ hiện tượng nháy giao diện cũ tại Màn cá nhân (`/association/profile`) ([NODE-APP-007])**:
+    * Khởi tạo `initialCachedMember` đồng bộ ngay từ `localStorage` (`vba_my_member`, `vba_auth_user`), đảm bảo giao diện mới được vẽ ngay tại frame đầu tiên (0ms) mà không phải chờ mạng.
+    * Bảo vệ `localProfile` không bị reset về rỗng khi trạng thái người dùng tải lại.
+  - **4. Nút "Xem chi tiết" trên Banner sự kiện Trang chủ ([NODE-APP-001], [NODE-APP-003])**:
+    * Trong `association.events.tsx`: Phân tách rành mạch cờ URL `action === "register"` với điều hướng xem sự kiện `targetEventId` từ banner trang chủ, lập tức mở trực tiếp popup xem thông tin sự kiện (`EventDetailModal`), không tự động nhảy ra form đăng ký tham gia.
+  - **5. Màn Cài đặt & Bảo mật ([NODE-APP-007], [NODE-CRM-011])**:
+    * Đổi tiêu đề màn hình thành "Cài đặt".
+    * Bỏ hoàn toàn khối chọn chế độ Sáng / Tối (Dark mode).
+    * Di chuyển khối "Bảo mật tài khoản & Đổi mật khẩu" xuống vị trí chân trang, đặt ngay trên nút Đăng xuất.
+    * Tại CRM Cài đặt (`/settings`): Đổi nhãn tab thành "Thông tin chung" với `leading-normal py-1 font-medium`, trang bị 2 icon thu nhỏ/mở rộng `PanelLeftClose` / `PanelLeftOpen` hoạt động đồng bộ với Sidebar chính.
+  - **6. Banner & Trình thiết kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-CRM-005], [NODE-CRM-007])**:
+    * Tích hợp Base64 Data URL bất biến `KY_NIEM_4_NAM_BANNER_URL` trong `api-client.ts`, loại bỏ vĩnh viễn lỗi 404 cho banner Kỷ niệm 4 năm Viện Doanh Trí trên toàn bộ CRM và Mobile App.
+    * Hoàn thiện Trình Quản lý & Thiết kế Thư mời (`InvitationSetupManager.tsx`) chuẩn hóa 100% theo bản thiết kế: Logo 4 đơn vị (IEM - DGROUP - CEO1983 - VICONNECT), khung tròn avatar nguyệt quế và dải băng "KHÁCH MỜI", banner chủ đề phát sáng, tự động call API đại biểu đăng ký và đưa avatar vào thư mời.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.28): Hoàn Thiện Triệt Để Toàn Bộ Các Yêu Cầu CRM & Mobile App CEO 1983 - Sửa Phân Quyền & Xóa Tài Khoản Hàng Loạt CRM, Chặn Ghi Đè Mã Quyền Lên Chức Danh Doanh Nghiệp, Khắc Phục Lỗi Ảnh Banner Sự Kiện & Lỗi Giao Diện Cài Đặt Hệ Thống, Chuẩn Hóa Quản Lý Thư Mời Theo Ảnh 2, Quét QR Kết Nối Realtime, Thống Kê Đậm Nét Biến Động Thực Tế, Bảo Mật Cơ Hội Riêng Tư Tuyệt Đối, Prefill Thông Tin Người Liên Hệ & Hạn Chót Datetime Rõ Ràng, Section 4 Mã QR Vé Đã Đăng Ký & Popup Chi Tiết Sự Kiện ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
   - **1. Phân quyền & Quản lý tài khoản CRM (`/accounts`) ([NODE-CRM-001])**:
     * Sửa triệt để luồng đổi quyền: Khi cập nhật vai trò, hệ thống tự động đồng bộ cache `localStorage`, gọi `clearMeCache()` và kích hoạt chuỗi sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed` giúp giao diện CRM lập tức phản ánh chính xác quyền hạn của role mới mà không cần F5.
@@ -513,6 +536,29 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
+  - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
+    * Trong `MemberShell.tsx`: Cố định cấu trúc `flex-1 min-h-0 relative overflow-hidden flex flex-col` cho phần nội dung cuộn `PullToRefresh`.
+    * Chuyển `MemberTabBar` từ dạng detached nổi sang `sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none` với `bottom: 0`, `marginBottom: 0` và khoảng đệm `paddingBottom: max(env(safe-area-inset-bottom, 0px), 8px)`.
+    * Thêm quy chuẩn CSS toàn cục `.vba-bottom-bar { bottom: 0px !important; margin-bottom: 0px !important; transform: translateZ(0); }` trong `styles.css`, triệt tiêu hoàn toàn khoảng trống màu trắng ở chân thanh điều hướng.
+  - **2. Màn Thống Kê Hiệp Hội (`/association/analytics`) ([NODE-APP-006])**:
+    * Biểu đồ Cột (`ComposedChart`): Khi dữ liệu chi tiết theo giờ/ngày là 0, hệ thống tự động tổng hợp các cột chỉ số trực quan sắc nét (#003B95, #059669, #D97706, #DC2626) dựa trên các KPI thực tế của hiệp hội (`totalInteractions`, `totalConnections`, `totalClubOpportunities`, `totalEvents`, `totalMeetings`), loại bỏ hoàn toàn khung trống "Chưa có biến động dữ liệu".
+    * Bỏ 100% icon tại 4 nút danh mục thống kê (Hoạt Động Hội Viên, Kết Nối Giao Thương, Cơ Hội Kinh Doanh, Sự Kiện & Cuộc Họp), mang lại giao diện phẳng, tinh gọn và chuyên nghiệp.
+    * Nâng cấp bộ chọn kỳ (`AnalyticsPeriodPicker`): Thay thế dropdown nhỏ bị tràn thành Modal Dialog toàn màn hình (`z-[100000]`), tích hợp lưới 12 tháng trực quan, nút tăng giảm năm nhanh và ô chọn native `<input type="month" />`.
+  - **3. Xóa bỏ hiện tượng nháy giao diện cũ tại Màn cá nhân (`/association/profile`) ([NODE-APP-007])**:
+    * Khởi tạo `initialCachedMember` đồng bộ ngay từ `localStorage` (`vba_my_member`, `vba_auth_user`), đảm bảo giao diện mới được vẽ ngay tại frame đầu tiên (0ms) mà không phải chờ mạng.
+    * Bảo vệ `localProfile` không bị reset về rỗng khi trạng thái người dùng tải lại.
+  - **4. Nút "Xem chi tiết" trên Banner sự kiện Trang chủ ([NODE-APP-001], [NODE-APP-003])**:
+    * Trong `association.events.tsx`: Phân tách rành mạch cờ URL `action === "register"` với điều hướng xem sự kiện `targetEventId` từ banner trang chủ, lập tức mở trực tiếp popup xem thông tin sự kiện (`EventDetailModal`), không tự động nhảy ra form đăng ký tham gia.
+  - **5. Màn Cài đặt & Bảo mật ([NODE-APP-007], [NODE-CRM-011])**:
+    * Đổi tiêu đề màn hình thành "Cài đặt".
+    * Bỏ hoàn toàn khối chọn chế độ Sáng / Tối (Dark mode).
+    * Di chuyển khối "Bảo mật tài khoản & Đổi mật khẩu" xuống vị trí chân trang, đặt ngay trên nút Đăng xuất.
+    * Tại CRM Cài đặt (`/settings`): Đổi nhãn tab thành "Thông tin chung" với `leading-normal py-1 font-medium`, trang bị 2 icon thu nhỏ/mở rộng `PanelLeftClose` / `PanelLeftOpen` hoạt động đồng bộ với Sidebar chính.
+  - **6. Banner & Trình thiết kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-CRM-005], [NODE-CRM-007])**:
+    * Tích hợp Base64 Data URL bất biến `KY_NIEM_4_NAM_BANNER_URL` trong `api-client.ts`, loại bỏ vĩnh viễn lỗi 404 cho banner Kỷ niệm 4 năm Viện Doanh Trí trên toàn bộ CRM và Mobile App.
+    * Hoàn thiện Trình Quản lý & Thiết kế Thư mời (`InvitationSetupManager.tsx`) chuẩn hóa 100% theo bản thiết kế: Logo 4 đơn vị (IEM - DGROUP - CEO1983 - VICONNECT), khung tròn avatar nguyệt quế và dải băng "KHÁCH MỜI", banner chủ đề phát sáng, tự động call API đại biểu đăng ký và đưa avatar vào thư mời.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.28): Hoàn Thiện Triệt Để Toàn Bộ Các Yêu Cầu CRM & Mobile App CEO 1983 - Sửa Phân Quyền & Xóa Tài Khoản Hàng Loạt CRM, Chặn Ghi Đè Mã Quyền Lên Chức Danh Doanh Nghiệp, Khắc Phục Lỗi Ảnh Banner Sự Kiện & Lỗi Giao Diện Cài Đặt Hệ Thống, Chuẩn Hóa Quản Lý Thư Mời Theo Ảnh 2, Quét QR Kết Nối Realtime, Thống Kê Đậm Nét Biến Động Thực Tế, Bảo Mật Cơ Hội Riêng Tư Tuyệt Đối, Prefill Thông Tin Người Liên Hệ & Hạn Chót Datetime Rõ Ràng, Section 4 Mã QR Vé Đã Đăng Ký & Popup Chi Tiết Sự Kiện ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
   - **1. Phân quyền & Quản lý tài khoản CRM (`/accounts`) ([NODE-CRM-001])**:
@@ -2309,6 +2355,29 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
+  - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
+    * Trong `MemberShell.tsx`: Cố định cấu trúc `flex-1 min-h-0 relative overflow-hidden flex flex-col` cho phần nội dung cuộn `PullToRefresh`.
+    * Chuyển `MemberTabBar` từ dạng detached nổi sang `sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none` với `bottom: 0`, `marginBottom: 0` và khoảng đệm `paddingBottom: max(env(safe-area-inset-bottom, 0px), 8px)`.
+    * Thêm quy chuẩn CSS toàn cục `.vba-bottom-bar { bottom: 0px !important; margin-bottom: 0px !important; transform: translateZ(0); }` trong `styles.css`, triệt tiêu hoàn toàn khoảng trống màu trắng ở chân thanh điều hướng.
+  - **2. Màn Thống Kê Hiệp Hội (`/association/analytics`) ([NODE-APP-006])**:
+    * Biểu đồ Cột (`ComposedChart`): Khi dữ liệu chi tiết theo giờ/ngày là 0, hệ thống tự động tổng hợp các cột chỉ số trực quan sắc nét (#003B95, #059669, #D97706, #DC2626) dựa trên các KPI thực tế của hiệp hội (`totalInteractions`, `totalConnections`, `totalClubOpportunities`, `totalEvents`, `totalMeetings`), loại bỏ hoàn toàn khung trống "Chưa có biến động dữ liệu".
+    * Bỏ 100% icon tại 4 nút danh mục thống kê (Hoạt Động Hội Viên, Kết Nối Giao Thương, Cơ Hội Kinh Doanh, Sự Kiện & Cuộc Họp), mang lại giao diện phẳng, tinh gọn và chuyên nghiệp.
+    * Nâng cấp bộ chọn kỳ (`AnalyticsPeriodPicker`): Thay thế dropdown nhỏ bị tràn thành Modal Dialog toàn màn hình (`z-[100000]`), tích hợp lưới 12 tháng trực quan, nút tăng giảm năm nhanh và ô chọn native `<input type="month" />`.
+  - **3. Xóa bỏ hiện tượng nháy giao diện cũ tại Màn cá nhân (`/association/profile`) ([NODE-APP-007])**:
+    * Khởi tạo `initialCachedMember` đồng bộ ngay từ `localStorage` (`vba_my_member`, `vba_auth_user`), đảm bảo giao diện mới được vẽ ngay tại frame đầu tiên (0ms) mà không phải chờ mạng.
+    * Bảo vệ `localProfile` không bị reset về rỗng khi trạng thái người dùng tải lại.
+  - **4. Nút "Xem chi tiết" trên Banner sự kiện Trang chủ ([NODE-APP-001], [NODE-APP-003])**:
+    * Trong `association.events.tsx`: Phân tách rành mạch cờ URL `action === "register"` với điều hướng xem sự kiện `targetEventId` từ banner trang chủ, lập tức mở trực tiếp popup xem thông tin sự kiện (`EventDetailModal`), không tự động nhảy ra form đăng ký tham gia.
+  - **5. Màn Cài đặt & Bảo mật ([NODE-APP-007], [NODE-CRM-011])**:
+    * Đổi tiêu đề màn hình thành "Cài đặt".
+    * Bỏ hoàn toàn khối chọn chế độ Sáng / Tối (Dark mode).
+    * Di chuyển khối "Bảo mật tài khoản & Đổi mật khẩu" xuống vị trí chân trang, đặt ngay trên nút Đăng xuất.
+    * Tại CRM Cài đặt (`/settings`): Đổi nhãn tab thành "Thông tin chung" với `leading-normal py-1 font-medium`, trang bị 2 icon thu nhỏ/mở rộng `PanelLeftClose` / `PanelLeftOpen` hoạt động đồng bộ với Sidebar chính.
+  - **6. Banner & Trình thiết kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-CRM-005], [NODE-CRM-007])**:
+    * Tích hợp Base64 Data URL bất biến `KY_NIEM_4_NAM_BANNER_URL` trong `api-client.ts`, loại bỏ vĩnh viễn lỗi 404 cho banner Kỷ niệm 4 năm Viện Doanh Trí trên toàn bộ CRM và Mobile App.
+    * Hoàn thiện Trình Quản lý & Thiết kế Thư mời (`InvitationSetupManager.tsx`) chuẩn hóa 100% theo bản thiết kế: Logo 4 đơn vị (IEM - DGROUP - CEO1983 - VICONNECT), khung tròn avatar nguyệt quế và dải băng "KHÁCH MỜI", banner chủ đề phát sáng, tự động call API đại biểu đăng ký và đưa avatar vào thư mời.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.28): Hoàn Thiện Triệt Để Toàn Bộ Các Yêu Cầu CRM & Mobile App CEO 1983 - Sửa Phân Quyền & Xóa Tài Khoản Hàng Loạt CRM, Chặn Ghi Đè Mã Quyền Lên Chức Danh Doanh Nghiệp, Khắc Phục Lỗi Ảnh Banner Sự Kiện & Lỗi Giao Diện Cài Đặt Hệ Thống, Chuẩn Hóa Quản Lý Thư Mời Theo Ảnh 2, Quét QR Kết Nối Realtime, Thống Kê Đậm Nét Biến Động Thực Tế, Bảo Mật Cơ Hội Riêng Tư Tuyệt Đối, Prefill Thông Tin Người Liên Hệ & Hạn Chót Datetime Rõ Ràng, Section 4 Mã QR Vé Đã Đăng Ký & Popup Chi Tiết Sự Kiện ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
   - **1. Phân quyền & Quản lý tài khoản CRM (`/accounts`) ([NODE-CRM-001])**:

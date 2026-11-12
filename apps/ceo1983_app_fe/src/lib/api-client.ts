@@ -1,3 +1,5 @@
+import { KY_NIEM_4_NAM_BANNER_URL } from "@/assets/ky_niem_4_nam_banner";
+
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
   return (
@@ -115,9 +117,9 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
   const trimmed = url.trim();
   if (!trimmed || isDeadAvatarUrl(trimmed)) return null;
 
-  // Banner kỷ niệm 4 năm Viện Doanh Trí
+  // Banner kỷ niệm 4 năm Viện Doanh Trí (đảm bảo không bao giờ bị 404)
   if (trimmed.includes("ky_niem_4_nam_vien_doanh_tri")) {
-    return "/images/event/ky_niem_4_nam_vien_doanh_tri.jpg";
+    return KY_NIEM_4_NAM_BANNER_URL;
   }
 
   // Trực tiếp trả về data URI hợp lệ hoặc blob URL, không parse qua new URL để tránh ERR_INVALID_URL
