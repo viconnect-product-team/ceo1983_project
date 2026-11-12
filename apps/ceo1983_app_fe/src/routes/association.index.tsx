@@ -1252,7 +1252,7 @@ function Home() {
 
   return (
     <div
-      className="w-full max-w-full min-h-screen relative bg-Backgrounds-Primary dark:bg-slate-950 flex flex-col justify-start items-start pb-28 transition-colors duration-300"
+      className="w-full max-w-full min-h-screen relative bg-Backgrounds-Primary dark:bg-slate-950 flex flex-col justify-start items-start pb-6 transition-colors duration-300"
       style={{
         backgroundImage: "var(--festival-bg-image, none)",
         backgroundSize: "cover",
@@ -1271,9 +1271,9 @@ function Home() {
         <div
           data-type="1"
           style={{
-            paddingTop: "max(env(safe-area-inset-top, 0px), 12px)",
+            paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
           }}
-          className="self-stretch px-4 pb-2.5 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-40 border-b border-slate-100"
+          className="self-stretch px-4 pb-2 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-40 border-b border-slate-100"
         >
           <div className="flex justify-start items-center gap-2.5">
             <div className="w-14 h-9 relative shrink-0">
@@ -1993,9 +1993,16 @@ function Home() {
           })()}
         </div>
 
-        {/* Quét mã QR Check-in sự kiện (Chuẩn Gradient Thương hiệu Tone Cam & Gold) */}
+        {/* Quét mã QR Check-in sự kiện (Đồng bộ theo màu người dùng chọn) */}
         {canScanEventQr && (
-          <div className="self-stretch p-4 bg-gradient-to-r from-orange-600 via-amber-600 to-amber-700 rounded-[20px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-lg shadow-orange-500/25 border border-orange-300/40 mt-1">
+          <div
+            style={{
+              background: brandColorTheme.gradientCard || `linear-gradient(135deg, ${brandColorTheme.primaryColor} 0%, ${brandColorTheme.primaryDeep} 100%)`,
+              borderColor: `${brandColorTheme.accentColor}60`,
+              boxShadow: `0 8px 24px -4px ${brandColorTheme.primaryColor}40`,
+            }}
+            className="self-stretch p-4 rounded-[20px] inline-flex justify-between items-center gap-3 overflow-hidden shadow-lg border mt-1"
+          >
             <div className="size-12 bg-white/15 backdrop-blur-xs rounded-2xl border border-white/40 flex justify-center items-center shrink-0 text-white shadow-inner">
               <QrCode className="size-6.5 text-white" />
             </div>
@@ -2010,10 +2017,11 @@ function Home() {
             </div>
             <Link
               to="/association/checkin"
-              className="px-4 py-2.5 bg-white text-orange-600 font-bold hover:bg-orange-50 rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md shadow-black/10 active:scale-95 transition"
+              style={{ color: brandColorTheme.primaryColor }}
+              className="px-4 py-2.5 bg-white font-bold hover:bg-slate-50 rounded-full inline-flex justify-center items-center gap-1.5 shrink-0 shadow-md shadow-black/10 active:scale-95 transition"
             >
               <span className="text-xs font-bold">Quét ngay</span>
-              <ChevronRight className="size-3.5 text-orange-600 stroke-[2.5]" />
+              <ChevronRight className="size-3.5 stroke-[2.5]" style={{ color: brandColorTheme.primaryColor }} />
             </Link>
           </div>
         )}

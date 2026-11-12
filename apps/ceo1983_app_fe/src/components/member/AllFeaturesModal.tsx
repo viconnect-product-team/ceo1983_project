@@ -307,7 +307,7 @@ export function AllFeaturesModal({
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  return createPortal(
+  const modalContent = createPortal(
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs overflow-hidden animate-in fade-in duration-150"
       onClick={onClose}
@@ -435,13 +435,19 @@ export function AllFeaturesModal({
           })}
         </div>
       </div>
+    </div>,
+    document.body
+  );
+
+  return (
+    <>
+      {modalContent}
       <CustomHomeShortcutsModal
         isOpen={customShortcutsOpen}
         onClose={() => setCustomShortcutsOpen(false)}
         selectedIds={selectedShortcuts}
         onSave={handleSaveShortcuts}
       />
-    </div>,
-    document.body
+    </>
   );
 }

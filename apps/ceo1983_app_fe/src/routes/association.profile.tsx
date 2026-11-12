@@ -888,14 +888,14 @@ export default function ProfileScreen() {
   }
 
   return (
-    <div className="w-full min-h-screen pb-24 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center font-sans transition-colors duration-300">
+    <div className="w-full min-h-screen pb-6 bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-white flex flex-col justify-start items-center font-sans transition-colors duration-300">
       {/* ── 1. HEADER CHUẨN MOCKUP CEO 1983 TONE CAM ── */}
       <div
         data-type="2"
         className="w-full max-w-lg px-4 pb-2 bg-white dark:bg-[#070D1A] shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] flex justify-between items-center sticky top-0 z-30"
         style={{
-          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)",
-          minHeight: "calc(max(env(safe-area-inset-top, 0px), 54px) + 58px)",
+          paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+          minHeight: "calc(max(env(safe-area-inset-top, 0px), 8px) + 42px)",
         }}
       >
         <button
@@ -1025,15 +1025,15 @@ export default function ProfileScreen() {
             </div>
           </div>
 
-          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Nền trong suốt, tone màu Xanh & Cam CEO 1983) */}
+          {/* 3 Nút Hành Động Dưới Card: Danh thiếp, Chia sẻ, Sửa hồ sơ (Đồng bộ theo màu người dùng chọn) */}
           <div className="w-full self-stretch h-14 px-2 pt-1 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-2 items-center shrink-0">
             <button
               type="button"
               onClick={() => setCardPreviewOpen(true)}
               className="w-full self-stretch bg-transparent hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl flex flex-col justify-center items-center gap-1 transition cursor-pointer border-0 outline-none"
             >
-              <CreditCard className="size-5 text-[#003B95] dark:text-[#38BDF8]" strokeWidth={2.2} />
-              <div className="text-center justify-start text-[#003B95] dark:text-[#38BDF8] text-xs font-bold font-['Inter'] leading-4">
+              <CreditCard className="size-5" style={{ color: brandColorTheme.primaryColor }} strokeWidth={2.2} />
+              <div className="text-center justify-start text-xs font-bold font-['Inter'] leading-4" style={{ color: brandColorTheme.primaryColor }}>
                 Danh thiếp
               </div>
             </button>
@@ -1042,8 +1042,8 @@ export default function ProfileScreen() {
               onClick={handleShare}
               className="w-full self-stretch bg-transparent hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl flex flex-col justify-center items-center gap-1 transition cursor-pointer border-0 outline-none"
             >
-              <Share2 className="size-5 text-[#E0592A] dark:text-orange-400" strokeWidth={2.2} />
-              <div className="text-center justify-start text-[#E0592A] dark:text-orange-400 text-xs font-bold font-['Inter'] leading-4">
+              <Share2 className="size-5" style={{ color: brandColorTheme.primaryColor }} strokeWidth={2.2} />
+              <div className="text-center justify-start text-xs font-bold font-['Inter'] leading-4" style={{ color: brandColorTheme.primaryColor }}>
                 Chia sẻ
               </div>
             </button>
@@ -1052,15 +1052,15 @@ export default function ProfileScreen() {
               onClick={() => setEditProfileOpen(true)}
               className="w-full self-stretch bg-transparent hover:bg-slate-50 active:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl flex flex-col justify-center items-center gap-1 transition cursor-pointer border-0 outline-none"
             >
-              <Edit3 className="size-5 text-[#003B95] dark:text-[#38BDF8]" strokeWidth={2.2} />
-              <div className="text-center justify-start text-[#003B95] dark:text-[#38BDF8] text-xs font-bold font-['Inter'] leading-4">
+              <Edit3 className="size-5" style={{ color: brandColorTheme.primaryColor }} strokeWidth={2.2} />
+              <div className="text-center justify-start text-xs font-bold font-['Inter'] leading-4" style={{ color: brandColorTheme.primaryColor }}>
                 Sửa hồ sơ
               </div>
             </button>
           </div>
         </div>
 
-        {/* ── 3. THANH SEGMENTED TABS THEO MOCKUP (DÒNG 511-531) ── */}
+        {/* ── 3. THANH SEGMENTED TABS THEO MOCKUP (ĐỒNG BỘ MÀU THEME) ── */}
         <div className="self-stretch flex flex-col justify-start items-start">
           <div className="self-stretch relative flex flex-col justify-start items-start">
             <div className="w-full h-0 border-b border-Border-default absolute bottom-0 left-0" />
@@ -1070,13 +1070,14 @@ export default function ProfileScreen() {
                 onClick={() => setActiveTab("overview")}
                 className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
                   activeTab === "overview"
-                    ? "text-orange-600 dark:text-orange-400 font-semibold"
+                    ? "font-semibold"
                     : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
                 }`}
+                style={activeTab === "overview" ? { color: brandColorTheme.primaryColor } : undefined}
               >
                 <span className="text-sm font-['Inter'] leading-5">Tổng quan bài viết</span>
                 {activeTab === "overview" && (
-                  <div className="w-full h-0.5 bg-orange-500 absolute bottom-0 left-0" />
+                  <div className="w-full h-0.5 absolute bottom-0 left-0" style={{ backgroundColor: brandColorTheme.primaryColor }} />
                 )}
               </button>
               <button
@@ -1084,13 +1085,14 @@ export default function ProfileScreen() {
                 onClick={() => setActiveTab("activities")}
                 className={`flex-1 py-3 relative flex flex-col justify-center items-center gap-2 cursor-pointer transition ${
                   activeTab === "activities"
-                    ? "text-orange-600 dark:text-orange-400 font-semibold"
+                    ? "font-semibold"
                     : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
                 }`}
+                style={activeTab === "activities" ? { color: brandColorTheme.primaryColor } : undefined}
               >
                 <span className="text-sm font-['Inter'] leading-5">Giao thương &amp; Sự kiện</span>
                 {activeTab === "activities" && (
-                  <div className="w-full h-0.5 bg-orange-500 absolute bottom-0 left-0" />
+                  <div className="w-full h-0.5 absolute bottom-0 left-0" style={{ backgroundColor: brandColorTheme.primaryColor }} />
                 )}
               </button>
             </div>
@@ -1100,16 +1102,25 @@ export default function ProfileScreen() {
         {/* ── 4. NỘI DUNG THEO TỪNG TAB ── */}
         {activeTab === "overview" && (
           <div className="w-full flex flex-col justify-start items-stretch gap-3 animate-in fade-in duration-150">
-            {/* Sub-pills: Hồ sơ doanh nghiệp / Bài viết của bạn (dòng 533-542) */}
+            {/* Sub-pills: Hồ sơ doanh nghiệp / Bài viết của bạn */}
             <div className="self-stretch inline-flex justify-start items-start gap-2.5">
               <button
                 type="button"
                 onClick={() => setSubTab("business")}
                 className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
                   subTab === "business"
-                    ? "bg-orange-100 dark:bg-orange-950/60 outline-orange-400 text-orange-600 dark:text-orange-400 font-semibold shadow-2xs"
+                    ? "font-semibold shadow-2xs"
                     : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
                 }`}
+                style={
+                  subTab === "business"
+                    ? {
+                        backgroundColor: `${brandColorTheme.primaryColor}15`,
+                        outlineColor: brandColorTheme.primaryColor,
+                        color: brandColorTheme.primaryColor,
+                      }
+                    : undefined
+                }
               >
                 <span className="text-sm font-['Inter'] leading-5">Hồ sơ doanh nghiệp</span>
               </button>
@@ -1118,9 +1129,18 @@ export default function ProfileScreen() {
                 onClick={() => setSubTab("posts")}
                 className={`flex-1 px-1 py-2 rounded-[99px] outline outline-1 outline-offset-[-1px] flex justify-center items-center gap-1.5 transition cursor-pointer ${
                   subTab === "posts"
-                    ? "bg-orange-100 dark:bg-orange-950/60 outline-orange-400 text-orange-600 dark:text-orange-400 font-semibold shadow-2xs"
+                    ? "font-semibold shadow-2xs"
                     : "bg-white dark:bg-slate-800/60 outline-Border-default text-Text-default font-normal hover:bg-slate-50"
                 }`}
+                style={
+                  subTab === "posts"
+                    ? {
+                        backgroundColor: `${brandColorTheme.primaryColor}15`,
+                        outlineColor: brandColorTheme.primaryColor,
+                        color: brandColorTheme.primaryColor,
+                      }
+                    : undefined
+                }
               >
                 <span className="text-sm font-['Inter'] leading-5">Bài viết của bạn</span>
               </button>

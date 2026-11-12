@@ -392,7 +392,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
         <PullToRefresh
           enableSwipeNav={false}
           pathname={pathname}
-          className="flex-1 pb-[calc(max(env(safe-area-inset-bottom,0px),12px)+64px)]"
+          className="flex-1 pb-[calc(max(env(safe-area-inset-bottom,0px),8px)+58px)]"
         >
           {children}
         </PullToRefresh>
@@ -480,8 +480,9 @@ export function MemberHeader({
     <header
       className="w-full sticky top-0 z-40 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/80 dark:border-slate-800/80 bg-[var(--vba-bg-2)]/95 px-4 backdrop-blur-xl transition-all shadow-xs select-none"
       style={{
-        paddingTop: "max(env(safe-area-inset-top, 0px), 12px)",
-        minHeight: "calc(max(env(safe-area-inset-top, 0px), 12px) + 48px)",
+        paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+        paddingBottom: "8px",
+        minHeight: "calc(max(env(safe-area-inset-top, 0px), 8px) + 42px)",
       }}
     >
       <div className="flex w-9 items-center">
@@ -872,7 +873,7 @@ function MemberTabBar() {
     <>
       <nav className="vba-bottom-bar fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[480px] pointer-events-none transition-all duration-200 select-none">
         <div
-          className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),12px)] pt-2 backdrop-blur-xl transition-all border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]`}
+          className={`pointer-events-auto relative flex items-end justify-around border-t bg-white/95 dark:bg-[var(--vba-bg-2)]/95 px-2 pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-1.5 backdrop-blur-xl transition-all border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]`}
         >
           {/* Festive Mid-Autumn Corner Dangling Lantern */}
           {isMidAutumn && (

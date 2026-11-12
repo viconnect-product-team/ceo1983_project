@@ -1,5 +1,58 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.25): Tinh Chỉnh Hoàn Thiện 6 Hạng Mục Giao Diện & Nghiệp Vụ Mobile App CEO 1983 - Triệt Tiêu Khoảng Trống Thừa Header/Footer, Chuẩn Hóa Thanh Kỳ Lịch & Legend Thống Kê, Đồng Bộ Ẩn/Hiện Trường Sửa Thẻ, Chuẩn Hóa Màu Sắc Cá Nhân & Nút Quét Check-in, Khắc Phục Lỗi Đóng Modal 4 Phím Tắt Nhanh, Xóa Mock Data & Căn Chỉnh Nút Ghi Nhận Deal Kết Nối B2B ([NODE-APP-001], [NODE-APP-002], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007])**:
+  - **1. Triệt tiêu khoảng trống thừa (dead gap) tại Header & Footer App ([NODE-APP-001], [NODE-APP-004])**:
+    * Sửa hiện tượng cộng dồn đệm đáy giữa thanh cuộn `PullToRefresh` (trước đây padding `pb-[... + 64px]`) và các trang con (trước đây có `pb-24` đến `pb-40`).
+    * Chuẩn hóa lại tại `MemberShell.tsx`: Header giảm đệm trên về `max(env(safe-area-inset-top, 0px), 8px)` và chiều cao tối thiểu `calc(... + 42px)`; Footer `MemberTabBar` đệm gọn gàng `pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-1.5`.
+    * Đồng bộ các trang con (`association.index.tsx`, `association.card.tsx`, `association.profile.tsx`, `association.connect.tsx`, `association.analytics.tsx`) về khoảng đệm đáy duy nhất `pb-6`.
+  - **2. Đưa chọn lịch thống kê cùng hàng ngang với text & thu gọn thanh legend footer ([NODE-APP-006])**:
+    * Tại `AnalyticsPeriodPicker.tsx`: Chuyển cấu trúc sang hàng đơn `flex-nowrap` với các nút điều hướng chuyển tháng nhỏ gọn `size-7`, date input `h-7 px-2 text-[11px]`, hiển thị thẳng hàng trên cùng 1 dòng ngang với nhãn `Kỳ:`.
+    * Tại `association.analytics.tsx`: Thu nhỏ thanh chú thích (legend footer) bên dưới biểu đồ thành hàng các badge nhỏ gọn (`Bình luận`, `Chia sẻ bài viết`, `Lượt click link`, `Tổng hoạt động`) nằm vừa vặn trong 1 dòng ngang, không bị xuống dòng hay chiếm dụng diện tích đáy màn hình.
+  - **3. Khắc phục lỗi bật/tắt ẩn/hiện các trường thông tin tại Chỉnh sửa danh thiếp số ([NODE-APP-002])**:
+    * Tại `association.card.tsx`: Cập nhật hàm `submit()` lưu cài đặt riêng tư `vba_member_privacy_settings` vào `localStorage` và phát sự kiện `privacy-updated` để các component phụ thuộc cập nhật tức thì.
+    * Khi hội viên chọn tắt hiển thị (Số điện thoại, Email, Doanh nghiệp,...), giao diện Thẻ Danh Thiếp Số và Khối "Hồ sơ Doanh nghiệp & Cá nhân" sẽ ẩn hoàn toàn các dòng thông tin đó thay vì chỉ hiện icon khóa fallback.
+  - **4. Đồng bộ màu sắc cá nhân & Nút Quét QR Check-in trang chủ theo bảng màu hội viên chọn ([NODE-APP-001], [NODE-APP-007])**:
+    * Tại `association.profile.tsx`: Đồng bộ 3 nút thao tác dưới thẻ hồ sơ ("Danh thiếp", "Chia sẻ", "Sửa hồ sơ") cùng các tab phân đoạn và sub-pills theo màu thương hiệu động `brandColorTheme.primaryColor` (thay vì dính cứng màu cam `#E0592A` hay xanh dương cố định).
+    * Tại `association.index.tsx`: Cập nhật banner Quét mã QR Check-in Sự kiện tại trang chủ (thay vì gradient vàng cam cố định) tự động áp dụng `brandColorTheme.gradientCard`, viền `brandColorTheme.accentColor` và link "Quét ngay" với màu `brandColorTheme.primaryColor`.
+  - **5. Sửa lỗi modal tùy biến 4 phím tắt nhanh bị tự động đóng khi bỏ chọn ([NODE-APP-001])**:
+    * Tại `CustomHomeShortcutsModal.tsx`: Đưa toàn bộ modal ra ngoài qua `createPortal(..., document.body)` với `z-[100000]` và `e.stopPropagation()` ở backdrop nội bộ; thêm `e.stopPropagation()` tại hàm `handleToggle()` khi bấm checkbox bỏ chọn shortcut, ngăn triệt để hiện tượng sự kiện click nổi bọt làm kích hoạt backdrop đóng modal của `AllFeaturesModal`.
+    * Tại `AllFeaturesModal.tsx`: Tách `CustomHomeShortcutsModal` ra khỏi container cha có gắn `onClick={onClose}` bằng React Fragment.
+  - **6. Xóa toàn bộ dữ liệu mock cũ & chuẩn hóa màu sắc, căn thẳng hàng nút Ghi nhận Deal B2B ([NODE-APP-004])**:
+    * Tại `association.connect.tsx`: Xóa bỏ 100% danh sách dữ liệu mẫu cố định (`meet-01`, `meet-02`, `meet-03` với "Đặng Thị Mai", "Lê Hoàng Long", "Phạm Quốc Tuấn"). Khi backend trả về rỗng, hiển thị màn hình trống thân thiện với nút tạo cuộc hẹn mới thay vì inject dữ liệu giả.
+    * Xóa bỏ các giá trị số và nội dung deal hardcode trong form ghi nhận deal (`500000000` VNĐ).
+    * Loại bỏ hoàn toàn mã màu lỗi thời `#1F3864` và `#B8860B`, thay thế bằng chuẩn Navy CEO 1983 `#003B95` và Amber Gold (#F59E0B / `bg-gradient-to-r from-amber-500 to-amber-600`).
+    * Xóa bỏ class `ml-auto` gây lệch hàng ở nút "Ghi nhận Deal", giúp tất cả các nút hành động ("Vào phòng họp", "Chỉ đường", "Gọi điện", "Ghi nhận Deal") xếp thành 1 hàng ngang cân đối, thẳng hàng và chuẩn tỷ lệ trên mọi kích thước màn hình.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.24): Nâng Cấp Quản Lý Cài Đặt Hệ Thống & Quản Lý Thư Mời Chuẩn Mẫu Vector Luxury Kỷ Niệm (Ảnh 2) Kèm Call API Tuần Tự Đồng Bộ Avatar Hội Viên ([NODE-CRM-015], [NODE-CRM-017], [NODE-CORE-001])**:
+  - **1. Sửa lỗi text bị cắt xén & Bổ sung 2 icon thu to nhỏ Sidebar Cài đặt hệ thống ([NODE-CRM-015])**:
+    * Sửa triệt để lỗi đuôi chữ tiếng Việt (g, y, p,...) bị cắt ngang ở các tab danh mục cài đặt (`leading-none` thay bằng `leading-relaxed py-0.5`).
+    * Bổ sung 2 icon trực quan điều khiển thu nhỏ (`PanelLeftClose`) và mở rộng (`PanelLeftOpen`) thanh menu cài đặt:
+      - Khi thu nhỏ: Sidebar co về 72px dạng icon-only tinh gọn, có tooltip nhãn khi rê chuột.
+      - Khi mở rộng: Sidebar hiển thị đầy đủ 250px với tên danh mục và icon trực quan.
+      - Trạng thái được lưu bền vững vào `localStorage` (`crm_settings_sidebar_collapsed`).
+  - **2. Quản lý Thư Mời: Chuẩn hóa 100% theo mẫu Ảnh 2 & Call API tuần tự đồng bộ Avatar ([NODE-CRM-017])**:
+    * **Đổi nhãn chuẩn nghiệp vụ**: Cập nhật nhãn thành `1. Chọn sự kiện, cuộc họp, chương trình đào tạo`.
+    * **Call API tích hợp đa nguồn**: Nạp danh sách hoạt động từ cả 2 nguồn API backend: `GET /events` (Sự kiện & Chương trình đào tạo) và `GET /meetings` (Cuộc họp Ban/CLB).
+    * **Call API tuần tự (Cascading Selector)**: Khi người dùng chọn một sự kiện/cuộc họp, hệ thống tự động gọi API `GET /events/registrations?eventId=${id}` để lấy danh sách người đăng ký tham dự thực tế (fallback danh sách hội viên CLB từ `GET /members`).
+    * **Tự động đồng bộ Avatar vào khung thư mời**: Khi chọn hội viên đăng ký, avatar của hội viên đó lập tức được load tự động và hiển thị sắc nét vào khung Avatar tròn trên thiệp mời. Có kèm nút tải ảnh tùy chỉnh từ máy tính nếu cần.
+    * **Thiết kế Bố Cục Thư Mời Chuẩn Xác Theo Ảnh 2**:
+      - Nghiêm cấm và loại bỏ hoàn toàn watermark text rác ở background; sử dụng thuần vector dải sóng ribbon mềm mại và hiệu ứng radial glow sang trọng (xanh lá - xanh dương - vàng kim).
+      - *Dải Logo trên cùng*: VIEM | DGROUP | CEO 1983 | VICONNECT.
+      - *Tiêu đề thư mời*: Cành nguyệt quế / lông vũ thanh thoát `🪶 THƯ MỜI 🪶` kèm phụ đề `— Tham dự lễ kỷ niệm —`.
+      - *Lời dẫn & Khung Avatar*: Cột trái là lời kính gửi trang trọng, cột phải là khung Avatar tròn viền vàng nguyệt quế kèm dải băng xanh lá kim `★ KHÁCH MỜI ★` và tên đại biểu.
+      - *Banner Chủ đề phát sáng (Glow Emerald-Blue Capsule)*: Thiết kế pill nổi bật với danh mục `DOANH NGHIỆP VIỆT 2027:` cùng 2 dòng chủ đề `CỦNG CỐ NỘI LỰC - TẠO ĐÀ TĂNG TRƯỞNG` (chữ vàng bóng).
+      - *Khối Thời gian & Địa điểm (2 cột chuẩn Ảnh 2)*: Khối hộp thời gian (icon Calendar) và địa điểm (icon MapPin) nền xanh ngọc có đường kẻ ngăn cách tinh tế.
+      - *Lời tri ân & Chữ ký*: Câu châm ngôn tri ân nằm giữa hai cành lá 🌿 và chữ ký nghiêng trang trọng `Trân trọng kính mời!`.
+      - *Đáy thiệp (Footer)*: Số 4 mạ vàng 3D kỷ niệm thành lập Viện Doanh Trí (2022 - 2026) kèm Skyline tòa nhà thành phố hiện đại.
+    * **Tự do di chuyển Y và Xóa/Ẩn từng trường thông tin**: Mỗi trường (Logo, Tiêu đề, Lời dẫn, Avatar, Banner chủ đề, Thời gian/Địa điểm, Tri ân, Footer) đều có thể di chuyển lên/xuống (mũi tên `ArrowUp`/`ArrowDown`) và xóa/ẩn (icon thùng rác `Trash2`), đồng thời có nút 1-chạm "Khôi phục tất cả" về chuẩn Ảnh 2 bất kỳ lúc nào.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.23): Hoàn Thiện Trọn Vẹn 9 Hạng Mục Nâng Cấp Mobile App CEO 1983 - Dynamic SafeArea iOS/Android, Tối Giản Cấu Hình Hệ Thống, Quyền Riêng Tư Thẻ Hội Viên, 4 Tính Năng Nhanh Mặc Định, Xóa Bỏ Icon Đầu Mục Trang Chủ, Xóa Dữ Liệu Cũ & Sửa Lỗi Nháy Màn Cá Nhân, Reset Thông Báo Số, Định Vị Doanh Nghiệp & Tự Động Cài Đặt App 1 Chạm ([NODE-APP-001..014], [NODE-CORE-001..006])**:
   - **1. Co giãn Header & Footer tự động theo SafeArea phần cứng iOS/Android ([NODE-APP-001], [NODE-APP-004])**:
     * Triệt tiêu toàn bộ khoảng trống cố định thô cứng (dead gap 48px/54px) trên Dynamic Island / Tai thỏ và thanh điều hướng dưới.
@@ -365,6 +418,59 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.25): Tinh Chỉnh Hoàn Thiện 6 Hạng Mục Giao Diện & Nghiệp Vụ Mobile App CEO 1983 - Triệt Tiêu Khoảng Trống Thừa Header/Footer, Chuẩn Hóa Thanh Kỳ Lịch & Legend Thống Kê, Đồng Bộ Ẩn/Hiện Trường Sửa Thẻ, Chuẩn Hóa Màu Sắc Cá Nhân & Nút Quét Check-in, Khắc Phục Lỗi Đóng Modal 4 Phím Tắt Nhanh, Xóa Mock Data & Căn Chỉnh Nút Ghi Nhận Deal Kết Nối B2B ([NODE-APP-001], [NODE-APP-002], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007])**:
+  - **1. Triệt tiêu khoảng trống thừa (dead gap) tại Header & Footer App ([NODE-APP-001], [NODE-APP-004])**:
+    * Sửa hiện tượng cộng dồn đệm đáy giữa thanh cuộn `PullToRefresh` (trước đây padding `pb-[... + 64px]`) và các trang con (trước đây có `pb-24` đến `pb-40`).
+    * Chuẩn hóa lại tại `MemberShell.tsx`: Header giảm đệm trên về `max(env(safe-area-inset-top, 0px), 8px)` và chiều cao tối thiểu `calc(... + 42px)`; Footer `MemberTabBar` đệm gọn gàng `pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-1.5`.
+    * Đồng bộ các trang con (`association.index.tsx`, `association.card.tsx`, `association.profile.tsx`, `association.connect.tsx`, `association.analytics.tsx`) về khoảng đệm đáy duy nhất `pb-6`.
+  - **2. Đưa chọn lịch thống kê cùng hàng ngang với text & thu gọn thanh legend footer ([NODE-APP-006])**:
+    * Tại `AnalyticsPeriodPicker.tsx`: Chuyển cấu trúc sang hàng đơn `flex-nowrap` với các nút điều hướng chuyển tháng nhỏ gọn `size-7`, date input `h-7 px-2 text-[11px]`, hiển thị thẳng hàng trên cùng 1 dòng ngang với nhãn `Kỳ:`.
+    * Tại `association.analytics.tsx`: Thu nhỏ thanh chú thích (legend footer) bên dưới biểu đồ thành hàng các badge nhỏ gọn (`Bình luận`, `Chia sẻ bài viết`, `Lượt click link`, `Tổng hoạt động`) nằm vừa vặn trong 1 dòng ngang, không bị xuống dòng hay chiếm dụng diện tích đáy màn hình.
+  - **3. Khắc phục lỗi bật/tắt ẩn/hiện các trường thông tin tại Chỉnh sửa danh thiếp số ([NODE-APP-002])**:
+    * Tại `association.card.tsx`: Cập nhật hàm `submit()` lưu cài đặt riêng tư `vba_member_privacy_settings` vào `localStorage` và phát sự kiện `privacy-updated` để các component phụ thuộc cập nhật tức thì.
+    * Khi hội viên chọn tắt hiển thị (Số điện thoại, Email, Doanh nghiệp,...), giao diện Thẻ Danh Thiếp Số và Khối "Hồ sơ Doanh nghiệp & Cá nhân" sẽ ẩn hoàn toàn các dòng thông tin đó thay vì chỉ hiện icon khóa fallback.
+  - **4. Đồng bộ màu sắc cá nhân & Nút Quét QR Check-in trang chủ theo bảng màu hội viên chọn ([NODE-APP-001], [NODE-APP-007])**:
+    * Tại `association.profile.tsx`: Đồng bộ 3 nút thao tác dưới thẻ hồ sơ ("Danh thiếp", "Chia sẻ", "Sửa hồ sơ") cùng các tab phân đoạn và sub-pills theo màu thương hiệu động `brandColorTheme.primaryColor` (thay vì dính cứng màu cam `#E0592A` hay xanh dương cố định).
+    * Tại `association.index.tsx`: Cập nhật banner Quét mã QR Check-in Sự kiện tại trang chủ (thay vì gradient vàng cam cố định) tự động áp dụng `brandColorTheme.gradientCard`, viền `brandColorTheme.accentColor` và link "Quét ngay" với màu `brandColorTheme.primaryColor`.
+  - **5. Sửa lỗi modal tùy biến 4 phím tắt nhanh bị tự động đóng khi bỏ chọn ([NODE-APP-001])**:
+    * Tại `CustomHomeShortcutsModal.tsx`: Đưa toàn bộ modal ra ngoài qua `createPortal(..., document.body)` với `z-[100000]` và `e.stopPropagation()` ở backdrop nội bộ; thêm `e.stopPropagation()` tại hàm `handleToggle()` khi bấm checkbox bỏ chọn shortcut, ngăn triệt để hiện tượng sự kiện click nổi bọt làm kích hoạt backdrop đóng modal của `AllFeaturesModal`.
+    * Tại `AllFeaturesModal.tsx`: Tách `CustomHomeShortcutsModal` ra khỏi container cha có gắn `onClick={onClose}` bằng React Fragment.
+  - **6. Xóa toàn bộ dữ liệu mock cũ & chuẩn hóa màu sắc, căn thẳng hàng nút Ghi nhận Deal B2B ([NODE-APP-004])**:
+    * Tại `association.connect.tsx`: Xóa bỏ 100% danh sách dữ liệu mẫu cố định (`meet-01`, `meet-02`, `meet-03` với "Đặng Thị Mai", "Lê Hoàng Long", "Phạm Quốc Tuấn"). Khi backend trả về rỗng, hiển thị màn hình trống thân thiện với nút tạo cuộc hẹn mới thay vì inject dữ liệu giả.
+    * Xóa bỏ các giá trị số và nội dung deal hardcode trong form ghi nhận deal (`500000000` VNĐ).
+    * Loại bỏ hoàn toàn mã màu lỗi thời `#1F3864` và `#B8860B`, thay thế bằng chuẩn Navy CEO 1983 `#003B95` và Amber Gold (#F59E0B / `bg-gradient-to-r from-amber-500 to-amber-600`).
+    * Xóa bỏ class `ml-auto` gây lệch hàng ở nút "Ghi nhận Deal", giúp tất cả các nút hành động ("Vào phòng họp", "Chỉ đường", "Gọi điện", "Ghi nhận Deal") xếp thành 1 hàng ngang cân đối, thẳng hàng và chuẩn tỷ lệ trên mọi kích thước màn hình.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.24): Nâng Cấp Quản Lý Cài Đặt Hệ Thống & Quản Lý Thư Mời Chuẩn Mẫu Vector Luxury Kỷ Niệm (Ảnh 2) Kèm Call API Tuần Tự Đồng Bộ Avatar Hội Viên ([NODE-CRM-015], [NODE-CRM-017], [NODE-CORE-001])**:
+  - **1. Sửa lỗi text bị cắt xén & Bổ sung 2 icon thu to nhỏ Sidebar Cài đặt hệ thống ([NODE-CRM-015])**:
+    * Sửa triệt để lỗi đuôi chữ tiếng Việt (g, y, p,...) bị cắt ngang ở các tab danh mục cài đặt (`leading-none` thay bằng `leading-relaxed py-0.5`).
+    * Bổ sung 2 icon trực quan điều khiển thu nhỏ (`PanelLeftClose`) và mở rộng (`PanelLeftOpen`) thanh menu cài đặt:
+      - Khi thu nhỏ: Sidebar co về 72px dạng icon-only tinh gọn, có tooltip nhãn khi rê chuột.
+      - Khi mở rộng: Sidebar hiển thị đầy đủ 250px với tên danh mục và icon trực quan.
+      - Trạng thái được lưu bền vững vào `localStorage` (`crm_settings_sidebar_collapsed`).
+  - **2. Quản lý Thư Mời: Chuẩn hóa 100% theo mẫu Ảnh 2 & Call API tuần tự đồng bộ Avatar ([NODE-CRM-017])**:
+    * **Đổi nhãn chuẩn nghiệp vụ**: Cập nhật nhãn thành `1. Chọn sự kiện, cuộc họp, chương trình đào tạo`.
+    * **Call API tích hợp đa nguồn**: Nạp danh sách hoạt động từ cả 2 nguồn API backend: `GET /events` (Sự kiện & Chương trình đào tạo) và `GET /meetings` (Cuộc họp Ban/CLB).
+    * **Call API tuần tự (Cascading Selector)**: Khi người dùng chọn một sự kiện/cuộc họp, hệ thống tự động gọi API `GET /events/registrations?eventId=${id}` để lấy danh sách người đăng ký tham dự thực tế (fallback danh sách hội viên CLB từ `GET /members`).
+    * **Tự động đồng bộ Avatar vào khung thư mời**: Khi chọn hội viên đăng ký, avatar của hội viên đó lập tức được load tự động và hiển thị sắc nét vào khung Avatar tròn trên thiệp mời. Có kèm nút tải ảnh tùy chỉnh từ máy tính nếu cần.
+    * **Thiết kế Bố Cục Thư Mời Chuẩn Xác Theo Ảnh 2**:
+      - Nghiêm cấm và loại bỏ hoàn toàn watermark text rác ở background; sử dụng thuần vector dải sóng ribbon mềm mại và hiệu ứng radial glow sang trọng (xanh lá - xanh dương - vàng kim).
+      - *Dải Logo trên cùng*: VIEM | DGROUP | CEO 1983 | VICONNECT.
+      - *Tiêu đề thư mời*: Cành nguyệt quế / lông vũ thanh thoát `🪶 THƯ MỜI 🪶` kèm phụ đề `— Tham dự lễ kỷ niệm —`.
+      - *Lời dẫn & Khung Avatar*: Cột trái là lời kính gửi trang trọng, cột phải là khung Avatar tròn viền vàng nguyệt quế kèm dải băng xanh lá kim `★ KHÁCH MỜI ★` và tên đại biểu.
+      - *Banner Chủ đề phát sáng (Glow Emerald-Blue Capsule)*: Thiết kế pill nổi bật với danh mục `DOANH NGHIỆP VIỆT 2027:` cùng 2 dòng chủ đề `CỦNG CỐ NỘI LỰC - TẠO ĐÀ TĂNG TRƯỞNG` (chữ vàng bóng).
+      - *Khối Thời gian & Địa điểm (2 cột chuẩn Ảnh 2)*: Khối hộp thời gian (icon Calendar) và địa điểm (icon MapPin) nền xanh ngọc có đường kẻ ngăn cách tinh tế.
+      - *Lời tri ân & Chữ ký*: Câu châm ngôn tri ân nằm giữa hai cành lá 🌿 và chữ ký nghiêng trang trọng `Trân trọng kính mời!`.
+      - *Đáy thiệp (Footer)*: Số 4 mạ vàng 3D kỷ niệm thành lập Viện Doanh Trí (2022 - 2026) kèm Skyline tòa nhà thành phố hiện đại.
+    * **Tự do di chuyển Y và Xóa/Ẩn từng trường thông tin**: Mỗi trường (Logo, Tiêu đề, Lời dẫn, Avatar, Banner chủ đề, Thời gian/Địa điểm, Tri ân, Footer) đều có thể di chuyển lên/xuống (mũi tên `ArrowUp`/`ArrowDown`) và xóa/ẩn (icon thùng rác `Trash2`), đồng thời có nút 1-chạm "Khôi phục tất cả" về chuẩn Ảnh 2 bất kỳ lúc nào.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.23): Hoàn Thiện Trọn Vẹn 9 Hạng Mục Nâng Cấp Mobile App CEO 1983 - Dynamic SafeArea iOS/Android, Tối Giản Cấu Hình Hệ Thống, Quyền Riêng Tư Thẻ Hội Viên, 4 Tính Năng Nhanh Mặc Định, Xóa Bỏ Icon Đầu Mục Trang Chủ, Xóa Dữ Liệu Cũ & Sửa Lỗi Nháy Màn Cá Nhân, Reset Thông Báo Số, Định Vị Doanh Nghiệp & Tự Động Cài Đặt App 1 Chạm ([NODE-APP-001..014], [NODE-CORE-001..006])**:
   - **1. Co giãn Header & Footer tự động theo SafeArea phần cứng iOS/Android ([NODE-APP-001], [NODE-APP-004])**:
@@ -2013,6 +2119,59 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.25): Tinh Chỉnh Hoàn Thiện 6 Hạng Mục Giao Diện & Nghiệp Vụ Mobile App CEO 1983 - Triệt Tiêu Khoảng Trống Thừa Header/Footer, Chuẩn Hóa Thanh Kỳ Lịch & Legend Thống Kê, Đồng Bộ Ẩn/Hiện Trường Sửa Thẻ, Chuẩn Hóa Màu Sắc Cá Nhân & Nút Quét Check-in, Khắc Phục Lỗi Đóng Modal 4 Phím Tắt Nhanh, Xóa Mock Data & Căn Chỉnh Nút Ghi Nhận Deal Kết Nối B2B ([NODE-APP-001], [NODE-APP-002], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007])**:
+  - **1. Triệt tiêu khoảng trống thừa (dead gap) tại Header & Footer App ([NODE-APP-001], [NODE-APP-004])**:
+    * Sửa hiện tượng cộng dồn đệm đáy giữa thanh cuộn `PullToRefresh` (trước đây padding `pb-[... + 64px]`) và các trang con (trước đây có `pb-24` đến `pb-40`).
+    * Chuẩn hóa lại tại `MemberShell.tsx`: Header giảm đệm trên về `max(env(safe-area-inset-top, 0px), 8px)` và chiều cao tối thiểu `calc(... + 42px)`; Footer `MemberTabBar` đệm gọn gàng `pb-[max(env(safe-area-inset-bottom,0px),8px)] pt-1.5`.
+    * Đồng bộ các trang con (`association.index.tsx`, `association.card.tsx`, `association.profile.tsx`, `association.connect.tsx`, `association.analytics.tsx`) về khoảng đệm đáy duy nhất `pb-6`.
+  - **2. Đưa chọn lịch thống kê cùng hàng ngang với text & thu gọn thanh legend footer ([NODE-APP-006])**:
+    * Tại `AnalyticsPeriodPicker.tsx`: Chuyển cấu trúc sang hàng đơn `flex-nowrap` với các nút điều hướng chuyển tháng nhỏ gọn `size-7`, date input `h-7 px-2 text-[11px]`, hiển thị thẳng hàng trên cùng 1 dòng ngang với nhãn `Kỳ:`.
+    * Tại `association.analytics.tsx`: Thu nhỏ thanh chú thích (legend footer) bên dưới biểu đồ thành hàng các badge nhỏ gọn (`Bình luận`, `Chia sẻ bài viết`, `Lượt click link`, `Tổng hoạt động`) nằm vừa vặn trong 1 dòng ngang, không bị xuống dòng hay chiếm dụng diện tích đáy màn hình.
+  - **3. Khắc phục lỗi bật/tắt ẩn/hiện các trường thông tin tại Chỉnh sửa danh thiếp số ([NODE-APP-002])**:
+    * Tại `association.card.tsx`: Cập nhật hàm `submit()` lưu cài đặt riêng tư `vba_member_privacy_settings` vào `localStorage` và phát sự kiện `privacy-updated` để các component phụ thuộc cập nhật tức thì.
+    * Khi hội viên chọn tắt hiển thị (Số điện thoại, Email, Doanh nghiệp,...), giao diện Thẻ Danh Thiếp Số và Khối "Hồ sơ Doanh nghiệp & Cá nhân" sẽ ẩn hoàn toàn các dòng thông tin đó thay vì chỉ hiện icon khóa fallback.
+  - **4. Đồng bộ màu sắc cá nhân & Nút Quét QR Check-in trang chủ theo bảng màu hội viên chọn ([NODE-APP-001], [NODE-APP-007])**:
+    * Tại `association.profile.tsx`: Đồng bộ 3 nút thao tác dưới thẻ hồ sơ ("Danh thiếp", "Chia sẻ", "Sửa hồ sơ") cùng các tab phân đoạn và sub-pills theo màu thương hiệu động `brandColorTheme.primaryColor` (thay vì dính cứng màu cam `#E0592A` hay xanh dương cố định).
+    * Tại `association.index.tsx`: Cập nhật banner Quét mã QR Check-in Sự kiện tại trang chủ (thay vì gradient vàng cam cố định) tự động áp dụng `brandColorTheme.gradientCard`, viền `brandColorTheme.accentColor` và link "Quét ngay" với màu `brandColorTheme.primaryColor`.
+  - **5. Sửa lỗi modal tùy biến 4 phím tắt nhanh bị tự động đóng khi bỏ chọn ([NODE-APP-001])**:
+    * Tại `CustomHomeShortcutsModal.tsx`: Đưa toàn bộ modal ra ngoài qua `createPortal(..., document.body)` với `z-[100000]` và `e.stopPropagation()` ở backdrop nội bộ; thêm `e.stopPropagation()` tại hàm `handleToggle()` khi bấm checkbox bỏ chọn shortcut, ngăn triệt để hiện tượng sự kiện click nổi bọt làm kích hoạt backdrop đóng modal của `AllFeaturesModal`.
+    * Tại `AllFeaturesModal.tsx`: Tách `CustomHomeShortcutsModal` ra khỏi container cha có gắn `onClick={onClose}` bằng React Fragment.
+  - **6. Xóa toàn bộ dữ liệu mock cũ & chuẩn hóa màu sắc, căn thẳng hàng nút Ghi nhận Deal B2B ([NODE-APP-004])**:
+    * Tại `association.connect.tsx`: Xóa bỏ 100% danh sách dữ liệu mẫu cố định (`meet-01`, `meet-02`, `meet-03` với "Đặng Thị Mai", "Lê Hoàng Long", "Phạm Quốc Tuấn"). Khi backend trả về rỗng, hiển thị màn hình trống thân thiện với nút tạo cuộc hẹn mới thay vì inject dữ liệu giả.
+    * Xóa bỏ các giá trị số và nội dung deal hardcode trong form ghi nhận deal (`500000000` VNĐ).
+    * Loại bỏ hoàn toàn mã màu lỗi thời `#1F3864` và `#B8860B`, thay thế bằng chuẩn Navy CEO 1983 `#003B95` và Amber Gold (#F59E0B / `bg-gradient-to-r from-amber-500 to-amber-600`).
+    * Xóa bỏ class `ml-auto` gây lệch hàng ở nút "Ghi nhận Deal", giúp tất cả các nút hành động ("Vào phòng họp", "Chỉ đường", "Gọi điện", "Ghi nhận Deal") xếp thành 1 hàng ngang cân đối, thẳng hàng và chuẩn tỷ lệ trên mọi kích thước màn hình.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.24): Nâng Cấp Quản Lý Cài Đặt Hệ Thống & Quản Lý Thư Mời Chuẩn Mẫu Vector Luxury Kỷ Niệm (Ảnh 2) Kèm Call API Tuần Tự Đồng Bộ Avatar Hội Viên ([NODE-CRM-015], [NODE-CRM-017], [NODE-CORE-001])**:
+  - **1. Sửa lỗi text bị cắt xén & Bổ sung 2 icon thu to nhỏ Sidebar Cài đặt hệ thống ([NODE-CRM-015])**:
+    * Sửa triệt để lỗi đuôi chữ tiếng Việt (g, y, p,...) bị cắt ngang ở các tab danh mục cài đặt (`leading-none` thay bằng `leading-relaxed py-0.5`).
+    * Bổ sung 2 icon trực quan điều khiển thu nhỏ (`PanelLeftClose`) và mở rộng (`PanelLeftOpen`) thanh menu cài đặt:
+      - Khi thu nhỏ: Sidebar co về 72px dạng icon-only tinh gọn, có tooltip nhãn khi rê chuột.
+      - Khi mở rộng: Sidebar hiển thị đầy đủ 250px với tên danh mục và icon trực quan.
+      - Trạng thái được lưu bền vững vào `localStorage` (`crm_settings_sidebar_collapsed`).
+  - **2. Quản lý Thư Mời: Chuẩn hóa 100% theo mẫu Ảnh 2 & Call API tuần tự đồng bộ Avatar ([NODE-CRM-017])**:
+    * **Đổi nhãn chuẩn nghiệp vụ**: Cập nhật nhãn thành `1. Chọn sự kiện, cuộc họp, chương trình đào tạo`.
+    * **Call API tích hợp đa nguồn**: Nạp danh sách hoạt động từ cả 2 nguồn API backend: `GET /events` (Sự kiện & Chương trình đào tạo) và `GET /meetings` (Cuộc họp Ban/CLB).
+    * **Call API tuần tự (Cascading Selector)**: Khi người dùng chọn một sự kiện/cuộc họp, hệ thống tự động gọi API `GET /events/registrations?eventId=${id}` để lấy danh sách người đăng ký tham dự thực tế (fallback danh sách hội viên CLB từ `GET /members`).
+    * **Tự động đồng bộ Avatar vào khung thư mời**: Khi chọn hội viên đăng ký, avatar của hội viên đó lập tức được load tự động và hiển thị sắc nét vào khung Avatar tròn trên thiệp mời. Có kèm nút tải ảnh tùy chỉnh từ máy tính nếu cần.
+    * **Thiết kế Bố Cục Thư Mời Chuẩn Xác Theo Ảnh 2**:
+      - Nghiêm cấm và loại bỏ hoàn toàn watermark text rác ở background; sử dụng thuần vector dải sóng ribbon mềm mại và hiệu ứng radial glow sang trọng (xanh lá - xanh dương - vàng kim).
+      - *Dải Logo trên cùng*: VIEM | DGROUP | CEO 1983 | VICONNECT.
+      - *Tiêu đề thư mời*: Cành nguyệt quế / lông vũ thanh thoát `🪶 THƯ MỜI 🪶` kèm phụ đề `— Tham dự lễ kỷ niệm —`.
+      - *Lời dẫn & Khung Avatar*: Cột trái là lời kính gửi trang trọng, cột phải là khung Avatar tròn viền vàng nguyệt quế kèm dải băng xanh lá kim `★ KHÁCH MỜI ★` và tên đại biểu.
+      - *Banner Chủ đề phát sáng (Glow Emerald-Blue Capsule)*: Thiết kế pill nổi bật với danh mục `DOANH NGHIỆP VIỆT 2027:` cùng 2 dòng chủ đề `CỦNG CỐ NỘI LỰC - TẠO ĐÀ TĂNG TRƯỞNG` (chữ vàng bóng).
+      - *Khối Thời gian & Địa điểm (2 cột chuẩn Ảnh 2)*: Khối hộp thời gian (icon Calendar) và địa điểm (icon MapPin) nền xanh ngọc có đường kẻ ngăn cách tinh tế.
+      - *Lời tri ân & Chữ ký*: Câu châm ngôn tri ân nằm giữa hai cành lá 🌿 và chữ ký nghiêng trang trọng `Trân trọng kính mời!`.
+      - *Đáy thiệp (Footer)*: Số 4 mạ vàng 3D kỷ niệm thành lập Viện Doanh Trí (2022 - 2026) kèm Skyline tòa nhà thành phố hiện đại.
+    * **Tự do di chuyển Y và Xóa/Ẩn từng trường thông tin**: Mỗi trường (Logo, Tiêu đề, Lời dẫn, Avatar, Banner chủ đề, Thời gian/Địa điểm, Tri ân, Footer) đều có thể di chuyển lên/xuống (mũi tên `ArrowUp`/`ArrowDown`) và xóa/ẩn (icon thùng rác `Trash2`), đồng thời có nút 1-chạm "Khôi phục tất cả" về chuẩn Ảnh 2 bất kỳ lúc nào.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.23): Hoàn Thiện Trọn Vẹn 9 Hạng Mục Nâng Cấp Mobile App CEO 1983 - Dynamic SafeArea iOS/Android, Tối Giản Cấu Hình Hệ Thống, Quyền Riêng Tư Thẻ Hội Viên, 4 Tính Năng Nhanh Mặc Định, Xóa Bỏ Icon Đầu Mục Trang Chủ, Xóa Dữ Liệu Cũ & Sửa Lỗi Nháy Màn Cá Nhân, Reset Thông Báo Số, Định Vị Doanh Nghiệp & Tự Động Cài Đặt App 1 Chạm ([NODE-APP-001..014], [NODE-CORE-001..006])**:
   - **1. Co giãn Header & Footer tự động theo SafeArea phần cứng iOS/Android ([NODE-APP-001], [NODE-APP-004])**:

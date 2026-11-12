@@ -16,6 +16,8 @@ import {
   Smartphone,
   Wallet,
   Share2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { SyndicationConfigSection } from "@/components/dashboard/SyndicationConfigSection";
 import { AiConfigSection } from "@/components/dashboard/AiConfigSection";
@@ -60,6 +62,22 @@ function SettingsPage() {
   const [smsNotif, setSmsNotif] = useState(false);
   const [twoFA, setTwoFA] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("crm_settings_sidebar_collapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleSidebarCollapsed = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("crm_settings_sidebar_collapsed", String(next));
+      }
+      return next;
+    });
+  };
 
   const loadSettings = useServerFn(getSettingsFn);
   const persistSettings = useServerFn(saveSettingsFn);
@@ -128,8 +146,33 @@ function SettingsPage() {
     <AppShell>
       <PageHeader title={t("set.title")} subtitle={t("set.subtitle")} />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[250px_1fr]">
-        <Card className="p-2.5">
+      <div className={`grid grid-cols-1 gap-5 transition-all duration-300 ${
+        isSidebarCollapsed ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[250px_1fr]"
+      }`}>
+        <Card className="p-2.5 h-fit sticky top-20">
+          {/* Header thu phóng thanh danh mục Cài đặt */}
+          <div className={`flex items-center pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ${
+            isSidebarCollapsed ? "justify-center" : "justify-between px-1.5"
+          }`}>
+            {!isSidebarCollapsed && (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Danh mục cài đặt
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={toggleSidebarCollapsed}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-[#003B95] dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              title={isSidebarCollapsed ? "Mở rộng danh mục (Thu to)" : "Thu gọn danh mục (Thu nhỏ)"}
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="size-4" />
+              ) : (
+                <PanelLeftClose className="size-4" />
+              )}
+            </button>
+          </div>
+
           <nav className="space-y-1">
             {TABS.map((tt) => {
               const Icon = tt.icon;
@@ -140,14 +183,21 @@ function SettingsPage() {
                   key={tt.key}
                   type="button"
                   onClick={() => setTab(tt.key)}
-                  className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition cursor-pointer ${
+                  title={label}
+                  className={`flex items-center rounded-xl transition cursor-pointer ${
+                    isSidebarCollapsed
+                      ? "w-full justify-center p-2.5"
+                      : "w-full gap-2.5 px-3 py-2 text-left"
+                  } text-xs font-semibold ${
                     active
                       ? "bg-[#003B95] text-white shadow-xs font-bold"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${active ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
-                  <span className="truncate text-left leading-none">{label}</span>
+                  <Icon className={`size-4 shrink-0 ${active ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
+                  {!isSidebarCollapsed && (
+                    <span className="truncate leading-relaxed py-0.5">{label}</span>
+                  )}
                 </button>
               );
             })}
