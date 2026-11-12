@@ -1,5 +1,62 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.27): Khắc Phục Triệt Để 6 Lỗi Mobile App & 2 Lỗi Web CRM CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu, Cuộn Popup Vé & Đồng Bộ Banner, Hiển Thị Chi Tiết Hội Viên Khi Quét Check-in, Modal Xin Quyền Thiết Bị Tự Động, Cài Đặt 1-Chạm PWA, Rút Ngắn Tên Phím Tắt Nhanh & Khắc Phục Lỗi React #418 ([NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-CRM-007], [NODE-CORE-001])**:
+  - **1. Ép buộc đổi mật khẩu khi đăng nhập lần đầu tài khoản mới ([NODE-APP-007], [NODE-CORE-001])**:
+    * Mở rộng phạm vi phát hiện cờ đăng nhập lần đầu tại `AuthContext.tsx` (`mapApiUser` & `setAuthData`): hỗ trợ đầy đủ các biến thể từ backend `onboarding_status === "new"`, `must_change_password`, `mustChangePassword`, `isFirstLogin`, `is_first_login`, `firstLogin`.
+    * Tại `association.login.tsx`: Khi phát hiện tài khoản đăng nhập lần đầu, điều hướng ngay lập tức tới `/association/settings?action=change_password&required=true`.
+    * Tại `association.tsx`: Trong `beforeLoad` và `MemberRoot`, chặn truy cập mọi trang nghiệp vụ khác và mở ngay `FirstLoginChangePasswordModal` (không cho phép đóng bằng phím ESC hoặc click ra ngoài) cho đến khi hoàn tất đổi mật khẩu.
+  - **2. Đồng bộ ảnh sự kiện CRM & khắc phục lỗi cuộn Popup xem mã vé ([NODE-APP-003], [NODE-CRM-007])**:
+    * Sửa `EventTicketPassModal.tsx`: Chuyển `DialogContent` sang dạng `max-h-[90vh] max-h-[90dvh] flex flex-col` và bọc nội dung cuộn trong `flex-1 min-h-0 overflow-y-auto overscroll-contain`, giúp vuốt chạm cuộn xem toàn bộ vé, mã QR, ghế ngồi và thời gian diễn ra sự kiện dễ dàng trên mọi thiết bị di động có chiều cao màn hình nhỏ.
+    * Tại `association.events.tsx` và `EventDetailModal.tsx`: Sử dụng `resolveMediaUrl()` bọc toàn bộ các trường ảnh `image`, `banner`, `posterUrl`, `imageUrl`, `coverImage`, trích xuất ảnh chuẩn từ server MinIO hoặc đường dẫn tĩnh public.
+  - **3. Quét mã QR check-in sự kiện hiển thị đầy đủ thông tin hội viên & vé tham dự ([NODE-APP-003], [NODE-CORE-001])**:
+    * Sửa lỗi SQL Backend tại `events.service.ts`: Xóa bỏ ép kiểu sai cú pháp `e.id = r.event_id::uuid` tại các truy vấn (do `events.id` và `event_id` là kiểu `text` lưu mã như `EV-VIENDOANHTRI-2027`), chuyển về `e.id = r.event_id`.
+    * Chạy migration bổ sung các cột thiếu `phone`, `member_id`, `ticket_code` trong bảng `public.event_registrations` tránh lỗi truy vấn fatal error.
+    * Tích hợp `ScannedTicketDetailModal` trong `AssociationMemberQrModal.tsx`: Khi quét mã vé (`TKT-`, `REG-`, `event_ticket:`, `/api/events/qr`), hiển thị popup đầy đủ thông tin: Họ tên đại biểu, Số điện thoại, Mã vé, Tên sự kiện, Hạng vé, Trạng thái Check-in cùng nút xác nhận "Điểm danh ngay".
+  - **4. Tự động xin cấp đủ quyền truy cập thiết bị (Micro, Camera, Thông báo) ([NODE-APP-001], [NODE-APP-007])**:
+    * Tạo component `MobileAppPermissionModal.tsx` tự động kiểm tra và hiển thị modal hướng dẫn trực quan yêu cầu cấp quyền Camera (quét QR thẻ và vé), Micro (trợ lý ảo AI & voice chat), và Thông báo đẩy (nhận tin tức, lịch họp, cơ hội B2B).
+    * Gắn trực tiếp vào `association.tsx` để kích hoạt 1 lần khi hội viên khởi động ứng dụng trên thiết bị di động hoặc PWA.
+  - **5. Tự động hóa cài đặt 1-chạm PWA tại Cài đặt hệ thống ([NODE-APP-007])**:
+    * Tại `association.system-config.tsx` (`handleFastInstallApp`): Loại bỏ link tải APK tĩnh không tồn tại, tự động kích hoạt `beforeinstallprompt.prompt()` trực tiếp cho Android/Chrome và hiển thị cẩm nang 3 bước cài đặt PWA Add to Home Screen mượt mà cho iOS Safari.
+  - **6. Rút ngắn toàn bộ tên tính năng nhanh chống tràn chữ (`...`) ([NODE-APP-001])**:
+    * Chuẩn hóa danh sách nhãn phím tắt ngắn gọn: "Danh bạ CEO", "Tin nhắn", "Kết nối B2B", "Lịch CLB", "Lịch hẹn", "Cơ hội B2B", "Báo cáo", "Hội viên", "Bảng tin", "Danh thiếp", "Ưu đãi VIP", "Biểu quyết", "Sàn B2B", "Tài liệu", "Đào tạo", "Gặp 1-1", "Báo thức", "Cấu hình".
+    * Cập nhật kiểu chữ tại grid trang chủ sang `text-[11px] sm:text-xs font-semibold leading-tight line-clamp-1 truncate`, đảm bảo không bị hiện dấu ba chấm trên mọi dòng máy màn hình nhỏ.
+  - **7. Khắc phục lỗi Web CRM: Lỗi tải Banner và Lỗi Minified React #418 ([NODE-CRM-007], [NODE-CORE-001])**:
+    * Đưa tệp banner backdrop `ky_niem_4_nam_vien_doanh_tri.jpg` vào các thư mục tĩnh của Frontend và đồng bộ lên MinIO `/api/upload/file/documents/1794470096799-thfwcu.jpg` (kiểm tra HTTP 200).
+    * Bổ sung cơ chế fallback ảnh mượt mà cho preview ảnh tại `CrudModal.tsx`.
+    * Xóa bỏ mã nhúng pre-hydration `redirectScript` gây đột biến DOM trên thẻ `<html>` tại `apps/ceo1983_app_fe/src/routes/__root.tsx`, triệt tiêu hoàn toàn mã lỗi SSR Hydration mismatch Minified React error #418.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.26): Khởi Tạo Sự Kiện Tọa Đàm Kinh Tế "Doanh Nghiệp Việt 2027" & Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí (21/11/2026) Chuẩn Mẫu Banner Backdrop Thực Tế & Đầy Đủ 9 Trường Thông Tin ([NODE-CRM-007], [NODE-APP-003], [NODE-CORE-001])**:
+  - **1. Khởi tạo sự kiện chính thức trong CSDL PostgreSQL (`public.events` & `public.event_ticket_types`)**:
+    * **Mã sự kiện**: `EV-VIENDOANHTRI-2027`
+    * **Tên sự kiện**: `KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TỌA ĐÀM KINH TẾ: DOANH NGHIỆP VIỆT 2027`
+    * **Chủ đề (Tagline)**: `Thị trường - Dòng tiền - Năng suất trong kỷ nguyên AI`
+    * **Thời gian**: `15:00 - 22:00 | Thứ Bảy, 21/11/2026`
+    * **Địa điểm**: `Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội`
+    * **Quy mô & Trạng thái**: 300 đại biểu (`capacity: 300`), trạng thái `upcoming`
+    * **Chi phí / Giá vé**: `0 VNĐ` (Miễn phí toàn bộ dành cho Hội viên CEO 1983 & Khách mời danh dự của Viện Doanh Trí)
+    * **Hạng vé mời (`public.event_ticket_types`)**: `TKT-VDT-2027-VIP` - Số lượng 300 vé
+  - **2. Đồng bộ ảnh Banner Backdrop chính thức từ tệp người dùng tải lên**:
+    * Lưu trữ và phân phối đa đường dẫn tại: `/images/event/ky_niem_4_nam_vien_doanh_tri.jpg`, `/images/ky_niem_4_nam_vien_doanh_tri.jpg` và `/ky_niem_4_nam_vien_doanh_tri.jpg`.
+    * Hiển thị sắc nét trên cả Carousel Trang chủ Mobile App, Danh sách Sự kiện, Vé Check-in và Cổng Quản trị Web CRM.
+  - **3. Chuẩn hóa nội dung mô tả theo đúng quy chuẩn 9 trường thông tin bắt buộc**:
+    * Kính gửi Anh/Chị
+    * BTC trân trọng kính mời Anh/Chị tham dự sự kiện / tọa đàm kinh tế
+    * Tên sự kiện đầy đủ
+    * Thông tin sự kiện 9 trường: Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC
+    * Xác nhận tham dự (Public link không yêu cầu đăng nhập)
+    * Hotline BTC: `0973.205.683 / 0903.205.683 / 0903.203.204`
+    * Trân trọng!
+  - **4. Fix timezone offset an toàn tại `events.service.ts`**:
+    * Sửa hàm `mapEventRow` và `listEvents` sử dụng trích xuất ngày địa phương (`getFullYear()`, `getMonth()`, `getDate()`) thay vì `toISOString()` tránh hiện tượng lệch ngày lùi 1 hôm do múi giờ UTC+7.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.25): Tinh Chỉnh Hoàn Thiện 6 Hạng Mục Giao Diện & Nghiệp Vụ Mobile App CEO 1983 - Triệt Tiêu Khoảng Trống Thừa Header/Footer, Chuẩn Hóa Thanh Kỳ Lịch & Legend Thống Kê, Đồng Bộ Ẩn/Hiện Trường Sửa Thẻ, Chuẩn Hóa Màu Sắc Cá Nhân & Nút Quét Check-in, Khắc Phục Lỗi Đóng Modal 4 Phím Tắt Nhanh, Xóa Mock Data & Căn Chỉnh Nút Ghi Nhận Deal Kết Nối B2B ([NODE-APP-001], [NODE-APP-002], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007])**:
   - **1. Triệt tiêu khoảng trống thừa (dead gap) tại Header & Footer App ([NODE-APP-001], [NODE-APP-004])**:
     * Sửa hiện tượng cộng dồn đệm đáy giữa thanh cuộn `PullToRefresh` (trước đây padding `pb-[... + 64px]`) và các trang con (trước đây có `pb-24` đến `pb-40`).
@@ -418,6 +475,63 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.27): Khắc Phục Triệt Để 6 Lỗi Mobile App & 2 Lỗi Web CRM CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu, Cuộn Popup Vé & Đồng Bộ Banner, Hiển Thị Chi Tiết Hội Viên Khi Quét Check-in, Modal Xin Quyền Thiết Bị Tự Động, Cài Đặt 1-Chạm PWA, Rút Ngắn Tên Phím Tắt Nhanh & Khắc Phục Lỗi React #418 ([NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-CRM-007], [NODE-CORE-001])**:
+  - **1. Ép buộc đổi mật khẩu khi đăng nhập lần đầu tài khoản mới ([NODE-APP-007], [NODE-CORE-001])**:
+    * Mở rộng phạm vi phát hiện cờ đăng nhập lần đầu tại `AuthContext.tsx` (`mapApiUser` & `setAuthData`): hỗ trợ đầy đủ các biến thể từ backend `onboarding_status === "new"`, `must_change_password`, `mustChangePassword`, `isFirstLogin`, `is_first_login`, `firstLogin`.
+    * Tại `association.login.tsx`: Khi phát hiện tài khoản đăng nhập lần đầu, điều hướng ngay lập tức tới `/association/settings?action=change_password&required=true`.
+    * Tại `association.tsx`: Trong `beforeLoad` và `MemberRoot`, chặn truy cập mọi trang nghiệp vụ khác và mở ngay `FirstLoginChangePasswordModal` (không cho phép đóng bằng phím ESC hoặc click ra ngoài) cho đến khi hoàn tất đổi mật khẩu.
+  - **2. Đồng bộ ảnh sự kiện CRM & khắc phục lỗi cuộn Popup xem mã vé ([NODE-APP-003], [NODE-CRM-007])**:
+    * Sửa `EventTicketPassModal.tsx`: Chuyển `DialogContent` sang dạng `max-h-[90vh] max-h-[90dvh] flex flex-col` và bọc nội dung cuộn trong `flex-1 min-h-0 overflow-y-auto overscroll-contain`, giúp vuốt chạm cuộn xem toàn bộ vé, mã QR, ghế ngồi và thời gian diễn ra sự kiện dễ dàng trên mọi thiết bị di động có chiều cao màn hình nhỏ.
+    * Tại `association.events.tsx` và `EventDetailModal.tsx`: Sử dụng `resolveMediaUrl()` bọc toàn bộ các trường ảnh `image`, `banner`, `posterUrl`, `imageUrl`, `coverImage`, trích xuất ảnh chuẩn từ server MinIO hoặc đường dẫn tĩnh public.
+  - **3. Quét mã QR check-in sự kiện hiển thị đầy đủ thông tin hội viên & vé tham dự ([NODE-APP-003], [NODE-CORE-001])**:
+    * Sửa lỗi SQL Backend tại `events.service.ts`: Xóa bỏ ép kiểu sai cú pháp `e.id = r.event_id::uuid` tại các truy vấn (do `events.id` và `event_id` là kiểu `text` lưu mã như `EV-VIENDOANHTRI-2027`), chuyển về `e.id = r.event_id`.
+    * Chạy migration bổ sung các cột thiếu `phone`, `member_id`, `ticket_code` trong bảng `public.event_registrations` tránh lỗi truy vấn fatal error.
+    * Tích hợp `ScannedTicketDetailModal` trong `AssociationMemberQrModal.tsx`: Khi quét mã vé (`TKT-`, `REG-`, `event_ticket:`, `/api/events/qr`), hiển thị popup đầy đủ thông tin: Họ tên đại biểu, Số điện thoại, Mã vé, Tên sự kiện, Hạng vé, Trạng thái Check-in cùng nút xác nhận "Điểm danh ngay".
+  - **4. Tự động xin cấp đủ quyền truy cập thiết bị (Micro, Camera, Thông báo) ([NODE-APP-001], [NODE-APP-007])**:
+    * Tạo component `MobileAppPermissionModal.tsx` tự động kiểm tra và hiển thị modal hướng dẫn trực quan yêu cầu cấp quyền Camera (quét QR thẻ và vé), Micro (trợ lý ảo AI & voice chat), và Thông báo đẩy (nhận tin tức, lịch họp, cơ hội B2B).
+    * Gắn trực tiếp vào `association.tsx` để kích hoạt 1 lần khi hội viên khởi động ứng dụng trên thiết bị di động hoặc PWA.
+  - **5. Tự động hóa cài đặt 1-chạm PWA tại Cài đặt hệ thống ([NODE-APP-007])**:
+    * Tại `association.system-config.tsx` (`handleFastInstallApp`): Loại bỏ link tải APK tĩnh không tồn tại, tự động kích hoạt `beforeinstallprompt.prompt()` trực tiếp cho Android/Chrome và hiển thị cẩm nang 3 bước cài đặt PWA Add to Home Screen mượt mà cho iOS Safari.
+  - **6. Rút ngắn toàn bộ tên tính năng nhanh chống tràn chữ (`...`) ([NODE-APP-001])**:
+    * Chuẩn hóa danh sách nhãn phím tắt ngắn gọn: "Danh bạ CEO", "Tin nhắn", "Kết nối B2B", "Lịch CLB", "Lịch hẹn", "Cơ hội B2B", "Báo cáo", "Hội viên", "Bảng tin", "Danh thiếp", "Ưu đãi VIP", "Biểu quyết", "Sàn B2B", "Tài liệu", "Đào tạo", "Gặp 1-1", "Báo thức", "Cấu hình".
+    * Cập nhật kiểu chữ tại grid trang chủ sang `text-[11px] sm:text-xs font-semibold leading-tight line-clamp-1 truncate`, đảm bảo không bị hiện dấu ba chấm trên mọi dòng máy màn hình nhỏ.
+  - **7. Khắc phục lỗi Web CRM: Lỗi tải Banner và Lỗi Minified React #418 ([NODE-CRM-007], [NODE-CORE-001])**:
+    * Đưa tệp banner backdrop `ky_niem_4_nam_vien_doanh_tri.jpg` vào các thư mục tĩnh của Frontend và đồng bộ lên MinIO `/api/upload/file/documents/1794470096799-thfwcu.jpg` (kiểm tra HTTP 200).
+    * Bổ sung cơ chế fallback ảnh mượt mà cho preview ảnh tại `CrudModal.tsx`.
+    * Xóa bỏ mã nhúng pre-hydration `redirectScript` gây đột biến DOM trên thẻ `<html>` tại `apps/ceo1983_app_fe/src/routes/__root.tsx`, triệt tiêu hoàn toàn mã lỗi SSR Hydration mismatch Minified React error #418.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.26): Khởi Tạo Sự Kiện Tọa Đàm Kinh Tế "Doanh Nghiệp Việt 2027" & Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí (21/11/2026) Chuẩn Mẫu Banner Backdrop Thực Tế & Đầy Đủ 9 Trường Thông Tin ([NODE-CRM-007], [NODE-APP-003], [NODE-CORE-001])**:
+  - **1. Khởi tạo sự kiện chính thức trong CSDL PostgreSQL (`public.events` & `public.event_ticket_types`)**:
+    * **Mã sự kiện**: `EV-VIENDOANHTRI-2027`
+    * **Tên sự kiện**: `KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TỌA ĐÀM KINH TẾ: DOANH NGHIỆP VIỆT 2027`
+    * **Chủ đề (Tagline)**: `Thị trường - Dòng tiền - Năng suất trong kỷ nguyên AI`
+    * **Thời gian**: `15:00 - 22:00 | Thứ Bảy, 21/11/2026`
+    * **Địa điểm**: `Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội`
+    * **Quy mô & Trạng thái**: 300 đại biểu (`capacity: 300`), trạng thái `upcoming`
+    * **Chi phí / Giá vé**: `0 VNĐ` (Miễn phí toàn bộ dành cho Hội viên CEO 1983 & Khách mời danh dự của Viện Doanh Trí)
+    * **Hạng vé mời (`public.event_ticket_types`)**: `TKT-VDT-2027-VIP` - Số lượng 300 vé
+  - **2. Đồng bộ ảnh Banner Backdrop chính thức từ tệp người dùng tải lên**:
+    * Lưu trữ và phân phối đa đường dẫn tại: `/images/event/ky_niem_4_nam_vien_doanh_tri.jpg`, `/images/ky_niem_4_nam_vien_doanh_tri.jpg` và `/ky_niem_4_nam_vien_doanh_tri.jpg`.
+    * Hiển thị sắc nét trên cả Carousel Trang chủ Mobile App, Danh sách Sự kiện, Vé Check-in và Cổng Quản trị Web CRM.
+  - **3. Chuẩn hóa nội dung mô tả theo đúng quy chuẩn 9 trường thông tin bắt buộc**:
+    * Kính gửi Anh/Chị
+    * BTC trân trọng kính mời Anh/Chị tham dự sự kiện / tọa đàm kinh tế
+    * Tên sự kiện đầy đủ
+    * Thông tin sự kiện 9 trường: Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC
+    * Xác nhận tham dự (Public link không yêu cầu đăng nhập)
+    * Hotline BTC: `0973.205.683 / 0903.205.683 / 0903.203.204`
+    * Trân trọng!
+  - **4. Fix timezone offset an toàn tại `events.service.ts`**:
+    * Sửa hàm `mapEventRow` và `listEvents` sử dụng trích xuất ngày địa phương (`getFullYear()`, `getMonth()`, `getDate()`) thay vì `toISOString()` tránh hiện tượng lệch ngày lùi 1 hôm do múi giờ UTC+7.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.25): Tinh Chỉnh Hoàn Thiện 6 Hạng Mục Giao Diện & Nghiệp Vụ Mobile App CEO 1983 - Triệt Tiêu Khoảng Trống Thừa Header/Footer, Chuẩn Hóa Thanh Kỳ Lịch & Legend Thống Kê, Đồng Bộ Ẩn/Hiện Trường Sửa Thẻ, Chuẩn Hóa Màu Sắc Cá Nhân & Nút Quét Check-in, Khắc Phục Lỗi Đóng Modal 4 Phím Tắt Nhanh, Xóa Mock Data & Căn Chỉnh Nút Ghi Nhận Deal Kết Nối B2B ([NODE-APP-001], [NODE-APP-002], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007])**:
   - **1. Triệt tiêu khoảng trống thừa (dead gap) tại Header & Footer App ([NODE-APP-001], [NODE-APP-004])**:
@@ -2119,6 +2233,63 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.27): Khắc Phục Triệt Để 6 Lỗi Mobile App & 2 Lỗi Web CRM CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu, Cuộn Popup Vé & Đồng Bộ Banner, Hiển Thị Chi Tiết Hội Viên Khi Quét Check-in, Modal Xin Quyền Thiết Bị Tự Động, Cài Đặt 1-Chạm PWA, Rút Ngắn Tên Phím Tắt Nhanh & Khắc Phục Lỗi React #418 ([NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-CRM-007], [NODE-CORE-001])**:
+  - **1. Ép buộc đổi mật khẩu khi đăng nhập lần đầu tài khoản mới ([NODE-APP-007], [NODE-CORE-001])**:
+    * Mở rộng phạm vi phát hiện cờ đăng nhập lần đầu tại `AuthContext.tsx` (`mapApiUser` & `setAuthData`): hỗ trợ đầy đủ các biến thể từ backend `onboarding_status === "new"`, `must_change_password`, `mustChangePassword`, `isFirstLogin`, `is_first_login`, `firstLogin`.
+    * Tại `association.login.tsx`: Khi phát hiện tài khoản đăng nhập lần đầu, điều hướng ngay lập tức tới `/association/settings?action=change_password&required=true`.
+    * Tại `association.tsx`: Trong `beforeLoad` và `MemberRoot`, chặn truy cập mọi trang nghiệp vụ khác và mở ngay `FirstLoginChangePasswordModal` (không cho phép đóng bằng phím ESC hoặc click ra ngoài) cho đến khi hoàn tất đổi mật khẩu.
+  - **2. Đồng bộ ảnh sự kiện CRM & khắc phục lỗi cuộn Popup xem mã vé ([NODE-APP-003], [NODE-CRM-007])**:
+    * Sửa `EventTicketPassModal.tsx`: Chuyển `DialogContent` sang dạng `max-h-[90vh] max-h-[90dvh] flex flex-col` và bọc nội dung cuộn trong `flex-1 min-h-0 overflow-y-auto overscroll-contain`, giúp vuốt chạm cuộn xem toàn bộ vé, mã QR, ghế ngồi và thời gian diễn ra sự kiện dễ dàng trên mọi thiết bị di động có chiều cao màn hình nhỏ.
+    * Tại `association.events.tsx` và `EventDetailModal.tsx`: Sử dụng `resolveMediaUrl()` bọc toàn bộ các trường ảnh `image`, `banner`, `posterUrl`, `imageUrl`, `coverImage`, trích xuất ảnh chuẩn từ server MinIO hoặc đường dẫn tĩnh public.
+  - **3. Quét mã QR check-in sự kiện hiển thị đầy đủ thông tin hội viên & vé tham dự ([NODE-APP-003], [NODE-CORE-001])**:
+    * Sửa lỗi SQL Backend tại `events.service.ts`: Xóa bỏ ép kiểu sai cú pháp `e.id = r.event_id::uuid` tại các truy vấn (do `events.id` và `event_id` là kiểu `text` lưu mã như `EV-VIENDOANHTRI-2027`), chuyển về `e.id = r.event_id`.
+    * Chạy migration bổ sung các cột thiếu `phone`, `member_id`, `ticket_code` trong bảng `public.event_registrations` tránh lỗi truy vấn fatal error.
+    * Tích hợp `ScannedTicketDetailModal` trong `AssociationMemberQrModal.tsx`: Khi quét mã vé (`TKT-`, `REG-`, `event_ticket:`, `/api/events/qr`), hiển thị popup đầy đủ thông tin: Họ tên đại biểu, Số điện thoại, Mã vé, Tên sự kiện, Hạng vé, Trạng thái Check-in cùng nút xác nhận "Điểm danh ngay".
+  - **4. Tự động xin cấp đủ quyền truy cập thiết bị (Micro, Camera, Thông báo) ([NODE-APP-001], [NODE-APP-007])**:
+    * Tạo component `MobileAppPermissionModal.tsx` tự động kiểm tra và hiển thị modal hướng dẫn trực quan yêu cầu cấp quyền Camera (quét QR thẻ và vé), Micro (trợ lý ảo AI & voice chat), và Thông báo đẩy (nhận tin tức, lịch họp, cơ hội B2B).
+    * Gắn trực tiếp vào `association.tsx` để kích hoạt 1 lần khi hội viên khởi động ứng dụng trên thiết bị di động hoặc PWA.
+  - **5. Tự động hóa cài đặt 1-chạm PWA tại Cài đặt hệ thống ([NODE-APP-007])**:
+    * Tại `association.system-config.tsx` (`handleFastInstallApp`): Loại bỏ link tải APK tĩnh không tồn tại, tự động kích hoạt `beforeinstallprompt.prompt()` trực tiếp cho Android/Chrome và hiển thị cẩm nang 3 bước cài đặt PWA Add to Home Screen mượt mà cho iOS Safari.
+  - **6. Rút ngắn toàn bộ tên tính năng nhanh chống tràn chữ (`...`) ([NODE-APP-001])**:
+    * Chuẩn hóa danh sách nhãn phím tắt ngắn gọn: "Danh bạ CEO", "Tin nhắn", "Kết nối B2B", "Lịch CLB", "Lịch hẹn", "Cơ hội B2B", "Báo cáo", "Hội viên", "Bảng tin", "Danh thiếp", "Ưu đãi VIP", "Biểu quyết", "Sàn B2B", "Tài liệu", "Đào tạo", "Gặp 1-1", "Báo thức", "Cấu hình".
+    * Cập nhật kiểu chữ tại grid trang chủ sang `text-[11px] sm:text-xs font-semibold leading-tight line-clamp-1 truncate`, đảm bảo không bị hiện dấu ba chấm trên mọi dòng máy màn hình nhỏ.
+  - **7. Khắc phục lỗi Web CRM: Lỗi tải Banner và Lỗi Minified React #418 ([NODE-CRM-007], [NODE-CORE-001])**:
+    * Đưa tệp banner backdrop `ky_niem_4_nam_vien_doanh_tri.jpg` vào các thư mục tĩnh của Frontend và đồng bộ lên MinIO `/api/upload/file/documents/1794470096799-thfwcu.jpg` (kiểm tra HTTP 200).
+    * Bổ sung cơ chế fallback ảnh mượt mà cho preview ảnh tại `CrudModal.tsx`.
+    * Xóa bỏ mã nhúng pre-hydration `redirectScript` gây đột biến DOM trên thẻ `<html>` tại `apps/ceo1983_app_fe/src/routes/__root.tsx`, triệt tiêu hoàn toàn mã lỗi SSR Hydration mismatch Minified React error #418.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.26): Khởi Tạo Sự Kiện Tọa Đàm Kinh Tế "Doanh Nghiệp Việt 2027" & Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí (21/11/2026) Chuẩn Mẫu Banner Backdrop Thực Tế & Đầy Đủ 9 Trường Thông Tin ([NODE-CRM-007], [NODE-APP-003], [NODE-CORE-001])**:
+  - **1. Khởi tạo sự kiện chính thức trong CSDL PostgreSQL (`public.events` & `public.event_ticket_types`)**:
+    * **Mã sự kiện**: `EV-VIENDOANHTRI-2027`
+    * **Tên sự kiện**: `KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TỌA ĐÀM KINH TẾ: DOANH NGHIỆP VIỆT 2027`
+    * **Chủ đề (Tagline)**: `Thị trường - Dòng tiền - Năng suất trong kỷ nguyên AI`
+    * **Thời gian**: `15:00 - 22:00 | Thứ Bảy, 21/11/2026`
+    * **Địa điểm**: `Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội`
+    * **Quy mô & Trạng thái**: 300 đại biểu (`capacity: 300`), trạng thái `upcoming`
+    * **Chi phí / Giá vé**: `0 VNĐ` (Miễn phí toàn bộ dành cho Hội viên CEO 1983 & Khách mời danh dự của Viện Doanh Trí)
+    * **Hạng vé mời (`public.event_ticket_types`)**: `TKT-VDT-2027-VIP` - Số lượng 300 vé
+  - **2. Đồng bộ ảnh Banner Backdrop chính thức từ tệp người dùng tải lên**:
+    * Lưu trữ và phân phối đa đường dẫn tại: `/images/event/ky_niem_4_nam_vien_doanh_tri.jpg`, `/images/ky_niem_4_nam_vien_doanh_tri.jpg` và `/ky_niem_4_nam_vien_doanh_tri.jpg`.
+    * Hiển thị sắc nét trên cả Carousel Trang chủ Mobile App, Danh sách Sự kiện, Vé Check-in và Cổng Quản trị Web CRM.
+  - **3. Chuẩn hóa nội dung mô tả theo đúng quy chuẩn 9 trường thông tin bắt buộc**:
+    * Kính gửi Anh/Chị
+    * BTC trân trọng kính mời Anh/Chị tham dự sự kiện / tọa đàm kinh tế
+    * Tên sự kiện đầy đủ
+    * Thông tin sự kiện 9 trường: Diễn giả, Nội dung chính, Thời gian, Địa điểm, Chi phí, Google Maps, Trang phục, Gửi xe, Lưu ý quan trọng từ BTC
+    * Xác nhận tham dự (Public link không yêu cầu đăng nhập)
+    * Hotline BTC: `0973.205.683 / 0903.205.683 / 0903.203.204`
+    * Trân trọng!
+  - **4. Fix timezone offset an toàn tại `events.service.ts`**:
+    * Sửa hàm `mapEventRow` và `listEvents` sử dụng trích xuất ngày địa phương (`getFullYear()`, `getMonth()`, `getDate()`) thay vì `toISOString()` tránh hiện tượng lệch ngày lùi 1 hôm do múi giờ UTC+7.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.25): Tinh Chỉnh Hoàn Thiện 6 Hạng Mục Giao Diện & Nghiệp Vụ Mobile App CEO 1983 - Triệt Tiêu Khoảng Trống Thừa Header/Footer, Chuẩn Hóa Thanh Kỳ Lịch & Legend Thống Kê, Đồng Bộ Ẩn/Hiện Trường Sửa Thẻ, Chuẩn Hóa Màu Sắc Cá Nhân & Nút Quét Check-in, Khắc Phục Lỗi Đóng Modal 4 Phím Tắt Nhanh, Xóa Mock Data & Căn Chỉnh Nút Ghi Nhận Deal Kết Nối B2B ([NODE-APP-001], [NODE-APP-002], [NODE-APP-004], [NODE-APP-006], [NODE-APP-007])**:
   - **1. Triệt tiêu khoảng trống thừa (dead gap) tại Header & Footer App ([NODE-APP-001], [NODE-APP-004])**:

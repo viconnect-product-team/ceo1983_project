@@ -709,7 +709,12 @@ function UpcomingEventsCoverflow({
             opacity = 0.25;
           }
 
-          const rawImg = (evt as any).image;
+          const rawImg =
+            (evt as any).image ||
+            (evt as any).banner ||
+            (evt as any).posterUrl ||
+            (evt as any).imageUrl ||
+            (evt as any).coverImage;
           const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
           const agenda = getEventAgenda(evt, idx);
 
@@ -2183,7 +2188,12 @@ function EventsScreen() {
                 const rawPrice = getEventPrice(e);
                 const isFree = isEventFree(e);
                 const registered = isRegistered(e);
-                const rawImg = (e as any).image;
+                const rawImg =
+                  (e as any).image ||
+                  (e as any).banner ||
+                  (e as any).posterUrl ||
+                  (e as any).imageUrl ||
+                  (e as any).coverImage;
                 const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
                 const dateFormatted = formatEventDayOfWeekAndDate(e.date);
                 const timeStr = formatEventTimeRange(e, e.title);
@@ -2342,7 +2352,7 @@ function EventsScreen() {
                     className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 inline-flex flex-col justify-center items-start overflow-hidden cursor-pointer shadow-2xs hover:shadow-xs transition"
                   >
                     <div className="self-stretch h-20 relative bg-stone-300 overflow-hidden">
-                      <img className="size-full object-cover" src={item.image} alt={item.title} />
+                      <img className="size-full object-cover" src={resolveMediaUrl(item.image) || item.image} alt={item.title} />
                     </div>
                     <div className="self-stretch p-2 flex flex-col justify-start items-center gap-0.5">
                       <div className="self-stretch flex flex-col justify-start items-start gap-0.5">

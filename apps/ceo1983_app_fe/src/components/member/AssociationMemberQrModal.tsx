@@ -32,6 +32,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import heroImg from "@/assets/vba-hero.jpg";
+import {
+  ScannedTicketDetailModal,
+  type ScannedTicketData,
+} from "@/components/events/ScannedTicketDetailModal";
 
 export interface ScannedPartner {
   code: string;
@@ -76,6 +80,7 @@ export function AssociationMemberQrModal({
   const [torch, setTorch] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [scannedPartner, setScannedPartner] = useState<ScannedPartner | null>(null);
+  const [scannedTicket, setScannedTicket] = useState<ScannedTicketData | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -181,6 +186,55 @@ export function AssociationMemberQrModal({
   const handleQrValue = async (raw: string) => {
     if (!raw) return;
     setErrorMsg(null);
+
+    // 1. Kiểm tra nếu là Mã Vé Sự Kiện / Check-in QR (TKT-, REG-, event_ticket:, JSON vé, hoặc checkin scan-ticket)
+    const isTicketCode =
+      raw.startsWith("TKT-") ||
+      raw.startsWith("REG-") ||
+      raw.startsWith("event_ticket:") ||
+      raw.startsWith("EVENT_TICKET:") ||
+      raw.includes("ticketCode") ||
+      raw.includes("/api/events/qr") ||
+      /^TKT-[A-Za-z0-9_-]+/i.test(raw.trim()) ||
+      /^REG-[A-Za-z0-9_-]+/i.test(raw.trim());
+
+    if (isTicketCode) {
+      try {
+        const scanRes = await fetchNestApi<any>("/checkin/scan-ticket", {
+          method: "POST",
+          body: JSON.stringify({
+            payload: raw.trim(),
+            confirm: false,
+          }),
+        }).catch(() => null);
+
+        if (scanRes && (scanRes.attendeeName || scanRes.ticketCode || scanRes.success)) {
+          setScannedTicket({
+            ticketCode: scanRes.ticketCode || raw.trim(),
+            attendeeName: scanRes.attendeeName || "Hội viên",
+            attendeePhone: scanRes.attendeePhone || "",
+            attendeeCompany: scanRes.attendeeCompany || "CLB Doanh Nhân CEO 1983",
+            attendeePosition: scanRes.attendeePosition || "Hội viên chính thức",
+            attendeeAvatar: scanRes.attendeeAvatar || null,
+            memberCode: scanRes.memberCode || "",
+            eventId: scanRes.eventId,
+            eventTitle: scanRes.eventTitle || "Sự kiện CLB CEO 1983",
+            eventDate: scanRes.eventDate || "",
+            eventLocation: scanRes.eventLocation || "Hà Nội",
+            ticketType: scanRes.ticketType || "Vé Tham Dự",
+            seatAssignment: scanRes.seatAssignment || "Ghế tiêu chuẩn",
+            luckyNumber: scanRes.luckyNumber || "",
+            ticketCount: scanRes.ticketCount || 1,
+            isCheckedIn: Boolean(scanRes.isCheckedIn),
+            checkedInAt: scanRes.checkedInAt || null,
+            scannedBy: scanRes.scannedBy || "Ban Soát Vé CEO 1983",
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("Scan ticket error:", err);
+      }
+    }
 
     // Xử lý mã QR sự kiện: Quét mã QR sự kiện trong phần kết nối sẽ mở form đăng ký sự kiện (không tự động đăng ký)
     let eventId: string | null = null;
@@ -917,6 +971,46 @@ export function AssociationMemberQrModal({
           </div>
         )}
       </div>
+
+      {/* ── MODAL HIỂN THỊ ĐẦY ĐỦ THÔNG TIN VÉ & ĐIỂM DANH SỰ KIỆN ── */}
+      <ScannedTicketDetailModal
+        open={Boolean(scannedTicket)}
+        ticket={scannedTicket}
+        onClose={() => setScannedTicket(null)}
+        onConfirmCheckIn={async (t) => {
+          try {
+            await fetchNestApi("/checkin/scan-ticket", {
+              method: "POST",
+              body: JSON.stringify({
+                payload: t.ticketCode,
+                currentEventId: t.eventId,
+                confirm: true,
+              }),
+            });
+            const nowStr = new Date().toLocaleString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            setScannedTicket((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    isCheckedIn: true,
+                    checkedInAt: nowStr,
+                  }
+                : null
+            );
+            toast.success(`Đã xác nhận điểm danh thành công cho ${t.attendeeName}!`, {
+              description: `Mã vé: ${t.ticketCode} • Vị trí: ${t.seatAssignment || "Ghế tiêu chuẩn"}`,
+            });
+          } catch {
+            toast.error("Không thể ghi nhận check-in. Vui lòng thử lại!");
+          }
+        }}
+      />
     </div>
   );
 

@@ -121,7 +121,12 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   if (!selectedEvent) return null;
 
   const selectedIndex = events.findIndex((x: any) => x.id === selectedEvent.id);
-  const rawSelImg = (selectedEvent as any).image;
+  const rawSelImg =
+    (selectedEvent as any).image ||
+    (selectedEvent as any).banner ||
+    (selectedEvent as any).posterUrl ||
+    (selectedEvent as any).imageUrl ||
+    (selectedEvent as any).coverImage;
   const selectedImg =
     (rawSelImg ? resolveMediaUrl(rawSelImg) || rawSelImg : null) ||
     defaultEventImages[(selectedIndex >= 0 ? selectedIndex : 0) % defaultEventImages.length];

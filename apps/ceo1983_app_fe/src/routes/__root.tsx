@@ -226,25 +226,9 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
-  const redirectScript = `(${String(function () {
-    // Synchronously apply theme (defaulting to dark).
-    try {
-      const savedTheme = localStorage.getItem("vba.theme");
-      const theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
-      const doc = document.documentElement;
-      doc.classList.toggle("dark", theme === "dark");
-      doc.classList.remove("hc");
-      doc.dataset.theme = theme;
-      doc.style.colorScheme = theme === "light" ? "light" : "dark";
-    } catch (e) {
-      /* ignore */
-    }
-  })})();`;
-
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: redirectScript }} />
         <HeadContent />
       </head>
       <body suppressHydrationWarning>

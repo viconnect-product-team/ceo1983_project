@@ -215,7 +215,7 @@ const quickActionDefs = [
     iconKey: "card",
     icon: IdCard,
     to: "/association/business-cards",
-    customLabel: "Danh thiếp số",
+    customLabel: "Danh thiếp",
     enLabel: "Digital Card",
     badgeId: "card",
     badgeText: "VIP",
@@ -237,7 +237,7 @@ const quickActionDefs = [
     iconKey: "events",
     icon: Calendar,
     to: "/association/events",
-    customLabel: "Sự kiện CLB",
+    customLabel: "Sự kiện",
     enLabel: "Club Events",
     badgeId: "events",
     badgeText: "Mới",
@@ -248,7 +248,7 @@ const quickActionDefs = [
     iconKey: "perks",
     icon: Crown,
     to: "/association/perks",
-    customLabel: "Đặc quyền VIP",
+    customLabel: "Ưu đãi VIP",
     enLabel: "VIP Perks",
     badgeId: "perks",
     badgeText: "Ưu đãi",
@@ -259,7 +259,7 @@ const quickActionDefs = [
     iconKey: "voting",
     icon: Vote,
     to: "/association/voting",
-    customLabel: "Biểu quyết số",
+    customLabel: "Biểu quyết",
     enLabel: "E-Voting",
     badgeId: "voting",
     badgeText: "Mới",
@@ -281,7 +281,7 @@ const quickActionDefs = [
     iconKey: "library",
     icon: FolderOpen,
     to: "/association/library",
-    customLabel: "Kho tài liệu",
+    customLabel: "Tài liệu",
     enLabel: "Library",
     badgeId: "library",
     badgeText: "Điều lệ",
@@ -303,7 +303,7 @@ const quickActionDefs = [
     iconKey: "documents",
     icon: CalendarCheck,
     to: "/association/calendar",
-    customLabel: "Lịch hoạt động",
+    customLabel: "Lịch hẹn",
     enLabel: "Activity Calendar",
     badgeId: "calendar",
     badgeText: "Lịch",
@@ -314,7 +314,7 @@ const quickActionDefs = [
     iconKey: "alarm",
     icon: BellRing,
     to: "#alarm",
-    customLabel: "Lịch báo thức",
+    customLabel: "Báo thức",
     enLabel: "Alarm Schedule",
     badgeId: "alarm",
     badgeText: "Nhắc",
@@ -1489,7 +1489,7 @@ function Home() {
                       </div>
                     )}
                   </div>
-                  <div className="text-center text-slate-800 dark:text-slate-200 text-xs font-medium font-['Inter'] leading-4 line-clamp-1 truncate max-w-full">
+                  <div className="text-center text-slate-800 dark:text-slate-200 text-[11px] sm:text-xs font-semibold font-['Inter'] leading-tight line-clamp-1 truncate max-w-full">
                     {item.name}
                   </div>
                 </div>
