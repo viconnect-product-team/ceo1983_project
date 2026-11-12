@@ -1,5 +1,47 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.23): Hoàn Thiện Trọn Vẹn 9 Hạng Mục Nâng Cấp Mobile App CEO 1983 - Dynamic SafeArea iOS/Android, Tối Giản Cấu Hình Hệ Thống, Quyền Riêng Tư Thẻ Hội Viên, 4 Tính Năng Nhanh Mặc Định, Xóa Bỏ Icon Đầu Mục Trang Chủ, Xóa Dữ Liệu Cũ & Sửa Lỗi Nháy Màn Cá Nhân, Reset Thông Báo Số, Định Vị Doanh Nghiệp & Tự Động Cài Đặt App 1 Chạm ([NODE-APP-001..014], [NODE-CORE-001..006])**:
+  - **1. Co giãn Header & Footer tự động theo SafeArea phần cứng iOS/Android ([NODE-APP-001], [NODE-APP-004])**:
+    * Triệt tiêu toàn bộ khoảng trống cố định thô cứng (dead gap 48px/54px) trên Dynamic Island / Tai thỏ và thanh điều hướng dưới.
+    * Áp dụng công thức an toàn động: `paddingTop: max(env(safe-area-inset-top, 0px), 12px)` và `pb-[max(env(safe-area-inset-bottom, 0px), 12px)]` tại `MemberShell.tsx` và `association.index.tsx`.
+    * Phân tầng Z-Index chuẩn mực (`z-40` cho sticky header và bottom navigation), đảm bảo nội dung cuộn mượt mà phía dưới mà không bao giờ bị cắt xén hoặc đè khuất.
+  - **2. Tối giản giao diện Cấu hình hệ thống ([NODE-APP-004], [NODE-APP-005])**:
+    * Thiết kế lại theo quy chuẩn tối giản: Bên trên là nhãn (label) tiêu đề ngắn gọn kèm chú thích phụ, bên dưới là nút bấm/điều khiển trực diện, không lồng ghép thẻ card rườm rà.
+    * Áp dụng màu thương hiệu đồng bộ (`brandColorTheme.primaryColor`).
+  - **3. Gom toàn bộ quyền riêng tư vào Modal Sửa Thẻ tại Danh thiếp số ([NODE-APP-002])**:
+    * Xóa bỏ hoàn toàn khối bật/tắt quyền riêng tư (ẩn/hiện SĐT, Email) bị duplicate ở bên ngoài trang danh thiếp (`association.card.tsx`) và cài đặt bảo mật (`AccountSecuritySettingsForm.tsx`).
+    * Toàn bộ cài đặt riêng tư (ẩn/hiện SĐT, ẩn/hiện email, ẩn/hiện doanh nghiệp) được gói gọn, bảo mật bên trong modal "Chỉnh sửa danh thiếp số" (`EditModal`).
+  - **4. Tùy chỉnh tính năng nhanh chuẩn xác & 4 tính năng mặc định bất biến ([NODE-APP-001])**:
+    * Sửa dứt điểm lỗi modal tùy chỉnh không lưu hoặc không cập nhật ra trang chủ. Lắng nghe đa tầng sự kiện `ceo1983_shortcuts_changed` và `vba_user_custom_shortcuts`.
+    * Thiết lập 4 phím tắt mặc định trường tồn: **Danh bạ CEO 1983** (`members`), **Tin nhắn** (`messages`), **Kết nối B2B** (`connect` trỏ sang `/association/connect`), và **Lịch hoạt động** (`events` trỏ sang `/association/events`).
+  - **5. Bỏ toàn bộ icon ngang text tại 6 đầu mục trang chủ ([NODE-APP-001])**:
+    * Loại bỏ 100% các icon hiển thị ngang hàng với tiêu đề tại 6 khối nội dung trang chủ:
+      1. *Sự kiện sắp tới* (`Upcoming Events`)
+      2. *Ưu đãi & Đặc quyền hội viên* (loại bỏ cả badge tròn và inline icon)
+      3. *Trao đổi cơ hội B2B*
+      4. *Sàn thương mại nội bộ*
+      5. *Hội viên mới gia nhập*
+      6. *Tin tức câu lạc bộ*
+  - **6. Xóa dữ liệu cũ (cuộc gặp...) & Sửa triệt để lỗi nháy màn cá nhân ([NODE-APP-004], [NODE-CORE-004])**:
+    * Dọn sạch mảng mock hardcode `committeeMeetings` và `meetings1on1` trong `association.profile.tsx`, thay thế bằng Empty State thanh lịch ("Chưa có cuộc gặp 1-on-1 nào") khi chưa có dữ liệu.
+    * Triệt tiêu hiện tượng nháy giao diện lạ (placeholder "Doanh Nhân CEO 1983", "M1983-268", "0988888888", "Keangnam Landmark 72"): Khởi tạo `localProfile` trực tiếp từ `vba_auth_user`, `auth_user` và `vba_custom_profile`, loại bỏ toàn bộ dữ liệu mock giật nháy khi vào màn.
+  - **7. Tự động xóa thông báo số (Badge) khi click xem ([NODE-APP-001], [NODE-APP-004])**:
+    * Biểu tượng chuông thông báo trang chủ: Sửa lỗi logic cũ hiển thị cố định "9+", chuyển sang render có điều kiện `{unreadNotifCount > 0}`.
+    * Khi hội viên click vào chuông hoặc phím tắt thông báo, hệ thống lập tức đánh dấu đã đọc toàn bộ (`markAllAsRead`), giải phóng số đếm và biến mất huy hiệu đỏ.
+    * Bỏ các số đếm tổng (danh bạ, cơ hội) bị gán nhầm màu đỏ như huy hiệu chưa đọc trên các ô phím tắt nhanh.
+  - **8. Dọn dẹp Cài đặt hệ thống, đồng bộ màu theme & Sửa định vị doanh nghiệp ([NODE-APP-004], [NODE-APP-005], [NODE-CORE-001])**:
+    * Gỡ bỏ vĩnh viễn: "Phân quyền Ban Quản Trị & Ban Chuyên Môn" (RBAC), "FaceID / Khóa vân tay" (Biometrics), và "Cài đặt thông báo" (Push notifications) khỏi cả `association.system-config.tsx` và `association.settings.tsx`.
+    * Đồng bộ 100% màu sắc các icon, text và button theo bộ màu thương hiệu được chọn qua `getActiveCeo1983ColorTheme()`.
+    * Gỡ bỏ các icon nằm ngang text: "Hồ sơ doanh nghiệp", "Địa chỉ doanh nghiệp", "Chức danh".
+    * Sửa lỗi định vị doanh nghiệp: Cập nhật `CeoBusinessLocationPicker.tsx` lưu đồng thời tọa độ GPS thực và chuỗi địa chỉ geocoded vào `vba_custom_profile`, `vba_custom_profile_${userId}`, `vba_my_member` và backend `updateMyLocation` (đã fix lỗi Postgres UUID parameter).
+  - **9. Quy trình cài đặt App 1 chạm tự động không cần thao tác tay ([NODE-APP-001], [NODE-APP-004])**:
+    * Tích hợp tự động kích hoạt lời nhắc `beforeinstallprompt.prompt()` ngay khi bấm "Cài đặt ứng dụng".
+    * Trên thiết bị Android hoặc trình duyệt di động: Tự động kích hoạt tải xuống và cài đặt gói APK gốc `CEO1983-app-latest.apk` trực tiếp, không bắt hội viên phải qua nhiều bước thao tác thủ công.
+  - **Kiểm định mã nguồn nghiêm ngặt (Strict Pre-flight & Code Quality)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.22): Chuẩn Hóa 100% Template Thông Báo Hoạt Động Theo Đúng 9 Trường Quy Chuẩn & Public Link Đăng Ký Sự Kiện Dành Cho Khách Ngoài ([NODE-CRM-008], [NODE-CRM-003], [NODE-APP-003])**:
   - **Chuẩn Hóa Template Thông Báo Sự Kiện / Cuộc Họp / Cuộc Gặp / Chương Trình Đào Tạo ([NODE-CRM-008])**:
     * Chỉ có đúng và đủ các trường thông tin quy chuẩn bắt buộc, tuyệt đối không thêm bất kỳ trường nào khác ngoài danh sách:
@@ -323,6 +365,48 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.23): Hoàn Thiện Trọn Vẹn 9 Hạng Mục Nâng Cấp Mobile App CEO 1983 - Dynamic SafeArea iOS/Android, Tối Giản Cấu Hình Hệ Thống, Quyền Riêng Tư Thẻ Hội Viên, 4 Tính Năng Nhanh Mặc Định, Xóa Bỏ Icon Đầu Mục Trang Chủ, Xóa Dữ Liệu Cũ & Sửa Lỗi Nháy Màn Cá Nhân, Reset Thông Báo Số, Định Vị Doanh Nghiệp & Tự Động Cài Đặt App 1 Chạm ([NODE-APP-001..014], [NODE-CORE-001..006])**:
+  - **1. Co giãn Header & Footer tự động theo SafeArea phần cứng iOS/Android ([NODE-APP-001], [NODE-APP-004])**:
+    * Triệt tiêu toàn bộ khoảng trống cố định thô cứng (dead gap 48px/54px) trên Dynamic Island / Tai thỏ và thanh điều hướng dưới.
+    * Áp dụng công thức an toàn động: `paddingTop: max(env(safe-area-inset-top, 0px), 12px)` và `pb-[max(env(safe-area-inset-bottom, 0px), 12px)]` tại `MemberShell.tsx` và `association.index.tsx`.
+    * Phân tầng Z-Index chuẩn mực (`z-40` cho sticky header và bottom navigation), đảm bảo nội dung cuộn mượt mà phía dưới mà không bao giờ bị cắt xén hoặc đè khuất.
+  - **2. Tối giản giao diện Cấu hình hệ thống ([NODE-APP-004], [NODE-APP-005])**:
+    * Thiết kế lại theo quy chuẩn tối giản: Bên trên là nhãn (label) tiêu đề ngắn gọn kèm chú thích phụ, bên dưới là nút bấm/điều khiển trực diện, không lồng ghép thẻ card rườm rà.
+    * Áp dụng màu thương hiệu đồng bộ (`brandColorTheme.primaryColor`).
+  - **3. Gom toàn bộ quyền riêng tư vào Modal Sửa Thẻ tại Danh thiếp số ([NODE-APP-002])**:
+    * Xóa bỏ hoàn toàn khối bật/tắt quyền riêng tư (ẩn/hiện SĐT, Email) bị duplicate ở bên ngoài trang danh thiếp (`association.card.tsx`) và cài đặt bảo mật (`AccountSecuritySettingsForm.tsx`).
+    * Toàn bộ cài đặt riêng tư (ẩn/hiện SĐT, ẩn/hiện email, ẩn/hiện doanh nghiệp) được gói gọn, bảo mật bên trong modal "Chỉnh sửa danh thiếp số" (`EditModal`).
+  - **4. Tùy chỉnh tính năng nhanh chuẩn xác & 4 tính năng mặc định bất biến ([NODE-APP-001])**:
+    * Sửa dứt điểm lỗi modal tùy chỉnh không lưu hoặc không cập nhật ra trang chủ. Lắng nghe đa tầng sự kiện `ceo1983_shortcuts_changed` và `vba_user_custom_shortcuts`.
+    * Thiết lập 4 phím tắt mặc định trường tồn: **Danh bạ CEO 1983** (`members`), **Tin nhắn** (`messages`), **Kết nối B2B** (`connect` trỏ sang `/association/connect`), và **Lịch hoạt động** (`events` trỏ sang `/association/events`).
+  - **5. Bỏ toàn bộ icon ngang text tại 6 đầu mục trang chủ ([NODE-APP-001])**:
+    * Loại bỏ 100% các icon hiển thị ngang hàng với tiêu đề tại 6 khối nội dung trang chủ:
+      1. *Sự kiện sắp tới* (`Upcoming Events`)
+      2. *Ưu đãi & Đặc quyền hội viên* (loại bỏ cả badge tròn và inline icon)
+      3. *Trao đổi cơ hội B2B*
+      4. *Sàn thương mại nội bộ*
+      5. *Hội viên mới gia nhập*
+      6. *Tin tức câu lạc bộ*
+  - **6. Xóa dữ liệu cũ (cuộc gặp...) & Sửa triệt để lỗi nháy màn cá nhân ([NODE-APP-004], [NODE-CORE-004])**:
+    * Dọn sạch mảng mock hardcode `committeeMeetings` và `meetings1on1` trong `association.profile.tsx`, thay thế bằng Empty State thanh lịch ("Chưa có cuộc gặp 1-on-1 nào") khi chưa có dữ liệu.
+    * Triệt tiêu hiện tượng nháy giao diện lạ (placeholder "Doanh Nhân CEO 1983", "M1983-268", "0988888888", "Keangnam Landmark 72"): Khởi tạo `localProfile` trực tiếp từ `vba_auth_user`, `auth_user` và `vba_custom_profile`, loại bỏ toàn bộ dữ liệu mock giật nháy khi vào màn.
+  - **7. Tự động xóa thông báo số (Badge) khi click xem ([NODE-APP-001], [NODE-APP-004])**:
+    * Biểu tượng chuông thông báo trang chủ: Sửa lỗi logic cũ hiển thị cố định "9+", chuyển sang render có điều kiện `{unreadNotifCount > 0}`.
+    * Khi hội viên click vào chuông hoặc phím tắt thông báo, hệ thống lập tức đánh dấu đã đọc toàn bộ (`markAllAsRead`), giải phóng số đếm và biến mất huy hiệu đỏ.
+    * Bỏ các số đếm tổng (danh bạ, cơ hội) bị gán nhầm màu đỏ như huy hiệu chưa đọc trên các ô phím tắt nhanh.
+  - **8. Dọn dẹp Cài đặt hệ thống, đồng bộ màu theme & Sửa định vị doanh nghiệp ([NODE-APP-004], [NODE-APP-005], [NODE-CORE-001])**:
+    * Gỡ bỏ vĩnh viễn: "Phân quyền Ban Quản Trị & Ban Chuyên Môn" (RBAC), "FaceID / Khóa vân tay" (Biometrics), và "Cài đặt thông báo" (Push notifications) khỏi cả `association.system-config.tsx` và `association.settings.tsx`.
+    * Đồng bộ 100% màu sắc các icon, text và button theo bộ màu thương hiệu được chọn qua `getActiveCeo1983ColorTheme()`.
+    * Gỡ bỏ các icon nằm ngang text: "Hồ sơ doanh nghiệp", "Địa chỉ doanh nghiệp", "Chức danh".
+    * Sửa lỗi định vị doanh nghiệp: Cập nhật `CeoBusinessLocationPicker.tsx` lưu đồng thời tọa độ GPS thực và chuỗi địa chỉ geocoded vào `vba_custom_profile`, `vba_custom_profile_${userId}`, `vba_my_member` và backend `updateMyLocation` (đã fix lỗi Postgres UUID parameter).
+  - **9. Quy trình cài đặt App 1 chạm tự động không cần thao tác tay ([NODE-APP-001], [NODE-APP-004])**:
+    * Tích hợp tự động kích hoạt lời nhắc `beforeinstallprompt.prompt()` ngay khi bấm "Cài đặt ứng dụng".
+    * Trên thiết bị Android hoặc trình duyệt di động: Tự động kích hoạt tải xuống và cài đặt gói APK gốc `CEO1983-app-latest.apk` trực tiếp, không bắt hội viên phải qua nhiều bước thao tác thủ công.
+  - **Kiểm định mã nguồn nghiêm ngặt (Strict Pre-flight & Code Quality)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.22): Chuẩn Hóa 100% Template Thông Báo Hoạt Động Theo Đúng 9 Trường Quy Chuẩn & Public Link Đăng Ký Sự Kiện Dành Cho Khách Ngoài ([NODE-CRM-008], [NODE-CRM-003], [NODE-APP-003])**:
   - **Chuẩn Hóa Template Thông Báo Sự Kiện / Cuộc Họp / Cuộc Gặp / Chương Trình Đào Tạo ([NODE-CRM-008])**:
@@ -1929,6 +2013,48 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.23): Hoàn Thiện Trọn Vẹn 9 Hạng Mục Nâng Cấp Mobile App CEO 1983 - Dynamic SafeArea iOS/Android, Tối Giản Cấu Hình Hệ Thống, Quyền Riêng Tư Thẻ Hội Viên, 4 Tính Năng Nhanh Mặc Định, Xóa Bỏ Icon Đầu Mục Trang Chủ, Xóa Dữ Liệu Cũ & Sửa Lỗi Nháy Màn Cá Nhân, Reset Thông Báo Số, Định Vị Doanh Nghiệp & Tự Động Cài Đặt App 1 Chạm ([NODE-APP-001..014], [NODE-CORE-001..006])**:
+  - **1. Co giãn Header & Footer tự động theo SafeArea phần cứng iOS/Android ([NODE-APP-001], [NODE-APP-004])**:
+    * Triệt tiêu toàn bộ khoảng trống cố định thô cứng (dead gap 48px/54px) trên Dynamic Island / Tai thỏ và thanh điều hướng dưới.
+    * Áp dụng công thức an toàn động: `paddingTop: max(env(safe-area-inset-top, 0px), 12px)` và `pb-[max(env(safe-area-inset-bottom, 0px), 12px)]` tại `MemberShell.tsx` và `association.index.tsx`.
+    * Phân tầng Z-Index chuẩn mực (`z-40` cho sticky header và bottom navigation), đảm bảo nội dung cuộn mượt mà phía dưới mà không bao giờ bị cắt xén hoặc đè khuất.
+  - **2. Tối giản giao diện Cấu hình hệ thống ([NODE-APP-004], [NODE-APP-005])**:
+    * Thiết kế lại theo quy chuẩn tối giản: Bên trên là nhãn (label) tiêu đề ngắn gọn kèm chú thích phụ, bên dưới là nút bấm/điều khiển trực diện, không lồng ghép thẻ card rườm rà.
+    * Áp dụng màu thương hiệu đồng bộ (`brandColorTheme.primaryColor`).
+  - **3. Gom toàn bộ quyền riêng tư vào Modal Sửa Thẻ tại Danh thiếp số ([NODE-APP-002])**:
+    * Xóa bỏ hoàn toàn khối bật/tắt quyền riêng tư (ẩn/hiện SĐT, Email) bị duplicate ở bên ngoài trang danh thiếp (`association.card.tsx`) và cài đặt bảo mật (`AccountSecuritySettingsForm.tsx`).
+    * Toàn bộ cài đặt riêng tư (ẩn/hiện SĐT, ẩn/hiện email, ẩn/hiện doanh nghiệp) được gói gọn, bảo mật bên trong modal "Chỉnh sửa danh thiếp số" (`EditModal`).
+  - **4. Tùy chỉnh tính năng nhanh chuẩn xác & 4 tính năng mặc định bất biến ([NODE-APP-001])**:
+    * Sửa dứt điểm lỗi modal tùy chỉnh không lưu hoặc không cập nhật ra trang chủ. Lắng nghe đa tầng sự kiện `ceo1983_shortcuts_changed` và `vba_user_custom_shortcuts`.
+    * Thiết lập 4 phím tắt mặc định trường tồn: **Danh bạ CEO 1983** (`members`), **Tin nhắn** (`messages`), **Kết nối B2B** (`connect` trỏ sang `/association/connect`), và **Lịch hoạt động** (`events` trỏ sang `/association/events`).
+  - **5. Bỏ toàn bộ icon ngang text tại 6 đầu mục trang chủ ([NODE-APP-001])**:
+    * Loại bỏ 100% các icon hiển thị ngang hàng với tiêu đề tại 6 khối nội dung trang chủ:
+      1. *Sự kiện sắp tới* (`Upcoming Events`)
+      2. *Ưu đãi & Đặc quyền hội viên* (loại bỏ cả badge tròn và inline icon)
+      3. *Trao đổi cơ hội B2B*
+      4. *Sàn thương mại nội bộ*
+      5. *Hội viên mới gia nhập*
+      6. *Tin tức câu lạc bộ*
+  - **6. Xóa dữ liệu cũ (cuộc gặp...) & Sửa triệt để lỗi nháy màn cá nhân ([NODE-APP-004], [NODE-CORE-004])**:
+    * Dọn sạch mảng mock hardcode `committeeMeetings` và `meetings1on1` trong `association.profile.tsx`, thay thế bằng Empty State thanh lịch ("Chưa có cuộc gặp 1-on-1 nào") khi chưa có dữ liệu.
+    * Triệt tiêu hiện tượng nháy giao diện lạ (placeholder "Doanh Nhân CEO 1983", "M1983-268", "0988888888", "Keangnam Landmark 72"): Khởi tạo `localProfile` trực tiếp từ `vba_auth_user`, `auth_user` và `vba_custom_profile`, loại bỏ toàn bộ dữ liệu mock giật nháy khi vào màn.
+  - **7. Tự động xóa thông báo số (Badge) khi click xem ([NODE-APP-001], [NODE-APP-004])**:
+    * Biểu tượng chuông thông báo trang chủ: Sửa lỗi logic cũ hiển thị cố định "9+", chuyển sang render có điều kiện `{unreadNotifCount > 0}`.
+    * Khi hội viên click vào chuông hoặc phím tắt thông báo, hệ thống lập tức đánh dấu đã đọc toàn bộ (`markAllAsRead`), giải phóng số đếm và biến mất huy hiệu đỏ.
+    * Bỏ các số đếm tổng (danh bạ, cơ hội) bị gán nhầm màu đỏ như huy hiệu chưa đọc trên các ô phím tắt nhanh.
+  - **8. Dọn dẹp Cài đặt hệ thống, đồng bộ màu theme & Sửa định vị doanh nghiệp ([NODE-APP-004], [NODE-APP-005], [NODE-CORE-001])**:
+    * Gỡ bỏ vĩnh viễn: "Phân quyền Ban Quản Trị & Ban Chuyên Môn" (RBAC), "FaceID / Khóa vân tay" (Biometrics), và "Cài đặt thông báo" (Push notifications) khỏi cả `association.system-config.tsx` và `association.settings.tsx`.
+    * Đồng bộ 100% màu sắc các icon, text và button theo bộ màu thương hiệu được chọn qua `getActiveCeo1983ColorTheme()`.
+    * Gỡ bỏ các icon nằm ngang text: "Hồ sơ doanh nghiệp", "Địa chỉ doanh nghiệp", "Chức danh".
+    * Sửa lỗi định vị doanh nghiệp: Cập nhật `CeoBusinessLocationPicker.tsx` lưu đồng thời tọa độ GPS thực và chuỗi địa chỉ geocoded vào `vba_custom_profile`, `vba_custom_profile_${userId}`, `vba_my_member` và backend `updateMyLocation` (đã fix lỗi Postgres UUID parameter).
+  - **9. Quy trình cài đặt App 1 chạm tự động không cần thao tác tay ([NODE-APP-001], [NODE-APP-004])**:
+    * Tích hợp tự động kích hoạt lời nhắc `beforeinstallprompt.prompt()` ngay khi bấm "Cài đặt ứng dụng".
+    * Trên thiết bị Android hoặc trình duyệt di động: Tự động kích hoạt tải xuống và cài đặt gói APK gốc `CEO1983-app-latest.apk` trực tiếp, không bắt hội viên phải qua nhiều bước thao tác thủ công.
+  - **Kiểm định mã nguồn nghiêm ngặt (Strict Pre-flight & Code Quality)**:
+    * Backend (`apps/ceo1983_app_be`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.22): Chuẩn Hóa 100% Template Thông Báo Hoạt Động Theo Đúng 9 Trường Quy Chuẩn & Public Link Đăng Ký Sự Kiện Dành Cho Khách Ngoài ([NODE-CRM-008], [NODE-CRM-003], [NODE-APP-003])**:
   - **Chuẩn Hóa Template Thông Báo Sự Kiện / Cuộc Họp / Cuộc Gặp / Chương Trình Đào Tạo ([NODE-CRM-008])**:

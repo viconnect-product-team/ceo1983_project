@@ -53,6 +53,11 @@ import {
   History,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
+import {
+  getActiveCeo1983ColorTheme,
+  COLOR_THEME_EVENT,
+  type Ceo1983ColorTheme,
+} from "@/lib/ceo1983-color-theme";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { CardPreviewModal } from "@/components/member/CardPreviewModal";
 import { CreatePostModal } from "@/components/feed/CreatePostModal";
@@ -318,67 +323,10 @@ export default function ProfileScreen() {
   };
 
   // Cuộc họp ban (Ban Điều Hành, Ban Thư Ký, Ban Xúc Tiến, Ban Truyền Thông...)
-  const committeeMeetings = useMemo(() => [
-    {
-      id: "meet_btk_01",
-      title: "Họp Ban Thư Ký & Ban Điều Hành Quý IV",
-      department: "Ban Thư Ký",
-      date: "28/10/2026",
-      time: "14:00 - 16:30",
-      location: "Văn phòng HanoiBA & Trực tuyến Zoom",
-      zoomUrl: "https://zoom.us/j/8831983001",
-      type: "Ban chuyên môn",
-      status: "Sắp diễn ra",
-    },
-    {
-      id: "meet_xttm_02",
-      title: "Phiên giao ban Xúc Tiến Thương Mại & Deal B2B",
-      department: "Ban Xúc Tiến Thương Mại",
-      date: "05/11/2026",
-      time: "09:00 - 11:30",
-      location: "Zoom Meeting ID: 883-1983-002",
-      zoomUrl: "https://zoom.us/j/8831983002",
-      type: "Giao ban định kỳ",
-      status: "Chuẩn bị",
-    },
-    {
-      id: "meet_tt_03",
-      title: "Họp triển khai chiến dịch Caravan Doanh Nhân 1983",
-      department: "Ban Truyền Thông",
-      date: "12/11/2026",
-      time: "15:00 - 17:00",
-      location: "Google Meet",
-      zoomUrl: "https://meet.google.com/ceo-1983-meet",
-      type: "Họp dự án",
-      status: "Sắp tới",
-    },
-  ], []);
+  const committeeMeetings = useMemo<any[]>(() => [], []);
 
   // Cuộc gặp 1-on-1 (Giao lưu, hợp tác kinh doanh)
-  const meetings1on1 = useMemo(() => [
-    {
-      id: "meet_1on1_01",
-      title: "Gặp gỡ 1-on-1: Trao đổi cung ứng vật tư & công nghệ sản xuất",
-      partnerName: "CEO Lê Văn Hùng",
-      partnerCompany: "Tập đoàn Xây dựng & Cơ điện Thăng Long",
-      date: "29/10/2026",
-      time: "10:00",
-      location: "Cafe Trung Nguyên Legend, Cầu Giấy, Hà Nội",
-      status: "Đã xác nhận",
-      phone: "0988111222",
-    },
-    {
-      id: "meet_1on1_02",
-      title: "Gặp gỡ 1-on-1: Thảo luận giải pháp Chuyển đổi số Doanh nghiệp",
-      partnerName: "CEO Đỗ Thị Mai",
-      partnerCompany: "Công ty Cổ phần Giải pháp Công nghệ ViOne",
-      date: "02/11/2026",
-      time: "15:30",
-      location: "Trực tuyến Google Meet",
-      status: "Đang chờ",
-      phone: "0988333444",
-    },
-  ], []);
+  const meetings1on1 = useMemo<any[]>(() => [], []);
 
   // Lịch sử thao tác hội viên (Audit Log sống động - Yêu cầu 3)
   const [auditHistory, setAuditHistory] = useState<UserActivityItem[]>(() =>
@@ -536,13 +484,38 @@ export default function ProfileScreen() {
 
   // Local responsive profile state (STRICTLY SCOPED TO CURRENT USER - No stale cross-contamination)
   const [localProfile, setLocalProfile] = useState<any>(() => {
-    if (typeof window === "undefined" || !user?.id) return {};
+    if (typeof window === "undefined") return {};
     try {
-      const userCp = localStorage.getItem(`vba_custom_profile_${user.id}`);
-      if (userCp) return JSON.parse(userCp);
+      const currentAuth = localStorage.getItem("vba_auth_user") || localStorage.getItem("auth_user");
+      const parsedAuth = currentAuth ? JSON.parse(currentAuth) : null;
+      const effectiveId = user?.id || parsedAuth?.id;
+      if (effectiveId) {
+        const userCp = localStorage.getItem(`vba_custom_profile_${effectiveId}`);
+        if (userCp) return JSON.parse(userCp);
+      }
+      const genericCp = localStorage.getItem("vba_custom_profile");
+      if (genericCp) return JSON.parse(genericCp);
+      const myMem = localStorage.getItem("vba_my_member");
+      if (myMem) return JSON.parse(myMem);
     } catch {}
     return {};
   });
+
+  const [brandColorTheme, setBrandColorTheme] = useState<Ceo1983ColorTheme>(() =>
+    getActiveCeo1983ColorTheme()
+  );
+  useEffect(() => {
+    const handleThemeChange = (e: any) => {
+      if (e?.detail) setBrandColorTheme(e.detail);
+      else setBrandColorTheme(getActiveCeo1983ColorTheme());
+    };
+    window.addEventListener(COLOR_THEME_EVENT, handleThemeChange);
+    window.addEventListener("storage", handleThemeChange);
+    return () => {
+      window.removeEventListener(COLOR_THEME_EVENT, handleThemeChange);
+      window.removeEventListener("storage", handleThemeChange);
+    };
+  }, []);
 
   // Re-sync when user ID changes
   useEffect(() => {
@@ -768,42 +741,61 @@ export default function ProfileScreen() {
     }
   };
 
-  // Resolved dynamic fields with localProfile priority (instant reactivity)
-  const memberCode = member?.code || (user as any)?.user_metadata?.member_code || "M1983-268";
+  // Resolved dynamic fields with localProfile priority (instant reactivity - No fake mock placeholders)
+  const memberCode =
+    localProfile?.code ||
+    member?.code ||
+    (user as any)?.user_metadata?.member_code ||
+    (user as any)?.member_code ||
+    "";
   const displayName =
     localProfile?.name?.trim() ||
     member?.name ||
     user?.name ||
     (user as any)?.user_metadata?.full_name ||
     user?.username ||
-    "Doanh Nhân CEO 1983";
+    (user?.email ? user.email.split("@")[0] : "");
   const displayTitle =
     localProfile?.title?.trim() ||
     member?.title ||
     (member as any)?.position ||
-    "Tổng Giám Đốc / CEO";
+    "";
   const displayCompany =
     localProfile?.company?.trim() ||
     (member as any)?.companyName ||
     (member as any)?.company ||
-    "Doanh nghiệp CLB CEO 1983";
+    "";
   const displayPhone =
     localProfile?.phone?.trim() ||
     member?.phone ||
     (user as any)?.phone ||
-    "0988888888";
-  const displayEmail = member?.email || user?.email || "lienhe@ceo1983club.com";
+    "";
+  const displayEmail = member?.email || user?.email || "";
   const displayWebsite =
     localProfile?.website?.trim() ||
     (member as any)?.website ||
-    "https://ceo1983club.com";
+    "";
   const displayAddress =
     localProfile?.address?.trim() ||
     (member as any)?.address ||
     (member as any)?.officeAddress ||
-    "Tòa nhà CEO 1983 Tower, Cầu Giấy, TP. Hà Nội";
-  const displayLat = Number((member as any)?.latitude || (member as any)?.lat || (user as any)?.latitude || 21.0175);
-  const displayLng = Number((member as any)?.longitude || (member as any)?.lng || (user as any)?.longitude || 105.7838);
+    "";
+  const displayLat = Number(
+    localProfile?.lat ||
+      localProfile?.latitude ||
+      (member as any)?.latitude ||
+      (member as any)?.lat ||
+      (user as any)?.latitude ||
+      21.0175
+  );
+  const displayLng = Number(
+    localProfile?.lng ||
+      localProfile?.longitude ||
+      (member as any)?.longitude ||
+      (member as any)?.lng ||
+      (user as any)?.longitude ||
+      105.7838
+  );
   let rawBio = (member as any)?.bio || (member as any)?.about || "";
   let extractedStaffSize = (member as any)?.companySize || (member as any)?.company_size || (member as any)?.staffSize || "";
   if (typeof rawBio === "string" && rawBio.trim().startsWith("{")) {
@@ -1013,9 +1005,17 @@ export default function ProfileScreen() {
 
             {/* Chức vụ & Doanh nghiệp */}
             <div className="pt-0.5 flex flex-col justify-center items-center gap-0.5">
-              <div className="px-2 py-[2px] bg-orange-100 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-500/30 rounded-full inline-flex justify-start items-center gap-1">
-                <img src="/icons/profile/briefcase-04.svg" className="size-3 text-orange-600 dark:text-orange-400" alt="briefcase" />
-                <span className="text-orange-600 dark:text-orange-400 text-[11px] font-semibold font-['Inter'] leading-4">
+              <div
+                style={{
+                  backgroundColor: `${brandColorTheme.primaryColor}15`,
+                  borderColor: `${brandColorTheme.primaryColor}30`,
+                }}
+                className="px-2.5 py-[2px] rounded-full inline-flex justify-start items-center border"
+              >
+                <span
+                  style={{ color: brandColorTheme.primaryColor }}
+                  className="text-[11px] font-semibold font-['Inter'] leading-4"
+                >
                   {displayTitle}
                 </span>
               </div>
@@ -1132,12 +1132,9 @@ export default function ProfileScreen() {
                 {/* Khối Hồ sơ doanh nghiệp (dòng 545-587) */}
                 <div className="self-stretch bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden shadow-2xs">
                   <div className="self-stretch px-4 pt-4 pb-2 inline-flex justify-between items-center">
-                    <div className="flex-1 flex justify-start items-center gap-2">
-                      <img src="/icons/profile/profile-02.svg" className="size-5" alt="profile" />
-                      <div className="flex-1 inline-flex flex-col justify-start items-start">
-                        <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
-                          Hồ sơ doanh nghiệp
-                        </div>
+                    <div className="flex-1 flex justify-start items-center">
+                      <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
+                        Hồ sơ doanh nghiệp
                       </div>
                     </div>
                   </div>
@@ -1186,8 +1183,7 @@ export default function ProfileScreen() {
                 {/* Khối Địa chỉ doanh nghiệp & Bản đồ 2D Google (dòng 589-656) */}
                 <div className="self-stretch p-4 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start gap-3 shadow-2xs">
                   <div className="self-stretch inline-flex justify-between items-center">
-                    <div className="flex-1 flex justify-start items-center gap-2">
-                      <img src="/icons/profile/navigation-05.svg" className="size-5" alt="navigation" />
+                    <div className="flex-1 flex justify-start items-center">
                       <div className="text-Text-default text-base font-semibold font-['Inter'] leading-5">
                         Địa chỉ doanh nghiệp
                       </div>
@@ -1259,7 +1255,16 @@ export default function ProfileScreen() {
                         initialLng={displayLng}
                         companyName={displayCompany}
                         userId={user?.id}
-                        onAddressSaved={() => {
+                        onAddressSaved={(newAddress, lat, lng) => {
+                          setLocalProfile((prev: any) => ({
+                            ...prev,
+                            address: newAddress,
+                            officeAddress: newAddress,
+                            lat,
+                            latitude: lat,
+                            lng,
+                            longitude: lng,
+                          }));
                           reloadMember?.();
                           setShowLocationEditor(false);
                         }}
@@ -1568,48 +1573,54 @@ export default function ProfileScreen() {
 
               {expandedSections["committee_meetings"] && (
                 <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  {committeeMeetings.map((m) => (
-                    <div
-                      key={m.id}
-                      className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[9.5px] font-extrabold uppercase">
-                          {m.department}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9.5px] font-extrabold">
-                          {m.status}
-                        </span>
-                      </div>
-                      <h5 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
-                        {m.title}
-                      </h5>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-slate-500 dark:text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Clock className="size-3 text-slate-400" />
-                          <span>{m.time}, {m.date}</span>
-                        </span>
-                        <span className="flex items-center gap-1 truncate max-w-full">
-                          <MapPin className="size-3 text-slate-400 shrink-0" />
-                          <span className="truncate">{m.location}</span>
-                        </span>
-                      </div>
-                      {m.zoomUrl && (
-                        <div className="pt-1 flex items-center justify-between">
-                          <a
-                            href={m.zoomUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-orange-500 text-white text-[11px] font-bold shadow-2xs hover:bg-orange-600 transition cursor-pointer"
-                          >
-                            <Video className="size-3 text-amber-200" />
-                            <span>Vào phòng họp</span>
-                          </a>
-                          <span className="text-[10px] text-slate-400 italic">Được cấp bởi Ban Thư Ký</span>
-                        </div>
-                      )}
+                  {committeeMeetings.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                      Chưa có cuộc họp ban nào được lên lịch
                     </div>
-                  ))}
+                  ) : (
+                    committeeMeetings.map((m) => (
+                      <div
+                        key={m.id}
+                        className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[9.5px] font-extrabold uppercase">
+                            {m.department}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9.5px] font-extrabold">
+                            {m.status}
+                          </span>
+                        </div>
+                        <h5 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                          {m.title}
+                        </h5>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-slate-500 dark:text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Clock className="size-3 text-slate-400" />
+                            <span>{m.time}, {m.date}</span>
+                          </span>
+                          <span className="flex items-center gap-1 truncate max-w-full">
+                            <MapPin className="size-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{m.location}</span>
+                          </span>
+                        </div>
+                        {m.zoomUrl && (
+                          <div className="pt-1 flex items-center justify-between">
+                            <a
+                              href={m.zoomUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-orange-500 text-white text-[11px] font-bold shadow-2xs hover:bg-orange-600 transition cursor-pointer"
+                            >
+                              <Video className="size-3 text-amber-200" />
+                              <span>Vào phòng họp</span>
+                            </a>
+                            <span className="text-[10px] text-slate-400 italic">Được cấp bởi Ban Thư Ký</span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -1643,54 +1654,60 @@ export default function ProfileScreen() {
 
               {expandedSections["meetings_1on1"] && (
                 <div className="px-4 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-in fade-in duration-150">
-                  {meetings1on1.map((meet) => (
-                    <div
-                      key={meet.id}
-                      className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-xs text-orange-600 dark:text-orange-400">
-                          {meet.partnerName}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[9.5px] font-extrabold border border-orange-200">
-                          {meet.status}
-                        </span>
-                      </div>
-                      <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
-                        {meet.title}
-                      </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Doanh nghiệp: {meet.partnerCompany}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
-                        <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                          <Clock className="size-3 text-orange-500" />
-                          <span>{meet.time} ngày {meet.date}</span>
-                        </span>
-                        <span className="flex items-center gap-1 truncate max-w-full">
-                          <MapPin className="size-3 text-slate-400 shrink-0" />
-                          <span className="truncate">{meet.location}</span>
-                        </span>
-                      </div>
-                      <div className="pt-1 flex items-center justify-between">
-                        <a
-                          href={`https://zalo.me/${meet.phone}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-[10.5px] font-bold hover:bg-orange-100 transition cursor-pointer"
-                        >
-                          <span>Nhắn Zalo đối tác</span>
-                        </a>
-                        <a
-                          href={`tel:${meet.phone}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-[10.5px] font-bold hover:bg-orange-100 transition cursor-pointer"
-                        >
-                          <Phone className="size-3 text-orange-600" />
-                          <span>Gọi điện</span>
-                        </a>
-                      </div>
+                  {meetings1on1.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                      Chưa có cuộc gặp 1-on-1 nào
                     </div>
-                  ))}
+                  ) : (
+                    meetings1on1.map((meet) => (
+                      <div
+                        key={meet.id}
+                        className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-xs text-orange-600 dark:text-orange-400">
+                            {meet.partnerName}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-300 text-[9.5px] font-extrabold border border-orange-200">
+                            {meet.status}
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
+                          {meet.title}
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                          Doanh nghiệp: {meet.partnerCompany}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
+                          <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                            <Clock className="size-3 text-orange-500" />
+                            <span>{meet.time} ngày {meet.date}</span>
+                          </span>
+                          <span className="flex items-center gap-1 truncate max-w-full">
+                            <MapPin className="size-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{meet.location}</span>
+                          </span>
+                        </div>
+                        <div className="pt-1 flex items-center justify-between">
+                          <a
+                            href={`https://zalo.me/${meet.phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-[10.5px] font-bold hover:bg-orange-100 transition cursor-pointer"
+                          >
+                            <span>Nhắn Zalo đối tác</span>
+                          </a>
+                          <a
+                            href={`tel:${meet.phone}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-[10.5px] font-bold hover:bg-orange-100 transition cursor-pointer"
+                          >
+                            <Phone className="size-3 text-orange-600" />
+                            <span>Gọi điện</span>
+                          </a>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

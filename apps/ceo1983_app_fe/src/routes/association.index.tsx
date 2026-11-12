@@ -737,8 +737,16 @@ function Home() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const legacy = ["messages", "members", "analytics", "opportunities"];
-          if (parsed.length === legacy.length && legacy.every((id, idx) => parsed[idx] === id)) {
+          const legacyList = [
+            ["messages", "members", "analytics", "opportunities"],
+            ["members", "messages", "opportunities", "events"],
+          ];
+          const isLegacy = legacyList.some(
+            (legacy) =>
+              parsed.length === legacy.length &&
+              legacy.every((id, idx) => parsed[idx] === id)
+          );
+          if (isLegacy) {
             return DEFAULT_SHORTCUT_IDS;
           }
           return parsed;
@@ -758,8 +766,16 @@ function Home() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const legacy = ["messages", "members", "analytics", "opportunities"];
-            if (parsed.length === legacy.length && legacy.every((id, idx) => parsed[idx] === id)) {
+            const legacyList = [
+              ["messages", "members", "analytics", "opportunities"],
+              ["members", "messages", "opportunities", "events"],
+            ];
+            const isLegacy = legacyList.some(
+              (legacy) =>
+                parsed.length === legacy.length &&
+                legacy.every((id, idx) => parsed[idx] === id)
+            );
+            if (isLegacy) {
               setActiveShortcutIds(DEFAULT_SHORTCUT_IDS);
               return;
             }
@@ -1255,9 +1271,9 @@ function Home() {
         <div
           data-type="1"
           style={{
-            paddingTop: "calc(max(env(safe-area-inset-top, 0px), 48px) + 6px)",
+            paddingTop: "max(env(safe-area-inset-top, 0px), 12px)",
           }}
-          className="self-stretch px-4 pb-2.5 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-30 border-b border-slate-100"
+          className="self-stretch px-4 pb-2.5 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-40 border-b border-slate-100"
         >
           <div className="flex justify-start items-center gap-2.5">
             <div className="w-14 h-9 relative shrink-0">
@@ -1279,15 +1295,31 @@ function Home() {
           </div>
           <Link
             to="/association/notifications"
+            onClick={() => {
+              try {
+                const stored = localStorage.getItem("vba_notifications");
+                if (stored) {
+                  const parsed = JSON.parse(stored);
+                  if (Array.isArray(parsed)) {
+                    const marked = parsed.map((item) => ({ ...item, unread: false, isRead: true }));
+                    localStorage.setItem("vba_notifications", JSON.stringify(marked));
+                    window.dispatchEvent(new Event("notifications-updated"));
+                    window.dispatchEvent(new Event("vba_notifications_updated"));
+                  }
+                }
+              } catch {}
+            }}
             className="relative p-2 rounded-xl border border-orange-200 bg-orange-50/50 inline-flex justify-center items-center hover:scale-105 active:scale-95 transition shadow-xs"
             aria-label="Thông báo"
           >
             <img src="/icons/home/notification-01.svg" className="size-5" alt="Thông báo" />
-            <div className="px-1.5 py-0.5 -right-1.5 -top-1.5 absolute bg-[#EF4444] rounded-[100px] inline-flex justify-center items-center overflow-hidden ring-1 ring-white shadow-xs">
-              <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
-                {unreadNotifCount > 9 ? "9+" : (unreadNotifCount || "9+")}
+            {unreadNotifCount > 0 && (
+              <div className="px-1.5 py-0.5 -right-1.5 -top-1.5 absolute bg-[#EF4444] rounded-[100px] inline-flex justify-center items-center overflow-hidden ring-1 ring-white shadow-xs">
+                <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
+                  {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                </div>
               </div>
-            </div>
+            )}
           </Link>
         </div>
 
@@ -1440,13 +1472,6 @@ function Home() {
               const isConnectModal = item.to === "#connect";
               const isAlarmModal = item.to === "#alarm";
 
-              const badgeCount =
-                item.id === "members"
-                  ? (directoryMembers.length > 0 ? directoryMembers.length : null)
-                  : item.id === "opportunities"
-                  ? (totalOpportunitiesCount > 0 ? totalOpportunitiesCount : null)
-                  : null;
-
               const content = (
                 <div className="w-full inline-flex flex-col justify-start items-center gap-1.5 group cursor-pointer relative">
                   <div
@@ -1458,14 +1483,7 @@ function Home() {
                   >
                     {getShortcutIcon(item.iconName, "size-6", brandColorTheme.primaryColor)}
 
-                    {badgeCount !== null && (
-                      <div className="px-1.5 py-0.5 right-[-4px] top-[-6px] absolute bg-[#EF4444] rounded-[100px] flex justify-center items-center overflow-hidden ring-1 ring-white dark:ring-slate-900 shadow-xs">
-                        <div className="text-center text-white text-[10px] font-bold font-['Inter'] leading-3">
-                          {badgeCount}
-                        </div>
-                      </div>
-                    )}
-                    {item.badge && badgeCount === null && (
+                    {item.badge && (
                       <div className={`px-1.5 py-0.2 right-[-4px] top-[-6px] absolute ${item.badgeColor || "bg-amber-500 text-slate-900"} rounded-full text-[9px] font-black uppercase ring-1 ring-white dark:ring-slate-900 shadow-xs`}>
                         {item.badge}
                       </div>

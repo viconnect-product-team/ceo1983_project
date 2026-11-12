@@ -546,14 +546,42 @@ export const CeoBusinessLocationPicker: React.FC<CeoBusinessLocationPickerProps>
         company: companyName,
       };
 
-      // 1. Lưu vào cache localStorage
+      // 1. Lưu vào cache localStorage đa cấp
       try {
+        const effectiveUserId =
+          userId ||
+          localStorage.getItem("vba_current_user_id") ||
+          (() => {
+            try {
+              return JSON.parse(localStorage.getItem("ceo1983_user") || "{}").id;
+            } catch {
+              return "";
+            }
+          })();
+
         const rawProfile = localStorage.getItem("vba_custom_profile");
         const customProfile = rawProfile ? JSON.parse(rawProfile) : {};
-        localStorage.setItem(
-          "vba_custom_profile",
-          JSON.stringify({ ...customProfile, address: address.trim(), latitude: lat, longitude: lng })
-        );
+        const updated = {
+          ...customProfile,
+          address: address.trim(),
+          latitude: lat,
+          longitude: lng,
+          company: companyName,
+        };
+
+        localStorage.setItem("vba_custom_profile", JSON.stringify(updated));
+        if (effectiveUserId) {
+          localStorage.setItem(`vba_custom_profile_${effectiveUserId}`, JSON.stringify(updated));
+        }
+
+        const rawMember = localStorage.getItem("vba_my_member");
+        if (rawMember) {
+          const parsedMem = JSON.parse(rawMember);
+          localStorage.setItem(
+            "vba_my_member",
+            JSON.stringify({ ...parsedMem, address: address.trim(), latitude: lat, longitude: lng })
+          );
+        }
       } catch {}
 
       // 2. Gửi API đồng bộ vào CSDL PostgreSQL

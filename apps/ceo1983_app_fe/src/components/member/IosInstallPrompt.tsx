@@ -150,14 +150,25 @@ export function IosInstallPrompt() {
         }
         setDeferredPrompt(null);
         (window as any).__pwaInstallPrompt = null;
+        return;
       } catch (err) {
         console.error(err);
       }
-    } else if (isAndroidDevice) {
-      toast.info("Vui lòng chạm nút Menu (⋮) góc trên bên phải trình duyệt và chọn 'Cài đặt ứng dụng'!");
-    } else {
-      toast.info("Vui lòng làm theo hướng dẫn 1 thao tác bên dưới để thêm ra màn hình chính!");
     }
+
+    if (isAndroidDevice) {
+      const link = document.createElement("a");
+      link.href = "/docs/CEO1983-app-latest.apk";
+      link.download = "CEO1983-app-latest.apk";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Đang tự động tải và kích hoạt gói cài đặt ứng dụng CEO 1983!");
+      handleDismissPrompt();
+      return;
+    }
+
+    toast.info("Vui lòng chạm nút Chia sẻ (⎋) dưới thanh công cụ Safari và chọn 'Thêm vào MH chính'!");
   };
 
   const getSmartInstallUrl = () => {

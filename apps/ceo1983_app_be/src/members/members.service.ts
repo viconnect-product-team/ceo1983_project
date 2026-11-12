@@ -4637,21 +4637,84 @@ Trân trọng cảm ơn Anh/Chị!`;
     if (!userId) throw new BadRequestException('Chưa đăng nhập');
     const isSharing =
       body.isSharing !== undefined ? Boolean(body.isSharing) : true;
-    const addressUpdate = body.address
-      ? `, address = '${body.address.replace(/'/g, "''")}'`
-      : '';
-    await this.prisma.$executeRawUnsafe(`
-      UPDATE public.members 
-      SET latitude = ${body.latitude}, 
-          longitude = ${body.longitude}, 
-          is_location_sharing = ${isSharing},
-          last_location_updated_at = now()
-          ${addressUpdate}
-      WHERE user_id = '${userId}'::uuid OR id = '${userId}';
-    `);
+    const cleanAddress = (body.address || '').trim();
+    const lat = Number(body.latitude) || 21.0175;
+    const lng = Number(body.longitude) || 105.7838;
+    const isUserUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId);
+
+    // Cập nhật bảng members an toàn
+    try {
+      if (isUserUuid) {
+        if (cleanAddress) {
+          await this.prisma.$executeRawUnsafe(
+            `UPDATE public.members 
+             SET latitude = $1, 
+                 longitude = $2, 
+                 is_location_sharing = $3,
+                 last_location_updated_at = now(),
+                 address = $4
+             WHERE user_id = $5::uuid OR id::text = $5`,
+            lat,
+            lng,
+            isSharing,
+            cleanAddress,
+            userId,
+          );
+        } else {
+          await this.prisma.$executeRawUnsafe(
+            `UPDATE public.members 
+             SET latitude = $1, 
+                 longitude = $2, 
+                 is_location_sharing = $3,
+                 last_location_updated_at = now()
+             WHERE user_id = $4::uuid OR id::text = $4`,
+            lat,
+            lng,
+            isSharing,
+            userId,
+          );
+        }
+      } else {
+        if (cleanAddress) {
+          await this.prisma.$executeRawUnsafe(
+            `UPDATE public.members 
+             SET latitude = $1, 
+                 longitude = $2, 
+                 is_location_sharing = $3,
+                 last_location_updated_at = now(),
+                 address = $4
+             WHERE user_id::text = $5 OR id::text = $5`,
+            lat,
+            lng,
+            isSharing,
+            cleanAddress,
+            userId,
+          );
+        } else {
+          await this.prisma.$executeRawUnsafe(
+            `UPDATE public.members 
+             SET latitude = $1, 
+                 longitude = $2, 
+                 is_location_sharing = $3,
+                 last_location_updated_at = now()
+             WHERE user_id::text = $4 OR id::text = $4`,
+            lat,
+            lng,
+            isSharing,
+            userId,
+          );
+        }
+      }
+    } catch (err: any) {
+      console.warn('[updateMyLocation] members update fallback:', err?.message);
+    }
+
     return {
       success: true,
       message: 'Đã cập nhật vị trí bản đồ & địa chỉ doanh nghiệp',
+      address: cleanAddress,
+      latitude: lat,
+      longitude: lng,
     };
   }
 

@@ -89,8 +89,38 @@ export function AllFeaturesModal({
       window.dispatchEvent(new Event("storage"));
     } catch { }
     setCustomShortcutsOpen(false);
+    onClose();
   };
   const [brandColorTheme, setBrandColorTheme] = React.useState<Ceo1983ColorTheme>(() => getActiveCeo1983ColorTheme());
+
+  React.useEffect(() => {
+    const syncShortcuts = () => {
+      try {
+        const saved =
+          localStorage.getItem("ceo1983_home_shortcuts") ||
+          localStorage.getItem("vba_user_custom_shortcuts");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length === 4) {
+            setSelectedShortcuts(parsed);
+            return;
+          }
+        }
+      } catch {}
+      setSelectedShortcuts(DEFAULT_SHORTCUT_IDS);
+    };
+
+    if (isOpen) {
+      syncShortcuts();
+    }
+
+    window.addEventListener("ceo1983_shortcuts_changed", syncShortcuts);
+    window.addEventListener("storage", syncShortcuts);
+    return () => {
+      window.removeEventListener("ceo1983_shortcuts_changed", syncShortcuts);
+      window.removeEventListener("storage", syncShortcuts);
+    };
+  }, [isOpen]);
 
   React.useEffect(() => {
     const handleUpdate = (e: any) => {
