@@ -334,7 +334,35 @@ export function MemberPerksCarousel() {
   };
 
   if (allSlides.length === 0) {
-    return null;
+    return (
+      <div className="self-stretch w-full flex flex-col gap-2 select-none">
+        {/* Header bar of Perks Section */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <Gift className="size-4 text-amber-500 shrink-0" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white">
+              ƯU ĐÃI & ĐẶC QUYỀN HỘI VIÊN
+            </span>
+          </div>
+          <Link
+            to="/association/perks"
+            className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 cursor-pointer mr-1"
+          >
+            <span>Xem tất cả</span>
+            <ChevronRight className="size-3" />
+          </Link>
+        </div>
+
+        {/* Empty State Banner (Không hardcode mock data, hiển thị giao diện chờ cập nhật) */}
+        <div className="w-full py-6 px-4 rounded-2xl border border-dashed border-amber-300/80 dark:border-amber-700/60 bg-amber-50/50 dark:bg-amber-950/20 flex flex-col items-center justify-center text-center">
+          <Gift className="size-6 text-amber-500/70 mb-1" />
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Chưa có ưu đãi đặc quyền nào</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            Chương trình ưu đãi độc quyền dành riêng cho hội viên CEO 1983 sẽ được cập nhật tại đây
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -347,11 +375,9 @@ export function MemberPerksCarousel() {
     >
       {/* Header bar of Perks Section */}
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <div className="size-6 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center">
-            <Gift className="size-3.5" />
-          </div>
-          <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
+        <div className="flex items-center gap-1.5">
+          <Gift className="size-4 text-amber-500 shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white">
             ƯU ĐÃI & ĐẶC QUYỀN HỘI VIÊN
           </span>
         </div>

@@ -20,6 +20,7 @@ import {
   MapPin,
   BellRing,
   BarChart3,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -171,9 +172,18 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     badge: "Nhắc",
     badgeColor: "bg-amber-500 text-slate-900",
   },
+  {
+    id: "system-config",
+    name: "Cấu hình",
+    desc: "Đổi mật khẩu, màu giao diện & AI",
+    to: "/association/system-config",
+    iconName: "Settings",
+    badge: "Hệ thống",
+    badgeColor: "bg-[#003B95] text-amber-300 font-bold",
+  },
 ];
 
-export const DEFAULT_SHORTCUT_IDS = ["messages", "members", "analytics", "opportunities"];
+export const DEFAULT_SHORTCUT_IDS = ["members", "messages", "opportunities", "events"];
 
 export function getShortcutIcon(iconName: string, className = "size-6", color?: string) {
   const style = color ? { color } : undefined;
@@ -210,6 +220,8 @@ export function getShortcutIcon(iconName: string, className = "size-6", color?: 
       return <BellRing className={className} style={style} />;
     case "BarChart3":
       return <BarChart3 className={className} style={style} />;
+    case "Settings":
+      return <Settings className={className} style={style} />;
     default:
       return <Sparkles className={className} style={style} />;
   }

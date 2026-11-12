@@ -89,7 +89,18 @@ export function getPublicBackendUrl(): string {
 
 export function isDeadAvatarUrl(url: string | null | undefined): boolean {
   if (!url) return true;
-  const deadMarkers = ["i5o6ez", "d9ut5z", "4qjy8i", "j01t7w", "undefined", "null", "placeholder", "mock"];
+  const deadMarkers = [
+    "i5o6ez",
+    "d9ut5z",
+    "4qjy8i",
+    "j01t7w",
+    "undefined",
+    "null",
+    "placeholder",
+    "mock",
+    "test.jpg",
+    "example.com",
+  ];
   if (deadMarkers.some((m) => url.includes(m))) return true;
 
   // Reject malformed or truncated data URIs that trigger ERR_INVALID_URL

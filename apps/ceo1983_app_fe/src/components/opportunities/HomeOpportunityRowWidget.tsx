@@ -169,10 +169,8 @@ export const HomeOpportunityRowWidget: React.FC<HomeOpportunityRowWidgetProps> =
         {/* Header bar */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <span className="p-1.5 rounded-xl bg-[#003B95] text-white shadow-xs">
-              <Handshake className="size-4" />
-            </span>
-            <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
+            <Handshake className="size-4 text-[#003B95] dark:text-amber-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">
               Trao Đổi Cơ Hội B2B
             </span>
             <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9.5px] font-bold">
