@@ -1,5 +1,33 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.22): Chuẩn Hóa 100% Template Thông Báo Hoạt Động Theo Đúng 9 Trường Quy Chuẩn & Public Link Đăng Ký Sự Kiện Dành Cho Khách Ngoài ([NODE-CRM-008], [NODE-CRM-003], [NODE-APP-003])**:
+  - **Chuẩn Hóa Template Thông Báo Sự Kiện / Cuộc Họp / Cuộc Gặp / Chương Trình Đào Tạo ([NODE-CRM-008])**:
+    * Chỉ có đúng và đủ các trường thông tin quy chuẩn bắt buộc, tuyệt đối không thêm bất kỳ trường nào khác ngoài danh sách:
+      1. Lời chào: `Kính gửi Anh/Chị` (hoặc `Kính gửi Anh/Chị {{full_name}}`)
+      2. Lời mời: `- BTC trân trọng kính mời Anh/Chị tham dự [sự kiện / cuộc họp / cuộc gặp / chương trình]:`
+      3. Tên hoạt động: `- Tên [sự kiện / cuộc họp / cuộc gặp / chương trình]:`
+      4. Thông tin chi tiết: `- Thông tin [sự kiện / cuộc họp / cuộc gặp / chương trình] gồm các trường:`
+         + Diễn giả: `{{speaker_name}}`
+         + Nội dung chính: `{{event_summary}}`
+         + Thời gian: `{{event_date}}`
+         + Địa điểm: `{{event_location}}`
+         + Chi phí: `{{event_fee}}`
+         + Google Maps: `{{google_maps_url}}`
+         + Trang phục: `{{dress_code}}`
+         + Gửi xe: `{{parking_info}}`
+         + Lưu ý quan trọng từ BTC: `{{event_notes}}`
+      5. Xác nhận tham dự: `- Xác nhận tham dự: {{confirm_link}}` (Link public `https://crm.ceo1983.viconnect.vn/guest-event-register/{{event_id}}`)
+      6. Hotline liên hệ: `- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204`
+      7. Lời kết: `- Trân trọng!`
+    * Tích hợp Select Dropdown "Chọn Loại Hoạt Động": Cho phép người dùng chuyển đổi tức thì giữa `sự kiện`, `cuộc họp`, `cuộc gặp`, `chương trình` (chương trình đào tạo). Khi thay đổi, toàn bộ câu chữ trên template (cả HTML và In-App/SMS/Zalo text) tự động thay thế tương ứng.
+    * Tách biệt mẫu Hội phí (`category: "fee"`) và mẫu Cảm ơn đăng ký (`category: "welcome"`): Thiết kế giao diện Visual Block riêng biệt, cho phép người dùng tự do chỉnh sửa từng trường trong mẫu (Mức hội phí, Hạn nộp, Tên chủ TK, Số TK CLB, Ngân hàng CLB, Cú pháp chuyển khoản; Mã hội viên, Ban sinh hoạt, Tên doanh nghiệp,...).
+  - **Mở Rộng Cổng Đăng Ký Tham Gia Sự Kiện Công Khai (Public - Không Bắt Đăng Nhập) ([NODE-APP-003], [NODE-CRM-003], [NODE-CORE-001])**:
+    * Backend (`events.controller.ts`): Bổ sung guard `OptionalJwtAuthGuard` trên endpoint `@Post(':id/register')`. Nếu request không có JWT token hoặc là khách ngoài, tự động gọi `this.eventsService.guestRegister(id, body)` cho phép ghi danh thành công mà không bị lỗi 401 Unauthorized.
+    * Route Guard (`association.tsx`): Kiểm tra nếu người dùng chưa đăng nhập nhưng truy cập link đăng ký sự kiện `/association/events` hoặc `/association/checkin` với `action=register`, tự động chuyển hướng mượt mà sang trang đăng ký công khai `/guest-event-register/$eventId` (hoặc `/latest`) thay vì ép về `/association/login`.
+    * Public Guest Register (`guest-event-register.$eventId.tsx`): Tự động fallback lấy sự kiện sắp diễn ra gần nhất nếu `eventId === 'latest'` hoặc không tìm thấy ID, hiển thị form ghi danh công khai và cấp vé QR check-in ngay sau khi gửi thông tin.
+    * Chia sẻ mạng xã hội (`share.$type.$id.tsx`): Bổ sung nút CTA công khai nổi bật "ĐĂNG KÝ THAM DỰ SỰ KIỆN (DÀNH CHO KHÁCH MỜI)" dẫn trực tiếp vào trang đăng ký công khai.
+    * Event Poster (`EventPoster.tsx`): Mã QR và nút "Sao chép link đăng ký" trỏ thẳng đến `https://crm.ceo1983.viconnect.vn/guest-event-register/${event.id}`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.21): Tối Giản Icon Đầu Mục Trang Chủ App, Xóa Lỗi test.jpg 404, Chuẩn Hóa 4 Phím Tắt Mặc Định & Xóa Sạch Ưu Đãi Mock ([NODE-APP-001], [NODE-CORE-001], [NODE-CORE-004])**:
   - **Rút gọn icon đầu mục & Bỏ icon chức danh thẻ hội viên trang chủ ([NODE-APP-001])**:
     * Tại 6 đầu mục nội dung trên trang chủ Mobile App (`/association`):
@@ -295,6 +323,34 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.22): Chuẩn Hóa 100% Template Thông Báo Hoạt Động Theo Đúng 9 Trường Quy Chuẩn & Public Link Đăng Ký Sự Kiện Dành Cho Khách Ngoài ([NODE-CRM-008], [NODE-CRM-003], [NODE-APP-003])**:
+  - **Chuẩn Hóa Template Thông Báo Sự Kiện / Cuộc Họp / Cuộc Gặp / Chương Trình Đào Tạo ([NODE-CRM-008])**:
+    * Chỉ có đúng và đủ các trường thông tin quy chuẩn bắt buộc, tuyệt đối không thêm bất kỳ trường nào khác ngoài danh sách:
+      1. Lời chào: `Kính gửi Anh/Chị` (hoặc `Kính gửi Anh/Chị {{full_name}}`)
+      2. Lời mời: `- BTC trân trọng kính mời Anh/Chị tham dự [sự kiện / cuộc họp / cuộc gặp / chương trình]:`
+      3. Tên hoạt động: `- Tên [sự kiện / cuộc họp / cuộc gặp / chương trình]:`
+      4. Thông tin chi tiết: `- Thông tin [sự kiện / cuộc họp / cuộc gặp / chương trình] gồm các trường:`
+         + Diễn giả: `{{speaker_name}}`
+         + Nội dung chính: `{{event_summary}}`
+         + Thời gian: `{{event_date}}`
+         + Địa điểm: `{{event_location}}`
+         + Chi phí: `{{event_fee}}`
+         + Google Maps: `{{google_maps_url}}`
+         + Trang phục: `{{dress_code}}`
+         + Gửi xe: `{{parking_info}}`
+         + Lưu ý quan trọng từ BTC: `{{event_notes}}`
+      5. Xác nhận tham dự: `- Xác nhận tham dự: {{confirm_link}}` (Link public `https://crm.ceo1983.viconnect.vn/guest-event-register/{{event_id}}`)
+      6. Hotline liên hệ: `- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204`
+      7. Lời kết: `- Trân trọng!`
+    * Tích hợp Select Dropdown "Chọn Loại Hoạt Động": Cho phép người dùng chuyển đổi tức thì giữa `sự kiện`, `cuộc họp`, `cuộc gặp`, `chương trình` (chương trình đào tạo). Khi thay đổi, toàn bộ câu chữ trên template (cả HTML và In-App/SMS/Zalo text) tự động thay thế tương ứng.
+    * Tách biệt mẫu Hội phí (`category: "fee"`) và mẫu Cảm ơn đăng ký (`category: "welcome"`): Thiết kế giao diện Visual Block riêng biệt, cho phép người dùng tự do chỉnh sửa từng trường trong mẫu (Mức hội phí, Hạn nộp, Tên chủ TK, Số TK CLB, Ngân hàng CLB, Cú pháp chuyển khoản; Mã hội viên, Ban sinh hoạt, Tên doanh nghiệp,...).
+  - **Mở Rộng Cổng Đăng Ký Tham Gia Sự Kiện Công Khai (Public - Không Bắt Đăng Nhập) ([NODE-APP-003], [NODE-CRM-003], [NODE-CORE-001])**:
+    * Backend (`events.controller.ts`): Bổ sung guard `OptionalJwtAuthGuard` trên endpoint `@Post(':id/register')`. Nếu request không có JWT token hoặc là khách ngoài, tự động gọi `this.eventsService.guestRegister(id, body)` cho phép ghi danh thành công mà không bị lỗi 401 Unauthorized.
+    * Route Guard (`association.tsx`): Kiểm tra nếu người dùng chưa đăng nhập nhưng truy cập link đăng ký sự kiện `/association/events` hoặc `/association/checkin` với `action=register`, tự động chuyển hướng mượt mà sang trang đăng ký công khai `/guest-event-register/$eventId` (hoặc `/latest`) thay vì ép về `/association/login`.
+    * Public Guest Register (`guest-event-register.$eventId.tsx`): Tự động fallback lấy sự kiện sắp diễn ra gần nhất nếu `eventId === 'latest'` hoặc không tìm thấy ID, hiển thị form ghi danh công khai và cấp vé QR check-in ngay sau khi gửi thông tin.
+    * Chia sẻ mạng xã hội (`share.$type.$id.tsx`): Bổ sung nút CTA công khai nổi bật "ĐĂNG KÝ THAM DỰ SỰ KIỆN (DÀNH CHO KHÁCH MỜI)" dẫn trực tiếp vào trang đăng ký công khai.
+    * Event Poster (`EventPoster.tsx`): Mã QR và nút "Sao chép link đăng ký" trỏ thẳng đến `https://crm.ceo1983.viconnect.vn/guest-event-register/${event.id}`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.21): Tối Giản Icon Đầu Mục Trang Chủ App, Xóa Lỗi test.jpg 404, Chuẩn Hóa 4 Phím Tắt Mặc Định & Xóa Sạch Ưu Đãi Mock ([NODE-APP-001], [NODE-CORE-001], [NODE-CORE-004])**:
   - **Rút gọn icon đầu mục & Bỏ icon chức danh thẻ hội viên trang chủ ([NODE-APP-001])**:
@@ -1873,6 +1929,34 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.22): Chuẩn Hóa 100% Template Thông Báo Hoạt Động Theo Đúng 9 Trường Quy Chuẩn & Public Link Đăng Ký Sự Kiện Dành Cho Khách Ngoài ([NODE-CRM-008], [NODE-CRM-003], [NODE-APP-003])**:
+  - **Chuẩn Hóa Template Thông Báo Sự Kiện / Cuộc Họp / Cuộc Gặp / Chương Trình Đào Tạo ([NODE-CRM-008])**:
+    * Chỉ có đúng và đủ các trường thông tin quy chuẩn bắt buộc, tuyệt đối không thêm bất kỳ trường nào khác ngoài danh sách:
+      1. Lời chào: `Kính gửi Anh/Chị` (hoặc `Kính gửi Anh/Chị {{full_name}}`)
+      2. Lời mời: `- BTC trân trọng kính mời Anh/Chị tham dự [sự kiện / cuộc họp / cuộc gặp / chương trình]:`
+      3. Tên hoạt động: `- Tên [sự kiện / cuộc họp / cuộc gặp / chương trình]:`
+      4. Thông tin chi tiết: `- Thông tin [sự kiện / cuộc họp / cuộc gặp / chương trình] gồm các trường:`
+         + Diễn giả: `{{speaker_name}}`
+         + Nội dung chính: `{{event_summary}}`
+         + Thời gian: `{{event_date}}`
+         + Địa điểm: `{{event_location}}`
+         + Chi phí: `{{event_fee}}`
+         + Google Maps: `{{google_maps_url}}`
+         + Trang phục: `{{dress_code}}`
+         + Gửi xe: `{{parking_info}}`
+         + Lưu ý quan trọng từ BTC: `{{event_notes}}`
+      5. Xác nhận tham dự: `- Xác nhận tham dự: {{confirm_link}}` (Link public `https://crm.ceo1983.viconnect.vn/guest-event-register/{{event_id}}`)
+      6. Hotline liên hệ: `- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204`
+      7. Lời kết: `- Trân trọng!`
+    * Tích hợp Select Dropdown "Chọn Loại Hoạt Động": Cho phép người dùng chuyển đổi tức thì giữa `sự kiện`, `cuộc họp`, `cuộc gặp`, `chương trình` (chương trình đào tạo). Khi thay đổi, toàn bộ câu chữ trên template (cả HTML và In-App/SMS/Zalo text) tự động thay thế tương ứng.
+    * Tách biệt mẫu Hội phí (`category: "fee"`) và mẫu Cảm ơn đăng ký (`category: "welcome"`): Thiết kế giao diện Visual Block riêng biệt, cho phép người dùng tự do chỉnh sửa từng trường trong mẫu (Mức hội phí, Hạn nộp, Tên chủ TK, Số TK CLB, Ngân hàng CLB, Cú pháp chuyển khoản; Mã hội viên, Ban sinh hoạt, Tên doanh nghiệp,...).
+  - **Mở Rộng Cổng Đăng Ký Tham Gia Sự Kiện Công Khai (Public - Không Bắt Đăng Nhập) ([NODE-APP-003], [NODE-CRM-003], [NODE-CORE-001])**:
+    * Backend (`events.controller.ts`): Bổ sung guard `OptionalJwtAuthGuard` trên endpoint `@Post(':id/register')`. Nếu request không có JWT token hoặc là khách ngoài, tự động gọi `this.eventsService.guestRegister(id, body)` cho phép ghi danh thành công mà không bị lỗi 401 Unauthorized.
+    * Route Guard (`association.tsx`): Kiểm tra nếu người dùng chưa đăng nhập nhưng truy cập link đăng ký sự kiện `/association/events` hoặc `/association/checkin` với `action=register`, tự động chuyển hướng mượt mà sang trang đăng ký công khai `/guest-event-register/$eventId` (hoặc `/latest`) thay vì ép về `/association/login`.
+    * Public Guest Register (`guest-event-register.$eventId.tsx`): Tự động fallback lấy sự kiện sắp diễn ra gần nhất nếu `eventId === 'latest'` hoặc không tìm thấy ID, hiển thị form ghi danh công khai và cấp vé QR check-in ngay sau khi gửi thông tin.
+    * Chia sẻ mạng xã hội (`share.$type.$id.tsx`): Bổ sung nút CTA công khai nổi bật "ĐĂNG KÝ THAM DỰ SỰ KIỆN (DÀNH CHO KHÁCH MỜI)" dẫn trực tiếp vào trang đăng ký công khai.
+    * Event Poster (`EventPoster.tsx`): Mã QR và nút "Sao chép link đăng ký" trỏ thẳng đến `https://crm.ceo1983.viconnect.vn/guest-event-register/${event.id}`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.21): Tối Giản Icon Đầu Mục Trang Chủ App, Xóa Lỗi test.jpg 404, Chuẩn Hóa 4 Phím Tắt Mặc Định & Xóa Sạch Ưu Đãi Mock ([NODE-APP-001], [NODE-CORE-001], [NODE-CORE-004])**:
   - **Rút gọn icon đầu mục & Bỏ icon chức danh thẻ hội viên trang chủ ([NODE-APP-001])**:

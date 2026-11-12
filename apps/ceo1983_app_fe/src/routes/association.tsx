@@ -73,6 +73,22 @@ export const Route = createFileRoute("/association")({
         document.cookie.includes("access_token="),
       );
     if (!hasLocal) {
+      const search = (location.search || {}) as any;
+      const eventId = search?.id || search?.eventId;
+      // Khách vãng lai / Khách mời bên ngoài không dùng app khi truy cập link sự kiện:
+      // Chuyển hướng trực tiếp tới trang đăng ký công khai (Public Guest Event Registration) tuyệt đối không bắt đăng nhập!
+      if (
+        path.startsWith("/association/events") ||
+        path.startsWith("/association/checkin") ||
+        search?.action === "register"
+      ) {
+        throw redirect({
+          to: "/guest-event-register/$eventId",
+          params: { eventId: eventId || "latest" },
+          search: search,
+        });
+      }
+
       const searchStr =
         typeof (location as any).searchStr === "string" ? (location as any).searchStr : "";
       const target = location.pathname.startsWith("/association/login")
