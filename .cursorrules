@@ -1,6 +1,12 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 12/11/2026 (v11.31) — [NODE-CRM-001], [NODE-CRM-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-005]:
+#   * Sidebar CRM: Ánh xạ ban_thu_ky về tong_thu_ky, đồng bộ triệt để với SystemRoleKey tránh lỗi TS2322.
+#   * Xóa tài khoản CRM: Xóa cascade sạch companies, vione_companies, members, vione_users, memberships, user_roles. Phía Frontend lưu vba_deleted_account_identifiers_v3 chặn nạp lại khi F5.
+#   * Luồng gặp B2B: Chỉ đưa vào Lịch khi đối phương ĐÃ ĐỒNG Ý (status === 'confirmed' || 'accepted'). Tách rời hoàn toàn khỏi màn Sự kiện. Đổi 'Lịch CLB' thành 'Lịch'.
+#   * Sàn B2B: Rút gọn nút 'Yêu cầu báo giá B2B' / 'Nhận báo giá VIP' thành 'Báo giá', 'Lên lịch B2B' thành 'Lên lịch'. Bố cục chuẩn mobile không tràn lệch.
+#   * Popup lên lịch: Xóa bỏ thẻ UUID màu vàng {target.code}, hiển thị đầy đủ họ tên chủ doanh nghiệp.
 # 11/11/2026 — Form ZBS [NODE-CRM-014]/[NODE-CRM-024]: cấu hình độc lập theo mã mẫu duy nhất; lưu từng mã bằng PUT /zalo/template-configs/:templateCode, không gửi cả snapshot OA/token từ trình duyệt. Bản nháp phải tách theo mã, lưu thành công trước gửi thử; nạp/lưu lỗi không báo thành công hoặc gửi tiếp. Refresh token không ghi đè ánh xạ ZBS đang được chỉnh sửa. GET cấu hình không trả bí mật OA; API cấu hình và gửi thử yêu cầu vai trò CRM.
 # 11/11/2026 — [NODE-CRM-014], [NODE-CRM-024]: Gửi thử Zalo từ Mẫu Email CRM dùng ZBS qua SĐT, ánh xạ mã CRM -> templateId đã duyệt + parameterMap trong zbsTemplates/ZALO_ZBS_TEMPLATES. Token lấy phía backend; không dùng token localStorage. Chỉ báo API tiếp nhận khi Zalo trả error=0; thiếu cấu hình phải báo lỗi, không fallback CS. Giữ ID ví dụ trống đến khi có mẫu thật của OA/App.
 # ==============================================================================

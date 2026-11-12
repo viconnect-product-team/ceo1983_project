@@ -20,6 +20,8 @@ import {
   Filter,
   Plus,
   X,
+  XCircle,
+  Loader2,
   AlertCircle,
   Video,
   Coffee,
@@ -182,6 +184,11 @@ export function CalendarScreen() {
   // Reminder settings modal
   const [reminderModalTarget, setReminderModalTarget] = useState<CalendarItem | null>(null);
 
+  // Cancel 1-on-1 appointment modal state
+  const [cancelling1on1Target, setCancelling1on1Target] = useState<CalendarItem | null>(null);
+  const [cancel1on1Reason, setCancel1on1Reason] = useState("");
+  const [submittingCancel1on1, setSubmittingCancel1on1] = useState(false);
+
   // Reminders state stored in localStorage
   const [reminders, setReminders] = useState<Record<string, ReminderConfig>>(() => {
     if (typeof window === "undefined") return {};
@@ -251,13 +258,17 @@ export function CalendarScreen() {
         }
       } catch {}
 
-      // 2. Load 1-on-1 appointments that the user actually scheduled
+      // 2. Load 1-on-1 appointments that the user actually scheduled (CHỈ lấy khi đối phương ĐÃ ĐỒNG Ý)
       try {
         const stored1on1 = localStorage.getItem("vba_connection_appointments");
         if (stored1on1) {
           const list = JSON.parse(stored1on1);
           if (Array.isArray(list) && list.length > 0) {
-            const mapped1on1: CalendarItem[] = list.map((a: any, idx: number) => ({
+            // LỌC NGHIÊM NGẶT: Chỉ lưu và hiển thị vào Lịch khi đối phương ĐÃ ĐỒNG Ý (confirmed / accepted)
+            const acceptedList = list.filter(
+              (a: any) => a.status === "confirmed" || a.status === "accepted"
+            );
+            const mapped1on1: CalendarItem[] = acceptedList.map((a: any, idx: number) => ({
               id: a.id || `app-${idx}`,
               type: "meeting_1on1",
               title: a.title || "Gặp gỡ kết nối 1-on-1",
@@ -271,7 +282,7 @@ export function CalendarScreen() {
               partnerCompany: a.partnerCompany || a.hostCompany || "Doanh nghiệp CLB",
               partnerPhone: a.partnerPhone || a.hostPhone || "0901234567",
               partnerAvatar: a.partnerAvatar || a.hostAvatar,
-              status: (a.status as any) || "confirmed",
+              status: "confirmed",
               description: a.notes,
             }));
             combined.push(...mapped1on1);
@@ -316,7 +327,53 @@ export function CalendarScreen() {
 
   useEffect(() => {
     loadCalendarData();
+    const handleReload = () => loadCalendarData();
+    window.addEventListener("vba.connection.changed", handleReload);
+    window.addEventListener("vba.meeting.changed", handleReload);
+    return () => {
+      window.removeEventListener("vba.connection.changed", handleReload);
+      window.removeEventListener("vba.meeting.changed", handleReload);
+    };
   }, []);
+
+  const handleConfirmCancel1on1 = async () => {
+    if (!cancelling1on1Target) return;
+    const reason = cancel1on1Reason.trim() || "Hội viên bận công tác đột xuất";
+    setSubmittingCancel1on1(true);
+    try {
+      await fetchNestApi(`/meetings/connection-appointments/${cancelling1on1Target.id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }).catch(() => null);
+
+      // Loại bỏ khỏi calendarItems tức thì
+      setCalendarItems((prev) => prev.filter((item) => item.id !== cancelling1on1Target.id));
+
+      // Cập nhật vba_connection_appointments trong localStorage
+      try {
+        const stored = localStorage.getItem("vba_connection_appointments");
+        if (stored) {
+          const list = JSON.parse(stored);
+          const updated = list.map((item: any) =>
+            item.id === cancelling1on1Target.id
+              ? { ...item, status: "cancelled", cancelReason: reason }
+              : item,
+          );
+          localStorage.setItem("vba_connection_appointments", JSON.stringify(updated));
+        }
+      } catch {}
+
+      window.dispatchEvent(new Event("vba.connection.changed"));
+      window.dispatchEvent(new Event("vba.meeting.changed"));
+      toast.info("Đã hủy lịch hẹn kết nối thành công.");
+      setCancelling1on1Target(null);
+      setCancel1on1Reason("");
+    } catch {
+      toast.error("Không thể hủy lịch hẹn kết nối.");
+    } finally {
+      setSubmittingCancel1on1(false);
+    }
+  };
 
   // ── ACTIVE REMINDER ENGINE: Check and trigger reminders on due dates ──
   useEffect(() => {
@@ -487,7 +544,7 @@ export function CalendarScreen() {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070D18] text-slate-900 dark:text-white pb-24 font-sans select-none">
       {/* Header */}
       <MemberHeader
-        title="Lịch Hoạt Động & Nhắc Hẹn"
+        title="Lịch"
         subtitle="Sự kiện, cuộc họp ban & cuộc gặp của bạn"
         right={
           <button
@@ -996,6 +1053,20 @@ export function CalendarScreen() {
                         </a>
                       )}
 
+                      {item.type === "meeting_1on1" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCancelling1on1Target(item);
+                            setCancel1on1Reason("");
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                        >
+                          <XCircle className="size-3" />
+                          <span>Hủy hẹn</span>
+                        </button>
+                      )}
+
                       {item.type === "event" && (
                         <Link
                           to="/association/events"
@@ -1119,7 +1190,119 @@ export function CalendarScreen() {
         </div>
       )}
 
-      {/* ── 7. CREATE CONNECTION / APPOINTMENT MODAL ── */}
+      {/* ── 7. MODAL HỦY LỊCH HẸN 1-ON-1 CÓ TRƯỜNG LÝ DO HỦY ── */}
+      {cancelling1on1Target && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => !submittingCancel1on1 && setCancelling1on1Target(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-rose-200 dark:border-rose-900/50 p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600">
+                  <XCircle className="size-5" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">
+                    Hủy Lịch Hẹn Kết Nối
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Cuộc hẹn sẽ gỡ khỏi Lịch và thông báo tới đối tác</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={submittingCancel1on1}
+                onClick={() => setCancelling1on1Target(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white line-clamp-1">
+                {cancelling1on1Target.title}
+              </div>
+              {cancelling1on1Target.partnerName && (
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Đối tác: <strong className="text-slate-700 dark:text-slate-200">{cancelling1on1Target.partnerName}</strong>
+                  {cancelling1on1Target.partnerCompany ? ` (${cancelling1on1Target.partnerCompany})` : ""}
+                </div>
+              )}
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <span>Ngày: {cancelling1on1Target.date}</span>
+                <span>•</span>
+                <span>Giờ: {cancelling1on1Target.time}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Lý do hủy cuộc hẹn <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                value={cancel1on1Reason}
+                onChange={(e) => setCancel1on1Reason(e.target.value)}
+                placeholder="Nhập chi tiết lý do hủy để thông báo cho đối tác..."
+                rows={3}
+                className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-rose-500"
+              />
+
+              {/* Gợi ý lý do nhanh (One-tap chips) */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[
+                  "Bận công tác đột xuất",
+                  "Trùng lịch họp đối tác",
+                  "Thay đổi kế hoạch",
+                  "Hẹn lại vào dịp khác",
+                ].map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => setCancel1on1Reason(chip)}
+                    className={`px-2.5 py-1 rounded-full text-[10.5px] font-semibold transition cursor-pointer border ${
+                      cancel1on1Reason === chip
+                        ? "bg-rose-500 text-white border-rose-500"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={submittingCancel1on1}
+                onClick={() => setCancelling1on1Target(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Giữ lịch hẹn
+              </button>
+              <button
+                type="button"
+                disabled={submittingCancel1on1}
+                onClick={handleConfirmCancel1on1}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {submittingCancel1on1 ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <XCircle className="size-4" />
+                )}
+                <span>Xác nhận hủy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 8. CREATE CONNECTION / APPOINTMENT MODAL ── */}
       <CreateConnectionModal
         isOpen={createConnectModalOpen}
         onClose={() => {

@@ -400,28 +400,28 @@ export function ShopeeProductDetailModal({
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-2">
+              {/* Action Buttons: Tinh gọn, chuẩn mobile không bị tràn lệch */}
+              <div className="flex items-center gap-1.5 pt-2 flex-nowrap">
                 <button
                   type="button"
                   onClick={onToggleInterest}
-                  className={`size-11 rounded-2xl border flex items-center justify-center transition cursor-pointer shrink-0 ${
+                  className={`size-10 rounded-xl border flex items-center justify-center transition cursor-pointer shrink-0 ${
                     isInterested
                       ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 text-rose-600"
                       : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-rose-500"
                   }`}
                   title={isInterested ? "Bỏ quan tâm" : "Lưu vào giỏ quan tâm"}
                 >
-                  <Heart className={`size-5 ${isInterested ? "fill-rose-600" : ""}`} />
+                  <Heart className={`size-4.5 ${isInterested ? "fill-rose-600" : ""}`} />
                 </button>
 
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="size-11 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 hover:text-[#003B95] dark:text-slate-300 flex items-center justify-center transition cursor-pointer shrink-0 shadow-xs"
+                  className="size-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 hover:text-[#003B95] dark:text-slate-300 flex items-center justify-center transition cursor-pointer shrink-0 shadow-xs"
                   title="Chia sẻ sản phẩm"
                 >
-                  <Share2 className="size-5" />
+                  <Share2 className="size-4.5" />
                 </button>
 
                 {onMessageSeller && (
@@ -431,11 +431,11 @@ export function ShopeeProductDetailModal({
                       onClose();
                       onMessageSeller(product);
                     }}
-                    className="h-11 px-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+                    className="flex-1 h-10 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0 min-w-0"
                     title="Nhắn tin hỏi shop về sản phẩm này"
                   >
-                    <MessageSquare className="size-4 text-[#003B95] dark:text-blue-400" />
-                    <span>Chat Ngay</span>
+                    <MessageSquare className="size-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+                    <span className="truncate">Chat</span>
                   </button>
                 )}
 
@@ -446,21 +446,22 @@ export function ShopeeProductDetailModal({
                       onClose();
                       onScheduleMeeting(product);
                     }}
-                    className="h-11 px-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                    className="flex-1 h-10 px-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-[#003B95] text-[#003B95] hover:text-white dark:text-blue-300 dark:hover:text-white text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer border border-blue-200 dark:border-blue-800 shrink-0 min-w-0 active:scale-95"
                     title="Lên lịch hẹn gặp 1-1 B2B với chủ gian hàng"
                   >
-                    <Calendar className="size-4" />
-                    <span>Lên lịch B2B</span>
+                    <Calendar className="size-3.5 shrink-0" />
+                    <span className="truncate">Lên lịch</span>
                   </button>
                 )}
 
                 <button
                   type="button"
                   onClick={() => onOpenQuote(product)}
-                  className="flex-1 h-11 px-4 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer"
+                  className="flex-1 h-10 px-2.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-md shadow-blue-900/20 active:scale-98 transition cursor-pointer shrink-0 min-w-0"
+                  title="Yêu cầu báo giá B2B"
                 >
-                  <FileText className="size-4" />
-                  <span>Nhận Báo Giá VIP Ngay</span>
+                  <FileText className="size-3.5 text-amber-300 shrink-0" />
+                  <span className="truncate">Báo giá</span>
                 </button>
               </div>
             </div>
@@ -829,25 +830,25 @@ export function ShopeeProductDetailModal({
         </div>
 
         {/* Modal Bottom Fixed Bar */}
-        <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Building2 className="size-4 text-[#003B95]" />
-            <span className="truncate max-w-[200px] sm:max-w-xs">{companyName}</span>
+        <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 min-w-0 flex-1">
+            <Building2 className="size-3.5 text-[#003B95] shrink-0" />
+            <span className="truncate">{companyName}</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleShare}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-xs"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1 border border-slate-200 dark:border-slate-700 shadow-xs"
             >
-              <Share2 className="size-3.5" />
-              <span>Chia Sẻ</span>
+              <Share2 className="size-3" />
+              <span>Chia sẻ</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Đóng
             </button>
@@ -857,10 +858,10 @@ export function ShopeeProductDetailModal({
                 onClose();
                 onOpenQuote(product);
               }}
-              className="px-5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1"
             >
-              <FileText className="size-3.5" />
-              <span>Yêu Cầu Báo Giá VIP</span>
+              <FileText className="size-3 text-amber-300" />
+              <span>Báo giá</span>
             </button>
           </div>
         </div>

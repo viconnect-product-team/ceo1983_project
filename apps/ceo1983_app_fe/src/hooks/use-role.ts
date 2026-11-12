@@ -475,7 +475,7 @@ export function useRole(): RoleState {
     srsRole !== "quan_tri" &&
     (srsRole as string) !== "platform_admin" &&
     srsRole !== "chu_tich" &&
-    srsRole !== "president" &&
+    (srsRole as string) !== "president" &&
     srsRole !== "ban_dieu_hanh" &&
     srsRole !== "BQT";
 

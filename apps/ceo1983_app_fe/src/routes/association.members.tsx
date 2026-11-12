@@ -413,11 +413,26 @@ function MembersScreen() {
           item.id === cancelMeetingTarget.id ? { ...item, status: "cancelled" } : item,
         ),
       );
+      // Cập nhật localStorage vba_connection_appointments
+      try {
+        const stored = localStorage.getItem("vba_connection_appointments");
+        if (stored) {
+          const list = JSON.parse(stored);
+          const updated = list.map((item: any) =>
+            item.id === cancelMeetingTarget.id
+              ? { ...item, status: "cancelled", cancelReason: meetingCancelReason || "Hủy theo yêu cầu hội viên" }
+              : item,
+          );
+          localStorage.setItem("vba_connection_appointments", JSON.stringify(updated));
+        }
+      } catch {}
+
       toast.success("Đã hủy lịch hẹn gặp gỡ thành công!");
       setCancelMeetingTarget(null);
       setMeetingCancelReason("");
       try {
         window.dispatchEvent(new Event("vba.meeting.changed"));
+        window.dispatchEvent(new Event("vba.connection.changed"));
       } catch {
         /* ignore */
       }

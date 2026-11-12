@@ -1687,8 +1687,57 @@ export class UsersService {
         actualId,
       );
 
+    // Tra cứu thông tin doanh nghiệp gắn với hội viên để xóa triệt để
+    const memberRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, company_name, tax_code FROM public.members
+      WHERE user_id::text = ${actualId} 
+         OR id::text = ${actualId} 
+         OR id::text = ${cleanTargetId} 
+         OR code = ${cleanTargetId} 
+         OR (LOWER(email) = LOWER(${userEmail}) AND ${userEmail} != '')
+    `.catch(() => []);
+    const memberCompName = (memberRows[0]?.company_name || '').trim();
+    const memberTaxCode = (memberRows[0]?.tax_code || '').trim();
+
     // 1. Cascade cleanup related records to avoid FK constraint violations
     try {
+      // 1.1 Xóa doanh nghiệp liên kết trong cả companies và vione_companies
+      if (isUuid) {
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.companies WHERE owner_id = $1::uuid OR created_by = $1::uuid`,
+            actualId,
+          )
+          .catch(() => { });
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.vione_companies WHERE user_id = $1::uuid`,
+            actualId,
+          )
+          .catch(() => { });
+      }
+      if (memberCompName) {
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.companies WHERE LOWER(name) = LOWER($1)`,
+            memberCompName,
+          )
+          .catch(() => { });
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.vione_companies WHERE LOWER(name) = LOWER($1)`,
+            memberCompName,
+          )
+          .catch(() => { });
+      }
+      if (memberTaxCode) {
+        await this.prisma
+          .$executeRawUnsafe(
+            `DELETE FROM public.companies WHERE tax_code = $1`,
+            memberTaxCode,
+          )
+          .catch(() => { });
+      }
       if (isUuid) {
         await this.prisma
           .$executeRawUnsafe(

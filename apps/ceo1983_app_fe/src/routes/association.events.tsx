@@ -1039,19 +1039,19 @@ const defaultRecentEvents = [
 const defaultMeetingsList = [
   {
     id: "meet-demo-01",
-    title: "Test Offline Meeting",
-    time: "09:00",
-    location: "Cung Tri Thuc",
+    title: "Họp Ban Chấp Hành Định Kỳ Tháng 11/2026",
+    time: "09:00 - 11:30",
+    location: "Cung Tri Thức Hà Nội, Số 1 Tôn Thất Thuyết",
     isOnline: false,
     category: "fixed_committee",
     isExtraordinary: false,
   },
   {
-    id: "meet-demo-02",
-    title: "Hẹn gặp 1-1 trao đổi liên kết dịch vụ B2B",
-    time: "09:00 - 10:30",
-    location: "meet.jit.si/CEO1983_Connect_1on1",
-    meetingLink: "https://meet.jit.si/CEO1983_Connect_1on1",
+    id: "meet-demo-03",
+    title: "Họp Ban Thư Ký & Ban Truyền Thông Chuẩn Bị Sự Kiện",
+    time: "14:30 - 16:30",
+    location: "Văn phòng Hiệp hội CEO 1983",
+    meetingLink: "https://meet.jit.si/CEO1983_Committee_Meeting",
     isOnline: true,
     category: "fixed_committee",
     isExtraordinary: false,
@@ -1244,7 +1244,17 @@ function EventsScreen() {
     fetchNestApi<any[]>("/meetings")
       .then((res: any) => {
         if (Array.isArray(res) && res.length > 0) {
-          setMeetingsList(res);
+          // LỌC NGHIÊM NGẶT: Cuộc họp là riêng biệt được bắn từ hệ thống về, không bao gồm hẹn gặp kết nối B2B 1-1
+          const systemMeetingsOnly = res.filter(
+            (m: any) =>
+              m.department !== "Hẹn gặp kết nối 1-1" &&
+              !m.code?.startsWith("MT-CONN-") &&
+              m.type !== "networking" &&
+              !m.title?.startsWith("Đàm phán 1-1") &&
+              !m.title?.startsWith("Kết nối 1-1") &&
+              !m.title?.startsWith("Hẹn gặp kết nối:"),
+          );
+          setMeetingsList(systemMeetingsOnly);
         } else {
           setMeetingsList([]);
         }

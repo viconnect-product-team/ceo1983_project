@@ -485,7 +485,7 @@ export function Sidebar({
     if (rawRole === "ban_dieu_hanh" || rawRole === "truong_ban_dieu_hanh" || rawRole === "BQT") return "truong_ban_dieu_hanh";
     if (rawRole === "thanh_vien_ban_dieu_hanh") return "thanh_vien_ban_dieu_hanh";
     if (rawRole === "tong_thu_ky" || isTongThuKy) return "tong_thu_ky";
-    if (rawRole === "ban_thu_ky" || isBanThuKy) return "ban_thu_ky";
+    if (rawRole === "ban_thu_ky" || isBanThuKy) return "tong_thu_ky";
     if (rawRole === "truong_ban_truyen_thong" || rawRole === "BTT" || isTruongBanTruyenThong) return "truong_ban_truyen_thong";
     if (rawRole === "thanh_vien_ban_truyen_thong") return "thanh_vien_ban_truyen_thong";
     if (rawRole === "truong_ban_thanh_vien" || rawRole === "BTV" || isTruongBanThanhVien) return "truong_ban_thanh_vien";
