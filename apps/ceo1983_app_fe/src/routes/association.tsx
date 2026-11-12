@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MemberScreen } from "@/components/member/MemberShell";
 import { FirstLoginChangePasswordModal } from "@/components/member/FirstLoginChangePasswordModal";
+import { MobileAppPermissionModal } from "@/components/member/MobileAppPermissionModal";
 import { useAuth } from "@/context/AuthContext";
 import { checkRenewalReminder } from "@/lib/member-app.functions";
 import { MEMBER_MANIFEST_HREF } from "@/lib/pwa-manifest";
@@ -328,7 +329,15 @@ function MemberRoot() {
       user.role === "admin" ||
       user.role === "quan_tri";
     if (isSysAdmin) return;
-    if (user.mustChangePassword || (user as any).must_change_password || (user as any).isFirstLogin || (user as any).firstLogin) {
+    if (
+      user.mustChangePassword ||
+      (user as any).must_change_password ||
+      (user as any).isFirstLogin ||
+      (user as any).is_first_login ||
+      (user as any).firstLogin ||
+      (user as any).onboarding_status === "new" ||
+      (user as any).profile?.onboarding_status === "new"
+    ) {
       setMustChangePassword(true);
     }
   }, [user]);
@@ -372,6 +381,7 @@ function MemberRoot() {
   return (
     <MemberScreen>
       <Outlet />
+      <MobileAppPermissionModal />
       {mustChangePassword && (
         <FirstLoginChangePasswordModal
           onSuccess={() => {

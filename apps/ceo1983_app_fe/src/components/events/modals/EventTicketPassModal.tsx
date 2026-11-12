@@ -31,9 +31,9 @@ export const EventTicketPassModal: React.FC<EventTicketPassModalProps> = ({
 
   return (
     <Dialog open={!!ticketPassModal} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-sm p-0 overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-[var(--vba-surface,#fff)] text-center shadow-2xl">
+      <DialogContent className="max-w-sm max-h-[90vh] max-h-[90dvh] flex flex-col p-0 overflow-hidden rounded-3xl border-2 border-amber-400/50 bg-[var(--vba-surface,#fff)] text-center shadow-2xl">
         {/* Header Ticket Banner */}
-        <div className="bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#002B70] p-4 text-white relative">
+        <div className="shrink-0 bg-gradient-to-br from-[#001D4A] via-[#003B95] to-[#002B70] p-4 text-white relative">
           <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-400/60 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 uppercase tracking-wider mb-2">
             <Sparkles className="h-3 w-3" />
             VÉ THAM DỰ SỰ KIỆN CHÍNH THỨC
@@ -46,8 +46,8 @@ export const EventTicketPassModal: React.FC<EventTicketPassModalProps> = ({
           </DialogDescription>
         </div>
 
-        {/* Ticket Body with QR Code */}
-        <div className="p-4 space-y-3">
+        {/* Ticket Body with QR Code - scrollable container */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3">
           <div className="bg-white p-3 rounded-2xl border-2 border-dashed border-amber-400/50 inline-block shadow-sm">
             <img
               src={ticketPassModal.qrUrl}

@@ -168,7 +168,21 @@ function AssociationLoginPage() {
           res.user?.role === "quan_tri" ||
           res.user?.role === "platform_admin";
 
-        if (!isSystemAdmin && (res.mustChangePassword || res.user?.mustChangePassword)) {
+        const isMustChange =
+          !isSystemAdmin &&
+          Boolean(
+            res.mustChangePassword ||
+            res.must_change_password ||
+            res.user?.mustChangePassword ||
+            res.user?.must_change_password ||
+            res.user?.isFirstLogin ||
+            res.user?.is_first_login ||
+            res.user?.firstLogin ||
+            res.user?.onboarding_status === "new" ||
+            res.user?.profile?.onboarding_status === "new"
+          );
+
+        if (isMustChange) {
           try {
             localStorage.setItem("vba_must_change_password", "true");
           } catch {}

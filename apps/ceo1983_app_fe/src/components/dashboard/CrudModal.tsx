@@ -429,6 +429,14 @@ export function CrudModal({
                           src={resolveMediaUrl(String(values[f.name])) || String(values[f.name])}
                           alt="Preview"
                           className="h-40 w-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            if (!target.dataset.fallbackTried) {
+                              target.dataset.fallbackTried = "true";
+                              const fallback = resolveMediaUrl("/upload/file/documents/1794470096799-thfwcu.jpg");
+                              if (fallback) target.src = fallback;
+                            }
+                          }}
                         />
                         <button
                           type="button"

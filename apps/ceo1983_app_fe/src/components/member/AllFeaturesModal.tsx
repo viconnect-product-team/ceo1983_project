@@ -148,7 +148,7 @@ export function AllFeaturesModal({
     },
     {
       id: "connect",
-      name: "Tính năng kết nối",
+      name: "Kết nối B2B",
       category: "Giao thương & Kết nối",
       desc: "Tạo lịch hẹn kết nối 1-on-1 Online & Offline",
       action: () => {
@@ -162,7 +162,7 @@ export function AllFeaturesModal({
     },
     {
       id: "opportunities",
-      name: "Cơ hội giao thương",
+      name: "Cơ hội B2B",
       category: "Giao thương & Kết nối",
       desc: "Sàn chia sẻ & chốt deal cơ hội kinh doanh B2B",
       to: "/association/opportunities",
@@ -172,7 +172,7 @@ export function AllFeaturesModal({
     },
     {
       id: "marketplace",
-      name: "Sàn thương mại B2B",
+      name: "Sàn B2B",
       category: "Giao thương & Kết nối",
       desc: "Sản phẩm & dịch vụ ưu đãi độc quyền hội viên",
       to: "/association/products",
@@ -180,7 +180,7 @@ export function AllFeaturesModal({
     },
     {
       id: "events",
-      name: "Sự kiện CLB",
+      name: "Sự kiện",
       category: "Hoạt động & Sự kiện",
       desc: "Đại hội, Gala, Diễn đàn xúc tiến & Họp ban",
       to: "/association/events",
@@ -190,7 +190,7 @@ export function AllFeaturesModal({
     },
     {
       id: "voting",
-      name: "Biểu quyết số",
+      name: "Biểu quyết",
       category: "Hoạt động & Sự kiện",
       desc: "Bình chọn đại hội, nghị quyết & khảo sát CLB",
       to: "/association/voting",
@@ -198,7 +198,7 @@ export function AllFeaturesModal({
     },
     {
       id: "training",
-      name: "Đào tạo & Huấn luyện",
+      name: "Đào tạo",
       category: "Hoạt động & Sự kiện",
       desc: "Khóa học quản trị, tài liệu & phòng họp video",
       to: "/association/training",
@@ -206,7 +206,7 @@ export function AllFeaturesModal({
     },
     {
       id: "feed",
-      name: "Bảng tin Mạng lưới",
+      name: "Bảng tin",
       category: "Hoạt động & Sự kiện",
       desc: "Tin tức phát thanh từ các ban & tương tác cộng đồng",
       to: "/association/messages?tab=feed",
@@ -216,7 +216,7 @@ export function AllFeaturesModal({
     },
     {
       id: "messages",
-      name: "Tin nhắn trực tiếp",
+      name: "Tin nhắn",
       category: "Giao thương & Kết nối",
       desc: "Trò chuyện & trao đổi hợp tác riêng tư với hội viên",
       to: "/association/messages?tab=messages",
@@ -226,7 +226,7 @@ export function AllFeaturesModal({
     },
     {
       id: "card",
-      name: "Danh thiếp số VIP",
+      name: "Danh thiếp",
       category: "Đặc quyền & Hội viên",
       desc: "Thẻ hội viên số nhận diện doanh nhân công nghệ NFC",
       to: "/association/card",
@@ -236,7 +236,7 @@ export function AllFeaturesModal({
     },
     {
       id: "perks",
-      name: "Đặc quyền & Ưu đãi",
+      name: "Ưu đãi",
       category: "Đặc quyền & Hội viên",
       desc: "Kho voucher & ưu đãi dịch vụ 5 sao đối tác",
       to: "/association/perks",
@@ -244,7 +244,7 @@ export function AllFeaturesModal({
     },
     {
       id: "library",
-      name: "Kho tài liệu CLB",
+      name: "Tài liệu",
       category: "Đặc quyền & Hội viên",
       desc: "Điều lệ, quy chế hoạt động, kỷ yếu & biểu mẫu",
       to: "/association/library",
@@ -252,7 +252,7 @@ export function AllFeaturesModal({
     },
     {
       id: "renew",
-      name: "Hội phí niên liễm",
+      name: "Hội phí",
       category: "Đặc quyền & Hội viên",
       desc: "Gia hạn tư cách hội viên, thanh toán VietQR",
       to: "/association/renew",
@@ -260,7 +260,7 @@ export function AllFeaturesModal({
     },
     {
       id: "history",
-      name: "Lịch sử hoạt động",
+      name: "Lịch sử",
       category: "Tiện ích số",
       desc: "Nhật ký điểm danh sự kiện, cuộc gặp & trao đổi",
       to: "/association/history",
@@ -268,7 +268,7 @@ export function AllFeaturesModal({
     },
     {
       id: "system-config",
-      name: "Cấu hình hệ thống",
+      name: "Cấu hình",
       category: "Tiện ích số",
       desc: "Đổi mật khẩu, màu giao diện, Trợ lý AI & thông báo",
       to: "/association/system-config",
@@ -278,7 +278,7 @@ export function AllFeaturesModal({
     },
     {
       id: "calendar",
-      name: "Lịch hoạt động & Nhắc hẹn",
+      name: "Lịch hẹn",
       category: "Hoạt động & Sự kiện",
       desc: "Lịch sự kiện, cuộc họp ban, cuộc gặp 1-on-1 & cài đặt nhắc hẹn",
       to: "/association/calendar",

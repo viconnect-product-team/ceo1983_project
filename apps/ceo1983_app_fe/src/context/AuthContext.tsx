@@ -316,6 +316,11 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
     : Boolean(
       apiUser?.mustChangePassword ||
       apiUser?.must_change_password ||
+      apiUser?.isFirstLogin ||
+      apiUser?.is_first_login ||
+      apiUser?.firstLogin ||
+      apiUser?.onboarding_status === 'new' ||
+      apiUser?.profile?.onboarding_status === 'new' ||
       decoded.mustChangePassword ||
       decoded.must_change_password ||
       (typeof window !== 'undefined' &&
@@ -543,7 +548,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearUserSessionData();
 
     const appUser = mapApiUser(data.user, data.access_token);
-    if (data.mustChangePassword || data.user?.mustChangePassword) {
+    const isMustChange = Boolean(
+      appUser.mustChangePassword ||
+      data.mustChangePassword ||
+      data.must_change_password ||
+      data.user?.mustChangePassword ||
+      data.user?.must_change_password ||
+      data.user?.isFirstLogin ||
+      data.user?.is_first_login ||
+      data.user?.firstLogin ||
+      data.user?.onboarding_status === 'new' ||
+      data.user?.profile?.onboarding_status === 'new'
+    );
+    if (isMustChange) {
       appUser.mustChangePassword = true;
       appUser.must_change_password = true;
       try {

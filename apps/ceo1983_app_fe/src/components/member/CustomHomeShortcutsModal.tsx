@@ -38,7 +38,7 @@ export interface ShortcutItem {
 export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   {
     id: "members",
-    name: "Danh bạ CEO 1983",
+    name: "Danh bạ CEO",
     desc: "Danh bạ 200+ CEO doanh nhân",
     to: "/association/members",
     iconName: "Users",
@@ -63,14 +63,14 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "events",
-    name: "Lịch hoạt động",
+    name: "Lịch CLB",
     desc: "Lịch sinh hoạt & sự kiện CLB",
     to: "/association/events",
     iconName: "Calendar",
   },
   {
     id: "calendar",
-    name: "Lịch & Nhắc hẹn",
+    name: "Lịch hẹn",
     desc: "Lịch sự kiện, họp ban, cuộc gặp & cài nhắc",
     to: "/association/calendar",
     iconName: "Calendar",
@@ -79,7 +79,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "opportunities",
-    name: "Cơ hội giao thương",
+    name: "Cơ hội B2B",
     desc: "Sàn kết nối cơ hội kinh doanh B2B",
     to: "/association/opportunities",
     iconName: "TrendingUp",
@@ -95,14 +95,14 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "profile",
-    name: "Góc hội viên",
+    name: "Hội viên",
     desc: "Hồ sơ & thông tin doanh nghiệp",
     to: "/association/profile",
     iconName: "IdCard",
   },
   {
     id: "feed",
-    name: "Bảng tin CLB",
+    name: "Bảng tin",
     desc: "Tin tức các ban & tương tác",
     to: "/association/messages?tab=feed",
     iconName: "MessageSquare",
@@ -120,7 +120,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "perks",
-    name: "Đặc quyền VIP",
+    name: "Ưu đãi VIP",
     desc: "Ưu đãi đối tác nội bộ CLB",
     to: "/association/perks",
     iconName: "Crown",
@@ -148,7 +148,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "training",
-    name: "Đào tạo & Họp",
+    name: "Đào tạo",
     desc: "Khóa học, tài liệu & phòng họp video",
     to: "/association/training",
     iconName: "GraduationCap",
@@ -157,7 +157,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "connect-1on1",
-    name: "Gặp gỡ 1-1",
+    name: "Gặp 1-1",
     desc: "Hẹn kết nối & chốt deal B2B",
     to: "/association/connect",
     iconName: "PhoneCall",
@@ -166,7 +166,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "calendar-alarm",
-    name: "Lịch & Báo thức",
+    name: "Báo thức",
     desc: "Nhắc lịch hẹn, sự kiện & cuộc họp",
     to: "#alarm",
     iconName: "BellRing",

@@ -202,7 +202,10 @@ export class EventsService implements OnModuleInit {
     let dateStr = '';
     if (r.date) {
       if (r.date instanceof Date) {
-        dateStr = r.date.toISOString().slice(0, 10);
+        const y = r.date.getFullYear();
+        const m = String(r.date.getMonth() + 1).padStart(2, '0');
+        const d = String(r.date.getDate()).padStart(2, '0');
+        dateStr = `${y}-${m}-${d}`;
       } else {
         dateStr = String(r.date).slice(0, 10);
       }
@@ -463,10 +466,14 @@ export class EventsService implements OnModuleInit {
     return eventRows.map((e) => {
       let dateStr = '';
       if (e.date) {
-        dateStr =
-          e.date instanceof Date
-            ? e.date.toISOString().slice(0, 10)
-            : String(e.date).slice(0, 10);
+        if (e.date instanceof Date) {
+          const y = e.date.getFullYear();
+          const m = String(e.date.getMonth() + 1).padStart(2, '0');
+          const d = String(e.date.getDate()).padStart(2, '0');
+          dateStr = `${y}-${m}-${d}`;
+        } else {
+          dateStr = String(e.date).slice(0, 10);
+        }
       }
       return {
         id: e.id,
@@ -1126,11 +1133,13 @@ export class EventsService implements OnModuleInit {
     const mappedEvents = events.map((e) => {
       const dt = new Date(e.date);
       const valid = !isNaN(dt.getTime());
-      const dateStr = valid ? dt.toISOString().slice(0, 10) : '';
       const vnEventDate = valid
         ? new Intl.DateTimeFormat('en-CA', {
             timeZone: 'Asia/Ho_Chi_Minh',
           }).format(dt)
+        : '';
+      const dateStr = valid
+        ? vnEventDate || `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
         : '';
       const isToday =
         vnEventDate === vnToday || dateStr === todayStr || dateStr === vnToday;
@@ -1142,10 +1151,13 @@ export class EventsService implements OnModuleInit {
       const myReg = regMap.get(String(e.id));
       const ticketPriceNum = Number(e.ticket_price ?? e.fee ?? 0);
 
+      const parsedDay = vnEventDate ? vnEventDate.split('-')[2] : String(dt.getDate()).padStart(2, '0');
+      const parsedMonthIdx = vnEventDate ? parseInt(vnEventDate.split('-')[1], 10) - 1 : dt.getMonth();
+
       return {
         id: e.id,
-        day: valid ? String(dt.getDate()).padStart(2, '0') : '--',
-        month: valid ? MONTHS[dt.getMonth()] : '',
+        day: valid ? parsedDay : '--',
+        month: valid ? (MONTHS[parsedMonthIdx] || '') : '',
         title: e.name,
         name: e.name,
         date: dateStr,
@@ -1669,7 +1681,7 @@ export class EventsService implements OnModuleInit {
           `
         SELECT r.*, e.name as event_name, e.title as event_title
         FROM public.event_registrations r
-        LEFT JOIN public.events e ON e.id = r.event_id::uuid
+        LEFT JOIN public.events e ON e.id = r.event_id
         WHERE r.id = $1 OR r.id = $2
         LIMIT 1
       `,
@@ -2822,7 +2834,7 @@ export class EventsService implements OnModuleInit {
                COALESCE(m.executive_role, m.position, 'Hội viên') as attendee_position,
                m.avatar as attendee_avatar
         FROM public.event_registrations r
-        LEFT JOIN public.events e ON e.id = r.event_id::uuid
+        LEFT JOIN public.events e ON e.id = r.event_id
         LEFT JOIN public.members m ON (m.code = r.member_code OR m.id = r.member_id OR (m.email IS NOT NULL AND m.email != '' AND m.email = r.email))
         WHERE (
           r.id = $1 
@@ -2860,7 +2872,7 @@ export class EventsService implements OnModuleInit {
                COALESCE(m.executive_role, m.position, 'Hội viên') as attendee_position,
                m.avatar as attendee_avatar
         FROM public.event_registrations r
-        LEFT JOIN public.events e ON e.id = r.event_id::uuid
+        LEFT JOIN public.events e ON e.id = r.event_id
         LEFT JOIN public.members m ON (m.code = r.member_code OR m.id = r.member_id OR (m.email IS NOT NULL AND m.email != '' AND m.email = r.email))
         WHERE (
           ($1 != '' AND (r.phone ILIKE '%' || $1 || '%' OR m.phone ILIKE '%' || $1 || '%'))
@@ -2890,7 +2902,7 @@ export class EventsService implements OnModuleInit {
                COALESCE(m.executive_role, m.position, 'Hội viên') as attendee_position,
                m.avatar as attendee_avatar
         FROM public.event_registrations r
-        LEFT JOIN public.events e ON e.id = r.event_id::uuid
+        LEFT JOIN public.events e ON e.id = r.event_id
         LEFT JOIN public.members m ON (m.code = r.member_code OR m.id = r.member_id)
         WHERE (r.member_code = $1 OR m.code = $1)
           AND r.status != 'cancelled'

@@ -19,6 +19,9 @@ import {
   ChevronRight,
   LogOut,
   Smartphone,
+  Camera,
+  Mic,
+  Bell,
 } from "lucide-react";
 import { MemberHeader } from "@/components/member/MemberShell";
 import { Ceo1983ColorThemeSelector } from "@/components/member/Ceo1983ColorThemeSelector";
@@ -32,6 +35,7 @@ import { signOutSession } from "@/lib/business-connect/mobile/auth-session";
 import { AccountSecuritySettingsForm } from "@/components/member/AccountSecuritySettingsForm";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { UserGuideModal } from "@/components/member/UserGuideModal";
+import { MobileAppPermissionModal } from "@/components/member/MobileAppPermissionModal";
 import {
   isVoiceAiEnabled,
   setVoiceAiEnabled,
@@ -71,6 +75,7 @@ export function AssociationSystemConfigScreen() {
   // Modals state
   const [contactSupportOpen, setContactSupportOpen] = useState(false);
   const [userGuideOpen, setUserGuideOpen] = useState(false);
+  const [permissionModalOpen, setPermissionModalOpen] = useState(false);
 
   // Active brand color theme
   const [brandColorTheme, setBrandColorTheme] = useState<Ceo1983ColorTheme>(() =>
@@ -121,6 +126,7 @@ export function AssociationSystemConfigScreen() {
       return;
     }
 
+    // 1. Kích hoạt trực tiếp prompt cài đặt 1-chạm nếu browser đã sẵn sàng
     const p = (window as any).__pwaInstallPrompt;
     if (p && typeof p.prompt === "function") {
       try {
@@ -136,19 +142,8 @@ export function AssociationSystemConfigScreen() {
       }
     }
 
-    const userAgent = typeof window !== "undefined" ? window.navigator.userAgent.toLowerCase() : "";
-    const isAndroid = /android/.test(userAgent);
-    if (isAndroid) {
-      const link = document.createElement("a");
-      link.href = "/docs/CEO1983-app-latest.apk";
-      link.download = "CEO1983-app-latest.apk";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Đang tự động tải và kích hoạt gói cài đặt ứng dụng CEO 1983!");
-      return;
-    }
-
+    // 2. Kích hoạt sự kiện toàn cục để mở banner cài đặt 1-chạm
+    window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
     window.dispatchEvent(new CustomEvent("open-install-prompt"));
     window.dispatchEvent(new CustomEvent("open-ios-install-guide"));
   };
@@ -373,34 +368,57 @@ export function AssociationSystemConfigScreen() {
         {/* ── 6. KHỐI CÀI ĐẶT ỨNG DỤNG PWA / MOBILE APP ── */}
         <div className="space-y-1.5">
           <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
-            {isEn ? "App Installation" : "Cài đặt ứng dụng lên thiết bị"}
+            {isEn ? "App Installation & Device Permissions" : "Cài đặt ứng dụng & Quyền thiết bị"}
           </div>
 
-          <button
-            type="button"
-            onClick={handleFastInstallApp}
-            style={{
-              backgroundColor: brandColorTheme.primaryColor,
-            }}
-            className="w-full p-3.5 rounded-2xl text-white shadow-md flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition cursor-pointer text-left"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="size-9 rounded-xl bg-white/20 text-white grid place-items-center shrink-0">
-                <Smartphone className="size-4.5" />
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleFastInstallApp}
+              style={{
+                backgroundColor: brandColorTheme.primaryColor,
+              }}
+              className="w-full p-3.5 rounded-2xl text-white shadow-md flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="size-9 rounded-xl bg-white/20 text-white grid place-items-center shrink-0">
+                  <Smartphone className="size-4.5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-white block truncate">
+                    {isEn ? "1-Tap Install CEO 1983 App" : "Cài đặt ứng dụng CEO 1983 tự động"}
+                  </span>
+                  <span className="text-[10.5px] text-white/80 block line-clamp-1">
+                    {isEn ? "Auto-install on mobile home screen" : "Tự động kích hoạt cài đặt ghim biểu tượng lên màn hình chính"}
+                  </span>
+                </div>
               </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-white block truncate">
-                  {isEn ? "Install CEO 1983 App" : "Cài đặt ứng dụng CEO 1983 tự động"}
-                </span>
-                <span className="text-[10.5px] text-white/80 block line-clamp-1">
-                  {isEn ? "Auto-install on home screen or download APK" : "Tự động ghim ra màn hình chính hoặc tải gói APK Android"}
-                </span>
+              <div className="size-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 ml-2">
+                <ChevronRight className="size-4 text-white" />
               </div>
-            </div>
-            <div className="size-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 ml-2">
-              <ChevronRight className="size-4 text-white" />
-            </div>
-          </button>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPermissionModalOpen(true)}
+              className="w-full p-3 rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition cursor-pointer text-left shadow-2xs"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="size-8.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#003B95] dark:text-blue-400 grid place-items-center shrink-0">
+                  <ShieldCheck className="size-4.5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
+                    {isEn ? "Device Permissions (Camera, Mic, Notifications)" : "Cấp quyền thiết bị (Máy ảnh, Micro, Thông báo)"}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                    {isEn ? "Allow device access for QR scan, calls & notifications" : "Kiểm tra và cấp quyền hoạt động đầy đủ trên điện thoại"}
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="size-4 text-slate-400 shrink-0 ml-2" />
+            </button>
+          </div>
         </div>
 
         {/* ── 7. KHỐI LIÊN HỆ & HỖ TRỢ BAN THƯ KÝ ── */}
@@ -519,6 +537,11 @@ export function AssociationSystemConfigScreen() {
       <UserGuideModal
         open={userGuideOpen}
         onClose={() => setUserGuideOpen(false)}
+      />
+
+      <MobileAppPermissionModal
+        forceOpen={permissionModalOpen}
+        onClose={() => setPermissionModalOpen(false)}
       />
     </div>
   );
