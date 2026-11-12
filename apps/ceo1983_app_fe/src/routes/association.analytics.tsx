@@ -1622,19 +1622,12 @@ export function AssociationAnalyticsScreen() {
                       maxBarSize={22}
                     />
                   )}
-                  <Bar
-                    dataKey="timelineVal"
-                    name={activeChartMeta.timelineLabel}
-                    fill={activeChartMeta.timelineColor || "#DC2626"}
-                    radius={[5, 5, 0, 0]}
-                    maxBarSize={22}
-                  />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {/* Thanh chú thích thu gọn chuẩn mobile (không bị tràn hay đẩy chân card) */}
+          {/* Thanh chú thích thu gọn chuẩn mobile (chỉ hiện đúng các cột chỉ số thành phần) */}
           <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] overflow-x-auto no-scrollbar py-0.5 select-none">
             <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
               <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
@@ -1656,10 +1649,6 @@ export function AssociationAnalyticsScreen() {
                 <span className="text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">{activeChartMeta.col4Label.replace("Lượt ", "")}</span>
               </div>
             )}
-            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
-              <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
-              <span className="text-slate-700 dark:text-slate-300 font-bold whitespace-nowrap">{activeChartMeta.timelineLabel.replace(" hội viên", "")}</span>
-            </div>
           </div>
         </div>
 

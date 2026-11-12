@@ -1863,7 +1863,7 @@ function ProductsScreen() {
                     className="h-9 px-4 rounded-xl bg-[#003B95] hover:bg-[#002b6e] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                   >
                     <Mail className="h-4 w-4 text-white" />
-                    <span>Yêu cầu báo giá VIP</span>
+                    <span>Báo giá</span>
                   </button>
                 )}
               </div>
@@ -2097,7 +2097,7 @@ function ProductsScreen() {
                               title="Lên lịch hẹn 1-1 B2B với người bán"
                             >
                               <Calendar className="h-3.5 w-3.5" />
-                              <span>Lên lịch B2B</span>
+                              <span>Lên lịch</span>
                             </button>
                             <button
                               type="button"
@@ -2117,7 +2117,7 @@ function ProductsScreen() {
                               className="flex-1 h-9 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95 cursor-pointer"
                             >
                               <Mail className="h-3.5 w-3.5 text-amber-300" />
-                              <span>Nhận báo giá VIP</span>
+                              <span>Báo giá</span>
                             </button>
                           </div>
                         )}

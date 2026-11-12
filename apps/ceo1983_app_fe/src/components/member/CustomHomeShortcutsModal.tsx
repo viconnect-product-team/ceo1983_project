@@ -63,14 +63,14 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "events",
-    name: "Lịch CLB",
-    desc: "Lịch sinh hoạt & sự kiện CLB",
+    name: "Sự kiện",
+    desc: "Sự kiện & chương trình CLB",
     to: "/association/events",
     iconName: "Calendar",
   },
   {
     id: "calendar",
-    name: "Lịch hẹn",
+    name: "Lịch",
     desc: "Lịch sự kiện, họp ban, cuộc gặp & cài nhắc",
     to: "/association/calendar",
     iconName: "Calendar",

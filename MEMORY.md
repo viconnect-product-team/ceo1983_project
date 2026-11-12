@@ -1,5 +1,91 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.32): Tách Biệt Tuyệt Đối 3 Luồng Riêng Biệt (Cuộc Họp Hệ Thống vs Hẹn Gặp Kết Nối B2B vs Sự Kiện) & Triển Khai Tính Năng Hủy Hẹn Kèm Trường Lý Do Hủy ([NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CRM-005], [NODE-CORE-001])**:
+  - **1. Tách Biệt Hoàn Toàn Hẹn Gặp Kết Nối B2B Khỏi Cuộc Họp & Sự Kiện ([NODE-APP-003], [NODE-APP-004], [NODE-CRM-005], [NODE-CORE-001])**:
+    * **Xác định kiến trúc ranh giới rõ ràng**:
+      - **Cuộc họp (`meetings`)**: Là các cuộc họp chính thống của tổ chức (Ban Chấp Hành, Ban Thư Ký, Ban Chuyên Môn, Đại Hội, Họp Định Kỳ) được khởi tạo bởi Ban Điều Hành và bắn từ hệ thống về. Quản lý trên CRM `/meetings` và hiển thị trên tab "Cuộc họp" của app.
+      - **Hẹn gặp kết nối (`connection-appointments` / `business_meetings`)**: Là luồng tương tác 1-on-1 giữa 2 hội viên để trao đổi, đàm phán về cơ hội kinh doanh hoặc sản phẩm trên sàn giao thương. Tuyệt đối không lưu vào `public.meetings`.
+      - **Sự kiện (`events`)**: Các sự kiện, hội thảo, đào tạo, gala quy mô hiệp hội độc lập.
+    * **Phía Frontend (`BusinessConnectBottomSheet.tsx`)**:
+      - Xóa bỏ triệt để việc import và gọi `createMeeting` (`createMeetingFn`).
+      - Luồng hẹn gặp B2B 1-1 chỉ gửi API chuyên dụng `POST /meetings/connection-appointments` và cập nhật danh mục cá nhân `vba_connection_appointments` với trạng thái `pending` (chờ đối tác đồng ý), không ghi vào `public.meetings`.
+    * **Phía Backend (`apps/ceo1983_app_be/src/meetings/meetings.service.ts`)**:
+      - Trong `createConnectionAppointment`: Loại bỏ hoàn toàn khối lệnh `INSERT INTO public.meetings`. Lịch hẹn kết nối 1-1 B2B chỉ ghi nhận vào `public.business_meetings` và `public.business_meeting_participants`.
+      - Trong `getAllUnifiedMeetings(userId)`: Endpoint `GET /meetings` chỉ trả về danh sách cuộc họp thuần túy của hệ thống từ `public.meetings`. KHÔNG gộp `connItems` từ `getConnectionAppointments` vào danh sách cuộc họp, đồng thời lọc sạch các bản ghi có `department = 'Hẹn gặp kết nối 1-1'`, `code LIKE 'MT-CONN-%'`, hoặc title hẹn gặp 1-1.
+      - Trong `createMeeting` (Backend): Bổ sung kiểm tra `if (!isOneOnOne)` để tuyệt đối không lưu các cuộc hẹn 1-1 (có tên/SĐT đối tác hoặc thuộc phân hệ giao thương) vào `public.meetings`.
+      - Bổ sung `onModuleInit()`: Tự động chạy câu lệnh dọn sạch mọi bản ghi hẹn gặp kết nối 1-1 từng bị ghi nhầm vào `public.meetings` trong quá khứ.
+    * **Phía Mobile App (`association.events.tsx`)**:
+      - Tab "Cuộc họp" bổ sung bộ lọc nghiêm ngặt lọc bỏ toàn bộ các cuộc hẹn 1-1 nếu có, đảm bảo chỉ hiển thị đúng các cuộc họp Ban/Hội đồng được bắn từ hệ thống về.
+  - **2. Bổ Sung Nút "Hủy Hẹn" Kèm Trường "Lý Do Hủy" Giữa 2 Tài Khoản ([NODE-APP-003], [NODE-APP-005])**:
+    * **Tại Màn hình Kết nối B2B (`association.connect.tsx`)**:
+      - Thêm nút "Hủy hẹn" nổi bật trên thẻ cuộc gặp đã xác nhận (`m.status === "confirmed"`) cho cả 2 phía tài khoản (người mời & người nhận lời mời).
+      - Nâng cấp nút "Hủy lời mời" trên các cuộc hẹn đang chờ (`m.status === "pending"`).
+      - Xây dựng Modal "Hủy Lịch Hẹn Kết Nối B2B" chuyên nghiệp:
+        * Hiển thị chi tiết tiêu đề cuộc gặp, tên đối tác, thời gian gặp.
+        * Ô nhập textarea bắt buộc cho trường **Lý do hủy cuộc hẹn**.
+        * Tích hợp 4 chip chọn nhanh lý do tiện lợi ("Bận công tác đột xuất", "Trùng lịch họp đối tác", "Thay đổi kế hoạch", "Hẹn lại vào dịp khác").
+        * Hai nút hành động: "Giữ lịch hẹn" và "Xác nhận hủy" (có loading state).
+      - Khi xác nhận hủy: Gọi API `POST /meetings/connection-appointments/:id/cancel` gửi kèm lý do, cập nhật trạng thái `cancelled`, lưu lý do hủy vào `localStorage`, phát event `vba.connection.changed` và `vba.meeting.changed`.
+      - Tab "Lịch sử & Đã hủy" hiển thị rõ nét lý do hủy của từng cuộc hẹn.
+    * **Tại Màn hình Lịch trình (`association.calendar.tsx`)**:
+      - Bổ sung nút "Hủy hẹn" trực tiếp trên card cuộc gặp 1-on-1 trong Lịch trình.
+      - Tích hợp Modal nhập lý do hủy tương ứng. Khi xác nhận hủy, cuộc hẹn được loại bỏ tức thì khỏi Lịch trình, đồng bộ CSDL và bắn socket/event tới đối tác.
+    * **Tại Thẻ Hội Viên (`association.members.tsx`)**:
+      - Đồng bộ hóa cập nhật `vba_connection_appointments` trong `localStorage` và phát event `vba.connection.changed` khi hủy hẹn.
+  - **Kiểm định mã nguồn (Strict Code Quality & Rule 1)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+    * Frontend (`apps/ceo1983_app_fe`): `node typescript/bin/tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ tuyệt đối Rule 1: Không chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.31): Khắc Phục Triệt Để 5 Yêu Cầu CRM & Mobile App - Fix Lỗi Code Sidebar Ban Thư Ký, Xóa Tài Khoản Cascade Cả Doanh Nghiệp & Hội Viên Không Bị Hồi Lại Khi Reload, Luồng Gặp B2B Chỉ Lưu Lịch Khi Đối Phương Đồng Ý, Tách Biệt Hoàn Toàn Khỏi Sự Kiện, Đổi Lịch CLB Thành Lịch, Tinh Gọn Nút Chi Tiết Sản Phẩm & Xóa Mã UUID Vàng Tại Popup Lên Lịch ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-001])**:
+  - **1. Fix Lỗi Code Ảnh 3 Tại Sidebar CRM (`Sidebar.tsx:488`) ([NODE-CRM-001])**:
+    * Khắc phục triệt để lỗi TypeScript `Type '"ban_thu_ky"' is not assignable to type 'SystemRoleKey'. ts(2322)`:
+    * Ánh xạ vai trò `ban_thu_ky` về vai trò chuẩn `tong_thu_ky`, đồng bộ hoàn toàn với định nghĩa `SystemRoleKey` và logic phân quyền `normalizeRole()` trong `rbac-permission-helpers.ts`.
+  - **2. Xóa Tài Khoản Cascade Hội Viên & Doanh Nghiệp, Không Bị Phục Hồi Khi Reload (`/accounts`) ([NODE-CRM-002], [NODE-CORE-001])**:
+    * **Phía Backend (`users.service.ts` & `members.service.ts`)**:
+      - Bổ sung logic cascade deletion xóa sạch toàn bộ bản ghi doanh nghiệp trong `public.companies` (theo `owner_id`, `created_by`, `name`, `tax_code`) và `public.vione_companies` (theo `user_id`, `name`).
+      - Xóa sạch hồ sơ hội viên trong `public.members` (theo `user_id`, `id`, `code`, `email`), `public.vione_users`, `auth.users`, `public.user_roles`, `public.user_profiles`, `public.memberships`, `public.vba_member_permissions`.
+    * **Phía Frontend (`accounts.tsx`)**:
+      - Khởi tạo danh sách `vba_deleted_account_identifiers_v3` lưu toàn bộ định danh (`id`, `dbMemberId`, `code`, `email`) của các tài khoản đã bị xóa.
+      - Khi khởi tạo state hoặc khi nhận kết quả `GET /members` từ server, hệ thống LỌC BỎ triệt để bất kỳ tài khoản nào nằm trong danh sách đã xóa, ngăn chặn hoàn toàn việc API hoặc `DEFAULT_ACCOUNTS` tự ý bù đắp lại các tài khoản đã bị xóa sau khi reload trang (F5).
+      - Khi xóa tất cả tài khoản, hệ thống lưu vết mảng rỗng (chỉ giữ lại tài khoản Quản trị gốc), không bao giờ tự động nạp lại danh sách mặc định.
+  - **3. Luồng Gặp B2B & Lịch Trình - Tách Rời Khỏi Sự Kiện & Bỏ Từ "CLB" ([NODE-APP-003], [NODE-APP-004])**:
+    * **Chỉ lưu và hiển thị vào Lịch khi đối phương đã đồng ý**: Trong `association.calendar.tsx`, lọc nghiêm ngặt các cuộc gặp B2B 1-on-1 (`vba_connection_appointments` / API `/meetings/connection-appointments`): Chỉ những cuộc gặp có trạng thái `status === "confirmed" || status === "accepted"` mới được lưu và hiển thị trên Lịch trình; các cuộc gặp đang chờ (`pending`) tuyệt đối không đưa vào lịch.
+    * **Tách biệt hoàn toàn khỏi Màn Sự kiện**: Loại bỏ hoàn toàn mục hẹn gặp B2B 1-1 (`meet-demo-02: Hẹn gặp 1-1 trao đổi liên kết dịch vụ B2B`) khỏi `defaultMeetingsList` trong `association.events.tsx`. Màn sự kiện chỉ hiển thị sự kiện & chương trình chung của CLB, không trộn lẫn các cuộc hẹn gặp 1-on-1 cá nhân.
+    * **Đổi từ "Lịch CLB" thành "Lịch"**: Đổi tiêu đề `MemberHeader` từ "Lịch Hoạt Động & Nhắc Hẹn" thành "Lịch", đổi tên shortcut trong `CustomHomeShortcutsModal.tsx` từ "Lịch CLB" thành "Lịch" (và "Lịch sinh hoạt" thành "Sự kiện").
+  - **4. Tinh Gọn Nút Chi Tiết Sản Phẩm Trên Sàn Thương Mại (`ShopeeProductDetailModal.tsx`, `association.products.tsx`) ([NODE-APP-005])**:
+    * Tái cấu trúc hàng nút hành động trên mobile: Bố trí gọn gàng, sử dụng `flex-nowrap` với kích thước chuẩn 40px cho 2 nút icon (Heart, Share) và phân bổ đều cho các nút hành động chữ: "Chat", "Lên lịch", "Báo giá".
+    * Đổi tên nút "Lên lịch B2B" thành "Lên lịch".
+    * Đổi tên nút "Yêu cầu báo giá B2B" / "Nhận Báo Giá VIP Ngay" / "Yêu Cầu Báo Giá VIP" thành "Báo giá" trên cả phần thân và thanh footer cố định dưới cùng (`Modal Bottom Fixed Bar`).
+    * Triệt tiêu hoàn toàn hiện tượng tràn nút, lệch khung trên thiết bị di động.
+  - **5. Xóa Bỏ Mã Text Màu Vàng Tại Popup Lên Lịch Báo Giá (`BusinessConnectBottomSheet.tsx`) ([NODE-APP-005])**:
+    * Xóa bỏ hoàn toàn thẻ badge màu vàng chứa mã UUID tác giả `{target.code}` (`67e1bca9-94e6-4859-b13c-bf93e2b9c4c5`).
+    * Bỏ class `truncate` trên tên chủ gian hàng, hiển thị đầy đủ họ tên ("Phạm Văn Vũ") rõ ràng, sắc nét.
+  - **Kiểm định mã nguồn (Strict Code Quality & Rule 1)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.30): Hoàn Thiện Chuẩn Xác 3 Yêu Cầu Về Thống Kê Mobile & CRM - Biểu Đồ Cột Biến Động Sinh Động Phản Ánh Đầy Đủ Số Liệu Từng Tháng Kèm Tự Động Ghi Nhận Lượt Share, Ẩn Triệt Để Toàn Bộ Menu/Nhóm Menu Không Có Quyền Trên CRM Khi Gán Role Cụ Thể, Chuẩn Hóa Thông Báo Đăng Nhập Sai Mật Khẩu/Tài Khoản ([NODE-APP-006], [NODE-CRM-001], [NODE-CRM-011], [NODE-CORE-001])**:
+  - **1. Thống Kê Mobile App (`/association/analytics`) ([NODE-APP-006], [NODE-CORE-001])**:
+    * **Chỉ hiện đủ cột thể hiện đủ chỉ số**: Loại bỏ hoàn toàn cột thanh khổng lồ `timelineVal` (Tổng hoạt động/Tổng tương tác) và nhãn chú thích tương ứng khỏi `ComposedChart`.
+    * Mỗi danh mục chỉ hiển thị đúng các cột chỉ số thành phần:
+      - Hoạt động hội viên: Đúng 3 cột: Lượt bình luận (Xanh `#003B95`), Lượt share bài viết (Xanh lục `#10B981`), Lượt click link giới thiệu (Vàng `#F59E0B`).
+      - Kết nối giao thương: Đúng 4 cột: Kết nối 1-on-1, Đã kết nối, Chờ phản hồi, Cuộc gặp B2B.
+      - Cơ hội kinh doanh: Đúng 4 cột: Cơ hội mở mới, Giá trị tăng (Tỷ), Giá trị đàm phán, Đã kết nối / chốt.
+      - Sự kiện & cuộc họp: Đúng 4 cột: Đăng ký tham gia, Điểm danh thực tế, Cuộc họp ban, Chờ check-in.
+    * **Biến động dữ liệu theo tháng sinh động**: Các tháng có hoạt động (như T9 có hội viên mới, T11 có sự kiện, kết nối, đăng ký) hiển thị cột biến động số liệu sắc nét. Khi có thêm bất kỳ 1 hội viên, lượt share hay tương tác nào, cột biểu đồ của tháng đó phản ánh đúng số liệu.
+    * **Tự động lưu vết lượt chia sẻ (`executeShare`)**: Trong `share-helper.ts`, khi người dùng chia sẻ bài viết/sự kiện/cơ hội ra ngoài (Facebook, Zalo, clipboard), hệ thống tự động gọi API `/analytics/share-click` lưu bản ghi vào `audit_logs` để cột Lượt share bài viết nhảy số liệu ngay lập tức.
+  - **2. Phân Quyền CRM & Ẩn Triệt Để Giao Diện Theo Role Được Gán (`/accounts`, `use-role.ts`, `Sidebar.tsx`) ([NODE-CRM-001], [NODE-CRM-011])**:
+    * Khắc phục triệt để lỗi khi gán role cụ thể ở Quản lý tài khoản nhưng giao diện không thay đổi:
+      - Trong `use-role.ts`: Ưu tiên tuyệt đối vai trò `found.role` từ `vba_managed_accounts_v2` cho tài khoản hiện tại. Nếu tài khoản được gán vai trò chuyên môn (như `truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_tai_chinh`, `member` v.v.), `srsRole` được thiết lập chính xác theo vai trò đó, đồng thời đặt `isAdmin = false`, `isBQT = false`, `isSuperUser = false`, không bị các cờ admin cũ từ token JWT ghi đè.
+      - Trong `Sidebar.tsx`: Chuẩn hóa `currentRoleKey` ánh xạ trực tiếp từ `srsRole`. Toàn bộ các nhóm menu (`Group`) chỉ được render khi `filteredItems.length > 0`.
+      - Khi tài khoản thuộc vai trò không có quyền (ví dụ Trưởng Ban Truyền Thông hoặc Hội viên thường): Toàn bộ menu Tài chính (`/finance`, `/income`, `/expenses`, `/fees`), Quản trị hệ thống (`/settings`, `/activity`), Phân quyền (`/permissions`, `/accounts`, `/departments`) **BỊ ẨN HOÀN TOÀN KHỎI GIAO DIỆN CRM**.
+  - **3. Chuẩn Hóa Thông Báo Đăng Nhập Thất Bại ([NODE-CORE-001], [NODE-CRM-001])**:
+    * Trong `local.strategy.ts` (Backend) và các màn hình đăng nhập (`auth.tsx` CRM, `association.login.tsx` Mobile):
+    * Khi nhập sai tài khoản hoặc sai mật khẩu, hệ thống thông báo chính xác và đồng nhất:
+      `"Tài khoản hoặc mật khẩu không chính xác"`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
   - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
     * Trong `MemberShell.tsx`: Cố định cấu trúc `flex-1 min-h-0 relative overflow-hidden flex flex-col` cho phần nội dung cuộn `PullToRefresh`.
@@ -536,6 +622,92 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.32): Tách Biệt Tuyệt Đối 3 Luồng Riêng Biệt (Cuộc Họp Hệ Thống vs Hẹn Gặp Kết Nối B2B vs Sự Kiện) & Triển Khai Tính Năng Hủy Hẹn Kèm Trường Lý Do Hủy ([NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CRM-005], [NODE-CORE-001])**:
+  - **1. Tách Biệt Hoàn Toàn Hẹn Gặp Kết Nối B2B Khỏi Cuộc Họp & Sự Kiện ([NODE-APP-003], [NODE-APP-004], [NODE-CRM-005], [NODE-CORE-001])**:
+    * **Xác định kiến trúc ranh giới rõ ràng**:
+      - **Cuộc họp (`meetings`)**: Là các cuộc họp chính thống của tổ chức (Ban Chấp Hành, Ban Thư Ký, Ban Chuyên Môn, Đại Hội, Họp Định Kỳ) được khởi tạo bởi Ban Điều Hành và bắn từ hệ thống về. Quản lý trên CRM `/meetings` và hiển thị trên tab "Cuộc họp" của app.
+      - **Hẹn gặp kết nối (`connection-appointments` / `business_meetings`)**: Là luồng tương tác 1-on-1 giữa 2 hội viên để trao đổi, đàm phán về cơ hội kinh doanh hoặc sản phẩm trên sàn giao thương. Tuyệt đối không lưu vào `public.meetings`.
+      - **Sự kiện (`events`)**: Các sự kiện, hội thảo, đào tạo, gala quy mô hiệp hội độc lập.
+    * **Phía Frontend (`BusinessConnectBottomSheet.tsx`)**:
+      - Xóa bỏ triệt để việc import và gọi `createMeeting` (`createMeetingFn`).
+      - Luồng hẹn gặp B2B 1-1 chỉ gửi API chuyên dụng `POST /meetings/connection-appointments` và cập nhật danh mục cá nhân `vba_connection_appointments` với trạng thái `pending` (chờ đối tác đồng ý), không ghi vào `public.meetings`.
+    * **Phía Backend (`apps/ceo1983_app_be/src/meetings/meetings.service.ts`)**:
+      - Trong `createConnectionAppointment`: Loại bỏ hoàn toàn khối lệnh `INSERT INTO public.meetings`. Lịch hẹn kết nối 1-1 B2B chỉ ghi nhận vào `public.business_meetings` và `public.business_meeting_participants`.
+      - Trong `getAllUnifiedMeetings(userId)`: Endpoint `GET /meetings` chỉ trả về danh sách cuộc họp thuần túy của hệ thống từ `public.meetings`. KHÔNG gộp `connItems` từ `getConnectionAppointments` vào danh sách cuộc họp, đồng thời lọc sạch các bản ghi có `department = 'Hẹn gặp kết nối 1-1'`, `code LIKE 'MT-CONN-%'`, hoặc title hẹn gặp 1-1.
+      - Trong `createMeeting` (Backend): Bổ sung kiểm tra `if (!isOneOnOne)` để tuyệt đối không lưu các cuộc hẹn 1-1 (có tên/SĐT đối tác hoặc thuộc phân hệ giao thương) vào `public.meetings`.
+      - Bổ sung `onModuleInit()`: Tự động chạy câu lệnh dọn sạch mọi bản ghi hẹn gặp kết nối 1-1 từng bị ghi nhầm vào `public.meetings` trong quá khứ.
+    * **Phía Mobile App (`association.events.tsx`)**:
+      - Tab "Cuộc họp" bổ sung bộ lọc nghiêm ngặt lọc bỏ toàn bộ các cuộc hẹn 1-1 nếu có, đảm bảo chỉ hiển thị đúng các cuộc họp Ban/Hội đồng được bắn từ hệ thống về.
+  - **2. Bổ Sung Nút "Hủy Hẹn" Kèm Trường "Lý Do Hủy" Giữa 2 Tài Khoản ([NODE-APP-003], [NODE-APP-005])**:
+    * **Tại Màn hình Kết nối B2B (`association.connect.tsx`)**:
+      - Thêm nút "Hủy hẹn" nổi bật trên thẻ cuộc gặp đã xác nhận (`m.status === "confirmed"`) cho cả 2 phía tài khoản (người mời & người nhận lời mời).
+      - Nâng cấp nút "Hủy lời mời" trên các cuộc hẹn đang chờ (`m.status === "pending"`).
+      - Xây dựng Modal "Hủy Lịch Hẹn Kết Nối B2B" chuyên nghiệp:
+        * Hiển thị chi tiết tiêu đề cuộc gặp, tên đối tác, thời gian gặp.
+        * Ô nhập textarea bắt buộc cho trường **Lý do hủy cuộc hẹn**.
+        * Tích hợp 4 chip chọn nhanh lý do tiện lợi ("Bận công tác đột xuất", "Trùng lịch họp đối tác", "Thay đổi kế hoạch", "Hẹn lại vào dịp khác").
+        * Hai nút hành động: "Giữ lịch hẹn" và "Xác nhận hủy" (có loading state).
+      - Khi xác nhận hủy: Gọi API `POST /meetings/connection-appointments/:id/cancel` gửi kèm lý do, cập nhật trạng thái `cancelled`, lưu lý do hủy vào `localStorage`, phát event `vba.connection.changed` và `vba.meeting.changed`.
+      - Tab "Lịch sử & Đã hủy" hiển thị rõ nét lý do hủy của từng cuộc hẹn.
+    * **Tại Màn hình Lịch trình (`association.calendar.tsx`)**:
+      - Bổ sung nút "Hủy hẹn" trực tiếp trên card cuộc gặp 1-on-1 trong Lịch trình.
+      - Tích hợp Modal nhập lý do hủy tương ứng. Khi xác nhận hủy, cuộc hẹn được loại bỏ tức thì khỏi Lịch trình, đồng bộ CSDL và bắn socket/event tới đối tác.
+    * **Tại Thẻ Hội Viên (`association.members.tsx`)**:
+      - Đồng bộ hóa cập nhật `vba_connection_appointments` trong `localStorage` và phát event `vba.connection.changed` khi hủy hẹn.
+  - **Kiểm định mã nguồn (Strict Code Quality & Rule 1)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+    * Frontend (`apps/ceo1983_app_fe`): `node typescript/bin/tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ tuyệt đối Rule 1: Không chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.31): Khắc Phục Triệt Để 5 Yêu Cầu CRM & Mobile App - Fix Lỗi Code Sidebar Ban Thư Ký, Xóa Tài Khoản Cascade Cả Doanh Nghiệp & Hội Viên Không Bị Hồi Lại Khi Reload, Luồng Gặp B2B Chỉ Lưu Lịch Khi Đối Phương Đồng Ý, Tách Biệt Hoàn Toàn Khỏi Sự Kiện, Đổi Lịch CLB Thành Lịch, Tinh Gọn Nút Chi Tiết Sản Phẩm & Xóa Mã UUID Vàng Tại Popup Lên Lịch ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-001])**:
+  - **1. Fix Lỗi Code Ảnh 3 Tại Sidebar CRM (`Sidebar.tsx:488`) ([NODE-CRM-001])**:
+    * Khắc phục triệt để lỗi TypeScript `Type '"ban_thu_ky"' is not assignable to type 'SystemRoleKey'. ts(2322)`:
+    * Ánh xạ vai trò `ban_thu_ky` về vai trò chuẩn `tong_thu_ky`, đồng bộ hoàn toàn với định nghĩa `SystemRoleKey` và logic phân quyền `normalizeRole()` trong `rbac-permission-helpers.ts`.
+  - **2. Xóa Tài Khoản Cascade Hội Viên & Doanh Nghiệp, Không Bị Phục Hồi Khi Reload (`/accounts`) ([NODE-CRM-002], [NODE-CORE-001])**:
+    * **Phía Backend (`users.service.ts` & `members.service.ts`)**:
+      - Bổ sung logic cascade deletion xóa sạch toàn bộ bản ghi doanh nghiệp trong `public.companies` (theo `owner_id`, `created_by`, `name`, `tax_code`) và `public.vione_companies` (theo `user_id`, `name`).
+      - Xóa sạch hồ sơ hội viên trong `public.members` (theo `user_id`, `id`, `code`, `email`), `public.vione_users`, `auth.users`, `public.user_roles`, `public.user_profiles`, `public.memberships`, `public.vba_member_permissions`.
+    * **Phía Frontend (`accounts.tsx`)**:
+      - Khởi tạo danh sách `vba_deleted_account_identifiers_v3` lưu toàn bộ định danh (`id`, `dbMemberId`, `code`, `email`) của các tài khoản đã bị xóa.
+      - Khi khởi tạo state hoặc khi nhận kết quả `GET /members` từ server, hệ thống LỌC BỎ triệt để bất kỳ tài khoản nào nằm trong danh sách đã xóa, ngăn chặn hoàn toàn việc API hoặc `DEFAULT_ACCOUNTS` tự ý bù đắp lại các tài khoản đã bị xóa sau khi reload trang (F5).
+      - Khi xóa tất cả tài khoản, hệ thống lưu vết mảng rỗng (chỉ giữ lại tài khoản Quản trị gốc), không bao giờ tự động nạp lại danh sách mặc định.
+  - **3. Luồng Gặp B2B & Lịch Trình - Tách Rời Khỏi Sự Kiện & Bỏ Từ "CLB" ([NODE-APP-003], [NODE-APP-004])**:
+    * **Chỉ lưu và hiển thị vào Lịch khi đối phương đã đồng ý**: Trong `association.calendar.tsx`, lọc nghiêm ngặt các cuộc gặp B2B 1-on-1 (`vba_connection_appointments` / API `/meetings/connection-appointments`): Chỉ những cuộc gặp có trạng thái `status === "confirmed" || status === "accepted"` mới được lưu và hiển thị trên Lịch trình; các cuộc gặp đang chờ (`pending`) tuyệt đối không đưa vào lịch.
+    * **Tách biệt hoàn toàn khỏi Màn Sự kiện**: Loại bỏ hoàn toàn mục hẹn gặp B2B 1-1 (`meet-demo-02: Hẹn gặp 1-1 trao đổi liên kết dịch vụ B2B`) khỏi `defaultMeetingsList` trong `association.events.tsx`. Màn sự kiện chỉ hiển thị sự kiện & chương trình chung của CLB, không trộn lẫn các cuộc hẹn gặp 1-on-1 cá nhân.
+    * **Đổi từ "Lịch CLB" thành "Lịch"**: Đổi tiêu đề `MemberHeader` từ "Lịch Hoạt Động & Nhắc Hẹn" thành "Lịch", đổi tên shortcut trong `CustomHomeShortcutsModal.tsx` từ "Lịch CLB" thành "Lịch" (và "Lịch sinh hoạt" thành "Sự kiện").
+  - **4. Tinh Gọn Nút Chi Tiết Sản Phẩm Trên Sàn Thương Mại (`ShopeeProductDetailModal.tsx`, `association.products.tsx`) ([NODE-APP-005])**:
+    * Tái cấu trúc hàng nút hành động trên mobile: Bố trí gọn gàng, sử dụng `flex-nowrap` với kích thước chuẩn 40px cho 2 nút icon (Heart, Share) và phân bổ đều cho các nút hành động chữ: "Chat", "Lên lịch", "Báo giá".
+    * Đổi tên nút "Lên lịch B2B" thành "Lên lịch".
+    * Đổi tên nút "Yêu cầu báo giá B2B" / "Nhận Báo Giá VIP Ngay" / "Yêu Cầu Báo Giá VIP" thành "Báo giá" trên cả phần thân và thanh footer cố định dưới cùng (`Modal Bottom Fixed Bar`).
+    * Triệt tiêu hoàn toàn hiện tượng tràn nút, lệch khung trên thiết bị di động.
+  - **5. Xóa Bỏ Mã Text Màu Vàng Tại Popup Lên Lịch Báo Giá (`BusinessConnectBottomSheet.tsx`) ([NODE-APP-005])**:
+    * Xóa bỏ hoàn toàn thẻ badge màu vàng chứa mã UUID tác giả `{target.code}` (`67e1bca9-94e6-4859-b13c-bf93e2b9c4c5`).
+    * Bỏ class `truncate` trên tên chủ gian hàng, hiển thị đầy đủ họ tên ("Phạm Văn Vũ") rõ ràng, sắc nét.
+  - **Kiểm định mã nguồn (Strict Code Quality & Rule 1)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.30): Hoàn Thiện Chuẩn Xác 3 Yêu Cầu Về Thống Kê Mobile & CRM - Biểu Đồ Cột Biến Động Sinh Động Phản Ánh Đầy Đủ Số Liệu Từng Tháng Kèm Tự Động Ghi Nhận Lượt Share, Ẩn Triệt Để Toàn Bộ Menu/Nhóm Menu Không Có Quyền Trên CRM Khi Gán Role Cụ Thể, Chuẩn Hóa Thông Báo Đăng Nhập Sai Mật Khẩu/Tài Khoản ([NODE-APP-006], [NODE-CRM-001], [NODE-CRM-011], [NODE-CORE-001])**:
+  - **1. Thống Kê Mobile App (`/association/analytics`) ([NODE-APP-006], [NODE-CORE-001])**:
+    * **Chỉ hiện đủ cột thể hiện đủ chỉ số**: Loại bỏ hoàn toàn cột thanh khổng lồ `timelineVal` (Tổng hoạt động/Tổng tương tác) và nhãn chú thích tương ứng khỏi `ComposedChart`.
+    * Mỗi danh mục chỉ hiển thị đúng các cột chỉ số thành phần:
+      - Hoạt động hội viên: Đúng 3 cột: Lượt bình luận (Xanh `#003B95`), Lượt share bài viết (Xanh lục `#10B981`), Lượt click link giới thiệu (Vàng `#F59E0B`).
+      - Kết nối giao thương: Đúng 4 cột: Kết nối 1-on-1, Đã kết nối, Chờ phản hồi, Cuộc gặp B2B.
+      - Cơ hội kinh doanh: Đúng 4 cột: Cơ hội mở mới, Giá trị tăng (Tỷ), Giá trị đàm phán, Đã kết nối / chốt.
+      - Sự kiện & cuộc họp: Đúng 4 cột: Đăng ký tham gia, Điểm danh thực tế, Cuộc họp ban, Chờ check-in.
+    * **Biến động dữ liệu theo tháng sinh động**: Các tháng có hoạt động (như T9 có hội viên mới, T11 có sự kiện, kết nối, đăng ký) hiển thị cột biến động số liệu sắc nét. Khi có thêm bất kỳ 1 hội viên, lượt share hay tương tác nào, cột biểu đồ của tháng đó phản ánh đúng số liệu.
+    * **Tự động lưu vết lượt chia sẻ (`executeShare`)**: Trong `share-helper.ts`, khi người dùng chia sẻ bài viết/sự kiện/cơ hội ra ngoài (Facebook, Zalo, clipboard), hệ thống tự động gọi API `/analytics/share-click` lưu bản ghi vào `audit_logs` để cột Lượt share bài viết nhảy số liệu ngay lập tức.
+  - **2. Phân Quyền CRM & Ẩn Triệt Để Giao Diện Theo Role Được Gán (`/accounts`, `use-role.ts`, `Sidebar.tsx`) ([NODE-CRM-001], [NODE-CRM-011])**:
+    * Khắc phục triệt để lỗi khi gán role cụ thể ở Quản lý tài khoản nhưng giao diện không thay đổi:
+      - Trong `use-role.ts`: Ưu tiên tuyệt đối vai trò `found.role` từ `vba_managed_accounts_v2` cho tài khoản hiện tại. Nếu tài khoản được gán vai trò chuyên môn (như `truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_tai_chinh`, `member` v.v.), `srsRole` được thiết lập chính xác theo vai trò đó, đồng thời đặt `isAdmin = false`, `isBQT = false`, `isSuperUser = false`, không bị các cờ admin cũ từ token JWT ghi đè.
+      - Trong `Sidebar.tsx`: Chuẩn hóa `currentRoleKey` ánh xạ trực tiếp từ `srsRole`. Toàn bộ các nhóm menu (`Group`) chỉ được render khi `filteredItems.length > 0`.
+      - Khi tài khoản thuộc vai trò không có quyền (ví dụ Trưởng Ban Truyền Thông hoặc Hội viên thường): Toàn bộ menu Tài chính (`/finance`, `/income`, `/expenses`, `/fees`), Quản trị hệ thống (`/settings`, `/activity`), Phân quyền (`/permissions`, `/accounts`, `/departments`) **BỊ ẨN HOÀN TOÀN KHỎI GIAO DIỆN CRM**.
+  - **3. Chuẩn Hóa Thông Báo Đăng Nhập Thất Bại ([NODE-CORE-001], [NODE-CRM-001])**:
+    * Trong `local.strategy.ts` (Backend) và các màn hình đăng nhập (`auth.tsx` CRM, `association.login.tsx` Mobile):
+    * Khi nhập sai tài khoản hoặc sai mật khẩu, hệ thống thông báo chính xác và đồng nhất:
+      `"Tài khoản hoặc mật khẩu không chính xác"`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
   - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
@@ -2355,6 +2527,92 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.32): Tách Biệt Tuyệt Đối 3 Luồng Riêng Biệt (Cuộc Họp Hệ Thống vs Hẹn Gặp Kết Nối B2B vs Sự Kiện) & Triển Khai Tính Năng Hủy Hẹn Kèm Trường Lý Do Hủy ([NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CRM-005], [NODE-CORE-001])**:
+  - **1. Tách Biệt Hoàn Toàn Hẹn Gặp Kết Nối B2B Khỏi Cuộc Họp & Sự Kiện ([NODE-APP-003], [NODE-APP-004], [NODE-CRM-005], [NODE-CORE-001])**:
+    * **Xác định kiến trúc ranh giới rõ ràng**:
+      - **Cuộc họp (`meetings`)**: Là các cuộc họp chính thống của tổ chức (Ban Chấp Hành, Ban Thư Ký, Ban Chuyên Môn, Đại Hội, Họp Định Kỳ) được khởi tạo bởi Ban Điều Hành và bắn từ hệ thống về. Quản lý trên CRM `/meetings` và hiển thị trên tab "Cuộc họp" của app.
+      - **Hẹn gặp kết nối (`connection-appointments` / `business_meetings`)**: Là luồng tương tác 1-on-1 giữa 2 hội viên để trao đổi, đàm phán về cơ hội kinh doanh hoặc sản phẩm trên sàn giao thương. Tuyệt đối không lưu vào `public.meetings`.
+      - **Sự kiện (`events`)**: Các sự kiện, hội thảo, đào tạo, gala quy mô hiệp hội độc lập.
+    * **Phía Frontend (`BusinessConnectBottomSheet.tsx`)**:
+      - Xóa bỏ triệt để việc import và gọi `createMeeting` (`createMeetingFn`).
+      - Luồng hẹn gặp B2B 1-1 chỉ gửi API chuyên dụng `POST /meetings/connection-appointments` và cập nhật danh mục cá nhân `vba_connection_appointments` với trạng thái `pending` (chờ đối tác đồng ý), không ghi vào `public.meetings`.
+    * **Phía Backend (`apps/ceo1983_app_be/src/meetings/meetings.service.ts`)**:
+      - Trong `createConnectionAppointment`: Loại bỏ hoàn toàn khối lệnh `INSERT INTO public.meetings`. Lịch hẹn kết nối 1-1 B2B chỉ ghi nhận vào `public.business_meetings` và `public.business_meeting_participants`.
+      - Trong `getAllUnifiedMeetings(userId)`: Endpoint `GET /meetings` chỉ trả về danh sách cuộc họp thuần túy của hệ thống từ `public.meetings`. KHÔNG gộp `connItems` từ `getConnectionAppointments` vào danh sách cuộc họp, đồng thời lọc sạch các bản ghi có `department = 'Hẹn gặp kết nối 1-1'`, `code LIKE 'MT-CONN-%'`, hoặc title hẹn gặp 1-1.
+      - Trong `createMeeting` (Backend): Bổ sung kiểm tra `if (!isOneOnOne)` để tuyệt đối không lưu các cuộc hẹn 1-1 (có tên/SĐT đối tác hoặc thuộc phân hệ giao thương) vào `public.meetings`.
+      - Bổ sung `onModuleInit()`: Tự động chạy câu lệnh dọn sạch mọi bản ghi hẹn gặp kết nối 1-1 từng bị ghi nhầm vào `public.meetings` trong quá khứ.
+    * **Phía Mobile App (`association.events.tsx`)**:
+      - Tab "Cuộc họp" bổ sung bộ lọc nghiêm ngặt lọc bỏ toàn bộ các cuộc hẹn 1-1 nếu có, đảm bảo chỉ hiển thị đúng các cuộc họp Ban/Hội đồng được bắn từ hệ thống về.
+  - **2. Bổ Sung Nút "Hủy Hẹn" Kèm Trường "Lý Do Hủy" Giữa 2 Tài Khoản ([NODE-APP-003], [NODE-APP-005])**:
+    * **Tại Màn hình Kết nối B2B (`association.connect.tsx`)**:
+      - Thêm nút "Hủy hẹn" nổi bật trên thẻ cuộc gặp đã xác nhận (`m.status === "confirmed"`) cho cả 2 phía tài khoản (người mời & người nhận lời mời).
+      - Nâng cấp nút "Hủy lời mời" trên các cuộc hẹn đang chờ (`m.status === "pending"`).
+      - Xây dựng Modal "Hủy Lịch Hẹn Kết Nối B2B" chuyên nghiệp:
+        * Hiển thị chi tiết tiêu đề cuộc gặp, tên đối tác, thời gian gặp.
+        * Ô nhập textarea bắt buộc cho trường **Lý do hủy cuộc hẹn**.
+        * Tích hợp 4 chip chọn nhanh lý do tiện lợi ("Bận công tác đột xuất", "Trùng lịch họp đối tác", "Thay đổi kế hoạch", "Hẹn lại vào dịp khác").
+        * Hai nút hành động: "Giữ lịch hẹn" và "Xác nhận hủy" (có loading state).
+      - Khi xác nhận hủy: Gọi API `POST /meetings/connection-appointments/:id/cancel` gửi kèm lý do, cập nhật trạng thái `cancelled`, lưu lý do hủy vào `localStorage`, phát event `vba.connection.changed` và `vba.meeting.changed`.
+      - Tab "Lịch sử & Đã hủy" hiển thị rõ nét lý do hủy của từng cuộc hẹn.
+    * **Tại Màn hình Lịch trình (`association.calendar.tsx`)**:
+      - Bổ sung nút "Hủy hẹn" trực tiếp trên card cuộc gặp 1-on-1 trong Lịch trình.
+      - Tích hợp Modal nhập lý do hủy tương ứng. Khi xác nhận hủy, cuộc hẹn được loại bỏ tức thì khỏi Lịch trình, đồng bộ CSDL và bắn socket/event tới đối tác.
+    * **Tại Thẻ Hội Viên (`association.members.tsx`)**:
+      - Đồng bộ hóa cập nhật `vba_connection_appointments` trong `localStorage` và phát event `vba.connection.changed` khi hủy hẹn.
+  - **Kiểm định mã nguồn (Strict Code Quality & Rule 1)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+    * Frontend (`apps/ceo1983_app_fe`): `node typescript/bin/tsc --noEmit` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ tuyệt đối Rule 1: Không chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.31): Khắc Phục Triệt Để 5 Yêu Cầu CRM & Mobile App - Fix Lỗi Code Sidebar Ban Thư Ký, Xóa Tài Khoản Cascade Cả Doanh Nghiệp & Hội Viên Không Bị Hồi Lại Khi Reload, Luồng Gặp B2B Chỉ Lưu Lịch Khi Đối Phương Đồng Ý, Tách Biệt Hoàn Toàn Khỏi Sự Kiện, Đổi Lịch CLB Thành Lịch, Tinh Gọn Nút Chi Tiết Sản Phẩm & Xóa Mã UUID Vàng Tại Popup Lên Lịch ([NODE-CRM-001], [NODE-CRM-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-001])**:
+  - **1. Fix Lỗi Code Ảnh 3 Tại Sidebar CRM (`Sidebar.tsx:488`) ([NODE-CRM-001])**:
+    * Khắc phục triệt để lỗi TypeScript `Type '"ban_thu_ky"' is not assignable to type 'SystemRoleKey'. ts(2322)`:
+    * Ánh xạ vai trò `ban_thu_ky` về vai trò chuẩn `tong_thu_ky`, đồng bộ hoàn toàn với định nghĩa `SystemRoleKey` và logic phân quyền `normalizeRole()` trong `rbac-permission-helpers.ts`.
+  - **2. Xóa Tài Khoản Cascade Hội Viên & Doanh Nghiệp, Không Bị Phục Hồi Khi Reload (`/accounts`) ([NODE-CRM-002], [NODE-CORE-001])**:
+    * **Phía Backend (`users.service.ts` & `members.service.ts`)**:
+      - Bổ sung logic cascade deletion xóa sạch toàn bộ bản ghi doanh nghiệp trong `public.companies` (theo `owner_id`, `created_by`, `name`, `tax_code`) và `public.vione_companies` (theo `user_id`, `name`).
+      - Xóa sạch hồ sơ hội viên trong `public.members` (theo `user_id`, `id`, `code`, `email`), `public.vione_users`, `auth.users`, `public.user_roles`, `public.user_profiles`, `public.memberships`, `public.vba_member_permissions`.
+    * **Phía Frontend (`accounts.tsx`)**:
+      - Khởi tạo danh sách `vba_deleted_account_identifiers_v3` lưu toàn bộ định danh (`id`, `dbMemberId`, `code`, `email`) của các tài khoản đã bị xóa.
+      - Khi khởi tạo state hoặc khi nhận kết quả `GET /members` từ server, hệ thống LỌC BỎ triệt để bất kỳ tài khoản nào nằm trong danh sách đã xóa, ngăn chặn hoàn toàn việc API hoặc `DEFAULT_ACCOUNTS` tự ý bù đắp lại các tài khoản đã bị xóa sau khi reload trang (F5).
+      - Khi xóa tất cả tài khoản, hệ thống lưu vết mảng rỗng (chỉ giữ lại tài khoản Quản trị gốc), không bao giờ tự động nạp lại danh sách mặc định.
+  - **3. Luồng Gặp B2B & Lịch Trình - Tách Rời Khỏi Sự Kiện & Bỏ Từ "CLB" ([NODE-APP-003], [NODE-APP-004])**:
+    * **Chỉ lưu và hiển thị vào Lịch khi đối phương đã đồng ý**: Trong `association.calendar.tsx`, lọc nghiêm ngặt các cuộc gặp B2B 1-on-1 (`vba_connection_appointments` / API `/meetings/connection-appointments`): Chỉ những cuộc gặp có trạng thái `status === "confirmed" || status === "accepted"` mới được lưu và hiển thị trên Lịch trình; các cuộc gặp đang chờ (`pending`) tuyệt đối không đưa vào lịch.
+    * **Tách biệt hoàn toàn khỏi Màn Sự kiện**: Loại bỏ hoàn toàn mục hẹn gặp B2B 1-1 (`meet-demo-02: Hẹn gặp 1-1 trao đổi liên kết dịch vụ B2B`) khỏi `defaultMeetingsList` trong `association.events.tsx`. Màn sự kiện chỉ hiển thị sự kiện & chương trình chung của CLB, không trộn lẫn các cuộc hẹn gặp 1-on-1 cá nhân.
+    * **Đổi từ "Lịch CLB" thành "Lịch"**: Đổi tiêu đề `MemberHeader` từ "Lịch Hoạt Động & Nhắc Hẹn" thành "Lịch", đổi tên shortcut trong `CustomHomeShortcutsModal.tsx` từ "Lịch CLB" thành "Lịch" (và "Lịch sinh hoạt" thành "Sự kiện").
+  - **4. Tinh Gọn Nút Chi Tiết Sản Phẩm Trên Sàn Thương Mại (`ShopeeProductDetailModal.tsx`, `association.products.tsx`) ([NODE-APP-005])**:
+    * Tái cấu trúc hàng nút hành động trên mobile: Bố trí gọn gàng, sử dụng `flex-nowrap` với kích thước chuẩn 40px cho 2 nút icon (Heart, Share) và phân bổ đều cho các nút hành động chữ: "Chat", "Lên lịch", "Báo giá".
+    * Đổi tên nút "Lên lịch B2B" thành "Lên lịch".
+    * Đổi tên nút "Yêu cầu báo giá B2B" / "Nhận Báo Giá VIP Ngay" / "Yêu Cầu Báo Giá VIP" thành "Báo giá" trên cả phần thân và thanh footer cố định dưới cùng (`Modal Bottom Fixed Bar`).
+    * Triệt tiêu hoàn toàn hiện tượng tràn nút, lệch khung trên thiết bị di động.
+  - **5. Xóa Bỏ Mã Text Màu Vàng Tại Popup Lên Lịch Báo Giá (`BusinessConnectBottomSheet.tsx`) ([NODE-APP-005])**:
+    * Xóa bỏ hoàn toàn thẻ badge màu vàng chứa mã UUID tác giả `{target.code}` (`67e1bca9-94e6-4859-b13c-bf93e2b9c4c5`).
+    * Bỏ class `truncate` trên tên chủ gian hàng, hiển thị đầy đủ họ tên ("Phạm Văn Vũ") rõ ràng, sắc nét.
+  - **Kiểm định mã nguồn (Strict Code Quality & Rule 1)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+
+- **Bản cập nhật ngày 12/11/2026 (v11.30): Hoàn Thiện Chuẩn Xác 3 Yêu Cầu Về Thống Kê Mobile & CRM - Biểu Đồ Cột Biến Động Sinh Động Phản Ánh Đầy Đủ Số Liệu Từng Tháng Kèm Tự Động Ghi Nhận Lượt Share, Ẩn Triệt Để Toàn Bộ Menu/Nhóm Menu Không Có Quyền Trên CRM Khi Gán Role Cụ Thể, Chuẩn Hóa Thông Báo Đăng Nhập Sai Mật Khẩu/Tài Khoản ([NODE-APP-006], [NODE-CRM-001], [NODE-CRM-011], [NODE-CORE-001])**:
+  - **1. Thống Kê Mobile App (`/association/analytics`) ([NODE-APP-006], [NODE-CORE-001])**:
+    * **Chỉ hiện đủ cột thể hiện đủ chỉ số**: Loại bỏ hoàn toàn cột thanh khổng lồ `timelineVal` (Tổng hoạt động/Tổng tương tác) và nhãn chú thích tương ứng khỏi `ComposedChart`.
+    * Mỗi danh mục chỉ hiển thị đúng các cột chỉ số thành phần:
+      - Hoạt động hội viên: Đúng 3 cột: Lượt bình luận (Xanh `#003B95`), Lượt share bài viết (Xanh lục `#10B981`), Lượt click link giới thiệu (Vàng `#F59E0B`).
+      - Kết nối giao thương: Đúng 4 cột: Kết nối 1-on-1, Đã kết nối, Chờ phản hồi, Cuộc gặp B2B.
+      - Cơ hội kinh doanh: Đúng 4 cột: Cơ hội mở mới, Giá trị tăng (Tỷ), Giá trị đàm phán, Đã kết nối / chốt.
+      - Sự kiện & cuộc họp: Đúng 4 cột: Đăng ký tham gia, Điểm danh thực tế, Cuộc họp ban, Chờ check-in.
+    * **Biến động dữ liệu theo tháng sinh động**: Các tháng có hoạt động (như T9 có hội viên mới, T11 có sự kiện, kết nối, đăng ký) hiển thị cột biến động số liệu sắc nét. Khi có thêm bất kỳ 1 hội viên, lượt share hay tương tác nào, cột biểu đồ của tháng đó phản ánh đúng số liệu.
+    * **Tự động lưu vết lượt chia sẻ (`executeShare`)**: Trong `share-helper.ts`, khi người dùng chia sẻ bài viết/sự kiện/cơ hội ra ngoài (Facebook, Zalo, clipboard), hệ thống tự động gọi API `/analytics/share-click` lưu bản ghi vào `audit_logs` để cột Lượt share bài viết nhảy số liệu ngay lập tức.
+  - **2. Phân Quyền CRM & Ẩn Triệt Để Giao Diện Theo Role Được Gán (`/accounts`, `use-role.ts`, `Sidebar.tsx`) ([NODE-CRM-001], [NODE-CRM-011])**:
+    * Khắc phục triệt để lỗi khi gán role cụ thể ở Quản lý tài khoản nhưng giao diện không thay đổi:
+      - Trong `use-role.ts`: Ưu tiên tuyệt đối vai trò `found.role` từ `vba_managed_accounts_v2` cho tài khoản hiện tại. Nếu tài khoản được gán vai trò chuyên môn (như `truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_tai_chinh`, `member` v.v.), `srsRole` được thiết lập chính xác theo vai trò đó, đồng thời đặt `isAdmin = false`, `isBQT = false`, `isSuperUser = false`, không bị các cờ admin cũ từ token JWT ghi đè.
+      - Trong `Sidebar.tsx`: Chuẩn hóa `currentRoleKey` ánh xạ trực tiếp từ `srsRole`. Toàn bộ các nhóm menu (`Group`) chỉ được render khi `filteredItems.length > 0`.
+      - Khi tài khoản thuộc vai trò không có quyền (ví dụ Trưởng Ban Truyền Thông hoặc Hội viên thường): Toàn bộ menu Tài chính (`/finance`, `/income`, `/expenses`, `/fees`), Quản trị hệ thống (`/settings`, `/activity`), Phân quyền (`/permissions`, `/accounts`, `/departments`) **BỊ ẨN HOÀN TOÀN KHỎI GIAO DIỆN CRM**.
+  - **3. Chuẩn Hóa Thông Báo Đăng Nhập Thất Bại ([NODE-CORE-001], [NODE-CRM-001])**:
+    * Trong `local.strategy.ts` (Backend) và các màn hình đăng nhập (`auth.tsx` CRM, `association.login.tsx` Mobile):
+    * Khi nhập sai tài khoản hoặc sai mật khẩu, hệ thống thông báo chính xác và đồng nhất:
+      `"Tài khoản hoặc mật khẩu không chính xác"`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
   - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:

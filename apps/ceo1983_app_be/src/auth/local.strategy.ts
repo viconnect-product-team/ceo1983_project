@@ -24,7 +24,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       recordLoginFailure(clientIp);
       throw new UnauthorizedException(
-        'Tài khoản hoặc mật khẩu không chính xác hoặc đã bị xóa',
+        'Tài khoản hoặc mật khẩu không chính xác',
       );
     }
     resetLoginFailures(clientIp);

@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   BadRequestException,
   Optional,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectAppGateway } from '../connect-app/connect-app.gateway';
@@ -28,13 +29,25 @@ function toValidUuid(val: any): string {
 }
 
 @Injectable()
-export class MeetingsService {
+export class MeetingsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly meetingsRepo: MeetingsRepository,
     @Optional() private readonly gateway?: ConnectAppGateway,
     @Optional() private readonly mailService?: MailService,
   ) {}
+
+  async onModuleInit() {
+    // Dọn sạch dữ liệu hẹn gặp kết nối 1-1 từng bị lưu nhầm vào public.meetings
+    await this.prisma.$executeRawUnsafe(`
+      DELETE FROM public.meetings
+      WHERE department = 'Hẹn gặp kết nối 1-1'
+         OR code LIKE 'MT-CONN-%'
+         OR title LIKE 'Đàm phán 1-1%'
+         OR title LIKE 'Hẹn gặp kết nối:%'
+         OR title LIKE 'Kết nối 1-1:%'
+    `).catch(() => {});
+  }
 
   /**
    * Tạo cuộc gặp / cuộc họp 1-on-1 từ CRM và kích hoạt Push Notification nếu là Offline
@@ -168,13 +181,14 @@ export class MeetingsService {
       `, meetingId, partnerUserId).catch((err) => console.warn('invitee participant insert warning:', err?.message));
     }
 
-    // 4b. Đồng bộ trực tiếp vào CRM public.meetings để hiển thị tức thì trên cả 2 màn hình CRM (/meetings và /business-connect/meetings)
-    const connCode = data.code || `MT-CONN-${genMeetingId.slice(0, 8).toUpperCase()}`;
+    // 4b. Chuẩn hóa dữ liệu cuộc họp
+    const isOneOnOne = Boolean(partnerName || partnerPhone || data.department === 'Hẹn gặp kết nối 1-1' || data.meetingType === 'networking');
+    const connCode = data.code || `MT-${Date.now().toString().slice(-6)}`;
     const endH = String((h || 9) + 1).padStart(2, '0');
     const endM = String(m || 0).padStart(2, '0');
     const timeRange = data.time && data.time.includes('-') ? data.time : `${time} - ${endH}:${endM}`;
     const meetingType = data.type || 'general';
-    const department = data.department || 'Hẹn gặp kết nối 1-1';
+    const department = data.department || (isOneOnOne ? 'Hẹn gặp kết nối 1-1' : 'Ban Điều Hành');
     const attendees = typeof data.attendees === 'number' ? data.attendees : 2;
     const meetingStatus = data.status || 'upcoming';
     const targetMembers = data.targetMembers !== undefined ? data.targetMembers : {
@@ -190,40 +204,44 @@ export class MeetingsService {
     const zoomUrl = data.zoomUrl || (isOffline ? '' : venue);
     const cancelReason = data.cancelReason || null;
 
-    await this.prisma.$executeRawUnsafe(`
-      INSERT INTO public.meetings (
-        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, cancel_reason, association_id, created_at, updated_at
-      ) VALUES (
-        $1::uuid, $2, $3, $4, $5::date, $6, $7, $8, $9, $10,
-        $11::jsonb, $12, $13, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
-      ) ON CONFLICT (id) DO UPDATE SET
-        title = EXCLUDED.title,
-        type = EXCLUDED.type,
-        date = EXCLUDED.date,
-        time = EXCLUDED.time,
-        location = EXCLUDED.location,
-        attendees = EXCLUDED.attendees,
-        status = EXCLUDED.status,
-        department = EXCLUDED.department,
-        target_members = EXCLUDED.target_members,
-        zoom_url = EXCLUDED.zoom_url,
-        cancel_reason = EXCLUDED.cancel_reason,
-        updated_at = NOW()
-    `,
-      meetingId,
-      connCode,
-      title,
-      meetingType,
-      date,
-      timeRange,
-      venue,
-      attendees,
-      meetingStatus,
-      department,
-      JSON.stringify(targetMembers),
-      zoomUrl,
-      cancelReason,
-    ).catch((err) => console.warn('meetings sync warning:', err?.message));
+    // Đồng bộ trực tiếp vào CRM public.meetings CHỈ KHI là cuộc họp của hệ thống (Board / Committee / Đại hội)
+    // TUYỆT ĐỐI KHÔNG lưu cuộc hẹn kết nối B2B 1-on-1 vào bảng public.meetings
+    if (!isOneOnOne) {
+      await this.prisma.$executeRawUnsafe(`
+        INSERT INTO public.meetings (
+          id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, cancel_reason, association_id, created_at, updated_at
+        ) VALUES (
+          $1::uuid, $2, $3, $4, $5::date, $6, $7, $8, $9, $10,
+          $11::jsonb, $12, $13, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
+        ) ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          type = EXCLUDED.type,
+          date = EXCLUDED.date,
+          time = EXCLUDED.time,
+          location = EXCLUDED.location,
+          attendees = EXCLUDED.attendees,
+          status = EXCLUDED.status,
+          department = EXCLUDED.department,
+          target_members = EXCLUDED.target_members,
+          zoom_url = EXCLUDED.zoom_url,
+          cancel_reason = EXCLUDED.cancel_reason,
+          updated_at = NOW()
+      `,
+        meetingId,
+        connCode,
+        title,
+        meetingType,
+        date,
+        timeRange,
+        venue,
+        attendees,
+        meetingStatus,
+        department,
+        JSON.stringify(targetMembers),
+        zoomUrl,
+        cancelReason,
+      ).catch((err) => console.warn('meetings sync warning:', err?.message));
+    }
 
     // 4c. Đồng bộ lên Bảng tin CLB (public.feed_posts) với danh mục EVENT_MEETING (Requirement 4)
     await this.prisma.$executeRawUnsafe(`
@@ -1652,64 +1670,22 @@ export class MeetingsService {
   }
 
   /**
-   * Trả về danh sách cuộc họp hợp nhất cho CRM (/meetings & /business-connect/meetings)
+   * Trả về danh sách cuộc họp của hệ thống cho CRM (/meetings) và App (/association/events tab cuộc họp)
+   * Tách biệt hoàn toàn: KHÔNG bao gồm các cuộc hẹn kết nối B2B 1-on-1 giữa 2 hội viên
    */
   async getAllUnifiedMeetings(userId: string) {
-    const connRes = await this.getConnectionAppointments(userId);
-    const connItems = connRes?.items || [];
-
     const crmRows = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, created_at, updated_at
       FROM public.meetings
+      WHERE department != 'Hẹn gặp kết nối 1-1'
+        AND (code IS NULL OR code NOT LIKE 'MT-CONN-%')
+        AND title NOT LIKE 'Đàm phán 1-1%'
+        AND title NOT LIKE 'Hẹn gặp kết nối:%'
+        AND title NOT LIKE 'Kết nối 1-1:%'
       ORDER BY date DESC, created_at DESC
     `).catch(() => []);
 
-    const mergedList: any[] = [];
-    const seen = new Set<string>();
-
-    for (const r of crmRows) {
-      const idStr = String(r.id);
-      seen.add(idStr);
-      if (r.code) seen.add(String(r.code));
-      mergedList.push(r);
-    }
-
-    for (const c of connItems) {
-      const idStr = String(c.id);
-      if (seen.has(idStr)) continue;
-      seen.add(idStr);
-
-      const isOnline = c.venueType === 'online' || String(c.venue || '').toLowerCase().includes('http');
-      mergedList.push({
-        id: c.id,
-        code: `MT-CONN-${idStr.slice(0, 8).toUpperCase()}`,
-        title: c.title || 'Cuộc gặp kết nối 1-on-1',
-        type: 'general',
-        date: c.date || new Date().toISOString().slice(0, 10),
-        time: c.time || '09:30 - 10:30',
-        location: c.venue || 'Văn phòng Hiệp hội CEO 1983',
-        attendees: 2,
-        status: c.status || 'upcoming',
-        department: 'Hẹn gặp kết nối 1-1',
-        target_members: {
-          hostName: c.hostName,
-          hostCompany: c.hostCompany,
-          hostPhone: c.hostPhone,
-          partnerName: c.partnerName,
-          partnerCompany: c.partnerCompany,
-          partnerPhone: c.partnerPhone,
-          venue: c.venue,
-          venueType: c.venueType,
-          notes: c.notes,
-          onlineUrl: isOnline ? c.venue : undefined,
-        },
-        zoom_url: isOnline ? c.venue : '',
-        created_at: c.createdAt || new Date().toISOString(),
-        updated_at: c.createdAt || new Date().toISOString(),
-      });
-    }
-
-    return mergedList;
+    return crmRows;
   }
 
   /**
@@ -1867,34 +1843,7 @@ export class MeetingsService {
       WHERE id = $1::uuid
     `, meetingId).catch(() => {});
 
-    // 5. ĐỒNG BỘ DỮ LIỆU SANG CRM (Bảng public.meetings) ĐỂ CRM LUÔN CÓ THÔNG TIN CUỘC HẸN
-    const crmMeetingCode = `MT-CONN-${meetingId.slice(0, 8).toUpperCase()}`;
-    await this.prisma.$executeRawUnsafe(`
-      INSERT INTO public.meetings (
-        id, code, title, type, date, time, location, attendees, status, department, target_members, zoom_url, association_id, created_at, updated_at
-      ) VALUES (
-        $1::uuid, $2, $3, 'general', $4::date, $5, $6, 2, 'upcoming', 'Hẹn gặp kết nối 1-1', $7::jsonb, $8, 'c1983000-0000-4000-8000-000000001983'::uuid, NOW(), NOW()
-      ) ON CONFLICT (id) DO UPDATE SET
-        title = EXCLUDED.title,
-        status = EXCLUDED.status,
-        updated_at = NOW()
-    `,
-      meetingId,
-      crmMeetingCode,
-      title,
-      date,
-      time,
-      venue,
-      JSON.stringify([
-        { name: requesterName, company: requesterCompany, phone: requesterPhone, code: requesterCode, role: 'Người mời', userId: hostUuid },
-        { name: recipientName, company: recipientCompany, code: recipientCode, role: 'Người được mời', userId: inviteeUuid }
-      ]),
-      venueType === 'online' ? venue : '',
-    ).catch((crmErr) => {
-      console.warn('Dual-write to CRM public.meetings warning:', crmErr?.message);
-    });
-
-    // 6. Bắn notification vào public.member_notifications cho đối tác (Recipient)
+    // 5. Bắn notification vào public.member_notifications cho đối tác (Recipient)
     const notifTargets = [recipientUserId, recipientMember?.id, recipientMember?.code].filter(Boolean);
     for (const targetId of notifTargets) {
       await this.prisma.$executeRawUnsafe(`
@@ -2073,13 +2022,12 @@ export class MeetingsService {
       WHERE meeting_id = $3::uuid AND (user_id = $4::uuid OR role = 'required' OR role = 'invitee')
     `, finalStatus === 'confirmed' ? 'accepted' : 'declined', now, meetingId, userId).catch(() => {});
 
-    // Đồng bộ sang CRM public.meetings
+    // Đảm bảo không tồn tại bản ghi lịch hẹn kết nối 1-1 trong bảng public.meetings
     const crmCode = `MT-CONN-${meetingId.slice(0, 8).toUpperCase()}`;
     await this.prisma.$executeRawUnsafe(`
-      UPDATE public.meetings
-      SET status = $1, updated_at = NOW()
-      WHERE id::text = $2 OR code = $2 OR code = $3 OR code LIKE '%' || $4 || '%' OR title = $5
-    `, finalStatus === 'confirmed' ? 'confirmed' : 'cancelled', meetingId, crmCode, meetingId.slice(0, 8), meeting.title).catch(() => {});
+      DELETE FROM public.meetings
+      WHERE id::text = $1 OR code = $1 OR code = $2 OR code LIKE '%' || $3 || '%'
+    `, meetingId, crmCode, meetingId.slice(0, 8)).catch(() => {});
 
     // Đánh dấu đã đọc notification của cuộc gặp này
     await this.prisma.$executeRawUnsafe(`

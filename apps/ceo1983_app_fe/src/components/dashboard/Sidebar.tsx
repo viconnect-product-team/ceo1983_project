@@ -476,47 +476,41 @@ export function Sidebar({
     setRoleOverride,
   } = roleState;
 
-  // Xác định vai trò hệ thống CRM cốt lõi
+  // Xác định vai trò hệ thống CRM cốt lõi theo thứ tự ưu tiên chính xác
   const currentRoleKey: SystemRoleKey = useMemo(() => {
     const rawRole = (srsRole as string) || "";
-    if (isPlatformAdmin || rawRole === "quan_tri" || rawRole === "ADM") return "quan_tri";
-    if (isChuTich || isPresident || rawRole === "chu_tich") return "chu_tich";
-    if (isAdmin || isBQT || rawRole === "admin" || rawRole === "BQT") return "admin";
-    if (isBanDieuHanh || rawRole === "ban_dieu_hanh" || rawRole === "truong_ban_dieu_hanh") return "truong_ban_dieu_hanh";
+    if (rawRole === "quan_tri" || rawRole === "ADM" || isPlatformAdmin) return "quan_tri";
+    if (rawRole === "chu_tich" || rawRole === "president" || isChuTich) return "chu_tich";
+    if (rawRole === "admin") return "admin";
+    if (rawRole === "ban_dieu_hanh" || rawRole === "truong_ban_dieu_hanh" || rawRole === "BQT") return "truong_ban_dieu_hanh";
     if (rawRole === "thanh_vien_ban_dieu_hanh") return "thanh_vien_ban_dieu_hanh";
-    if (isTongThuKy || isBanThuKy || isBTK || rawRole === "tong_thu_ky") return "tong_thu_ky";
-    if (isTruongBanTruyenThong || isBTT || rawRole === "truong_ban_truyen_thong") return "truong_ban_truyen_thong";
+    if (rawRole === "tong_thu_ky" || isTongThuKy) return "tong_thu_ky";
+    if (rawRole === "ban_thu_ky" || isBanThuKy) return "tong_thu_ky";
+    if (rawRole === "truong_ban_truyen_thong" || rawRole === "BTT" || isTruongBanTruyenThong) return "truong_ban_truyen_thong";
     if (rawRole === "thanh_vien_ban_truyen_thong") return "thanh_vien_ban_truyen_thong";
-    if (isTruongBanThanhVien || isBTV || rawRole === "truong_ban_thanh_vien") return "truong_ban_thanh_vien";
+    if (rawRole === "truong_ban_thanh_vien" || rawRole === "BTV" || isTruongBanThanhVien) return "truong_ban_thanh_vien";
     if (rawRole === "thanh_vien_ban_thanh_vien") return "thanh_vien_ban_thanh_vien";
-    if (isTruongBanXucTien || isBXT || rawRole === "truong_ban_xuc_tien") return "truong_ban_xuc_tien";
+    if (rawRole === "truong_ban_xuc_tien" || rawRole === "BXT" || isTruongBanXucTien) return "truong_ban_xuc_tien";
     if (rawRole === "thanh_vien_ban_xuc_tien") return "thanh_vien_ban_xuc_tien";
-    if (isTruongBanTaiChinh || isBTC || rawRole === "truong_ban_tai_chinh") return "truong_ban_tai_chinh";
+    if (rawRole === "truong_ban_tai_chinh" || rawRole === "BTC" || isTruongBanTaiChinh) return "truong_ban_tai_chinh";
     if (rawRole === "thanh_vien_ban_tai_chinh") return "thanh_vien_ban_tai_chinh";
-    if (isTruongBanThienNguyen || isBTN || rawRole === "truong_ban_thien_nguyen") return "truong_ban_thien_nguyen";
+    if (rawRole === "truong_ban_thien_nguyen" || rawRole === "BTN" || isTruongBanThienNguyen) return "truong_ban_thien_nguyen";
     if (rawRole === "thanh_vien_ban_thien_nguyen") return "thanh_vien_ban_thien_nguyen";
+    if (isAdmin || isBQT) return "admin";
     return "member";
   }, [
-    isPlatformAdmin,
-    isAdmin,
     srsRole,
-    isBQT,
+    isPlatformAdmin,
     isChuTich,
-    isPresident,
-    isBanDieuHanh,
+    isAdmin,
+    isBQT,
     isTongThuKy,
     isBanThuKy,
-    isBTK,
     isTruongBanTruyenThong,
-    isBTT,
     isTruongBanThanhVien,
-    isBTV,
     isTruongBanXucTien,
-    isBXT,
     isTruongBanTaiChinh,
-    isBTC,
     isTruongBanThienNguyen,
-    isBTN,
   ]);
 
   const [matrixRevision, setMatrixRevision] = useState(0);
@@ -539,15 +533,16 @@ export function Sidebar({
   );
 
   // Scoped permissions according to the SRS RBAC matrix:
+  const isPrivilegedAdmin = isPlatformAdmin || isAdmin || isChuTich || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "ADM" || srsRole === "chu_tich";
   const canViewMembers = true; // All can view member directory (HVT is read-only)
   const canViewEvents = true; // All can view events
-  const canViewSponsors = isBQT || isBTC; // Finance & sponsorship management
-  const canViewFinance = isBQT || isBTC; // Finance ONLY for ADM, BQT, BTC. Hidden from HVT, BTV, BTT!
-  const canViewComm = isBQT || isBTT || isHVT; // News & media
-  const canViewNetwork = true; // B2B Marketplace & networking
-  const canViewBusinessConnect = true; // Card & 1-on-1 connections
-  const canViewSystem = isPlatformAdmin || isAdmin || isBQT || srsRole === "BQT" || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh"; // System settings
-  const canViewPlatform = isPlatformAdmin || isAdmin || isBQT || srsRole === "BQT" || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh"; // Permissions ONLY for ADM and BQT
+  const canViewSponsors = isPrivilegedAdmin || isBTC || currentRoleKey === "truong_ban_tai_chinh";
+  const canViewFinance = isPrivilegedAdmin || isBTC || currentRoleKey === "truong_ban_tai_chinh" || currentRoleKey === "tong_thu_ky";
+  const canViewComm = isPrivilegedAdmin || isBTT || currentRoleKey === "truong_ban_truyen_thong" || isHVT;
+  const canViewNetwork = true;
+  const canViewBusinessConnect = true;
+  const canViewSystem = isPrivilegedAdmin;
+  const canViewPlatform = isPrivilegedAdmin;
 
   const location = useRouterState({ select: (s) => s?.location });
   const pathname = location?.pathname;
@@ -862,16 +857,18 @@ export function Sidebar({
         onScroll={handleScroll}
         className="sidebar-scroll flex-1 space-y-5 overflow-y-auto py-4"
       >
-        <Group
-          items={filteredOverview}
-          pathname={pathname}
-          searchStr={searchStr}
-          collapsed={isCollapsed}
-          onNavigate={onNavigate}
-          badges={effectiveBadges}
-          onDismissBadge={dismissBadge}
-        />
-        {canViewMembers && (
+        {filteredOverview.length > 0 && (
+          <Group
+            items={filteredOverview}
+            pathname={pathname}
+            searchStr={searchStr}
+            collapsed={isCollapsed}
+            onNavigate={onNavigate}
+            badges={effectiveBadges}
+            onDismissBadge={dismissBadge}
+          />
+        )}
+        {canViewMembers && filteredMembers.length > 0 && (
           <Group
             label="nav.group.members"
             items={filteredMembers}
@@ -883,7 +880,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {canViewEvents && (
+        {canViewEvents && filteredEvents.length > 0 && (
           <Group
             label="nav.group.events"
             items={filteredEvents}
@@ -895,7 +892,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {canViewSponsors && (
+        {canViewSponsors && filteredSponsors.length > 0 && (
           <Group
             label="nav.group.sponsors"
             items={filteredSponsors}
@@ -907,7 +904,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {canViewFinance && (
+        {canViewFinance && filteredFinance.length > 0 && (
           <Group
             label="nav.group.finance"
             items={filteredFinance}
@@ -919,7 +916,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {canViewComm && (
+        {canViewComm && filteredComm.length > 0 && (
           <Group
             label="nav.group.comm"
             items={filteredComm}
@@ -931,7 +928,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {canViewNetwork && (
+        {canViewNetwork && filteredNetwork.length > 0 && (
           <Group
             label="nav.group.network"
             items={filteredNetwork}
@@ -955,7 +952,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {canViewSystem && (
+        {canViewSystem && filteredSystem.length > 0 && (
           <Group
             label="nav.group.system"
             items={filteredSystem}
@@ -979,7 +976,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {filteredPermissions.length > 0 && (
+        {canViewPlatform && filteredPermissions.length > 0 && (
           <Group
             label="nav.group.permissions"
             items={filteredPermissions}

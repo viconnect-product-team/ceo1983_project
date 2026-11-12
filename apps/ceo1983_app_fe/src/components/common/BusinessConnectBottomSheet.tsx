@@ -18,7 +18,6 @@ import {
 import { toast } from "sonner";
 import { resolveMediaUrl, fetchNestApi } from "@/lib/api-client";
 import { requestMemberConnectionFn, listMyOpportunities, type MyOpportunity } from "@/lib/member-app.functions";
-import { createMeetingFn } from "@/lib/meetings.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -53,7 +52,6 @@ export function BusinessConnectBottomSheet({
 }: BusinessConnectBottomSheetProps) {
   const navigate = useNavigate();
   const fetchMyOppFn = useServerFn(listMyOpportunities);
-  const createMeeting = useServerFn(createMeetingFn);
 
   const [senderName, setSenderName] = useState("");
   const [senderPhone, setSenderPhone] = useState("");
@@ -238,44 +236,10 @@ export function BusinessConnectBottomSheet({
         }
       } catch {}
 
-      // Đồng bộ cuộc gặp vào hệ thống CSDL CRM (Hiện đúng 2 tài khoản hẹn gặp nhau)
       try {
         const effectiveVenue = meetingMode === "offline" ? offlineVenue.trim() : onlineUrl.trim();
-        const effectiveLocation = meetingMode === "offline" ? offlineVenue.trim() : `Trực tuyến (${onlinePlatform === "zoom" ? "Zoom" : onlinePlatform === "uniwork" ? "UniWork" : "Google Meet"})`;
 
-        await createMeeting({
-          data: {
-            title: effectiveOppTitle
-              ? `Đàm phán 1-1 (${effectiveOppTitle.slice(0, 30)}): ${senderName.trim()} & ${target.name.trim()}`
-              : `Kết nối 1-1: ${senderName.trim()} & ${target.name.trim()}`,
-            type: "committee",
-            date: meetingDate,
-            time: meetingTime,
-            location: effectiveLocation,
-            attendees: 2,
-            status: "upcoming",
-            department: "Hẹn gặp kết nối 1-1",
-            targetMembers: [
-              {
-                name: senderName.trim(),
-                company: senderCompany.trim() || "Doanh nghiệp CEO 1983",
-                phone: senderPhone.trim(),
-                role: "Người mời hẹn gặp",
-              },
-              {
-                name: target.name.trim(),
-                code: target.code,
-                company: target.company || "Hội viên CEO 1983",
-                title: target.title || "Hội viên",
-                userId: target.userId,
-                role: "Đối tác được hẹn gặp",
-              },
-            ],
-            zoomUrl: meetingMode === "online" ? onlineUrl.trim() : "",
-          },
-        });
-
-        // Gửi lịch hẹn kết nối 1-1 lên Backend để lưu vào database và bắn thông báo real-time tới đối tác
+        // Gửi lịch hẹn kết nối 1-1 lên Backend để lưu vào database (business_meetings) và bắn thông báo real-time tới đối tác
         try {
           await fetchNestApi("/meetings/connection-appointments", {
             method: "POST",
@@ -438,18 +402,17 @@ export function BusinessConnectBottomSheet({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{target.name}</span>
-              <span className="text-[9.5px] px-1.5 py-0.5 rounded-sm bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-mono font-bold">
-                {target.code}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                {target.name}
               </span>
             </div>
-            <p className="text-[11px] text-amber-600 dark:text-amber-400/90 truncate font-medium">
-              {target.title || target.industry || "Hội viên CEO 1983"}
+            <p className="text-[11px] text-amber-600 dark:text-amber-400/90 font-medium mt-0.5">
+              {target.title || target.industry || "Chủ gian hàng"}
             </p>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1 mt-0.5">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
               <Building2 className="h-3 w-3 shrink-0 text-slate-400 dark:text-slate-500" />
-              <span>{target.company || "CLB Doanh Nhân CEO 1983"}</span>
+              <span className="truncate">{target.company || "CLB Doanh Nhân CEO 1983"}</span>
             </p>
           </div>
         </div>

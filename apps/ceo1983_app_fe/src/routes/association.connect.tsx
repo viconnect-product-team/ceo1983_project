@@ -73,6 +73,11 @@ export function AssociationConnectScreen() {
   const [dealModalMeeting, setDealModalMeeting] = useState<ConnectionMeeting | null>(null);
   const [videoCallMeeting, setVideoCallMeeting] = useState<ConnectionMeeting | null>(null);
 
+  // Cancel Appointment Modal State
+  const [cancellingMeeting, setCancellingMeeting] = useState<ConnectionMeeting | null>(null);
+  const [cancelReasonText, setCancelReasonText] = useState("");
+  const [submittingCancel, setSubmittingCancel] = useState(false);
+
   // New Meeting Form State
   const [formPartnerName, setFormPartnerName] = useState("");
   const [formPartnerCompany, setFormPartnerCompany] = useState("");
@@ -141,18 +146,50 @@ export function AssociationConnectScreen() {
     }
   };
 
-  const handleCancelMeeting = async (meetingId: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy lịch hẹn gặp này?")) return;
+  const handleOpenCancelModal = (meeting: ConnectionMeeting) => {
+    setCancellingMeeting(meeting);
+    setCancelReasonText("");
+  };
+
+  const handleConfirmCancelMeeting = async () => {
+    if (!cancellingMeeting) return;
+    const reason = cancelReasonText.trim() || "Hội viên bận công tác đột xuất";
+    setSubmittingCancel(true);
     try {
-      await fetchNestApi(`/meetings/connection-appointments/${meetingId}/cancel`, {
+      await fetchNestApi(`/meetings/connection-appointments/${cancellingMeeting.id}/cancel`, {
         method: "POST",
-        body: JSON.stringify({ reason: "Hội viên bận công tác đột xuất" }),
+        body: JSON.stringify({ reason }),
       }).catch(() => null);
 
-      setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
-      toast.info("Đã hủy lịch hẹn gặp.");
+      setMeetings((prev) =>
+        prev.map((m) =>
+          m.id === cancellingMeeting.id ? { ...m, status: "cancelled", cancelReason: reason } : m,
+        ),
+      );
+
+      // Cập nhật localStorage vba_connection_appointments để các tab và Lịch trình đồng bộ tức thì
+      try {
+        const stored = localStorage.getItem("vba_connection_appointments");
+        if (stored) {
+          const list = JSON.parse(stored);
+          const updated = list.map((item: any) =>
+            item.id === cancellingMeeting.id
+              ? { ...item, status: "cancelled", cancelReason: reason }
+              : item,
+          );
+          localStorage.setItem("vba_connection_appointments", JSON.stringify(updated));
+        }
+      } catch {}
+
+      window.dispatchEvent(new Event("vba.connection.changed"));
+      window.dispatchEvent(new Event("vba.meeting.changed"));
+      toast.info("Đã hủy lịch hẹn kết nối thành công.");
+      setCancellingMeeting(null);
+      setCancelReasonText("");
     } catch {
       toast.error("Không thể hủy lịch hẹn.");
+    } finally {
+      setSubmittingCancel(false);
     }
   };
 
@@ -545,6 +582,16 @@ export function AssociationConnectScreen() {
                       <DollarSign className="size-3.5" />
                       <span>Ghi nhận Deal</span>
                     </button>
+
+                    {/* Nút Hủy Hẹn khi đã lên lịch giữa 2 tài khoản */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCancelModal(m)}
+                      className="py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer"
+                    >
+                      <XCircle className="size-3.5" />
+                      <span>Hủy hẹn</span>
+                    </button>
                   </div>
                 )}
 
@@ -561,19 +608,26 @@ export function AssociationConnectScreen() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleRespond(m.id, "decline")}
+                      onClick={() => handleOpenCancelModal(m)}
                       className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
                     >
-                      Từ chối
+                      Từ chối / Hủy
                     </button>
                   </div>
                 )}
 
                 {/* Notice for Cancelled Meeting */}
                 {activeTab === "cancelled" && (
-                  <div className="pt-1 text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1.5 border-t border-rose-100 dark:border-rose-950">
-                    <XCircle className="size-3.5 shrink-0" />
-                    <span>Cuộc gặp đã hủy. Người được hẹn không còn nhìn thấy cuộc gặp này.</span>
+                  <div className="pt-2 text-[11px] text-rose-600 dark:text-rose-400 font-semibold space-y-1 border-t border-rose-100 dark:border-rose-950">
+                    <div className="flex items-center gap-1.5">
+                      <XCircle className="size-3.5 shrink-0" />
+                      <span>{m.status === "declined" ? "Lời mời đã bị từ chối" : "Cuộc gặp đã bị hủy"}</span>
+                    </div>
+                    {((m as any).cancelReason || (m as any).cancel_reason) && (
+                      <p className="text-slate-600 dark:text-slate-300 text-[11px] pl-5 font-normal">
+                        Lý do: <span className="italic font-medium">{(m as any).cancelReason || (m as any).cancel_reason}</span>
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -583,10 +637,11 @@ export function AssociationConnectScreen() {
                     <span className="text-slate-400">Đang đợi đối tác CEO phản hồi</span>
                     <button
                       type="button"
-                      onClick={() => handleCancelMeeting(m.id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold transition cursor-pointer"
+                      onClick={() => handleOpenCancelModal(m)}
+                      className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold transition cursor-pointer inline-flex items-center gap-1"
                     >
-                      Hủy lời mời
+                      <XCircle className="size-3" />
+                      <span>Hủy lời mời</span>
                     </button>
                   </div>
                 )}
@@ -904,6 +959,116 @@ export function AssociationConnectScreen() {
               className="w-full flex-1 border-0"
               title="Jitsi Video Meeting"
             />
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL HỦY LỊCH HẸN KẾT NỐI B2B CÓ TRƯỜNG LÝ DO HỦY ── */}
+      {cancellingMeeting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => !submittingCancel && setCancellingMeeting(null)}
+        >
+          <div
+            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-rose-200 dark:border-rose-900/50 p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600">
+                  <XCircle className="size-5" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">
+                    Hủy Lịch Hẹn Kết Nối B2B
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Thông báo kèm lý do sẽ gửi tới đối tác</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={submittingCancel}
+                onClick={() => setCancellingMeeting(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white line-clamp-1">
+                {cancellingMeeting.title}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                Đối tác: <strong className="text-slate-700 dark:text-slate-200">{cancellingMeeting.partnerName}</strong>
+                {cancellingMeeting.partnerCompany ? ` (${cancellingMeeting.partnerCompany})` : ""}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <span>Ngày: {cancellingMeeting.date}</span>
+                <span>•</span>
+                <span>Giờ: {cancellingMeeting.time}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Lý do hủy lịch hẹn <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                value={cancelReasonText}
+                onChange={(e) => setCancelReasonText(e.target.value)}
+                placeholder="Nhập chi tiết lý do hủy cuộc hẹn để đối tác nắm được..."
+                rows={3}
+                className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-rose-500"
+              />
+
+              {/* Gợi ý lý do nhanh (One-tap chips) */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[
+                  "Bận công tác đột xuất",
+                  "Trùng lịch họp đối tác",
+                  "Thay đổi kế hoạch",
+                  "Hẹn lại vào dịp khác",
+                ].map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => setCancelReasonText(chip)}
+                    className={`px-2.5 py-1 rounded-full text-[10.5px] font-semibold transition cursor-pointer border ${
+                      cancelReasonText === chip
+                        ? "bg-rose-500 text-white border-rose-500"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={submittingCancel}
+                onClick={() => setCancellingMeeting(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Giữ lịch hẹn
+              </button>
+              <button
+                type="button"
+                disabled={submittingCancel}
+                onClick={handleConfirmCancelMeeting}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {submittingCancel ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <XCircle className="size-4" />
+                )}
+                <span>Xác nhận hủy</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

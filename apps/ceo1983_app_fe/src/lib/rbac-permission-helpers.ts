@@ -563,19 +563,23 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
     const sRole = String(roleKey);
     if (sRole === "quan_tri" || sRole === "admin" || sRole === "chu_tich" || sRole === "president") return true;
 
-    // Restricted system routes:
+    // Restricted system routes: Quản trị hệ thống, tài khoản, phân quyền, cấu hình
     const isSystemAdminRoute =
       cleanRoute.startsWith("/accounts") ||
       cleanRoute.startsWith("/permissions") ||
+      cleanRoute.startsWith("/departments") ||
       cleanRoute.startsWith("/settings") ||
+      cleanRoute.startsWith("/activity") ||
+      cleanRoute.startsWith("/admin") ||
       cleanRoute.startsWith("/system");
     if (isSystemAdminRoute) return false;
 
-    // Finance routes: Only for financial leaders and secretary
+    // Finance routes: Chỉ dành cho Ban Tài chính, Tổng thư ký, Ban Điều hành
     const isFinanceRoute =
       cleanRoute.startsWith("/finance") ||
       cleanRoute.startsWith("/income") ||
       cleanRoute.startsWith("/expenses") ||
+      cleanRoute.startsWith("/fees") ||
       cleanRoute.startsWith("/sponsor");
     if (isFinanceRoute) {
       return (
@@ -584,6 +588,18 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
         roleKey === "tong_thu_ky" ||
         roleKey === "truong_ban_dieu_hanh"
       );
+    }
+
+    // Các route cấm đối với Hội viên thường (member / HVT)
+    if (sRole === "member" || sRole === "HVT") {
+      if (
+        cleanRoute.startsWith("/segments") ||
+        cleanRoute.startsWith("/renewal") ||
+        cleanRoute.startsWith("/templates") ||
+        cleanRoute.startsWith("/analytics")
+      ) {
+        return false;
+      }
     }
 
     return true;

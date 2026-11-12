@@ -56,6 +56,35 @@ import {
 export type { UserAccountItem };
 
 const STORAGE_KEY = MANAGED_ACCOUNTS_STORAGE_KEY;
+const DELETED_ACCOUNTS_KEY = "vba_deleted_account_identifiers_v3";
+
+function getDeletedIdentifiers(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(DELETED_ACCOUNTS_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr.map((s: string) => String(s || "").toLowerCase().trim()).filter(Boolean));
+    }
+  } catch {}
+  return new Set();
+}
+
+function addDeletedIdentifiers(identifiers: (string | undefined | null)[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const cur = getDeletedIdentifiers();
+    identifiers.forEach((id) => {
+      if (id) {
+        const clean = String(id).toLowerCase().trim();
+        if (clean) cur.add(clean);
+        const withoutPrefix = clean.replace(/^acc_/, "").trim();
+        if (withoutPrefix) cur.add(withoutPrefix);
+      }
+    });
+    localStorage.setItem(DELETED_ACCOUNTS_KEY, JSON.stringify(Array.from(cur)));
+  } catch {}
+}
 
 function AccountsPage() {
   const { isPlatformAdmin, isBQT, isAdmin } = useRole();
@@ -64,14 +93,29 @@ function AccountsPage() {
   const [accounts, setAccounts] = useState<UserAccountItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
+        const deleted = getDeletedIdentifiers();
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
+        if (saved !== null) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed)) {
+            return parsed.filter((a) => {
+              const id = (a.id || "").toLowerCase().trim();
+              const code = (a.code || "").toLowerCase().trim();
+              const email = (a.email || "").toLowerCase().trim();
+              const dbId = (a.dbMemberId || "").toLowerCase().trim();
+              return !deleted.has(id) && !deleted.has(code) && !deleted.has(email) && !deleted.has(dbId);
+            });
+          }
         }
       } catch {}
     }
-    return DEFAULT_ACCOUNTS;
+    const deleted = getDeletedIdentifiers();
+    return DEFAULT_ACCOUNTS.filter((a) => {
+      const id = (a.id || "").toLowerCase().trim();
+      const code = (a.code || "").toLowerCase().trim();
+      const email = (a.email || "").toLowerCase().trim();
+      return !deleted.has(id) && !deleted.has(code) && !deleted.has(email);
+    });
   });
 
   // Snapshot phục vụ dirty state & nút Lưu thay đổi Amber Gold
@@ -175,12 +219,21 @@ function AccountsPage() {
       .then((mList) => {
         if (!active || !Array.isArray(mList) || mList.length === 0) return;
 
+        const deleted = getDeletedIdentifiers();
+        const validMList = mList.filter((m) => {
+          const id = String(m.id || "").toLowerCase().trim();
+          const code = String(m.code || "").toLowerCase().trim();
+          const email = String(m.email || "").toLowerCase().trim();
+          const userId = String(m.user_id || m.userId || "").toLowerCase().trim();
+          return !deleted.has(id) && !deleted.has(code) && !deleted.has(email) && !deleted.has(userId);
+        });
+
         setAccounts((prev) => {
           const memberByCode = new Map<string, any>();
           const memberById = new Map<string, any>();
           const memberByEmail = new Map<string, any>();
 
-          mList.forEach((m) => {
+          validMList.forEach((m) => {
             if (m.code) memberByCode.set(m.code.toUpperCase().trim(), m);
             if (m.id) memberById.set(m.id.toLowerCase().trim(), m);
             if (m.email) memberByEmail.set(m.email.toLowerCase().trim(), m);
@@ -188,46 +241,54 @@ function AccountsPage() {
 
           const matchedMemberIds = new Set<string>();
 
-          // 1. Đồng bộ các tài khoản hiện có với dữ liệu thực tế từ Database
-          const updatedPrev: UserAccountItem[] = prev.map((a) => {
-            const cleanId = (a.id || "").replace(/^acc_/, "").toLowerCase().trim();
-            const cleanCode = (a.code || "").toUpperCase().trim();
-            const cleanEmail = (a.email || "").toLowerCase().trim();
+          // 1. Đồng bộ các tài khoản hiện có với dữ liệu thực tế từ Database (đã loại trừ đã xóa)
+          const updatedPrev: UserAccountItem[] = prev
+            .filter((a) => {
+              const id = (a.id || "").toLowerCase().trim();
+              const code = (a.code || "").toLowerCase().trim();
+              const email = (a.email || "").toLowerCase().trim();
+              const dbId = (a.dbMemberId || "").toLowerCase().trim();
+              return !deleted.has(id) && !deleted.has(code) && !deleted.has(email) && !deleted.has(dbId);
+            })
+            .map((a) => {
+              const cleanId = (a.id || "").replace(/^acc_/, "").toLowerCase().trim();
+              const cleanCode = (a.code || "").toUpperCase().trim();
+              const cleanEmail = (a.email || "").toLowerCase().trim();
 
-            const m =
-              (cleanCode && memberByCode.get(cleanCode)) ||
-              (cleanId && memberById.get(cleanId)) ||
-              (cleanEmail && memberByEmail.get(cleanEmail));
+              const m =
+                (cleanCode && memberByCode.get(cleanCode)) ||
+                (cleanId && memberById.get(cleanId)) ||
+                (cleanEmail && memberByEmail.get(cleanEmail));
 
-            if (m) {
-              if (m.id) matchedMemberIds.add(m.id);
-              const realRole = normalizeRole(m.executiveRole || m.executive_role || m.role || a.role);
-              const realDept = normalizeDept(m.department || a.department);
-              const resolvedStatus: "active" | "inactive" | "locked" =
-                (m.status === "active" || m.status === "approved" || a.status === "active")
-                  ? "active"
-                  : (a.status === "locked" || a.status === "inactive" ? a.status : "active");
+              if (m) {
+                if (m.id) matchedMemberIds.add(m.id);
+                const realRole = normalizeRole(m.executiveRole || m.executive_role || m.role || a.role);
+                const realDept = normalizeDept(m.department || a.department);
+                const resolvedStatus: "active" | "inactive" | "locked" =
+                  (m.status === "active" || m.status === "approved" || a.status === "active")
+                    ? "active"
+                    : (a.status === "locked" || a.status === "inactive" ? a.status : "active");
 
-              return {
-                ...a,
-                id: a.id || `acc_${m.id || m.code}`,
-                dbMemberId: m.id || a.dbMemberId,
-                name: m.name || m.personName || a.name,
-                code: m.code || a.code,
-                email: a.email || m.email,
-                phone: m.phone || m.mobile || a.phone,
-                companyName: m.companyName || m.company || a.companyName,
-                department: realDept,
-                role: realRole,
-                avatar: m.avatar || m.avatarUrl || a.avatar,
-                status: resolvedStatus,
-              };
-            }
-            return a;
-          });
+                return {
+                  ...a,
+                  id: a.id || `acc_${m.id || m.code}`,
+                  dbMemberId: m.id || a.dbMemberId,
+                  name: m.name || m.personName || a.name,
+                  code: m.code || a.code,
+                  email: a.email || m.email,
+                  phone: m.phone || m.mobile || a.phone,
+                  companyName: m.companyName || m.company || a.companyName,
+                  department: realDept,
+                  role: realRole,
+                  avatar: m.avatar || m.avatarUrl || a.avatar,
+                  status: resolvedStatus,
+                };
+              }
+              return a;
+            });
 
           // 2. Bổ sung các hội viên từ CSDL chưa có trong danh sách
-          const newAccounts: UserAccountItem[] = mList
+          const newAccounts: UserAccountItem[] = validMList
             .filter((m) => m.id && !matchedMemberIds.has(m.id))
             .filter(
               (m) =>
@@ -595,21 +656,23 @@ function AccountsPage() {
 
     try {
       const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
+      addDeletedIdentifiers([acc.id, acc.dbMemberId, acc.code, acc.email, cleanId]);
+
       const calls: Promise<any>[] = [];
       if (cleanId) {
         calls.push(fetchNestApi(`/users/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
-        calls.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+        calls.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}?mode=all`, { method: "DELETE" }).catch(() => null));
       }
       if (acc.email) {
         calls.push(fetchNestApi(`/users/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
-        calls.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+        calls.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}?mode=all`, { method: "DELETE" }).catch(() => null));
       }
       if (acc.code) {
-        calls.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}`, { method: "DELETE" }).catch(() => null));
+        calls.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}?mode=all`, { method: "DELETE" }).catch(() => null));
       }
       await Promise.allSettled(calls);
 
-      const next = accounts.filter((a) => a.id !== acc.id && a.email !== acc.email);
+      const next = accounts.filter((a) => a.id !== acc.id && a.email !== acc.email && a.code !== acc.code);
       setAccounts(next);
       setSelectedAccountIds((prev) => {
         const s = new Set(prev);
@@ -619,11 +682,13 @@ function AccountsPage() {
       setDeleteConfirmAccount(null);
 
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        const nextStr = JSON.stringify(next);
+        localStorage.setItem(STORAGE_KEY, nextStr);
+        setInitialAccountsStr(nextStr);
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
       } catch {}
 
-      toast.success(`Đã xóa tài khoản "${acc.name}" thành công.`);
+      toast.success(`Đã xóa tài khoản "${acc.name}" cùng hồ sơ hội viên và doanh nghiệp thành công.`);
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi xóa tài khoản");
     }
@@ -637,20 +702,25 @@ function AccountsPage() {
     }
 
     try {
+      toDelete.forEach((acc) => {
+        const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
+        addDeletedIdentifiers([acc.id, acc.dbMemberId, acc.code, acc.email, cleanId]);
+      });
+
       await Promise.allSettled(
         toDelete.flatMap((acc) => {
           const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
           const p: Promise<any>[] = [];
           if (cleanId) {
             p.push(fetchNestApi(`/users/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
-            p.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}?mode=all`, { method: "DELETE" }).catch(() => null));
           }
           if (acc.email) {
             p.push(fetchNestApi(`/users/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
-            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}?mode=all`, { method: "DELETE" }).catch(() => null));
           }
           if (acc.code) {
-            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}?mode=all`, { method: "DELETE" }).catch(() => null));
           }
           return p;
         })
@@ -663,7 +733,9 @@ function AccountsPage() {
       setIsBulkDeleteConfirmOpen(false);
 
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        const nextStr = JSON.stringify(next);
+        localStorage.setItem(STORAGE_KEY, nextStr);
+        setInitialAccountsStr(nextStr);
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
       } catch {}
 
@@ -681,20 +753,25 @@ function AccountsPage() {
     }
 
     try {
+      toDelete.forEach((acc) => {
+        const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
+        addDeletedIdentifiers([acc.id, acc.dbMemberId, acc.code, acc.email, cleanId]);
+      });
+
       await Promise.allSettled(
         toDelete.flatMap((acc) => {
           const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
           const p: Promise<any>[] = [];
           if (cleanId) {
             p.push(fetchNestApi(`/users/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
-            p.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}?mode=all`, { method: "DELETE" }).catch(() => null));
           }
           if (acc.email) {
             p.push(fetchNestApi(`/users/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
-            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}?mode=all`, { method: "DELETE" }).catch(() => null));
           }
           if (acc.code) {
-            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}?mode=all`, { method: "DELETE" }).catch(() => null));
           }
           return p;
         })
@@ -706,7 +783,9 @@ function AccountsPage() {
       setIsDeleteAllConfirmOpen(false);
 
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        const nextStr = JSON.stringify(next);
+        localStorage.setItem(STORAGE_KEY, nextStr);
+        setInitialAccountsStr(nextStr);
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
       } catch {}
 

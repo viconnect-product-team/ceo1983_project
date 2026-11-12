@@ -110,6 +110,23 @@ export function useRole(): RoleState {
       } catch {}
     }
 
+    // 0. ƯU TIÊN TUYỆT ĐỐI: Vai trò được phân bổ trực tiếp cho tài khoản từ Quản lý tài khoản (vba_managed_accounts_v2)
+    if (member?.executiveRole) {
+      const explicitRole = String(member.executiveRole).toLowerCase().trim();
+      if (explicitRole === "truong_ban_truyen_thong" || explicitRole === "btt") return "truong_ban_truyen_thong";
+      if (explicitRole === "truong_ban_thanh_vien" || explicitRole === "btv") return "truong_ban_thanh_vien";
+      if (explicitRole === "truong_ban_xuc_tien" || explicitRole === "bxt") return "truong_ban_xuc_tien";
+      if (explicitRole === "truong_ban_tai_chinh" || explicitRole === "btc") return "truong_ban_tai_chinh";
+      if (explicitRole === "truong_ban_thien_nguyen" || explicitRole === "btn") return "truong_ban_thien_nguyen";
+      if (explicitRole === "ban_thu_ky" || explicitRole === "btk") return "ban_thu_ky";
+      if (explicitRole === "tong_thu_ky") return "tong_thu_ky";
+      if (explicitRole === "member" || explicitRole === "hoi_vien") return "HVT";
+      if (explicitRole.startsWith("thanh_vien_ban_")) return explicitRole as SrsRole;
+      if (explicitRole === "chu_tich" || explicitRole === "president") return "chu_tich";
+      if (explicitRole === "ban_dieu_hanh" || explicitRole === "bqt" || explicitRole === "truong_ban_dieu_hanh") return "ban_dieu_hanh";
+      if (explicitRole === "admin" || explicitRole === "quan_tri" || explicitRole === "platform_admin") return "admin";
+    }
+
     const rList = rawRoles.map((r) => String(r).toLowerCase());
     const primaryRole = String(userObj?.role || member?.role || "").toLowerCase();
 
@@ -336,11 +353,15 @@ export function useRole(): RoleState {
             if (rawAccounts) {
               const accList = JSON.parse(rawAccounts);
               if (Array.isArray(accList)) {
+                const myEmail = String(me?.email || user?.email || "").toLowerCase().trim();
+                const myCode = String(member?.code || user?.code || (user as any)?.memberCode || "").toUpperCase().trim();
+                const myId = String(me?.id || user?.id || "").trim();
+
                 const found = accList.find(
                   (a: any) =>
-                    (a.email && me?.email && a.email.toLowerCase() === me.email.toLowerCase()) ||
-                    (a.code && member?.code && a.code.toUpperCase() === member.code.toUpperCase()) ||
-                    (a.id && me?.id && (a.id === me.id || a.id === `acc_${me.id}`))
+                    (a.email && myEmail && a.email.toLowerCase().trim() === myEmail) ||
+                    (a.code && myCode && a.code.toUpperCase().trim() === myCode) ||
+                    (a.id && myId && (a.id === myId || a.id === `acc_${myId}` || a.dbMemberId === myId))
                 );
                 if (found && found.role) {
                   member = { ...(member || {}), executiveRole: found.role, department: found.department };
@@ -448,70 +469,62 @@ export function useRole(): RoleState {
     }
   };
 
+  const isExplicitNonAdminRole =
+    srsRole !== "admin" &&
+    srsRole !== "ADM" &&
+    srsRole !== "quan_tri" &&
+    (srsRole as string) !== "platform_admin" &&
+    srsRole !== "chu_tich" &&
+    (srsRole as string) !== "president" &&
+    srsRole !== "ban_dieu_hanh" &&
+    srsRole !== "BQT";
+
   const isPresident =
-    srsRole === "chu_tich" ||
-    Boolean(user?.isPresident) ||
-    user?.role === "chu_tich" ||
-    user?.role === "president" ||
-    (String(user?.executiveRole).toLowerCase().includes("chủ tịch") &&
-      !String(user?.executiveRole).toLowerCase().includes("phó"));
+    !isExplicitNonAdminRole &&
+    (srsRole === "chu_tich" ||
+      user?.role === "chu_tich" ||
+      user?.role === "president" ||
+      (String(user?.executiveRole).toLowerCase().includes("chủ tịch") &&
+        !String(user?.executiveRole).toLowerCase().includes("phó")));
   const isChuTich = isPresident;
   const isPlatformAdmin =
-    srsRole === "ADM" ||
-    srsRole === "quan_tri" ||
-    (srsRole as string) === "platform_admin" ||
-    roles.includes("platform_admin") ||
-    isPresident;
+    !isExplicitNonAdminRole &&
+    (srsRole === "ADM" ||
+      srsRole === "quan_tri" ||
+      (srsRole as string) === "platform_admin" ||
+      isPresident);
   const isBanDieuHanh =
-    srsRole === "ban_dieu_hanh" ||
-    srsRole === "BQT" ||
-    srsRole === "admin" ||
-    Boolean(user?.isExecutive) ||
-    Boolean(user?.isAdmin) ||
-    isPresident ||
-    isPlatformAdmin;
+    !isExplicitNonAdminRole &&
+    (srsRole === "ban_dieu_hanh" ||
+      srsRole === "BQT" ||
+      srsRole === "admin" ||
+      isPresident ||
+      isPlatformAdmin);
   const isBQT = isBanDieuHanh;
   const isAdmin =
+    !isExplicitNonAdminRole &&
     (isPresident ||
       isPlatformAdmin ||
       srsRole === "admin" ||
-      isBanDieuHanh ||
-      Boolean(user?.isAdmin) ||
-      roles.includes("admin")) &&
-    (!memberPermProfile || memberPermProfile.isAdmin !== false || isPlatformAdmin || isPresident);
-  const isTongThuKy = srsRole === "tong_thu_ky" || Boolean(user?.isGeneralSecretary) || isPresident || isAdmin;
+      isBanDieuHanh) &&
+    (!memberPermProfile || memberPermProfile.isAdmin !== false);
+  const isTongThuKy = srsRole === "tong_thu_ky" || (!isExplicitNonAdminRole && Boolean(user?.isGeneralSecretary));
   const permBoardRole = String((memberPermProfile as any)?.boardRole || "").toLowerCase();
-  const isSuperAdmin =
-    srsRole === "chu_tich" ||
-    srsRole === "admin" ||
-    (srsRole as string) === "quan_tri" ||
-    (srsRole as string) === "ADM" ||
-    (srsRole as string) === "platform_admin" ||
-    Boolean(user?.isPresident) ||
-    Boolean(user?.isAdmin) ||
-    roles.includes("admin") ||
-    roles.includes("platform_admin") ||
-    roles.includes("quan_tri") ||
-    roles.includes("chu_tich") ||
-    permBoardRole === "quan_tri" ||
-    permBoardRole === "admin" ||
-    permBoardRole === "chu_tich" ||
-    (memberPermProfile as any)?.isAdmin === true;
+  const isSuperAdmin = !isExplicitNonAdminRole && (isAdmin || isPlatformAdmin || isPresident || permBoardRole === "quan_tri" || permBoardRole === "admin" || permBoardRole === "chu_tich");
   const isBanThuKy = srsRole === "ban_thu_ky" || srsRole === "BTK" || isTongThuKy;
   const isBTK = isBanThuKy;
-  const isBTT = srsRole === "BTT" || srsRole === "truong_ban_truyen_thong" || isBQT;
-  const isBXT = srsRole === "BXT" || srsRole === "truong_ban_xuc_tien" || isBQT;
-  const isBTV = srsRole === "BTV" || srsRole === "truong_ban_thanh_vien" || isBQT;
-  const isBTN = srsRole === "BTN" || srsRole === "truong_ban_thien_nguyen" || isBQT;
-  const isBTC = srsRole === "BTC" || srsRole === "truong_ban_tai_chinh" || isBQT;
+  const isTruongBanTruyenThong = srsRole === "BTT" || srsRole === "truong_ban_truyen_thong";
+  const isBTT = isTruongBanTruyenThong || (!isExplicitNonAdminRole && isBQT);
+  const isTruongBanXucTien = srsRole === "BXT" || srsRole === "truong_ban_xuc_tien";
+  const isBXT = isTruongBanXucTien || (!isExplicitNonAdminRole && isBQT);
+  const isTruongBanThanhVien = srsRole === "BTV" || srsRole === "truong_ban_thanh_vien";
+  const isBTV = isTruongBanThanhVien || (!isExplicitNonAdminRole && isBQT);
+  const isTruongBanThienNguyen = srsRole === "BTN" || srsRole === "truong_ban_thien_nguyen";
+  const isBTN = isTruongBanThienNguyen || (!isExplicitNonAdminRole && isBQT);
+  const isTruongBanTaiChinh = srsRole === "BTC" || srsRole === "truong_ban_tai_chinh";
+  const isBTC = isTruongBanTaiChinh || (!isExplicitNonAdminRole && isBQT);
   const isHVT = srsRole === "HVT" || srsRole === "member";
-  const isTruongBanTruyenThong = isBTT;
-  const isTruongBanThanhVien = isBTV;
-  const isTruongBanXucTien = isBXT;
-  const isTruongBanTaiChinh = isBTC;
-  const isTruongBanThienNguyen = isBTN;
   const isTruongBan =
-    Boolean(user?.isDepartmentLeader) ||
     isTruongBanTruyenThong ||
     isTruongBanThanhVien ||
     isTruongBanXucTien ||
@@ -599,29 +612,27 @@ export function useRole(): RoleState {
       }
 
       // 0. Toàn quyền tối cao cho Quản trị viên (quan_tri / admin / platform_admin) và Chủ tịch (chu_tich / president)
+      // CHỈ ÁP DỤNG KHI KHÔNG BỊ PHÂN VAI TRÒ CỤ THỂ KHÁC ADMIN
       const userEmail = String(user?.email || "").toLowerCase();
       const roleStr = String(srsRole || "");
       const isRoleAdmin =
-        isPlatformAdmin ||
-        isAdmin ||
-        isPresident ||
-        isChuTich ||
-        roleStr === "quan_tri" ||
-        roleStr === "admin" ||
-        roleStr === "chu_tich" ||
-        roleStr === "president" ||
-        roleStr === "BQT" ||
-        roleStr === "ADM" ||
-        roles.includes("admin") ||
-        roles.includes("platform_admin") ||
-        user?.permissions?.includes("*") ||
-        user?.permissions?.includes("admin:full_access");
+        !isExplicitNonAdminRole &&
+        (isPlatformAdmin ||
+          isAdmin ||
+          isPresident ||
+          isChuTich ||
+          roleStr === "quan_tri" ||
+          roleStr === "admin" ||
+          roleStr === "chu_tich" ||
+          roleStr === "president" ||
+          roleStr === "BQT" ||
+          roleStr === "ADM" ||
+          user?.permissions?.includes("*") ||
+          user?.permissions?.includes("admin:full_access") ||
+          ((userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
+            (!roleStr || roleStr === "admin" || roleStr === "quan_tri" || roleStr === "ADM")));
 
-      if (
-        isRoleAdmin ||
-        ((userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
-          (!roleStr || roleStr === "admin" || roleStr === "quan_tri" || roleStr === "ADM"))
-      ) {
+      if (isRoleAdmin) {
         return true;
       }
 
@@ -658,7 +669,7 @@ export function useRole(): RoleState {
 
       return grantedPermissions.has(permission as Permission);
     },
-    [isPlatformAdmin, isAdmin, isPresident, isChuTich, srsRole, roles, user?.email, grantedPermissions, matrixVersion, memberPermProfile, user?.code, user?.permissions],
+    [isExplicitNonAdminRole, isPlatformAdmin, isAdmin, isPresident, isChuTich, srsRole, roles, user?.email, grantedPermissions, matrixVersion, memberPermProfile, user?.code, user?.permissions],
   );
 
   const hasPermission = can;
@@ -685,7 +696,7 @@ export function useRole(): RoleState {
     [isPlatformAdmin, srsRole],
   );
 
-  const isSuperUser = isPlatformAdmin || isAdmin || isPresident || isChuTich || isSuperAdmin;
+  const isSuperUser = !isExplicitNonAdminRole && (isPlatformAdmin || isAdmin || isPresident || isChuTich || isSuperAdmin);
 
   // Granular shortcut flags: Tuân thủ chặt chẽ can() và memberPermProfile; Quản trị & Chủ tịch luôn có toàn quyền
   const canManageMembers =
