@@ -1,5 +1,32 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.21): Tối Giản Icon Đầu Mục Trang Chủ App, Xóa Lỗi test.jpg 404, Chuẩn Hóa 4 Phím Tắt Mặc Định & Xóa Sạch Ưu Đãi Mock ([NODE-APP-001], [NODE-CORE-001], [NODE-CORE-004])**:
+  - **Rút gọn icon đầu mục & Bỏ icon chức danh thẻ hội viên trang chủ ([NODE-APP-001])**:
+    * Tại 6 đầu mục nội dung trên trang chủ Mobile App (`/association`):
+      1. *Sự kiện sắp tới*: Thay khối nền cam vuông to bằng inline icon `<Calendar className="size-4 text-orange-500 shrink-0" />`.
+      2. *Ưu đãi & Đặc quyền hội viên*: Thay khối tròn nền vàng cam bằng inline icon `<Gift className="size-4 text-amber-500 shrink-0" />`.
+      3. *Cơ hội kết nối & Giao thương*: Thay khối icon nền xanh to bằng inline icon `<Handshake className="size-4 text-[#003B95] dark:text-amber-400 shrink-0" />`.
+      4. *Sàn thương mại nội bộ*: Thay khối tròn nền cam nhạt bằng inline icon `<Package className="size-4 text-orange-500 shrink-0" />`.
+      5. *Hội viên mới gia nhập*: Thay khối icon briefcase SVG to bằng inline icon `<Users className="size-4 text-orange-500 shrink-0" />`.
+      6. *Tin tức câu lạc bộ*: Thay icon SVG rườm rà bằng inline icon `<Newspaper className="size-4 text-orange-500 shrink-0" />`.
+    * Thẻ hội viên (Hero Card): Gỡ bỏ icon chiếc cặp tài liệu (`/icons/home/briefcase-04.svg`) bên cạnh chức vụ/chức danh, chỉ giữ lại text chức vụ gọn gàng trong pill badge.
+  - **Khắc phục triệt để lỗi test.jpg 404 trên mạng ([NODE-APP-001], [NODE-CORE-001])**:
+    * CSDL: Bản ghi hội viên `00000000-0000-4000-8000-000000000002` (Jame Nguyễn / Chủ Tịch HĐQT) có `avatar_url = 'https://ceo1983.viconnect.vn/test.jpg'`. Đã thực thi `UPDATE public.members SET avatar_url = avatar WHERE avatar_url ILIKE '%test.jpg%'`, trả về đúng link avatar ảnh thật `/upload/file/avatars/...`.
+    * Client (`api-client.ts`): Bổ sung `test.jpg` và `example.com` vào `deadMarkers` của `isDeadAvatarUrl()` để ngăn chặn dứt điểm trình duyệt tải link rác.
+  - **4 tính năng nhanh mặc định & Chuyển nút tùy chỉnh vào modal Tất cả tính năng ([NODE-APP-001])**:
+    * Trang chủ: Gỡ bỏ nút "Tùy chỉnh" riêng lẻ ở header Tính năng nhanh (chỉ giữ lại nút "Xem tất cả >").
+    * 4 tính năng mặc định: `["members", "messages", "opportunities", "events"]` (Danh bạ CEO, Tin nhắn, Cơ hội, Sự kiện).
+    * Bổ sung cơ chế auto-migrate tự động chuyển đổi cấu hình cũ sang 4 tính năng mặc định mới này.
+    * Tại modal "Tất cả tính năng" (`AllFeaturesModal.tsx`): Bổ sung banner trực quan "Tùy chỉnh tính năng nhanh", hiển thị số lượng `{selectedShortcuts.length}/4` kèm nút "Tùy chỉnh" mở `CustomHomeShortcutsModal` để hội viên tự do tùy biến.
+  - **Xóa sạch ưu đãi cũ, triệt tiêu hoàn toàn mock perks ([NODE-APP-001], [NODE-CORE-004])**:
+    * CSDL: Xóa toàn bộ 6 bản ghi ưu đãi mẫu trong bảng `public.perks` (`DELETE FROM public.perks;`).
+    * Backend (`content.service.ts`): Làm rỗng `ensureSeedPerks()`, xóa bỏ mảng mock `seedData` (Vinpearl, BRG Golf, Kiểm toán BCTC,...).
+    * Mobile App (`MemberPerksCarousel.tsx`): Thiết kế Empty State với đường viền nét đứt thanh lịch, hiển thị tiêu đề với icon nhỏ gọn kèm lời mời gọi tài trợ ưu đãi, sẵn sàng khi có ưu đãi thật từ CRM hoặc hội viên đăng.
+  - **Kiểm định mã nguồn (Strict Code Quality)**:
+    * `apps/ceo1983_app_be`: `tsc --noEmit` Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: Build Nitro & Client bundle thành công 100% (Exit code 0).
+    * Tuân thủ nghiêm ngặt Strict Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.20): Khởi Tạo Sự Kiện Mới Trực Tiếp Trên Subdomain crm.ceo1983.viconnect.vn Bằng Banner Thật & Danh Mục Toàn Diện 13 Mẫu Email Phục Vụ Cấu Hình Zalo ZBS ([NODE-CRM-003], [NODE-CORE-004], [NODE-CORE-005])**:
   - **Khởi tạo Sự Kiện Trực Tiếp Qua Giao Diện Web CRM (Playwright Automation)**:
     * Thao tác trực tiếp trên giao diện Cổng Quản trị `https://crm.ceo1983.viconnect.vn/events` thông qua Playwright Browser Automation.
@@ -268,6 +295,33 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.21): Tối Giản Icon Đầu Mục Trang Chủ App, Xóa Lỗi test.jpg 404, Chuẩn Hóa 4 Phím Tắt Mặc Định & Xóa Sạch Ưu Đãi Mock ([NODE-APP-001], [NODE-CORE-001], [NODE-CORE-004])**:
+  - **Rút gọn icon đầu mục & Bỏ icon chức danh thẻ hội viên trang chủ ([NODE-APP-001])**:
+    * Tại 6 đầu mục nội dung trên trang chủ Mobile App (`/association`):
+      1. *Sự kiện sắp tới*: Thay khối nền cam vuông to bằng inline icon `<Calendar className="size-4 text-orange-500 shrink-0" />`.
+      2. *Ưu đãi & Đặc quyền hội viên*: Thay khối tròn nền vàng cam bằng inline icon `<Gift className="size-4 text-amber-500 shrink-0" />`.
+      3. *Cơ hội kết nối & Giao thương*: Thay khối icon nền xanh to bằng inline icon `<Handshake className="size-4 text-[#003B95] dark:text-amber-400 shrink-0" />`.
+      4. *Sàn thương mại nội bộ*: Thay khối tròn nền cam nhạt bằng inline icon `<Package className="size-4 text-orange-500 shrink-0" />`.
+      5. *Hội viên mới gia nhập*: Thay khối icon briefcase SVG to bằng inline icon `<Users className="size-4 text-orange-500 shrink-0" />`.
+      6. *Tin tức câu lạc bộ*: Thay icon SVG rườm rà bằng inline icon `<Newspaper className="size-4 text-orange-500 shrink-0" />`.
+    * Thẻ hội viên (Hero Card): Gỡ bỏ icon chiếc cặp tài liệu (`/icons/home/briefcase-04.svg`) bên cạnh chức vụ/chức danh, chỉ giữ lại text chức vụ gọn gàng trong pill badge.
+  - **Khắc phục triệt để lỗi test.jpg 404 trên mạng ([NODE-APP-001], [NODE-CORE-001])**:
+    * CSDL: Bản ghi hội viên `00000000-0000-4000-8000-000000000002` (Jame Nguyễn / Chủ Tịch HĐQT) có `avatar_url = 'https://ceo1983.viconnect.vn/test.jpg'`. Đã thực thi `UPDATE public.members SET avatar_url = avatar WHERE avatar_url ILIKE '%test.jpg%'`, trả về đúng link avatar ảnh thật `/upload/file/avatars/...`.
+    * Client (`api-client.ts`): Bổ sung `test.jpg` và `example.com` vào `deadMarkers` của `isDeadAvatarUrl()` để ngăn chặn dứt điểm trình duyệt tải link rác.
+  - **4 tính năng nhanh mặc định & Chuyển nút tùy chỉnh vào modal Tất cả tính năng ([NODE-APP-001])**:
+    * Trang chủ: Gỡ bỏ nút "Tùy chỉnh" riêng lẻ ở header Tính năng nhanh (chỉ giữ lại nút "Xem tất cả >").
+    * 4 tính năng mặc định: `["members", "messages", "opportunities", "events"]` (Danh bạ CEO, Tin nhắn, Cơ hội, Sự kiện).
+    * Bổ sung cơ chế auto-migrate tự động chuyển đổi cấu hình cũ sang 4 tính năng mặc định mới này.
+    * Tại modal "Tất cả tính năng" (`AllFeaturesModal.tsx`): Bổ sung banner trực quan "Tùy chỉnh tính năng nhanh", hiển thị số lượng `{selectedShortcuts.length}/4` kèm nút "Tùy chỉnh" mở `CustomHomeShortcutsModal` để hội viên tự do tùy biến.
+  - **Xóa sạch ưu đãi cũ, triệt tiêu hoàn toàn mock perks ([NODE-APP-001], [NODE-CORE-004])**:
+    * CSDL: Xóa toàn bộ 6 bản ghi ưu đãi mẫu trong bảng `public.perks` (`DELETE FROM public.perks;`).
+    * Backend (`content.service.ts`): Làm rỗng `ensureSeedPerks()`, xóa bỏ mảng mock `seedData` (Vinpearl, BRG Golf, Kiểm toán BCTC,...).
+    * Mobile App (`MemberPerksCarousel.tsx`): Thiết kế Empty State với đường viền nét đứt thanh lịch, hiển thị tiêu đề với icon nhỏ gọn kèm lời mời gọi tài trợ ưu đãi, sẵn sàng khi có ưu đãi thật từ CRM hoặc hội viên đăng.
+  - **Kiểm định mã nguồn (Strict Code Quality)**:
+    * `apps/ceo1983_app_be`: `tsc --noEmit` Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: Build Nitro & Client bundle thành công 100% (Exit code 0).
+    * Tuân thủ nghiêm ngặt Strict Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.20): Khởi Tạo Sự Kiện Mới Trực Tiếp Trên Subdomain crm.ceo1983.viconnect.vn Bằng Banner Thật & Danh Mục Toàn Diện 13 Mẫu Email Phục Vụ Cấu Hình Zalo ZBS ([NODE-CRM-003], [NODE-CORE-004], [NODE-CORE-005])**:
   - **Khởi tạo Sự Kiện Trực Tiếp Qua Giao Diện Web CRM (Playwright Automation)**:
@@ -1819,6 +1873,33 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.21): Tối Giản Icon Đầu Mục Trang Chủ App, Xóa Lỗi test.jpg 404, Chuẩn Hóa 4 Phím Tắt Mặc Định & Xóa Sạch Ưu Đãi Mock ([NODE-APP-001], [NODE-CORE-001], [NODE-CORE-004])**:
+  - **Rút gọn icon đầu mục & Bỏ icon chức danh thẻ hội viên trang chủ ([NODE-APP-001])**:
+    * Tại 6 đầu mục nội dung trên trang chủ Mobile App (`/association`):
+      1. *Sự kiện sắp tới*: Thay khối nền cam vuông to bằng inline icon `<Calendar className="size-4 text-orange-500 shrink-0" />`.
+      2. *Ưu đãi & Đặc quyền hội viên*: Thay khối tròn nền vàng cam bằng inline icon `<Gift className="size-4 text-amber-500 shrink-0" />`.
+      3. *Cơ hội kết nối & Giao thương*: Thay khối icon nền xanh to bằng inline icon `<Handshake className="size-4 text-[#003B95] dark:text-amber-400 shrink-0" />`.
+      4. *Sàn thương mại nội bộ*: Thay khối tròn nền cam nhạt bằng inline icon `<Package className="size-4 text-orange-500 shrink-0" />`.
+      5. *Hội viên mới gia nhập*: Thay khối icon briefcase SVG to bằng inline icon `<Users className="size-4 text-orange-500 shrink-0" />`.
+      6. *Tin tức câu lạc bộ*: Thay icon SVG rườm rà bằng inline icon `<Newspaper className="size-4 text-orange-500 shrink-0" />`.
+    * Thẻ hội viên (Hero Card): Gỡ bỏ icon chiếc cặp tài liệu (`/icons/home/briefcase-04.svg`) bên cạnh chức vụ/chức danh, chỉ giữ lại text chức vụ gọn gàng trong pill badge.
+  - **Khắc phục triệt để lỗi test.jpg 404 trên mạng ([NODE-APP-001], [NODE-CORE-001])**:
+    * CSDL: Bản ghi hội viên `00000000-0000-4000-8000-000000000002` (Jame Nguyễn / Chủ Tịch HĐQT) có `avatar_url = 'https://ceo1983.viconnect.vn/test.jpg'`. Đã thực thi `UPDATE public.members SET avatar_url = avatar WHERE avatar_url ILIKE '%test.jpg%'`, trả về đúng link avatar ảnh thật `/upload/file/avatars/...`.
+    * Client (`api-client.ts`): Bổ sung `test.jpg` và `example.com` vào `deadMarkers` của `isDeadAvatarUrl()` để ngăn chặn dứt điểm trình duyệt tải link rác.
+  - **4 tính năng nhanh mặc định & Chuyển nút tùy chỉnh vào modal Tất cả tính năng ([NODE-APP-001])**:
+    * Trang chủ: Gỡ bỏ nút "Tùy chỉnh" riêng lẻ ở header Tính năng nhanh (chỉ giữ lại nút "Xem tất cả >").
+    * 4 tính năng mặc định: `["members", "messages", "opportunities", "events"]` (Danh bạ CEO, Tin nhắn, Cơ hội, Sự kiện).
+    * Bổ sung cơ chế auto-migrate tự động chuyển đổi cấu hình cũ sang 4 tính năng mặc định mới này.
+    * Tại modal "Tất cả tính năng" (`AllFeaturesModal.tsx`): Bổ sung banner trực quan "Tùy chỉnh tính năng nhanh", hiển thị số lượng `{selectedShortcuts.length}/4` kèm nút "Tùy chỉnh" mở `CustomHomeShortcutsModal` để hội viên tự do tùy biến.
+  - **Xóa sạch ưu đãi cũ, triệt tiêu hoàn toàn mock perks ([NODE-APP-001], [NODE-CORE-004])**:
+    * CSDL: Xóa toàn bộ 6 bản ghi ưu đãi mẫu trong bảng `public.perks` (`DELETE FROM public.perks;`).
+    * Backend (`content.service.ts`): Làm rỗng `ensureSeedPerks()`, xóa bỏ mảng mock `seedData` (Vinpearl, BRG Golf, Kiểm toán BCTC,...).
+    * Mobile App (`MemberPerksCarousel.tsx`): Thiết kế Empty State với đường viền nét đứt thanh lịch, hiển thị tiêu đề với icon nhỏ gọn kèm lời mời gọi tài trợ ưu đãi, sẵn sàng khi có ưu đãi thật từ CRM hoặc hội viên đăng.
+  - **Kiểm định mã nguồn (Strict Code Quality)**:
+    * `apps/ceo1983_app_be`: `tsc --noEmit` Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: Build Nitro & Client bundle thành công 100% (Exit code 0).
+    * Tuân thủ nghiêm ngặt Strict Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.20): Khởi Tạo Sự Kiện Mới Trực Tiếp Trên Subdomain crm.ceo1983.viconnect.vn Bằng Banner Thật & Danh Mục Toàn Diện 13 Mẫu Email Phục Vụ Cấu Hình Zalo ZBS ([NODE-CRM-003], [NODE-CORE-004], [NODE-CORE-005])**:
   - **Khởi tạo Sự Kiện Trực Tiếp Qua Giao Diện Web CRM (Playwright Automation)**:

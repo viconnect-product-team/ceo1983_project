@@ -736,7 +736,13 @@ function Home() {
         localStorage.getItem("vba_user_custom_shortcuts");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const legacy = ["messages", "members", "analytics", "opportunities"];
+          if (parsed.length === legacy.length && legacy.every((id, idx) => parsed[idx] === id)) {
+            return DEFAULT_SHORTCUT_IDS;
+          }
+          return parsed;
+        }
       }
     } catch {}
     return DEFAULT_SHORTCUT_IDS;
@@ -752,6 +758,11 @@ function Home() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
+            const legacy = ["messages", "members", "analytics", "opportunities"];
+            if (parsed.length === legacy.length && legacy.every((id, idx) => parsed[idx] === id)) {
+              setActiveShortcutIds(DEFAULT_SHORTCUT_IDS);
+              return;
+            }
             setActiveShortcutIds(parsed);
           }
         }
@@ -1359,9 +1370,8 @@ function Home() {
                   borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
                   color: !isDark ? brandColorTheme.primaryColor : brandColorTheme.accentLight,
                 }}
-                className="px-2 py-[2px] border rounded-full inline-flex justify-start items-center gap-1.5"
+                className="px-2.5 py-[2px] border rounded-full inline-flex justify-start items-center"
               >
-                <img src="/icons/home/briefcase-04.svg" className="size-3" alt="Chức vụ" />
                 <div className="text-xs font-semibold font-['Inter'] leading-4">
                   {displayTitle || "CEO"}
                 </div>
@@ -1400,37 +1410,21 @@ function Home() {
             <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
               Tính năng nhanh
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCustomShortcutsModalOpen(true)}
-                style={{
-                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                  color: brandColorTheme.primaryColor,
-                }}
-                className="px-2.5 py-1 rounded-lg border flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-xs font-semibold"
-                title="Tùy chỉnh 4 phím tắt"
-              >
-                <Pencil className="size-3" />
-                <span>Tùy chỉnh</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAllFeaturesModalOpen(true)}
-                style={{
-                  backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
-                  borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
-                  color: brandColorTheme.primaryColor,
-                }}
-                className="px-2.5 py-1 rounded-lg border flex justify-start items-center gap-1.5 cursor-pointer hover:opacity-90 transition"
-              >
-                <div className="text-xs font-semibold font-['Inter'] leading-5">
-                  Xem tất cả
-                </div>
-                <img src="/icons/home/arrow-right-02.svg" className="size-3.5" alt="Xem tất cả" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setAllFeaturesModalOpen(true)}
+              style={{
+                backgroundColor: !isDark ? brandColorTheme.lightBg : `${brandColorTheme.primaryColor}20`,
+                borderColor: !isDark ? brandColorTheme.lightBorder : brandColorTheme.darkBorderSoft,
+                color: brandColorTheme.primaryColor,
+              }}
+              className="px-2.5 py-1 rounded-lg border flex justify-start items-center gap-1.5 cursor-pointer hover:opacity-90 transition"
+            >
+              <div className="text-xs font-semibold font-['Inter'] leading-5">
+                Xem tất cả
+              </div>
+              <ChevronRight className="size-3.5" />
+            </button>
           </div>
 
           <div className="self-stretch px-4 pt-3.5 pb-2 grid grid-cols-4 gap-2">
@@ -1535,13 +1529,9 @@ function Home() {
         <div className="w-full">
           <div className="mb-3 flex items-center justify-between">
             <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-              <span className="grid h-6 w-6 place-items-center rounded-lg bg-orange-500 text-white text-xs border border-white/20 shadow-xs">
-                <Calendar className="size-3.5 text-white" />
-              </span>
-              <h2 className="text-[14px] font-black tracking-tight text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors flex items-center gap-1">
-                <span>{isEn ? "Upcoming Events" : "Sự kiện sắp tới"}</span>
-                <Sparkles className="h-3.5 w-3.5 text-orange-500 fill-orange-500/20" />
-                <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              <Calendar className="size-4 text-orange-500 shrink-0" />
+              <h2 className="text-[14px] font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">
+                {isEn ? "Upcoming Events" : "Sự kiện sắp tới"}
               </h2>
             </Link>
             <Link to="/association/events" className="flex items-center gap-1 text-[12px] font-bold text-orange-600 dark:text-orange-400 hover:underline p-1">
@@ -1748,11 +1738,9 @@ function Home() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                  <Package className="size-5" />
-                </span>
+                <Package className="size-4 text-orange-500 shrink-0" />
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">
                     Sàn Thương Mại Nội Bộ
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1792,11 +1780,11 @@ function Home() {
         <div className="self-stretch flex flex-col justify-start items-start gap-2">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
-              <img src="/icons/home/briefcase-04.svg" alt="Building" className="size-5 shrink-0" />
-              <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">DOANH NGHIỆP MỚI GIA NHẬP</span>
+              <Users className="size-4 text-orange-500 shrink-0" />
+              <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">HỘI VIÊN MỚI GIA NHẬP</span>
             </div>
             <Link to="/association/members" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
-              <img src="/icons/home/arrow-right-02.svg" alt="More" className="size-4" />
+              <ChevronRight className="size-4 text-slate-500 dark:text-slate-400" />
             </Link>
           </div>
 
@@ -1840,11 +1828,7 @@ function Home() {
         <div className="self-stretch flex flex-col justify-start items-start gap-3">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
-              <img
-                src="/icons/home/new-releases.svg"
-                alt="News"
-                className="size-5 shrink-0"
-              />
+              <Newspaper className="size-4 text-orange-500 shrink-0" />
               <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">TIN TỨC CÂU LẠC BỘ</span>
             </div>
             <div className="flex items-center gap-2">
@@ -1852,7 +1836,7 @@ function Home() {
                 {combinedNews.length > 0 ? `+${combinedNews.length} BẢN TIN` : "0 BẢN TIN"}
               </span>
               <Link to="/association/news" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
-                <img src="/icons/home/arrow-right-02.svg" alt="More" className="size-4" />
+                <ChevronRight className="size-4 text-slate-500 dark:text-slate-400" />
               </Link>
             </div>
           </div>

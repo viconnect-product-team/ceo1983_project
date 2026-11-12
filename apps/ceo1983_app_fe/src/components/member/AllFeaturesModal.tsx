@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Search,
   Sliders,
+  Settings,
 } from "lucide-react";
 
 export interface AllFeaturesModalProps {
@@ -67,7 +68,13 @@ export function AllFeaturesModal({
       const saved = localStorage.getItem("ceo1983_home_shortcuts");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const legacy = ["messages", "members", "analytics", "opportunities"];
+          if (parsed.length === legacy.length && legacy.every((id, idx) => parsed[idx] === id)) {
+            return DEFAULT_SHORTCUT_IDS;
+          }
+          return parsed;
+        }
       }
     } catch { }
     return DEFAULT_SHORTCUT_IDS;
@@ -230,6 +237,16 @@ export function AllFeaturesModal({
       icon: History,
     },
     {
+      id: "system-config",
+      name: "Cấu hình hệ thống",
+      category: "Tiện ích số",
+      desc: "Đổi mật khẩu, màu giao diện, Trợ lý AI & thông báo",
+      to: "/association/system-config",
+      icon: Settings,
+      badge: "Hệ thống",
+      badgeColor: "bg-[#003B95] text-amber-300 font-bold",
+    },
+    {
       id: "calendar",
       name: "Lịch hoạt động & Nhắc hẹn",
       category: "Hoạt động & Sự kiện",
@@ -316,14 +333,14 @@ export function AllFeaturesModal({
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white truncate">
-                  4 Phím Tắt Trang Chủ
+                  Tùy chỉnh tính năng nhanh
                 </h4>
                 <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-[#003B95] text-amber-300">
                   {selectedShortcuts.length}/4
                 </span>
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                Tùy biến các lối tắt tiện ích hiển thị ở màn hình chính
+                Cài đặt 4 tính năng hiển thị ở màn hình chính
               </p>
             </div>
           </div>
@@ -332,7 +349,7 @@ export function AllFeaturesModal({
             onClick={() => setCustomShortcutsOpen(true)}
             className="px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs font-bold shrink-0 transition active:scale-95 shadow-xs cursor-pointer flex items-center gap-1"
           >
-            <span>Cài đặt</span>
+            <span>Tùy chỉnh</span>
             <ChevronRight className="size-3.5" />
           </button>
         </div>
