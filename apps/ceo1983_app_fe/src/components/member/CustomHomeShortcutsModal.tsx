@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Check,
@@ -36,6 +36,38 @@ export interface ShortcutItem {
 
 export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   {
+    id: "members",
+    name: "Danh bạ CEO 1983",
+    desc: "Danh bạ 200+ CEO doanh nhân",
+    to: "/association/members",
+    iconName: "Users",
+  },
+  {
+    id: "messages",
+    name: "Tin nhắn",
+    desc: "Trò chuyện & nhắn tin kết nối nhanh",
+    to: "/association/messages?tab=messages",
+    iconName: "MessageSquare",
+    badge: "Chat",
+    badgeColor: "bg-[#003B95] text-white",
+  },
+  {
+    id: "connect",
+    name: "Kết nối B2B",
+    desc: "Tạo kết nối 1-on-1 & hợp tác B2B",
+    to: "/association/connect",
+    iconName: "Handshake",
+    badge: "B2B",
+    badgeColor: "bg-[#003B95] text-white",
+  },
+  {
+    id: "events",
+    name: "Lịch hoạt động",
+    desc: "Lịch sinh hoạt & sự kiện CLB",
+    to: "/association/events",
+    iconName: "Calendar",
+  },
+  {
     id: "calendar",
     name: "Lịch & Nhắc hẹn",
     desc: "Lịch sự kiện, họp ban, cuộc gặp & cài nhắc",
@@ -45,22 +77,8 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     badgeColor: "bg-red-600 text-white",
   },
   {
-    id: "events",
-    name: "Sự kiện",
-    desc: "Lịch sinh hoạt & sự kiện CLB",
-    to: "/association/events",
-    iconName: "Calendar",
-  },
-  {
-    id: "members",
-    name: "Danh bạ CEO",
-    desc: "Danh bạ 200+ CEO doanh nhân",
-    to: "/association/members",
-    iconName: "Users",
-  },
-  {
     id: "opportunities",
-    name: "Cơ hội",
+    name: "Cơ hội giao thương",
     desc: "Sàn kết nối cơ hội kinh doanh B2B",
     to: "/association/opportunities",
     iconName: "TrendingUp",
@@ -75,29 +93,11 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
     badgeColor: "bg-blue-600 text-white",
   },
   {
-    id: "connect",
-    name: "Kết nối",
-    desc: "Tạo kết nối 1-on-1 & hợp tác B2B",
-    to: "#connect",
-    iconName: "Handshake",
-    badge: "B2B",
-    badgeColor: "bg-[#003B95] text-white",
-  },
-  {
     id: "profile",
     name: "Góc hội viên",
     desc: "Hồ sơ & thông tin doanh nghiệp",
     to: "/association/profile",
     iconName: "IdCard",
-  },
-  {
-    id: "messages",
-    name: "Tin nhắn",
-    desc: "Trò chuyện & nhắn tin kết nối nhanh",
-    to: "/association/messages?tab=messages",
-    iconName: "MessageSquare",
-    badge: "Chat",
-    badgeColor: "bg-[#003B95] text-white",
   },
   {
     id: "feed",
@@ -183,7 +183,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
 ];
 
-export const DEFAULT_SHORTCUT_IDS = ["members", "messages", "opportunities", "events"];
+export const DEFAULT_SHORTCUT_IDS = ["members", "messages", "connect", "events"];
 
 export function getShortcutIcon(iconName: string, className = "size-6", color?: string) {
   const style = color ? { color } : undefined;
@@ -241,8 +241,16 @@ export function CustomHomeShortcutsModal({
   onSave,
 }: CustomHomeShortcutsModalProps) {
   const [currentSelected, setCurrentSelected] = useState<string[]>(
-    selectedIds.length === 4 ? selectedIds : DEFAULT_SHORTCUT_IDS
+    Array.isArray(selectedIds) && selectedIds.length === 4 ? selectedIds : DEFAULT_SHORTCUT_IDS
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentSelected(
+        Array.isArray(selectedIds) && selectedIds.length === 4 ? selectedIds : DEFAULT_SHORTCUT_IDS
+      );
+    }
+  }, [isOpen, selectedIds]);
 
   if (!isOpen) return null;
 

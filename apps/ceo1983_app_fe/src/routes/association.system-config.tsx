@@ -11,7 +11,6 @@ import {
   Palette,
   Sparkles,
   ShieldCheck,
-  Bell,
   Headphones,
   Phone,
   Mail,
@@ -38,7 +37,6 @@ import {
   setVoiceAiEnabled,
   VOICE_AI_EVENT_NAME,
 } from "@/components/ai/Ceo1983ChatAssistant";
-import { requestNotificationPermission } from "@/lib/notification-permissions";
 import { toast } from "sonner";
 import {
   getActiveCeo1983ColorTheme,
@@ -111,34 +109,6 @@ export function AssociationSystemConfigScreen() {
     toast.success(nextVal ? "Đã bật Trợ lý AI CEO 1983" : "Đã tắt Trợ lý AI CEO 1983");
   };
 
-  // Push notifications state
-  const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const pref = localStorage.getItem("vba_push_notifications_enabled");
-    if (pref === "false") return false;
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") return true;
-    return pref === "true";
-  });
-
-  const handleToggleNotification = async () => {
-    if (!isNotificationEnabled) {
-      const res = await requestNotificationPermission();
-      if (res === "granted" || (typeof Notification !== "undefined" && Notification.permission === "granted")) {
-        setIsNotificationEnabled(true);
-        localStorage.setItem("vba_push_notifications_enabled", "true");
-        toast.success(isEn ? "Push notifications enabled!" : "Đã bật thông báo đẩy thành công!");
-      } else {
-        setIsNotificationEnabled(true);
-        localStorage.setItem("vba_push_notifications_enabled", "true");
-        toast.success(isEn ? "Notification preference saved!" : "Đã lưu cài đặt thông báo!");
-      }
-    } else {
-      setIsNotificationEnabled(false);
-      localStorage.setItem("vba_push_notifications_enabled", "false");
-      toast.info(isEn ? "Push notifications disabled." : "Đã tắt thông báo đẩy.");
-    }
-  };
-
   // Cài đặt ứng dụng PWA / Mobile App nhanh
   const handleFastInstallApp = async () => {
     const isStandalone =
@@ -164,6 +134,19 @@ export function AssociationSystemConfigScreen() {
       } catch (err) {
         console.warn("Fast install prompt error:", err);
       }
+    }
+
+    const userAgent = typeof window !== "undefined" ? window.navigator.userAgent.toLowerCase() : "";
+    const isAndroid = /android/.test(userAgent);
+    if (isAndroid) {
+      const link = document.createElement("a");
+      link.href = "/docs/CEO1983-app-latest.apk";
+      link.download = "CEO1983-app-latest.apk";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Đang tự động tải và kích hoạt gói cài đặt ứng dụng CEO 1983!");
+      return;
     }
 
     window.dispatchEvent(new CustomEvent("open-install-prompt"));
@@ -223,35 +206,21 @@ export function AssociationSystemConfigScreen() {
         </div>
 
         {/* ── 1. KHỐI TRỌNG TÂM: BẢO MẬT TÀI KHOẢN & ĐỔI MẬT KHẨU ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="size-8 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                <ShieldCheck className="size-4.5" />
-              </div>
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                  {isEn ? "Security & Change Password" : "Bảo mật tài khoản & Đổi mật khẩu"}
-                </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                  {isEn
-                    ? "Manage login password and account safety"
-                    : "Đổi mật khẩu đăng nhập, sinh trắc học và quyền riêng tư"}
-                </p>
-              </div>
-            </div>
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
+            {isEn ? "Security & Change Password" : "Bảo mật tài khoản & Đổi mật khẩu"}
           </div>
-
-          <AccountSecuritySettingsForm isRequired={required === "true"} />
+          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <AccountSecuritySettingsForm isRequired={required === "true"} />
+          </div>
         </div>
 
         {/* ── 2. KHỐI TÙY CHỌN MÀU GIAO DIỆN (BRANDBOOK CEO 1983) ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-2">
-              <Palette className="size-4 text-amber-500" />
-              <span>{isEn ? "Color Theme (Brandbook)" : "Chọn màu giao diện (Brandbook)"}</span>
-            </h3>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {isEn ? "Color Theme (Brandbook)" : "Chọn màu giao diện (Brandbook)"}
+            </div>
             <span
               style={{ color: brandColorTheme.primaryColor }}
               className="text-[11px] font-black"
@@ -259,16 +228,17 @@ export function AssociationSystemConfigScreen() {
               {brandColorTheme.name}
             </span>
           </div>
-          <Ceo1983ColorThemeSelector />
+          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <Ceo1983ColorThemeSelector />
+          </div>
         </div>
 
         {/* ── 3. KHỐI CHẾ ĐỘ HIỂN THỊ (SÁNG / TỐI) ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-2">
-              <Sun className="size-4 text-amber-500" />
-              <span>{isEn ? "Appearance Mode" : "Chế độ hiển thị"}</span>
-            </h3>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {isEn ? "Appearance Mode" : "Chế độ hiển thị"}
+            </div>
             <span className="text-[11px] font-bold text-slate-400">
               {theme === "dark" ? "Ban đêm" : "Ban ngày"}
             </span>
@@ -281,11 +251,11 @@ export function AssociationSystemConfigScreen() {
                 setTheme("light");
                 toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
               }}
-              className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                theme === "light"
-                  ? "border-[#003B95] bg-blue-50 text-[#003B95] shadow-2xs font-black"
+              style={theme === "light" ? { borderColor: brandColorTheme.primaryColor, color: brandColorTheme.primaryColor } : undefined}
+              className={`py-3 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${theme === "light"
+                  ? "bg-blue-50/80 dark:bg-slate-800 shadow-2xs font-black"
                   : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-              }`}
+                }`}
             >
               <Sun className="size-4 text-amber-500" />
               <span>{isEn ? "Light Mode" : "Giao diện sáng"}</span>
@@ -297,11 +267,11 @@ export function AssociationSystemConfigScreen() {
                 setTheme("dark");
                 toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
               }}
-              className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                theme === "dark"
-                  ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-2xs font-black"
+              style={theme === "dark" ? { borderColor: brandColorTheme.primaryColor, color: brandColorTheme.primaryColor } : undefined}
+              className={`py-3 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${theme === "dark"
+                  ? "bg-slate-800 shadow-2xs font-black"
                   : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-              }`}
+                }`}
             >
               <Moon className="size-4 text-sky-400" />
               <span>{isEn ? "Dark Mode" : "Giao diện tối"}</span>
@@ -310,52 +280,54 @@ export function AssociationSystemConfigScreen() {
         </div>
 
         {/* ── 4. KHỐI TRỢ LÝ AI (VOICE & CHAT BOT) ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0 pr-2">
-              <div
-                style={{ backgroundColor: `${brandColorTheme.primaryColor}20`, color: brandColorTheme.primaryColor }}
-                className="size-10 rounded-2xl grid place-items-center shrink-0 border border-slate-200/50 dark:border-slate-700/50"
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
+            {isEn ? "AI Voice & Chat Assistant" : "Trợ lý AI CEO 1983"}
+          </div>
+          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0 pr-2">
+                <div
+                  style={{ backgroundColor: `${brandColorTheme.primaryColor}20`, color: brandColorTheme.primaryColor }}
+                  className="size-10 rounded-2xl grid place-items-center shrink-0 border border-slate-200/50 dark:border-slate-700/50"
+                >
+                  <Bot className="size-5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
+                    {isEn ? "Floating AI Assistant" : "Biểu tượng AI nổi trên màn hình"}
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block line-clamp-1">
+                    {voiceAiEnabled
+                      ? (isEn ? "Floating AI is active on screen" : "Đang hiển thị trợ lý AI")
+                      : (isEn ? "AI is currently turned off" : "Đang tắt / ẩn biểu tượng AI")}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={voiceAiEnabled}
+                onClick={handleToggleVoiceAi}
+                className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
+                  }`}
+                title="Bật/tắt Trợ lý AI"
               >
-                <Bot className="size-5" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                  {isEn ? "AI Voice & Chat Assistant" : "Bật / Tắt Trợ lý AI CEO 1983"}
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block line-clamp-1">
-                  {voiceAiEnabled
-                    ? (isEn ? "Floating AI is active on screen" : "Đang hiển thị trợ lý AI nổi trên màn hình")
-                    : (isEn ? "AI is currently turned off" : "Đang tắt / ẩn biểu tượng AI")}
-                </span>
-              </div>
+                <div
+                  className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${voiceAiEnabled ? "translate-x-5.5" : "translate-x-0.5"
+                    }`}
+                />
+              </button>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={voiceAiEnabled}
-              onClick={handleToggleVoiceAi}
-              className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                voiceAiEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-              }`}
-              title="Bật/tắt Trợ lý AI"
-            >
-              <div
-                className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                  voiceAiEnabled ? "translate-x-5.5" : "translate-x-0.5"
-                }`}
-              />
-            </button>
           </div>
         </div>
 
         {/* ── 5. KHỐI CHỌN NGÔN NGỮ (LANGUAGE SELECTOR) ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-2">
-              <Globe className="size-4 text-blue-500" />
-              <span>{isEn ? "Select Language" : "Chọn ngôn ngữ"}</span>
-            </h3>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {isEn ? "Select Language" : "Chọn ngôn ngữ"}
+            </div>
             <span className="text-[11px] font-bold text-slate-400">
               {lang === "vi" ? "Tiếng Việt" : "English"}
             </span>
@@ -368,15 +340,15 @@ export function AssociationSystemConfigScreen() {
                 setLang("vi");
                 toast.success("Đã chuyển sang Tiếng Việt");
               }}
-              className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                lang === "vi"
-                  ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs font-black"
+              style={lang === "vi" ? { borderColor: brandColorTheme.primaryColor, color: brandColorTheme.primaryColor } : undefined}
+              className={`py-3 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${lang === "vi"
+                  ? "bg-blue-50/80 dark:bg-slate-800 shadow-2xs font-black"
                   : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               <span className="text-base">🇻🇳</span>
               <span>Tiếng Việt</span>
-              {lang === "vi" && <Check className="size-4 text-[#003B95] dark:text-amber-400 ml-auto" />}
+              {lang === "vi" && <Check className="size-4 ml-auto" style={{ color: brandColorTheme.primaryColor }} />}
             </button>
 
             <button
@@ -385,227 +357,147 @@ export function AssociationSystemConfigScreen() {
                 setLang("en");
                 toast.success("Switched to English");
               }}
-              className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
-                lang === "en"
-                  ? "border-[#003B95] dark:border-amber-400 bg-blue-50 dark:bg-amber-950/40 text-[#003B95] dark:text-amber-400 shadow-2xs font-black"
+              style={lang === "en" ? { borderColor: brandColorTheme.primaryColor, color: brandColorTheme.primaryColor } : undefined}
+              className={`py-3 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${lang === "en"
+                  ? "bg-blue-50/80 dark:bg-slate-800 shadow-2xs font-black"
                   : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               <span className="text-base">🇬🇧</span>
               <span>English</span>
-              {lang === "en" && <Check className="size-4 text-[#003B95] dark:text-amber-400 ml-auto" />}
+              {lang === "en" && <Check className="size-4 ml-auto" style={{ color: brandColorTheme.primaryColor }} />}
             </button>
           </div>
         </div>
 
-        {/* ── 6. KHỐI THÔNG BÁO ĐẨY ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-              <Bell className="h-4 w-4 text-rose-500" />
-              <span>{isEn ? "Notification Settings" : "Cài đặt thông báo"}</span>
-            </h3>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-            <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <div className="size-9 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 grid place-items-center shrink-0">
-                <Bell className="size-4.5" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                  {isEn ? "Push Notifications" : "Thông báo đẩy & Tin tức CLB"}
-                </span>
-                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block line-clamp-1">
-                  {isNotificationEnabled
-                    ? (isEn ? "Enabled notifications" : "Đang bật nhận chuông và tin nhắn")
-                    : (isEn ? "Notifications are disabled" : "Đang tắt thông báo")}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isNotificationEnabled}
-              onClick={handleToggleNotification}
-              className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-              }`}
-              title="Bật/tắt Thông báo"
-            >
-              <div
-                className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                  isNotificationEnabled ? "translate-x-5.5" : "translate-x-0.5"
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-
-        {/* ── 7. KHỐI CÀI ĐẶT ỨNG DỤNG PWA / MOBILE APP ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-              <Smartphone className="h-4 w-4 text-blue-500" />
-              <span>{isEn ? "App Installation" : "Cài đặt ứng dụng PWA / Mobile App"}</span>
-            </h3>
+        {/* ── 6. KHỐI CÀI ĐẶT ỨNG DỤNG PWA / MOBILE APP ── */}
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
+            {isEn ? "App Installation" : "Cài đặt ứng dụng lên thiết bị"}
           </div>
 
           <button
             type="button"
             onClick={handleFastInstallApp}
-            className="w-full p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50/50 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between hover:scale-[1.01] active:scale-[0.99] transition cursor-pointer text-left"
+            style={{
+              backgroundColor: brandColorTheme.primaryColor,
+            }}
+            className="w-full p-3.5 rounded-2xl text-white shadow-md flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition cursor-pointer text-left"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="size-9 rounded-xl bg-[#003B95] text-white grid place-items-center shrink-0 shadow-xs">
+              <div className="size-9 rounded-xl bg-white/20 text-white grid place-items-center shrink-0">
                 <Smartphone className="size-4.5" />
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-bold text-blue-950 dark:text-blue-200 block truncate">
-                  {isEn ? "Install App on Home Screen" : "Cài đặt ứng dụng lên màn hình chính"}
+                <span className="text-xs font-bold text-white block truncate">
+                  {isEn ? "Install CEO 1983 App" : "Cài đặt ứng dụng CEO 1983 tự động"}
                 </span>
-                <span className="text-[10.5px] text-blue-700 dark:text-blue-300/80 block line-clamp-1">
-                  {isEn ? "Add to home screen or install APK" : "Tải ứng dụng hoặc ghim biểu tượng lên iPhone / Android"}
+                <span className="text-[10.5px] text-white/80 block line-clamp-1">
+                  {isEn ? "Auto-install on home screen or download APK" : "Tự động ghim ra màn hình chính hoặc tải gói APK Android"}
                 </span>
               </div>
             </div>
-            <div className="size-7 rounded-full bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 flex items-center justify-center shrink-0 ml-2">
-              <ChevronRight className="size-4 text-[#003B95] dark:text-blue-400" />
+            <div className="size-7 rounded-full bg-white/20 flex items-center justify-center shrink-0 ml-2">
+              <ChevronRight className="size-4 text-white" />
             </div>
           </button>
         </div>
 
-        {/* ── 8. KHỐI LIÊN HỆ & HỖ TRỢ BAN THƯ KÝ ── */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-              <Headphones className="h-4 w-4 text-rose-500" />
-              <span>{isEn ? "Support & Club Secretariat" : "Liên hệ & Hỗ trợ Ban Thư Ký"}</span>
-            </h3>
+        {/* ── 7. KHỐI LIÊN HỆ & HỖ TRỢ BAN THƯ KÝ ── */}
+        <div className="space-y-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
+            {isEn ? "Support & Club Secretariat" : "Liên hệ & Hỗ trợ Ban Thư Ký"}
           </div>
 
-          <div className="space-y-2 text-xs">
-            {/* Hotline */}
-            <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
-                  <Phone className="size-4" />
+          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-2.5">
+            <div className="space-y-2 text-xs">
+              {/* Hotline */}
+              <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0">
+                    <Phone className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Hotline Ban Thư Ký</span>
+                    <span className="font-bold text-slate-800 dark:text-white block truncate">098.333.1983 / 098.1983.888</span>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Hotline Ban Thư Ký</span>
-                  <span className="font-bold text-slate-800 dark:text-white block truncate">098.333.1983 / 098.1983.888</span>
-                </div>
+                <a
+                  href="tel:0983331983"
+                  className="px-3 py-1 rounded-xl bg-[#00A86B] hover:bg-[#00925d] text-white font-bold text-xs shadow-xs transition shrink-0 cursor-pointer"
+                >
+                  Gọi ngay
+                </a>
               </div>
-              <a
-                href="tel:0983331983"
-                className="px-3 py-1 rounded-xl bg-[#00A86B] hover:bg-[#00925d] text-white font-bold text-xs shadow-xs transition shrink-0 cursor-pointer"
+
+              {/* Email */}
+              <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 grid place-items-center shrink-0">
+                    <Mail className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Email tiếp nhận</span>
+                    <span className="font-bold text-slate-800 dark:text-white block truncate">banthuky@ceo1983.vn</span>
+                  </div>
+                </div>
+                <a
+                  href="mailto:banthuky@ceo1983.vn"
+                  style={{ color: brandColorTheme.primaryColor }}
+                  className="px-2.5 py-1 rounded-xl border border-current font-bold text-xs transition shrink-0 cursor-pointer"
+                >
+                  Gửi thư
+                </a>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setContactSupportOpen(true)}
+                className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100/80 transition flex items-center justify-between cursor-pointer text-left"
               >
-                Gọi ngay
-              </a>
-            </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8.5 rounded-xl bg-rose-600 text-white grid place-items-center shrink-0 shadow-xs">
+                    <Headphones className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                      Gửi góp ý &amp; phản ánh
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                      Hỗ trợ trực tiếp từ Ban Thư Ký
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="size-4 text-slate-400 shrink-0" />
+              </button>
 
-            {/* Email */}
-            <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 grid place-items-center shrink-0">
-                  <Mail className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Email tiếp nhận &amp; hỗ trợ</span>
-                  <span className="font-bold text-slate-800 dark:text-white block truncate">banthuky@ceo1983.vn</span>
-                </div>
-              </div>
-              <a
-                href="mailto:banthuky@ceo1983.vn"
-                className="px-2.5 py-1 rounded-xl border border-blue-600 text-[#003B95] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 font-bold text-xs transition shrink-0 cursor-pointer"
+              <button
+                type="button"
+                onClick={() => setUserGuideOpen(true)}
+                className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-100/80 transition flex items-center justify-between cursor-pointer text-left"
               >
-                Gửi thư
-              </a>
-            </div>
-
-            {/* Trụ sở */}
-            <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-              <div className="size-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
-                <MapPin className="size-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Trụ sở CLB Doanh Nhân CEO 1983</span>
-                <span className="font-semibold text-slate-800 dark:text-white block text-[11px] leading-snug">
-                  Hiệp Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA) - TP. Hà Nội
-                </span>
-              </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-8.5 rounded-xl bg-amber-500 text-slate-950 grid place-items-center shrink-0 shadow-xs">
+                    <BookOpen className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                      Hướng dẫn sử dụng App
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                      Cẩm nang &amp; tour tính năng
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="size-4 text-slate-400 shrink-0" />
+              </button>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setContactSupportOpen(true)}
-              className="p-3 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100/80 transition flex items-center justify-between cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8.5 rounded-xl bg-rose-600 text-white grid place-items-center shrink-0 shadow-xs">
-                  <Headphones className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-rose-950 dark:text-rose-200 block truncate">
-                    Liên hệ Ban Thư Ký CLB
-                  </span>
-                  <span className="text-[10px] text-rose-700 dark:text-rose-400 block truncate">
-                    Gửi phản ánh, góp ý &amp; hỗ trợ
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="size-4 text-rose-500 shrink-0" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setUserGuideOpen(true)}
-              className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 hover:bg-amber-100/80 transition flex items-center justify-between cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8.5 rounded-xl bg-amber-500 text-slate-950 grid place-items-center shrink-0 shadow-xs">
-                  <BookOpen className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-amber-950 dark:text-amber-200 block truncate">
-                    Hướng dẫn sử dụng App
-                  </span>
-                  <span className="text-[10px] text-amber-700 dark:text-amber-400 block truncate">
-                    Cẩm nang &amp; tour tính năng
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="size-4 text-amber-600 shrink-0" />
-            </button>
-          </div>
-
-          {/* Phân quyền RBAC cho SuperAdmin */}
-          {hasAdminPrivilege && (
-            <Link
-              to="/association/permissions"
-              className="p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 hover:bg-indigo-100/80 transition flex items-center justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8.5 rounded-xl bg-indigo-600 text-white grid place-items-center shrink-0 shadow-xs">
-                  <ShieldCheck className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200 block truncate">
-                    Phân quyền Ban Quản Trị &amp; Ban Chuyên Môn
-                  </span>
-                  <span className="text-[10px] text-indigo-700 dark:text-indigo-400 block truncate">
-                    Quản lý ma trận vai trò RBAC hệ thống
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="size-4 text-indigo-600 shrink-0" />
-            </Link>
-          )}
         </div>
 
-        {/* ── 9. NÚT ĐĂNG XUẤT TÀI KHOẢN ── */}
+        {/* ── 8. NÚT ĐĂNG XUẤT TÀI KHOẢN ── */}
         <div className="pt-2">
           <button
             type="button"

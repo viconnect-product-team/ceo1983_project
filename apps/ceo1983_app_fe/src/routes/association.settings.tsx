@@ -7,7 +7,6 @@ import {
   Globe,
   Bot,
   Sparkles,
-  Bell,
   Headphones,
   Phone,
   Mail,
@@ -36,7 +35,6 @@ import {
   setVoiceAiEnabled,
   VOICE_AI_EVENT_NAME,
 } from "@/components/ai/Ceo1983ChatAssistant";
-import { requestNotificationPermission } from "@/lib/notification-permissions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/association/settings")({
@@ -89,34 +87,6 @@ function AssociationSettingsScreen() {
     setVoiceAiState(nextVal);
     setVoiceAiEnabled(nextVal);
     toast.success(nextVal ? "Đã bật Trợ lý AI CEO 1983" : "Đã tắt Trợ lý AI CEO 1983");
-  };
-
-  // Push notifications state
-  const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const pref = localStorage.getItem("vba_push_notifications_enabled");
-    if (pref === "false") return false;
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") return true;
-    return pref === "true";
-  });
-
-  const handleToggleNotification = async () => {
-    if (!isNotificationEnabled) {
-      const res = await requestNotificationPermission();
-      if (res === "granted" || (typeof Notification !== "undefined" && Notification.permission === "granted")) {
-        setIsNotificationEnabled(true);
-        localStorage.setItem("vba_push_notifications_enabled", "true");
-        toast.success(isEn ? "Push notifications enabled!" : "Đã bật thông báo đẩy thành công!");
-      } else {
-        setIsNotificationEnabled(true);
-        localStorage.setItem("vba_push_notifications_enabled", "true");
-        toast.success(isEn ? "Notification preference saved!" : "Đã lưu cài đặt thông báo!");
-      }
-    } else {
-      setIsNotificationEnabled(false);
-      localStorage.setItem("vba_push_notifications_enabled", "false");
-      toast.info(isEn ? "Push notifications disabled." : "Đã tắt thông báo đẩy.");
-    }
   };
 
   const handleBackToLogin = async () => {
@@ -193,50 +163,6 @@ function AssociationSettingsScreen() {
             <ChevronRight className="size-4 text-orange-600 dark:text-amber-400" />
           </div>
         </Link>
-
-        {/* 2. KHỐI THÔNG BÁO ĐẨY */}
-        <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#003B95] dark:text-amber-400 flex items-center gap-1.5">
-              <Bell className="h-4 w-4 text-rose-500" />
-              <span>{isEn ? "Notification Settings" : "Cài đặt thông báo"}</span>
-            </h3>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60">
-            <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <div className="size-9 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 grid place-items-center shrink-0">
-                <Bell className="size-4.5" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block truncate">
-                  {isEn ? "Push Notifications" : "Thông báo đẩy & Tin tức CLB"}
-                </span>
-                <span className="text-[10.5px] text-slate-500 dark:text-slate-400 block line-clamp-1">
-                  {isNotificationEnabled
-                    ? (isEn ? "Enabled notifications" : "Đang bật nhận chuông và tin nhắn")
-                    : (isEn ? "Notifications are disabled" : "Đang tắt thông báo")}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isNotificationEnabled}
-              onClick={handleToggleNotification}
-              className={`w-12 h-6.5 p-0.5 rounded-full flex items-center transition-colors duration-200 ease-in-out cursor-pointer focus:outline-hidden shrink-0 ${
-                isNotificationEnabled ? "bg-[#00A86B]" : "bg-slate-300 dark:bg-slate-700"
-              }`}
-              title="Bật/tắt Thông báo"
-            >
-              <div
-                className={`size-5.5 bg-white rounded-full shadow-md transform transition duration-200 ease-in-out ${
-                  isNotificationEnabled ? "translate-x-5.5" : "translate-x-0.5"
-                }`}
-              />
-            </button>
-          </div>
-        </div>
 
         {/* 2. KHỐI CÁC TRƯỜNG LIÊN HỆ & HỖ TRỢ BAN THƯ KÝ */}
         <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-3">
@@ -345,29 +271,6 @@ function AssociationSettingsScreen() {
               <ChevronRight className="size-4 text-amber-600 shrink-0" />
             </button>
           </div>
-
-          {/* Nếu có quyền quản trị */}
-          {hasAdminPrivilege && (
-            <Link
-              to="/association/permissions"
-              className="p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 hover:bg-indigo-100/80 transition flex items-center justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8.5 rounded-xl bg-indigo-600 text-white grid place-items-center shrink-0 shadow-xs">
-                  <ShieldCheck className="size-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200 block truncate">
-                    Phân quyền Ban Quản Trị &amp; Ban Chuyên Môn
-                  </span>
-                  <span className="text-[10px] text-indigo-700 dark:text-indigo-400 block truncate">
-                    Quản lý ma trận vai trò RBAC hệ thống
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="size-4 text-indigo-600 shrink-0" />
-            </Link>
-          )}
         </div>
 
         {/* 3. KHỐI CÀI ĐẶT & BẢO MẬT TÀI KHOẢN (ĐỔI TÊN ĐĂNG NHẬP, SĐT & MẬT KHẨU) */}
