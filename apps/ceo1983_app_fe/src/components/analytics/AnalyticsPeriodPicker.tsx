@@ -134,9 +134,62 @@ export function AnalyticsPeriodPicker({
   }, [currentYear]);
 
   return (
-    <div ref={containerRef} className={`relative inline-flex items-center gap-2 flex-wrap select-none ${className}`}>
+    <div ref={containerRef} className={`relative inline-flex items-center gap-1.5 flex-nowrap select-none ${className}`}>
+      {/* ── BỘ CHỌN LỊCH VÀ ĐIỀU HƯỚNG KỲ LỊCH SỬ (PREV / DROPDOWN / NEXT / RESET) ── */}
+      <div className="inline-flex items-center gap-0.5 bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs shrink-0">
+        {/* Nút lùi kỳ trước */}
+        <button
+          type="button"
+          onClick={handlePrev}
+          className="size-7 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          title="Xem kỳ trước đó (Tháng cũ / Quý cũ / Năm cũ)"
+        >
+          <ChevronLeft className="size-3.5" />
+        </button>
+
+        {/* Nút mở hộp chọn lịch */}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`h-7 px-2 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+            isHistorical
+              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60"
+              : "bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+          }`}
+        >
+          <CalendarIcon className={`size-3 ${isHistorical ? "text-amber-600" : "text-slate-500"}`} />
+          <span className="whitespace-nowrap">{periodLabel}</span>
+          {isHistorical && (
+            <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" title="Đang xem dữ liệu lịch sử" />
+          )}
+        </button>
+
+        {/* Nút tiến kỳ sau */}
+        <button
+          type="button"
+          onClick={handleNext}
+          className="size-7 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          title="Xem kỳ tiếp theo"
+        >
+          <ChevronRight className="size-3.5" />
+        </button>
+
+        {/* Nút quay về Hiện tại (khi đang xem kỳ cũ) */}
+        {isHistorical && (
+          <button
+            type="button"
+            onClick={handleResetToCurrent}
+            className="h-7 px-1.5 rounded-lg text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-0.5 cursor-pointer"
+            title="Quay về kỳ hiện tại"
+          >
+            <RotateCcw className="size-2.5" />
+            <span className="hidden sm:inline">Kỳ này</span>
+          </button>
+        )}
+      </div>
+
       {/* ── 3 CHẾ ĐỘ XEM CHUẨN: THÁNG / QUÝ / NĂM ── */}
-      <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-2xs">
+      <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-2xs shrink-0">
         {[
           { id: "month" as const, label: "Tháng", desc: "Xem từng tháng" },
           { id: "quarter" as const, label: "Quý", desc: "Xem 4 quý" },
@@ -148,7 +201,7 @@ export function AnalyticsPeriodPicker({
               key={tab.id}
               type="button"
               onClick={() => onGranularityChange(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                 isActive
                   ? "text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -160,59 +213,6 @@ export function AnalyticsPeriodPicker({
             </button>
           );
         })}
-      </div>
-
-      {/* ── BỘ CHỌN LỊCH VÀ ĐIỀU HƯỚNG KỲ LỊCH SỬ (PREV / DROPDOWN / NEXT / RESET) ── */}
-      <div className="inline-flex items-center gap-1 bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-        {/* Nút lùi kỳ trước */}
-        <button
-          type="button"
-          onClick={handlePrev}
-          className="size-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-          title="Xem kỳ trước đó (Tháng cũ / Quý cũ / Năm cũ)"
-        >
-          <ChevronLeft className="size-4" />
-        </button>
-
-        {/* Nút mở hộp chọn lịch */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-2 transition cursor-pointer border ${
-            isHistorical
-              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60"
-              : "bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
-          }`}
-        >
-          <CalendarIcon className={`size-3.5 ${isHistorical ? "text-amber-600" : "text-slate-500"}`} />
-          <span>{periodLabel}</span>
-          {isHistorical && (
-            <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" title="Đang xem dữ liệu lịch sử" />
-          )}
-        </button>
-
-        {/* Nút tiến kỳ sau */}
-        <button
-          type="button"
-          onClick={handleNext}
-          className="size-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-          title="Xem kỳ tiếp theo"
-        >
-          <ChevronRight className="size-4" />
-        </button>
-
-        {/* Nút quay về Hiện tại (khi đang xem kỳ cũ) */}
-        {isHistorical && (
-          <button
-            type="button"
-            onClick={handleResetToCurrent}
-            className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-1 cursor-pointer"
-            title="Quay về kỳ hiện tại"
-          >
-            <RotateCcw className="size-3" />
-            <span className="hidden sm:inline">Kỳ này</span>
-          </button>
-        )}
       </div>
 
       {/* ── DROPDOWN POPOVER CHỌN THÁNG CŨ, QUÝ CŨ, NĂM CŨ ── */}

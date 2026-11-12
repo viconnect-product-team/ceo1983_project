@@ -1059,23 +1059,18 @@ export function AssociationAnalyticsScreen() {
   };
 
   return (
-    <div className="vba-animate pb-40 relative min-h-screen bg-white dark:bg-[#0B1120] text-slate-900 dark:text-white font-sans">
+    <div className="vba-animate pb-6 relative min-h-screen bg-white dark:bg-[#0B1120] text-slate-900 dark:text-white font-sans">
       <MemberHeader
         title="Thống Kê Hiệp Hội"
         back
       />
 
       {/* ── BỘ LỌC CHU KỲ THÁNG / QUÝ / NĂM VÀ CHỌN LỊCH THỐNG KÊ LỊCH SỬ ── */}
-      <div className="px-3 sm:px-4 pt-3 flex flex-col gap-2 border-b border-slate-100 dark:border-white/5 pb-2.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <CalendarDays className="size-3.5 text-[#003B95] dark:text-blue-400" />
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-              Kỳ thống kê:
-            </span>
-            <span className="text-[11px] font-black text-[#003B95] dark:text-amber-400">
-              {selectedPeriodLabel}
-            </span>
+      <div className="px-3 sm:px-4 pt-2.5 flex flex-col gap-1.5 border-b border-slate-100 dark:border-white/5 pb-2">
+        <div className="flex items-center justify-between gap-1.5 w-full flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-1 shrink-0 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
+            <CalendarDays className="size-3.5 text-[#003B95] dark:text-blue-400 shrink-0" />
+            <span className="whitespace-nowrap">Kỳ:</span>
           </div>
 
           <AnalyticsPeriodPicker
@@ -1089,6 +1084,7 @@ export function AssociationAnalyticsScreen() {
             onQuarterChange={setSelectedQuarter}
             isCompact
             themeColor={colorTheme.primaryColor}
+            className="flex-1 justify-end flex-nowrap"
           />
         </div>
 
@@ -1456,31 +1452,31 @@ export function AssociationAnalyticsScreen() {
             )}
           </div>
 
-          {/* Màu chú thích dưới biểu đồ: Tất cả đều là biểu tượng khối Cột */}
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-            <div className="flex items-center gap-1">
-              <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
-              <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col1Label}</span>
+          {/* Thanh chú thích thu gọn chuẩn mobile (không bị tràn hay đẩy chân card) */}
+          <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] overflow-x-auto no-scrollbar py-0.5 select-none">
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+              <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col1Color }} />
+              <span className="text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">{activeChartMeta.col1Label.replace("Lượt ", "")}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
-              <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col2Label}</span>
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+              <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col2Color }} />
+              <span className="text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">{activeChartMeta.col2Label.replace("Lượt ", "")}</span>
             </div>
             {activeChartMeta.col3Label && (
-              <div className="flex items-center gap-1">
-                <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
-                <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col3Label}</span>
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+                <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col3Color }} />
+                <span className="text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">{activeChartMeta.col3Label.replace("Lượt ", "")}</span>
               </div>
             )}
             {activeChartMeta.col4Label && (
-              <div className="flex items-center gap-1">
-                <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
-                <span className="text-slate-700 dark:text-slate-300 font-medium">{activeChartMeta.col4Label}</span>
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+                <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.col4Color }} />
+                <span className="text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">{activeChartMeta.col4Label.replace("Lượt ", "")}</span>
               </div>
             )}
-            <div className="flex items-center gap-1">
-              <span className="size-2.5 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
-              <span className="text-slate-700 dark:text-slate-300 font-bold">{activeChartMeta.timelineLabel}</span>
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 dark:bg-slate-800/60 shrink-0 border border-slate-200/50 dark:border-slate-700/50">
+              <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: activeChartMeta.timelineColor }} />
+              <span className="text-slate-700 dark:text-slate-300 font-bold whitespace-nowrap">{activeChartMeta.timelineLabel.replace(" hội viên", "")}</span>
             </div>
           </div>
         </div>

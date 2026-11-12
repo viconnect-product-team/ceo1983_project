@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Check,
@@ -254,7 +255,11 @@ export function CustomHomeShortcutsModal({
 
   if (!isOpen) return null;
 
-  const handleToggle = (id: string) => {
+  const handleToggle = (id: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (currentSelected.includes(id)) {
       if (currentSelected.length <= 1) {
         toast.warning("Bạn cần chọn tối thiểu 1 tính năng");
@@ -263,18 +268,26 @@ export function CustomHomeShortcutsModal({
       setCurrentSelected((prev) => prev.filter((item) => item !== id));
     } else {
       if (currentSelected.length >= 4) {
-        toast.warning("Chỉ được chọn tối đa 4 tính năng hiển thị chính");
+        toast.warning("Chỉ được chọn tối đa 4 tính năng hiển thị chính. Hãy bỏ chọn 1 tính năng trước khi thêm.");
         return;
       }
       setCurrentSelected((prev) => [...prev, id]);
     }
   };
 
-  const handleReset = () => {
+  const handleReset = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCurrentSelected(DEFAULT_SHORTCUT_IDS);
   };
 
-  const handleSave = () => {
+  const handleSave = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (currentSelected.length !== 4) {
       toast.warning("Vui lòng chọn đúng 4 tính năng bạn thường xuyên sử dụng nhất");
       return;
@@ -284,9 +297,22 @@ export function CustomHomeShortcutsModal({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-red-50/60 via-amber-50/40 to-blue-50/50 dark:from-slate-800 dark:to-slate-800">
           <div className="flex items-center gap-2.5">
@@ -304,8 +330,11 @@ export function CustomHomeShortcutsModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="size-5" />
           </button>
@@ -320,7 +349,7 @@ export function CustomHomeShortcutsModal({
             return (
               <div
                 key={item.id}
-                onClick={() => handleToggle(item.id)}
+                onClick={(e) => handleToggle(item.id, e)}
                 className={`pt-2 first:pt-0 flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all ${
                   isSelected
                     ? "bg-amber-500/10 border-2 border-amber-500 dark:bg-amber-950/20"
@@ -377,7 +406,7 @@ export function CustomHomeShortcutsModal({
           <button
             type="button"
             onClick={handleReset}
-            className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white inline-flex items-center gap-1.5 transition"
+            className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white inline-flex items-center gap-1.5 transition cursor-pointer"
           >
             <RotateCcw className="size-3.5" />
             <span>Mặc định</span>
@@ -386,15 +415,18 @@ export function CustomHomeShortcutsModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-[#1F3864] hover:bg-[#152747] text-white shadow-md active:scale-95 transition inline-flex items-center gap-1.5 border border-amber-400/30"
+              className="px-5 py-2 rounded-xl text-xs font-bold bg-[#003B95] hover:bg-[#002b6d] text-white shadow-md active:scale-95 transition inline-flex items-center gap-1.5 border border-amber-400/30 cursor-pointer"
             >
               <Check className="size-4" />
               <span>Áp dụng ({currentSelected.length}/4)</span>
@@ -402,6 +434,7 @@ export function CustomHomeShortcutsModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

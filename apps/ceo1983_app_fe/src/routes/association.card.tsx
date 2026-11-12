@@ -783,24 +783,24 @@ function CardScreen() {
   };
 
   return (
-    <div className="vba-animate min-h-full pb-36">
+    <div className="vba-animate min-h-full pb-6">
       <MemberHeader title={t("m.card.headerTitle")} back />
 
       <div className="px-4 pt-4">
         {/* Visit Card CEO 1983 (100% thay thế hoàn toàn thẻ cứng theo yêu cầu) */}
         <div id="tour-card-visit" className="mb-4">
           <Ceo1983BusinessCardVisit
-            name={d.name || "NGUYỄN VĂN A"}
+            name={cardPrivacy.showName !== false ? (d.name || "NGUYỄN VĂN A") : ""}
             title={customProfile?.title || (effectiveMember as any)?.position || (effectiveMember as any)?.title || "Director"}
-            phone={customProfile?.phone || effectiveMember?.phone || "036xxxxxxx"}
-            email={customProfile?.email || effectiveMember?.email || "username@gmail.com"}
-            company={d.company || "CÂU LẠC BỘ CEO1983"}
+            phone={cardPrivacy.showPhone !== false ? (customProfile?.phone || effectiveMember?.phone || "036xxxxxxx") : ""}
+            email={cardPrivacy.showEmail !== false ? (customProfile?.email || effectiveMember?.email || "username@gmail.com") : ""}
+            company={cardPrivacy.showCompany !== false ? (d.company || "CÂU LẠC BỘ CEO1983") : ""}
             companyLogoUrl={companyLogo}
             website="https://ceo1983club.com"
             clubEmail="info@ceo1983club.com"
             cardCode={currentMemberCode}
             qrValue={`${origin}/card/${currentMemberCode}`}
-            avatarUrl={d.photo}
+            avatarUrl={cardPrivacy.showPhoto !== false ? d.photo : null}
             showActions={false}
           />
         </div>
@@ -926,36 +926,28 @@ function CardScreen() {
             </div>
 
             {/* Hàng SĐT có toggle ẩn/hiện */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-semibold text-slate-500 flex items-center gap-1">
-                <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> SĐT / Hotline:
-              </span>
-              {cardPrivacy.showPhone ? (
+            {cardPrivacy.showPhone !== false && (
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Phone className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> SĐT / Hotline:
+                </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {customProfile?.phone || effectiveMember?.phone || (user as any)?.phone || "Chưa cập nhật"}
                 </span>
-              ) : (
-                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic flex items-center gap-1">
-                  <Lock className="h-3 w-3 text-amber-500" /> Ẩn theo cài đặt riêng tư
-                </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Hàng Email có toggle ẩn/hiện */}
-            <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-semibold text-slate-500 flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Email:
-              </span>
-              {cardPrivacy.showEmail ? (
+            {cardPrivacy.showEmail !== false && (
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+                <span className="font-semibold text-slate-500 flex items-center gap-1">
+                  <Mail className="h-3.5 w-3.5 text-[#003B95] dark:text-blue-400" /> Email:
+                </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {customProfile?.email || effectiveMember?.email || (user as any)?.email || "Chưa cập nhật"}
                 </span>
-              ) : (
-                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic flex items-center gap-1">
-                  <Lock className="h-3 w-3 text-amber-500" /> Ẩn theo cài đặt riêng tư
-                </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {(customProfile?.industry || effectiveMember?.industry) && (
               <div className="flex items-center justify-between py-1 border-b border-slate-50 dark:border-slate-850">
@@ -1258,6 +1250,8 @@ function CardScreen() {
           onSaved={() => {
             setEditOpen(false);
             try {
+              const freshPriv = JSON.parse(localStorage.getItem("vba_member_privacy_settings") || "null");
+              if (freshPriv) setCardPrivacy(freshPriv);
               const fresh = JSON.parse(localStorage.getItem("vba_custom_profile") || "null");
               setCustomProfile(fresh);
               const freshAvatar = localStorage.getItem("vba_member_avatar_photo");
@@ -1568,7 +1562,18 @@ function EditCardModal({
         companyLogo: finalLogo || undefined,
       };
 
+      const updatedPrivacy = {
+        showPhone: privacyPhone,
+        showEmail: privacyEmail,
+        showAddress: privacyAddress,
+        showProducts: privacyProducts,
+        showName,
+        showCompany,
+        showPhoto,
+      };
+
       try {
+        localStorage.setItem("vba_member_privacy_settings", JSON.stringify(updatedPrivacy));
         localStorage.setItem("vba_custom_profile", JSON.stringify(updatedProfile));
         if (finalPhoto) localStorage.setItem("vba_member_avatar_photo", finalPhoto);
         if (finalLogo) localStorage.setItem("vba_member_company_logo", finalLogo);
@@ -1578,7 +1583,7 @@ function EditCardModal({
       window.dispatchEvent(new CustomEvent("vba_profile_updated", { detail: updatedProfile }));
       window.dispatchEvent(new CustomEvent("vba_member_avatar_updated", { detail: finalPhoto }));
       window.dispatchEvent(new CustomEvent("vba_member_company_logo_updated", { detail: finalLogo }));
-      window.dispatchEvent(new Event("privacy-updated"));
+      window.dispatchEvent(new CustomEvent("privacy-updated", { detail: updatedPrivacy }));
       window.dispatchEvent(new Event("contract-updated"));
 
       toast.success("Đã cập nhật hồ sơ và đồng bộ lên máy chủ thành công!");

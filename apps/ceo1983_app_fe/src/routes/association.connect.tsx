@@ -101,67 +101,16 @@ export function AssociationConnectScreen() {
   }, []);
 
   // Deal Form State
-  const [dealValueInput, setDealValueInput] = useState("500000000");
-  const [dealTitleInput, setDealTitleInput] = useState("Hợp tác cung ứng nội khối CEO 1983");
-  const [dealNotesInput, setDealNotesInput] = useState("Hợp đồng nguyên tắc đã được hai bên ký kết sau buổi gặp 1-1");
+  const [dealValueInput, setDealValueInput] = useState("");
+  const [dealTitleInput, setDealTitleInput] = useState("");
+  const [dealNotesInput, setDealNotesInput] = useState("");
   const [savingDeal, setSavingDeal] = useState(false);
 
   const fetchMeetings = async () => {
     setLoading(true);
     try {
       const res = await fetchNestApi<any>("/meetings/connection-appointments").catch(() => null);
-      let list = Array.isArray(res) ? res : res?.items || [];
-      if (list.length === 0) {
-        // Fallback default sample meetings for testing
-        list = [
-          {
-            id: "meet-01",
-            title: "Trao đổi hợp tác phân phối độc quyền miền Bắc",
-            partnerName: "Đặng Thị Mai",
-            partnerCompany: "Mai Linh Logistics",
-            partnerPhone: "0912345678",
-            partnerCode: "CEO-83-012",
-            date: "2026-10-25",
-            time: "10:00",
-            venueType: "online",
-            venue: "Phòng họp trực tuyến CEO 1983",
-            onlineUrl: "https://meet.jit.si/CEO1983_B2B_MEET_01",
-            status: "confirmed",
-            notes: "Chuẩn bị profile năng lực và bảng báo giá chiết khấu đại lý",
-            isUserHost: true,
-          },
-          {
-            id: "meet-02",
-            title: "Gặp gỡ Cafe sáng & Kết nối đầu tư chuỗi F&B",
-            partnerName: "Lê Hoàng Long",
-            partnerCompany: "Long Thành Invest",
-            partnerPhone: "0987654321",
-            partnerCode: "CEO-83-045",
-            date: "2026-10-26",
-            time: "08:30",
-            venueType: "offline",
-            venue: "Starbucks Coffee - Tòa Keangnam Landmark 72, Nam Từ Liêm, Hà Nội",
-            status: "confirmed",
-            notes: "Bàn về kế hoạch mở rộng chuỗi nhà hàng quý 4",
-            isUserHost: false,
-          },
-          {
-            id: "meet-03",
-            title: "Mời thẩm định giải pháp ERP & Chuyển đổi số",
-            partnerName: "Phạm Quốc Tuấn",
-            partnerCompany: "Tuấn Phát Tech",
-            partnerPhone: "0909090909",
-            partnerCode: "CEO-83-088",
-            date: "2026-10-28",
-            time: "14:00",
-            venueType: "online",
-            onlineUrl: "https://meet.jit.si/CEO1983_B2B_MEET_03",
-            status: "pending",
-            notes: "Giới thiệu giải pháp quản trị kho vận thông minh",
-            isUserInvitee: true,
-          },
-        ];
-      }
+      const list = Array.isArray(res) ? res : res?.items || [];
       setMeetings(list);
     } catch {
       /* ignore */
@@ -345,12 +294,12 @@ export function AssociationConnectScreen() {
   }, [activeTab, myMeetingsList, sentMeetingsList, cancelledMeetingsList, searchQuery]);
 
   return (
-    <div className="vba-animate pb-24 min-h-screen bg-stone-50 dark:bg-slate-950 font-sans">
+    <div className="vba-animate pb-6 min-h-screen bg-stone-50 dark:bg-slate-950 font-sans">
       <MemberHeader title="Gặp Gỡ &amp; Kết Nối B2B" back />
 
       {/* Top Banner & Quick KPI */}
       <div className="px-4 pt-3 space-y-3 max-w-2xl mx-auto">
-        <div className="p-4 rounded-3xl bg-gradient-to-r from-[#1F3864] via-[#152747] to-[#0A1224] text-white shadow-xl border border-amber-400/40 flex items-center justify-between">
+        <div className="p-4 rounded-3xl bg-gradient-to-r from-[#003B95] via-[#002766] to-[#001433] text-white shadow-xl border border-amber-400/40 flex items-center justify-between">
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10.5px] font-bold border border-amber-400/30 mb-1">
               <Sparkles className="size-3.5 text-amber-400" />
@@ -365,7 +314,7 @@ export function AssociationConnectScreen() {
           <button
             type="button"
             onClick={() => setCreateModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-xs font-black inline-flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer shrink-0"
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-black inline-flex items-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer shrink-0"
           >
             <Plus className="size-4" />
             <span>Hẹn gặp 1-1</span>
@@ -376,7 +325,7 @@ export function AssociationConnectScreen() {
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase">Cuộc gặp của tôi</span>
-            <div className="text-base font-black text-[#1F3864] dark:text-blue-400 mt-0.5">
+            <div className="text-base font-black text-[#003B95] dark:text-blue-400 mt-0.5">
               {myMeetingsList.length}
             </div>
           </div>
@@ -401,7 +350,7 @@ export function AssociationConnectScreen() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo tên đối tác, doanh nghiệp, nội dung gặp..."
-            className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 outline-none focus:border-[#1F3864] text-slate-800 dark:text-slate-100 shadow-2xs"
+            className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 outline-none focus:border-[#003B95] text-slate-800 dark:text-slate-100 shadow-2xs"
           />
         </div>
 
@@ -412,7 +361,7 @@ export function AssociationConnectScreen() {
             onClick={() => setActiveTab("my_meetings")}
             className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "my_meetings"
-                ? "bg-[#1F3864] text-white shadow-md shadow-blue-900/20"
+                ? "bg-[#003B95] text-white shadow-md shadow-blue-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -425,7 +374,7 @@ export function AssociationConnectScreen() {
             onClick={() => setActiveTab("sent_meetings")}
             className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "sent_meetings"
-                ? "bg-[#B8860B] text-white shadow-md shadow-amber-900/20"
+                ? "bg-amber-500 text-white shadow-md shadow-amber-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -451,7 +400,7 @@ export function AssociationConnectScreen() {
         <div className="space-y-3 pt-1">
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-              <Loader2 className="size-6 animate-spin text-[#1F3864]" />
+              <Loader2 className="size-6 animate-spin text-[#003B95]" />
               <span className="text-xs">Đang tải danh sách gặp gỡ...</span>
             </div>
           ) : filteredCurrentList.length === 0 ? (
@@ -461,7 +410,7 @@ export function AssociationConnectScreen() {
               <button
                 type="button"
                 onClick={() => setCreateModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[#1F3864] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs"
+                className="px-4 py-2 rounded-xl bg-[#003B95] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs"
               >
                 <Plus className="size-3.5" />
                 <span>Thiết lập cuộc hẹn đầu tiên</span>
@@ -476,7 +425,7 @@ export function AssociationConnectScreen() {
                 {/* Header: Partner Info & Status */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="size-12 rounded-2xl bg-[#1F3864] text-amber-300 font-black flex items-center justify-center text-sm shadow-xs shrink-0 ring-1 ring-amber-400/40">
+                    <div className="size-12 rounded-2xl bg-[#003B95] text-amber-300 font-black flex items-center justify-center text-sm shadow-xs shrink-0 ring-1 ring-amber-400/40">
                       {m.partnerAvatar ? (
                         <img
                           src={resolveMediaUrl(m.partnerAvatar) || m.partnerAvatar}
@@ -502,7 +451,7 @@ export function AssociationConnectScreen() {
                       m.status === "completed"
                         ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300"
                         : m.status === "confirmed"
-                        ? "bg-blue-50 text-[#1F3864] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200"
+                        ? "bg-blue-50 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200"
                         : "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300"
                     }`}
                   >
@@ -517,7 +466,7 @@ export function AssociationConnectScreen() {
                 {/* Meeting Title & Notes */}
                 <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Handshake className="size-3.5 text-[#B8860B]" />
+                    <Handshake className="size-3.5 text-amber-500" />
                     <span>{m.title}</span>
                   </div>
                   {m.notes && <p className="text-[11px] text-slate-500 dark:text-slate-400">{m.notes}</p>}
@@ -525,7 +474,7 @@ export function AssociationConnectScreen() {
                   {/* Time & Venue */}
                   <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-600 dark:text-slate-300 font-semibold border-t border-slate-200/60 dark:border-slate-700">
                     <span className="flex items-center gap-1">
-                      <Calendar className="size-3 text-[#1F3864] dark:text-blue-400" />
+                      <Calendar className="size-3 text-[#003B95] dark:text-blue-400" />
                       <span>{m.date}</span>
                     </span>
                     <span className="flex items-center gap-1">
@@ -556,7 +505,7 @@ export function AssociationConnectScreen() {
                       <button
                         type="button"
                         onClick={() => setVideoCallMeeting(m)}
-                        className="py-2 px-3 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                        className="py-2 px-3 rounded-xl bg-[#003B95] hover:bg-[#002f77] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
                       >
                         <Video className="size-3.5 text-amber-300" />
                         <span>Vào phòng họp</span>
@@ -591,7 +540,7 @@ export function AssociationConnectScreen() {
                     <button
                       type="button"
                       onClick={() => setDealModalMeeting(m)}
-                      className="py-2 px-3 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white text-xs font-bold inline-flex items-center gap-1 shadow-xs transition cursor-pointer ml-auto"
+                      className="py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold inline-flex items-center gap-1 shadow-xs transition cursor-pointer"
                     >
                       <DollarSign className="size-3.5" />
                       <span>Ghi nhận Deal</span>
@@ -605,7 +554,7 @@ export function AssociationConnectScreen() {
                     <button
                       type="button"
                       onClick={() => handleRespond(m.id, "accept")}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[#1F3864] hover:bg-[#152747] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2 px-3 rounded-xl bg-[#003B95] hover:bg-[#002f77] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle2 className="size-3.5 text-emerald-400" />
                       <span>Đồng ý lịch hẹn</span>
@@ -688,7 +637,7 @@ export function AssociationConnectScreen() {
                   value={formPartnerName}
                   onChange={(e) => setFormPartnerName(e.target.value)}
                   placeholder="Ví dụ: Nguyễn Văn Tuấn"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#1F3864]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#003B95]"
                 />
               </div>
 
@@ -701,7 +650,7 @@ export function AssociationConnectScreen() {
                     value={formPartnerCompany}
                     onChange={(e) => setFormPartnerCompany(e.target.value)}
                     placeholder="Tên công ty đối tác"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#1F3864]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#003B95]"
                   />
                 </div>
                 <div>
@@ -712,7 +661,7 @@ export function AssociationConnectScreen() {
                     value={formPartnerPhone}
                     onChange={(e) => setFormPartnerPhone(e.target.value)}
                     placeholder="0901..."
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#1F3864]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-[#003B95]"
                   />
                 </div>
               </div>
@@ -754,7 +703,7 @@ export function AssociationConnectScreen() {
                     onClick={() => setFormVenueType("online")}
                     className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                       formVenueType === "online"
-                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                        ? "bg-[#003B95] text-white border-[#003B95]"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-transparent"
                     }`}
                   >
@@ -766,7 +715,7 @@ export function AssociationConnectScreen() {
                     onClick={() => setFormVenueType("offline")}
                     className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                       formVenueType === "offline"
-                        ? "bg-[#1F3864] text-white border-[#1F3864]"
+                        ? "bg-[#003B95] text-white border-[#003B95]"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-transparent"
                     }`}
                   >
@@ -815,7 +764,7 @@ export function AssociationConnectScreen() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#B8860B] hover:bg-[#9a7009] text-white font-bold inline-flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold inline-flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
                 >
                   {submitting && <Loader2 className="size-3.5 animate-spin" />}
                   <span>Xác nhận đặt lịch hẹn</span>
@@ -867,12 +816,13 @@ export function AssociationConnectScreen() {
                 <input
                   required
                   type="number"
+                  placeholder="500000000"
                   value={dealValueInput}
                   onChange={(e) => setDealValueInput(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold text-base outline-none focus:border-emerald-500"
                 />
                 <span className="text-[10.5px] text-emerald-600 font-bold mt-0.5 block">
-                  Quy đổi: {(Number(dealValueInput) / 1000000).toLocaleString()} Triệu VNĐ
+                  Quy đổi: {dealValueInput && Number(dealValueInput) > 0 ? (Number(dealValueInput) / 1000000).toLocaleString() + " Triệu VNĐ" : "0 VNĐ"}
                 </span>
               </div>
 
@@ -882,6 +832,7 @@ export function AssociationConnectScreen() {
                 </label>
                 <input
                   required
+                  placeholder="Ví dụ: Hợp tác cung ứng nội khối CEO 1983"
                   value={dealTitleInput}
                   onChange={(e) => setDealTitleInput(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
@@ -894,6 +845,7 @@ export function AssociationConnectScreen() {
                 </label>
                 <textarea
                   rows={3}
+                  placeholder="Ví dụ: Hợp đồng nguyên tắc đã được hai bên ký kết sau buổi gặp 1-1"
                   value={dealNotesInput}
                   onChange={(e) => setDealNotesInput(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
@@ -928,7 +880,7 @@ export function AssociationConnectScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-2 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
           <div className="w-full max-w-4xl h-[90vh] bg-slate-950 rounded-3xl overflow-hidden border-2 border-amber-400 flex flex-col shadow-2xl">
             {/* Call Header */}
-            <div className="px-4 py-3 bg-[#1F3864] text-white flex items-center justify-between border-b border-amber-400/40">
+            <div className="px-4 py-3 bg-[#003B95] text-white flex items-center justify-between border-b border-amber-400/40">
               <div className="flex items-center gap-2">
                 <span className="size-3 rounded-full bg-emerald-500 animate-ping" />
                 <h3 className="text-sm font-black truncate">
