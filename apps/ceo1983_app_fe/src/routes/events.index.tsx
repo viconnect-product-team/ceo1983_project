@@ -34,7 +34,7 @@ import { TruncatedText } from "@/components/dashboard/TruncatedText";
 import { useTableControls } from "@/hooks/use-table-controls";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { type EventItem } from "@/lib/events.functions";
-import { fetchNestApi } from "@/lib/api-client";
+import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import {
   getEventView,
   setEventView,
@@ -1116,7 +1116,7 @@ function EventCard({
           const fallback = typeFallbacks[e.type] || typeFallbacks.forum;
           const raw =
             (e as any).imageUrl || (e as any).image || (e as any).bannerUrl || (e as any).coverUrl;
-          const resolved = raw || fallback;
+          const resolved = resolveMediaUrl(raw) || raw || fallback;
           return (
             <img
               src={resolved}
@@ -1254,7 +1254,7 @@ function FeaturedCard({ event: e, onOpen }: { event: EventItem; onOpen: () => vo
               (e as any).image ||
               (e as any).bannerUrl ||
               (e as any).coverUrl;
-            const resolved = raw || fallback;
+            const resolved = resolveMediaUrl(raw) || raw || fallback;
             return (
               <img
                 src={resolved}

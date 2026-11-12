@@ -7,6 +7,7 @@ import {
   History,
   Check,
   CalendarDays,
+  X,
 } from "lucide-react";
 
 export type PeriodGranularity = "month" | "quarter" | "year";
@@ -215,33 +216,44 @@ export function AnalyticsPeriodPicker({
         })}
       </div>
 
-      {/* ── DROPDOWN POPOVER CHỌN THÁNG CŨ, QUÝ CŨ, NĂM CŨ ── */}
+      {/* ── MODAL DIALOG CHỌN LỊCH THỐNG KÊ (THÁNG, QUÝ, NĂM & NATIVE PICKER) ── */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 z-50 w-76 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-3.5">
-          {/* Header Popover: Chọn năm */}
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <CalendarDays className="size-4 text-[#003B95] dark:text-amber-400" />
-              <span>Chọn Lịch Thống Kê</span>
-            </span>
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-              <button
-                type="button"
-                onClick={() => onYearChange(selectedYear - 1)}
-                className="text-slate-500 hover:text-slate-900 text-xs px-1 cursor-pointer"
-              >
-                ◀
-              </button>
-              <span className="text-xs font-black text-slate-800 dark:text-slate-200">{selectedYear}</span>
-              <button
-                type="button"
-                onClick={() => onYearChange(selectedYear + 1)}
-                className="text-slate-500 hover:text-slate-900 text-xs px-1 cursor-pointer"
-              >
-                ▶
-              </button>
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            {/* Header Popover: Chọn năm */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+              <span className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5 uppercase tracking-wide">
+                <CalendarDays className="size-4.5 text-[#003B95] dark:text-amber-400" />
+                <span>Chọn Lịch Thống Kê</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => onYearChange(selectedYear - 1)}
+                    className="text-slate-500 hover:text-slate-900 text-xs px-1 cursor-pointer"
+                  >
+                    ◀
+                  </button>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200">{selectedYear}</span>
+                  <button
+                    type="button"
+                    onClick={() => onYearChange(selectedYear + 1)}
+                    className="text-slate-500 hover:text-slate-900 text-xs px-1 cursor-pointer"
+                  >
+                    ▶
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="size-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  title="Đóng hộp thoại"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
             </div>
-          </div>
 
           {/* Quick Select Năm */}
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
@@ -381,28 +393,51 @@ export function AnalyticsPeriodPicker({
             </div>
           )}
 
-          {/* Footer: Phím tắt nhanh */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
-            <button
-              type="button"
-              onClick={() => {
-                handleResetToCurrent();
-                setIsOpen(false);
-              }}
-              className="text-[#003B95] dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
-            >
-              <RotateCcw className="size-3" />
-              <span>Về kỳ hiện tại</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200"
-            >
-              Đóng
-            </button>
+          {/* Native Month Input & Nút thao tác nhanh */}
+          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                Chọn tháng/năm trực tiếp:
+              </span>
+              <input
+                type="month"
+                value={`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val) {
+                    const [y, m] = val.split("-").map(Number);
+                    if (y) onYearChange(y);
+                    if (m) onMonthChange(m);
+                    setIsOpen(false);
+                  }
+                }}
+                className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 dark:text-white cursor-pointer [color-scheme:light_dark]"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  handleResetToCurrent();
+                  setIsOpen(false);
+                }}
+                className="text-[#003B95] dark:text-amber-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <RotateCcw className="size-3" />
+                <span>Về kỳ hiện tại</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold cursor-pointer hover:bg-slate-200"
+              >
+                Xác nhận
+              </button>
+            </div>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

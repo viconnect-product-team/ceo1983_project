@@ -108,7 +108,7 @@ function AssociationSettingsScreen() {
   return (
     <div className="vba-animate pb-28 min-h-screen bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white">
       <MemberHeader
-        title={isEn ? "System Settings & Security" : "Cài đặt hệ thống & Bảo mật"}
+        title={isEn ? "Settings" : "Cài đặt"}
         subtitle="Hiệp hội Doanh nhân CEO 1983"
         back={true}
         onBack={required === "true" ? handleBackToLogin : undefined}
@@ -152,7 +152,7 @@ function AssociationSettingsScreen() {
             </div>
             <div className="min-w-0">
               <span className="text-xs font-bold text-slate-900 dark:text-white block truncate group-hover:text-orange-600 dark:group-hover:text-amber-400 transition">
-                {isEn ? "System Configuration (Themes & AI)" : "Cấu hình hệ thống (Giao diện & AI)"}
+                {isEn ? "System Settings (Themes & AI)" : "Cài đặt (Giao diện & AI)"}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 block line-clamp-1">
                 {isEn ? "Customize brand color themes, Voice AI, and language" : "Chọn màu giao diện, Bật tắt AI, Chọn ngôn ngữ"}

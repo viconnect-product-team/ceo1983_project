@@ -3286,3 +3286,11 @@ button.bg-\[\#003b95\] *:not([class*="bg-"]) {
 .font-great-vibes { font-family: 'Great Vibes', cursive; }
 .font-vietnam { font-family: 'Be Vietnam Pro', sans-serif; }
 
+/* Fix Footer App CEO 1983 luôn bám sát đáy thiết bị mobile */
+.vba-bottom-bar {
+  bottom: 0px !important;
+  margin-bottom: 0px !important;
+  transform: translateZ(0);
+}
+
+

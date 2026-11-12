@@ -1367,7 +1367,7 @@ function EventsScreen() {
     const ticketParam = params.get("ticket") || params.get("ticketCode") || params.get("regId");
     const qrData = params.get("qrData");
 
-    // Chỉ kích hoạt một lần khi URL có tham số đăng ký hoặc mã vé
+    // Chỉ kích hoạt khi URL có tham số đăng ký, mã vé hoặc xem chi tiết sự kiện
     if (action === "register" || action === "dang-ky" || targetEventId || ticketParam || qrData) {
       const allEvs = serverEvents || [];
       const matched = allEvs.find((ev) => ev.id === targetEventId) || allEvs[0];
@@ -1403,11 +1403,17 @@ function EventsScreen() {
           communityName: "CLB Doanh Nhân CEO 1983 (HanoiBA)",
         } as any;
 
-        handleOpenRegister(evToOpen);
-        toast.success(`Đã tự động mở Form Đăng Ký tham dự sự kiện "${evToOpen.title}" từ mã QR!`, {
-          icon: "🎟️",
-          duration: 4000,
-        });
+        // Nếu rõ ràng có action đăng ký từ QR thì mới mở Form Đăng Ký
+        if (action === "register" || action === "dang-ky") {
+          handleOpenRegister(evToOpen);
+          toast.success(`Đã tự động mở Form Đăng Ký tham dự sự kiện "${evToOpen.title}"!`, {
+            icon: "🎟️",
+            duration: 4000,
+          });
+        } else {
+          // Ngược lại (bấm Xem Chi Tiết từ Banner Trang chủ hoặc liên kết sự kiện): Mở thẳng Popup Chi Tiết Sự Kiện
+          handleSelectEvent(evToOpen);
+        }
       }
     }
   }, [serverEvents]);

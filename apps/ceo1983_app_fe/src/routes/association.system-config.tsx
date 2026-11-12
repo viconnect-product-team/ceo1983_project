@@ -161,8 +161,8 @@ export function AssociationSystemConfigScreen() {
   return (
     <div className="vba-animate pb-28 min-h-screen bg-slate-50 dark:bg-[#070D1A] text-slate-900 dark:text-white">
       <MemberHeader
-        title={isEn ? "System Configuration" : "Cấu hình hệ thống"}
-        subtitle="Màu sắc • Trợ lý AI • Ngôn ngữ • Đổi mật khẩu"
+        title={isEn ? "Settings" : "Cài đặt"}
+        subtitle="Màu sắc • Trợ lý AI • Ngôn ngữ • Cài đặt ứng dụng"
         back={true}
         onBack={() => navigate({ to: "/association/profile" })}
       />
@@ -200,17 +200,7 @@ export function AssociationSystemConfigScreen() {
           </div>
         </div>
 
-        {/* ── 1. KHỐI TRỌNG TÂM: BẢO MẬT TÀI KHOẢN & ĐỔI MẬT KHẨU ── */}
-        <div className="space-y-1.5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
-            {isEn ? "Security & Change Password" : "Bảo mật tài khoản & Đổi mật khẩu"}
-          </div>
-          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
-            <AccountSecuritySettingsForm isRequired={required === "true"} />
-          </div>
-        </div>
-
-        {/* ── 2. KHỐI TÙY CHỌN MÀU GIAO DIỆN (BRANDBOOK CEO 1983) ── */}
+        {/* ── 1. KHỐI TÙY CHỌN MÀU GIAO DIỆN (BRANDBOOK CEO 1983) ── */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-1">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -225,52 +215,6 @@ export function AssociationSystemConfigScreen() {
           </div>
           <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
             <Ceo1983ColorThemeSelector />
-          </div>
-        </div>
-
-        {/* ── 3. KHỐI CHẾ ĐỘ HIỂN THỊ (SÁNG / TỐI) ── */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-1">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {isEn ? "Appearance Mode" : "Chế độ hiển thị"}
-            </div>
-            <span className="text-[11px] font-bold text-slate-400">
-              {theme === "dark" ? "Ban đêm" : "Ban ngày"}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => {
-                setTheme("light");
-                toast.success(isEn ? "Light mode enabled" : "Đã chuyển sang giao diện sáng");
-              }}
-              style={theme === "light" ? { borderColor: brandColorTheme.primaryColor, color: brandColorTheme.primaryColor } : undefined}
-              className={`py-3 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${theme === "light"
-                  ? "bg-blue-50/80 dark:bg-slate-800 shadow-2xs font-black"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                }`}
-            >
-              <Sun className="size-4 text-amber-500" />
-              <span>{isEn ? "Light Mode" : "Giao diện sáng"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setTheme("dark");
-                toast.success(isEn ? "Dark mode enabled" : "Đã chuyển sang giao diện tối");
-              }}
-              style={theme === "dark" ? { borderColor: brandColorTheme.primaryColor, color: brandColorTheme.primaryColor } : undefined}
-              className={`py-3 px-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${theme === "dark"
-                  ? "bg-slate-800 shadow-2xs font-black"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400"
-                }`}
-            >
-              <Moon className="size-4 text-sky-400" />
-              <span>{isEn ? "Dark Mode" : "Giao diện tối"}</span>
-            </button>
           </div>
         </div>
 
@@ -512,6 +456,17 @@ export function AssociationSystemConfigScreen() {
                 <ChevronRight className="size-4 text-slate-400 shrink-0" />
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* ── 7. KHỐI TRỌNG TÂM DƯỚI FOOTER: BẢO MẬT TÀI KHOẢN & ĐỔI MẬT KHẨU ── */}
+        <div className="space-y-1.5 pt-2">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 flex items-center gap-1.5">
+            <ShieldCheck className="size-4 text-[#003B95] dark:text-amber-400" />
+            <span>{isEn ? "Security & Change Password" : "Bảo mật tài khoản & Đổi mật khẩu"}</span>
+          </div>
+          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <AccountSecuritySettingsForm isRequired={required === "true"} />
           </div>
         </div>
 
