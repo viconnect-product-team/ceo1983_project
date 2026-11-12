@@ -173,12 +173,16 @@ export const EventPoster: React.FC<EventPosterProps> = ({
   const isSoldOut = remainingSeats === 0;
   const isNearSoldOut = remainingSeats > 0 && remainingSeats <= 15;
 
-  // Check-in QR URL (dùng mã QR điểm danh thực tế của sự kiện)
+  // Check-in QR URL & Public Register URL (ưu tiên mở trang đăng ký công khai cho khách ngoài)
+  const publicRegisterUrl = useMemo(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://ceo1983.viconnect.vn";
+    return `${origin}/guest-event-register/${event?.id || ""}`;
+  }, [event?.id]);
+
   const checkinUrl = useMemo(() => {
     if (event?.checkinQr) return event.checkinQr;
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://ceo1983.viconnect.vn";
-    return `${origin}/association/checkin?eventId=${event?.id || ""}`;
-  }, [event?.checkinQr, event?.id]);
+    return publicRegisterUrl;
+  }, [event?.checkinQr, publicRegisterUrl]);
 
   const qrImageUrl = getQrUrl(checkinUrl, 300);
 
@@ -202,10 +206,12 @@ export const EventPoster: React.FC<EventPosterProps> = ({
     }
   };
 
-  // Copy link action
+  // Copy link action (Sao chép link đăng ký công khai)
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(checkinUrl);
-    toast.success("Đã sao chép đường link điểm danh sự kiện!");
+    navigator.clipboard.writeText(publicRegisterUrl);
+    toast.success("Đã sao chép liên kết đăng ký công khai sự kiện!", {
+      description: publicRegisterUrl,
+    });
   };
 
   // Print poster

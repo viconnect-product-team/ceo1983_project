@@ -34,8 +34,10 @@ export const Route = createFileRoute("/guest-event-register/$eventId")({
     let event = await fetchNestApi<any>(`/events/${params.eventId}`).catch(() => null);
     if (!event) {
       const allEvents = await fetchNestApi<any[]>("/events").catch(() => []);
-      if (Array.isArray(allEvents)) {
-        event = allEvents.find((e: any) => e.id === params.eventId || e.slug === params.eventId) || null;
+      if (Array.isArray(allEvents) && allEvents.length > 0) {
+        event =
+          allEvents.find((e: any) => e.id === params.eventId || e.slug === params.eventId) ||
+          (params.eventId === "latest" ? allEvents[0] : null);
       }
     }
     if (!event) {
@@ -206,7 +208,7 @@ function StandaloneGuestEventRegistrationPage() {
 
       try {
         localStorage.setItem(`guest_ticket_${fallbackRegId}`, JSON.stringify(clientResult));
-      } catch {}
+      } catch { }
 
       setResult(clientResult);
       toast.success(
@@ -770,11 +772,10 @@ function StandaloneGuestEventRegistrationPage() {
                   key={t.id}
                   type="button"
                   onClick={() => setTicketType(t.id)}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                    ticketType === t.id
+                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${ticketType === t.id
                       ? "border-[#003B95] bg-blue-50/60 ring-2 ring-[#003B95]/20 shadow-xs"
                       : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-xs text-slate-900">{t.label}</span>
@@ -841,11 +842,10 @@ function StandaloneGuestEventRegistrationPage() {
             <button
               type="submit"
               disabled={submitting || isFull}
-              className={`w-full py-4 px-6 rounded-2xl font-black text-sm sm:text-base text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer ${
-                isFull
+              className={`w-full py-4 px-6 rounded-2xl font-black text-sm sm:text-base text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer ${isFull
                   ? "bg-slate-400 cursor-not-allowed"
                   : "bg-[#003B95] hover:bg-[#002B70] shadow-blue-900/30"
-              }`}
+                }`}
             >
               {submitting ? (
                 <>

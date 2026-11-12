@@ -1529,7 +1529,6 @@ function Home() {
         <div className="w-full">
           <div className="mb-3 flex items-center justify-between">
             <Link to="/association/events" className="flex items-center gap-1.5 group cursor-pointer">
-              <Calendar className="size-4 text-orange-500 shrink-0" />
               <h2 className="text-[14px] font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">
                 {isEn ? "Upcoming Events" : "Sự kiện sắp tới"}
               </h2>
@@ -1737,16 +1736,13 @@ function Home() {
             className="w-full p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-[0px_4px_16px_0px_rgba(234,88,12,0.08)] border border-slate-200 dark:border-slate-800 flex flex-col gap-3 group hover:border-orange-400 transition"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Package className="size-4 text-orange-500 shrink-0" />
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                    Sàn Thương Mại Nội Bộ
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Sản phẩm &amp; dịch vụ ưu đãi độc quyền hội viên
-                  </p>
-                </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+                  Sàn Thương Mại Nội Bộ
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Sản phẩm &amp; dịch vụ ưu đãi độc quyền hội viên
+                </p>
               </div>
               <div className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 group-hover:translate-x-0.5 transition-transform">
                 <span>Gian hàng</span>
@@ -1780,7 +1776,6 @@ function Home() {
         <div className="self-stretch flex flex-col justify-start items-start gap-2">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
-              <Users className="size-4 text-orange-500 shrink-0" />
               <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">HỘI VIÊN MỚI GIA NHẬP</span>
             </div>
             <Link to="/association/members" className="p-1 rounded-full bg-orange-50 dark:bg-slate-800 flex justify-center items-center hover:bg-orange-100 transition">
@@ -1828,7 +1823,6 @@ function Home() {
         <div className="self-stretch flex flex-col justify-start items-start gap-3">
           <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
             <div className="flex justify-start items-center gap-2">
-              <Newspaper className="size-4 text-orange-500 shrink-0" />
               <span className="text-slate-800 dark:text-white text-sm font-bold font-sans leading-5">TIN TỨC CÂU LẠC BỘ</span>
             </div>
             <div className="flex items-center gap-2">

@@ -38,7 +38,7 @@ export class EventsController {
     let rawData = data || regId || 'CEO1983-EVENT-TICKET';
     const baseUrl = process.env.APP_URL || 'https://ceo1983.viconnect.vn';
     
-    // Nếu rawData không phải là một liên kết Web (URL), chuyển đổi thành URL mở Form đăng ký / Thẻ Check-in trên Web
+    // Nếu rawData không phải là một liên kết Web (URL), chuyển đổi thành URL mở Form đăng ký công khai (Public) trên Web
     if (!rawData.startsWith('http://') && !rawData.startsWith('https://')) {
       const qp = new URLSearchParams();
       qp.set('action', 'register');
@@ -46,7 +46,9 @@ export class EventsController {
       if (regId) qp.set('ticket', regId);
       qp.set('ref', 'qr_scan');
       qp.set('qrData', rawData);
-      rawData = `${baseUrl}/association/events?${qp.toString()}`;
+      rawData = eventId
+        ? `${baseUrl}/guest-event-register/${eventId}`
+        : `${baseUrl}/guest-event-register/latest`;
     }
 
     const parsedSize = Math.min(
@@ -186,14 +188,18 @@ export class EventsController {
     return this.eventsService.createEvent(req.user.id, body);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   @Post(':id/register')
   async registerForEvent(
     @Request() req: any,
     @Param('id') id: string,
     @Body() body?: any,
   ) {
-    return this.eventsService.registerForEvent(req.user.id, id, body);
+    const userId = req.user?.id;
+    if (!userId || userId === 'guest') {
+      return this.eventsService.guestRegister(id, body);
+    }
+    return this.eventsService.registerForEvent(userId, id, body);
   }
 
   /**

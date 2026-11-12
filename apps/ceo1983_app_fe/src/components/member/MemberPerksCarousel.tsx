@@ -339,7 +339,6 @@ export function MemberPerksCarousel() {
         {/* Header bar of Perks Section */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <Gift className="size-4 text-amber-500 shrink-0" />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white">
               ƯU ĐÃI & ĐẶC QUYỀN HỘI VIÊN
             </span>
@@ -376,7 +375,6 @@ export function MemberPerksCarousel() {
       {/* Header bar of Perks Section */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-1.5">
-          <Gift className="size-4 text-amber-500 shrink-0" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white">
             ƯU ĐÃI & ĐẶC QUYỀN HỘI VIÊN
           </span>

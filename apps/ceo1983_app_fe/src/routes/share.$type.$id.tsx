@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ChevronRight,
   Globe,
+  Ticket,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
@@ -422,27 +423,59 @@ function PublicSharePage() {
                 </div>
               )}
 
-              {/* Protected Notice Banner */}
-              <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-2">
-                <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
-                  <ShieldCheck className="size-4 text-amber-400" />
-                  <span>Khu Vực Dành Riêng Cho Hội Viên Doanh Nhân</span>
+              {/* Event Registration / Protected Notice Banner */}
+              {item.type === "event" ? (
+                <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                    <Sparkles className="size-4 text-emerald-400" />
+                    <span>Cổng Đăng Ký Công Khai Mở Rộng</span>
+                  </div>
+                  <p className="text-[12px] text-slate-300 leading-relaxed">
+                    Sự kiện chào đón Quý Khách mời và Doanh nhân tham dự. Bấm nút bên dưới để điền thông tin nhận vé điện tử và mã QR check-in ngay mà không cần tải hay đăng nhập app!
+                  </p>
                 </div>
-                <p className="text-[12px] text-slate-300 leading-relaxed">
-                  Để xem toàn bộ tài liệu đính kèm, danh sách đại biểu tham gia hoặc liên hệ trực tiếp với tác giả, vui lòng bấm nút bên dưới để đăng nhập vào ứng dụng Hiệp hội.
-                </p>
-              </div>
+              ) : (
+                <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
+                    <ShieldCheck className="size-4 text-amber-400" />
+                    <span>Khu Vực Dành Riêng Cho Hội Viên Doanh Nhân</span>
+                  </div>
+                  <p className="text-[12px] text-slate-300 leading-relaxed">
+                    Để xem toàn bộ tài liệu đính kèm, danh sách đại biểu tham gia hoặc liên hệ trực tiếp với tác giả, vui lòng bấm nút bên dưới để đăng nhập vào ứng dụng Hiệp hội.
+                  </p>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="space-y-2.5 pt-2 pb-5">
-                <button
-                  type="button"
-                  onClick={handleNavigateToLogin}
-                  className="w-full py-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-sm shadow-xl active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Xem Chi Tiết Bài Viết (Đăng Nhập)</span>
-                  <ArrowRight className="size-4 stroke-[2.5]" />
-                </button>
+                {item.type === "event" ? (
+                  <>
+                    <Link
+                      to="/guest-event-register/$eventId"
+                      params={{ eventId: item.id }}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-sm shadow-xl active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wide"
+                    >
+                      <Ticket className="size-4 stroke-[2.5]" />
+                      <span>ĐĂNG KÝ THAM DỰ SỰ KIỆN (DÀNH CHO KHÁCH MỜI)</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleNavigateToLogin}
+                      className="w-full py-2.5 rounded-xl border border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Hội viên CLB CEO 1983? Đăng nhập app tại đây</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleNavigateToLogin}
+                    className="w-full py-3.5 rounded-2xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-sm shadow-xl active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Xem Chi Tiết Bài Viết (Đăng Nhập)</span>
+                    <ArrowRight className="size-4 stroke-[2.5]" />
+                  </button>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
