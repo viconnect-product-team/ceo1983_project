@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
 import { MilestoneAwardsManagerModal } from "@/components/analytics/MilestoneAwardsManagerModal";
@@ -272,6 +273,53 @@ export function AnalyticsDashboardPage() {
     loadStats();
     return () => {
       isMounted = false;
+    };
+  }, [granularity, selectedYear, selectedMonth, selectedQuarter]);
+
+  // Realtime updates: Refresh CRM analytics when any new deal, connection, or opportunity occurs
+  useEffect(() => {
+    let socket: any = null;
+    try {
+      socket = getConnectAppSocket();
+    } catch {}
+
+    const handleRealtimeUpdate = () => {
+      const params = new URLSearchParams({
+        granularity,
+        period: granularity,
+        year: String(selectedYear),
+        ...(granularity === "month" ? { month: String(selectedMonth) } : {}),
+        ...(granularity === "quarter" ? { quarter: String(selectedQuarter) } : {}),
+      });
+      fetchNestApi<any>(`/analytics/overview?${params.toString()}`)
+        .then((res) => {
+          if (res && res.ok) {
+            setServerData(res);
+          }
+        })
+        .catch(() => {});
+    };
+
+    if (socket) {
+      socket.on("opportunity:created", handleRealtimeUpdate);
+      socket.on("opportunity:updated", handleRealtimeUpdate);
+      socket.on("connection:accepted", handleRealtimeUpdate);
+      socket.on("event:registered", handleRealtimeUpdate);
+      socket.on("deal:recorded", handleRealtimeUpdate);
+    }
+    window.addEventListener("vba:realtime_refresh_stats", handleRealtimeUpdate);
+    window.addEventListener("vba_refresh_analytics", handleRealtimeUpdate);
+
+    return () => {
+      if (socket) {
+        socket.off("opportunity:created", handleRealtimeUpdate);
+        socket.off("opportunity:updated", handleRealtimeUpdate);
+        socket.off("connection:accepted", handleRealtimeUpdate);
+        socket.off("event:registered", handleRealtimeUpdate);
+        socket.off("deal:recorded", handleRealtimeUpdate);
+      }
+      window.removeEventListener("vba:realtime_refresh_stats", handleRealtimeUpdate);
+      window.removeEventListener("vba_refresh_analytics", handleRealtimeUpdate);
     };
   }, [granularity, selectedYear, selectedMonth, selectedQuarter]);
 

@@ -36,6 +36,7 @@ import {
   History,
   AlertTriangle,
   Share2,
+  Headphones,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -2159,6 +2160,23 @@ function EventsScreen() {
               </div>
             </div>
 
+            {/* Section: Tối đa 4 mã QR tham gia sự kiện đã đăng ký kèm text xem tất cả mã */}
+            {registeredEvents.length > 0 && (
+              <div className="w-full">
+                <RegisteredEventsQrSlider
+                  registeredEvents={registeredEvents.slice(0, 4)}
+                  events={events}
+                  member={member}
+                  user={user}
+                  isEventFree={isEventFree}
+                  formatDisplayDate={formatDisplayDate}
+                  makeTicketQrUrl={(invNo) => getQrUrl(invNo, 320)}
+                  onSelectTicketPass={(ticketPassData) => setTicketPassModal(ticketPassData)}
+                  onViewAll={() => setAllTicketsModalOpen(true)}
+                />
+              </div>
+            )}
+
             {/* Event Cards List */}
             <div className="self-stretch pt-4 pb-3 flex flex-col justify-start items-start gap-2">
               {displayEventsList.length === 0 ? (
@@ -2278,27 +2296,7 @@ function EventsScreen() {
                         type="button"
                         onClick={(evt) => {
                           evt.stopPropagation();
-                          if (registered) {
-                            const invNo = String((e as any).regId || (e as any).ticketCode || e.id);
-                            setTicketPassModal({
-                              eventTitle: e.title,
-                              ticketCode: invNo,
-                              luckyNumber: "#" + Math.floor(1000 + Math.random() * 9000),
-                              ticketType: "Standard",
-                              ticketCount: 1,
-                              isFree,
-                              date: String(e.date || ""),
-                              time: timeStr,
-                              location: e.place || "Hà Nội",
-                              attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
-                              attendeePhone: member?.phone || "",
-                              attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
-                              attendeePosition: member?.title || "Hội viên chính thức",
-                              qrUrl: getQrUrl(invNo, 320),
-                            });
-                          } else {
-                            handleOpenRegister(e, evt);
-                          }
+                          handleSelectEvent(e);
                         }}
                         className={`px-3 py-1.5 rounded-lg border flex justify-start items-center gap-1.5 text-sm font-semibold font-['Inter'] leading-5 active:scale-95 transition cursor-pointer shadow-xs ${
                           registered
@@ -2306,7 +2304,7 @@ function EventsScreen() {
                             : "bg-[#003B95] hover:bg-[#002B70] border-[#003B95] text-white"
                         }`}
                       >
-                        <span>{registered ? "Đã đăng ký (Xem vé)" : "Đăng ký ngay"}</span>
+                        <span>{registered ? "Đã đăng ký (Xem chi tiết)" : "Xem chi tiết"}</span>
                       </button>
                     </div>
                   </div>
@@ -2376,27 +2374,15 @@ function EventsScreen() {
             </div>
           </div>
 
-          {/* Section: Banner cuối trang */}
-          <div className="self-stretch px-4 pt-6 flex flex-col justify-start items-start">
-            <div className="self-stretch p-4 bg-gradient-to-r from-indigo-500 to-[#003B95] rounded-[20px] flex flex-col justify-start items-start gap-4 shadow-md text-white">
-              <div className="self-stretch flex flex-col justify-start items-start gap-1">
-                <div className="self-stretch text-white text-base font-semibold font-['Inter'] leading-5">
-                  CLB Doanh Nhân CEO 1983 - Kết Nối Thịnh Vượng
-                </div>
-                <div className="w-80 text-white/70 text-sm font-normal font-['Inter'] leading-5">
-                  Kế thừa giá trị, kiến tạo tương lai và đồng hành phát triển bền vững.
-                </div>
-              </div>
-              <Link
-                to="/association/messages"
-                className="px-3 py-1.5 bg-[#B8860B] hover:bg-[#9A7009] rounded-lg border border-[#B8860B] inline-flex justify-start items-center gap-1.5 shadow-xs active:scale-95 transition cursor-pointer"
-              >
-                <span className="text-white text-sm font-semibold font-['Inter'] leading-5">
-                  Liên hệ Ban Truyền Thông
-                </span>
-                <img src="/icons/events/arrow-right-02.svg" className="size-4" alt="arrow" />
-              </Link>
-            </div>
+          {/* Nút liên hệ Ban Truyền Thông đơn giản, tinh gọn, không gradient tím */}
+          <div className="self-stretch px-4 pt-4 pb-2 flex justify-center">
+            <Link
+              to="/association/messages"
+              className="w-full max-w-sm py-3 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-[#003B95] hover:text-[#003B95] dark:hover:text-sky-400 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
+            >
+              <Headphones className="size-4 text-[#003B95] dark:text-sky-400" />
+              <span>Liên hệ Ban Truyền Thông</span>
+            </Link>
           </div>
         </div>
       )}

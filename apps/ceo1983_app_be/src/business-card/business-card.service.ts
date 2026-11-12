@@ -76,8 +76,9 @@ export class BusinessCardService {
         )`,
           primarySlug,
           name,
-          m.executive_role ||
-            m.department ||
+          (m as any).title ||
+            (m as any).professional_title ||
+            (m as any).job_title ||
             'Hội viên chính thức CLB CEO 1983',
           'CLB Doanh Nhân CEO 1983',
           avatar,
@@ -983,7 +984,7 @@ export class BusinessCardService {
     // Try finding member first by code, id, or user_id
     let memRows = await this.prisma.$queryRaw<any[]>`
       SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
-             m.avatar, m.about, m.department, m.executive_role, m.cover_url,
+             m.title, m.avatar, m.about, m.department, m.executive_role, m.cover_url,
              m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
              a.public_card_enabled, a.public_card_requires_active_member
       FROM public.members m
@@ -1012,7 +1013,7 @@ export class BusinessCardService {
         if (searchUserId || searchMemberId) {
           memRows = await this.prisma.$queryRaw<any[]>`
             SELECT m.id, m.user_id, m.code, m.name, m.contact, m.email, m.phone, m.type, m.status,
-                   m.avatar, m.about, m.department, m.executive_role, m.cover_url,
+                   m.title, m.avatar, m.about, m.department, m.executive_role, m.cover_url,
                    m.industry, m.region, m.address, m.website, m.joined_at, m.term_end, m.association_id,
                    a.public_card_enabled, a.public_card_requires_active_member
             FROM public.members m
@@ -1159,11 +1160,13 @@ export class BusinessCardService {
       resolvedCompanyName = 'CLB Doanh Nhân CEO 1983';
     }
 
-    // Resolve Title
+    // Resolve Title - Ưu tiên tuyệt đối chức danh nghề nghiệp/doanh nghiệp của hội viên, KHÔNG ghi đè mã quyền hay vai trò CLB
     const resolvedTitle =
       cardRow?.professional_title ||
-      m.executive_role ||
-      m.department ||
+      m.title ||
+      (m as any).professional_title ||
+      (m as any).job_title ||
+      (m as any).position ||
       (m.type === 'company'
         ? 'Đại diện Doanh nghiệp Hội viên'
         : 'Lãnh đạo Doanh nghiệp Hội viên');

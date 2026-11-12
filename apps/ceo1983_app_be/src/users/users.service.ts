@@ -1638,27 +1638,53 @@ export class UsersService {
   }
 
   async adminDeleteUser(callerId: string, targetId: string) {
-    if (callerId === targetId) {
+    const cleanTargetId = String(targetId || '').replace(/^acc_/, '').trim();
+    if (callerId === cleanTargetId || callerId === targetId) {
       throw new BadRequestException(
         'Bạn không thể xóa tài khoản của chính mình',
       );
     }
 
     if (
-      targetId === '00000000-0000-0000-0000-000000000000' ||
-      targetId === '00000000-0000-4000-8000-000000000002' ||
-      targetId === 'mock-admin-id'
+      cleanTargetId === '00000000-0000-0000-0000-000000000000' ||
+      cleanTargetId === '00000000-0000-4000-8000-000000000002' ||
+      cleanTargetId === 'mock-admin-id' ||
+      cleanTargetId.toUpperCase() === 'ADMIN-001'
     ) {
       throw new ForbiddenException('Không thể xóa tài khoản quản trị viên gốc');
     }
 
-    const user = await this.findById(targetId);
+    let user = await this.findById(cleanTargetId);
+    if (!user) {
+      user =
+        (await this.findByUsername(cleanTargetId)) ||
+        (await this.findByEmail(cleanTargetId));
+    }
+    if (!user) {
+      const mems = await this.prisma.$queryRaw<any[]>`
+        SELECT user_id, email, phone FROM public.members
+        WHERE id::text = ${cleanTargetId} OR code = ${cleanTargetId} OR LOWER(email) = LOWER(${cleanTargetId})
+        LIMIT 1
+      `.catch(() => []);
+      if (mems.length > 0) {
+        if (mems[0].user_id) {
+          user = await this.findById(mems[0].user_id);
+        }
+        if (!user && mems[0].email) {
+          user =
+            (await this.findByUsername(mems[0].email)) ||
+            (await this.findByEmail(mems[0].email));
+        }
+      }
+    }
+
+    const actualId = user?.id || cleanTargetId;
     const userEmail = (user?.email || user?.username || '')
       .toLowerCase()
       .trim();
     const isUuid =
       /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-        targetId,
+        actualId,
       );
 
     // 1. Cascade cleanup related records to avoid FK constraint violations
@@ -1666,112 +1692,115 @@ export class UsersService {
       if (isUuid) {
         await this.prisma
           .$executeRawUnsafe(
-            `DELETE FROM public.vba_member_permissions WHERE user_id = $1::uuid OR member_id::text = $1`,
-            targetId,
+            `DELETE FROM public.vba_member_permissions WHERE user_id = $1::uuid OR member_id::text = $1 OR member_id::text = $2`,
+            actualId,
+            cleanTargetId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.memberships WHERE user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.business_relationship_moment_media WHERE owner_user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.business_relationship_moments WHERE owner_user_id = $1::uuid OR target_user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.meeting_participants WHERE user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.business_appointments WHERE host_user_id = $1::uuid OR guest_user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.event_registrations WHERE user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.member_business_cards WHERE user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.card_settings WHERE user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.user_connections WHERE requester_user_id = $1::uuid OR recipient_user_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         await this.prisma
           .$executeRawUnsafe(
             `DELETE FROM public.direct_messages WHERE sender_id = $1::uuid OR recipient_id = $1::uuid`,
-            targetId,
+            actualId,
           )
           .catch(() => { });
 
         if (userEmail) {
           await this.prisma
             .$executeRawUnsafe(
-              `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1 OR LOWER(email) = $2 OR LOWER(contact_email) = $2`,
-              targetId,
+              `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1 OR id::text = $2 OR code = $2 OR LOWER(email) = $3 OR LOWER(contact_email) = $3`,
+              actualId,
+              cleanTargetId,
               userEmail,
             )
             .catch(() => { });
         } else {
           await this.prisma
             .$executeRawUnsafe(
-              `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1`,
-              targetId,
+              `DELETE FROM public.members WHERE user_id = $1::uuid OR id::text = $1 OR id::text = $2 OR code = $2`,
+              actualId,
+              cleanTargetId,
             )
             .catch(() => { });
         }
-      } else if (userEmail) {
+      } else {
         await this.prisma
           .$executeRawUnsafe(
-            `DELETE FROM public.members WHERE LOWER(email) = $1 OR LOWER(contact_email) = $1 OR id::text = $2`,
+            `DELETE FROM public.members WHERE id::text = $1 OR code = $1 OR (LOWER(email) = $2 AND $2 != '')`,
+            cleanTargetId,
             userEmail,
-            targetId,
           )
           .catch(() => { });
       }
 
-      await this.usersRepo.deleteUserRoles(targetId);
-      await this.usersRepo.deleteUserProfile(targetId);
-      await this.usersRepo.deleteUser(targetId);
+      await this.usersRepo.deleteUserRoles(actualId);
+      await this.usersRepo.deleteUserProfile(actualId);
+      await this.usersRepo.deleteUser(actualId);
       if (isUuid) {
-        await this.usersRepo.deleteAuthUser(targetId);
+        await this.usersRepo.deleteAuthUser(actualId);
       }
     } catch (err: any) {
       console.warn(

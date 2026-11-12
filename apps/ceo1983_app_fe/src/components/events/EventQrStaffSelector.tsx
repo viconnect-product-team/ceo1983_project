@@ -55,13 +55,37 @@ export function EventQrStaffSelector({
     return [];
   }, [value]);
 
-  // Fetch members from API and filter those in Ban Truyền Thông
+  // Fetch members from API and filter those in Ban Truyền Thông (with immediate localStorage fallback)
   useEffect(() => {
     let active = true;
+
+    // Load instant fallback from local storage
+    try {
+      const cached = localStorage.getItem("vba_managed_accounts_v2");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembersList(
+            parsed.map((a: any) => ({
+              id: a.id || a.dbMemberId,
+              code: a.code,
+              name: a.name,
+              department: a.department,
+              executiveRole: a.role || a.executiveRole,
+              phone: a.phone,
+              email: a.email,
+              avatar: a.avatar,
+            }))
+          );
+          setLoading(false);
+        }
+      }
+    } catch {}
+
     async function loadMembers() {
       try {
         const res = await fetchNestApi<MemberStaff[]>("/members");
-        if (active && Array.isArray(res)) {
+        if (active && Array.isArray(res) && res.length > 0) {
           setMembersList(res);
         }
       } catch (err) {

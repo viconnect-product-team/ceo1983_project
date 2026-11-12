@@ -412,7 +412,7 @@ export function CrudModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 overflow-y-auto p-5 flex-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" data-modal-body>
+        <div className="space-y-4 overflow-y-auto p-5 flex-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-400" data-modal-body>
           {fields.map((f) => {
             const hasErr = !!errors[f.name];
             const stateInputCls = `${inputCls} ${
@@ -431,10 +431,16 @@ export function CrudModal({
                           className="h-40 w-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget as HTMLImageElement;
-                            if (!target.dataset.fallbackTried) {
-                              target.dataset.fallbackTried = "true";
-                              const fallback = resolveMediaUrl("/upload/file/documents/1794470096799-thfwcu.jpg");
-                              if (fallback) target.src = fallback;
+                            const step = Number(target.dataset.fallbackStep || 0);
+                            const fallbacks = [
+                              "/ky_niem_4_nam_vien_doanh_tri.jpg",
+                              "/images/event/ky_niem_4_nam_vien_doanh_tri.jpg",
+                              "/images/events/ky_niem_4_nam_vien_doanh_tri.jpg",
+                              "/uploads/ky_niem_4_nam_vien_doanh_tri.jpg"
+                            ];
+                            if (step < fallbacks.length) {
+                              target.dataset.fallbackStep = String(step + 1);
+                              target.src = fallbacks[step];
                             }
                           }}
                         />

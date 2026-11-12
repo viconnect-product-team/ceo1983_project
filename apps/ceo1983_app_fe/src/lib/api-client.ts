@@ -115,11 +115,9 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
   const trimmed = url.trim();
   if (!trimmed || isDeadAvatarUrl(trimmed)) return null;
 
-  // Banner kỷ niệm 4 năm Viện Doanh Trí đã upload lên production MinIO
+  // Banner kỷ niệm 4 năm Viện Doanh Trí
   if (trimmed.includes("ky_niem_4_nam_vien_doanh_tri")) {
-    const pubBase = getPublicBackendUrl();
-    const filePath = "/api/upload/file/documents/1794470096799-thfwcu.jpg";
-    return pubBase ? `${pubBase}${filePath}` : filePath;
+    return "/images/event/ky_niem_4_nam_vien_doanh_tri.jpg";
   }
 
   // Trực tiếp trả về data URI hợp lệ hoặc blob URL, không parse qua new URL để tránh ERR_INVALID_URL

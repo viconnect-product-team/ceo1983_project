@@ -526,41 +526,67 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
 
   try {
     const raw = localStorage.getItem(RBAC_MATRIX_STORAGE_KEY);
-    if (!raw) return true; // Chưa tùy biến thì áp dụng quyền mặc định
-
-    const categories = JSON.parse(raw);
-    if (!Array.isArray(categories)) return true;
-
-    for (const cat of categories) {
-      if (!cat?.features || !Array.isArray(cat.features)) continue;
-      for (const feat of cat.features) {
-        if (!feat?.route) continue;
-
-        const featCleanRoute = String(feat.route).split("?")[0].split("#")[0];
-
-        // So khớp route chính xác hoặc tiền tố hai chiều
-        if (
-          featCleanRoute === cleanRoute ||
-          (cleanRoute !== "/" && featCleanRoute.startsWith(cleanRoute)) ||
-          (featCleanRoute !== "/" && cleanRoute.startsWith(featCleanRoute))
-        ) {
-          if (!feat.actions || !Array.isArray(feat.actions) || feat.actions.length === 0) {
-            return true;
+    if (raw) {
+      try {
+        const categories = JSON.parse(raw);
+        if (Array.isArray(categories) && categories.length > 0) {
+          for (const cat of categories) {
+            if (!cat?.features || !Array.isArray(cat.features)) continue;
+            for (const feat of cat.features) {
+              if (!feat?.route) continue;
+              const featCleanRoute = String(feat.route).split("?")[0].split("#")[0];
+              if (
+                featCleanRoute === cleanRoute ||
+                (cleanRoute !== "/" && featCleanRoute.startsWith(cleanRoute)) ||
+                (featCleanRoute !== "/" && cleanRoute.startsWith(featCleanRoute))
+              ) {
+                if (!feat.actions || !Array.isArray(feat.actions) || feat.actions.length === 0) {
+                  return true;
+                }
+                const viewAction = feat.actions.find(
+                  (a: any) =>
+                    (a.code && a.code.toUpperCase().endsWith("_VIEW")) ||
+                    (a.id && a.id.toLowerCase().includes("_view"))
+                );
+                if (viewAction && viewAction.roles) {
+                  return Boolean(viewAction.roles[roleKey]);
+                }
+                return feat.actions.some((a: any) => Boolean(a?.roles?.[roleKey]));
+              }
+            }
           }
-          // Ưu tiên kiểm tra quyền VIEW của chức năng đó
-          const viewAction = feat.actions.find(
-            (a: any) =>
-              (a.code && a.code.toUpperCase().endsWith("_VIEW")) ||
-              (a.id && a.id.toLowerCase().includes("_view"))
-          );
-          if (viewAction && viewAction.roles) {
-            return Boolean(viewAction.roles[roleKey]);
-          }
-          // Nếu không có action view riêng, cho phép nếu có ít nhất 1 quyền được bật
-          return feat.actions.some((a: any) => Boolean(a?.roles?.[roleKey]));
         }
-      }
+      } catch {}
     }
+
+    // Default RBAC rule when custom matrix not saved yet:
+    const sRole = String(roleKey);
+    if (sRole === "quan_tri" || sRole === "admin" || sRole === "chu_tich" || sRole === "president") return true;
+
+    // Restricted system routes:
+    const isSystemAdminRoute =
+      cleanRoute.startsWith("/accounts") ||
+      cleanRoute.startsWith("/permissions") ||
+      cleanRoute.startsWith("/settings") ||
+      cleanRoute.startsWith("/system");
+    if (isSystemAdminRoute) return false;
+
+    // Finance routes: Only for financial leaders and secretary
+    const isFinanceRoute =
+      cleanRoute.startsWith("/finance") ||
+      cleanRoute.startsWith("/income") ||
+      cleanRoute.startsWith("/expenses") ||
+      cleanRoute.startsWith("/sponsor");
+    if (isFinanceRoute) {
+      return (
+        roleKey === "truong_ban_tai_chinh" ||
+        roleKey === "thanh_vien_ban_tai_chinh" ||
+        roleKey === "tong_thu_ky" ||
+        roleKey === "truong_ban_dieu_hanh"
+      );
+    }
+
+    return true;
   } catch {
     return true;
   }

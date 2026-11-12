@@ -752,6 +752,7 @@ export class ConnectOpportunityService {
       let isPlatformAdmin = false;
       let memberId: string | null = null;
       let memberCode: string | null = null;
+      let userDept = '';
       if (userId) {
         const roles = (await this.prisma.user_roles
           .findMany({ where: { user_id: userId } })
@@ -761,11 +762,14 @@ export class ConnectOpportunityService {
         );
 
         const memberRows = await this.prisma.$queryRaw<any[]>`
-          SELECT id, code FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId} LIMIT 1
+          SELECT id, code, department FROM public.members WHERE user_id = ${userId}::uuid OR id = ${userId} LIMIT 1
         `.catch(() => []);
         if (memberRows && memberRows.length > 0) {
           memberId = memberRows[0].id;
           memberCode = memberRows[0].code;
+          if (memberRows[0].department) {
+            userDept = String(memberRows[0].department).toLowerCase().trim();
+          }
         }
       }
 
@@ -827,13 +831,13 @@ export class ConnectOpportunityService {
 
       const visibleOpps = opps.filter((o) => {
         const posterId = String(o.poster_id || '');
-        if (isPlatformAdmin) return true;
-        if (
+        const isOwner =
           posterId === String(userId) ||
           (memberId && posterId === String(memberId)) ||
-          (memberCode && posterId === String(memberCode))
-        )
-          return true;
+          (memberCode && posterId === String(memberCode));
+
+        // Chủ cơ hội luôn luôn xem được cơ hội của chính mình
+        if (isOwner) return true;
 
         const scope = (o.target_scope || 'all').toLowerCase();
         const recips: string[] = Array.isArray(o.target_recipients)
@@ -842,41 +846,63 @@ export class ConnectOpportunityService {
             ? JSON.parse(o.target_recipients || '[]')
             : [];
 
-        // Nếu cơ hội assign cụ thể từng người (target_scope là 'assigned', 'specific', 'private' hoặc có danh sách target_recipients)
+        const isTargetRecipient = recips.some(
+          (r) =>
+            r === String(userId) ||
+            (memberId && r === String(memberId)) ||
+            (memberCode && r === String(memberCode)),
+        );
+
+        // 1. Quyền riêng tư STRICT: Khi cơ hội trao riêng tư / chỉ định đích danh (private, assigned, specific)
+        // Bắt buộc: CHỈ CÓ chủ cơ hội và người được trao mới thấy; dù là admin, quản trị, chủ tịch cũng KHÔNG được thấy!
         if (
           scope === 'assigned' ||
           scope === 'specific' ||
           scope === 'private' ||
-          (recips.length > 0 && scope !== 'public' && scope !== 'all')
+          (recips.length > 0 &&
+            scope !== 'public' &&
+            scope !== 'all' &&
+            scope !== 'department' &&
+            scope !== 'group')
         ) {
-          return recips.some(
-            (r) =>
-              r === String(userId) ||
-              (memberId && r === String(memberId)) ||
-              (memberCode && r === String(memberCode)),
-          );
+          return isTargetRecipient;
         }
 
-        // Nếu chia sẻ cho bạn bè kết nối
+        // 2. Chia sẻ riêng tư với bạn bè (friends)
         if (scope === 'friends') {
-          if (
-            recips.some(
-              (r) =>
-                r === String(userId) ||
-                (memberId && r === String(memberId)) ||
-                (memberCode && r === String(memberCode)),
-            )
-          )
-            return true;
+          if (isTargetRecipient) return true;
           return connectedUserIds.includes(posterId);
         }
 
-        // Cơ hội public / all
+        // 3. Chia sẻ theo Ban chuyên môn (department / group hoặc target_groups không rỗng)
+        const targetGroups: string[] = Array.isArray(o.target_groups)
+          ? o.target_groups.map((g: any) => String(g).toLowerCase().trim())
+          : typeof o.target_groups === 'string'
+            ? JSON.parse(o.target_groups || '[]').map((g: any) =>
+                String(g).toLowerCase().trim(),
+              )
+            : [];
+
+        if (scope === 'department' || scope === 'group' || targetGroups.length > 0) {
+          if (targetGroups.length > 0) {
+            if (!userDept) return false;
+            const inSameDept = targetGroups.some(
+              (tg) => userDept.includes(tg) || tg.includes(userDept),
+            );
+            if (!inSameDept) return false;
+          }
+          return true;
+        }
+
+        // 4. Nếu là Admin hệ thống thì có thể xem các cơ hội công khai/chung (nhưng KHÔNG xem private như đã chặn ở trên)
+        if (isPlatformAdmin) return true;
+
+        // 5. Cơ hội công khai toàn hội viên (all / public)
         if (scope === 'all' || scope === 'public') {
           return true;
         }
 
-        return true;
+        return false;
       });
 
       return {
@@ -1175,6 +1201,81 @@ export class ConnectOpportunityService {
     `,
       )
       .catch(() => null);
+
+    // Bắn thông báo và socket cho người nhận được trao cơ hội
+    const rawRecipients: any[] = Array.isArray(data.targetRecipients) ? data.targetRecipients : [];
+    if (rawRecipients.length > 0) {
+      for (const r of rawRecipients) {
+        const cleanRecip = String(r || '').replace(/^mem_/, '').replace(/^acc_/, '').trim();
+        if (!cleanRecip) continue;
+        try {
+          const targetUsers = await this.prisma.$queryRaw<any[]>`
+            SELECT id, user_id FROM public.members 
+            WHERE id::text = ${cleanRecip} OR user_id::text = ${cleanRecip} OR code = ${cleanRecip}
+            UNION
+            SELECT id, id AS user_id FROM public.vione_users
+            WHERE id::text = ${cleanRecip} OR email = ${cleanRecip} OR username = ${cleanRecip}
+            LIMIT 1
+          `.catch(() => []);
+
+          const finalUserId = targetUsers[0]?.user_id || targetUsers[0]?.id || cleanRecip;
+          const notifTitle = 'Bạn nhận được cơ hội kinh doanh mới';
+          const notifBody = `${contactName} (${company}) vừa trao cơ hội: "${data.title || 'Cơ hội hợp tác'}"`;
+
+          if (isValidUuid(finalUserId)) {
+            await this.prisma.$executeRawUnsafe(
+              `
+              INSERT INTO public.business_notifications (
+                id, user_id, type, title, body, metadata, is_read, created_at
+              ) VALUES (
+                gen_random_uuid(), $1::uuid, 'opportunity_shared', $2, $3, $4::jsonb, false, now()
+              )
+              `,
+              finalUserId,
+              notifTitle,
+              notifBody,
+              JSON.stringify({
+                opportunityId: oppId,
+                title: data.title,
+                contactName,
+                company,
+                posterId: userId,
+              }),
+            ).catch(() => {});
+          }
+
+          if (this.gateway) {
+            this.gateway.emitNotification(String(finalUserId), {
+              id: `notif_${Date.now()}`,
+              title: notifTitle,
+              body: notifBody,
+              type: 'opportunity_shared',
+              data: {
+                opportunityId: oppId,
+                title: data.title,
+                contactName,
+                company,
+              },
+              created_at: new Date().toISOString(),
+            });
+            this.gateway.server?.to(`user:${finalUserId}`)?.emit('opportunity:received', {
+              id: oppId,
+              title: data.title,
+              contactName,
+              company,
+            });
+          }
+        } catch {
+          // ignore notification error
+        }
+      }
+    }
+
+    // Emit real-time stats update
+    if (this.gateway?.server) {
+      this.gateway.server.emit('opportunity:created', { id: oppId, title: data.title });
+      this.gateway.server.emit('vba:realtime_refresh_stats', { type: 'opportunity', id: oppId });
+    }
 
     return { ok: true, id: oppId };
   }

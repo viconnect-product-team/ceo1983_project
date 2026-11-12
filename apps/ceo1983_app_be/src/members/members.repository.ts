@@ -93,7 +93,7 @@ export class MembersRepository {
                  COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
                  COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
                  COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
-                 COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
+                 COALESCE(m.title, up.professional_title, bi.job_title, bi.headline, m.industry, 'Hội viên CEO 1983') as person_title
           FROM public.members m
           INNER JOIN public.user_connections uc ON (
             (uc.requester_user_id::text = ${userId}::text AND (uc.recipient_user_id = m.user_id OR uc.recipient_user_id::text = m.id::text)) OR
@@ -119,7 +119,7 @@ export class MembersRepository {
                  COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
                  COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
                  COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
-                 COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
+                 COALESCE(m.title, up.professional_title, bi.job_title, bi.headline, m.industry, 'Hội viên CEO 1983') as person_title
           FROM public.members m
           INNER JOIN public.user_connections uc ON (
             (uc.requester_user_id::text = ${userId}::text AND (uc.recipient_user_id = m.user_id OR uc.recipient_user_id::text = m.id::text)) OR
@@ -145,7 +145,7 @@ export class MembersRepository {
                COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
                COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
                COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
-               COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
+               COALESCE(m.title, up.professional_title, bi.job_title, bi.headline, m.industry, 'Hội viên CEO 1983') as person_title
         FROM public.members m
         LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
         LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'
@@ -165,7 +165,7 @@ export class MembersRepository {
              COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company,
              COALESCE(m.company_name, up.company_name, bi.company_name, 'CLB Doanh Nhân CEO 1983') as company_name,
              COALESCE(up.display_name, vu.name, bi.display_name, m.contact, m.name) as person_name,
-             COALESCE(m.executive_role, up.professional_title, bi.job_title, bi.headline, m.industry) as person_title
+             COALESCE(m.title, up.professional_title, bi.job_title, bi.headline, m.industry, 'Hội viên CEO 1983') as person_title
       FROM public.members m
       LEFT JOIN public.user_profiles up ON up.user_id = m.user_id
       LEFT JOIN public.business_identities bi ON bi.owner_user_id = m.user_id AND bi.status = 'active'

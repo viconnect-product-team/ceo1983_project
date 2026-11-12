@@ -457,6 +457,9 @@ export function Sidebar({
     isBTN,
     isBTC,
     isHVT,
+    isChuTich,
+    isPresident,
+    isBanDieuHanh,
     isTongThuKy,
     isBanThuKy,
     isTruongBanTruyenThong,
@@ -475,21 +478,32 @@ export function Sidebar({
 
   // Xác định vai trò hệ thống CRM cốt lõi
   const currentRoleKey: SystemRoleKey = useMemo(() => {
-    if (isPlatformAdmin || srsRole === "quan_tri" || srsRole === "ADM") return "quan_tri";
-    if (isAdmin || isBQT || srsRole === "admin" || srsRole === "BQT" || srsRole === "ban_dieu_hanh") return "admin";
-    if (isTongThuKy) return "tong_thu_ky";
-    if (isBanThuKy || isBTK) return "tong_thu_ky";
-    if (isTruongBanTruyenThong || isBTT) return "truong_ban_truyen_thong";
-    if (isTruongBanThanhVien || isBTV) return "truong_ban_thanh_vien";
-    if (isTruongBanXucTien || isBXT) return "truong_ban_xuc_tien";
-    if (isTruongBanTaiChinh || isBTC) return "truong_ban_tai_chinh";
-    if (isTruongBanThienNguyen || isBTN) return "truong_ban_thien_nguyen";
+    const rawRole = (srsRole as string) || "";
+    if (isPlatformAdmin || rawRole === "quan_tri" || rawRole === "ADM") return "quan_tri";
+    if (isChuTich || isPresident || rawRole === "chu_tich") return "chu_tich";
+    if (isAdmin || isBQT || rawRole === "admin" || rawRole === "BQT") return "admin";
+    if (isBanDieuHanh || rawRole === "ban_dieu_hanh" || rawRole === "truong_ban_dieu_hanh") return "truong_ban_dieu_hanh";
+    if (rawRole === "thanh_vien_ban_dieu_hanh") return "thanh_vien_ban_dieu_hanh";
+    if (isTongThuKy || isBanThuKy || isBTK || rawRole === "tong_thu_ky") return "tong_thu_ky";
+    if (isTruongBanTruyenThong || isBTT || rawRole === "truong_ban_truyen_thong") return "truong_ban_truyen_thong";
+    if (rawRole === "thanh_vien_ban_truyen_thong") return "thanh_vien_ban_truyen_thong";
+    if (isTruongBanThanhVien || isBTV || rawRole === "truong_ban_thanh_vien") return "truong_ban_thanh_vien";
+    if (rawRole === "thanh_vien_ban_thanh_vien") return "thanh_vien_ban_thanh_vien";
+    if (isTruongBanXucTien || isBXT || rawRole === "truong_ban_xuc_tien") return "truong_ban_xuc_tien";
+    if (rawRole === "thanh_vien_ban_xuc_tien") return "thanh_vien_ban_xuc_tien";
+    if (isTruongBanTaiChinh || isBTC || rawRole === "truong_ban_tai_chinh") return "truong_ban_tai_chinh";
+    if (rawRole === "thanh_vien_ban_tai_chinh") return "thanh_vien_ban_tai_chinh";
+    if (isTruongBanThienNguyen || isBTN || rawRole === "truong_ban_thien_nguyen") return "truong_ban_thien_nguyen";
+    if (rawRole === "thanh_vien_ban_thien_nguyen") return "thanh_vien_ban_thien_nguyen";
     return "member";
   }, [
     isPlatformAdmin,
     isAdmin,
     srsRole,
     isBQT,
+    isChuTich,
+    isPresident,
+    isBanDieuHanh,
     isTongThuKy,
     isBanThuKy,
     isBTK,

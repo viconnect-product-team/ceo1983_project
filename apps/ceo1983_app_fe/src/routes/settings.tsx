@@ -147,30 +147,50 @@ function SettingsPage() {
       <PageHeader title={t("set.title")} subtitle={t("set.subtitle")} />
 
       <div className={`grid grid-cols-1 gap-5 transition-all duration-300 ${
-        isSidebarCollapsed ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[250px_1fr]"
+        isSidebarCollapsed ? "lg:grid-cols-[76px_1fr]" : "lg:grid-cols-[280px_1fr]"
       }`}>
         <Card className="p-2.5 h-fit sticky top-20">
-          {/* Header thu phóng thanh danh mục Cài đặt */}
-          <div className={`flex items-center pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ${
-            isSidebarCollapsed ? "justify-center" : "justify-between px-1.5"
+          {/* Header thu phóng thanh danh mục Cài đặt kèm 2 icon thể hiện thu to / nhỏ như sidebar */}
+          <div className={`flex items-center pb-2.5 mb-2 border-b border-slate-100 dark:border-slate-800 ${
+            isSidebarCollapsed ? "flex-col gap-1.5 justify-center" : "justify-between px-1.5"
           }`}>
             {!isSidebarCollapsed && (
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Danh mục cài đặt
               </span>
             )}
-            <button
-              type="button"
-              onClick={toggleSidebarCollapsed}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-[#003B95] dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              title={isSidebarCollapsed ? "Mở rộng danh mục (Thu to)" : "Thu gọn danh mục (Thu nhỏ)"}
-            >
-              {isSidebarCollapsed ? (
-                <PanelLeftOpen className="size-4" />
-              ) : (
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSidebarCollapsed(true);
+                  if (typeof window !== "undefined") localStorage.setItem("crm_settings_sidebar_collapsed", "true");
+                }}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
+                  isSidebarCollapsed
+                    ? "bg-white dark:bg-slate-700 text-[#003B95] dark:text-sky-400 shadow-xs font-bold"
+                    : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                }`}
+                title="Thu nhỏ danh mục"
+              >
                 <PanelLeftClose className="size-4" />
-              )}
-            </button>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSidebarCollapsed(false);
+                  if (typeof window !== "undefined") localStorage.setItem("crm_settings_sidebar_collapsed", "false");
+                }}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
+                  !isSidebarCollapsed
+                    ? "bg-white dark:bg-slate-700 text-[#003B95] dark:text-sky-400 shadow-xs font-bold"
+                    : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                }`}
+                title="Mở rộng danh mục (Thu to)"
+              >
+                <PanelLeftOpen className="size-4" />
+              </button>
+            </div>
           </div>
 
           <nav className="space-y-1">
@@ -196,7 +216,7 @@ function SettingsPage() {
                 >
                   <Icon className={`size-4 shrink-0 ${active ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
                   {!isSidebarCollapsed && (
-                    <span className="truncate leading-relaxed py-0.5">{label}</span>
+                    <span className="whitespace-normal leading-snug py-0.5 break-words">{label}</span>
                   )}
                 </button>
               );
