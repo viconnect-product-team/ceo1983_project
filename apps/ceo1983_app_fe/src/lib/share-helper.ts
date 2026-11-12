@@ -1,3 +1,5 @@
+import { fetchNestApi } from "@/lib/api-client";
+
 /**
  * Helper sinh link chia sẻ mạng xã hội (Facebook, Zalo, LinkedIn, Telegram)
  * Có hỗ trợ endpoint preview OpenGraph động của CEO 1983 Backend (/api/share/preview)
@@ -47,6 +49,17 @@ export async function executeShare(
   onCopySuccess?: () => void
 ): Promise<void> {
   const shareUrl = buildDynamicShareUrl(options);
+
+  // Tự động ghi nhận lượt chia sẻ bài viết / sự kiện vào CSDL Analytics
+  fetchNestApi("/analytics/share-click", {
+    method: "POST",
+    body: {
+      type: options.type || "post",
+      id: options.id || "general",
+      platform: "mobile_app",
+      action: "share_post",
+    },
+  }).catch(() => {});
 
   if (typeof navigator !== 'undefined' && navigator.share) {
     try {

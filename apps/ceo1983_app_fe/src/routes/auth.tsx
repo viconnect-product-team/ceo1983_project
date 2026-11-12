@@ -143,9 +143,22 @@ function CrmAdminAuthPage() {
       applyRememberPreference(remember, email.trim());
       await goPostLogin();
     } catch (e: any) {
+      const rawMsg = String(e?.message || "");
+      let msg = "Tài khoản hoặc mật khẩu không chính xác";
+      if (
+        rawMsg.toLowerCase().includes("không chính xác") ||
+        rawMsg.toLowerCase().includes("unauthorized") ||
+        rawMsg.toLowerCase().includes("401") ||
+        rawMsg.toLowerCase().includes("credentials") ||
+        rawMsg.toLowerCase().includes("invalid") ||
+        rawMsg.toLowerCase().includes("bị xóa")
+      ) {
+        msg = "Tài khoản hoặc mật khẩu không chính xác";
+      } else if (rawMsg && !rawMsg.includes("API request failed")) {
+        msg = rawMsg;
+      }
       const info = classifyAuthError(e, { provider: "password" });
       setAuthErrorInfo(info);
-      const msg = t(info.messageKey as Parameters<typeof t>[0]) || e?.message || "Đăng nhập thất bại";
       setAuthError(msg);
       toast.error(msg);
     } finally {

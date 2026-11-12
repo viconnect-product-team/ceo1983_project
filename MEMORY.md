@@ -1,5 +1,25 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.30): Hoàn Thiện Chuẩn Xác 3 Yêu Cầu Về Thống Kê Mobile & CRM - Biểu Đồ Cột Biến Động Sinh Động Phản Ánh Đầy Đủ Số Liệu Từng Tháng Kèm Tự Động Ghi Nhận Lượt Share, Ẩn Triệt Để Toàn Bộ Menu/Nhóm Menu Không Có Quyền Trên CRM Khi Gán Role Cụ Thể, Chuẩn Hóa Thông Báo Đăng Nhập Sai Mật Khẩu/Tài Khoản ([NODE-APP-006], [NODE-CRM-001], [NODE-CRM-011], [NODE-CORE-001])**:
+  - **1. Thống Kê Mobile App (`/association/analytics`) ([NODE-APP-006], [NODE-CORE-001])**:
+    * **Chỉ hiện đủ cột thể hiện đủ chỉ số**: Loại bỏ hoàn toàn cột thanh khổng lồ `timelineVal` (Tổng hoạt động/Tổng tương tác) và nhãn chú thích tương ứng khỏi `ComposedChart`.
+    * Mỗi danh mục chỉ hiển thị đúng các cột chỉ số thành phần:
+      - Hoạt động hội viên: Đúng 3 cột: Lượt bình luận (Xanh `#003B95`), Lượt share bài viết (Xanh lục `#10B981`), Lượt click link giới thiệu (Vàng `#F59E0B`).
+      - Kết nối giao thương: Đúng 4 cột: Kết nối 1-on-1, Đã kết nối, Chờ phản hồi, Cuộc gặp B2B.
+      - Cơ hội kinh doanh: Đúng 4 cột: Cơ hội mở mới, Giá trị tăng (Tỷ), Giá trị đàm phán, Đã kết nối / chốt.
+      - Sự kiện & cuộc họp: Đúng 4 cột: Đăng ký tham gia, Điểm danh thực tế, Cuộc họp ban, Chờ check-in.
+    * **Biến động dữ liệu theo tháng sinh động**: Các tháng có hoạt động (như T9 có hội viên mới, T11 có sự kiện, kết nối, đăng ký) hiển thị cột biến động số liệu sắc nét. Khi có thêm bất kỳ 1 hội viên, lượt share hay tương tác nào, cột biểu đồ của tháng đó phản ánh đúng số liệu.
+    * **Tự động lưu vết lượt chia sẻ (`executeShare`)**: Trong `share-helper.ts`, khi người dùng chia sẻ bài viết/sự kiện/cơ hội ra ngoài (Facebook, Zalo, clipboard), hệ thống tự động gọi API `/analytics/share-click` lưu bản ghi vào `audit_logs` để cột Lượt share bài viết nhảy số liệu ngay lập tức.
+  - **2. Phân Quyền CRM & Ẩn Triệt Để Giao Diện Theo Role Được Gán (`/accounts`, `use-role.ts`, `Sidebar.tsx`) ([NODE-CRM-001], [NODE-CRM-011])**:
+    * Khắc phục triệt để lỗi khi gán role cụ thể ở Quản lý tài khoản nhưng giao diện không thay đổi:
+      - Trong `use-role.ts`: Ưu tiên tuyệt đối vai trò `found.role` từ `vba_managed_accounts_v2` cho tài khoản hiện tại. Nếu tài khoản được gán vai trò chuyên môn (như `truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_tai_chinh`, `member` v.v.), `srsRole` được thiết lập chính xác theo vai trò đó, đồng thời đặt `isAdmin = false`, `isBQT = false`, `isSuperUser = false`, không bị các cờ admin cũ từ token JWT ghi đè.
+      - Trong `Sidebar.tsx`: Chuẩn hóa `currentRoleKey` ánh xạ trực tiếp từ `srsRole`. Toàn bộ các nhóm menu (`Group`) chỉ được render khi `filteredItems.length > 0`.
+      - Khi tài khoản thuộc vai trò không có quyền (ví dụ Trưởng Ban Truyền Thông hoặc Hội viên thường): Toàn bộ menu Tài chính (`/finance`, `/income`, `/expenses`, `/fees`), Quản trị hệ thống (`/settings`, `/activity`), Phân quyền (`/permissions`, `/accounts`, `/departments`) **BỊ ẨN HOÀN TOÀN KHỎI GIAO DIỆN CRM**.
+  - **3. Chuẩn Hóa Thông Báo Đăng Nhập Thất Bại ([NODE-CORE-001], [NODE-CRM-001])**:
+    * Trong `local.strategy.ts` (Backend) và các màn hình đăng nhập (`auth.tsx` CRM, `association.login.tsx` Mobile):
+    * Khi nhập sai tài khoản hoặc sai mật khẩu, hệ thống thông báo chính xác và đồng nhất:
+      `"Tài khoản hoặc mật khẩu không chính xác"`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
   - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
     * Trong `MemberShell.tsx`: Cố định cấu trúc `flex-1 min-h-0 relative overflow-hidden flex flex-col` cho phần nội dung cuộn `PullToRefresh`.
@@ -536,6 +556,26 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.30): Hoàn Thiện Chuẩn Xác 3 Yêu Cầu Về Thống Kê Mobile & CRM - Biểu Đồ Cột Biến Động Sinh Động Phản Ánh Đầy Đủ Số Liệu Từng Tháng Kèm Tự Động Ghi Nhận Lượt Share, Ẩn Triệt Để Toàn Bộ Menu/Nhóm Menu Không Có Quyền Trên CRM Khi Gán Role Cụ Thể, Chuẩn Hóa Thông Báo Đăng Nhập Sai Mật Khẩu/Tài Khoản ([NODE-APP-006], [NODE-CRM-001], [NODE-CRM-011], [NODE-CORE-001])**:
+  - **1. Thống Kê Mobile App (`/association/analytics`) ([NODE-APP-006], [NODE-CORE-001])**:
+    * **Chỉ hiện đủ cột thể hiện đủ chỉ số**: Loại bỏ hoàn toàn cột thanh khổng lồ `timelineVal` (Tổng hoạt động/Tổng tương tác) và nhãn chú thích tương ứng khỏi `ComposedChart`.
+    * Mỗi danh mục chỉ hiển thị đúng các cột chỉ số thành phần:
+      - Hoạt động hội viên: Đúng 3 cột: Lượt bình luận (Xanh `#003B95`), Lượt share bài viết (Xanh lục `#10B981`), Lượt click link giới thiệu (Vàng `#F59E0B`).
+      - Kết nối giao thương: Đúng 4 cột: Kết nối 1-on-1, Đã kết nối, Chờ phản hồi, Cuộc gặp B2B.
+      - Cơ hội kinh doanh: Đúng 4 cột: Cơ hội mở mới, Giá trị tăng (Tỷ), Giá trị đàm phán, Đã kết nối / chốt.
+      - Sự kiện & cuộc họp: Đúng 4 cột: Đăng ký tham gia, Điểm danh thực tế, Cuộc họp ban, Chờ check-in.
+    * **Biến động dữ liệu theo tháng sinh động**: Các tháng có hoạt động (như T9 có hội viên mới, T11 có sự kiện, kết nối, đăng ký) hiển thị cột biến động số liệu sắc nét. Khi có thêm bất kỳ 1 hội viên, lượt share hay tương tác nào, cột biểu đồ của tháng đó phản ánh đúng số liệu.
+    * **Tự động lưu vết lượt chia sẻ (`executeShare`)**: Trong `share-helper.ts`, khi người dùng chia sẻ bài viết/sự kiện/cơ hội ra ngoài (Facebook, Zalo, clipboard), hệ thống tự động gọi API `/analytics/share-click` lưu bản ghi vào `audit_logs` để cột Lượt share bài viết nhảy số liệu ngay lập tức.
+  - **2. Phân Quyền CRM & Ẩn Triệt Để Giao Diện Theo Role Được Gán (`/accounts`, `use-role.ts`, `Sidebar.tsx`) ([NODE-CRM-001], [NODE-CRM-011])**:
+    * Khắc phục triệt để lỗi khi gán role cụ thể ở Quản lý tài khoản nhưng giao diện không thay đổi:
+      - Trong `use-role.ts`: Ưu tiên tuyệt đối vai trò `found.role` từ `vba_managed_accounts_v2` cho tài khoản hiện tại. Nếu tài khoản được gán vai trò chuyên môn (như `truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_tai_chinh`, `member` v.v.), `srsRole` được thiết lập chính xác theo vai trò đó, đồng thời đặt `isAdmin = false`, `isBQT = false`, `isSuperUser = false`, không bị các cờ admin cũ từ token JWT ghi đè.
+      - Trong `Sidebar.tsx`: Chuẩn hóa `currentRoleKey` ánh xạ trực tiếp từ `srsRole`. Toàn bộ các nhóm menu (`Group`) chỉ được render khi `filteredItems.length > 0`.
+      - Khi tài khoản thuộc vai trò không có quyền (ví dụ Trưởng Ban Truyền Thông hoặc Hội viên thường): Toàn bộ menu Tài chính (`/finance`, `/income`, `/expenses`, `/fees`), Quản trị hệ thống (`/settings`, `/activity`), Phân quyền (`/permissions`, `/accounts`, `/departments`) **BỊ ẨN HOÀN TOÀN KHỎI GIAO DIỆN CRM**.
+  - **3. Chuẩn Hóa Thông Báo Đăng Nhập Thất Bại ([NODE-CORE-001], [NODE-CRM-001])**:
+    * Trong `local.strategy.ts` (Backend) và các màn hình đăng nhập (`auth.tsx` CRM, `association.login.tsx` Mobile):
+    * Khi nhập sai tài khoản hoặc sai mật khẩu, hệ thống thông báo chính xác và đồng nhất:
+      `"Tài khoản hoặc mật khẩu không chính xác"`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
   - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:
@@ -2355,6 +2395,26 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.30): Hoàn Thiện Chuẩn Xác 3 Yêu Cầu Về Thống Kê Mobile & CRM - Biểu Đồ Cột Biến Động Sinh Động Phản Ánh Đầy Đủ Số Liệu Từng Tháng Kèm Tự Động Ghi Nhận Lượt Share, Ẩn Triệt Để Toàn Bộ Menu/Nhóm Menu Không Có Quyền Trên CRM Khi Gán Role Cụ Thể, Chuẩn Hóa Thông Báo Đăng Nhập Sai Mật Khẩu/Tài Khoản ([NODE-APP-006], [NODE-CRM-001], [NODE-CRM-011], [NODE-CORE-001])**:
+  - **1. Thống Kê Mobile App (`/association/analytics`) ([NODE-APP-006], [NODE-CORE-001])**:
+    * **Chỉ hiện đủ cột thể hiện đủ chỉ số**: Loại bỏ hoàn toàn cột thanh khổng lồ `timelineVal` (Tổng hoạt động/Tổng tương tác) và nhãn chú thích tương ứng khỏi `ComposedChart`.
+    * Mỗi danh mục chỉ hiển thị đúng các cột chỉ số thành phần:
+      - Hoạt động hội viên: Đúng 3 cột: Lượt bình luận (Xanh `#003B95`), Lượt share bài viết (Xanh lục `#10B981`), Lượt click link giới thiệu (Vàng `#F59E0B`).
+      - Kết nối giao thương: Đúng 4 cột: Kết nối 1-on-1, Đã kết nối, Chờ phản hồi, Cuộc gặp B2B.
+      - Cơ hội kinh doanh: Đúng 4 cột: Cơ hội mở mới, Giá trị tăng (Tỷ), Giá trị đàm phán, Đã kết nối / chốt.
+      - Sự kiện & cuộc họp: Đúng 4 cột: Đăng ký tham gia, Điểm danh thực tế, Cuộc họp ban, Chờ check-in.
+    * **Biến động dữ liệu theo tháng sinh động**: Các tháng có hoạt động (như T9 có hội viên mới, T11 có sự kiện, kết nối, đăng ký) hiển thị cột biến động số liệu sắc nét. Khi có thêm bất kỳ 1 hội viên, lượt share hay tương tác nào, cột biểu đồ của tháng đó phản ánh đúng số liệu.
+    * **Tự động lưu vết lượt chia sẻ (`executeShare`)**: Trong `share-helper.ts`, khi người dùng chia sẻ bài viết/sự kiện/cơ hội ra ngoài (Facebook, Zalo, clipboard), hệ thống tự động gọi API `/analytics/share-click` lưu bản ghi vào `audit_logs` để cột Lượt share bài viết nhảy số liệu ngay lập tức.
+  - **2. Phân Quyền CRM & Ẩn Triệt Để Giao Diện Theo Role Được Gán (`/accounts`, `use-role.ts`, `Sidebar.tsx`) ([NODE-CRM-001], [NODE-CRM-011])**:
+    * Khắc phục triệt để lỗi khi gán role cụ thể ở Quản lý tài khoản nhưng giao diện không thay đổi:
+      - Trong `use-role.ts`: Ưu tiên tuyệt đối vai trò `found.role` từ `vba_managed_accounts_v2` cho tài khoản hiện tại. Nếu tài khoản được gán vai trò chuyên môn (như `truong_ban_truyen_thong`, `truong_ban_thanh_vien`, `truong_ban_tai_chinh`, `member` v.v.), `srsRole` được thiết lập chính xác theo vai trò đó, đồng thời đặt `isAdmin = false`, `isBQT = false`, `isSuperUser = false`, không bị các cờ admin cũ từ token JWT ghi đè.
+      - Trong `Sidebar.tsx`: Chuẩn hóa `currentRoleKey` ánh xạ trực tiếp từ `srsRole`. Toàn bộ các nhóm menu (`Group`) chỉ được render khi `filteredItems.length > 0`.
+      - Khi tài khoản thuộc vai trò không có quyền (ví dụ Trưởng Ban Truyền Thông hoặc Hội viên thường): Toàn bộ menu Tài chính (`/finance`, `/income`, `/expenses`, `/fees`), Quản trị hệ thống (`/settings`, `/activity`), Phân quyền (`/permissions`, `/accounts`, `/departments`) **BỊ ẨN HOÀN TOÀN KHỎI GIAO DIỆN CRM**.
+  - **3. Chuẩn Hóa Thông Báo Đăng Nhập Thất Bại ([NODE-CORE-001], [NODE-CRM-001])**:
+    * Trong `local.strategy.ts` (Backend) và các màn hình đăng nhập (`auth.tsx` CRM, `association.login.tsx` Mobile):
+    * Khi nhập sai tài khoản hoặc sai mật khẩu, hệ thống thông báo chính xác và đồng nhất:
+      `"Tài khoản hoặc mật khẩu không chính xác"`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.29): Chuẩn Hóa Toàn Diện 5 Điểm Trọng Yếu Theo Phản Hồi Hình Ảnh - Khóa Chặt Footer App Bám Đáy Thiết Bị, Biểu Đồ Thống Kê Phản Ánh Cột Màu Sắc Nét & Bộ Chọn Tháng Modal Toàn Màn Hình, Xóa Bỏ Nhấp Nháy Màn Cá Nhân, Banner Trang Chủ Mở Thẳng Popup Chi Tiết, Tối Ưu Cài Đặt Không Dark Mode & Đưa Đổi Mật Khẩu Xuống Cuối, Hoàn Thiện Trình Thiết Kế Thư Mời 4 Năm Viện Doanh Trí ([NODE-APP-001], [NODE-APP-003], [NODE-APP-006], [NODE-APP-007], [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-011])**:
   - **1. Footer Mobile App bám sát mép đáy thiết bị di động ([NODE-APP-001])**:

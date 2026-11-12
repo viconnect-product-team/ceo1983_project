@@ -225,7 +225,7 @@ function AssociationLoginPage() {
         info.kind === "credentials";
       setAuthError(
         isAuthFail
-          ? "Tài khoản hoặc mật khẩu không chính xác hoặc đã bị xóa"
+          ? "Tài khoản hoặc mật khẩu không chính xác"
           : (info.raw || err?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.")
       );
     } finally {

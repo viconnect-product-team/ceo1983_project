@@ -606,13 +606,13 @@ export class AnalyticsService implements OnModuleInit {
         SELECT id, author_id, created_at FROM public.feed_comments
       `.catch(() => [] as any[]);
 
-      // 7. Fetch audit logs (lượt click chia sẻ ra ngoài Facebook, Zalo, Web)
+      // 7. Fetch audit logs (lượt click chia sẻ ra ngoài Facebook, Zalo, Web, Mobile App)
       const rawShareLogs = await this.prisma.$queryRaw<any[]>`
         SELECT id, action, target_type, target_id, ip_address, user_agent, metadata, created_at
         FROM public.audit_logs
-        WHERE action IN ('share_click', 'share_conversion')
+        WHERE action LIKE 'share%' OR action IN ('share_click', 'share_conversion', 'share_post', 'share_event', 'share_article')
         ORDER BY created_at DESC
-        LIMIT 200
+        LIMIT 500
       `.catch(() => [] as any[]);
 
       const shareLogs = rawShareLogs.map((l: any) => ({
@@ -1311,10 +1311,11 @@ export class AnalyticsService implements OnModuleInit {
     ip?: string;
     userAgent?: string;
     converted?: boolean;
+    action?: string;
   }) {
     try {
       await this.ensureTables();
-      const action = data.converted ? 'share_conversion' : 'share_click';
+      const action = data.action || (data.converted ? 'share_conversion' : 'share_post');
       const meta = JSON.stringify({
         platform: data.platform || 'web',
         referrer: data.referrer || '',
