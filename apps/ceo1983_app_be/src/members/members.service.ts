@@ -938,8 +938,6 @@ export class MembersService {
           m.title ||
           profile?.professional_title ||
           cardSetting?.professional_title ||
-          (m.executive_role && m.executive_role !== 'admin' && m.executive_role !== 'member' ? m.executive_role : null) ||
-          m.department ||
           'Tổng Giám Đốc / CEO',
         company: unifiedCompanyName,
         companyName: unifiedCompanyName,
@@ -2024,9 +2022,18 @@ export class MembersService {
     id: string,
     mode?: 'company_only' | 'all',
   ) {
-    const cleanId = String(id || '').replace(/^RNW-/, '');
+    const cleanId = String(id || '')
+      .replace(/^acc_/, '')
+      .replace(/^RNW-/, '')
+      .trim();
     const existing = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} LIMIT 1
+      SELECT * FROM public.members 
+      WHERE id::text = ${cleanId} 
+         OR code = ${cleanId} 
+         OR user_id::text = ${cleanId} 
+         OR LOWER(email) = LOWER(${cleanId}) 
+         OR LOWER(contact_email) = LOWER(${cleanId})
+      LIMIT 1
     `.catch(() => []);
 
     if (existing.length === 0) {

@@ -157,7 +157,6 @@ function EventsPage() {
     { name: "image", label: "Ảnh banner sự kiện", type: "image" },
     { name: "date", label: t("events.col.date"), type: "date", required: true },
     { name: "location", label: t("events.col.location"), type: "text" },
-    { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
     {
       name: "qrStaff",
       label: "Người thực hiện quét mã QR (Ban Truyền Thông)",
@@ -166,6 +165,7 @@ function EventsPage() {
         <EventQrStaffSelector value={val || []} onChange={onChange} />
       ),
     },
+    { name: "capacity", label: t("events.kpi.capacity"), type: "number" },
     { name: "description", label: "Mô tả / Thông tin sự kiện", type: "textarea" },
     {
       name: "photoGalleryUrl",

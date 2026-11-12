@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { getConnectAppSocket } from "@/hooks/use-connect-app-socket";
 import {
   ChevronLeft,
   ChevronRight,
@@ -307,6 +308,67 @@ export function AssociationAnalyticsScreen() {
     loadStats();
     return () => {
       isMounted = false;
+    };
+  }, [granularity, selectedYear, selectedMonth, selectedQuarter]);
+
+  // Realtime updates: Invalidate analytics cache on any activity, connection, or deal event
+  useEffect(() => {
+    let socket: any = null;
+    try {
+      socket = getConnectAppSocket();
+    } catch {}
+
+    const handleRealtimeUpdate = () => {
+      analyticsOverviewMemoryCache.clear();
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && key.startsWith("vba_cache_")) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      } catch {}
+
+      const params = new URLSearchParams({
+        granularity,
+        period: granularity,
+        year: String(selectedYear),
+        ...(granularity === "month" ? { month: String(selectedMonth) } : {}),
+        ...(granularity === "quarter" ? { quarter: String(selectedQuarter) } : {}),
+      });
+      fetchNestApi<any>(`/analytics/overview?${params.toString()}`)
+        .then((res) => {
+          if (res && res.ok) {
+            setServerData(res);
+          }
+        })
+        .catch(() => {});
+    };
+
+    if (socket) {
+      socket.on("opportunity:created", handleRealtimeUpdate);
+      socket.on("opportunity:updated", handleRealtimeUpdate);
+      socket.on("connection:accepted", handleRealtimeUpdate);
+      socket.on("event:registered", handleRealtimeUpdate);
+      socket.on("deal:recorded", handleRealtimeUpdate);
+      socket.on("interaction:created", handleRealtimeUpdate);
+    }
+    window.addEventListener("vba:realtime_refresh_stats", handleRealtimeUpdate);
+    window.addEventListener("vba_refresh_analytics", handleRealtimeUpdate);
+
+    return () => {
+      if (socket) {
+        socket.off("opportunity:created", handleRealtimeUpdate);
+        socket.off("opportunity:updated", handleRealtimeUpdate);
+        socket.off("connection:accepted", handleRealtimeUpdate);
+        socket.off("event:registered", handleRealtimeUpdate);
+        socket.off("deal:recorded", handleRealtimeUpdate);
+        socket.off("interaction:created", handleRealtimeUpdate);
+      }
+      window.removeEventListener("vba:realtime_refresh_stats", handleRealtimeUpdate);
+      window.removeEventListener("vba_refresh_analytics", handleRealtimeUpdate);
     };
   }, [granularity, selectedYear, selectedMonth, selectedQuarter]);
 
@@ -681,13 +743,13 @@ export function AssociationAnalyticsScreen() {
     member_activities: {
       unit: "Lượt",
       col1Label: "Lượt bình luận",
-      col1Color: colorTheme.primaryColor,
+      col1Color: "#003B95",
       col1Unit: "Lượt",
       col2Label: "Lượt share bài viết",
-      col2Color: "#10B981",
+      col2Color: "#059669",
       col2Unit: "Lượt",
       col3Label: "Lượt click link giới thiệu",
-      col3Color: "#F59E0B",
+      col3Color: "#D97706",
       col3Unit: "Lượt",
       col4Label: undefined,
       col4Color: undefined,
@@ -699,34 +761,34 @@ export function AssociationAnalyticsScreen() {
     top_connections: {
       unit: "Lượt",
       col1Label: "Kết nối 1-on-1",
-      col1Color: colorTheme.primaryColor,
+      col1Color: "#003B95",
       col1Unit: "Lượt",
       col2Label: "Đã kết nối",
-      col2Color: "#10B981",
+      col2Color: "#059669",
       col2Unit: "Lượt",
       col3Label: "Chờ phản hồi",
-      col3Color: "#F59E0B",
+      col3Color: "#D97706",
       col3Unit: "Lượt",
       col4Label: "Cuộc gặp B2B",
-      col4Color: "#DC2626",
+      col4Color: "#7C3AED",
       col4Unit: "Cuộc",
       timelineLabel: "Tổng kết nối",
-      timelineColor: "#EA580C",
+      timelineColor: "#DC2626",
       timelineUnit: "Lượt",
     },
     top_opportunities: {
       unit: "Cơ hội",
       col1Label: "Cơ hội mở mới",
-      col1Color: colorTheme.primaryColor,
+      col1Color: "#003B95",
       col1Unit: "Cơ hội",
       col2Label: "Giá trị tăng (Tỷ)",
-      col2Color: "#10B981",
+      col2Color: "#059669",
       col2Unit: "Tỷ VNĐ",
       col3Label: "Giá trị đàm phán",
-      col3Color: "#F59E0B",
+      col3Color: "#D97706",
       col3Unit: "Tỷ VNĐ",
       col4Label: "Đã khớp lệnh / chốt",
-      col4Color: "#8B5CF6",
+      col4Color: "#7C3AED",
       col4Unit: "Deal",
       timelineLabel: "Tổng luồng cơ hội",
       timelineColor: "#DC2626",
@@ -735,13 +797,13 @@ export function AssociationAnalyticsScreen() {
     top_events_meetings: {
       unit: "Lượt",
       col1Label: "Đăng ký tham gia",
-      col1Color: colorTheme.primaryColor,
+      col1Color: "#003B95",
       col1Unit: "Lượt",
       col2Label: "Điểm danh thực tế",
-      col2Color: "#10B981",
+      col2Color: "#059669",
       col2Unit: "Lượt",
       col3Label: "Cuộc họp ban",
-      col3Color: "#F59E0B",
+      col3Color: "#D97706",
       col3Unit: "Cuộc",
       col4Label: "Chờ check-in",
       col4Color: "#EA580C",
@@ -753,10 +815,10 @@ export function AssociationAnalyticsScreen() {
     top_referrals: {
       unit: "Hội viên",
       col1Label: "Hội viên giới thiệu",
-      col1Color: colorTheme.primaryColor,
+      col1Color: "#003B95",
       col1Unit: "Hội viên",
       col2Label: "Đã kết nạp",
-      col2Color: "#10B981",
+      col2Color: "#059669",
       col2Unit: "Hội viên",
       col3Label: "Nhiệm vụ thưởng",
       col3Color: "#F59E0B",
@@ -1412,23 +1474,23 @@ export function AssociationAnalyticsScreen() {
                     dataKey="col1"
                     name={activeChartMeta.col1Label}
                     fill={activeChartMeta.col1Color}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={12}
+                    radius={[5, 5, 0, 0]}
+                    maxBarSize={22}
                   />
                   <Bar
                     dataKey="col2"
                     name={activeChartMeta.col2Label}
                     fill={activeChartMeta.col2Color}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={12}
+                    radius={[5, 5, 0, 0]}
+                    maxBarSize={22}
                   />
                   {activeChartMeta.col3Label && (
                     <Bar
                       dataKey="col3"
                       name={activeChartMeta.col3Label}
                       fill={activeChartMeta.col3Color}
-                      radius={[3, 3, 0, 0]}
-                      maxBarSize={12}
+                      radius={[5, 5, 0, 0]}
+                      maxBarSize={22}
                     />
                   )}
                   {activeChartMeta.col4Label && (
@@ -1436,16 +1498,16 @@ export function AssociationAnalyticsScreen() {
                       dataKey="col4"
                       name={activeChartMeta.col4Label}
                       fill={activeChartMeta.col4Color}
-                      radius={[3, 3, 0, 0]}
-                      maxBarSize={12}
+                      radius={[5, 5, 0, 0]}
+                      maxBarSize={22}
                     />
                   )}
                   <Bar
                     dataKey="timelineVal"
                     name={activeChartMeta.timelineLabel}
                     fill={activeChartMeta.timelineColor || "#DC2626"}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={12}
+                    radius={[5, 5, 0, 0]}
+                    maxBarSize={22}
                   />
                 </ComposedChart>
               </ResponsiveContainer>

@@ -722,7 +722,9 @@ function MemberTabBar() {
       const raw = typeof window !== "undefined" ? localStorage.getItem("vba_my_member") : null;
       if (raw) {
         const m = JSON.parse(raw);
-        if (m?.executive_role || m?.title) return m.executive_role || m.title;
+        if (m?.title || m?.job_title || m?.position || m?.professional_title) {
+          return m.title || m.job_title || m.position || m.professional_title;
+        }
       }
     } catch { }
     return user?.title || "Hội viên chính thức";

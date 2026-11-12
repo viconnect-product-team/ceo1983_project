@@ -83,6 +83,8 @@ export function IncomingConnectionModal() {
     };
 
     socket.on("connection:requested", handleConnectionRequested);
+    socket.on("connection:request", handleConnectionRequested);
+    socket.on("connect_request", handleConnectionRequested);
     socket.on("notification:new", handleNotification);
 
     const handleCustomEvent = (e: any) => {
@@ -106,6 +108,8 @@ export function IncomingConnectionModal() {
 
     return () => {
       socket.off("connection:requested", handleConnectionRequested);
+      socket.off("connection:request", handleConnectionRequested);
+      socket.off("connect_request", handleConnectionRequested);
       socket.off("notification:new", handleNotification);
       window.removeEventListener("vba:incoming_connection", handleCustomEvent);
     };

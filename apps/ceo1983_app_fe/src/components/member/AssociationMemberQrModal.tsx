@@ -302,27 +302,70 @@ export function AssociationMemberQrModal({
     try {
       const cleanCode = encodeURIComponent(String(code).trim());
       const res = await fetchNestApi<any>(`/members/${cleanCode}`);
-      if (res && (res.name || res.contact)) {
-        const pAvatar = res.avatar || res.avatarUrl;
-        setScannedPartner({
-          code: res.code || code,
-          name: res.name || res.contact || "Hội viên CEO 1983",
-          company: res.companyName || res.company || "CLB Doanh Nhân CEO 1983",
-          title: res.title || res.executiveRole || res.industry || "Hội viên Doanh nhân",
-          avatar: pAvatar ? resolveMediaUrl(pAvatar) || pAvatar : null,
-          phone: res.phone || null,
-          email: res.email || null,
-          industry: res.industry || null,
-          userId: res.userId || res.user_id || res.id || null,
+      const partnerData =
+        res && (res.name || res.contact)
+          ? {
+              code: res.code || code,
+              name: res.name || res.contact || "Hội viên CEO 1983",
+              company: res.companyName || res.company || "CLB Doanh Nhân CEO 1983",
+              title: res.title || res.job_title || res.professional_title || "Hội viên Doanh nhân",
+              avatar: res.avatar || res.avatarUrl ? resolveMediaUrl(res.avatar || res.avatarUrl) || res.avatar || res.avatarUrl : null,
+              phone: res.phone || null,
+              email: res.email || null,
+              industry: res.industry || null,
+              userId: res.userId || res.user_id || res.id || null,
+            }
+          : {
+              code,
+              name: `Hội viên ${code}`,
+              company: "CLB Doanh Nhân CEO 1983",
+              title: "Doanh nhân CEO 1983",
+              avatar: null,
+              userId: null,
+            };
+
+      setScannedPartner(partnerData);
+
+      // Realtime Handshake: Ngay khi quét thấy tài khoản B, bắn ngay socket handshake để màn hình B hiện popup yêu cầu kết nối
+      try {
+        const targetUserId = partnerData.userId || partnerData.code || code;
+        const targetMemberCode = partnerData.code || code;
+        const instantConnectionId =
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : "conn_" + Date.now();
+
+        const socket = getConnectAppSocket();
+        socket.emit("connection:request", {
+          connectionId: instantConnectionId,
+          targetUserId: targetUserId,
+          targetMemberCode: targetMemberCode,
+          requesterProfile: {
+            display_name: user?.name || memberName,
+            name: user?.name || memberName,
+            avatar_url: memberAvatar,
+            memberCode: memberCode,
+            company_name: memberCompany,
+            job_title: memberTitle,
+            userId: user?.id,
+            phone: user?.phone || "",
+            email: user?.email || "",
+          },
+          message: `Chào bạn! Tôi vừa quét mã QR của bạn và rất mong được kết nối giao thương trong CLB CEO 1983.`,
         });
-      } else {
-        setScannedPartner({
-          code,
-          name: `Hội viên ${code}`,
-          company: "CLB Doanh Nhân CEO 1983",
-          title: "Doanh nhân CEO 1983",
-          avatar: null,
-        });
+
+        // Ghi nhận ngầm yêu cầu kết nối để lưu thông báo in-app
+        fetchNestApi("/network/requests", {
+          method: "POST",
+          body: JSON.stringify({
+            connectionId: instantConnectionId,
+            targetUserId: targetUserId,
+            memberCode: targetMemberCode,
+            message: `Chào bạn! Tôi vừa quét mã QR của bạn và rất mong được kết nối giao thương trong CLB CEO 1983.`,
+          }),
+        }).catch(() => null);
+      } catch (err) {
+        console.warn("[QR Scan] Instant connection handshake error:", err);
       }
     } catch {
       setScannedPartner({

@@ -1,5 +1,43 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 12/11/2026 (v11.28): Hoàn Thiện Triệt Để Toàn Bộ Các Yêu Cầu CRM & Mobile App CEO 1983 - Sửa Phân Quyền & Xóa Tài Khoản Hàng Loạt CRM, Chặn Ghi Đè Mã Quyền Lên Chức Danh Doanh Nghiệp, Khắc Phục Lỗi Ảnh Banner Sự Kiện & Lỗi Giao Diện Cài Đặt Hệ Thống, Chuẩn Hóa Quản Lý Thư Mời Theo Ảnh 2, Quét QR Kết Nối Realtime, Thống Kê Đậm Nét Biến Động Thực Tế, Bảo Mật Cơ Hội Riêng Tư Tuyệt Đối, Prefill Thông Tin Người Liên Hệ & Hạn Chót Datetime Rõ Ràng, Section 4 Mã QR Vé Đã Đăng Ký & Popup Chi Tiết Sự Kiện ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
+  - **1. Phân quyền & Quản lý tài khoản CRM (`/accounts`) ([NODE-CRM-001])**:
+    * Sửa triệt để luồng đổi quyền: Khi cập nhật vai trò, hệ thống tự động đồng bộ cache `localStorage`, gọi `clearMeCache()` và kích hoạt chuỗi sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed` giúp giao diện CRM lập tức phản ánh chính xác quyền hạn của role mới mà không cần F5.
+    * Thêm checkbox chọn xóa từng tài khoản hoặc checkbox "Chọn tất cả" trên thanh công cụ bảng tài khoản; bổ sung 2 nút hành động nhóm "Xóa đã chọn" và "Xóa tất cả" với modal xác nhận an toàn, luôn bảo vệ tài khoản root admin (`ADMIN-001`, `quan_tri`, `admin@connect.vn`).
+    * Sửa lỗi xóa tài khoản thất bại: Chuẩn hóa ID (`replace(/^acc_/, '')`), hỗ trợ tìm kiếm đa tầng theo ID, email, username, member code và xử lý cascade deletion trên toàn bộ 9 bảng liên quan.
+    * Triệt tiêu hoàn toàn lỗi mã quyền ghi đè chức danh thẻ hội viên: Trong `members.service.ts`, `members.repository.ts`, `MemberShell.tsx` và `business-card.service.ts` (cả lúc sinh thẻ lẫn hàm phân giải `resolvedTitle`), chức danh tuyệt đối ưu tiên `professional_title`, `title`, `job_title`, `position` của doanh nghiệp hội viên; loại bỏ hoàn toàn việc fallback sang `executive_role` hay `department`.
+  - **2. Sự kiện CRM & Khắc phục lỗi hiển thị ảnh banner ([NODE-CRM-007], [NODE-CORE-001])**:
+    * Đưa bộ chọn nhân sự Ban Truyền Thông quét QR (`EventQrStaffSelector`) lên vị trí ưu tiên ngay cạnh địa điểm, kèm cơ chế fallback tức thì từ tài khoản quản trị khi API đang tải.
+    * Sửa lỗi ảnh banner `ky_niem_4_nam_vien_doanh_tri.jpg` bị lỗi 404: Sao chép đồng bộ tệp ảnh sắc nét vào `public/`, `public/images/event/`, `public/images/events/`, `dist/` và thư mục `uploads/` backend; nâng cấp bộ xử lý lỗi `onError` trong `CrudModal.tsx` với cơ chế đa fallback tuần tự (`/ky_niem_4_nam_vien_doanh_tri.jpg`, `/images/event/...`, `/images/events/...`, `/uploads/...`).
+  - **3. Cấu hình hệ thống CRM (`/settings`) ([NODE-CRM-011])**:
+    * Sửa lỗi chữ bị cắt / lỗi font: Mở rộng chiều rộng panel danh mục lên `280px`, cho phép ngắt dòng tự nhiên (`leading-snug break-words`), chuẩn hóa nhãn tab đầu tiên thành "Thông tin chung" (thay cho chữ "Chung" bị hẹp).
+    * Bổ sung cụm 2 icon điều khiển thu nhỏ (`PanelLeftClose`) và mở rộng (`PanelLeftOpen`) trực quan trong header panel, hoạt động đồng bộ với thanh Sidebar chính của CRM.
+  - **4. Quản lý Thư Mời CRM (`/templates?tab=invitation-setup`) ([NODE-CRM-007])**:
+    * Đổi label thành "1. Chọn sự kiện, cuộc họp, chương trình đào tạo" kèm bộ lọc phân loại hoạt động trực quan (Tất cả, Sự kiện Gala, Họp Ban, Đào tạo).
+    * Thiết lập luồng Call API tuần tự: Khi chọn sự kiện/hoạt động -> Tự động gọi API lấy danh sách người đăng ký của sự kiện đó -> Tự động đưa avatar và họ tên hội viên vào khu vực avatar vòng nguyệt quế và huy hiệu "KHÁCH MỜI" trên thư mời.
+    * Mọi trường thông tin trên thư mời đều có thể kéo thả / di chuyển thứ tự và bật/tắt xóa linh hoạt; bố cục chuẩn xác 100% theo Ảnh 2 (Logo 4 đơn vị IEM-DGROUP-CEO1983-VICONNECT, thông điệp kỷ niệm, box thời gian & địa điểm, skyline thành phố).
+  - **5. Mobile App - Luồng quét mã QR kết nối realtime ([NODE-APP-001], [NODE-CORE-003])**:
+    * Khi tài khoản A quét mã QR của tài khoản B (`AssociationMemberQrModal`), hệ thống lập tức phát sự kiện WebSocket `connection:request` kèm hồ sơ đầy đủ của người quét đến phòng `user:B`.
+    * `IncomingConnectionModal` trên màn hình tài khoản B lắng nghe và hiển thị tức thì popup yêu cầu kết nối kèm nút "Chấp nhận" / "Để sau".
+  - **6. Mobile App & CRM - Thống kê biến động realtime & Cột biểu đồ tương phản ([NODE-APP-006], [NODE-CRM-006])**:
+    * Tích hợp WebSocket listener tự động làm mới dữ liệu thống kê khi có cơ hội mới (`opportunity:created`), deal chốt, đăng ký sự kiện hoặc kết nối mới.
+    * Nâng cấp bảng màu cột biểu đồ trên app: Tăng độ tương phản thương hiệu với Navy `#003B95`, Emerald `#059669`, Amber `#D97706`, Royal Purple `#7C3AED`, Crimson `#DC2626`; mở rộng độ dày cột `maxBarSize={22}` và bo góc `radius={[5, 5, 0, 0]}`.
+  - **7. Mobile App - Bảo mật cơ hội kinh doanh & Thông báo người nhận ([NODE-APP-004], [NODE-CORE-001])**:
+    * Thắt chặt quyền riêng tư: Khi chọn chia sẻ theo Ban, chỉ hội viên cùng Ban mới thấy; khi chia sẻ riêng tư (`private`, `assigned`, `specific`), CHỈ CÓ chủ cơ hội và người nhận đích danh được thấy (kể cả admin, chủ tịch cũng không được can thiệp vào cơ hội riêng tư).
+    * Khi trao cơ hội cho hội viên đã kết nối: Backend tự động ghi nhận vào `public.business_notifications` và phát sự kiện `emitNotification` + `opportunity:received` đến người nhận kèm badge chuông thông báo.
+  - **8. Mobile App - Popup tạo mới cơ hội (`OpportunityCreateModal`) ([NODE-APP-004])**:
+    * Khắc phục trường Hạn chót bị mờ: Chuyển sang ô nhập datetime sắc nét với `[color-scheme:light_dark]`, mở bộ chọn ngày khi click (`showPicker()`), mặc định 30 ngày từ thời điểm hiện tại và bổ sung 4 chip chọn nhanh (+7 ngày, +15 ngày, +30 ngày, +60 ngày).
+    * Tự động điền đầy đủ thông tin người liên hệ: Họ tên, số điện thoại, chức danh doanh nghiệp, tên công ty của chính tài khoản đăng nhập (loại bỏ hoàn toàn "Ban Quản Trị" và số điện thoại rác).
+  - **9. Mobile App - Danh sách & Chi tiết sự kiện (`/association/events`) ([NODE-APP-003])**:
+    * Bấm vào sự kiện hoặc nút trên card mở popup Chi tiết sự kiện (`EventDetailModal`); nút hành động hiển thị "Xem chi tiết" (hoặc "Đã đăng ký (Xem chi tiết)").
+    * Trong `EventDetailModal`: Chưa đăng ký hiện nút "Đăng ký tham gia ngay"; đã đăng ký hiện nút "Hủy đăng ký" và nút "Xem vé & QR".
+    * Bổ sung section hiển thị tối đa 4 mã QR sự kiện đã đăng ký (`RegisteredEventsQrSlider`) ở đầu danh sách sự kiện, kèm liên kết "Xem tất cả mã" mở modal danh sách vé.
+    * Thay thế banner tím dài dòng bằng nút đơn giản, tinh gọn "Liên hệ Ban Truyền Thông" kèm biểu tượng tai nghe, loại bỏ hoàn toàn gradient tím và văn bản rườm rà.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 12/11/2026 (v11.27): Khắc Phục Triệt Để 6 Lỗi Mobile App & 2 Lỗi Web CRM CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu, Cuộn Popup Vé & Đồng Bộ Banner, Hiển Thị Chi Tiết Hội Viên Khi Quét Check-in, Modal Xin Quyền Thiết Bị Tự Động, Cài Đặt 1-Chạm PWA, Rút Ngắn Tên Phím Tắt Nhanh & Khắc Phục Lỗi React #418 ([NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-CRM-007], [NODE-CORE-001])**:
   - **1. Ép buộc đổi mật khẩu khi đăng nhập lần đầu tài khoản mới ([NODE-APP-007], [NODE-CORE-001])**:
     * Mở rộng phạm vi phát hiện cờ đăng nhập lần đầu tại `AuthContext.tsx` (`mapApiUser` & `setAuthData`): hỗ trợ đầy đủ các biến thể từ backend `onboarding_status === "new"`, `must_change_password`, `mustChangePassword`, `isFirstLogin`, `is_first_login`, `firstLogin`.
@@ -475,6 +513,44 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.28): Hoàn Thiện Triệt Để Toàn Bộ Các Yêu Cầu CRM & Mobile App CEO 1983 - Sửa Phân Quyền & Xóa Tài Khoản Hàng Loạt CRM, Chặn Ghi Đè Mã Quyền Lên Chức Danh Doanh Nghiệp, Khắc Phục Lỗi Ảnh Banner Sự Kiện & Lỗi Giao Diện Cài Đặt Hệ Thống, Chuẩn Hóa Quản Lý Thư Mời Theo Ảnh 2, Quét QR Kết Nối Realtime, Thống Kê Đậm Nét Biến Động Thực Tế, Bảo Mật Cơ Hội Riêng Tư Tuyệt Đối, Prefill Thông Tin Người Liên Hệ & Hạn Chót Datetime Rõ Ràng, Section 4 Mã QR Vé Đã Đăng Ký & Popup Chi Tiết Sự Kiện ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
+  - **1. Phân quyền & Quản lý tài khoản CRM (`/accounts`) ([NODE-CRM-001])**:
+    * Sửa triệt để luồng đổi quyền: Khi cập nhật vai trò, hệ thống tự động đồng bộ cache `localStorage`, gọi `clearMeCache()` và kích hoạt chuỗi sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed` giúp giao diện CRM lập tức phản ánh chính xác quyền hạn của role mới mà không cần F5.
+    * Thêm checkbox chọn xóa từng tài khoản hoặc checkbox "Chọn tất cả" trên thanh công cụ bảng tài khoản; bổ sung 2 nút hành động nhóm "Xóa đã chọn" và "Xóa tất cả" với modal xác nhận an toàn, luôn bảo vệ tài khoản root admin (`ADMIN-001`, `quan_tri`, `admin@connect.vn`).
+    * Sửa lỗi xóa tài khoản thất bại: Chuẩn hóa ID (`replace(/^acc_/, '')`), hỗ trợ tìm kiếm đa tầng theo ID, email, username, member code và xử lý cascade deletion trên toàn bộ 9 bảng liên quan.
+    * Triệt tiêu hoàn toàn lỗi mã quyền ghi đè chức danh thẻ hội viên: Trong `members.service.ts`, `members.repository.ts`, `MemberShell.tsx` và `business-card.service.ts` (cả lúc sinh thẻ lẫn hàm phân giải `resolvedTitle`), chức danh tuyệt đối ưu tiên `professional_title`, `title`, `job_title`, `position` của doanh nghiệp hội viên; loại bỏ hoàn toàn việc fallback sang `executive_role` hay `department`.
+  - **2. Sự kiện CRM & Khắc phục lỗi hiển thị ảnh banner ([NODE-CRM-007], [NODE-CORE-001])**:
+    * Đưa bộ chọn nhân sự Ban Truyền Thông quét QR (`EventQrStaffSelector`) lên vị trí ưu tiên ngay cạnh địa điểm, kèm cơ chế fallback tức thì từ tài khoản quản trị khi API đang tải.
+    * Sửa lỗi ảnh banner `ky_niem_4_nam_vien_doanh_tri.jpg` bị lỗi 404: Sao chép đồng bộ tệp ảnh sắc nét vào `public/`, `public/images/event/`, `public/images/events/`, `dist/` và thư mục `uploads/` backend; nâng cấp bộ xử lý lỗi `onError` trong `CrudModal.tsx` với cơ chế đa fallback tuần tự (`/ky_niem_4_nam_vien_doanh_tri.jpg`, `/images/event/...`, `/images/events/...`, `/uploads/...`).
+  - **3. Cấu hình hệ thống CRM (`/settings`) ([NODE-CRM-011])**:
+    * Sửa lỗi chữ bị cắt / lỗi font: Mở rộng chiều rộng panel danh mục lên `280px`, cho phép ngắt dòng tự nhiên (`leading-snug break-words`), chuẩn hóa nhãn tab đầu tiên thành "Thông tin chung" (thay cho chữ "Chung" bị hẹp).
+    * Bổ sung cụm 2 icon điều khiển thu nhỏ (`PanelLeftClose`) và mở rộng (`PanelLeftOpen`) trực quan trong header panel, hoạt động đồng bộ với thanh Sidebar chính của CRM.
+  - **4. Quản lý Thư Mời CRM (`/templates?tab=invitation-setup`) ([NODE-CRM-007])**:
+    * Đổi label thành "1. Chọn sự kiện, cuộc họp, chương trình đào tạo" kèm bộ lọc phân loại hoạt động trực quan (Tất cả, Sự kiện Gala, Họp Ban, Đào tạo).
+    * Thiết lập luồng Call API tuần tự: Khi chọn sự kiện/hoạt động -> Tự động gọi API lấy danh sách người đăng ký của sự kiện đó -> Tự động đưa avatar và họ tên hội viên vào khu vực avatar vòng nguyệt quế và huy hiệu "KHÁCH MỜI" trên thư mời.
+    * Mọi trường thông tin trên thư mời đều có thể kéo thả / di chuyển thứ tự và bật/tắt xóa linh hoạt; bố cục chuẩn xác 100% theo Ảnh 2 (Logo 4 đơn vị IEM-DGROUP-CEO1983-VICONNECT, thông điệp kỷ niệm, box thời gian & địa điểm, skyline thành phố).
+  - **5. Mobile App - Luồng quét mã QR kết nối realtime ([NODE-APP-001], [NODE-CORE-003])**:
+    * Khi tài khoản A quét mã QR của tài khoản B (`AssociationMemberQrModal`), hệ thống lập tức phát sự kiện WebSocket `connection:request` kèm hồ sơ đầy đủ của người quét đến phòng `user:B`.
+    * `IncomingConnectionModal` trên màn hình tài khoản B lắng nghe và hiển thị tức thì popup yêu cầu kết nối kèm nút "Chấp nhận" / "Để sau".
+  - **6. Mobile App & CRM - Thống kê biến động realtime & Cột biểu đồ tương phản ([NODE-APP-006], [NODE-CRM-006])**:
+    * Tích hợp WebSocket listener tự động làm mới dữ liệu thống kê khi có cơ hội mới (`opportunity:created`), deal chốt, đăng ký sự kiện hoặc kết nối mới.
+    * Nâng cấp bảng màu cột biểu đồ trên app: Tăng độ tương phản thương hiệu với Navy `#003B95`, Emerald `#059669`, Amber `#D97706`, Royal Purple `#7C3AED`, Crimson `#DC2626`; mở rộng độ dày cột `maxBarSize={22}` và bo góc `radius={[5, 5, 0, 0]}`.
+  - **7. Mobile App - Bảo mật cơ hội kinh doanh & Thông báo người nhận ([NODE-APP-004], [NODE-CORE-001])**:
+    * Thắt chặt quyền riêng tư: Khi chọn chia sẻ theo Ban, chỉ hội viên cùng Ban mới thấy; khi chia sẻ riêng tư (`private`, `assigned`, `specific`), CHỈ CÓ chủ cơ hội và người nhận đích danh được thấy (kể cả admin, chủ tịch cũng không được can thiệp vào cơ hội riêng tư).
+    * Khi trao cơ hội cho hội viên đã kết nối: Backend tự động ghi nhận vào `public.business_notifications` và phát sự kiện `emitNotification` + `opportunity:received` đến người nhận kèm badge chuông thông báo.
+  - **8. Mobile App - Popup tạo mới cơ hội (`OpportunityCreateModal`) ([NODE-APP-004])**:
+    * Khắc phục trường Hạn chót bị mờ: Chuyển sang ô nhập datetime sắc nét với `[color-scheme:light_dark]`, mở bộ chọn ngày khi click (`showPicker()`), mặc định 30 ngày từ thời điểm hiện tại và bổ sung 4 chip chọn nhanh (+7 ngày, +15 ngày, +30 ngày, +60 ngày).
+    * Tự động điền đầy đủ thông tin người liên hệ: Họ tên, số điện thoại, chức danh doanh nghiệp, tên công ty của chính tài khoản đăng nhập (loại bỏ hoàn toàn "Ban Quản Trị" và số điện thoại rác).
+  - **9. Mobile App - Danh sách & Chi tiết sự kiện (`/association/events`) ([NODE-APP-003])**:
+    * Bấm vào sự kiện hoặc nút trên card mở popup Chi tiết sự kiện (`EventDetailModal`); nút hành động hiển thị "Xem chi tiết" (hoặc "Đã đăng ký (Xem chi tiết)").
+    * Trong `EventDetailModal`: Chưa đăng ký hiện nút "Đăng ký tham gia ngay"; đã đăng ký hiện nút "Hủy đăng ký" và nút "Xem vé & QR".
+    * Bổ sung section hiển thị tối đa 4 mã QR sự kiện đã đăng ký (`RegisteredEventsQrSlider`) ở đầu danh sách sự kiện, kèm liên kết "Xem tất cả mã" mở modal danh sách vé.
+    * Thay thế banner tím dài dòng bằng nút đơn giản, tinh gọn "Liên hệ Ban Truyền Thông" kèm biểu tượng tai nghe, loại bỏ hoàn toàn gradient tím và văn bản rườm rà.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.27): Khắc Phục Triệt Để 6 Lỗi Mobile App & 2 Lỗi Web CRM CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu, Cuộn Popup Vé & Đồng Bộ Banner, Hiển Thị Chi Tiết Hội Viên Khi Quét Check-in, Modal Xin Quyền Thiết Bị Tự Động, Cài Đặt 1-Chạm PWA, Rút Ngắn Tên Phím Tắt Nhanh & Khắc Phục Lỗi React #418 ([NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-CRM-007], [NODE-CORE-001])**:
   - **1. Ép buộc đổi mật khẩu khi đăng nhập lần đầu tài khoản mới ([NODE-APP-007], [NODE-CORE-001])**:
@@ -2233,6 +2309,44 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 12/11/2026 (v11.28): Hoàn Thiện Triệt Để Toàn Bộ Các Yêu Cầu CRM & Mobile App CEO 1983 - Sửa Phân Quyền & Xóa Tài Khoản Hàng Loạt CRM, Chặn Ghi Đè Mã Quyền Lên Chức Danh Doanh Nghiệp, Khắc Phục Lỗi Ảnh Banner Sự Kiện & Lỗi Giao Diện Cài Đặt Hệ Thống, Chuẩn Hóa Quản Lý Thư Mời Theo Ảnh 2, Quét QR Kết Nối Realtime, Thống Kê Đậm Nét Biến Động Thực Tế, Bảo Mật Cơ Hội Riêng Tư Tuyệt Đối, Prefill Thông Tin Người Liên Hệ & Hạn Chót Datetime Rõ Ràng, Section 4 Mã QR Vé Đã Đăng Ký & Popup Chi Tiết Sự Kiện ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-011], [NODE-APP-001], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
+  - **1. Phân quyền & Quản lý tài khoản CRM (`/accounts`) ([NODE-CRM-001])**:
+    * Sửa triệt để luồng đổi quyền: Khi cập nhật vai trò, hệ thống tự động đồng bộ cache `localStorage`, gọi `clearMeCache()` và kích hoạt chuỗi sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed` giúp giao diện CRM lập tức phản ánh chính xác quyền hạn của role mới mà không cần F5.
+    * Thêm checkbox chọn xóa từng tài khoản hoặc checkbox "Chọn tất cả" trên thanh công cụ bảng tài khoản; bổ sung 2 nút hành động nhóm "Xóa đã chọn" và "Xóa tất cả" với modal xác nhận an toàn, luôn bảo vệ tài khoản root admin (`ADMIN-001`, `quan_tri`, `admin@connect.vn`).
+    * Sửa lỗi xóa tài khoản thất bại: Chuẩn hóa ID (`replace(/^acc_/, '')`), hỗ trợ tìm kiếm đa tầng theo ID, email, username, member code và xử lý cascade deletion trên toàn bộ 9 bảng liên quan.
+    * Triệt tiêu hoàn toàn lỗi mã quyền ghi đè chức danh thẻ hội viên: Trong `members.service.ts`, `members.repository.ts`, `MemberShell.tsx` và `business-card.service.ts` (cả lúc sinh thẻ lẫn hàm phân giải `resolvedTitle`), chức danh tuyệt đối ưu tiên `professional_title`, `title`, `job_title`, `position` của doanh nghiệp hội viên; loại bỏ hoàn toàn việc fallback sang `executive_role` hay `department`.
+  - **2. Sự kiện CRM & Khắc phục lỗi hiển thị ảnh banner ([NODE-CRM-007], [NODE-CORE-001])**:
+    * Đưa bộ chọn nhân sự Ban Truyền Thông quét QR (`EventQrStaffSelector`) lên vị trí ưu tiên ngay cạnh địa điểm, kèm cơ chế fallback tức thì từ tài khoản quản trị khi API đang tải.
+    * Sửa lỗi ảnh banner `ky_niem_4_nam_vien_doanh_tri.jpg` bị lỗi 404: Sao chép đồng bộ tệp ảnh sắc nét vào `public/`, `public/images/event/`, `public/images/events/`, `dist/` và thư mục `uploads/` backend; nâng cấp bộ xử lý lỗi `onError` trong `CrudModal.tsx` với cơ chế đa fallback tuần tự (`/ky_niem_4_nam_vien_doanh_tri.jpg`, `/images/event/...`, `/images/events/...`, `/uploads/...`).
+  - **3. Cấu hình hệ thống CRM (`/settings`) ([NODE-CRM-011])**:
+    * Sửa lỗi chữ bị cắt / lỗi font: Mở rộng chiều rộng panel danh mục lên `280px`, cho phép ngắt dòng tự nhiên (`leading-snug break-words`), chuẩn hóa nhãn tab đầu tiên thành "Thông tin chung" (thay cho chữ "Chung" bị hẹp).
+    * Bổ sung cụm 2 icon điều khiển thu nhỏ (`PanelLeftClose`) và mở rộng (`PanelLeftOpen`) trực quan trong header panel, hoạt động đồng bộ với thanh Sidebar chính của CRM.
+  - **4. Quản lý Thư Mời CRM (`/templates?tab=invitation-setup`) ([NODE-CRM-007])**:
+    * Đổi label thành "1. Chọn sự kiện, cuộc họp, chương trình đào tạo" kèm bộ lọc phân loại hoạt động trực quan (Tất cả, Sự kiện Gala, Họp Ban, Đào tạo).
+    * Thiết lập luồng Call API tuần tự: Khi chọn sự kiện/hoạt động -> Tự động gọi API lấy danh sách người đăng ký của sự kiện đó -> Tự động đưa avatar và họ tên hội viên vào khu vực avatar vòng nguyệt quế và huy hiệu "KHÁCH MỜI" trên thư mời.
+    * Mọi trường thông tin trên thư mời đều có thể kéo thả / di chuyển thứ tự và bật/tắt xóa linh hoạt; bố cục chuẩn xác 100% theo Ảnh 2 (Logo 4 đơn vị IEM-DGROUP-CEO1983-VICONNECT, thông điệp kỷ niệm, box thời gian & địa điểm, skyline thành phố).
+  - **5. Mobile App - Luồng quét mã QR kết nối realtime ([NODE-APP-001], [NODE-CORE-003])**:
+    * Khi tài khoản A quét mã QR của tài khoản B (`AssociationMemberQrModal`), hệ thống lập tức phát sự kiện WebSocket `connection:request` kèm hồ sơ đầy đủ của người quét đến phòng `user:B`.
+    * `IncomingConnectionModal` trên màn hình tài khoản B lắng nghe và hiển thị tức thì popup yêu cầu kết nối kèm nút "Chấp nhận" / "Để sau".
+  - **6. Mobile App & CRM - Thống kê biến động realtime & Cột biểu đồ tương phản ([NODE-APP-006], [NODE-CRM-006])**:
+    * Tích hợp WebSocket listener tự động làm mới dữ liệu thống kê khi có cơ hội mới (`opportunity:created`), deal chốt, đăng ký sự kiện hoặc kết nối mới.
+    * Nâng cấp bảng màu cột biểu đồ trên app: Tăng độ tương phản thương hiệu với Navy `#003B95`, Emerald `#059669`, Amber `#D97706`, Royal Purple `#7C3AED`, Crimson `#DC2626`; mở rộng độ dày cột `maxBarSize={22}` và bo góc `radius={[5, 5, 0, 0]}`.
+  - **7. Mobile App - Bảo mật cơ hội kinh doanh & Thông báo người nhận ([NODE-APP-004], [NODE-CORE-001])**:
+    * Thắt chặt quyền riêng tư: Khi chọn chia sẻ theo Ban, chỉ hội viên cùng Ban mới thấy; khi chia sẻ riêng tư (`private`, `assigned`, `specific`), CHỈ CÓ chủ cơ hội và người nhận đích danh được thấy (kể cả admin, chủ tịch cũng không được can thiệp vào cơ hội riêng tư).
+    * Khi trao cơ hội cho hội viên đã kết nối: Backend tự động ghi nhận vào `public.business_notifications` và phát sự kiện `emitNotification` + `opportunity:received` đến người nhận kèm badge chuông thông báo.
+  - **8. Mobile App - Popup tạo mới cơ hội (`OpportunityCreateModal`) ([NODE-APP-004])**:
+    * Khắc phục trường Hạn chót bị mờ: Chuyển sang ô nhập datetime sắc nét với `[color-scheme:light_dark]`, mở bộ chọn ngày khi click (`showPicker()`), mặc định 30 ngày từ thời điểm hiện tại và bổ sung 4 chip chọn nhanh (+7 ngày, +15 ngày, +30 ngày, +60 ngày).
+    * Tự động điền đầy đủ thông tin người liên hệ: Họ tên, số điện thoại, chức danh doanh nghiệp, tên công ty của chính tài khoản đăng nhập (loại bỏ hoàn toàn "Ban Quản Trị" và số điện thoại rác).
+  - **9. Mobile App - Danh sách & Chi tiết sự kiện (`/association/events`) ([NODE-APP-003])**:
+    * Bấm vào sự kiện hoặc nút trên card mở popup Chi tiết sự kiện (`EventDetailModal`); nút hành động hiển thị "Xem chi tiết" (hoặc "Đã đăng ký (Xem chi tiết)").
+    * Trong `EventDetailModal`: Chưa đăng ký hiện nút "Đăng ký tham gia ngay"; đã đăng ký hiện nút "Hủy đăng ký" và nút "Xem vé & QR".
+    * Bổ sung section hiển thị tối đa 4 mã QR sự kiện đã đăng ký (`RegisteredEventsQrSlider`) ở đầu danh sách sự kiện, kèm liên kết "Xem tất cả mã" mở modal danh sách vé.
+    * Thay thế banner tím dài dòng bằng nút đơn giản, tinh gọn "Liên hệ Ban Truyền Thông" kèm biểu tượng tai nghe, loại bỏ hoàn toàn gradient tím và văn bản rườm rà.
+  - **Kiểm định mã nguồn & Ràng buộc (Strict Code Quality & Rules)**:
+    * Backend (`apps/ceo1983_app_be`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Frontend (`apps/ceo1983_app_fe`): `npx tsc --noEmit` Exit code 0 (0 errors).
+    * Tuân thủ triệt để Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 12/11/2026 (v11.27): Khắc Phục Triệt Để 6 Lỗi Mobile App & 2 Lỗi Web CRM CEO 1983 - Bắt Buộc Đổi Mật Khẩu Lần Đầu, Cuộn Popup Vé & Đồng Bộ Banner, Hiển Thị Chi Tiết Hội Viên Khi Quét Check-in, Modal Xin Quyền Thiết Bị Tự Động, Cài Đặt 1-Chạm PWA, Rút Ngắn Tên Phím Tắt Nhanh & Khắc Phục Lỗi React #418 ([NODE-APP-001], [NODE-APP-003], [NODE-APP-007], [NODE-CRM-007], [NODE-CORE-001])**:
   - **1. Ép buộc đổi mật khẩu khi đăng nhập lần đầu tài khoản mới ([NODE-APP-007], [NODE-CORE-001])**:

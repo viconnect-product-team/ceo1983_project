@@ -138,6 +138,9 @@ function AccountsPage() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<UserAccountItem | null>(null);
   const [deleteConfirmAccount, setDeleteConfirmAccount] = useState<UserAccountItem | null>(null);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isDeleteAllConfirmOpen, setIsDeleteAllConfirmOpen] = useState(false);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -528,6 +531,33 @@ function AccountsPage() {
         )
         .then(() => {
           clearMeCache();
+          try {
+            const rawMyMem = localStorage.getItem("vba_my_member");
+            if (rawMyMem) {
+              const myMem = JSON.parse(rawMyMem);
+              if (
+                myMem.id === targetId ||
+                myMem.code === selectedAccount.code ||
+                myMem.email === selectedAccount.email
+              ) {
+                myMem.executiveRole = formRole;
+                myMem.executive_role = formRole;
+                myMem.role = formRole;
+                myMem.department = formDepartment;
+                localStorage.setItem("vba_my_member", JSON.stringify(myMem));
+              }
+            }
+            const rawCrmUser = localStorage.getItem("vba_crm_current_user");
+            if (rawCrmUser) {
+              const cu = JSON.parse(rawCrmUser);
+              if (cu.id === targetId || cu.email === selectedAccount.email) {
+                cu.role = formRole;
+                cu.executiveRole = formRole;
+                localStorage.setItem("vba_crm_current_user", JSON.stringify(cu));
+              }
+            }
+          } catch {}
+
           if (typeof window !== "undefined") {
             window.dispatchEvent(new Event("role-changed"));
             window.dispatchEvent(new Event("crm_permissions_updated"));
@@ -548,27 +578,46 @@ function AccountsPage() {
     setIsEditOpen(false);
   };
 
+  const isRootAdmin = (acc: UserAccountItem) => {
+    return (
+      acc.role === "quan_tri" ||
+      acc.code === "ADMIN-001" ||
+      acc.email === "admin@connect.vn" ||
+      acc.email === "admin@ceo1983.vn"
+    );
+  };
+
   const handleDeleteAccount = async (acc: UserAccountItem) => {
-    if (acc.role === "quan_tri" || acc.code === "ADMIN-001") {
+    if (isRootAdmin(acc)) {
       toast.error("Tài khoản Quản trị cấp cao không thể xóa!");
       return;
     }
 
     try {
-      // 1. Call Backend Delete API for user and member
-      if (acc.id) {
-        await Promise.allSettled([
-          fetchNestApi(`/users/${acc.id}`, { method: "DELETE" }),
-          fetchNestApi(`/members/${acc.id}`, { method: "DELETE" }),
-        ]);
+      const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
+      const calls: Promise<any>[] = [];
+      if (cleanId) {
+        calls.push(fetchNestApi(`/users/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+        calls.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
       }
+      if (acc.email) {
+        calls.push(fetchNestApi(`/users/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+        calls.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+      }
+      if (acc.code) {
+        calls.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}`, { method: "DELETE" }).catch(() => null));
+      }
+      await Promise.allSettled(calls);
 
-      // 2. Update local state
       const next = accounts.filter((a) => a.id !== acc.id && a.email !== acc.email);
       setAccounts(next);
+      setSelectedAccountIds((prev) => {
+        const s = new Set(prev);
+        s.delete(acc.id);
+        return s;
+      });
       setDeleteConfirmAccount(null);
 
-      // 3. Persist to storage & notify other tabs
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
@@ -577,6 +626,93 @@ function AccountsPage() {
       toast.success(`Đã xóa tài khoản "${acc.name}" thành công.`);
     } catch (err: any) {
       toast.error(err?.message || "Lỗi khi xóa tài khoản");
+    }
+  };
+
+  const handleDeleteBulk = async () => {
+    const toDelete = accounts.filter((a) => selectedAccountIds.has(a.id) && !isRootAdmin(a));
+    if (toDelete.length === 0) {
+      toast.info("Không có tài khoản hợp lệ nào được chọn để xóa");
+      return;
+    }
+
+    try {
+      await Promise.allSettled(
+        toDelete.flatMap((acc) => {
+          const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
+          const p: Promise<any>[] = [];
+          if (cleanId) {
+            p.push(fetchNestApi(`/users/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+          }
+          if (acc.email) {
+            p.push(fetchNestApi(`/users/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+          }
+          if (acc.code) {
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}`, { method: "DELETE" }).catch(() => null));
+          }
+          return p;
+        })
+      );
+
+      const toDeleteIds = new Set(toDelete.map((a) => a.id));
+      const next = accounts.filter((a) => !toDeleteIds.has(a.id));
+      setAccounts(next);
+      setSelectedAccountIds(new Set());
+      setIsBulkDeleteConfirmOpen(false);
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+      } catch {}
+
+      toast.success(`Đã xóa thành công ${toDelete.length} tài khoản đã chọn.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xóa tài khoản hàng loạt");
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const toDelete = accounts.filter((a) => !isRootAdmin(a));
+    if (toDelete.length === 0) {
+      toast.info("Không có tài khoản nào có thể xóa (tài khoản gốc được bảo vệ)");
+      return;
+    }
+
+    try {
+      await Promise.allSettled(
+        toDelete.flatMap((acc) => {
+          const cleanId = (acc.dbMemberId || acc.id || "").replace(/^acc_/, "").trim();
+          const p: Promise<any>[] = [];
+          if (cleanId) {
+            p.push(fetchNestApi(`/users/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(cleanId)}`, { method: "DELETE" }).catch(() => null));
+          }
+          if (acc.email) {
+            p.push(fetchNestApi(`/users/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.email)}`, { method: "DELETE" }).catch(() => null));
+          }
+          if (acc.code) {
+            p.push(fetchNestApi(`/members/${encodeURIComponent(acc.code)}`, { method: "DELETE" }).catch(() => null));
+          }
+          return p;
+        })
+      );
+
+      const next = accounts.filter((a) => isRootAdmin(a));
+      setAccounts(next);
+      setSelectedAccountIds(new Set());
+      setIsDeleteAllConfirmOpen(false);
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+      } catch {}
+
+      toast.success(`Đã xóa tất cả ${toDelete.length} tài khoản thành công (Bảo vệ tài khoản quản trị gốc).`);
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi khi xóa tất cả tài khoản");
     }
   };
 
@@ -597,6 +733,44 @@ function AccountsPage() {
       return matchQuery && matchDept && matchRole;
     });
   }, [accounts, searchQuery, selectedDeptFilter, selectedRoleFilter]);
+
+  const deletableAccounts = useMemo(() => {
+    return accounts.filter((a) => !isRootAdmin(a));
+  }, [accounts]);
+
+  const deletableInFiltered = useMemo(() => {
+    return filteredAccounts.filter((a) => !isRootAdmin(a));
+  }, [filteredAccounts]);
+
+  const allFilteredSelected = useMemo(() => {
+    if (deletableInFiltered.length === 0) return false;
+    return deletableInFiltered.every((a) => selectedAccountIds.has(a.id));
+  }, [deletableInFiltered, selectedAccountIds]);
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedAccountIds((prev) => {
+        const next = new Set(prev);
+        deletableInFiltered.forEach((a) => next.delete(a.id));
+        return next;
+      });
+    } else {
+      setSelectedAccountIds((prev) => {
+        const next = new Set(prev);
+        deletableInFiltered.forEach((a) => next.add(a.id));
+        return next;
+      });
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedAccountIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Sắp xếp cột 3 trạng thái & phân trang đồng nhất (mặc định null để bản ghi mới / vừa sửa luôn ở đầu)
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -855,12 +1029,71 @@ function AccountsPage() {
           </div>
         )}
 
+        {/* ── BATCH SELECTION & ACTION BAR (Xóa đã chọn & Xóa tất cả) ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#003B95]"
+              />
+              <span className="font-bold text-slate-700 dark:text-slate-300">
+                {selectedAccountIds.size > 0
+                  ? `Đã chọn ${selectedAccountIds.size} / ${deletableInFiltered.length} tài khoản`
+                  : `Chọn tất cả tài khoản có thể xóa (${deletableInFiltered.length})`}
+              </span>
+            </label>
+            {selectedAccountIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedAccountIds(new Set())}
+                className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline cursor-pointer"
+              >
+                Bỏ chọn
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {selectedAccountIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                className="h-8 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Xóa đã chọn ({selectedAccountIds.size})</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsDeleteAllConfirmOpen(true)}
+              className="h-8 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
+              title="Xóa toàn bộ tài khoản ngoại trừ tài khoản quản trị viên gốc"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Xóa tất cả ({deletableAccounts.length})</span>
+            </button>
+          </div>
+        </div>
+
         {/* ── BẢNG TÀI KHOẢN (Figma Exact Table Design & Resizable Columns) ── */}
         <div className="self-stretch bg-white dark:bg-card rounded-[20px] outline outline-1 outline-slate-200 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[1050px]">
               <thead>
                 <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <th className="w-10 px-2 text-center border-r border-slate-200 select-none">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-[#003B95]"
+                      title="Chọn tất cả trên trang"
+                    />
+                  </th>
                   <th className="w-12 px-3 text-center border-r border-slate-200 select-none">STT</th>
                   <SortHeader
                     label="THÔNG TIN TÀI KHOẢN"
@@ -917,12 +1150,38 @@ function AccountsPage() {
               </thead>
 
               <tbody className="divide-y divide-slate-200 text-xs">
-                {paginatedAccounts.map((acc, index) => (
-                  <tr key={acc.id} className="h-16 hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition">
-                    {/* STT */}
-                    <td className="w-12 px-3 text-center text-slate-500 text-xs font-semibold border-r border-slate-200">
-                      {(currentPage - 1) * pageSize + index + 1}
-                    </td>
+                {paginatedAccounts.map((acc, index) => {
+                  const root = isRootAdmin(acc);
+                  const isChecked = selectedAccountIds.has(acc.id);
+                  return (
+                    <tr
+                      key={acc.id}
+                      className={`h-16 hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition ${
+                        isChecked ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="w-10 px-2 text-center border-r border-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={root}
+                          onChange={() => toggleSelectOne(acc.id)}
+                          className={`w-4 h-4 rounded cursor-pointer accent-[#003B95] ${
+                            root ? "opacity-30 cursor-not-allowed" : ""
+                          }`}
+                          title={
+                            root
+                              ? "Tài khoản quản trị viên gốc không thể chọn xóa"
+                              : "Chọn tài khoản này"
+                          }
+                        />
+                      </td>
+
+                      {/* STT */}
+                      <td className="w-12 px-3 text-center text-slate-500 text-xs font-semibold border-r border-slate-200">
+                        {(currentPage - 1) * pageSize + index + 1}
+                      </td>
 
                     {/* THÔNG TIN TÀI KHOẢN */}
                     <td className="px-6 border-r border-slate-200">
@@ -1019,7 +1278,8 @@ function AccountsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
@@ -1297,6 +1557,7 @@ function AccountsPage() {
       )}
 
       {/* ── MODAL 4: XÁC NHẬN XÓA TÀI KHOẢN ── */}
+      {/* ── MODAL 4: XÁC NHẬN XÓA 1 TÀI KHOẢN ── */}
       {deleteConfirmAccount && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4">
@@ -1328,6 +1589,83 @@ function AccountsPage() {
                 className="px-4 py-1.5 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold text-xs transition cursor-pointer"
               >
                 Xác Nhận Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 5: XÁC NHẬN XÓA HÀNG LOẠT (ĐÃ CHỌN) ── */}
+      {isBulkDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3 text-destructive">
+              <div className="p-2.5 rounded-xl bg-destructive/10">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground text-sm">Xóa {selectedAccountIds.size} Tài Khoản Đã Chọn?</h3>
+                <p className="text-muted-foreground text-xs mt-0.5">Thao tác này sẽ xóa đồng thời các tài khoản đã chọn.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-foreground leading-relaxed">
+              Bạn có chắc chắn muốn xóa <strong className="text-foreground">{selectedAccountIds.size}</strong> tài khoản đang được chọn? (Các tài khoản quản trị cấp cao gốc sẽ luôn được bảo vệ an toàn).
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteConfirmOpen(false)}
+                className="px-3.5 py-1.5 rounded-xl border border-border bg-background hover:bg-muted font-semibold text-xs text-foreground transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteBulk}
+                className="px-4 py-1.5 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold text-xs transition cursor-pointer"
+              >
+                Xác Nhận Xóa ({selectedAccountIds.size})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 6: XÁC NHẬN XÓA TẤT CẢ TÀI KHOẢN ── */}
+      {isDeleteAllConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-destructive">
+              <div className="p-2.5 rounded-xl bg-destructive/15">
+                <ShieldAlert className="h-7 w-7" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground text-base">CẢNH BÁO: XÓA TOÀN BỘ TÀI KHOẢN?</h3>
+                <p className="text-muted-foreground text-xs mt-0.5">Xóa {deletableAccounts.length} tài khoản thành viên khỏi hệ thống.</p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-destructive/10 rounded-xl border border-destructive/20 text-xs text-destructive space-y-1">
+              <p className="font-bold">Hành động này không thể hoàn tác!</p>
+              <p>Hệ thống sẽ bảo vệ và giữ lại duy nhất tài khoản Quản trị cấp cao (Admin Root / ADMIN-001) để bạn tiếp tục vận hành hệ thống.</p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setIsDeleteAllConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl border border-border bg-background hover:bg-muted font-semibold text-xs text-foreground transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAll}
+                className="px-5 py-2 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold text-xs shadow-md transition cursor-pointer"
+              >
+                Xác Nhận Xóa Tất Cả ({deletableAccounts.length})
               </button>
             </div>
           </div>

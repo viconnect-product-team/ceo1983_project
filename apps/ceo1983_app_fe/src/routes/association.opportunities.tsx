@@ -582,7 +582,9 @@ function OpportunitiesScreen() {
   const [newBudgetMax, setNewBudgetMax] = useState("");
   const [newIndustry, setNewIndustry] = useState("Công nghệ & Số hóa");
   const [newRegion, setNewRegion] = useState("Toàn quốc");
-  const [newDeadline, setNewDeadline] = useState("");
+  const [newDeadline, setNewDeadline] = useState(() => {
+    return new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  });
   const [newDesc, setNewDesc] = useState("");
   const [newImage, setNewImage] = useState<string | null>(null);
   const [newImages, setNewImages] = useState<string[]>([]);
@@ -632,23 +634,23 @@ function OpportunitiesScreen() {
   );
 
   useEffect(() => {
-    if (member || user) {
-      if (!newContactName)
-        setNewContactName(
-          member?.name || (user as any)?.name || (user as any)?.username || "Ban Quản Trị",
-        );
-      if (!newContactPhone)
-        setNewContactPhone(member?.phone || (user as any)?.phone || "0900000000");
-      if (!newContactTitle) setNewContactTitle(member?.title || "Ban Quản Trị");
-      if (!newCompany)
-        setNewCompany(
-          (member as any)?.company ||
-            (member as any)?.companyName ||
-            member?.title ||
-            "CLB Doanh Nhân CEO 1983",
-        );
+    const storedMember = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("vba_my_member") || "null") : null;
+    const storedUser = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("vba_crm_current_user") || "null") : null;
+    const mObj = member || storedMember;
+    const uObj = user || storedUser;
+
+    if (mObj || uObj) {
+      const defaultName = mObj?.name || uObj?.name || uObj?.username || "Hội viên CEO 1983";
+      const defaultPhone = mObj?.phone || uObj?.phone || "";
+      const defaultTitle = mObj?.title || mObj?.job_title || mObj?.position || mObj?.professional_title || "Lãnh đạo Doanh nghiệp Hội viên";
+      const defaultCompany = mObj?.company || mObj?.companyName || "CLB Doanh Nhân CEO 1983";
+
+      if (!newContactName || newContactName === "Ban Quản Trị") setNewContactName(defaultName);
+      if (!newContactPhone || newContactPhone === "0900000000") setNewContactPhone(defaultPhone);
+      if (!newContactTitle || newContactTitle === "Ban Quản Trị") setNewContactTitle(defaultTitle);
+      if (!newCompany) setNewCompany(defaultCompany);
     }
-  }, [member, user]);
+  }, [member, user, createModalOpen]);
 
   const [benefitSort, setBenefitSort] = useState<"highest_benefit" | "highest_value" | "newest">("highest_benefit");
 
