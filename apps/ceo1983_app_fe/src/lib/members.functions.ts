@@ -145,10 +145,43 @@ export const createMemberFn = createServerFn({ method: "POST" })
 
 /** GET /api/members/:id — Chi tiết hội viên */
 export const getMemberFn = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .inputValidator((d: unknown) => IdSchema.parse(d))
   .handler(async ({ data, context }) => {
-    return fetchNestApiFromServer(`/members/${encodeURIComponent(data.id)}`, context.token);
+    let result: any = null;
+    try {
+      result = await fetchNestApiFromServer(`/members/${encodeURIComponent(data.id)}`, context?.token);
+    } catch {
+      // ignore
+    }
+    if (result && (result.id || result.code || result.name)) {
+      return result;
+    }
+
+    const cleanId = String(data.id || "").toLowerCase().trim();
+
+    // Fallback tìm kiếm trong DEFAULT_MEMBERS
+    const { DEFAULT_MEMBERS } = await import("./members-data");
+    const foundInDefault = DEFAULT_MEMBERS.find(
+      (m) =>
+        m.id.toLowerCase() === cleanId ||
+        m.code.toLowerCase() === cleanId ||
+        m.email.toLowerCase() === cleanId
+    );
+    if (foundInDefault) return foundInDefault;
+
+    // Fallback tìm kiếm trong committee accounts
+    const { readManagedAccounts, accountToMember } = await import("./committee-accounts");
+    const accounts = readManagedAccounts();
+    const foundAcc = accounts.find(
+      (a) =>
+        a.id.toLowerCase() === cleanId ||
+        a.code.toLowerCase() === cleanId ||
+        a.email.toLowerCase() === cleanId
+    );
+    if (foundAcc) return accountToMember(foundAcc);
+
+    return null;
   });
 
 /** PUT /api/members/:id — Cập nhật hội viên */

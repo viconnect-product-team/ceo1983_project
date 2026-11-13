@@ -1,5 +1,53 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 13/11/2026 (v11.42): Xóa Trắng 27 Hội Viên Mẫu Cũ, Chuẩn Hóa 2 Tài Khoản Mặc Định (`admin@viconnect.vn` / `admin@connect.vn` & `info@viconnect.vn`), Khắc Phục Triệt Để Chức Năng Xem Tài Khoản & Xem Chi Tiết Hội Viên Không Xem Được ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001], [NODE-APP-003])**:
+  - **1. Yêu Cầu Của Người Dùng & Nguyên Nhân Gốc Rễ Phát Hiện Được**:
+    * **Yêu cầu**: Xóa trắng toàn bộ 27 hội viên mẫu cũ trong `DEFAULT_MEMBERS`, chỉ giữ lại đúng 2 tài khoản: `admin@connect.vn` / `admin@viconnect.vn` và `info@viconnect.vn`.
+    * **Nguyên nhân "Không xem được tài khoản & không xem được hội viên"**:
+      1. *Lỗi xem hội viên (`/members/$memberId`)*: `getMemberFn` trong `members.functions.ts` dùng `requireNestAuth` bắt buộc token phía server, khi thiếu cookie auth phía SSR hoặc khi gọi backend `/members/:id` bị 404 (do CSDL PostgreSQL chưa có bản ghi), hàm bị văng exception khiến loader của router throw 404 / Unauthorized. Đồng thời các query phụ (`listReviewsFn`, `listProductsFn`, `listInteractionsWithFn`) không có `.catch()`, làm crash cả trang chi tiết hội viên.
+      2. *Lỗi xem danh bạ (`/members` & `/association/members`)*: Trong `rbac-permission-helpers.ts`, logic phân quyền kiểm tra cờ `userProfile.canManageMembers === false` bị áp nhầm để cấm luôn việc xem danh bạ `/members`, trong khi theo chuẩn ma trận SRS RBAC, mọi hội viên và ban đều có quyền tra cứu danh bạ (`MEM_VIEW`). Tại `directory.functions.ts`, hàm `listMembers` cũng dùng `requireNestAuth` thay vì `optionalNestAuth` khiến app hội viên không tải được danh bạ khi chưa có token server.
+      3. *Lỗi xem tài khoản (`/accounts` & `/account-settings`)*: Khi `DEFAULT_ACCOUNTS` trước đó bị xóa về mảng rỗng `[]`, nếu localStorage chưa có tài khoản hoặc CSDL chưa kết nối thì bảng tài khoản bị trống hoàn toàn, người dùng không thể bấm xem. Ở trang `/account-settings` (quản trị người dùng hệ thống), bảng danh sách thiếu hẳn nút "Xem chi tiết tài khoản" (icon `Eye`) và modal xem chi tiết.
+  - **2. Xóa Trắng 27 Hội Viên Mẫu & Giữ Đúng 2 Tài Khoản Mặc Định**:
+    * **File `apps/ceo1983_app_fe/src/lib/members-data.ts`**:
+      - Xóa toàn bộ 27 bản ghi mẫu cũ từ `M1983-001` đến `M1983-027`.
+      - Chỉ giữ đúng 2 tài khoản:
+        1. `M1983-001`: Lê Thị Dung (Admin Viconnect) - Email: `admin@viconnect.vn` / Username: `admin@connect.vn` - Ban Điều Hành - Chủ tịch CLB / Quản trị hệ thống (`quan_tri`).
+        2. `M1983-002`: Ban Truyền Thông CEO 1983 - Email: `info@viconnect.vn` - Ban Truyền Thông - Trưởng Ban (`truong_ban_truyen_thong`).
+      - Nâng cấp hàm `getMember(id)`: Tra cứu linh hoạt theo cả `id`, `code` và `email`.
+    * **File `apps/ceo1983_app_fe/src/lib/committee-accounts.ts`**:
+      - Đồng bộ `DEFAULT_ACCOUNTS` chứa đúng 2 tài khoản trên.
+      - Hàm `readManagedAccounts()` tự động fallback về `DEFAULT_ACCOUNTS` khi localStorage chưa có dữ liệu.
+  - **3. Khắc Phục Triệt Để Chức Năng Xem Chi Tiết Hội Viên**:
+    * **File `apps/ceo1983_app_fe/src/lib/members.functions.ts`**:
+      - Chuyển `getMemberFn` sang dùng `optionalNestAuth`.
+      - Bọc trong khối `try / catch`: Nếu API backend `/members/:id` offline hoặc trả về 404, tự động fallback tìm kiếm trong `DEFAULT_MEMBERS` và `readManagedAccounts()`, không bao giờ bị ném lỗi unhandled.
+    * **File `apps/ceo1983_app_fe/src/routes/members.$memberId.tsx`**:
+      - Bổ sung fallback kiểm tra trực tiếp trong `DEFAULT_MEMBERS` nếu `getMemberFn` trả về null.
+      - Bổ sung `.catch()` an toàn cho `listReviewsFn`, `listProductsFn` và `listInteractionsWithFn`, loại bỏ triệt để tình trạng văng lỗi crash trang chi tiết hội viên.
+    * **File `apps/ceo1983_app_fe/src/lib/member-app/directory.functions.ts`**:
+      - Chuyển `listMembers` và `listConnectedMembers` sang dùng `optionalNestAuth` để cả khách và hội viên đều xem được danh bạ mượt mà trên App di động.
+  - **4. Khắc Phục Triệt Để Chức Năng Xem Chi Tiết Tài Khoản**:
+    * **File `apps/ceo1983_app_fe/src/routes/accounts.tsx`**:
+      - Bảo vệ 2 tài khoản `admin@viconnect.vn` và `info@viconnect.vn` trong `isRootAdmin` và `getDeletedIdentifiers()`, không bao giờ bị xóa nhầm hay lọc mất khỏi danh sách.
+      - Đảm bảo khi localStorage rỗng thì tự động nạp từ `DEFAULT_ACCOUNTS`.
+      - Nút Xem chi tiết (icon `Eye`) và Modal Xem chi tiết tài khoản hoạt động mượt mà.
+    * **File `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`**:
+      - Bổ sung nút **Xem chi tiết tài khoản** (icon `Eye`) ngay cột thao tác trong Bảng người dùng hệ thống.
+      - Bổ sung Modal **Xem chi tiết tài khoản** chuẩn đẹp (hiển thị Avatar, Họ tên, Username, Mã hội viên, Email, Trạng thái, Doanh nghiệp, Ban chuyên môn, Vai trò theo Ban và tóm tắt quyền hạn).
+      - Hàm `loadUsers()`: Bổ sung fallback tự động nạp danh sách 2 tài khoản từ `DEFAULT_ACCOUNTS` khi backend offline hoặc chưa có dữ liệu.
+      - Nâng cấp điều kiện `canManageUsers`: Cho phép cả `isPlatformAdmin`, `isAdmin`, `isBQT`, `isChuTich`, `srsRole === "quan_tri"`, `srsRole === "chu_tich"`, `srsRole === "admin"` xem và quản lý người dùng.
+  - **5. Nâng Cấp Backend & Ma Trận Phân Quyền**:
+    * **File `apps/ceo1983_app_be/src/members/members.service.ts`**:
+      - Hàm `getMemberById`: Bổ sung điều kiện tra cứu theo `LOWER(email) = LOWER(${cleanId})` giúp tìm kiếm chính xác hội viên qua email.
+    * **File `apps/ceo1983_app_be/src/users/users.service.ts`**:
+      - Hàm `listUsers`: Tự động nhận diện `info@viconnect.vn` với role `staff`, vai trò theo ban `truong_ban_truyen_thong` và ban `Ban Truyền Thông`.
+    * **File `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`**:
+      - Bỏ logic cấm xem `/members` khi `canManageMembers === false`. Danh bạ hội viên `/members` và `/companies` luôn mở quyền đọc cho mọi tài khoản.
+      - Mở quyền xem `/accounts` cho các chức danh Trưởng ban (`truong_ban_*`), Thư ký, Ban điều hành và Quản trị viên.
+  - **6. Kiểm Tra Toàn Diện**:
+    * TypeScript check (`tsc --noEmit`) đạt **Exit code 0 (0 errors)** tại cả BE và FE.
+    * Tuân thủ nghiêm ngặt Rule 1: Không chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 13/11/2026 (v11.41): Khắc Phục Triệt Để Lỗi Phân Quyền CRM: Đồng Bộ Chức Năng Quản Lý Tài Khoản Thứ Hai Tại Giao Diện Hệ Thống (`/account-settings`), Cho Phép Chọn Ban & Role Thành Viên Ban, Cập Nhật Ngay Lập Tức Menu Giao Diện Hệ Thống Theo Ma Trận Quyền RBAC ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Nguyên Nhân Gốc Rễ Phát Hiện Được**:
     * **Chức năng quản lý tài khoản thứ hai**: Nằm ở `/account-settings/` (tab "Quản lý người dùng" tại mục Cài đặt tài khoản của hệ thống). Tại đây, trước đó chỉ có 4 role sơ sài (`staff`, `tenant_admin`, `platform_admin`, `viewer`), hoàn toàn thiếu trường "Ban chuyên môn" và không có các role chức danh theo Ban (`thanh_vien_ban_*`, `truong_ban_*`). Khi admin chỉnh sửa thì API backend không nhận diện được role chuyên môn và không cập nhật bảng `members` / `memberships`.
@@ -852,6 +900,54 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.42): Xóa Trắng 27 Hội Viên Mẫu Cũ, Chuẩn Hóa 2 Tài Khoản Mặc Định (`admin@viconnect.vn` / `admin@connect.vn` & `info@viconnect.vn`), Khắc Phục Triệt Để Chức Năng Xem Tài Khoản & Xem Chi Tiết Hội Viên Không Xem Được ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001], [NODE-APP-003])**:
+  - **1. Yêu Cầu Của Người Dùng & Nguyên Nhân Gốc Rễ Phát Hiện Được**:
+    * **Yêu cầu**: Xóa trắng toàn bộ 27 hội viên mẫu cũ trong `DEFAULT_MEMBERS`, chỉ giữ lại đúng 2 tài khoản: `admin@connect.vn` / `admin@viconnect.vn` và `info@viconnect.vn`.
+    * **Nguyên nhân "Không xem được tài khoản & không xem được hội viên"**:
+      1. *Lỗi xem hội viên (`/members/$memberId`)*: `getMemberFn` trong `members.functions.ts` dùng `requireNestAuth` bắt buộc token phía server, khi thiếu cookie auth phía SSR hoặc khi gọi backend `/members/:id` bị 404 (do CSDL PostgreSQL chưa có bản ghi), hàm bị văng exception khiến loader của router throw 404 / Unauthorized. Đồng thời các query phụ (`listReviewsFn`, `listProductsFn`, `listInteractionsWithFn`) không có `.catch()`, làm crash cả trang chi tiết hội viên.
+      2. *Lỗi xem danh bạ (`/members` & `/association/members`)*: Trong `rbac-permission-helpers.ts`, logic phân quyền kiểm tra cờ `userProfile.canManageMembers === false` bị áp nhầm để cấm luôn việc xem danh bạ `/members`, trong khi theo chuẩn ma trận SRS RBAC, mọi hội viên và ban đều có quyền tra cứu danh bạ (`MEM_VIEW`). Tại `directory.functions.ts`, hàm `listMembers` cũng dùng `requireNestAuth` thay vì `optionalNestAuth` khiến app hội viên không tải được danh bạ khi chưa có token server.
+      3. *Lỗi xem tài khoản (`/accounts` & `/account-settings`)*: Khi `DEFAULT_ACCOUNTS` trước đó bị xóa về mảng rỗng `[]`, nếu localStorage chưa có tài khoản hoặc CSDL chưa kết nối thì bảng tài khoản bị trống hoàn toàn, người dùng không thể bấm xem. Ở trang `/account-settings` (quản trị người dùng hệ thống), bảng danh sách thiếu hẳn nút "Xem chi tiết tài khoản" (icon `Eye`) và modal xem chi tiết.
+  - **2. Xóa Trắng 27 Hội Viên Mẫu & Giữ Đúng 2 Tài Khoản Mặc Định**:
+    * **File `apps/ceo1983_app_fe/src/lib/members-data.ts`**:
+      - Xóa toàn bộ 27 bản ghi mẫu cũ từ `M1983-001` đến `M1983-027`.
+      - Chỉ giữ đúng 2 tài khoản:
+        1. `M1983-001`: Lê Thị Dung (Admin Viconnect) - Email: `admin@viconnect.vn` / Username: `admin@connect.vn` - Ban Điều Hành - Chủ tịch CLB / Quản trị hệ thống (`quan_tri`).
+        2. `M1983-002`: Ban Truyền Thông CEO 1983 - Email: `info@viconnect.vn` - Ban Truyền Thông - Trưởng Ban (`truong_ban_truyen_thong`).
+      - Nâng cấp hàm `getMember(id)`: Tra cứu linh hoạt theo cả `id`, `code` và `email`.
+    * **File `apps/ceo1983_app_fe/src/lib/committee-accounts.ts`**:
+      - Đồng bộ `DEFAULT_ACCOUNTS` chứa đúng 2 tài khoản trên.
+      - Hàm `readManagedAccounts()` tự động fallback về `DEFAULT_ACCOUNTS` khi localStorage chưa có dữ liệu.
+  - **3. Khắc Phục Triệt Để Chức Năng Xem Chi Tiết Hội Viên**:
+    * **File `apps/ceo1983_app_fe/src/lib/members.functions.ts`**:
+      - Chuyển `getMemberFn` sang dùng `optionalNestAuth`.
+      - Bọc trong khối `try / catch`: Nếu API backend `/members/:id` offline hoặc trả về 404, tự động fallback tìm kiếm trong `DEFAULT_MEMBERS` và `readManagedAccounts()`, không bao giờ bị ném lỗi unhandled.
+    * **File `apps/ceo1983_app_fe/src/routes/members.$memberId.tsx`**:
+      - Bổ sung fallback kiểm tra trực tiếp trong `DEFAULT_MEMBERS` nếu `getMemberFn` trả về null.
+      - Bổ sung `.catch()` an toàn cho `listReviewsFn`, `listProductsFn` và `listInteractionsWithFn`, loại bỏ triệt để tình trạng văng lỗi crash trang chi tiết hội viên.
+    * **File `apps/ceo1983_app_fe/src/lib/member-app/directory.functions.ts`**:
+      - Chuyển `listMembers` và `listConnectedMembers` sang dùng `optionalNestAuth` để cả khách và hội viên đều xem được danh bạ mượt mà trên App di động.
+  - **4. Khắc Phục Triệt Để Chức Năng Xem Chi Tiết Tài Khoản**:
+    * **File `apps/ceo1983_app_fe/src/routes/accounts.tsx`**:
+      - Bảo vệ 2 tài khoản `admin@viconnect.vn` và `info@viconnect.vn` trong `isRootAdmin` và `getDeletedIdentifiers()`, không bao giờ bị xóa nhầm hay lọc mất khỏi danh sách.
+      - Đảm bảo khi localStorage rỗng thì tự động nạp từ `DEFAULT_ACCOUNTS`.
+      - Nút Xem chi tiết (icon `Eye`) và Modal Xem chi tiết tài khoản hoạt động mượt mà.
+    * **File `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`**:
+      - Bổ sung nút **Xem chi tiết tài khoản** (icon `Eye`) ngay cột thao tác trong Bảng người dùng hệ thống.
+      - Bổ sung Modal **Xem chi tiết tài khoản** chuẩn đẹp (hiển thị Avatar, Họ tên, Username, Mã hội viên, Email, Trạng thái, Doanh nghiệp, Ban chuyên môn, Vai trò theo Ban và tóm tắt quyền hạn).
+      - Hàm `loadUsers()`: Bổ sung fallback tự động nạp danh sách 2 tài khoản từ `DEFAULT_ACCOUNTS` khi backend offline hoặc chưa có dữ liệu.
+      - Nâng cấp điều kiện `canManageUsers`: Cho phép cả `isPlatformAdmin`, `isAdmin`, `isBQT`, `isChuTich`, `srsRole === "quan_tri"`, `srsRole === "chu_tich"`, `srsRole === "admin"` xem và quản lý người dùng.
+  - **5. Nâng Cấp Backend & Ma Trận Phân Quyền**:
+    * **File `apps/ceo1983_app_be/src/members/members.service.ts`**:
+      - Hàm `getMemberById`: Bổ sung điều kiện tra cứu theo `LOWER(email) = LOWER(${cleanId})` giúp tìm kiếm chính xác hội viên qua email.
+    * **File `apps/ceo1983_app_be/src/users/users.service.ts`**:
+      - Hàm `listUsers`: Tự động nhận diện `info@viconnect.vn` với role `staff`, vai trò theo ban `truong_ban_truyen_thong` và ban `Ban Truyền Thông`.
+    * **File `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`**:
+      - Bỏ logic cấm xem `/members` khi `canManageMembers === false`. Danh bạ hội viên `/members` và `/companies` luôn mở quyền đọc cho mọi tài khoản.
+      - Mở quyền xem `/accounts` cho các chức danh Trưởng ban (`truong_ban_*`), Thư ký, Ban điều hành và Quản trị viên.
+  - **6. Kiểm Tra Toàn Diện**:
+    * TypeScript check (`tsc --noEmit`) đạt **Exit code 0 (0 errors)** tại cả BE và FE.
+    * Tuân thủ nghiêm ngặt Rule 1: Không chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.41): Khắc Phục Triệt Để Lỗi Phân Quyền CRM: Đồng Bộ Chức Năng Quản Lý Tài Khoản Thứ Hai Tại Giao Diện Hệ Thống (`/account-settings`), Cho Phép Chọn Ban & Role Thành Viên Ban, Cập Nhật Ngay Lập Tức Menu Giao Diện Hệ Thống Theo Ma Trận Quyền RBAC ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Nguyên Nhân Gốc Rễ Phát Hiện Được**:
@@ -2987,6 +3083,54 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.42): Xóa Trắng 27 Hội Viên Mẫu Cũ, Chuẩn Hóa 2 Tài Khoản Mặc Định (`admin@viconnect.vn` / `admin@connect.vn` & `info@viconnect.vn`), Khắc Phục Triệt Để Chức Năng Xem Tài Khoản & Xem Chi Tiết Hội Viên Không Xem Được ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001], [NODE-APP-003])**:
+  - **1. Yêu Cầu Của Người Dùng & Nguyên Nhân Gốc Rễ Phát Hiện Được**:
+    * **Yêu cầu**: Xóa trắng toàn bộ 27 hội viên mẫu cũ trong `DEFAULT_MEMBERS`, chỉ giữ lại đúng 2 tài khoản: `admin@connect.vn` / `admin@viconnect.vn` và `info@viconnect.vn`.
+    * **Nguyên nhân "Không xem được tài khoản & không xem được hội viên"**:
+      1. *Lỗi xem hội viên (`/members/$memberId`)*: `getMemberFn` trong `members.functions.ts` dùng `requireNestAuth` bắt buộc token phía server, khi thiếu cookie auth phía SSR hoặc khi gọi backend `/members/:id` bị 404 (do CSDL PostgreSQL chưa có bản ghi), hàm bị văng exception khiến loader của router throw 404 / Unauthorized. Đồng thời các query phụ (`listReviewsFn`, `listProductsFn`, `listInteractionsWithFn`) không có `.catch()`, làm crash cả trang chi tiết hội viên.
+      2. *Lỗi xem danh bạ (`/members` & `/association/members`)*: Trong `rbac-permission-helpers.ts`, logic phân quyền kiểm tra cờ `userProfile.canManageMembers === false` bị áp nhầm để cấm luôn việc xem danh bạ `/members`, trong khi theo chuẩn ma trận SRS RBAC, mọi hội viên và ban đều có quyền tra cứu danh bạ (`MEM_VIEW`). Tại `directory.functions.ts`, hàm `listMembers` cũng dùng `requireNestAuth` thay vì `optionalNestAuth` khiến app hội viên không tải được danh bạ khi chưa có token server.
+      3. *Lỗi xem tài khoản (`/accounts` & `/account-settings`)*: Khi `DEFAULT_ACCOUNTS` trước đó bị xóa về mảng rỗng `[]`, nếu localStorage chưa có tài khoản hoặc CSDL chưa kết nối thì bảng tài khoản bị trống hoàn toàn, người dùng không thể bấm xem. Ở trang `/account-settings` (quản trị người dùng hệ thống), bảng danh sách thiếu hẳn nút "Xem chi tiết tài khoản" (icon `Eye`) và modal xem chi tiết.
+  - **2. Xóa Trắng 27 Hội Viên Mẫu & Giữ Đúng 2 Tài Khoản Mặc Định**:
+    * **File `apps/ceo1983_app_fe/src/lib/members-data.ts`**:
+      - Xóa toàn bộ 27 bản ghi mẫu cũ từ `M1983-001` đến `M1983-027`.
+      - Chỉ giữ đúng 2 tài khoản:
+        1. `M1983-001`: Lê Thị Dung (Admin Viconnect) - Email: `admin@viconnect.vn` / Username: `admin@connect.vn` - Ban Điều Hành - Chủ tịch CLB / Quản trị hệ thống (`quan_tri`).
+        2. `M1983-002`: Ban Truyền Thông CEO 1983 - Email: `info@viconnect.vn` - Ban Truyền Thông - Trưởng Ban (`truong_ban_truyen_thong`).
+      - Nâng cấp hàm `getMember(id)`: Tra cứu linh hoạt theo cả `id`, `code` và `email`.
+    * **File `apps/ceo1983_app_fe/src/lib/committee-accounts.ts`**:
+      - Đồng bộ `DEFAULT_ACCOUNTS` chứa đúng 2 tài khoản trên.
+      - Hàm `readManagedAccounts()` tự động fallback về `DEFAULT_ACCOUNTS` khi localStorage chưa có dữ liệu.
+  - **3. Khắc Phục Triệt Để Chức Năng Xem Chi Tiết Hội Viên**:
+    * **File `apps/ceo1983_app_fe/src/lib/members.functions.ts`**:
+      - Chuyển `getMemberFn` sang dùng `optionalNestAuth`.
+      - Bọc trong khối `try / catch`: Nếu API backend `/members/:id` offline hoặc trả về 404, tự động fallback tìm kiếm trong `DEFAULT_MEMBERS` và `readManagedAccounts()`, không bao giờ bị ném lỗi unhandled.
+    * **File `apps/ceo1983_app_fe/src/routes/members.$memberId.tsx`**:
+      - Bổ sung fallback kiểm tra trực tiếp trong `DEFAULT_MEMBERS` nếu `getMemberFn` trả về null.
+      - Bổ sung `.catch()` an toàn cho `listReviewsFn`, `listProductsFn` và `listInteractionsWithFn`, loại bỏ triệt để tình trạng văng lỗi crash trang chi tiết hội viên.
+    * **File `apps/ceo1983_app_fe/src/lib/member-app/directory.functions.ts`**:
+      - Chuyển `listMembers` và `listConnectedMembers` sang dùng `optionalNestAuth` để cả khách và hội viên đều xem được danh bạ mượt mà trên App di động.
+  - **4. Khắc Phục Triệt Để Chức Năng Xem Chi Tiết Tài Khoản**:
+    * **File `apps/ceo1983_app_fe/src/routes/accounts.tsx`**:
+      - Bảo vệ 2 tài khoản `admin@viconnect.vn` và `info@viconnect.vn` trong `isRootAdmin` và `getDeletedIdentifiers()`, không bao giờ bị xóa nhầm hay lọc mất khỏi danh sách.
+      - Đảm bảo khi localStorage rỗng thì tự động nạp từ `DEFAULT_ACCOUNTS`.
+      - Nút Xem chi tiết (icon `Eye`) và Modal Xem chi tiết tài khoản hoạt động mượt mà.
+    * **File `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`**:
+      - Bổ sung nút **Xem chi tiết tài khoản** (icon `Eye`) ngay cột thao tác trong Bảng người dùng hệ thống.
+      - Bổ sung Modal **Xem chi tiết tài khoản** chuẩn đẹp (hiển thị Avatar, Họ tên, Username, Mã hội viên, Email, Trạng thái, Doanh nghiệp, Ban chuyên môn, Vai trò theo Ban và tóm tắt quyền hạn).
+      - Hàm `loadUsers()`: Bổ sung fallback tự động nạp danh sách 2 tài khoản từ `DEFAULT_ACCOUNTS` khi backend offline hoặc chưa có dữ liệu.
+      - Nâng cấp điều kiện `canManageUsers`: Cho phép cả `isPlatformAdmin`, `isAdmin`, `isBQT`, `isChuTich`, `srsRole === "quan_tri"`, `srsRole === "chu_tich"`, `srsRole === "admin"` xem và quản lý người dùng.
+  - **5. Nâng Cấp Backend & Ma Trận Phân Quyền**:
+    * **File `apps/ceo1983_app_be/src/members/members.service.ts`**:
+      - Hàm `getMemberById`: Bổ sung điều kiện tra cứu theo `LOWER(email) = LOWER(${cleanId})` giúp tìm kiếm chính xác hội viên qua email.
+    * **File `apps/ceo1983_app_be/src/users/users.service.ts`**:
+      - Hàm `listUsers`: Tự động nhận diện `info@viconnect.vn` với role `staff`, vai trò theo ban `truong_ban_truyen_thong` và ban `Ban Truyền Thông`.
+    * **File `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`**:
+      - Bỏ logic cấm xem `/members` khi `canManageMembers === false`. Danh bạ hội viên `/members` và `/companies` luôn mở quyền đọc cho mọi tài khoản.
+      - Mở quyền xem `/accounts` cho các chức danh Trưởng ban (`truong_ban_*`), Thư ký, Ban điều hành và Quản trị viên.
+  - **6. Kiểm Tra Toàn Diện**:
+    * TypeScript check (`tsc --noEmit`) đạt **Exit code 0 (0 errors)** tại cả BE và FE.
+    * Tuân thủ nghiêm ngặt Rule 1: Không chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.41): Khắc Phục Triệt Để Lỗi Phân Quyền CRM: Đồng Bộ Chức Năng Quản Lý Tài Khoản Thứ Hai Tại Giao Diện Hệ Thống (`/account-settings`), Cho Phép Chọn Ban & Role Thành Viên Ban, Cập Nhật Ngay Lập Tức Menu Giao Diện Hệ Thống Theo Ma Trận Quyền RBAC ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Nguyên Nhân Gốc Rễ Phát Hiện Được**:

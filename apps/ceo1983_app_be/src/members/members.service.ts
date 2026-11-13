@@ -1218,6 +1218,7 @@ export class MembersService {
          OR LOWER(code) = LOWER(${cleanId}) 
          OR LOWER(code) = LOWER(${cleanId.replace(/^CEO1983-/i, '')})
          OR LOWER(code) = LOWER(${'CEO1983-' + cleanId.replace(/^CEO1983-/i, '')})
+         OR LOWER(email) = LOWER(${cleanId})
          OR user_id::text = ${cleanId} 
       LIMIT 1
     `.catch(() => []);

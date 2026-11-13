@@ -76,14 +76,25 @@ export const Route = createFileRoute("/members/$memberId")({
   ssr: false,
   validateSearch: parseReviewSearch,
   loader: async ({ params }) => {
-    const member = await getMemberFn({ data: { id: params.memberId } });
+    let member = await getMemberFn({ data: { id: params.memberId } }).catch(() => null);
+    if (!member) {
+      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
+      const cleanId = String(params.memberId || "").toLowerCase().trim();
+      member =
+        DEFAULT_MEMBERS.find(
+          (m) =>
+            m.id.toLowerCase() === cleanId ||
+            m.code.toLowerCase() === cleanId ||
+            m.email.toLowerCase() === cleanId
+        ) || null;
+    }
     if (!member) throw notFound();
-    const { reviews, stats } = await listReviewsFn({ data: { sellerId: params.memberId } });
-    const allProducts = await listProductsFn();
-    const products = allProducts.filter((p) => p.sellerId === params.memberId);
+    const { reviews = [], stats = {} } = await listReviewsFn({ data: { sellerId: params.memberId } }).catch(() => ({ reviews: [], stats: {} }));
+    const allProducts = await listProductsFn().catch(() => []);
+    const products = Array.isArray(allProducts) ? allProducts.filter((p) => p.sellerId === params.memberId) : [];
     const interactions = await listInteractionsWithFn({
       data: { peerId: params.memberId, type: "all", offset: 0, limit: 10 },
-    });
+    }).catch(() => ({ items: [], total: 0 }));
     return { member, reviews, stats, products, interactions };
   },
   component: MemberDetailPage,

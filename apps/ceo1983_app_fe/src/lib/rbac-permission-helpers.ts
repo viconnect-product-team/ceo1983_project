@@ -582,7 +582,7 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
         const userProfile = userMap[mCode] || userMap[mCode.toUpperCase()] || userMap[mCode.toLowerCase()];
         if (userProfile) {
           if (userProfile.canView === false) return false;
-          if (cleanRoute === "/members" && userProfile.canManageMembers === false) return false;
+          // canManageMembers dùng cho thao tác duyệt/sửa/xóa, không cấm xem danh bạ
           if (cleanRoute === "/events" && userProfile.canManageEvents === false) return false;
           if ((cleanRoute === "/finance" || cleanRoute === "/renewal") && userProfile.canManageFinance === false) return false;
           if (cleanRoute === "/news" && userProfile.canManageNews === false) return false;
@@ -592,9 +592,13 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
     }
   } catch {}
 
-  // 2. Các route quản trị hệ thống nhạy cảm (Cấm tuyệt đối đối với thành viên ban và hội viên thường)
+  // Danh bạ hội viên & doanh nghiệp mở quyền tra cứu danh bạ cho toàn bộ tài khoản hợp lệ
+  if (cleanRoute === "/members" || cleanRoute === "/companies" || cleanRoute === "/association/members") {
+    return true;
+  }
+
+  // 2. Các route quản trị hệ thống nhạy cảm (Cấm tuyệt đối đối với thành viên ban thường và hội viên)
   const isSystemAdminOnlyRoute =
-    cleanRoute.startsWith("/accounts") ||
     cleanRoute.startsWith("/permissions") ||
     cleanRoute.startsWith("/departments") ||
     cleanRoute.startsWith("/settings") ||
@@ -603,6 +607,23 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
 
   if (isSystemAdminOnlyRoute) {
     if (sRole === "quan_tri" || sRole === "admin" || sRole === "chu_tich" || sRole === "president" || sRole === "truong_ban_dieu_hanh") {
+      return true;
+    }
+    return false;
+  }
+
+  // Quản lý tài khoản (/accounts): Cho phép Quản trị, Chủ tịch, Ban điều hành, Thư ký và Trưởng ban chuyên môn
+  if (cleanRoute.startsWith("/accounts")) {
+    if (
+      sRole === "quan_tri" ||
+      sRole === "admin" ||
+      sRole === "chu_tich" ||
+      sRole === "president" ||
+      sRole === "truong_ban_dieu_hanh" ||
+      sRole === "tong_thu_ky" ||
+      sRole === "ban_thu_ky" ||
+      sRole.startsWith("truong_ban_")
+    ) {
       return true;
     }
     return false;

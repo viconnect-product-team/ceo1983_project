@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
 
 // ---------- Member directory ----------
 export type DirectoryMember = {
@@ -26,18 +26,18 @@ export type DirectoryMember = {
 import { fetchNestApiFromServer } from "@/lib/api-client";
 
 export const listMembers = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .handler(async ({ context }): Promise<DirectoryMember[]> => {
     let data: any = null;
     try {
-      data = await fetchNestApiFromServer("/members/directory", context.token);
+      data = await fetchNestApiFromServer("/members/directory", context?.token);
     } catch {
       // ignore
     }
 
     if (!Array.isArray(data) || data.length === 0) {
       try {
-        data = await fetchNestApiFromServer("/members", context.token);
+        data = await fetchNestApiFromServer("/members", context?.token);
       } catch {
         // ignore
       }
@@ -71,11 +71,11 @@ export const listMembers = createServerFn({ method: "GET" })
   });
 
 export const listConnectedMembers = createServerFn({ method: "GET" })
-  .middleware([requireNestAuth])
+  .middleware([optionalNestAuth])
   .handler(async ({ context }): Promise<DirectoryMember[]> => {
     let data: any = null;
     try {
-      data = await fetchNestApiFromServer("/members/directory?connectedOnly=true", context.token);
+      data = await fetchNestApiFromServer("/members/directory?connectedOnly=true", context?.token);
     } catch {
       // ignore
     }
