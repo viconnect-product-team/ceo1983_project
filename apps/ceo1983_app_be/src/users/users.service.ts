@@ -356,13 +356,13 @@ export class UsersService {
       return user;
     }
 
-    if (username === 'admin@connect.vn') {
+    if (username === 'admin@viconnect.vn' || username === 'admin@connect.vn') {
       return {
-        id: '00000000-0000-0000-0000-000000000000',
-        username: 'admin@connect.vn',
+        id: '00000000-0000-4000-8000-000000000002',
+        username: 'admin@viconnect.vn',
         password:
           '$2b$10$FLMpymq2ujbhVinusol9XuMc5pjTY97IZNrT0b9UAmzRtMoKrXHbu',
-        email: 'admin@connect.vn',
+        email: 'admin@viconnect.vn',
         name: 'Administrator',
         avatar_url: null,
         google_id: null,
@@ -396,7 +396,9 @@ export class UsersService {
       id === '00000000-0000-0000-0000-000000000000' ||
       id === '00000000-0000-4000-8000-000000000002'
     ) {
-      const adminUser = await this.usersRepo.findByUsername('admin@connect.vn');
+      const adminUser =
+        (await this.usersRepo.findByUsername('admin@viconnect.vn')) ||
+        (await this.usersRepo.findByUsername('admin@connect.vn'));
 
       if (adminUser) {
         return adminUser;
@@ -404,10 +406,10 @@ export class UsersService {
 
       return {
         id: '00000000-0000-4000-8000-000000000002',
-        username: 'admin@connect.vn',
+        username: 'admin@viconnect.vn',
         password:
           '$2b$10$FLMpymq2ujbhVinusol9XuMc5pjTY97IZNrT0b9UAmzRtMoKrXHbu',
-        email: 'admin@connect.vn',
+        email: 'admin@viconnect.vn',
         name: 'Administrator',
         avatar_url: null,
         google_id: null,
@@ -740,6 +742,9 @@ export class UsersService {
         const isSystemAdminUser =
           user.id === '00000000-0000-0000-0000-000000000000' ||
           user.id === '00000000-0000-4000-8000-000000000002' ||
+          user.username === 'admin@viconnect.vn' ||
+          user.email === 'admin@viconnect.vn' ||
+          userEmail === 'admin@viconnect.vn' ||
           user.username === 'admin@connect.vn' ||
           user.email === 'admin@connect.vn' ||
           userEmail === 'admin@connect.vn' ||

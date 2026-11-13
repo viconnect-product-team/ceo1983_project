@@ -161,6 +161,7 @@ function AssociationLoginPage() {
         applyRememberPreference(remember, cleanId);
 
         const isSystemAdmin =
+          cleanId.toLowerCase() === "admin@viconnect.vn" ||
           cleanId.toLowerCase() === "admin@connect.vn" ||
           cleanId.toLowerCase() === "admin@ceo1983.com" ||
           cleanId.toLowerCase() === "ceo.tongthuky@ceo1983.com" ||

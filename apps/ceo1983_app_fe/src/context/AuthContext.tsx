@@ -306,6 +306,7 @@ function mapApiUser(apiUser: any, accessToken: string): AppUser {
   }
 
   const isSystemAdmin =
+    email.toLowerCase() === 'admin@viconnect.vn' ||
     email.toLowerCase() === 'admin@connect.vn' ||
     email.toLowerCase() === 'admin@ceo1983.com' ||
     email.toLowerCase() === 'ceo.tongthuky@ceo1983.com' ||

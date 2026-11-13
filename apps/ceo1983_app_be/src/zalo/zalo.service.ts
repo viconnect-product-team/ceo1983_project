@@ -1643,6 +1643,127 @@ Trân trọng cảm ơn Anh/Chị!`;
   }
 
   /**
+   * Bắn thư mời / thông báo Zalo ZBS (ZNS) hàng loạt từ danh sách file Excel
+   * Tự động trích xuất Họ tên + Số điện thoại, chuẩn hóa số ĐT Việt Nam
+   */
+  async sendBulkZns(dto: {
+    templateId?: string;
+    templateCode?: string;
+    recipients: Array<{
+      fullName?: string;
+      name?: string;
+      phone?: string;
+      telephone?: string;
+      [key: string]: any;
+    }>;
+    templateData?: Record<string, any>;
+    eventName?: string;
+    eventDate?: string;
+    eventLocation?: string;
+    accessToken?: string;
+  }) {
+    if (!Array.isArray(dto.recipients) || dto.recipients.length === 0) {
+      throw new HttpException(
+        'Danh sách khách mời từ file Excel không được để trống',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const templateId = dto.templateId || '324561';
+    const results: Array<{
+      phone: string;
+      name: string;
+      success: boolean;
+      message: string;
+      msgId?: string;
+    }> = [];
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const r of dto.recipients) {
+      const name = (r.fullName || r.name || 'Quý Khách').trim();
+      const rawPhone = String(r.phone || r.telephone || '').trim();
+
+      if (!rawPhone) {
+        results.push({
+          phone: rawPhone,
+          name,
+          success: false,
+          message: 'Thiếu số điện thoại',
+        });
+        failCount++;
+        continue;
+      }
+
+      const digits = rawPhone.replace(/[\s()+.-]/g, '');
+      const formattedPhone = digits.startsWith('0')
+        ? '84' + digits.slice(1)
+        : digits.length === 9
+          ? '84' + digits
+          : digits;
+
+      try {
+        const itemTemplateData = {
+          customer_name: name,
+          name: name,
+          event_name: dto.eventName || 'Sự Kiện Kỷ Niệm CEO 1983',
+          event_date: dto.eventDate || '21/11/2026',
+          event_location: dto.eventLocation || 'Hà Nội',
+          ...(dto.templateData || {}),
+        };
+
+        const res = await this.sendZns({
+          templateId,
+          templateCode: dto.templateCode || 'EVENT_INVITATION',
+          phone: formattedPhone,
+          templateData: itemTemplateData,
+          accessToken: dto.accessToken,
+          trackingId: `zbs_bulk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        });
+
+        if (res && res.success) {
+          successCount++;
+          results.push({
+            phone: formattedPhone,
+            name,
+            success: true,
+            message: 'Đã gửi ZBS thành công',
+            msgId: (res as any).data?.msg_id,
+          });
+        } else {
+          failCount++;
+          results.push({
+            phone: formattedPhone,
+            name,
+            success: false,
+            message: res?.message || 'Zalo từ chối gửi bản tin',
+          });
+        }
+      } catch (err: any) {
+        failCount++;
+        results.push({
+          phone: formattedPhone,
+          name,
+          success: false,
+          message: err?.message || 'Lỗi kết nối Zalo ZBS API',
+        });
+      }
+
+      // Khoảng cách ngắn giữa các cuộc gọi để tuân thủ rate limit Zalo
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    }
+
+    return {
+      success: true,
+      total: dto.recipients.length,
+      successCount,
+      failCount,
+      results,
+    };
+  }
+
+  /**
    * Phương thức cấp cao: Tự động gửi thông báo qua Zalo OA (CS Message hoặc ZNS)
    * Đồng bộ toàn diện 100% với các luồng gửi Email thông báo của hệ thống CEO 1983
    */

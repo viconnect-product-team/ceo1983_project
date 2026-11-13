@@ -176,6 +176,7 @@ export function ChatThread({
   } | null>(null);
   const [forwardingMsg, setForwardingMsg] = useState<ChatMessage | null>(null);
   const [activeContextMenuMsgId, setActiveContextMenuMsgId] = useState<string | null>(null);
+  const [contextMenuPlacement, setContextMenuPlacement] = useState<"up" | "down">("up");
   const isGroup = Boolean(peer.isGroup || peer.peerCode?.startsWith("group_"));
   const [groupMembersOpen, setGroupMembersOpen] = useState(false);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -285,6 +286,8 @@ export function ChatThread({
   const handleBubbleTouchStart = (e: React.TouchEvent, msg: ChatMessage) => {
     const touch = e.touches[0];
     touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    const opensDown = touch.clientY < 260;
+    setContextMenuPlacement(opensDown ? "down" : "up");
     if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
     touchTimerRef.current = setTimeout(() => {
       triggerHaptic(30);
@@ -639,7 +642,9 @@ export function ChatThread({
     type: "audio",
   });
   const [activeMenuMsgId, setActiveMenuMsgId] = useState<string | null>(null);
+  const [menuPlacement, setMenuPlacement] = useState<"up" | "down">("up");
   const [activeReactionPickerMsgId, setActiveReactionPickerMsgId] = useState<string | null>(null);
+  const [reactionPickerPlacement, setReactionPickerPlacement] = useState<"up" | "down">("up");
   const [retractedMsgIds, setRetractedMsgIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -1456,7 +1461,7 @@ export function ChatThread({
       <div
         className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0c121e]/95 px-4 pb-2.5 shrink-0 backdrop-blur-md shadow-xs"
         style={{
-          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 48px) + 6px)",
+          paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
         }}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -2281,9 +2286,9 @@ export function ChatThread({
                                   }}
                                 />
                                 <div
-                                  className={`absolute z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 ${
+                                  className={`absolute z-35 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 ${
                                     m.mine ? "right-0" : "left-0"
-                                  } ${idx <= 2 ? "top-full mt-2" : "-top-20"}`}
+                                  } ${contextMenuPlacement === "down" ? "top-full mt-2" : "bottom-full mb-2"}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {/* 1. Emoji Reaction Bar */}
@@ -2422,11 +2427,13 @@ export function ChatThread({
                             <div className="relative">
                               <button
                                 type="button"
-                                onClick={() =>
+                                onClick={(e) => {
+                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                  setReactionPickerPlacement(rect.top < 220 ? "down" : "up");
                                   setActiveReactionPickerMsgId(
                                     activeReactionPickerMsgId === m.id ? null : m.id,
-                                  )
-                                }
+                                  );
+                                }}
                                 className="flex h-7 w-7 items-center justify-center rounded-full bg-white dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 shadow-xs cursor-pointer text-[12px]"
                                 title="Thả cảm xúc"
                               >
@@ -2434,7 +2441,7 @@ export function ChatThread({
                               </button>
                               {activeReactionPickerMsgId === m.id && (
                                 <div
-                                  className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} z-50 flex items-center gap-1 rounded-full border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
+                                  className={`absolute ${reactionPickerPlacement === "down" ? "top-full mt-1.5" : "bottom-8"} z-35 flex items-center gap-1 rounded-full border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
                                     m.mine ? "right-0" : "left-0"
                                   }`}
                                 >
@@ -2456,9 +2463,11 @@ export function ChatThread({
                             <div className="relative">
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setActiveMenuMsgId(activeMenuMsgId === m.id ? null : m.id)
-                                }
+                                onClick={(e) => {
+                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                  setMenuPlacement(rect.top < 240 ? "down" : "up");
+                                  setActiveMenuMsgId(activeMenuMsgId === m.id ? null : m.id);
+                                }}
                                 className="flex h-7 w-7 items-center justify-center rounded-full bg-white dark:bg-zinc-800 text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 shadow-xs cursor-pointer"
                                 title="Tùy chọn"
                               >
@@ -2466,7 +2475,7 @@ export function ChatThread({
                               </button>
                               {activeMenuMsgId === m.id && (
                                 <div
-                                  className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} z-50 min-w-[140px] rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
+                                  className={`absolute ${menuPlacement === "down" ? "top-full mt-1.5" : "bottom-8"} z-35 min-w-[140px] rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
                                     m.mine ? "right-0" : "left-0"
                                   }`}
                                 >

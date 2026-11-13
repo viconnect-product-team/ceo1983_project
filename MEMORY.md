@@ -1,5 +1,31 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
+  - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
+    * **Backend `AnalyticsService.getBuckets`**: Hỗ trợ đầy đủ các lát cắt con: `month_days` (28-31 ngày), `month_weeks` (5 tuần), `quarter_weeks` (13 tuần), `quarter_months` (3 tháng), `year_months` (12 tháng), `year_quarters` (4 quý) từ PostgreSQL.
+    * **CRM Frontend (`routes/analytics.tsx`) & Mobile App Frontend (`routes/association.analytics.tsx`)**:
+      - Bổ sung bộ chọn Sub-view lát cắt con chi tiết (Tất cả ngày vs 5 tuần; 13 tuần vs 3 tháng; 12 tháng vs 4 quý).
+      - Thanh công cụ Zoom In / Zoom Out (1x - 3x) kèm nút Reset 100%.
+      - Container cuộn ngang cảm ứng mượt mà (`overflow-x-auto touch-pan-x`).
+      - Tích hợp thanh trượt Recharts `<Brush />` khi dữ liệu > 8 mốc.
+      - Biểu đồ tròn tính toán tỷ trọng phân bổ chính xác 100% từ dữ liệu PostgreSQL thực tế.
+  - **2. Cấu Hình Chuẩn Zalo ZBS + Thư Mời Sự Kiện + Import Excel Khách Mời**:
+    * **Backend `ZaloService.sendBulkZns`**: Kết nối OpenAPI chuẩn `https://business.openapi.zalo.me/message/template`, tự động trích xuất Họ tên + SĐT, chuẩn hóa số `84...`, gửi theo lô có rate-limit delay và báo cáo kết quả chi tiết.
+    * **Frontend Modal `ZaloZbsInvitationModal.tsx` & Tích hợp vào `InvitationSetupManager.tsx`**: Hỗ trợ upload file Excel `.xlsx`, tải file mẫu 2 cột, bảng danh sách khách kèm trạng thái real-time, nút bắn thư mời Zalo ZBS.
+    * **Mẫu Thông Báo (`routes/notifications.tsx`)**: Tùy chọn gửi kèm qua Zalo OA với mẫu thông báo đã thiết lập.
+  - **3. Khắc Phục Triệt Để Popup Tin Nhắn Bị Header Che (`ChatThread.tsx`)**:
+    * Tự động đo khoảng cách `rect.top` của tin nhắn: Nếu `< 240px` (gần header), menu và picker tự động mở hướng xuống dưới (`top-full mt-1.5`). Ngược lại mở hướng lên (`bottom-8`).
+    * Z-index của popup đổi thành `z-35`, thấp hơn sticky header `z-40`, triệt tiêu hoàn toàn lỗi menu chèn đè lên header người nhận.
+  - **4. Tối Ưu Safe Area Tai Thỏ (Notch) & Footer Bám Đáy Không Dư Thừa Khoảng Trắng/Xanh**:
+    * `MemberShell.tsx`: Container `vba-app` dùng `fixed inset-0 h-full w-full`, bao trọn màn hình điện thoại từ trên xuống dưới, không bị co giật theo dvh.
+    * Footer `MemberTabBar`: `<nav>` bám sát đáy (`bottom: 0`), mở rộng `paddingBottom: max(env(safe-area-inset-bottom, 0px), 6px)` cùng màu nền thanh TabBar, triệt tiêu hoàn toàn khoảng trắng và khoảng xanh dư thừa dưới footer.
+    * Header `MemberHeader` & `association.index.tsx`: Bám sát đỉnh (`sticky top-0 z-40`), mở rộng `paddingTop: max(env(safe-area-inset-top, 0px), 8px)` tự động đẩy nội dung xuống dưới tai thỏ / Dynamic Island / icon status bar của thiết bị.
+  - **5. File Excel Đánh Giá Toàn Diện Hệ Thống**:
+    * Đã tạo `document/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` và `apps/ceo1983_app_fe/public/docs/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` đầy đủ 11 cột, 47 nodes, format zebra striping, dropdown validation 3 trạng thái.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Chạy `npx tsc --noEmit` ở cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều đạt Exit Code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 13/11/2026 (v11.37): Sửa Nhóm Phân Quyền CRM Theo Ma Trận RBAC, Chuẩn Hóa Chi Tiết Sự Kiện & Bắn QR Feed Sắc Nét, Tối Ưu Popup Tin Nhắn Không Bị Header Che, Gỡ Khối Chữ Nhật Gradient CRM, Xóa Ảnh 404 & Gỡ Landing Web ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-016], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-008])**:
   - **1. Sửa 3 Chức Năng Nhóm Phân Quyền CRM (`/accounts`, `/roles`, `/permissions`)**:
     * **Đồng bộ Ma trận RBAC thời gian thực**: Loại bỏ toàn bộ các điều kiện biến cứng (`canViewSystem`, `canViewPlatform`, `canViewFinance`, `canViewSponsors`, `canViewComm`) trong `Sidebar.tsx`. Chuyển đổi 100% sang kiểm tra ma trận RBAC (`isAllowed(it.to)`).
@@ -746,6 +772,32 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
+  - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
+    * **Backend `AnalyticsService.getBuckets`**: Hỗ trợ đầy đủ các lát cắt con: `month_days` (28-31 ngày), `month_weeks` (5 tuần), `quarter_weeks` (13 tuần), `quarter_months` (3 tháng), `year_months` (12 tháng), `year_quarters` (4 quý) từ PostgreSQL.
+    * **CRM Frontend (`routes/analytics.tsx`) & Mobile App Frontend (`routes/association.analytics.tsx`)**:
+      - Bổ sung bộ chọn Sub-view lát cắt con chi tiết (Tất cả ngày vs 5 tuần; 13 tuần vs 3 tháng; 12 tháng vs 4 quý).
+      - Thanh công cụ Zoom In / Zoom Out (1x - 3x) kèm nút Reset 100%.
+      - Container cuộn ngang cảm ứng mượt mà (`overflow-x-auto touch-pan-x`).
+      - Tích hợp thanh trượt Recharts `<Brush />` khi dữ liệu > 8 mốc.
+      - Biểu đồ tròn tính toán tỷ trọng phân bổ chính xác 100% từ dữ liệu PostgreSQL thực tế.
+  - **2. Cấu Hình Chuẩn Zalo ZBS + Thư Mời Sự Kiện + Import Excel Khách Mời**:
+    * **Backend `ZaloService.sendBulkZns`**: Kết nối OpenAPI chuẩn `https://business.openapi.zalo.me/message/template`, tự động trích xuất Họ tên + SĐT, chuẩn hóa số `84...`, gửi theo lô có rate-limit delay và báo cáo kết quả chi tiết.
+    * **Frontend Modal `ZaloZbsInvitationModal.tsx` & Tích hợp vào `InvitationSetupManager.tsx`**: Hỗ trợ upload file Excel `.xlsx`, tải file mẫu 2 cột, bảng danh sách khách kèm trạng thái real-time, nút bắn thư mời Zalo ZBS.
+    * **Mẫu Thông Báo (`routes/notifications.tsx`)**: Tùy chọn gửi kèm qua Zalo OA với mẫu thông báo đã thiết lập.
+  - **3. Khắc Phục Triệt Để Popup Tin Nhắn Bị Header Che (`ChatThread.tsx`)**:
+    * Tự động đo khoảng cách `rect.top` của tin nhắn: Nếu `< 240px` (gần header), menu và picker tự động mở hướng xuống dưới (`top-full mt-1.5`). Ngược lại mở hướng lên (`bottom-8`).
+    * Z-index của popup đổi thành `z-35`, thấp hơn sticky header `z-40`, triệt tiêu hoàn toàn lỗi menu chèn đè lên header người nhận.
+  - **4. Tối Ưu Safe Area Tai Thỏ (Notch) & Footer Bám Đáy Không Dư Thừa Khoảng Trắng/Xanh**:
+    * `MemberShell.tsx`: Container `vba-app` dùng `fixed inset-0 h-full w-full`, bao trọn màn hình điện thoại từ trên xuống dưới, không bị co giật theo dvh.
+    * Footer `MemberTabBar`: `<nav>` bám sát đáy (`bottom: 0`), mở rộng `paddingBottom: max(env(safe-area-inset-bottom, 0px), 6px)` cùng màu nền thanh TabBar, triệt tiêu hoàn toàn khoảng trắng và khoảng xanh dư thừa dưới footer.
+    * Header `MemberHeader` & `association.index.tsx`: Bám sát đỉnh (`sticky top-0 z-40`), mở rộng `paddingTop: max(env(safe-area-inset-top, 0px), 8px)` tự động đẩy nội dung xuống dưới tai thỏ / Dynamic Island / icon status bar của thiết bị.
+  - **5. File Excel Đánh Giá Toàn Diện Hệ Thống**:
+    * Đã tạo `document/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` và `apps/ceo1983_app_fe/public/docs/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` đầy đủ 11 cột, 47 nodes, format zebra striping, dropdown validation 3 trạng thái.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Chạy `npx tsc --noEmit` ở cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều đạt Exit Code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.37): Sửa Nhóm Phân Quyền CRM Theo Ma Trận RBAC, Chuẩn Hóa Chi Tiết Sự Kiện & Bắn QR Feed Sắc Nét, Tối Ưu Popup Tin Nhắn Không Bị Header Che, Gỡ Khối Chữ Nhật Gradient CRM, Xóa Ảnh 404 & Gỡ Landing Web ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-016], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-008])**:
   - **1. Sửa 3 Chức Năng Nhóm Phân Quyền CRM (`/accounts`, `/roles`, `/permissions`)**:
@@ -2775,6 +2827,32 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
+  - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
+    * **Backend `AnalyticsService.getBuckets`**: Hỗ trợ đầy đủ các lát cắt con: `month_days` (28-31 ngày), `month_weeks` (5 tuần), `quarter_weeks` (13 tuần), `quarter_months` (3 tháng), `year_months` (12 tháng), `year_quarters` (4 quý) từ PostgreSQL.
+    * **CRM Frontend (`routes/analytics.tsx`) & Mobile App Frontend (`routes/association.analytics.tsx`)**:
+      - Bổ sung bộ chọn Sub-view lát cắt con chi tiết (Tất cả ngày vs 5 tuần; 13 tuần vs 3 tháng; 12 tháng vs 4 quý).
+      - Thanh công cụ Zoom In / Zoom Out (1x - 3x) kèm nút Reset 100%.
+      - Container cuộn ngang cảm ứng mượt mà (`overflow-x-auto touch-pan-x`).
+      - Tích hợp thanh trượt Recharts `<Brush />` khi dữ liệu > 8 mốc.
+      - Biểu đồ tròn tính toán tỷ trọng phân bổ chính xác 100% từ dữ liệu PostgreSQL thực tế.
+  - **2. Cấu Hình Chuẩn Zalo ZBS + Thư Mời Sự Kiện + Import Excel Khách Mời**:
+    * **Backend `ZaloService.sendBulkZns`**: Kết nối OpenAPI chuẩn `https://business.openapi.zalo.me/message/template`, tự động trích xuất Họ tên + SĐT, chuẩn hóa số `84...`, gửi theo lô có rate-limit delay và báo cáo kết quả chi tiết.
+    * **Frontend Modal `ZaloZbsInvitationModal.tsx` & Tích hợp vào `InvitationSetupManager.tsx`**: Hỗ trợ upload file Excel `.xlsx`, tải file mẫu 2 cột, bảng danh sách khách kèm trạng thái real-time, nút bắn thư mời Zalo ZBS.
+    * **Mẫu Thông Báo (`routes/notifications.tsx`)**: Tùy chọn gửi kèm qua Zalo OA với mẫu thông báo đã thiết lập.
+  - **3. Khắc Phục Triệt Để Popup Tin Nhắn Bị Header Che (`ChatThread.tsx`)**:
+    * Tự động đo khoảng cách `rect.top` của tin nhắn: Nếu `< 240px` (gần header), menu và picker tự động mở hướng xuống dưới (`top-full mt-1.5`). Ngược lại mở hướng lên (`bottom-8`).
+    * Z-index của popup đổi thành `z-35`, thấp hơn sticky header `z-40`, triệt tiêu hoàn toàn lỗi menu chèn đè lên header người nhận.
+  - **4. Tối Ưu Safe Area Tai Thỏ (Notch) & Footer Bám Đáy Không Dư Thừa Khoảng Trắng/Xanh**:
+    * `MemberShell.tsx`: Container `vba-app` dùng `fixed inset-0 h-full w-full`, bao trọn màn hình điện thoại từ trên xuống dưới, không bị co giật theo dvh.
+    * Footer `MemberTabBar`: `<nav>` bám sát đáy (`bottom: 0`), mở rộng `paddingBottom: max(env(safe-area-inset-bottom, 0px), 6px)` cùng màu nền thanh TabBar, triệt tiêu hoàn toàn khoảng trắng và khoảng xanh dư thừa dưới footer.
+    * Header `MemberHeader` & `association.index.tsx`: Bám sát đỉnh (`sticky top-0 z-40`), mở rộng `paddingTop: max(env(safe-area-inset-top, 0px), 8px)` tự động đẩy nội dung xuống dưới tai thỏ / Dynamic Island / icon status bar của thiết bị.
+  - **5. File Excel Đánh Giá Toàn Diện Hệ Thống**:
+    * Đã tạo `document/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` và `apps/ceo1983_app_fe/public/docs/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` đầy đủ 11 cột, 47 nodes, format zebra striping, dropdown validation 3 trạng thái.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Chạy `npx tsc --noEmit` ở cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đều đạt Exit Code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.37): Sửa Nhóm Phân Quyền CRM Theo Ma Trận RBAC, Chuẩn Hóa Chi Tiết Sự Kiện & Bắn QR Feed Sắc Nét, Tối Ưu Popup Tin Nhắn Không Bị Header Che, Gỡ Khối Chữ Nhật Gradient CRM, Xóa Ảnh 404 & Gỡ Landing Web ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-016], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-008])**:
   - **1. Sửa 3 Chức Năng Nhóm Phân Quyền CRM (`/accounts`, `/roles`, `/permissions`)**:

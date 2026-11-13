@@ -29,6 +29,9 @@ import {
   RotateCcw,
   CalendarDays,
   History,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -54,6 +57,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Brush,
 } from "recharts";
 
 interface SearchParams {
@@ -199,6 +203,8 @@ export function AnalyticsDashboardPage() {
     }
   };
   const [chartMode, setChartMode] = useState<"composed" | "pie">("composed");
+  const [subView, setSubView] = useState<"default" | "alt">("default");
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [moneyFilter, setMoneyFilter] = useState<"all" | "under_500m" | "500m_2b" | "2b_10b" | "over_10b">("all");
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -699,10 +705,25 @@ export function AnalyticsDashboardPage() {
     else if (selectedCat === "external_shares") catKey = "externalShareClicks";
 
     const apiCat = serverData?.categories?.[catKey];
-    if (apiCat?.granularities?.[granularity]) return apiCat.granularities[granularity];
+    if (apiCat?.granularities) {
+      if (granularity === "month") {
+        if (subView === "alt" && apiCat.granularities.month_weeks) return apiCat.granularities.month_weeks;
+        if (apiCat.granularities.month_days) return apiCat.granularities.month_days;
+        if (apiCat.granularities.month) return apiCat.granularities.month;
+      } else if (granularity === "quarter") {
+        if (subView === "alt" && apiCat.granularities.quarter_months) return apiCat.granularities.quarter_months;
+        if (apiCat.granularities.quarter_weeks) return apiCat.granularities.quarter_weeks;
+        if (apiCat.granularities.quarter) return apiCat.granularities.quarter;
+      } else if (granularity === "year") {
+        if (subView === "alt" && apiCat.granularities.year_quarters) return apiCat.granularities.year_quarters;
+        if (apiCat.granularities.year_months) return apiCat.granularities.year_months;
+        if (apiCat.granularities.year) return apiCat.granularities.year;
+      }
+      if (apiCat.granularities[granularity]) return apiCat.granularities[granularity];
+    }
     if (apiCat?.chartData && Array.isArray(apiCat.chartData)) return apiCat.chartData;
     return [];
-  }, [selectedCat, serverData, granularity]);
+  }, [selectedCat, serverData, granularity, subView]);
 
   const isChartEmpty = useMemo(() => {
     if (!chartData || chartData.length === 0) return true;
@@ -962,6 +983,132 @@ export function AnalyticsDashboardPage() {
             )}
           </div>
 
+          {/* Lựa chọn xem chi tiết (Ngày/Tuần trong Tháng, Tuần/Tháng trong Quý, Tháng/Quý trong Năm) & Zoom Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              {granularity === "month" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSubView("default")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      subView === "default"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Đầy đủ các ngày trong tháng (28-31 ngày)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubView("alt")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      subView === "alt"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Tổng hợp 5 tuần trong tháng
+                  </button>
+                </>
+              )}
+              {granularity === "quarter" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSubView("default")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      subView === "default"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Đầy đủ các tuần trong quý (13 tuần)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubView("alt")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      subView === "alt"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Tổng hợp 3 tháng trong quý
+                  </button>
+                </>
+              )}
+              {granularity === "year" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSubView("default")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      subView === "default"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Đầy đủ 12 tháng trong năm
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubView("alt")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      subView === "alt"
+                        ? "bg-[#003B95] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Tổng hợp 4 quý trong năm
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Bộ điều khiển Phóng to / Thu nhỏ & Vuốt ngang */}
+            {chartMode === "composed" && (
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 px-1.5 flex items-center gap-1">
+                  <Maximize2 className="size-3 text-[#003B95] dark:text-blue-400" />
+                  <span>Zoom:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((z) => Math.max(1, Number((z - 0.5).toFixed(1))))}
+                  disabled={zoomLevel <= 1}
+                  className="p-1 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Thu nhỏ"
+                >
+                  <ZoomOut className="size-3.5" />
+                </button>
+                <span className="text-xs font-mono font-bold text-[#003B95] dark:text-amber-400 px-1.5 min-w-[38px] text-center">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((z) => Math.min(3, Number((z + 0.5).toFixed(1))))}
+                  disabled={zoomLevel >= 3}
+                  className="p-1 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Phóng to"
+                >
+                  <ZoomIn className="size-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel(1)}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer"
+                  title="Đặt lại 100%"
+                >
+                  Reset
+                </button>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline pl-1 italic">
+                  (Vuốt ngang để xem cụ thể)
+                </span>
+              </div>
+            )}
+          </div>
+
           {/* Khung Biểu Đồ Kèm Bảng Điều Khiển Chu Kỳ Dọc */}
           <div className="flex flex-col md:flex-row items-stretch gap-4">
             {/* Vùng Vẽ Biểu Đồ */}
@@ -1029,84 +1176,102 @@ export function AnalyticsDashboardPage() {
                   </ResponsiveContainer>
                 )
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94a3b8" />
-                    <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, isChartEmpty ? 5 : 'auto']} />
-                    <Tooltip
-                      content={({ active, payload, label }: any) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xl text-xs space-y-1.5 min-w-[220px]">
-                              <div className="font-bold border-b border-slate-100 dark:border-slate-800 pb-1 text-slate-900 dark:text-slate-100 flex items-center justify-between">
-                                <span>Mốc: {label}</span>
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">Thời gian thực</span>
-                              </div>
-                              {payload.map((p: any, idx: number) => {
-                                const itemUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
-                                  : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
-                                    : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
-                                      : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
-                                        : (activeChartMeta.timelineUnit || activeChartMeta.unit);
-
-                                return (
-                                  <div key={idx} className="flex justify-between items-center text-xs">
-                                    <span className="flex items-center gap-1.5" style={{ color: p.color || p.fill || p.stroke }}>
-                                      <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.fill || p.stroke }} />
-                                      <span className="text-slate-700 dark:text-slate-300 font-medium">{p.name}:</span>
-                                    </span>
-                                    <strong className="text-slate-900 dark:text-white font-mono">{p.value} {itemUnit}</strong>
+                <div className="w-full h-full overflow-x-auto overflow-y-hidden pb-2 select-none scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+                  <div
+                    style={{
+                      minWidth: `${Math.max(100, Math.round((chartData.length * 40 * zoomLevel) / 6))}%`,
+                      width: `${Math.max(100, Math.round((chartData.length * 40 * zoomLevel) / 6))}%`,
+                      height: "100%",
+                    }}
+                  >
+                    <ResponsiveContainer width="100%" height={320}>
+                      <ComposedChart data={chartData} margin={{ top: 20, right: 25, left: -10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94a3b8" />
+                        <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} domain={[0, isChartEmpty ? 5 : 'auto']} />
+                        <Tooltip
+                          content={({ active, payload, label }: any) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xl text-xs space-y-1.5 min-w-[220px]">
+                                  <div className="font-bold border-b border-slate-100 dark:border-slate-800 pb-1 text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                                    <span>Mốc: {label}</span>
+                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">Thời gian thực</span>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar
-                      dataKey="col1"
-                      name={activeChartMeta.col1Label}
-                      fill={activeChartMeta.col1Color}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={28}
-                    />
-                    <Bar
-                      dataKey="col2"
-                      name={activeChartMeta.col2Label}
-                      fill={activeChartMeta.col2Color}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={28}
-                    />
-                    {activeChartMeta.col3Label && (
-                      <Bar
-                        dataKey="col3"
-                        name={activeChartMeta.col3Label}
-                        fill={activeChartMeta.col3Color}
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={28}
-                      />
-                    )}
-                    {activeChartMeta.col4Label && (
-                      <Bar
-                        dataKey="col4"
-                        name={activeChartMeta.col4Label}
-                        fill={activeChartMeta.col4Color}
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={28}
-                      />
-                    )}
-                    <Bar
-                      dataKey="timelineVal"
-                      name={activeChartMeta.timelineLabel}
-                      fill={activeChartMeta.timelineColor || "#DC2626"}
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={28}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                                  {payload.map((p: any, idx: number) => {
+                                    const itemUnit = p.dataKey === 'col1' ? (activeChartMeta.col1Unit || activeChartMeta.unit)
+                                      : p.dataKey === 'col2' ? (activeChartMeta.col2Unit || activeChartMeta.unit)
+                                        : p.dataKey === 'col3' ? (activeChartMeta.col3Unit || activeChartMeta.unit)
+                                          : p.dataKey === 'col4' ? (activeChartMeta.col4Unit || activeChartMeta.unit)
+                                            : (activeChartMeta.timelineUnit || activeChartMeta.unit);
+
+                                    return (
+                                      <div key={idx} className="flex justify-between items-center text-xs">
+                                        <span className="flex items-center gap-1.5" style={{ color: p.color || p.fill || p.stroke }}>
+                                          <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: p.color || p.fill || p.stroke }} />
+                                          <span className="text-slate-700 dark:text-slate-300 font-medium">{p.name}:</span>
+                                        </span>
+                                        <strong className="text-slate-900 dark:text-white font-mono">{p.value} {itemUnit}</strong>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar
+                          dataKey="col1"
+                          name={activeChartMeta.col1Label}
+                          fill={activeChartMeta.col1Color}
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={28}
+                        />
+                        <Bar
+                          dataKey="col2"
+                          name={activeChartMeta.col2Label}
+                          fill={activeChartMeta.col2Color}
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={28}
+                        />
+                        {activeChartMeta.col3Label && (
+                          <Bar
+                            dataKey="col3"
+                            name={activeChartMeta.col3Label}
+                            fill={activeChartMeta.col3Color}
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={28}
+                          />
+                        )}
+                        {activeChartMeta.col4Label && (
+                          <Bar
+                            dataKey="col4"
+                            name={activeChartMeta.col4Label}
+                            fill={activeChartMeta.col4Color}
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={28}
+                          />
+                        )}
+                        <Bar
+                          dataKey="timelineVal"
+                          name={activeChartMeta.timelineLabel}
+                          fill={activeChartMeta.timelineColor || "#DC2626"}
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={28}
+                        />
+                        {chartData.length > 8 && (
+                          <Brush
+                            dataKey="name"
+                            height={22}
+                            stroke="#003B95"
+                            fill="rgba(0, 59, 149, 0.05)"
+                          />
+                        )}
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               )}
             </div>
 

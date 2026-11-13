@@ -21,6 +21,7 @@ export interface BucketInfo {
 export function getBuckets(
   granularity: TimeGranularity,
   now: Date = new Date(),
+  subView?: 'days' | 'weeks' | 'months' | 'quarters',
 ): BucketInfo[] {
   const buckets: BucketInfo[] = [];
   if (granularity === 'minute') {
@@ -102,49 +103,126 @@ export function getBuckets(
       });
     }
   } else if (granularity === 'month') {
-    // 12 tháng đầy đủ của năm được chọn (T1 -> T12)
     const y = now.getFullYear();
-    for (let m = 0; m < 12; m++) {
-      const start = new Date(y, m, 1, 0, 0, 0);
-      const end = new Date(y, m + 1, 0, 23, 59, 59);
-      const label = `T${m + 1}`;
-      buckets.push({
-        name: label,
-        label,
-        start,
-        end,
-        timeLabel: `Tháng ${m + 1}/${y}`,
-      });
+    const m = now.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+    if (subView === 'weeks') {
+      // Nhóm theo các tuần trong tháng (Tuần 1, Tuần 2, Tuần 3, Tuần 4, Tuần 5)
+      const weekRanges = [
+        { name: 'Tuần 1 (1-7)', startDay: 1, endDay: 7, label: 'Tuần 1' },
+        { name: 'Tuần 2 (8-14)', startDay: 8, endDay: 14, label: 'Tuần 2' },
+        { name: 'Tuần 3 (15-21)', startDay: 15, endDay: 21, label: 'Tuần 3' },
+        { name: 'Tuần 4 (22-28)', startDay: 22, endDay: 28, label: 'Tuần 4' },
+        { name: `Tuần 5 (29-${daysInMonth})`, startDay: 29, endDay: daysInMonth, label: 'Tuần 5' },
+      ];
+      for (const w of weekRanges) {
+        if (w.startDay <= daysInMonth) {
+          const actualEnd = Math.min(w.endDay, daysInMonth);
+          const start = new Date(y, m, w.startDay, 0, 0, 0);
+          const end = new Date(y, m, actualEnd, 23, 59, 59);
+          buckets.push({
+            name: w.name,
+            label: w.label,
+            start,
+            end,
+            timeLabel: `${w.label} (Từ ngày ${w.startDay} đến ngày ${actualEnd}/${m + 1}/${y})`,
+          });
+        }
+      }
+    } else {
+      // Mặc định: Hiển thị ĐẦY ĐỦ tất cả các ngày trong tháng (Ngày 1 -> Ngày 28/30/31) kèm ký hiệu Tuần
+      const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const start = new Date(y, m, d, 0, 0, 0);
+        const end = new Date(y, m, d, 23, 59, 59);
+        const dayOfWeek = start.getDay();
+        const dayName = dayNames[dayOfWeek];
+        const weekNum = Math.ceil(d / 7);
+        const dateStr = `${String(d).padStart(2, '0')}/${String(m + 1).padStart(2, '0')}`;
+        buckets.push({
+          name: dateStr,
+          label: `${dayName} ${dateStr}`,
+          start,
+          end,
+          timeLabel: `${dayName}, ngày ${dateStr}/${y} (Tuần ${weekNum})`,
+        });
+      }
     }
   } else if (granularity === 'quarter') {
-    // 4 quý đầy đủ của năm được chọn (Q1 -> Q4)
+    // Quý: hiển thị các tuần trong quý hoặc 3 tháng trong quý
     const curYear = now.getFullYear();
-    for (let q = 0; q < 4; q++) {
-      const start = new Date(curYear, q * 3, 1, 0, 0, 0);
-      const end = new Date(curYear, (q + 1) * 3, 0, 23, 59, 59);
-      const label = `Q${q + 1}`;
-      buckets.push({
-        name: label,
-        label,
-        start,
-        end,
-        timeLabel: `Quý ${q + 1}/${curYear}`,
-      });
+    const curQuarter = Math.floor(now.getMonth() / 3) + 1;
+    const startMonth = (curQuarter - 1) * 3;
+
+    if (subView === 'months') {
+      // 3 tháng của quý
+      for (let i = 0; i < 3; i++) {
+        const m = startMonth + i;
+        const start = new Date(curYear, m, 1, 0, 0, 0);
+        const end = new Date(curYear, m + 1, 0, 23, 59, 59);
+        const label = `Tháng ${m + 1}`;
+        buckets.push({
+          name: label,
+          label,
+          start,
+          end,
+          timeLabel: `Tháng ${m + 1}/${curYear} (Quý ${curQuarter})`,
+        });
+      }
+    } else {
+      // Mặc định: Hiển thị đầy đủ ~13 tuần trong quý
+      const quarterStart = new Date(curYear, startMonth, 1, 0, 0, 0);
+      const quarterEnd = new Date(curYear, startMonth + 3, 0, 23, 59, 59);
+      let weekIdx = 1;
+      let curr = new Date(quarterStart);
+      while (curr <= quarterEnd) {
+        const wStart = new Date(curr);
+        const wEnd = new Date(curr.getTime() + 6 * 24 * 60 * 60 * 1000);
+        if (wEnd > quarterEnd) wEnd.setTime(quarterEnd.getTime());
+        const wMonth = wStart.getMonth() + 1;
+        const label = `T${weekIdx} (T${wMonth})`;
+        buckets.push({
+          name: label,
+          label: `Tuần ${weekIdx}`,
+          start: wStart,
+          end: wEnd,
+          timeLabel: `Tuần ${weekIdx} (Tháng ${wMonth}/${curYear})`,
+        });
+        curr = new Date(curr.getTime() + 7 * 24 * 60 * 60 * 1000);
+        weekIdx++;
+      }
     }
   } else {
-    // year: 5 năm liên tiếp kết thúc tại năm được chọn
+    // year: 12 tháng đầy đủ của năm (T1 -> T12) hoặc 4 quý (Q1 -> Q4)
     const curYear = now.getFullYear();
-    for (let yr = curYear - 4; yr <= curYear; yr++) {
-      const start = new Date(yr, 0, 1, 0, 0, 0);
-      const end = new Date(yr, 11, 31, 23, 59, 59);
-      const label = String(yr);
-      buckets.push({
-        name: label,
-        label,
-        start,
-        end,
-        timeLabel: `Năm ${yr}`,
-      });
+    if (subView === 'quarters') {
+      for (let q = 0; q < 4; q++) {
+        const start = new Date(curYear, q * 3, 1, 0, 0, 0);
+        const end = new Date(curYear, (q + 1) * 3, 0, 23, 59, 59);
+        const label = `Quý ${q + 1}`;
+        buckets.push({
+          name: label,
+          label,
+          start,
+          end,
+          timeLabel: `Quý ${q + 1}/${curYear}`,
+        });
+      }
+    } else {
+      // 12 tháng đầy đủ của năm
+      for (let m = 0; m < 12; m++) {
+        const start = new Date(curYear, m, 1, 0, 0, 0);
+        const end = new Date(curYear, m + 1, 0, 23, 59, 59);
+        const label = `Tháng ${m + 1}`;
+        buckets.push({
+          name: label,
+          label,
+          start,
+          end,
+          timeLabel: `Tháng ${m + 1}/${curYear}`,
+        });
+      }
     }
   }
   return buckets;
@@ -294,8 +372,9 @@ export function buildGranularChart(
     members: any[];
   },
   now: Date = new Date(),
+  subView?: 'days' | 'weeks' | 'months' | 'quarters',
 ) {
-  const buckets = getBuckets(granularity, now);
+  const buckets = getBuckets(granularity, now, subView);
   const {
     opps,
     conns,
@@ -671,6 +750,16 @@ export class AnalyticsService implements OnModuleInit {
         allGranularities.forEach((gran) => {
           result[gran] = buildGranularChart(gran, catKey, dataSources, now);
         });
+        // Bổ sung các lát cắt con linh hoạt theo yêu cầu:
+        // 1. Tháng: Tất cả các ngày (month / month_days) VÀ Nhóm theo tuần (month_weeks)
+        result['month_days'] = buildGranularChart('month', catKey, dataSources, now, 'days');
+        result['month_weeks'] = buildGranularChart('month', catKey, dataSources, now, 'weeks');
+        // 2. Quý: Tất cả các tuần (quarter / quarter_weeks) VÀ Nhóm theo 3 tháng (quarter_months)
+        result['quarter_weeks'] = buildGranularChart('quarter', catKey, dataSources, now, 'weeks');
+        result['quarter_months'] = buildGranularChart('quarter', catKey, dataSources, now, 'months');
+        // 3. Năm: 12 tháng (year / year_months) VÀ 4 Quý (year_quarters)
+        result['year_months'] = buildGranularChart('year', catKey, dataSources, now, 'months');
+        result['year_quarters'] = buildGranularChart('year', catKey, dataSources, now, 'quarters');
         return result;
       };
 

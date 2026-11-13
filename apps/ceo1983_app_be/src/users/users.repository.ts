@@ -410,6 +410,8 @@ export class UsersRepository {
       `.catch(() => []);
       const user = userRows?.[0];
       if (
+        user?.email === 'admin@viconnect.vn' ||
+        user?.username === 'admin@viconnect.vn' ||
         user?.email === 'admin@connect.vn' ||
         user?.username === 'admin@connect.vn'
       ) {

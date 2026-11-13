@@ -25,60 +25,11 @@ export interface UserAccountItem {
 
 export const MANAGED_ACCOUNTS_STORAGE_KEY = "vba_managed_accounts_v2";
 
-export const DEFAULT_ACCOUNTS: UserAccountItem[] = [
-  {
-    id: "00000000-0000-4000-8000-000000000002",
-    dbMemberId: "00000000-0000-4000-8000-000000000002",
-    name: "Jame Nguyễn",
-    code: "CEO1983-000001",
-    email: "admin@connect.vn",
-    phone: "0988 888 888",
-    companyName: "Công ty Cổ phần Công nghệ VIO CONNECT",
-    department: "Ban Điều Hành",
-    role: "quan_tri",
-    status: "active",
-  },
-  {
-    id: "67e1bca9-94e6-4859-b13c-bf93e2b9c4c5",
-    dbMemberId: "MBMWD8P4NX",
-    name: "Phạm Văn Vũ",
-    code: "CEO1983-000003",
-    email: "vumikasa6@gmail.com",
-    phone: "0988 888 888",
-    companyName: "VIO CONNECT JSC",
-    department: "Ban truyền thông",
-    role: "thanh_vien_ban_truyen_thong",
-    status: "active",
-  },
-  {
-    id: "eda9cbcc-6c51-47db-968b-6dee219a59ae",
-    dbMemberId: "MBMWBR2VWN",
-    name: "Phạm hồng Nguyên",
-    code: "CEO1983-000002",
-    email: "info@viconnect.vn",
-    phone: "0903 205 683",
-    companyName: "Công ty TNHH Tư Vấn Doanh Nghiệp ViConnect",
-    department: "Hội viên ceo1983",
-    role: "member",
-    status: "active",
-  },
-  {
-    id: "703909a9-f21e-4ebe-b537-10da57b0cb4c",
-    dbMemberId: "MBMWD8NCJH",
-    name: "Phạm An Nam",
-    code: "CEO1983-000004",
-    email: "vupv090120@gmail.com",
-    phone: "0973 205 683",
-    companyName: "Doanh Nghiệp Hội Viên CEO 1983",
-    department: "Hội viên ceo1983",
-    role: "member",
-    status: "active",
-  },
-];
+export const DEFAULT_ACCOUNTS: UserAccountItem[] = [];
 
-/** Đọc danh sách tài khoản đang quản lý (localStorage, fallback DEFAULT_ACCOUNTS). */
+/** Đọc danh sách tài khoản đang quản lý (localStorage, fallback mảng rỗng []). */
 export function readManagedAccounts(): UserAccountItem[] {
-  if (typeof window === "undefined") return DEFAULT_ACCOUNTS;
+  if (typeof window === "undefined") return [];
   try {
     const saved = localStorage.getItem(MANAGED_ACCOUNTS_STORAGE_KEY);
     if (saved) {
@@ -88,7 +39,7 @@ export function readManagedAccounts(): UserAccountItem[] {
   } catch {
     /* ignore */
   }
-  return DEFAULT_ACCOUNTS;
+  return [];
 }
 
 /** Chuyển tài khoản quản trị → Member để dùng trong danh bạ / chat. */

@@ -644,6 +644,7 @@ function AccountsPage() {
     return (
       acc.role === "quan_tri" ||
       acc.code === "ADMIN-001" ||
+      acc.email === "admin@viconnect.vn" ||
       acc.email === "admin@connect.vn" ||
       acc.email === "admin@ceo1983.vn"
     );

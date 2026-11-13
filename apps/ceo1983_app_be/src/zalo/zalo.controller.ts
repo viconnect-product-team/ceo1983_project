@@ -143,9 +143,19 @@ export class ZaloController {
    */
   @Post('send-zns')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk')
+  @Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk', 'quan_tri')
   async sendZns(@Body() dto: SendZnsMessageDto) {
     return this.zaloService.sendZns(dto);
+  }
+
+  /**
+   * Bắn thư mời / thông báo Zalo ZBS (ZNS) hàng loạt từ file Excel danh sách khách mời
+   */
+  @Post('send-bulk-zns')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'platform_admin', 'adm', 'bqt', 'btc', 'btk', 'quan_tri')
+  async sendBulkZns(@Body() dto: any) {
+    return this.zaloService.sendBulkZns(dto);
   }
 
   /**
