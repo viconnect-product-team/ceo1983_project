@@ -577,10 +577,18 @@ export class UsersService {
           (exec.includes('điều hành') && !exec.includes('hội viên')) ||
           roleList.includes('ban_dieu_hanh'));
 
+      const hasSpecificSpecialistRole =
+        exec.startsWith('truong_ban_') ||
+        exec.startsWith('thanh_vien_ban_') ||
+        exec === 'ban_thu_ky' ||
+        exec === 'tong_thu_ky' ||
+        (exec.includes('thư ký') && !exec.includes('hội viên'));
+
       const isExplicitAdmin =
         !isExplicitPresident &&
         !isExplicitGeneralSecretary &&
         !isExplicitExecutive &&
+        !hasSpecificSpecialistRole &&
         (exec === 'admin' ||
           exec === 'quan_tri' ||
           exec === 'platform_admin' ||

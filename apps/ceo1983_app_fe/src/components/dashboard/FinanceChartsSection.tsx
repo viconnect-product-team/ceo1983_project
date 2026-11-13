@@ -555,8 +555,8 @@ export function FinanceChartsSection({
 
       {/* ── 3. KHỐI PHÂN TÍCH CHUYÊN SÂU NGUỒN TÀI TRỢ (SPONSORSHIP DEEP DIVE) ── */}
       {(activeTab === "all" || activeTab === "income_sponsor") && (
-        <div className="p-5 sm:p-6 rounded-3xl border border-amber-400/40 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/20 dark:from-[#0F172A] dark:via-[#131F37] dark:to-[#0F172A] shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-amber-200/60 dark:border-amber-500/20">
+        <div className="p-5 sm:p-6 rounded-3xl border border-border bg-card shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
             <div className="flex items-center gap-2.5">
               <span className="size-9 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 grid place-items-center border border-amber-400/30">
                 <Award className="size-5" />

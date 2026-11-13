@@ -39,6 +39,7 @@ import {
   getAllDynamicRoleOptions,
   getRolesForDepartment,
   DepartmentItem,
+  isRouteAllowedByMatrix,
 } from "@/lib/rbac-permission-helpers";
 import { Pagination, SortHeader } from "@/components/dashboard/DataTablePagination";
 import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
@@ -87,8 +88,8 @@ function addDeletedIdentifiers(identifiers: (string | undefined | null)[]) {
 }
 
 function AccountsPage() {
-  const { isPlatformAdmin, isBQT, isAdmin } = useRole();
-  const canManage = isPlatformAdmin || isBQT || isAdmin;
+  const { isPlatformAdmin, isBQT, isAdmin, srsRole } = useRole();
+  const canManage = isPlatformAdmin || isBQT || isAdmin || isRouteAllowedByMatrix("/accounts", (srsRole as any) || "member");
 
   const [accounts, setAccounts] = useState<UserAccountItem[]>(() => {
     if (typeof window !== "undefined") {
@@ -685,7 +686,11 @@ function AccountsPage() {
         const nextStr = JSON.stringify(next);
         localStorage.setItem(STORAGE_KEY, nextStr);
         setInitialAccountsStr(nextStr);
+        clearMeCache();
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+        window.dispatchEvent(new Event("role-changed"));
+        window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("vba_auth_changed"));
       } catch {}
 
       toast.success(`Đã xóa tài khoản "${acc.name}" cùng hồ sơ hội viên và doanh nghiệp thành công.`);
@@ -736,7 +741,11 @@ function AccountsPage() {
         const nextStr = JSON.stringify(next);
         localStorage.setItem(STORAGE_KEY, nextStr);
         setInitialAccountsStr(nextStr);
+        clearMeCache();
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+        window.dispatchEvent(new Event("role-changed"));
+        window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("vba_auth_changed"));
       } catch {}
 
       toast.success(`Đã xóa thành công ${toDelete.length} tài khoản đã chọn.`);
@@ -786,7 +795,11 @@ function AccountsPage() {
         const nextStr = JSON.stringify(next);
         localStorage.setItem(STORAGE_KEY, nextStr);
         setInitialAccountsStr(nextStr);
+        clearMeCache();
         window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+        window.dispatchEvent(new Event("role-changed"));
+        window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("vba_auth_changed"));
       } catch {}
 
       toast.success(`Đã xóa tất cả ${toDelete.length} tài khoản thành công (Bảo vệ tài khoản quản trị gốc).`);
@@ -1071,9 +1084,9 @@ function AccountsPage() {
           </div>
         </div>
 
-        {/* ── CẢNH BÁO CHƯA LƯU PHÂN QUYỀN TÀI KHOẢN (Amber Gold UX) ── */}
+        {/* ── CẢNH BÁO CHƯA LƯU PHÂN QUYỀN TÀI KHOẢN ── */}
         {isDirty && (
-          <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-200 shadow-xs">
+          <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/30 p-4 flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-200 shadow-xs">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-900 flex items-center justify-center shrink-0 shadow-sm font-black text-sm">
                 !

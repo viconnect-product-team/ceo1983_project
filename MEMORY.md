@@ -1,6 +1,130 @@
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 12/11/2026 (v11.32): Tách Biệt Tuyệt Đối 3 Luồng Riêng Biệt (Cuộc Họp Hệ Thống vs Hẹn Gặp Kết Nối B2B vs Sự Kiện) & Triển Khai Tính Năng Hủy Hẹn Kèm Trường Lý Do Hủy ([NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CRM-005], [NODE-CORE-001])**:
+- **Bản cập nhật ngày 13/11/2026 (v11.37): Sửa Nhóm Phân Quyền CRM Theo Ma Trận RBAC, Chuẩn Hóa Chi Tiết Sự Kiện & Bắn QR Feed Sắc Nét, Tối Ưu Popup Tin Nhắn Không Bị Header Che, Gỡ Khối Chữ Nhật Gradient CRM, Xóa Ảnh 404 & Gỡ Landing Web ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-016], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-008])**:
+  - **1. Sửa 3 Chức Năng Nhóm Phân Quyền CRM (`/accounts`, `/roles`, `/permissions`)**:
+    * **Đồng bộ Ma trận RBAC thời gian thực**: Loại bỏ toàn bộ các điều kiện biến cứng (`canViewSystem`, `canViewPlatform`, `canViewFinance`, `canViewSponsors`, `canViewComm`) trong `Sidebar.tsx`. Chuyển đổi 100% sang kiểm tra ma trận RBAC (`isAllowed(it.to)`).
+    * Bỏ các điều kiện chặn cứng `hasPerm` trong `permissionsGroup`, `system`, `events`, `members`.
+    * Cập nhật `permissions.tsx`, `departments.tsx`, `accounts.tsx` kiểm tra quyền theo `isRouteAllowedByMatrix`, giải phóng các role chuyên môn để họ truy cập đúng các trang đã được tích quyền trên Ma trận RBAC.
+    * Trong `users.service.ts` (`getAccountDetails`): Đảm bảo ưu tiên vai trò chức danh cụ thể từ `members.executive_role` (`hasSpecificSpecialistRole`), không ép cứng thành `admin` nếu tài khoản có chức danh Ban chuyên môn.
+    * Khi thay đổi quyền hoặc xóa tài khoản: Kích hoạt `clearMeCache()`, dọn sạch cache 15s và bắn đồng bộ các sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed`, `vba_accounts_changed`.
+  - **2. Chuẩn Hóa Chi Tiết Sự Kiện, Bắn QR Xuống Feed & Phóng To QR Sắc Nét**:
+    * **Loại bỏ hard text tự bịa**: Xóa bỏ các khẩu hiệu giả lập `subtitle` ("KẾ THỪA GIÁ TRỊ..."), `audience` ("Chủ tịch, CEO..."), `offer` ("Vé tham dự miễn phí...") trong `EventDetailModal.tsx` và `events.$eventId.tsx`. Chỉ hiển thị đúng `description` thực tế từ CSDL PostgreSQL.
+    * **Gỡ bỏ khối hiển thị Sponsors lặp lại**: Xóa khối render sponsors lặp thừa thãi ở dòng 616 `events.$eventId.tsx`.
+    * **Bắn sự kiện xuống mạng lưới Feed chuẩn QR**: `handleBroadcastEventToFeed` (`events.index.tsx`) đọc đúng `image` và `banner` của sự kiện, sinh link ảnh QR code PNG sắc nét `https://ceo1983.viconnect.vn/api/events/qr?data=...&size=500`.
+    * **Phóng to QR trong FeedView (`FeedView.tsx`)**: Sửa nút "Phóng to QR" tạo ảnh QR PNG trực tiếp mở trong Lightbox, loại bỏ hoàn toàn lỗi phóng to QR nhảy ra logo CLB 1983.
+    * **Người tham gia đã đăng ký**: Sử dụng dữ liệu thực tế từ bảng `event_registrations` (4 bản ghi hội viên thật đã được đồng bộ chuẩn vào PostgreSQL).
+  - **3. Sửa Popup Tin Nhắn Không Bị Header Che (`ChatThread.tsx` & `connect-app.inbox.$threadId.tsx`)**:
+    * Xác định nguyên nhân: Các tin nhắn ở gần đầu trang (`idx <= 2`) có menu và reaction picker mở ngược lên trên (`bottom-8`) với `z-30`, bị thanh Header `z-40` đè lên một nửa (như ảnh attachment `media_1794537431209_67973896.png`).
+    * Khắc phục:
+      - Đổi hướng mở của More Menu: Nếu `idx <= 2` thì mở xuống dưới (`top-full mt-1.5`), ngược lại mở lên trên (`bottom-8`).
+      - Nâng `z-index` lên `z-50` (cao hơn Header `z-40`).
+      - Đồng bộ cho cả Context menu (`idx <= 2 ? top-full mt-2 : -top-20`) và Reaction picker trong cả `ChatThread.tsx` và `connect-app.inbox.$threadId.tsx`.
+  - **4. Gỡ Bỏ Màu Gradient Ở Các Khối Chữ Nhật Tại Các Chức Năng Trên CRM**:
+    * `KpiCard.tsx` (`StandardMetricCard`): Đổi 4 theme màu xanh (`sky`), tím (`violet`), cam (`orange`), xanh lá (`green`) từ `bg-gradient-to-b` sang màu solid chuẩn phẳng `bg-card dark:bg-slate-900 border border-border`.
+    * `PageKit.tsx` (`StatCard`): Đổi `cardThemes` từ `bg-gradient-to-b` sang `bg-card dark:bg-slate-900 border border-border`.
+    * `tasks.tsx`: Đổi 4 khối KPI công việc sang `bg-card dark:bg-slate-900 rounded-[20px] border border-border`.
+    * `EventSponsors.tsx`: Đổi 4 hạng tài trợ (Bạch Kim, Vàng, Bạc, Đồng) sang `bg-card dark:bg-slate-900`.
+    * `accounts.tsx` & `RbacPermissionMatrix.tsx`: Đổi banner cảnh báo chưa lưu từ gradient sang `bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800`.
+    * `FinanceChartsSection.tsx`: Đổi khối phân tích nguồn tài trợ sang `bg-card border border-border`.
+  - **5. Xóa Ảnh 404, Gỡ Bỏ Landing Web Khỏi Tài Liệu HDSD & Tái Xuất PDF**:
+    * `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`:
+      - Xóa 2 ảnh bị thiếu 404: `04_crm_member_detail_drawer.png` và `08_crm_account_role_dept_modal.png`.
+      - Gỡ bỏ toàn bộ mục `[NODE-CRM-023]: Quản Lý Landing Web Dynamic Pinterest Showcase` kèm ảnh `29_crm_landing_webs.png`.
+    * Xóa file ảnh `document/images/guide_crm/29_crm_landing_webs.png` trên đĩa.
+    * Chạy script `node scripts/generate_all_user_guides_pdf.cjs`: Tái xuất bản thành công 3 tệp PDF sắc nét (8.12 MB CRM, 2.93 MB App Mobile, 0.32 MB Tổng hợp) và đồng bộ sang `apps/ceo1983_app_fe/public/docs/`.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Bắt buộc kiểm tra `npx tsc --noEmit` ở cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe`.
+    * Tuân thủ nghiêm ngặt Rule 1: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.36): Bổ Sung Toàn Diện Ảnh & Hướng Dẫn Chi Tiết Chức Năng Con Mobile App, Luồng Sự Kiện & Sơ Đồ Chỗ Ngồi CRM Kèm Bộ Ảnh Responsive Đa Thiết Bị ([NODE-CRM-007], [NODE-APP-001], [NODE-APP-008], [NODE-APP-010])**:
+  - **1. Chụp Bổ Sung 13 Hình Ảnh Độ Phân Giải Cao Cho Chức Năng Con & Responsive**:
+    * **Nhóm 1 — Chức Năng Con Mobile App (`document/images/guide_app/`)**:
+      - `01_b_app_notifications_center.png`: Trung tâm Thông báo Đa kênh Hội viên (`/association/notifications`) hiển thị thông báo sự kiện, tin nhắn kết nối, cơ hội kinh doanh.
+      - `01_c_app_theme_switcher_modal.png`: Màn hình Cài đặt Giao diện & Bộ chọn Màu Brandbook (`/association/system-config`) với 4 màu cốt lõi: Đỏ Ruby, Vàng Hoàng Gia, Xanh Doanh Nhân, Cam Tiên Phong và công tắc trợ lý AI.
+      - `01_d_app_theme_dark_mode.png`: Ứng dụng ở Chế độ Tối (Dark Mode) sang trọng, tiết kiệm pin OLED và bảo vệ thị lực ban đêm.
+      - `08_b_app_event_ticket_qr_modal.png`: Màn hình Chi tiết Sự kiện Ngày Hội Doanh Trí 21/11 & Modal Vé QR Check-in điện tử có gán số ghế / bàn tiệc.
+      - `10_b_app_messages_chat_1on1.png`: Màn hình Tin nhắn & Trò chuyện Kết nối Doanh nhân 1-on-1 thời gian thực qua Socket.IO.
+    * **Nhóm 2 — Luồng Sự Kiện Chuyên Sâu Web CRM (`document/images/guide_crm/`)**:
+      - `11_b_crm_event_detail_hub.png`: Màn hình Trung tâm Điều hành Sự kiện Hub (`/events/EV-VIENDOANHTRI-2027`) với bộ đếm Countdown, Poster, Cổng QR Gatekeeper và Agenda.
+      - `11_c_crm_event_registrations_tickets.png`: Bảng Quản lý Vé & Đăng ký Đại biểu (`/event-registrations`) đa phân hạng vé VIP/Thường, trạng thái `[✓ Đã thanh toán]`, thu tiền mặt walk-in.
+      - `11_d_crm_event_seating_setup.png`: Studio Sơ đồ Chỗ ngồi & Bàn tiệc tương tác (`CinemaSeatingMap`) hỗ trợ kéo thả đại biểu, tự động gán vào vé QR check-in.
+      - `11_e_crm_event_poster_and_qr_modal.png`: Modal Poster Sự kiện khổ lớn kèm mã QR Điểm danh tự động Gatekeeper cho bàn tiếp tân.
+      - `11_f_crm_event_guest_qr_presenter.png`: Modal Trình chiếu Mã QR Đăng ký Khách mời Zalo nhanh gọn trong 30 giây.
+    * **Nhóm 3 — Bộ Ảnh Thể Hiện Responsive Đa Thiết Bị Web CRM (`document/images/guide_crm/`)**:
+      - `responsive_crm_desktop_1440.png`: CRM hiển thị chuẩn màn hình Desktop (1440x900) với full Sidebar 24 module và bảng tính Excel rộng rãi.
+      - `responsive_crm_tablet_1024.png`: CRM hiển thị trên Tablet/iPad (1024x768) với Sidebar co gọn linh hoạt, lưới 2 cột và thao tác cảm ứng tối ưu.
+      - `responsive_crm_mobile_390.png`: CRM hiển thị trên Mobile Smartphone (390x844) với menu Drawer dạng Hamburger và bố cục 1 cột cuộn mượt mà.
+  - **2. Đồng Bộ Hóa Chi Tiết Vào Toàn Bộ Tài Liệu Hướng Dẫn Sử Dụng**:
+    * Cập nhật `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`: Thêm mục quản lý vé sự kiện, thiết lập sơ đồ chỗ ngồi CinemaSeatingMap, Gatekeeper điểm danh, và bổ sung riêng Chương 3 "GIAO DIỆN ĐA THIẾT BỊ & KHẢ NĂNG ĐÁP ỨNG RESPONSIVE (DESKTOP, TABLET, MOBILE)".
+    * Cập nhật `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md`: Thêm hướng dẫn Trung tâm thông báo đẩy, Bộ tùy biến màu sắc Brandbook 4 màu, Chế độ Dark Mode, Vé QR sự kiện và Trò chuyện nhắn tin bí mật 1-on-1 giữa các CEO.
+    * Cập nhật `document/BO_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_TOAN_DIEN.md`: Cập nhật bảng tổng hợp danh mục hình ảnh thực tế đầy đủ.
+  - **3. Tái Kết Xuất 3 File PDF Chuẩn In Ấn A4 & Đồng Bộ Tải Xuống**:
+    * Chạy `scripts/generate_all_user_guides_pdf.cjs`:
+      - 📄 `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (8.74 MB — Nâng cấp toàn diện).
+      - 📱 `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (3.07 MB — Bổ sung chức năng con).
+      - 🌐 `document/BO_HUONG_DAN_SU_DUNG_TOAN_DIEN_CEO1983.pdf` (0.34 MB — Bản tổng hợp).
+    * Đồng bộ đầy đủ sang `apps/ceo1983_app_fe/public/docs/`.
+  - **4. Kiểm Tra Type-check & Tuân Thủ Quy Chuẩn**:
+    * `tsc --noEmit` tại `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều đạt Exit Code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.35): Chụp Lại Toàn Bộ Ảnh Mobile App Không Bị Popup Che & Kết Xuất Trọn Bộ 3 Tài Liệu HDSD Sang Định Dạng PDF Chuẩn In Ấn A4 ([NODE-APP-001] -> [NODE-APP-017], [NODE-CRM-001] -> [NODE-CRM-024])**:
+  - **1. Xử Lý Triệt Để Popup & Tái Chụp Sạch Sẽ 16 Màn Hình Mobile App**:
+    * Phát hiện nguyên nhân che giao diện: `WelcomeMemberModal` (`ceo1983_welcome_shown`) và `FirstDayAiWelcomeModal` (`vba_daily_ai_welcomed_date`) tự động bật lên khi tài khoản mới đăng nhập.
+    * Xây dựng script `scripts/recapture_clean_app_screens.cjs`:
+      - Thiết lập trước các cờ `localStorage` ngăn modal xuất hiện.
+      - Tự động bóc tách và xóa sạch mọi dialog / backdrop che phủ (`[role="dialog"]`, `.backdrop-blur-sm`, `.bg-black/60`).
+      - Khôi phục `document.body.style.overflow = 'auto'`.
+    * Chụp lại toàn bộ 16 ảnh độ phân giải cao tại `document/images/guide_app/`:
+      - `01_app_home_ticker.png`: Trang chủ Ticker nến Realtime hoàn toàn sạch sẽ, lộ rõ đồ thị nến, thẻ cơ hội và shortcut tin nhắn.
+      - `02_app_vip_card.png` đến `16_app_calendar.png`: Tất cả các tab (Thẻ VIP số, QR công khai, Danh bạ đối tác, Sàn B2B, Bục vinh danh Top 3, Sự kiện YBA, Moments mạng lưới, Video call Jitsi, Lịch nhắc hẹn) đều hiển thị 100% nội dung giao diện gốc.
+  - **2. Kết Xuất Trọn Bộ 3 File PDF Chuẩn In Ấn A4 Sắc Nét**:
+    * Xây dựng script `scripts/generate_all_user_guides_pdf.cjs` sử dụng Playwright Chromium headless.
+    * Thiết kế bìa tài liệu gradient VIP sang trọng (`#001A4D` -> `#003B95`), viền Amber Gold, định dạng bảng so le, nhúng ảnh độ nét cao và đánh số trang Header/Footer.
+    * Xuất bản 3 tệp PDF hoàn chỉnh:
+      - 📄 `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (6.38 MB — 24 Functional Nodes CRM).
+      - 📱 `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.19 MB — 17 Functional Nodes Mobile App).
+      - 🌐 `document/BO_HUONG_DAN_SU_DUNG_TOAN_DIEN_CEO1983.pdf` (0.32 MB — Vận hành đồng bộ 2 Subdomain).
+    * Đồng bộ bản sao sang `apps/ceo1983_app_fe/public/docs/` để phục vụ tải trực tiếp từ web/app.
+  - **3. Tuân thủ tuyệt đối Rule 1**: Không tự động chạy `git push` hay `git commit`.
+
+
+  - **1. Thực Hiện Quy Chuẩn An Toàn Dữ Liệu (accidental-data-loss-prevention)**:
+    * Tạo bản sao lưu toàn diện trước khi xóa tại `scratch/backup_before_clean_2026-11-13T00-57-19-501Z.json`.
+    * Được xác nhận phê duyệt (explicit consent) từ người dùng trước khi thực thi xóa.
+  - **2. Làm Sạch Toàn Bộ Dữ Liệu Phát Sinh Thử Nghiệm**:
+    * Bảng chia sẻ cơ hội: `public.opportunities`, `public.opportunity_interests` (Về 0 bản ghi).
+    * Bảng sàn giao thương B2B: `public.products` (Về 0 bản ghi).
+    * Bảng cuộc họp hệ thống: `public.meetings` (Về 0 bản ghi).
+    * Bảng hẹn gặp kết nối 1-on-1: `public.business_meetings`, `public.business_meeting_participants` (Về 0 bản ghi).
+  - **3. Chuẩn Hóa Duy Nhất 4 Tài Khoản Hội Viên & Đăng Nhập (Pass: 123456)**:
+    * 1. `admin@connect.vn` (Jame Nguyễn - Chủ Tịch HĐQT / Admin, mã `M1983-268`)
+    * 2. `vumikasa6@gmail.com` (Phạm Văn Vũ - Trưởng Ban Truyền Thông, mã `CEO1983-000003`)
+    * 3. `info@viconnect.vn` (Phạm hồng Nguyên - Hội viên, mã `CEO1983-000001`)
+    * 4. `vupv090120@gmail.com` (Phạm An Nam - Hội viên, mã `CEO1983-000002`)
+    * Kiểm thử đăng nhập tự động qua API xác nhận 100% tài khoản trả về `HTTP 200 SUCCESS`.
+  - **4. Bảo Lưu Duy Nhất 1 Sự Kiện Ngày 21/11/2026**:
+    * Mã sự kiện: `EV-VIENDOANHTRI-2027`
+    * Tiêu đề: *Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí & Tọa Đàm Kinh Tế: Doanh Nghiệp Việt 2027*
+    * Thời gian: Ngày 21/11/2026 (2026-11-20T17:00:00.000Z theo UTC = 00:00 ngày 21/11/2026 GMT+7).
+    * Địa điểm: *Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội*.
+  - **5. Tuân thủ tuyệt đối Rule 1**: Không tự động chạy `git push` hay `git commit`.
+
+
+  - **1. Truy Cập Trực Tiếp & Chụp Ảnh Thực Tế 2 Subdomain Bằng Playwright**:
+    * **Subdomain 1 — Web CRM Quản Trị (`https://crm.ceo1983.viconnect.vn`)**:
+      - Chụp đầy đủ 30 hình ảnh độ phân giải cao tại `document/images/guide_crm/` bao phủ toàn bộ 24 Node CRM: Đăng nhập quản trị, Dashboard 4 chỉ số KPI, Thống kê 5 danh mục, Quản lý hội viên 360°, Drawer chi tiết & duyệt hồ sơ, Doanh nghiệp thành viên, Tài khoản & 6 Ban chuyên môn, Ma trận phân quyền RBAC 2 Tab độc lập, Quản trị sự kiện 3 bước & Bắn mạng lưới, Quản lý cuộc họp & Bản đồ Nominatim ghim tọa độ, Thu chi ngân sách & Sổ quỹ S07-DN, Báo cáo tài chính, Giao việc Kanban & Universal File Viewer, Nhà tài trợ 4 phân hạng & VietQR tri ân, Kho văn kiện CLB, Biểu quyết & Lucky Draw, Bản tin truyền thông, Gia hạn niên liễm, Đào tạo & Video Call Jitsi, Audit Log an ninh, Trao cơ hội B2B đa điểm, Theme Studio 5 VIP Presets, Trung tâm thông báo cảnh báo, Dynamic Landing Webs Pinterest Showcase, Omnichannel Invitation Studio.
+    * **Subdomain 2 — Mobile App Hội Viên (`https://ceo1983.viconnect.vn`)**:
+      - Chụp đầy đủ 17 hình ảnh tỷ lệ chuẩn di động tại `document/images/guide_app/` bao phủ toàn bộ 17 Node Mobile App: Đăng nhập hội viên, Trang chủ Ticker nến Realtime & Shortcut tin nhắn, Thẻ VIP số xoay 2 mặt & QR cá nhân hóa, Trang quét danh thiếp công khai bảo mật riêng tư, Danh bạ hội viên & Bản đồ 2D Google Maps dẫn đường GPS, Cơ hội B2B Strip 3 thẻ ngang, Trung tâm thống kê 5 phân loại & Bục vinh danh Top 3 Giver, Sàn B2B Marketplace giới hạn 5 sản phẩm/DN, Sự kiện lớn & Họp mặt 2 kiểu YBA, Biểu quyết trực tuyến Realtime, Bảng tin Moments mạng lưới & Thẻ check-in sự kiện, Hồ sơ cá nhân tối giản & Hợp đồng điện tử, Cài đặt hệ thống, Trợ lý AI & Đổi mật khẩu, Danh sách ưu đãi QR động & Bản đồ điểm dùng, Phân hệ kết nối B2B 1-on-1 độc lập, Đào tạo di động & Video Call Jitsi trực tuyến, Lịch hoạt động & Công cụ nhắc hẹn Active Reminder.
+  - **2. Biên Soạn 3 Bộ Cẩm Nang Hướng Dẫn Sử Dụng Chuyên Sâu**:
+    * `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`: Bộ cẩm nang Hướng dẫn sử dụng Cổng Quản Trị Web CRM CLB Doanh Nhân CEO 1983 (24 Node CRM chi tiết từng bước, vai trò thao tác, hình ảnh chụp thật, ràng buộc nghiệp vụ và xử lý sự cố).
+    * `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md`: Bộ cẩm nang Hướng dẫn sử dụng Ứng Dụng Di Động Hội Viên CEO 1983 (17 Node Mobile App, trải nghiệm Mobile-First 5 tab, hướng dẫn cài đặt PWA Add-to-Homescreen trên iOS Safari và Android Chrome).
+    * `document/BO_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_TOAN_DIEN.md`: Cẩm nang Tổng thể Vận hành & Kết nối Toàn diện 2 Subdomain, Ma trận đồng bộ dữ liệu 2 chiều, Chu trình sống 6 bước khép kín từ đăng ký gia nhập đến vinh danh cống hiến.
+  - **3. Tuân thủ tuyệt đối AGENTS Rules & Constraints**:
+    * Không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+    * Đồng bộ hóa MEMORY.md đầy đủ.
+
+
   - **1. Tách Biệt Hoàn Toàn Hẹn Gặp Kết Nối B2B Khỏi Cuộc Họp & Sự Kiện ([NODE-APP-003], [NODE-APP-004], [NODE-CRM-005], [NODE-CORE-001])**:
     * **Xác định kiến trúc ranh giới rõ ràng**:
       - **Cuộc họp (`meetings`)**: Là các cuộc họp chính thống của tổ chức (Ban Chấp Hành, Ban Thư Ký, Ban Chuyên Môn, Đại Hội, Họp Định Kỳ) được khởi tạo bởi Ban Điều Hành và bắn từ hệ thống về. Quản lý trên CRM `/meetings` và hiển thị trên tab "Cuộc họp" của app.
@@ -623,7 +747,131 @@
 
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 12/11/2026 (v11.32): Tách Biệt Tuyệt Đối 3 Luồng Riêng Biệt (Cuộc Họp Hệ Thống vs Hẹn Gặp Kết Nối B2B vs Sự Kiện) & Triển Khai Tính Năng Hủy Hẹn Kèm Trường Lý Do Hủy ([NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CRM-005], [NODE-CORE-001])**:
+- **Bản cập nhật ngày 13/11/2026 (v11.37): Sửa Nhóm Phân Quyền CRM Theo Ma Trận RBAC, Chuẩn Hóa Chi Tiết Sự Kiện & Bắn QR Feed Sắc Nét, Tối Ưu Popup Tin Nhắn Không Bị Header Che, Gỡ Khối Chữ Nhật Gradient CRM, Xóa Ảnh 404 & Gỡ Landing Web ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-016], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-008])**:
+  - **1. Sửa 3 Chức Năng Nhóm Phân Quyền CRM (`/accounts`, `/roles`, `/permissions`)**:
+    * **Đồng bộ Ma trận RBAC thời gian thực**: Loại bỏ toàn bộ các điều kiện biến cứng (`canViewSystem`, `canViewPlatform`, `canViewFinance`, `canViewSponsors`, `canViewComm`) trong `Sidebar.tsx`. Chuyển đổi 100% sang kiểm tra ma trận RBAC (`isAllowed(it.to)`).
+    * Bỏ các điều kiện chặn cứng `hasPerm` trong `permissionsGroup`, `system`, `events`, `members`.
+    * Cập nhật `permissions.tsx`, `departments.tsx`, `accounts.tsx` kiểm tra quyền theo `isRouteAllowedByMatrix`, giải phóng các role chuyên môn để họ truy cập đúng các trang đã được tích quyền trên Ma trận RBAC.
+    * Trong `users.service.ts` (`getAccountDetails`): Đảm bảo ưu tiên vai trò chức danh cụ thể từ `members.executive_role` (`hasSpecificSpecialistRole`), không ép cứng thành `admin` nếu tài khoản có chức danh Ban chuyên môn.
+    * Khi thay đổi quyền hoặc xóa tài khoản: Kích hoạt `clearMeCache()`, dọn sạch cache 15s và bắn đồng bộ các sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed`, `vba_accounts_changed`.
+  - **2. Chuẩn Hóa Chi Tiết Sự Kiện, Bắn QR Xuống Feed & Phóng To QR Sắc Nét**:
+    * **Loại bỏ hard text tự bịa**: Xóa bỏ các khẩu hiệu giả lập `subtitle` ("KẾ THỪA GIÁ TRỊ..."), `audience` ("Chủ tịch, CEO..."), `offer` ("Vé tham dự miễn phí...") trong `EventDetailModal.tsx` và `events.$eventId.tsx`. Chỉ hiển thị đúng `description` thực tế từ CSDL PostgreSQL.
+    * **Gỡ bỏ khối hiển thị Sponsors lặp lại**: Xóa khối render sponsors lặp thừa thãi ở dòng 616 `events.$eventId.tsx`.
+    * **Bắn sự kiện xuống mạng lưới Feed chuẩn QR**: `handleBroadcastEventToFeed` (`events.index.tsx`) đọc đúng `image` và `banner` của sự kiện, sinh link ảnh QR code PNG sắc nét `https://ceo1983.viconnect.vn/api/events/qr?data=...&size=500`.
+    * **Phóng to QR trong FeedView (`FeedView.tsx`)**: Sửa nút "Phóng to QR" tạo ảnh QR PNG trực tiếp mở trong Lightbox, loại bỏ hoàn toàn lỗi phóng to QR nhảy ra logo CLB 1983.
+    * **Người tham gia đã đăng ký**: Sử dụng dữ liệu thực tế từ bảng `event_registrations` (4 bản ghi hội viên thật đã được đồng bộ chuẩn vào PostgreSQL).
+  - **3. Sửa Popup Tin Nhắn Không Bị Header Che (`ChatThread.tsx` & `connect-app.inbox.$threadId.tsx`)**:
+    * Xác định nguyên nhân: Các tin nhắn ở gần đầu trang (`idx <= 2`) có menu và reaction picker mở ngược lên trên (`bottom-8`) với `z-30`, bị thanh Header `z-40` đè lên một nửa (như ảnh attachment `media_1794537431209_67973896.png`).
+    * Khắc phục:
+      - Đổi hướng mở của More Menu: Nếu `idx <= 2` thì mở xuống dưới (`top-full mt-1.5`), ngược lại mở lên trên (`bottom-8`).
+      - Nâng `z-index` lên `z-50` (cao hơn Header `z-40`).
+      - Đồng bộ cho cả Context menu (`idx <= 2 ? top-full mt-2 : -top-20`) và Reaction picker trong cả `ChatThread.tsx` và `connect-app.inbox.$threadId.tsx`.
+  - **4. Gỡ Bỏ Màu Gradient Ở Các Khối Chữ Nhật Tại Các Chức Năng Trên CRM**:
+    * `KpiCard.tsx` (`StandardMetricCard`): Đổi 4 theme màu xanh (`sky`), tím (`violet`), cam (`orange`), xanh lá (`green`) từ `bg-gradient-to-b` sang màu solid chuẩn phẳng `bg-card dark:bg-slate-900 border border-border`.
+    * `PageKit.tsx` (`StatCard`): Đổi `cardThemes` từ `bg-gradient-to-b` sang `bg-card dark:bg-slate-900 border border-border`.
+    * `tasks.tsx`: Đổi 4 khối KPI công việc sang `bg-card dark:bg-slate-900 rounded-[20px] border border-border`.
+    * `EventSponsors.tsx`: Đổi 4 hạng tài trợ (Bạch Kim, Vàng, Bạc, Đồng) sang `bg-card dark:bg-slate-900`.
+    * `accounts.tsx` & `RbacPermissionMatrix.tsx`: Đổi banner cảnh báo chưa lưu từ gradient sang `bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800`.
+    * `FinanceChartsSection.tsx`: Đổi khối phân tích nguồn tài trợ sang `bg-card border border-border`.
+  - **5. Xóa Ảnh 404, Gỡ Bỏ Landing Web Khỏi Tài Liệu HDSD & Tái Xuất PDF**:
+    * `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`:
+      - Xóa 2 ảnh bị thiếu 404: `04_crm_member_detail_drawer.png` và `08_crm_account_role_dept_modal.png`.
+      - Gỡ bỏ toàn bộ mục `[NODE-CRM-023]: Quản Lý Landing Web Dynamic Pinterest Showcase` kèm ảnh `29_crm_landing_webs.png`.
+    * Xóa file ảnh `document/images/guide_crm/29_crm_landing_webs.png` trên đĩa.
+    * Chạy script `node scripts/generate_all_user_guides_pdf.cjs`: Tái xuất bản thành công 3 tệp PDF sắc nét (8.12 MB CRM, 2.93 MB App Mobile, 0.32 MB Tổng hợp) và đồng bộ sang `apps/ceo1983_app_fe/public/docs/`.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Bắt buộc kiểm tra `npx tsc --noEmit` ở cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe`.
+    * Tuân thủ nghiêm ngặt Rule 1: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.36): Bổ Sung Toàn Diện Ảnh & Hướng Dẫn Chi Tiết Chức Năng Con Mobile App, Luồng Sự Kiện & Sơ Đồ Chỗ Ngồi CRM Kèm Bộ Ảnh Responsive Đa Thiết Bị ([NODE-CRM-007], [NODE-APP-001], [NODE-APP-008], [NODE-APP-010])**:
+  - **1. Chụp Bổ Sung 13 Hình Ảnh Độ Phân Giải Cao Cho Chức Năng Con & Responsive**:
+    * **Nhóm 1 — Chức Năng Con Mobile App (`document/images/guide_app/`)**:
+      - `01_b_app_notifications_center.png`: Trung tâm Thông báo Đa kênh Hội viên (`/association/notifications`) hiển thị thông báo sự kiện, tin nhắn kết nối, cơ hội kinh doanh.
+      - `01_c_app_theme_switcher_modal.png`: Màn hình Cài đặt Giao diện & Bộ chọn Màu Brandbook (`/association/system-config`) với 4 màu cốt lõi: Đỏ Ruby, Vàng Hoàng Gia, Xanh Doanh Nhân, Cam Tiên Phong và công tắc trợ lý AI.
+      - `01_d_app_theme_dark_mode.png`: Ứng dụng ở Chế độ Tối (Dark Mode) sang trọng, tiết kiệm pin OLED và bảo vệ thị lực ban đêm.
+      - `08_b_app_event_ticket_qr_modal.png`: Màn hình Chi tiết Sự kiện Ngày Hội Doanh Trí 21/11 & Modal Vé QR Check-in điện tử có gán số ghế / bàn tiệc.
+      - `10_b_app_messages_chat_1on1.png`: Màn hình Tin nhắn & Trò chuyện Kết nối Doanh nhân 1-on-1 thời gian thực qua Socket.IO.
+    * **Nhóm 2 — Luồng Sự Kiện Chuyên Sâu Web CRM (`document/images/guide_crm/`)**:
+      - `11_b_crm_event_detail_hub.png`: Màn hình Trung tâm Điều hành Sự kiện Hub (`/events/EV-VIENDOANHTRI-2027`) với bộ đếm Countdown, Poster, Cổng QR Gatekeeper và Agenda.
+      - `11_c_crm_event_registrations_tickets.png`: Bảng Quản lý Vé & Đăng ký Đại biểu (`/event-registrations`) đa phân hạng vé VIP/Thường, trạng thái `[✓ Đã thanh toán]`, thu tiền mặt walk-in.
+      - `11_d_crm_event_seating_setup.png`: Studio Sơ đồ Chỗ ngồi & Bàn tiệc tương tác (`CinemaSeatingMap`) hỗ trợ kéo thả đại biểu, tự động gán vào vé QR check-in.
+      - `11_e_crm_event_poster_and_qr_modal.png`: Modal Poster Sự kiện khổ lớn kèm mã QR Điểm danh tự động Gatekeeper cho bàn tiếp tân.
+      - `11_f_crm_event_guest_qr_presenter.png`: Modal Trình chiếu Mã QR Đăng ký Khách mời Zalo nhanh gọn trong 30 giây.
+    * **Nhóm 3 — Bộ Ảnh Thể Hiện Responsive Đa Thiết Bị Web CRM (`document/images/guide_crm/`)**:
+      - `responsive_crm_desktop_1440.png`: CRM hiển thị chuẩn màn hình Desktop (1440x900) với full Sidebar 24 module và bảng tính Excel rộng rãi.
+      - `responsive_crm_tablet_1024.png`: CRM hiển thị trên Tablet/iPad (1024x768) với Sidebar co gọn linh hoạt, lưới 2 cột và thao tác cảm ứng tối ưu.
+      - `responsive_crm_mobile_390.png`: CRM hiển thị trên Mobile Smartphone (390x844) với menu Drawer dạng Hamburger và bố cục 1 cột cuộn mượt mà.
+  - **2. Đồng Bộ Hóa Chi Tiết Vào Toàn Bộ Tài Liệu Hướng Dẫn Sử Dụng**:
+    * Cập nhật `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`: Thêm mục quản lý vé sự kiện, thiết lập sơ đồ chỗ ngồi CinemaSeatingMap, Gatekeeper điểm danh, và bổ sung riêng Chương 3 "GIAO DIỆN ĐA THIẾT BỊ & KHẢ NĂNG ĐÁP ỨNG RESPONSIVE (DESKTOP, TABLET, MOBILE)".
+    * Cập nhật `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md`: Thêm hướng dẫn Trung tâm thông báo đẩy, Bộ tùy biến màu sắc Brandbook 4 màu, Chế độ Dark Mode, Vé QR sự kiện và Trò chuyện nhắn tin bí mật 1-on-1 giữa các CEO.
+    * Cập nhật `document/BO_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_TOAN_DIEN.md`: Cập nhật bảng tổng hợp danh mục hình ảnh thực tế đầy đủ.
+  - **3. Tái Kết Xuất 3 File PDF Chuẩn In Ấn A4 & Đồng Bộ Tải Xuống**:
+    * Chạy `scripts/generate_all_user_guides_pdf.cjs`:
+      - 📄 `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (8.74 MB — Nâng cấp toàn diện).
+      - 📱 `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (3.07 MB — Bổ sung chức năng con).
+      - 🌐 `document/BO_HUONG_DAN_SU_DUNG_TOAN_DIEN_CEO1983.pdf` (0.34 MB — Bản tổng hợp).
+    * Đồng bộ đầy đủ sang `apps/ceo1983_app_fe/public/docs/`.
+  - **4. Kiểm Tra Type-check & Tuân Thủ Quy Chuẩn**:
+    * `tsc --noEmit` tại `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều đạt Exit Code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.35): Chụp Lại Toàn Bộ Ảnh Mobile App Không Bị Popup Che & Kết Xuất Trọn Bộ 3 Tài Liệu HDSD Sang Định Dạng PDF Chuẩn In Ấn A4 ([NODE-APP-001] -> [NODE-APP-017], [NODE-CRM-001] -> [NODE-CRM-024])**:
+  - **1. Xử Lý Triệt Để Popup & Tái Chụp Sạch Sẽ 16 Màn Hình Mobile App**:
+    * Phát hiện nguyên nhân che giao diện: `WelcomeMemberModal` (`ceo1983_welcome_shown`) và `FirstDayAiWelcomeModal` (`vba_daily_ai_welcomed_date`) tự động bật lên khi tài khoản mới đăng nhập.
+    * Xây dựng script `scripts/recapture_clean_app_screens.cjs`:
+      - Thiết lập trước các cờ `localStorage` ngăn modal xuất hiện.
+      - Tự động bóc tách và xóa sạch mọi dialog / backdrop che phủ (`[role="dialog"]`, `.backdrop-blur-sm`, `.bg-black/60`).
+      - Khôi phục `document.body.style.overflow = 'auto'`.
+    * Chụp lại toàn bộ 16 ảnh độ phân giải cao tại `document/images/guide_app/`:
+      - `01_app_home_ticker.png`: Trang chủ Ticker nến Realtime hoàn toàn sạch sẽ, lộ rõ đồ thị nến, thẻ cơ hội và shortcut tin nhắn.
+      - `02_app_vip_card.png` đến `16_app_calendar.png`: Tất cả các tab (Thẻ VIP số, QR công khai, Danh bạ đối tác, Sàn B2B, Bục vinh danh Top 3, Sự kiện YBA, Moments mạng lưới, Video call Jitsi, Lịch nhắc hẹn) đều hiển thị 100% nội dung giao diện gốc.
+  - **2. Kết Xuất Trọn Bộ 3 File PDF Chuẩn In Ấn A4 Sắc Nét**:
+    * Xây dựng script `scripts/generate_all_user_guides_pdf.cjs` sử dụng Playwright Chromium headless.
+    * Thiết kế bìa tài liệu gradient VIP sang trọng (`#001A4D` -> `#003B95`), viền Amber Gold, định dạng bảng so le, nhúng ảnh độ nét cao và đánh số trang Header/Footer.
+    * Xuất bản 3 tệp PDF hoàn chỉnh:
+      - 📄 `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (6.38 MB — 24 Functional Nodes CRM).
+      - 📱 `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.19 MB — 17 Functional Nodes Mobile App).
+      - 🌐 `document/BO_HUONG_DAN_SU_DUNG_TOAN_DIEN_CEO1983.pdf` (0.32 MB — Vận hành đồng bộ 2 Subdomain).
+    * Đồng bộ bản sao sang `apps/ceo1983_app_fe/public/docs/` để phục vụ tải trực tiếp từ web/app.
+  - **3. Tuân thủ tuyệt đối Rule 1**: Không tự động chạy `git push` hay `git commit`.
+
+
+  - **1. Thực Hiện Quy Chuẩn An Toàn Dữ Liệu (accidental-data-loss-prevention)**:
+    * Tạo bản sao lưu toàn diện trước khi xóa tại `scratch/backup_before_clean_2026-11-13T00-57-19-501Z.json`.
+    * Được xác nhận phê duyệt (explicit consent) từ người dùng trước khi thực thi xóa.
+  - **2. Làm Sạch Toàn Bộ Dữ Liệu Phát Sinh Thử Nghiệm**:
+    * Bảng chia sẻ cơ hội: `public.opportunities`, `public.opportunity_interests` (Về 0 bản ghi).
+    * Bảng sàn giao thương B2B: `public.products` (Về 0 bản ghi).
+    * Bảng cuộc họp hệ thống: `public.meetings` (Về 0 bản ghi).
+    * Bảng hẹn gặp kết nối 1-on-1: `public.business_meetings`, `public.business_meeting_participants` (Về 0 bản ghi).
+  - **3. Chuẩn Hóa Duy Nhất 4 Tài Khoản Hội Viên & Đăng Nhập (Pass: 123456)**:
+    * 1. `admin@connect.vn` (Jame Nguyễn - Chủ Tịch HĐQT / Admin, mã `M1983-268`)
+    * 2. `vumikasa6@gmail.com` (Phạm Văn Vũ - Trưởng Ban Truyền Thông, mã `CEO1983-000003`)
+    * 3. `info@viconnect.vn` (Phạm hồng Nguyên - Hội viên, mã `CEO1983-000001`)
+    * 4. `vupv090120@gmail.com` (Phạm An Nam - Hội viên, mã `CEO1983-000002`)
+    * Kiểm thử đăng nhập tự động qua API xác nhận 100% tài khoản trả về `HTTP 200 SUCCESS`.
+  - **4. Bảo Lưu Duy Nhất 1 Sự Kiện Ngày 21/11/2026**:
+    * Mã sự kiện: `EV-VIENDOANHTRI-2027`
+    * Tiêu đề: *Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí & Tọa Đàm Kinh Tế: Doanh Nghiệp Việt 2027*
+    * Thời gian: Ngày 21/11/2026 (2026-11-20T17:00:00.000Z theo UTC = 00:00 ngày 21/11/2026 GMT+7).
+    * Địa điểm: *Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội*.
+  - **5. Tuân thủ tuyệt đối Rule 1**: Không tự động chạy `git push` hay `git commit`.
+
+
+  - **1. Truy Cập Trực Tiếp & Chụp Ảnh Thực Tế 2 Subdomain Bằng Playwright**:
+    * **Subdomain 1 — Web CRM Quản Trị (`https://crm.ceo1983.viconnect.vn`)**:
+      - Chụp đầy đủ 30 hình ảnh độ phân giải cao tại `document/images/guide_crm/` bao phủ toàn bộ 24 Node CRM: Đăng nhập quản trị, Dashboard 4 chỉ số KPI, Thống kê 5 danh mục, Quản lý hội viên 360°, Drawer chi tiết & duyệt hồ sơ, Doanh nghiệp thành viên, Tài khoản & 6 Ban chuyên môn, Ma trận phân quyền RBAC 2 Tab độc lập, Quản trị sự kiện 3 bước & Bắn mạng lưới, Quản lý cuộc họp & Bản đồ Nominatim ghim tọa độ, Thu chi ngân sách & Sổ quỹ S07-DN, Báo cáo tài chính, Giao việc Kanban & Universal File Viewer, Nhà tài trợ 4 phân hạng & VietQR tri ân, Kho văn kiện CLB, Biểu quyết & Lucky Draw, Bản tin truyền thông, Gia hạn niên liễm, Đào tạo & Video Call Jitsi, Audit Log an ninh, Trao cơ hội B2B đa điểm, Theme Studio 5 VIP Presets, Trung tâm thông báo cảnh báo, Dynamic Landing Webs Pinterest Showcase, Omnichannel Invitation Studio.
+    * **Subdomain 2 — Mobile App Hội Viên (`https://ceo1983.viconnect.vn`)**:
+      - Chụp đầy đủ 17 hình ảnh tỷ lệ chuẩn di động tại `document/images/guide_app/` bao phủ toàn bộ 17 Node Mobile App: Đăng nhập hội viên, Trang chủ Ticker nến Realtime & Shortcut tin nhắn, Thẻ VIP số xoay 2 mặt & QR cá nhân hóa, Trang quét danh thiếp công khai bảo mật riêng tư, Danh bạ hội viên & Bản đồ 2D Google Maps dẫn đường GPS, Cơ hội B2B Strip 3 thẻ ngang, Trung tâm thống kê 5 phân loại & Bục vinh danh Top 3 Giver, Sàn B2B Marketplace giới hạn 5 sản phẩm/DN, Sự kiện lớn & Họp mặt 2 kiểu YBA, Biểu quyết trực tuyến Realtime, Bảng tin Moments mạng lưới & Thẻ check-in sự kiện, Hồ sơ cá nhân tối giản & Hợp đồng điện tử, Cài đặt hệ thống, Trợ lý AI & Đổi mật khẩu, Danh sách ưu đãi QR động & Bản đồ điểm dùng, Phân hệ kết nối B2B 1-on-1 độc lập, Đào tạo di động & Video Call Jitsi trực tuyến, Lịch hoạt động & Công cụ nhắc hẹn Active Reminder.
+  - **2. Biên Soạn 3 Bộ Cẩm Nang Hướng Dẫn Sử Dụng Chuyên Sâu**:
+    * `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`: Bộ cẩm nang Hướng dẫn sử dụng Cổng Quản Trị Web CRM CLB Doanh Nhân CEO 1983 (24 Node CRM chi tiết từng bước, vai trò thao tác, hình ảnh chụp thật, ràng buộc nghiệp vụ và xử lý sự cố).
+    * `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md`: Bộ cẩm nang Hướng dẫn sử dụng Ứng Dụng Di Động Hội Viên CEO 1983 (17 Node Mobile App, trải nghiệm Mobile-First 5 tab, hướng dẫn cài đặt PWA Add-to-Homescreen trên iOS Safari và Android Chrome).
+    * `document/BO_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_TOAN_DIEN.md`: Cẩm nang Tổng thể Vận hành & Kết nối Toàn diện 2 Subdomain, Ma trận đồng bộ dữ liệu 2 chiều, Chu trình sống 6 bước khép kín từ đăng ký gia nhập đến vinh danh cống hiến.
+  - **3. Tuân thủ tuyệt đối AGENTS Rules & Constraints**:
+    * Không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+    * Đồng bộ hóa MEMORY.md đầy đủ.
+
+
   - **1. Tách Biệt Hoàn Toàn Hẹn Gặp Kết Nối B2B Khỏi Cuộc Họp & Sự Kiện ([NODE-APP-003], [NODE-APP-004], [NODE-CRM-005], [NODE-CORE-001])**:
     * **Xác định kiến trúc ranh giới rõ ràng**:
       - **Cuộc họp (`meetings`)**: Là các cuộc họp chính thống của tổ chức (Ban Chấp Hành, Ban Thư Ký, Ban Chuyên Môn, Đại Hội, Họp Định Kỳ) được khởi tạo bởi Ban Điều Hành và bắn từ hệ thống về. Quản lý trên CRM `/meetings` và hiển thị trên tab "Cuộc họp" của app.
@@ -2528,7 +2776,131 @@
 
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 12/11/2026 (v11.32): Tách Biệt Tuyệt Đối 3 Luồng Riêng Biệt (Cuộc Họp Hệ Thống vs Hẹn Gặp Kết Nối B2B vs Sự Kiện) & Triển Khai Tính Năng Hủy Hẹn Kèm Trường Lý Do Hủy ([NODE-APP-003], [NODE-APP-004], [NODE-APP-005], [NODE-CRM-005], [NODE-CORE-001])**:
+- **Bản cập nhật ngày 13/11/2026 (v11.37): Sửa Nhóm Phân Quyền CRM Theo Ma Trận RBAC, Chuẩn Hóa Chi Tiết Sự Kiện & Bắn QR Feed Sắc Nét, Tối Ưu Popup Tin Nhắn Không Bị Header Che, Gỡ Khối Chữ Nhật Gradient CRM, Xóa Ảnh 404 & Gỡ Landing Web ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-016], [NODE-CRM-023], [NODE-APP-001], [NODE-APP-008])**:
+  - **1. Sửa 3 Chức Năng Nhóm Phân Quyền CRM (`/accounts`, `/roles`, `/permissions`)**:
+    * **Đồng bộ Ma trận RBAC thời gian thực**: Loại bỏ toàn bộ các điều kiện biến cứng (`canViewSystem`, `canViewPlatform`, `canViewFinance`, `canViewSponsors`, `canViewComm`) trong `Sidebar.tsx`. Chuyển đổi 100% sang kiểm tra ma trận RBAC (`isAllowed(it.to)`).
+    * Bỏ các điều kiện chặn cứng `hasPerm` trong `permissionsGroup`, `system`, `events`, `members`.
+    * Cập nhật `permissions.tsx`, `departments.tsx`, `accounts.tsx` kiểm tra quyền theo `isRouteAllowedByMatrix`, giải phóng các role chuyên môn để họ truy cập đúng các trang đã được tích quyền trên Ma trận RBAC.
+    * Trong `users.service.ts` (`getAccountDetails`): Đảm bảo ưu tiên vai trò chức danh cụ thể từ `members.executive_role` (`hasSpecificSpecialistRole`), không ép cứng thành `admin` nếu tài khoản có chức danh Ban chuyên môn.
+    * Khi thay đổi quyền hoặc xóa tài khoản: Kích hoạt `clearMeCache()`, dọn sạch cache 15s và bắn đồng bộ các sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed`, `vba_accounts_changed`.
+  - **2. Chuẩn Hóa Chi Tiết Sự Kiện, Bắn QR Xuống Feed & Phóng To QR Sắc Nét**:
+    * **Loại bỏ hard text tự bịa**: Xóa bỏ các khẩu hiệu giả lập `subtitle` ("KẾ THỪA GIÁ TRỊ..."), `audience` ("Chủ tịch, CEO..."), `offer` ("Vé tham dự miễn phí...") trong `EventDetailModal.tsx` và `events.$eventId.tsx`. Chỉ hiển thị đúng `description` thực tế từ CSDL PostgreSQL.
+    * **Gỡ bỏ khối hiển thị Sponsors lặp lại**: Xóa khối render sponsors lặp thừa thãi ở dòng 616 `events.$eventId.tsx`.
+    * **Bắn sự kiện xuống mạng lưới Feed chuẩn QR**: `handleBroadcastEventToFeed` (`events.index.tsx`) đọc đúng `image` và `banner` của sự kiện, sinh link ảnh QR code PNG sắc nét `https://ceo1983.viconnect.vn/api/events/qr?data=...&size=500`.
+    * **Phóng to QR trong FeedView (`FeedView.tsx`)**: Sửa nút "Phóng to QR" tạo ảnh QR PNG trực tiếp mở trong Lightbox, loại bỏ hoàn toàn lỗi phóng to QR nhảy ra logo CLB 1983.
+    * **Người tham gia đã đăng ký**: Sử dụng dữ liệu thực tế từ bảng `event_registrations` (4 bản ghi hội viên thật đã được đồng bộ chuẩn vào PostgreSQL).
+  - **3. Sửa Popup Tin Nhắn Không Bị Header Che (`ChatThread.tsx` & `connect-app.inbox.$threadId.tsx`)**:
+    * Xác định nguyên nhân: Các tin nhắn ở gần đầu trang (`idx <= 2`) có menu và reaction picker mở ngược lên trên (`bottom-8`) với `z-30`, bị thanh Header `z-40` đè lên một nửa (như ảnh attachment `media_1794537431209_67973896.png`).
+    * Khắc phục:
+      - Đổi hướng mở của More Menu: Nếu `idx <= 2` thì mở xuống dưới (`top-full mt-1.5`), ngược lại mở lên trên (`bottom-8`).
+      - Nâng `z-index` lên `z-50` (cao hơn Header `z-40`).
+      - Đồng bộ cho cả Context menu (`idx <= 2 ? top-full mt-2 : -top-20`) và Reaction picker trong cả `ChatThread.tsx` và `connect-app.inbox.$threadId.tsx`.
+  - **4. Gỡ Bỏ Màu Gradient Ở Các Khối Chữ Nhật Tại Các Chức Năng Trên CRM**:
+    * `KpiCard.tsx` (`StandardMetricCard`): Đổi 4 theme màu xanh (`sky`), tím (`violet`), cam (`orange`), xanh lá (`green`) từ `bg-gradient-to-b` sang màu solid chuẩn phẳng `bg-card dark:bg-slate-900 border border-border`.
+    * `PageKit.tsx` (`StatCard`): Đổi `cardThemes` từ `bg-gradient-to-b` sang `bg-card dark:bg-slate-900 border border-border`.
+    * `tasks.tsx`: Đổi 4 khối KPI công việc sang `bg-card dark:bg-slate-900 rounded-[20px] border border-border`.
+    * `EventSponsors.tsx`: Đổi 4 hạng tài trợ (Bạch Kim, Vàng, Bạc, Đồng) sang `bg-card dark:bg-slate-900`.
+    * `accounts.tsx` & `RbacPermissionMatrix.tsx`: Đổi banner cảnh báo chưa lưu từ gradient sang `bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800`.
+    * `FinanceChartsSection.tsx`: Đổi khối phân tích nguồn tài trợ sang `bg-card border border-border`.
+  - **5. Xóa Ảnh 404, Gỡ Bỏ Landing Web Khỏi Tài Liệu HDSD & Tái Xuất PDF**:
+    * `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`:
+      - Xóa 2 ảnh bị thiếu 404: `04_crm_member_detail_drawer.png` và `08_crm_account_role_dept_modal.png`.
+      - Gỡ bỏ toàn bộ mục `[NODE-CRM-023]: Quản Lý Landing Web Dynamic Pinterest Showcase` kèm ảnh `29_crm_landing_webs.png`.
+    * Xóa file ảnh `document/images/guide_crm/29_crm_landing_webs.png` trên đĩa.
+    * Chạy script `node scripts/generate_all_user_guides_pdf.cjs`: Tái xuất bản thành công 3 tệp PDF sắc nét (8.12 MB CRM, 2.93 MB App Mobile, 0.32 MB Tổng hợp) và đồng bộ sang `apps/ceo1983_app_fe/public/docs/`.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Bắt buộc kiểm tra `npx tsc --noEmit` ở cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe`.
+    * Tuân thủ nghiêm ngặt Rule 1: TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẠY `git push` HAY `git commit`.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.36): Bổ Sung Toàn Diện Ảnh & Hướng Dẫn Chi Tiết Chức Năng Con Mobile App, Luồng Sự Kiện & Sơ Đồ Chỗ Ngồi CRM Kèm Bộ Ảnh Responsive Đa Thiết Bị ([NODE-CRM-007], [NODE-APP-001], [NODE-APP-008], [NODE-APP-010])**:
+  - **1. Chụp Bổ Sung 13 Hình Ảnh Độ Phân Giải Cao Cho Chức Năng Con & Responsive**:
+    * **Nhóm 1 — Chức Năng Con Mobile App (`document/images/guide_app/`)**:
+      - `01_b_app_notifications_center.png`: Trung tâm Thông báo Đa kênh Hội viên (`/association/notifications`) hiển thị thông báo sự kiện, tin nhắn kết nối, cơ hội kinh doanh.
+      - `01_c_app_theme_switcher_modal.png`: Màn hình Cài đặt Giao diện & Bộ chọn Màu Brandbook (`/association/system-config`) với 4 màu cốt lõi: Đỏ Ruby, Vàng Hoàng Gia, Xanh Doanh Nhân, Cam Tiên Phong và công tắc trợ lý AI.
+      - `01_d_app_theme_dark_mode.png`: Ứng dụng ở Chế độ Tối (Dark Mode) sang trọng, tiết kiệm pin OLED và bảo vệ thị lực ban đêm.
+      - `08_b_app_event_ticket_qr_modal.png`: Màn hình Chi tiết Sự kiện Ngày Hội Doanh Trí 21/11 & Modal Vé QR Check-in điện tử có gán số ghế / bàn tiệc.
+      - `10_b_app_messages_chat_1on1.png`: Màn hình Tin nhắn & Trò chuyện Kết nối Doanh nhân 1-on-1 thời gian thực qua Socket.IO.
+    * **Nhóm 2 — Luồng Sự Kiện Chuyên Sâu Web CRM (`document/images/guide_crm/`)**:
+      - `11_b_crm_event_detail_hub.png`: Màn hình Trung tâm Điều hành Sự kiện Hub (`/events/EV-VIENDOANHTRI-2027`) với bộ đếm Countdown, Poster, Cổng QR Gatekeeper và Agenda.
+      - `11_c_crm_event_registrations_tickets.png`: Bảng Quản lý Vé & Đăng ký Đại biểu (`/event-registrations`) đa phân hạng vé VIP/Thường, trạng thái `[✓ Đã thanh toán]`, thu tiền mặt walk-in.
+      - `11_d_crm_event_seating_setup.png`: Studio Sơ đồ Chỗ ngồi & Bàn tiệc tương tác (`CinemaSeatingMap`) hỗ trợ kéo thả đại biểu, tự động gán vào vé QR check-in.
+      - `11_e_crm_event_poster_and_qr_modal.png`: Modal Poster Sự kiện khổ lớn kèm mã QR Điểm danh tự động Gatekeeper cho bàn tiếp tân.
+      - `11_f_crm_event_guest_qr_presenter.png`: Modal Trình chiếu Mã QR Đăng ký Khách mời Zalo nhanh gọn trong 30 giây.
+    * **Nhóm 3 — Bộ Ảnh Thể Hiện Responsive Đa Thiết Bị Web CRM (`document/images/guide_crm/`)**:
+      - `responsive_crm_desktop_1440.png`: CRM hiển thị chuẩn màn hình Desktop (1440x900) với full Sidebar 24 module và bảng tính Excel rộng rãi.
+      - `responsive_crm_tablet_1024.png`: CRM hiển thị trên Tablet/iPad (1024x768) với Sidebar co gọn linh hoạt, lưới 2 cột và thao tác cảm ứng tối ưu.
+      - `responsive_crm_mobile_390.png`: CRM hiển thị trên Mobile Smartphone (390x844) với menu Drawer dạng Hamburger và bố cục 1 cột cuộn mượt mà.
+  - **2. Đồng Bộ Hóa Chi Tiết Vào Toàn Bộ Tài Liệu Hướng Dẫn Sử Dụng**:
+    * Cập nhật `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`: Thêm mục quản lý vé sự kiện, thiết lập sơ đồ chỗ ngồi CinemaSeatingMap, Gatekeeper điểm danh, và bổ sung riêng Chương 3 "GIAO DIỆN ĐA THIẾT BỊ & KHẢ NĂNG ĐÁP ỨNG RESPONSIVE (DESKTOP, TABLET, MOBILE)".
+    * Cập nhật `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md`: Thêm hướng dẫn Trung tâm thông báo đẩy, Bộ tùy biến màu sắc Brandbook 4 màu, Chế độ Dark Mode, Vé QR sự kiện và Trò chuyện nhắn tin bí mật 1-on-1 giữa các CEO.
+    * Cập nhật `document/BO_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_TOAN_DIEN.md`: Cập nhật bảng tổng hợp danh mục hình ảnh thực tế đầy đủ.
+  - **3. Tái Kết Xuất 3 File PDF Chuẩn In Ấn A4 & Đồng Bộ Tải Xuống**:
+    * Chạy `scripts/generate_all_user_guides_pdf.cjs`:
+      - 📄 `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (8.74 MB — Nâng cấp toàn diện).
+      - 📱 `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (3.07 MB — Bổ sung chức năng con).
+      - 🌐 `document/BO_HUONG_DAN_SU_DUNG_TOAN_DIEN_CEO1983.pdf` (0.34 MB — Bản tổng hợp).
+    * Đồng bộ đầy đủ sang `apps/ceo1983_app_fe/public/docs/`.
+  - **4. Kiểm Tra Type-check & Tuân Thủ Quy Chuẩn**:
+    * `tsc --noEmit` tại `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều đạt Exit Code 0 (0 errors).
+    * Tuân thủ tuyệt đối Rule 1: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.35): Chụp Lại Toàn Bộ Ảnh Mobile App Không Bị Popup Che & Kết Xuất Trọn Bộ 3 Tài Liệu HDSD Sang Định Dạng PDF Chuẩn In Ấn A4 ([NODE-APP-001] -> [NODE-APP-017], [NODE-CRM-001] -> [NODE-CRM-024])**:
+  - **1. Xử Lý Triệt Để Popup & Tái Chụp Sạch Sẽ 16 Màn Hình Mobile App**:
+    * Phát hiện nguyên nhân che giao diện: `WelcomeMemberModal` (`ceo1983_welcome_shown`) và `FirstDayAiWelcomeModal` (`vba_daily_ai_welcomed_date`) tự động bật lên khi tài khoản mới đăng nhập.
+    * Xây dựng script `scripts/recapture_clean_app_screens.cjs`:
+      - Thiết lập trước các cờ `localStorage` ngăn modal xuất hiện.
+      - Tự động bóc tách và xóa sạch mọi dialog / backdrop che phủ (`[role="dialog"]`, `.backdrop-blur-sm`, `.bg-black/60`).
+      - Khôi phục `document.body.style.overflow = 'auto'`.
+    * Chụp lại toàn bộ 16 ảnh độ phân giải cao tại `document/images/guide_app/`:
+      - `01_app_home_ticker.png`: Trang chủ Ticker nến Realtime hoàn toàn sạch sẽ, lộ rõ đồ thị nến, thẻ cơ hội và shortcut tin nhắn.
+      - `02_app_vip_card.png` đến `16_app_calendar.png`: Tất cả các tab (Thẻ VIP số, QR công khai, Danh bạ đối tác, Sàn B2B, Bục vinh danh Top 3, Sự kiện YBA, Moments mạng lưới, Video call Jitsi, Lịch nhắc hẹn) đều hiển thị 100% nội dung giao diện gốc.
+  - **2. Kết Xuất Trọn Bộ 3 File PDF Chuẩn In Ấn A4 Sắc Nét**:
+    * Xây dựng script `scripts/generate_all_user_guides_pdf.cjs` sử dụng Playwright Chromium headless.
+    * Thiết kế bìa tài liệu gradient VIP sang trọng (`#001A4D` -> `#003B95`), viền Amber Gold, định dạng bảng so le, nhúng ảnh độ nét cao và đánh số trang Header/Footer.
+    * Xuất bản 3 tệp PDF hoàn chỉnh:
+      - 📄 `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (6.38 MB — 24 Functional Nodes CRM).
+      - 📱 `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.19 MB — 17 Functional Nodes Mobile App).
+      - 🌐 `document/BO_HUONG_DAN_SU_DUNG_TOAN_DIEN_CEO1983.pdf` (0.32 MB — Vận hành đồng bộ 2 Subdomain).
+    * Đồng bộ bản sao sang `apps/ceo1983_app_fe/public/docs/` để phục vụ tải trực tiếp từ web/app.
+  - **3. Tuân thủ tuyệt đối Rule 1**: Không tự động chạy `git push` hay `git commit`.
+
+
+  - **1. Thực Hiện Quy Chuẩn An Toàn Dữ Liệu (accidental-data-loss-prevention)**:
+    * Tạo bản sao lưu toàn diện trước khi xóa tại `scratch/backup_before_clean_2026-11-13T00-57-19-501Z.json`.
+    * Được xác nhận phê duyệt (explicit consent) từ người dùng trước khi thực thi xóa.
+  - **2. Làm Sạch Toàn Bộ Dữ Liệu Phát Sinh Thử Nghiệm**:
+    * Bảng chia sẻ cơ hội: `public.opportunities`, `public.opportunity_interests` (Về 0 bản ghi).
+    * Bảng sàn giao thương B2B: `public.products` (Về 0 bản ghi).
+    * Bảng cuộc họp hệ thống: `public.meetings` (Về 0 bản ghi).
+    * Bảng hẹn gặp kết nối 1-on-1: `public.business_meetings`, `public.business_meeting_participants` (Về 0 bản ghi).
+  - **3. Chuẩn Hóa Duy Nhất 4 Tài Khoản Hội Viên & Đăng Nhập (Pass: 123456)**:
+    * 1. `admin@connect.vn` (Jame Nguyễn - Chủ Tịch HĐQT / Admin, mã `M1983-268`)
+    * 2. `vumikasa6@gmail.com` (Phạm Văn Vũ - Trưởng Ban Truyền Thông, mã `CEO1983-000003`)
+    * 3. `info@viconnect.vn` (Phạm hồng Nguyên - Hội viên, mã `CEO1983-000001`)
+    * 4. `vupv090120@gmail.com` (Phạm An Nam - Hội viên, mã `CEO1983-000002`)
+    * Kiểm thử đăng nhập tự động qua API xác nhận 100% tài khoản trả về `HTTP 200 SUCCESS`.
+  - **4. Bảo Lưu Duy Nhất 1 Sự Kiện Ngày 21/11/2026**:
+    * Mã sự kiện: `EV-VIENDOANHTRI-2027`
+    * Tiêu đề: *Kỷ Niệm 4 Năm Thành Lập Viện Doanh Trí & Tọa Đàm Kinh Tế: Doanh Nghiệp Việt 2027*
+    * Thời gian: Ngày 21/11/2026 (2026-11-20T17:00:00.000Z theo UTC = 00:00 ngày 21/11/2026 GMT+7).
+    * Địa điểm: *Nhà hàng Long Phụng - Tầng 2, Tòa nhà 29T2, Hoàng Đạo Thúy, Cầu Giấy, Hà Nội*.
+  - **5. Tuân thủ tuyệt đối Rule 1**: Không tự động chạy `git push` hay `git commit`.
+
+
+  - **1. Truy Cập Trực Tiếp & Chụp Ảnh Thực Tế 2 Subdomain Bằng Playwright**:
+    * **Subdomain 1 — Web CRM Quản Trị (`https://crm.ceo1983.viconnect.vn`)**:
+      - Chụp đầy đủ 30 hình ảnh độ phân giải cao tại `document/images/guide_crm/` bao phủ toàn bộ 24 Node CRM: Đăng nhập quản trị, Dashboard 4 chỉ số KPI, Thống kê 5 danh mục, Quản lý hội viên 360°, Drawer chi tiết & duyệt hồ sơ, Doanh nghiệp thành viên, Tài khoản & 6 Ban chuyên môn, Ma trận phân quyền RBAC 2 Tab độc lập, Quản trị sự kiện 3 bước & Bắn mạng lưới, Quản lý cuộc họp & Bản đồ Nominatim ghim tọa độ, Thu chi ngân sách & Sổ quỹ S07-DN, Báo cáo tài chính, Giao việc Kanban & Universal File Viewer, Nhà tài trợ 4 phân hạng & VietQR tri ân, Kho văn kiện CLB, Biểu quyết & Lucky Draw, Bản tin truyền thông, Gia hạn niên liễm, Đào tạo & Video Call Jitsi, Audit Log an ninh, Trao cơ hội B2B đa điểm, Theme Studio 5 VIP Presets, Trung tâm thông báo cảnh báo, Dynamic Landing Webs Pinterest Showcase, Omnichannel Invitation Studio.
+    * **Subdomain 2 — Mobile App Hội Viên (`https://ceo1983.viconnect.vn`)**:
+      - Chụp đầy đủ 17 hình ảnh tỷ lệ chuẩn di động tại `document/images/guide_app/` bao phủ toàn bộ 17 Node Mobile App: Đăng nhập hội viên, Trang chủ Ticker nến Realtime & Shortcut tin nhắn, Thẻ VIP số xoay 2 mặt & QR cá nhân hóa, Trang quét danh thiếp công khai bảo mật riêng tư, Danh bạ hội viên & Bản đồ 2D Google Maps dẫn đường GPS, Cơ hội B2B Strip 3 thẻ ngang, Trung tâm thống kê 5 phân loại & Bục vinh danh Top 3 Giver, Sàn B2B Marketplace giới hạn 5 sản phẩm/DN, Sự kiện lớn & Họp mặt 2 kiểu YBA, Biểu quyết trực tuyến Realtime, Bảng tin Moments mạng lưới & Thẻ check-in sự kiện, Hồ sơ cá nhân tối giản & Hợp đồng điện tử, Cài đặt hệ thống, Trợ lý AI & Đổi mật khẩu, Danh sách ưu đãi QR động & Bản đồ điểm dùng, Phân hệ kết nối B2B 1-on-1 độc lập, Đào tạo di động & Video Call Jitsi trực tuyến, Lịch hoạt động & Công cụ nhắc hẹn Active Reminder.
+  - **2. Biên Soạn 3 Bộ Cẩm Nang Hướng Dẫn Sử Dụng Chuyên Sâu**:
+    * `document/HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`: Bộ cẩm nang Hướng dẫn sử dụng Cổng Quản Trị Web CRM CLB Doanh Nhân CEO 1983 (24 Node CRM chi tiết từng bước, vai trò thao tác, hình ảnh chụp thật, ràng buộc nghiệp vụ và xử lý sự cố).
+    * `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md`: Bộ cẩm nang Hướng dẫn sử dụng Ứng Dụng Di Động Hội Viên CEO 1983 (17 Node Mobile App, trải nghiệm Mobile-First 5 tab, hướng dẫn cài đặt PWA Add-to-Homescreen trên iOS Safari và Android Chrome).
+    * `document/BO_HUONG_DAN_SU_DUNG_HE_THONG_CEO1983_TOAN_DIEN.md`: Cẩm nang Tổng thể Vận hành & Kết nối Toàn diện 2 Subdomain, Ma trận đồng bộ dữ liệu 2 chiều, Chu trình sống 6 bước khép kín từ đăng ký gia nhập đến vinh danh cống hiến.
+  - **3. Tuân thủ tuyệt đối AGENTS Rules & Constraints**:
+    * Không tự động chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ cục bộ.
+    * Đồng bộ hóa MEMORY.md đầy đủ.
+
+
   - **1. Tách Biệt Hoàn Toàn Hẹn Gặp Kết Nối B2B Khỏi Cuộc Họp & Sự Kiện ([NODE-APP-003], [NODE-APP-004], [NODE-CRM-005], [NODE-CORE-001])**:
     * **Xác định kiến trúc ranh giới rõ ràng**:
       - **Cuộc họp (`meetings`)**: Là các cuộc họp chính thống của tổ chức (Ban Chấp Hành, Ban Thư Ký, Ban Chuyên Môn, Đại Hội, Họp Định Kỳ) được khởi tạo bởi Ban Điều Hành và bắn từ hệ thống về. Quản lý trên CRM `/meetings` và hiển thị trên tab "Cuộc họp" của app.

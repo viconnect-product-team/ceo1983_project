@@ -844,7 +844,7 @@ function ThreadPage() {
                                   </button>
 
                                   {activeMenuMsgId === m.id ? (
-                                    <div className="absolute bottom-8 right-0 z-30 min-w-[140px] rounded-xl border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md">
+                                    <div className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} right-0 z-50 min-w-[140px] rounded-xl border border-slate-200 dark:border-[var(--bc-mobile-border)] bg-white dark:bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md`}>
                                       <button
                                         type="button"
                                         onClick={() => handleSelectReply(m)}
@@ -907,7 +907,7 @@ function ThreadPage() {
                                   </button>
 
                                   {activeReactionPickerMsgId === m.id ? (
-                                    <div className="absolute bottom-8 right-0 z-30 flex items-center gap-1 rounded-full border border-slate-200 dark:border-[var(--bc-mobile-border-gold)] bg-white dark:bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
+                                    <div className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} right-0 z-50 flex items-center gap-1 rounded-full border border-slate-200 dark:border-[var(--bc-mobile-border-gold)] bg-white dark:bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in`}>
                                       {QUICK_REACTIONS.map((emoji) => (
                                         <button
                                           key={emoji}
@@ -1183,7 +1183,7 @@ function ThreadPage() {
                                   </button>
 
                                   {activeReactionPickerMsgId === m.id ? (
-                                    <div className="absolute bottom-8 left-0 z-30 flex items-center gap-1 rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in">
+                                    <div className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} left-0 z-50 flex items-center gap-1 rounded-full border border-[var(--bc-mobile-border-gold)] bg-[var(--bc-mobile-surface)] p-1.5 shadow-xl backdrop-blur-md animate-fade-in`}>
                                       {QUICK_REACTIONS.map((emoji) => (
                                         <button
                                           key={emoji}
@@ -1222,7 +1222,7 @@ function ThreadPage() {
                                   </button>
 
                                   {activeMenuMsgId === m.id ? (
-                                    <div className="absolute bottom-8 left-0 z-30 min-w-[140px] rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md">
+                                    <div className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} left-0 z-50 min-w-[140px] rounded-xl border border-[var(--bc-mobile-border)] bg-[var(--bc-mobile-surface)] py-1 shadow-2xl backdrop-blur-md`}>
                                       <button
                                         type="button"
                                         onClick={() => handleSelectReply(m)}

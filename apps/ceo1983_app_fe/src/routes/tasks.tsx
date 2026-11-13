@@ -448,10 +448,10 @@ function TasksPage() {
           </div>
         )}
 
-        {/* ── 4 METRIC CARDS (Figma Exact Style matching Quản lý tài khoản) ── */}
+        {/* ── 4 METRIC CARDS (Solid Card Style matching CRM standard) ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Tổng công việc (Sky gradient - Blue) */}
-          <div className="h-32 p-4 bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          {/* Card 1: Tổng công việc */}
+          <div className="h-32 p-4 bg-card dark:bg-slate-900 rounded-[20px] border border-border flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/users-round-1.svg" className="h-4 w-4" alt="tasks" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
               <div className="text-blue-600 dark:text-blue-400 text-xs font-semibold font-['Inter']">TỔNG CÔNG VIỆC</div>
@@ -464,8 +464,8 @@ function TasksPage() {
             </div>
           </div>
 
-          {/* Card 2: Đang thực hiện & Duyệt (Violet gradient - Indigo) */}
-          <div className="h-32 p-4 bg-gradient-to-b from-violet-100 to-white dark:from-violet-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          {/* Card 2: Đang thực hiện & Duyệt */}
+          <div className="h-32 p-4 bg-card dark:bg-slate-900 rounded-[20px] border border-border flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/shield-check.svg" className="h-4 w-4" alt="progress" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
               <div className="text-indigo-500 dark:text-indigo-400 text-xs font-semibold font-['Inter']">ĐANG THỰC HIỆN</div>
@@ -478,8 +478,8 @@ function TasksPage() {
             </div>
           </div>
 
-          {/* Card 3: Cần đôn đốc / Quá hạn (Orange gradient - Orange) */}
-          <div className="h-32 p-4 bg-gradient-to-b from-orange-100 to-white dark:from-orange-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          {/* Card 3: Cần đôn đốc / Quá hạn */}
+          <div className="h-32 p-4 bg-card dark:bg-slate-900 rounded-[20px] border border-border flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/building-2-1.svg" className="h-4 w-4" alt="overdue" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
               <div className="text-orange-500 dark:text-orange-400 text-xs font-semibold font-['Inter']">CẦN ĐÔN ĐỐC / QUÁ HẠN</div>
@@ -492,8 +492,8 @@ function TasksPage() {
             </div>
           </div>
 
-          {/* Card 4: Đã hoàn thành (Green gradient - Emerald) */}
-          <div className="h-32 p-4 bg-gradient-to-b from-green-100 to-white dark:from-green-950/40 dark:to-slate-900 rounded-[20px] outline outline-[0.50px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
+          {/* Card 4: Đã hoàn thành */}
+          <div className="h-32 p-4 bg-card dark:bg-slate-900 rounded-[20px] border border-border flex flex-col justify-start items-start gap-2.5 overflow-hidden shadow-xs">
             <div className="h-8 flex items-center gap-2">
               <img src="/icons/ceo1983_icon_2/circle-check.svg" className="h-4 w-4" alt="done" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
               <div className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold font-['Inter']">ĐÃ HOÀN THÀNH</div>

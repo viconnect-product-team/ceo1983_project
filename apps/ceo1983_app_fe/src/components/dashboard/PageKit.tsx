@@ -53,22 +53,22 @@ export function StatCard({
 }) {
   const cardThemes = [
     {
-      cardBg: "bg-gradient-to-b from-sky-100 to-slate-50 dark:from-sky-950/40 dark:to-slate-900 border-sky-200/70 dark:border-sky-800/40",
+      cardBg: "bg-card dark:bg-slate-900 border border-border",
       labelColor: "text-blue-600 dark:text-sky-400",
       iconBg: "bg-blue-600 text-white",
     },
     {
-      cardBg: "bg-gradient-to-b from-violet-100 to-white dark:from-indigo-950/40 dark:to-slate-900 border-violet-200/70 dark:border-indigo-800/40",
+      cardBg: "bg-card dark:bg-slate-900 border border-border",
       labelColor: "text-indigo-600 dark:text-indigo-400",
       iconBg: "bg-indigo-600 text-white",
     },
     {
-      cardBg: "bg-gradient-to-b from-orange-100 to-white dark:from-amber-950/40 dark:to-slate-900 border-orange-200/70 dark:border-orange-800/40",
+      cardBg: "bg-card dark:bg-slate-900 border border-border",
       labelColor: "text-orange-600 dark:text-orange-400",
       iconBg: "bg-orange-500 text-white",
     },
     {
-      cardBg: "bg-gradient-to-b from-green-100 to-white dark:from-emerald-950/40 dark:to-slate-900 border-emerald-200/70 dark:border-emerald-800/40",
+      cardBg: "bg-card dark:bg-slate-900 border border-border",
       labelColor: "text-emerald-600 dark:text-emerald-400",
       iconBg: "bg-emerald-600 text-white",
     },
