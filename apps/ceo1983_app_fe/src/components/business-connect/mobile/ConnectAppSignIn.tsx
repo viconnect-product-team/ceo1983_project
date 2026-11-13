@@ -268,7 +268,7 @@ export function ConnectAppSignIn({
                 autoComplete="username"
                 value={email}
                 onChange={(e) => onEmailChange(e.target.value)}
-                placeholder="admin@connect.vn"
+                placeholder="admin@viconnect.vn"
                 className={fieldClass}
               />
             </div>

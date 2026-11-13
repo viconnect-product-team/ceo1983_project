@@ -475,10 +475,22 @@ function NotificationsScreen() {
     reload,
   } = useServerData<MyNotification[]>(() => fetchNotis(), []);
 
+  const [localReadIds, setLocalReadIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("vba_read_notification_ids");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
   const notifications = useMemo(() => {
     const seen = new Set<string>();
     const res: MyNotification[] = [];
-    for (const n of rawNotifications || []) {
+    for (const raw of rawNotifications || []) {
+      const isLocalRead = localReadIds.has(raw.id);
+      const n: MyNotification = isLocalRead ? { ...raw, unread: false } : raw;
       const keys: string[] = [];
       if (n.id) keys.push(`id:${n.id}`);
       if (n.refType && n.refId) keys.push(`ref:${n.refType}:${n.refId}`);
@@ -637,13 +649,34 @@ function NotificationsScreen() {
   };
 
   const onMarkOneRead = async (n: MyNotification) => {
+    // Cập nhật trạng thái đã đọc ngay lập tức trên UI và LocalStorage
+    setLocalReadIds((prev) => new Set([...prev, n.id]));
+    try {
+      const stored = localStorage.getItem("vba_read_notification_ids");
+      const list: string[] = stored ? JSON.parse(stored) : [];
+      if (!list.includes(n.id)) {
+        list.push(n.id);
+        localStorage.setItem("vba_read_notification_ids", JSON.stringify(list));
+      }
+      const rawStoredNotifs = localStorage.getItem("vba_notifications");
+      if (rawStoredNotifs) {
+        const notifs = JSON.parse(rawStoredNotifs);
+        const updated = notifs.map((item: any) =>
+          item.id === n.id ? { ...item, unread: false, read: true } : item
+        );
+        localStorage.setItem("vba_notifications", JSON.stringify(updated));
+      }
+      window.dispatchEvent(new Event("notifications-updated"));
+      window.dispatchEvent(new Event("vba_notifications_updated"));
+    } catch {}
+
     if (rowBusy) return;
     setRowBusy(n.id);
     try {
       await markRead({ data: { id: n.id } });
       reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("m.notifications.markOne.error"));
+      // Background sync, UI already marked read
     } finally {
       setRowBusy(null);
     }
@@ -760,6 +793,12 @@ function NotificationsScreen() {
   const [query, setQuery] = useState(search.q ?? "");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<MyNotification | null>(null);
+
+  useEffect(() => {
+    if (selectedNotif && selectedNotif.unread) {
+      void onMarkOneRead(selectedNotif);
+    }
+  }, [selectedNotif]);
 
   // Trạng thái quyền thông báo hệ thống ngoài app (Yêu cầu 4)
   const [notifPermission, setNotifPermission] = useState<string>(() => {
@@ -907,7 +946,7 @@ function NotificationsScreen() {
   };
 
   const handlePayNotification = (n: any) => {
-    if (n.unread && n.personal) {
+    if (n.unread) {
       void onMarkOneRead(n);
     }
     const text = `${n.title || ""} ${n.body || ""}`.toLowerCase();
@@ -1390,7 +1429,7 @@ function NotificationsScreen() {
                 role="listitem"
                 onClick={() => {
                   setSelectedNotif(n);
-                  if (n.unread && n.personal) onMarkOneRead(n);
+                  if (n.unread) onMarkOneRead(n);
                 }}
                 className={`relative flex gap-2.5 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden cursor-pointer ${
                   n.unread
@@ -1552,7 +1591,7 @@ function NotificationsScreen() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedNotif(n);
-                                if (n.unread && n.personal) onMarkOneRead(n);
+                                if (n.unread) onMarkOneRead(n);
                               }}
                               className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                             >
@@ -1566,7 +1605,7 @@ function NotificationsScreen() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (n.unread && n.personal) onMarkOneRead(n);
+                                if (n.unread) onMarkOneRead(n);
                                 void navigate({ to: "/association/members", search: { tab: "meetings" } });
                               }}
                               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
@@ -1580,7 +1619,7 @@ function NotificationsScreen() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedNotif(n);
-                                if (n.unread && n.personal) onMarkOneRead(n);
+                                if (n.unread) onMarkOneRead(n);
                               }}
                               className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                             >
@@ -1596,7 +1635,7 @@ function NotificationsScreen() {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (n.unread && n.personal) onMarkOneRead(n);
+                                  if (n.unread) onMarkOneRead(n);
                                   const targetChannel = getChannelOrPeerForNotif(n);
                                   void navigate({ to: "/association/messages", search: { peerCode: targetChannel } });
                                 }}
@@ -1613,7 +1652,7 @@ function NotificationsScreen() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedNotif(n);
-                                if (n.unread && n.personal) onMarkOneRead(n);
+                                if (n.unread) onMarkOneRead(n);
                               }}
                               className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap transition-all"
                             >

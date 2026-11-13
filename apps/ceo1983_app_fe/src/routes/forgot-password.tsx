@@ -118,14 +118,14 @@ function ForgotPasswordPage() {
 
   const titleText =
     status === "success"
-      ? t("forgot.success.title")
+      ? "Cấp lại mật khẩu thành công"
       : status === "error"
         ? t("forgot.error.title")
         : t("forgot.title");
 
   const subtitleText =
     status === "success"
-      ? t("forgot.success.subtitle")
+      ? `Hệ thống đã gửi thông báo tới Ban Quản Trị CRM và tự động gửi mật khẩu mới đến email ${email}. Vui lòng kiểm tra hộp thư để đăng nhập!`
       : status === "error"
         ? t("forgot.error.subtitle")
         : t("forgot.subtitle");
@@ -200,11 +200,11 @@ function ForgotPasswordPage() {
               </p>
             )}
             <button
-              onClick={() => navigate({ to: "/auth" })}
-              className="vba-gold-grad w-full rounded-xl px-4 py-3 text-sm font-semibold"
+              onClick={() => navigate({ to: mobile === "1" ? "/association/login" : "/auth" })}
+              className="vba-gold-grad w-full rounded-xl px-4 py-3 text-sm font-semibold cursor-pointer shadow-md active:scale-[0.99] transition-all"
               style={{ color: "#1a1304" }}
             >
-              {t("forgot.backToLogin")}
+              Quay lại Đăng nhập
             </button>
           </div>
         )}

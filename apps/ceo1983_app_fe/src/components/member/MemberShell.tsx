@@ -357,7 +357,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   return (
-    <div className="vba-app relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200">
+    <div className="vba-app fixed inset-0 h-full w-full overflow-hidden bg-white dark:bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200 flex flex-col items-center">
       {/* Dynamic Background Mesh Overlay — only in dark luxury mode */}
       {!isLight && (
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
@@ -383,7 +383,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
       />
 
       <div
-        className={`relative z-10 mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-[480px] flex-col justify-between overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${isLight ? "bg-white" : "bg-[var(--vba-bg)]"
+        className={`relative z-10 flex h-full w-full max-w-[480px] flex-col justify-between overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${isLight ? "bg-white" : "bg-[var(--vba-bg)]"
           } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)]`}
       >
         <OfflineBanner />
@@ -393,7 +393,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
           <PullToRefresh
             enableSwipeNav={false}
             pathname={pathname}
-            className="flex-1 pb-4"
+            className="flex-1"
           >
             {children}
           </PullToRefresh>
@@ -876,12 +876,15 @@ function MemberTabBar() {
   return (
     <>
       <nav
-        className="vba-bottom-bar sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none transition-all duration-200"
-        style={{ bottom: 0, marginBottom: 0 }}
+        className="vba-bottom-bar sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none transition-all duration-200 bg-white dark:bg-[var(--vba-bg-2)] border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        style={{
+          bottom: 0,
+          marginBottom: 0,
+          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 6px)",
+        }}
       >
         <div
-          className={`relative flex items-end justify-around border-t bg-white dark:bg-[var(--vba-bg-2)] px-2 pt-1.5 backdrop-blur-xl transition-all border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]`}
-          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)" }}
+          className="relative flex items-end justify-around px-2 pt-1.5 backdrop-blur-xl transition-all"
         >
           {/* Festive Mid-Autumn Corner Dangling Lantern */}
           {isMidAutumn && (

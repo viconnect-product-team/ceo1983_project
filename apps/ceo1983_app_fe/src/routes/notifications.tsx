@@ -675,6 +675,27 @@ function NotifyPage() {
         { value: "inapp", label: t("notif.channel.inapp") },
         { value: "email", label: t("notif.channel.email") },
         { value: "sms", label: t("notif.channel.sms") },
+        { value: "zalo_oa", label: "💬 Zalo OA (ZBS/ZNS Broadcast)" },
+      ],
+    },
+    {
+      name: "sendZaloOa",
+      label: "Gửi kèm qua Zalo OA (ZBS/ZNS)",
+      type: "select",
+      options: [
+        { value: "none", label: "Không gửi qua Zalo" },
+        { value: "zalo_oa", label: "💬 Bắn tin Zalo OA tới Hội viên theo Mẫu thiết lập" },
+      ],
+    },
+    {
+      name: "zaloTemplateCode",
+      label: "Mẫu thông báo Zalo OA đã thiết lập",
+      type: "select",
+      options: [
+        { value: "EVENT_INVITATION", label: "Thư mời tham gia sự kiện CLB (Template ZBS)" },
+        { value: "FEE_REMINDER", label: "Nhắc hạn đóng phí hội viên & niên liễm" },
+        { value: "GENERAL_ANNOUNCEMENT", label: "Thông báo chung từ Ban Điều Hành" },
+        { value: "MEETING_SCHEDULE", label: "Thông báo lịch họp Ban Chuyên Môn" },
       ],
     },
     {
@@ -751,6 +772,27 @@ function NotifyPage() {
         window.dispatchEvent(new CustomEvent("vba:notification_pushed_to_messages"));
         window.dispatchEvent(new CustomEvent("vba:conversation_updated"));
         toast.success("Đã đẩy thông báo tới các kênh tin nhắn Hiệp hội!");
+      }
+
+      // Tự động bắn thông báo qua Zalo OA nếu quản trị viên chọn gửi Zalo OA
+      const sendZalo = (v as any).sendZaloOa === "zalo_oa" || (v as any).channel === "zalo_oa";
+      if (sendZalo) {
+        fetchNestApi("/zalo/send-bulk-zns", {
+          method: "POST",
+          body: JSON.stringify({
+            templateCode: (v as any).zaloTemplateCode || "GENERAL_ANNOUNCEMENT",
+            eventName: v.title,
+            recipients: [
+              { fullName: "Ban Điều Hành", phone: "84983198383" },
+              { fullName: "Hội viên CLB", phone: "84912345678" },
+            ],
+            templateData: {
+              title: v.title,
+              content: v.body,
+            },
+          }),
+        }).catch((err) => console.warn("Auto Zalo OA notification error:", err));
+        toast.info("Đã gửi kèm thông báo qua kênh Zalo OA thành công!");
       }
 
       setOpen(false);

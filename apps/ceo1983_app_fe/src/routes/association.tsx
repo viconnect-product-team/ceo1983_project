@@ -118,6 +118,7 @@ export const Route = createFileRoute("/association")({
         const userEmail = (parsedUser?.email || "").toLowerCase().trim();
         const userRole = (parsedUser?.role || parsedUser?.user_metadata?.role || "").toLowerCase().trim();
         const isSystemAdmin =
+          userEmail === "admin@viconnect.vn" ||
           userEmail === "admin@connect.vn" ||
           userEmail === "admin@ceo1983.com" ||
           userEmail === "ceo.tongthuky@ceo1983.com" ||
@@ -298,6 +299,7 @@ function MemberRoot() {
         const u = JSON.parse(rawUser);
         const email = (u.email || "").toLowerCase().trim();
         const isSysAdmin =
+          email === "admin@viconnect.vn" ||
           email === "admin@connect.vn" ||
           email === "admin@ceo1983.com" ||
           email === "ceo.tongthuky@ceo1983.com" ||
@@ -322,6 +324,7 @@ function MemberRoot() {
     if (!user) return;
     const email = (user.email || "").toLowerCase().trim();
     const isSysAdmin =
+      email === "admin@viconnect.vn" ||
       email === "admin@connect.vn" ||
       email === "admin@ceo1983.com" ||
       email === "ceo.tongthuky@ceo1983.com" ||

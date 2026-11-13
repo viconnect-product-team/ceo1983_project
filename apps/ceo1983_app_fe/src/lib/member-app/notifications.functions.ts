@@ -44,7 +44,7 @@ export const listMyNotifications = createServerFn({ method: "GET" })
     }
   });
 
-const bulkIdsSchema = z.object({ ids: z.array(z.string().uuid()) });
+const bulkIdsSchema = z.object({ ids: z.array(z.string().min(1)) });
 
 export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
@@ -66,7 +66,7 @@ export const unmarkAllNotificationsReadFn = createServerFn({ method: "POST" })
     return { restored: 0 };
   });
 
-const markReadSchema = z.object({ id: z.string().uuid() });
+const markReadSchema = z.object({ id: z.string().min(1) });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])

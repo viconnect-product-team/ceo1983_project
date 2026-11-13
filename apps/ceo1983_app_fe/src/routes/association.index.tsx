@@ -1267,14 +1267,14 @@ function Home() {
       <input type="file" ref={logoFileInputRef} className="hidden" accept="image/*" onChange={handleDirectLogoUpload} />
 
       {/* ── TOP HEADER (Logo + Xin chào, MemberName + Chuông thông báo - Chuẩn iOS Safe Area) ── */}
-      <div className="self-stretch flex flex-col justify-start items-center">
-        <div
-          data-type="1"
-          style={{
-            paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
-          }}
-          className="self-stretch px-4 pb-2 bg-white shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-40 border-b border-slate-100"
-        >
+      <header
+        data-type="1"
+        style={{
+          paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
+          minHeight: "calc(max(env(safe-area-inset-top, 0px), 8px) + 48px)",
+        }}
+        className="self-stretch px-4 pb-2 bg-white dark:bg-[var(--vba-bg-2)] shadow-[0px_2px_8px_0px_rgba(0,0,0,0.06)] flex justify-between items-center overflow-hidden sticky top-0 z-40 border-b border-slate-100 dark:border-slate-800 transition-all select-none"
+      >
           <div className="flex justify-start items-center gap-2.5">
             <div className="w-14 h-9 relative shrink-0">
               <img
@@ -1321,9 +1321,10 @@ function Home() {
               </div>
             )}
           </Link>
-        </div>
+        </header>
 
-        {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE MÀU ĐỘNG BRAND THEME ── */}
+        <div className="self-stretch flex flex-col justify-start items-center">
+          {/* ── THẺ HỘI VIÊN CHÍNH THỨC HERO CARD THEO TONE MÀU ĐỘNG BRAND THEME ── */}
         <div className="self-stretch px-4 pt-3 flex flex-col justify-start items-start gap-2.5">
           <div
             onClick={() => setProfileSheetOpen(true)}

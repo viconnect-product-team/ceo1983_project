@@ -1889,7 +1889,7 @@ function EventsScreen() {
         data-type="2"
         className="w-full px-4 pb-2 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.06)] bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 inline-flex justify-between items-center overflow-hidden"
         style={{
-          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 54px) + 8px)",
+          paddingTop: "max(env(safe-area-inset-top, 0px), 8px)",
         }}
       >
         <div className="flex-1 flex justify-between items-center">

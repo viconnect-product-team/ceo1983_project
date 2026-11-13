@@ -288,7 +288,8 @@ export function useRole(): RoleState {
 
     // 9. Fallback mặc định cho tài khoản admin root/seed khi chưa cấu hình vai trò cụ thể
     if (
-      (userEmail === "admin@connect.vn" ||
+      (userEmail === "admin@viconnect.vn" ||
+      userEmail === "admin@connect.vn" ||
       userEmail === "admin1@connect.vn" ||
       userEmail.startsWith("admin")) &&
       execRole !== "member" &&
@@ -629,7 +630,7 @@ export function useRole(): RoleState {
           roleStr === "ADM" ||
           user?.permissions?.includes("*") ||
           user?.permissions?.includes("admin:full_access") ||
-          ((userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
+          ((userEmail === "admin@viconnect.vn" || userEmail === "admin@connect.vn" || userEmail === "admin1@connect.vn") &&
             (!roleStr || roleStr === "admin" || roleStr === "quan_tri" || roleStr === "ADM")));
 
       if (isRoleAdmin) {

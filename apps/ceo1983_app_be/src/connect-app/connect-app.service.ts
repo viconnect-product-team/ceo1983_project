@@ -1921,12 +1921,19 @@ export class ConnectAppService implements OnModuleInit {
   }
 
   async markMemberNotificationRead(userId: string, id: string) {
-    await this.prisma.$executeRaw`
-      UPDATE public.member_notifications SET read = true WHERE id = ${id}::uuid
-    `.catch(() => null);
-    await this.prisma.$executeRaw`
-      UPDATE public.business_notifications SET read_at = now() WHERE id = ${id}::uuid AND recipient_user_id = ${userId}::uuid
-    `.catch(() => null);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUuid) {
+      await this.prisma.$executeRaw`
+        UPDATE public.member_notifications SET read = true WHERE id = ${id}::uuid
+      `.catch(() => null);
+      await this.prisma.$executeRaw`
+        UPDATE public.business_notifications SET read_at = now() WHERE id = ${id}::uuid AND recipient_user_id = ${userId}::uuid
+      `.catch(() => null);
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE public.member_notifications SET read = true WHERE id::text = ${id}
+      `.catch(() => null);
+    }
     return { marked: 1 };
   }
 

@@ -92,6 +92,8 @@ export class RolesGuard implements CanActivate {
           const cleanEmail = (vu.email || '').toLowerCase().trim();
           const cleanUsername = (vu.username || '').toLowerCase().trim();
           if (
+            cleanEmail === 'admin@viconnect.vn' ||
+            cleanUsername === 'admin@viconnect.vn' ||
             cleanEmail === 'admin@connect.vn' ||
             cleanUsername === 'admin@connect.vn' ||
             cleanEmail === 'ceo.chutich@ceo1983.com'
@@ -116,6 +118,7 @@ export class RolesGuard implements CanActivate {
       .toLowerCase()
       .trim();
     if (
+      userEmail === 'admin@viconnect.vn' ||
       userEmail === 'admin@connect.vn' ||
       userEmail === 'ceo.chutich@ceo1983.com' ||
       userEmail.startsWith('admin')

@@ -36,6 +36,7 @@ import {
 import { toast } from "sonner";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { OmnichannelBroadcastModal } from "./OmnichannelBroadcastModal";
+import { ZaloZbsInvitationModal } from "./ZaloZbsInvitationModal";
 
 export interface ActivityOption {
   id: string;
@@ -185,6 +186,7 @@ export function InvitationSetupManager() {
 
   // ── 5. PHÁT HÀNH ĐA KÊNH & LƯU TRỮ ──
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState<boolean>(false);
+  const [isZaloZbsModalOpen, setIsZaloZbsModalOpen] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // ── CALL API NẠP TOÀN BỘ SỰ KIỆN, CUỘC HỌP, CHƯƠNG TRÌNH ĐÀO TẠO ──
@@ -459,6 +461,14 @@ export function InvitationSetupManager() {
           >
             <CheckCircle2 className="size-4 text-emerald-400" />
             <span>{isSaving ? "Đang lưu..." : "Lưu Cấu Hình"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsZaloZbsModalOpen(true)}
+            className="px-4 py-2.5 rounded-2xl bg-[#0068FF] hover:bg-[#0052CC] text-white text-xs font-bold shadow-md transition flex items-center gap-2 cursor-pointer"
+          >
+            <Smartphone className="size-4" />
+            <span>Gửi Zalo ZBS từ File Excel</span>
           </button>
           <button
             type="button"
@@ -1242,6 +1252,19 @@ export function InvitationSetupManager() {
             yearDigits: "26",
             saluteText: signatureText,
             capsuleBenefit: bannerHeadline1 + " - " + bannerHeadline2,
+          }}
+        />
+      )}
+
+      {/* MODAL CẤU HÌNH ZALO ZBS & IMPORT EXCEL GỬI HÀNG LOẠT */}
+      {isZaloZbsModalOpen && (
+        <ZaloZbsInvitationModal
+          open={isZaloZbsModalOpen}
+          onClose={() => setIsZaloZbsModalOpen(false)}
+          eventData={{
+            eventName: mainTitle + (mainSubtitle ? `: ${mainSubtitle}` : ""),
+            eventDate: eventDateString,
+            eventLocation: `${eventVenue}, ${eventAddress}`,
           }}
         />
       )}

@@ -137,7 +137,14 @@ export class AuthService implements OnModuleInit {
       isDepartmentLeader: Boolean(details?.isDepartmentLeader),
       permissions,
     };
-    const isSystemAdmin = user.email === 'admin@connect.vn' || user.username === 'admin@connect.vn' || Boolean(details?.isAdmin) || resolvedRole === 'quan_tri' || resolvedRole === 'admin';
+    const isSystemAdmin =
+      user.email === 'admin@viconnect.vn' ||
+      user.username === 'admin@viconnect.vn' ||
+      user.email === 'admin@connect.vn' ||
+      user.username === 'admin@connect.vn' ||
+      Boolean(details?.isAdmin) ||
+      resolvedRole === 'quan_tri' ||
+      resolvedRole === 'admin';
     const mustChangePassword = isSystemAdmin ? false : await this.usersService.checkMustChangePassword(user.id);
     const refreshPayload = { jti: refreshJti, sub: user.id, type: 'refresh' };
 
@@ -565,30 +572,97 @@ Kính chúc Doanh nghiệp của Anh/Chị luôn phát triển thịnh vượng,
 
   async forgotPassword(email: string) {
     if (!email || !email.trim()) {
-      throw new BadRequestException('Email is required');
+      throw new BadRequestException('Vui lòng nhập email hoặc tài khoản đăng nhập');
     }
     const cleanEmail = email.trim().toLowerCase();
-    const user = await this.usersService.findByEmail(cleanEmail).catch(() => null);
+    const user =
+      (await this.usersService.findByEmail(cleanEmail).catch(() => null)) ||
+      (await this.usersService.findByUsername(cleanEmail).catch(() => null));
 
-    if (user && user.email) {
-      // Sinh token bảo mật 32-byte ngẫu nhiên với thời hạn 15 phút
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = Date.now() + 15 * 60 * 1000;
-      this.resetTokenStore.set(cleanEmail, { token, expiresAt });
+    if (user) {
+      const targetEmail = (user.email || cleanEmail).toLowerCase().trim();
+      const memberName = user.name || user.username || targetEmail;
 
-      if (this.mailService) {
+      // 1. Sinh mật khẩu mới ngẫu nhiên 6 chữ số
+      const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+      // 2. Cập nhật mật khẩu mới vào cơ sở dữ liệu PostgreSQL
+      if (this.prisma) {
+        await this.prisma.$executeRaw`
+          UPDATE public.vione_users
+          SET password = ${hashedPassword}, updated_at = NOW()
+          WHERE id = ${user.id}::uuid
+        `.catch((e) => {
+          console.warn('[forgotPassword] Error updating user password:', e?.message);
+        });
+
+        // 3. Bắn thông báo về CRM (public.notifications)
+        await this.prisma.$executeRaw`
+          INSERT INTO public.notifications (
+            id, title, message, body, type, category, priority, app_scope, target_app, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(),
+            ${'Yêu cầu cấp lại mật khẩu: ' + memberName},
+            ${'Hội viên ' + memberName + ' (' + targetEmail + ') đã gửi yêu cầu cấp lại mật khẩu. Hệ thống đã tự động cấp mật khẩu mới và gửi email đến hội viên.'},
+            ${'Hội viên ' + memberName + ' (' + targetEmail + ') đã gửi yêu cầu cấp lại mật khẩu. Hệ thống đã tự động cấp mật khẩu mới và gửi email đến hội viên.'},
+            'system',
+            'system',
+            'high',
+            'crm',
+            'crm',
+            NOW(),
+            NOW()
+          )
+        `.catch((e) => {
+          console.warn('[forgotPassword] Error inserting notification to CRM:', e?.message);
+        });
+      }
+
+      // 4. Tự động gửi Email cấp lại mật khẩu tới hội viên qua SMTP MailService
+      if (this.mailService && targetEmail.includes('@')) {
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h2 style="color: #003B95; margin: 0;">CLB DOANH NHÂN CEO 1983</h2>
+              <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Hệ Thống Quản Trị & Kết Nối Hội Viên Toàn Diện</p>
+            </div>
+            <div style="padding: 20px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #F59E0B; margin-bottom: 20px;">
+              <h3 style="margin-top: 0; color: #1e293b;">Cấp Lại Mật Khẩu Thành Công</h3>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+                Xin chào <strong>${memberName}</strong>,<br/>
+                Hệ thống nhận được yêu cầu cấp lại mật khẩu cho tài khoản <strong>${targetEmail}</strong>.
+              </p>
+              <div style="text-align: center; margin: 24px 0;">
+                <span style="font-size: 13px; color: #64748b; display: block; margin-bottom: 8px;">MẬT KHẨU MỚI CỦA BẠN:</span>
+                <span style="display: inline-block; font-size: 26px; font-weight: bold; color: #003B95; letter-spacing: 4px; padding: 12px 28px; background: #ffffff; border: 2px dashed #003B95; border-radius: 8px;">${tempPassword}</span>
+              </div>
+              <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
+                Vì lý do an toàn, vui lòng đăng nhập ngay và đổi lại mật khẩu cá nhân tại phần Cài đặt tài khoản.
+              </p>
+            </div>
+            <div style="text-align: center; margin-top: 24px;">
+              <a href="https://ceo1983.viconnect.vn/association/login" style="display: inline-block; padding: 12px 28px; background-color: #003B95; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 8px; font-size: 14px;">Đăng Nhập Ngay</a>
+            </div>
+          </div>
+        `;
+
         void this.mailService.sendDirectEmail({
-          to: cleanEmail,
-          subject: '[CEO 1983] Yêu cầu đặt lại mật khẩu tài khoản',
-          html: `<p>Xin chào,</p><p>Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản CEO 1983 của bạn.</p><p>Mã xác thực của bạn (có hiệu lực trong 15 phút):</p><h2 style="color: #2563eb; letter-spacing: 2px;">${token}</h2><p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>`,
+          to: targetEmail,
+          subject: '[CEO 1983] Cấp lại mật khẩu tài khoản thành công',
+          html: emailHtml,
         }).catch((err) => {
-          console.warn('Could not send reset password email:', err?.message);
+          console.warn('[forgotPassword] Could not send reset email:', err?.message);
         });
       }
     }
 
-    // Luôn trả về thông báo chung để tránh tấn công dò quét email (Email Enumeration Protection)
-    return { ok: true, message: 'Nếu email tồn tại trên hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.' };
+    return {
+      ok: true,
+      success: true,
+      message: 'Yêu cầu cấp lại mật khẩu đã được chuyển tới CRM và mật khẩu mới đã được gửi về email của bạn. Vui lòng kiểm tra hộp thư!',
+    };
   }
 
   async resetPassword(data: { email?: string; token?: string; newPassword?: string }) {
