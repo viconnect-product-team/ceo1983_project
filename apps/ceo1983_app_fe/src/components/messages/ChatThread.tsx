@@ -2283,7 +2283,7 @@ export function ChatThread({
                                 <div
                                   className={`absolute z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150 ${
                                     m.mine ? "right-0" : "left-0"
-                                  } -top-20`}
+                                  } ${idx <= 2 ? "top-full mt-2" : "-top-20"}`}
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {/* 1. Emoji Reaction Bar */}
@@ -2434,7 +2434,7 @@ export function ChatThread({
                               </button>
                               {activeReactionPickerMsgId === m.id && (
                                 <div
-                                  className={`absolute bottom-8 z-30 flex items-center gap-1 rounded-full border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
+                                  className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} z-50 flex items-center gap-1 rounded-full border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
                                     m.mine ? "right-0" : "left-0"
                                   }`}
                                 >
@@ -2466,7 +2466,7 @@ export function ChatThread({
                               </button>
                               {activeMenuMsgId === m.id && (
                                 <div
-                                  className={`absolute bottom-8 z-30 min-w-[140px] rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
+                                  className={`absolute ${idx <= 2 ? "top-full mt-1.5" : "bottom-8"} z-50 min-w-[140px] rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 ${
                                     m.mine ? "right-0" : "left-0"
                                   }`}
                                 >

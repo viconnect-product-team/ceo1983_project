@@ -536,13 +536,13 @@ export function Sidebar({
   const isPrivilegedAdmin = isPlatformAdmin || isAdmin || isChuTich || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "ADM" || srsRole === "chu_tich";
   const canViewMembers = true; // All can view member directory (HVT is read-only)
   const canViewEvents = true; // All can view events
-  const canViewSponsors = isPrivilegedAdmin || isBTC || currentRoleKey === "truong_ban_tai_chinh";
-  const canViewFinance = isPrivilegedAdmin || isBTC || currentRoleKey === "truong_ban_tai_chinh" || currentRoleKey === "tong_thu_ky";
-  const canViewComm = isPrivilegedAdmin || isBTT || currentRoleKey === "truong_ban_truyen_thong" || isHVT;
+  const canViewSponsors = true;
+  const canViewFinance = true;
+  const canViewComm = true;
   const canViewNetwork = true;
   const canViewBusinessConnect = true;
-  const canViewSystem = isPrivilegedAdmin;
-  const canViewPlatform = isPrivilegedAdmin;
+  const canViewSystem = true;
+  const canViewPlatform = true;
 
   const location = useRouterState({ select: (s) => s?.location });
   const pathname = location?.pathname;
@@ -718,32 +718,12 @@ export function Sidebar({
   const visibility = mobile ? "flex" : "hidden lg:flex";
   const width = isCollapsed ? "w-[72px]" : "w-[260px]";
 
-  // Lọc chi tiết từng mục menu kết hợp Ma Trận Quyền và vai trò 6 Ban
+  // Lọc chi tiết từng mục menu kết hợp Ma Trận Quyền RBAC
   const filteredOverview = overview.filter((it) => isAllowed(it.to));
 
-  const filteredMembers = members.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/segments" || it.to === "/renewal") {
-      return canManageMembers || isBQT || isBTV || isBTK;
-    }
-    return true;
-  });
+  const filteredMembers = members.filter((it) => isAllowed(it.to));
 
-  const filteredEvents = events.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/checkin") {
-      return true; // Quản lý điểm danh mở cho tất cả thành viên ban điều hành & cán bộ sự kiện CRM
-    }
-    if (it.to === "/checkin-qr") {
-      if (isPrivilegedAdminOrPresident(user)) return true;
-      if (!isMediaDepartmentMember(user)) return false;
-      return canScanQR;
-    }
-    if (it.to === "/event-registrations") {
-      return canManageEvents || isBQT || isBTT || isBTK;
-    }
-    return true;
-  });
+  const filteredEvents = events.filter((it) => isAllowed(it.to));
 
   const filteredSponsors = sponsors.filter((it) => isAllowed(it.to));
   
@@ -753,52 +733,13 @@ export function Sidebar({
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
-  const filteredTemplates = pageTemplates.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/landing") return true;
-    if (it.to === "/admin/landing-webs") {
-      return (
-        isPlatformAdmin ||
-        isAdmin ||
-        isBQT ||
-        isBTT ||
-        isTongThuKy ||
-        srsRole === "admin" ||
-        srsRole === "ADM" ||
-        srsRole === "quan_tri" ||
-        srsRole === "ban_dieu_hanh" ||
-        srsRole === "chu_tich"
-      );
-    }
-    return true;
-  });
+  const filteredTemplates = pageTemplates.filter((it) => isAllowed(it.to));
 
-  const filteredSystem = system.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/tasks") return true;
-    if (it.to === "/settings") return isPlatformAdmin || isAdmin || isBQT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
-    if (it.to === "/activity") return isPlatformAdmin || isAdmin || isBQT || isBTK || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
-    if (it.to === "/landing") return true;
-    if (it.to === "/admin/landing-templates" || it.to === "/admin/landing-webs") return isPlatformAdmin || isAdmin || isBQT || isBTT || isTongThuKy || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh" || srsRole === "chu_tich";
-    return true;
-  });
+  const filteredSystem = system.filter((it) => isAllowed(it.to));
 
-  const filteredPermissions = permissionsGroup.filter((it) => {
-    const hasPerm = isPlatformAdmin || isAdmin || isBQT || srsRole === "BQT" || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri" || srsRole === "ban_dieu_hanh";
-    if (!hasPerm) return false;
-    return isAllowed(it.to || "/permissions");
-  });
+  const filteredPermissions = permissionsGroup.filter((it) => isAllowed(it.to || "/permissions"));
 
-  const filteredAdmin = admin.filter((it) => {
-    if (!isAllowed(it.to)) return false;
-    if (it.to === "/documents") {
-      return true;
-    }
-    if (it.to === "/admin/business-cards") {
-      return isPlatformAdmin || isAdmin || isBQT || srsRole === "admin" || srsRole === "ADM" || srsRole === "quan_tri";
-    }
-    return true;
-  });
+  const filteredAdmin = admin.filter((it) => isAllowed(it.to));
 
   return (
     <aside

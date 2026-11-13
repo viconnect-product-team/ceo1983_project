@@ -31,6 +31,7 @@ import {
   saveCustomDepartments,
   INITIAL_DEPARTMENTS,
   dispatchPermissionSyncEvent,
+  isRouteAllowedByMatrix,
 } from "@/lib/rbac-permission-helpers";
 import { useRole } from "@/hooks/use-role";
 import { DEFAULT_MEMBERS } from "@/lib/members-data";
@@ -158,8 +159,8 @@ function matchesDept(m: any, d: DepartmentItem): boolean {
 }
 
 function DepartmentsPage() {
-  const { isPlatformAdmin, isBQT, isAdmin } = useRole();
-  const canManage = isPlatformAdmin || isBQT || isAdmin;
+  const { isPlatformAdmin, isBQT, isAdmin, srsRole } = useRole();
+  const canManage = isPlatformAdmin || isBQT || isAdmin || isRouteAllowedByMatrix("/departments", (srsRole as any) || "member");
 
   const [departments, setDepartments] = useState<DepartmentItem[]>(() => getCustomDepartments());
   const [searchQuery, setSearchQuery] = useState("");

@@ -438,26 +438,34 @@ function EventsPage() {
 
   const handleBroadcastEventToFeed = async (e: EventItem) => {
     try {
-      const poster = (e as any).imageUrl || (e as any).coverUrl || (e as any).bannerUrl || "/ceo1983-emblem-8.png";
-      const checkinQr = `/checkin-qr?eventId=${e.id}`;
+      const poster =
+        (e as any).image ||
+        (e as any).banner ||
+        (e as any).imageUrl ||
+        (e as any).coverUrl ||
+        (e as any).bannerUrl ||
+        "/app-icon.png";
+      const regUrl = `https://ceo1983.viconnect.vn/guest-event-register/${e.id}`;
+      const checkinQr = `https://ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(regUrl)}&size=500`;
 
       await fetchNestApi("/feed", {
         method: "POST",
         body: JSON.stringify({
           title: `[SỰ KIỆN CLB] ${e.name}`,
-          content: `🎉 SỰ KIỆN TRỌNG ĐẠI CLB CEO 1983:
+          content: `🎉 SỰ KIỆN CLB DOANH NHÂN CEO 1983:
 ${e.name}
 
 ⏰ Thời gian: ${new Date(e.date).toLocaleString("vi-VN")}
 📍 Địa điểm: ${e.location || "Trụ sở CLB CEO 1983"}
 🎟️ Vé tham dự: ${e.ticketPrice && Number(e.ticketPrice) > 0 ? Number(e.ticketPrice).toLocaleString("vi-VN") + " VNĐ" : "Miễn phí dành cho Hội viên"}
 
-${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""}👉 Quý Doanh nhân quét mã QR đính kèm để xem chi tiết và hoàn tất thủ tục Check-in điện tử!`,
+${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""}👉 Quý Doanh nhân quét mã QR đính kèm để mở form đăng ký và hoàn tất thủ tục tham gia!`,
           category: "EVENT_MEETING",
           department: "Ban Sự Kiện",
           images: [poster],
           posterUrl: poster,
           qrCodeUrl: checkinQr,
+          meetingLink: regUrl,
         }),
       }).catch((err) => {
         console.warn("Feed event broadcast fallback:", err);

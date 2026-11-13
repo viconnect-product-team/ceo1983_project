@@ -140,9 +140,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   const validDriveUrl = isValidDriveUrl(rawDriveUrl) ? String(rawDriveUrl).trim() : null;
 
   const eventDesc =
-    (selectedEvent.description && selectedEvent.description.trim()) ||
-    selectedAgenda?.desc ||
-    `Sự kiện "${selectedEvent.title}" do ${selectedEvent.communityName || "CLB Doanh Nhân CEO 1983"} tổ chức tại ${selectedEvent.place || "Hà Nội"}.`;
+    (selectedEvent.description && selectedEvent.description.trim()) || "";
 
   const guestRegUrl =
     typeof window !== "undefined"
@@ -199,9 +197,6 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               <DialogTitle className="text-[18px] sm:text-[20px] font-black text-white line-clamp-2 leading-tight drop-shadow-md">
                 {selectedEvent.title}
               </DialogTitle>
-              <DialogDescription className="text-[11px] text-amber-300/90 font-bold tracking-wide uppercase mt-0.5">
-                {selectedAgenda.subtitle}
-              </DialogDescription>
             </div>
 
             {/* Countdown Timer on Modal Banner */}
@@ -225,7 +220,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             <div className="px-1">
               <span className="text-[9.5px] uppercase font-bold text-slate-400 block">Đối tượng</span>
               <span className="text-[10.5px] font-medium text-slate-600 dark:text-slate-300 line-clamp-1">
-                {selectedAgenda.audience || "Hội viên & Khách mời"}
+                {selectedEvent.audience || "Hội viên & Khách mời"}
               </span>
             </div>
           </div>
@@ -331,18 +326,6 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   </span>
                 </span>
               </div>
-
-              {selectedAgenda.offer && (
-                <div className="flex items-start gap-2 text-slate-800 dark:text-slate-200">
-                  <Users className="h-4 w-4 text-[#003B95] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span>
-                    Ưu đãi:{" "}
-                    <span className="font-semibold text-amber-700 dark:text-amber-300">
-                      {selectedAgenda.offer}
-                    </span>
-                  </span>
-                </div>
-              )}
 
               {/* Link ảnh sự kiện (Google Drive / Cloud storage) dành cho hội viên và ban truyền thông - Ẩn hoàn toàn nếu chưa có link hợp lệ */}
               {validDriveUrl && (

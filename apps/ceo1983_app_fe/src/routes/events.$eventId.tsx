@@ -326,9 +326,7 @@ function EventDetailPage() {
     }
   };
 
-  const overview =
-    (event as any).description?.trim() ||
-    `${event.name} do Ban Tổ Chức CLB Doanh Nhân CEO 1983 tổ chức tại ${event.location || "Hà Nội"}.`;
+  const overview = (event as any).description?.trim() || "";
 
   return (
     <AppShell>
@@ -611,35 +609,6 @@ function EventDetailPage() {
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">{overview}</p>
           </section>
-
-          {/* Trường hiển thị Đơn vị / Nhà tài trợ nếu sự kiện có nhà tài trợ */}
-          {Array.isArray(event.sponsors) && event.sponsors.length > 0 && (
-            <section className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-500/10 p-5 shadow-[var(--shadow-card)] space-y-3">
-              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
-                <Handshake className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                <span>Đơn Vị Đồng Hành &amp; Nhà Tài Trợ Sự Kiện ({event.sponsors.length}):</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {event.sponsors.map((s: any, idx: number) => {
-                  const sName = s.sponsorName || s.name || "Doanh nghiệp đồng hành";
-                  return (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-amber-300/60 dark:border-amber-500/40 text-xs font-bold text-foreground shadow-2xs"
-                    >
-                      <span className="text-amber-600">🤝</span>
-                      <span>{sName}</span>
-                      {s.tier && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold uppercase">
-                          {s.tier}
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-            </section>
-          )}
 
           <TicketsSection tickets={tickets} event={event} canManage={canManage} />
 

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useRole } from "@/hooks/use-role";
 import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
-import { dispatchPermissionSyncEvent } from "@/lib/rbac-permission-helpers";
+import { dispatchPermissionSyncEvent, isRouteAllowedByMatrix } from "@/lib/rbac-permission-helpers";
 
 export const Route = createFileRoute("/permissions")({
   component: PermissionsPage,
@@ -144,7 +144,8 @@ function PermissionsPage() {
     srsRole === "admin" ||
     srsRole === "quan_tri" ||
     srsRole === "ban_dieu_hanh" ||
-    srsRole === "chu_tich";
+    srsRole === "chu_tich" ||
+    isRouteAllowedByMatrix("/permissions", (srsRole as any) || "member");
 
   const [matrixDirty, setMatrixDirty] = useState(false);
   const isDirty = matrixDirty;

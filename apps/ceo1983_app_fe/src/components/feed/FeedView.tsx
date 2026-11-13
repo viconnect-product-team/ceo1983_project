@@ -1444,9 +1444,12 @@ export function FeedView({
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() =>
-                                      setLightboxImage(post.qrCodeUrl || post.posterUrl || "/ceo1983-emblem-8.png")
-                                    }
+                                    onClick={() => {
+                                      const targetQr = (post.qrCodeUrl && post.qrCodeUrl.startsWith("http") && (post.qrCodeUrl.includes("/api/events/qr") || post.qrCodeUrl.includes("qrserver") || post.qrCodeUrl.endsWith(".png") || post.qrCodeUrl.endsWith(".jpg")))
+                                        ? post.qrCodeUrl
+                                        : `https://ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(meetingQrValue)}&size=500`;
+                                      setLightboxImage(targetQr);
+                                    }}
                                     className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
                                   >
                                     Phóng to QR

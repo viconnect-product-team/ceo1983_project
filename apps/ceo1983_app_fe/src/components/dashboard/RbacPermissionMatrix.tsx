@@ -1697,7 +1697,7 @@ export function RbacPermissionMatrix({
 
       {/* ── CẢNH BÁO CHƯA LƯU QUYỀN TRÊN MA TRẬN ── */}
       {isDirty && (
-        <div className="self-stretch rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="self-stretch rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/30 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm font-bold text-sm">
               !
