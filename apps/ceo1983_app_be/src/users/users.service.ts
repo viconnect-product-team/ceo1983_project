@@ -1366,9 +1366,27 @@ export class UsersService {
         userRoles.push('admin');
       }
 
+      if (u.email === 'info@viconnect.vn' || u.username === 'info@viconnect.vn') {
+        if (!userRoles.includes('staff')) {
+          userRoles.push('staff');
+        }
+      }
+
       const rawExec = (m?.executive_role || '').toLowerCase().trim();
-      const executiveRole = rawExec || (userRoles.includes('platform_admin') ? 'quan_tri' : userRoles.includes('admin') ? 'admin' : 'member');
-      const department = m?.department || 'Hội viên ceo1983';
+      const executiveRole =
+        rawExec ||
+        (u.email === 'info@viconnect.vn' || u.username === 'info@viconnect.vn'
+          ? 'truong_ban_truyen_thong'
+          : userRoles.includes('platform_admin')
+          ? 'quan_tri'
+          : userRoles.includes('admin')
+          ? 'admin'
+          : 'member');
+      const department =
+        m?.department ||
+        (u.email === 'info@viconnect.vn' || u.username === 'info@viconnect.vn'
+          ? 'Ban Truyền Thông'
+          : 'Hội viên ceo1983');
 
       return {
         id: u.id,

@@ -65,7 +65,20 @@ function getDeletedIdentifiers(): Set<string> {
     const raw = localStorage.getItem(DELETED_ACCOUNTS_KEY);
     if (raw) {
       const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) return new Set(arr.map((s: string) => String(s || "").toLowerCase().trim()).filter(Boolean));
+      if (Array.isArray(arr)) {
+        const filtered = arr
+          .map((s: string) => String(s || "").toLowerCase().trim())
+          .filter(
+            (s) =>
+              s &&
+              s !== "admin@viconnect.vn" &&
+              s !== "admin@connect.vn" &&
+              s !== "info@viconnect.vn" &&
+              s !== "m1983-001" &&
+              s !== "m1983-002"
+          );
+        return new Set(filtered);
+      }
     }
   } catch {}
   return new Set();
@@ -98,14 +111,15 @@ function AccountsPage() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved !== null) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            return parsed.filter((a) => {
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const valid = parsed.filter((a) => {
               const id = (a.id || "").toLowerCase().trim();
               const code = (a.code || "").toLowerCase().trim();
               const email = (a.email || "").toLowerCase().trim();
               const dbId = (a.dbMemberId || "").toLowerCase().trim();
               return !deleted.has(id) && !deleted.has(code) && !deleted.has(email) && !deleted.has(dbId);
             });
+            if (valid.length > 0) return valid;
           }
         }
       } catch {}
@@ -646,7 +660,8 @@ function AccountsPage() {
       acc.code === "ADMIN-001" ||
       acc.email === "admin@viconnect.vn" ||
       acc.email === "admin@connect.vn" ||
-      acc.email === "admin@ceo1983.vn"
+      acc.email === "admin@ceo1983.vn" ||
+      acc.email === "info@viconnect.vn"
     );
   };
 
