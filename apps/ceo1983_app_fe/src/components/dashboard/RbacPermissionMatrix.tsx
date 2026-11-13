@@ -780,17 +780,29 @@ export function RbacPermissionMatrix({
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            parsed[0] &&
+            Array.isArray(parsed[0].features)
+          ) {
             base = parsed;
+          } else {
+            // Dữ liệu cũ/hỏng trong localStorage không đúng cấu trúc TreeCategory -> xóa sạch để dùng INITIAL_CATEGORIES
+            localStorage.removeItem(STORAGE_KEY);
           }
         }
-      } catch {}
+      } catch {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+      }
     }
-    return base.map((cat) => ({
+    return (base || []).map((cat) => ({
       ...cat,
-      features: cat.features.map((feat) => ({
+      features: (cat?.features || []).map((feat) => ({
         ...feat,
-        actions: feat.actions.map((act) => ({
+        actions: (feat?.actions || []).map((act) => ({
           ...act,
           roles: normalizeActionRoles(act),
         })),
@@ -1563,13 +1575,13 @@ export function RbacPermissionMatrix({
 
   const crmCategories = useMemo(() => {
     return filteredCategories.filter(
-      (c) => c.id !== "cat_mobile_app" && !c.name.toLowerCase().includes("ứng dụng di động")
+      (c) => c && c.id !== "cat_mobile_app" && !c.name?.toLowerCase().includes("ứng dụng di động")
     );
   }, [filteredCategories]);
 
   const appCategories = useMemo(() => {
     return filteredCategories.filter(
-      (c) => c.id === "cat_mobile_app" || c.name.toLowerCase().includes("ứng dụng di động") || c.name.toLowerCase().includes("app ceo 1983")
+      (c) => c && (c.id === "cat_mobile_app" || c.name?.toLowerCase().includes("ứng dụng di động") || c.name?.toLowerCase().includes("app ceo 1983"))
     );
   }, [filteredCategories]);
 
@@ -1578,7 +1590,7 @@ export function RbacPermissionMatrix({
   // Flat danh sách tất cả các chức năng theo tab được chọn
   const flatFeatures = useMemo(() => {
     return currentTabCategories.flatMap((cat) =>
-      cat.features.map((feat) => ({
+      (cat?.features || []).map((feat) => ({
         feat,
         catId: cat.id,
         catName: cat.name,
@@ -1744,10 +1756,10 @@ export function RbacPermissionMatrix({
             let totalActions = 0;
             let activeCount = 0;
             categories.forEach((cat) => {
-              cat.features.forEach((feat) => {
-                feat.actions.forEach((act) => {
+              (cat?.features || []).forEach((feat) => {
+                (feat?.actions || []).forEach((act) => {
                   totalActions++;
-                  if (act.roles[col.key]) activeCount++;
+                  if (act.roles && act.roles[col.key]) activeCount++;
                 });
               });
             });
@@ -1809,13 +1821,13 @@ export function RbacPermissionMatrix({
                     </span>
                   </button>
                   <span className="rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 border border-amber-400/40">
-                    {cat.features.length} phân hệ
+                    {(cat.features || []).length} phân hệ
                   </span>
                 </div>
               </div>
 
               {isCatExpanded &&
-                cat.features.map((feat) => {
+                (cat.features || []).map((feat) => {
                   const isFeatExpanded = expandedNodes[feat.id] ?? true;
 
                   return (
@@ -1838,14 +1850,14 @@ export function RbacPermissionMatrix({
                             </div>
                           </button>
                           <div className="justify-start text-slate-500 text-[10px] font-medium font-['Inter']">
-                            ({feat.actions.length} thao tác)
+                            ({(feat.actions || []).length} thao tác)
                           </div>
                         </div>
                       </div>
 
                       {/* Danh sách các Thao tác con */}
                       {isFeatExpanded &&
-                        feat.actions.map((action) => (
+                        (feat.actions || []).map((action) => (
                           <div
                             key={action.id}
                             className="w-full min-w-max h-10 border-b border-zinc-200 dark:border-slate-800 inline-flex justify-start items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"

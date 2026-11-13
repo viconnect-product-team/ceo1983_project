@@ -315,7 +315,7 @@ export function ViOneAiTutorGuide({
               </div>
 
               {/* Status Badge */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
                 <span className="size-1.5 rounded-full bg-white animate-ping" />
                 <span>AI Đang Giảng</span>
               </div>

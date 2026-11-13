@@ -2553,6 +2553,10 @@ export class ConnectAppService implements OnModuleInit {
   toggleProductSold(userId: string, id: string) {
     return this.marketplaceService.toggleProductSold(userId, id);
   }
+  listMyProductsInterested(userId: string) {
+    return this.marketplaceService.listMyProductsInterested(userId);
+  }
+
   listProductQuotes(userId: string) {
     return this.marketplaceService.listProductQuotes(userId);
   }

@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { CeoTableEllipsis } from "./CeoTableEllipsis";
 
 export type SortDirection = "asc" | "desc" | null;
 
@@ -299,9 +300,20 @@ export function CustomTable<T>({
                     )}
 
                     {columns.map((col) => {
-                      const content = col.render
+                      const rawContent = col.render
                         ? col.render(row, index)
                         : (row as any)[col.key];
+
+                      let content = rawContent;
+                      if (typeof rawContent === "string" || typeof rawContent === "number") {
+                        content = (
+                          <CeoTableEllipsis
+                            text={rawContent}
+                            maxLines={2}
+                            showTooltip={true}
+                          />
+                        );
+                      }
 
                       return (
                         <td

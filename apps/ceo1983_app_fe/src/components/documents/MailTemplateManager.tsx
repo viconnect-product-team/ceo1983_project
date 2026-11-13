@@ -59,7 +59,7 @@ export interface MailTemplateItem {
   inAppBody: string;
   htmlBody: string;
   variables: MailVariable[];
-  channels: ("email" | "in_app" | "push" | "sms")[];
+  channels: ("email" | "in_app" | "zalo_oa")[];
   updatedAt: string;
   isCustom?: boolean;
   visualContent?: VisualBlockContent;
@@ -72,7 +72,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "event",
     name: "Thư Mời Tham Dự Sự Kiện (Chuẩn Tinh Gọn Đa Kênh)",
     description: "Mẫu thông báo thư mời sự kiện tinh gọn theo chuẩn CLB, áp dụng đồng bộ cho Email, Zalo OA và In-App.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thư mời tham dự sự kiện: {{event_title}}",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự sự kiện: {{event_title}}\n- Tên sự kiện: {{event_title}}\n- Thông tin sự kiện gồm các trường:\n  + Diễn giả: {{speaker_name}}\n  + Nội dung chính: {{event_summary}}\n  + Thời gian: {{event_date}}\n  + Địa điểm: {{event_location}}\n  + Chi phí: {{event_fee}}\n  + Google Maps: {{google_maps_url}}\n  + Trang phục: {{dress_code}}\n  + Gửi xe: {{parking_info}}\n  + Lưu ý quan trọng từ BTC: {{event_notes}}\n- Xác nhận tham dự: {{confirm_link}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
@@ -142,7 +142,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "meeting",
     name: "Thư Mời Cuộc Họp Ban & CLB (Chuẩn Tinh Gọn)",
     description: "Mẫu thông báo họp định kỳ cho Ban Điều Hành, Ban Thường Trực và các Ban chuyên môn CLB CEO 1983.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[THƯ MỜI HỌP] {{meeting_title}} - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thư mời họp: {{meeting_title}}",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự cuộc họp: {{meeting_title}}\n- Tên cuộc họp: {{meeting_title}}\n- Thông tin cuộc họp gồm các trường:\n  + Diễn giả: {{speaker_name}}\n  + Nội dung chính: {{event_summary}}\n  + Thời gian: {{event_date}}\n  + Địa điểm: {{event_location}}\n  + Chi phí: {{event_fee}}\n  + Google Maps: {{google_maps_url}}\n  + Trang phục: {{dress_code}}\n  + Gửi xe: {{parking_info}}\n  + Lưu ý quan trọng từ BTC: {{event_notes}}\n- Xác nhận tham dự: {{confirm_link}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
@@ -211,7 +211,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "meeting",
     name: "Thư Mời Cuộc Gặp & Giao Lưu Kết Nối (Chuẩn Tinh Gọn)",
     description: "Mẫu thông báo cuộc gặp gỡ, giao lưu kết nối doanh nhân và tiếp đón đối tác CLB CEO 1983.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[THƯ MỜI GẶP GỠ] {{gathering_title}} - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thư mời cuộc gặp: {{gathering_title}}",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự cuộc gặp: {{gathering_title}}\n- Tên cuộc gặp: {{gathering_title}}\n- Thông tin cuộc gặp gồm các trường:\n  + Diễn giả: {{speaker_name}}\n  + Nội dung chính: {{event_summary}}\n  + Thời gian: {{event_date}}\n  + Địa điểm: {{event_location}}\n  + Chi phí: {{event_fee}}\n  + Google Maps: {{google_maps_url}}\n  + Trang phục: {{dress_code}}\n  + Gửi xe: {{parking_info}}\n  + Lưu ý quan trọng từ BTC: {{event_notes}}\n- Xác nhận tham dự: {{confirm_link}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
@@ -280,7 +280,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "event",
     name: "Thư Mời Chương Trình Đào Tạo Doanh Nhân (Chuẩn Tinh Gọn)",
     description: "Mẫu thông báo các chương trình đào tạo, hội thảo nâng cao năng lực quản trị doanh nghiệp CEO 1983.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[CHƯƠNG TRÌNH ĐÀO TẠO] {{training_title}} - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thư mời đào tạo: {{training_title}}",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự chương trình: {{training_title}}\n- Tên chương trình: {{training_title}}\n- Thông tin chương trình gồm các trường:\n  + Diễn giả: {{speaker_name}}\n  + Nội dung chính: {{event_summary}}\n  + Thời gian: {{event_date}}\n  + Địa điểm: {{event_location}}\n  + Chi phí: {{event_fee}}\n  + Google Maps: {{google_maps_url}}\n  + Trang phục: {{dress_code}}\n  + Gửi xe: {{parking_info}}\n  + Lưu ý quan trọng từ BTC: {{event_notes}}\n- Xác nhận tham dự: {{confirm_link}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
@@ -349,7 +349,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "welcome",
     name: "Thư Cảm Ơn & Chào Mừng Hội Viên Mới Gia Nhập",
     description: "Thư cảm ơn và chúc mừng chính thức gửi đến tân hội viên ngay sau khi hoàn tất đăng ký gia nhập CLB CEO 1983.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[THƯ CẢM ƠN] Chúc mừng Anh/Chị {{full_name}} chính thức gia nhập CLB Doanh Nhân CEO 1983",
     inAppTitle: "Chào mừng tân hội viên {{full_name}}!",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- Ban Chấp Hành CLB Doanh Nhân CEO 1983 trân trọng cảm ơn và chúc mừng Anh/Chị đã chính thức gia nhập CLB!\n- Họ và tên: {{full_name}}\n- Tên doanh nghiệp: {{company_name}}\n- Mã hội viên: {{member_code}}\n- Ban sinh hoạt: {{department}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng! TM. BAN CHẤP HÀNH CLB DOANH NHÂN CEO 1983",
@@ -395,7 +395,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "system",
     name: "Template Gửi Tài Khoản & Mật Khẩu Cho Hội Viên Mới",
     description: "Tự động gửi thông tin tài khoản đăng nhập kèm link cài đặt app 1-chạm và liên kết Zalo OA chính thức.",
-    channels: ["email", "in_app", "sms"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[TÀI KHOẢN HỘI VIÊN] Thông tin đăng nhập ứng dụng CEO 1983 - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thông tin tài khoản ứng dụng CEO 1983",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- Ban Quản Trị gửi thông tin tài khoản đăng nhập app CEO 1983:\n- Tên đăng nhập: {{email}}\n- Mật khẩu: {{temporary_password}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
@@ -459,7 +459,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "fee",
     name: "Thông Báo Nộp Hội Phí Niên Liễm Định Kỳ",
     description: "Mẫu thông báo hội phí niên liễm định kỳ với đầy đủ thông tin số tài khoản và ngân hàng CLB.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[CEO 1983] Thông báo nộp hội phí thường niên năm {{fee_year}} - {{full_name}}",
     inAppTitle: "Thông báo nộp hội phí năm {{fee_year}}",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}\n- Ban Thường Trực CLB Doanh Nhân CEO 1983 trân trọng thông báo quyết toán niên liễm năm {{fee_year}}.\n- Mức hội phí: {{fee_amount}} VNĐ\n- Hạn nộp: {{due_date}}\n- Tên tài khoản: {{bank_owner}}\n- Số tài khoản CLB: {{bank_account}}\n- Ngân hàng: {{bank_name}}\n- Cú pháp chuyển khoản: {{transfer_content}}\n- Hotline Kế toán: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng! TM. BAN TÀI CHÍNH & KẾ TOÁN CLB DOANH NHÂN CEO 1983",
@@ -514,7 +514,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "event",
     name: "Thư Mời Tham Dự Sự Kiện (Bản Đầy Đủ)",
     description: "Phát hành thư mời chính thức chuẩn đa kênh kèm đầy đủ thông tin sự kiện.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[THƯ MỜI SỰ KIỆN] {{event_title}} - Kính gửi Anh/Chị {{full_name}}",
     inAppTitle: "Thư mời tham dự sự kiện: {{event_title}}",
     inAppBody: "- Kính gửi Anh/Chị: {{full_name}}\n- BTC trân trọng kính mời Anh/Chị tham dự sự kiện: {{event_title}}\n- Thời gian: {{event_date}}\n- Địa điểm: {{event_location}}\n- Hotline BTC khi cần hỗ trợ: 0973.205.683 / 0903.205.683 / 0903.203.204\n- Trân trọng!",
@@ -617,7 +617,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "birthday",
     name: "Thiệp & Thư Chúc Mừng Sinh Nhật Hội Viên",
     description: "Tự động gửi thư chúc mừng sinh nhật kèm thiệp mừng sang trọng, lời chúc từ Chủ tịch & Ban Điều Hành, và banner ảnh tải lên tùy biến.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[CHÚC MỪNG SINH NHẬT] CLB Doanh Nhân CEO 1983 chúc mừng sinh nhật Anh/Chị {{full_name}}!",
     inAppTitle: "Chúc mừng sinh nhật Anh/Chị {{full_name}}!",
     inAppBody: "Ban Chấp Hành CLB Doanh Nhân CEO 1983 kính chúc Anh/Chị {{full_name}} ({{company_name}}) tuổi mới sức khỏe dồi dào, vạn sự hanh thông và gặt hái nhiều thành công rực rỡ!",
@@ -686,7 +686,7 @@ export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
     category: "marketing",
     name: "Chiến Dịch Email Marketing & Xúc Tiến B2B",
     description: "Quản lý và phát động chiến dịch email marketing định kỳ, giới thiệu giải pháp sản phẩm và kết nối đối tác giao thương nội bộ.",
-    channels: ["email", "in_app", "push"],
+    channels: ["email", "in_app", "zalo_oa"],
     subject: "[CEO 1983 B2B] Cơ hội hợp tác & Bản tin kết nối giao thương tháng {{campaign_month}}",
     inAppTitle: "Bản tin kết nối giao thương B2B tháng {{campaign_month}}",
     inAppBody: "Kính gửi Anh/Chị {{full_name}}, khám phá danh mục chào hàng và nhu cầu mua sắm ưu tiên từ các doanh nghiệp hội viên CEO 1983.",
@@ -1080,7 +1080,7 @@ export function MailTemplateManager() {
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [testEmail, setTestEmail] = useState<string>("admin@connect.vn");
   const [testPhone, setTestPhone] = useState<string>("0973924819");
-  const [sendChannel, setSendChannel] = useState<"both" | "email" | "zalo">("both");
+  const [sendChannel, setSendChannel] = useState<"all" | "email" | "in_app" | "zalo_oa">("all");
   const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
   const [phoneError, setPhoneError] = useState("");
   const testPhoneRef = useRef<HTMLInputElement>(null);
@@ -1969,11 +1969,11 @@ export function MailTemplateManager() {
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
 
-    if ((sendChannel === "email" || sendChannel === "both") && targetEmails.length === 0) {
+    if ((sendChannel === "email" || sendChannel === "all") && targetEmails.length === 0) {
       toast.error("Vui lòng nhập ít nhất một địa chỉ email người nhận hợp lệ!");
       return;
     }
-    if ((sendChannel === "zalo" || sendChannel === "both") && targetPhones.length === 0) {
+    if ((sendChannel === "zalo_oa" || sendChannel === "all") && targetPhones.length === 0) {
       toast.error("Vui lòng nhập ít nhất một số điện thoại Zalo người nhận!");
       return;
     }
@@ -2933,25 +2933,7 @@ export function MailTemplateManager() {
                   </div>
                 )}
               </div>
-              <ZbsTemplateConfigForm
-                templateCode={activeTemplate.code}
-                draft={zbs.draftFor(activeTemplate.code)}
-                variables={activeTemplate.variables}
-                sampleValues={sampleValues}
-                dirty={zbs.isDirty(activeTemplate.code)}
-                configured={Boolean(zbs.configs[activeTemplate.code]?.templateId)}
-                busy={isSendingTest || Boolean(zbs.savingCode)}
-                loading={zbs.loading}
-                loadError={zbs.loadError}
-                saveError={zbs.saveErrors[activeTemplate.code]}
-                errors={zbs.errors[activeTemplate.code]}
-                phone={testPhone}
-                onChange={(update) => zbs.updateDraft(activeTemplate.code, update)}
-                onSave={handleSaveZbsConfig}
-                onSendTest={handleSaveAndSendZbsTest}
-                onRetry={zbs.reload}
-              />
-            </div>
+              </div>
 
             {/* Subject and In-App Push Details */}
             <div className="rounded-xl bg-secondary/40 border border-border/80 p-3 space-y-2 text-xs">

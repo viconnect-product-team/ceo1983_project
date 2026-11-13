@@ -34,6 +34,8 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader, StatCard } from "@/components/dashboard/PageKit";
+import { CustomTable, type CustomTableColumn } from "@/components/common/CustomTable";
+import { CeoTableEllipsis } from "@/components/common/CeoTableEllipsis";
 import { useT, type TKey } from "@/lib/i18n";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
@@ -1296,209 +1298,210 @@ function AccountManagementPage() {
             </Card>
 
             {/* Users Data Table */}
-            <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    <tr>
-                      <th className="px-5 py-3.5">Người dùng</th>
-                      <th className="px-4 py-3.5">Tên đăng nhập</th>
-                      <th className="px-4 py-3.5">Ban chuyên môn</th>
-                      <th className="px-4 py-3.5">Vai trò chức danh</th>
-                      <th className="px-4 py-3.5">Trạng thái</th>
-                      <th className="px-4 py-3.5">Ngày tạo</th>
-                      <th className="px-5 py-3.5 text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {usersLoading ? (
-                      <tr>
-                        <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
-                          <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-primary" />
-                          Đang tải danh sách người dùng...
-                        </td>
-                      </tr>
-                    ) : usersList.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
-                          Không tìm thấy tài khoản người dùng nào
-                        </td>
-                      </tr>
-                    ) : (
-                      usersList.map((u) => {
-                        const userRoleKey = u.executiveRole || u.roles?.[0] || "member";
-                        const isSuper = userRoleKey === "quan_tri" || userRoleKey === "platform_admin";
-                        const isLeader = userRoleKey === "chu_tich" || userRoleKey === "admin" || userRoleKey.startsWith("truong_ban_") || userRoleKey === "tong_thu_ky";
-                        const isSpecialist = userRoleKey.startsWith("thanh_vien_ban_");
+            <CustomTable
+              columns={[
+                {
+                  key: "name",
+                  label: "Người dùng",
+                  width: 250,
+                  render: (u: any) => (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {u.avatar_url ? (
+                          <img src={u.avatar_url} alt={u.name} className="h-full w-full object-cover" />
+                        ) : (
+                          getInitials(u.name || u.username)
+                        )}
+                      </div>
+                      <div>
+                        <CeoTableEllipsis text={u.name || "—"} maxLines={1} className="font-semibold text-foreground" />
+                        <div className="text-[11px] text-muted-foreground">{u.email || "Chưa có email"}</div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: "username",
+                  label: "Tên đăng nhập",
+                  width: 140,
+                  render: (u: any) => (
+                    <span className="font-mono text-xs text-foreground font-medium">@{u.username}</span>
+                  ),
+                },
+                {
+                  key: "department",
+                  label: "Ban chuyên môn",
+                  width: 200,
+                  render: (u: any) => (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted border border-border/70 text-foreground font-semibold text-xs">
+                      <Building className="h-3 w-3 text-primary shrink-0" />
+                      <CeoTableEllipsis text={u.department || "Hội viên ceo1983"} maxLines={1} />
+                    </span>
+                  ),
+                },
+                {
+                  key: "executiveRole",
+                  label: "Vai trò chức danh",
+                  width: 190,
+                  render: (u: any) => {
+                    const userRoleKey = u.executiveRole || u.roles?.[0] || "member";
+                    const isSuper = userRoleKey === "quan_tri" || userRoleKey === "platform_admin";
+                    const isLeader =
+                      userRoleKey === "chu_tich" ||
+                      userRoleKey === "admin" ||
+                      userRoleKey.startsWith("truong_ban_") ||
+                      userRoleKey === "tong_thu_ky";
+                    const isSpecialist = userRoleKey.startsWith("thanh_vien_ban_");
 
-                        return (
-                          <tr key={u.id} className="hover:bg-muted/30 transition">
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">
-                                  {u.avatar_url ? (
-                                    <img src={u.avatar_url} alt={u.name} className="h-full w-full object-cover" />
-                                  ) : (
-                                    getInitials(u.name || u.username)
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-foreground">{u.name || "—"}</div>
-                                  <div className="text-xs text-muted-foreground">{u.email || "Chưa có email"}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3.5 font-mono text-xs text-foreground font-medium">
-                              @{u.username}
-                            </td>
-                            <td className="px-4 py-3.5 text-xs font-medium text-foreground">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted border border-border/70 text-foreground font-semibold">
-                                <Building className="h-3 w-3 text-primary" />
-                                {u.department || "Hội viên ceo1983"}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span
-                                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold border ${
-                                  isSuper
-                                    ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
-                                    : isLeader
-                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                                    : isSpecialist
-                                    ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
-                                    : "bg-secondary text-muted-foreground border-border"
-                                }`}
-                              >
-                                <ShieldCheck className="h-3 w-3" />
-                                {getRoleBadgeLabel(userRoleKey)}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span
-                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  u.account_status === "suspended"
-                                    ? "bg-destructive/10 text-destructive"
-                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                }`}
-                              >
-                                {u.account_status === "suspended" ? (
-                                  <>
-                                    <AlertCircle className="h-3 w-3" /> Đã tạm khóa
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 className="h-3 w-3" /> Hoạt động
-                                  </>
-                                )}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3.5 text-xs text-muted-foreground">
-                              {u.created_at ? new Date(u.created_at).toLocaleDateString("vi-VN") : "—"}
-                            </td>
-                            <td className="px-5 py-3.5 text-right">
-                              <div className="inline-flex items-center gap-1">
-                                {/* View User Details */}
-                                <button
-                                  onClick={() => {
-                                    setSelectedViewUser(u);
-                                    setViewModalOpen(true);
-                                  }}
-                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                                  title="Xem chi tiết tài khoản"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </button>
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold border ${
+                          isSuper
+                            ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
+                            : isLeader
+                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                            : isSpecialist
+                            ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                            : "bg-secondary text-muted-foreground border-border"
+                        }`}
+                      >
+                        <ShieldCheck className="h-3 w-3 shrink-0" />
+                        <CeoTableEllipsis text={getRoleBadgeLabel(userRoleKey)} maxLines={1} />
+                      </span>
+                    );
+                  },
+                },
+                {
+                  key: "account_status",
+                  label: "Trạng thái",
+                  width: 130,
+                  align: "center",
+                  render: (u: any) => (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        u.account_status === "suspended"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      }`}
+                    >
+                      {u.account_status === "suspended" ? (
+                        <>
+                          <AlertCircle className="h-3 w-3" /> Đã tạm khóa
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-3 w-3" /> Hoạt động
+                        </>
+                      )}
+                    </span>
+                  ),
+                },
+                {
+                  key: "created_at",
+                  label: "Ngày tạo",
+                  width: 120,
+                  align: "center",
+                  render: (u: any) => (
+                    <span className="text-xs text-muted-foreground">
+                      {u.created_at ? new Date(u.created_at).toLocaleDateString("vi-VN") : "—"}
+                    </span>
+                  ),
+                },
+              ]}
+              data={usersList}
+              keyExtractor={(u: any) => u.id}
+              showStt={true}
+              loading={usersLoading}
+              emptyText="Không tìm thấy tài khoản người dùng nào"
+              page={pagination.page}
+              pageSize={pagination.limit}
+              total={pagination.total}
+              onPageChange={(p) => loadUsers(p)}
+              actionColumn={{
+                title: "THAO TÁC",
+                width: 140,
+                render: (u: any) => (
+                  <div className="inline-flex items-center gap-1 justify-center">
+                    {/* View User Details */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedViewUser(u);
+                        setViewModalOpen(true);
+                      }}
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
+                      title="Xem chi tiết tài khoản"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
 
-                                {/* Edit User */}
-                                <button
-                                  onClick={() => {
-                                    setTargetUser(u);
-                                    setEditName(u.name !== "—" ? u.name : "");
-                                    setEditEmail(u.email || "");
-                                    const initDept = u.department || "Hội viên ceo1983";
-                                    const initRole = u.executiveRole || u.roles?.[0] || "member";
-                                    setEditDepartment(initDept);
-                                    setEditRole(initRole);
-                                    setEditStatus(u.account_status || "active");
-                                    setEditModalOpen(true);
-                                  }}
-                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                                  title="Chỉnh sửa tài khoản"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
+                    {/* Edit User */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTargetUser(u);
+                        setEditName(u.name !== "—" ? u.name : "");
+                        setEditEmail(u.email || "");
+                        const initDept = u.department || "Hội viên ceo1983";
+                        const initRole = u.executiveRole || u.roles?.[0] || "member";
+                        setEditDepartment(initDept);
+                        setEditRole(initRole);
+                        setEditStatus(u.account_status || "active");
+                        setEditModalOpen(true);
+                      }}
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
+                      title="Chỉnh sửa tài khoản"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
 
-                                {/* Toggle Lock / Unlock */}
-                                <button
-                                  onClick={() => handleToggleStatus(u)}
-                                  className={`rounded-lg p-1.5 transition ${
-                                    u.account_status === "suspended"
-                                      ? "text-emerald-600 hover:bg-emerald-500/10"
-                                      : "text-amber-600 hover:bg-amber-500/10"
-                                  }`}
-                                  title={u.account_status === "suspended" ? "Mở khóa tài khoản" : "Tạm khóa tài khoản"}
-                                >
-                                  {u.account_status === "suspended" ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                                </button>
+                    {/* Toggle Lock / Unlock */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(u)}
+                      className={`rounded-lg p-1.5 transition cursor-pointer ${
+                        u.account_status === "suspended"
+                          ? "text-emerald-600 hover:bg-emerald-500/10"
+                          : "text-amber-600 hover:bg-amber-500/10"
+                      }`}
+                      title={u.account_status === "suspended" ? "Mở khóa tài khoản" : "Tạm khóa tài khoản"}
+                    >
+                      {u.account_status === "suspended" ? (
+                        <Unlock className="h-4 w-4" />
+                      ) : (
+                        <Lock className="h-4 w-4" />
+                      )}
+                    </button>
 
-                                {/* Reset Password */}
-                                <button
-                                  onClick={() => {
-                                    setTargetUser(u);
-                                    setAdminNewPassword("");
-                                    setResetModalOpen(true);
-                                  }}
-                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                                  title="Đặt lại mật khẩu"
-                                >
-                                  <KeyRound className="h-4 w-4" />
-                                </button>
+                    {/* Reset Password */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTargetUser(u);
+                        setAdminNewPassword("");
+                        setResetModalOpen(true);
+                      }}
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition cursor-pointer"
+                      title="Đặt lại mật khẩu"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </button>
 
-                                {/* Delete User */}
-                                {u.id !== account?.id && (
-                                  <button
-                                    onClick={() => handleDeleteUser(u)}
-                                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
-                                    title="Xóa tài khoản"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
+                    {/* Delete User */}
+                    {u.id !== account?.id && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(u)}
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition cursor-pointer"
+                        title="Xóa tài khoản"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Bar */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-border px-5 py-3 bg-card">
-                  <div className="text-xs text-muted-foreground">
-                    Trang {pagination.page} / {pagination.totalPages} ({pagination.total} tài khoản)
                   </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      disabled={pagination.page <= 1}
-                      onClick={() => loadUsers(pagination.page - 1)}
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-50"
-                    >
-                      Trang trước
-                    </button>
-                    <button
-                      disabled={pagination.page >= pagination.totalPages}
-                      onClick={() => loadUsers(pagination.page + 1)}
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-50"
-                    >
-                      Trang sau
-                    </button>
-                  </div>
-                </div>
-              )}
-            </Card>
+                ),
+              }}
+            />
           </div>
         )}
 

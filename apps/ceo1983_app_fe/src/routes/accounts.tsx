@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   Users,
   Search,
@@ -45,6 +45,12 @@ import { Pagination, SortHeader } from "@/components/dashboard/DataTablePaginati
 import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 
 export const Route = createFileRoute("/accounts")({
+  beforeLoad: () => {
+    throw redirect({
+      to: "/account-settings",
+      search: { tab: "users" },
+    });
+  },
   component: AccountsPage,
 });
 

@@ -430,8 +430,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.categories || data?.rows || Array.isArray(data)) {
-          const matrixData = data.categories || data.rows || data;
+        const matrixData = data?.categories || (Array.isArray(data) && data[0]?.features ? data : null) || (Array.isArray(data?.rows) && data?.rows[0]?.features ? data.rows : null);
+        if (Array.isArray(matrixData) && matrixData.length > 0 && Array.isArray(matrixData[0]?.features)) {
           localStorage.setItem(RBAC_MATRIX_STORAGE_KEY, JSON.stringify(matrixData));
           window.dispatchEvent(new CustomEvent('rbac-matrix-synced', { detail: matrixData }));
           window.dispatchEvent(new Event('role-changed'));
@@ -460,9 +460,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('vibe_user', JSON.stringify(enrichedUser));
           } catch { }
           if (fresh.permissionMatrix) {
-            const matrixData = fresh.permissionMatrix.categories || fresh.permissionMatrix.rows || fresh.permissionMatrix;
-            localStorage.setItem(RBAC_MATRIX_STORAGE_KEY, JSON.stringify(matrixData));
-            window.dispatchEvent(new CustomEvent('rbac-matrix-synced', { detail: matrixData }));
+            const matrixData = fresh.permissionMatrix.categories || (Array.isArray(fresh.permissionMatrix) && fresh.permissionMatrix[0]?.features ? fresh.permissionMatrix : null) || (Array.isArray(fresh.permissionMatrix.rows) && fresh.permissionMatrix.rows[0]?.features ? fresh.permissionMatrix.rows : null);
+            if (Array.isArray(matrixData) && matrixData.length > 0 && Array.isArray(matrixData[0]?.features)) {
+              localStorage.setItem(RBAC_MATRIX_STORAGE_KEY, JSON.stringify(matrixData));
+              window.dispatchEvent(new CustomEvent('rbac-matrix-synced', { detail: matrixData }));
+            }
           }
         }
       })

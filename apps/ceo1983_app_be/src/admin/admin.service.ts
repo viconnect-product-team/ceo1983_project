@@ -2332,148 +2332,223 @@ export class AdminService implements OnModuleInit {
       if (
         val?.categories &&
         Array.isArray(val.categories) &&
-        val.categories.length > 0
+        val.categories.length > 0 &&
+        val.categories[0]?.features
       )
         return val;
-      if (Array.isArray(val) && val.length > 0)
+      if (Array.isArray(val) && val.length > 0 && val[0]?.features)
         return { rows: val, categories: val };
-      if (val?.rows && Array.isArray(val.rows) && val.rows.length > 0)
-        return val;
+      if (val?.rows && Array.isArray(val.rows) && val.rows.length > 0 && val.rows[0]?.features)
+        return { rows: val.rows, categories: val.rows };
     }
 
-    // Default 8-role permission matrix if not configured in DB
+    const defaultCategories = this.getDefaultTreeCategories();
     return {
-      rows: [
-        {
-          feature: {
-            vi: 'Quản trị hệ thống & Cấu hình nền tảng',
-            en: 'Platform & system management',
-          },
-          platform_admin: 'full',
-          admin: 'scoped',
-          tong_thu_ky: 'none',
-          ban_thu_ky: 'none',
-          truong_ban_thanh_vien: 'none',
-          truong_ban_tai_chinh: 'none',
-          truong_ban_truyen_thong: 'none',
-          truong_ban_xuc_tien: 'none',
-          truong_ban_thien_nguyen: 'none',
-          member: 'none',
-        },
-        {
-          feature: {
-            vi: 'Họp phòng ban & Lịch Zoom',
-            en: 'Department meetings & Zoom',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'full',
-          ban_thu_ky: 'full',
-          truong_ban_thanh_vien: 'scoped',
-          truong_ban_tai_chinh: 'scoped',
-          truong_ban_truyen_thong: 'scoped',
-          truong_ban_xuc_tien: 'scoped',
-          truong_ban_thien_nguyen: 'scoped',
-          member: 'own',
-        },
-        {
-          feature: {
-            vi: 'Quản lý hội viên & Phân ban',
-            en: 'Members & committee assignment',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'scoped',
-          ban_thu_ky: 'scoped',
-          truong_ban_thanh_vien: 'full',
-          truong_ban_tai_chinh: 'scoped',
-          truong_ban_truyen_thong: 'scoped',
-          truong_ban_xuc_tien: 'scoped',
-          truong_ban_thien_nguyen: 'scoped',
-          member: 'own',
-        },
-        {
-          feature: {
-            vi: 'Thu chi, Tạm ứng & Hóa đơn',
-            en: 'Finance, advances & invoices',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'scoped',
-          ban_thu_ky: 'scoped',
-          truong_ban_thanh_vien: 'scoped',
-          truong_ban_tai_chinh: 'full',
-          truong_ban_truyen_thong: 'scoped',
-          truong_ban_xuc_tien: 'scoped',
-          truong_ban_thien_nguyen: 'scoped',
-          member: 'own',
-        },
-        {
-          feature: {
-            vi: 'Sự kiện, Điểm danh QR & Xếp chỗ VIP',
-            en: 'Events, check-in QR & VIP seating',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'scoped',
-          ban_thu_ky: 'full',
-          truong_ban_thanh_vien: 'scoped',
-          truong_ban_tai_chinh: 'scoped',
-          truong_ban_truyen_thong: 'full',
-          truong_ban_xuc_tien: 'scoped',
-          truong_ban_thien_nguyen: 'scoped',
-          member: 'own',
-        },
-        {
-          feature: {
-            vi: 'Sàn cơ hội kinh doanh & Matching',
-            en: 'Opportunities marketplace & matching',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'scoped',
-          ban_thu_ky: 'scoped',
-          truong_ban_thanh_vien: 'scoped',
-          truong_ban_tai_chinh: 'scoped',
-          truong_ban_truyen_thong: 'scoped',
-          truong_ban_xuc_tien: 'full',
-          truong_ban_thien_nguyen: 'scoped',
-          member: 'own',
-        },
-        {
-          feature: {
-            vi: 'Biểu quyết & Bốc thăm trúng thưởng',
-            en: 'Voting & Lucky draw',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'full',
-          ban_thu_ky: 'full',
-          truong_ban_thanh_vien: 'scoped',
-          truong_ban_tai_chinh: 'scoped',
-          truong_ban_truyen_thong: 'scoped',
-          truong_ban_xuc_tien: 'scoped',
-          truong_ban_thien_nguyen: 'scoped',
-          member: 'own',
-        },
-        {
-          feature: {
-            vi: 'Thiện nguyện & An sinh xã hội',
-            en: 'Charity & social welfare',
-          },
-          platform_admin: 'full',
-          admin: 'full',
-          tong_thu_ky: 'scoped',
-          ban_thu_ky: 'scoped',
-          truong_ban_thanh_vien: 'scoped',
-          truong_ban_tai_chinh: 'scoped',
-          truong_ban_truyen_thong: 'scoped',
-          truong_ban_xuc_tien: 'scoped',
-          truong_ban_thien_nguyen: 'full',
-          member: 'own',
-        },
-      ],
+      categories: defaultCategories,
+      rows: defaultCategories,
     };
+  }
+
+  private getDefaultTreeCategories(): any[] {
+    const allRolesGranted = {
+      quan_tri: true,
+      chu_tich: true,
+      admin: true,
+      truong_ban_dieu_hanh: true,
+      tong_thu_ky: true,
+      truong_ban_truyen_thong: true,
+      truong_ban_thanh_vien: true,
+      truong_ban_xuc_tien: true,
+      truong_ban_tai_chinh: true,
+      truong_ban_thien_nguyen: true,
+      thanh_vien_ban_su_kien: true,
+      thanh_vien_ban_xuc_tien: true,
+      thanh_vien_ban_thanh_vien: true,
+      thanh_vien_ban_truyen_thong: true,
+      thanh_vien_ban_tai_chinh: true,
+      thanh_vien_ban_thien_nguyen: true,
+      member: true,
+    };
+
+    return [
+      {
+        id: 'cat_members',
+        name: 'HỘI VIÊN',
+        iconName: 'Users',
+        features: [
+          {
+            id: 'feat_members',
+            name: 'Hội viên',
+            route: '/members',
+            description: 'Quản lý hồ sơ hội viên cá nhân',
+            actions: [
+              { id: 'act_mem_view', name: 'Xem danh sách hội viên', code: 'MEM_VIEW', description: 'Tra cứu thông tin cá nhân', apiEndpoint: 'GET /api/members', roles: { ...allRolesGranted } },
+              { id: 'act_mem_add', name: 'Thêm mới hội viên', code: 'MEM_ADD', description: 'Tạo mới hồ sơ', apiEndpoint: 'POST /api/members', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_thanh_vien: true } },
+              { id: 'act_mem_edit', name: 'Chỉnh sửa hội viên', code: 'MEM_EDIT', description: 'Cập nhật thông tin', apiEndpoint: 'PUT /api/members/:id', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_thanh_vien: true } },
+              { id: 'act_mem_delete', name: 'Xóa hội viên', code: 'MEM_DELETE', description: 'Đình chỉ hoặc xóa', apiEndpoint: 'DELETE /api/members/:id', roles: { quan_tri: true, chu_tich: true } },
+            ],
+          },
+          {
+            id: 'feat_companies',
+            name: 'Doanh nghiệp',
+            route: '/companies',
+            description: 'Quản lý doanh nghiệp thành viên',
+            actions: [
+              { id: 'act_com_view', name: 'Xem doanh nghiệp', code: 'COM_VIEW', description: 'Tra cứu công ty', apiEndpoint: 'GET /api/companies', roles: { ...allRolesGranted } },
+              { id: 'act_com_edit', name: 'Sửa doanh nghiệp', code: 'COM_EDIT', description: 'Cập nhật MST, ngành', apiEndpoint: 'PUT /api/companies/:id', roles: { quan_tri: true, chu_tich: true, admin: true } },
+            ],
+          },
+          {
+            id: 'feat_renewal',
+            name: 'Gia hạn hội viên',
+            route: '/renewal',
+            description: 'Quản lý niên liễm hội viên',
+            actions: [
+              { id: 'act_ren_view', name: 'Xem gia hạn', code: 'REN_VIEW', description: 'Tra cứu hạn phí', apiEndpoint: 'GET /api/renewals', roles: { ...allRolesGranted } },
+              { id: 'act_ren_process', name: 'Xử lý gia hạn', code: 'REN_PROCESS', description: 'Gia hạn niên liễm', apiEndpoint: 'POST /api/renewals/extend', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_tai_chinh: true } },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'cat_events',
+        name: 'SỰ KIỆN',
+        iconName: 'Calendar',
+        features: [
+          {
+            id: 'feat_events',
+            name: 'Sự kiện',
+            route: '/events',
+            description: 'Quản lý sự kiện, hội thảo',
+            actions: [
+              { id: 'act_evt_view', name: 'Xem sự kiện', code: 'EVT_VIEW', description: 'Xem chi tiết sự kiện', apiEndpoint: 'GET /api/events', roles: { ...allRolesGranted } },
+              { id: 'act_evt_add', name: 'Tạo sự kiện', code: 'EVT_ADD', description: 'Tạo chương trình mới', apiEndpoint: 'POST /api/events', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_truyen_thong: true } },
+              { id: 'act_evt_edit', name: 'Sửa sự kiện', code: 'EVT_EDIT', description: 'Chỉnh sửa timeline', apiEndpoint: 'PUT /api/events/:id', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_truyen_thong: true } },
+            ],
+          },
+          {
+            id: 'feat_meetings',
+            name: 'Cuộc họp',
+            route: '/meetings',
+            description: 'Quản lý cuộc họp ban, lịch phòng',
+            actions: [
+              { id: 'act_meet_view', name: 'Xem cuộc họp', code: 'MEET_VIEW', description: 'Xem lịch họp', apiEndpoint: 'GET /api/meetings', roles: { ...allRolesGranted } },
+              { id: 'act_meet_add', name: 'Tạo cuộc họp', code: 'MEET_ADD', description: 'Đặt lịch họp', apiEndpoint: 'POST /api/meetings', roles: { ...allRolesGranted } },
+            ],
+          },
+          {
+            id: 'feat_voting',
+            name: 'Biểu quyết & Quay số',
+            route: '/voting',
+            description: 'Quản lý bỏ phiếu & bốc thăm trúng thưởng',
+            actions: [
+              { id: 'act_vote_view', name: 'Xem biểu quyết', code: 'VOTE_VIEW', description: 'Xem kết quả bỏ phiếu', apiEndpoint: 'GET /api/voting', roles: { ...allRolesGranted } },
+              { id: 'act_vote_add', name: 'Tạo phiên biểu quyết', code: 'VOTE_ADD', description: 'Khởi tạo bỏ phiếu', apiEndpoint: 'POST /api/voting', roles: { quan_tri: true, chu_tich: true, admin: true, tong_thu_ky: true } },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'cat_finance',
+        name: 'TÀI CHÍNH',
+        iconName: 'Wallet',
+        features: [
+          {
+            id: 'feat_income',
+            name: 'Thu ngân sách',
+            route: '/income',
+            description: 'Quản lý các khoản thu và hội phí',
+            actions: [
+              { id: 'act_inc_view', name: 'Xem phiếu thu', code: 'INC_VIEW', description: 'Tra cứu phiếu thu', apiEndpoint: 'GET /api/finance/income', roles: { ...allRolesGranted } },
+              { id: 'act_inc_add', name: 'Tạo phiếu thu', code: 'INC_ADD', description: 'Ghi nhận khoản thu', apiEndpoint: 'POST /api/finance/income', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_tai_chinh: true } },
+            ],
+          },
+          {
+            id: 'feat_expenses',
+            name: 'Chi ngân sách',
+            route: '/expenses',
+            description: 'Quản lý chi tiêu và hoàn ứng',
+            actions: [
+              { id: 'act_exp_view', name: 'Xem phiếu chi', code: 'EXP_VIEW', description: 'Tra cứu phiếu chi', apiEndpoint: 'GET /api/finance/expenses', roles: { ...allRolesGranted } },
+              { id: 'act_exp_add', name: 'Tạo phiếu chi', code: 'EXP_ADD', description: 'Lập phiếu chi', apiEndpoint: 'POST /api/finance/expenses', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_tai_chinh: true } },
+            ],
+          },
+          {
+            id: 'feat_finance_report',
+            name: 'Báo cáo tài chính',
+            route: '/finance-report',
+            description: 'Thống kê tổng hợp thu chi',
+            actions: [
+              { id: 'act_frp_view', name: 'Xem báo cáo tài chính', code: 'FRP_VIEW', description: 'Biểu đồ dòng tiền', apiEndpoint: 'GET /api/finance/summary-report', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_tai_chinh: true } },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'cat_tasks',
+        name: 'CÔNG VIỆC',
+        iconName: 'ClipboardList',
+        features: [
+          {
+            id: 'feat_tasks',
+            name: 'Quản lý công việc',
+            route: '/tasks',
+            description: 'Giao việc ban chuyên môn',
+            actions: [
+              { id: 'act_tsk_view', name: 'Xem công việc', code: 'TSK_VIEW', description: 'Xem danh sách công việc', apiEndpoint: 'GET /api/tasks', roles: { ...allRolesGranted } },
+              { id: 'act_tsk_add', name: 'Tạo công việc', code: 'TSK_ADD', description: 'Giao việc mới', apiEndpoint: 'POST /api/tasks', roles: { quan_tri: true, chu_tich: true, admin: true, truong_ban_dieu_hanh: true, tong_thu_ky: true, truong_ban_truyen_thong: true, truong_ban_thanh_vien: true, truong_ban_xuc_tien: true, truong_ban_tai_chinh: true, truong_ban_thien_nguyen: true } },
+              { id: 'act_tsk_edit', name: 'Cập nhật công việc', code: 'TSK_EDIT', description: 'Sửa tiến độ', apiEndpoint: 'PUT /api/tasks/:id', roles: { ...allRolesGranted } },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'cat_system',
+        name: 'HỆ THỐNG',
+        iconName: 'Settings',
+        features: [
+          {
+            id: 'feat_account_settings',
+            name: 'Quản lý tài khoản',
+            route: '/account-settings',
+            description: 'Hồ sơ người dùng & phân vai trò ban',
+            actions: [
+              { id: 'act_usr_view', name: 'Xem tài khoản', code: 'USR_VIEW', description: 'Danh sách tài khoản', apiEndpoint: 'GET /api/users', roles: { quan_tri: true, chu_tich: true, admin: true, tong_thu_ky: true } },
+              { id: 'act_usr_edit', name: 'Cập nhật quyền & vai trò', code: 'USR_EDIT', description: 'Gán ban chuyên môn', apiEndpoint: 'PUT /api/users/:id', roles: { quan_tri: true, chu_tich: true, admin: true } },
+            ],
+          },
+          {
+            id: 'feat_permissions',
+            name: 'Ma trận phân quyền',
+            route: '/permissions',
+            description: 'Cấu hình quyền RBAC',
+            actions: [
+              { id: 'act_prm_view', name: 'Xem ma trận', code: 'PRM_VIEW', description: 'Tra cứu quyền', apiEndpoint: 'GET /api/admin/permission-matrix', roles: { quan_tri: true, chu_tich: true, admin: true } },
+              { id: 'act_prm_edit', name: 'Sửa ma trận', code: 'PRM_EDIT', description: 'Lưu quyền RBAC', apiEndpoint: 'PUT /api/admin/permission-matrix', roles: { quan_tri: true, chu_tich: true, admin: true } },
+            ],
+          },
+          {
+            id: 'feat_notifications',
+            name: 'Quản lý thông báo',
+            route: '/notifications',
+            description: 'Trung tâm thông báo & Mẫu thông báo',
+            actions: [
+              { id: 'act_notif_view', name: 'Xem thông báo', code: 'NOTIF_VIEW', description: 'Tra cứu thông báo', apiEndpoint: 'GET /api/admin/notifications', roles: { ...allRolesGranted } },
+              { id: 'act_notif_send', name: 'Gửi thông báo', code: 'NOTIF_SEND', description: 'Phát thông báo Mail/App/Zalo OA', apiEndpoint: 'POST /api/admin/notifications', roles: { quan_tri: true, chu_tich: true, admin: true, tong_thu_ky: true } },
+            ],
+          },
+          {
+            id: 'feat_activity_logs',
+            name: 'Nhật ký thao tác',
+            route: '/activity-logs',
+            description: 'Audit logs hệ thống',
+            actions: [
+              { id: 'act_log_view', name: 'Xem nhật ký', code: 'LOG_VIEW', description: 'Tra cứu lịch sử', apiEndpoint: 'GET /api/admin/audit-logs', roles: { quan_tri: true, chu_tich: true, admin: true } },
+            ],
+          },
+        ],
+      },
+    ];
   }
 
   private isUuid(val?: string): boolean {

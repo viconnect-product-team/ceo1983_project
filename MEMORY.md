@@ -1,5 +1,62 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 13/11/2026 (v11.44): Hoàn Thiện Đồng Bộ Toàn Diện 7 Yêu Cầu CRM & 1 Yêu Cầu Mobile App CEO 1983 ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-007], [NODE-CORE-001])**:
+  - **1. Sửa Lỗi Crash Tại /permissions (Ảnh 1)**:
+    * Triệt tiêu lỗi crash `TypeError: Cannot read properties of undefined (reading 'map')` khi truy cập `/permissions`.
+    * Backend `admin.service.ts`: Hàm `getDefaultTreeCategories()` trả về đúng chuẩn cây phân cấp 5 danh mục chuẩn (`cat_members`, `cat_events`, `cat_finance`, `cat_tasks`, `cat_system`) với đầy đủ `features` và `actions`.
+    * Frontend `AuthContext.tsx` & `RbacPermissionMatrix.tsx`: Thêm kiểm tra tự động dọn dẹp cache bị lỗi cấu trúc phẳng, bổ sung optional chaining `?.features || []` và Error Boundary `PermissionsErrorFallback` cho phép người dùng khôi phục & tải lại trang bằng 1 click.
+  - **2. Đưa Chức Năng Quản Lý Tài Khoản Profile Thay Thế Quản Lý Tài Khoản Cũ (Ảnh 2)**:
+    * Menu phân quyền trên Sidebar trỏ trực tiếp đến `/account-settings?tab=users` (chức năng quản lý tài khoản đầy đủ tại mục profile ảnh 2).
+    * Route `/accounts.tsx` được cấu hình `beforeLoad` tự động redirect về `/account-settings?tab=users`.
+    * Nâng cấp toàn diện bảng người dùng trong `/account-settings.index.tsx` sang dùng component `CustomTable` với phân trang chuẩn, số thứ tự STT tự động và xem chi tiết modal.
+  - **3. Kiểm Tra & Xác Nhận Full Luồng Phân Quyền Theo RBAC Cả FE và API**:
+    * **Backend (NestJS API)**: `RolesGuard` kiểm tra vai trò thời gian thực trực tiếp từ CSDL PostgreSQL (`user_roles`, `memberships`, `members.executive_role`).
+    * **Frontend (TanStack Router & Sidebar)**: Áp dụng `isRouteAllowedByMatrix`, ẩn / hiện menu sidebar và chặn truy cập route quản trị trái phép đối với các vai trò thành viên ban.
+  - **4. Chuẩn Hóa Tất Cả Chức Năng CRM Dùng Chung 1 Component CustomTable**:
+    * Tích hợp `CeoTableEllipsis` với `maxLines={2}` (`line-clamp-2`) và Radix Tooltip hiển thị đầy đủ văn bản khi hover.
+    * Nâng cấp toàn diện các bảng dữ liệu thủ công / raw `<table>` trong hệ thống sang `CustomTable`:
+      - `TaskTableView.tsx` (Quản lý công việc)
+      - `departments.tsx` (Quản lý ban chuyên môn)
+      - `activity-logs.tsx` (Nhật ký thao tác hệ thống)
+      - `account-settings.index.tsx` (Quản lý tài khoản người dùng)
+  - **5. Xóa Dữ Liệu Hardmock Quản Lý Công Việc, Lưu Trữ & Truy Xuất 100% CSDL PostgreSQL**:
+    * Tạo bảng `public.tasks` trong PostgreSQL bằng câu lệnh DDL an toàn trong `TasksRepository` với các cột JSONB linh hoạt.
+    * `TasksRepository` và `TasksService` đồng bộ dữ liệu trực tiếp với PostgreSQL qua Prisma `$queryRaw` và `$executeRawUnsafe`.
+    * Frontend `src/features/tasks/api.ts`: Xóa bỏ hoàn toàn logic tạo task giả lập (fake task) trong localStorage khi offline/lỗi; kết nối trực tiếp API NestJS.
+  - **6. Chuyển "Mẫu Thông Báo" Ra Quản Lý Thông Báo & Xóa Cấu Hình Deprecated**:
+    * Trang `/settings`: Đã xóa bỏ các tab và component cũ: `VNPayConfigSection` (`vnpay`), `ZaloMiniAppConfigSection` (`zalo_miniapp`), `OmnichannelTemplatesSection` (`templates`).
+    * Trang `/notifications`: Thêm bộ chuyển tab chính (Tabs Switch) giữa "Quản Lý Thông Báo" và "Mẫu Thông Báo" (nhúng `MailTemplateManager`).
+    * Mẫu thông báo (`MailTemplateManager`): Xóa bỏ cấu hình ZBS phức tạp và mẫu trả lời nhanh; chuẩn hóa mẫu thông báo chỉ gửi qua đúng 3 kênh: **Email**, **App CEO 1983**, và **Zalo OA**.
+  - **7. Khắc Phục Triệt Để Text Đen Trên Nền Xanh / Xanh Lá Hệ Thống**:
+    * Sửa `VoiceGpsHudOverlay.tsx`: Loại bỏ class `text-slate-950` đè lên `bg-[#003B95]`, đảm bảo text luôn là `text-white`.
+    * Sửa `AssociationQrScanModal.tsx`: Chuyển text nút hành động trên `bg-[#003B95]` sang `text-white`.
+    * Sửa `ViOneAiTutorGuide.tsx`: Đổi badge `bg-emerald-500 text-slate-950` sang `bg-emerald-600 text-white`.
+    * Sửa `association.products.tsx`: Đổi icon `<Plus className="size-4 text-slate-950" />` sang `text-white`.
+  - **8. Sửa App CEO 1983: Gian Hàng Của Tôi Icon 3 Chấm & Danh Mục Người Quan Tâm**:
+    * Tại `/association/products` (tab Gian hàng của tôi): Thay thế 4 nút hành động dài cồng kềnh bằng icon 3 chấm (`MoreVertical`) mở popup menu gồm: Chỉnh sửa thông tin, Đã bán / Mở bán lại, Ai đang quan tâm, Chia sẻ sản phẩm, Xóa sản phẩm.
+    * Bổ sung Subtabs: "Sản phẩm của tôi" và "Ai đang quan tâm ({count})" với badge nổi bật.
+    * Bổ sung API `GET /marketplace/my-products/interested` tại NestJS Backend và view danh sách "Ai đang quan tâm sản phẩm" hiển thị chi tiết người hỏi (Avatar, Tên, Công ty, SĐT, Sản phẩm quan tâm, Lời nhắn) cùng các nút thao tác nhanh: **Gọi điện**, **Zalo**, **Nhắn tin**.
+  - **9. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Chạy Type Check `tsc --noEmit` tại Backend NestJS đạt **Exit code 0 (0 errors)**.
+    * Không thực hiện bất kỳ lệnh `git push` hay `git commit` nào theo đúng quy chuẩn Rule 1.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.43): Tối Ưu Hóa & Giải Phóng Dung Lượng Ổ C (C:\) Từ 5.25 GB Lên 13.97 GB Trống (+8.72 GB), Dọn Dẹp Toàn Diện Dev Caches (Bun, Gradle, NPM, Temp) ([NODE-CORE-006])**:
+  - **1. Hiện Trạng Trước Khi Tối Ưu**:
+    * Ổ C có tổng kích thước vật lý: **114.52 GB**.
+    * Dung lượng trống ban đầu: Chỉ còn **5.25 GB** (báo động đỏ < 5%, khiến hệ thống giật lag và IDE chạy chậm khi nạp / build).
+  - **2. Các Hạng Mục Đã Dọn Dẹp Thành Công**:
+    * **Gradle Caches (`C:\Users\vumik\.gradle\caches` & `daemon`)**: Đã xóa an toàn 38,932 tệp rác / cache build cũ, giải phóng **~4.67 GB**.
+    * **Bun Package Cache (`C:\Users\vumik\.bun\install\cache`)**: Đã xóa 143,312 tệp lưu trữ gói tải về, giải phóng **~1.44 GB**.
+    * **Windows User Temp (`C:\Users\vumik\AppData\Local\Temp`)**: Đã quét và dọn sạch 33,614 file tạm của các ứng dụng, giải phóng **~1.25 GB**.
+    * **NPM Cache (`npm cache clean --force`)**: Thu hồi **~0.53 GB**.
+    * **Cấu hình `.gitignore` dự án**: Bổ sung `.gradle/`, `**/android/build/**`, `**/.transforms/**` vào `.gitignore` để tránh IDE quét index tốn CPU và dung lượng.
+  - **3. Kết Quả Thu Được**:
+    * Dung lượng trống ổ C đã tăng từ **5.25 GB** lên **13.97 GB** (tăng thêm **+8.72 GB**, gấp gần 3 lần ban đầu).
+  - **4. Hướng Dẫn Các Bước Giải Phóng Thêm 10 - 25 GB Nữa Trên Windows**:
+    * Tắt Hibernate (`powercfg -h off` trong CMD Administrator) để xóa `hiberfil.sys`, thu hồi ngay **6 - 12 GB**.
+    * Chạy `cleanmgr` (Disk Cleanup -> Clean up system files) dọn dẹp các bản vá Windows Update cũ, thu hồi **5 - 15 GB**.
+
+
 - **Bản cập nhật ngày 13/11/2026 (v11.42): Xóa Trắng 27 Hội Viên Mẫu Cũ, Chuẩn Hóa 2 Tài Khoản Mặc Định (`admin@viconnect.vn` / `admin@connect.vn` & `info@viconnect.vn`), Khắc Phục Triệt Để Chức Năng Xem Tài Khoản & Xem Chi Tiết Hội Viên Không Xem Được ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001], [NODE-APP-003])**:
   - **1. Yêu Cầu Của Người Dùng & Nguyên Nhân Gốc Rễ Phát Hiện Được**:
     * **Yêu cầu**: Xóa trắng toàn bộ 27 hội viên mẫu cũ trong `DEFAULT_MEMBERS`, chỉ giữ lại đúng 2 tài khoản: `admin@connect.vn` / `admin@viconnect.vn` và `info@viconnect.vn`.
@@ -900,6 +957,23 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.43): Tối Ưu Hóa & Giải Phóng Dung Lượng Ổ C (C:\) Từ 5.25 GB Lên 13.97 GB Trống (+8.72 GB), Dọn Dẹp Toàn Diện Dev Caches (Bun, Gradle, NPM, Temp) ([NODE-CORE-006])**:
+  - **1. Hiện Trạng Trước Khi Tối Ưu**:
+    * Ổ C có tổng kích thước vật lý: **114.52 GB**.
+    * Dung lượng trống ban đầu: Chỉ còn **5.25 GB** (báo động đỏ < 5%, khiến hệ thống giật lag và IDE chạy chậm khi nạp / build).
+  - **2. Các Hạng Mục Đã Dọn Dẹp Thành Công**:
+    * **Gradle Caches (`C:\Users\vumik\.gradle\caches` & `daemon`)**: Đã xóa an toàn 38,932 tệp rác / cache build cũ, giải phóng **~4.67 GB**.
+    * **Bun Package Cache (`C:\Users\vumik\.bun\install\cache`)**: Đã xóa 143,312 tệp lưu trữ gói tải về, giải phóng **~1.44 GB**.
+    * **Windows User Temp (`C:\Users\vumik\AppData\Local\Temp`)**: Đã quét và dọn sạch 33,614 file tạm của các ứng dụng, giải phóng **~1.25 GB**.
+    * **NPM Cache (`npm cache clean --force`)**: Thu hồi **~0.53 GB**.
+    * **Cấu hình `.gitignore` dự án**: Bổ sung `.gradle/`, `**/android/build/**`, `**/.transforms/**` vào `.gitignore` để tránh IDE quét index tốn CPU và dung lượng.
+  - **3. Kết Quả Thu Được**:
+    * Dung lượng trống ổ C đã tăng từ **5.25 GB** lên **13.97 GB** (tăng thêm **+8.72 GB**, gấp gần 3 lần ban đầu).
+  - **4. Hướng Dẫn Các Bước Giải Phóng Thêm 10 - 25 GB Nữa Trên Windows**:
+    * Tắt Hibernate (`powercfg -h off` trong CMD Administrator) để xóa `hiberfil.sys`, thu hồi ngay **6 - 12 GB**.
+    * Chạy `cleanmgr` (Disk Cleanup -> Clean up system files) dọn dẹp các bản vá Windows Update cũ, thu hồi **5 - 15 GB**.
+
 
 - **Bản cập nhật ngày 13/11/2026 (v11.42): Xóa Trắng 27 Hội Viên Mẫu Cũ, Chuẩn Hóa 2 Tài Khoản Mặc Định (`admin@viconnect.vn` / `admin@connect.vn` & `info@viconnect.vn`), Khắc Phục Triệt Để Chức Năng Xem Tài Khoản & Xem Chi Tiết Hội Viên Không Xem Được ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001], [NODE-APP-003])**:
   - **1. Yêu Cầu Của Người Dùng & Nguyên Nhân Gốc Rễ Phát Hiện Được**:
@@ -3083,6 +3157,23 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.43): Tối Ưu Hóa & Giải Phóng Dung Lượng Ổ C (C:\) Từ 5.25 GB Lên 13.97 GB Trống (+8.72 GB), Dọn Dẹp Toàn Diện Dev Caches (Bun, Gradle, NPM, Temp) ([NODE-CORE-006])**:
+  - **1. Hiện Trạng Trước Khi Tối Ưu**:
+    * Ổ C có tổng kích thước vật lý: **114.52 GB**.
+    * Dung lượng trống ban đầu: Chỉ còn **5.25 GB** (báo động đỏ < 5%, khiến hệ thống giật lag và IDE chạy chậm khi nạp / build).
+  - **2. Các Hạng Mục Đã Dọn Dẹp Thành Công**:
+    * **Gradle Caches (`C:\Users\vumik\.gradle\caches` & `daemon`)**: Đã xóa an toàn 38,932 tệp rác / cache build cũ, giải phóng **~4.67 GB**.
+    * **Bun Package Cache (`C:\Users\vumik\.bun\install\cache`)**: Đã xóa 143,312 tệp lưu trữ gói tải về, giải phóng **~1.44 GB**.
+    * **Windows User Temp (`C:\Users\vumik\AppData\Local\Temp`)**: Đã quét và dọn sạch 33,614 file tạm của các ứng dụng, giải phóng **~1.25 GB**.
+    * **NPM Cache (`npm cache clean --force`)**: Thu hồi **~0.53 GB**.
+    * **Cấu hình `.gitignore` dự án**: Bổ sung `.gradle/`, `**/android/build/**`, `**/.transforms/**` vào `.gitignore` để tránh IDE quét index tốn CPU và dung lượng.
+  - **3. Kết Quả Thu Được**:
+    * Dung lượng trống ổ C đã tăng từ **5.25 GB** lên **13.97 GB** (tăng thêm **+8.72 GB**, gấp gần 3 lần ban đầu).
+  - **4. Hướng Dẫn Các Bước Giải Phóng Thêm 10 - 25 GB Nữa Trên Windows**:
+    * Tắt Hibernate (`powercfg -h off` trong CMD Administrator) để xóa `hiberfil.sys`, thu hồi ngay **6 - 12 GB**.
+    * Chạy `cleanmgr` (Disk Cleanup -> Clean up system files) dọn dẹp các bản vá Windows Update cũ, thu hồi **5 - 15 GB**.
+
 
 - **Bản cập nhật ngày 13/11/2026 (v11.42): Xóa Trắng 27 Hội Viên Mẫu Cũ, Chuẩn Hóa 2 Tài Khoản Mặc Định (`admin@viconnect.vn` / `admin@connect.vn` & `info@viconnect.vn`), Khắc Phục Triệt Để Chức Năng Xem Tài Khoản & Xem Chi Tiết Hội Viên Không Xem Được ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001], [NODE-APP-003])**:
   - **1. Yêu Cầu Của Người Dùng & Nguyên Nhân Gốc Rễ Phát Hiện Được**:
