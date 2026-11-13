@@ -1,5 +1,35 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 13/11/2026 (v11.39): Chuẩn Hóa Toàn Diện Bộ Tài Liệu Hướng Dẫn Sử Dụng Bám Sát Label Giao Diện Thực Tế, Bỏ Theme Tối & Bản Đồ Danh Bạ Trên App, Gỡ Landing Web & Xóa Ảnh 404 Trên CRM, Chụp Lại Trọn Bộ Ảnh Mới Cho App & CRM, Kết Xuất Đầy Đủ Cả Bản Word (.docx) & PDF (.pdf) ([NODE-CRM-001] - [NODE-CRM-024], [NODE-APP-001] - [NODE-APP-017])**:
+  - **1. Chuẩn Hóa Câu Từ Tài Liệu Hướng Dẫn Bám Sát Label Giao Diện**:
+    * Biên tập lại toàn bộ 2 tài liệu `HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md` và `HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`.
+    * Áp dụng cấu trúc chuẩn mực: "Tại màn [Tên màn hình], chọn chức năng [Tên chức năng] -> Bước 1: Chọn nút [Tên nút], nhập [Tên trường 1], [Tên trường 2] -> Bước 2: Bấm nút [Tên nút] -> Kết quả hiển thị".
+    * Loại bỏ 100% các từ ngữ hoa mỹ, khẩu hiệu văn vẻ, triết lý rườm rà. Bất kỳ người dùng nào cũng có thể đọc và thao tác chuẩn xác ngay lập tức.
+  - **2. Tinh Gọn & Chuẩn Hóa Riêng Cho Tài Liệu Ứng Dụng Di Động (App Mobile)**:
+    * Bỏ hoàn toàn phần Theme tối (Dark Mode) và xóa tệp ảnh `01_d_app_theme_dark_mode.png`.
+    * Bỏ hoàn toàn phần Bản đồ danh bạ CEO 1983 (Radar/Map GPS), chuyển phân hệ `[NODE-APP-004]` thành Danh bạ hội viên thuần túy tra cứu theo Tên, Công ty, Ngành nghề và liên hệ trực tiếp.
+    * Bổ sung đầy đủ các chức năng con: Màn thông báo (`01_b_app_notifications_center.png`), Cài đặt 4 màu chủ đề Brandbook (`01_c_app_theme_switcher_modal.png`), Nhắn tin 1-on-1 có menu ngữ cảnh thông minh không che header (`10_b_app_messages_chat_1on1.png`), Vé điện tử và QR điểm danh (`08_b_app_event_ticket_qr_modal.png`), Luồng Quên mật khẩu.
+  - **3. Tinh Gọn & Nâng Cấp Riêng Cho Tài Liệu Cổng Quản Trị Web CRM**:
+    * Gỡ bỏ hoàn toàn phân hệ Landing Web (`NODE-CRM-023` cũ và ảnh `29_crm_landing_webs.png`).
+    * Dọn sạch các ảnh bị 404 (`04_crm_member_detail_drawer.png`, `08_crm_account_role_dept_modal.png`), xác nhận 0 ảnh 404.
+    * Bổ sung chi tiết luồng Sự Kiện: Thiết lập sơ đồ chỗ ngồi (`11_d_crm_event_seating_setup.png`), Quản lý vé và điểm danh check-in (`11_c_crm_event_registrations_tickets.png`), Event Detail Hub (`11_b_crm_event_detail_hub.png`).
+    * Bổ sung chi tiết luồng Mẫu thông báo, thư mời & gửi tin nhắn Zalo ZBS theo file Excel danh sách khách mời (`30_crm_templates_hub.png`).
+    * Bổ sung bộ ảnh minh họa giao diện Responsive trên đa thiết bị: Desktop 1440px (`responsive_crm_desktop_1440.png`), Tablet 1024px (`responsive_crm_tablet_1024.png`), Mobile 390px (`responsive_crm_mobile_390.png`).
+  - **4. Chụp Mới Toàn Bộ Ảnh App & CRM Phản Ánh Giao Diện Hiện Hành**:
+    * Chụp lại toàn bộ ảnh App (`document/images/guide_app/*.png`) sạch sẽ, không bị popup giới thiệu/onboarding che khuất.
+    * Chụp lại toàn bộ ảnh CRM (`document/images/guide_crm/*.png`) phản ánh đúng giao diện phẳng không gradient, thanh công cụ Zoom In/Out & Granular Tabs Recharts Brush tại Thống kê.
+  - **5. Kết Xuất Đồng Bộ Cả 2 Định Dạng Bắt Buộc: Word (.docx) & PDF (.pdf)**:
+    * Kết xuất 2 tệp Word bằng thư viện `docx` chính thức:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.docx` (6.55 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.docx` (1.95 MB)
+    * Kết xuất 2 tệp PDF chất lượng cao chuẩn in ấn A4 bằng Playwright:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (7.26 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.48 MB)
+    * Đồng bộ toàn bộ 4 tệp vào thư mục `apps/ceo1983_app_fe/public/docs/` để tải trực tiếp từ web/app.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Kiểm tra `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ an toàn tại local.
+
 - **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
   - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
     * **Backend `AnalyticsService.getBuckets`**: Hỗ trợ đầy đủ các lát cắt con: `month_days` (28-31 ngày), `month_weeks` (5 tuần), `quarter_weeks` (13 tuần), `quarter_months` (3 tháng), `year_months` (12 tháng), `year_quarters` (4 quý) từ PostgreSQL.
@@ -772,6 +802,36 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.39): Chuẩn Hóa Toàn Diện Bộ Tài Liệu Hướng Dẫn Sử Dụng Bám Sát Label Giao Diện Thực Tế, Bỏ Theme Tối & Bản Đồ Danh Bạ Trên App, Gỡ Landing Web & Xóa Ảnh 404 Trên CRM, Chụp Lại Trọn Bộ Ảnh Mới Cho App & CRM, Kết Xuất Đầy Đủ Cả Bản Word (.docx) & PDF (.pdf) ([NODE-CRM-001] - [NODE-CRM-024], [NODE-APP-001] - [NODE-APP-017])**:
+  - **1. Chuẩn Hóa Câu Từ Tài Liệu Hướng Dẫn Bám Sát Label Giao Diện**:
+    * Biên tập lại toàn bộ 2 tài liệu `HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md` và `HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`.
+    * Áp dụng cấu trúc chuẩn mực: "Tại màn [Tên màn hình], chọn chức năng [Tên chức năng] -> Bước 1: Chọn nút [Tên nút], nhập [Tên trường 1], [Tên trường 2] -> Bước 2: Bấm nút [Tên nút] -> Kết quả hiển thị".
+    * Loại bỏ 100% các từ ngữ hoa mỹ, khẩu hiệu văn vẻ, triết lý rườm rà. Bất kỳ người dùng nào cũng có thể đọc và thao tác chuẩn xác ngay lập tức.
+  - **2. Tinh Gọn & Chuẩn Hóa Riêng Cho Tài Liệu Ứng Dụng Di Động (App Mobile)**:
+    * Bỏ hoàn toàn phần Theme tối (Dark Mode) và xóa tệp ảnh `01_d_app_theme_dark_mode.png`.
+    * Bỏ hoàn toàn phần Bản đồ danh bạ CEO 1983 (Radar/Map GPS), chuyển phân hệ `[NODE-APP-004]` thành Danh bạ hội viên thuần túy tra cứu theo Tên, Công ty, Ngành nghề và liên hệ trực tiếp.
+    * Bổ sung đầy đủ các chức năng con: Màn thông báo (`01_b_app_notifications_center.png`), Cài đặt 4 màu chủ đề Brandbook (`01_c_app_theme_switcher_modal.png`), Nhắn tin 1-on-1 có menu ngữ cảnh thông minh không che header (`10_b_app_messages_chat_1on1.png`), Vé điện tử và QR điểm danh (`08_b_app_event_ticket_qr_modal.png`), Luồng Quên mật khẩu.
+  - **3. Tinh Gọn & Nâng Cấp Riêng Cho Tài Liệu Cổng Quản Trị Web CRM**:
+    * Gỡ bỏ hoàn toàn phân hệ Landing Web (`NODE-CRM-023` cũ và ảnh `29_crm_landing_webs.png`).
+    * Dọn sạch các ảnh bị 404 (`04_crm_member_detail_drawer.png`, `08_crm_account_role_dept_modal.png`), xác nhận 0 ảnh 404.
+    * Bổ sung chi tiết luồng Sự Kiện: Thiết lập sơ đồ chỗ ngồi (`11_d_crm_event_seating_setup.png`), Quản lý vé và điểm danh check-in (`11_c_crm_event_registrations_tickets.png`), Event Detail Hub (`11_b_crm_event_detail_hub.png`).
+    * Bổ sung chi tiết luồng Mẫu thông báo, thư mời & gửi tin nhắn Zalo ZBS theo file Excel danh sách khách mời (`30_crm_templates_hub.png`).
+    * Bổ sung bộ ảnh minh họa giao diện Responsive trên đa thiết bị: Desktop 1440px (`responsive_crm_desktop_1440.png`), Tablet 1024px (`responsive_crm_tablet_1024.png`), Mobile 390px (`responsive_crm_mobile_390.png`).
+  - **4. Chụp Mới Toàn Bộ Ảnh App & CRM Phản Ánh Giao Diện Hiện Hành**:
+    * Chụp lại toàn bộ ảnh App (`document/images/guide_app/*.png`) sạch sẽ, không bị popup giới thiệu/onboarding che khuất.
+    * Chụp lại toàn bộ ảnh CRM (`document/images/guide_crm/*.png`) phản ánh đúng giao diện phẳng không gradient, thanh công cụ Zoom In/Out & Granular Tabs Recharts Brush tại Thống kê.
+  - **5. Kết Xuất Đồng Bộ Cả 2 Định Dạng Bắt Buộc: Word (.docx) & PDF (.pdf)**:
+    * Kết xuất 2 tệp Word bằng thư viện `docx` chính thức:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.docx` (6.55 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.docx` (1.95 MB)
+    * Kết xuất 2 tệp PDF chất lượng cao chuẩn in ấn A4 bằng Playwright:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (7.26 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.48 MB)
+    * Đồng bộ toàn bộ 4 tệp vào thư mục `apps/ceo1983_app_fe/public/docs/` để tải trực tiếp từ web/app.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Kiểm tra `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ an toàn tại local.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
   - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
@@ -2827,6 +2887,36 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.39): Chuẩn Hóa Toàn Diện Bộ Tài Liệu Hướng Dẫn Sử Dụng Bám Sát Label Giao Diện Thực Tế, Bỏ Theme Tối & Bản Đồ Danh Bạ Trên App, Gỡ Landing Web & Xóa Ảnh 404 Trên CRM, Chụp Lại Trọn Bộ Ảnh Mới Cho App & CRM, Kết Xuất Đầy Đủ Cả Bản Word (.docx) & PDF (.pdf) ([NODE-CRM-001] - [NODE-CRM-024], [NODE-APP-001] - [NODE-APP-017])**:
+  - **1. Chuẩn Hóa Câu Từ Tài Liệu Hướng Dẫn Bám Sát Label Giao Diện**:
+    * Biên tập lại toàn bộ 2 tài liệu `HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md` và `HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`.
+    * Áp dụng cấu trúc chuẩn mực: "Tại màn [Tên màn hình], chọn chức năng [Tên chức năng] -> Bước 1: Chọn nút [Tên nút], nhập [Tên trường 1], [Tên trường 2] -> Bước 2: Bấm nút [Tên nút] -> Kết quả hiển thị".
+    * Loại bỏ 100% các từ ngữ hoa mỹ, khẩu hiệu văn vẻ, triết lý rườm rà. Bất kỳ người dùng nào cũng có thể đọc và thao tác chuẩn xác ngay lập tức.
+  - **2. Tinh Gọn & Chuẩn Hóa Riêng Cho Tài Liệu Ứng Dụng Di Động (App Mobile)**:
+    * Bỏ hoàn toàn phần Theme tối (Dark Mode) và xóa tệp ảnh `01_d_app_theme_dark_mode.png`.
+    * Bỏ hoàn toàn phần Bản đồ danh bạ CEO 1983 (Radar/Map GPS), chuyển phân hệ `[NODE-APP-004]` thành Danh bạ hội viên thuần túy tra cứu theo Tên, Công ty, Ngành nghề và liên hệ trực tiếp.
+    * Bổ sung đầy đủ các chức năng con: Màn thông báo (`01_b_app_notifications_center.png`), Cài đặt 4 màu chủ đề Brandbook (`01_c_app_theme_switcher_modal.png`), Nhắn tin 1-on-1 có menu ngữ cảnh thông minh không che header (`10_b_app_messages_chat_1on1.png`), Vé điện tử và QR điểm danh (`08_b_app_event_ticket_qr_modal.png`), Luồng Quên mật khẩu.
+  - **3. Tinh Gọn & Nâng Cấp Riêng Cho Tài Liệu Cổng Quản Trị Web CRM**:
+    * Gỡ bỏ hoàn toàn phân hệ Landing Web (`NODE-CRM-023` cũ và ảnh `29_crm_landing_webs.png`).
+    * Dọn sạch các ảnh bị 404 (`04_crm_member_detail_drawer.png`, `08_crm_account_role_dept_modal.png`), xác nhận 0 ảnh 404.
+    * Bổ sung chi tiết luồng Sự Kiện: Thiết lập sơ đồ chỗ ngồi (`11_d_crm_event_seating_setup.png`), Quản lý vé và điểm danh check-in (`11_c_crm_event_registrations_tickets.png`), Event Detail Hub (`11_b_crm_event_detail_hub.png`).
+    * Bổ sung chi tiết luồng Mẫu thông báo, thư mời & gửi tin nhắn Zalo ZBS theo file Excel danh sách khách mời (`30_crm_templates_hub.png`).
+    * Bổ sung bộ ảnh minh họa giao diện Responsive trên đa thiết bị: Desktop 1440px (`responsive_crm_desktop_1440.png`), Tablet 1024px (`responsive_crm_tablet_1024.png`), Mobile 390px (`responsive_crm_mobile_390.png`).
+  - **4. Chụp Mới Toàn Bộ Ảnh App & CRM Phản Ánh Giao Diện Hiện Hành**:
+    * Chụp lại toàn bộ ảnh App (`document/images/guide_app/*.png`) sạch sẽ, không bị popup giới thiệu/onboarding che khuất.
+    * Chụp lại toàn bộ ảnh CRM (`document/images/guide_crm/*.png`) phản ánh đúng giao diện phẳng không gradient, thanh công cụ Zoom In/Out & Granular Tabs Recharts Brush tại Thống kê.
+  - **5. Kết Xuất Đồng Bộ Cả 2 Định Dạng Bắt Buộc: Word (.docx) & PDF (.pdf)**:
+    * Kết xuất 2 tệp Word bằng thư viện `docx` chính thức:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.docx` (6.55 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.docx` (1.95 MB)
+    * Kết xuất 2 tệp PDF chất lượng cao chuẩn in ấn A4 bằng Playwright:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (7.26 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.48 MB)
+    * Đồng bộ toàn bộ 4 tệp vào thư mục `apps/ceo1983_app_fe/public/docs/` để tải trực tiếp từ web/app.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Kiểm tra `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ an toàn tại local.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
   - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
