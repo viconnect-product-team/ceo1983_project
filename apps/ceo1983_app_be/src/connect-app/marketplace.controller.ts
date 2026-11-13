@@ -70,6 +70,11 @@ export class MarketplaceController {
     return this.connectAppService.toggleProductSold(req.user.id, id);
   }
 
+  @Get('my-products/interested')
+  async listMyProductsInterested(@Request() req: any) {
+    return this.connectAppService.listMyProductsInterested(req.user.id);
+  }
+
   @Get('quotes')
   async listQuotes(@Request() req: any) {
     return this.connectAppService.listProductQuotes(req.user.id);

@@ -368,7 +368,7 @@ function SettingsPage() {
             </div>
           )}
 
-          {tab !== "templates" && tab !== "zalo_oa" && tab !== "vnpay" && tab !== "momo" && tab !== "zalo_miniapp" && (
+          {tab !== "zalo_oa" && tab !== "momo" && (
             <div className="mt-6 flex justify-end">
               <button
                 onClick={save}

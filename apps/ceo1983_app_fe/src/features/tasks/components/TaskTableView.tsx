@@ -9,7 +9,8 @@ import {
   Video,
   ExternalLink,
 } from 'lucide-react';
-import { Pagination } from '@/components/dashboard/DataTablePagination';
+import { CustomTable, type CustomTableColumn } from '@/components/common/CustomTable';
+import { CeoTableEllipsis } from '@/components/common/CeoTableEllipsis';
 import type { TaskItem, TaskStatus } from '../types';
 import { TASK_PRIORITY_CONFIG, TASK_STATUS_CONFIG, MEETING_PLATFORMS } from '../types';
 
@@ -35,280 +36,290 @@ export function TaskTableView({
     setPage(1);
   }, [tasks]);
 
-  const pageCount = Math.max(1, Math.ceil(tasks.length / pageSize));
   const pagedTasks = React.useMemo(() => {
     const start = (page - 1) * pageSize;
     return tasks.slice(start, start + pageSize);
   }, [tasks, page, pageSize]);
 
-  if (tasks.length === 0) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-xs">
-        <p className="text-muted-foreground text-sm">Không tìm thấy công việc nào phù hợp với bộ lọc.</p>
-      </div>
-    );
-  }
+  const columns = React.useMemo<CustomTableColumn<TaskItem>[]>(() => [
+    {
+      key: 'code',
+      label: 'Mã CV',
+      width: 110,
+      render: (task) => (
+        <span className="inline-flex items-center gap-1 rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20 font-mono">
+          {task.code}
+        </span>
+      ),
+    },
+    {
+      key: 'title',
+      label: 'Tên công việc',
+      minWidth: 240,
+      render: (task) => (
+        <div className="space-y-0.5">
+          <CeoTableEllipsis
+            text={task.title}
+            maxLines={2}
+            className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors"
+          />
+          {task.deliverables && (
+            <CeoTableEllipsis
+              text={`Kết quả: ${task.deliverables}`}
+              maxLines={1}
+              className="text-[11px] text-slate-400 dark:text-slate-500"
+            />
+          )}
+          {task.meeting?.enabled && task.meeting?.link && (
+            <div className="mt-1 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <a
+                href={task.meeting.link}
+                target="_blank"
+                rel="noreferrer"
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-bold border transition ${
+                  MEETING_PLATFORMS[task.meeting.platform]?.bg || 'bg-blue-50'
+                } ${
+                  MEETING_PLATFORMS[task.meeting.platform]?.text || 'text-[#003B95]'
+                } ${
+                  MEETING_PLATFORMS[task.meeting.platform]?.border || 'border-blue-200'
+                } hover:opacity-85`}
+                title={`Tham gia họp: ${task.meeting.link}`}
+              >
+                <Video className="w-2.5 h-2.5" />
+                <span>Họp {MEETING_PLATFORMS[task.meeting.platform]?.shortName || 'Trực tuyến'}</span>
+                <ExternalLink className="w-2 h-2 opacity-60" />
+              </a>
+              {task.meeting.meetingTime && (
+                <span className="text-[10px] text-slate-400">
+                  ({task.meeting.meetingTime.replace('T', ' ')})
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'department',
+      label: 'Ban phụ trách',
+      minWidth: 160,
+      render: (task) => (
+        <span className="inline-flex items-center gap-1 rounded-md bg-[#003B95]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
+          <Building className="w-3 h-3 text-[#003B95] dark:text-blue-300" />
+          <CeoTableEllipsis text={task.department} maxLines={1} />
+        </span>
+      ),
+    },
+    {
+      key: 'assignee',
+      label: 'Người thực hiện',
+      minWidth: 160,
+      render: (task) => {
+        if (task.assignees && task.assignees.length > 1) {
+          return (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center -space-x-1.5">
+                {task.assignees.slice(0, 3).map((a, i) =>
+                  a.avatar ? (
+                    <img
+                      key={i}
+                      src={a.avatar}
+                      alt={a.name}
+                      title={a.name}
+                      className="w-6 h-6 rounded-full object-cover border border-white dark:border-slate-800"
+                    />
+                  ) : (
+                    <div
+                      key={i}
+                      title={a.name}
+                      className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold border border-white dark:border-slate-800"
+                    >
+                      {a.name.charAt(0)}
+                    </div>
+                  )
+                )}
+              </div>
+              <div className="min-w-0">
+                <CeoTableEllipsis
+                  text={`${task.assignees[0].name} +${task.assignees.length - 1}`}
+                  maxLines={1}
+                  className="font-medium text-slate-800 dark:text-slate-200"
+                />
+                <div className="text-[10px] text-slate-400">
+                  {task.assignees.length} người thực hiện
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex items-center gap-2">
+            {task.assignee?.avatar ? (
+              <img
+                src={task.assignee.avatar}
+                alt={task.assignee.name}
+                className="w-6 h-6 rounded-full object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                {(task.assignee?.name || 'A').charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0">
+              <CeoTableEllipsis
+                text={task.assignee?.name || 'Chưa giao'}
+                maxLines={1}
+                className="font-medium text-slate-800 dark:text-slate-200"
+              />
+              {task.assignee?.role && (
+                <CeoTableEllipsis text={task.assignee.role} maxLines={1} className="text-[10px] text-slate-400" />
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'dueDate',
+      label: 'Hạn chót',
+      width: 120,
+      render: (task) => {
+        const isOverdue =
+          task.status !== 'DONE' &&
+          new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
+
+        return (
+          <span
+            className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+              isOverdue
+                ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <Calendar className="w-3 h-3" />
+            {task.dueDate}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'priority',
+      label: 'Ưu tiên',
+      width: 110,
+      render: (task) => {
+        const priorityInfo = TASK_PRIORITY_CONFIG[task.priority] || TASK_PRIORITY_CONFIG.MEDIUM;
+        return (
+          <span
+            className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold border ${priorityInfo.badge}`}
+          >
+            {task.priority === 'CRITICAL' && <Flame className="w-3 h-3" />}
+            {priorityInfo.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'progress',
+      label: 'Tiến độ',
+      width: 130,
+      render: (task) => (
+        <div className="flex items-center gap-2">
+          <div className="w-16 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                task.status === 'DONE' ? 'bg-emerald-500' : 'bg-[#003B95]'
+              }`}
+              style={{ width: `${task.progress}%` }}
+            />
+          </div>
+          <span className="text-[11px] font-mono font-medium text-slate-600 dark:text-slate-400">
+            {task.progress}%
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      width: 140,
+      render: (task) => {
+        const statusInfo = TASK_STATUS_CONFIG[task.status] || TASK_STATUS_CONFIG.TODO;
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <select
+              value={task.status}
+              onChange={(e) =>
+                onQuickStatusChange(task.id, e.target.value as TaskStatus)
+              }
+              className={`text-[11px] font-semibold rounded-lg px-2.5 py-1 border transition-colors outline-hidden cursor-pointer ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}
+            >
+              {Object.entries(TASK_STATUS_CONFIG).map(([stKey, cfg]) => (
+                <option key={stKey} value={stKey} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+                  {cfg.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      },
+    },
+  ], [onQuickStatusChange]);
 
   return (
-    <div className="self-stretch bg-white dark:bg-card rounded-[20px] outline outline-1 outline-slate-200 dark:outline-slate-800 overflow-hidden shadow-xs">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse min-w-[1050px]">
-          <thead>
-            <tr className="h-16 bg-blue-50/70 dark:bg-blue-950/40 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100">
-              <th className="sticky left-0 z-20 bg-blue-50/90 dark:bg-blue-950/90 py-3 px-3 w-12 text-center border-r border-b border-slate-200 dark:border-slate-800 select-none">
-                STT
-              </th>
-              <th className="sticky left-12 z-20 bg-blue-50/90 dark:bg-blue-950/90 py-3 px-4 w-[110px] min-w-[110px] border-r border-b border-slate-200 dark:border-slate-800 shadow-xs">
-                Mã CV
-              </th>
-              <th className="py-3 px-4 min-w-[240px] border-r border-b border-slate-200 dark:border-slate-800">Tên công việc</th>
-              <th className="py-3 px-4 min-w-[180px] border-r border-b border-slate-200 dark:border-slate-800">Ban phụ trách</th>
-              <th className="py-3 px-4 min-w-[160px] border-r border-b border-slate-200 dark:border-slate-800">Người thực hiện</th>
-              <th className="py-3 px-4 w-[120px] border-r border-b border-slate-200 dark:border-slate-800">Hạn chót</th>
-              <th className="py-3 px-4 w-[110px] border-r border-b border-slate-200 dark:border-slate-800">Ưu tiên</th>
-              <th className="py-3 px-4 min-w-[140px] border-r border-b border-slate-200 dark:border-slate-800">Tiến độ</th>
-              <th className="py-3 px-4 min-w-[140px] border-r border-b border-slate-200 dark:border-slate-800">Trạng thái</th>
-              <th className="sticky right-0 z-20 bg-blue-50/90 dark:bg-blue-950/90 py-3 px-4 w-[110px] min-w-[110px] text-right border-l border-b border-slate-200 dark:border-slate-800 shadow-xs">
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
-            {pagedTasks.map((task, idx) => {
-              const priorityInfo = TASK_PRIORITY_CONFIG[task.priority] || TASK_PRIORITY_CONFIG.MEDIUM;
-              const statusInfo = TASK_STATUS_CONFIG[task.status] || TASK_STATUS_CONFIG.TODO;
-              const isOverdue =
-                task.status !== 'DONE' &&
-                new Date(task.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
-
-              return (
-                <tr
-                  key={task.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer border-b border-slate-200 dark:border-slate-800"
-                  onClick={() => onTaskClick(task)}
-                >
-                  <td className="sticky left-0 z-10 bg-card group-hover:bg-muted/70 py-3.5 px-3 text-center font-mono text-slate-500 border-r border-b border-slate-200 dark:border-slate-800">
-                    {(page - 1) * pageSize + idx + 1}
-                  </td>
-                  <td className="sticky left-12 z-10 bg-card group-hover:bg-muted/70 py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800 shadow-xs">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20 font-mono">
-                      {task.code}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 border-r border-b border-slate-200 dark:border-slate-800">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors">
-                      {task.title}
-                    </div>
-                    {task.deliverables && (
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1">
-                        Kết quả: {task.deliverables}
-                      </div>
-                    )}
-                    {task.meeting?.enabled && task.meeting?.link && (
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <a
-                          href={task.meeting.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10.5px] font-bold border transition ${
-                            MEETING_PLATFORMS[task.meeting.platform]?.bg || 'bg-blue-50'
-                          } ${
-                            MEETING_PLATFORMS[task.meeting.platform]?.text || 'text-[#003B95]'
-                          } ${
-                            MEETING_PLATFORMS[task.meeting.platform]?.border || 'border-blue-200'
-                          } hover:opacity-85`}
-                          title={`Tham gia họp: ${task.meeting.link}`}
-                        >
-                          <Video className="w-2.5 h-2.5" />
-                          <span>Họp {MEETING_PLATFORMS[task.meeting.platform]?.shortName || 'Trực tuyến'}</span>
-                          <ExternalLink className="w-2 h-2 opacity-60" />
-                        </a>
-                        {task.meeting.meetingTime && (
-                          <span className="text-[10px] text-slate-400">
-                            ({task.meeting.meetingTime.replace('T', ' ')})
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-[#ffffff]/10 text-[#003B95] dark:text-blue-300 font-extrabold px-2 py-0.5 text-[11px] border border-[#003B95]/20">
-                      <Building className="w-3 h-3 text-[#003B95] dark:text-blue-300" />
-                      {task.department}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
-                    {task.assignees && task.assignees.length > 1 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center -space-x-1.5">
-                          {task.assignees.slice(0, 3).map((a, i) =>
-                            a.avatar ? (
-                              <img
-                                key={i}
-                                src={a.avatar}
-                                alt={a.name}
-                                title={a.name}
-                                className="w-6 h-6 rounded-full object-cover border border-white dark:border-slate-800"
-                              />
-                            ) : (
-                              <div
-                                key={i}
-                                title={a.name}
-                                className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold border border-white dark:border-slate-800"
-                              >
-                                {a.name.charAt(0)}
-                              </div>
-                            )
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {task.assignees[0].name} <span className="text-xs text-muted-foreground">+{task.assignees.length - 1}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            {task.assignees.length} người thực hiện
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        {task.assignee?.avatar ? (
-                          <img
-                            src={task.assignee.avatar}
-                            alt={task.assignee.name}
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-[#003B95] text-white flex items-center justify-center text-[10px] font-bold">
-                            {(task.assignee?.name || 'A').charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {task.assignee?.name}
-                          </div>
-                          {task.assignee?.role && (
-                            <div className="text-[10px] text-slate-400">{task.assignee.role}</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
-                    <span
-                      className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
-                        isOverdue
-                          ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded'
-                          : 'text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      <Calendar className="w-3 h-3" />
-                      {task.dueDate}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold border ${priorityInfo.badge}`}
-                    >
-                      {task.priority === 'CRITICAL' && <Flame className="w-3 h-3" />}
-                      {priorityInfo.label}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 border-r border-b border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            task.status === 'DONE' ? 'bg-emerald-500' : 'bg-[#003B95]'
-                          }`}
-                          style={{ width: `${task.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] font-mono font-medium text-slate-600 dark:text-slate-400">
-                        {task.progress}%
-                      </span>
-                    </div>
-                  </td>
-
-                  <td
-                    className="py-3.5 px-4 whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-800"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <select
-                      value={task.status}
-                      onChange={(e) =>
-                        onQuickStatusChange(task.id, e.target.value as TaskStatus)
-                      }
-                      className={`text-[11px] font-semibold rounded-lg px-2.5 py-1 border transition-colors outline-none cursor-pointer ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}
-                    >
-                      {Object.entries(TASK_STATUS_CONFIG).map(([stKey, cfg]) => (
-                        <option key={stKey} value={stKey} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
-                          {cfg.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td
-                    className="sticky right-0 z-10 bg-card group-hover:bg-muted/70 py-3.5 px-4 text-right whitespace-nowrap border-l border-b border-slate-200 dark:border-slate-800 shadow-xs"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onTaskClick(task)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#003B95] dark:hover:text-blue-400 transition-colors"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onEditTask(task)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-[#B45309] dark:hover:text-amber-400 transition-colors"
-                        title="Chỉnh sửa công việc"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteTask(task.id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
-                        title="Xóa công việc"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      {tasks.length > 0 && (
-        <Pagination
-          page={page}
-          pageCount={pageCount}
-          pageSize={pageSize}
-          total={tasks.length}
-          from={(page - 1) * pageSize + 1}
-          to={Math.min(page * pageSize, tasks.length)}
-          onPage={setPage}
-          onPageSize={(s) => {
-            setPageSize(s);
-            setPage(1);
-          }}
-          pageSizeOptions={[10, 20, 50]}
-        />
-      )}
+    <div className="self-stretch">
+      <CustomTable
+        columns={columns}
+        data={pagedTasks}
+        keyExtractor={(t) => t.id}
+        showStt={true}
+        page={page}
+        pageSize={pageSize}
+        total={tasks.length}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setPage(1);
+        }}
+        pageSizeOptions={[10, 20, 50]}
+        emptyText="Không tìm thấy công việc nào phù hợp với bộ lọc."
+        onRowClick={(task) => onTaskClick(task)}
+        actionColumn={{
+          title: 'Thao tác',
+          width: 120,
+          render: (task) => (
+            <div
+              className="flex items-center justify-end gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => onTaskClick(task)}
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#003B95] dark:hover:text-blue-400 transition-colors cursor-pointer"
+                title="Xem chi tiết"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onEditTask(task)}
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-[#B45309] dark:hover:text-amber-400 transition-colors cursor-pointer"
+                title="Chỉnh sửa công việc"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteTask(task.id)}
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                title="Xóa công việc"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ),
+        }}
+      />
     </div>
   );
 }

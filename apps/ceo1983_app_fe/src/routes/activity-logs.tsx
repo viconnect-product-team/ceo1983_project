@@ -154,7 +154,81 @@ function ActivityLogsPage() {
   const getActionBadge = (action: string) => {
     const act = action.toUpperCase();
     if (act.includes("LOGIN")) {
-      return (
+      const logColumns = useMemo<CustomTableColumn<ActivityLogItem>[]>(() => [
+    {
+      key: "created_at",
+      label: "Thời Gian",
+      width: 130,
+      render: (log) => (
+        <div className="font-mono text-slate-500 whitespace-nowrap">
+          <div className="font-bold text-slate-800 dark:text-slate-200">
+            {new Date(log.created_at).toLocaleTimeString("vi-VN")}
+          </div>
+          <div className="text-[10px] text-slate-400">
+            {new Date(log.created_at).toLocaleDateString("vi-VN")}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "actor",
+      label: "Hội Viên Thực Hiện",
+      minWidth: 180,
+      render: (log) => (
+        <div className="flex items-center gap-2.5">
+          <img
+            src={log.actor_avatar || "/ceo1983-emblem-8.png"}
+            alt={log.actor_name}
+            className="size-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
+            }}
+          />
+          <div className="min-w-0">
+            <CeoTableEllipsis text={log.actor_name} maxLines={1} className="font-bold text-slate-900 dark:text-white" />
+            <div className="text-[10px] text-slate-400">{log.actor_email || "App Member"}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "department",
+      label: "Ban Chuyên Môn",
+      minWidth: 140,
+      render: (log) => (
+        <CeoTableEllipsis text={log.department || "Ban Xúc tiến"} maxLines={1} className="font-semibold text-slate-700 dark:text-slate-300" />
+      ),
+    },
+    {
+      key: "action",
+      label: "Hành Động",
+      width: 140,
+      render: (log) => getActionBadge(log.action),
+    },
+    {
+      key: "target_type",
+      label: "Phân Hệ",
+      width: 110,
+      render: (log) => (
+        <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          {log.target_type}
+        </span>
+      ),
+    },
+    {
+      key: "ip_address",
+      label: "IP & Thiết Bị",
+      width: 150,
+      render: (log) => (
+        <div className="text-slate-500 font-mono text-[11px]">
+          <div>{log.ip_address || "127.0.0.1"}</div>
+          <CeoTableEllipsis text={log.user_agent || "Mobile App / Web"} maxLines={1} className="text-[9px] text-slate-400" />
+        </div>
+      ),
+    },
+  ], []);
+
+  return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 inline-flex items-center gap-1">
           <LogIn className="size-3" /> Đăng nhập
         </span>
@@ -315,95 +389,33 @@ function ActivityLogsPage() {
           </div>
         </Card>
 
-        {/* ── AUDIT LOGS TABLE ── */}
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#1F3864] text-white font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="p-3.5">Thời Gian</th>
-                  <th className="p-3.5">Hội Viên Thực Hiện</th>
-                  <th className="p-3.5">Ban Chuyên Môn</th>
-                  <th className="p-3.5">Hành Động</th>
-                  <th className="p-3.5">Phân Hệ</th>
-                  <th className="p-3.5">IP & Thiết Bị</th>
-                  <th className="p-3.5 text-center">Chi Tiết</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-400">
-                      Đang tải dữ liệu nhật ký...
-                    </td>
-                  </tr>
-                ) : logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-400">
-                      Không tìm thấy thao tác nào phù hợp
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                      <td className="p-3.5 font-mono text-slate-500 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 dark:text-slate-200">
-                          {new Date(log.created_at).toLocaleTimeString("vi-VN")}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          {new Date(log.created_at).toLocaleDateString("vi-VN")}
-                        </div>
-                      </td>
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <img
-                            src={log.actor_avatar || "/ceo1983-emblem-8.png"}
-                            alt={log.actor_name}
-                            className="size-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
-                            }}
-                          />
-                          <div>
-                            <div className="font-bold text-slate-900 dark:text-white">{log.actor_name}</div>
-                            <div className="text-[10px] text-slate-400">{log.actor_email || "App Member"}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3.5">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          {log.department || "Ban Xúc tiến"}
-                        </span>
-                      </td>
-                      <td className="p-3.5">{getActionBadge(log.action)}</td>
-                      <td className="p-3.5">
-                        <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                          {log.target_type}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-500 font-mono text-[11px]">
-                        <div>{log.ip_address || "127.0.0.1"}</div>
-                        <div className="text-[9px] text-slate-400 truncate max-w-[120px]">
-                          {log.user_agent || "Mobile App / Web"}
-                        </div>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedLog(log)}
-                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#1F3864] dark:text-amber-400 hover:bg-slate-200 transition cursor-pointer"
-                          title="Xem chi tiết dữ liệu JSON"
-                        >
-                          <Eye className="size-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        {/* ── AUDIT LOGS TABLE (CustomTable Chuẩn CRM) ── */}
+        <div className="self-stretch">
+          <CustomTable
+            columns={logColumns}
+            data={logs}
+            keyExtractor={(l) => l.id}
+            showStt={true}
+            loading={loading}
+            emptyText="Không tìm thấy thao tác nào phù hợp"
+            actionColumn={{
+              title: "Chi Tiết",
+              width: 80,
+              render: (log) => (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedLog(log)}
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#1F3864] dark:text-amber-400 hover:bg-slate-200 transition cursor-pointer"
+                    title="Xem chi tiết dữ liệu JSON"
+                  >
+                    <Eye className="size-4" />
+                  </button>
+                </div>
+              ),
+            }}
+          />
+        </div>
 
         {/* ── DETAIL MODAL ── */}
         {selectedLog && (

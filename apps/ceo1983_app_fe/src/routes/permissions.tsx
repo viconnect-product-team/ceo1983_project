@@ -15,7 +15,40 @@ import { dispatchPermissionSyncEvent, isRouteAllowedByMatrix } from "@/lib/rbac-
 
 export const Route = createFileRoute("/permissions")({
   component: PermissionsPage,
+  errorComponent: PermissionsErrorFallback,
 });
+
+function PermissionsErrorFallback() {
+  const handleReset = () => {
+    try {
+      localStorage.removeItem("ceo1983_rbac_tree_matrix_v7_sidebar_menu");
+    } catch {}
+    window.location.reload();
+  };
+
+  return (
+    <AppShell>
+      <div className="p-8 max-w-xl mx-auto my-12 text-center bg-card border border-border rounded-3xl shadow-lg">
+        <div className="size-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center mb-4">
+          <AlertTriangle className="size-8" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground mb-2">Đang làm mới Ma Trận Phân Quyền</h2>
+        <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
+          Bộ nhớ đệm ma trận phân quyền đã được làm mới đồng bộ với cơ sở dữ liệu hệ thống. Quý quản trị viên vui lòng bấm nút bên dưới để khôi phục và tiếp tục.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="px-5 py-2.5 rounded-xl bg-[#003B95] text-white font-bold text-xs hover:bg-[#002B70] transition shadow-md cursor-pointer"
+          >
+            Khôi phục &amp; Tải lại trang
+          </button>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
 
 import {
   getCustomDepartments,
@@ -288,7 +321,7 @@ function PermissionsPage() {
                 disabled={isSaving}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
               >
-                <Save className="h-3.5 w-3.5 text-slate-950" />
+                <Save className="h-3.5 w-3.5 text-white" />
                 <span>{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
               </button>
             </div>

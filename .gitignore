@@ -54,6 +54,12 @@ release_apk/
 *.apk
 *.ipa
 *.aab
+.gradle/
+**/android/.gradle/**
+**/android/build/**
+**/android/app/build/**
+**/ios/build/**
+**/.transforms/**
 
 # Scratch & Temporary Scripts
 scratch/

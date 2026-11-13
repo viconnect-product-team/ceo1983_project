@@ -3,6 +3,7 @@ import {
   Logger,
   ForbiddenException,
   Optional,
+  OnModuleInit,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -45,7 +46,7 @@ export {
 };
 
 @Injectable()
-export class TasksService {
+export class TasksService implements OnModuleInit {
   private readonly logger = new Logger(TasksService.name);
   private readonly storageFilePath = path.join(
     process.cwd(),
@@ -59,6 +60,16 @@ export class TasksService {
     @Optional() private readonly mailService?: MailService,
   ) {
     this.ensureInitialized();
+  }
+
+  async onModuleInit() {
+    await this.refreshTasks();
+  }
+
+  async refreshTasks() {
+    try {
+      this.tasks = await this.tasksRepo.getAll();
+    } catch (e) {}
   }
 
   private ensureInitialized() {
@@ -82,7 +93,10 @@ export class TasksService {
     }
   }
 
-  private saveToFile() {
+  private async saveToFile() {
+    for (const t of this.tasks) {
+      await this.tasksRepo.insert(t).catch(() => {});
+    }
     try {
       fs.writeFileSync(
         this.storageFilePath,
@@ -254,6 +268,9 @@ export class TasksService {
     },
     currentUser?: any,
   ): Promise<TaskItem[]> {
+    try {
+      this.tasks = await this.tasksRepo.getAll();
+    } catch {}
     let list = [...this.tasks];
 
     // PHÂN QUYỀN DỮ LIỆU (Data Authorization)
@@ -1360,6 +1377,7 @@ export class TasksService {
   }
 
   async deleteTask(id: string): Promise<{ success: boolean }> {
+    await this.tasksRepo.delete(id).catch(() => {});
     const initialLen = this.tasks.length;
     this.tasks = this.tasks.filter((t) => t.id !== id && t.code !== id);
     this.saveToFile();

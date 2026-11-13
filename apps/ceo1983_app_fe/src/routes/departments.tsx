@@ -36,7 +36,8 @@ import {
 import { useRole } from "@/hooks/use-role";
 import { DEFAULT_MEMBERS } from "@/lib/members-data";
 import { fetchNestApi } from "@/lib/api-client";
-import { Pagination } from "@/components/dashboard/DataTablePagination";
+import { CustomTable, type CustomTableColumn } from "@/components/common/CustomTable";
+import { CeoTableEllipsis } from "@/components/common/CeoTableEllipsis";
 import { StandardMetricCard, StandardMetricGrid } from "@/components/dashboard/KpiCard";
 
 export const Route = createFileRoute("/departments")({
@@ -364,6 +365,72 @@ function DepartmentsPage() {
   }, [searchQuery, filterColor]);
 
   const pageCount = Math.max(1, Math.ceil(filteredDepartments.length / pageSize));
+  const deptColumns = useMemo<CustomTableColumn<DepartmentItem>[]>(() => [
+    {
+      key: "name",
+      label: "Ban Chuyên Môn",
+      minWidth: 240,
+      render: (dept) => {
+        const IconComponent = getDeptIcon(dept.name, dept.code);
+        const colorConfig = COLOR_MAP[dept.color || "blue"] || COLOR_MAP.blue;
+        return (
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${colorConfig.border} ${colorConfig.bg} ${colorConfig.text}`}>
+              <IconComponent className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <CeoTableEllipsis text={dept.name} maxLines={1} className="font-bold text-foreground text-xs" />
+              <span className="font-mono text-[10px] font-bold text-muted-foreground uppercase">{dept.code}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "leader",
+      label: "Trưởng Ban Phụ Trách",
+      minWidth: 180,
+      render: (dept) => (
+        <div>
+          <CeoTableEllipsis text={dept.headTitle || dept.leaderName || "Trưởng ban"} maxLines={1} className="font-semibold text-foreground" />
+          <div className="text-[11px] text-muted-foreground">Phụ trách điều hành</div>
+        </div>
+      ),
+    },
+    {
+      key: "members",
+      label: "Thành Viên",
+      width: 140,
+      align: "center",
+      render: (dept) => {
+        const deptMembers = deptMembersMap[dept.id] || [];
+        return (
+          <button
+            type="button"
+            onClick={() => handleOpenView(dept)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer"
+            title="Bấm để xem danh sách tài khoản thuộc ban"
+          >
+            <Users className="h-3 w-3" />
+            <span>{deptMembers.length} thành viên</span>
+          </button>
+        );
+      },
+    },
+    {
+      key: "description",
+      label: "Nhiệm Vụ Cốt Lõi",
+      minWidth: 280,
+      render: (dept) => (
+        <CeoTableEllipsis
+          text={dept.description || "Chưa có mô tả nhiệm vụ chi tiết."}
+          maxLines={2}
+          className="text-muted-foreground text-[11.5px] leading-relaxed"
+        />
+      ),
+    },
+  ], [deptMembersMap]);
+
   const paginatedDepartments = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredDepartments.slice(start, start + pageSize);
@@ -470,156 +537,63 @@ function DepartmentsPage() {
           </div>
         </div>
 
-        {/* ── BẢNG LƯỚI DASHBOARD (Format Chuẩn Ma Trận Phân Quyền) ── */}
-        <div className="self-stretch relative bg-white dark:bg-slate-900 rounded-[20px] outline outline-1 outline-offset-[-1px] outline-slate-200 dark:outline-slate-800 flex flex-col justify-start items-start overflow-x-auto shadow-xs">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                {/* CỘT STT */}
-                <th className="sticky left-0 z-20 bg-slate-100 dark:bg-slate-800 py-3.5 px-3 w-[60px] text-center border-r border-slate-200 dark:border-slate-800 shadow-xs">
-                  STT
-                </th>
-
-                {/* CỘT CỐ ĐỊNH 1 (SÁT LỀ TRÁI) */}
-                <th className="sticky left-[60px] z-20 bg-muted/95 backdrop-blur-xs py-3.5 px-4 w-[240px] min-w-[240px] border-r border-border/60 shadow-xs">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-[#003B95]" />
-                    <span>Ban Chuyên Môn</span>
-                  </div>
-                </th>
-
-                <th className="py-3.5 px-4 min-w-[180px]">Trưởng Ban Phụ Trách</th>
-                <th className="py-3.5 px-4 w-[140px] text-center">Thành Viên</th>
-                <th className="py-3.5 px-4 min-w-[280px]">Nhiệm Vụ Cốt Lõi</th>
-
-                {/* CỘT CỐ ĐỊNH 2 (SÁT LỀ PHẢI - THAO TÁC XEM SỬA XÓA) */}
-                <th className="sticky right-0 z-20 bg-muted/95 backdrop-blur-xs py-3.5 px-4 text-center w-[130px] min-w-[130px] border-l border-border/60 shadow-xs">
-                  Thao Tác
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-border/60 text-xs">
-              {paginatedDepartments.map((dept, index) => {
-                const IconComponent = getDeptIcon(dept.name, dept.code);
-                const colorConfig = COLOR_MAP[dept.color || "blue"] || COLOR_MAP.blue;
-                const deptMembers = deptMembersMap[dept.id] || [];
-
-                return (
-                  <tr key={dept.id} className="hover:bg-primary/5 transition-colors group">
-                    {/* CỘT STT */}
-                    <td className="sticky left-0 z-10 bg-card group-hover:bg-background py-3 px-3 text-center border-r border-border/40 font-bold text-xs text-muted-foreground shadow-xs">
-                      {(page - 1) * pageSize + index + 1}
-                    </td>
-
-                    {/* CỘT CỐ ĐỊNH 1 (SÁT LỀ TRÁI) */}
-                    <td className="sticky left-[60px] z-10 bg-card group-hover:bg-background py-3 px-4 border-r border-border/40 shadow-xs">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${colorConfig.border} ${colorConfig.bg} ${colorConfig.text}`}>
-                          <IconComponent className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-foreground text-xs line-clamp-1">{dept.name}</div>
-                          <span className="font-mono text-[10px] font-bold text-muted-foreground uppercase">{dept.code}</span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Các cột ở giữa cuộn ngang */}
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-foreground">{dept.headTitle || dept.leaderName || "Trưởng ban"}</div>
-                      <div className="text-[11px] text-muted-foreground">Phụ trách điều hành</div>
-                    </td>
-
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenView(dept)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer"
-                        title="Bấm để xem danh sách tài khoản thuộc ban"
-                      >
-                        <Users className="h-3 w-3" />
-                        <span>{deptMembers.length} thành viên</span>
-                      </button>
-                    </td>
-
-                    <td className="py-3 px-4">
-                      <p className="text-muted-foreground text-[11.5px] line-clamp-2 leading-relaxed">
-                        {dept.description || "Chưa có mô tả nhiệm vụ chi tiết."}
-                      </p>
-                    </td>
-
-                    {/* CỘT CỐ ĐỊNH 2 (SÁT LỀ PHẢI - THAO TÁC XEM SỬA XÓA) */}
-                    <td className="sticky right-0 z-10 bg-card group-hover:bg-background py-3 px-4 text-center border-l border-border/40 shadow-xs">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* Xem */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenView(dept)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
-                          title="Xem chi tiết và danh sách thành viên ban"
-                          aria-label="Xem chi tiết và danh sách thành viên ban"
-                        >
-                          <Eye className="h-4 w-4" strokeWidth={2.2} />
-                        </button>
-
-                        {/* Sửa */}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(dept)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
-                          title="Chỉnh sửa ban"
-                          aria-label="Chỉnh sửa ban"
-                        >
-                          <Pencil className="h-4 w-4" strokeWidth={2.2} />
-                        </button>
-
-                        {/* Xóa */}
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmDept(dept)}
-                          disabled={dept.isCore}
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${
-                            dept.isCore
-                              ? "border-slate-200/50 bg-slate-50 text-slate-300 cursor-not-allowed dark:bg-slate-800/40 dark:border-slate-800 dark:text-slate-600"
-                              : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
-                          }`}
-                          title={dept.isCore ? "Ban nòng cốt không thể xóa" : "Xóa ban"}
-                          aria-label="Xóa ban"
-                        >
-                          <Trash2 className="h-4 w-4" strokeWidth={2.2} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {filteredDepartments.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                    <Building2 className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="font-semibold text-xs">Không tìm thấy ban chuyên môn nào phù hợp.</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          {/* ── THANH CHUYỂN TRANG (PAGINATION CHUẨN CRM ẢNH 1) ── */}
-          <Pagination
+        {/* ── BẢNG LƯỚI DASHBOARD (CustomTable Chuẩn CRM) ── */}
+        <div className="self-stretch">
+          <CustomTable
+            columns={deptColumns}
+            data={paginatedDepartments}
+            keyExtractor={(d) => d.id}
+            showStt={true}
             page={page}
-            pageCount={pageCount}
             pageSize={pageSize}
             total={filteredDepartments.length}
-            from={filteredDepartments.length === 0 ? 0 : (page - 1) * pageSize + 1}
-            to={Math.min(page * pageSize, filteredDepartments.length)}
-            onPage={(p) => setPage(p)}
-            onPageSize={(size) => {
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
               setPageSize(size);
               setPage(1);
             }}
             pageSizeOptions={[10, 20, 50, 100]}
+            emptyText="Không tìm thấy ban chuyên môn nào phù hợp."
+            actionColumn={{
+              title: "Thao Tác",
+              width: 130,
+              render: (dept) => (
+                <div className="flex items-center justify-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenView(dept)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
+                    title="Xem chi tiết và danh sách thành viên ban"
+                    aria-label="Xem chi tiết và danh sách thành viên ban"
+                  >
+                    <Eye className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(dept)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 transition cursor-pointer dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300"
+                    title="Chỉnh sửa ban"
+                    aria-label="Chỉnh sửa ban"
+                  >
+                    <Pencil className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirmDept(dept)}
+                    disabled={dept.isCore}
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+                      dept.isCore
+                        ? "border-slate-200/50 bg-slate-50 text-slate-300 cursor-not-allowed dark:bg-slate-800/40 dark:border-slate-800 dark:text-slate-600"
+                        : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 cursor-pointer dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300"
+                    }`}
+                    title={dept.isCore ? "Ban nòng cốt không thể xóa" : "Xóa ban"}
+                    aria-label="Xóa ban"
+                  >
+                    <Trash2 className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+                </div>
+              ),
+            }}
           />
         </div>
       </div>

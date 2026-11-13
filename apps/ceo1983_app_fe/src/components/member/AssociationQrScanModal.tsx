@@ -820,7 +820,7 @@ export function AssociationQrScanModal({
                       toast.success("Đã sao chép liên kết hồ sơ danh thiếp!");
                     }
                   }}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white hover:from-amber-600 hover:to-yellow-600 text-slate-950 py-2.5 text-xs font-black shadow-xs transition active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white hover:brightness-110 py-2.5 text-xs font-black shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <Share2 className="h-3.5 w-3.5" />
                   <span>Chia sẻ hồ sơ</span>

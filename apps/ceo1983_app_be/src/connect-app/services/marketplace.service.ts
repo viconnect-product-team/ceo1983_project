@@ -648,6 +648,48 @@ export class ConnectMarketplaceService {
     return { id: String(r.custom_id || r.id), status: r.status };
   }
 
+  async listMyProductsInterested(userId: string) {
+    try {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT q.id, q.product_id, q.buyer_id, q.quantity, q.message, q.contact, q.status, q.created_at,
+               p.title as product_title, p.price as product_price, p.image_url as product_image,
+               COALESCE(m.name, u.name, 'Hội viên CLB') as buyer_name,
+               COALESCE(m.avatar_url, u.avatar_url, '') as buyer_avatar,
+               COALESCE(m.company_name, '') as buyer_company,
+               COALESCE(q.contact, m.phone, u.phone, '') as buyer_phone,
+               COALESCE(m.email, u.email, '') as buyer_email
+        FROM public.quote_requests q
+        JOIN public.products p ON q.product_id = p.id
+        LEFT JOIN public.members m ON (q.buyer_id = m.user_id::text OR q.buyer_id = m.id OR q.buyer_id = m.code)
+        LEFT JOIN public.vione_users u ON (q.buyer_id = u.id::text)
+        WHERE (p.seller_id = ${userId} OR p.user_id = ${userId})
+           OR (p.seller_id IN (SELECT id::text FROM public.members WHERE user_id::text = ${userId} OR id::text = ${userId}))
+        ORDER BY q.created_at DESC
+      `.catch(() => []);
+
+      return rows.map((r) => ({
+        id: r.id,
+        productId: r.product_id,
+        productTitle: r.product_title || 'Sản phẩm',
+        productPrice: Number(r.product_price || 0),
+        productImage: r.product_image || '',
+        buyerId: r.buyer_id,
+        buyerName: r.buyer_name,
+        buyerAvatar: r.buyer_avatar,
+        buyerCompany: r.buyer_company,
+        buyerPhone: r.buyer_phone,
+        buyerEmail: r.buyer_email,
+        quantity: Number(r.quantity || 1),
+        message: r.message || '',
+        status: r.status || 'sent',
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      }));
+    } catch (e: any) {
+      console.warn('listMyProductsInterested error:', e.message);
+      return [];
+    }
+  }
+
   async listProductQuotes(userId: string) {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT q.*, p.title as product_title, p.price as product_price

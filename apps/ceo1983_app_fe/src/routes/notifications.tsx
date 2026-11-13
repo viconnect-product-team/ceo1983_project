@@ -271,6 +271,7 @@ function NotifyPage() {
     return () => window.removeEventListener("notifications-seen", onSeen);
   }, []);
 
+  const [mainTab, setMainTab] = useState<"notifications" | "templates">("notifications");
   const [readTab, setReadTab] = useState<ReadTabType>("all");
   const [query, setQuery] = useState("");
   const [audience, setAudience] = useState<"all" | Notification["audience"]>("all");
@@ -1032,6 +1033,45 @@ function NotifyPage() {
         }
       />
 
+      {/* ── BỘ CHUYỂN TAB CHÍNH: QUẢN LÝ THÔNG BÁO / MẪU THÔNG BÁO ── */}
+      <div className="flex items-center gap-2 mb-6 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setMainTab("notifications")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            mainTab === "notifications"
+              ? "bg-[#003B95] text-white shadow-xs"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+          }`}
+        >
+          <Bell className="size-4" />
+          <span>Quản Lý Thông Báo</span>
+          {unreadCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-900 font-extrabold">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setMainTab("templates")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            mainTab === "templates"
+              ? "bg-[#003B95] text-white shadow-xs"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+          }`}
+        >
+          <Mail className="size-4" />
+          <span>Mẫu Thông Báo</span>
+        </button>
+      </div>
+
+      {mainTab === "templates" ? (
+        <div className="space-y-4">
+          <MailTemplateManager />
+        </div>
+      ) : (
+        <>
       {/* ── 4 KPI CARDS CHUẨN FIGMA EXACT GRADIENTS ── */}
       <div className="mb-6">
         <CrmMetricGrid>
@@ -1279,6 +1319,9 @@ function NotifyPage() {
               ),
           )}
         </div>
+      )}
+
+        </>
       )}
 
       {/* ── MODAL TẠO & SỬA THÔNG BÁO ── */}

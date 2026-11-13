@@ -1066,6 +1066,40 @@ function ProductsScreen() {
   }, [sortedList, pageFilter, filterPageSize]);
 
   // Pagination for "Gian hàng của tôi" (My Store)
+  // ── MY STORE 3-DOTS & INTERESTED LEADS STATES ──
+  const [activeMenuProductId, setActiveMenuProductId] = useState<string | null>(null);
+  const [myStoreSubTab, setMyStoreSubTab] = useState<"products" | "interested">("products");
+  const [interestedLeads, setInterestedLeads] = useState<any[]>([]);
+  const [loadingInterested, setLoadingInterested] = useState(false);
+
+  const loadInterestedLeads = useCallback(async () => {
+    setLoadingInterested(true);
+    try {
+      const res = await fetchNestApi<any[]>("/marketplace/my-products/interested");
+      if (Array.isArray(res)) setInterestedLeads(res);
+      else setInterestedLeads([]);
+    } catch {
+      setInterestedLeads([]);
+    } finally {
+      setLoadingInterested(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "my_store") {
+      void loadInterestedLeads();
+    }
+  }, [activeTab, loadInterestedLeads]);
+
+  const handleShareProduct = (p: MyProduct) => {
+    const url = `${window.location.origin}/association/products?highlight=${p.id}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép liên kết sản phẩm vào bộ nhớ tạm!");
+    } else {
+      toast.info(`Link sản phẩm: ${url}`);
+    }
+  };
   const [myStorePage, setMyStorePage] = useState(1);
   const [myStorePageSize, setMyStorePageSize] = useState(6);
   const mineProducts = useMemo(() => allProducts.filter((p) => checkIsProductOwner(p)), [allProducts, member, user]);
@@ -2280,7 +2314,7 @@ function ProductsScreen() {
                     onClick={() => handleOpenPostModal()}
                     className="mt-2 px-4 py-2 bg-[#003B95] hover:bg-[#002B70] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
                   >
-                    <Plus className="size-4 text-slate-950" />
+                    <Plus className="size-4 text-white" />
                     <span>Đăng sản phẩm ngay</span>
                   </button>
                 </div>
