@@ -1325,10 +1325,16 @@ export class UsersService {
     ]);
 
     const userIds = rawUsers.map((u) => u.id);
+    const userEmails = rawUsers.map((u) => u.email).filter(Boolean) as string[];
 
-    const [profiles, roles] = await Promise.all([
+    const [profiles, roles, membersList] = await Promise.all([
       this.usersRepo.findProfilesByUserIds(userIds),
       this.usersRepo.findRolesByUserIds(userIds),
+      this.prisma.$queryRaw<any[]>`
+        SELECT id, user_id, email, code, department, executive_role 
+        FROM public.members 
+        WHERE user_id = ANY(${userIds}::uuid[]) OR email = ANY(${userEmails}::text[])
+      `.catch(() => []),
     ]);
 
     const profileMap = new Map<string, any>();
@@ -1341,29 +1347,43 @@ export class UsersService {
       list.push(r.role);
       roleMap.set(r.user_id, list);
     }
+    const memberMap = new Map<string, any>();
+    for (const m of membersList) {
+      if (m.user_id) memberMap.set(String(m.user_id), m);
+      if (m.email) memberMap.set(String(m.email).toLowerCase(), m);
+    }
 
     let items = rawUsers.map((u) => {
       const p = profileMap.get(u.id);
       const userRoles = roleMap.get(u.id) || [];
+      const m = memberMap.get(u.id) || (u.email ? memberMap.get(u.email.toLowerCase()) : null);
       if (
         (u.id === '00000000-0000-0000-0000-000000000000' ||
-          u.username === 'admin@connect.vn') &&
+          u.username === 'admin@connect.vn' ||
+          u.email === 'admin@viconnect.vn') &&
         !userRoles.includes('admin')
       ) {
         userRoles.push('admin');
       }
 
+      const rawExec = (m?.executive_role || '').toLowerCase().trim();
+      const executiveRole = rawExec || (userRoles.includes('platform_admin') ? 'quan_tri' : userRoles.includes('admin') ? 'admin' : 'member');
+      const department = m?.department || 'Hội viên ceo1983';
+
       return {
         id: u.id,
         username: u.username,
         email: u.email,
-        name: u.name || p?.display_name || '—',
+        name: u.name || p?.display_name || m?.name || '—',
         avatar_url: u.avatar_url || p?.avatar_url || null,
         email_verified: u.email_verified,
         account_status: p?.account_status || 'active',
         company_name: p?.company_name || null,
         professional_title: p?.professional_title || null,
         roles: userRoles,
+        executiveRole,
+        department,
+        memberCode: m?.code || null,
         created_at: u.created_at,
         updated_at: u.updated_at,
       };
@@ -1415,7 +1435,9 @@ export class UsersService {
     email?: string;
     password?: string;
     name?: string;
-    role?: app_role;
+    role?: string | app_role;
+    executiveRole?: string;
+    department?: string;
     account_status?: string;
   }) {
     if (!data.username || !data.username.trim()) {
@@ -1500,9 +1522,52 @@ export class UsersService {
       UPDATE public.vione_users SET must_change_password = true WHERE id = ${newUser.id}::uuid
     `.catch(() => { });
 
-    if (data.role) {
-      await this.usersRepo.createUserRole(newUser.id, data.role);
+    const rawRole = (data.executiveRole || (typeof data.role === 'string' ? data.role : '') || 'member').toLowerCase().trim();
+    const rawDept = (data.department || 'Hội viên ceo1983').trim();
+
+    let appRoleValue: app_role = 'member';
+    if (rawRole === 'quan_tri' || rawRole === 'platform_admin') {
+      appRoleValue = 'platform_admin' as app_role;
+    } else if (
+      rawRole === 'chu_tich' ||
+      rawRole === 'admin' ||
+      rawRole === 'ban_dieu_hanh' ||
+      rawRole === 'tong_thu_ky' ||
+      rawRole === 'ban_thu_ky' ||
+      rawRole.startsWith('truong_ban_')
+    ) {
+      appRoleValue = 'admin' as app_role;
+    } else if (rawRole.startsWith('thanh_vien_ban_') || rawRole === 'staff') {
+      appRoleValue = 'staff' as app_role;
     }
+
+    await this.usersRepo.createUserRole(newUser.id, appRoleValue);
+
+    // Cập nhật memberships & members
+    const defaultAssoc = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.associations LIMIT 1
+    `.catch(() => []);
+    const assocId = defaultAssoc?.[0]?.id || '00000000-0000-0000-0000-000000000001';
+
+    await this.prisma.$executeRawUnsafe(
+      `
+      INSERT INTO public.memberships (
+        id, user_id, association_id, role, is_default, created_at, updated_at, department, executive_role
+      ) VALUES (
+        gen_random_uuid(), $1::uuid, $2::uuid, $3::app_role, true, NOW(), NOW(), $4, $5
+      )
+      ON CONFLICT (user_id, association_id) DO UPDATE
+      SET role = EXCLUDED.role,
+          executive_role = EXCLUDED.executive_role,
+          department = EXCLUDED.department,
+          updated_at = NOW()
+    `,
+      newUser.id,
+      assocId,
+      appRoleValue,
+      rawDept,
+      rawRole,
+    ).catch(() => {});
 
     return this.getAccountDetails(newUser.id);
   }
@@ -1512,7 +1577,9 @@ export class UsersService {
     data: {
       name?: string;
       email?: string;
-      role?: app_role;
+      role?: string | app_role;
+      executiveRole?: string;
+      department?: string;
       account_status?: string;
     },
   ) {
@@ -1562,20 +1629,88 @@ export class UsersService {
       );
     }
 
-    if (data.role) {
+    const rawRole = (data.executiveRole || (typeof data.role === 'string' ? data.role : '') || '').toLowerCase().trim();
+    const rawDept = (data.department || '').trim();
+
+    if (rawRole || rawDept) {
+      let appRoleValue: app_role = 'member';
+      if (rawRole === 'quan_tri' || rawRole === 'platform_admin') {
+        appRoleValue = 'platform_admin' as app_role;
+      } else if (
+        rawRole === 'chu_tich' ||
+        rawRole === 'admin' ||
+        rawRole === 'ban_dieu_hanh' ||
+        rawRole === 'tong_thu_ky' ||
+        rawRole === 'ban_thu_ky' ||
+        rawRole.startsWith('truong_ban_')
+      ) {
+        appRoleValue = 'admin' as app_role;
+      } else if (rawRole.startsWith('thanh_vien_ban_') || rawRole === 'staff') {
+        appRoleValue = 'staff' as app_role;
+      } else if (data.role && (data.role === 'admin' || data.role === 'member' || data.role === 'platform_admin' || data.role === 'tenant_admin' || data.role === 'staff')) {
+        appRoleValue = data.role as app_role;
+      }
+
       await this.usersRepo.deleteUserRoles(id);
-      await this.usersRepo.createUserRole(id, data.role);
+      await this.usersRepo.createUserRole(id, appRoleValue);
+
+      // Cập nhật bảng members
       await this.prisma
         .$executeRawUnsafe(
           `
         UPDATE public.members
-        SET executive_role = $1, updated_at = NOW()
-        WHERE user_id = $2::uuid OR id = $2::uuid
+        SET executive_role = COALESCE(NULLIF($1, ''), executive_role),
+            department = COALESCE(NULLIF($2, ''), department),
+            name = COALESCE(NULLIF($3, ''), name),
+            email = COALESCE(NULLIF($4, ''), email),
+            updated_at = NOW()
+        WHERE user_id = $5::uuid OR id = $5::uuid OR (email IS NOT NULL AND LOWER(email) = LOWER($6))
       `,
-          data.role,
+          rawRole || null,
+          rawDept || null,
+          data.name || null,
+          data.email || null,
           id,
+          user.email || '',
         )
-        .catch(() => { });
+        .catch(() => {});
+
+      // Cập nhật memberships
+      const defaultAssoc = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.associations LIMIT 1
+      `.catch(() => []);
+      const assocId = defaultAssoc?.[0]?.id || '00000000-0000-0000-0000-000000000001';
+
+      await this.prisma.$executeRawUnsafe(
+        `
+        INSERT INTO public.memberships (
+          id, user_id, association_id, role, is_default, created_at, updated_at, department, executive_role
+        ) VALUES (
+          gen_random_uuid(), $1::uuid, $2::uuid, $3::app_role, true, NOW(), NOW(), $4, $5
+        )
+        ON CONFLICT (user_id, association_id) DO UPDATE
+        SET role = EXCLUDED.role,
+            executive_role = EXCLUDED.executive_role,
+            department = EXCLUDED.department,
+            updated_at = NOW()
+      `,
+        id,
+        assocId,
+        appRoleValue,
+        rawDept || 'Hội viên ceo1983',
+        rawRole || 'member',
+      ).catch(async () => {
+        await this.prisma.$executeRawUnsafe(
+          `
+          UPDATE public.memberships
+          SET executive_role = $1, department = $2, updated_at = NOW()
+          WHERE user_id = $3::uuid
+        `,
+          rawRole || 'member',
+          rawDept || 'Hội viên ceo1983',
+          id,
+        ).catch(() => {});
+      });
     }
 
     return this.getAccountDetails(id);

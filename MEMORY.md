@@ -1,5 +1,85 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 13/11/2026 (v11.41): Khắc Phục Triệt Để Lỗi Phân Quyền CRM: Đồng Bộ Chức Năng Quản Lý Tài Khoản Thứ Hai Tại Giao Diện Hệ Thống (`/account-settings`), Cho Phép Chọn Ban & Role Thành Viên Ban, Cập Nhật Ngay Lập Tức Menu Giao Diện Hệ Thống Theo Ma Trận Quyền RBAC ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
+  - **1. Nguyên Nhân Gốc Rễ Phát Hiện Được**:
+    * **Chức năng quản lý tài khoản thứ hai**: Nằm ở `/account-settings/` (tab "Quản lý người dùng" tại mục Cài đặt tài khoản của hệ thống). Tại đây, trước đó chỉ có 4 role sơ sài (`staff`, `tenant_admin`, `platform_admin`, `viewer`), hoàn toàn thiếu trường "Ban chuyên môn" và không có các role chức danh theo Ban (`thanh_vien_ban_*`, `truong_ban_*`). Khi admin chỉnh sửa thì API backend không nhận diện được role chuyên môn và không cập nhật bảng `members` / `memberships`.
+    * **Lỗi giao diện hệ thống (Sidebar) không thay đổi**:
+      - Trong `Sidebar.tsx`, `currentRoleKey` bị lỗi thứ tự ưu tiên: cờ `isPlatformAdmin` hoặc `isAdmin` đè lên trước các vai trò thành viên ban, đồng thời thiếu case `thanh_vien_ban_su_kien`. Khiến tài khoản dù đã gán vào ban nhưng giao diện Sidebar vẫn giữ nguyên menu của Admin.
+      - Trong `isRouteAllowedByMatrix`, ma trận quyền lưu theo key ban (`xuc_tien`, `truyen_thong`, `thanh_vien`, `tai_chinh`, `thien_nguyen`, `su_kien`, `thu_ky`, `dieu_hanh`), nhưng hàm kiểm tra không có ánh xạ đa chiều alias từ `roleKey` (`thanh_vien_ban_xuc_tien`, v.v.) sang các key ban này, khiến các chức năng chuyên môn bị trả về `false` hoặc rơi vào fallback.
+  - **2. Nâng Cấp Phía Backend (NestJS Core)**:
+    * **File `apps/ceo1983_app_be/src/users/dto/user.dto.ts`**: Bổ sung `role?: string | app_role; executiveRole?: string; department?: string;` vào cả `AdminCreateUserDto` và `AdminUpdateUserDto`.
+    * **File `apps/ceo1983_app_be/src/users/users.service.ts`**:
+      - `adminUpdateUser(id, data)` và `adminCreateUser(data)`: Nhận `department`, `role`, `executiveRole`. Chuẩn hóa an toàn sang PostgreSQL enum `app_role` (`platform_admin`, `admin`, `staff`, `member`), không bao giờ bị lỗi enum type mismatch khi lưu vào `public.user_roles`.
+      - Cập nhật đồng bộ tức thì vào bảng `public.members`: `UPDATE public.members SET executive_role = $1, department = $2, updated_at = NOW()`.
+      - Upsert / update đồng bộ vào bảng `public.memberships`: `role = $1::app_role, executive_role = $2, department = $3`.
+      - Nâng cấp `listUsers`: Tự động join và query `public.members` để trả về đầy đủ `department`, `executiveRole`, `memberCode` cho từng tài khoản.
+  - **3. Nâng Cấp Chức Năng Quản Lý Tài Khoản Hệ Thống (`/account-settings`)**:
+    * **File `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`**:
+      - Thêm dropdown chọn **Ban chuyên môn** (`departmentList`): Ban Điều Hành, Ban Thư Ký, Ban Thành viên, Ban Xúc tiến, Ban Truyền thông, Ban Tài chính, Ban Thiện nguyện, Hội viên ceo1983.
+      - Thêm dropdown chọn **Vai trò / Chức danh theo Ban** động học (`getRolesForDepartment(dept)`): Tự động nạp danh sách role tương ứng chuẩn theo ban được chọn (ví dụ chọn Ban Xúc tiến -> có Trưởng ban Xúc tiến, Thành viên Ban Xúc Tiến TM, Hội viên; chọn Ban Sự Kiện -> có Thành viên Ban Sự Kiện; chọn Ban Truyền thông -> có Trưởng ban Truyền thông, Thành viên Ban Truyền Thông, v.v.).
+      - Thêm cột **Ban chuyên môn** vào Bảng danh sách người dùng với icon và badge phân biệt rõ ràng.
+      - Cột **Vai trò chức danh** hiển thị badge màu chuẩn hóa theo cấp bậc: Tím (Quản trị), Vàng (Lãnh đạo / Trưởng ban), Xanh dương (Thành viên ban chuyên trách), Xám (Hội viên).
+      - Hàm `handleAdminUpdateUser` và `handleAdminCreateUser`: Cập nhật đồng bộ API `/users/:id`, `/members/:id/role-dept`, cập nhật `vba_managed_accounts_v2`, `vba_my_member`, `vba_crm_current_user`, gọi `clearMeCache()`, và bắn đầy đủ các sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed`, `vba_accounts_changed`.
+  - **4. Nâng Cấp Hệ Thống Quyền & Giao Diện Menu Sidebar**:
+    * **File `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`**:
+      - Đảo thứ tự ưu tiên trong `currentRoleKey`: Các vai trò ban chuyên trách (`thanh_vien_ban_*` và `truong_ban_*`) được **ưu tiên hàng đầu**, không để cờ `isPlatformAdmin` hay `isAdmin` đè lên nếu tài khoản đã được phân công vai trò chuyên môn cụ thể.
+      - Bổ sung đầy đủ nhận diện `thanh_vien_ban_su_kien` và các ban chuyên môn khác.
+    * **File `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`**:
+      - Xây dựng hàm `isActionAllowedForRole(actionRoles, roleKey)` ánh xạ alias đa chiều thông minh từ `roleKey` sang các key chuyên môn của ban trong ma trận quyền (`xuc_tien`, `truyen_thong`, `su_kien`, `thanh_vien`, `tai_chinh`, `thien_nguyen`, `dieu_hanh`, `thu_ky`).
+      - Cập nhật `isRouteAllowedByMatrix`: Cấm tuyệt đối các route quản trị hệ thống (`/accounts`, `/permissions`, `/departments`, `/settings`, `/activity`) đối với thành viên ban thường; chỉ hiển thị chính xác các menu thuộc thẩm quyền của Ban đã được phân quyền trên ma trận RBAC.
+    * **File `apps/ceo1983_app_fe/src/hooks/use-role.ts`**:
+      - Ưu tiên nhận diện `rawExecRole` trực tiếp từ profile user và CSDL để cập nhật `srsRole` ngay lập tức.
+  - **5. Kiểm Tra Tính Toàn Vẹn & Tuân Thủ Quy Chuẩn**:
+    * Chạy kiểm tra TypeScript (`npx tsc --noEmit`) tại cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be`: **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.40): Chuẩn Hóa Lại File Excel Đánh Giá Chức Năng `BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` Chia Rõ Rệt App Mobile & Hệ Thống CRM, Liệt Kê Đầy Đủ Chức Năng Cha / Con / Mô Tả Và Để Trống Toàn Bộ Các Cột Đánh Giá Cho Khách Hàng Ghi Lỗi ([NODE-CRM-001] -> [NODE-CRM-024], [NODE-APP-001] -> [NODE-APP-017])**:
+  - **1. Phân Tách Rõ Ràng Giữa App Mobile & Hệ Thống Web CRM**:
+    * **Sheet 1: `TỔNG HỢP TOÀN HỆ THỐNG`**: Có 2 phân khu lớn riêng biệt:
+      - `📱 PHẦN I: ỨNG DỤNG DI ĐỘNG HỘI VIÊN (MOBILE APP - https://ceo1983.viconnect.vn)`
+      - `💻 PHẦN II: CỔNG QUẢN TRỊ HỆ THỐNG (WEB CRM - https://crm.ceo1983.viconnect.vn)`
+    * **Sheet 2: `📱 APP MOBILE HỘI VIÊN`**: Tách riêng toàn bộ 41 chức năng chi tiết của Ứng dụng Di động Hội viên.
+    * **Sheet 3: `💻 HỆ THỐNG WEB CRM`**: Tách riêng toàn bộ 34 chức năng chi tiết của Cổng Quản trị Web CRM.
+  - **2. Điền Đầy Đủ Chức Năng & Để Trống Toàn Bộ Các Cột Đánh Giá**:
+    * Cột A (`STT`), B (`Chức năng cha`), C (`Chức năng con`), D (`Mô tả chi tiết`): Điền đầy đủ, chuẩn xác tên gọi và mô tả chi tiết của từng chức năng.
+    * Các cột còn lại: Cột E (`Trạng thái`), F (`Người thực hiện`), G (`Người đánh giá`), H (`Nội dung đánh giá (Lỗi / Góp ý)`), I (`Người tiếp nhận sửa`), J (`Giải pháp`), K (`Trạng thái sau tiếp nhận`): **ĐỂ TRỐNG 100%** để khách hàng, hội viên và người trải nghiệm tự điền tên người đánh giá, mô tả lỗi phát sinh hoặc ý kiến góp ý.
+    * Cài đặt Data Validation Dropdown (`Khởi tạo,Đang xử lý,Đã xong`) cho cột E và K để tiện thao tác.
+  - **3. Lưu Trữ & Đồng Bộ Hóa**:
+    * File gốc: `document/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx`
+    * Đồng bộ sang: `apps/ceo1983_app_fe/public/docs/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx`
+  - **4. Tuân Thủ Quy Chuẩn**:
+    * Giữ nguyên mã nguồn sạch lỗi, không commit/push tự động theo Rule 1.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.39): Chuẩn Hóa Toàn Diện Bộ Tài Liệu Hướng Dẫn Sử Dụng Bám Sát Label Giao Diện Thực Tế, Bỏ Theme Tối & Bản Đồ Danh Bạ Trên App, Gỡ Landing Web & Xóa Ảnh 404 Trên CRM, Chụp Lại Trọn Bộ Ảnh Mới Cho App & CRM, Kết Xuất Đầy Đủ Cả Bản Word (.docx) & PDF (.pdf) ([NODE-CRM-001] - [NODE-CRM-024], [NODE-APP-001] - [NODE-APP-017])**:
+  - **1. Chuẩn Hóa Câu Từ Tài Liệu Hướng Dẫn Bám Sát Label Giao Diện**:
+    * Biên tập lại toàn bộ 2 tài liệu `HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md` và `HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`.
+    * Áp dụng cấu trúc chuẩn mực: "Tại màn [Tên màn hình], chọn chức năng [Tên chức năng] -> Bước 1: Chọn nút [Tên nút], nhập [Tên trường 1], [Tên trường 2] -> Bước 2: Bấm nút [Tên nút] -> Kết quả hiển thị".
+    * Loại bỏ 100% các từ ngữ hoa mỹ, khẩu hiệu văn vẻ, triết lý rườm rà. Bất kỳ người dùng nào cũng có thể đọc và thao tác chuẩn xác ngay lập tức.
+  - **2. Tinh Gọn & Chuẩn Hóa Riêng Cho Tài Liệu Ứng Dụng Di Động (App Mobile)**:
+    * Bỏ hoàn toàn phần Theme tối (Dark Mode) và xóa tệp ảnh `01_d_app_theme_dark_mode.png`.
+    * Bỏ hoàn toàn phần Bản đồ danh bạ CEO 1983 (Radar/Map GPS), chuyển phân hệ `[NODE-APP-004]` thành Danh bạ hội viên thuần túy tra cứu theo Tên, Công ty, Ngành nghề và liên hệ trực tiếp.
+    * Bổ sung đầy đủ các chức năng con: Màn thông báo (`01_b_app_notifications_center.png`), Cài đặt 4 màu chủ đề Brandbook (`01_c_app_theme_switcher_modal.png`), Nhắn tin 1-on-1 có menu ngữ cảnh thông minh không che header (`10_b_app_messages_chat_1on1.png`), Vé điện tử và QR điểm danh (`08_b_app_event_ticket_qr_modal.png`), Luồng Quên mật khẩu.
+  - **3. Tinh Gọn & Nâng Cấp Riêng Cho Tài Liệu Cổng Quản Trị Web CRM**:
+    * Gỡ bỏ hoàn toàn phân hệ Landing Web (`NODE-CRM-023` cũ và ảnh `29_crm_landing_webs.png`).
+    * Dọn sạch các ảnh bị 404 (`04_crm_member_detail_drawer.png`, `08_crm_account_role_dept_modal.png`), xác nhận 0 ảnh 404.
+    * Bổ sung chi tiết luồng Sự Kiện: Thiết lập sơ đồ chỗ ngồi (`11_d_crm_event_seating_setup.png`), Quản lý vé và điểm danh check-in (`11_c_crm_event_registrations_tickets.png`), Event Detail Hub (`11_b_crm_event_detail_hub.png`).
+    * Bổ sung chi tiết luồng Mẫu thông báo, thư mời & gửi tin nhắn Zalo ZBS theo file Excel danh sách khách mời (`30_crm_templates_hub.png`).
+    * Bổ sung bộ ảnh minh họa giao diện Responsive trên đa thiết bị: Desktop 1440px (`responsive_crm_desktop_1440.png`), Tablet 1024px (`responsive_crm_tablet_1024.png`), Mobile 390px (`responsive_crm_mobile_390.png`).
+  - **4. Chụp Mới Toàn Bộ Ảnh App & CRM Phản Ánh Giao Diện Hiện Hành**:
+    * Chụp lại toàn bộ ảnh App (`document/images/guide_app/*.png`) sạch sẽ, không bị popup giới thiệu/onboarding che khuất.
+    * Chụp lại toàn bộ ảnh CRM (`document/images/guide_crm/*.png`) phản ánh đúng giao diện phẳng không gradient, thanh công cụ Zoom In/Out & Granular Tabs Recharts Brush tại Thống kê.
+  - **5. Kết Xuất Đồng Bộ Cả 2 Định Dạng Bắt Buộc: Word (.docx) & PDF (.pdf)**:
+    * Kết xuất 2 tệp Word bằng thư viện `docx` chính thức:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.docx` (6.55 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.docx` (1.95 MB)
+    * Kết xuất 2 tệp PDF chất lượng cao chuẩn in ấn A4 bằng Playwright:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (7.26 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.48 MB)
+    * Đồng bộ toàn bộ 4 tệp vào thư mục `apps/ceo1983_app_fe/public/docs/` để tải trực tiếp từ web/app.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Kiểm tra `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ an toàn tại local.
+
 - **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
   - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
     * **Backend `AnalyticsService.getBuckets`**: Hỗ trợ đầy đủ các lát cắt con: `month_days` (28-31 ngày), `month_weeks` (5 tuần), `quarter_weeks` (13 tuần), `quarter_months` (3 tháng), `year_months` (12 tháng), `year_quarters` (4 quý) từ PostgreSQL.
@@ -772,6 +852,86 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.41): Khắc Phục Triệt Để Lỗi Phân Quyền CRM: Đồng Bộ Chức Năng Quản Lý Tài Khoản Thứ Hai Tại Giao Diện Hệ Thống (`/account-settings`), Cho Phép Chọn Ban & Role Thành Viên Ban, Cập Nhật Ngay Lập Tức Menu Giao Diện Hệ Thống Theo Ma Trận Quyền RBAC ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
+  - **1. Nguyên Nhân Gốc Rễ Phát Hiện Được**:
+    * **Chức năng quản lý tài khoản thứ hai**: Nằm ở `/account-settings/` (tab "Quản lý người dùng" tại mục Cài đặt tài khoản của hệ thống). Tại đây, trước đó chỉ có 4 role sơ sài (`staff`, `tenant_admin`, `platform_admin`, `viewer`), hoàn toàn thiếu trường "Ban chuyên môn" và không có các role chức danh theo Ban (`thanh_vien_ban_*`, `truong_ban_*`). Khi admin chỉnh sửa thì API backend không nhận diện được role chuyên môn và không cập nhật bảng `members` / `memberships`.
+    * **Lỗi giao diện hệ thống (Sidebar) không thay đổi**:
+      - Trong `Sidebar.tsx`, `currentRoleKey` bị lỗi thứ tự ưu tiên: cờ `isPlatformAdmin` hoặc `isAdmin` đè lên trước các vai trò thành viên ban, đồng thời thiếu case `thanh_vien_ban_su_kien`. Khiến tài khoản dù đã gán vào ban nhưng giao diện Sidebar vẫn giữ nguyên menu của Admin.
+      - Trong `isRouteAllowedByMatrix`, ma trận quyền lưu theo key ban (`xuc_tien`, `truyen_thong`, `thanh_vien`, `tai_chinh`, `thien_nguyen`, `su_kien`, `thu_ky`, `dieu_hanh`), nhưng hàm kiểm tra không có ánh xạ đa chiều alias từ `roleKey` (`thanh_vien_ban_xuc_tien`, v.v.) sang các key ban này, khiến các chức năng chuyên môn bị trả về `false` hoặc rơi vào fallback.
+  - **2. Nâng Cấp Phía Backend (NestJS Core)**:
+    * **File `apps/ceo1983_app_be/src/users/dto/user.dto.ts`**: Bổ sung `role?: string | app_role; executiveRole?: string; department?: string;` vào cả `AdminCreateUserDto` và `AdminUpdateUserDto`.
+    * **File `apps/ceo1983_app_be/src/users/users.service.ts`**:
+      - `adminUpdateUser(id, data)` và `adminCreateUser(data)`: Nhận `department`, `role`, `executiveRole`. Chuẩn hóa an toàn sang PostgreSQL enum `app_role` (`platform_admin`, `admin`, `staff`, `member`), không bao giờ bị lỗi enum type mismatch khi lưu vào `public.user_roles`.
+      - Cập nhật đồng bộ tức thì vào bảng `public.members`: `UPDATE public.members SET executive_role = $1, department = $2, updated_at = NOW()`.
+      - Upsert / update đồng bộ vào bảng `public.memberships`: `role = $1::app_role, executive_role = $2, department = $3`.
+      - Nâng cấp `listUsers`: Tự động join và query `public.members` để trả về đầy đủ `department`, `executiveRole`, `memberCode` cho từng tài khoản.
+  - **3. Nâng Cấp Chức Năng Quản Lý Tài Khoản Hệ Thống (`/account-settings`)**:
+    * **File `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`**:
+      - Thêm dropdown chọn **Ban chuyên môn** (`departmentList`): Ban Điều Hành, Ban Thư Ký, Ban Thành viên, Ban Xúc tiến, Ban Truyền thông, Ban Tài chính, Ban Thiện nguyện, Hội viên ceo1983.
+      - Thêm dropdown chọn **Vai trò / Chức danh theo Ban** động học (`getRolesForDepartment(dept)`): Tự động nạp danh sách role tương ứng chuẩn theo ban được chọn (ví dụ chọn Ban Xúc tiến -> có Trưởng ban Xúc tiến, Thành viên Ban Xúc Tiến TM, Hội viên; chọn Ban Sự Kiện -> có Thành viên Ban Sự Kiện; chọn Ban Truyền thông -> có Trưởng ban Truyền thông, Thành viên Ban Truyền Thông, v.v.).
+      - Thêm cột **Ban chuyên môn** vào Bảng danh sách người dùng với icon và badge phân biệt rõ ràng.
+      - Cột **Vai trò chức danh** hiển thị badge màu chuẩn hóa theo cấp bậc: Tím (Quản trị), Vàng (Lãnh đạo / Trưởng ban), Xanh dương (Thành viên ban chuyên trách), Xám (Hội viên).
+      - Hàm `handleAdminUpdateUser` và `handleAdminCreateUser`: Cập nhật đồng bộ API `/users/:id`, `/members/:id/role-dept`, cập nhật `vba_managed_accounts_v2`, `vba_my_member`, `vba_crm_current_user`, gọi `clearMeCache()`, và bắn đầy đủ các sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed`, `vba_accounts_changed`.
+  - **4. Nâng Cấp Hệ Thống Quyền & Giao Diện Menu Sidebar**:
+    * **File `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`**:
+      - Đảo thứ tự ưu tiên trong `currentRoleKey`: Các vai trò ban chuyên trách (`thanh_vien_ban_*` và `truong_ban_*`) được **ưu tiên hàng đầu**, không để cờ `isPlatformAdmin` hay `isAdmin` đè lên nếu tài khoản đã được phân công vai trò chuyên môn cụ thể.
+      - Bổ sung đầy đủ nhận diện `thanh_vien_ban_su_kien` và các ban chuyên môn khác.
+    * **File `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`**:
+      - Xây dựng hàm `isActionAllowedForRole(actionRoles, roleKey)` ánh xạ alias đa chiều thông minh từ `roleKey` sang các key chuyên môn của ban trong ma trận quyền (`xuc_tien`, `truyen_thong`, `su_kien`, `thanh_vien`, `tai_chinh`, `thien_nguyen`, `dieu_hanh`, `thu_ky`).
+      - Cập nhật `isRouteAllowedByMatrix`: Cấm tuyệt đối các route quản trị hệ thống (`/accounts`, `/permissions`, `/departments`, `/settings`, `/activity`) đối với thành viên ban thường; chỉ hiển thị chính xác các menu thuộc thẩm quyền của Ban đã được phân quyền trên ma trận RBAC.
+    * **File `apps/ceo1983_app_fe/src/hooks/use-role.ts`**:
+      - Ưu tiên nhận diện `rawExecRole` trực tiếp từ profile user và CSDL để cập nhật `srsRole` ngay lập tức.
+  - **5. Kiểm Tra Tính Toàn Vẹn & Tuân Thủ Quy Chuẩn**:
+    * Chạy kiểm tra TypeScript (`npx tsc --noEmit`) tại cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be`: **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.40): Chuẩn Hóa Lại File Excel Đánh Giá Chức Năng `BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` Chia Rõ Rệt App Mobile & Hệ Thống CRM, Liệt Kê Đầy Đủ Chức Năng Cha / Con / Mô Tả Và Để Trống Toàn Bộ Các Cột Đánh Giá Cho Khách Hàng Ghi Lỗi ([NODE-CRM-001] -> [NODE-CRM-024], [NODE-APP-001] -> [NODE-APP-017])**:
+  - **1. Phân Tách Rõ Ràng Giữa App Mobile & Hệ Thống Web CRM**:
+    * **Sheet 1: `TỔNG HỢP TOÀN HỆ THỐNG`**: Có 2 phân khu lớn riêng biệt:
+      - `📱 PHẦN I: ỨNG DỤNG DI ĐỘNG HỘI VIÊN (MOBILE APP - https://ceo1983.viconnect.vn)`
+      - `💻 PHẦN II: CỔNG QUẢN TRỊ HỆ THỐNG (WEB CRM - https://crm.ceo1983.viconnect.vn)`
+    * **Sheet 2: `📱 APP MOBILE HỘI VIÊN`**: Tách riêng toàn bộ 41 chức năng chi tiết của Ứng dụng Di động Hội viên.
+    * **Sheet 3: `💻 HỆ THỐNG WEB CRM`**: Tách riêng toàn bộ 34 chức năng chi tiết của Cổng Quản trị Web CRM.
+  - **2. Điền Đầy Đủ Chức Năng & Để Trống Toàn Bộ Các Cột Đánh Giá**:
+    * Cột A (`STT`), B (`Chức năng cha`), C (`Chức năng con`), D (`Mô tả chi tiết`): Điền đầy đủ, chuẩn xác tên gọi và mô tả chi tiết của từng chức năng.
+    * Các cột còn lại: Cột E (`Trạng thái`), F (`Người thực hiện`), G (`Người đánh giá`), H (`Nội dung đánh giá (Lỗi / Góp ý)`), I (`Người tiếp nhận sửa`), J (`Giải pháp`), K (`Trạng thái sau tiếp nhận`): **ĐỂ TRỐNG 100%** để khách hàng, hội viên và người trải nghiệm tự điền tên người đánh giá, mô tả lỗi phát sinh hoặc ý kiến góp ý.
+    * Cài đặt Data Validation Dropdown (`Khởi tạo,Đang xử lý,Đã xong`) cho cột E và K để tiện thao tác.
+  - **3. Lưu Trữ & Đồng Bộ Hóa**:
+    * File gốc: `document/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx`
+    * Đồng bộ sang: `apps/ceo1983_app_fe/public/docs/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx`
+  - **4. Tuân Thủ Quy Chuẩn**:
+    * Giữ nguyên mã nguồn sạch lỗi, không commit/push tự động theo Rule 1.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.39): Chuẩn Hóa Toàn Diện Bộ Tài Liệu Hướng Dẫn Sử Dụng Bám Sát Label Giao Diện Thực Tế, Bỏ Theme Tối & Bản Đồ Danh Bạ Trên App, Gỡ Landing Web & Xóa Ảnh 404 Trên CRM, Chụp Lại Trọn Bộ Ảnh Mới Cho App & CRM, Kết Xuất Đầy Đủ Cả Bản Word (.docx) & PDF (.pdf) ([NODE-CRM-001] - [NODE-CRM-024], [NODE-APP-001] - [NODE-APP-017])**:
+  - **1. Chuẩn Hóa Câu Từ Tài Liệu Hướng Dẫn Bám Sát Label Giao Diện**:
+    * Biên tập lại toàn bộ 2 tài liệu `HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md` và `HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`.
+    * Áp dụng cấu trúc chuẩn mực: "Tại màn [Tên màn hình], chọn chức năng [Tên chức năng] -> Bước 1: Chọn nút [Tên nút], nhập [Tên trường 1], [Tên trường 2] -> Bước 2: Bấm nút [Tên nút] -> Kết quả hiển thị".
+    * Loại bỏ 100% các từ ngữ hoa mỹ, khẩu hiệu văn vẻ, triết lý rườm rà. Bất kỳ người dùng nào cũng có thể đọc và thao tác chuẩn xác ngay lập tức.
+  - **2. Tinh Gọn & Chuẩn Hóa Riêng Cho Tài Liệu Ứng Dụng Di Động (App Mobile)**:
+    * Bỏ hoàn toàn phần Theme tối (Dark Mode) và xóa tệp ảnh `01_d_app_theme_dark_mode.png`.
+    * Bỏ hoàn toàn phần Bản đồ danh bạ CEO 1983 (Radar/Map GPS), chuyển phân hệ `[NODE-APP-004]` thành Danh bạ hội viên thuần túy tra cứu theo Tên, Công ty, Ngành nghề và liên hệ trực tiếp.
+    * Bổ sung đầy đủ các chức năng con: Màn thông báo (`01_b_app_notifications_center.png`), Cài đặt 4 màu chủ đề Brandbook (`01_c_app_theme_switcher_modal.png`), Nhắn tin 1-on-1 có menu ngữ cảnh thông minh không che header (`10_b_app_messages_chat_1on1.png`), Vé điện tử và QR điểm danh (`08_b_app_event_ticket_qr_modal.png`), Luồng Quên mật khẩu.
+  - **3. Tinh Gọn & Nâng Cấp Riêng Cho Tài Liệu Cổng Quản Trị Web CRM**:
+    * Gỡ bỏ hoàn toàn phân hệ Landing Web (`NODE-CRM-023` cũ và ảnh `29_crm_landing_webs.png`).
+    * Dọn sạch các ảnh bị 404 (`04_crm_member_detail_drawer.png`, `08_crm_account_role_dept_modal.png`), xác nhận 0 ảnh 404.
+    * Bổ sung chi tiết luồng Sự Kiện: Thiết lập sơ đồ chỗ ngồi (`11_d_crm_event_seating_setup.png`), Quản lý vé và điểm danh check-in (`11_c_crm_event_registrations_tickets.png`), Event Detail Hub (`11_b_crm_event_detail_hub.png`).
+    * Bổ sung chi tiết luồng Mẫu thông báo, thư mời & gửi tin nhắn Zalo ZBS theo file Excel danh sách khách mời (`30_crm_templates_hub.png`).
+    * Bổ sung bộ ảnh minh họa giao diện Responsive trên đa thiết bị: Desktop 1440px (`responsive_crm_desktop_1440.png`), Tablet 1024px (`responsive_crm_tablet_1024.png`), Mobile 390px (`responsive_crm_mobile_390.png`).
+  - **4. Chụp Mới Toàn Bộ Ảnh App & CRM Phản Ánh Giao Diện Hiện Hành**:
+    * Chụp lại toàn bộ ảnh App (`document/images/guide_app/*.png`) sạch sẽ, không bị popup giới thiệu/onboarding che khuất.
+    * Chụp lại toàn bộ ảnh CRM (`document/images/guide_crm/*.png`) phản ánh đúng giao diện phẳng không gradient, thanh công cụ Zoom In/Out & Granular Tabs Recharts Brush tại Thống kê.
+  - **5. Kết Xuất Đồng Bộ Cả 2 Định Dạng Bắt Buộc: Word (.docx) & PDF (.pdf)**:
+    * Kết xuất 2 tệp Word bằng thư viện `docx` chính thức:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.docx` (6.55 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.docx` (1.95 MB)
+    * Kết xuất 2 tệp PDF chất lượng cao chuẩn in ấn A4 bằng Playwright:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (7.26 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.48 MB)
+    * Đồng bộ toàn bộ 4 tệp vào thư mục `apps/ceo1983_app_fe/public/docs/` để tải trực tiếp từ web/app.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Kiểm tra `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ an toàn tại local.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
   - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:
@@ -2827,6 +2987,86 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 13/11/2026 (v11.41): Khắc Phục Triệt Để Lỗi Phân Quyền CRM: Đồng Bộ Chức Năng Quản Lý Tài Khoản Thứ Hai Tại Giao Diện Hệ Thống (`/account-settings`), Cho Phép Chọn Ban & Role Thành Viên Ban, Cập Nhật Ngay Lập Tức Menu Giao Diện Hệ Thống Theo Ma Trận Quyền RBAC ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
+  - **1. Nguyên Nhân Gốc Rễ Phát Hiện Được**:
+    * **Chức năng quản lý tài khoản thứ hai**: Nằm ở `/account-settings/` (tab "Quản lý người dùng" tại mục Cài đặt tài khoản của hệ thống). Tại đây, trước đó chỉ có 4 role sơ sài (`staff`, `tenant_admin`, `platform_admin`, `viewer`), hoàn toàn thiếu trường "Ban chuyên môn" và không có các role chức danh theo Ban (`thanh_vien_ban_*`, `truong_ban_*`). Khi admin chỉnh sửa thì API backend không nhận diện được role chuyên môn và không cập nhật bảng `members` / `memberships`.
+    * **Lỗi giao diện hệ thống (Sidebar) không thay đổi**:
+      - Trong `Sidebar.tsx`, `currentRoleKey` bị lỗi thứ tự ưu tiên: cờ `isPlatformAdmin` hoặc `isAdmin` đè lên trước các vai trò thành viên ban, đồng thời thiếu case `thanh_vien_ban_su_kien`. Khiến tài khoản dù đã gán vào ban nhưng giao diện Sidebar vẫn giữ nguyên menu của Admin.
+      - Trong `isRouteAllowedByMatrix`, ma trận quyền lưu theo key ban (`xuc_tien`, `truyen_thong`, `thanh_vien`, `tai_chinh`, `thien_nguyen`, `su_kien`, `thu_ky`, `dieu_hanh`), nhưng hàm kiểm tra không có ánh xạ đa chiều alias từ `roleKey` (`thanh_vien_ban_xuc_tien`, v.v.) sang các key ban này, khiến các chức năng chuyên môn bị trả về `false` hoặc rơi vào fallback.
+  - **2. Nâng Cấp Phía Backend (NestJS Core)**:
+    * **File `apps/ceo1983_app_be/src/users/dto/user.dto.ts`**: Bổ sung `role?: string | app_role; executiveRole?: string; department?: string;` vào cả `AdminCreateUserDto` và `AdminUpdateUserDto`.
+    * **File `apps/ceo1983_app_be/src/users/users.service.ts`**:
+      - `adminUpdateUser(id, data)` và `adminCreateUser(data)`: Nhận `department`, `role`, `executiveRole`. Chuẩn hóa an toàn sang PostgreSQL enum `app_role` (`platform_admin`, `admin`, `staff`, `member`), không bao giờ bị lỗi enum type mismatch khi lưu vào `public.user_roles`.
+      - Cập nhật đồng bộ tức thì vào bảng `public.members`: `UPDATE public.members SET executive_role = $1, department = $2, updated_at = NOW()`.
+      - Upsert / update đồng bộ vào bảng `public.memberships`: `role = $1::app_role, executive_role = $2, department = $3`.
+      - Nâng cấp `listUsers`: Tự động join và query `public.members` để trả về đầy đủ `department`, `executiveRole`, `memberCode` cho từng tài khoản.
+  - **3. Nâng Cấp Chức Năng Quản Lý Tài Khoản Hệ Thống (`/account-settings`)**:
+    * **File `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`**:
+      - Thêm dropdown chọn **Ban chuyên môn** (`departmentList`): Ban Điều Hành, Ban Thư Ký, Ban Thành viên, Ban Xúc tiến, Ban Truyền thông, Ban Tài chính, Ban Thiện nguyện, Hội viên ceo1983.
+      - Thêm dropdown chọn **Vai trò / Chức danh theo Ban** động học (`getRolesForDepartment(dept)`): Tự động nạp danh sách role tương ứng chuẩn theo ban được chọn (ví dụ chọn Ban Xúc tiến -> có Trưởng ban Xúc tiến, Thành viên Ban Xúc Tiến TM, Hội viên; chọn Ban Sự Kiện -> có Thành viên Ban Sự Kiện; chọn Ban Truyền thông -> có Trưởng ban Truyền thông, Thành viên Ban Truyền Thông, v.v.).
+      - Thêm cột **Ban chuyên môn** vào Bảng danh sách người dùng với icon và badge phân biệt rõ ràng.
+      - Cột **Vai trò chức danh** hiển thị badge màu chuẩn hóa theo cấp bậc: Tím (Quản trị), Vàng (Lãnh đạo / Trưởng ban), Xanh dương (Thành viên ban chuyên trách), Xám (Hội viên).
+      - Hàm `handleAdminUpdateUser` và `handleAdminCreateUser`: Cập nhật đồng bộ API `/users/:id`, `/members/:id/role-dept`, cập nhật `vba_managed_accounts_v2`, `vba_my_member`, `vba_crm_current_user`, gọi `clearMeCache()`, và bắn đầy đủ các sự kiện `role-changed`, `crm_permissions_updated`, `vba_auth_changed`, `vba_accounts_changed`.
+  - **4. Nâng Cấp Hệ Thống Quyền & Giao Diện Menu Sidebar**:
+    * **File `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`**:
+      - Đảo thứ tự ưu tiên trong `currentRoleKey`: Các vai trò ban chuyên trách (`thanh_vien_ban_*` và `truong_ban_*`) được **ưu tiên hàng đầu**, không để cờ `isPlatformAdmin` hay `isAdmin` đè lên nếu tài khoản đã được phân công vai trò chuyên môn cụ thể.
+      - Bổ sung đầy đủ nhận diện `thanh_vien_ban_su_kien` và các ban chuyên môn khác.
+    * **File `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`**:
+      - Xây dựng hàm `isActionAllowedForRole(actionRoles, roleKey)` ánh xạ alias đa chiều thông minh từ `roleKey` sang các key chuyên môn của ban trong ma trận quyền (`xuc_tien`, `truyen_thong`, `su_kien`, `thanh_vien`, `tai_chinh`, `thien_nguyen`, `dieu_hanh`, `thu_ky`).
+      - Cập nhật `isRouteAllowedByMatrix`: Cấm tuyệt đối các route quản trị hệ thống (`/accounts`, `/permissions`, `/departments`, `/settings`, `/activity`) đối với thành viên ban thường; chỉ hiển thị chính xác các menu thuộc thẩm quyền của Ban đã được phân quyền trên ma trận RBAC.
+    * **File `apps/ceo1983_app_fe/src/hooks/use-role.ts`**:
+      - Ưu tiên nhận diện `rawExecRole` trực tiếp từ profile user và CSDL để cập nhật `srsRole` ngay lập tức.
+  - **5. Kiểm Tra Tính Toàn Vẹn & Tuân Thủ Quy Chuẩn**:
+    * Chạy kiểm tra TypeScript (`npx tsc --noEmit`) tại cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be`: **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu an toàn tại local.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.40): Chuẩn Hóa Lại File Excel Đánh Giá Chức Năng `BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx` Chia Rõ Rệt App Mobile & Hệ Thống CRM, Liệt Kê Đầy Đủ Chức Năng Cha / Con / Mô Tả Và Để Trống Toàn Bộ Các Cột Đánh Giá Cho Khách Hàng Ghi Lỗi ([NODE-CRM-001] -> [NODE-CRM-024], [NODE-APP-001] -> [NODE-APP-017])**:
+  - **1. Phân Tách Rõ Ràng Giữa App Mobile & Hệ Thống Web CRM**:
+    * **Sheet 1: `TỔNG HỢP TOÀN HỆ THỐNG`**: Có 2 phân khu lớn riêng biệt:
+      - `📱 PHẦN I: ỨNG DỤNG DI ĐỘNG HỘI VIÊN (MOBILE APP - https://ceo1983.viconnect.vn)`
+      - `💻 PHẦN II: CỔNG QUẢN TRỊ HỆ THỐNG (WEB CRM - https://crm.ceo1983.viconnect.vn)`
+    * **Sheet 2: `📱 APP MOBILE HỘI VIÊN`**: Tách riêng toàn bộ 41 chức năng chi tiết của Ứng dụng Di động Hội viên.
+    * **Sheet 3: `💻 HỆ THỐNG WEB CRM`**: Tách riêng toàn bộ 34 chức năng chi tiết của Cổng Quản trị Web CRM.
+  - **2. Điền Đầy Đủ Chức Năng & Để Trống Toàn Bộ Các Cột Đánh Giá**:
+    * Cột A (`STT`), B (`Chức năng cha`), C (`Chức năng con`), D (`Mô tả chi tiết`): Điền đầy đủ, chuẩn xác tên gọi và mô tả chi tiết của từng chức năng.
+    * Các cột còn lại: Cột E (`Trạng thái`), F (`Người thực hiện`), G (`Người đánh giá`), H (`Nội dung đánh giá (Lỗi / Góp ý)`), I (`Người tiếp nhận sửa`), J (`Giải pháp`), K (`Trạng thái sau tiếp nhận`): **ĐỂ TRỐNG 100%** để khách hàng, hội viên và người trải nghiệm tự điền tên người đánh giá, mô tả lỗi phát sinh hoặc ý kiến góp ý.
+    * Cài đặt Data Validation Dropdown (`Khởi tạo,Đang xử lý,Đã xong`) cho cột E và K để tiện thao tác.
+  - **3. Lưu Trữ & Đồng Bộ Hóa**:
+    * File gốc: `document/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx`
+    * Đồng bộ sang: `apps/ceo1983_app_fe/public/docs/BANG_DANH_GIA_VA_THEO_DOI_CHUC_NANG_CEO1983.xlsx`
+  - **4. Tuân Thủ Quy Chuẩn**:
+    * Giữ nguyên mã nguồn sạch lỗi, không commit/push tự động theo Rule 1.
+
+- **Bản cập nhật ngày 13/11/2026 (v11.39): Chuẩn Hóa Toàn Diện Bộ Tài Liệu Hướng Dẫn Sử Dụng Bám Sát Label Giao Diện Thực Tế, Bỏ Theme Tối & Bản Đồ Danh Bạ Trên App, Gỡ Landing Web & Xóa Ảnh 404 Trên CRM, Chụp Lại Trọn Bộ Ảnh Mới Cho App & CRM, Kết Xuất Đầy Đủ Cả Bản Word (.docx) & PDF (.pdf) ([NODE-CRM-001] - [NODE-CRM-024], [NODE-APP-001] - [NODE-APP-017])**:
+  - **1. Chuẩn Hóa Câu Từ Tài Liệu Hướng Dẫn Bám Sát Label Giao Diện**:
+    * Biên tập lại toàn bộ 2 tài liệu `HUONG_DAN_SU_DUNG_APP_MOBILE_CHI_TIET.md` và `HUONG_DAN_SU_DUNG_WEB_CRM_CHI_TIET.md`.
+    * Áp dụng cấu trúc chuẩn mực: "Tại màn [Tên màn hình], chọn chức năng [Tên chức năng] -> Bước 1: Chọn nút [Tên nút], nhập [Tên trường 1], [Tên trường 2] -> Bước 2: Bấm nút [Tên nút] -> Kết quả hiển thị".
+    * Loại bỏ 100% các từ ngữ hoa mỹ, khẩu hiệu văn vẻ, triết lý rườm rà. Bất kỳ người dùng nào cũng có thể đọc và thao tác chuẩn xác ngay lập tức.
+  - **2. Tinh Gọn & Chuẩn Hóa Riêng Cho Tài Liệu Ứng Dụng Di Động (App Mobile)**:
+    * Bỏ hoàn toàn phần Theme tối (Dark Mode) và xóa tệp ảnh `01_d_app_theme_dark_mode.png`.
+    * Bỏ hoàn toàn phần Bản đồ danh bạ CEO 1983 (Radar/Map GPS), chuyển phân hệ `[NODE-APP-004]` thành Danh bạ hội viên thuần túy tra cứu theo Tên, Công ty, Ngành nghề và liên hệ trực tiếp.
+    * Bổ sung đầy đủ các chức năng con: Màn thông báo (`01_b_app_notifications_center.png`), Cài đặt 4 màu chủ đề Brandbook (`01_c_app_theme_switcher_modal.png`), Nhắn tin 1-on-1 có menu ngữ cảnh thông minh không che header (`10_b_app_messages_chat_1on1.png`), Vé điện tử và QR điểm danh (`08_b_app_event_ticket_qr_modal.png`), Luồng Quên mật khẩu.
+  - **3. Tinh Gọn & Nâng Cấp Riêng Cho Tài Liệu Cổng Quản Trị Web CRM**:
+    * Gỡ bỏ hoàn toàn phân hệ Landing Web (`NODE-CRM-023` cũ và ảnh `29_crm_landing_webs.png`).
+    * Dọn sạch các ảnh bị 404 (`04_crm_member_detail_drawer.png`, `08_crm_account_role_dept_modal.png`), xác nhận 0 ảnh 404.
+    * Bổ sung chi tiết luồng Sự Kiện: Thiết lập sơ đồ chỗ ngồi (`11_d_crm_event_seating_setup.png`), Quản lý vé và điểm danh check-in (`11_c_crm_event_registrations_tickets.png`), Event Detail Hub (`11_b_crm_event_detail_hub.png`).
+    * Bổ sung chi tiết luồng Mẫu thông báo, thư mời & gửi tin nhắn Zalo ZBS theo file Excel danh sách khách mời (`30_crm_templates_hub.png`).
+    * Bổ sung bộ ảnh minh họa giao diện Responsive trên đa thiết bị: Desktop 1440px (`responsive_crm_desktop_1440.png`), Tablet 1024px (`responsive_crm_tablet_1024.png`), Mobile 390px (`responsive_crm_mobile_390.png`).
+  - **4. Chụp Mới Toàn Bộ Ảnh App & CRM Phản Ánh Giao Diện Hiện Hành**:
+    * Chụp lại toàn bộ ảnh App (`document/images/guide_app/*.png`) sạch sẽ, không bị popup giới thiệu/onboarding che khuất.
+    * Chụp lại toàn bộ ảnh CRM (`document/images/guide_crm/*.png`) phản ánh đúng giao diện phẳng không gradient, thanh công cụ Zoom In/Out & Granular Tabs Recharts Brush tại Thống kê.
+  - **5. Kết Xuất Đồng Bộ Cả 2 Định Dạng Bắt Buộc: Word (.docx) & PDF (.pdf)**:
+    * Kết xuất 2 tệp Word bằng thư viện `docx` chính thức:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.docx` (6.55 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.docx` (1.95 MB)
+    * Kết xuất 2 tệp PDF chất lượng cao chuẩn in ấn A4 bằng Playwright:
+      - `document/HUONG_DAN_SU_DUNG_WEB_CRM_CEO1983.pdf` (7.26 MB)
+      - `document/HUONG_DAN_SU_DUNG_APP_MOBILE_CEO1983.pdf` (2.48 MB)
+    * Đồng bộ toàn bộ 4 tệp vào thư mục `apps/ceo1983_app_fe/public/docs/` để tải trực tiếp từ web/app.
+  - **6. Kiểm Tra Code & Tuân Thủ Quy Chuẩn**:
+    * Kiểm tra `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` đạt **Exit code 0 (0 errors)**.
+    * Tuân thủ nghiêm ngặt Rule 1: Tuyệt đối không tự ý chạy `git push` hay `git commit`. Mọi thay đổi lưu trữ an toàn tại local.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.38): Đồng Bộ Thống Kê Real Data Granular Đầy Đủ Ngày/Tuần/Tháng/Quý/Năm Kèm Zoom & Vuốt Ngang Trên Mobile App & CRM, Tích Hợp Zalo ZBS Bulk API Từ File Excel Khách Mời, Khắc Phục Triệt Để Popup Tin Nhắn Chạm Header, Tối Ưu Safe Area Notch & Dọn Khoảng Trống Footer App, Xuất Bảng Excel Đánh Giá 47 Functional Nodes ([NODE-CRM-002], [NODE-CRM-010], [NODE-CRM-022], [NODE-CRM-024], [NODE-APP-006], [NODE-APP-008], [NODE-APP-010])**:
   - **1. Thống Kê Real Data Granular Cột & Tròn (App & CRM)**:

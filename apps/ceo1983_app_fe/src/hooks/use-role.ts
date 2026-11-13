@@ -110,9 +110,10 @@ export function useRole(): RoleState {
       } catch {}
     }
 
-    // 0. ƯU TIÊN TUYỆT ĐỐI: Vai trò được phân bổ trực tiếp cho tài khoản từ Quản lý tài khoản (vba_managed_accounts_v2)
-    if (member?.executiveRole) {
-      const explicitRole = String(member.executiveRole).toLowerCase().trim();
+    // 0. ƯU TIÊN TUYỆT ĐỐI: Vai trò được phân bổ trực tiếp cho tài khoản từ CSDL (members.executive_role) hoặc Quản lý tài khoản (vba_managed_accounts_v2)
+    const rawExecRole = member?.executiveRole || userObj?.executiveRole || userObj?.executive_role || user?.executiveRole;
+    if (rawExecRole) {
+      const explicitRole = String(rawExecRole).toLowerCase().trim();
       if (explicitRole === "truong_ban_truyen_thong" || explicitRole === "btt") return "truong_ban_truyen_thong";
       if (explicitRole === "truong_ban_thanh_vien" || explicitRole === "btv") return "truong_ban_thanh_vien";
       if (explicitRole === "truong_ban_xuc_tien" || explicitRole === "bxt") return "truong_ban_xuc_tien";

@@ -39,14 +39,18 @@ export class AdminCreateUserDto {
   email?: string;
   password?: string;
   name?: string;
-  role?: app_role;
+  role?: string | app_role;
+  executiveRole?: string;
+  department?: string;
   account_status?: string;
 }
 
 export class AdminUpdateUserDto {
   name?: string;
   email?: string;
-  role?: app_role;
+  role?: string | app_role;
+  executiveRole?: string;
+  department?: string;
   account_status?: string;
 }
 

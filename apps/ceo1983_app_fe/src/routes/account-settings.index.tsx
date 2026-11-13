@@ -37,7 +37,9 @@ import { Card, PageHeader, StatCard } from "@/components/dashboard/PageKit";
 import { useT, type TKey } from "@/lib/i18n";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
-import { useRole } from "@/hooks/use-role";
+import { useRole, clearMeCache } from "@/hooks/use-role";
+import { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeDept, normalizeRole } from "@/routes/permissions";
+import { getRolesForDepartment, getDynamicDepartmentOptions } from "@/lib/rbac-permission-helpers";
 import {
   getVotingOpenPrefFn,
   setVotingOpenPrefFn,
@@ -110,14 +112,38 @@ function AccountManagementPage() {
   const [createEmail, setCreateEmail] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [createName, setCreateName] = useState("");
-  const [createRole, setCreateRole] = useState("staff");
+  const [createDepartment, setCreateDepartment] = useState("Hội viên ceo1983");
+  const [createRole, setCreateRole] = useState("member");
   const [createStatus, setCreateStatus] = useState("active");
 
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editRole, setEditRole] = useState("staff");
+  const [editDepartment, setEditDepartment] = useState("Hội viên ceo1983");
+  const [editRole, setEditRole] = useState("member");
   const [editStatus, setEditStatus] = useState("active");
   const [adminNewPassword, setAdminNewPassword] = useState("");
+
+  const departmentList = useMemo(() => {
+    return getDynamicDepartmentOptions();
+  }, []);
+
+  const createRoleOptions = useMemo(() => {
+    return getRolesForDepartment(createDepartment);
+  }, [createDepartment]);
+
+  const editRoleOptions = useMemo(() => {
+    return getRolesForDepartment(editDepartment, undefined, editRole);
+  }, [editDepartment, editRole]);
+
+  const getRoleBadgeLabel = (role: string) => {
+    const opt = ROLE_OPTIONS.find((r) => r.value === role);
+    if (opt) return opt.label;
+    if (role === "quan_tri" || role === "platform_admin") return "Quản trị";
+    if (role === "admin" || role === "tenant_admin") return "Admin";
+    if (role === "staff") return "Nhân viên";
+    if (role === "viewer") return "Chỉ xem";
+    return role.replace(/_/g, " ");
+  };
 
   // Voting Preference State
   const [prefChoice, setPrefChoice] = useState<Choice>("ask");
@@ -304,6 +330,8 @@ function AccountManagementPage() {
           password: createPassword || undefined,
           name: createName.trim() || undefined,
           role: createRole,
+          executiveRole: createRole,
+          department: createDepartment,
           account_status: createStatus,
         }),
       });
@@ -311,12 +339,41 @@ function AccountManagementPage() {
       if (res && res.error) {
         toast.error(res.message || "Không thể tạo tài khoản");
       } else {
-        toast.success("Tạo tài khoản người dùng thành công!");
+        // Đồng bộ vào vba_managed_accounts_v2
+        try {
+          const raw = localStorage.getItem("vba_managed_accounts_v2");
+          const list = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(list)) {
+            const newAcc = {
+              id: res?.id || `acc_${Date.now()}`,
+              dbMemberId: res?.id,
+              name: createName.trim() || createUsername.trim(),
+              code: createUsername.trim().toUpperCase(),
+              email: createEmail.trim().toLowerCase(),
+              department: createDepartment,
+              role: createRole,
+              status: createStatus === "suspended" ? "suspended" : "active",
+              updatedAt: new Date().toISOString(),
+            };
+            const next = [newAcc, ...list];
+            localStorage.setItem("vba_managed_accounts_v2", JSON.stringify(next));
+            window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+          }
+        } catch {}
+
+        toast.success(`Tạo tài khoản "${createName.trim() || createUsername}" với chức vụ "${getRoleBadgeLabel(createRole)}" thành công!`);
         setCreateModalOpen(false);
         setCreateUsername("");
         setCreateEmail("");
         setCreatePassword("");
         setCreateName("");
+        setCreateDepartment("Hội viên ceo1983");
+        setCreateRole("member");
+
+        window.dispatchEvent(new Event("role-changed"));
+        window.dispatchEvent(new Event("crm_permissions_updated"));
+        window.dispatchEvent(new Event("vba_auth_changed"));
+
         loadUsers(1);
       }
     } catch (err: any) {
@@ -332,12 +389,18 @@ function AccountManagementPage() {
     if (!targetUser) return;
     setModalSubmitting(true);
     try {
-      const res = await fetchNestApi(`/users/${targetUser.id}`, {
+      const targetId = targetUser.id;
+      const targetEmail = editEmail.trim() || targetUser.email || "";
+
+      // 1. Cập nhật thông tin và vai trò người dùng qua /users/:id
+      const res = await fetchNestApi(`/users/${targetId}`, {
         method: "PUT",
         body: JSON.stringify({
           name: editName.trim(),
-          email: editEmail.trim(),
+          email: targetEmail,
           role: editRole,
+          executiveRole: editRole,
+          department: editDepartment,
           account_status: editStatus,
         }),
       });
@@ -345,7 +408,104 @@ function AccountManagementPage() {
       if (res && res.error) {
         toast.error(res.message || "Không thể cập nhật tài khoản");
       } else {
-        toast.success("Cập nhật tài khoản thành công!");
+        // 2. Đồng bộ hóa sang /members/:id/role-dept để lưu chắc chắn vào CSDL members & memberships
+        const payload = {
+          executiveRole: editRole,
+          department: editDepartment,
+          email: targetEmail,
+          name: editName.trim(),
+        };
+
+        await fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        })
+          .catch(() =>
+            fetchNestApi(`/members/${encodeURIComponent(targetId)}/role-dept`, {
+              method: "POST",
+              body: JSON.stringify(payload),
+            })
+          )
+          .catch(() => {
+            if (targetEmail) {
+              return fetchNestApi(`/members/${encodeURIComponent(targetEmail)}/role-dept`, {
+                method: "PATCH",
+                body: JSON.stringify(payload),
+              }).catch(() => null);
+            }
+          });
+
+        // 3. Đồng bộ danh sách tài khoản đã quản lý vba_managed_accounts_v2
+        try {
+          const raw = localStorage.getItem("vba_managed_accounts_v2");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const next = list.map((a: any) => {
+                const matchId = a.id === targetId || a.id === `acc_${targetId}` || a.dbMemberId === targetId;
+                const matchEmail = a.email && targetEmail && a.email.toLowerCase().trim() === targetEmail.toLowerCase().trim();
+                const matchUsername = a.code && targetUser.username && a.code.toLowerCase().trim() === targetUser.username.toLowerCase().trim();
+                if (matchId || matchEmail || matchUsername) {
+                  return {
+                    ...a,
+                    name: editName.trim() || a.name,
+                    email: targetEmail || a.email,
+                    role: editRole,
+                    department: editDepartment,
+                    status: editStatus === "suspended" ? "suspended" : "active",
+                    updatedAt: new Date().toISOString(),
+                  };
+                }
+                return a;
+              });
+              localStorage.setItem("vba_managed_accounts_v2", JSON.stringify(next));
+              window.dispatchEvent(new CustomEvent("vba_accounts_changed", { detail: next }));
+            }
+          }
+        } catch {}
+
+        // 4. Nếu tài khoản được chỉnh sửa là tài khoản hiện tại, cập nhật localStorage và xóa cache
+        clearMeCache();
+        try {
+          const rawMyMem = localStorage.getItem("vba_my_member");
+          if (rawMyMem) {
+            const myMem = JSON.parse(rawMyMem);
+            if (
+              myMem.id === targetId ||
+              myMem.userId === targetId ||
+              (myMem.email && targetEmail && myMem.email.toLowerCase() === targetEmail.toLowerCase())
+            ) {
+              myMem.executiveRole = editRole;
+              myMem.executive_role = editRole;
+              myMem.department = editDepartment;
+              localStorage.setItem("vba_my_member", JSON.stringify(myMem));
+            }
+          }
+
+          const rawCrmUser = localStorage.getItem("vba_crm_current_user");
+          if (rawCrmUser) {
+            const cu = JSON.parse(rawCrmUser);
+            if (
+              cu.id === targetId ||
+              (cu.email && targetEmail && cu.email.toLowerCase() === targetEmail.toLowerCase())
+            ) {
+              cu.role = editRole;
+              cu.executiveRole = editRole;
+              cu.department = editDepartment;
+              localStorage.setItem("vba_crm_current_user", JSON.stringify(cu));
+            }
+          }
+        } catch {}
+
+        // 5. Bắn các sự kiện hệ thống để cập nhật Sidebar và toàn bộ giao diện ngay lập tức
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("role-changed"));
+          window.dispatchEvent(new Event("crm_permissions_updated"));
+          window.dispatchEvent(new Event("vba_auth_changed"));
+          window.dispatchEvent(new CustomEvent("ceo1983_departments_updated"));
+        }
+
+        toast.success(`Đã chuyển sang "${editDepartment}" với quyền "${getRoleBadgeLabel(editRole)}" thành công!`);
         setEditModalOpen(false);
         loadUsers(pagination.page);
       }
@@ -1083,7 +1243,8 @@ function AccountManagementPage() {
                     <tr>
                       <th className="px-5 py-3.5">Người dùng</th>
                       <th className="px-4 py-3.5">Tên đăng nhập</th>
-                      <th className="px-4 py-3.5">Vai trò</th>
+                      <th className="px-4 py-3.5">Ban chuyên môn</th>
+                      <th className="px-4 py-3.5">Vai trò chức danh</th>
                       <th className="px-4 py-3.5">Trạng thái</th>
                       <th className="px-4 py-3.5">Ngày tạo</th>
                       <th className="px-5 py-3.5 text-right">Thao tác</th>
@@ -1092,136 +1253,150 @@ function AccountManagementPage() {
                   <tbody className="divide-y divide-border">
                     {usersLoading ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">
+                        <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
                           <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-primary" />
                           Đang tải danh sách người dùng...
                         </td>
                       </tr>
                     ) : usersList.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">
+                        <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
                           Không tìm thấy tài khoản người dùng nào
                         </td>
                       </tr>
                     ) : (
-                      usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-muted/30 transition">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">
-                                {u.avatar_url ? (
-                                  <img src={u.avatar_url} alt={u.name} className="h-full w-full object-cover" />
+                      usersList.map((u) => {
+                        const userRoleKey = u.executiveRole || u.roles?.[0] || "member";
+                        const isSuper = userRoleKey === "quan_tri" || userRoleKey === "platform_admin";
+                        const isLeader = userRoleKey === "chu_tich" || userRoleKey === "admin" || userRoleKey.startsWith("truong_ban_") || userRoleKey === "tong_thu_ky";
+                        const isSpecialist = userRoleKey.startsWith("thanh_vien_ban_");
+
+                        return (
+                          <tr key={u.id} className="hover:bg-muted/30 transition">
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                  {u.avatar_url ? (
+                                    <img src={u.avatar_url} alt={u.name} className="h-full w-full object-cover" />
+                                  ) : (
+                                    getInitials(u.name || u.username)
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-foreground">{u.name || "—"}</div>
+                                  <div className="text-xs text-muted-foreground">{u.email || "Chưa có email"}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 font-mono text-xs text-foreground font-medium">
+                              @{u.username}
+                            </td>
+                            <td className="px-4 py-3.5 text-xs font-medium text-foreground">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted border border-border/70 text-foreground font-semibold">
+                                <Building className="h-3 w-3 text-primary" />
+                                {u.department || "Hội viên ceo1983"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold border ${
+                                  isSuper
+                                    ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
+                                    : isLeader
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                                    : isSpecialist
+                                    ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                                    : "bg-secondary text-muted-foreground border-border"
+                                }`}
+                              >
+                                <ShieldCheck className="h-3 w-3" />
+                                {getRoleBadgeLabel(userRoleKey)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  u.account_status === "suspended"
+                                    ? "bg-destructive/10 text-destructive"
+                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                }`}
+                              >
+                                {u.account_status === "suspended" ? (
+                                  <>
+                                    <AlertCircle className="h-3 w-3" /> Đã tạm khóa
+                                  </>
                                 ) : (
-                                  getInitials(u.name || u.username)
+                                  <>
+                                    <CheckCircle2 className="h-3 w-3" /> Hoạt động
+                                  </>
+                                )}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-xs text-muted-foreground">
+                              {u.created_at ? new Date(u.created_at).toLocaleDateString("vi-VN") : "—"}
+                            </td>
+                            <td className="px-5 py-3.5 text-right">
+                              <div className="inline-flex items-center gap-1">
+                                {/* Edit User */}
+                                <button
+                                  onClick={() => {
+                                    setTargetUser(u);
+                                    setEditName(u.name !== "—" ? u.name : "");
+                                    setEditEmail(u.email || "");
+                                    const initDept = u.department || "Hội viên ceo1983";
+                                    const initRole = u.executiveRole || u.roles?.[0] || "member";
+                                    setEditDepartment(initDept);
+                                    setEditRole(initRole);
+                                    setEditStatus(u.account_status || "active");
+                                    setEditModalOpen(true);
+                                  }}
+                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+                                  title="Chỉnh sửa tài khoản"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+
+                                {/* Toggle Lock / Unlock */}
+                                <button
+                                  onClick={() => handleToggleStatus(u)}
+                                  className={`rounded-lg p-1.5 transition ${
+                                    u.account_status === "suspended"
+                                      ? "text-emerald-600 hover:bg-emerald-500/10"
+                                      : "text-amber-600 hover:bg-amber-500/10"
+                                  }`}
+                                  title={u.account_status === "suspended" ? "Mở khóa tài khoản" : "Tạm khóa tài khoản"}
+                                >
+                                  {u.account_status === "suspended" ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                                </button>
+
+                                {/* Reset Password */}
+                                <button
+                                  onClick={() => {
+                                    setTargetUser(u);
+                                    setAdminNewPassword("");
+                                    setResetModalOpen(true);
+                                  }}
+                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+                                  title="Đặt lại mật khẩu"
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </button>
+
+                                {/* Delete User */}
+                                {u.id !== account?.id && (
+                                  <button
+                                    onClick={() => handleDeleteUser(u)}
+                                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
+                                    title="Xóa tài khoản"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
                                 )}
                               </div>
-                              <div>
-                                <div className="font-semibold text-foreground">{u.name || "—"}</div>
-                                <div className="text-xs text-muted-foreground">{u.email || "Chưa có email"}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 font-mono text-xs text-foreground font-medium">
-                            @{u.username}
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <div className="flex flex-wrap gap-1">
-                              {(u.roles && u.roles.length > 0 ? u.roles : ["member"]).map((r: string) => (
-                                <span
-                                  key={r}
-                                  className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                                    r === "platform_admin"
-                                      ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"
-                                      : r === "tenant_admin"
-                                      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                                      : "bg-secondary text-muted-foreground"
-                                  }`}
-                                >
-                                  {r.replace("_", " ")}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                                u.account_status === "suspended"
-                                  ? "bg-destructive/10 text-destructive"
-                                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              }`}
-                            >
-                              {u.account_status === "suspended" ? (
-                                <>
-                                  <AlertCircle className="h-3 w-3" /> Đã tạm khóa
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 className="h-3 w-3" /> Hoạt động
-                                </>
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-xs text-muted-foreground">
-                            {u.created_at ? new Date(u.created_at).toLocaleDateString("vi-VN") : "—"}
-                          </td>
-                          <td className="px-5 py-3.5 text-right">
-                            <div className="inline-flex items-center gap-1">
-                              {/* Edit User */}
-                              <button
-                                onClick={() => {
-                                  setTargetUser(u);
-                                  setEditName(u.name !== "—" ? u.name : "");
-                                  setEditEmail(u.email || "");
-                                  setEditRole(u.roles?.[0] || "staff");
-                                  setEditStatus(u.account_status || "active");
-                                  setEditModalOpen(true);
-                                }}
-                                className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                                title="Chỉnh sửa tài khoản"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-
-                              {/* Toggle Lock / Unlock */}
-                              <button
-                                onClick={() => handleToggleStatus(u)}
-                                className={`rounded-lg p-1.5 transition ${
-                                  u.account_status === "suspended"
-                                    ? "text-emerald-600 hover:bg-emerald-500/10"
-                                    : "text-amber-600 hover:bg-amber-500/10"
-                                }`}
-                                title={u.account_status === "suspended" ? "Mở khóa tài khoản" : "Tạm khóa tài khoản"}
-                              >
-                                {u.account_status === "suspended" ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                              </button>
-
-                              {/* Reset Password */}
-                              <button
-                                onClick={() => {
-                                  setTargetUser(u);
-                                  setAdminNewPassword("");
-                                  setResetModalOpen(true);
-                                }}
-                                className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                                title="Đặt lại mật khẩu"
-                              >
-                                <KeyRound className="h-4 w-4" />
-                              </button>
-
-                              {/* Delete User */}
-                              {u.id !== account?.id && (
-                                <button
-                                  onClick={() => handleDeleteUser(u)}
-                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
-                                  title="Xóa tài khoản"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -1374,30 +1549,53 @@ function AccountManagementPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block font-semibold text-foreground">Vai trò người dùng</label>
+                  <label className="mb-1 block font-semibold text-foreground">Ban chuyên môn</label>
                   <select
-                    value={createRole}
-                    onChange={(e) => setCreateRole(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring"
+                    value={createDepartment}
+                    onChange={(e) => {
+                      const nextDept = e.target.value;
+                      setCreateDepartment(nextDept);
+                      const avail = getRolesForDepartment(nextDept);
+                      if (avail.length > 0) {
+                        setCreateRole(avail[0].value);
+                      }
+                    }}
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring font-medium"
                   >
-                    <option value="staff">Staff (Nhân viên)</option>
-                    <option value="tenant_admin">Tenant Admin (Quản trị hiệp hội)</option>
-                    <option value="platform_admin">Quản trị (Quyền cao nhất hệ thống)</option>
-                    <option value="viewer">Viewer (Chỉ xem)</option>
+                    {departmentList.map((d: string) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="mb-1 block font-semibold text-foreground">Trạng thái tài khoản</label>
+                  <label className="mb-1 block font-semibold text-foreground">Vai trò theo Ban</label>
                   <select
-                    value={createStatus}
-                    onChange={(e) => setCreateStatus(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring"
+                    value={createRole}
+                    onChange={(e) => setCreateRole(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring font-medium"
                   >
-                    <option value="active">Kích hoạt (Active)</option>
-                    <option value="suspended">Tạm khóa (Suspended)</option>
+                    {createRoleOptions.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block font-semibold text-foreground">Trạng thái tài khoản</label>
+                <select
+                  value={createStatus}
+                  onChange={(e) => setCreateStatus(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring"
+                >
+                  <option value="active">Kích hoạt (Active)</option>
+                  <option value="suspended">Tạm khóa (Suspended)</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-border">
@@ -1460,30 +1658,53 @@ function AccountManagementPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block font-semibold text-foreground">Vai trò</label>
+                  <label className="mb-1 block font-semibold text-foreground">Ban chuyên môn</label>
                   <select
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring"
+                    value={editDepartment}
+                    onChange={(e) => {
+                      const nextDept = e.target.value;
+                      setEditDepartment(nextDept);
+                      const avail = getRolesForDepartment(nextDept);
+                      if (avail.length > 0) {
+                        setEditRole(avail[0].value);
+                      }
+                    }}
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring font-medium"
                   >
-                    <option value="staff">Staff (Nhân viên)</option>
-                    <option value="tenant_admin">Tenant Admin (Quản trị hiệp hội)</option>
-                    <option value="platform_admin">Quản trị (Quyền cao nhất hệ thống)</option>
-                    <option value="viewer">Viewer (Chỉ xem)</option>
+                    {departmentList.map((d: string) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="mb-1 block font-semibold text-foreground">Trạng thái</label>
+                  <label className="mb-1 block font-semibold text-foreground">Vai trò theo Ban</label>
                   <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring"
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring font-medium"
                   >
-                    <option value="active">Kích hoạt (Active)</option>
-                    <option value="suspended">Tạm khóa (Suspended)</option>
+                    {editRoleOptions.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block font-semibold text-foreground">Trạng thái tài khoản</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring"
+                >
+                  <option value="active">Kích hoạt (Active)</option>
+                  <option value="suspended">Tạm khóa (Suspended)</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-border">
