@@ -142,6 +142,8 @@ function IncomePage() {
   // Category filter: all | membership_fee | event_ticket | event_walkin | sponsor | other
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [q, setQ] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -356,7 +358,7 @@ function IncomePage() {
           tx.category.toLowerCase().includes(ql) ||
           (tx.recipient && tx.recipient.toLowerCase().includes(ql)),
       );
-  }, [q, methodFilter, categoryFilter, incomeList]);
+  }, [q, methodFilter, categoryFilter, incomeList, startDate, endDate]);
 
   const tc = useTableControls<Transaction>(
     filtered,

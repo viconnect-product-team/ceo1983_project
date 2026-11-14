@@ -228,7 +228,7 @@ export function EcosystemPitchPosters() {
               type="button"
               disabled={isExporting}
               onClick={handleExportPoster}
-              className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 font-black text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <Download className="size-4" />
               <span>{isExporting ? "Đang xuất 4K..." : "Xuất Ảnh 4K Sắc Nét"}</span>

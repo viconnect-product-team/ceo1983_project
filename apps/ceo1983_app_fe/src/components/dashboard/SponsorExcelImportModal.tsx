@@ -780,7 +780,7 @@ export function SponsorExcelImportModal({
             type="button"
             onClick={handleConfirmImport}
             disabled={importing || selectedIndices.size === 0}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition shadow-sm cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-[#ffffff] hover:bg-slate-50 text-slate-900 transition shadow-sm cursor-pointer disabled:opacity-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             {importing ? (
               <>

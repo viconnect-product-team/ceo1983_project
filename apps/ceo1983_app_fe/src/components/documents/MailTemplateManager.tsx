@@ -1090,6 +1090,8 @@ export function MailTemplateManager() {
   const [membersList, setMembersList] = useState<any[]>([]);
   const [zaloSubscribers, setZaloSubscribers] = useState<any[]>([]);
   const [trainingPrograms, setTrainingPrograms] = useState<any[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [allMeetings, setAllMeetings] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [deptSelectMode, setDeptSelectMode] = useState<"all" | "single" | "multiple">("all");
   const [selectedDeptMemberIds, setSelectedDeptMemberIds] = useState<string[]>([]);
@@ -1152,6 +1154,20 @@ export function MailTemplateManager() {
           { id: "zalo-sub-03", name: "Lê Hoàng Quân", displayName: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
         ]);
       });
+
+    fetchNestApi<any>("/events")
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(list)) setAllEvents(list);
+      })
+      .catch(() => {});
+
+    fetchNestApi<any>("/meetings")
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(list)) setAllMeetings(list);
+      })
+      .catch(() => {});
 
     fetchNestApi<any>("/events?type=training")
       .then((res: any) => {
@@ -1986,13 +2002,13 @@ export function MailTemplateManager() {
 
     try {
       // Lưu đúng cấu hình mẫu đang chọn trước khi gửi bất kỳ kênh nào.
-      if (sendChannel === "zalo" || sendChannel === "both") {
+      if (sendChannel === "zalo_oa" || sendChannel === "all") {
         try {
           await saveSelectedZbsConfig();
         } catch {}
       }
       // 1. Gửi qua Email nếu chọn Email hoặc Cả hai
-      if (sendChannel === "email" || sendChannel === "both") {
+      if (sendChannel === "email" || sendChannel === "all") {
         for (const email of targetEmails) {
           try {
             const result = await fetchNestApi<{ ok: boolean; message?: string }>("/mail/send-test", {
@@ -2017,7 +2033,7 @@ export function MailTemplateManager() {
       }
 
       // 2. Gửi qua Zalo OA nếu chọn Zalo hoặc Cả hai
-      if (sendChannel === "zalo" || sendChannel === "both") {
+      if (sendChannel === "zalo_oa" || sendChannel === "all") {
         const templateData = Object.fromEntries(
           (activeTemplate.variables || [])
             .filter((variable) => variable.key !== "vietqr_url")
@@ -2075,7 +2091,7 @@ export function MailTemplateManager() {
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-xs font-bold shadow-sm transition cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 px-4 py-2 text-xs font-bold shadow-sm transition cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         >
           <Plus className="h-4 w-4" />
           <span>Tạo Mẫu Template Mới</span>
@@ -2448,20 +2464,20 @@ export function MailTemplateManager() {
                 <div className="inline-flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
                   <button
                     type="button"
-                    onClick={() => setSendChannel("both")}
+                    onClick={() => setSendChannel("all")}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      sendChannel === "both"
+                      sendChannel === "all"
                         ? "bg-[#003B95] text-white shadow-xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                     }`}
                   >
-                    🌟 Cả 2 Kênh
+                    🌟 Tất Cả Kênh (Email, App, Zalo)
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSendChannel("zalo")}
+                    onClick={() => setSendChannel("zalo_oa")}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      sendChannel === "zalo"
+                      sendChannel === "zalo_oa"
                         ? "bg-blue-600 text-white shadow-xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                     }`}
@@ -2816,7 +2832,7 @@ export function MailTemplateManager() {
 
                 {/* DÒNG NHẬP EMAIL & SĐT CÓ DẤU CỘNG (+) ĐỂ THÊM NGƯỜI NGOÀI HỆ THỐNG */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {(sendChannel === "email" || sendChannel === "both") && (
+                  {(sendChannel === "email" || sendChannel === "all") && (
                     <div className="flex-1 min-w-[200px] flex items-center gap-1">
                       <div className="relative flex-1">
                         <input
@@ -2838,7 +2854,7 @@ export function MailTemplateManager() {
                     </div>
                   )}
 
-                  {(sendChannel === "zalo" || sendChannel === "both") && (
+                  {(sendChannel === "zalo_oa" || sendChannel === "all") && (
                     <div className="flex-1 min-w-[180px] flex items-center gap-1">
                       <div className="relative flex-1">
                         <input
@@ -3677,7 +3693,7 @@ export function MailTemplateManager() {
                 <div className="flex items-center gap-2">
                   <button
                     type="submit"
-                    className="rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-600 cursor-pointer"
+                    className="rounded-xl bg-[#ffffff] px-5 py-2 text-xs font-bold text-slate-900 shadow-sm hover:bg-slate-50 cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     Lưu Template
                   </button>

@@ -2209,7 +2209,7 @@ export class AdminService implements OnModuleInit {
         id: tx.code || String(tx.id),
         date: tx.date
           ? tx.date instanceof Date
-            ? tx.date.toISOString().slice(0, 10)
+            ? `${tx.date.getFullYear()}-${String(tx.date.getMonth() + 1).padStart(2, '0')}-${String(tx.date.getDate()).padStart(2, '0')}`
             : String(tx.date).slice(0, 10)
           : '',
         type: tx.type,

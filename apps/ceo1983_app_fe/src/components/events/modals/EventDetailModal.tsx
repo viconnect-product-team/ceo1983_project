@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { EventCountdownBanner } from "@/components/events/EventCountdownTimer";
 import { EventPosterModal } from "@/components/events/EventPosterModal";
 import { EventHistoryRecapModal } from "./EventHistoryRecapModal";
+import { LiveActivityMediaSection } from "@/components/common/LiveActivityMediaSection";
 import { isEventFull } from "@/lib/member-app.functions";
 import { buildDynamicShareUrl } from "@/lib/share-helper";
 
@@ -375,7 +376,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   href={guestRegUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 text-xs font-bold transition shadow-xs cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   <span>Mở trang đăng ký</span>
@@ -576,7 +577,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               href={selectedAgenda.zaloLink}
               target="_blank"
               rel="noreferrer"
-              className="w-full sm:w-auto py-2.5 px-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-xs font-bold transition hover:bg-amber-100 flex items-center justify-center gap-1.5 cursor-pointer text-center shrink-0"
+              className="w-full sm:w-auto py-2.5 px-3 rounded-xl border border-amber-500/40 bg-[#ffffff] dark:bg-amber-950/40 text-slate-900 dark:text-amber-300 text-xs font-bold transition hover:bg-slate-50 flex items-center justify-center gap-1.5 cursor-pointer text-center shrink-0"
             >
               <MessageSquare className="h-4 w-4 text-amber-500" />
               <span>Nhóm Zalo</span>

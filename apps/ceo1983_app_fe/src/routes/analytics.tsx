@@ -860,7 +860,7 @@ export function AnalyticsDashboardPage() {
             <button
               type="button"
               onClick={handleResetToCurrent}
-              className="px-3 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer shrink-0 flex items-center gap-1"
+              className="px-3 py-1 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 font-bold text-xs transition cursor-pointer shrink-0 flex items-center gap-1 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <RotateCcw className="size-3" />
               <span>Quay về kỳ hiện tại</span>
@@ -1314,7 +1314,7 @@ export function AnalyticsDashboardPage() {
                   <button
                     type="button"
                     onClick={handleResetToCurrent}
-                    className="w-full mt-1.5 py-1 px-1.5 rounded-lg text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 transition cursor-pointer flex items-center justify-center gap-1"
+                    className="w-full mt-1.5 py-1 px-1.5 rounded-lg text-[10px] font-bold text-slate-900 dark:text-amber-300 bg-[#ffffff] dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 hover:bg-slate-50 transition cursor-pointer flex items-center justify-center gap-1"
                   >
                     <RotateCcw className="size-2.5" />
                     <span>Về kỳ này</span>

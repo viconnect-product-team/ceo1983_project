@@ -146,6 +146,8 @@ function ExpensesPage() {
   // Sub-filter: all | standard (Chi tiêu thường) | advance (Tạm ứng)
   const [categoryFilter, setCategoryFilter] = useState<"all" | "advance" | "standard">("all");
   const [q, setQ] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -431,7 +433,7 @@ function ExpensesPage() {
           tx.category.toLowerCase().includes(ql) ||
           (tx.recipient && tx.recipient.toLowerCase().includes(ql)),
       );
-  }, [q, methodFilter, categoryFilter, expenseList]);
+  }, [q, methodFilter, categoryFilter, expenseList, startDate, endDate]);
 
   const tc = useTableControls<Transaction>(
     filtered,

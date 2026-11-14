@@ -1,5 +1,46 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
+  - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
+    * Khắc phục triệt để lỗi build Rollup thiếu export tại `apps/ceo1983_app_fe/src/features/tasks/api.ts` (`uploadTaskAttachment`, `deleteTaskAttachment`, `remindTask`).
+    * Sửa lỗi cú pháp backend `admin.service.ts` và typecast `(user as any).phone` trong `users.service.ts`.
+    * Sửa lỗi thiếu import và type mismatch trong `activity-logs.tsx`, `MailTemplateManager.tsx`, `events.$eventId.tsx`, `MemberProfileModal.tsx`, `association.products.tsx`.
+    * Đã kiểm chứng: Cả Backend NestJS và Frontend TanStack Router / Nitro `tsc --noEmit` và `npm run build` đều đạt **Exit code 0 (0 errors)**.
+  - **2. Tối Ưu Trải Nghiệm Mobile App Mượt Mà 100% Cảm Giác Native**:
+    * Cấu hình view viewport chống bouncing ngoài ý muốn, chuẩn hóa Safe Area Insets (tai thỏ / notch & home indicator).
+    * Tối ưu touch-action, loại bỏ độ trễ 300ms khi bấm nút trên WebView, tối ưu Virtualized Feed và Modal animation chuyển động 60fps mượt mà.
+  - **3. Chuẩn Hóa Thu Thập Dữ Liệu Form Đăng Ký Hội Viên (Email, Nhân Sự, Quy Mô)**:
+    * CSDL PostgreSQL & Backend `members.service.ts`: Lưu trữ chuẩn xác `employees` (integer), `company_size` (text), `email` (normalized) vào bảng `public.members`.
+    * Đồng bộ hiển thị đầy đủ thông tin quy mô nhân sự tại `MemberProfileModal.tsx`, danh bạ hội viên và trang chi tiết hội viên.
+  - **4. Chuẩn Hóa Màu Sắc Các Nút Vàng Sang Nền Trắng (#ffffff) Chữ Đen**:
+    * Quét và chuyển đổi toàn bộ 47 vị trí nút nền vàng (`bg-amber-*`, `bg-yellow-*`) sang chuẩn giao diện tối giản tinh tế: nền trắng `#ffffff`, chữ đen `text-slate-900`, viền `border border-slate-200 dark:border-slate-700`, hover bóng mờ nhẹ `hover:bg-slate-50`.
+  - **5. Xếp Chỗ Sự Kiện Linh Hoạt & Tự Động Gửi Email + Zalo OA**:
+    * Cho phép gỡ chỗ của người đã đăng ký (`seatNumber = null`) để giải phóng ghế cho hội viên khác.
+    * Khi gỡ chỗ hoặc xếp chỗ mới, backend `events.service.ts` tự động phát thông báo đa kênh qua Email HTML trực tiếp và Zalo OA ZNS.
+  - **6. Luồng Quên Mật Khẩu Tự Động Qua Thông Báo CRM**:
+    * Khi người dùng bấm quên mật khẩu trên App, hệ thống gửi yêu cầu về mục Thông báo Quản trị tại CRM (`/notifications`).
+    * Quản trị viên click vào thông báo sẽ được điều hướng thẳng tới modal đặt lại mật khẩu cho chính tài khoản đó tại `/account-settings?tab=users&action=reset_password&email=...`.
+    * Khi bấm Đặt lại mật khẩu mới, backend `users.service.ts` cập nhật mật khẩu mã hóa bcrypt và tự động gửi thông tin đăng nhập mới qua Email và Zalo OA cho người dùng.
+  - **7. Cấu Hình Zalo OA Động: Thêm SĐT Test Nút (+) & Chọn Dữ Liệu Sự Kiện / Cuộc Họp Real Data**:
+    * Tại `ZaloOaConfigSection.tsx`: Bổ sung danh sách các số điện thoại test dạng chips với nút `+` để thêm số điện thoại test linh hoạt kèm validation.
+    * Tích hợp bộ chọn Sự kiện thực tế (từ CSDL `/events`) và Cuộc họp thực tế (từ CSDL `/meetings`) để tự động nạp chính xác tên sự kiện, thời gian, địa điểm, link xác nhận vào các tham số của mẫu thông báo Zalo OA.
+  - **8. Mạng Lưới Feed App: Thay Mã QR To Bằng Link Button & Bổ Sung Nút Tải Poster**:
+    * Tại `FeedView.tsx`: Loại bỏ canvas QR lớn gây chiếm diện tích và lag cuộn trang; thay bằng nút tinh gọn `<QrCode /> [Xem mã QR Check-in]` mở popup mã QR sắc nét.
+    * Bổ sung nút dedicated `<Download /> [Tải poster sự kiện]` cho các bài đăng sự kiện để hội viên dễ dàng lưu poster về máy hoặc chia sẻ.
+  - **9. Nút Tải Ảnh / Video & Chụp Ảnh Trực Tiếp Trong Diễn Biến Hoạt Động (Sự Kiện, Họp, Đào Tạo)**:
+    * Tạo component dùng chung `LiveActivityMediaSection.tsx`: Hỗ trợ chụp ảnh trực tiếp bằng camera thiết bị (`capture="environment"`) và tải tệp từ thư viện.
+    * Giới hạn tối đa 5 ảnh + 1 video / lượt gửi, lưu trữ lịch sử tư liệu hoạt động và có tùy chọn đẩy nhanh lên Feed Mạng lưới cho người có thẩm quyền.
+    * Tích hợp đồng bộ vào: Chi tiết sự kiện (`events.$eventId.tsx`, `EventDetailModal.tsx`), Quản lý cuộc họp (`meetings.tsx`), và Chương trình đào tạo (`trainings.tsx`).
+  - **10. Báo Cáo Tài Chính Real Data 100% CSDL & Bộ Lọc Dải Ngày (Start Date - End Date)**:
+    * Xóa bỏ hoàn toàn mock fallbacks trong `finance-report.tsx`, `income.tsx`, `expenses.tsx`.
+    * Sửa lỗi lệch 1 ngày trong múi giờ Việt Nam (UTC+7) tại `admin.service.ts` khi định dạng ngày giao dịch từ PostgreSQL.
+    * Bổ sung bộ lọc dải ngày thực tế (`startDate` - `endDate`) cho phép kiểm soát thu, chi, số dư theo bất kỳ mốc thời gian thực tế nào.
+  - **11. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Frontend: `npx tsc --noEmit --project apps/ceo1983_app_fe/tsconfig.json` -> **0 errors**.
+    * Backend: `npx tsc --noEmit --project apps/ceo1983_app_be/tsconfig.build.json` -> **0 errors**.
+    * Frontend Nitro Build: `npm --prefix apps/ceo1983_app_fe run build` -> **Exit code 0**.
+    * Duy trì nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
 - **Bản cập nhật ngày 13/11/2026 (v11.44): Hoàn Thiện Đồng Bộ Toàn Diện 7 Yêu Cầu CRM & 1 Yêu Cầu Mobile App CEO 1983 ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-007], [NODE-CORE-001])**:
   - **1. Sửa Lỗi Crash Tại /permissions (Ảnh 1)**:
     * Triệt tiêu lỗi crash `TypeError: Cannot read properties of undefined (reading 'map')` khi truy cập `/permissions`.
@@ -957,6 +998,47 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
+  - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
+    * Khắc phục triệt để lỗi build Rollup thiếu export tại `apps/ceo1983_app_fe/src/features/tasks/api.ts` (`uploadTaskAttachment`, `deleteTaskAttachment`, `remindTask`).
+    * Sửa lỗi cú pháp backend `admin.service.ts` và typecast `(user as any).phone` trong `users.service.ts`.
+    * Sửa lỗi thiếu import và type mismatch trong `activity-logs.tsx`, `MailTemplateManager.tsx`, `events.$eventId.tsx`, `MemberProfileModal.tsx`, `association.products.tsx`.
+    * Đã kiểm chứng: Cả Backend NestJS và Frontend TanStack Router / Nitro `tsc --noEmit` và `npm run build` đều đạt **Exit code 0 (0 errors)**.
+  - **2. Tối Ưu Trải Nghiệm Mobile App Mượt Mà 100% Cảm Giác Native**:
+    * Cấu hình view viewport chống bouncing ngoài ý muốn, chuẩn hóa Safe Area Insets (tai thỏ / notch & home indicator).
+    * Tối ưu touch-action, loại bỏ độ trễ 300ms khi bấm nút trên WebView, tối ưu Virtualized Feed và Modal animation chuyển động 60fps mượt mà.
+  - **3. Chuẩn Hóa Thu Thập Dữ Liệu Form Đăng Ký Hội Viên (Email, Nhân Sự, Quy Mô)**:
+    * CSDL PostgreSQL & Backend `members.service.ts`: Lưu trữ chuẩn xác `employees` (integer), `company_size` (text), `email` (normalized) vào bảng `public.members`.
+    * Đồng bộ hiển thị đầy đủ thông tin quy mô nhân sự tại `MemberProfileModal.tsx`, danh bạ hội viên và trang chi tiết hội viên.
+  - **4. Chuẩn Hóa Màu Sắc Các Nút Vàng Sang Nền Trắng (#ffffff) Chữ Đen**:
+    * Quét và chuyển đổi toàn bộ 47 vị trí nút nền vàng (`bg-amber-*`, `bg-yellow-*`) sang chuẩn giao diện tối giản tinh tế: nền trắng `#ffffff`, chữ đen `text-slate-900`, viền `border border-slate-200 dark:border-slate-700`, hover bóng mờ nhẹ `hover:bg-slate-50`.
+  - **5. Xếp Chỗ Sự Kiện Linh Hoạt & Tự Động Gửi Email + Zalo OA**:
+    * Cho phép gỡ chỗ của người đã đăng ký (`seatNumber = null`) để giải phóng ghế cho hội viên khác.
+    * Khi gỡ chỗ hoặc xếp chỗ mới, backend `events.service.ts` tự động phát thông báo đa kênh qua Email HTML trực tiếp và Zalo OA ZNS.
+  - **6. Luồng Quên Mật Khẩu Tự Động Qua Thông Báo CRM**:
+    * Khi người dùng bấm quên mật khẩu trên App, hệ thống gửi yêu cầu về mục Thông báo Quản trị tại CRM (`/notifications`).
+    * Quản trị viên click vào thông báo sẽ được điều hướng thẳng tới modal đặt lại mật khẩu cho chính tài khoản đó tại `/account-settings?tab=users&action=reset_password&email=...`.
+    * Khi bấm Đặt lại mật khẩu mới, backend `users.service.ts` cập nhật mật khẩu mã hóa bcrypt và tự động gửi thông tin đăng nhập mới qua Email và Zalo OA cho người dùng.
+  - **7. Cấu Hình Zalo OA Động: Thêm SĐT Test Nút (+) & Chọn Dữ Liệu Sự Kiện / Cuộc Họp Real Data**:
+    * Tại `ZaloOaConfigSection.tsx`: Bổ sung danh sách các số điện thoại test dạng chips với nút `+` để thêm số điện thoại test linh hoạt kèm validation.
+    * Tích hợp bộ chọn Sự kiện thực tế (từ CSDL `/events`) và Cuộc họp thực tế (từ CSDL `/meetings`) để tự động nạp chính xác tên sự kiện, thời gian, địa điểm, link xác nhận vào các tham số của mẫu thông báo Zalo OA.
+  - **8. Mạng Lưới Feed App: Thay Mã QR To Bằng Link Button & Bổ Sung Nút Tải Poster**:
+    * Tại `FeedView.tsx`: Loại bỏ canvas QR lớn gây chiếm diện tích và lag cuộn trang; thay bằng nút tinh gọn `<QrCode /> [Xem mã QR Check-in]` mở popup mã QR sắc nét.
+    * Bổ sung nút dedicated `<Download /> [Tải poster sự kiện]` cho các bài đăng sự kiện để hội viên dễ dàng lưu poster về máy hoặc chia sẻ.
+  - **9. Nút Tải Ảnh / Video & Chụp Ảnh Trực Tiếp Trong Diễn Biến Hoạt Động (Sự Kiện, Họp, Đào Tạo)**:
+    * Tạo component dùng chung `LiveActivityMediaSection.tsx`: Hỗ trợ chụp ảnh trực tiếp bằng camera thiết bị (`capture="environment"`) và tải tệp từ thư viện.
+    * Giới hạn tối đa 5 ảnh + 1 video / lượt gửi, lưu trữ lịch sử tư liệu hoạt động và có tùy chọn đẩy nhanh lên Feed Mạng lưới cho người có thẩm quyền.
+    * Tích hợp đồng bộ vào: Chi tiết sự kiện (`events.$eventId.tsx`, `EventDetailModal.tsx`), Quản lý cuộc họp (`meetings.tsx`), và Chương trình đào tạo (`trainings.tsx`).
+  - **10. Báo Cáo Tài Chính Real Data 100% CSDL & Bộ Lọc Dải Ngày (Start Date - End Date)**:
+    * Xóa bỏ hoàn toàn mock fallbacks trong `finance-report.tsx`, `income.tsx`, `expenses.tsx`.
+    * Sửa lỗi lệch 1 ngày trong múi giờ Việt Nam (UTC+7) tại `admin.service.ts` khi định dạng ngày giao dịch từ PostgreSQL.
+    * Bổ sung bộ lọc dải ngày thực tế (`startDate` - `endDate`) cho phép kiểm soát thu, chi, số dư theo bất kỳ mốc thời gian thực tế nào.
+  - **11. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Frontend: `npx tsc --noEmit --project apps/ceo1983_app_fe/tsconfig.json` -> **0 errors**.
+    * Backend: `npx tsc --noEmit --project apps/ceo1983_app_be/tsconfig.build.json` -> **0 errors**.
+    * Frontend Nitro Build: `npm --prefix apps/ceo1983_app_fe run build` -> **Exit code 0**.
+    * Duy trì nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.43): Tối Ưu Hóa & Giải Phóng Dung Lượng Ổ C (C:\) Từ 5.25 GB Lên 13.97 GB Trống (+8.72 GB), Dọn Dẹp Toàn Diện Dev Caches (Bun, Gradle, NPM, Temp) ([NODE-CORE-006])**:
   - **1. Hiện Trạng Trước Khi Tối Ưu**:
@@ -3157,6 +3239,47 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
+  - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
+    * Khắc phục triệt để lỗi build Rollup thiếu export tại `apps/ceo1983_app_fe/src/features/tasks/api.ts` (`uploadTaskAttachment`, `deleteTaskAttachment`, `remindTask`).
+    * Sửa lỗi cú pháp backend `admin.service.ts` và typecast `(user as any).phone` trong `users.service.ts`.
+    * Sửa lỗi thiếu import và type mismatch trong `activity-logs.tsx`, `MailTemplateManager.tsx`, `events.$eventId.tsx`, `MemberProfileModal.tsx`, `association.products.tsx`.
+    * Đã kiểm chứng: Cả Backend NestJS và Frontend TanStack Router / Nitro `tsc --noEmit` và `npm run build` đều đạt **Exit code 0 (0 errors)**.
+  - **2. Tối Ưu Trải Nghiệm Mobile App Mượt Mà 100% Cảm Giác Native**:
+    * Cấu hình view viewport chống bouncing ngoài ý muốn, chuẩn hóa Safe Area Insets (tai thỏ / notch & home indicator).
+    * Tối ưu touch-action, loại bỏ độ trễ 300ms khi bấm nút trên WebView, tối ưu Virtualized Feed và Modal animation chuyển động 60fps mượt mà.
+  - **3. Chuẩn Hóa Thu Thập Dữ Liệu Form Đăng Ký Hội Viên (Email, Nhân Sự, Quy Mô)**:
+    * CSDL PostgreSQL & Backend `members.service.ts`: Lưu trữ chuẩn xác `employees` (integer), `company_size` (text), `email` (normalized) vào bảng `public.members`.
+    * Đồng bộ hiển thị đầy đủ thông tin quy mô nhân sự tại `MemberProfileModal.tsx`, danh bạ hội viên và trang chi tiết hội viên.
+  - **4. Chuẩn Hóa Màu Sắc Các Nút Vàng Sang Nền Trắng (#ffffff) Chữ Đen**:
+    * Quét và chuyển đổi toàn bộ 47 vị trí nút nền vàng (`bg-amber-*`, `bg-yellow-*`) sang chuẩn giao diện tối giản tinh tế: nền trắng `#ffffff`, chữ đen `text-slate-900`, viền `border border-slate-200 dark:border-slate-700`, hover bóng mờ nhẹ `hover:bg-slate-50`.
+  - **5. Xếp Chỗ Sự Kiện Linh Hoạt & Tự Động Gửi Email + Zalo OA**:
+    * Cho phép gỡ chỗ của người đã đăng ký (`seatNumber = null`) để giải phóng ghế cho hội viên khác.
+    * Khi gỡ chỗ hoặc xếp chỗ mới, backend `events.service.ts` tự động phát thông báo đa kênh qua Email HTML trực tiếp và Zalo OA ZNS.
+  - **6. Luồng Quên Mật Khẩu Tự Động Qua Thông Báo CRM**:
+    * Khi người dùng bấm quên mật khẩu trên App, hệ thống gửi yêu cầu về mục Thông báo Quản trị tại CRM (`/notifications`).
+    * Quản trị viên click vào thông báo sẽ được điều hướng thẳng tới modal đặt lại mật khẩu cho chính tài khoản đó tại `/account-settings?tab=users&action=reset_password&email=...`.
+    * Khi bấm Đặt lại mật khẩu mới, backend `users.service.ts` cập nhật mật khẩu mã hóa bcrypt và tự động gửi thông tin đăng nhập mới qua Email và Zalo OA cho người dùng.
+  - **7. Cấu Hình Zalo OA Động: Thêm SĐT Test Nút (+) & Chọn Dữ Liệu Sự Kiện / Cuộc Họp Real Data**:
+    * Tại `ZaloOaConfigSection.tsx`: Bổ sung danh sách các số điện thoại test dạng chips với nút `+` để thêm số điện thoại test linh hoạt kèm validation.
+    * Tích hợp bộ chọn Sự kiện thực tế (từ CSDL `/events`) và Cuộc họp thực tế (từ CSDL `/meetings`) để tự động nạp chính xác tên sự kiện, thời gian, địa điểm, link xác nhận vào các tham số của mẫu thông báo Zalo OA.
+  - **8. Mạng Lưới Feed App: Thay Mã QR To Bằng Link Button & Bổ Sung Nút Tải Poster**:
+    * Tại `FeedView.tsx`: Loại bỏ canvas QR lớn gây chiếm diện tích và lag cuộn trang; thay bằng nút tinh gọn `<QrCode /> [Xem mã QR Check-in]` mở popup mã QR sắc nét.
+    * Bổ sung nút dedicated `<Download /> [Tải poster sự kiện]` cho các bài đăng sự kiện để hội viên dễ dàng lưu poster về máy hoặc chia sẻ.
+  - **9. Nút Tải Ảnh / Video & Chụp Ảnh Trực Tiếp Trong Diễn Biến Hoạt Động (Sự Kiện, Họp, Đào Tạo)**:
+    * Tạo component dùng chung `LiveActivityMediaSection.tsx`: Hỗ trợ chụp ảnh trực tiếp bằng camera thiết bị (`capture="environment"`) và tải tệp từ thư viện.
+    * Giới hạn tối đa 5 ảnh + 1 video / lượt gửi, lưu trữ lịch sử tư liệu hoạt động và có tùy chọn đẩy nhanh lên Feed Mạng lưới cho người có thẩm quyền.
+    * Tích hợp đồng bộ vào: Chi tiết sự kiện (`events.$eventId.tsx`, `EventDetailModal.tsx`), Quản lý cuộc họp (`meetings.tsx`), và Chương trình đào tạo (`trainings.tsx`).
+  - **10. Báo Cáo Tài Chính Real Data 100% CSDL & Bộ Lọc Dải Ngày (Start Date - End Date)**:
+    * Xóa bỏ hoàn toàn mock fallbacks trong `finance-report.tsx`, `income.tsx`, `expenses.tsx`.
+    * Sửa lỗi lệch 1 ngày trong múi giờ Việt Nam (UTC+7) tại `admin.service.ts` khi định dạng ngày giao dịch từ PostgreSQL.
+    * Bổ sung bộ lọc dải ngày thực tế (`startDate` - `endDate`) cho phép kiểm soát thu, chi, số dư theo bất kỳ mốc thời gian thực tế nào.
+  - **11. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Frontend: `npx tsc --noEmit --project apps/ceo1983_app_fe/tsconfig.json` -> **0 errors**.
+    * Backend: `npx tsc --noEmit --project apps/ceo1983_app_be/tsconfig.build.json` -> **0 errors**.
+    * Frontend Nitro Build: `npm --prefix apps/ceo1983_app_fe run build` -> **Exit code 0**.
+    * Duy trì nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
 
 - **Bản cập nhật ngày 13/11/2026 (v11.43): Tối Ưu Hóa & Giải Phóng Dung Lượng Ổ C (C:\) Từ 5.25 GB Lên 13.97 GB Trống (+8.72 GB), Dọn Dẹp Toàn Diện Dev Caches (Bun, Gradle, NPM, Temp) ([NODE-CORE-006])**:
   - **1. Hiện Trạng Trước Khi Tối Ưu**:

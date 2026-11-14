@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { vione_users, app_role } from '@vibe/db';
@@ -17,6 +18,7 @@ import {
   AdminUpdateUserDto,
 } from './dto';
 import { MailService } from '../mail/mail.service';
+import { ZaloService } from '../zalo/zalo.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 function cleanStoredMediaUrl(url?: string | null): string | null {
@@ -343,6 +345,7 @@ export class UsersService {
     private readonly usersRepo: UsersRepository,
     private readonly mailService: MailService,
     private readonly prisma: PrismaService,
+    @Optional() private readonly zaloService?: ZaloService,
   ) { }
 
   async getMemberInfo(userId: string, email?: string) {
@@ -779,7 +782,7 @@ export class UsersService {
       return {
         id: user.id,
         username: user.username,
-        email: user.email,
+        email: user.email || memberRow?.email || '',
         name: user.name,
         avatar_url: userAvatar,
         avatar: userAvatar,
@@ -810,6 +813,9 @@ export class UsersService {
         department: normalizedDept,
         memberCode: memberRow?.code || null,
         memberId: memberRow?.id || null,
+        companyName: memberRow?.company_name || profile?.company_name || '',
+        companySize: memberRow?.company_size || (memberRow?.employees ? `${memberRow.employees} nhân sự` : ''),
+        employees: memberRow?.employees || 0,
         profile: profile
           ? {
             display_name: profile.display_name,
@@ -1753,9 +1759,71 @@ export class UsersService {
 
     await this.usersRepo.syncAuthUserPassword(id, hashedPassword);
 
+    // Lấy thông tin hội viên (email, phone, name) để gửi thông báo tự động
+    const memberRow = await this.usersRepo.getMemberInfo(id, user.email);
+    const targetEmail = (user.email || memberRow?.email || '').trim().toLowerCase();
+    const targetPhone = ((user as any).phone || memberRow?.phone || '').trim();
+    const targetName = user.name || memberRow?.name || memberRow?.contact || 'Hội viên';
+
+    // 1. Tự động gửi Email thông báo mật khẩu mới
+    if (targetEmail && targetEmail.includes('@') && this.mailService) {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="color: #003B95; margin: 0;">CLB DOANH NHÂN CEO 1983</h2>
+            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Thông Báo Cấp Mật Khẩu Mới Từ Ban Quản Trị</p>
+          </div>
+          <div style="padding: 20px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #003B95; margin-bottom: 20px;">
+            <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+              Xin chào <strong>${targetName}</strong>,<br/>
+              Ban Quản Trị CLB Doanh Nhân CEO 1983 đã hoàn tất thiết lập mật khẩu mới cho tài khoản của bạn.
+            </p>
+            <div style="text-align: center; margin: 24px 0;">
+              <span style="font-size: 13px; color: #64748b; display: block; margin-bottom: 8px;">MẬT KHẨU MỚI:</span>
+              <span style="display: inline-block; font-size: 24px; font-weight: bold; color: #003B95; letter-spacing: 2px; padding: 12px 24px; background: #ffffff; border: 2px dashed #003B95; border-radius: 8px;">${newPass}</span>
+            </div>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
+              Vui lòng đăng nhập vào ứng dụng <strong>CEO 1983</strong> và đổi lại mật khẩu cá nhân theo ý muốn tại phần Cài đặt tài khoản.
+            </p>
+          </div>
+          <div style="text-align: center; margin-top: 24px;">
+            <a href="https://app.ceo1983.viconnect.vn/login" style="display: inline-block; background-color: #003B95; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; font-size: 14px;">Đăng Nhập Ngay</a>
+          </div>
+        </div>
+      `;
+      void this.mailService.sendDirectEmail({
+        to: targetEmail,
+        subject: '[CEO 1983] Mật khẩu mới tài khoản hội viên',
+        html: emailHtml,
+      }).catch((e: any) => console.warn('[adminResetPassword] Mail error:', e?.message));
+    }
+
+    // 2. Tự động gửi Zalo OA
+    if (targetPhone && this.zaloService) {
+      void this.zaloService.sendAutoNotification({
+        recipientPhone: targetPhone,
+        recipientEmail: targetEmail,
+        recipientName: targetName,
+        title: '[CEO 1983] Cấp lại mật khẩu tài khoản',
+        content: `Kính gửi ${targetName}, Ban Quản Trị đã thiết lập mật khẩu mới cho tài khoản của bạn: ${newPass}. Vui lòng đăng nhập và đổi lại mật khẩu để bảo đảm an toàn.`,
+        ctaText: 'Đăng nhập',
+        ctaUrl: 'https://app.ceo1983.viconnect.vn/login',
+      }).catch((e: any) => console.warn('[adminResetPassword] Zalo error:', e?.message));
+    }
+
+    // 3. Đánh dấu thông báo yêu cầu cấp lại mật khẩu trong CRM là đã xử lý
+    if (this.prisma) {
+      await this.prisma.$executeRaw`
+        UPDATE public.notifications
+        SET status = 'resolved', updated_at = NOW()
+        WHERE app_scope = 'crm' 
+          AND (title LIKE ${'%cấp lại mật khẩu%' + targetName + '%'} OR body LIKE ${'%' + targetEmail + '%'})
+      `.catch(() => {});
+    }
+
     return {
       success: true,
-      message: 'Mật khẩu đã được thiết lập lại thành công',
+      message: 'Mật khẩu đã được thiết lập lại thành công và đã tự động gửi Email, Zalo OA cho hội viên',
     };
   }
 

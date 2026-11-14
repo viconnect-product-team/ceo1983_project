@@ -35,6 +35,7 @@ import { EventAttendees } from "@/components/dashboard/EventAttendees";
 import { EventAgenda } from "@/components/dashboard/EventAgenda";
 import { EventSponsors } from "@/components/dashboard/EventSponsors";
 import { EventFeed } from "@/components/dashboard/EventFeed";
+import { LiveActivityMediaSection } from "@/components/common/LiveActivityMediaSection";
 import { EventQrConfigModal } from "@/components/dashboard/EventQrConfigModal";
 import { getQrUrl } from "@/lib/qr";
 import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGatekeeperModal";
@@ -617,6 +618,8 @@ function EventDetailPage() {
           <EventSponsors sponsors={event.sponsors as any} />
 
           <EventAttendees registrations={registrations} canManage={canManage} />
+
+          <LiveActivityMediaSection activityType="event" activityId={event.id} activityTitle={(event as any).title || event.name} canPushToFeed={canManage} />
 
           <EventFeed event={event} registrations={registrations} canManage={canManage} />
         </div>

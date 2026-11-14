@@ -370,6 +370,43 @@ function RegPage() {
     }
   };
 
+  const handleUnassignSeat = async () => {
+    if (!selectedReg) return;
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn gỡ vị trí chỗ ngồi "${selectedReg.seatAssignment}" của ${selectedReg.memberName} để xếp chỗ cho người khác?\nHệ thống sẽ tự động gửi thông báo điều chỉnh chỗ ngồi qua Email và Zalo OA cho đại biểu.`,
+      )
+    ) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await fetchNestApi(`/events/registrations/${encodeURIComponent(selectedReg.id)}/seating`, {
+        method: "PUT",
+        body: JSON.stringify({ seatAssignment: "" }),
+      }).catch(async () => {
+        return updateSeating({
+          data: {
+            registrationId: selectedReg.id,
+            seatAssignment: "",
+          },
+        });
+      });
+
+      setRegistrationsList((prev) =>
+        prev.map((r) => (r.id === selectedReg.id ? { ...r, seatAssignment: "" } : r)),
+      );
+      setSeatInput("");
+      toast.success(`Đã gỡ chỗ ngồi của ${selectedReg.memberName} và gửi thông báo qua Email & Zalo OA thành công!`);
+      setSeatingModalOpen(false);
+      await router.invalidate();
+    } catch {
+      toast.error("Lỗi khi gỡ vị trí chỗ ngồi");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSaveSeating = async () => {
     if (!selectedReg || !seatInput.trim()) {
       setSeatingModalOpen(false);
@@ -1261,22 +1298,36 @@ function RegPage() {
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setSeatingModalOpen(false)}
-                className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer"
-              >
-                {selectedReg ? "Hủy" : "Đóng"}
-              </button>
-              {selectedReg && (
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div>
+                {selectedReg && selectedReg.seatAssignment && (
+                  <button
+                    type="button"
+                    onClick={handleUnassignSeat}
+                    disabled={submitting}
+                    className="w-full sm:w-auto rounded-xl border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-4 py-2 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                  >
+                    Gỡ Chỗ Ngồi (Hủy Xếp Ghế Để Nhường)
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <button
-                  onClick={handleSaveSeating}
-                  disabled={submitting}
-                  className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-95 disabled:opacity-50 cursor-pointer"
+                  onClick={() => setSeatingModalOpen(false)}
+                  className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted cursor-pointer"
                 >
-                  {submitting ? "Đang lưu..." : "Xác Nhận Xếp Chỗ"}
+                  {selectedReg ? "Hủy" : "Đóng"}
                 </button>
-              )}
+                {selectedReg && (
+                  <button
+                    onClick={handleSaveSeating}
+                    disabled={submitting}
+                    className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:opacity-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    {submitting ? "Đang lưu..." : "Xác Nhận Xếp Chỗ"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

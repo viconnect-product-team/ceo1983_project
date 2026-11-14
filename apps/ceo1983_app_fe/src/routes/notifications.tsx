@@ -23,10 +23,12 @@ import {
   Clock,
   Sparkles,
   CreditCard,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/dashboard/AppShell";
+import { MailTemplateManager } from "@/components/documents/MailTemplateManager";
 import { PageHeader, Pill } from "@/components/dashboard/PageKit";
 import { EmptyState, NoNotifications, NoSearchResult } from "@/components/dashboard/StateKit";
 import type { Notification } from "@/lib/extra-data";
@@ -112,6 +114,27 @@ function getNotificationCategory(n: Notification): {
   const code = ((n as any).code || "").toUpperCase();
   const title = (n.title || "").toLowerCase();
   const body = (n.body || "").toLowerCase();
+
+  // 0. Yêu cầu Quên mật khẩu từ Hội viên
+  const targetUrl = (n as any).target_url || (n as any).actionUrl;
+  if (
+    code.includes("PWD") ||
+    (n as any).type === "forgot_password" ||
+    title.includes("mật khẩu") ||
+    body.includes("mật khẩu") ||
+    (targetUrl && targetUrl.includes("reset_password"))
+  ) {
+    return {
+      id: "admin_system",
+      label: "Quên mật khẩu",
+      badgeBg: "bg-rose-500/10",
+      badgeText: "text-rose-600 dark:text-rose-400",
+      badgeBorder: "border-rose-500/25",
+      icon: KeyRound,
+      actionUrl: targetUrl || "/account-settings?tab=users&action=reset_password",
+      actionLabel: "Đặt lại mật khẩu",
+    };
+  }
 
   // 1. Hồ sơ hội viên mới
   if (

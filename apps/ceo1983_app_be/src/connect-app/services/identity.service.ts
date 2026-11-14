@@ -26,7 +26,7 @@ export class ConnectIdentityService {
     const profile = profileRows[0] || null;
 
     const memberRows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, code, name, phone, email, avatar, company_name, executive_role, region, address, about, company_logo_url
+      SELECT id, code, name, phone, email, avatar, company_name, company_size, employees, executive_role, region, address, about, company_logo_url
       FROM public.members
       WHERE user_id = ${userId}::uuid OR id = ${userId}
       LIMIT 1
@@ -67,6 +67,8 @@ export class ConnectIdentityService {
       email: member?.email || user?.email || '',
       member_id: member?.id || null,
       member_code: member?.code || null,
+      company_size: member?.company_size || (member?.employees ? `${member.employees} nhân sự` : ''),
+      employees: member?.employees || 0,
       onboarding_status: profile?.onboarding_status || 'completed',
       account_status: profile?.account_status || 'active',
       locale: profile?.locale || 'vi',

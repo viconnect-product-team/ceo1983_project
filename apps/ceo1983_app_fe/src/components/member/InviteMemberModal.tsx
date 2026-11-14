@@ -162,7 +162,7 @@ export function InviteMemberModal({
                 href={inviteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 transition active:scale-95 cursor-pointer shadow-xs"
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[#ffffff] hover:bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-900 transition active:scale-95 cursor-pointer shadow-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 title="Mở tab mới"
               >
                 <ExternalLink className="h-3.5 w-3.5" />

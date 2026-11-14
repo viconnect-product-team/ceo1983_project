@@ -1327,7 +1327,7 @@ export function AssociationAnalyticsScreen() {
             <button
               type="button"
               onClick={handleResetToCurrent}
-              className="px-2 py-0.5 rounded-lg bg-amber-600 text-white font-bold text-[10px] shrink-0 hover:bg-amber-700 cursor-pointer flex items-center gap-1"
+              className="px-2 py-0.5 rounded-lg bg-[#ffffff] text-slate-900 font-bold text-[10px] shrink-0 hover:bg-slate-50 cursor-pointer flex items-center gap-1 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <RotateCcw className="size-2.5" />
               <span>Kỳ này</span>

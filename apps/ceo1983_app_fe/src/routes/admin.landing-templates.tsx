@@ -1290,7 +1290,7 @@ export function AdminThemeManagementPage() {
                 <button
                   type="button"
                   onClick={handleSaveAndApplyCustomTheme}
-                  className="flex-1 w-full py-3 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="flex-1 w-full py-3 px-6 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   <Save className="w-4 h-4" />
                   <span>LƯU & ÁP DỤNG NGAY CHO APP CEO 1983</span>

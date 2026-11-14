@@ -271,3 +271,12 @@
   - Hiển thị thông tin giảng viên/chuyên gia, học hàm học vị, ngày giờ phát sóng và kho giáo trình bài giảng đính kèm (Slide PDF, file tính toán Excel).
   - Nút "Vào Phòng Họp Video" tích hợp phòng họp Jitsi Meet trực tiếp trong ứng dụng, có camera, micro, chat và cơ chế tự động điểm danh tham dự.
 
+### `[NODE-APP-018]` Chụp Ảnh Trực Tiếp & Tải Ảnh/Video Hoạt Động (Sự Kiện, Họp, Đào Tạo) Đẩy Lên Mạng Lưới
+- **Thành phần**: `LiveActivityMediaSection.tsx`, `FeedView.tsx`.
+- **Luồng xử lý**:
+  - Tích hợp nút Chụp ảnh trực tiếp từ Camera (`capture="environment"`) và nút Tải ảnh/video từ thư viện.
+  - Giới hạn tải lên tối đa 5 ảnh + 1 video / lượt.
+  - Cho phép người có quyền tùy chọn đẩy nhanh khoảnh khắc hoạt động lên bảng tin Mạng Lưới (`/feed`) với danh mục `EVENT_MEETING`.
+  - Trên bảng tin mạng lưới, các bài đăng sự kiện hiển thị nút link `<QrCode /> [Xem mã QR Check-in]` và nút `<Download /> [Tải poster sự kiện]` thay vì render canvas QR lớn chiếm màn hình.
+
+

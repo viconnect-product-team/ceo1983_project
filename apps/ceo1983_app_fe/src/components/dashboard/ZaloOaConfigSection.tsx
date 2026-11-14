@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   MessageSquareText,
+  Plus,
   Send,
   CheckCircle2,
   AlertCircle,
@@ -597,7 +598,7 @@ ${qrImageUrl}
                 type="button"
                 disabled={isExchangingCode}
                 onClick={handleExchangeAuthCode}
-                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer shrink-0"
+                className="px-4 py-2 rounded-lg bg-[#ffffff] hover:bg-slate-50 text-slate-900 text-xs font-bold transition cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               >
                 {isExchangingCode ? "Đang đổi mã..." : "Đổi lấy Refresh Token tự động"}
               </button>

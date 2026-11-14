@@ -156,7 +156,7 @@ export const OpportunityAnalyticsWidget: React.FC<OpportunityAnalyticsWidgetProp
 
           <Link
             to="/association/analytics"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black transition shadow-md shadow-amber-500/20 cursor-pointer active:scale-95"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 text-[11px] font-black transition shadow-md shadow-amber-500/20 cursor-pointer active:scale-95 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <span>Thống kê</span>
             <ChevronRight className="w-3.5 h-3.5" />

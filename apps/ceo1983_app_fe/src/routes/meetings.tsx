@@ -1,3 +1,4 @@
+import { LiveActivityMediaSection } from "@/components/common/LiveActivityMediaSection";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import {
@@ -6,6 +7,7 @@ import {
   ArrowRightLeft,
   Bell,
   Calendar,
+  Camera,
   CheckCircle2,
   Clock,
   Copy,
@@ -184,6 +186,7 @@ function MeetingsPage() {
   const [formUrgentReason, setFormUrgentReason] = useState("");
 
   // Modals for Urgent Case & Delete
+  const [mediaMeetingModal, setMediaMeetingModal] = useState<Meeting | null>(null);
   const [contactHostModalOpen, setContactHostModalOpen] = useState(false);
   const [contactHostMeeting, setContactHostMeeting] = useState<Meeting | null>(null);
 
@@ -655,7 +658,7 @@ function MeetingsPage() {
             )}
             <Link
               to="/business-connect/meetings"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-[#ffffff] dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-slate-900 dark:text-amber-300 hover:bg-slate-50 transition shadow-xs cursor-pointer"
             >
               <Handshake className="h-4 w-4 text-amber-500" />
               <span>Quản Lý Cuộc Gặp Giao Thương 1-on-1 →</span>
@@ -1839,7 +1842,7 @@ function MeetingsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-amber-700 transition cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#ffffff] px-5 py-2 text-xs font-bold text-slate-900 shadow hover:bg-slate-50 transition cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   {submitting ? "Đang cập nhật..." : "Lưu & Phát Thông Báo Đổi Lịch"}
                 </button>

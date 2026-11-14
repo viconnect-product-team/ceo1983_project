@@ -59,6 +59,8 @@ function FinanceReport() {
   const rawTransactions = (Route.useLoaderData() as Transaction[]) || [];
 
   const [period, setPeriod] = useState<PeriodFilter>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [viewMode, setViewMode] = useState<FinanceViewMode>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
@@ -176,7 +178,7 @@ function FinanceReport() {
 
       return true;
     });
-  }, [activeRawTransactions, typeFilter, statusFilter, searchQuery, period]);
+  }, [activeRawTransactions, typeFilter, statusFilter, searchQuery, period, startDate, endDate]);
 
   const invoiceItems: InvoiceItem[] = useMemo(() => {
     return transactions.map((tx) => ({

@@ -518,6 +518,9 @@ export class MembersService {
     let personName = r.contact || r.person_name || r.name || '';
     let compName = r.company_name || r.company || '';
     let staffSizeStr = r.company_size || '';
+    if (!staffSizeStr && r.employees) {
+      staffSizeStr = `${r.employees} nhân sự`;
+    }
 
     if (
       r.about &&
@@ -557,8 +560,8 @@ export class MembersService {
       companyName: compName,
       companySize: staffSizeStr,
       company_size: staffSizeStr,
-      email: r.user_email || r.email || '',
-      phone: r.user_phone || r.phone || '',
+      email: r.email || r.user_email || '',
+      phone: r.phone || r.user_phone || '',
       type: mappedType,
       level: mappedLevel,
       industry: mappedIndustry,
@@ -941,15 +944,16 @@ export class MembersService {
           'Tổng Giám Đốc / CEO',
         company: unifiedCompanyName,
         companyName: unifiedCompanyName,
-        email: m.email ?? user?.email ?? '',
-        phone: m.phone ?? userPhone ?? '',
+        email: m.email || user?.email || '',
+        phone: m.phone || userPhone || '',
         taxCode: m.tax_code ?? null,
         industry: m.industry ?? profile?.industry ?? '',
         region: m.region ?? profile?.region ?? '',
         address: m.address ?? '',
         website: m.website ?? null,
-        companySize: m.company_size || '20 - 50 nhân sự',
-        company_size: m.company_size || '20 - 50 nhân sự',
+        companySize: m.company_size || (m.employees ? `${m.employees} nhân sự` : '10 - 50 nhân sự'),
+        company_size: m.company_size || (m.employees ? `${m.employees} nhân sự` : '10 - 50 nhân sự'),
+        employees: m.employees || (m.company_size ? parseInt(String(m.company_size).match(/\d+/)?.[0] || '0', 10) : 0),
         about: m.about ?? null,
         bio: m.about ?? null,
         joinedAt: m.joined_at
@@ -3958,16 +3962,23 @@ Trân trọng cảm ơn Anh/Chị!`;
       attachments: attachments || [],
     });
 
+    let parsedEmployees: number | null = null;
+    if (staffSize) {
+      const match = String(staffSize).match(/\d+/);
+      if (match) parsedEmployees = parseInt(match[0], 10);
+    }
+    const memberCode = 'M1983-' + String(Math.floor(1000 + Math.random() * 9000));
+
     try {
       await this.prisma.$executeRaw`
         INSERT INTO public.members (
           id, code, name, contact, email, phone, type, level, industry, region, status,
           joined_at, fee_year, fee_paid, address, website, tax_code, about,
-          executive_role, department, company_size, company_name,
+          executive_role, department, company_size, employees, company_name,
           association_id, created_at, updated_at
         ) VALUES (
           ${id},
-          '',
+          ${memberCode},
           ${fullName},
           ${fullName},
           ${email.trim().toLowerCase()},
@@ -3987,6 +3998,7 @@ Trân trọng cảm ơn Anh/Chị!`;
           'member',
           'Hội viên ceo1983',
           ${staffSize || null},
+          ${parsedEmployees},
           ${companyName},
           ${assocId}::uuid,
           NOW(),
@@ -4002,11 +4014,11 @@ Trân trọng cảm ơn Anh/Chị!`;
           INSERT INTO public.members (
             id, code, name, contact, email, phone, type, level, industry, region, status,
             joined_at, fee_year, fee_paid, address, website, tax_code, about,
-            executive_role, department, company_name,
+            executive_role, department, company_size, employees, company_name,
             association_id, created_at, updated_at
           ) VALUES (
             ${id},
-            '',
+            ${memberCode},
             ${fullName},
             ${fullName},
             ${email.trim().toLowerCase()},
@@ -4025,6 +4037,8 @@ Trân trọng cảm ơn Anh/Chị!`;
             ${aboutMeta},
             'member',
             'Hội viên ceo1983',
+            ${staffSize || null},
+            ${parsedEmployees},
             ${companyName},
             ${assocId}::uuid,
             NOW(),

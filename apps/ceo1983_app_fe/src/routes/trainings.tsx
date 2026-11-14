@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LiveActivityMediaSection } from "@/components/common/LiveActivityMediaSection";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   GraduationCap,
+  Camera,
   Video,
   Plus,
   Calendar,
@@ -113,6 +115,7 @@ export function TrainingsPage() {
   const [editingTraining, setEditingTraining] = useState<TrainingItem | null>(null);
   const [detailTraining, setDetailTraining] = useState<TrainingItem | null>(null);
   const [activeCallRoom, setActiveCallRoom] = useState<{ id: string; title: string; link: string } | null>(null);
+  const [activeMediaModal, setActiveMediaModal] = useState<TrainingItem | null>(null);
   const [activeQrModal, setActiveQrModal] = useState<TrainingItem | null>(null);
 
   // Form State cho Khai Báo Khóa Đào Tạo (Chuẩn như Sự Kiện, có số lượng & hạng vé, KHÔNG xếp chỗ)
@@ -658,6 +661,16 @@ export function TrainingsPage() {
                     <Video className="h-4 w-4" />
                   </button>
                 )}
+
+                {/* Tư liệu & Khoảnh khắc đào tạo trực tiếp (User Directive 9) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaModal(t)}
+                  className="p-1.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                  title="Chụp ảnh trực tiếp hoặc tải ảnh/video khoảnh khắc đào tạo lưu vào lịch sử và đẩy lên mạng lưới"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
 
                 {/* Điểm danh QR */}
                 <button
