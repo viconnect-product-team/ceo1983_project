@@ -165,7 +165,7 @@ const permissionsGroup: Item[] = [
     key: "nav.permissions" as TKey,
     icon: ShieldCheck,
     to: "/permissions",
-    label: "Ma trận phân quyền",
+    label: "Phân quyền hệ thống",
   },
   {
     key: "nav.departments" as TKey,

@@ -40,8 +40,14 @@ import { useT, type TKey } from "@/lib/i18n";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { AvatarUploadField } from "@/components/business-connect/mobile/me/AvatarUploadField";
 import { useRole, clearMeCache } from "@/hooks/use-role";
-import { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeDept, normalizeRole } from "@/routes/permissions";
-import { getRolesForDepartment, getDynamicDepartmentOptions } from "@/lib/rbac-permission-helpers";
+import {
+  ROLE_OPTIONS,
+  DEPARTMENT_OPTIONS,
+  normalizeDept,
+  normalizeRole,
+  getRolesForDepartment,
+  getDynamicDepartmentOptions,
+} from "@/lib/rbac-permission-helpers";
 import {
   getVotingOpenPrefFn,
   setVotingOpenPrefFn,
@@ -189,9 +195,13 @@ function AccountManagementPage() {
 
   const displayUsername = (val?: string) => {
     if (!val) return "—";
-    const clean = val.startsWith("@") ? val.slice(1) : val;
+    let clean = String(val).trim();
+    while (clean.startsWith("@")) {
+      clean = clean.slice(1).trim();
+    }
+    // Nếu là địa chỉ email (chứa @) thì hiển thị nguyên bản sạch, tuyệt đối không thêm tiền tố @
     if (clean.includes("@")) return clean;
-    return `@${clean}`;
+    return clean ? `@${clean}` : "—";
   };
 
   const canManageUsers =
@@ -206,8 +216,12 @@ function AccountManagementPage() {
     userRolesList?.includes("admin") ||
     account?.email === "admin@connect.vn" ||
     account?.email === "admin@viconnect.vn" ||
+    account?.email === "info@viconnect.vn" ||
+    account?.email === "infor@viconnect.vn" ||
     account?.username === "admin" ||
     account?.username === "admin@connect.vn" ||
+    account?.username === "admin@viconnect.vn" ||
+    account?.username === "info@viconnect.vn" ||
     (account?.roles &&
       (account.roles.includes("platform_admin") ||
         account.roles.includes("tenant_admin") ||

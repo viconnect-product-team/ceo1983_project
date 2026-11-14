@@ -74,7 +74,7 @@ export const DEFAULT_MEMBERS: Member[] = [
   {
     id: "M1983-002",
     code: "M1983-002",
-    name: "Ban Truyền Thông CEO 1983",
+    name: "Phạm Hồng Nguyên",
     contact: "Trưởng Ban Truyền Thông",
     email: "info@viconnect.vn",
     phone: "0983988999",
@@ -88,11 +88,11 @@ export const DEFAULT_MEMBERS: Member[] = [
     feePaid: true,
     address: "Hà Nội",
     website: "https://ceo1983.viconnect.vn",
-    about: "Trưởng Ban Truyền Thông & Sự Kiện CLB Doanh Nhân CEO 1983",
-    company: "CLB CEO 1983",
+    about: "Trưởng Ban Truyền Thông & Sự Kiện CLB Doanh Nhân CEO 1983 - Phạm Hồng Nguyên",
+    company: "CLB Doanh Nhân CEO 1983",
     companyName: "CLB Doanh Nhân CEO 1983",
     department: "Ban Truyền Thông",
-    executiveRole: "Trưởng Ban",
+    executiveRole: "Trưởng Ban Truyền Thông",
   },
 ];
 

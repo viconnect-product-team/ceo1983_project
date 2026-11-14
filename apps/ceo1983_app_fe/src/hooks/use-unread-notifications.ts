@@ -25,6 +25,32 @@ export function markNotificationsSeen() {
   window.dispatchEvent(new Event("notifications-seen"));
 }
 
+let sharedFetchPromise: Promise<any[]> | null = null;
+let lastFetchTime = 0;
+let cachedNotifications: any[] = [];
+const CACHE_TTL_MS = 15000; // Cache 15s để tránh spam network
+
+async function getSharedNotifications(fetchFn: (args: any) => Promise<any[]>): Promise<any[]> {
+  const now = Date.now();
+  if (cachedNotifications.length > 0 && now - lastFetchTime < CACHE_TTL_MS) {
+    return cachedNotifications;
+  }
+  if (sharedFetchPromise) {
+    return sharedFetchPromise;
+  }
+  sharedFetchPromise = (async () => {
+    try {
+      const items = await fetchFn({});
+      cachedNotifications = Array.isArray(items) ? items : [];
+      lastFetchTime = Date.now();
+      return cachedNotifications;
+    } finally {
+      sharedFetchPromise = null;
+    }
+  })();
+  return sharedFetchPromise;
+}
+
 /**
  * Unread badge for the admin "Thông báo" menu item.
  * The broadcast `notifications` table has no per-user read state, so we treat
@@ -46,9 +72,12 @@ export function useUnreadNotifications() {
     }
   }
 
-  async function refresh() {
+  async function refresh(force = false) {
     try {
-      const items = await listRef.current({});
+      if (force) {
+        lastFetchTime = 0;
+      }
+      const items = await getSharedNotifications(listRef.current);
       const seen = lastSeen();
       // Lấy danh sách ID đã đọc cá nhân từ localStorage nếu có
       let readIds = new Set<string>();
@@ -162,15 +191,18 @@ export function useUnreadNotifications() {
     void refresh();
     // Re-sync when another instance marks notifications as seen.
     const onSeen = () => setCount(0);
+    const onNotificationEvent = () => {
+      void refresh(true);
+    };
     window.addEventListener("notifications-seen", onSeen);
-    window.addEventListener("connect-app:notification", refresh);
+    window.addEventListener("connect-app:notification", onNotificationEvent);
 
     const socket = getConnectAppSocket();
     if (!socket.connected) {
       socket.connect();
     }
     const onSocketEvent = () => {
-      void refresh();
+      void refresh(true);
     };
     socket.on("notification:new", onSocketEvent);
     socket.on("notification:count", onSocketEvent);
@@ -185,7 +217,7 @@ export function useUnreadNotifications() {
     return () => {
       clearInterval(interval);
       window.removeEventListener("notifications-seen", onSeen);
-      window.removeEventListener("connect-app:notification", refresh);
+      window.removeEventListener("connect-app:notification", onNotificationEvent);
       socket.off("notification:new", onSocketEvent);
       socket.off("notification:count", onSocketEvent);
       socket.off("notification:unread_count", onSocketEvent);

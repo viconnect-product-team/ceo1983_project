@@ -1,5 +1,63 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 14/11/2026 (v11.49): Khắc Phục Triệt Để Lỗi 404 Sửa Hội Viên, Đổi Tên Tài Khoản Thành Phạm Hồng Nguyên, Sửa Lỗi Crash /permissions, Xóa @ Thừa Tên Đăng Nhập, Chuẩn Hóa Nhóm Phân Quyền & Nút Xem Tất Cả ([NODE-CRM-003], [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-008])**:
+  - **1. Sửa Tên Tài Khoản `info@viconnect.vn` / `infor@viconnect.vn` Thành "Phạm Hồng Nguyên" & Khắc Phục Lỗi 404 "Không Tìm Thấy Hội Viên"**:
+    * **Nguyên nhân cốt lõi gây lỗi 404**:
+      - Trước đây trong `apps/ceo1983_app_be/src/users/users.service.ts` tại hàm `ensureDefaultUsersInDatabase()`, câu lệnh SQL `INSERT INTO public.members` bị sai tên cột `company` (tên đúng trong Prisma schema là `company_name`), thừa cột `position`, và thiếu cột `association_id` (cột `NOT NULL @db.Uuid`). Do câu lệnh có `.catch(() => {})`, PostgreSQL trả về lỗi khiến bản ghi `M1983-001` và `M1983-002` không được lưu vào CSDL `public.members`.
+      - Khi người dùng bấm lưu thay đổi hội viên `M1983-002`, backend gọi `updateMember` chỉ tìm trong bảng `public.members`. Do không có bản ghi nên ném lỗi 404 `NotFoundException('Không tìm thấy hội viên')`.
+      - Đồng thời màn hình Dashboard và Quản lý tài khoản cũng không hiển thị được dữ liệu động do bảng `public.members` bị trống.
+    * **Giải pháp khắc phục toàn diện**:
+      - Tại `apps/ceo1983_app_be/src/users/users.service.ts`:
+        * Cập nhật tên hiển thị của tài khoản `info@viconnect.vn` / `infor@viconnect.vn` thành **"Phạm Hồng Nguyên"** đồng bộ trên cả 3 bảng: `public.vione_users`, `public.user_profiles` (chức danh Trưởng Ban Truyền Thông) và `public.members`.
+        * Sửa lại câu lệnh SQL `INSERT INTO public.members` cho cả `M1983-001` và `M1983-002` với đầy đủ các cột chuẩn theo Prisma Schema: `id`, `user_id`, `code`, `name`, `email`, `phone`, `company_name`, `department`, `executive_role`, `status`, `association_id`, `type`, `level`, `industry`, `region`, `payment_status`, `fee_paid`, `created_at`, `updated_at`.
+      - Tại `apps/ceo1983_app_be/src/members/members.service.ts`:
+        * Nâng cấp hàm `updateMember`: Mở rộng tìm kiếm theo `id`, `code`, `user_id`, và `email`. Bổ sung cơ chế **Auto-provisioning**: Nếu bản ghi chưa có trong `public.members` nhưng tài khoản đã tồn tại trong `public.vione_users`, hệ thống tự động khởi tạo bản ghi trong `public.members` và tiến hành cập nhật, đảm bảo không bao giờ bị ném lỗi 404.
+        * Nâng cấp hàm `getMemberById`: Tương tự, bổ sung fallback tra cứu từ `public.vione_users` và tự động provision nếu thiếu bản ghi trong `members`.
+      - Tại `apps/ceo1983_app_fe/src/lib/members-data.ts`:
+        * Cập nhật bản ghi fallback `M1983-002` với `name: "Phạm Hồng Nguyên"`, `contact: "Trưởng Ban Truyền Thông"`, `companyName: "CLB Doanh Nhân CEO 1983"`.
+  - **2. Sửa Lỗi Crash Màn Hình Phân Quyền `/permissions` ("Something went wrong")**:
+    * **Nguyên nhân**: File `account-settings.index.tsx` và `accounts.tsx` import các hằng số `{ ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeDept, normalizeRole }` từ file route `src/routes/permissions.tsx`. Việc import từ file route của TanStack Router gây ra tình trạng cyclic chunk dependency và lỗi đánh giá module (module initialization error) khi Vite thực hiện code-splitting trên môi trường production.
+    * **Giải pháp**:
+      - Chuyển toàn bộ các import trên sang import từ `@/lib/rbac-permission-helpers`.
+      - Trong `apps/ceo1983_app_fe/src/routes/permissions.tsx`, re-export các hằng số từ `@/lib/rbac-permission-helpers` thay vì định nghĩa trùng lặp.
+      - Bổ sung phòng thủ an toàn (safe navigation `?.` và fallback mảng rỗng `[]`) trong `RbacPermissionMatrix.tsx` tại các hàm `filteredCategories` và `fetchNestApi("/admin/permission-matrix")`.
+  - **3. Khắc Phục Lỗi Tên Đăng Nhập Bị Thừa Ký Tự `@` (Ví Dụ `@admin@viconnect.vn`)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+      - Nâng cấp hàm `displayUsername`: Dùng vòng lặp `while (clean.startsWith("@"))` để làm sạch toàn bộ dấu `@` ở đầu chuỗi. Nếu chuỗi là một địa chỉ email (chứa ký tự `@`), trả về nguyên bản chuỗi sạch, tuyệt đối không thêm tiền tố `@`.
+      - Mở rộng quyền quản trị `canManageUsers`: Cấp toàn quyền cho các tài khoản quản trị hệ thống (`admin@connect.vn`, `admin@viconnect.vn`, `info@viconnect.vn`, `infor@viconnect.vn` và các vai trò `quan_tri`, `admin`, `platform_admin`, `superadmin`, `chu_tich`) để có thể thay đổi quyền hạn của các tài khoản khác.
+  - **4. Chuẩn Hóa Nhóm Phân Quyền & Quản Trị Người Dùng Trên Sidebar**:
+    * Trong `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx` và `use-sidebar-labels.ts`:
+      - Tại nhóm **PHÂN QUYỀN**: Đổi tên mục thành **"Quản trị người dùng"** (`/account-settings?tab=users`) thay vì "Quản lý Tài Khoản". Khi bấm vào, hệ thống mở trực tiếp tab Quản trị người dùng (User Management).
+      - Tại menu profile góc trên bên phải (avatar dropdown): Giữ nguyên mục "Quản lý tài khoản" (`/account-settings`) để người dùng quản lý hồ sơ và mật khẩu cá nhân.
+  - **5. Chuẩn Hóa Màn Hình Sự Kiện & Hoạt Động Trên App Mobile CEO 1983**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Tiêu đề màn hình hiển thị trang trọng: **"Sự kiện & Hoạt động"**.
+      - Ẩn nút "Xem tất cả" tại header "Sự kiện sắp tới" khi đang ở danh mục "Tất cả" (`eventCategory === "all"`).
+      - Đảm bảo trong khu vực danh mục sự kiện chỉ hiển thị duy nhất 1 nút "Xem tất cả", và nút này **TUYỆT ĐỐI KHÔNG HIỂN THỊ KHI ĐANG Ở DANH MỤC "TẤT CẢ"**.
+  - **6. Kiểm Tra Chất Lượng & Ràng Buộc Kỹ Thuật (Strict Type-Check & Rule 1)**:
+    * Chạy `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` -> Đạt **0 errors (Exit code 0)**.
+    * Chạy kiểm tra build Vite SSR Frontend (`npm run build --prefix apps/ceo1983_app_fe`) -> Đạt thành công **Exit code 0**.
+    * Tuân thủ nghiêm ngặt **Rule 1**: Giữ toàn bộ thay đổi ở local, tuyệt đối không tự động chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 14/11/2026 (v11.48): Hoàn Thành Xuất Bản Đặc Tả Chi Tiết Toàn Bộ 47 Chức Năng Hệ Thống CLB Doanh Nhân CEO 1983 (HanoiBA) Ra File Word (.docx) & PDF (.pdf)**:
+  - **1. Xây Dựng Bản Đặc Tả Kỹ Thuật Toàn Diện (Không Bỏ Sót Bất Kỳ Chức Năng Nào)**:
+    * Đặc tả chi tiết 47 Functional Nodes thuộc 4 phân hệ lớn:
+      - **Phần I: Hạ Tầng Core, Xác Thực & Bảo Mật (7 Nodes)**: Đăng nhập JWT/OAuth/Biometric (`NODE-CORE-001`), Đăng xuất & Thu hồi phiên (`NODE-CORE-002`), Đổi mật khẩu chủ động (`NODE-CORE-003`), Quên mật khẩu & Phê duyệt cấp mới qua CRM (`NODE-CORE-004`), Đăng ký hội viên mới & Hồ sơ DN (`NODE-CORE-005`), Ma trận phân quyền RBAC 2 Tab CRM/App & Tự động đồng bộ tên Sidebar (`NODE-CRM-006`), Quản lý tài khoản & Gán Ban chuyên môn trực tiếp (`NODE-CRM-005`).
+      - **Phần II: Phân Hệ Web CRM Quản Trị (17 Nodes)**: Tổng quan Dashboard CLB (`NODE-CRM-001`), Trung tâm thống kê 5 danh mục (`NODE-CRM-002`), Quản trị danh bạ Hội viên 360 độ (`NODE-CRM-003`), Quản trị Doanh nghiệp thành viên (`NODE-CRM-004`), Quản trị Sự kiện, Bán vé, Xếp chỗ/Đổi chỗ bắn mail/Zalo & Bắn mạng lưới (`NODE-CRM-007`), Quản lý Cuộc họp Ban & Gặp gỡ CLB (`NODE-CRM-008`), Quản lý Thu ngân sách VietQR SeABank (`NODE-CRM-009`), Quản lý Chi ngân sách, Tạm ứng & Hoàn ứng (`NODE-CRM-010`), Báo cáo Tài chính tổng hợp & Quyết toán quỹ Realtime PostgreSQL (`NODE-CRM-011`), Quản lý Công việc & Giao việc Ban chuyên môn xem file trực tiếp (`NODE-CRM-012`), Quản trị Nhà tài trợ & Quyền lợi (`NODE-CRM-013`), Kho Tài liệu CLB & Universal Document Viewer Word/Excel/PDF (`NODE-CRM-014`), Quản trị Biểu quyết trực tuyến & Lucky Draw (`NODE-CRM-015`), Quản lý Bản tin & Truyền thông CLB (`NODE-CRM-016`), Gia hạn Hội viên & Xử lý Nợ phí niên liễm (`NODE-CRM-017`), Quản trị Đào tạo đa thức (`NODE-CRM-018`), Nhật ký Lịch sử thao tác Audit Logs (`NODE-CRM-019`), Trao Cơ hội đa đối tượng & Hội nhóm (`NODE-CRM-020`), Theme Studio, Icon Picker 14 tính năng & Đồng bộ giao diện 3 màu (`NODE-CRM-021`), Trung tâm Thông báo Quản trị (`NODE-CRM-022`), Quản lý Landing Web Dynamic & Subdomain (`NODE-CRM-023`), Quản lý Mẫu Thư Mời Đa Kênh & Trình Tạo Mẫu Thư Nhắc Nhở Tùy Biến (`NODE-CRM-024`).
+      - **Phần III: Phân Hệ Mobile App CEO 1983 (17 Nodes)**: Trang chủ Ticker Nến Realtime & Shortcut (`NODE-APP-001`), Thẻ Hội viên VIP số & QR cá nhân bảo mật (`NODE-APP-002`), Trang quét danh thiếp công khai bảo mật (`NODE-APP-003`), Danh bạ Hội viên & Bản đồ 2D Google Maps dẫn đường (`NODE-APP-004`), Cơ hội giao thương B2B Strip 3 thẻ ngang (`NODE-APP-005`), Trung tâm thống kê 5 phân loại nghiệp vụ (`NODE-APP-006`), Giao thương B2B, Gian hàng của tôi (Menu 3 chấm & Danh mục ai quan tâm) (`NODE-APP-007`), Sự kiện & Hoạt động (Tab Sự kiện/Hoạt động, 1 nút Xem tất cả, Tải poster, Tải/Chụp ảnh trực tiếp) (`NODE-APP-008`), Biểu quyết trực tuyến gắn với Sự kiện/Họp (`NODE-APP-009`), Bảng tin Mạng lưới doanh nhân, bình luận, tương tác & link QR bảo mật (`NODE-APP-010`), Hồ sơ cá nhân & Doanh nghiệp 360 độ (`NODE-APP-011`), Cài đặt hệ thống, Đổi mật khẩu & Hỗ trợ 24/7 (`NODE-APP-012`), Kho Đặc quyền Doanh nhân VIP Perks & QR động (`NODE-APP-013`), Cầu nối Native Capacitor & Push Notification (`NODE-APP-014`), Gặp gỡ Kết nối B2B 1-on-1 giữa 2 tài khoản (`NODE-APP-015`), Đào tạo di động & Phòng họp Video Call Jitsi nhúng (`NODE-APP-016`), Lịch hoạt động & Báo thức nhắc hẹn đa kênh tự động (`NODE-APP-017`).
+      - **Phần IV: Luồng Khách Vãng Lai & Kiểm Tra Mã QR An Toàn (1 Node)**: Quét mã QR đăng ký vé khách & Tự động gửi email cảnh báo khi mã QR hết hạn/bị xóa (`NODE-EXT-001`).
+    * Mỗi chức năng bao gồm: Tên & Mã định danh, Đối tượng sử dụng, Mô tả luồng nghiệp vụ chi tiết từng bước, Danh sách API Endpoint Backend kèm Method HTTP, Bảng CSDL PostgreSQL lưu trữ kèm danh sách cột quan trọng, Ràng buộc và ghi chú kỹ thuật.
+  - **2. Xuất Bản Hai Định Dạng Tài Liệu Chuẩn Mực (Word & PDF)**:
+    * File Word (.docx): Tạo bằng thư viện `docx`, bảng 5 cột có màu nền header Navy Blue `#003B95`, border `#CBD5E1`, font chữ chuẩn.
+    * File PDF (.pdf): Tạo bằng `playwright.chromium` (sử dụng engine Google Chrome/Edge tích hợp sẵn), khổ ngang A4 Landscape, vector typography sắc nét, header và footer tự động đếm số trang (`Trang X / Y`), màu sắc nhận diện thương hiệu CLB CEO 1983 chuẩn mực.
+    * Vị trí lưu trữ tài liệu:
+      - `document/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.docx`
+      - `document/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.pdf`
+      - `apps/ceo1983_app_fe/public/docs/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.docx`
+      - `apps/ceo1983_app_fe/public/docs/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.pdf`
+  - **3. Tuân Thủ Nghiêm Ngặt Rule 1**:
+    * Không tự ý chạy `git commit` hay `git push`. Toàn bộ thay đổi và file tạo mới được lưu trữ tại workspace cục bộ (local).
+
 - **Bản cập nhật ngày 14/11/2026 (v11.47): Hoàn Thiện Đồng Bộ 4 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Thiết Lập Mẫu Thư Nhắc Động, Luồng Check QR Hết Hạn Gửi Email, Xóa Mock Tài Khoản & Chuẩn Hóa Nút Xem Tất Cả ([NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-CRM-024], [NODE-APP-008])**:
   - **1. Web CRM: Thiết Lập Mẫu Thư Nhắc Nhở Động Với Các Trường Tùy Biến (Dynamic Reminder Builder)**:
     * Tạo component chuyên biệt `CustomReminderTemplateModal.tsx` và tích hợp vào `MailTemplateManager.tsx`.
@@ -1078,6 +1136,64 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 14/11/2026 (v11.49): Khắc Phục Triệt Để Lỗi 404 Sửa Hội Viên, Đổi Tên Tài Khoản Thành Phạm Hồng Nguyên, Sửa Lỗi Crash /permissions, Xóa @ Thừa Tên Đăng Nhập, Chuẩn Hóa Nhóm Phân Quyền & Nút Xem Tất Cả ([NODE-CRM-003], [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-008])**:
+  - **1. Sửa Tên Tài Khoản `info@viconnect.vn` / `infor@viconnect.vn` Thành "Phạm Hồng Nguyên" & Khắc Phục Lỗi 404 "Không Tìm Thấy Hội Viên"**:
+    * **Nguyên nhân cốt lõi gây lỗi 404**:
+      - Trước đây trong `apps/ceo1983_app_be/src/users/users.service.ts` tại hàm `ensureDefaultUsersInDatabase()`, câu lệnh SQL `INSERT INTO public.members` bị sai tên cột `company` (tên đúng trong Prisma schema là `company_name`), thừa cột `position`, và thiếu cột `association_id` (cột `NOT NULL @db.Uuid`). Do câu lệnh có `.catch(() => {})`, PostgreSQL trả về lỗi khiến bản ghi `M1983-001` và `M1983-002` không được lưu vào CSDL `public.members`.
+      - Khi người dùng bấm lưu thay đổi hội viên `M1983-002`, backend gọi `updateMember` chỉ tìm trong bảng `public.members`. Do không có bản ghi nên ném lỗi 404 `NotFoundException('Không tìm thấy hội viên')`.
+      - Đồng thời màn hình Dashboard và Quản lý tài khoản cũng không hiển thị được dữ liệu động do bảng `public.members` bị trống.
+    * **Giải pháp khắc phục toàn diện**:
+      - Tại `apps/ceo1983_app_be/src/users/users.service.ts`:
+        * Cập nhật tên hiển thị của tài khoản `info@viconnect.vn` / `infor@viconnect.vn` thành **"Phạm Hồng Nguyên"** đồng bộ trên cả 3 bảng: `public.vione_users`, `public.user_profiles` (chức danh Trưởng Ban Truyền Thông) và `public.members`.
+        * Sửa lại câu lệnh SQL `INSERT INTO public.members` cho cả `M1983-001` và `M1983-002` với đầy đủ các cột chuẩn theo Prisma Schema: `id`, `user_id`, `code`, `name`, `email`, `phone`, `company_name`, `department`, `executive_role`, `status`, `association_id`, `type`, `level`, `industry`, `region`, `payment_status`, `fee_paid`, `created_at`, `updated_at`.
+      - Tại `apps/ceo1983_app_be/src/members/members.service.ts`:
+        * Nâng cấp hàm `updateMember`: Mở rộng tìm kiếm theo `id`, `code`, `user_id`, và `email`. Bổ sung cơ chế **Auto-provisioning**: Nếu bản ghi chưa có trong `public.members` nhưng tài khoản đã tồn tại trong `public.vione_users`, hệ thống tự động khởi tạo bản ghi trong `public.members` và tiến hành cập nhật, đảm bảo không bao giờ bị ném lỗi 404.
+        * Nâng cấp hàm `getMemberById`: Tương tự, bổ sung fallback tra cứu từ `public.vione_users` và tự động provision nếu thiếu bản ghi trong `members`.
+      - Tại `apps/ceo1983_app_fe/src/lib/members-data.ts`:
+        * Cập nhật bản ghi fallback `M1983-002` với `name: "Phạm Hồng Nguyên"`, `contact: "Trưởng Ban Truyền Thông"`, `companyName: "CLB Doanh Nhân CEO 1983"`.
+  - **2. Sửa Lỗi Crash Màn Hình Phân Quyền `/permissions` ("Something went wrong")**:
+    * **Nguyên nhân**: File `account-settings.index.tsx` và `accounts.tsx` import các hằng số `{ ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeDept, normalizeRole }` từ file route `src/routes/permissions.tsx`. Việc import từ file route của TanStack Router gây ra tình trạng cyclic chunk dependency và lỗi đánh giá module (module initialization error) khi Vite thực hiện code-splitting trên môi trường production.
+    * **Giải pháp**:
+      - Chuyển toàn bộ các import trên sang import từ `@/lib/rbac-permission-helpers`.
+      - Trong `apps/ceo1983_app_fe/src/routes/permissions.tsx`, re-export các hằng số từ `@/lib/rbac-permission-helpers` thay vì định nghĩa trùng lặp.
+      - Bổ sung phòng thủ an toàn (safe navigation `?.` và fallback mảng rỗng `[]`) trong `RbacPermissionMatrix.tsx` tại các hàm `filteredCategories` và `fetchNestApi("/admin/permission-matrix")`.
+  - **3. Khắc Phục Lỗi Tên Đăng Nhập Bị Thừa Ký Tự `@` (Ví Dụ `@admin@viconnect.vn`)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+      - Nâng cấp hàm `displayUsername`: Dùng vòng lặp `while (clean.startsWith("@"))` để làm sạch toàn bộ dấu `@` ở đầu chuỗi. Nếu chuỗi là một địa chỉ email (chứa ký tự `@`), trả về nguyên bản chuỗi sạch, tuyệt đối không thêm tiền tố `@`.
+      - Mở rộng quyền quản trị `canManageUsers`: Cấp toàn quyền cho các tài khoản quản trị hệ thống (`admin@connect.vn`, `admin@viconnect.vn`, `info@viconnect.vn`, `infor@viconnect.vn` và các vai trò `quan_tri`, `admin`, `platform_admin`, `superadmin`, `chu_tich`) để có thể thay đổi quyền hạn của các tài khoản khác.
+  - **4. Chuẩn Hóa Nhóm Phân Quyền & Quản Trị Người Dùng Trên Sidebar**:
+    * Trong `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx` và `use-sidebar-labels.ts`:
+      - Tại nhóm **PHÂN QUYỀN**: Đổi tên mục thành **"Quản trị người dùng"** (`/account-settings?tab=users`) thay vì "Quản lý Tài Khoản". Khi bấm vào, hệ thống mở trực tiếp tab Quản trị người dùng (User Management).
+      - Tại menu profile góc trên bên phải (avatar dropdown): Giữ nguyên mục "Quản lý tài khoản" (`/account-settings`) để người dùng quản lý hồ sơ và mật khẩu cá nhân.
+  - **5. Chuẩn Hóa Màn Hình Sự Kiện & Hoạt Động Trên App Mobile CEO 1983**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Tiêu đề màn hình hiển thị trang trọng: **"Sự kiện & Hoạt động"**.
+      - Ẩn nút "Xem tất cả" tại header "Sự kiện sắp tới" khi đang ở danh mục "Tất cả" (`eventCategory === "all"`).
+      - Đảm bảo trong khu vực danh mục sự kiện chỉ hiển thị duy nhất 1 nút "Xem tất cả", và nút này **TUYỆT ĐỐI KHÔNG HIỂN THỊ KHI ĐANG Ở DANH MỤC "TẤT CẢ"**.
+  - **6. Kiểm Tra Chất Lượng & Ràng Buộc Kỹ Thuật (Strict Type-Check & Rule 1)**:
+    * Chạy `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` -> Đạt **0 errors (Exit code 0)**.
+    * Chạy kiểm tra build Vite SSR Frontend (`npm run build --prefix apps/ceo1983_app_fe`) -> Đạt thành công **Exit code 0**.
+    * Tuân thủ nghiêm ngặt **Rule 1**: Giữ toàn bộ thay đổi ở local, tuyệt đối không tự động chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 14/11/2026 (v11.48): Hoàn Thành Xuất Bản Đặc Tả Chi Tiết Toàn Bộ 47 Chức Năng Hệ Thống CLB Doanh Nhân CEO 1983 (HanoiBA) Ra File Word (.docx) & PDF (.pdf)**:
+  - **1. Xây Dựng Bản Đặc Tả Kỹ Thuật Toàn Diện (Không Bỏ Sót Bất Kỳ Chức Năng Nào)**:
+    * Đặc tả chi tiết 47 Functional Nodes thuộc 4 phân hệ lớn:
+      - **Phần I: Hạ Tầng Core, Xác Thực & Bảo Mật (7 Nodes)**: Đăng nhập JWT/OAuth/Biometric (`NODE-CORE-001`), Đăng xuất & Thu hồi phiên (`NODE-CORE-002`), Đổi mật khẩu chủ động (`NODE-CORE-003`), Quên mật khẩu & Phê duyệt cấp mới qua CRM (`NODE-CORE-004`), Đăng ký hội viên mới & Hồ sơ DN (`NODE-CORE-005`), Ma trận phân quyền RBAC 2 Tab CRM/App & Tự động đồng bộ tên Sidebar (`NODE-CRM-006`), Quản lý tài khoản & Gán Ban chuyên môn trực tiếp (`NODE-CRM-005`).
+      - **Phần II: Phân Hệ Web CRM Quản Trị (17 Nodes)**: Tổng quan Dashboard CLB (`NODE-CRM-001`), Trung tâm thống kê 5 danh mục (`NODE-CRM-002`), Quản trị danh bạ Hội viên 360 độ (`NODE-CRM-003`), Quản trị Doanh nghiệp thành viên (`NODE-CRM-004`), Quản trị Sự kiện, Bán vé, Xếp chỗ/Đổi chỗ bắn mail/Zalo & Bắn mạng lưới (`NODE-CRM-007`), Quản lý Cuộc họp Ban & Gặp gỡ CLB (`NODE-CRM-008`), Quản lý Thu ngân sách VietQR SeABank (`NODE-CRM-009`), Quản lý Chi ngân sách, Tạm ứng & Hoàn ứng (`NODE-CRM-010`), Báo cáo Tài chính tổng hợp & Quyết toán quỹ Realtime PostgreSQL (`NODE-CRM-011`), Quản lý Công việc & Giao việc Ban chuyên môn xem file trực tiếp (`NODE-CRM-012`), Quản trị Nhà tài trợ & Quyền lợi (`NODE-CRM-013`), Kho Tài liệu CLB & Universal Document Viewer Word/Excel/PDF (`NODE-CRM-014`), Quản trị Biểu quyết trực tuyến & Lucky Draw (`NODE-CRM-015`), Quản lý Bản tin & Truyền thông CLB (`NODE-CRM-016`), Gia hạn Hội viên & Xử lý Nợ phí niên liễm (`NODE-CRM-017`), Quản trị Đào tạo đa thức (`NODE-CRM-018`), Nhật ký Lịch sử thao tác Audit Logs (`NODE-CRM-019`), Trao Cơ hội đa đối tượng & Hội nhóm (`NODE-CRM-020`), Theme Studio, Icon Picker 14 tính năng & Đồng bộ giao diện 3 màu (`NODE-CRM-021`), Trung tâm Thông báo Quản trị (`NODE-CRM-022`), Quản lý Landing Web Dynamic & Subdomain (`NODE-CRM-023`), Quản lý Mẫu Thư Mời Đa Kênh & Trình Tạo Mẫu Thư Nhắc Nhở Tùy Biến (`NODE-CRM-024`).
+      - **Phần III: Phân Hệ Mobile App CEO 1983 (17 Nodes)**: Trang chủ Ticker Nến Realtime & Shortcut (`NODE-APP-001`), Thẻ Hội viên VIP số & QR cá nhân bảo mật (`NODE-APP-002`), Trang quét danh thiếp công khai bảo mật (`NODE-APP-003`), Danh bạ Hội viên & Bản đồ 2D Google Maps dẫn đường (`NODE-APP-004`), Cơ hội giao thương B2B Strip 3 thẻ ngang (`NODE-APP-005`), Trung tâm thống kê 5 phân loại nghiệp vụ (`NODE-APP-006`), Giao thương B2B, Gian hàng của tôi (Menu 3 chấm & Danh mục ai quan tâm) (`NODE-APP-007`), Sự kiện & Hoạt động (Tab Sự kiện/Hoạt động, 1 nút Xem tất cả, Tải poster, Tải/Chụp ảnh trực tiếp) (`NODE-APP-008`), Biểu quyết trực tuyến gắn với Sự kiện/Họp (`NODE-APP-009`), Bảng tin Mạng lưới doanh nhân, bình luận, tương tác & link QR bảo mật (`NODE-APP-010`), Hồ sơ cá nhân & Doanh nghiệp 360 độ (`NODE-APP-011`), Cài đặt hệ thống, Đổi mật khẩu & Hỗ trợ 24/7 (`NODE-APP-012`), Kho Đặc quyền Doanh nhân VIP Perks & QR động (`NODE-APP-013`), Cầu nối Native Capacitor & Push Notification (`NODE-APP-014`), Gặp gỡ Kết nối B2B 1-on-1 giữa 2 tài khoản (`NODE-APP-015`), Đào tạo di động & Phòng họp Video Call Jitsi nhúng (`NODE-APP-016`), Lịch hoạt động & Báo thức nhắc hẹn đa kênh tự động (`NODE-APP-017`).
+      - **Phần IV: Luồng Khách Vãng Lai & Kiểm Tra Mã QR An Toàn (1 Node)**: Quét mã QR đăng ký vé khách & Tự động gửi email cảnh báo khi mã QR hết hạn/bị xóa (`NODE-EXT-001`).
+    * Mỗi chức năng bao gồm: Tên & Mã định danh, Đối tượng sử dụng, Mô tả luồng nghiệp vụ chi tiết từng bước, Danh sách API Endpoint Backend kèm Method HTTP, Bảng CSDL PostgreSQL lưu trữ kèm danh sách cột quan trọng, Ràng buộc và ghi chú kỹ thuật.
+  - **2. Xuất Bản Hai Định Dạng Tài Liệu Chuẩn Mực (Word & PDF)**:
+    * File Word (.docx): Tạo bằng thư viện `docx`, bảng 5 cột có màu nền header Navy Blue `#003B95`, border `#CBD5E1`, font chữ chuẩn.
+    * File PDF (.pdf): Tạo bằng `playwright.chromium` (sử dụng engine Google Chrome/Edge tích hợp sẵn), khổ ngang A4 Landscape, vector typography sắc nét, header và footer tự động đếm số trang (`Trang X / Y`), màu sắc nhận diện thương hiệu CLB CEO 1983 chuẩn mực.
+    * Vị trí lưu trữ tài liệu:
+      - `document/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.docx`
+      - `document/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.pdf`
+      - `apps/ceo1983_app_fe/public/docs/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.docx`
+      - `apps/ceo1983_app_fe/public/docs/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.pdf`
+  - **3. Tuân Thủ Nghiêm Ngặt Rule 1**:
+    * Không tự ý chạy `git commit` hay `git push`. Toàn bộ thay đổi và file tạo mới được lưu trữ tại workspace cục bộ (local).
 
 - **Bản cập nhật ngày 14/11/2026 (v11.47): Hoàn Thiện Đồng Bộ 4 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Thiết Lập Mẫu Thư Nhắc Động, Luồng Check QR Hết Hạn Gửi Email, Xóa Mock Tài Khoản & Chuẩn Hóa Nút Xem Tất Cả ([NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-CRM-024], [NODE-APP-008])**:
   - **1. Web CRM: Thiết Lập Mẫu Thư Nhắc Nhở Động Với Các Trường Tùy Biến (Dynamic Reminder Builder)**:
@@ -3399,6 +3515,64 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 14/11/2026 (v11.49): Khắc Phục Triệt Để Lỗi 404 Sửa Hội Viên, Đổi Tên Tài Khoản Thành Phạm Hồng Nguyên, Sửa Lỗi Crash /permissions, Xóa @ Thừa Tên Đăng Nhập, Chuẩn Hóa Nhóm Phân Quyền & Nút Xem Tất Cả ([NODE-CRM-003], [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-008])**:
+  - **1. Sửa Tên Tài Khoản `info@viconnect.vn` / `infor@viconnect.vn` Thành "Phạm Hồng Nguyên" & Khắc Phục Lỗi 404 "Không Tìm Thấy Hội Viên"**:
+    * **Nguyên nhân cốt lõi gây lỗi 404**:
+      - Trước đây trong `apps/ceo1983_app_be/src/users/users.service.ts` tại hàm `ensureDefaultUsersInDatabase()`, câu lệnh SQL `INSERT INTO public.members` bị sai tên cột `company` (tên đúng trong Prisma schema là `company_name`), thừa cột `position`, và thiếu cột `association_id` (cột `NOT NULL @db.Uuid`). Do câu lệnh có `.catch(() => {})`, PostgreSQL trả về lỗi khiến bản ghi `M1983-001` và `M1983-002` không được lưu vào CSDL `public.members`.
+      - Khi người dùng bấm lưu thay đổi hội viên `M1983-002`, backend gọi `updateMember` chỉ tìm trong bảng `public.members`. Do không có bản ghi nên ném lỗi 404 `NotFoundException('Không tìm thấy hội viên')`.
+      - Đồng thời màn hình Dashboard và Quản lý tài khoản cũng không hiển thị được dữ liệu động do bảng `public.members` bị trống.
+    * **Giải pháp khắc phục toàn diện**:
+      - Tại `apps/ceo1983_app_be/src/users/users.service.ts`:
+        * Cập nhật tên hiển thị của tài khoản `info@viconnect.vn` / `infor@viconnect.vn` thành **"Phạm Hồng Nguyên"** đồng bộ trên cả 3 bảng: `public.vione_users`, `public.user_profiles` (chức danh Trưởng Ban Truyền Thông) và `public.members`.
+        * Sửa lại câu lệnh SQL `INSERT INTO public.members` cho cả `M1983-001` và `M1983-002` với đầy đủ các cột chuẩn theo Prisma Schema: `id`, `user_id`, `code`, `name`, `email`, `phone`, `company_name`, `department`, `executive_role`, `status`, `association_id`, `type`, `level`, `industry`, `region`, `payment_status`, `fee_paid`, `created_at`, `updated_at`.
+      - Tại `apps/ceo1983_app_be/src/members/members.service.ts`:
+        * Nâng cấp hàm `updateMember`: Mở rộng tìm kiếm theo `id`, `code`, `user_id`, và `email`. Bổ sung cơ chế **Auto-provisioning**: Nếu bản ghi chưa có trong `public.members` nhưng tài khoản đã tồn tại trong `public.vione_users`, hệ thống tự động khởi tạo bản ghi trong `public.members` và tiến hành cập nhật, đảm bảo không bao giờ bị ném lỗi 404.
+        * Nâng cấp hàm `getMemberById`: Tương tự, bổ sung fallback tra cứu từ `public.vione_users` và tự động provision nếu thiếu bản ghi trong `members`.
+      - Tại `apps/ceo1983_app_fe/src/lib/members-data.ts`:
+        * Cập nhật bản ghi fallback `M1983-002` với `name: "Phạm Hồng Nguyên"`, `contact: "Trưởng Ban Truyền Thông"`, `companyName: "CLB Doanh Nhân CEO 1983"`.
+  - **2. Sửa Lỗi Crash Màn Hình Phân Quyền `/permissions` ("Something went wrong")**:
+    * **Nguyên nhân**: File `account-settings.index.tsx` và `accounts.tsx` import các hằng số `{ ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeDept, normalizeRole }` từ file route `src/routes/permissions.tsx`. Việc import từ file route của TanStack Router gây ra tình trạng cyclic chunk dependency và lỗi đánh giá module (module initialization error) khi Vite thực hiện code-splitting trên môi trường production.
+    * **Giải pháp**:
+      - Chuyển toàn bộ các import trên sang import từ `@/lib/rbac-permission-helpers`.
+      - Trong `apps/ceo1983_app_fe/src/routes/permissions.tsx`, re-export các hằng số từ `@/lib/rbac-permission-helpers` thay vì định nghĩa trùng lặp.
+      - Bổ sung phòng thủ an toàn (safe navigation `?.` và fallback mảng rỗng `[]`) trong `RbacPermissionMatrix.tsx` tại các hàm `filteredCategories` và `fetchNestApi("/admin/permission-matrix")`.
+  - **3. Khắc Phục Lỗi Tên Đăng Nhập Bị Thừa Ký Tự `@` (Ví Dụ `@admin@viconnect.vn`)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+      - Nâng cấp hàm `displayUsername`: Dùng vòng lặp `while (clean.startsWith("@"))` để làm sạch toàn bộ dấu `@` ở đầu chuỗi. Nếu chuỗi là một địa chỉ email (chứa ký tự `@`), trả về nguyên bản chuỗi sạch, tuyệt đối không thêm tiền tố `@`.
+      - Mở rộng quyền quản trị `canManageUsers`: Cấp toàn quyền cho các tài khoản quản trị hệ thống (`admin@connect.vn`, `admin@viconnect.vn`, `info@viconnect.vn`, `infor@viconnect.vn` và các vai trò `quan_tri`, `admin`, `platform_admin`, `superadmin`, `chu_tich`) để có thể thay đổi quyền hạn của các tài khoản khác.
+  - **4. Chuẩn Hóa Nhóm Phân Quyền & Quản Trị Người Dùng Trên Sidebar**:
+    * Trong `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx` và `use-sidebar-labels.ts`:
+      - Tại nhóm **PHÂN QUYỀN**: Đổi tên mục thành **"Quản trị người dùng"** (`/account-settings?tab=users`) thay vì "Quản lý Tài Khoản". Khi bấm vào, hệ thống mở trực tiếp tab Quản trị người dùng (User Management).
+      - Tại menu profile góc trên bên phải (avatar dropdown): Giữ nguyên mục "Quản lý tài khoản" (`/account-settings`) để người dùng quản lý hồ sơ và mật khẩu cá nhân.
+  - **5. Chuẩn Hóa Màn Hình Sự Kiện & Hoạt Động Trên App Mobile CEO 1983**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Tiêu đề màn hình hiển thị trang trọng: **"Sự kiện & Hoạt động"**.
+      - Ẩn nút "Xem tất cả" tại header "Sự kiện sắp tới" khi đang ở danh mục "Tất cả" (`eventCategory === "all"`).
+      - Đảm bảo trong khu vực danh mục sự kiện chỉ hiển thị duy nhất 1 nút "Xem tất cả", và nút này **TUYỆT ĐỐI KHÔNG HIỂN THỊ KHI ĐANG Ở DANH MỤC "TẤT CẢ"**.
+  - **6. Kiểm Tra Chất Lượng & Ràng Buộc Kỹ Thuật (Strict Type-Check & Rule 1)**:
+    * Chạy `npx tsc --noEmit` tại cả `apps/ceo1983_app_be` và `apps/ceo1983_app_fe` -> Đạt **0 errors (Exit code 0)**.
+    * Chạy kiểm tra build Vite SSR Frontend (`npm run build --prefix apps/ceo1983_app_fe`) -> Đạt thành công **Exit code 0**.
+    * Tuân thủ nghiêm ngặt **Rule 1**: Giữ toàn bộ thay đổi ở local, tuyệt đối không tự động chạy `git commit` hay `git push`.
+
+- **Bản cập nhật ngày 14/11/2026 (v11.48): Hoàn Thành Xuất Bản Đặc Tả Chi Tiết Toàn Bộ 47 Chức Năng Hệ Thống CLB Doanh Nhân CEO 1983 (HanoiBA) Ra File Word (.docx) & PDF (.pdf)**:
+  - **1. Xây Dựng Bản Đặc Tả Kỹ Thuật Toàn Diện (Không Bỏ Sót Bất Kỳ Chức Năng Nào)**:
+    * Đặc tả chi tiết 47 Functional Nodes thuộc 4 phân hệ lớn:
+      - **Phần I: Hạ Tầng Core, Xác Thực & Bảo Mật (7 Nodes)**: Đăng nhập JWT/OAuth/Biometric (`NODE-CORE-001`), Đăng xuất & Thu hồi phiên (`NODE-CORE-002`), Đổi mật khẩu chủ động (`NODE-CORE-003`), Quên mật khẩu & Phê duyệt cấp mới qua CRM (`NODE-CORE-004`), Đăng ký hội viên mới & Hồ sơ DN (`NODE-CORE-005`), Ma trận phân quyền RBAC 2 Tab CRM/App & Tự động đồng bộ tên Sidebar (`NODE-CRM-006`), Quản lý tài khoản & Gán Ban chuyên môn trực tiếp (`NODE-CRM-005`).
+      - **Phần II: Phân Hệ Web CRM Quản Trị (17 Nodes)**: Tổng quan Dashboard CLB (`NODE-CRM-001`), Trung tâm thống kê 5 danh mục (`NODE-CRM-002`), Quản trị danh bạ Hội viên 360 độ (`NODE-CRM-003`), Quản trị Doanh nghiệp thành viên (`NODE-CRM-004`), Quản trị Sự kiện, Bán vé, Xếp chỗ/Đổi chỗ bắn mail/Zalo & Bắn mạng lưới (`NODE-CRM-007`), Quản lý Cuộc họp Ban & Gặp gỡ CLB (`NODE-CRM-008`), Quản lý Thu ngân sách VietQR SeABank (`NODE-CRM-009`), Quản lý Chi ngân sách, Tạm ứng & Hoàn ứng (`NODE-CRM-010`), Báo cáo Tài chính tổng hợp & Quyết toán quỹ Realtime PostgreSQL (`NODE-CRM-011`), Quản lý Công việc & Giao việc Ban chuyên môn xem file trực tiếp (`NODE-CRM-012`), Quản trị Nhà tài trợ & Quyền lợi (`NODE-CRM-013`), Kho Tài liệu CLB & Universal Document Viewer Word/Excel/PDF (`NODE-CRM-014`), Quản trị Biểu quyết trực tuyến & Lucky Draw (`NODE-CRM-015`), Quản lý Bản tin & Truyền thông CLB (`NODE-CRM-016`), Gia hạn Hội viên & Xử lý Nợ phí niên liễm (`NODE-CRM-017`), Quản trị Đào tạo đa thức (`NODE-CRM-018`), Nhật ký Lịch sử thao tác Audit Logs (`NODE-CRM-019`), Trao Cơ hội đa đối tượng & Hội nhóm (`NODE-CRM-020`), Theme Studio, Icon Picker 14 tính năng & Đồng bộ giao diện 3 màu (`NODE-CRM-021`), Trung tâm Thông báo Quản trị (`NODE-CRM-022`), Quản lý Landing Web Dynamic & Subdomain (`NODE-CRM-023`), Quản lý Mẫu Thư Mời Đa Kênh & Trình Tạo Mẫu Thư Nhắc Nhở Tùy Biến (`NODE-CRM-024`).
+      - **Phần III: Phân Hệ Mobile App CEO 1983 (17 Nodes)**: Trang chủ Ticker Nến Realtime & Shortcut (`NODE-APP-001`), Thẻ Hội viên VIP số & QR cá nhân bảo mật (`NODE-APP-002`), Trang quét danh thiếp công khai bảo mật (`NODE-APP-003`), Danh bạ Hội viên & Bản đồ 2D Google Maps dẫn đường (`NODE-APP-004`), Cơ hội giao thương B2B Strip 3 thẻ ngang (`NODE-APP-005`), Trung tâm thống kê 5 phân loại nghiệp vụ (`NODE-APP-006`), Giao thương B2B, Gian hàng của tôi (Menu 3 chấm & Danh mục ai quan tâm) (`NODE-APP-007`), Sự kiện & Hoạt động (Tab Sự kiện/Hoạt động, 1 nút Xem tất cả, Tải poster, Tải/Chụp ảnh trực tiếp) (`NODE-APP-008`), Biểu quyết trực tuyến gắn với Sự kiện/Họp (`NODE-APP-009`), Bảng tin Mạng lưới doanh nhân, bình luận, tương tác & link QR bảo mật (`NODE-APP-010`), Hồ sơ cá nhân & Doanh nghiệp 360 độ (`NODE-APP-011`), Cài đặt hệ thống, Đổi mật khẩu & Hỗ trợ 24/7 (`NODE-APP-012`), Kho Đặc quyền Doanh nhân VIP Perks & QR động (`NODE-APP-013`), Cầu nối Native Capacitor & Push Notification (`NODE-APP-014`), Gặp gỡ Kết nối B2B 1-on-1 giữa 2 tài khoản (`NODE-APP-015`), Đào tạo di động & Phòng họp Video Call Jitsi nhúng (`NODE-APP-016`), Lịch hoạt động & Báo thức nhắc hẹn đa kênh tự động (`NODE-APP-017`).
+      - **Phần IV: Luồng Khách Vãng Lai & Kiểm Tra Mã QR An Toàn (1 Node)**: Quét mã QR đăng ký vé khách & Tự động gửi email cảnh báo khi mã QR hết hạn/bị xóa (`NODE-EXT-001`).
+    * Mỗi chức năng bao gồm: Tên & Mã định danh, Đối tượng sử dụng, Mô tả luồng nghiệp vụ chi tiết từng bước, Danh sách API Endpoint Backend kèm Method HTTP, Bảng CSDL PostgreSQL lưu trữ kèm danh sách cột quan trọng, Ràng buộc và ghi chú kỹ thuật.
+  - **2. Xuất Bản Hai Định Dạng Tài Liệu Chuẩn Mực (Word & PDF)**:
+    * File Word (.docx): Tạo bằng thư viện `docx`, bảng 5 cột có màu nền header Navy Blue `#003B95`, border `#CBD5E1`, font chữ chuẩn.
+    * File PDF (.pdf): Tạo bằng `playwright.chromium` (sử dụng engine Google Chrome/Edge tích hợp sẵn), khổ ngang A4 Landscape, vector typography sắc nét, header và footer tự động đếm số trang (`Trang X / Y`), màu sắc nhận diện thương hiệu CLB CEO 1983 chuẩn mực.
+    * Vị trí lưu trữ tài liệu:
+      - `document/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.docx`
+      - `document/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.pdf`
+      - `apps/ceo1983_app_fe/public/docs/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.docx`
+      - `apps/ceo1983_app_fe/public/docs/BANG_DAC_TA_CHI_TIET_TOAN_BO_CHUC_NANG_CEO1983.pdf`
+  - **3. Tuân Thủ Nghiêm Ngặt Rule 1**:
+    * Không tự ý chạy `git commit` hay `git push`. Toàn bộ thay đổi và file tạo mới được lưu trữ tại workspace cục bộ (local).
 
 - **Bản cập nhật ngày 14/11/2026 (v11.47): Hoàn Thiện Đồng Bộ 4 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Thiết Lập Mẫu Thư Nhắc Động, Luồng Check QR Hết Hạn Gửi Email, Xóa Mock Tài Khoản & Chuẩn Hóa Nút Xem Tất Cả ([NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-CRM-024], [NODE-APP-008])**:
   - **1. Web CRM: Thiết Lập Mẫu Thư Nhắc Nhở Động Với Các Trường Tùy Biến (Dynamic Reminder Builder)**:

@@ -37,7 +37,8 @@ export const DEFAULT_SIDEBAR_LABELS: Record<string, string> = {
   "/admin/landing-templates": "Quản lý chủ đề",
   "/permissions": "Phân quyền hệ thống",
   "/departments": "Quản lý Ban Chuyên Môn",
-  "/accounts": "Quản lý Tài Khoản",
+  "/accounts": "Quản trị người dùng",
+  "/account-settings?tab=users": "Quản trị người dùng",
   "/documents": "Tài liệu & Biểu mẫu",
   "/templates": "Quản lý mẫu trang",
   // Group keys:
