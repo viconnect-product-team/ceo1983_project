@@ -2071,19 +2071,21 @@ function EventsScreen() {
               <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
                 Sự kiện sắp tới
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setEventCategory("all");
-                  toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
-                  const el = document.getElementById("all-events-section");
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="text-xs font-semibold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer transition active:scale-95"
-              >
-                <span>Xem tất cả ({allEventsCount})</span>
-                <img src="/icons/events/arrow-right-02.svg" className="size-3.5" alt="all" />
-              </button>
+              {eventCategory !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEventCategory("all");
+                    toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
+                    const el = document.getElementById("all-events-section");
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="text-xs font-semibold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer transition active:scale-95"
+                >
+                  <span>Xem tất cả ({allEventsCount})</span>
+                  <img src="/icons/events/arrow-right-02.svg" className="size-3.5" alt="all" />
+                </button>
+              )}
             </div>
 
             <FeaturedUpcomingEventHero

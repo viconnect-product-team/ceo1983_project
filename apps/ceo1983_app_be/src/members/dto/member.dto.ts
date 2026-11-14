@@ -43,6 +43,8 @@ export class UpdateMemberDto {
   code?: string;
   avatar?: string;
   coverUrl?: string;
+  companyName?: string;
+  company?: string;
 }
 
 export class UpdateMemberContactDto {

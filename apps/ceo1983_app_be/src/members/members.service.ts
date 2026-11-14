@@ -1228,7 +1228,44 @@ export class MembersService {
     `.catch(() => []);
 
     if (rows.length === 0) {
-      // Fallback: tra c?u t? business_cards ho?c business_identities
+      // Fallback 1: tra cứu từ vione_users nếu tài khoản đã tồn tại trên hệ thống
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      const vUsers = await this.prisma.$queryRaw<any[]>`
+        SELECT u.id, u.name, u.email, u.phone, u.created_at, p.display_name, p.company_name, p.professional_title
+        FROM public.vione_users u
+        LEFT JOIN public.user_profiles p ON p.user_id = u.id
+        WHERE (${isUuid} AND u.id = ${cleanId}::uuid)
+           OR LOWER(u.email) = LOWER(${cleanId})
+           OR LOWER(u.username) = LOWER(${cleanId})
+        LIMIT 1
+      `.catch(() => []);
+
+      if (vUsers.length > 0) {
+        const u = vUsers[0];
+        const targetMemberId = cleanId.startsWith('M1983-') ? cleanId : (isUuid ? `M1983-${cleanId.slice(0, 4)}` : cleanId);
+        // Tự động tạo bản ghi members để bảo toàn tính toàn vẹn dữ liệu
+        await this.prisma.$executeRaw`
+          INSERT INTO public.members (
+            id, user_id, code, name, email, phone, company_name, department, executive_role, status,
+            association_id, type, level, industry, region, payment_status, fee_paid, created_at, updated_at
+          ) VALUES (
+            ${targetMemberId}, ${u.id}::uuid, ${targetMemberId}, ${u.display_name || u.name || 'Hội viên CEO 1983'},
+            ${u.email}, ${u.phone || ''}, ${u.company_name || 'CLB Doanh Nhân CEO 1983'}, 'Ban Thành viên',
+            'member', 'active', 'c1983000-0000-4000-8000-000000001983'::uuid,
+            'company', 'memberLevel.large', 'ind.trade', 'region.north', 'paid', true, NOW(), NOW()
+          )
+          ON CONFLICT (id) DO UPDATE SET updated_at = NOW()
+        `.catch(() => {});
+
+        const createdRows = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.members WHERE id = ${targetMemberId} LIMIT 1
+        `.catch(() => []);
+        if (createdRows.length > 0) {
+          return this.mapMemberRow(createdRows[0]);
+        }
+      }
+
+      // Fallback 2: tra cứu từ business_cards hoặc business_identities
       const cards = await this.prisma.$queryRaw<any[]>`
         SELECT user_id FROM public.business_cards 
         WHERE slug = ${cleanId} OR id::text = ${cleanId} 
@@ -1647,10 +1684,56 @@ export class MembersService {
   }
 
   async updateMember(userId: string, id: string, data: UpdateMemberDto) {
-    const cleanId = String(id || '').replace(/^RNW-/, '');
-    const existing = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.members WHERE id::text = ${cleanId} OR code = ${cleanId} OR user_id::text = ${cleanId} LIMIT 1
+    const cleanId = String(id || '').replace(/^RNW-/, '').trim();
+    const cleanEmail = (data.email || '').trim().toLowerCase();
+    let existing = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.members 
+      WHERE id::text = ${cleanId} 
+         OR code = ${cleanId} 
+         OR user_id::text = ${cleanId}
+         OR LOWER(email) = LOWER(${cleanId})
+         OR (${cleanEmail !== ''} AND LOWER(email) = ${cleanEmail})
+      LIMIT 1
     `.catch(() => []);
+
+    if (existing.length === 0) {
+      // Auto-provision fallback: Tìm trong vione_users nếu tài khoản đã tồn tại
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      const uRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, email FROM public.vione_users
+        WHERE (${isUuid} AND id = ${cleanId}::uuid)
+           OR LOWER(email) = LOWER(${cleanId})
+           OR (${cleanEmail !== ''} AND LOWER(email) = ${cleanEmail})
+        LIMIT 1
+      `.catch(() => []);
+
+      if (uRows.length > 0) {
+        const u = uRows[0];
+        const targetMemberId = cleanId.startsWith('M1983-') ? cleanId : (isUuid ? `M1983-${cleanId.slice(0, 4)}` : cleanId);
+        await this.prisma.$executeRaw`
+          INSERT INTO public.members (
+            id, user_id, code, name, email, phone, company_name, department, executive_role, status,
+            association_id, type, level, industry, region, payment_status, fee_paid, created_at, updated_at
+          ) VALUES (
+            ${targetMemberId}, ${u.id}::uuid, ${targetMemberId}, ${data.name || u.name || 'Hội viên CEO 1983'},
+            ${cleanEmail || u.email}, ${data.phone || ''}, ${(data as any).companyName || data.company || 'CLB Doanh Nhân CEO 1983'},
+            ${data.department || 'Ban Thành viên'}, ${data.executiveRole || 'member'}, 'active',
+            'c1983000-0000-4000-8000-000000001983'::uuid, 'company', 'memberLevel.large', 'ind.trade',
+            'region.north', 'paid', true, NOW(), NOW()
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            phone = EXCLUDED.phone,
+            company_name = EXCLUDED.company_name,
+            updated_at = NOW()
+        `.catch(() => {});
+
+        existing = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM public.members WHERE id = ${targetMemberId} LIMIT 1
+        `.catch(() => []);
+      }
+    }
 
     if (existing.length === 0) {
       throw new NotFoundException('Không tìm thấy hội viên');

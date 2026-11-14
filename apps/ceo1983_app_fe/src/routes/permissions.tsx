@@ -19,81 +19,17 @@ import {
   getRolesForDepartment,
   INITIAL_DEPARTMENTS,
   DepartmentItem,
+  ROLE_OPTIONS,
+  DEPARTMENT_OPTIONS,
+  normalizeRole,
+  normalizeDept,
 } from "@/lib/rbac-permission-helpers";
 
-export const ROLE_OPTIONS = [
-  { value: "quan_tri", label: "Quản trị", desc: "Toàn quyền quản trị hệ thống" },
-  { value: "chu_tich", label: "Chủ tịch", desc: "Chủ tịch Hiệp hội" },
-  { value: "admin", label: "Admin", desc: "Quản trị viên" },
-  { value: "ban_dieu_hanh", label: "Ban Điều Hành", desc: "Lãnh đạo điều hành" },
-  { value: "tong_thu_ky", label: "Tổng thư ký", desc: "Điều phối thư ký" },
-  { value: "truong_ban_dieu_hanh", label: "Trưởng ban Điều hành", desc: "Quản lý tổ chức, điều hành" },
-  { value: "truong_ban_truyen_thong", label: "Trưởng ban Truyền thông", desc: "Quản lý truyền thông" },
-  { value: "truong_ban_thanh_vien", label: "Trưởng ban Thành viên", desc: "Quản lý hội viên" },
-  { value: "truong_ban_xuc_tien", label: "Trưởng ban Xúc tiến", desc: "Quản lý giao thương" },
-  { value: "truong_ban_tai_chinh", label: "Trưởng ban Tài chính", desc: "Quản lý tài chính" },
-  { value: "truong_ban_thien_nguyen", label: "Trưởng ban Thiện nguyện", desc: "Quản trị thiện nguyện" },
-  { value: "thanh_vien_ban_su_kien", label: "Thành viên Ban Sự Kiện", desc: "Thành viên chuyên môn Ban Sự Kiện" },
-  { value: "thanh_vien_ban_xuc_tien", label: "Thành viên Ban Xúc Tiến Thương Mại", desc: "Thành viên chuyên môn Ban Xúc Tiến TM" },
-  { value: "thanh_vien_ban_thanh_vien", label: "Thành viên Ban Thành Viên", desc: "Thành viên chuyên môn Ban Thành Viên" },
-  { value: "thanh_vien_ban_truyen_thong", label: "Thành viên Ban Truyền Thông", desc: "Thành viên chuyên môn Ban Truyền Thông" },
-  { value: "thanh_vien_ban_tai_chinh", label: "Thành viên Ban Tài Chính", desc: "Thành viên chuyên môn Ban Tài Chính" },
-  { value: "thanh_vien_ban_thien_nguyen", label: "Thành viên Ban Thiện Nguyện", desc: "Thành viên chuyên môn Ban Thiện Nguyện" },
-  { value: "member", label: "Hội viên", desc: "Hội viên chính thức hiệp hội" },
-];
+export { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeRole, normalizeDept };
 
 export function getDynamicRoleOptions(): { value: string; label: string; desc?: string }[] {
   return getAllDynamicRoleOptions();
 }
-
-export function normalizeRole(r?: string): string {
-  if (!r) return "member";
-  const s = r.toLowerCase().trim();
-  if (s.startsWith("thanh_vien_ban_") || s.startsWith("truong_ban_")) return s;
-  if (s.includes("thành viên ban sự kiện") || s.includes("ban sự kiện")) return "thanh_vien_ban_su_kien";
-  if (s.includes("thành viên ban xúc tiến") || s.includes("xúc tiến thương mại")) return "thanh_vien_ban_xuc_tien";
-  if (s.includes("thành viên ban thành viên")) return "thanh_vien_ban_thanh_vien";
-  if (s.includes("thành viên ban truyền thông")) return "thanh_vien_ban_truyen_thong";
-  if (s.includes("thành viên ban tài chính")) return "thanh_vien_ban_tai_chinh";
-  if (s.includes("thành viên ban thiện nguyện")) return "thanh_vien_ban_thien_nguyen";
-  if (s.includes("chủ tịch") || s === "chu_tich" || s === "president") return "chu_tich";
-  if (
-    s === "quan_tri" ||
-    s === "platform_admin" ||
-    s === "superadmin" ||
-    s.includes("hệ thống") ||
-    s === "quản trị"
-  )
-    return "quan_tri";
-  if (s === "admin" || s === "adm") return "admin";
-  if (s.includes("tổng thư ký") || s.includes("tong_thu_ky") || s === "ttk")
-    return "tong_thu_ky";
-  if (s.includes("ban điều hành") || s.includes("điều hành") || s === "truong_ban_dieu_hanh" || s === "ban_dieu_hanh" || s === "bdh")
-    return "truong_ban_dieu_hanh";
-  if (s.includes("truyền thông") || s.includes("btt") || s === "truong_ban_truyen_thong")
-    return "truong_ban_truyen_thong";
-  if (s.includes("thành viên") || s.includes("btv") || s === "truong_ban_thanh_vien")
-    return "truong_ban_thanh_vien";
-  if (s.includes("xúc tiến") || s.includes("bxt") || s.includes("thương mại") || s === "truong_ban_xuc_tien")
-    return "truong_ban_xuc_tien";
-  if (s.includes("tài chính") || s.includes("btc") || s === "truong_ban_tai_chinh")
-    return "truong_ban_tai_chinh";
-  if (s.includes("thiện nguyện") || s.includes("btn") || s === "truong_ban_thien_nguyen")
-    return "truong_ban_thien_nguyen";
-  if (s.includes("thư ký"))
-    return "tong_thu_ky";
-  return "member";
-}
-
-export const DEPARTMENT_OPTIONS = [
-  "Ban Điều Hành",
-  "Ban Thư Ký",
-  "Ban Thành viên",
-  "Ban Xúc tiến",
-  "Ban Truyền thông",
-  "Ban Tài chính",
-  "Ban Thiện nguyện",
-];
 
 export function getDynamicDepartmentOptions(): string[] {
   const custom = typeof window !== "undefined" ? getCustomDepartments() : INITIAL_DEPARTMENTS;
@@ -102,28 +38,6 @@ export function getDynamicDepartmentOptions(): string[] {
     if (!list.includes(c.name)) list.push(c.name);
   });
   return list;
-}
-
-export function normalizeDept(d?: string): string {
-  if (!d) return "Hội viên ceo1983";
-  const s = d.toLowerCase().trim();
-  if (s.includes("thành viên") && !s.includes("hội viên") && !s.includes("ceo")) return "Ban Thành viên";
-  if (s.includes("xúc tiến") || s.includes("thương mại") || s.includes("b2b")) return "Ban Xúc tiến";
-  if (s.includes("thiện nguyện") || s.includes("an sinh")) return "Ban Thiện nguyện";
-  if (s.includes("truyền thông") || s.includes("sự kiện") || s.includes("báo chí")) return "Ban Truyền thông";
-  if (s.includes("điều hành") || s.includes("bdh")) return "Ban Điều Hành";
-  if (s.includes("thư ký")) return "Ban Thư Ký";
-  if (s.includes("tài chính") || s.includes("ngân sách") || s.includes("thu chi")) return "Ban Tài chính";
-
-  if (typeof window !== "undefined") {
-    try {
-      const custom = getCustomDepartments();
-      const match = custom.find((c) => c.name.toLowerCase() === s || c.code.toLowerCase() === s);
-      if (match) return match.name;
-    } catch {}
-  }
-
-  return d;
 }
 
 function PermissionsErrorFallback({ onReset }: { onReset?: () => void }) {

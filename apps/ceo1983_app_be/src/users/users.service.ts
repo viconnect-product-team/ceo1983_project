@@ -356,7 +356,7 @@ export class UsersService implements OnModuleInit {
   /**
    * Đảm bảo 2 tài khoản quản trị và truyền thông được lưu trữ thực sự trong CSDL PostgreSQL
    * - admin@connect.vn (Admin Viconnect / Toàn quyền Quản trị)
-   * - info@viconnect.vn (Ban Truyền Thông CEO 1983)
+   * - info@viconnect.vn (Phạm Hồng Nguyên)
    */
   async ensureDefaultUsersInDatabase() {
     try {
@@ -419,8 +419,10 @@ export class UsersService implements OnModuleInit {
 
       // Đảm bảo record trong public.members cho admin
       await this.prisma.$executeRaw`
-        INSERT INTO public.members (id, user_id, code, name, email, phone, company, position, department, executive_role, status)
-        VALUES (
+        INSERT INTO public.members (
+          id, user_id, code, name, email, phone, company_name, department, executive_role, status,
+          association_id, type, level, industry, region, payment_status, fee_paid, created_at, updated_at
+        ) VALUES (
           'M1983-001',
           ${adminUserId}::uuid,
           'M1983-001',
@@ -428,17 +430,34 @@ export class UsersService implements OnModuleInit {
           'admin@connect.vn',
           '0988870888',
           'Công ty CP Giải Pháp Viconnect',
-          'Quản trị viên',
           'Ban Điều Hành',
           'quan_tri',
-          'active'
+          'active',
+          'c1983000-0000-4000-8000-000000001983'::uuid,
+          'company',
+          'memberLevel.large',
+          'ind.trade',
+          'region.north',
+          'paid',
+          true,
+          NOW(),
+          NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
           email = EXCLUDED.email,
-          executive_role = 'quan_tri',
-          department = 'Ban Điều Hành',
-          status = 'active'
-      `.catch(() => {});
+          phone = EXCLUDED.phone,
+          company_name = EXCLUDED.company_name,
+          department = EXCLUDED.department,
+          executive_role = EXCLUDED.executive_role,
+          status = 'active',
+          payment_status = 'paid',
+          fee_paid = true,
+          association_id = EXCLUDED.association_id,
+          updated_at = NOW()
+      `.catch((err) => {
+        this.logger.warn(`Could not seed M1983-001 into members: ${err.message}`);
+      });
 
       // 2. Kiểm tra tài khoản info@viconnect.vn (hoặc alias infor@viconnect.vn)
       const mediaRows = await this.prisma.$queryRaw<any[]>`
@@ -457,7 +476,7 @@ export class UsersService implements OnModuleInit {
             ${mediaUserId}::uuid, 
             'info@viconnect.vn', 
             'info@viconnect.vn', 
-            'Ban Truyền Thông CEO 1983', 
+            'Phạm Hồng Nguyên', 
             ${mediaPasswordHash}, 
             true, 
             NOW(), 
@@ -473,6 +492,9 @@ export class UsersService implements OnModuleInit {
         });
       } else {
         mediaUserId = String(mediaRows[0].id);
+        await this.prisma.$executeRaw`
+          UPDATE public.vione_users SET name = 'Phạm Hồng Nguyên' WHERE id = ${mediaUserId}::uuid
+        `.catch(() => {});
       }
 
       // Đảm bảo roles cho media
@@ -485,32 +507,63 @@ export class UsersService implements OnModuleInit {
       // Đảm bảo profile cho media
       await this.prisma.$executeRaw`
         INSERT INTO public.user_profiles (user_id, display_name, company_name, professional_title)
-        VALUES (${mediaUserId}::uuid, 'Ban Truyền Thông CEO 1983', 'CLB Doanh Nhân CEO 1983', 'Trưởng Ban Truyền Thông')
+        VALUES (${mediaUserId}::uuid, 'Phạm Hồng Nguyên', 'CLB Doanh Nhân CEO 1983', 'Trưởng Ban Truyền Thông')
         ON CONFLICT (user_id) DO UPDATE SET
-          display_name = EXCLUDED.display_name
+          display_name = EXCLUDED.display_name,
+          company_name = EXCLUDED.company_name,
+          professional_title = EXCLUDED.professional_title
       `.catch(() => {});
 
-      // Đảm bảo record trong public.members cho media
+      // Đảm bảo record trong public.members cho media (Phạm Hồng Nguyên)
       await this.prisma.$executeRaw`
-        INSERT INTO public.members (id, user_id, code, name, email, phone, company, position, department, executive_role, status)
-        VALUES (
+        INSERT INTO public.members (
+          id, user_id, code, name, email, phone, company_name, department, executive_role, status,
+          association_id, type, level, industry, region, payment_status, fee_paid, created_at, updated_at
+        ) VALUES (
           'M1983-002',
           ${mediaUserId}::uuid,
           'M1983-002',
-          'Ban Truyền Thông CEO 1983',
+          'Phạm Hồng Nguyên',
           'info@viconnect.vn',
           '0983988999',
           'CLB Doanh Nhân CEO 1983',
-          'Trưởng Ban Truyền Thông',
           'Ban Truyền Thông',
           'truong_ban_truyen_thong',
-          'active'
+          'active',
+          'c1983000-0000-4000-8000-000000001983'::uuid,
+          'company',
+          'memberLevel.large',
+          'ind.trade',
+          'region.north',
+          'paid',
+          true,
+          NOW(),
+          NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
           email = EXCLUDED.email,
-          executive_role = 'truong_ban_truyen_thong',
-          department = 'Ban Truyền Thông',
-          status = 'active'
+          phone = EXCLUDED.phone,
+          company_name = EXCLUDED.company_name,
+          department = EXCLUDED.department,
+          executive_role = EXCLUDED.executive_role,
+          status = 'active',
+          payment_status = 'paid',
+          fee_paid = true,
+          association_id = EXCLUDED.association_id,
+          updated_at = NOW()
+      `.catch((err) => {
+        this.logger.warn(`Could not seed M1983-002 into members: ${err.message}`);
+      });
+
+      // Đồng bộ tên Phạm Hồng Nguyên cho toàn bộ record liên quan email info@viconnect.vn / infor@viconnect.vn
+      await this.prisma.$executeRaw`
+        UPDATE public.members SET name = 'Phạm Hồng Nguyên' 
+        WHERE email IN ('info@viconnect.vn', 'infor@viconnect.vn') OR id = 'M1983-002' OR code = 'M1983-002'
+      `.catch(() => {});
+      await this.prisma.$executeRaw`
+        UPDATE public.vione_users SET name = 'Phạm Hồng Nguyên' 
+        WHERE email IN ('info@viconnect.vn', 'infor@viconnect.vn')
       `.catch(() => {});
 
     } catch (e: any) {

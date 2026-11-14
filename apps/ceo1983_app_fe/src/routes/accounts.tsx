@@ -31,7 +31,7 @@ import { AppShell } from "@/components/dashboard/AppShell";
 import { PageHeader } from "@/components/dashboard/PageKit";
 import { fetchNestApi, resolveMediaUrl } from "@/lib/api-client";
 import { useRole, clearMeCache } from "@/hooks/use-role";
-import { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeRole, normalizeDept } from "@/routes/permissions";
+import { ROLE_OPTIONS, DEPARTMENT_OPTIONS, normalizeRole, normalizeDept } from "@/lib/rbac-permission-helpers";
 import { SYSTEM_ROLES, COMMITTEES } from "@/components/dashboard/RbacPermissionMatrix";
 import {
   dispatchPermissionSyncEvent,

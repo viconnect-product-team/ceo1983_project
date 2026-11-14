@@ -875,13 +875,13 @@ export function RbacPermissionMatrix({
       .then((res: any) => {
         if (!active || !res) return;
         const incoming = res.categories || res.rows;
-        if (Array.isArray(incoming) && incoming.length > 0 && incoming[0]?.features) {
+        if (Array.isArray(incoming) && incoming.length > 0) {
           const normalized = incoming.map((cat: TreeCategory) => ({
             ...cat,
-            features: cat.features.map((feat) => ({
+            features: (cat.features || []).map((feat) => ({
               ...feat,
               name: getSynchronizedFeatureName(feat.route, feat.name),
-              actions: feat.actions.map((act) => ({
+              actions: (feat.actions || []).map((act) => ({
                 ...act,
                 roles: normalizeActionRoles(act),
               })),
@@ -1399,14 +1399,16 @@ export function RbacPermissionMatrix({
 
     return categories
       .map((c) => {
-        const matchingFeatures = c.features
+        const matchingFeatures = (c.features || [])
           .map((f) => {
-            const featMatches = f.name.toLowerCase().includes(term) || f.route.toLowerCase().includes(term);
-            const matchingActions = f.actions.filter(
+            const featMatches =
+              (f.name || "").toLowerCase().includes(term) ||
+              (f.route || "").toLowerCase().includes(term);
+            const matchingActions = (f.actions || []).filter(
               (a) =>
-                a.name.toLowerCase().includes(term) ||
-                a.code.toLowerCase().includes(term) ||
-                a.description.toLowerCase().includes(term) ||
+                (a.name || "").toLowerCase().includes(term) ||
+                (a.code || "").toLowerCase().includes(term) ||
+                (a.description || "").toLowerCase().includes(term) ||
                 (a.apiEndpoint && a.apiEndpoint.toLowerCase().includes(term))
             );
 
@@ -1423,7 +1425,7 @@ export function RbacPermissionMatrix({
           })
           .filter(Boolean) as TreeFeature[];
 
-        if (c.name.toLowerCase().includes(term)) {
+        if ((c.name || "").toLowerCase().includes(term)) {
           return c;
         }
         if (matchingFeatures.length > 0) {
