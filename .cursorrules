@@ -1,6 +1,11 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 14/11/2026 (v11.47) — [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-APP-008]:
+#   * Web CRM Mẫu Thư Nhắc: Tích hợp CustomReminderTemplateModal với các trường động textarea (mô tả), datetime (ngày giờ), price (chi phí VNĐ), qr (mã QR), text. Hỗ trợ xem trước App/Email/Zalo và lưu vào templates/localStorage.
+#   * Luồng Check QR Hết Hạn: guestRegister trong events.service.ts tự động kiểm tra sự kiện/đào tạo đã xóa/hết hạn và kích hoạt sendQrChangedOrExpiredEmail() trong mail.service.ts, gửi email thông báo chi tiết đến hòm thư người quét mã.
+#   * Xóa Mock Tài Khoản: DEFAULT_ACCOUNTS = [] trong committee-accounts.ts; account-settings.index.tsx lấy danh sách người dùng 100% từ CSDL qua /users; UsersService.onModuleInit() tự động đảm bảo lưu admin@connect.vn và info@viconnect.vn trong CSDL PostgreSQL.
+#   * Mobile App Sự Kiện: Đổi tên thành "Sự kiện & Hoạt động"; ẩn hoàn toàn nút "Xem tất cả" khi ở danh mục "Tất cả"; chỉ hiển thị duy nhất 1 nút khi ở các danh mục khác.
 # 12/11/2026 (v11.31) — [NODE-CRM-001], [NODE-CRM-002], [NODE-APP-003], [NODE-APP-004], [NODE-APP-005]:
 #   * Sidebar CRM: Ánh xạ ban_thu_ky về tong_thu_ky, đồng bộ triệt để với SystemRoleKey tránh lỗi TS2322.
 #   * Xóa tài khoản CRM: Xóa cascade sạch companies, vione_companies, members, vione_users, memberships, user_roles. Phía Frontend lưu vba_deleted_account_identifiers_v3 chặn nạp lại khi F5.

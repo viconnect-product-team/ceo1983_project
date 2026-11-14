@@ -60,6 +60,18 @@ export interface SendEventSoldOutEmailOptions {
   eventLocation?: string;
 }
 
+export interface SendQrChangedOrExpiredEmailOptions {
+  to: string;
+  fullName: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  eventTitle?: string;
+  qrCodeRef?: string;
+  hotline?: string;
+  supportEmail?: string;
+}
+
 export interface SendAppWelcomeEmailOptions {
   to: string;
   fullName: string;
@@ -1246,6 +1258,154 @@ export class MailService {
       html,
       fromName: 'Ban Tổ Chức Sự Kiện CEO 1983',
       auditContext: `[EVENT_SOLDOUT_EMAIL] Event: ${eventTitle} | Name: ${fullName} | Email: ${cleanTo}`,
+    });
+  }
+
+  /**
+   * Gửi email thông báo mã QR sự kiện/đào tạo đã bị thay đổi, xóa hoặc hết hạn trên hệ thống
+   */
+  async sendQrChangedOrExpiredEmail(
+    options: SendQrChangedOrExpiredEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      phone,
+      company,
+      position,
+      eventTitle = 'Sự kiện / Chương trình đào tạo CLB CEO 1983',
+      qrCodeRef,
+      hotline = '0983 1983 83 / 0973 205 683',
+      supportEmail = 'btk@ceo1983.com',
+    } = options;
+
+    const cleanTo = (to || '').trim();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      this.logger.warn(
+        `Cannot send QR expired email: invalid destination email "${cleanTo}"`,
+      );
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const subject = `[CLB CEO 1983] Thông Báo Thay Đổi Mã QR & Cập Nhật Chương Trình — Kính gửi ${fullName}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 12px 36px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #78350F 0%, #B45309 45%, #D97706 100%); padding: 36px 28px; text-align: center; color: #ffffff; }
+    .warning-badge { display: inline-block; background: rgba(254, 243, 199, 0.25); border: 1px solid #FDE68A; color: #FEF3C7; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .title { font-size: 21px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff; line-height: 1.35; }
+    .subtitle { font-size: 13px; color: #fde68a; margin: 0; font-weight: 500; }
+    .content { padding: 32px 28px; }
+    .greeting { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .message { font-size: 13.5px; line-height: 1.65; color: #334155; margin-bottom: 20px; }
+    .notice-card { background: #FEF3C7; border: 1.5px dashed #F59E0B; border-radius: 14px; padding: 18px 20px; margin: 20px 0; }
+    .notice-card strong { color: #92400E; font-size: 14px; }
+    .notice-card p { font-size: 13px; color: #78350F; margin: 8px 0 0 0; line-height: 1.6; }
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; background: #f8fafc; border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .info-table td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+    .info-table tr:last-child td { border-bottom: none; }
+    .info-label { width: 35%; color: #64748b; font-weight: 600; }
+    .info-value { width: 65%; color: #0f172a; font-weight: 700; }
+    .action-box { text-align: center; margin: 28px 0 20px 0; }
+    .btn-action { display: inline-block; background: #003B95; color: #ffffff !important; padding: 14px 28px; border-radius: 12px; font-size: 13.5px; font-weight: 800; text-decoration: none; box-shadow: 0 4px 14px rgba(0, 59, 149, 0.25); }
+    .footer { background: #0B192C; color: #94a3b8; padding: 24px 28px; text-align: center; font-size: 11.5px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="warning-badge">⚠️ THÔNG BÁO TỪ BAN TỔ CHỨC</div>
+      <h1 class="title">THÔNG BÁO CẬP NHẬT MÃ QR</h1>
+      <p class="subtitle">CLB Doanh Nhân CEO 1983 (HanoiBA)</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Quý Doanh nhân / Khách quý: ${fullName},</div>
+      
+      <p class="message">
+        Hệ thống cổng thông tin CLB Doanh Nhân CEO 1983 ghi nhận Quý Anh/Chị vừa thực hiện quét mã QR đăng ký tham gia chương trình. 
+        Tuy nhiên, Ban Tổ Chức xin trân trọng thông báo:
+      </p>
+
+      <div class="notice-card">
+        <strong>📌 Mã QR đã thay đổi hoặc không còn hiệu lực sử dụng:</strong>
+        <p>
+          Chương trình sự kiện hoặc khóa đào tạo <strong>"${eventTitle}"</strong> liên quan đến mã QR này đã có sự điều chỉnh về cấu hình, thay đổi lịch trình tổ chức hoặc đã được thay thế bằng mã định danh mới trên hệ thống. Vì vậy, phiếu quét mã cũ tạm thời không thể tự động xác nhận vào hệ thống vé check-in.
+        </p>
+      </div>
+
+      <table class="info-table">
+        <tr>
+          <td class="info-label">👤 Khách đăng ký:</td>
+          <td class="info-value">${fullName}</td>
+        </tr>
+        ${phone ? `<tr><td class="info-label">📱 Số điện thoại:</td><td class="info-value">${phone}</td></tr>` : ''}
+        ${company ? `<tr><td class="info-label">🏢 Doanh nghiệp:</td><td class="info-value">${company}</td></tr>` : ''}
+        ${position ? `<tr><td class="info-label">💼 Chức vụ:</td><td class="info-value">${position}</td></tr>` : ''}
+        <tr>
+          <td class="info-label">🎪 Chương trình:</td>
+          <td class="info-value">${eventTitle}</td>
+        </tr>
+        ${qrCodeRef ? `<tr><td class="info-label">🏷️ Mã tham chiếu:</td><td class="info-value">${qrCodeRef}</td></tr>` : ''}
+        <tr>
+          <td class="info-label">⏳ Trạng thái:</td>
+          <td class="info-value" style="color: #b45309;">Cần cập nhật mã QR mới / Liên hệ hỗ trợ</td>
+        </tr>
+      </table>
+
+      <div style="background: #eff6ff; border-radius: 12px; padding: 16px; border: 1px solid #bfdbfe; font-size: 13px; color: #1e40af; line-height: 1.6;">
+        <strong>✦ HƯỚNG DẪN DÀNH CHO QUÝ ANH/CHỊ:</strong><br>
+        Để được cấp mã QR vé mời mới nhất, hoặc cập nhật thông tin địa điểm và thời gian chính xác của chương trình, Quý Anh/Chị vui lòng liên hệ trực tiếp với Ban Thư Ký CLB qua:<br>
+        • Hotline hỗ trợ 24/7: <strong>${hotline}</strong><br>
+        • Email Ban Thư Ký: <strong>${supportEmail}</strong><br>
+        • Hoặc truy cập trực tiếp ứng dụng di động để tra cứu danh sách sự kiện đang mở.
+      </div>
+
+      <div class="action-box">
+        <a href="${DEFAULT_APP_URL}" class="btn-action" target="_blank">
+          📲 Mở Ứng Dụng CEO 1983 Tra Cứu Sự Kiện
+        </a>
+      </div>
+
+      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">
+        Ban Thư Ký CLB Doanh Nhân CEO 1983 thành thật cáo lỗi vì sự bất tiện này và rất mong được đón tiếp Quý Anh/Chị!
+      </p>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 6px 0; font-weight: 700; color: #f8fafc;">CLB DOANH NHÂN CEO 1983 (HANOIBA)</p>
+      <p style="margin: 0 0 10px 0;">Tầng 6, Tòa nhà VIONE, Số 83 Vũ Trọng Phụng, Thanh Xuân, Hà Nội</p>
+      <p style="margin: 0;">Hotline: ${hotline} • Cổng thông tin: <a href="${DEFAULT_APP_URL}" style="color: #93c5fd; text-decoration: none;">ceo1983.viconnect.vn</a></p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    this.dispatchZaloOaNotification({
+      recipientEmail: cleanTo,
+      recipientName: fullName,
+      title: `THÔNG BÁO: MÃ QR ĐÃ THAY ĐỔI - ${eventTitle}`,
+      content: `Kính gửi Quý Doanh nhân ${fullName},\nMã QR đăng ký chương trình "${eventTitle}" đã có sự điều chỉnh trên hệ thống. Vui lòng kiểm tra email "${cleanTo}" hoặc liên hệ Hotline ${hotline} để nhận mã QR mới nhất!`,
+      ctaText: 'Mở App Tra Cứu',
+      ctaUrl: DEFAULT_APP_URL,
+      trackingType: 'qr_changed_expired',
+    });
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Ban Tổ Chức CLB CEO 1983',
+      auditContext: `[QR_EXPIRED_EMAIL] Event: ${eventTitle} | Name: ${fullName} | Email: ${cleanTo}`,
     });
   }
 

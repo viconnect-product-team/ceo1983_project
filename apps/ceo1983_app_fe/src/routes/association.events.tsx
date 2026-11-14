@@ -1997,7 +1997,7 @@ function EventsScreen() {
           {/* Title */}
           <div className="inline-flex flex-col justify-center items-center gap-px">
             <div className="text-slate-900 dark:text-white text-base font-semibold font-['Inter'] leading-5">
-              Sự kiện
+              Sự kiện &amp; Hoạt động
             </div>
           </div>
 
@@ -2240,21 +2240,26 @@ function EventsScreen() {
                     <Calendar className="size-6" />
                   </div>
                   <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Chưa có sự kiện nào trong danh mục này
+                    {eventCategory === "all" ? "Chưa có sự kiện nào trong hệ thống" : "Chưa có sự kiện nào trong danh mục này"}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
-                    Vui lòng chọn danh mục khác hoặc bấm xem tất cả sự kiện của CLB Doanh Nhân CEO 1983.
+                    {eventCategory === "all"
+                      ? "Các sự kiện và hoạt động của CLB Doanh Nhân CEO 1983 sẽ được cập nhật liên tục tại đây."
+                      : "Vui lòng chọn danh mục khác hoặc bấm xem tất cả sự kiện của CLB Doanh Nhân CEO 1983."}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEventCategory("all");
-                      toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
-                    }}
-                    className="mt-1 px-4 py-2 rounded-lg bg-[#003B95] text-white text-xs font-semibold hover:bg-[#002B70] transition cursor-pointer"
-                  >
-                    Xem tất cả ({allEventsCount}) sự kiện
-                  </button>
+                  {/* QUY TẮC BẮT BUỘC: Nút xem tất cả KHÔNG ĐƯỢC PHÉP HIỆN TRÊN DANH MỤC TẤT CẢ (eventCategory === "all") */}
+                  {eventCategory !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEventCategory("all");
+                        toast.success(`Đang hiển thị toàn bộ ${allEventsCount} sự kiện ở tất cả danh mục CLB CEO 1983`);
+                      }}
+                      className="mt-1 px-4 py-2 rounded-lg bg-[#003B95] text-white text-xs font-semibold hover:bg-[#002B70] transition cursor-pointer"
+                    >
+                      Xem tất cả ({allEventsCount}) sự kiện
+                    </button>
+                  )}
                 </div>
               ) : (
                 displayEventsList.map((e, idx) => {
@@ -2367,8 +2372,8 @@ function EventsScreen() {
               }))}
             </div>
 
-            {/* Xem tất cả - Chỉ hiển thị khi đang lọc theo danh mục khác tab Tất cả */}
-            {eventCategory !== "all" && (
+            {/* Xem tất cả - Chỉ hiển thị khi đang lọc theo danh mục khác tab Tất cả và danh sách có dữ liệu (tránh trùng nút trong empty box) */}
+            {eventCategory !== "all" && displayEventsList.length > 0 && (
               <div className="self-stretch px-4 flex flex-col justify-start items-center gap-2.5">
                 <button
                   type="button"

@@ -3452,16 +3452,6 @@ export class EventsService implements OnModuleInit {
    * - Sự kiện miễn phí: Gửi email xác nhận vé điện tử, mã QR check-in, và mã quay thưởng Lucky Draw
    */
   async guestRegister(eventId: string, guestData: any) {
-    const eventRows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
-    `.catch(() => []);
-
-    if (eventRows.length === 0) {
-      throw new NotFoundException('Không tìm thấy sự kiện');
-    }
-
-    const event = eventRows[0];
-    const resolvedEventId = event.id;
     const fullName = (guestData?.fullName || '').trim();
     const phone = (guestData?.phone || '').trim();
     const email = (guestData?.email || '').trim().toLowerCase();
@@ -3470,11 +3460,64 @@ export class EventsService implements OnModuleInit {
     const ticketCount = Math.max(1, Number(guestData?.ticketCount) || 1);
     const note = (guestData?.note || '').trim();
 
+    // 1. Tra cứu sự kiện trong public.events
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+
+    // 2. Nếu không có trong events, tra cứu trong public.trainings (chương trình đào tạo)
+    let targetEvent: any = eventRows.length > 0 ? eventRows[0] : null;
+    let targetTitle = targetEvent?.title || targetEvent?.name || '';
+    if (!targetEvent) {
+      const trainingRows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.trainings WHERE id = ${eventId} LIMIT 1
+      `.catch(() => []);
+      if (trainingRows.length > 0) {
+        targetEvent = trainingRows[0];
+        targetTitle = targetEvent.title || targetEvent.name || 'Chương trình đào tạo CEO 1983';
+      }
+    }
+
+    // 3. Nếu mã QR dẫn tới sự kiện/đào tạo đã bị xóa hoặc không tồn tại
+    const isDeletedOrMissing =
+      !targetEvent ||
+      targetEvent.is_deleted === true ||
+      targetEvent.status === 'deleted' ||
+      targetEvent.status === 'inactive';
+
+    if (isDeletedOrMissing) {
+      const fallbackTitle = targetTitle || 'Sự kiện / Chương trình đào tạo CLB CEO 1983';
+      if (email && email.includes('@')) {
+        await this.mailService.sendQrChangedOrExpiredEmail({
+          to: email,
+          fullName: fullName || 'Quý Khách',
+          phone,
+          company,
+          position,
+          eventTitle: fallbackTitle,
+          qrCodeRef: eventId,
+        });
+      }
+      return {
+        ok: false,
+        status: 'qr_changed_or_expired',
+        isQrExpired: true,
+        eventTitle: fallbackTitle,
+        fullName: fullName || 'Quý Khách',
+        email,
+        message:
+          'Sự kiện hoặc chương trình đào tạo liên quan đến mã QR này đã có sự thay đổi lịch trình hoặc mã QR không còn hiệu lực trên hệ thống. Ban Tổ Chức đã gửi thư thông báo chi tiết đến email của Quý Anh/Chị.',
+      };
+    }
+
     if (!fullName || !phone || !email) {
       throw new BadRequestException(
         'Vui lòng điền đầy đủ Họ tên, Số điện thoại và Email để nhận vé',
       );
     }
+
+    const event = targetEvent;
+    const resolvedEventId = event.id;
 
     const capacityNum = Number(event.capacity ?? 0);
     const registeredNum = Number(event.registered ?? 0);
