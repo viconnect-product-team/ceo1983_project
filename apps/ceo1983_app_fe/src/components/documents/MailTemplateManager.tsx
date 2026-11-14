@@ -2059,7 +2059,44 @@ export function MailTemplateManager() {
         }
       }
 
-      if (emailSuccessCount === 0 && zaloSuccessCount === 0 && emailError) {
+      // 3. Gửi qua App CEO 1983 nếu chọn In-App hoặc Cả 3 kênh
+      if (sendChannel === "in_app" || sendChannel === "all") {
+        try {
+          const inAppTitle = renderedContent.inAppTitle || activeTemplate.inAppTitle || activeTemplate.name;
+          const inAppBody = renderedContent.inAppBody || activeTemplate.inAppBody || activeTemplate.description;
+          await fetchNestApi("/notifications", {
+            method: "POST",
+            body: JSON.stringify({
+              title: inAppTitle,
+              body: inAppBody,
+              channel: "inapp",
+              appScope: "ceo1983",
+              targetApp: "ceo1983",
+              status: "sent",
+              audience: "all",
+            }),
+          }).catch(() => null);
+
+          try {
+            const localNotifs = JSON.parse(localStorage.getItem("vba_notifications") || "[]");
+            localNotifs.unshift({
+              id: `notif_${Date.now()}`,
+              title: inAppTitle,
+              body: inAppBody,
+              read: false,
+              timestamp: new Date().toISOString(),
+              type: "system",
+            });
+            localStorage.setItem("vba_notifications", JSON.stringify(localNotifs.slice(0, 50)));
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new Event("notifications_updated"));
+            }
+          } catch {}
+          sentChannels.push("App CEO 1983");
+        } catch {}
+      }
+
+      if (sendChannel !== "in_app" && emailSuccessCount === 0 && zaloSuccessCount === 0 && emailError) {
         throw new Error(emailError);
       }
       toast.success(
@@ -2471,7 +2508,18 @@ export function MailTemplateManager() {
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                     }`}
                   >
-                    🌟 Tất Cả Kênh (Email, App, Zalo)
+                    🌟 Gửi Cả 3 Kênh (App, Email, Zalo)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSendChannel("in_app")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      sendChannel === "in_app"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                    }`}
+                  >
+                    📱 App CEO 1983
                   </button>
                   <button
                     type="button"

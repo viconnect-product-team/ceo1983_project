@@ -53,6 +53,58 @@ import { fetchNestApi } from "@/lib/api-client";
 import { RBAC_MATRIX_STORAGE_KEY, normalizeActionRoles, dispatchPermissionSyncEvent, getCustomDepartments } from "@/lib/rbac-permission-helpers";
 
 // ── 6 BAN CHUYÊN MÔN / BAN ĐIỀU HÀNH ──
+// ── ĐỒNG BỘ HÓA TỰ ĐỘNG TÊN CHỨC NĂNG THEO SIDEBAR & GIAO DIỆN HỆ THỐNG ──
+export const SIDEBAR_ROUTE_NAMES: Record<string, string> = {
+  "/members": "Hội viên & Doanh nghiệp",
+  "/companies": "Doanh nghiệp hội viên",
+  "/departments": "Quản lý Ban Chuyên Môn",
+  "/accounts": "Quản trị người dùng",
+  "/account-settings": "Quản trị người dùng",
+  "/account-settings?tab=users": "Quản trị người dùng",
+  "/events": "Sự kiện",
+  "/events-overview": "Tổng quan sự kiện",
+  "/meetings": "Cuộc họp",
+  "/voting": "Biểu quyết",
+  "/event-registrations": "Đăng ký sự kiện",
+  "/lucky-draw": "Bốc thăm trúng thưởng",
+  "/sponsors": "Nhà tài trợ",
+  "/sponsor-packages": "Gói tài trợ",
+  "/sponsor-report": "Báo cáo tài trợ",
+  "/fees": "Hội phí",
+  "/income": "Khoản thu & Niên liễm",
+  "/expenses": "Khoản chi & Ngân sách",
+  "/finance-report": "Báo cáo tài chính",
+  "/news": "Bản tin & Hoạt động",
+  "/media": "Thư viện truyền thông",
+  "/marketplace": "Gian hàng & Sản phẩm",
+  "/business-connect": "Cơ hội hợp tác",
+  "/trainings": "Đào tạo & Họp trực tuyến",
+  "/tasks": "Quản lý công việc",
+  "/settings": "Cài đặt hệ thống",
+  "/activity": "Lịch sử hoạt động",
+  "/activity-logs": "Lịch sử hoạt động",
+  "/notifications": "Quản lý thông báo",
+  "/permissions": "Phân quyền hệ thống",
+  "/association/card": "Thẻ Hội Viên & Danh Thiếp Số",
+  "/association/feed": "Mạng Lưới Hội Viên (Feed)",
+  "/association/members": "Danh Bạ Hội Viên Trên App",
+  "/association/messages": "Kết Nối Giao Thương B2B & Tin Nhắn",
+  "/association/opportunities": "Cơ Hội Giao Thương",
+  "/association/products": "Giao thương",
+  "/association/events": "Sự Kiện & Vé Điện Tử E-Ticket",
+  "/association/voting": "Biểu Quyết & Bầu Cử Trực Tuyến",
+  "/association/profile": "Hội Phí Cá Nhân & Hồ Sơ Lãnh Đạo",
+};
+
+export function getSynchronizedFeatureName(route?: string, fallbackName?: string): string {
+  if (!route) return fallbackName || "";
+  const clean = route.trim();
+  if (SIDEBAR_ROUTE_NAMES[clean]) return SIDEBAR_ROUTE_NAMES[clean];
+  const noQuery = clean.split("?")[0].split("#")[0];
+  if (SIDEBAR_ROUTE_NAMES[noQuery]) return SIDEBAR_ROUTE_NAMES[noQuery];
+  return fallbackName || "";
+}
+
 export interface CommitteeRole {
   key: string;
   name: string;
@@ -802,6 +854,7 @@ export function RbacPermissionMatrix({
       ...cat,
       features: (cat?.features || []).map((feat) => ({
         ...feat,
+        name: getSynchronizedFeatureName(feat.route, feat.name),
         actions: (feat?.actions || []).map((act) => ({
           ...act,
           roles: normalizeActionRoles(act),
@@ -827,6 +880,7 @@ export function RbacPermissionMatrix({
             ...cat,
             features: cat.features.map((feat) => ({
               ...feat,
+              name: getSynchronizedFeatureName(feat.route, feat.name),
               actions: feat.actions.map((act) => ({
                 ...act,
                 roles: normalizeActionRoles(act),
@@ -1846,7 +1900,7 @@ export function RbacPermissionMatrix({
                               alt="toggle"
                             />
                             <div className="justify-start text-slate-900 dark:text-white text-xs font-bold font-['Inter']">
-                              {feat.name}
+                              {getSynchronizedFeatureName(feat.route, feat.name)}
                             </div>
                           </button>
                           <div className="justify-start text-slate-500 text-[10px] font-medium font-['Inter']">
@@ -1902,7 +1956,7 @@ export function RbacPermissionMatrix({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setSelectedDetail({ action, featureName: feat.name, categoryName: cat.name });
+                                  setSelectedDetail({ action, featureName: getSynchronizedFeatureName(feat.route, feat.name), categoryName: cat.name });
                                   setDetailModalOpen(true);
                                 }}
                                 className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 transition cursor-pointer dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"

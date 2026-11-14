@@ -134,7 +134,7 @@ export const ALL_SHORTCUT_OPTIONS: ShortcutItem[] = [
   },
   {
     id: "marketplace",
-    name: "Sàn B2B",
+    name: "Giao thương",
     desc: "Sản phẩm & dịch vụ thành viên",
     to: "/association/marketplace",
     iconName: "ShoppingBag",
