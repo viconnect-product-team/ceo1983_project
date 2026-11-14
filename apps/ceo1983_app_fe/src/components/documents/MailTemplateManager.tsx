@@ -39,6 +39,10 @@ import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { useZbsTemplateConfigs } from "@/hooks/useZbsTemplateConfigs";
 import { ZbsTemplateConfigForm } from "./ZbsTemplateConfigForm";
+import {
+  CustomReminderTemplateModal,
+  type DynamicReminderField,
+} from "./CustomReminderTemplateModal";
 
 export type MailCategory = "fee" | "welcome" | "event" | "meeting" | "system" | "birthday" | "marketing";
 
@@ -63,9 +67,141 @@ export interface MailTemplateItem {
   updatedAt: string;
   isCustom?: boolean;
   visualContent?: VisualBlockContent;
+  reminderFields?: DynamicReminderField[];
 }
 
 export const INITIAL_MAIL_TEMPLATES: MailTemplateItem[] = [
+  {
+    id: "tmpl-daily-reminder-dynamic",
+    code: "TODAY_IN_APP_CEO1983",
+    category: "event",
+    name: "Thư Nhắc: Hôm Nay Trong App CEO 1983 Có Gì (Trường Tùy Biến)",
+    description: "Mẫu thư nhắc nhở hoạt động trong ngày: tùy biến thêm/xóa trường, hỗ trợ textarea mô tả, datetime ngày giờ, price chi phí và mã QR check-in.",
+    channels: ["email", "in_app", "zalo_oa"],
+    subject: "[CEO 1983 NHẮC HẸN] Hôm nay trong App CEO 1983 có gì? — Kính gửi {{full_name}}",
+    inAppTitle: "Hôm nay trong App CEO 1983 có gì?",
+    inAppBody: "Kính gửi Anh/Chị {{full_name}}!\n\nHôm nay trong App CEO 1983 có gì?\n\n📌 Mô tả hoạt động:\n{{activity_description}}\n\n⏰ Thời gian diễn ra: {{activity_datetime}}\n💰 Chi phí tham dự: {{activity_fee}}\n📍 Địa điểm / Kênh: {{activity_location}}\n📱 Mã QR Check-in: Quét mã QR đính kèm để điểm danh\n\nTrân trọng,\nBan Thư Ký CLB Doanh Nhân CEO 1983",
+    variables: [
+      { key: "full_name", label: "Tên hội viên", example: "Dương Thị Huệ" },
+      { key: "activity_description", label: "Mô tả hoạt động", example: "Phiên kết nối giao thương nội bộ B2B 1-on-1 ngành F&B & Công nghệ, chia sẻ chuyên đề tối ưu dòng tiền và giao lưu kết nối cùng 15+ thành viên mới gia nhập CLB." },
+      { key: "activity_datetime", label: "Thời gian diễn ra", example: "14:30 - 17:00 Hôm nay, 14/11/2026" },
+      { key: "activity_fee", label: "Chi phí tham dự", example: "Miễn phí dành cho Hội viên chính thức" },
+      { key: "activity_location", label: "Địa điểm / Phòng họp", example: "Hội Trường VIONE, 83 Vũ Trọng Phụng, Thanh Xuân, Hà Nội & Online App CEO 1983" },
+      { key: "qr_code_url", label: "Mã QR Check-in", example: "https://ceo1983.viconnect.vn/events/today" },
+    ],
+    updatedAt: "2026-11-14",
+    reminderFields: [
+      {
+        id: "f_desc",
+        key: "activity_description",
+        label: "Mô tả hoạt động nổi bật hôm nay",
+        type: "textarea",
+        value: "Phiên kết nối giao thương nội bộ B2B 1-on-1 ngành F&B & Công nghệ, chia sẻ chuyên đề tối ưu dòng tiền và giao lưu kết nối cùng 15+ thành viên mới gia nhập CLB.",
+        placeholder: "Nhập mô tả hoạt động nhiều dòng...",
+      },
+      {
+        id: "f_datetime",
+        key: "activity_datetime",
+        label: "Ngày giờ diễn ra",
+        type: "datetime",
+        value: "2026-11-14T14:30",
+        placeholder: "Chọn ngày và giờ",
+      },
+      {
+        id: "f_fee",
+        key: "activity_fee",
+        label: "Chi phí / Hội phí tham dự",
+        type: "price",
+        value: "0",
+        placeholder: "0 VNĐ (Miễn phí dành cho Hội viên)",
+      },
+      {
+        id: "f_location",
+        key: "activity_location",
+        label: "Địa điểm / Phòng họp",
+        type: "text",
+        value: "Hội Trường VIONE, 83 Vũ Trọng Phụng, Thanh Xuân, Hà Nội & Online App CEO 1983",
+        placeholder: "Nhập địa điểm...",
+      },
+      {
+        id: "f_qr",
+        key: "qr_code_url",
+        label: "Mã QR Check-in / Đăng ký tham gia",
+        type: "qr",
+        value: "https://ceo1983.viconnect.vn/events/today",
+        placeholder: "Nhập đường link hoặc mã vé QR...",
+      },
+    ],
+    htmlBody: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+  <div style="background: linear-gradient(135deg, #001D4A 0%, #003B95 50%, #0A2540 100%); padding: 30px 24px; text-align: center; color: #ffffff;">
+    <div style="display: inline-block; padding: 4px 14px; background: rgba(234, 179, 8, 0.25); border: 1px solid rgba(234, 179, 8, 0.5); border-radius: 9999px; font-size: 11px; font-weight: 800; color: #fde047; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
+      THƯ NHẮC HẸN &amp; HOẠT ĐỘNG CLB CEO 1983
+    </div>
+    <h1 style="font-size: 22px; font-weight: 800; margin: 0; line-height: 1.35; color: #ffffff;">
+      Hôm nay trong App CEO 1983 có gì?
+    </h1>
+    <p style="font-size: 13px; color: #93c5fd; margin: 8px 0 0 0;">
+      Kính gửi Quý Doanh nhân: <strong>{{full_name}}</strong>
+    </p>
+  </div>
+  <div style="padding: 28px 24px;">
+    <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 20px;">
+      Kính gửi Quý Anh/Chị <strong>{{full_name}}</strong>,<br>
+      Ban Thư Ký CLB Doanh Nhân CEO 1983 trân trọng gửi tới Quý Anh/Chị thông tin hoạt động trong ngày hôm nay:
+    </p>
+    <div style="background: #f8fafc; border-left: 4px solid #003B95; padding: 14px 16px; border-radius: 0 12px 12px 0; margin-bottom: 16px;">
+      <div style="font-size: 12px; font-weight: 700; color: #003B95; text-transform: uppercase; margin-bottom: 6px;">
+        📌 Mô tả hoạt động
+      </div>
+      <div style="font-size: 13.5px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">
+        {{activity_description}}
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #eff6ff; border-radius: 12px; margin-bottom: 12px; border: 1px solid #dbeafe;">
+      <span style="font-size: 18px;">⏰</span>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #1d4ed8; text-transform: uppercase;">Thời gian diễn ra</div>
+        <div style="font-size: 14px; font-weight: 700; color: #1e3a8a;">{{activity_datetime}}</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #f0fdf4; border-radius: 12px; margin-bottom: 12px; border: 1px solid #bbf7d0;">
+      <span style="font-size: 18px;">💰</span>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #15803d; text-transform: uppercase;">Chi phí tham dự</div>
+        <div style="font-size: 14px; font-weight: 700; color: #166534;">{{activity_fee}}</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #f8fafc; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+      <span style="font-size: 16px;">📍</span>
+      <div>
+        <div style="font-size: 11px; font-weight: 600; color: #64748b;">Địa điểm / Phòng họp</div>
+        <div style="font-size: 13.5px; font-weight: 600; color: #0f172a;">{{activity_location}}</div>
+      </div>
+    </div>
+    <div style="text-align: center; padding: 20px; background: #fffbeb; border: 1.5px dashed #f59e0b; border-radius: 16px; margin: 20px 0;">
+      <div style="font-size: 12px; font-weight: 800; color: #92400e; text-transform: uppercase; margin-bottom: 10px;">
+        📱 Mã QR Check-in / Điểm danh
+      </div>
+      <img src="{{qr_code_url}}" alt="QR Code" style="width: 160px; height: 160px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 0 auto; display: block;" />
+      <p style="font-size: 11.5px; color: #78350f; margin: 8px 0 0 0;">
+        Mở camera điện thoại hoặc Zalo quét mã QR để tham gia
+      </p>
+    </div>
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="https://ceo1983.viconnect.vn" style="display: inline-block; padding: 12px 28px; background: #003B95; color: #ffffff; border-radius: 12px; font-size: 13.5px; font-weight: 700; text-decoration: none;">
+        📲 Mở App CEO 1983 Tra Cứu Hoạt Động
+      </a>
+    </div>
+  </div>
+  <div style="background: #0f172a; color: #94a3b8; padding: 20px 24px; text-align: center; font-size: 12px; line-height: 1.6;">
+    <strong style="color: #ffffff;">CLB DOANH NHÂN CEO 1983 (HANOIBA)</strong><br>
+    Văn phòng Ban Thư Ký · Hotline: 0983 1983 83 / 0973 205 683<br>
+    Cổng thông tin &amp; Ứng dụng: ceo1983.viconnect.vn
+  </div>
+</div>
+    `,
+  },
   {
     id: "tmpl-event-invite-qr",
     code: "EVENT_INVITATION",
@@ -1376,7 +1512,34 @@ export function MailTemplateManager() {
     }
   };
 
-  // Edit / Create Modal State
+    // Reminder Builder Modal State
+  const [isReminderBuilderOpen, setIsReminderBuilderOpen] = useState(false);
+  const [reminderEditingTemplate, setReminderEditingTemplate] = useState<MailTemplateItem | null>(null);
+
+  const handleOpenReminderBuilder = (t?: MailTemplateItem) => {
+    if (t) {
+      setReminderEditingTemplate(t);
+    } else {
+      const match = templates.find((x) => x.code === "TODAY_IN_APP_CEO1983") || null;
+      setReminderEditingTemplate(match);
+    }
+    setIsReminderBuilderOpen(true);
+  };
+
+  const handleSaveReminderTemplate = (newTemplate: MailTemplateItem) => {
+    const existsIdx = templates.findIndex((t) => t.id === newTemplate.id || t.code === newTemplate.code);
+    let updated: MailTemplateItem[];
+    if (existsIdx >= 0) {
+      updated = [...templates];
+      updated[existsIdx] = newTemplate;
+    } else {
+      updated = [newTemplate, ...templates];
+    }
+    saveTemplates(updated);
+    setSelectedTemplateId(newTemplate.id);
+  };
+
+// Edit / Create Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<MailTemplateItem | null>(null);
   const [modalEditorMode, setModalEditorMode] = useState<"visual" | "code">("visual");
@@ -2275,7 +2438,30 @@ export function MailTemplateManager() {
         <div className="lg:col-span-8 space-y-4">
           {/* Header Card */}
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+            {(activeTemplate.reminderFields || activeTemplate.code === "TODAY_IN_APP_CEO1983") && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <div className="font-bold text-xs text-amber-950 dark:text-amber-200">
+                    Mẫu Thư Nhắc Nhở Động: Hôm Nay Trong App CEO 1983 Có Gì
+                  </div>
+                  <div className="text-[11px] text-amber-800/80 dark:text-amber-400">
+                    Hỗ trợ tùy biến thêm/xóa trường: mô tả textarea, datetime ngày giờ, price chi phí, mã QR check-in.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenReminderBuilder(activeTemplate)}
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition cursor-pointer shadow-xs"
+              >
+                ⚙️ Tùy Chỉnh Trường Động
+              </button>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-foreground">{activeTemplate.name}</h3>

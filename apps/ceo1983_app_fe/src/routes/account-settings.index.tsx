@@ -251,60 +251,20 @@ function AccountManagementPage() {
         status: statusFilter,
       });
       const res = await fetchNestApi(`/users?${params.toString()}`);
-      if (res && res.users && Array.isArray(res.users) && res.users.length > 0) {
+      if (res && res.users && Array.isArray(res.users)) {
         setUsersList(res.users);
-        setPagination(res.pagination);
+        setPagination(res.pagination || { page, limit: pagination.limit, total: res.users.length, totalPages: 1 });
         if (res.stats) setUserStats(res.stats);
       } else {
-        const { DEFAULT_ACCOUNTS } = await import("@/lib/committee-accounts");
-        const fallbackUsers = DEFAULT_ACCOUNTS.map((acc) => ({
-          id: acc.id,
-          username: acc.email,
-          email: acc.email,
-          name: acc.name,
-          account_status: acc.status === "locked" ? "suspended" : "active",
-          company_name: acc.companyName,
-          professional_title: acc.role,
-          roles: [acc.role === "quan_tri" ? "admin" : "member"],
-          executiveRole: acc.role,
-          department: acc.department,
-          memberCode: acc.code,
-          created_at: acc.createdAt || new Date().toISOString(),
-        }));
-        setUsersList(fallbackUsers);
-        setPagination({ page: 1, limit: 10, total: fallbackUsers.length, totalPages: 1 });
-        setUserStats({
-          total: fallbackUsers.length,
-          active: fallbackUsers.filter((u) => u.account_status === "active").length,
-          suspended: fallbackUsers.filter((u) => u.account_status === "suspended").length,
-          admins: fallbackUsers.filter((u) => u.roles.includes("admin") || u.executiveRole === "quan_tri").length,
-        });
+        setUsersList([]);
+        setPagination({ page: 1, limit: 10, total: 0, totalPages: 1 });
+        setUserStats({ total: 0, active: 0, suspended: 0, admins: 0 });
       }
     } catch (err: any) {
-      console.error("Lỗi khi tải danh sách người dùng:", err);
-      const { DEFAULT_ACCOUNTS } = await import("@/lib/committee-accounts");
-      const fallbackUsers = DEFAULT_ACCOUNTS.map((acc) => ({
-        id: acc.id,
-        username: acc.email,
-        email: acc.email,
-        name: acc.name,
-        account_status: acc.status === "locked" ? "suspended" : "active",
-        company_name: acc.companyName,
-        professional_title: acc.role,
-        roles: [acc.role === "quan_tri" ? "admin" : "member"],
-        executiveRole: acc.role,
-        department: acc.department,
-        memberCode: acc.code,
-        created_at: acc.createdAt || new Date().toISOString(),
-      }));
-      setUsersList(fallbackUsers);
-      setPagination({ page: 1, limit: 10, total: fallbackUsers.length, totalPages: 1 });
-      setUserStats({
-        total: fallbackUsers.length,
-        active: fallbackUsers.filter((u) => u.account_status === "active").length,
-        suspended: fallbackUsers.filter((u) => u.account_status === "suspended").length,
-        admins: fallbackUsers.filter((u) => u.roles.includes("admin") || u.executiveRole === "quan_tri").length,
-      });
+      console.error("Lỗi khi tải danh sách người dùng từ CSDL:", err);
+      setUsersList([]);
+      setPagination({ page: 1, limit: 10, total: 0, totalPages: 1 });
+      setUserStats({ total: 0, active: 0, suspended: 0, admins: 0 });
     } finally {
       setUsersLoading(false);
     }

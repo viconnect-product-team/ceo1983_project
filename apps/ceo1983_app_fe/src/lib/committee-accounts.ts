@@ -25,36 +25,11 @@ export interface UserAccountItem {
 
 export const MANAGED_ACCOUNTS_STORAGE_KEY = "vba_managed_accounts_v2";
 
-export const DEFAULT_ACCOUNTS: UserAccountItem[] = [
-  {
-    id: "acc_admin_001",
-    name: "Lê Thị Dung (Admin Viconnect)",
-    code: "M1983-001",
-    email: "admin@connect.vn",
-    phone: "0988870888",
-    companyName: "Công ty CP Giải Pháp Viconnect",
-    department: "Ban Điều Hành",
-    role: "quan_tri",
-    status: "active",
-    createdAt: "2022-08-18T00:00:00Z",
-  },
-  {
-    id: "acc_media_002",
-    name: "Ban Truyền Thông CEO 1983",
-    code: "M1983-002",
-    email: "info@viconnect.vn",
-    phone: "0983988999",
-    companyName: "CLB Doanh Nhân CEO 1983",
-    department: "Ban Truyền Thông",
-    role: "truong_ban_truyen_thong",
-    status: "active",
-    createdAt: "2022-10-20T00:00:00Z",
-  },
-];
+export const DEFAULT_ACCOUNTS: UserAccountItem[] = [];
 
-/** Đọc danh sách tài khoản đang quản lý (localStorage, fallback DEFAULT_ACCOUNTS). */
+/** Đọc danh sách tài khoản đang quản lý (localStorage, fallback rỗng). */
 export function readManagedAccounts(): UserAccountItem[] {
-  if (typeof window === "undefined") return DEFAULT_ACCOUNTS;
+  if (typeof window === "undefined") return [];
   try {
     const saved = localStorage.getItem(MANAGED_ACCOUNTS_STORAGE_KEY);
     if (saved) {
@@ -64,7 +39,7 @@ export function readManagedAccounts(): UserAccountItem[] {
   } catch {
     /* ignore */
   }
-  return DEFAULT_ACCOUNTS;
+  return [];
 }
 
 /** Chuyển tài khoản quản trị → Member để dùng trong danh bạ / chat. */

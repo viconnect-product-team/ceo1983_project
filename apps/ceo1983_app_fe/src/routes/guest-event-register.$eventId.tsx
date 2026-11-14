@@ -136,6 +136,22 @@ function StandaloneGuestEventRegistrationPage() {
         return { ok: false, error: err };
       });
 
+      // Kiểm tra trạng thái mã QR hết hạn / đã xóa / sự kiện thay đổi
+      if (res && (res.status === "qr_changed_or_expired" || res.isQrExpired)) {
+        setResult({
+          isQrExpired: true,
+          status: "qr_changed_or_expired",
+          message:
+            res.message ||
+            "Sự kiện hoặc chương trình đào tạo liên quan đến mã QR này đã có sự thay đổi lịch trình hoặc mã QR không còn hiệu lực trên hệ thống. Ban Tổ Chức đã gửi thư thông báo chi tiết đến email của Quý Anh/Chị.",
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          eventTitle: res.eventTitle || event.name || event.title,
+        });
+        toast.warning("Mã QR đã có sự thay đổi hoặc hết hạn. Ban Tổ Chức đã gửi email thông báo chi tiết tới Quý Anh/Chị!");
+        return;
+      }
+
       // Kiểm tra trạng thái hết chỗ (Sold Out)
       if (res && (res.status === "sold_out" || res.isSoldOut || (res.message && res.message.includes("Hết chỗ")))) {
         setResult({
@@ -293,6 +309,84 @@ function StandaloneGuestEventRegistrationPage() {
               >
                 Trang Chủ CLB CEO 1983
                 <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 1.5. QR EXPIRED OR CHANGED VIEW
+  if (result && (result.isQrExpired || result.status === "qr_changed_or_expired")) {
+    return (
+      <div className="min-h-screen bg-[#F0F4F9] py-8 sm:py-12 px-4 flex items-center justify-center font-sans text-slate-800">
+        <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-gradient-to-r from-amber-700 via-amber-800 to-amber-950 px-6 py-8 text-white text-center relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/20 border border-amber-300/40 text-amber-200 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-300" />
+              THÔNG BÁO TỪ BAN TỔ CHỨC
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-white px-2 leading-snug">
+              MÃ QR ĐÃ THAY ĐỔI HOẶC HẾT HIỆU LỰC
+            </h1>
+            <p className="text-amber-100 text-xs mt-2 font-medium">
+              {result.eventTitle || event.name || "Sự kiện / Chương trình đào tạo CLB CEO 1983"}
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-5 text-left space-y-3">
+              <div className="font-bold text-amber-950 text-sm sm:text-base">
+                Kính gửi Quý Anh/Chị {result.fullName || "Đại biểu"},
+              </div>
+              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">
+                {result.message ||
+                  "Sự kiện hoặc chương trình đào tạo liên quan đến mã QR này đã có sự thay đổi lịch trình, cập nhật cấu hình hoặc mã QR không còn hiệu lực trên hệ thống."}
+              </p>
+              <div className="bg-white/90 rounded-xl p-3.5 border border-amber-200/80 text-xs text-amber-950 space-y-1.5">
+                <p className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  Email thông báo hướng dẫn đã được gửi tới:{" "}
+                  <span className="font-mono text-blue-700 underline">{result.email}</span>
+                </p>
+                <p className="text-slate-600 leading-relaxed">
+                  Quý Anh/Chị vui lòng kiểm tra hộp thư (bao gồm cả thư mục Quảng cáo / Spam) để nhận thông tin cập nhật mới nhất và hướng dẫn chi tiết từ Ban Thư Ký CLB Doanh Nhân CEO 1983.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs text-slate-600 space-y-2 text-left">
+              <div className="font-bold text-slate-800 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-amber-600" />
+                Thông Tin Liên Hệ Ban Tổ Chức &amp; Hỗ Trợ Đăng Ký Lại:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 pt-1">
+                <div>• Hotline 1: <strong className="text-slate-900">0983 1983 83</strong></div>
+                <div>• Hotline 2: <strong className="text-slate-900">0973 205 683</strong></div>
+                <div>• Hotline 3: <strong className="text-slate-900">0903 205 683</strong></div>
+                <div>• Email: <strong className="text-slate-900">btk@ceo1983.com</strong></div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setResult(null)}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 text-slate-500" />
+                Quay Lại Biểu Mẫu
+              </button>
+              <a
+                href="https://ceo1983.viconnect.vn"
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#002B70] to-[#003B95] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md transition"
+              >
+                Mở App Tra Cứu Sự Kiện
+                <ExternalLink className="w-3.5 h-3.5 text-white" />
               </a>
             </div>
           </div>

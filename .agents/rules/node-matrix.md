@@ -98,4 +98,9 @@ Dành cho: DevOps, Quản trị hệ thống, Backend Core.
 ### Form cấu hình ZBS trên CRM — 11/11/2026 ([NODE-CRM-014], [NODE-CRM-024])
 - Thêm `components/documents/ZbsTemplateConfigForm.tsx`, `hooks/useZbsTemplateConfigs.ts`; tích hợp trong `MailTemplateManager.tsx` và kiểm thử `__tests__/mail-template-zbs.test.tsx`.
 - API quản trị cấu hình từng trường hợp: `GET /zalo/template-configs`, `PUT /zalo/template-configs/:templateCode`; `zalo.controller.ts`, `zalo.service.ts`, `zbs-template.config.ts`, `zbs-template-config.spec.ts`.
+
+## Cập nhật 14/11/2026 — Mẫu Thư Nhắc Nhở Động & Check QR Hết Hạn ([NODE-CRM-014], [NODE-CRM-007], [NODE-APP-008])
+- Thêm component `CustomReminderTemplateModal.tsx` tích hợp trong `MailTemplateManager.tsx`: Cung cấp trình tạo mẫu thư nhắc hôm nay với trường động tùy biến (textarea, datetime, price, qr, text).
+- Bổ sung luồng kiểm tra mã QR sự kiện/đào tạo đã xóa/hết hạn tại `events.service.ts` (`guestRegister`) và `mail.service.ts` (`sendQrChangedOrExpiredEmail`): Tự động gửi email thông báo chi tiết cho khách quét mã và hiển thị thông báo trang trọng tại `guest-event-register.$eventId.tsx`.
+- Đồng bộ danh mục sự kiện & đổi tên "Sự kiện & Hoạt động" tại `association.events.tsx`: Ẩn nút "Xem tất cả" khi ở tab "Tất cả" và chỉ giữ lại duy nhất 1 nút khi ở các danh mục khác.
 - Lưu nguyên tử một mã mẫu trong `app_settings.zalo_oa_config.zbsTemplates`; không ghi đè các mẫu khác hoặc token OA. Gửi thử dùng mã mẫu đang chọn và cấu hình đã lưu.

@@ -1,6 +1,50 @@
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 14/11/2026 (v11.46): Hoàn Thiện Đồng Bộ 5 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi Phân Quyền & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001], [NODE-CRM-007], [NODE-APP-003], [NODE-APP-004], [NODE-APP-007])**:
+- **Bản cập nhật ngày 14/11/2026 (v11.47): Hoàn Thiện Đồng Bộ 4 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Thiết Lập Mẫu Thư Nhắc Động, Luồng Check QR Hết Hạn Gửi Email, Xóa Mock Tài Khoản & Chuẩn Hóa Nút Xem Tất Cả ([NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-CRM-024], [NODE-APP-008])**:
+  - **1. Web CRM: Thiết Lập Mẫu Thư Nhắc Nhở Động Với Các Trường Tùy Biến (Dynamic Reminder Builder)**:
+    * Tạo component chuyên biệt `CustomReminderTemplateModal.tsx` và tích hợp vào `MailTemplateManager.tsx`.
+    * Cung cấp mẫu mặc định: *"Thư Nhắc: Hôm Nay Trong App CEO 1983 Có Gì (Trường Tùy Biến)"* (code: `TODAY_IN_APP_CEO1983`).
+    * Hỗ trợ người dùng thêm/xóa trường tùy thích với đầy đủ các kiểu dữ liệu chuyên biệt:
+      - `textarea`: Cho phần mô tả hoạt động nhiều dòng (Multiline description).
+      - `datetime`: Cho ngày và giờ diễn ra hoạt động (Date & Time picker).
+      - `price`: Cho chi phí / hội phí tham gia (Currency format VNĐ kèm các mốc chọn nhanh 0đ, 200k, 500k, 1M).
+      - `qr`: Cho mã QR (nhập liên kết/mã vé và tự động sinh ảnh QR Code hiển thị tức thì).
+      - `text`: Cho các trường văn bản ngắn (địa điểm, diễn giả, ghi chú).
+    * Bộ Live Preview tương tác đa kênh thời gian thực: Xem trước thẻ thông báo App CEO 1983, xem trước Email HTML đóng khung sang trọng và xem trước tin nhắn Zalo OA.
+    * Nút *"Lưu & Áp Dụng Mẫu"* tự động biên dịch cấu trúc mẫu, cập nhật danh sách `templates`, lưu vào localStorage và sẵn sàng gửi qua App, Email, Zalo OA hoặc Gửi Cả 3 Kênh.
+    * Tích hợp nút shortcut `[⚙️ Tùy Chỉnh Trường Động]` ngay trên thanh tác vụ khi chọn mẫu thông báo nhắc nhở.
+  - **2. Core & Backend: Luồng Check Mã QR Đã Xóa / Hết Hạn & Tự Động Bắn Email Thông Báo**:
+    * Tại `apps/ceo1983_app_be/src/mail/mail.service.ts`:
+      - Bổ sung interface `SendQrChangedOrExpiredEmailOptions`.
+      - Bổ sung phương thức `sendQrChangedOrExpiredEmail()`: Soạn thảo mẫu email HTML trang trọng từ Ban Tổ Chức CLB CEO 1983, nêu rõ sự kiện hoặc chương trình đào tạo liên quan đến mã QR đã có sự thay đổi hoặc hết hiệu lực trên hệ thống; cung cấp thông tin liên hệ Ban Thư Ký (Hotline 0983 1983 83 / 0973 205 683 / 0903 205 683, email `btk@ceo1983.com`, link mở App CEO 1983). Đồng thời kích hoạt thông báo Zalo OA notification nếu khả dụng.
+    * Tại `apps/ceo1983_app_be/src/events/events.service.ts`:
+      - Trong `guestRegister(eventId, guestData)`: Khi kiểm tra `public.events` và `public.trainings` mà sự kiện không tồn tại hoặc đã bị xóa (`is_deleted === true` / `status === 'deleted'`), hệ thống không ném 404 thuần túy mà tự động gọi `mailService.sendQrChangedOrExpiredEmail()` gửi ngay thư thông báo đến email người dùng và trả về payload `{ ok: false, status: 'qr_changed_or_expired', isQrExpired: true, message: '...' }`.
+    * Tại `apps/ceo1983_app_fe/src/routes/guest-event-register.$eventId.tsx`:
+      - Khi backend trả về trạng thái `qr_changed_or_expired` hoặc `isQrExpired`, hiển thị màn hình thông báo chuyên biệt với biểu tượng cảnh báo trang trọng, xác nhận email hướng dẫn đã được gửi tới người dùng và hiển thị hotline liên hệ BTC.
+  - **3. CRM & Database: Xóa Hardcode Mock Dữ Liệu 2 Tài Khoản & Đảm Bảo Lưu Trữ Trong CSDL PostgreSQL**:
+    * Tại `apps/ceo1983_app_fe/src/lib/committee-accounts.ts`:
+      - Đặt `DEFAULT_ACCOUNTS: UserAccountItem[] = []`.
+      - Xóa mảng mock hardcode chứa `admin@connect.vn` và `info@viconnect.vn`, đảm bảo `readManagedAccounts()` trả về rỗng nếu không có dữ liệu thực.
+    * Tại `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+      - Xóa bỏ việc import và gán `DEFAULT_ACCOUNTS` làm fallback khi API `/users` trả về danh sách rỗng hoặc lỗi. Dữ liệu bảng người dùng hoàn toàn phản ánh trung thực từ CSDL PostgreSQL backend.
+    * Tại `apps/ceo1983_app_be/src/users/users.service.ts`:
+      - Cho `UsersService` implements `OnModuleInit`, gọi `ensureDefaultUsersInDatabase()` khi khởi chạy hệ thống:
+        + Tự động kiểm tra và đảm bảo tài khoản `admin@connect.vn` (Toàn quyền Quản trị, mật khẩu mặc định `Admin@1983`) tồn tại đầy đủ trong `public.vione_users`, `public.user_roles` (`admin`, `platform_admin`), `public.user_profiles` và `public.members`.
+        + Tự động kiểm tra và đảm bảo tài khoản `info@viconnect.vn` (Ban Truyền Thông, mật khẩu mặc định `Ceo1983@vba`) tồn tại đầy đủ trong `public.vione_users`, `public.user_roles` (`staff`, `moderator`), `public.user_profiles` và `public.members`.
+  - **4. Mobile App CEO 1983: Đổi Tên "Sự Kiện & Hoạt Động" & Chuẩn Hóa Duy Nhất 1 Nút "Xem Tất Cả" (Ảnh 5)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Sửa tiêu đề Top App Bar từ "Sự kiện" thành **"Sự kiện & Hoạt động"** (dòng 2000).
+      - Chuẩn hóa nút "Xem tất cả" trong danh mục sự kiện CLB:
+        + **RÀNG BUỘC TUYỆT ĐỐI**: Khi danh mục đang chọn là "Tất cả" (`eventCategory === "all"`), **ẨN HOÀN TOÀN** nút "Xem tất cả" (kể cả trong empty state).
+        + Khi danh mục khác rỗng (`displayEventsList.length === 0` và `eventCategory !== "all"`): Chỉ hiển thị DUY NHẤT 1 nút "Xem tất cả ({allEventsCount}) sự kiện" bên trong thẻ empty state để quay về danh mục tất cả.
+        + Khi danh mục khác có sự kiện (`displayEventsList.length > 0` và `eventCategory !== "all"`): Hiển thị DUY NHẤT 1 nút "Xem tất cả ({allEventsCount}) sự kiện" ở phía dưới danh sách sự kiện.
+        + Triệt tiêu hoàn toàn tình trạng xuất hiện 2 nút "Xem tất cả" trùng lặp như người dùng phản ánh ở Ảnh 5.
+  - **5. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Backend `npm run build`: Exit code 0 (0 errors).
+    * Frontend `tsc`: Exit code 0 (0 errors) trên toàn bộ các file đã chỉnh sửa (`CustomReminderTemplateModal.tsx`, `MailTemplateManager.tsx`, `account-settings.index.tsx`, `committee-accounts.ts`, `guest-event-register.$eventId.tsx`, `association.events.tsx`).
+    * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
+
   - **1. Tách Biệt Giao Diện Quản Trị Người Dùng & Sửa Lỗi Quyền / Trùng Tên `@` (Ảnh 2 & 4)**:
     * Nhóm "PHÂN QUYỀN" trên Sidebar đổi nhãn thành "Quản trị người dùng", trỏ đến `/account-settings?tab=users`.
     * Khi ở tab `users`, giao diện hoàn toàn tách biệt: chỉ hiển thị workspace quản trị người dùng (KPI cards, thanh lọc, bảng `CustomTable`, modal thêm/sửa/khóa/reset pass), ẩn banner hồ sơ cá nhân và các tab cá nhân ("Thông tin tài khoản", "Bảo mật", "Tùy chọn"). Khi truy cập từ menu avatar hồ sơ, các tab cá nhân hiển thị đầy đủ.
@@ -1035,7 +1079,51 @@
 
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 14/11/2026 (v11.46): Hoàn Thiện Đồng Bộ 5 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi Phân Quyền & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001], [NODE-CRM-007], [NODE-APP-003], [NODE-APP-004], [NODE-APP-007])**:
+- **Bản cập nhật ngày 14/11/2026 (v11.47): Hoàn Thiện Đồng Bộ 4 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Thiết Lập Mẫu Thư Nhắc Động, Luồng Check QR Hết Hạn Gửi Email, Xóa Mock Tài Khoản & Chuẩn Hóa Nút Xem Tất Cả ([NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-CRM-024], [NODE-APP-008])**:
+  - **1. Web CRM: Thiết Lập Mẫu Thư Nhắc Nhở Động Với Các Trường Tùy Biến (Dynamic Reminder Builder)**:
+    * Tạo component chuyên biệt `CustomReminderTemplateModal.tsx` và tích hợp vào `MailTemplateManager.tsx`.
+    * Cung cấp mẫu mặc định: *"Thư Nhắc: Hôm Nay Trong App CEO 1983 Có Gì (Trường Tùy Biến)"* (code: `TODAY_IN_APP_CEO1983`).
+    * Hỗ trợ người dùng thêm/xóa trường tùy thích với đầy đủ các kiểu dữ liệu chuyên biệt:
+      - `textarea`: Cho phần mô tả hoạt động nhiều dòng (Multiline description).
+      - `datetime`: Cho ngày và giờ diễn ra hoạt động (Date & Time picker).
+      - `price`: Cho chi phí / hội phí tham gia (Currency format VNĐ kèm các mốc chọn nhanh 0đ, 200k, 500k, 1M).
+      - `qr`: Cho mã QR (nhập liên kết/mã vé và tự động sinh ảnh QR Code hiển thị tức thì).
+      - `text`: Cho các trường văn bản ngắn (địa điểm, diễn giả, ghi chú).
+    * Bộ Live Preview tương tác đa kênh thời gian thực: Xem trước thẻ thông báo App CEO 1983, xem trước Email HTML đóng khung sang trọng và xem trước tin nhắn Zalo OA.
+    * Nút *"Lưu & Áp Dụng Mẫu"* tự động biên dịch cấu trúc mẫu, cập nhật danh sách `templates`, lưu vào localStorage và sẵn sàng gửi qua App, Email, Zalo OA hoặc Gửi Cả 3 Kênh.
+    * Tích hợp nút shortcut `[⚙️ Tùy Chỉnh Trường Động]` ngay trên thanh tác vụ khi chọn mẫu thông báo nhắc nhở.
+  - **2. Core & Backend: Luồng Check Mã QR Đã Xóa / Hết Hạn & Tự Động Bắn Email Thông Báo**:
+    * Tại `apps/ceo1983_app_be/src/mail/mail.service.ts`:
+      - Bổ sung interface `SendQrChangedOrExpiredEmailOptions`.
+      - Bổ sung phương thức `sendQrChangedOrExpiredEmail()`: Soạn thảo mẫu email HTML trang trọng từ Ban Tổ Chức CLB CEO 1983, nêu rõ sự kiện hoặc chương trình đào tạo liên quan đến mã QR đã có sự thay đổi hoặc hết hiệu lực trên hệ thống; cung cấp thông tin liên hệ Ban Thư Ký (Hotline 0983 1983 83 / 0973 205 683 / 0903 205 683, email `btk@ceo1983.com`, link mở App CEO 1983). Đồng thời kích hoạt thông báo Zalo OA notification nếu khả dụng.
+    * Tại `apps/ceo1983_app_be/src/events/events.service.ts`:
+      - Trong `guestRegister(eventId, guestData)`: Khi kiểm tra `public.events` và `public.trainings` mà sự kiện không tồn tại hoặc đã bị xóa (`is_deleted === true` / `status === 'deleted'`), hệ thống không ném 404 thuần túy mà tự động gọi `mailService.sendQrChangedOrExpiredEmail()` gửi ngay thư thông báo đến email người dùng và trả về payload `{ ok: false, status: 'qr_changed_or_expired', isQrExpired: true, message: '...' }`.
+    * Tại `apps/ceo1983_app_fe/src/routes/guest-event-register.$eventId.tsx`:
+      - Khi backend trả về trạng thái `qr_changed_or_expired` hoặc `isQrExpired`, hiển thị màn hình thông báo chuyên biệt với biểu tượng cảnh báo trang trọng, xác nhận email hướng dẫn đã được gửi tới người dùng và hiển thị hotline liên hệ BTC.
+  - **3. CRM & Database: Xóa Hardcode Mock Dữ Liệu 2 Tài Khoản & Đảm Bảo Lưu Trữ Trong CSDL PostgreSQL**:
+    * Tại `apps/ceo1983_app_fe/src/lib/committee-accounts.ts`:
+      - Đặt `DEFAULT_ACCOUNTS: UserAccountItem[] = []`.
+      - Xóa mảng mock hardcode chứa `admin@connect.vn` và `info@viconnect.vn`, đảm bảo `readManagedAccounts()` trả về rỗng nếu không có dữ liệu thực.
+    * Tại `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+      - Xóa bỏ việc import và gán `DEFAULT_ACCOUNTS` làm fallback khi API `/users` trả về danh sách rỗng hoặc lỗi. Dữ liệu bảng người dùng hoàn toàn phản ánh trung thực từ CSDL PostgreSQL backend.
+    * Tại `apps/ceo1983_app_be/src/users/users.service.ts`:
+      - Cho `UsersService` implements `OnModuleInit`, gọi `ensureDefaultUsersInDatabase()` khi khởi chạy hệ thống:
+        + Tự động kiểm tra và đảm bảo tài khoản `admin@connect.vn` (Toàn quyền Quản trị, mật khẩu mặc định `Admin@1983`) tồn tại đầy đủ trong `public.vione_users`, `public.user_roles` (`admin`, `platform_admin`), `public.user_profiles` và `public.members`.
+        + Tự động kiểm tra và đảm bảo tài khoản `info@viconnect.vn` (Ban Truyền Thông, mật khẩu mặc định `Ceo1983@vba`) tồn tại đầy đủ trong `public.vione_users`, `public.user_roles` (`staff`, `moderator`), `public.user_profiles` và `public.members`.
+  - **4. Mobile App CEO 1983: Đổi Tên "Sự Kiện & Hoạt Động" & Chuẩn Hóa Duy Nhất 1 Nút "Xem Tất Cả" (Ảnh 5)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Sửa tiêu đề Top App Bar từ "Sự kiện" thành **"Sự kiện & Hoạt động"** (dòng 2000).
+      - Chuẩn hóa nút "Xem tất cả" trong danh mục sự kiện CLB:
+        + **RÀNG BUỘC TUYỆT ĐỐI**: Khi danh mục đang chọn là "Tất cả" (`eventCategory === "all"`), **ẨN HOÀN TOÀN** nút "Xem tất cả" (kể cả trong empty state).
+        + Khi danh mục khác rỗng (`displayEventsList.length === 0` và `eventCategory !== "all"`): Chỉ hiển thị DUY NHẤT 1 nút "Xem tất cả ({allEventsCount}) sự kiện" bên trong thẻ empty state để quay về danh mục tất cả.
+        + Khi danh mục khác có sự kiện (`displayEventsList.length > 0` và `eventCategory !== "all"`): Hiển thị DUY NHẤT 1 nút "Xem tất cả ({allEventsCount}) sự kiện" ở phía dưới danh sách sự kiện.
+        + Triệt tiêu hoàn toàn tình trạng xuất hiện 2 nút "Xem tất cả" trùng lặp như người dùng phản ánh ở Ảnh 5.
+  - **5. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Backend `npm run build`: Exit code 0 (0 errors).
+    * Frontend `tsc`: Exit code 0 (0 errors) trên toàn bộ các file đã chỉnh sửa (`CustomReminderTemplateModal.tsx`, `MailTemplateManager.tsx`, `account-settings.index.tsx`, `committee-accounts.ts`, `guest-event-register.$eventId.tsx`, `association.events.tsx`).
+    * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
+
   - **1. Tách Biệt Giao Diện Quản Trị Người Dùng & Sửa Lỗi Quyền / Trùng Tên `@` (Ảnh 2 & 4)**:
     * Nhóm "PHÂN QUYỀN" trên Sidebar đổi nhãn thành "Quản trị người dùng", trỏ đến `/account-settings?tab=users`.
     * Khi ở tab `users`, giao diện hoàn toàn tách biệt: chỉ hiển thị workspace quản trị người dùng (KPI cards, thanh lọc, bảng `CustomTable`, modal thêm/sửa/khóa/reset pass), ẩn banner hồ sơ cá nhân và các tab cá nhân ("Thông tin tài khoản", "Bảo mật", "Tùy chọn"). Khi truy cập từ menu avatar hồ sơ, các tab cá nhân hiển thị đầy đủ.
@@ -3312,7 +3400,51 @@
 
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 14/11/2026 (v11.46): Hoàn Thiện Đồng Bộ 5 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi Phân Quyền & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001], [NODE-CRM-007], [NODE-APP-003], [NODE-APP-004], [NODE-APP-007])**:
+- **Bản cập nhật ngày 14/11/2026 (v11.47): Hoàn Thiện Đồng Bộ 4 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Thiết Lập Mẫu Thư Nhắc Động, Luồng Check QR Hết Hạn Gửi Email, Xóa Mock Tài Khoản & Chuẩn Hóa Nút Xem Tất Cả ([NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-CRM-024], [NODE-APP-008])**:
+  - **1. Web CRM: Thiết Lập Mẫu Thư Nhắc Nhở Động Với Các Trường Tùy Biến (Dynamic Reminder Builder)**:
+    * Tạo component chuyên biệt `CustomReminderTemplateModal.tsx` và tích hợp vào `MailTemplateManager.tsx`.
+    * Cung cấp mẫu mặc định: *"Thư Nhắc: Hôm Nay Trong App CEO 1983 Có Gì (Trường Tùy Biến)"* (code: `TODAY_IN_APP_CEO1983`).
+    * Hỗ trợ người dùng thêm/xóa trường tùy thích với đầy đủ các kiểu dữ liệu chuyên biệt:
+      - `textarea`: Cho phần mô tả hoạt động nhiều dòng (Multiline description).
+      - `datetime`: Cho ngày và giờ diễn ra hoạt động (Date & Time picker).
+      - `price`: Cho chi phí / hội phí tham gia (Currency format VNĐ kèm các mốc chọn nhanh 0đ, 200k, 500k, 1M).
+      - `qr`: Cho mã QR (nhập liên kết/mã vé và tự động sinh ảnh QR Code hiển thị tức thì).
+      - `text`: Cho các trường văn bản ngắn (địa điểm, diễn giả, ghi chú).
+    * Bộ Live Preview tương tác đa kênh thời gian thực: Xem trước thẻ thông báo App CEO 1983, xem trước Email HTML đóng khung sang trọng và xem trước tin nhắn Zalo OA.
+    * Nút *"Lưu & Áp Dụng Mẫu"* tự động biên dịch cấu trúc mẫu, cập nhật danh sách `templates`, lưu vào localStorage và sẵn sàng gửi qua App, Email, Zalo OA hoặc Gửi Cả 3 Kênh.
+    * Tích hợp nút shortcut `[⚙️ Tùy Chỉnh Trường Động]` ngay trên thanh tác vụ khi chọn mẫu thông báo nhắc nhở.
+  - **2. Core & Backend: Luồng Check Mã QR Đã Xóa / Hết Hạn & Tự Động Bắn Email Thông Báo**:
+    * Tại `apps/ceo1983_app_be/src/mail/mail.service.ts`:
+      - Bổ sung interface `SendQrChangedOrExpiredEmailOptions`.
+      - Bổ sung phương thức `sendQrChangedOrExpiredEmail()`: Soạn thảo mẫu email HTML trang trọng từ Ban Tổ Chức CLB CEO 1983, nêu rõ sự kiện hoặc chương trình đào tạo liên quan đến mã QR đã có sự thay đổi hoặc hết hiệu lực trên hệ thống; cung cấp thông tin liên hệ Ban Thư Ký (Hotline 0983 1983 83 / 0973 205 683 / 0903 205 683, email `btk@ceo1983.com`, link mở App CEO 1983). Đồng thời kích hoạt thông báo Zalo OA notification nếu khả dụng.
+    * Tại `apps/ceo1983_app_be/src/events/events.service.ts`:
+      - Trong `guestRegister(eventId, guestData)`: Khi kiểm tra `public.events` và `public.trainings` mà sự kiện không tồn tại hoặc đã bị xóa (`is_deleted === true` / `status === 'deleted'`), hệ thống không ném 404 thuần túy mà tự động gọi `mailService.sendQrChangedOrExpiredEmail()` gửi ngay thư thông báo đến email người dùng và trả về payload `{ ok: false, status: 'qr_changed_or_expired', isQrExpired: true, message: '...' }`.
+    * Tại `apps/ceo1983_app_fe/src/routes/guest-event-register.$eventId.tsx`:
+      - Khi backend trả về trạng thái `qr_changed_or_expired` hoặc `isQrExpired`, hiển thị màn hình thông báo chuyên biệt với biểu tượng cảnh báo trang trọng, xác nhận email hướng dẫn đã được gửi tới người dùng và hiển thị hotline liên hệ BTC.
+  - **3. CRM & Database: Xóa Hardcode Mock Dữ Liệu 2 Tài Khoản & Đảm Bảo Lưu Trữ Trong CSDL PostgreSQL**:
+    * Tại `apps/ceo1983_app_fe/src/lib/committee-accounts.ts`:
+      - Đặt `DEFAULT_ACCOUNTS: UserAccountItem[] = []`.
+      - Xóa mảng mock hardcode chứa `admin@connect.vn` và `info@viconnect.vn`, đảm bảo `readManagedAccounts()` trả về rỗng nếu không có dữ liệu thực.
+    * Tại `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+      - Xóa bỏ việc import và gán `DEFAULT_ACCOUNTS` làm fallback khi API `/users` trả về danh sách rỗng hoặc lỗi. Dữ liệu bảng người dùng hoàn toàn phản ánh trung thực từ CSDL PostgreSQL backend.
+    * Tại `apps/ceo1983_app_be/src/users/users.service.ts`:
+      - Cho `UsersService` implements `OnModuleInit`, gọi `ensureDefaultUsersInDatabase()` khi khởi chạy hệ thống:
+        + Tự động kiểm tra và đảm bảo tài khoản `admin@connect.vn` (Toàn quyền Quản trị, mật khẩu mặc định `Admin@1983`) tồn tại đầy đủ trong `public.vione_users`, `public.user_roles` (`admin`, `platform_admin`), `public.user_profiles` và `public.members`.
+        + Tự động kiểm tra và đảm bảo tài khoản `info@viconnect.vn` (Ban Truyền Thông, mật khẩu mặc định `Ceo1983@vba`) tồn tại đầy đủ trong `public.vione_users`, `public.user_roles` (`staff`, `moderator`), `public.user_profiles` và `public.members`.
+  - **4. Mobile App CEO 1983: Đổi Tên "Sự Kiện & Hoạt Động" & Chuẩn Hóa Duy Nhất 1 Nút "Xem Tất Cả" (Ảnh 5)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Sửa tiêu đề Top App Bar từ "Sự kiện" thành **"Sự kiện & Hoạt động"** (dòng 2000).
+      - Chuẩn hóa nút "Xem tất cả" trong danh mục sự kiện CLB:
+        + **RÀNG BUỘC TUYỆT ĐỐI**: Khi danh mục đang chọn là "Tất cả" (`eventCategory === "all"`), **ẨN HOÀN TOÀN** nút "Xem tất cả" (kể cả trong empty state).
+        + Khi danh mục khác rỗng (`displayEventsList.length === 0` và `eventCategory !== "all"`): Chỉ hiển thị DUY NHẤT 1 nút "Xem tất cả ({allEventsCount}) sự kiện" bên trong thẻ empty state để quay về danh mục tất cả.
+        + Khi danh mục khác có sự kiện (`displayEventsList.length > 0` và `eventCategory !== "all"`): Hiển thị DUY NHẤT 1 nút "Xem tất cả ({allEventsCount}) sự kiện" ở phía dưới danh sách sự kiện.
+        + Triệt tiêu hoàn toàn tình trạng xuất hiện 2 nút "Xem tất cả" trùng lặp như người dùng phản ánh ở Ảnh 5.
+  - **5. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Backend `npm run build`: Exit code 0 (0 errors).
+    * Frontend `tsc`: Exit code 0 (0 errors) trên toàn bộ các file đã chỉnh sửa (`CustomReminderTemplateModal.tsx`, `MailTemplateManager.tsx`, `account-settings.index.tsx`, `committee-accounts.ts`, `guest-event-register.$eventId.tsx`, `association.events.tsx`).
+    * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
+
   - **1. Tách Biệt Giao Diện Quản Trị Người Dùng & Sửa Lỗi Quyền / Trùng Tên `@` (Ảnh 2 & 4)**:
     * Nhóm "PHÂN QUYỀN" trên Sidebar đổi nhãn thành "Quản trị người dùng", trỏ đến `/account-settings?tab=users`.
     * Khi ở tab `users`, giao diện hoàn toàn tách biệt: chỉ hiển thị workspace quản trị người dùng (KPI cards, thanh lọc, bảng `CustomTable`, modal thêm/sửa/khóa/reset pass), ẩn banner hồ sơ cá nhân và các tab cá nhân ("Thông tin tài khoản", "Bảo mật", "Tùy chọn"). Khi truy cập từ menu avatar hồ sơ, các tab cá nhân hiển thị đầy đủ.
