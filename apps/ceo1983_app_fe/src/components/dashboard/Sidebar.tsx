@@ -177,7 +177,7 @@ const permissionsGroup: Item[] = [
     key: "nav.accounts" as TKey,
     icon: UserCog,
     to: "/account-settings?tab=users",
-    label: "Quản lý Tài Khoản",
+    label: "Quản trị người dùng",
   },
 ];
 const pageTemplates: Item[] = [

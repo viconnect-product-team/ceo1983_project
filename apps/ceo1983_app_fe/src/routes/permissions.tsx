@@ -1,56 +1,19 @@
-import { useState, useRef } from "react";
-import { createFileRoute, useBlocker } from "@tanstack/react-router";
+import React, { useState, useRef, useEffect, Component, ErrorInfo, ReactNode } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   ShieldCheck,
   Lock,
   AlertTriangle,
   Save,
-  LogOut,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { useRole } from "@/hooks/use-role";
 import { RbacPermissionMatrix } from "@/components/dashboard/RbacPermissionMatrix";
-import { dispatchPermissionSyncEvent, isRouteAllowedByMatrix } from "@/lib/rbac-permission-helpers";
-
-export const Route = createFileRoute("/permissions")({
-  component: PermissionsPage,
-  errorComponent: PermissionsErrorFallback,
-});
-
-function PermissionsErrorFallback() {
-  const handleReset = () => {
-    try {
-      localStorage.removeItem("ceo1983_rbac_tree_matrix_v7_sidebar_menu");
-    } catch {}
-    window.location.reload();
-  };
-
-  return (
-    <AppShell>
-      <div className="p-8 max-w-xl mx-auto my-12 text-center bg-card border border-border rounded-3xl shadow-lg">
-        <div className="size-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center mb-4">
-          <AlertTriangle className="size-8" />
-        </div>
-        <h2 className="text-lg font-bold text-foreground mb-2">Đang làm mới Ma Trận Phân Quyền</h2>
-        <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
-          Bộ nhớ đệm ma trận phân quyền đã được làm mới đồng bộ với cơ sở dữ liệu hệ thống. Quý quản trị viên vui lòng bấm nút bên dưới để khôi phục và tiếp tục.
-        </p>
-        <div className="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="px-5 py-2.5 rounded-xl bg-[#003B95] text-white font-bold text-xs hover:bg-[#002B70] transition shadow-md cursor-pointer"
-          >
-            Khôi phục &amp; Tải lại trang
-          </button>
-        </div>
-      </div>
-    </AppShell>
-  );
-}
-
 import {
+  dispatchPermissionSyncEvent,
+  isRouteAllowedByMatrix,
   getCustomDepartments,
   getAllDynamicRoleOptions,
   getRolesForDepartment,
@@ -163,6 +126,65 @@ export function normalizeDept(d?: string): string {
   return d;
 }
 
+function PermissionsErrorFallback({ onReset }: { onReset?: () => void }) {
+  const handleReset = () => {
+    try {
+      localStorage.removeItem("ceo1983_rbac_tree_matrix_v7_sidebar_menu");
+      localStorage.removeItem("vba_crm_rbac_tree_categories_v2");
+    } catch {}
+    if (onReset) {
+      onReset();
+    } else {
+      window.location.reload();
+    }
+  };
+
+  return (
+    <AppShell>
+      <div className="p-8 max-w-xl mx-auto my-12 text-center bg-card border border-border rounded-3xl shadow-lg">
+        <div className="size-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center mb-4">
+          <AlertTriangle className="size-8" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground mb-2">Đang làm mới Ma Trận Phân Quyền</h2>
+        <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
+          Bộ nhớ đệm ma trận phân quyền đã được làm mới đồng bộ với cơ sở dữ liệu hệ thống. Quý quản trị viên vui lòng bấm nút bên dưới để khôi phục và tiếp tục.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="px-5 py-2.5 rounded-xl bg-[#003B95] text-white font-bold text-xs hover:bg-[#002B70] transition shadow-md cursor-pointer"
+          >
+            Khôi phục &amp; Tải lại trang
+          </button>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+class PermissionsErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("[PermissionsErrorBoundary caught]", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <PermissionsErrorFallback onReset={() => this.setState({ hasError: false, error: null })} />;
+    }
+    return this.props.children;
+  }
+}
+
 function PermissionsPage() {
   const { isPlatformAdmin, isBQT, isAdmin, isSuperAdmin, isPresident, isChuTich, srsRole, loading } = useRole();
   const hasAccess =
@@ -181,49 +203,20 @@ function PermissionsPage() {
     isRouteAllowedByMatrix("/permissions", (srsRole as any) || "member");
 
   const [matrixDirty, setMatrixDirty] = useState(false);
-  const isDirty = matrixDirty;
-
   const matrixSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const matrixDiscardRef = useRef<(() => void) | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const blocker = useBlocker({
-    shouldBlockFn: () => isDirty,
-    withResolver: true,
-    enableBeforeUnload: true,
-  });
-
-  const showUnsavedModal = blocker.status === "blocked";
-
-  const handleSaveAndProceed = async () => {
-    setIsSaving(true);
-    try {
-      if (matrixDirty && matrixSaveRef.current) {
-        await matrixSaveRef.current();
+  // Standard safe browser beforeunload handler (prevents crashes from router blockers)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (matrixDirty) {
+        e.preventDefault();
+        e.returnValue = "";
       }
-      setMatrixDirty(false);
-      dispatchPermissionSyncEvent();
-      toast.success("Đã lưu các thay đổi phân quyền!");
-      blocker.proceed?.();
-    } catch (err: any) {
-      toast.error(err?.message || "Lỗi khi lưu phân quyền");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDiscardAndProceed = () => {
-    if (matrixDiscardRef.current) {
-      matrixDiscardRef.current();
-    }
-    setMatrixDirty(false);
-    toast.info("Đã hủy các thay đổi chưa lưu.");
-    blocker.proceed?.();
-  };
-
-  const handleStay = () => {
-    blocker.reset?.();
-  };
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [matrixDirty]);
 
   if (!loading && !hasAccess) {
     return (
@@ -249,9 +242,9 @@ function PermissionsPage() {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#003B95]/10 text-[#003B95] dark:bg-blue-950/60 dark:text-blue-300">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  RBAC V2 & BAN CHUYÊN MÔN
+                  RBAC V2 &amp; BAN CHUYÊN MÔN
                 </span>
-                {isDirty && (
+                {matrixDirty && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 animate-pulse">
                     <AlertTriangle className="w-3 h-3" />
                     Có thay đổi chưa lưu
@@ -259,7 +252,7 @@ function PermissionsPage() {
                 )}
               </div>
               <h1 className="text-lg sm:text-xl font-black text-foreground tracking-tight mt-1">
-                Phân Quyền & Quản Trị Vai Trò CEO 1983
+                Phân Quyền &amp; Quản Trị Vai Trò CEO 1983
               </h1>
             </div>
           </div>
@@ -274,60 +267,19 @@ function PermissionsPage() {
           />
         </div>
       </div>
-
-      {showUnsavedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="unsaved-modal-title"
-            className="w-full max-w-md rounded-3xl border-2 border-amber-500/40 bg-card p-6 shadow-2xl transition-all animate-in zoom-in-95 duration-200"
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 id="unsaved-modal-title" className="text-base font-bold text-foreground">
-                  Thay đổi chưa lưu
-                </h3>
-                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                  Bạn có các thay đổi trên ma trận phân quyền chưa lưu. Bạn có muốn lưu lại không?
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2.5 pt-4 border-t border-border">
-              <button
-                type="button"
-                onClick={handleStay}
-                disabled={isSaving}
-                className="px-3.5 py-2 rounded-xl border border-border bg-background text-foreground hover:bg-muted font-medium text-xs transition cursor-pointer"
-              >
-                Ở lại
-              </button>
-              <button
-                type="button"
-                onClick={handleDiscardAndProceed}
-                disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 font-medium text-xs transition cursor-pointer"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Không lưu</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAndProceed}
-                disabled={isSaving}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-black text-xs shadow-md shadow-amber-500/20 transition cursor-pointer disabled:opacity-50"
-              >
-                <Save className="h-3.5 w-3.5 text-white" />
-                <span>{isSaving ? "Đang lưu..." : "Lưu thay đổi"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AppShell>
   );
 }
+
+function PermissionsPageWrapper() {
+  return (
+    <PermissionsErrorBoundary>
+      <PermissionsPage />
+    </PermissionsErrorBoundary>
+  );
+}
+
+export const Route = createFileRoute("/permissions")({
+  component: PermissionsPageWrapper,
+  errorComponent: PermissionsErrorFallback,
+});

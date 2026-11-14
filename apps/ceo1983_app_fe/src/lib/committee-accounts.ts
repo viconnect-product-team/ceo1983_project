@@ -30,7 +30,7 @@ export const DEFAULT_ACCOUNTS: UserAccountItem[] = [
     id: "acc_admin_001",
     name: "Lê Thị Dung (Admin Viconnect)",
     code: "M1983-001",
-    email: "admin@viconnect.vn",
+    email: "admin@connect.vn",
     phone: "0988870888",
     companyName: "Công ty CP Giải Pháp Viconnect",
     department: "Ban Điều Hành",

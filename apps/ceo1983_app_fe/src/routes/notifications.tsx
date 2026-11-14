@@ -1156,11 +1156,6 @@ function NotifyPage() {
           searchQuery={query}
           onSearchChange={setQuery}
           searchPlaceholder="Tìm theo tiêu đề, nội dung hoặc mã thông báo..."
-          addButtonLabel="Tạo thông báo"
-          onAddClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
         >
           {/* Lọc trạng thái đọc */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
@@ -1347,21 +1342,7 @@ function NotifyPage() {
         </>
       )}
 
-      {/* ── MODAL TẠO & SỬA THÔNG BÁO ── */}
-      <CrudModal
-        open={open}
-        title={editing ? t("common.editTitle") : t("notif.create")}
-        fields={fields}
-        initial={editing ? (editing as unknown as CrudValues) : undefined}
-        submitting={submitting}
-        submitLabel={editing ? t("common.save") : t("common.create")}
-        cancelLabel={t("common.cancel")}
-        onSubmit={onSubmit}
-        onClose={() => {
-          setOpen(false);
-          setEditing(null);
-        }}
-      />
+{/* Đã chuyển việc tạo thông báo sang Mẫu thông báo (đa kênh App, Email, Zalo OA) */}
 
       {/* ── MODAL BẮN TIN NHẮC SỰ KIỆN KÈM POSTER ── */}
       <EventReminderPosterModal

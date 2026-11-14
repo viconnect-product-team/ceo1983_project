@@ -1785,7 +1785,7 @@ function ProductsScreen() {
             className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#003B95] dark:hover:text-amber-400 transition cursor-pointer group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span>Quay lại Chợ giao thương</span>
+            <span>Quay lại Giao thương</span>
           </button>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span className="truncate max-w-[160px] sm:max-w-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -2191,7 +2191,7 @@ function ProductsScreen() {
                 <ChevronLeft className="size-5 text-sky-950 dark:text-white" />
               </button>
               <div className="justify-start text-sky-950 dark:text-white text-base font-bold font-['Inter']">
-                {marketplaceTab === "my_store" ? "Gian Hàng Của Tôi" : "Chợ Giao Thương B2B"}
+                {marketplaceTab === "my_store" ? "Gian Hàng Của Tôi" : "Giao thương"}
               </div>
             </div>
 
@@ -2205,11 +2205,11 @@ function ProductsScreen() {
                   ? "bg-amber-500 text-white border-amber-600 shadow-sm"
                   : "bg-slate-50 dark:bg-slate-800 text-[#003B95] dark:text-amber-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
-              title={marketplaceTab === "my_store" ? "Quay lại Chợ B2B" : "Gian hàng của tôi"}
+              title={marketplaceTab === "my_store" ? "Quay lại Giao thương" : "Gian hàng của tôi"}
               aria-label="Gian hàng của tôi"
             >
               <Store className="size-4" />
-              <span className="hidden xs:inline">{marketplaceTab === "my_store" ? "Chợ B2B" : "Gian hàng"}</span>
+              <span className="hidden xs:inline">{marketplaceTab === "my_store" ? "Giao thương" : "Gian hàng"}</span>
               {myProductsCount > 0 && (
                 <span className="size-4.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center ring-1.5 ring-white dark:ring-slate-900">
                   {myProductsCount}

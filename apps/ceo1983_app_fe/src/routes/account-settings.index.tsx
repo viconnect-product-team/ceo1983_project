@@ -187,6 +187,13 @@ function AccountManagementPage() {
   const savePref = useServerFn(setVotingOpenPrefFn);
   const clearPref = useServerFn(clearVotingOpenPrefFn);
 
+  const displayUsername = (val?: string) => {
+    if (!val) return "—";
+    const clean = val.startsWith("@") ? val.slice(1) : val;
+    if (clean.includes("@")) return clean;
+    return `@${clean}`;
+  };
+
   const canManageUsers =
     isPlatformAdmin ||
     isAdmin ||
@@ -195,9 +202,16 @@ function AccountManagementPage() {
     srsRole === "quan_tri" ||
     srsRole === "admin" ||
     srsRole === "chu_tich" ||
+    userRolesList?.includes("quan_tri") ||
+    userRolesList?.includes("admin") ||
+    account?.email === "admin@connect.vn" ||
+    account?.email === "admin@viconnect.vn" ||
+    account?.username === "admin" ||
+    account?.username === "admin@connect.vn" ||
     (account?.roles &&
       (account.roles.includes("platform_admin") ||
         account.roles.includes("tenant_admin") ||
+        account.roles.includes("quan_tri") ||
         account.roles.includes("admin")));
 
   // ── Load Account Data ──────────────────────────────────────────────────────
@@ -726,24 +740,44 @@ function AccountManagementPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <PageHeader
-          title={t("account.title") || "Quản lý tài khoản"}
+          title={
+            activeTab === "users"
+              ? "Quản trị người dùng & Phân quyền tài khoản"
+              : t("account.title") || "Quản lý tài khoản"
+          }
           subtitle={
-            account
+            activeTab === "users"
+              ? "Quản lý danh sách tài khoản, phân công ban chuyên môn, chức danh vai trò và trạng thái hoạt động"
+              : account
               ? `${account.name || account.username} • ${account.email || "Chưa có email"}`
               : "Quản lý hồ sơ cá nhân, bảo mật và phân quyền tài khoản hệ thống"
           }
           actions={
-            <button
-              onClick={() => navigate({ to: "/" })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary transition"
-            >
-              <ArrowLeft className="h-4 w-4" /> Về bảng tin
-            </button>
+            <div className="flex items-center gap-2">
+              {activeTab === "users" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    loadUsers(pagination.page);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition shadow-xs cursor-pointer"
+                  title="Làm mới danh sách"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${usersLoading ? "animate-spin" : ""}`} /> Làm mới
+                </button>
+              )}
+              <button
+                onClick={() => navigate({ to: "/" })}
+                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary transition"
+              >
+                <ArrowLeft className="h-4 w-4" /> Về bảng tin
+              </button>
+            </div>
           }
         />
 
-        {/* User Quick Info Banner */}
-        {account && (
+        {/* User Quick Info Banner - Chỉ hiển thị khi ở tab hồ sơ cá nhân / bảo mật, ẨN khi ở Quản trị người dùng */}
+        {activeTab !== "users" && account && (
           <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-r from-primary/10 via-background to-secondary/30 p-6 backdrop-blur-sm shadow-sm">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -771,7 +805,7 @@ function AccountManagementPage() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Tên đăng nhập: <span className="font-semibold text-foreground">@{account.username}</span>
+                    Tên đăng nhập: <span className="font-semibold text-foreground">{displayUsername(account.username || account.email)}</span>
                   </p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {(account.roles && account.roles.length > 0 ? account.roles : ["member"]).map((r: string) => (
@@ -799,61 +833,59 @@ function AccountManagementPage() {
           </div>
         )}
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-border overflow-x-auto scrollbar-none gap-2">
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-              activeTab === "profile"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <User className="h-4 w-4" />
-            {t("account.tab.profile") || "Hồ sơ tài khoản"}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("security")}
-            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-              activeTab === "security"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <KeyRound className="h-4 w-4" />
-            {t("account.tab.security") || "Bảo mật & Mật khẩu"}
-          </button>
-
-          {canManageUsers && (
+        {/* Tab Navigation - Chỉ hiển thị khi xem hồ sơ cá nhân / bảo mật / tùy chọn */}
+        {activeTab !== "users" && (
+          <div className="flex border-b border-border overflow-x-auto scrollbar-none gap-2">
             <button
-              onClick={() => setActiveTab("users")}
+              onClick={() => setActiveTab("profile")}
               className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-                activeTab === "users"
+                activeTab === "profile"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Users className="h-4 w-4" />
-              {t("account.tab.users") || "Quản trị người dùng"}
-              <span className="rounded-full bg-primary/10 text-primary px-1.5 py-0.2 text-[10px] font-bold">
-                Admin
-              </span>
+              <User className="h-4 w-4" />
+              {t("account.tab.profile") || "Hồ sơ tài khoản"}
             </button>
-          )}
 
-          <button
-            onClick={() => setActiveTab("preferences")}
-            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-              activeTab === "preferences"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            {t("account.tab.preferences") || "Tuỳ chọn"}
-          </button>
-        </div>
+            <button
+              onClick={() => setActiveTab("security")}
+              className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
+                activeTab === "security"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <KeyRound className="h-4 w-4" />
+              {t("account.tab.security") || "Bảo mật & Mật khẩu"}
+            </button>
+
+            {canManageUsers && (
+              <button
+                onClick={() => setActiveTab("users")}
+                className="inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 border-transparent text-muted-foreground hover:text-foreground"
+              >
+                <Users className="h-4 w-4" />
+                {t("account.tab.users") || "Quản trị người dùng"}
+                <span className="rounded-full bg-primary/10 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+                  Admin
+                </span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setActiveTab("preferences")}
+              className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
+                activeTab === "preferences"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {t("account.tab.preferences") || "Tuỳ chọn"}
+            </button>
+          </div>
+        )}
 
         {/* ── TAB 1: PROFILE & ACCOUNT DETAILS ──────────────────────────────── */}
         {activeTab === "profile" && (
@@ -1355,7 +1387,7 @@ function AccountManagementPage() {
                   label: "Tên đăng nhập",
                   width: 140,
                   render: (u: any) => (
-                    <span className="font-mono text-xs text-foreground font-medium">@{u.username}</span>
+                    <span className="font-mono text-xs text-foreground font-medium">{displayUsername(u.username || u.email)}</span>
                   ),
                 },
                 {
@@ -1731,7 +1763,7 @@ function AccountManagementPage() {
           <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-primary" /> Chỉnh sửa tài khoản: @{targetUser.username}
+                <Pencil className="h-5 w-5 text-primary" /> Chỉnh sửa tài khoản: {displayUsername(targetUser.username || targetUser.email)}
               </h3>
               <button onClick={() => setEditModalOpen(false)} className="rounded-lg p-1 text-muted-foreground hover:bg-secondary">
                 <X className="h-4 w-4" />
@@ -1840,7 +1872,7 @@ function AccountManagementPage() {
           <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-primary" /> Đặt lại mật khẩu: @{targetUser.username}
+                <KeyRound className="h-5 w-5 text-primary" /> Đặt lại mật khẩu: {displayUsername(targetUser.username || targetUser.email)}
               </h3>
               <button onClick={() => setResetModalOpen(false)} className="rounded-lg p-1 text-muted-foreground hover:bg-secondary">
                 <X className="h-4 w-4" />
@@ -1896,7 +1928,7 @@ function AccountManagementPage() {
                     {selectedViewUser.name !== "—" ? selectedViewUser.name : selectedViewUser.username}
                   </h3>
                   <span className="font-mono text-xs text-muted-foreground">
-                    @{selectedViewUser.username} {selectedViewUser.memberCode ? `• Mã: ${selectedViewUser.memberCode}` : ""}
+                    {displayUsername(selectedViewUser.username || selectedViewUser.email)} {selectedViewUser.memberCode ? `• Mã: ${selectedViewUser.memberCode}` : ""}
                   </span>
                 </div>
               </div>

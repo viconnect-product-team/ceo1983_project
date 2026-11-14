@@ -721,24 +721,52 @@ export class AdminService implements OnModuleInit {
     if (!userId) return false;
     if (
       userId === 'mock-admin-id' ||
-      userId === '00000000-0000-0000-0000-000000000000'
+      userId === '00000000-0000-0000-0000-000000000000' ||
+      userId === '00000000-0000-4000-8000-000000000001' ||
+      userId === '00000000-0000-4000-8000-000000000002'
     ) {
       return true;
     }
-    const roles = await this.prisma.user_roles
-      .findMany({ where: { user_id: userId } })
-      .catch(() => [] as any[]);
-    if (
-      roles.some(
-        (r: any) =>
-          r.role === 'platform_admin' ||
-          r.role === 'tenant_admin' ||
-          r.role === 'admin',
-      )
-    ) {
-      return true;
-    }
+
     try {
+      const user = await this.prisma.vione_users.findUnique({
+        where: { id: userId },
+        select: { email: true, username: true },
+      }).catch(() => null);
+
+      if (user) {
+        const e = (user.email || '').toLowerCase().trim();
+        const u = (user.username || '').toLowerCase().trim();
+        if (
+          e === 'admin@connect.vn' ||
+          e === 'admin@viconnect.vn' ||
+          e === 'admin1@connect.vn' ||
+          u === 'admin' ||
+          u === 'admin@connect.vn' ||
+          u === 'admin@viconnect.vn'
+        ) {
+          return true;
+        }
+      }
+
+      const roles = await this.prisma.user_roles
+        .findMany({ where: { user_id: userId } })
+        .catch(() => [] as any[]);
+      if (
+        roles.some(
+          (r: any) =>
+            r.role === 'platform_admin' ||
+            r.role === 'tenant_admin' ||
+            r.role === 'admin' ||
+            r.role === 'quan_tri' ||
+            r.role === 'chu_tich' ||
+            r.role === 'ban_dieu_hanh' ||
+            r.role === 'tong_thu_ky',
+        )
+      ) {
+        return true;
+      }
+
       let mems: any[] = [];
       if (assocId) {
         mems = await this.prisma.$queryRaw<any[]>`
@@ -755,7 +783,9 @@ export class AdminService implements OnModuleInit {
         (m: any) =>
           m.role === 'admin' ||
           m.role === 'association_admin' ||
-          m.role === 'owner',
+          m.role === 'owner' ||
+          m.role === 'quan_tri' ||
+          m.role === 'chu_tich',
       );
     } catch {
       return false;

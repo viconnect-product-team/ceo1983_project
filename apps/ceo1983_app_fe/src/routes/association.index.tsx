@@ -459,6 +459,81 @@ function Home() {
       }
     } catch {}
   }, []);
+
+  // ── DAILY FIRST-OPEN REMINDER POPUP & TOAST ──
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const lastPopupDate = localStorage.getItem("vba_daily_alarm_popup_date");
+      if (lastPopupDate !== todayStr) {
+        const savedCalendar = JSON.parse(localStorage.getItem("vba_calendar_saved_items") || "[]");
+        const alarmConfigs = JSON.parse(localStorage.getItem("vba_calendar_alarms") || "{}");
+        const regEvents = JSON.parse(localStorage.getItem("vba_registered_event_records") || "[]");
+        const b2bMeets = JSON.parse(localStorage.getItem("vba_connection_appointments") || "[]");
+
+        const todayItems: any[] = [];
+        if (Array.isArray(savedCalendar)) {
+          savedCalendar.forEach((item: any) => {
+            if (item.dateStr === todayStr && (alarmConfigs[item.id]?.enabled ?? item.alarmEnabled)) {
+              todayItems.push(item);
+            }
+          });
+        }
+        if (Array.isArray(regEvents)) {
+          regEvents.forEach((item: any) => {
+            const dStr = (item.date || "").split("T")[0];
+            const id = `ev-${item.eventId || item.id}`;
+            if (dStr === todayStr && (alarmConfigs[id]?.enabled ?? true)) {
+              todayItems.push({ ...item, id, title: item.name || item.title });
+            }
+          });
+        }
+        if (Array.isArray(b2bMeets)) {
+          b2bMeets.forEach((item: any) => {
+            const dStr = (item.appointment_date || item.date || "").split("T")[0];
+            const id = `conn-${item.id}`;
+            if (dStr === todayStr && (alarmConfigs[id]?.enabled ?? true)) {
+              todayItems.push({ ...item, id, title: item.title || "Gặp gỡ kết nối B2B" });
+            }
+          });
+        }
+
+        if (todayItems.length > 0) {
+          localStorage.setItem("vba_daily_alarm_popup_date", todayStr);
+          setAlarmModalOpen(true);
+
+          const existingNotifs = JSON.parse(localStorage.getItem("vba_notifications") || "[]");
+          const alarmNotif = {
+            id: `notif-alarm-${Date.now()}`,
+            title: `🔔 Nhắc nhở lịch trình hôm nay (${todayItems.length} mục)`,
+            message: `Hôm nay bạn có ${todayItems.length} lịch sự kiện/cuộc hẹn: ${todayItems.map((i: any) => i.title).join(", ")}.`,
+            type: "calendar_alarm",
+            created_at: new Date().toISOString(),
+            is_read: false,
+          };
+          localStorage.setItem("vba_notifications", JSON.stringify([alarmNotif, ...(Array.isArray(existingNotifs) ? existingNotifs : [])]));
+          window.dispatchEvent(new Event("vba.notifications.changed"));
+
+          toast.info(`🔔 Bạn có ${todayItems.length} lịch trình diễn ra hôm nay!`, {
+            duration: 6000,
+            icon: "⏰",
+          });
+
+          if ("Notification" in window && Notification.permission === "granted") {
+            try {
+              new Notification("CEO 1983 - Nhắc lịch hôm nay", {
+                body: `Bạn có ${todayItems.length} sự kiện/cuộc họp cần tham dự hôm nay!`,
+                icon: "/favicon.ico",
+              });
+            } catch {}
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Daily alarm check error:", e);
+    }
+  }, []);
   const [clearedBadges, setClearedBadges] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -1748,7 +1823,7 @@ function Home() {
           />
         </div>
 
-        {/* ── 3. SÀN THƯƠNG MẠI DOANH NGHIỆP HỘI VIÊN (ĐẨY XUỐNG DƯỚI TOÀN ĐỘ RỘNG) ── */}
+        {/* ── 3. GIAO THƯƠNG DOANH NGHIỆP HỘI VIÊN (ĐẨY XUỐNG DƯỚI TOÀN ĐỘ RỘNG) ── */}
         <div className="w-full flex flex-col gap-3">
           <Link
             to="/association/products"
@@ -1757,7 +1832,7 @@ function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                  Sàn Thương Mại Nội Bộ
+                  Giao thương
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Sản phẩm &amp; dịch vụ ưu đãi độc quyền hội viên
@@ -1773,7 +1848,7 @@ function Home() {
             <div className="relative h-28 w-full overflow-hidden rounded-2xl bg-slate-900">
               <img
                 src="/images/ceo1983/marketplace-banner.jpg"
-                alt="Sàn thương mại"
+                alt="Giao thương"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />

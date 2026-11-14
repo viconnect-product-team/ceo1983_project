@@ -1,5 +1,41 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 14/11/2026 (v11.46): Hoàn Thiện Đồng Bộ 5 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi Phân Quyền & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001], [NODE-CRM-007], [NODE-APP-003], [NODE-APP-004], [NODE-APP-007])**:
+  - **1. Tách Biệt Giao Diện Quản Trị Người Dùng & Sửa Lỗi Quyền / Trùng Tên `@` (Ảnh 2 & 4)**:
+    * Nhóm "PHÂN QUYỀN" trên Sidebar đổi nhãn thành "Quản trị người dùng", trỏ đến `/account-settings?tab=users`.
+    * Khi ở tab `users`, giao diện hoàn toàn tách biệt: chỉ hiển thị workspace quản trị người dùng (KPI cards, thanh lọc, bảng `CustomTable`, modal thêm/sửa/khóa/reset pass), ẩn banner hồ sơ cá nhân và các tab cá nhân ("Thông tin tài khoản", "Bảo mật", "Tùy chọn"). Khi truy cập từ menu avatar hồ sơ, các tab cá nhân hiển thị đầy đủ.
+    * Sửa lỗi hiển thị tên đăng nhập bị trùng `@` (ví dụ `@admin@viconnect.vn`) bằng helper `displayUsername()`.
+    * Chuẩn hóa email tài khoản quản trị viên mặc định là `admin@connect.vn`.
+    * Sửa lỗi 403 Forbidden khi tài khoản quản trị cập nhật quyền tài khoản khác: Cập nhật hàm `checkIsAdmin` trong cả `users.service.ts` và `admin.service.ts` để kiểm tra email admin root (`admin@connect.vn`, `admin@viconnect.vn`), các vai trò `admin`, `quan_tri`, `platform_admin`, `tenant_admin`, `chu_tich`, `ban_dieu_hanh`, cùng bảng `memberships` và `members`.
+    * Đồng bộ tên chức năng tự động trong Ma trận phân quyền (`RbacPermissionMatrix.tsx`): Tự động lấy tên chính xác theo live sidebar (`SIDEBAR_ROUTE_NAMES`), đảm bảo khi sidebar đổi tên thì phân quyền tự động cập nhật theo.
+    * Khắc phục triệt để lỗi "Something went wrong" tại `/permissions` (Ảnh 1) bằng cách thay thế `useBlocker` bằng `beforeunload` và bọc toàn trang trong `PermissionsErrorBoundary`.
+  - **2. Web CRM: Loại Bỏ Nút "Tạo Thông Báo" & Bổ Sung Nút Gửi Đa Kênh Trong "Mẫu Thông Báo"**:
+    * Tại màn Quản lý thông báo (`/notifications`), loại bỏ nút "Tạo thông báo" và modal tạo thông báo thủ công.
+    * Tại component "Mẫu thông báo" (`MailTemplateManager.tsx`), tích hợp các nút gửi chuyên biệt: **📱 App CEO 1983** (gọi API `POST /notifications` và đồng bộ `vba_notifications`), **📧 Email**, **💬 Zalo OA** (và nút **🌟 Gửi Cả 3 Kênh**).
+  - **3. Mobile App: Tái Cấu Trúc Danh Mục Sự Kiện & Bổ Sung Danh Mục Hoạt Động (Ảnh 5)**:
+    * Tại màn Sự kiện (`association.events.tsx`): Loại bỏ 3 nút danh mục "Giao thương B2B", "Gala & Đại hội", "Đào tạo & Tọa đàm". Giữ lại: Tất cả, Sắp diễn ra, Đã đăng ký, Miễn phí, Có phí, Đã kết thúc / Kỷ yếu.
+    * Tại tab "Hoạt động" (`association.events.tsx`):
+      - Thêm danh mục "Kết nối B2B" (`b2b_connect`): Lấy ra các cuộc gặp kết nối giữa 2 tài khoản từ API `/meetings/connection-appointments` và local cache.
+      - Thêm danh mục "Chương trình đào tạo" (`trainings`): Lấy theo danh sách khóa đào tạo từ hệ thống CRM (`/trainings` / `public.trainings`).
+      - Hiển thị card chuyên biệt cho từng loại: Card kết nối B2B (hiển thị thông tin 2 tài khoản, đối tác, nút vào họp/chi tiết), Card khóa đào tạo (giảng viên, thời gian, nút xem chi tiết & đăng ký).
+  - **4. Mobile App: Tự Động Lưu Lịch & Chế Độ Lưới/Danh Sách Kèm Báo Thức Nhắc Lịch**:
+    * Mọi sự kiện, cuộc họp, kết nối B2B đã đăng ký tham gia đều được tự động đồng bộ vào Lịch hội viên (`CeoCalendarAlarmModal.tsx`).
+    * Bổ sung thanh chuyển đổi giao diện: **📅 Dạng Lưới** (mini calendar tháng) và **📋 Dạng Danh Sách** (agenda toàn bộ lịch trình sắp xếp theo thứ tự thời gian).
+    * Nút "Bật nhắc / Bỏ nhắc": Nhấn lần 1 để bật báo thức (`alarmEnabled = true`), nhấn lần 2 để bỏ nhắc (`alarmEnabled = false`).
+    * Tự động kiểm tra vào lần đầu mở app trong ngày (`association.index.tsx`): Nếu có lịch trình trong ngày đang bật nhắc, hệ thống tự động:
+      1. Mở popup Báo thức Lịch trình CEO 1983.
+      2. Ghi nhận thông báo nhắc nhở vào màn thông báo (`vba_notifications`).
+      3. Bắn toast thông báo nổi bật trên điện thoại.
+      4. Kích hoạt Web Notification / Mobile Push Notification.
+  - **5. Mobile App: Chuẩn Hóa Tên Gọi "Giao thương"**:
+    * Tại Trang chủ (`association.index.tsx`): Đổi "Sàn Thương Mại Nội Bộ" thành "Giao thương".
+    * Tại Modal tiện ích tắt (`CustomHomeShortcutsModal.tsx`): Đổi "Sàn B2B" thành "Giao thương".
+    * Tại màn Chợ sản phẩm (`association.products.tsx`): Đổi "Chợ giao thương", "Chợ B2B", "Chợ Giao Thương B2B" thành "Giao thương".
+  - **6. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Backend `tsc --noEmit`: Exit code 0 (0 errors).
+    * Frontend `tsc --noEmit`: Exit code 0 (0 errors).
+    * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
 - **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
   - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
     * Khắc phục triệt để lỗi build Rollup thiếu export tại `apps/ceo1983_app_fe/src/features/tasks/api.ts` (`uploadTaskAttachment`, `deleteTaskAttachment`, `remindTask`).
@@ -998,6 +1034,42 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 14/11/2026 (v11.46): Hoàn Thiện Đồng Bộ 5 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi Phân Quyền & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001], [NODE-CRM-007], [NODE-APP-003], [NODE-APP-004], [NODE-APP-007])**:
+  - **1. Tách Biệt Giao Diện Quản Trị Người Dùng & Sửa Lỗi Quyền / Trùng Tên `@` (Ảnh 2 & 4)**:
+    * Nhóm "PHÂN QUYỀN" trên Sidebar đổi nhãn thành "Quản trị người dùng", trỏ đến `/account-settings?tab=users`.
+    * Khi ở tab `users`, giao diện hoàn toàn tách biệt: chỉ hiển thị workspace quản trị người dùng (KPI cards, thanh lọc, bảng `CustomTable`, modal thêm/sửa/khóa/reset pass), ẩn banner hồ sơ cá nhân và các tab cá nhân ("Thông tin tài khoản", "Bảo mật", "Tùy chọn"). Khi truy cập từ menu avatar hồ sơ, các tab cá nhân hiển thị đầy đủ.
+    * Sửa lỗi hiển thị tên đăng nhập bị trùng `@` (ví dụ `@admin@viconnect.vn`) bằng helper `displayUsername()`.
+    * Chuẩn hóa email tài khoản quản trị viên mặc định là `admin@connect.vn`.
+    * Sửa lỗi 403 Forbidden khi tài khoản quản trị cập nhật quyền tài khoản khác: Cập nhật hàm `checkIsAdmin` trong cả `users.service.ts` và `admin.service.ts` để kiểm tra email admin root (`admin@connect.vn`, `admin@viconnect.vn`), các vai trò `admin`, `quan_tri`, `platform_admin`, `tenant_admin`, `chu_tich`, `ban_dieu_hanh`, cùng bảng `memberships` và `members`.
+    * Đồng bộ tên chức năng tự động trong Ma trận phân quyền (`RbacPermissionMatrix.tsx`): Tự động lấy tên chính xác theo live sidebar (`SIDEBAR_ROUTE_NAMES`), đảm bảo khi sidebar đổi tên thì phân quyền tự động cập nhật theo.
+    * Khắc phục triệt để lỗi "Something went wrong" tại `/permissions` (Ảnh 1) bằng cách thay thế `useBlocker` bằng `beforeunload` và bọc toàn trang trong `PermissionsErrorBoundary`.
+  - **2. Web CRM: Loại Bỏ Nút "Tạo Thông Báo" & Bổ Sung Nút Gửi Đa Kênh Trong "Mẫu Thông Báo"**:
+    * Tại màn Quản lý thông báo (`/notifications`), loại bỏ nút "Tạo thông báo" và modal tạo thông báo thủ công.
+    * Tại component "Mẫu thông báo" (`MailTemplateManager.tsx`), tích hợp các nút gửi chuyên biệt: **📱 App CEO 1983** (gọi API `POST /notifications` và đồng bộ `vba_notifications`), **📧 Email**, **💬 Zalo OA** (và nút **🌟 Gửi Cả 3 Kênh**).
+  - **3. Mobile App: Tái Cấu Trúc Danh Mục Sự Kiện & Bổ Sung Danh Mục Hoạt Động (Ảnh 5)**:
+    * Tại màn Sự kiện (`association.events.tsx`): Loại bỏ 3 nút danh mục "Giao thương B2B", "Gala & Đại hội", "Đào tạo & Tọa đàm". Giữ lại: Tất cả, Sắp diễn ra, Đã đăng ký, Miễn phí, Có phí, Đã kết thúc / Kỷ yếu.
+    * Tại tab "Hoạt động" (`association.events.tsx`):
+      - Thêm danh mục "Kết nối B2B" (`b2b_connect`): Lấy ra các cuộc gặp kết nối giữa 2 tài khoản từ API `/meetings/connection-appointments` và local cache.
+      - Thêm danh mục "Chương trình đào tạo" (`trainings`): Lấy theo danh sách khóa đào tạo từ hệ thống CRM (`/trainings` / `public.trainings`).
+      - Hiển thị card chuyên biệt cho từng loại: Card kết nối B2B (hiển thị thông tin 2 tài khoản, đối tác, nút vào họp/chi tiết), Card khóa đào tạo (giảng viên, thời gian, nút xem chi tiết & đăng ký).
+  - **4. Mobile App: Tự Động Lưu Lịch & Chế Độ Lưới/Danh Sách Kèm Báo Thức Nhắc Lịch**:
+    * Mọi sự kiện, cuộc họp, kết nối B2B đã đăng ký tham gia đều được tự động đồng bộ vào Lịch hội viên (`CeoCalendarAlarmModal.tsx`).
+    * Bổ sung thanh chuyển đổi giao diện: **📅 Dạng Lưới** (mini calendar tháng) và **📋 Dạng Danh Sách** (agenda toàn bộ lịch trình sắp xếp theo thứ tự thời gian).
+    * Nút "Bật nhắc / Bỏ nhắc": Nhấn lần 1 để bật báo thức (`alarmEnabled = true`), nhấn lần 2 để bỏ nhắc (`alarmEnabled = false`).
+    * Tự động kiểm tra vào lần đầu mở app trong ngày (`association.index.tsx`): Nếu có lịch trình trong ngày đang bật nhắc, hệ thống tự động:
+      1. Mở popup Báo thức Lịch trình CEO 1983.
+      2. Ghi nhận thông báo nhắc nhở vào màn thông báo (`vba_notifications`).
+      3. Bắn toast thông báo nổi bật trên điện thoại.
+      4. Kích hoạt Web Notification / Mobile Push Notification.
+  - **5. Mobile App: Chuẩn Hóa Tên Gọi "Giao thương"**:
+    * Tại Trang chủ (`association.index.tsx`): Đổi "Sàn Thương Mại Nội Bộ" thành "Giao thương".
+    * Tại Modal tiện ích tắt (`CustomHomeShortcutsModal.tsx`): Đổi "Sàn B2B" thành "Giao thương".
+    * Tại màn Chợ sản phẩm (`association.products.tsx`): Đổi "Chợ giao thương", "Chợ B2B", "Chợ Giao Thương B2B" thành "Giao thương".
+  - **6. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Backend `tsc --noEmit`: Exit code 0 (0 errors).
+    * Frontend `tsc --noEmit`: Exit code 0 (0 errors).
+    * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
 
 - **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
   - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
@@ -3239,6 +3311,42 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 14/11/2026 (v11.46): Hoàn Thiện Đồng Bộ 5 Yêu Cầu Cấp Bách Web CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi Phân Quyền & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001], [NODE-CRM-007], [NODE-APP-003], [NODE-APP-004], [NODE-APP-007])**:
+  - **1. Tách Biệt Giao Diện Quản Trị Người Dùng & Sửa Lỗi Quyền / Trùng Tên `@` (Ảnh 2 & 4)**:
+    * Nhóm "PHÂN QUYỀN" trên Sidebar đổi nhãn thành "Quản trị người dùng", trỏ đến `/account-settings?tab=users`.
+    * Khi ở tab `users`, giao diện hoàn toàn tách biệt: chỉ hiển thị workspace quản trị người dùng (KPI cards, thanh lọc, bảng `CustomTable`, modal thêm/sửa/khóa/reset pass), ẩn banner hồ sơ cá nhân và các tab cá nhân ("Thông tin tài khoản", "Bảo mật", "Tùy chọn"). Khi truy cập từ menu avatar hồ sơ, các tab cá nhân hiển thị đầy đủ.
+    * Sửa lỗi hiển thị tên đăng nhập bị trùng `@` (ví dụ `@admin@viconnect.vn`) bằng helper `displayUsername()`.
+    * Chuẩn hóa email tài khoản quản trị viên mặc định là `admin@connect.vn`.
+    * Sửa lỗi 403 Forbidden khi tài khoản quản trị cập nhật quyền tài khoản khác: Cập nhật hàm `checkIsAdmin` trong cả `users.service.ts` và `admin.service.ts` để kiểm tra email admin root (`admin@connect.vn`, `admin@viconnect.vn`), các vai trò `admin`, `quan_tri`, `platform_admin`, `tenant_admin`, `chu_tich`, `ban_dieu_hanh`, cùng bảng `memberships` và `members`.
+    * Đồng bộ tên chức năng tự động trong Ma trận phân quyền (`RbacPermissionMatrix.tsx`): Tự động lấy tên chính xác theo live sidebar (`SIDEBAR_ROUTE_NAMES`), đảm bảo khi sidebar đổi tên thì phân quyền tự động cập nhật theo.
+    * Khắc phục triệt để lỗi "Something went wrong" tại `/permissions` (Ảnh 1) bằng cách thay thế `useBlocker` bằng `beforeunload` và bọc toàn trang trong `PermissionsErrorBoundary`.
+  - **2. Web CRM: Loại Bỏ Nút "Tạo Thông Báo" & Bổ Sung Nút Gửi Đa Kênh Trong "Mẫu Thông Báo"**:
+    * Tại màn Quản lý thông báo (`/notifications`), loại bỏ nút "Tạo thông báo" và modal tạo thông báo thủ công.
+    * Tại component "Mẫu thông báo" (`MailTemplateManager.tsx`), tích hợp các nút gửi chuyên biệt: **📱 App CEO 1983** (gọi API `POST /notifications` và đồng bộ `vba_notifications`), **📧 Email**, **💬 Zalo OA** (và nút **🌟 Gửi Cả 3 Kênh**).
+  - **3. Mobile App: Tái Cấu Trúc Danh Mục Sự Kiện & Bổ Sung Danh Mục Hoạt Động (Ảnh 5)**:
+    * Tại màn Sự kiện (`association.events.tsx`): Loại bỏ 3 nút danh mục "Giao thương B2B", "Gala & Đại hội", "Đào tạo & Tọa đàm". Giữ lại: Tất cả, Sắp diễn ra, Đã đăng ký, Miễn phí, Có phí, Đã kết thúc / Kỷ yếu.
+    * Tại tab "Hoạt động" (`association.events.tsx`):
+      - Thêm danh mục "Kết nối B2B" (`b2b_connect`): Lấy ra các cuộc gặp kết nối giữa 2 tài khoản từ API `/meetings/connection-appointments` và local cache.
+      - Thêm danh mục "Chương trình đào tạo" (`trainings`): Lấy theo danh sách khóa đào tạo từ hệ thống CRM (`/trainings` / `public.trainings`).
+      - Hiển thị card chuyên biệt cho từng loại: Card kết nối B2B (hiển thị thông tin 2 tài khoản, đối tác, nút vào họp/chi tiết), Card khóa đào tạo (giảng viên, thời gian, nút xem chi tiết & đăng ký).
+  - **4. Mobile App: Tự Động Lưu Lịch & Chế Độ Lưới/Danh Sách Kèm Báo Thức Nhắc Lịch**:
+    * Mọi sự kiện, cuộc họp, kết nối B2B đã đăng ký tham gia đều được tự động đồng bộ vào Lịch hội viên (`CeoCalendarAlarmModal.tsx`).
+    * Bổ sung thanh chuyển đổi giao diện: **📅 Dạng Lưới** (mini calendar tháng) và **📋 Dạng Danh Sách** (agenda toàn bộ lịch trình sắp xếp theo thứ tự thời gian).
+    * Nút "Bật nhắc / Bỏ nhắc": Nhấn lần 1 để bật báo thức (`alarmEnabled = true`), nhấn lần 2 để bỏ nhắc (`alarmEnabled = false`).
+    * Tự động kiểm tra vào lần đầu mở app trong ngày (`association.index.tsx`): Nếu có lịch trình trong ngày đang bật nhắc, hệ thống tự động:
+      1. Mở popup Báo thức Lịch trình CEO 1983.
+      2. Ghi nhận thông báo nhắc nhở vào màn thông báo (`vba_notifications`).
+      3. Bắn toast thông báo nổi bật trên điện thoại.
+      4. Kích hoạt Web Notification / Mobile Push Notification.
+  - **5. Mobile App: Chuẩn Hóa Tên Gọi "Giao thương"**:
+    * Tại Trang chủ (`association.index.tsx`): Đổi "Sàn Thương Mại Nội Bộ" thành "Giao thương".
+    * Tại Modal tiện ích tắt (`CustomHomeShortcutsModal.tsx`): Đổi "Sàn B2B" thành "Giao thương".
+    * Tại màn Chợ sản phẩm (`association.products.tsx`): Đổi "Chợ giao thương", "Chợ B2B", "Chợ Giao Thương B2B" thành "Giao thương".
+  - **6. Kiểm Tra Nghiêm Ngặt & Tuân Thủ Rule 1**:
+    * Backend `tsc --noEmit`: Exit code 0 (0 errors).
+    * Frontend `tsc --noEmit`: Exit code 0 (0 errors).
+    * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
 
 - **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
   - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
