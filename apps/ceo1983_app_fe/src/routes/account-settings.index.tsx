@@ -50,6 +50,17 @@ import {
 } from "@/lib/settings.functions";
 
 export const Route = createFileRoute("/account-settings/")({
+  validateSearch: (search: Record<string, unknown>): {
+    tab?: "profile" | "security" | "users" | "preferences";
+    action?: string;
+    email?: string;
+    userId?: string;
+  } => ({
+    tab: search.tab === "users" || search.tab === "security" || search.tab === "preferences" || search.tab === "profile" ? search.tab : undefined,
+    action: typeof search.action === "string" ? search.action : undefined,
+    email: typeof search.email === "string" ? search.email : undefined,
+    userId: typeof search.userId === "string" ? search.userId : undefined,
+  }),
   head: () => ({ meta: [{ title: "Quản lý tài khoản — CEO 1983" }] }),
   component: AccountManagementPage,
 });
@@ -65,10 +76,13 @@ const VOTING_OPTIONS: { value: Choice; labelKey: TKey; descKey: TKey }[] = [
 function AccountManagementPage() {
   const t = useT();
   const navigate = useNavigate();
+  const { tab: searchTab, action, email: searchEmail, userId: searchUserId } = Route.useSearch();
   const { isPlatformAdmin, isAdmin, isBQT, isChuTich, srsRole, roles: userRolesList } = useRole();
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "users" | "preferences">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "users" | "preferences">(
+    searchTab || (action === "reset_password" ? "users" : "profile")
+  );
 
   // Account State
   const [loading, setLoading] = useState(true);
@@ -110,6 +124,22 @@ function AccountManagementPage() {
   const [selectedViewUser, setSelectedViewUser] = useState<any>(null);
   const [targetUser, setTargetUser] = useState<any>(null);
   const [modalSubmitting, setModalSubmitting] = useState(false);
+
+  // Tự động mở modal Đặt lại mật khẩu khi quản trị viên bấm vào từ thông báo CRM
+  useEffect(() => {
+    if (action === "reset_password" && (searchUserId || searchEmail) && usersList.length > 0) {
+      const match = usersList.find(
+        (u) =>
+          (searchUserId && u.id === searchUserId) ||
+          (searchEmail && (u.email?.toLowerCase() === searchEmail.toLowerCase() || u.username?.toLowerCase() === searchEmail.toLowerCase()))
+      );
+      if (match) {
+        setTargetUser(match);
+        setAdminNewPassword("");
+        setResetModalOpen(true);
+      }
+    }
+  }, [action, searchUserId, searchEmail, usersList]);
 
   // Admin Form State
   const [createUsername, setCreateUsername] = useState("");
@@ -596,7 +626,7 @@ function AccountManagementPage() {
       if (res && res.error) {
         toast.error(res.message || "Không thể đặt lại mật khẩu");
       } else {
-        toast.success(`Đặt lại mật khẩu cho ${targetUser.username} thành công!`);
+        toast.success(`Đã thiết lập mật khẩu mới cho ${targetUser.username}! Hệ thống đã tự động gửi Email và Zalo OA mật khẩu mới tới hội viên.`);
         setResetModalOpen(false);
         setAdminNewPassword("");
       }

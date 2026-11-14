@@ -6,9 +6,10 @@ import { EventsRepository } from './events.repository';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
+import { ZaloModule } from '../zalo/zalo.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, MailModule],
+  imports: [PrismaModule, AuthModule, MailModule, ZaloModule],
   controllers: [EventsController, CheckinController],
   providers: [EventsService, EventsRepository],
   exports: [EventsService, EventsRepository],

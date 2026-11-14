@@ -336,7 +336,7 @@ export const CeoCalendarAlarmModal: React.FC<CeoCalendarAlarmModalProps> = ({
             <button
               type="button"
               onClick={playAlarmSoundPreview}
-              className="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-black flex items-center gap-1 shadow-xs cursor-pointer"
+              className="px-3 py-1 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 text-xs font-black flex items-center gap-1 shadow-xs cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <Play className="size-3 fill-current" />
               <span>Nghe thử</span>

@@ -579,7 +579,7 @@ export function TaskDetailDrawer({
                       type="button"
                       onClick={handleRemind}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 font-bold text-xs shadow-xs transition cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       title="Gửi chuông thông báo nhắc nhở tiếp nhận việc"
                     >
                       <Bell className="w-3.5 h-3.5" />
@@ -638,7 +638,7 @@ export function TaskDetailDrawer({
                       type="button"
                       onClick={handleRemind}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-700 dark:text-amber-300 hover:bg-amber-100 font-semibold text-xs transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ffffff] dark:bg-amber-950/40 border border-amber-300 text-slate-900 dark:text-amber-300 hover:bg-slate-50 font-semibold text-xs transition cursor-pointer"
                       title="Gửi chuông thông báo đôn đốc tiến độ"
                     >
                       <Bell className="w-3.5 h-3.5" />
@@ -1711,7 +1711,7 @@ export function TaskDetailDrawer({
                   type="button"
                   onClick={handleRequestRework}
                   disabled={actionLoading || !reworkReason.trim()}
-                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-xs font-bold text-white transition flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-[#ffffff] hover:bg-slate-50 disabled:opacity-50 text-xs font-bold text-slate-900 transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   {actionLoading ? 'Đang gửi...' : 'Gửi yêu cầu chỉnh sửa'}
                 </button>

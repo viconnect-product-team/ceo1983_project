@@ -341,7 +341,7 @@ export function IosInstallPrompt() {
                   <button
                     type="button"
                     onClick={handleCopyLink}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2.5 font-black text-xs shadow-md transition active:scale-95 cursor-pointer touch-press"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 px-4 py-2.5 font-black text-xs shadow-md transition active:scale-95 cursor-pointer touch-press border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     <span>{copied ? "Đã sao chép link thành công!" : "Sao chép link để mở bằng trình duyệt"}</span>

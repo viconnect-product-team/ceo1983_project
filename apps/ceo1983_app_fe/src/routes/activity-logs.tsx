@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { CustomTable, CeoTableEllipsis, type CustomTableColumn } from "@/components/common/CustomTable";
 import {
   History,
   ShieldCheck,
@@ -154,81 +155,7 @@ function ActivityLogsPage() {
   const getActionBadge = (action: string) => {
     const act = action.toUpperCase();
     if (act.includes("LOGIN")) {
-      const logColumns = useMemo<CustomTableColumn<ActivityLogItem>[]>(() => [
-    {
-      key: "created_at",
-      label: "Thời Gian",
-      width: 130,
-      render: (log) => (
-        <div className="font-mono text-slate-500 whitespace-nowrap">
-          <div className="font-bold text-slate-800 dark:text-slate-200">
-            {new Date(log.created_at).toLocaleTimeString("vi-VN")}
-          </div>
-          <div className="text-[10px] text-slate-400">
-            {new Date(log.created_at).toLocaleDateString("vi-VN")}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "actor",
-      label: "Hội Viên Thực Hiện",
-      minWidth: 180,
-      render: (log) => (
-        <div className="flex items-center gap-2.5">
-          <img
-            src={log.actor_avatar || "/ceo1983-emblem-8.png"}
-            alt={log.actor_name}
-            className="size-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
-            }}
-          />
-          <div className="min-w-0">
-            <CeoTableEllipsis text={log.actor_name} maxLines={1} className="font-bold text-slate-900 dark:text-white" />
-            <div className="text-[10px] text-slate-400">{log.actor_email || "App Member"}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "department",
-      label: "Ban Chuyên Môn",
-      minWidth: 140,
-      render: (log) => (
-        <CeoTableEllipsis text={log.department || "Ban Xúc tiến"} maxLines={1} className="font-semibold text-slate-700 dark:text-slate-300" />
-      ),
-    },
-    {
-      key: "action",
-      label: "Hành Động",
-      width: 140,
-      render: (log) => getActionBadge(log.action),
-    },
-    {
-      key: "target_type",
-      label: "Phân Hệ",
-      width: 110,
-      render: (log) => (
-        <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          {log.target_type}
-        </span>
-      ),
-    },
-    {
-      key: "ip_address",
-      label: "IP & Thiết Bị",
-      width: 150,
-      render: (log) => (
-        <div className="text-slate-500 font-mono text-[11px]">
-          <div>{log.ip_address || "127.0.0.1"}</div>
-          <CeoTableEllipsis text={log.user_agent || "Mobile App / Web"} maxLines={1} className="text-[9px] text-slate-400" />
-        </div>
-      ),
-    },
-  ], []);
-
-  return (
+      return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 inline-flex items-center gap-1">
           <LogIn className="size-3" /> Đăng nhập
         </span>
@@ -254,6 +181,80 @@ function ActivityLogsPage() {
       </span>
     );
   };
+
+  const logColumns = useMemo<CustomTableColumn<AuditLogItem>[]>(() => [
+    {
+      key: "created_at",
+      label: "Thời Gian",
+      width: 130,
+      render: (log: AuditLogItem) => (
+        <div className="font-mono text-slate-500 whitespace-nowrap">
+          <div className="font-bold text-slate-800 dark:text-slate-200">
+            {new Date(log.created_at).toLocaleTimeString("vi-VN")}
+          </div>
+          <div className="text-[10px] text-slate-400">
+            {new Date(log.created_at).toLocaleDateString("vi-VN")}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "actor",
+      label: "Hội Viên Thực Hiện",
+      minWidth: 180,
+      render: (log: AuditLogItem) => (
+        <div className="flex items-center gap-2.5">
+          <img
+            src={log.actor_avatar || "/ceo1983-emblem-8.png"}
+            alt={log.actor_name}
+            className="size-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/ceo1983-emblem-8.png";
+            }}
+          />
+          <div className="min-w-0">
+            <CeoTableEllipsis text={log.actor_name} maxLines={1} className="font-bold text-slate-900 dark:text-white" />
+            <div className="text-[10px] text-slate-400">{log.actor_email || "App Member"}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "department",
+      label: "Ban Chuyên Môn",
+      minWidth: 140,
+      render: (log: AuditLogItem) => (
+        <CeoTableEllipsis text={log.department || "Ban Xúc tiến"} maxLines={1} className="font-semibold text-slate-700 dark:text-slate-300" />
+      ),
+    },
+    {
+      key: "action",
+      label: "Hành Động",
+      width: 140,
+      render: (log: AuditLogItem) => getActionBadge(log.action),
+    },
+    {
+      key: "target_type",
+      label: "Phân Hệ",
+      width: 110,
+      render: (log: AuditLogItem) => (
+        <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          {log.target_type}
+        </span>
+      ),
+    },
+    {
+      key: "ip_address",
+      label: "IP & Thiết Bị",
+      width: 150,
+      render: (log: AuditLogItem) => (
+        <div className="text-slate-500 font-mono text-[11px]">
+          <div>{log.ip_address || "127.0.0.1"}</div>
+          <CeoTableEllipsis text={log.user_agent || "Mobile App / Web"} maxLines={1} className="text-[9px] text-slate-400" />
+        </div>
+      ),
+    },
+  ], []);
 
   return (
     <AppShell>

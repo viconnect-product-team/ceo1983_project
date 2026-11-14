@@ -23,6 +23,7 @@ import {
   CornerDownRight,
   Users,
   QrCode,
+  Download,
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
@@ -496,6 +497,23 @@ export function FeedView({
     posterName?: string;
     qrCodeUrl?: string;
   } | null>(null);
+
+  // Tải poster sự kiện
+  const handleDownloadPoster = (posterUrl?: string, title?: string) => {
+    if (!posterUrl) {
+      toast.error("Sự kiện chưa có ảnh poster!");
+      return;
+    }
+    const resolved = resolveMediaUrl(posterUrl) || posterUrl;
+    const a = document.createElement("a");
+    a.href = resolved;
+    a.download = `Poster-${(title || "Su-Kien-CEO1983").replace(/[^a-zA-Z0-9]/g, "-")}.jpg`;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success("Đang tải poster sự kiện về thiết bị!");
+  };
 
   // Media & Emotion states for inline comments
   const [commentMediaMap, setCommentMediaMap] = useState<

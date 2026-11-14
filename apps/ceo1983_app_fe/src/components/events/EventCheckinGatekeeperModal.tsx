@@ -640,7 +640,7 @@ export function EventCheckinGatekeeperModal({
                   type="button"
                   onClick={handleSaveScanners}
                   disabled={savingScanners}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 shadow-sm transition disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-slate-900 bg-[#ffffff] hover:bg-slate-50 border border-amber-500 shadow-sm transition disabled:opacity-50 cursor-pointer dark:bg-slate-800 dark:text-white"
                 >
                   {savingScanners ? (
                     <>
@@ -777,7 +777,7 @@ export function EventCheckinGatekeeperModal({
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-1.5 rounded-lg text-xs font-black text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 cursor-pointer shadow-sm"
+                      className="px-4 py-1.5 rounded-lg text-xs font-black text-slate-900 bg-[#ffffff] hover:bg-slate-50 border border-amber-500 cursor-pointer shadow-sm dark:bg-slate-800 dark:text-white"
                     >
                       Lưu Người Tham Gia
                     </button>

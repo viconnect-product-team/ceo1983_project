@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Search,
@@ -1086,10 +1086,10 @@ function ProductsScreen() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "my_store") {
+    if (marketplaceTab === "my_store") {
       void loadInterestedLeads();
     }
-  }, [activeTab, loadInterestedLeads]);
+  }, [marketplaceTab, loadInterestedLeads]);
 
   const handleShareProduct = (p: MyProduct) => {
     const url = `${window.location.origin}/association/products?highlight=${p.id}`;

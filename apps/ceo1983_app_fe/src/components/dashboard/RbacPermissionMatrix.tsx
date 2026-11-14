@@ -2265,7 +2265,7 @@ export function RbacPermissionMatrix({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition shadow-xs"
+                  className="px-4 py-2 rounded-xl bg-[#ffffff] text-slate-900 text-xs font-bold hover:bg-slate-50 transition shadow-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   Thêm Quyền
                 </button>

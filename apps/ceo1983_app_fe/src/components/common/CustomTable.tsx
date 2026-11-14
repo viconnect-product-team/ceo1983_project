@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
+export { CeoTableEllipsis } from "./CeoTableEllipsis";
 import { CeoTableEllipsis } from "./CeoTableEllipsis";
 
 export type SortDirection = "asc" | "desc" | null;

@@ -233,7 +233,8 @@
   - **Cân Đối Giao Diện Cấu Hình**: Tăng chiều rộng menu sidebar cấu hình lên 250px, rút gọn tiêu đề các tab dài (như "Cấu hình Zalo OA" thay vì tiêu đề dài gây tràn dòng), căn chỉnh icon `shrink-0` và text ngang hàng hoàn hảo với layout flex đồng đều.
   - **Bắn Tin Zalo OA Liên Kết API Dữ Liệu Thật**:
     + Tuyệt đối không dùng dữ liệu giả lập (mock data) hoặc bắt người dùng gõ tay thông tin đã có trong hệ thống.
-    + Tích hợp bộ chọn Dropdown nạp dữ liệu động trực tiếp từ CSDL: Sự kiện CLB (`/events`), Cuộc họp Ban (`/business-connect/meetings`), Khóa đào tạo (`/trainings`), Cơ hội giao thương B2B (`/opportunities`).
+    + Thêm danh sách số điện thoại nhận tin kiểm thử linh hoạt với nút `+` (thêm/xóa chips trực quan) tại `ZaloOaConfigSection.tsx`.
+    + Tích hợp bộ chọn Dropdown nạp dữ liệu động trực tiếp từ CSDL: Sự kiện CLB (`/events`), Cuộc họp Ban (`/meetings`), Khóa đào tạo (`/trainings`), Hội viên (`/members`).
     + Khi người dùng chọn một mục trong dropdown, hệ thống tự động điền các thông tin: Tiêu đề, Thời gian, Địa điểm/Link họp, Giảng viên/Chủ trì, và tự động tạo mã vé Check-in + sinh URL mã QR Check-in điện tử chính xác (`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=...`).
     + Hỗ trợ gửi tin nhắn qua Zalo OA với mã QR hiển thị dưới dạng đường link check-in điện tử chuẩn mực cho từng hội viên.
 

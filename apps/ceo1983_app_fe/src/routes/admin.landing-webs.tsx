@@ -963,7 +963,7 @@ function AdminLandingWebsPage() {
                   href={`/landing/${previewItem.slug || (previewItem.template === "startup_mobile_showcase" ? "web-v2" : "web-v1")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   <ExternalLink className="size-3.5" />
                   <span>Mở URL Tab Mới</span>

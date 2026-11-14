@@ -120,7 +120,7 @@ export const DriveMoveModal: React.FC<DriveMoveModalProps> = ({
             type="button"
             disabled={moving}
             onClick={handleExecuteMove}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 px-5 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#ffffff] hover:bg-slate-50 px-5 py-2 text-xs font-bold text-slate-900 shadow-sm disabled:opacity-50 cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             {moving ? "Đang di chuyển..." : "Di chuyển vào đây"}
           </button>

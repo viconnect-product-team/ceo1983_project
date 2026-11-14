@@ -356,7 +356,7 @@ export function NetworkStoriesStrip({ onOpenCreateStory }: NetworkStoriesStripPr
                 <button
                   type="button"
                   onClick={handleSendReply}
-                  className="p-2.5 rounded-full bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold transition shadow-md"
+                  className="p-2.5 rounded-full bg-[#ffffff] text-slate-900 hover:bg-slate-50 font-bold transition shadow-md border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 >
                   <Send className="w-5 h-5" />
                 </button>

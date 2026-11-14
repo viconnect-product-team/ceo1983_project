@@ -121,7 +121,7 @@ export async function evaluateTaskProgress(
 
 export async function approveTask(
   id: string,
-  payload: { approvedBy?: string; rating?: number; feedback?: string },
+  payload: { approvedBy?: string; rating?: number; feedback?: string; actorName?: string },
 ): Promise<TaskItem> {
   return fetchNestApi<TaskItem>(`/tasks/${id}/approve`, {
     method: 'POST',
@@ -131,11 +131,15 @@ export async function approveTask(
 
 export async function requestTaskRework(
   id: string,
-  payload: { reworkReason: string; actorName?: string },
+  payloadOrReason: string | { reworkReason: string; actorName?: string },
+  actorName?: string,
 ): Promise<TaskItem> {
+  const body = typeof payloadOrReason === 'string'
+    ? { reworkReason: payloadOrReason, actorName }
+    : payloadOrReason;
   return fetchNestApi<TaskItem>(`/tasks/${id}/request-rework`, {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
 
@@ -143,6 +147,29 @@ export async function sendTaskReminder(id: string, actorName?: string): Promise<
   return fetchNestApi<TaskItem>(`/tasks/${id}/remind`, {
     method: 'POST',
     body: JSON.stringify({ actorName }),
+  });
+}
+
+export const remindTask = sendTaskReminder;
+
+export async function uploadTaskAttachment(
+  taskId: string,
+  payload: { name: string; url: string; size?: string; type?: string; isDeliverable?: boolean; uploadedBy?: string; actorName?: string },
+): Promise<TaskItem> {
+  return fetchNestApi<TaskItem>(`/tasks/${taskId}/attachments`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteTaskAttachment(
+  taskId: string,
+  attachmentIndex: number | string,
+  actorName?: string,
+): Promise<TaskItem> {
+  const query = actorName ? `?actorName=${encodeURIComponent(actorName)}` : '';
+  return fetchNestApi<TaskItem>(`/tasks/${taskId}/attachments/${attachmentIndex}${query}`, {
+    method: 'DELETE',
   });
 }
 

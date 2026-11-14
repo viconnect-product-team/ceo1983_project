@@ -5,10 +5,12 @@ import {
   BadRequestException,
   Logger,
   OnModuleInit,
+  Optional,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { ZaloService } from '../zalo/zalo.service';
 import { EventsRepository } from './events.repository';
 import { CreateEventDto, UpdateEventDto } from './dto';
 
@@ -53,6 +55,7 @@ export class EventsService implements OnModuleInit {
     private prisma: PrismaService,
     private mailService: MailService,
     private readonly eventsRepo: EventsRepository,
+    @Optional() private readonly zaloService?: ZaloService,
   ) {}
 
   async onModuleInit() {
@@ -2014,14 +2017,91 @@ export class EventsService implements OnModuleInit {
   async updateRegistrationSeating(
     userId: string,
     registrationId: string,
-    seatAssignment: string,
+    seatAssignment?: string | null,
   ) {
+    const cleanSeat = seatAssignment && typeof seatAssignment === 'string' && seatAssignment.trim() !== ''
+      ? seatAssignment.trim()
+      : null;
+
     await this.prisma.$executeRaw`
       UPDATE public.event_registrations
-      SET seat_assignment = ${seatAssignment}, updated_at = now()
+      SET seat_assignment = ${cleanSeat}, updated_at = now()
       WHERE id = ${registrationId}
     `;
-    return { ok: true, id: registrationId, seatAssignment };
+
+    // Lấy thông tin đại biểu và sự kiện để gửi thông báo Email + Zalo OA
+    const regRows = await this.prisma.$queryRaw<any[]>`
+      SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location,
+             COALESCE(r.attendee_name, m.name, u.name) as member_name,
+             COALESCE(r.attendee_email, m.email, u.email) as member_email,
+             COALESCE(r.attendee_phone, m.phone, u.phone) as member_phone
+      FROM public.event_registrations r
+      LEFT JOIN public.events e ON r.event_id = e.id
+      LEFT JOIN public.members m ON r.member_id = m.id
+      LEFT JOIN public.vione_users u ON r.user_id = u.id
+      WHERE r.id = ${registrationId}
+      LIMIT 1
+    `.catch(() => []);
+
+    if (regRows.length > 0) {
+      const reg = regRows[0];
+      const memberEmail = reg.member_email;
+      const memberPhone = reg.member_phone;
+      const memberName = reg.member_name || 'Quý Hội viên';
+      const eventName = reg.event_name || 'Sự kiện CEO 1983';
+      const eventDateStr = reg.event_date ? new Date(reg.event_date).toLocaleDateString('vi-VN') : '';
+
+      // 1. Gửi Email thông báo
+      if (memberEmail && this.mailService) {
+        const subject = cleanSeat
+          ? `[CEO 1983] Cập nhật vị trí chỗ ngồi sự kiện: ${eventName}`
+          : `[CEO 1983] Thông báo điều chỉnh chỗ ngồi sự kiện: ${eventName}`;
+        const html = cleanSeat
+          ? `<div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
+              <h2 style="color: #003B95; margin-bottom: 12px;">CLB Doanh Nhân CEO 1983 (HanoiBA)</h2>
+              <p>Kính gửi <strong>${memberName}</strong>,</p>
+              <p>Ban Tổ Chức xin thông báo vị trí chỗ ngồi của Quý Hội viên tại sự kiện <strong>${eventName}</strong> đã được sắp xếp:</p>
+              <div style="background-color: #f8fafc; border-left: 4px solid #003B95; padding: 12px; margin: 16px 0;">
+                <p style="margin: 4px 0;"><strong>Vị trí ghế ngồi:</strong> <span style="font-size: 16px; color: #003B95; font-weight: bold;">${cleanSeat}</span></p>
+                <p style="margin: 4px 0;"><strong>Thời gian:</strong> ${eventDateStr}</p>
+                <p style="margin: 4px 0;"><strong>Địa điểm:</strong> ${reg.event_location || 'Hà Nội'}</p>
+              </div>
+              <p>Quý Hội viên vui lòng mở ứng dụng <strong>CEO 1983 Mobile App</strong> để xuất trình thẻ QR Check-in khi tham dự sự kiện.</p>
+              <p style="margin-top: 24px; color: #64748b; font-size: 13px;">Trân trọng cảm ơn,<br/><strong>Ban Tổ Chức CLB Doanh Nhân CEO 1983</strong></p>
+            </div>`
+          : `<div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
+              <h2 style="color: #003B95; margin-bottom: 12px;">CLB Doanh Nhân CEO 1983 (HanoiBA)</h2>
+              <p>Kính gửi <strong>${memberName}</strong>,</p>
+              <p>Ban Tổ Chức xin thông báo vị trí chỗ ngồi trước đây của Quý Hội viên tại sự kiện <strong>${eventName}</strong> đã được gỡ để điều chỉnh sắp xếp lại theo sơ đồ mới của Ban Tổ Chức.</p>
+              <p>Chúng tôi sẽ cập nhật vị trí mới sớm nhất và gửi thông báo tới Quý Hội viên qua Email và Zalo OA.</p>
+              <p style="margin-top: 24px; color: #64748b; font-size: 13px;">Trân trọng cảm ơn,<br/><strong>Ban Tổ Chức CLB Doanh Nhân CEO 1983</strong></p>
+            </div>`;
+
+        void this.mailService.sendDirectEmail({ to: memberEmail, subject, html }).catch(() => {});
+      }
+
+      // 2. Gửi Zalo OA thông báo
+      if (memberPhone && this.zaloService) {
+        const zaloTitle = cleanSeat
+          ? `[CEO 1983] Chỗ ngồi sự kiện: ${eventName}`
+          : `[CEO 1983] Điều chỉnh chỗ ngồi sự kiện: ${eventName}`;
+        const zaloContent = cleanSeat
+          ? `Kính gửi ${memberName}, vị trí chỗ ngồi của bạn tại sự kiện "${eventName}" đã được cập nhật: ${cleanSeat}. Vui lòng mở ứng dụng CEO 1983 để xem chi tiết.`
+          : `Kính gửi ${memberName}, vị trí chỗ ngồi của bạn tại sự kiện "${eventName}" đang được sắp xếp lại. Chúng tôi sẽ cập nhật vị trí mới sớm nhất.`;
+
+        void this.zaloService.sendAutoNotification({
+          recipientPhone: memberPhone,
+          recipientEmail: memberEmail,
+          recipientName: memberName,
+          title: zaloTitle,
+          content: zaloContent,
+          ctaText: 'Xem sự kiện',
+          ctaUrl: 'https://app.ceo1983.viconnect.vn/association/events',
+        }).catch(() => {});
+      }
+    }
+
+    return { ok: true, id: registrationId, seatAssignment: cleanSeat };
   }
 
   async recordWalkInCashPayment(

@@ -1173,7 +1173,7 @@ function LeadRow({
         {lead.requesterEmail ? (
           <a
             href={`mailto:${lead.requesterEmail}`}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-slate-950 bg-amber-400 hover:bg-amber-500 border border-amber-500 shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-bold text-slate-900 bg-[#ffffff] hover:bg-slate-50 border border-amber-500 shadow-xs cursor-pointer dark:bg-slate-800 dark:text-white"
           >
             <Mail className="h-3.5 w-3.5" />
             {t("bc.leads.reply")}

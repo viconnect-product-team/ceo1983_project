@@ -372,7 +372,7 @@ export function LandingWebManager({ onSwitchTab }: { onSwitchTab?: (tab: string)
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs font-black flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 font-bold text-xs font-black flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <Save className="size-3.5 text-slate-950" />
             <span>{saving ? "Đang lưu..." : "Lưu & Xuất Bản"}</span>

@@ -17,6 +17,7 @@ import {
   CreditCard,
   Clock,
   Compass,
+  Users,
 } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -558,6 +559,17 @@ export function MemberProfileModal({
                   </a>
                 </div>
               )}
+              {Boolean((member as any).companySize || (member as any).company_size || (member as any).employees) && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                    <Users className="h-3.5 w-3.5 text-[#003B95] dark:text-amber-400" />
+                    <span>Quy mô nhân sự</span>
+                  </div>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {(member as any).companySize || (member as any).company_size || `${(member as any).employees} nhân sự`}
+                  </span>
+                </div>
+              )}
               {member.website && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
@@ -605,7 +617,7 @@ export function MemberProfileModal({
               to="/card/$code"
               params={{ code: member.code || "M1983-001" }}
               onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 py-2.5 text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition active:scale-95 cursor-pointer shadow-sm text-center"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-[#ffffff] dark:bg-amber-950/40 py-2.5 text-[12.5px] font-bold text-[#003B95] dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-amber-900/50 transition active:scale-95 cursor-pointer shadow-sm text-center"
             >
               <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <span>Xem danh thiếp số</span>

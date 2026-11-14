@@ -1990,7 +1990,7 @@ function DocsPage() {
                   <button
                     type="submit"
                     disabled={creatingFolder || !newFolderName.trim()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 px-5 py-2 text-sm font-bold text-white shadow-sm disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#ffffff] hover:bg-slate-50 px-5 py-2 text-sm font-bold text-slate-900 shadow-sm disabled:opacity-50 cursor-pointer border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     {creatingFolder ? "Đang tạo..." : "Tạo thư mục"}
                   </button>

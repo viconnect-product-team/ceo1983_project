@@ -415,7 +415,7 @@ export function ViOneAiTutorGuide({
                     type="button"
                     onClick={handleAskAi}
                     disabled={isAskingAi || !userQuery.trim()}
-                    className="h-9 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                    className="h-9 px-3.5 rounded-xl bg-[#ffffff] hover:bg-slate-50 text-slate-900 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   >
                     <Send className="size-3.5" />
                     <span>Hỏi AI</span>
