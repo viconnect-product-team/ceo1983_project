@@ -196,23 +196,26 @@ const COLLAPSE_KEY = "vba.sidebar.collapsed";
 
 function isActive(pathname: string | undefined, to?: string, searchStr?: string) {
   if (!to || !pathname) return false;
+  const normPath = pathname.replace(/\/$/, "") || "/";
   if (to.includes("?")) {
     const [pathPart, queryPart] = to.split("?");
-    if (pathname !== pathPart) return false;
+    const normToPath = pathPart.replace(/\/$/, "") || "/";
+    if (normPath !== normToPath) return false;
     const currentSearch = searchStr ?? (typeof window !== "undefined" ? window.location.search : "");
     const sp = new URLSearchParams(currentSearch);
     const [queryKey, queryVal] = queryPart.split("=");
     if (queryKey && queryVal) {
       const actualVal = sp.get(queryKey);
-      if (!actualVal && queryKey === "tab" && queryVal === "matrix") {
+      if (!actualVal && queryKey === "tab" && (queryVal === "matrix" || queryVal === "users")) {
         return true;
       }
       return actualVal === queryVal;
     }
     return currentSearch.includes(queryPart);
   }
-  if (to === "/") return pathname === "/";
-  return pathname === to || pathname.startsWith(to + "/");
+  if (to === "/") return normPath === "/";
+  const normTo = to.replace(/\/$/, "");
+  return normPath === normTo || normPath.startsWith(normTo + "/");
 }
 
 function NavItem({
@@ -746,11 +749,16 @@ export function Sidebar({
   const filteredPermissions = permissionsGroup.filter((it) => {
     if (it.to?.includes("/account-settings") || it.to?.includes("/accounts")) {
       const roleStr = String(srsRole || "");
+      const emailLower = (user?.email || "").toLowerCase().trim();
       return (
         isPrivilegedAdmin ||
         isPlatformAdmin ||
         isAdmin ||
         isChuTich ||
+        emailLower === "admin@viconnect.vn" ||
+        emailLower === "infor@viconnect.vn" ||
+        emailLower === "info@viconnect.vn" ||
+        emailLower === "admin@connect.vn" ||
         roleStr === "quan_tri" ||
         roleStr === "admin" ||
         roleStr === "chu_tich" ||

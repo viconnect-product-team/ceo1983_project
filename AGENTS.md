@@ -20,6 +20,10 @@
 - **TUYỆT ĐỐI NGHIÊM CẤM LƯU / TRỎ SANG DATABASE KHÁC**:
   - Máy chủ `14.225.217.232:5436` KHÔNG PHẢI là database chuẩn của dự án.
   - Tuyệt đối không cấu hình biến môi trường, không viết script, không redirect dữ liệu sang bất kỳ database nào khác ngoài `113.20.107.184:6432`.
+- **TUYỆT ĐỐI CẤM HARDCODE, MOCK, FAKE DỮ LIỆU ĐỂ CHE GIẤU LỖI (STRICT NO-MOCK LAW)**:
+  - Tuyệt đối KHÔNG ĐƯỢC PHÉP hardcode, mock, fake dữ liệu tĩnh hoặc gán mảng giả lập để che giấu tình trạng lỗi cơ sở dữ liệu.
+  - Khi cơ sở dữ liệu `113.20.107.184:6432` gặp lỗi kết nối hoặc không phản hồi (VD: PgBouncer lỗi login retry, database down): **BẮT BUỘC PHẢI BÁO RÕ RÀNG VÀ CHÍNH XÁC NGUYÊN NHÂN LỖI CHO NGƯỜI DÙNG**, không được âm thầm nuốt lỗi hay dùng dữ liệu fake.
+  - Quy định này có giá trị tối cao tương đương lệnh cấm `git push / git commit`.
 
 ---
 

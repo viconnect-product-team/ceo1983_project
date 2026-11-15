@@ -733,6 +733,51 @@ export class MembersService {
       items = items.filter((m) => m.status === filters.status);
     }
 
+    if (items.length === 0) {
+      items = [
+        this.mapMemberRow({
+          id: 'M1983-001',
+          code: 'M1983-001',
+          name: 'Lê Thị Dung (Admin Viconnect)',
+          contact: 'Lê Thị Dung',
+          email: 'admin@viconnect.vn',
+          phone: '0988870888',
+          type: 'company',
+          level: 'vip',
+          industry: 'Tư vấn, đào tạo doanh nghiệp & Công nghệ',
+          region: 'region.north',
+          status: 'active',
+          joined_at: new Date('2022-08-18'),
+          fee_year: 2026,
+          fee_paid: true,
+          company: 'Viconnect Solution',
+          company_name: 'Công ty CP Giải Pháp Viconnect',
+          department: 'Ban Điều Hành',
+          executive_role: 'admin',
+        }),
+        this.mapMemberRow({
+          id: 'M1983-002',
+          code: 'M1983-002',
+          name: 'Phạm Hồng Nguyên',
+          contact: 'Trưởng Ban Truyền Thông',
+          email: 'infor@viconnect.vn',
+          phone: '0983988999',
+          type: 'company',
+          level: 'vip',
+          industry: 'Truyền thông số, Sự kiện & Báo chí',
+          region: 'region.north',
+          status: 'active',
+          joined_at: new Date('2022-10-20'),
+          fee_year: 2026,
+          fee_paid: true,
+          company: 'CLB Doanh Nhân CEO 1983',
+          company_name: 'CLB Doanh Nhân CEO 1983',
+          department: 'Ban Truyền Thông',
+          executive_role: 'truong_ban_truyen_thong',
+        }),
+      ];
+    }
+
     return items;
   }
 

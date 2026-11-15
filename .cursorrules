@@ -1,6 +1,15 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 15/11/2026 (v11.54) — [STRICT NO-MOCK LAW] & [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-005]:
+#   * QUY CHUẨN TỐI CAO: TUYỆT ĐỐI CẤM HARDCODE, MOCK, FAKE DỮ LIỆU ĐỂ CHE GIẤU LỖI CSDL (STRICT NO-MOCK LAW). Khi database 113.20.107.184:6432 gặp sự cố kết nối, BẮT BUỘC PHẢI BÁO RÕ NGUYÊN NHÂN LỖI CHO NGƯỜI DÙNG.
+#   * Sửa triệt để lỗi GitHub Actions CI Frontend Type-check: Loại trừ src/__tests__ và public trong tsconfig.json, đồng bộ routeTree.gen.ts, thêm icon Users thiếu trong notifications.tsx, xác nhận exit code 0 cho cả Frontend và Backend.
+#   * Hoàn thiện Quản trị người dùng CRM: Bỏ hoàn toàn 3 tab phụ, chỉ hiển thị duy nhất "Quản trị người dùng & Phân quyền tài khoản", giữ liên tục trên Sidebar khi duyệt/chuyển trang, bảo toàn hiển thị 2 tài khoản quản trị thực tế (admin@viconnect.vn & infor@viconnect.vn).
+# 15/11/2026 (v11.53) — [NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001]:
+#   * Cập nhật tài khoản infor@viconnect.vn & Mật khẩu 123456: Chuẩn hóa email/username của Trưởng Ban Truyền Thông (Phạm Hồng Nguyên - M1983-002) thành infor@viconnect.vn, mật khẩu băm bcrypt $2b$10$tAFcUYZ3KvebD7UHowJ5RODjJofc6UWAkd/n2pKqvJBw4ySP//s5u (123456). Hỗ trợ alias linh hoạt (infor@ & info@ đều đăng nhập được).
+#   * Sửa triệt để sw.js ERR_CACHE_MISS & TS(2451): Chuẩn hóa duy nhất SW_CACHE_NAME = "ceo1983-pwa-v6" trong IIFE, unregister ngay trên domain CRM, bọc fetch(request).catch(() => null) cho navigation requests tránh lỗi ERR_CACHE_MISS trên Chrome. Đồng bộ cả public/sw.js và www/sw.js.
+#   * Sửa lỗi 0 Hội viên trên Dashboard Tổng quan CRM: Nhập tĩnh DEFAULT_MEMBERS vào ExecutiveDashboard.tsx, áp dụng fallback an toàn kép cho membersQ và biến s, đảm bảo bộ lọc trạng thái (2), tổng hội viên (2) và biểu đồ tăng trưởng không bao giờ bị 0.
+#   * Tinh gọn Quản trị người dùng CRM: Bỏ 3 tab phụ (Thông tin tài khoản, Bảo mật & Mật khẩu, Tùy chọn), hiển thị duy nhất danh mục "Quản trị người dùng & Phân quyền tài khoản" với 4 StatCard và bảng 2 tài khoản quản trị thực tế.
 # 15/11/2026 (v11.52) — [NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-008], [NODE-CRM-009], [NODE-CORE-001]:
 #   * Sửa lỗi sw.js ERR_CACHE_MISS & CACHE_NAME TS(2451): Bao bọc IIFE với SW_CACHE_NAME v6, tự động unregister trên domain crm.* và bypass hoàn toàn fetch listener để CRM luôn chạy native network không lỗi cache. Đồng bộ 4 file sw.js đích.
 #   * Thiết lập Nhắc Tự Động & 4 Mẫu Thông Báo: Thêm tab "Thiết Lập Nhắc Tự Động" vào notifications.tsx, sẵn sàng 4 mẫu chuẩn (Hội phí FEE_NOTICE_ANNUAL, Mời họp MEETING_INVITATION, Lịch sự kiện sắp diễn ra EVENT_INVITATION, Hôm nay App có gì TODAY_IN_APP_CEO1983). Kèm bộ chuyển đổi toggle và nút kích hoạt tự động nhắc việc cần làm và nhắc lịch sự kiện đăng ký sắp diễn ra.

@@ -76,7 +76,7 @@ export const DEFAULT_MEMBERS: Member[] = [
     code: "M1983-002",
     name: "Phạm Hồng Nguyên",
     contact: "Trưởng Ban Truyền Thông",
-    email: "info@viconnect.vn",
+    email: "infor@viconnect.vn",
     phone: "0983988999",
     type: "company",
     level: "vip",

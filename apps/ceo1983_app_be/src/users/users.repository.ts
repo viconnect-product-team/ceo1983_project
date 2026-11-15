@@ -10,13 +10,17 @@ export class UsersRepository {
     const input = (username || '').trim();
     if (!input) return null;
 
+    const inputLower = input.toLowerCase();
+    const isMediaAccount = inputLower === 'info@viconnect.vn' || inputLower === 'infor@viconnect.vn';
+    const queryVariants = isMediaAccount ? ['infor@viconnect.vn', 'info@viconnect.vn'] : [input];
+
     // 1. Direct match on username or email
     const user = await this.prisma.vione_users
       .findFirst({
         where: {
           OR: [
-            { username: { equals: input, mode: 'insensitive' } },
-            { email: { equals: input, mode: 'insensitive' } },
+            ...queryVariants.map((val) => ({ username: { equals: val, mode: 'insensitive' as const } })),
+            ...queryVariants.map((val) => ({ email: { equals: val, mode: 'insensitive' as const } })),
           ],
         },
       })
