@@ -27,7 +27,8 @@ Hệ thống được cấu hình phân tách thành 2 gói triển khai Fronten
 
 ### 3. Phân hệ Backend API NestJS (`apps/ceo1983_app_be`):
 - **Cổng dịch vụ**: **5001** (hoặc 3000 mapped 5001 trên VPS).
-- **Cơ sở dữ liệu**: PostgreSQL 15 trên `14.225.217.232:5436` (Database: `ceo1983_project`).
+- **Cơ sở dữ liệu Chuẩn Duy Nhất**: PostgreSQL Enterprise kết nối qua PgBouncer tại **`113.20.107.184:6432`** (Database: `ceo1983_project`, user: `app1` / `5^S0CEpvYwC1(#YN1UoJ`).
+- **Ràng buộc tuyệt đối**: Toàn bộ luồng ghi dữ liệu (INSERT/UPDATE/DELETE) và đọc dữ liệu (SELECT) của toàn hệ thống Web CRM và Mobile App CEO 1983 đều chỉ lưu và đọc từ `113.20.107.184:6432`. Cụm máy chủ `14.225.217.232:5436` KHÔNG PHẢI database chuẩn của dự án.
 
 ---
 

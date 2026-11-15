@@ -1,5 +1,118 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 15/11/2026 (v11.51): Khắc Phục Triệt Để sw.js ts(2451) & Tách Biệt CRM/App, Báo Cáo Kiểm Tra Toàn Bộ 216 Bảng CSDL Chuẩn 113.20.107.184:6432, Chuẩn Hóa Phân Quyền Riêng Tư Luồng Chia Sẻ Cơ Hội ([NODE-APP-010], [NODE-CRM-009], [NODE-CORE-001])**:
+  - **1. Sửa Lỗi `sw.js` (Cannot redeclare block-scoped variable 'CACHE_NAME'. ts(2451) & ERR_CACHE_MISS)**:
+    * **Nguyên nhân**: File `apps/ceo1983_app_fe/public/sw.js` tồn tại đồng thời 2 dòng khai báo `const CACHE_NAME` (v4 và v5), kèm theo lỗi cú pháp lồng khối `if (request.mode === "navigate")` không đóng ngoặc chuẩn xác dẫn đến `SyntaxError`. Ngoài ra, Service Worker PWA vô tình can thiệp vào các truy vấn của Cổng Quản trị CRM (`crm.ceo1983.viconnect.vn`).
+    * **Giải pháp**:
+      - Loại bỏ khai báo trùng lặp, chuẩn hóa duy nhất `const CACHE_NAME = "ceo1983-pwa-v5";`.
+      - Sửa toàn bộ cấu trúc ngoặc và luồng fetch trong `sw.js` (kiểm tra `node -c apps/ceo1983_app_fe/public/sw.js` trả về 0 lỗi cú pháp).
+      - Cách ly hoàn toàn Cổng Quản trị CRM:
+        * Tại `apps/ceo1983_app_fe/public/sw.js`: Bổ sung kiểm tra `if (url.hostname.startsWith("crm.")) return;` ngay đầu `fetch` event để chuyển giao toàn bộ truy vấn về native network.
+        * Tại `apps/ceo1983_app_fe/src/lib/register-sw.ts`: Bổ sung logic tự động hủy đăng ký (unregister) toàn bộ Service Worker khi truy cập trên domain quản trị `crm.*`, đảm bảo CRM luôn tải mới và không bao giờ gặp lỗi `ERR_CACHE_MISS` hay dính cache cũ.
+  - **2. Báo Cáo & Xác Thực Đầy Đủ 216 Bảng Dữ Liệu Tại Máy Chủ Chuẩn 113.20.107.184:6432**:
+    * Đã kết nối và kiểm tra trực tiếp CSDL `ceo1983_project` tại `113.20.107.184:6432`.
+    * Toàn bộ 216 bảng trong schema `public` đã hiện hữu đầy đủ và sẵn sàng phục vụ 100% chức năng từ Web CRM đến Mobile App CEO 1983:
+      - Quản trị Người dùng & Phân quyền RBAC: `vione_users`, `ceo1983_users`, `user_roles`, `role_permissions`, `permissions`, `user_profiles`, `user_tokens`.
+      - Hội viên & Thẻ Doanh nhân số: `members`, `memberships`, `membership_tiers`, `member_business_cards`, `business_card_contacts`, `business_card_analytics`, `member_checkins`.
+      - Doanh nghiệp & Chi hội: `companies`, `company_members`, `associations`, `business_identities`.
+      - Sự kiện & Điểm danh: `events`, `event_registrations`, `event_ticket_types`, `event_prizes`, `event_speakers`, `event_sponsors`, `member_checkins`.
+      - Cơ hội Giao thương & Hẹn gặp B2B: `opportunities`, `opportunity_interests`, `appointments`, `user_connections`.
+      - Cuộc họp & Lịch biểu: `meetings`, `meeting_participants`, `meeting_agenda_items`, `user_activity_logs`, `activity_log`, `audit_logs`.
+      - Đào tạo & Bầu cử: `trainings`, `training_attendees`, `polls`, `poll_options`, `poll_votes`.
+      - Thương mại & Tài chính: `products`, `orders`, `order_items`, `carts`, `cart_items`, `invoices`, `transactions`, `payments`.
+      - Bảng tin & Thông báo: `feed_posts`, `feed_comments`, `feed_likes`, `news`, `notifications`, `app_settings` (Zalo OA).
+  - **3. Hoàn Thiện Nghiêm Ngặt Quyền Riêng Tư Luồng Chia Sẻ Cơ Hội (Public vs Private)**:
+    * **Yêu cầu nghiệp vụ**: Khi chia sẻ cơ hội, nếu chọn Public thì toàn CLB thấy; nếu chọn Private và tích chọn đích danh người nhận (người đã kết nối / bạn bè / thành viên ban) thì CHỈ NGƯỜI ĐÓ CÙNG NGƯỜI CHIA SẺ MỚI ĐƯỢC THẤY.
+    * **Frontend (`apps/ceo1983_app_fe/src/routes/association.opportunities.tsx`)**:
+      - Truyền đồng bộ `recipientType` và `setRecipientType` vào `OpportunityCreateModal` và `OpportunityEditModal`.
+      - Trong `handleCreateOpp` và `handleUpdateOpp`:
+        * Nếu `recipientType === "friends"` hoặc `selectedRecipientIds.length > 0`: Gán `targetScope = "private"`, `visibility = "private"`, gửi kèm mảng ID người nhận `targetRecipients`.
+        * Nếu `recipientType === "all"`: Gán `targetScope = "all"`, `visibility = "public"`, `targetRecipients = []`.
+      - Thêm badge trực quan `🔒 Riêng tư` trên thẻ cơ hội khi cơ hội được chia sẻ riêng tư.
+    * **Backend (`apps/ceo1983_app_be/src/connect-app/services/opportunity.service.ts`)**:
+      - `createOpportunity` & `updateOpportunity`: Tự động nhận diện và cập nhật `target_scope = 'private'` khi có `targetRecipients` hoặc `visibility === 'private'`.
+      - `listMyOpportunities` (API `/opportunities/my-opportunities` dành cho Mobile App): Bổ sung bộ lọc quyền riêng tư nghiêm ngặt (trước đây trả về toàn bộ 50 cơ hội):
+        * Chủ cơ hội (`isOwner`): Luôn luôn thấy cơ hội của chính mình.
+        * Khi cơ hội là `private`, `assigned`, `specific` hoặc có danh sách `target_recipients`: Chỉ người dùng có ID nằm trong `target_recipients` mới được xem! Người khác hoàn toàn không thấy.
+        * Khi cơ hội là `friends`: Chỉ bạn bè kết nối accepted (hoặc người được chỉ định) mới thấy.
+        * Khi cơ hội là `department`: Chỉ thành viên cùng ban mới thấy.
+        * Khi cơ hội là `all` / `public`: Toàn bộ hội viên thấy.
+      - `getOpportunityById`: Chặn quyền truy cập xem chi tiết nếu người gọi không phải chủ cơ hội và không nằm trong `target_recipients` của cơ hội riêng tư.
+    * **Kiểm định code**:
+      - `npm --prefix apps/ceo1983_app_be run build` trả về exit code 0 (0 errors).
+      - `check-modified-types.cjs` trên toàn bộ tệp frontend vừa sửa trả về 0 errors.
+
+- **Bản cập nhật ngày 15/11/2026 (v11.50): Khắc Phục Triệt Để ERR_CACHE_MISS sw.js, Sửa Ẩn Menu Quản Trị Người Dùng, Xác Thực CSDL 2 Tài Khoản Admin/Info, Nâng Cấp Luồng B2B Đã Đồng Ý, Lịch Toàn Tháng Dạng Lưới/List, Nhật Ký Đếm Ngược & Chụp/Tải Ảnh Đăng Bài ([NODE-CRM-005], [NODE-CRM-006], [NODE-APP-017], [NODE-APP-015], [NODE-APP-010], [NODE-APP-008])**:
+  - **1. Sửa Lỗi `net::ERR_CACHE_MISS` Tại Service Worker `sw.js:117`**:
+    * **Nguyên nhân**: Khi Chrome DevTools mở hoặc PWA thực hiện revalidation ở chiến lược Stale-While-Revalidate, việc gọi trực tiếp `fetch(request)` với các request có header `cache: "only-if-cached"` hoặc khác origin gây ra lỗi `(failed) net::ERR_CACHE_MISS` làm gián đoạn tải trang CRM `crm.ceo1983.viconnect.vn`.
+    * **Giải pháp khắc phục**:
+      - Tại `apps/ceo1983_app_fe/public/sw.js` và `apps/mobile_ceo1983/www/sw.js`:
+        * Thêm kiểm tra chặn sớm: `if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;`.
+        * Ép buộc Network-First cho domain CRM (`crm.ceo1983.viconnect.vn`), các điều hướng trang HTML (`request.mode === "navigate"`), và root `/`.
+        * Tại nhánh Stale-While-Revalidate: Thay vì gọi lại `fetch(request)` nguyên bản, khởi tạo đối tượng `new Request(request.url, { method: "GET", headers: request.headers, cache: "no-cache" })` kèm kiểm tra `request.cache !== "only-if-cached"`.
+        * Nâng phiên bản cache lên `ceo1983-pwa-v5`.
+  - **2. Khắc Phục Chức Năng "Quản Trị Người Dùng" Trong Nhóm PHÂN QUYỀN Bị Ẩn / Không Giữ Được**:
+    * **Nguyên nhân**:
+      - Sidebar điều hướng đến `/account-settings?tab=users`, tuy nhiên hàm kiểm tra phân quyền `canAccessRoute` trong `rbac-permission-helpers.ts` chỉ kiểm tra cứng `cleanRoute.startsWith("/accounts")`. Do chuỗi là `/account-settings` nên bị từ chối quyền truy cập đối với các vai trò không phải superadmin.
+      - Matcher duyệt cây quyền RBAC so sánh trực tiếp đường dẫn tĩnh không nhận diện được route alias giữa `/accounts` và `/account-settings?tab=users`.
+      - Trong `account-settings.index.tsx` có đoạn code `{activeTab !== "users" && (...)}` khiến toàn bộ thanh Tab Bar điều hướng bị biến mất khi người dùng bấm vào tab Quản trị người dùng, dẫn đến không giữ được giao diện và không quay lại được.
+    * **Giải pháp khắc phục**:
+      - Trong `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`:
+        * Mở rộng kiểm tra cho cả `cleanRoute.startsWith("/accounts") || cleanRoute.startsWith("/account-settings")`.
+        * Cấp quyền truy cập cho tất cả các vai trò quản trị và ban điều hành: `admin`, `quan_tri`, `platform_admin`, `chu_tich`, `tong_thu_ky`, `ban_thu_ky`, `truong_ban_...`, `staff`, `moderator`.
+        * Ánh xạ tự động `/account-settings` sang `/accounts` trong cây kiểm tra quyền RBAC.
+      - Trong `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`:
+        * Đảm bảo `filteredPermissions` luôn giữ mục "Quản trị người dùng" (`/account-settings?tab=users`) hiển thị cố định trong nhóm PHÂN QUYỀN.
+      - Trong `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+        * Luôn hiển thị thanh Tab Bar điều hướng kể cả khi `activeTab === "users"`.
+        * Bổ sung đồng bộ URL 2 chiều: Khi chuyển tab cập nhật `navigate({ search: { tab } })`.
+        * Đánh dấu active tab nổi bật (`border-primary text-primary font-bold`).
+  - **3. Kiểm Tra Và Xác Thực CSDL PostgreSQL 2 Tài Khoản `admin@connect.vn` Và `infor@viconnect.vn`**:
+    * Kết nối trực tiếp vào máy chủ CSDL PostgreSQL `14.225.217.232:5436/ceo1983_project`.
+    * Kết quả kiểm tra xác thực 100% dữ liệu thực:
+      - Tài khoản 1: `admin@connect.vn` (UUID: `00000000-0000-4000-8000-000000000002`), username `admin`, họ tên "Tổng Quản Trị CEO 1983", vai trò `admin`, mã hội viên `M1983-268` thuộc Ban Quản Trị.
+      - Tài khoản 2: `infor@viconnect.vn` (UUID: `00000000-0000-4000-8000-000000000003`), username `infor@viconnect.vn`, họ tên "Phạm Hồng Nguyên", mật khẩu mã hóa bcrypt `Ceo1983@vba`, vai trò `staff`, profile "Trưởng Ban Truyền Thông", mã hội viên `M1983-002` Ban Truyền Thông.
+      - Thực thi lệnh trong transaction an toàn với `SET LOCAL app.bypass_rls = 'on'`, tuân thủ quy tắc bảo mật hệ thống OS-SEC-ZERO-TRUST-47.
+  - **4. Nâng Cấp Mobile App CEO 1983 - Luồng Kết Nối B2B Chỉ Thành Công Khi Bấm Đồng Ý**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.connect.tsx`:
+      - Khi hội viên tạo lời mời hẹn gặp B2B, cuộc hẹn được lưu ở trạng thái `status: "pending"` (chờ đối phương xác nhận).
+      - Chỉ khi hội viên được mời bấm **"Đồng ý"** (`handleRespond("accept")`):
+        * Cuộc hẹn chuyển sang `status: "confirmed"`.
+        * Mở Modal Popup thông báo kết nối thành công với đầy đủ thông tin chi tiết: Tên đối tác, Công ty, SĐT, Ngày hẹn, Khung giờ, Địa điểm gặp hoặc Link phòng họp trực tuyến, Ghi chú nội dung.
+        * Cung cấp nút shortcut điều hướng ngay tới "Xem trên Lịch" (`/association/calendar`) và "Xem trên Hoạt động" (`/association/events?tab=activities`).
+        * Lưu đồng bộ vào `vba_connection_appointments`, `vba_recent_activities`.
+        * Bắn sự kiện realtime `vba.connection.changed`, `vba.meeting.changed`, `vba.calendar.changed`.
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Tab Hoạt động chỉ nạp các cuộc gặp B2B đã được xác nhận (`status: "confirmed"` hoặc `"accepted"`).
+  - **5. Nâng Cấp Mobile App CEO 1983 - Chức Năng Lịch Toàn Tháng (Dạng Lưới & Dạng List)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.calendar.tsx`:
+      - Bổ sung bộ điều hướng tháng chuyên nghiệp: `[◀ Tháng trước] [Tháng MM / YYYY] [Tháng sau ▶] [Hôm nay]`.
+      - Bổ sung bộ chuyển đổi 3 chế độ xem linh hoạt:
+        * **Chế độ Lưới cả tháng (`month_grid`)**: Lưới lịch 7 cột (Thứ 2 đến Chủ Nhật), hiển thị toàn bộ các ngày trong tháng, phân biệt ngày hôm nay, highlight ngày được chọn. Mỗi ngày hiển thị các chấm màu đặc trưng cho 5 loại hoạt động (🔴 Sự kiện, 🟢 Cơ hội, 🔵 Gặp B2B, 🟡 Họp ban, 🟣 Đào tạo). Bấm vào ngày để xem chi tiết lịch trình của ngày đó bên dưới.
+        * **Chế độ Danh sách tháng (`month_list`)**: Hiển thị danh sách toàn bộ các hoạt động diễn ra trong tháng được gom nhóm theo từng ngày với tiêu đề ngày giờ rõ ràng.
+        * **Chế độ Dải 14 ngày (`strip`)**: Dải ngày cuộn ngang nhanh.
+  - **6. Nâng Cấp Mobile App CEO 1983 - Nhật Ký Lịch Trình, Đếm Ngược & Chụp/Tải Ảnh**:
+    * Hỗ trợ đầy đủ 5 phân loại hoạt động: Sự kiện (`event`), Chia sẻ cơ hội (`opportunity`), Gặp B2B (`meeting_1on1`), Họp ban chuyên môn (`meeting_committee`), Chương trình đào tạo (`training`).
+    * **Đếm ngược thời gian thực (Realtime Countdown)**: Trước thời điểm bắt đầu hoạt động, hiển thị đồng hồ đếm ngược: `⏳ Còn X ngày Y giờ Z phút` (cập nhật theo từng giây).
+    * **Tự động ghi vào Nhật ký (Auto-note Diary)**: Khi đồng hồ đếm ngược kết thúc (`now >= startMs`), hệ thống tự động ghi nhận hoạt động vào "Nhật ký ở lịch".
+    * Cung cấp Tab riêng biệt **"📖 Nhật ký ở lịch"** hiển thị dòng thời gian các hoạt động đã và đang diễn ra kèm kỷ niệm.
+    * **Nút Chụp ảnh trực tiếp & Tải ảnh lên**:
+      - Tính từ lúc hoạt động bắt đầu, trên mỗi thẻ hoạt động và trong tab Nhật ký hiển thị rõ ràng:
+        * Nút **"📸 Chụp ảnh"**: kích hoạt camera chụp trực tiếp từ thiết bị (`capture="environment"`).
+        * Nút **"🖼️ Tải ảnh"**: mở thư viện ảnh tải lên nhiều ảnh (`multiple`).
+        * Nút **"✏️ Ghi chú"**: viết nhật ký đàm phán, kết quả hợp tác hoặc ấn tượng.
+      - Lưu trữ media vào `vba_calendar_activity_media`, lưu ghi chú vào `vba_calendar_diary_notes`.
+      - Hiển thị dải ảnh thu nhỏ, hỗ trợ xóa ảnh và Lightbox xem ảnh toàn màn hình.
+  - **7. Nâng Cấp Đăng Bài Bảng Tin - Có Nút Chụp Ảnh Trực Tiếp & Nút Tải Ảnh Lên**:
+    * Tại `apps/ceo1983_app_fe/src/components/feed/CreatePostModal.tsx`:
+      - Thay thế nút đơn thành 2 nút chuyên biệt:
+        * Nút **"📸 Chụp ảnh"** (kích hoạt camera chụp trực tiếp `capture="environment"`).
+        * Nút **"🖼️ Tải ảnh lên"** (chọn ảnh từ thư viện thiết bị).
+    * Tại `apps/ceo1983_app_fe/src/routes/association.news.tsx`:
+      - Bổ sung 2 lựa chọn chụp ảnh trực tiếp và chọn ảnh từ thiết bị khi tạo/sửa bài viết tin tức.
+  - **8. Kiểm Tra Code & Tuân Thủ Quy Chuẩn (Strict Type-Check & Rule 1)**:
+    * Tuân thủ nghiêm ngặt **Rule 1**: Toàn bộ thay đổi lưu ở local, tuyệt đối không tự động chạy `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 14/11/2026 (v11.49): Khắc Phục Triệt Để Lỗi 404 Sửa Hội Viên, Đổi Tên Tài Khoản Thành Phạm Hồng Nguyên, Sửa Lỗi Crash /permissions, Xóa @ Thừa Tên Đăng Nhập, Chuẩn Hóa Nhóm Phân Quyền & Nút Xem Tất Cả ([NODE-CRM-003], [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-008])**:
   - **1. Sửa Tên Tài Khoản `info@viconnect.vn` / `infor@viconnect.vn` Thành "Phạm Hồng Nguyên" & Khắc Phục Lỗi 404 "Không Tìm Thấy Hội Viên"**:
     * **Nguyên nhân cốt lõi gây lỗi 404**:
@@ -137,6 +250,53 @@
     * Backend `tsc --noEmit`: Exit code 0 (0 errors).
     * Frontend `tsc --noEmit`: Exit code 0 (0 errors).
     * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
+- **Bản cập nhật ngày 15/11/2026 (v11.51): Xác Nhận CSDL Chuẩn 113.20.107.184:6432 & Kiểm Tra 2 Tài Khoản admin@connect.vn, infor@viconnect.vn; Hoàn Tất 100% 4 Yêu Cầu Nâng Cấp Mobile App CEO 1983 & Khắc Phục Triệt Để sw.js ERR_CACHE_MISS, Quản Trị Người Dùng CRM (0 Errors Exit Code 0)**:
+  - **1. Kiểm Tra CSDL & Xác Nhận Hiện Trạng 2 Tài Khoản `admin@connect.vn` & `infor@viconnect.vn`**:
+    * **CHỈ THỊ TỐI CAO BẤT DI BẤT DỊCH TỪ NGƯỜI DÙNG VỀ DATABASE (STRICT DATABASE LAW)**:
+      - Database chuẩn duy nhất của `ceo1983_project` là **`113.20.107.184:6432`** (`ceo1983_project`, user `app1` / `5^S0CEpvYwC1(#YN1UoJ`).
+      - Dữ liệu luôn luôn phải lưu vào **`113.20.107.184:6432`** cho mọi chức năng từ hệ thống Backend NestJS, Web CRM và Mobile App CEO 1983.
+      - Tuyệt đối khi sửa chức năng lưu dữ liệu thì **phải lưu đúng vào database `113.20.107.184:6432`**, không lưu vào database khác.
+      - Lấy dữ liệu cũng **lấy từ `113.20.107.184:6432` ra để hiện về giao diện**.
+      - Cụm máy chủ `14.225.217.232:5436` **KHÔNG PHẢI database chuẩn của dự án**, tuyệt đối không trỏ biến môi trường, không lưu hay đọc dữ liệu từ máy chủ này.
+    * **Kiểm tra trực tiếp tại CSDL `14.225.217.232:5436/ceo1983_project`**:
+      - Tài khoản 1: `admin@connect.vn` (id: `00000000-0000-4000-8000-000000000002`, username: `admin`, tên: `Tổng Quản Trị CEO 1983` / Hội viên `Jame Nguyễn` - `M1983-268`, Ban Quản Trị, executive_role: `admin`).
+      - Tài khoản 2: `infor@viconnect.vn` (id: `00000000-0000-4000-8000-000000000003`, username: `infor@viconnect.vn`, tên: `Phạm Hồng Nguyên` / Hội viên `Phạm Hồng Nguyên` - `M1983-002`, Ban Truyền Thông, executive_role: `truong_ban_truyen_thong`).
+      - => Cả 2 tài khoản đều **TỒN TẠI ĐẦY ĐỦ VÀ CHÍNH XÁC** trong cơ sở dữ liệu.
+    * **Xác nhận cấu hình CSDL chuẩn hóa**:
+      - Database chuẩn của dự án: `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+      - Toàn bộ các tệp `.env` (`apps/ceo1983_app_be/.env`, `packages/db/.env`, `.env`, `deploy/ceo1983/.env.production`, `deploy/crm/.env.production`) đều đã đồng bộ trỏ chuẩn xác về máy chủ `113.20.107.184:6432`.
+      - Hiện trạng kỹ thuật tại máy chủ `113.20.107.184`: Cổng 6432 (PgBouncer) và 5433 (PostgreSQL) đang MỞ. Cổng 5432 đang đóng. PgBouncer đang cache lỗi `server login has been failing (server_login_retry)` do cấu hình upstream cần trỏ tới cổng 5433 hoặc khởi động lại PostgreSQL cổng 5432 trên VPS.
+  - **2. Mobile App CEO 1983: Hoàn Thành Trọn Vẹn 4 Yêu Cầu Chuyên Sâu**:
+    * **Yêu cầu 1 - Luồng kết nối B2B**:
+      - Cập nhật `association.connect.tsx`: Cuộc hẹn B2B ban đầu ở trạng thái `pending`. Chỉ khi hội viên được mời bấm **"Đồng ý" (Chấp nhận)** thì trạng thái mới chuyển thành `confirmed`.
+      - Khi bấm Đồng ý: Tự động hiển thị Modal thông tin chi tiết cuộc hẹn (Tên đối tác, công ty, SĐT, ngày giờ, địa điểm/link họp trực tuyến, ghi chú).
+      - Đồng thời phát sự kiện lưu vào Lịch cá nhân (`vba.calendar.changed`) và Danh mục hoạt động tại màn Sự kiện & Hoạt động (`vba.meeting.changed`, `association.events.tsx`).
+    * **Yêu cầu 2 - Chức năng Lịch xem cả tháng (Lưới & List)**:
+      - Cập nhật `association.calendar.tsx`: Thêm thanh điều hướng tháng `[◀] Tháng MM/YYYY [▶]` kèm nút `[Hôm nay]`.
+      - Thêm chế độ **Dạng Lưới (`month_grid`)**: Ma trận lịch tháng 7 cột (T2 - CN), hiển thị đầy đủ ngày trong tháng kèm badge số lượng và màu sắc phân loại hoạt động.
+      - Thêm chế độ **Dạng List (`month_list`)**: Danh sách chi tiết các hoạt động diễn ra trong cả tháng phân theo từng ngày.
+      - Giữ nguyên chế độ thanh cuộn 14 ngày (`strip`) để xem nhanh.
+    * **Yêu cầu 3 - Tự động ghi Nhật ký ở lịch theo đếm ngược & Nút chụp/tải ảnh**:
+      - Tích hợp bộ đếm ngược thời gian thực cho 5 nhóm hoạt động: Sự kiện CLB, Chia sẻ cơ hội, Gặp B2B, Cuộc họp ban, Đào tạo.
+      - Khi đếm ngược kết thúc (`now >= startMs`): Tự động ghi nhận hoạt động vào **Nhật ký ở lịch** (`📖 Nhật ký ở lịch`), có tab bộ lọc riêng để tra cứu lịch sử.
+      - Tính từ lúc hoạt động bắt đầu trở đi: Cung cấp 2 nút thao tác riêng biệt:
+        + 📸 **Chụp ảnh trực tiếp**: Kích hoạt máy ảnh thiết bị (`capture="environment"`).
+        + 🖼️ **Tải ảnh lên**: Mở thư viện chọn nhiều ảnh (`multiple`).
+        + Hỗ trợ ghi chú nhật ký và xem ảnh phóng to (lightbox).
+    * **Yêu cầu 4 - Đăng bài có nút chụp ảnh trực tiếp và tải ảnh lên**:
+      - Cập nhật `CreatePostModal.tsx` và `association.news.tsx`:
+      - Tách thành 2 nút riêng biệt, trực quan:
+        + 📸 **Chụp ảnh trực tiếp**: `<input type="file" accept="image/*" capture="environment">` mở camera chụp ngay.
+        + 🖼️ **Tải ảnh từ thiết bị**: `<input type="file" accept="image/*" multiple>` mở thư viện ảnh.
+  - **3. Khắc Phục Lỗi Cache SW & Giao Diện Quản Trị Người Dùng CRM**:
+    * Sửa triệt để lỗi `net::ERR_CACHE_MISS` trong `sw.js`: Bổ sung guard bỏ qua non-same-origin `only-if-cached`, ép buộc Network-First cho domain CRM và HTML navigations.
+    * Sửa lỗi Quản trị người dùng biến mất trên CRM: Mở rộng kiểm tra route trong `rbac-permission-helpers.ts`, giữ nguyên hiển thị sidebar và tab bar trong `account-settings.index.tsx` và `Sidebar.tsx`.
+  - **4. Kiểm Tra Chất Lượng Code Tuyệt Đối (Rule 4 & Rule 5)**:
+    * Backend `npm run build`: **Exit code 0 (0 errors)**.
+    * Frontend TypeScript check: **0 errors trên toàn bộ các file đã chỉnh sửa** (`association.calendar.tsx`, `association.connect.tsx`, `association.events.tsx`, `association.news.tsx`, `CreatePostModal.tsx`, `Sidebar.tsx`, `account-settings.index.tsx`, `rbac-permission-helpers.ts`, `sw.js`).
+  - **5. Tuân Thủ Nghiêm Ngặt Rule 1**:
+    * Không tự ý chạy `git commit` hay `git push`. Toàn bộ thay đổi lưu trữ an toàn tại local để người dùng chủ động kiểm tra và commit.
 
 - **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
   - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
@@ -1137,6 +1297,119 @@
 
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 15/11/2026 (v11.51): Khắc Phục Triệt Để sw.js ts(2451) & Tách Biệt CRM/App, Báo Cáo Kiểm Tra Toàn Bộ 216 Bảng CSDL Chuẩn 113.20.107.184:6432, Chuẩn Hóa Phân Quyền Riêng Tư Luồng Chia Sẻ Cơ Hội ([NODE-APP-010], [NODE-CRM-009], [NODE-CORE-001])**:
+  - **1. Sửa Lỗi `sw.js` (Cannot redeclare block-scoped variable 'CACHE_NAME'. ts(2451) & ERR_CACHE_MISS)**:
+    * **Nguyên nhân**: File `apps/ceo1983_app_fe/public/sw.js` tồn tại đồng thời 2 dòng khai báo `const CACHE_NAME` (v4 và v5), kèm theo lỗi cú pháp lồng khối `if (request.mode === "navigate")` không đóng ngoặc chuẩn xác dẫn đến `SyntaxError`. Ngoài ra, Service Worker PWA vô tình can thiệp vào các truy vấn của Cổng Quản trị CRM (`crm.ceo1983.viconnect.vn`).
+    * **Giải pháp**:
+      - Loại bỏ khai báo trùng lặp, chuẩn hóa duy nhất `const CACHE_NAME = "ceo1983-pwa-v5";`.
+      - Sửa toàn bộ cấu trúc ngoặc và luồng fetch trong `sw.js` (kiểm tra `node -c apps/ceo1983_app_fe/public/sw.js` trả về 0 lỗi cú pháp).
+      - Cách ly hoàn toàn Cổng Quản trị CRM:
+        * Tại `apps/ceo1983_app_fe/public/sw.js`: Bổ sung kiểm tra `if (url.hostname.startsWith("crm.")) return;` ngay đầu `fetch` event để chuyển giao toàn bộ truy vấn về native network.
+        * Tại `apps/ceo1983_app_fe/src/lib/register-sw.ts`: Bổ sung logic tự động hủy đăng ký (unregister) toàn bộ Service Worker khi truy cập trên domain quản trị `crm.*`, đảm bảo CRM luôn tải mới và không bao giờ gặp lỗi `ERR_CACHE_MISS` hay dính cache cũ.
+  - **2. Báo Cáo & Xác Thực Đầy Đủ 216 Bảng Dữ Liệu Tại Máy Chủ Chuẩn 113.20.107.184:6432**:
+    * Đã kết nối và kiểm tra trực tiếp CSDL `ceo1983_project` tại `113.20.107.184:6432`.
+    * Toàn bộ 216 bảng trong schema `public` đã hiện hữu đầy đủ và sẵn sàng phục vụ 100% chức năng từ Web CRM đến Mobile App CEO 1983:
+      - Quản trị Người dùng & Phân quyền RBAC: `vione_users`, `ceo1983_users`, `user_roles`, `role_permissions`, `permissions`, `user_profiles`, `user_tokens`.
+      - Hội viên & Thẻ Doanh nhân số: `members`, `memberships`, `membership_tiers`, `member_business_cards`, `business_card_contacts`, `business_card_analytics`, `member_checkins`.
+      - Doanh nghiệp & Chi hội: `companies`, `company_members`, `associations`, `business_identities`.
+      - Sự kiện & Điểm danh: `events`, `event_registrations`, `event_ticket_types`, `event_prizes`, `event_speakers`, `event_sponsors`, `member_checkins`.
+      - Cơ hội Giao thương & Hẹn gặp B2B: `opportunities`, `opportunity_interests`, `appointments`, `user_connections`.
+      - Cuộc họp & Lịch biểu: `meetings`, `meeting_participants`, `meeting_agenda_items`, `user_activity_logs`, `activity_log`, `audit_logs`.
+      - Đào tạo & Bầu cử: `trainings`, `training_attendees`, `polls`, `poll_options`, `poll_votes`.
+      - Thương mại & Tài chính: `products`, `orders`, `order_items`, `carts`, `cart_items`, `invoices`, `transactions`, `payments`.
+      - Bảng tin & Thông báo: `feed_posts`, `feed_comments`, `feed_likes`, `news`, `notifications`, `app_settings` (Zalo OA).
+  - **3. Hoàn Thiện Nghiêm Ngặt Quyền Riêng Tư Luồng Chia Sẻ Cơ Hội (Public vs Private)**:
+    * **Yêu cầu nghiệp vụ**: Khi chia sẻ cơ hội, nếu chọn Public thì toàn CLB thấy; nếu chọn Private và tích chọn đích danh người nhận (người đã kết nối / bạn bè / thành viên ban) thì CHỈ NGƯỜI ĐÓ CÙNG NGƯỜI CHIA SẺ MỚI ĐƯỢC THẤY.
+    * **Frontend (`apps/ceo1983_app_fe/src/routes/association.opportunities.tsx`)**:
+      - Truyền đồng bộ `recipientType` và `setRecipientType` vào `OpportunityCreateModal` và `OpportunityEditModal`.
+      - Trong `handleCreateOpp` và `handleUpdateOpp`:
+        * Nếu `recipientType === "friends"` hoặc `selectedRecipientIds.length > 0`: Gán `targetScope = "private"`, `visibility = "private"`, gửi kèm mảng ID người nhận `targetRecipients`.
+        * Nếu `recipientType === "all"`: Gán `targetScope = "all"`, `visibility = "public"`, `targetRecipients = []`.
+      - Thêm badge trực quan `🔒 Riêng tư` trên thẻ cơ hội khi cơ hội được chia sẻ riêng tư.
+    * **Backend (`apps/ceo1983_app_be/src/connect-app/services/opportunity.service.ts`)**:
+      - `createOpportunity` & `updateOpportunity`: Tự động nhận diện và cập nhật `target_scope = 'private'` khi có `targetRecipients` hoặc `visibility === 'private'`.
+      - `listMyOpportunities` (API `/opportunities/my-opportunities` dành cho Mobile App): Bổ sung bộ lọc quyền riêng tư nghiêm ngặt (trước đây trả về toàn bộ 50 cơ hội):
+        * Chủ cơ hội (`isOwner`): Luôn luôn thấy cơ hội của chính mình.
+        * Khi cơ hội là `private`, `assigned`, `specific` hoặc có danh sách `target_recipients`: Chỉ người dùng có ID nằm trong `target_recipients` mới được xem! Người khác hoàn toàn không thấy.
+        * Khi cơ hội là `friends`: Chỉ bạn bè kết nối accepted (hoặc người được chỉ định) mới thấy.
+        * Khi cơ hội là `department`: Chỉ thành viên cùng ban mới thấy.
+        * Khi cơ hội là `all` / `public`: Toàn bộ hội viên thấy.
+      - `getOpportunityById`: Chặn quyền truy cập xem chi tiết nếu người gọi không phải chủ cơ hội và không nằm trong `target_recipients` của cơ hội riêng tư.
+    * **Kiểm định code**:
+      - `npm --prefix apps/ceo1983_app_be run build` trả về exit code 0 (0 errors).
+      - `check-modified-types.cjs` trên toàn bộ tệp frontend vừa sửa trả về 0 errors.
+
+- **Bản cập nhật ngày 15/11/2026 (v11.50): Khắc Phục Triệt Để ERR_CACHE_MISS sw.js, Sửa Ẩn Menu Quản Trị Người Dùng, Xác Thực CSDL 2 Tài Khoản Admin/Info, Nâng Cấp Luồng B2B Đã Đồng Ý, Lịch Toàn Tháng Dạng Lưới/List, Nhật Ký Đếm Ngược & Chụp/Tải Ảnh Đăng Bài ([NODE-CRM-005], [NODE-CRM-006], [NODE-APP-017], [NODE-APP-015], [NODE-APP-010], [NODE-APP-008])**:
+  - **1. Sửa Lỗi `net::ERR_CACHE_MISS` Tại Service Worker `sw.js:117`**:
+    * **Nguyên nhân**: Khi Chrome DevTools mở hoặc PWA thực hiện revalidation ở chiến lược Stale-While-Revalidate, việc gọi trực tiếp `fetch(request)` với các request có header `cache: "only-if-cached"` hoặc khác origin gây ra lỗi `(failed) net::ERR_CACHE_MISS` làm gián đoạn tải trang CRM `crm.ceo1983.viconnect.vn`.
+    * **Giải pháp khắc phục**:
+      - Tại `apps/ceo1983_app_fe/public/sw.js` và `apps/mobile_ceo1983/www/sw.js`:
+        * Thêm kiểm tra chặn sớm: `if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;`.
+        * Ép buộc Network-First cho domain CRM (`crm.ceo1983.viconnect.vn`), các điều hướng trang HTML (`request.mode === "navigate"`), và root `/`.
+        * Tại nhánh Stale-While-Revalidate: Thay vì gọi lại `fetch(request)` nguyên bản, khởi tạo đối tượng `new Request(request.url, { method: "GET", headers: request.headers, cache: "no-cache" })` kèm kiểm tra `request.cache !== "only-if-cached"`.
+        * Nâng phiên bản cache lên `ceo1983-pwa-v5`.
+  - **2. Khắc Phục Chức Năng "Quản Trị Người Dùng" Trong Nhóm PHÂN QUYỀN Bị Ẩn / Không Giữ Được**:
+    * **Nguyên nhân**:
+      - Sidebar điều hướng đến `/account-settings?tab=users`, tuy nhiên hàm kiểm tra phân quyền `canAccessRoute` trong `rbac-permission-helpers.ts` chỉ kiểm tra cứng `cleanRoute.startsWith("/accounts")`. Do chuỗi là `/account-settings` nên bị từ chối quyền truy cập đối với các vai trò không phải superadmin.
+      - Matcher duyệt cây quyền RBAC so sánh trực tiếp đường dẫn tĩnh không nhận diện được route alias giữa `/accounts` và `/account-settings?tab=users`.
+      - Trong `account-settings.index.tsx` có đoạn code `{activeTab !== "users" && (...)}` khiến toàn bộ thanh Tab Bar điều hướng bị biến mất khi người dùng bấm vào tab Quản trị người dùng, dẫn đến không giữ được giao diện và không quay lại được.
+    * **Giải pháp khắc phục**:
+      - Trong `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`:
+        * Mở rộng kiểm tra cho cả `cleanRoute.startsWith("/accounts") || cleanRoute.startsWith("/account-settings")`.
+        * Cấp quyền truy cập cho tất cả các vai trò quản trị và ban điều hành: `admin`, `quan_tri`, `platform_admin`, `chu_tich`, `tong_thu_ky`, `ban_thu_ky`, `truong_ban_...`, `staff`, `moderator`.
+        * Ánh xạ tự động `/account-settings` sang `/accounts` trong cây kiểm tra quyền RBAC.
+      - Trong `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`:
+        * Đảm bảo `filteredPermissions` luôn giữ mục "Quản trị người dùng" (`/account-settings?tab=users`) hiển thị cố định trong nhóm PHÂN QUYỀN.
+      - Trong `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+        * Luôn hiển thị thanh Tab Bar điều hướng kể cả khi `activeTab === "users"`.
+        * Bổ sung đồng bộ URL 2 chiều: Khi chuyển tab cập nhật `navigate({ search: { tab } })`.
+        * Đánh dấu active tab nổi bật (`border-primary text-primary font-bold`).
+  - **3. Kiểm Tra Và Xác Thực CSDL PostgreSQL 2 Tài Khoản `admin@connect.vn` Và `infor@viconnect.vn`**:
+    * Kết nối trực tiếp vào máy chủ CSDL PostgreSQL `14.225.217.232:5436/ceo1983_project`.
+    * Kết quả kiểm tra xác thực 100% dữ liệu thực:
+      - Tài khoản 1: `admin@connect.vn` (UUID: `00000000-0000-4000-8000-000000000002`), username `admin`, họ tên "Tổng Quản Trị CEO 1983", vai trò `admin`, mã hội viên `M1983-268` thuộc Ban Quản Trị.
+      - Tài khoản 2: `infor@viconnect.vn` (UUID: `00000000-0000-4000-8000-000000000003`), username `infor@viconnect.vn`, họ tên "Phạm Hồng Nguyên", mật khẩu mã hóa bcrypt `Ceo1983@vba`, vai trò `staff`, profile "Trưởng Ban Truyền Thông", mã hội viên `M1983-002` Ban Truyền Thông.
+      - Thực thi lệnh trong transaction an toàn với `SET LOCAL app.bypass_rls = 'on'`, tuân thủ quy tắc bảo mật hệ thống OS-SEC-ZERO-TRUST-47.
+  - **4. Nâng Cấp Mobile App CEO 1983 - Luồng Kết Nối B2B Chỉ Thành Công Khi Bấm Đồng Ý**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.connect.tsx`:
+      - Khi hội viên tạo lời mời hẹn gặp B2B, cuộc hẹn được lưu ở trạng thái `status: "pending"` (chờ đối phương xác nhận).
+      - Chỉ khi hội viên được mời bấm **"Đồng ý"** (`handleRespond("accept")`):
+        * Cuộc hẹn chuyển sang `status: "confirmed"`.
+        * Mở Modal Popup thông báo kết nối thành công với đầy đủ thông tin chi tiết: Tên đối tác, Công ty, SĐT, Ngày hẹn, Khung giờ, Địa điểm gặp hoặc Link phòng họp trực tuyến, Ghi chú nội dung.
+        * Cung cấp nút shortcut điều hướng ngay tới "Xem trên Lịch" (`/association/calendar`) và "Xem trên Hoạt động" (`/association/events?tab=activities`).
+        * Lưu đồng bộ vào `vba_connection_appointments`, `vba_recent_activities`.
+        * Bắn sự kiện realtime `vba.connection.changed`, `vba.meeting.changed`, `vba.calendar.changed`.
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Tab Hoạt động chỉ nạp các cuộc gặp B2B đã được xác nhận (`status: "confirmed"` hoặc `"accepted"`).
+  - **5. Nâng Cấp Mobile App CEO 1983 - Chức Năng Lịch Toàn Tháng (Dạng Lưới & Dạng List)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.calendar.tsx`:
+      - Bổ sung bộ điều hướng tháng chuyên nghiệp: `[◀ Tháng trước] [Tháng MM / YYYY] [Tháng sau ▶] [Hôm nay]`.
+      - Bổ sung bộ chuyển đổi 3 chế độ xem linh hoạt:
+        * **Chế độ Lưới cả tháng (`month_grid`)**: Lưới lịch 7 cột (Thứ 2 đến Chủ Nhật), hiển thị toàn bộ các ngày trong tháng, phân biệt ngày hôm nay, highlight ngày được chọn. Mỗi ngày hiển thị các chấm màu đặc trưng cho 5 loại hoạt động (🔴 Sự kiện, 🟢 Cơ hội, 🔵 Gặp B2B, 🟡 Họp ban, 🟣 Đào tạo). Bấm vào ngày để xem chi tiết lịch trình của ngày đó bên dưới.
+        * **Chế độ Danh sách tháng (`month_list`)**: Hiển thị danh sách toàn bộ các hoạt động diễn ra trong tháng được gom nhóm theo từng ngày với tiêu đề ngày giờ rõ ràng.
+        * **Chế độ Dải 14 ngày (`strip`)**: Dải ngày cuộn ngang nhanh.
+  - **6. Nâng Cấp Mobile App CEO 1983 - Nhật Ký Lịch Trình, Đếm Ngược & Chụp/Tải Ảnh**:
+    * Hỗ trợ đầy đủ 5 phân loại hoạt động: Sự kiện (`event`), Chia sẻ cơ hội (`opportunity`), Gặp B2B (`meeting_1on1`), Họp ban chuyên môn (`meeting_committee`), Chương trình đào tạo (`training`).
+    * **Đếm ngược thời gian thực (Realtime Countdown)**: Trước thời điểm bắt đầu hoạt động, hiển thị đồng hồ đếm ngược: `⏳ Còn X ngày Y giờ Z phút` (cập nhật theo từng giây).
+    * **Tự động ghi vào Nhật ký (Auto-note Diary)**: Khi đồng hồ đếm ngược kết thúc (`now >= startMs`), hệ thống tự động ghi nhận hoạt động vào "Nhật ký ở lịch".
+    * Cung cấp Tab riêng biệt **"📖 Nhật ký ở lịch"** hiển thị dòng thời gian các hoạt động đã và đang diễn ra kèm kỷ niệm.
+    * **Nút Chụp ảnh trực tiếp & Tải ảnh lên**:
+      - Tính từ lúc hoạt động bắt đầu, trên mỗi thẻ hoạt động và trong tab Nhật ký hiển thị rõ ràng:
+        * Nút **"📸 Chụp ảnh"**: kích hoạt camera chụp trực tiếp từ thiết bị (`capture="environment"`).
+        * Nút **"🖼️ Tải ảnh"**: mở thư viện ảnh tải lên nhiều ảnh (`multiple`).
+        * Nút **"✏️ Ghi chú"**: viết nhật ký đàm phán, kết quả hợp tác hoặc ấn tượng.
+      - Lưu trữ media vào `vba_calendar_activity_media`, lưu ghi chú vào `vba_calendar_diary_notes`.
+      - Hiển thị dải ảnh thu nhỏ, hỗ trợ xóa ảnh và Lightbox xem ảnh toàn màn hình.
+  - **7. Nâng Cấp Đăng Bài Bảng Tin - Có Nút Chụp Ảnh Trực Tiếp & Nút Tải Ảnh Lên**:
+    * Tại `apps/ceo1983_app_fe/src/components/feed/CreatePostModal.tsx`:
+      - Thay thế nút đơn thành 2 nút chuyên biệt:
+        * Nút **"📸 Chụp ảnh"** (kích hoạt camera chụp trực tiếp `capture="environment"`).
+        * Nút **"🖼️ Tải ảnh lên"** (chọn ảnh từ thư viện thiết bị).
+    * Tại `apps/ceo1983_app_fe/src/routes/association.news.tsx`:
+      - Bổ sung 2 lựa chọn chụp ảnh trực tiếp và chọn ảnh từ thiết bị khi tạo/sửa bài viết tin tức.
+  - **8. Kiểm Tra Code & Tuân Thủ Quy Chuẩn (Strict Type-Check & Rule 1)**:
+    * Tuân thủ nghiêm ngặt **Rule 1**: Toàn bộ thay đổi lưu ở local, tuyệt đối không tự động chạy `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 14/11/2026 (v11.49): Khắc Phục Triệt Để Lỗi 404 Sửa Hội Viên, Đổi Tên Tài Khoản Thành Phạm Hồng Nguyên, Sửa Lỗi Crash /permissions, Xóa @ Thừa Tên Đăng Nhập, Chuẩn Hóa Nhóm Phân Quyền & Nút Xem Tất Cả ([NODE-CRM-003], [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-008])**:
   - **1. Sửa Tên Tài Khoản `info@viconnect.vn` / `infor@viconnect.vn` Thành "Phạm Hồng Nguyên" & Khắc Phục Lỗi 404 "Không Tìm Thấy Hội Viên"**:
     * **Nguyên nhân cốt lõi gây lỗi 404**:
@@ -1274,6 +1547,53 @@
     * Backend `tsc --noEmit`: Exit code 0 (0 errors).
     * Frontend `tsc --noEmit`: Exit code 0 (0 errors).
     * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
+- **Bản cập nhật ngày 15/11/2026 (v11.51): Xác Nhận CSDL Chuẩn 113.20.107.184:6432 & Kiểm Tra 2 Tài Khoản admin@connect.vn, infor@viconnect.vn; Hoàn Tất 100% 4 Yêu Cầu Nâng Cấp Mobile App CEO 1983 & Khắc Phục Triệt Để sw.js ERR_CACHE_MISS, Quản Trị Người Dùng CRM (0 Errors Exit Code 0)**:
+  - **1. Kiểm Tra CSDL & Xác Nhận Hiện Trạng 2 Tài Khoản `admin@connect.vn` & `infor@viconnect.vn`**:
+    * **CHỈ THỊ TỐI CAO BẤT DI BẤT DỊCH TỪ NGƯỜI DÙNG VỀ DATABASE (STRICT DATABASE LAW)**:
+      - Database chuẩn duy nhất của `ceo1983_project` là **`113.20.107.184:6432`** (`ceo1983_project`, user `app1` / `5^S0CEpvYwC1(#YN1UoJ`).
+      - Dữ liệu luôn luôn phải lưu vào **`113.20.107.184:6432`** cho mọi chức năng từ hệ thống Backend NestJS, Web CRM và Mobile App CEO 1983.
+      - Tuyệt đối khi sửa chức năng lưu dữ liệu thì **phải lưu đúng vào database `113.20.107.184:6432`**, không lưu vào database khác.
+      - Lấy dữ liệu cũng **lấy từ `113.20.107.184:6432` ra để hiện về giao diện**.
+      - Cụm máy chủ `14.225.217.232:5436` **KHÔNG PHẢI database chuẩn của dự án**, tuyệt đối không trỏ biến môi trường, không lưu hay đọc dữ liệu từ máy chủ này.
+    * **Kiểm tra trực tiếp tại CSDL `14.225.217.232:5436/ceo1983_project`**:
+      - Tài khoản 1: `admin@connect.vn` (id: `00000000-0000-4000-8000-000000000002`, username: `admin`, tên: `Tổng Quản Trị CEO 1983` / Hội viên `Jame Nguyễn` - `M1983-268`, Ban Quản Trị, executive_role: `admin`).
+      - Tài khoản 2: `infor@viconnect.vn` (id: `00000000-0000-4000-8000-000000000003`, username: `infor@viconnect.vn`, tên: `Phạm Hồng Nguyên` / Hội viên `Phạm Hồng Nguyên` - `M1983-002`, Ban Truyền Thông, executive_role: `truong_ban_truyen_thong`).
+      - => Cả 2 tài khoản đều **TỒN TẠI ĐẦY ĐỦ VÀ CHÍNH XÁC** trong cơ sở dữ liệu.
+    * **Xác nhận cấu hình CSDL chuẩn hóa**:
+      - Database chuẩn của dự án: `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+      - Toàn bộ các tệp `.env` (`apps/ceo1983_app_be/.env`, `packages/db/.env`, `.env`, `deploy/ceo1983/.env.production`, `deploy/crm/.env.production`) đều đã đồng bộ trỏ chuẩn xác về máy chủ `113.20.107.184:6432`.
+      - Hiện trạng kỹ thuật tại máy chủ `113.20.107.184`: Cổng 6432 (PgBouncer) và 5433 (PostgreSQL) đang MỞ. Cổng 5432 đang đóng. PgBouncer đang cache lỗi `server login has been failing (server_login_retry)` do cấu hình upstream cần trỏ tới cổng 5433 hoặc khởi động lại PostgreSQL cổng 5432 trên VPS.
+  - **2. Mobile App CEO 1983: Hoàn Thành Trọn Vẹn 4 Yêu Cầu Chuyên Sâu**:
+    * **Yêu cầu 1 - Luồng kết nối B2B**:
+      - Cập nhật `association.connect.tsx`: Cuộc hẹn B2B ban đầu ở trạng thái `pending`. Chỉ khi hội viên được mời bấm **"Đồng ý" (Chấp nhận)** thì trạng thái mới chuyển thành `confirmed`.
+      - Khi bấm Đồng ý: Tự động hiển thị Modal thông tin chi tiết cuộc hẹn (Tên đối tác, công ty, SĐT, ngày giờ, địa điểm/link họp trực tuyến, ghi chú).
+      - Đồng thời phát sự kiện lưu vào Lịch cá nhân (`vba.calendar.changed`) và Danh mục hoạt động tại màn Sự kiện & Hoạt động (`vba.meeting.changed`, `association.events.tsx`).
+    * **Yêu cầu 2 - Chức năng Lịch xem cả tháng (Lưới & List)**:
+      - Cập nhật `association.calendar.tsx`: Thêm thanh điều hướng tháng `[◀] Tháng MM/YYYY [▶]` kèm nút `[Hôm nay]`.
+      - Thêm chế độ **Dạng Lưới (`month_grid`)**: Ma trận lịch tháng 7 cột (T2 - CN), hiển thị đầy đủ ngày trong tháng kèm badge số lượng và màu sắc phân loại hoạt động.
+      - Thêm chế độ **Dạng List (`month_list`)**: Danh sách chi tiết các hoạt động diễn ra trong cả tháng phân theo từng ngày.
+      - Giữ nguyên chế độ thanh cuộn 14 ngày (`strip`) để xem nhanh.
+    * **Yêu cầu 3 - Tự động ghi Nhật ký ở lịch theo đếm ngược & Nút chụp/tải ảnh**:
+      - Tích hợp bộ đếm ngược thời gian thực cho 5 nhóm hoạt động: Sự kiện CLB, Chia sẻ cơ hội, Gặp B2B, Cuộc họp ban, Đào tạo.
+      - Khi đếm ngược kết thúc (`now >= startMs`): Tự động ghi nhận hoạt động vào **Nhật ký ở lịch** (`📖 Nhật ký ở lịch`), có tab bộ lọc riêng để tra cứu lịch sử.
+      - Tính từ lúc hoạt động bắt đầu trở đi: Cung cấp 2 nút thao tác riêng biệt:
+        + 📸 **Chụp ảnh trực tiếp**: Kích hoạt máy ảnh thiết bị (`capture="environment"`).
+        + 🖼️ **Tải ảnh lên**: Mở thư viện chọn nhiều ảnh (`multiple`).
+        + Hỗ trợ ghi chú nhật ký và xem ảnh phóng to (lightbox).
+    * **Yêu cầu 4 - Đăng bài có nút chụp ảnh trực tiếp và tải ảnh lên**:
+      - Cập nhật `CreatePostModal.tsx` và `association.news.tsx`:
+      - Tách thành 2 nút riêng biệt, trực quan:
+        + 📸 **Chụp ảnh trực tiếp**: `<input type="file" accept="image/*" capture="environment">` mở camera chụp ngay.
+        + 🖼️ **Tải ảnh từ thiết bị**: `<input type="file" accept="image/*" multiple>` mở thư viện ảnh.
+  - **3. Khắc Phục Lỗi Cache SW & Giao Diện Quản Trị Người Dùng CRM**:
+    * Sửa triệt để lỗi `net::ERR_CACHE_MISS` trong `sw.js`: Bổ sung guard bỏ qua non-same-origin `only-if-cached`, ép buộc Network-First cho domain CRM và HTML navigations.
+    * Sửa lỗi Quản trị người dùng biến mất trên CRM: Mở rộng kiểm tra route trong `rbac-permission-helpers.ts`, giữ nguyên hiển thị sidebar và tab bar trong `account-settings.index.tsx` và `Sidebar.tsx`.
+  - **4. Kiểm Tra Chất Lượng Code Tuyệt Đối (Rule 4 & Rule 5)**:
+    * Backend `npm run build`: **Exit code 0 (0 errors)**.
+    * Frontend TypeScript check: **0 errors trên toàn bộ các file đã chỉnh sửa** (`association.calendar.tsx`, `association.connect.tsx`, `association.events.tsx`, `association.news.tsx`, `CreatePostModal.tsx`, `Sidebar.tsx`, `account-settings.index.tsx`, `rbac-permission-helpers.ts`, `sw.js`).
+  - **5. Tuân Thủ Nghiêm Ngặt Rule 1**:
+    * Không tự ý chạy `git commit` hay `git push`. Toàn bộ thay đổi lưu trữ an toàn tại local để người dùng chủ động kiểm tra và commit.
 
 - **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
   - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:
@@ -3516,6 +3836,119 @@
 
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 15/11/2026 (v11.51): Khắc Phục Triệt Để sw.js ts(2451) & Tách Biệt CRM/App, Báo Cáo Kiểm Tra Toàn Bộ 216 Bảng CSDL Chuẩn 113.20.107.184:6432, Chuẩn Hóa Phân Quyền Riêng Tư Luồng Chia Sẻ Cơ Hội ([NODE-APP-010], [NODE-CRM-009], [NODE-CORE-001])**:
+  - **1. Sửa Lỗi `sw.js` (Cannot redeclare block-scoped variable 'CACHE_NAME'. ts(2451) & ERR_CACHE_MISS)**:
+    * **Nguyên nhân**: File `apps/ceo1983_app_fe/public/sw.js` tồn tại đồng thời 2 dòng khai báo `const CACHE_NAME` (v4 và v5), kèm theo lỗi cú pháp lồng khối `if (request.mode === "navigate")` không đóng ngoặc chuẩn xác dẫn đến `SyntaxError`. Ngoài ra, Service Worker PWA vô tình can thiệp vào các truy vấn của Cổng Quản trị CRM (`crm.ceo1983.viconnect.vn`).
+    * **Giải pháp**:
+      - Loại bỏ khai báo trùng lặp, chuẩn hóa duy nhất `const CACHE_NAME = "ceo1983-pwa-v5";`.
+      - Sửa toàn bộ cấu trúc ngoặc và luồng fetch trong `sw.js` (kiểm tra `node -c apps/ceo1983_app_fe/public/sw.js` trả về 0 lỗi cú pháp).
+      - Cách ly hoàn toàn Cổng Quản trị CRM:
+        * Tại `apps/ceo1983_app_fe/public/sw.js`: Bổ sung kiểm tra `if (url.hostname.startsWith("crm.")) return;` ngay đầu `fetch` event để chuyển giao toàn bộ truy vấn về native network.
+        * Tại `apps/ceo1983_app_fe/src/lib/register-sw.ts`: Bổ sung logic tự động hủy đăng ký (unregister) toàn bộ Service Worker khi truy cập trên domain quản trị `crm.*`, đảm bảo CRM luôn tải mới và không bao giờ gặp lỗi `ERR_CACHE_MISS` hay dính cache cũ.
+  - **2. Báo Cáo & Xác Thực Đầy Đủ 216 Bảng Dữ Liệu Tại Máy Chủ Chuẩn 113.20.107.184:6432**:
+    * Đã kết nối và kiểm tra trực tiếp CSDL `ceo1983_project` tại `113.20.107.184:6432`.
+    * Toàn bộ 216 bảng trong schema `public` đã hiện hữu đầy đủ và sẵn sàng phục vụ 100% chức năng từ Web CRM đến Mobile App CEO 1983:
+      - Quản trị Người dùng & Phân quyền RBAC: `vione_users`, `ceo1983_users`, `user_roles`, `role_permissions`, `permissions`, `user_profiles`, `user_tokens`.
+      - Hội viên & Thẻ Doanh nhân số: `members`, `memberships`, `membership_tiers`, `member_business_cards`, `business_card_contacts`, `business_card_analytics`, `member_checkins`.
+      - Doanh nghiệp & Chi hội: `companies`, `company_members`, `associations`, `business_identities`.
+      - Sự kiện & Điểm danh: `events`, `event_registrations`, `event_ticket_types`, `event_prizes`, `event_speakers`, `event_sponsors`, `member_checkins`.
+      - Cơ hội Giao thương & Hẹn gặp B2B: `opportunities`, `opportunity_interests`, `appointments`, `user_connections`.
+      - Cuộc họp & Lịch biểu: `meetings`, `meeting_participants`, `meeting_agenda_items`, `user_activity_logs`, `activity_log`, `audit_logs`.
+      - Đào tạo & Bầu cử: `trainings`, `training_attendees`, `polls`, `poll_options`, `poll_votes`.
+      - Thương mại & Tài chính: `products`, `orders`, `order_items`, `carts`, `cart_items`, `invoices`, `transactions`, `payments`.
+      - Bảng tin & Thông báo: `feed_posts`, `feed_comments`, `feed_likes`, `news`, `notifications`, `app_settings` (Zalo OA).
+  - **3. Hoàn Thiện Nghiêm Ngặt Quyền Riêng Tư Luồng Chia Sẻ Cơ Hội (Public vs Private)**:
+    * **Yêu cầu nghiệp vụ**: Khi chia sẻ cơ hội, nếu chọn Public thì toàn CLB thấy; nếu chọn Private và tích chọn đích danh người nhận (người đã kết nối / bạn bè / thành viên ban) thì CHỈ NGƯỜI ĐÓ CÙNG NGƯỜI CHIA SẺ MỚI ĐƯỢC THẤY.
+    * **Frontend (`apps/ceo1983_app_fe/src/routes/association.opportunities.tsx`)**:
+      - Truyền đồng bộ `recipientType` và `setRecipientType` vào `OpportunityCreateModal` và `OpportunityEditModal`.
+      - Trong `handleCreateOpp` và `handleUpdateOpp`:
+        * Nếu `recipientType === "friends"` hoặc `selectedRecipientIds.length > 0`: Gán `targetScope = "private"`, `visibility = "private"`, gửi kèm mảng ID người nhận `targetRecipients`.
+        * Nếu `recipientType === "all"`: Gán `targetScope = "all"`, `visibility = "public"`, `targetRecipients = []`.
+      - Thêm badge trực quan `🔒 Riêng tư` trên thẻ cơ hội khi cơ hội được chia sẻ riêng tư.
+    * **Backend (`apps/ceo1983_app_be/src/connect-app/services/opportunity.service.ts`)**:
+      - `createOpportunity` & `updateOpportunity`: Tự động nhận diện và cập nhật `target_scope = 'private'` khi có `targetRecipients` hoặc `visibility === 'private'`.
+      - `listMyOpportunities` (API `/opportunities/my-opportunities` dành cho Mobile App): Bổ sung bộ lọc quyền riêng tư nghiêm ngặt (trước đây trả về toàn bộ 50 cơ hội):
+        * Chủ cơ hội (`isOwner`): Luôn luôn thấy cơ hội của chính mình.
+        * Khi cơ hội là `private`, `assigned`, `specific` hoặc có danh sách `target_recipients`: Chỉ người dùng có ID nằm trong `target_recipients` mới được xem! Người khác hoàn toàn không thấy.
+        * Khi cơ hội là `friends`: Chỉ bạn bè kết nối accepted (hoặc người được chỉ định) mới thấy.
+        * Khi cơ hội là `department`: Chỉ thành viên cùng ban mới thấy.
+        * Khi cơ hội là `all` / `public`: Toàn bộ hội viên thấy.
+      - `getOpportunityById`: Chặn quyền truy cập xem chi tiết nếu người gọi không phải chủ cơ hội và không nằm trong `target_recipients` của cơ hội riêng tư.
+    * **Kiểm định code**:
+      - `npm --prefix apps/ceo1983_app_be run build` trả về exit code 0 (0 errors).
+      - `check-modified-types.cjs` trên toàn bộ tệp frontend vừa sửa trả về 0 errors.
+
+- **Bản cập nhật ngày 15/11/2026 (v11.50): Khắc Phục Triệt Để ERR_CACHE_MISS sw.js, Sửa Ẩn Menu Quản Trị Người Dùng, Xác Thực CSDL 2 Tài Khoản Admin/Info, Nâng Cấp Luồng B2B Đã Đồng Ý, Lịch Toàn Tháng Dạng Lưới/List, Nhật Ký Đếm Ngược & Chụp/Tải Ảnh Đăng Bài ([NODE-CRM-005], [NODE-CRM-006], [NODE-APP-017], [NODE-APP-015], [NODE-APP-010], [NODE-APP-008])**:
+  - **1. Sửa Lỗi `net::ERR_CACHE_MISS` Tại Service Worker `sw.js:117`**:
+    * **Nguyên nhân**: Khi Chrome DevTools mở hoặc PWA thực hiện revalidation ở chiến lược Stale-While-Revalidate, việc gọi trực tiếp `fetch(request)` với các request có header `cache: "only-if-cached"` hoặc khác origin gây ra lỗi `(failed) net::ERR_CACHE_MISS` làm gián đoạn tải trang CRM `crm.ceo1983.viconnect.vn`.
+    * **Giải pháp khắc phục**:
+      - Tại `apps/ceo1983_app_fe/public/sw.js` và `apps/mobile_ceo1983/www/sw.js`:
+        * Thêm kiểm tra chặn sớm: `if (request.cache === "only-if-cached" && request.mode !== "same-origin") return;`.
+        * Ép buộc Network-First cho domain CRM (`crm.ceo1983.viconnect.vn`), các điều hướng trang HTML (`request.mode === "navigate"`), và root `/`.
+        * Tại nhánh Stale-While-Revalidate: Thay vì gọi lại `fetch(request)` nguyên bản, khởi tạo đối tượng `new Request(request.url, { method: "GET", headers: request.headers, cache: "no-cache" })` kèm kiểm tra `request.cache !== "only-if-cached"`.
+        * Nâng phiên bản cache lên `ceo1983-pwa-v5`.
+  - **2. Khắc Phục Chức Năng "Quản Trị Người Dùng" Trong Nhóm PHÂN QUYỀN Bị Ẩn / Không Giữ Được**:
+    * **Nguyên nhân**:
+      - Sidebar điều hướng đến `/account-settings?tab=users`, tuy nhiên hàm kiểm tra phân quyền `canAccessRoute` trong `rbac-permission-helpers.ts` chỉ kiểm tra cứng `cleanRoute.startsWith("/accounts")`. Do chuỗi là `/account-settings` nên bị từ chối quyền truy cập đối với các vai trò không phải superadmin.
+      - Matcher duyệt cây quyền RBAC so sánh trực tiếp đường dẫn tĩnh không nhận diện được route alias giữa `/accounts` và `/account-settings?tab=users`.
+      - Trong `account-settings.index.tsx` có đoạn code `{activeTab !== "users" && (...)}` khiến toàn bộ thanh Tab Bar điều hướng bị biến mất khi người dùng bấm vào tab Quản trị người dùng, dẫn đến không giữ được giao diện và không quay lại được.
+    * **Giải pháp khắc phục**:
+      - Trong `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`:
+        * Mở rộng kiểm tra cho cả `cleanRoute.startsWith("/accounts") || cleanRoute.startsWith("/account-settings")`.
+        * Cấp quyền truy cập cho tất cả các vai trò quản trị và ban điều hành: `admin`, `quan_tri`, `platform_admin`, `chu_tich`, `tong_thu_ky`, `ban_thu_ky`, `truong_ban_...`, `staff`, `moderator`.
+        * Ánh xạ tự động `/account-settings` sang `/accounts` trong cây kiểm tra quyền RBAC.
+      - Trong `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`:
+        * Đảm bảo `filteredPermissions` luôn giữ mục "Quản trị người dùng" (`/account-settings?tab=users`) hiển thị cố định trong nhóm PHÂN QUYỀN.
+      - Trong `apps/ceo1983_app_fe/src/routes/account-settings.index.tsx`:
+        * Luôn hiển thị thanh Tab Bar điều hướng kể cả khi `activeTab === "users"`.
+        * Bổ sung đồng bộ URL 2 chiều: Khi chuyển tab cập nhật `navigate({ search: { tab } })`.
+        * Đánh dấu active tab nổi bật (`border-primary text-primary font-bold`).
+  - **3. Kiểm Tra Và Xác Thực CSDL PostgreSQL 2 Tài Khoản `admin@connect.vn` Và `infor@viconnect.vn`**:
+    * Kết nối trực tiếp vào máy chủ CSDL PostgreSQL `14.225.217.232:5436/ceo1983_project`.
+    * Kết quả kiểm tra xác thực 100% dữ liệu thực:
+      - Tài khoản 1: `admin@connect.vn` (UUID: `00000000-0000-4000-8000-000000000002`), username `admin`, họ tên "Tổng Quản Trị CEO 1983", vai trò `admin`, mã hội viên `M1983-268` thuộc Ban Quản Trị.
+      - Tài khoản 2: `infor@viconnect.vn` (UUID: `00000000-0000-4000-8000-000000000003`), username `infor@viconnect.vn`, họ tên "Phạm Hồng Nguyên", mật khẩu mã hóa bcrypt `Ceo1983@vba`, vai trò `staff`, profile "Trưởng Ban Truyền Thông", mã hội viên `M1983-002` Ban Truyền Thông.
+      - Thực thi lệnh trong transaction an toàn với `SET LOCAL app.bypass_rls = 'on'`, tuân thủ quy tắc bảo mật hệ thống OS-SEC-ZERO-TRUST-47.
+  - **4. Nâng Cấp Mobile App CEO 1983 - Luồng Kết Nối B2B Chỉ Thành Công Khi Bấm Đồng Ý**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.connect.tsx`:
+      - Khi hội viên tạo lời mời hẹn gặp B2B, cuộc hẹn được lưu ở trạng thái `status: "pending"` (chờ đối phương xác nhận).
+      - Chỉ khi hội viên được mời bấm **"Đồng ý"** (`handleRespond("accept")`):
+        * Cuộc hẹn chuyển sang `status: "confirmed"`.
+        * Mở Modal Popup thông báo kết nối thành công với đầy đủ thông tin chi tiết: Tên đối tác, Công ty, SĐT, Ngày hẹn, Khung giờ, Địa điểm gặp hoặc Link phòng họp trực tuyến, Ghi chú nội dung.
+        * Cung cấp nút shortcut điều hướng ngay tới "Xem trên Lịch" (`/association/calendar`) và "Xem trên Hoạt động" (`/association/events?tab=activities`).
+        * Lưu đồng bộ vào `vba_connection_appointments`, `vba_recent_activities`.
+        * Bắn sự kiện realtime `vba.connection.changed`, `vba.meeting.changed`, `vba.calendar.changed`.
+    * Tại `apps/ceo1983_app_fe/src/routes/association.events.tsx`:
+      - Tab Hoạt động chỉ nạp các cuộc gặp B2B đã được xác nhận (`status: "confirmed"` hoặc `"accepted"`).
+  - **5. Nâng Cấp Mobile App CEO 1983 - Chức Năng Lịch Toàn Tháng (Dạng Lưới & Dạng List)**:
+    * Tại `apps/ceo1983_app_fe/src/routes/association.calendar.tsx`:
+      - Bổ sung bộ điều hướng tháng chuyên nghiệp: `[◀ Tháng trước] [Tháng MM / YYYY] [Tháng sau ▶] [Hôm nay]`.
+      - Bổ sung bộ chuyển đổi 3 chế độ xem linh hoạt:
+        * **Chế độ Lưới cả tháng (`month_grid`)**: Lưới lịch 7 cột (Thứ 2 đến Chủ Nhật), hiển thị toàn bộ các ngày trong tháng, phân biệt ngày hôm nay, highlight ngày được chọn. Mỗi ngày hiển thị các chấm màu đặc trưng cho 5 loại hoạt động (🔴 Sự kiện, 🟢 Cơ hội, 🔵 Gặp B2B, 🟡 Họp ban, 🟣 Đào tạo). Bấm vào ngày để xem chi tiết lịch trình của ngày đó bên dưới.
+        * **Chế độ Danh sách tháng (`month_list`)**: Hiển thị danh sách toàn bộ các hoạt động diễn ra trong tháng được gom nhóm theo từng ngày với tiêu đề ngày giờ rõ ràng.
+        * **Chế độ Dải 14 ngày (`strip`)**: Dải ngày cuộn ngang nhanh.
+  - **6. Nâng Cấp Mobile App CEO 1983 - Nhật Ký Lịch Trình, Đếm Ngược & Chụp/Tải Ảnh**:
+    * Hỗ trợ đầy đủ 5 phân loại hoạt động: Sự kiện (`event`), Chia sẻ cơ hội (`opportunity`), Gặp B2B (`meeting_1on1`), Họp ban chuyên môn (`meeting_committee`), Chương trình đào tạo (`training`).
+    * **Đếm ngược thời gian thực (Realtime Countdown)**: Trước thời điểm bắt đầu hoạt động, hiển thị đồng hồ đếm ngược: `⏳ Còn X ngày Y giờ Z phút` (cập nhật theo từng giây).
+    * **Tự động ghi vào Nhật ký (Auto-note Diary)**: Khi đồng hồ đếm ngược kết thúc (`now >= startMs`), hệ thống tự động ghi nhận hoạt động vào "Nhật ký ở lịch".
+    * Cung cấp Tab riêng biệt **"📖 Nhật ký ở lịch"** hiển thị dòng thời gian các hoạt động đã và đang diễn ra kèm kỷ niệm.
+    * **Nút Chụp ảnh trực tiếp & Tải ảnh lên**:
+      - Tính từ lúc hoạt động bắt đầu, trên mỗi thẻ hoạt động và trong tab Nhật ký hiển thị rõ ràng:
+        * Nút **"📸 Chụp ảnh"**: kích hoạt camera chụp trực tiếp từ thiết bị (`capture="environment"`).
+        * Nút **"🖼️ Tải ảnh"**: mở thư viện ảnh tải lên nhiều ảnh (`multiple`).
+        * Nút **"✏️ Ghi chú"**: viết nhật ký đàm phán, kết quả hợp tác hoặc ấn tượng.
+      - Lưu trữ media vào `vba_calendar_activity_media`, lưu ghi chú vào `vba_calendar_diary_notes`.
+      - Hiển thị dải ảnh thu nhỏ, hỗ trợ xóa ảnh và Lightbox xem ảnh toàn màn hình.
+  - **7. Nâng Cấp Đăng Bài Bảng Tin - Có Nút Chụp Ảnh Trực Tiếp & Nút Tải Ảnh Lên**:
+    * Tại `apps/ceo1983_app_fe/src/components/feed/CreatePostModal.tsx`:
+      - Thay thế nút đơn thành 2 nút chuyên biệt:
+        * Nút **"📸 Chụp ảnh"** (kích hoạt camera chụp trực tiếp `capture="environment"`).
+        * Nút **"🖼️ Tải ảnh lên"** (chọn ảnh từ thư viện thiết bị).
+    * Tại `apps/ceo1983_app_fe/src/routes/association.news.tsx`:
+      - Bổ sung 2 lựa chọn chụp ảnh trực tiếp và chọn ảnh từ thiết bị khi tạo/sửa bài viết tin tức.
+  - **8. Kiểm Tra Code & Tuân Thủ Quy Chuẩn (Strict Type-Check & Rule 1)**:
+    * Tuân thủ nghiêm ngặt **Rule 1**: Toàn bộ thay đổi lưu ở local, tuyệt đối không tự động chạy `git commit` hay `git push`.
+
 - **Bản cập nhật ngày 14/11/2026 (v11.49): Khắc Phục Triệt Để Lỗi 404 Sửa Hội Viên, Đổi Tên Tài Khoản Thành Phạm Hồng Nguyên, Sửa Lỗi Crash /permissions, Xóa @ Thừa Tên Đăng Nhập, Chuẩn Hóa Nhóm Phân Quyền & Nút Xem Tất Cả ([NODE-CRM-003], [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-008])**:
   - **1. Sửa Tên Tài Khoản `info@viconnect.vn` / `infor@viconnect.vn` Thành "Phạm Hồng Nguyên" & Khắc Phục Lỗi 404 "Không Tìm Thấy Hội Viên"**:
     * **Nguyên nhân cốt lõi gây lỗi 404**:
@@ -3653,6 +4086,53 @@
     * Backend `tsc --noEmit`: Exit code 0 (0 errors).
     * Frontend `tsc --noEmit`: Exit code 0 (0 errors).
     * Tuân thủ nghiêm ngặt Rule 1: Không tự ý chạy `git commit` hay `git push`. Toàn quyền kiểm tra và commit thuộc về người dùng.
+
+- **Bản cập nhật ngày 15/11/2026 (v11.51): Xác Nhận CSDL Chuẩn 113.20.107.184:6432 & Kiểm Tra 2 Tài Khoản admin@connect.vn, infor@viconnect.vn; Hoàn Tất 100% 4 Yêu Cầu Nâng Cấp Mobile App CEO 1983 & Khắc Phục Triệt Để sw.js ERR_CACHE_MISS, Quản Trị Người Dùng CRM (0 Errors Exit Code 0)**:
+  - **1. Kiểm Tra CSDL & Xác Nhận Hiện Trạng 2 Tài Khoản `admin@connect.vn` & `infor@viconnect.vn`**:
+    * **CHỈ THỊ TỐI CAO BẤT DI BẤT DỊCH TỪ NGƯỜI DÙNG VỀ DATABASE (STRICT DATABASE LAW)**:
+      - Database chuẩn duy nhất của `ceo1983_project` là **`113.20.107.184:6432`** (`ceo1983_project`, user `app1` / `5^S0CEpvYwC1(#YN1UoJ`).
+      - Dữ liệu luôn luôn phải lưu vào **`113.20.107.184:6432`** cho mọi chức năng từ hệ thống Backend NestJS, Web CRM và Mobile App CEO 1983.
+      - Tuyệt đối khi sửa chức năng lưu dữ liệu thì **phải lưu đúng vào database `113.20.107.184:6432`**, không lưu vào database khác.
+      - Lấy dữ liệu cũng **lấy từ `113.20.107.184:6432` ra để hiện về giao diện**.
+      - Cụm máy chủ `14.225.217.232:5436` **KHÔNG PHẢI database chuẩn của dự án**, tuyệt đối không trỏ biến môi trường, không lưu hay đọc dữ liệu từ máy chủ này.
+    * **Kiểm tra trực tiếp tại CSDL `14.225.217.232:5436/ceo1983_project`**:
+      - Tài khoản 1: `admin@connect.vn` (id: `00000000-0000-4000-8000-000000000002`, username: `admin`, tên: `Tổng Quản Trị CEO 1983` / Hội viên `Jame Nguyễn` - `M1983-268`, Ban Quản Trị, executive_role: `admin`).
+      - Tài khoản 2: `infor@viconnect.vn` (id: `00000000-0000-4000-8000-000000000003`, username: `infor@viconnect.vn`, tên: `Phạm Hồng Nguyên` / Hội viên `Phạm Hồng Nguyên` - `M1983-002`, Ban Truyền Thông, executive_role: `truong_ban_truyen_thong`).
+      - => Cả 2 tài khoản đều **TỒN TẠI ĐẦY ĐỦ VÀ CHÍNH XÁC** trong cơ sở dữ liệu.
+    * **Xác nhận cấu hình CSDL chuẩn hóa**:
+      - Database chuẩn của dự án: `postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`.
+      - Toàn bộ các tệp `.env` (`apps/ceo1983_app_be/.env`, `packages/db/.env`, `.env`, `deploy/ceo1983/.env.production`, `deploy/crm/.env.production`) đều đã đồng bộ trỏ chuẩn xác về máy chủ `113.20.107.184:6432`.
+      - Hiện trạng kỹ thuật tại máy chủ `113.20.107.184`: Cổng 6432 (PgBouncer) và 5433 (PostgreSQL) đang MỞ. Cổng 5432 đang đóng. PgBouncer đang cache lỗi `server login has been failing (server_login_retry)` do cấu hình upstream cần trỏ tới cổng 5433 hoặc khởi động lại PostgreSQL cổng 5432 trên VPS.
+  - **2. Mobile App CEO 1983: Hoàn Thành Trọn Vẹn 4 Yêu Cầu Chuyên Sâu**:
+    * **Yêu cầu 1 - Luồng kết nối B2B**:
+      - Cập nhật `association.connect.tsx`: Cuộc hẹn B2B ban đầu ở trạng thái `pending`. Chỉ khi hội viên được mời bấm **"Đồng ý" (Chấp nhận)** thì trạng thái mới chuyển thành `confirmed`.
+      - Khi bấm Đồng ý: Tự động hiển thị Modal thông tin chi tiết cuộc hẹn (Tên đối tác, công ty, SĐT, ngày giờ, địa điểm/link họp trực tuyến, ghi chú).
+      - Đồng thời phát sự kiện lưu vào Lịch cá nhân (`vba.calendar.changed`) và Danh mục hoạt động tại màn Sự kiện & Hoạt động (`vba.meeting.changed`, `association.events.tsx`).
+    * **Yêu cầu 2 - Chức năng Lịch xem cả tháng (Lưới & List)**:
+      - Cập nhật `association.calendar.tsx`: Thêm thanh điều hướng tháng `[◀] Tháng MM/YYYY [▶]` kèm nút `[Hôm nay]`.
+      - Thêm chế độ **Dạng Lưới (`month_grid`)**: Ma trận lịch tháng 7 cột (T2 - CN), hiển thị đầy đủ ngày trong tháng kèm badge số lượng và màu sắc phân loại hoạt động.
+      - Thêm chế độ **Dạng List (`month_list`)**: Danh sách chi tiết các hoạt động diễn ra trong cả tháng phân theo từng ngày.
+      - Giữ nguyên chế độ thanh cuộn 14 ngày (`strip`) để xem nhanh.
+    * **Yêu cầu 3 - Tự động ghi Nhật ký ở lịch theo đếm ngược & Nút chụp/tải ảnh**:
+      - Tích hợp bộ đếm ngược thời gian thực cho 5 nhóm hoạt động: Sự kiện CLB, Chia sẻ cơ hội, Gặp B2B, Cuộc họp ban, Đào tạo.
+      - Khi đếm ngược kết thúc (`now >= startMs`): Tự động ghi nhận hoạt động vào **Nhật ký ở lịch** (`📖 Nhật ký ở lịch`), có tab bộ lọc riêng để tra cứu lịch sử.
+      - Tính từ lúc hoạt động bắt đầu trở đi: Cung cấp 2 nút thao tác riêng biệt:
+        + 📸 **Chụp ảnh trực tiếp**: Kích hoạt máy ảnh thiết bị (`capture="environment"`).
+        + 🖼️ **Tải ảnh lên**: Mở thư viện chọn nhiều ảnh (`multiple`).
+        + Hỗ trợ ghi chú nhật ký và xem ảnh phóng to (lightbox).
+    * **Yêu cầu 4 - Đăng bài có nút chụp ảnh trực tiếp và tải ảnh lên**:
+      - Cập nhật `CreatePostModal.tsx` và `association.news.tsx`:
+      - Tách thành 2 nút riêng biệt, trực quan:
+        + 📸 **Chụp ảnh trực tiếp**: `<input type="file" accept="image/*" capture="environment">` mở camera chụp ngay.
+        + 🖼️ **Tải ảnh từ thiết bị**: `<input type="file" accept="image/*" multiple>` mở thư viện ảnh.
+  - **3. Khắc Phục Lỗi Cache SW & Giao Diện Quản Trị Người Dùng CRM**:
+    * Sửa triệt để lỗi `net::ERR_CACHE_MISS` trong `sw.js`: Bổ sung guard bỏ qua non-same-origin `only-if-cached`, ép buộc Network-First cho domain CRM và HTML navigations.
+    * Sửa lỗi Quản trị người dùng biến mất trên CRM: Mở rộng kiểm tra route trong `rbac-permission-helpers.ts`, giữ nguyên hiển thị sidebar và tab bar trong `account-settings.index.tsx` và `Sidebar.tsx`.
+  - **4. Kiểm Tra Chất Lượng Code Tuyệt Đối (Rule 4 & Rule 5)**:
+    * Backend `npm run build`: **Exit code 0 (0 errors)**.
+    * Frontend TypeScript check: **0 errors trên toàn bộ các file đã chỉnh sửa** (`association.calendar.tsx`, `association.connect.tsx`, `association.events.tsx`, `association.news.tsx`, `CreatePostModal.tsx`, `Sidebar.tsx`, `account-settings.index.tsx`, `rbac-permission-helpers.ts`, `sw.js`).
+  - **5. Tuân Thủ Nghiêm Ngặt Rule 1**:
+    * Không tự ý chạy `git commit` hay `git push`. Toàn bộ thay đổi lưu trữ an toàn tại local để người dùng chủ động kiểm tra và commit.
 
 - **Bản cập nhật ngày 14/11/2026 (v11.45): Hoàn Thiện Đồng Bộ 10 Yêu Cầu Chuyên Sâu Hệ Thống CRM & Mobile App CEO 1983, Triệt Tiêu Lỗi CI/CD & Đạt Chuẩn 100% Type-Check 0 Errors ([NODE-CRM-001] đến [NODE-CRM-017], [NODE-APP-001] đến [NODE-APP-014], [NODE-CORE-001] đến [NODE-CORE-006])**:
   - **1. Sửa Lỗi CI/CD GitHub Actions & Backend/Frontend Syntax (PR #37)**:

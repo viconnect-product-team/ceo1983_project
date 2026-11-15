@@ -612,8 +612,8 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
     return false;
   }
 
-  // Quản lý tài khoản (/accounts): Cho phép Quản trị, Chủ tịch, Ban điều hành, Thư ký và Trưởng ban chuyên môn
-  if (cleanRoute.startsWith("/accounts")) {
+  // Quản lý tài khoản & Quản trị người dùng (/accounts hoặc /account-settings): Cho phép Quản trị, Chủ tịch, Ban điều hành, Thư ký và Trưởng ban chuyên môn
+  if (cleanRoute.startsWith("/accounts") || cleanRoute.startsWith("/account-settings")) {
     if (
       sRole === "quan_tri" ||
       sRole === "admin" ||
@@ -622,7 +622,9 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
       sRole === "truong_ban_dieu_hanh" ||
       sRole === "tong_thu_ky" ||
       sRole === "ban_thu_ky" ||
-      sRole.startsWith("truong_ban_")
+      sRole.startsWith("truong_ban_") ||
+      sRole === "staff" ||
+      sRole === "moderator"
     ) {
       return true;
     }
@@ -641,11 +643,14 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
             for (const feat of cat.features) {
               if (!feat?.route) continue;
               const featCleanRoute = String(feat.route).split("?")[0].split("#")[0];
-              if (
+              const isMatch =
                 featCleanRoute === cleanRoute ||
                 (cleanRoute !== "/" && featCleanRoute.startsWith(cleanRoute)) ||
-                (featCleanRoute !== "/" && cleanRoute.startsWith(featCleanRoute))
-              ) {
+                (featCleanRoute !== "/" && cleanRoute.startsWith(featCleanRoute)) ||
+                // Cầu nối đồng bộ /accounts và /account-settings
+                ((featCleanRoute === "/accounts" || featCleanRoute === "/account-settings") &&
+                 (cleanRoute === "/accounts" || cleanRoute === "/account-settings"));
+              if (isMatch) {
                 if (!feat.actions || !Array.isArray(feat.actions) || feat.actions.length === 0) {
                   return true;
                 }

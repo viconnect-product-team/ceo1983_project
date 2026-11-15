@@ -1255,6 +1255,20 @@ function OpportunitiesScreen() {
     setEditIndustry("Công nghệ & Số hóa");
     setEditRegion("Toàn quốc");
     setEditDeadline("");
+    const rawTargetScope = (o as any).targetScope || (o as any).target_scope || "all";
+    const rawRecipients = (o as any).targetRecipients || (o as any).target_recipients || [];
+    setEditSelectedRecipientIds(Array.isArray(rawRecipients) ? rawRecipients : []);
+    if (rawTargetScope === "department") {
+      setEditRecipientType("by_department");
+    } else if (
+      rawTargetScope === "private" ||
+      rawTargetScope === "friends" ||
+      (Array.isArray(rawRecipients) && rawRecipients.length > 0)
+    ) {
+      setEditRecipientType("friends");
+    } else {
+      setEditRecipientType("all");
+    }
   };
 
   const handleDeleteOpp = async (id: string, e?: React.MouseEvent) => {
@@ -1320,6 +1334,24 @@ function OpportunitiesScreen() {
 
     const finalImgs = editImages.length > 0 ? editImages : (editImage ? [editImage] : []);
 
+    let targetScope: string = "all";
+    let visibility: "public" | "private" = "public";
+    if (editRecipientType === "friends") {
+      targetScope = "private";
+      visibility = "private";
+    } else if (editRecipientType === "by_department") {
+      targetScope = "department";
+      visibility = "private";
+    } else {
+      targetScope = "all";
+      visibility = "public";
+    }
+
+    if (editSelectedRecipientIds.length > 0) {
+      targetScope = "private";
+      visibility = "private";
+    }
+
     try {
       const updateData = {
         title: editTitle.trim(),
@@ -1334,6 +1366,11 @@ function OpportunitiesScreen() {
         contactPhone: editContactPhone.trim(),
         contactTitle: editContactTitle.trim(),
         company: editCompany.trim(),
+        referrer: editReferrer.trim() || undefined,
+        commissionPercent: editCommissionPercent ? Number(editCommissionPercent.replace(/\D/g, "")) : undefined,
+        targetScope,
+        visibility,
+        targetRecipients: editSelectedRecipientIds,
         image: finalImgs[0] || null,
         images: finalImgs,
       };
@@ -1369,6 +1406,9 @@ function OpportunitiesScreen() {
                 budgetMin: cleanBudgetMin || undefined,
                 budgetMax: cleanBudgetMax || undefined,
                 value: updatedVal,
+                targetScope,
+                visibility,
+                targetRecipients: editSelectedRecipientIds,
                 image: finalImgs[0] || o.image,
                 images: finalImgs,
               }
@@ -1423,6 +1463,24 @@ function OpportunitiesScreen() {
 
     const finalImgs = newImages.length > 0 ? newImages : (newImage ? [newImage] : []);
 
+    let targetScope: string = "all";
+    let visibility: "public" | "private" = "public";
+    if (recipientType === "friends") {
+      targetScope = "private";
+      visibility = "private";
+    } else if (recipientType === "by_department") {
+      targetScope = "department";
+      visibility = "private";
+    } else {
+      targetScope = "all";
+      visibility = "public";
+    }
+
+    if (selectedRecipientIds.length > 0) {
+      targetScope = "private";
+      visibility = "private";
+    }
+
     try {
       const createRes = await fetchNestApi<any>("/opportunities", {
         method: "POST",
@@ -1447,6 +1505,8 @@ function OpportunitiesScreen() {
           images: finalImgs,
           referrer: newReferrer.trim() || undefined,
           commissionPercent: newCommissionPercent ? Number(newCommissionPercent.replace(/\D/g, "")) : undefined,
+          targetScope,
+          visibility,
           targetRecipients: selectedRecipientIds.length > 0 ? selectedRecipientIds : undefined,
         }),
       });
@@ -1481,6 +1541,9 @@ function OpportunitiesScreen() {
         images: finalImgs,
         status: "open",
         posterId: user?.id || "admin",
+        targetScope,
+        visibility,
+        targetRecipients: selectedRecipientIds,
       };
 
       setLocalOpps((prev) => [newOppItem, ...(prev || [])]);
@@ -1981,6 +2044,14 @@ function OpportunitiesScreen() {
                                 >
                                   {o.tradeType === "buyer" ? "BÊN MUA" : "BÊN BÁN"}
                                 </span>
+                                {((o as any).visibility === "private" ||
+                                  (o as any).targetScope === "private" ||
+                                  (Array.isArray((o as any).targetRecipients) &&
+                                    (o as any).targetRecipients.length > 0)) && (
+                                  <span className="px-1.5 py-0.5 rounded-sm text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                    🔒 Riêng tư
+                                  </span>
+                                )}
                               </div>
                               <div className="justify-start text-zinc-600 text-[10px] font-normal font-['Inter']">
                                 {o.time
@@ -2223,6 +2294,8 @@ function OpportunitiesScreen() {
         setNewCommissionPercent={setNewCommissionPercent}
         selectedRecipientIds={selectedRecipientIds}
         setSelectedRecipientIds={setSelectedRecipientIds}
+        recipientType={recipientType}
+        setRecipientType={setRecipientType}
       />
 
       <OpportunityEditModal
@@ -2264,6 +2337,16 @@ function OpportunitiesScreen() {
         setEditDesc={setEditDesc}
         updating={updating}
         resolveMediaUrl={resolveMediaUrl}
+        editRecipientType={editRecipientType}
+        setEditRecipientType={setEditRecipientType}
+        editSelectedRecipientIds={editSelectedRecipientIds}
+        setEditSelectedRecipientIds={setEditSelectedRecipientIds}
+        editReferrer={editReferrer}
+        setEditReferrer={setEditReferrer}
+        editCommissionPercent={editCommissionPercent}
+        setEditCommissionPercent={setEditCommissionPercent}
+        editExternalLink={editExternalLink}
+        setEditExternalLink={setEditExternalLink}
       />
 
 {/* MODAL ĐÀM PHÁN HẸN GẶP 1-1 GẮN VỚI CƠ HỘI */}

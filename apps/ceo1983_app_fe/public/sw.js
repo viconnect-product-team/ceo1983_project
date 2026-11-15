@@ -1,4 +1,4 @@
-const CACHE_NAME = "ceo1983-pwa-v4";
+const CACHE_NAME = "ceo1983-pwa-v5";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/apple-touch-icon.png",
@@ -38,10 +38,18 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
 
+  // Tránh lỗi net::ERR_CACHE_MISS khi browser gửi request only-if-cached
+  if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+    return;
+  }
+
   const url = new URL(request.url);
 
   // Chỉ can thiệp vào same-origin requests
   if (url.origin !== self.location.origin) return;
+
+  // Bỏ qua hoàn toàn trên cổng CRM để không cache hay can thiệp luồng web quản trị
+  if (url.hostname.startsWith("crm.")) return;
 
   // Không can thiệp API calls, WebSocket, Server Functions hoặc data endpoints
   if (
@@ -64,15 +72,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Navigation request (HTML pages): Network-First để luôn nhận phiên bản mới nhất khi deploy
-  if (request.mode === "navigate") {
+  // 1. Navigation request (HTML pages) hoặc tài liệu gốc: Network-First để luôn nhận phiên bản mới nhất khi deploy
+  if (request.mode === "navigate" || request.destination === "document" || url.pathname === "/") {
     event.respondWith(
       (async () => {
         try {
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
           }
           return networkResponse;
         } catch {
@@ -95,7 +103,7 @@ self.addEventListener("fetch", (event) => {
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
           }
           return networkResponse;
         } catch {
@@ -108,26 +116,35 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3. Các assets tĩnh khác: Stale-While-Revalidate
+  // 3. Các assets tĩnh khác: Stale-While-Revalidate an toàn (tránh fetch(request) gây ERR_CACHE_MISS)
   event.respondWith(
     (async () => {
       try {
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
-          fetch(request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                const copy = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
-              }
-            })
-            .catch(() => {});
+          if (request.cache !== "only-if-cached") {
+            try {
+              fetch(new Request(request.url, {
+                method: "GET",
+                headers: request.headers,
+                credentials: request.credentials,
+                cache: "no-cache",
+              }))
+                .then((networkResponse) => {
+                  if (networkResponse && networkResponse.status === 200) {
+                    const copy = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
+                  }
+                })
+                .catch(() => { });
+            } catch { }
+          }
           return cachedResponse;
         }
         const networkResponse = await fetch(request);
         if (networkResponse && networkResponse.status === 200) {
           const copy = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
         }
         return networkResponse;
       } catch {
@@ -166,7 +183,7 @@ self.addEventListener("message", (event) => {
   } else if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, options } = event.data;
     if (title) {
-      safeShowNotification(title, options || {}).catch(() => {});
+      safeShowNotification(title, options || {}).catch(() => { });
     }
   }
 });
@@ -205,7 +222,7 @@ setInterval(async () => {
               { action: "accept", title: "📞 Trả lời" },
               { action: "decline", title: "✕ Từ chối" },
             ],
-          }).catch(() => {});
+          }).catch(() => { });
         }
       } else if (lastActiveCallId) {
         lastActiveCallId = null;
@@ -232,7 +249,7 @@ setInterval(async () => {
             data: item.action_url || item.url || item.targetRoute || "/association/notifications",
             vibrate: [200, 100, 200],
             renotify: true,
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }
     }
@@ -258,19 +275,19 @@ self.addEventListener("push", (event) => {
       renotify: true,
       actions: isCall
         ? [
-            { action: "accept", title: "📞 Trả lời" },
-            { action: "decline", title: "✕ Từ chối" },
-          ]
+          { action: "accept", title: "📞 Trả lời" },
+          { action: "decline", title: "✕ Từ chối" },
+        ]
         : [],
     };
-    event.waitUntil(safeShowNotification(title, options).catch(() => {}));
+    event.waitUntil(safeShowNotification(title, options).catch(() => { }));
   } catch {
     const text = event.data ? event.data.text() : "";
     event.waitUntil(
       safeShowNotification("CEO 1983", {
         body: text || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
         icon: "/app-icon.png",
-      }).catch(() => {})
+      }).catch(() => { })
     );
   }
 });

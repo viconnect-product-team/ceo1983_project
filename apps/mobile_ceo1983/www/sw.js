@@ -1,10 +1,13 @@
-const CACHE_NAME = "ceo1983-pwa-v3";
+const CACHE_NAME = "ceo1983-pwa-v5";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/apple-touch-icon.png",
   "/apple-touch-icon-180x180.png",
   "/favicon.png",
   "/app-icon-192.png",
+  "/app-icon-512.png",
+  "/app-icon-maskable-192.png",
+  "/app-icon-maskable-512.png",
   "/app-icon.png",
   "/ceo1983-official-logo.png"
 ];
@@ -35,25 +38,56 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
 
-  const url = new URL(request.url);
-
-  // Không can thiệp API calls hoặc WebSocket
-  if (url.pathname.startsWith("/api") || url.pathname.startsWith("/dm") || url.pathname.startsWith("/socket.io")) {
+  // Tránh lỗi net::ERR_CACHE_MISS khi browser gửi request only-if-cached
+  if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
     return;
   }
 
-  // 1. Navigation request (HTML pages): Network-First để luôn nhận phiên bản mới nhất khi deploy
-  if (request.mode === "navigate") {
+  const url = new URL(request.url);
+
+  // Chỉ can thiệp vào same-origin requests
+  if (url.origin !== self.location.origin) return;
+
+  // Không can thiệp API calls, WebSocket, Server Functions hoặc data endpoints
+  if (
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/dm") ||
+    url.pathname.startsWith("/connect-app") ||
+    url.pathname.startsWith("/socket.io") ||
+    url.pathname.startsWith("/_serverFn") ||
+    url.pathname.startsWith("/admin") ||
+    url.pathname.startsWith("/notifications") ||
+    url.pathname.startsWith("/members") ||
+    url.pathname.startsWith("/events") ||
+    url.pathname.startsWith("/meetings") ||
+    url.pathname.startsWith("/news") ||
+    url.pathname.startsWith("/opportunities") ||
+    url.pathname.startsWith("/products") ||
+    url.pathname.startsWith("/transactions") ||
+    url.pathname.startsWith("/invoices")
+  ) {
+    return;
+  }
+
+  // 1. Navigation request (HTML pages) hoặc tài liệu gốc: Network-First để luôn nhận phiên bản mới nhất khi deploy
+  if (request.mode === "navigate" || request.destination === "document" || url.pathname === "/" || url.hostname.startsWith("crm.")) {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
           return networkResponse;
-        })
-        .catch(() => caches.match(request) || caches.match("/association"))
+        } catch {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const fallback = (await caches.match("/association")) || (await caches.match("/"));
+          if (fallback) return fallback;
+          return new Response("Offline", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+        }
+      })()
     );
     return;
   }
@@ -61,33 +95,223 @@ self.addEventListener("fetch", (event) => {
   // 2. Chunks JS/CSS hoặc assets: Network-First với fallback cache
   if (url.pathname.includes("/assets/") || url.pathname.includes("/_build/")) {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
+      (async () => {
+        try {
+          const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
           return networkResponse;
-        })
-        .catch(() => caches.match(request))
+        } catch {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          return new Response("", { status: 408, statusText: "Request Timeout" });
+        }
+      })()
     );
     return;
   }
 
-  // 3. Các assets tĩnh khác: Stale-While-Revalidate
+  // 3. Các assets tĩnh khác: Stale-While-Revalidate an toàn (tránh fetch(request) gây ERR_CACHE_MISS)
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+    (async () => {
+      try {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+          if (request.cache !== "only-if-cached") {
+            try {
+              fetch(new Request(request.url, {
+                method: "GET",
+                headers: request.headers,
+                credentials: request.credentials,
+                cache: "no-cache",
+              }))
+                .then((networkResponse) => {
+                  if (networkResponse && networkResponse.status === 200) {
+                    const copy = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+                  }
+                })
+                .catch(() => {});
+            } catch {}
           }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
+          return cachedResponse;
+        }
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+        }
+        return networkResponse;
+      } catch {
+        const fallback = await caches.match(request);
+        if (fallback) return fallback;
+        return new Response("", { status: 404, statusText: "Not Found" });
+      }
+    })()
+  );
+});
 
-      return cachedResponse || fetchPromise;
+// 4. Background Push Notification & Incoming Calls
+let currentUserId = null;
+let currentToken = null;
+let lastActiveCallId = null;
+const seenNotificationIds = new Set();
+
+// Safe helper to show notification only if permission has been granted
+async function safeShowNotification(title, options = {}) {
+  try {
+    if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+      return null;
+    }
+    return await self.registration.showNotification(title, options);
+  } catch (err) {
+    // Gracefully ignore notification permission error or silent dismiss
+    return null;
+  }
+}
+
+self.addEventListener("message", (event) => {
+  if (!event.data) return;
+  if (event.data.type === "REGISTER_USER") {
+    currentUserId = event.data.userId || null;
+    currentToken = event.data.token || null;
+  } else if (event.data.type === "SHOW_NOTIFICATION") {
+    const { title, options } = event.data;
+    if (title) {
+      safeShowNotification(title, options || {}).catch(() => {});
+    }
+  }
+});
+
+// Periodic background check for incoming calls and urgent notifications (runs even when tab is backgrounded)
+setInterval(async () => {
+  if (!currentUserId) return;
+  try {
+    const headers = {
+      Accept: "application/json",
+      ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
+    };
+
+    // 1. Kiểm tra cuộc gọi đến đang đổ chuông
+    const callRes = await fetch("/api/me/active-call", { headers }).catch(() => null);
+    if (callRes && callRes.ok) {
+      const callData = await callRes.json().catch(() => null);
+      if (callData?.ok && callData?.call && callData.call.status === "ringing") {
+        const call = callData.call;
+        const callId = call.callId;
+        if (callId && callId !== lastActiveCallId) {
+          lastActiveCallId = callId;
+          const callerName = call.callerName || "Hội viên CEO 1983";
+          const callType = call.callType === "video" ? "Video" : "Thoại";
+          safeShowNotification(`📞 Cuộc gọi ${callType} đến từ ${callerName}`, {
+            body: `${callerName} đang gọi cho bạn... Bấm để trả lời ngay!`,
+            icon: call.callerAvatar || "/app-icon.png",
+            badge: "/favicon.png",
+            tag: `call-${callId}`,
+            data: `/association/messages?callId=${callId}`,
+            vibrate: [500, 250, 500, 250, 500, 250, 500],
+            requireInteraction: true,
+            renotify: true,
+            silent: false,
+            actions: [
+              { action: "accept", title: "📞 Trả lời" },
+              { action: "decline", title: "✕ Từ chối" },
+            ],
+          }).catch(() => {});
+        }
+      } else if (lastActiveCallId) {
+        lastActiveCallId = null;
+      }
+    }
+
+    // 2. Kiểm tra thông báo mới từ hệ thống CLB Doanh Nhân CEO 1983
+    let notifRes = await fetch("/api/connect-app/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
+    if (!notifRes || !notifRes.ok) {
+      notifRes = await fetch("/api/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
+    }
+    if (notifRes && notifRes.ok) {
+      const notifData = await notifRes.json().catch(() => null);
+      const list = Array.isArray(notifData) ? notifData : notifData?.data || [];
+      for (const item of list) {
+        const notifId = item.id || `${item.title}-${item.created_at || item.createdAt || Date.now()}`;
+        if (!seenNotificationIds.has(notifId) && (item.is_read === false || item.unread === true)) {
+          seenNotificationIds.add(notifId);
+          safeShowNotification(item.title || "CLB Doanh Nhân CEO 1983", {
+            body: item.body || item.message || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
+            icon: item.icon || "/ceo1983-emblem-8.png",
+            badge: "/favicon.png",
+            tag: `notif-${notifId}`,
+            data: item.action_url || item.url || item.targetRoute || "/association/notifications",
+            vibrate: [200, 100, 200],
+            renotify: true,
+          }).catch(() => {});
+        }
+      }
+    }
+  } catch {
+    /* Silent catch for background checks */
+  }
+}, 4500);
+
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  try {
+    const data = event.data.json();
+    const title = data.title || "CEO 1983";
+    const isCall = data.type === "call" || data.tag?.startsWith("call-");
+    const options = {
+      body: data.body || "",
+      icon: data.icon || "/app-icon.png",
+      badge: "/favicon.png",
+      tag: data.tag || `notif-${Date.now()}`,
+      data: data.url || (isCall ? "/association/messages" : "/association"),
+      vibrate: isCall ? [500, 250, 500, 250, 500] : [200, 100, 200],
+      requireInteraction: isCall,
+      renotify: true,
+      actions: isCall
+        ? [
+            { action: "accept", title: "📞 Trả lời" },
+            { action: "decline", title: "✕ Từ chối" },
+          ]
+        : [],
+    };
+    event.waitUntil(safeShowNotification(title, options).catch(() => {}));
+  } catch {
+    const text = event.data ? event.data.text() : "";
+    event.waitUntil(
+      safeShowNotification("CEO 1983", {
+        body: text || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
+        icon: "/app-icon.png",
+      }).catch(() => {})
+    );
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data || "/association";
+
+  if (event.action === "decline") {
+    // Người dùng từ chối cuộc gọi
+    return;
+  }
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if ("focus" in client) {
+          if (client.url && "navigate" in client) {
+            client.navigate(urlToOpen);
+          }
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
+      }
     })
   );
 });
+

@@ -72,6 +72,7 @@ export function AssociationConnectScreen() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [dealModalMeeting, setDealModalMeeting] = useState<ConnectionMeeting | null>(null);
   const [videoCallMeeting, setVideoCallMeeting] = useState<ConnectionMeeting | null>(null);
+  const [acceptedSuccessMeeting, setAcceptedSuccessMeeting] = useState<ConnectionMeeting | null>(null);
 
   // Cancel Appointment Modal State
   const [cancellingMeeting, setCancellingMeeting] = useState<ConnectionMeeting | null>(null);
@@ -135,12 +136,50 @@ export function AssociationConnectScreen() {
         body: JSON.stringify({ action }),
       }).catch(() => null);
 
+      const found = meetings.find((m) => m.id === meetingId);
+      const targetMeeting: ConnectionMeeting | null = found
+        ? { ...found, status: action === "accept" ? "confirmed" : "declined" }
+        : null;
+
       setMeetings((prev) =>
-        prev.map((m) =>
-          m.id === meetingId ? { ...m, status: action === "accept" ? "confirmed" : "declined" } : m,
-        ),
+        prev.map((m) => {
+          if (m.id === meetingId) {
+            return targetMeeting || { ...m, status: action === "accept" ? "confirmed" : "declined" };
+          }
+          return m;
+        }),
       );
-      toast.success(action === "accept" ? "Đã đồng ý cuộc hẹn!" : "Đã từ chối cuộc hẹn.");
+
+      // Cập nhật localStorage vba_connection_appointments để các tab, Lịch và Màn sự kiện đồng bộ tức thì
+      try {
+        const stored = localStorage.getItem("vba_connection_appointments");
+        let list = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(list)) list = [];
+        const idx = list.findIndex((x: any) => x.id === meetingId);
+        if (idx >= 0) {
+          list[idx].status = action === "accept" ? "confirmed" : "declined";
+          if (targetMeeting) {
+            list[idx] = { ...(list[idx] as object), ...(targetMeeting as object), status: action === "accept" ? "confirmed" : "declined" };
+          }
+        } else if (targetMeeting) {
+          list.unshift(targetMeeting);
+        }
+        localStorage.setItem("vba_connection_appointments", JSON.stringify(list));
+      } catch {}
+
+      // Bắn event đồng bộ tức thì sang Lịch trình và Màn Sự kiện & Hoạt động
+      window.dispatchEvent(new Event("vba.connection.changed"));
+      window.dispatchEvent(new Event("vba.meeting.changed"));
+      window.dispatchEvent(new Event("vba.calendar.changed"));
+
+      if (action === "accept") {
+        if (targetMeeting) {
+          setAcceptedSuccessMeeting(targetMeeting);
+        }
+        toast.success("Đã đồng ý cuộc hẹn kết nối B2B thành công! Lịch hẹn đã được lưu vào Lịch trình & Hoạt động.");
+      } else {
+        toast.info("Đã từ chối cuộc hẹn.");
+      }
     } catch {
       toast.error("Không thể xử lý phản hồi cuộc hẹn.");
     }
@@ -218,7 +257,7 @@ export function AssociationConnectScreen() {
         venue: formVenueType === "offline" ? formVenue || "Văn phòng đối tác" : "Phòng họp trực tuyến Jitsi",
         onlineUrl: generatedOnlineUrl,
         notes: formNotes,
-        status: "confirmed",
+        status: "pending", // CHỈ SET UP THÀNH CÔNG KHI ĐỐI PHƯƠNG BẤM ĐỒNG Ý
         isUserHost: true,
         createdAt: new Date().toISOString(),
       };
@@ -229,7 +268,20 @@ export function AssociationConnectScreen() {
       }).catch(() => null);
 
       setMeetings((prev) => [newAppointment, ...prev]);
-      toast.success("Đã thiết lập lịch hẹn 1-on-1 thành công!");
+
+      // Lưu vào localStorage vba_connection_appointments
+      try {
+        const stored = localStorage.getItem("vba_connection_appointments");
+        let list = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(list)) list = [];
+        list.unshift(newAppointment);
+        localStorage.setItem("vba_connection_appointments", JSON.stringify(list));
+      } catch {}
+
+      window.dispatchEvent(new Event("vba.connection.changed"));
+      window.dispatchEvent(new Event("vba.meeting.changed"));
+
+      toast.success("Đã gửi lời mời gặp gỡ kết nối B2B! Cuộc hẹn sẽ được lên lịch chính thức khi đối tác bấm đồng ý.");
       setCreateModalOpen(false);
       // Reset form
       setFormPartnerName("");
@@ -1068,6 +1120,183 @@ export function AssociationConnectScreen() {
                 )}
                 <span>Xác nhận hủy</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL HIỆN THÔNG TIN CỤ THỂ KHI ĐỒNG Ý KẾT NỐI B2B THÀNH CÔNG (YÊU CẦU 1) ── */}
+      {acceptedSuccessMeeting && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setAcceptedSuccessMeeting(null)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-emerald-500/30 p-5 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Success */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="size-6" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wide">
+                    Kết Nối B2B Thành Công!
+                  </h3>
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    Đã lưu vào Lịch &amp; Hoạt động sự kiện
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAcceptedSuccessMeeting(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Partner Info Details */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/50 via-slate-50 to-blue-50/40 dark:from-slate-800/80 dark:to-slate-900 border border-emerald-500/20 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="size-12 rounded-2xl bg-[#003B95] text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0 overflow-hidden">
+                  {acceptedSuccessMeeting.partnerAvatar ? (
+                    <img
+                      src={resolveMediaUrl(acceptedSuccessMeeting.partnerAvatar) || acceptedSuccessMeeting.partnerAvatar}
+                      alt={acceptedSuccessMeeting.partnerName}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    (acceptedSuccessMeeting.partnerName || "C").charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {acceptedSuccessMeeting.partnerName}
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {acceptedSuccessMeeting.partnerCompany || "Doanh nghiệp CLB CEO 1983"}
+                  </p>
+                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <Handshake className="size-3" /> Đối tác kết nối 1-on-1
+                  </span>
+                </div>
+              </div>
+
+              {/* Time & Venue */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Thời gian</span>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                    <Clock className="size-3.5 text-amber-500" />
+                    <span>{acceptedSuccessMeeting.time}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">{acceptedSuccessMeeting.date}</div>
+                </div>
+
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Hình thức</span>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                    {acceptedSuccessMeeting.venueType === "online" ? (
+                      <>
+                        <Video className="size-3.5 text-blue-500" />
+                        <span>Trực tuyến</span>
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="size-3.5 text-rose-500" />
+                        <span>Gặp trực tiếp</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 truncate" title={acceptedSuccessMeeting.venue}>
+                    {acceptedSuccessMeeting.venue || "Văn phòng đối tác"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Phone & Actions */}
+              {acceptedSuccessMeeting.partnerPhone && (
+                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                  <div className="text-xs text-slate-600 dark:text-slate-300">
+                    Điện thoại: <strong className="text-slate-900 dark:text-white font-mono">{acceptedSuccessMeeting.partnerPhone}</strong>
+                  </div>
+                  <a
+                    href={`tel:${acceptedSuccessMeeting.partnerPhone}`}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                  >
+                    <Phone className="size-3" />
+                    <span>Gọi điện</span>
+                  </a>
+                </div>
+              )}
+
+              {/* Venue Directions or Online URL */}
+              {acceptedSuccessMeeting.venueType === "online" && acceptedSuccessMeeting.onlineUrl && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVideoCallMeeting(acceptedSuccessMeeting);
+                      setAcceptedSuccessMeeting(null);
+                    }}
+                    className="w-full py-2 rounded-xl bg-[#003B95] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <Video className="size-3.5" />
+                    <span>Vào phòng họp trực tuyến ngay</span>
+                  </button>
+                </div>
+              )}
+
+              {acceptedSuccessMeeting.venueType !== "online" && acceptedSuccessMeeting.venue && (
+                <div className="pt-2">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(acceptedSuccessMeeting.venue)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Navigation className="size-3.5 text-rose-500" />
+                    <span>Chỉ đường trên Google Maps</span>
+                  </a>
+                </div>
+              )}
+
+              {/* Notes */}
+              {acceptedSuccessMeeting.notes && (
+                <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 text-[11.5px] text-slate-600 dark:text-slate-300">
+                  <span className="font-bold text-slate-700 dark:text-slate-200">Ghi chú: </span>
+                  {acceptedSuccessMeeting.notes}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Nav Actions */}
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+              <Link
+                to="/association/calendar"
+                onClick={() => setAcceptedSuccessMeeting(null)}
+                className="py-2.5 px-3 rounded-xl bg-[#003B95] hover:bg-[#002b70] text-white text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-xs transition"
+              >
+                <Calendar className="size-3.5" />
+                <span>Xem trên Lịch</span>
+              </Link>
+              <Link
+                to="/association/events"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem("vba_events_active_tab", "activities");
+                  } catch {}
+                  setAcceptedSuccessMeeting(null);
+                }}
+                className="py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-xs transition"
+              >
+                <Sparkles className="size-3.5" />
+                <span>Mục Hoạt động</span>
+              </Link>
             </div>
           </div>
         </div>

@@ -158,3 +158,8 @@ Không làm rối màn hình bằng các nút chữ cồng kềnh. Sử dụng b
      - Luôn có tính năng Xuất file Excel và Nhập (Import) file Excel cho từng danh mục.
 7. **Truy Vấn Bảng Hệ Thống Không Có Trong Prisma Schema**:
    - Khi truy vấn các bảng hệ thống độc lập như `user_profiles`, `feed_posts`, `feed_comments`, bắt buộc dùng raw SQL an toàn (`$executeRawUnsafe` / `$queryRawUnsafe`) để tránh lỗi crash HTTP 500.
+8. **Quy Chuẩn CSDL Tối Cao Bất Di Bất Dịch: 113.20.107.184:6432**:
+   - Cơ sở dữ liệu duy nhất và chuẩn mực của toàn bộ hệ thống là `113.20.107.184:6432` (`app1` / `5^S0CEpvYwC1(#YN1UoJ`, database: `ceo1983_project`).
+   - Mọi chức năng lưu dữ liệu (INSERT, UPDATE, DELETE) của hệ thống và app CEO 1983 TUYỆT ĐỐI PHẢI LƯU ĐÚNG VÀO DATABASE `113.20.107.184:6432`, KHÔNG LƯU VÀO DATABASE KHÁC.
+   - Mọi chức năng lấy/đọc dữ liệu (SELECT) để hiển thị về giao diện Web CRM và Mobile App TUYỆT ĐỐI PHẢI LẤY TỪ `113.20.107.184:6432`.
+   - Máy chủ `14.225.217.232:5436` KHÔNG PHẢI database chuẩn của dự án. Nghiêm cấm trỏ hay lưu vào đó.

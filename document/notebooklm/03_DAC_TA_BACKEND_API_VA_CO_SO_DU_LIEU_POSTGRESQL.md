@@ -6,10 +6,13 @@
 
 ## 1. NGUYÊN TẮC KIẾN TRÚC BACKEND THUẦN NESTJS (PURE NESTJS ARCHITECTURE)
 1. **Kết nối trực tiếp CSDL PostgreSQL qua NestJS**:
-   - Máy chủ CSDL: `14.225.217.232:5436`
+   - Máy chủ CSDL Chuẩn Duy Nhất: **`113.20.107.184:6432`** (kết nối qua PgBouncer)
    - Database Name: `ceo1983_project`
+   - Tài khoản / Mật khẩu: `app1` / `5^S0CEpvYwC1(#YN1UoJ`
+   - Chuỗi kết nối chuẩn: `postgresql://app1:5^S0CEpvYwC1(#YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true`
    - Framework Backend: NestJS 11.x (`Node.js 20+`, Express platform, Prisma ORM `@vibe/db`).
    - Cổng API phục vụ: `5001` (trên VPS reverse proxy từ domain `api.ceo1983.vn`).
+   - **Ràng buộc lưu và đọc dữ liệu**: Toàn bộ thao tác ghi (INSERT/UPDATE/DELETE) và đọc (SELECT) của hệ thống và app CEO 1983 đều chỉ được thực hiện trên `113.20.107.184:6432`. Máy chủ `14.225.217.232:5436` KHÔNG PHẢI database chuẩn của dự án.
 2. **CẤM TUYỆT ĐỐI Supabase PostgREST Client**:
    - 100% dữ liệu nghiệp vụ (Meetings, Opportunities, Marketplace, News, Events, Documents, Sponsors, Members) phải đi qua NestJS REST API (`fetchNestApiFromServer` / `fetchNestApi`) kết nối trực tiếp đến PostgreSQL `ceo1983_project`.
    - TUYỆT ĐỐI KHÔNG dùng Supabase PostgREST client (`supabaseAdmin.from(...)`, `getDb.from(...)`) trong các server function nghiệp vụ nhằm tránh lỗi cache schema PostgREST.

@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import {
   X,
   ImagePlus,
+  Camera,
   Crop,
   Trash2,
   Send,
@@ -56,6 +57,7 @@ interface CreatePostModalProps {
 export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: CreatePostModalProps) {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(initialShare?.title || "");
   const [content, setContent] = useState(initialShare?.text || "");
@@ -594,34 +596,63 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
             />
           </div>
 
-          {/* Multi-image upload with Crop & Move */}
+          {/* Multi-image upload with Direct Camera & File Upload */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Tải ảnh (tối đa 5 ảnh) <span className="text-red-600 font-bold">({images.length}/5 ảnh)</span>
+                Hình ảnh đính kèm <span className="text-red-600 font-bold">({images.length}/5)</span>
               </label>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImages || images.length >= 5}
-                className={`text-xs font-bold inline-flex items-center gap-1 cursor-pointer transition ${
-                  images.length >= 5
-                    ? "text-slate-400 cursor-not-allowed opacity-60"
-                    : "text-red-600 hover:text-red-700 dark:text-red-400"
-                }`}
-              >
-                <ImagePlus className="size-3.5" />
-                <span>{images.length >= 5 ? "Đã đạt tối đa 5 ảnh" : "Thêm ảnh"}</span>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                className="hidden"
-                disabled={images.length >= 5}
-                onChange={(e) => handleImageFiles(e.target.files)}
-              />
+              <div className="flex items-center gap-1.5">
+                {/* Nút chụp ảnh trực tiếp */}
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={uploadingImages || images.length >= 5}
+                  className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition active:scale-95 ${
+                    images.length >= 5
+                      ? "border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                      : "border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
+                  }`}
+                  title="Mở máy ảnh chụp trực tiếp"
+                >
+                  <Camera className="size-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Chụp ảnh</span>
+                </button>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  disabled={images.length >= 5}
+                  onChange={(e) => handleImageFiles(e.target.files)}
+                />
+
+                {/* Nút tải ảnh lên từ thư viện */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImages || images.length >= 5}
+                  className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition active:scale-95 ${
+                    images.length >= 5
+                      ? "border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                      : "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/40 text-[#003B95] dark:text-blue-300 hover:bg-blue-100"
+                  }`}
+                  title="Tải ảnh có sẵn từ thiết bị"
+                >
+                  <ImagePlus className="size-3.5 text-[#003B95] dark:text-blue-400" />
+                  <span>Tải ảnh lên</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  disabled={images.length >= 5}
+                  onChange={(e) => handleImageFiles(e.target.files)}
+                />
+              </div>
             </div>
 
             {uploadingImages && (

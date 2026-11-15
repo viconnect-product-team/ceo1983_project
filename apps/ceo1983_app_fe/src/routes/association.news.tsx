@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Link as LinkIcon,
   ImagePlus,
+  Camera,
   X,
   Share2,
   Sparkles,
@@ -271,21 +272,21 @@ export default function NewsScreen() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
 
     // Call backend API if applicable
-    fetchNestApi(`/connect-app/admin/news/${id}`, { method: "DELETE" }).catch(() => {});
+    fetchNestApi(`/connect-app/admin/news/${id}`, { method: "DELETE" }).catch(() => { });
 
     // Update local news
     const updatedLocal = localNews.filter((n) => n.id !== id);
     setLocalNews(updatedLocal);
     try {
       localStorage.setItem("vba_member_shared_news", JSON.stringify(updatedLocal));
-    } catch {}
+    } catch { }
 
     // Add to deleted IDs
     const updatedDeleted = Array.from(new Set([...deletedNewsIds, id]));
     setDeletedNewsIds(updatedDeleted);
     try {
       localStorage.setItem("vba_member_deleted_news", JSON.stringify(updatedDeleted));
-    } catch {}
+    } catch { }
 
     if (selectedNews?.id === id) {
       setSelectedNews(null);
@@ -351,7 +352,7 @@ export default function NewsScreen() {
           cover_image: updatedArticle.image,
           url: updatedArticle.url,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       let updated = localNews.map((n) => (n.id === editingNews.id ? updatedArticle : n));
       if (!localNews.some((n) => n.id === editingNews.id)) {
@@ -360,7 +361,7 @@ export default function NewsScreen() {
       setLocalNews(updated);
       try {
         localStorage.setItem("vba_member_shared_news", JSON.stringify(updated));
-      } catch {}
+      } catch { }
 
       if (selectedNews?.id === editingNews.id) {
         setSelectedNews(updatedArticle);
@@ -397,13 +398,13 @@ export default function NewsScreen() {
           cover_image: newArticle.image,
           url: newArticle.url,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       const updated = [newArticle, ...localNews];
       setLocalNews(updated);
       try {
         localStorage.setItem("vba_member_shared_news", JSON.stringify(updated));
-      } catch {}
+      } catch { }
 
       toast.success("Đã đăng và chia sẻ bài viết thành công!");
     }
@@ -482,19 +483,17 @@ export default function NewsScreen() {
           <button
             type="button"
             onClick={() => setActiveTab("all")}
-            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-              activeTab === "all"
+            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${activeTab === "all"
                 ? "bg-white text-[#003B95] border border-[#003B95] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <span>Tất cả</span>
             <span
-              className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-semibold ${
-                activeTab === "all"
+              className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-semibold ${activeTab === "all"
                   ? "bg-blue-50 text-[#003B95] border border-blue-200"
                   : "bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400"
-              }`}
+                }`}
             >
               {allNews.length}
             </span>
@@ -504,11 +503,10 @@ export default function NewsScreen() {
           <button
             type="button"
             onClick={() => setActiveTab("latest")}
-            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-              activeTab === "latest"
+            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${activeTab === "latest"
                 ? "bg-white text-[#003B95] border border-[#003B95] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <span className="flex items-center gap-0.5">
               <Sparkles className="h-3 w-3 text-amber-500" />
@@ -520,19 +518,17 @@ export default function NewsScreen() {
           <button
             type="button"
             onClick={() => setActiveTab("read")}
-            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-              activeTab === "read"
+            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${activeTab === "read"
                 ? "bg-white text-[#003B95] border border-[#003B95] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <span>Đã xem</span>
             <span
-              className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-semibold ${
-                activeTab === "read"
+              className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-semibold ${activeTab === "read"
                   ? "bg-blue-50 text-[#003B95] border border-blue-200"
                   : "bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400"
-              }`}
+                }`}
             >
               {readCount}
             </span>
@@ -542,24 +538,22 @@ export default function NewsScreen() {
           <button
             type="button"
             onClick={() => setActiveTab("unread")}
-            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer relative ${
-              activeTab === "unread"
+            className={`py-2 px-1 text-center rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer relative ${activeTab === "unread"
                 ? "bg-white text-[#003B95] border border-[#003B95] shadow-xs"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <span className="flex items-center gap-1">
               {unreadCount > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />}
               <span>Chưa xem</span>
             </span>
             <span
-              className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${
-                activeTab === "unread"
+              className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${activeTab === "unread"
                   ? "bg-blue-50 text-[#003B95] border border-blue-200"
                   : unreadCount > 0
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300"
-                  : "bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400"
-              }`}
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300"
+                    : "bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400"
+                }`}
             >
               {unreadCount}
             </span>
@@ -884,9 +878,8 @@ export default function NewsScreen() {
                     if (errors.title) setErrors((prev) => ({ ...prev, title: "" }));
                   }}
                   placeholder="VD: Doanh nghiệp thành viên ký kết hợp tác thương mại 2026..."
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none transition ${
-                    errors.title ? "border-rose-500 ring-2 ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-[#003B95]"
-                  }`}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none transition ${errors.title ? "border-rose-500 ring-2 ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-[#003B95]"
+                    }`}
                 />
                 {errors.title && (
                   <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
@@ -930,9 +923,8 @@ export default function NewsScreen() {
                         if (errors.category) setErrors((prev) => ({ ...prev, category: "" }));
                       }}
                       placeholder="VD: Hội thảo quốc tế..."
-                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none transition ${
-                        errors.category ? "border-rose-500 ring-2 ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-[#003B95]"
-                      }`}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none transition ${errors.category ? "border-rose-500 ring-2 ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-[#003B95]"
+                        }`}
                     />
                     {errors.category && (
                       <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
@@ -965,17 +957,34 @@ export default function NewsScreen() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 hover:border-[#003B95] transition">
-                    <ImagePlus className="h-6 w-6 text-[#003B95] dark:text-blue-400" />
-                    <span className="font-semibold">{uploadingImage ? "Đang tải ảnh lên MinIO..." : "Nhấn để chọn ảnh từ thiết bị (JPG, PNG, WebP)"}</span>
-                    <span className="text-[10px] text-slate-400">Hình ảnh rõ nét, kích thước khuyến nghị 800x450px</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleUploadImage}
-                    />
-                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Nút chụp ảnh trực tiếp */}
+                    <label className="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 text-xs text-amber-900 dark:text-amber-200 cursor-pointer hover:bg-amber-100/60 transition text-center">
+                      <Camera className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <span className="font-bold text-[11.5px]">{uploadingImage ? "Đang xử lý..." : "Chụp ảnh trực tiếp"}</span>
+                      <span className="text-[9.5px] text-amber-700/70 dark:text-amber-300/70">Mở máy ảnh</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={handleUploadImage}
+                      />
+                    </label>
+
+                    {/* Nút tải ảnh lên từ thư viện */}
+                    <label className="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 hover:border-[#003B95] transition text-center">
+                      <ImagePlus className="h-5 w-5 text-[#003B95] dark:text-blue-400" />
+                      <span className="font-bold text-[11.5px]">{uploadingImage ? "Đang tải ảnh..." : "Tải ảnh từ thiết bị"}</span>
+                      <span className="text-[9.5px] text-slate-400">Thư viện ảnh</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleUploadImage}
+                      />
+                    </label>
+                  </div>
                 )}
               </div>
 
@@ -1014,9 +1023,8 @@ export default function NewsScreen() {
                     if (errors.content) setErrors((prev) => ({ ...prev, content: "" }));
                   }}
                   placeholder="Nhập nội dung tóm tắt hoặc điểm nổi bật của bài viết muốn chia sẻ đến cộng đồng CEO..."
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none resize-none transition ${
-                    errors.content ? "border-rose-500 ring-2 ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-[#003B95]"
-                  }`}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none resize-none transition ${errors.content ? "border-rose-500 ring-2 ring-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-[#003B95]"
+                    }`}
                 />
                 {errors.content && (
                   <p className="mt-1 text-[11px] font-semibold text-rose-500 animate-in fade-in duration-150">
