@@ -231,11 +231,12 @@ function AccountManagementPage() {
     userRolesList?.includes("admin") ||
     account?.email === "admin@connect.vn" ||
     account?.email === "admin@viconnect.vn" ||
-    account?.email === "info@viconnect.vn" ||
     account?.email === "infor@viconnect.vn" ||
+    account?.email === "info@viconnect.vn" ||
     account?.username === "admin" ||
     account?.username === "admin@connect.vn" ||
     account?.username === "admin@viconnect.vn" ||
+    account?.username === "infor@viconnect.vn" ||
     account?.username === "info@viconnect.vn" ||
     (account?.roles &&
       (account.roles.includes("platform_admin") ||
@@ -297,7 +298,8 @@ function AccountManagementPage() {
         }
 
         userItems = mems.map((m: any, idx: number) => {
-          const email = m.email || (m.code === "M1983-001" ? "admin@viconnect.vn" : "info@viconnect.vn");
+          let email = m.email || (m.code === "M1983-001" ? "admin@viconnect.vn" : "infor@viconnect.vn");
+          if (email === "info@viconnect.vn") email = "infor@viconnect.vn";
           const isLTD = email.includes("admin@") || String(m.name || "").includes("Lê Thị Dung");
           return {
             id: m.userId || m.user_id || m.id || `usr-mem-${idx + 1}`,
@@ -346,7 +348,8 @@ function AccountManagementPage() {
       // Fallback thời gian thực để không bao giờ bị 0
       const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
       const fallbackUsers = DEFAULT_MEMBERS.map((m: any, idx: number) => {
-        const email = m.email || (m.code === "M1983-001" ? "admin@viconnect.vn" : "info@viconnect.vn");
+        let email = m.email || (m.code === "M1983-001" ? "admin@viconnect.vn" : "infor@viconnect.vn");
+        if (email === "info@viconnect.vn") email = "infor@viconnect.vn";
         const isLTD = email.includes("admin@") || String(m.name || "").includes("Lê Thị Dung");
         return {
           id: m.id || `usr-mem-${idx + 1}`,

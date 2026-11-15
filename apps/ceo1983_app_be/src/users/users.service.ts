@@ -356,12 +356,12 @@ export class UsersService implements OnModuleInit {
   /**
    * Đảm bảo 2 tài khoản quản trị và truyền thông được lưu trữ thực sự trong CSDL PostgreSQL
    * - admin@connect.vn (Admin Viconnect / Toàn quyền Quản trị)
-   * - info@viconnect.vn (Phạm Hồng Nguyên)
+   * - infor@viconnect.vn (Phạm Hồng Nguyên - Pass: 123456)
    */
   async ensureDefaultUsersInDatabase() {
     try {
       const defaultPasswordHash = await bcrypt.hash('Admin@1983', 10);
-      const mediaPasswordHash = await bcrypt.hash('Ceo1983@vba', 10);
+      const mediaPasswordHash = await bcrypt.hash('123456', 10);
 
       // 1. Kiểm tra tài khoản admin@connect.vn
       const adminRows = await this.prisma.$queryRaw<any[]>`
@@ -459,23 +459,23 @@ export class UsersService implements OnModuleInit {
         this.logger.warn(`Could not seed M1983-001 into members: ${err.message}`);
       });
 
-      // 2. Kiểm tra tài khoản info@viconnect.vn (hoặc alias infor@viconnect.vn)
+      // 2. Kiểm tra tài khoản infor@viconnect.vn (hoặc alias info@viconnect.vn)
       const mediaRows = await this.prisma.$queryRaw<any[]>`
         SELECT id, username, email FROM public.vione_users 
-        WHERE email = 'info@viconnect.vn' OR username = 'info@viconnect.vn' 
-           OR email = 'infor@viconnect.vn' OR username = 'infor@viconnect.vn'
+        WHERE email = 'infor@viconnect.vn' OR username = 'infor@viconnect.vn' 
+           OR email = 'info@viconnect.vn' OR username = 'info@viconnect.vn'
         LIMIT 1
       `.catch(() => []);
 
       let mediaUserId = '00000000-0000-4000-8000-000000000003';
       if (mediaRows.length === 0) {
-        this.logger.log('Seeding media account (info@viconnect.vn) into database...');
+        this.logger.log('Seeding media account (infor@viconnect.vn) into database...');
         await this.prisma.$executeRaw`
           INSERT INTO public.vione_users (id, username, email, name, password, email_verified, created_at, updated_at)
           VALUES (
             ${mediaUserId}::uuid, 
-            'info@viconnect.vn', 
-            'info@viconnect.vn', 
+            'infor@viconnect.vn', 
+            'infor@viconnect.vn', 
             'Phạm Hồng Nguyên', 
             ${mediaPasswordHash}, 
             true, 
@@ -483,8 +483,9 @@ export class UsersService implements OnModuleInit {
             NOW()
           )
           ON CONFLICT (id) DO UPDATE SET
-            username = EXCLUDED.username,
-            email = EXCLUDED.email,
+            username = 'infor@viconnect.vn',
+            email = 'infor@viconnect.vn',
+            password = ${mediaPasswordHash},
             name = EXCLUDED.name,
             updated_at = NOW()
         `.catch((err) => {
@@ -493,7 +494,9 @@ export class UsersService implements OnModuleInit {
       } else {
         mediaUserId = String(mediaRows[0].id);
         await this.prisma.$executeRaw`
-          UPDATE public.vione_users SET name = 'Phạm Hồng Nguyên' WHERE id = ${mediaUserId}::uuid
+          UPDATE public.vione_users 
+          SET username = 'infor@viconnect.vn', email = 'infor@viconnect.vn', password = ${mediaPasswordHash}, name = 'Phạm Hồng Nguyên', updated_at = NOW() 
+          WHERE id = ${mediaUserId}::uuid
         `.catch(() => {});
       }
 
@@ -524,7 +527,7 @@ export class UsersService implements OnModuleInit {
           ${mediaUserId}::uuid,
           'M1983-002',
           'Phạm Hồng Nguyên',
-          'info@viconnect.vn',
+          'infor@viconnect.vn',
           '0983988999',
           'CLB Doanh Nhân CEO 1983',
           'Ban Truyền Thông',
@@ -542,7 +545,7 @@ export class UsersService implements OnModuleInit {
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
-          email = EXCLUDED.email,
+          email = 'infor@viconnect.vn',
           phone = EXCLUDED.phone,
           company_name = EXCLUDED.company_name,
           department = EXCLUDED.department,
@@ -556,14 +559,16 @@ export class UsersService implements OnModuleInit {
         this.logger.warn(`Could not seed M1983-002 into members: ${err.message}`);
       });
 
-      // Đồng bộ tên Phạm Hồng Nguyên cho toàn bộ record liên quan email info@viconnect.vn / infor@viconnect.vn
+      // Đồng bộ tên Phạm Hồng Nguyên, email infor@viconnect.vn và mật khẩu 123456 cho toàn bộ record
       await this.prisma.$executeRaw`
-        UPDATE public.members SET name = 'Phạm Hồng Nguyên' 
+        UPDATE public.members 
+        SET email = 'infor@viconnect.vn', name = 'Phạm Hồng Nguyên', updated_at = NOW() 
         WHERE email IN ('info@viconnect.vn', 'infor@viconnect.vn') OR id = 'M1983-002' OR code = 'M1983-002'
       `.catch(() => {});
       await this.prisma.$executeRaw`
-        UPDATE public.vione_users SET name = 'Phạm Hồng Nguyên' 
-        WHERE email IN ('info@viconnect.vn', 'infor@viconnect.vn')
+        UPDATE public.vione_users 
+        SET email = 'infor@viconnect.vn', username = 'infor@viconnect.vn', password = ${mediaPasswordHash}, name = 'Phạm Hồng Nguyên', updated_at = NOW() 
+        WHERE email IN ('info@viconnect.vn', 'infor@viconnect.vn') OR username IN ('info@viconnect.vn', 'infor@viconnect.vn')
       `.catch(() => {});
 
     } catch (e: any) {
@@ -596,6 +601,24 @@ export class UsersService implements OnModuleInit {
         email_verified: true,
         apple_refresh_token: null,
         created_at: new Date(),
+        updated_at: new Date(),
+      } as vione_users;
+    }
+
+    if (username === 'infor@viconnect.vn' || username === 'info@viconnect.vn') {
+      return {
+        id: '00000000-0000-4000-8000-000000000003',
+        username: 'infor@viconnect.vn',
+        password:
+          '$2b$10$tAFcUYZ3KvebD7UHowJ5RODjJofc6UWAkd/n2pKqvJBw4ySP//s5u',
+        email: 'infor@viconnect.vn',
+        name: 'Phạm Hồng Nguyên',
+        avatar_url: null,
+        google_id: null,
+        apple_id: null,
+        email_verified: true,
+        apple_refresh_token: null,
+        created_at: new Date('2026-10-20'),
         updated_at: new Date(),
       } as vione_users;
     }
@@ -647,6 +670,36 @@ export class UsersService implements OnModuleInit {
       } as vione_users;
     }
 
+    if (
+      id === '00000000-0000-4000-8000-000000000003' ||
+      id === 'usr-mem-2' ||
+      id === 'M1983-002'
+    ) {
+      const mediaUser =
+        (await this.usersRepo.findByUsername('infor@viconnect.vn')) ||
+        (await this.usersRepo.findByUsername('info@viconnect.vn'));
+
+      if (mediaUser) {
+        return mediaUser;
+      }
+
+      return {
+        id: '00000000-0000-4000-8000-000000000003',
+        username: 'infor@viconnect.vn',
+        password:
+          '$2b$10$tAFcUYZ3KvebD7UHowJ5RODjJofc6UWAkd/n2pKqvJBw4ySP//s5u',
+        email: 'infor@viconnect.vn',
+        name: 'Phạm Hồng Nguyên',
+        avatar_url: null,
+        google_id: null,
+        apple_id: null,
+        email_verified: true,
+        apple_refresh_token: null,
+        created_at: new Date('2026-10-20'),
+        updated_at: new Date(),
+      } as vione_users;
+    }
+
     return null;
   }
 
@@ -659,7 +712,16 @@ export class UsersService implements OnModuleInit {
   }
 
   async findByEmail(email: string): Promise<vione_users | null> {
-    return this.usersRepo.findByEmail(email);
+    const user = await this.usersRepo.findByEmail(email);
+    if (user) return user;
+    const clean = (email || '').toLowerCase().trim();
+    if (clean === 'infor@viconnect.vn' || clean === 'info@viconnect.vn') {
+      return this.findByUsername('infor@viconnect.vn');
+    }
+    if (clean === 'admin@viconnect.vn' || clean === 'admin@connect.vn') {
+      return this.findByUsername('admin@viconnect.vn');
+    }
+    return null;
   }
 
   async createUser(data: {
@@ -1667,7 +1729,12 @@ export class UsersService implements OnModuleInit {
         userRoles.push('admin');
       }
 
-      if (u.email === 'info@viconnect.vn' || u.username === 'info@viconnect.vn') {
+      if (
+        u.email === 'infor@viconnect.vn' ||
+        u.username === 'infor@viconnect.vn' ||
+        u.email === 'info@viconnect.vn' ||
+        u.username === 'info@viconnect.vn'
+      ) {
         if (!userRoles.includes('staff')) {
           userRoles.push('staff');
         }
@@ -1676,7 +1743,10 @@ export class UsersService implements OnModuleInit {
       const rawExec = (m?.executive_role || '').toLowerCase().trim();
       const executiveRole =
         rawExec ||
-        (u.email === 'info@viconnect.vn' || u.username === 'info@viconnect.vn'
+        (u.email === 'infor@viconnect.vn' ||
+        u.username === 'infor@viconnect.vn' ||
+        u.email === 'info@viconnect.vn' ||
+        u.username === 'info@viconnect.vn'
           ? 'truong_ban_truyen_thong'
           : userRoles.includes('platform_admin')
           ? 'quan_tri'
@@ -1685,7 +1755,10 @@ export class UsersService implements OnModuleInit {
           : 'member');
       const department =
         m?.department ||
-        (u.email === 'info@viconnect.vn' || u.username === 'info@viconnect.vn'
+        (u.email === 'infor@viconnect.vn' ||
+        u.username === 'infor@viconnect.vn' ||
+        u.email === 'info@viconnect.vn' ||
+        u.username === 'info@viconnect.vn'
           ? 'Ban Truyền Thông'
           : 'Hội viên ceo1983');
 
@@ -1726,9 +1799,9 @@ export class UsersService implements OnModuleInit {
           created_at: new Date('2026-08-18'),
         },
         {
-          id: '00000000-0000-4000-8000-000000000002',
+          id: '00000000-0000-4000-8000-000000000003',
           name: 'Phạm Hồng Nguyên',
-          email: 'info@viconnect.vn',
+          email: 'infor@viconnect.vn',
           code: 'M1983-002',
           department: 'Ban Truyền Thông',
           executive_role: 'truong_ban_truyen_thong',
@@ -1739,7 +1812,7 @@ export class UsersService implements OnModuleInit {
 
       items = fallbackList.map((m: any, idx: number) => {
         const isLTD = m.email === 'admin@viconnect.vn' || m.code === 'M1983-001' || String(m.name || '').includes('Dung');
-        const email = m.email || (isLTD ? 'admin@viconnect.vn' : 'info@viconnect.vn');
+        const email = m.email || (isLTD ? 'admin@viconnect.vn' : 'infor@viconnect.vn');
         return {
           id: m.user_id || m.id || `usr-mem-${idx + 1}`,
           username: email,

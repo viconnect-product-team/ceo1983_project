@@ -1,7 +1,13 @@
 export function registerServiceWorker() {
   if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-    // Không can thiệp hoặc đăng ký Service Worker trên domain Quản trị CRM
-    if (window.location.hostname.startsWith("crm.")) {
+    const isCrmDomain =
+      window.location.hostname.includes("crm") ||
+      window.location.port === "5443" ||
+      sessionStorage.getItem("crm_portal") === "1" ||
+      new URLSearchParams(window.location.search).get("portal") === "crm";
+
+    // Không can thiệp hoặc đăng ký Service Worker trên Cổng Quản trị CRM
+    if (isCrmDomain) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const registration of registrations) {
           registration.unregister();

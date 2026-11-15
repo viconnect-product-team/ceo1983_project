@@ -79,6 +79,7 @@ function getDeletedIdentifiers(): Set<string> {
               s &&
               s !== "admin@viconnect.vn" &&
               s !== "admin@connect.vn" &&
+              s !== "infor@viconnect.vn" &&
               s !== "info@viconnect.vn" &&
               s !== "m1983-001" &&
               s !== "m1983-002"
@@ -667,6 +668,7 @@ function AccountsPage() {
       acc.email === "admin@viconnect.vn" ||
       acc.email === "admin@connect.vn" ||
       acc.email === "admin@ceo1983.vn" ||
+      acc.email === "infor@viconnect.vn" ||
       acc.email === "info@viconnect.vn"
     );
   };

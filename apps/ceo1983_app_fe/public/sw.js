@@ -10,7 +10,11 @@
 
   // Tự động hủy đăng ký ngay lập tức nếu chạy trên domain Quản trị CRM
   // Tuyệt đối không can thiệp hay cài đặt fetch listener trên portal CRM!
-  if (typeof self !== "undefined" && self.location && self.location.hostname && self.location.hostname.startsWith("crm.")) {
+  if (
+    typeof self !== "undefined" &&
+    self.location &&
+    (self.location.hostname.includes("crm") || self.location.port === "5443")
+  ) {
     self.addEventListener("install", () => self.skipWaiting());
     self.addEventListener("activate", (event) => {
       event.waitUntil(
@@ -80,7 +84,14 @@
     if (url.origin !== self.location.origin) return;
 
     // Bỏ qua hoàn toàn trên cổng CRM để không cache hay can thiệp luồng web quản trị
-    if (self.location.hostname.startsWith("crm.") || url.hostname.startsWith("crm.")) return;
+    if (
+      self.location.hostname.includes("crm") ||
+      url.hostname.includes("crm") ||
+      url.port === "5443" ||
+      self.location.port === "5443"
+    ) {
+      return;
+    }
 
     // Không can thiệp API calls, WebSocket, Server Functions hoặc data endpoints
     if (
@@ -108,19 +119,20 @@
       event.respondWith(
         (async () => {
           try {
-            const networkResponse = await fetch(request);
+            const networkResponse = await fetch(request).catch(() => null);
             if (networkResponse && networkResponse.status === 200) {
               const copy = networkResponse.clone();
               caches.open(SW_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
+              return networkResponse;
             }
-            return networkResponse;
-          } catch {
-            const cached = await caches.match(request);
-            if (cached) return cached;
-            const fallback = (await caches.match("/association")) || (await caches.match("/"));
-            if (fallback) return fallback;
-            return new Response("Offline", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
-          }
+            if (networkResponse) return networkResponse;
+          } catch { }
+
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const fallback = (await caches.match("/association")) || (await caches.match("/"));
+          if (fallback) return fallback;
+          return new Response("Offline", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
         })()
       );
       return;
@@ -131,17 +143,18 @@
       event.respondWith(
         (async () => {
           try {
-            const networkResponse = await fetch(request);
+            const networkResponse = await fetch(request).catch(() => null);
             if (networkResponse && networkResponse.status === 200) {
               const copy = networkResponse.clone();
               caches.open(SW_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
+              return networkResponse;
             }
-            return networkResponse;
-          } catch {
-            const cached = await caches.match(request);
-            if (cached) return cached;
-            return new Response("", { status: 408, statusText: "Request Timeout" });
-          }
+            if (networkResponse) return networkResponse;
+          } catch { }
+
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          return new Response("", { status: 408, statusText: "Request Timeout" });
         })()
       );
       return;
