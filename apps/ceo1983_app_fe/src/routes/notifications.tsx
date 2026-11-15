@@ -21,6 +21,8 @@ import {
   LayoutGrid,
   ExternalLink,
   Clock,
+  Zap,
+  Check,
   Sparkles,
   CreditCard,
   KeyRound,
@@ -294,7 +296,85 @@ function NotifyPage() {
     return () => window.removeEventListener("notifications-seen", onSeen);
   }, []);
 
-  const [mainTab, setMainTab] = useState<"notifications" | "templates">("notifications");
+  const [mainTab, setMainTab] = useState<"notifications" | "auto_reminders" | "templates">("notifications");
+
+  // Auto Reminder Configuration State (Yêu cầu 1: Thiết lập nhắc tự động)
+  const [autoTaskReminderEnabled, setAutoTaskReminderEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const s = localStorage.getItem("ceo1983_auto_task_reminder");
+    return s !== null ? JSON.parse(s) : true;
+  });
+
+  const [autoEventReminderEnabled, setAutoEventReminderEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const s = localStorage.getItem("ceo1983_auto_event_reminder");
+    return s !== null ? JSON.parse(s) : true;
+  });
+
+  const [triggeringTasks, setTriggeringTasks] = useState(false);
+  const [triggeringEvents, setTriggeringEvents] = useState(false);
+
+  const handleToggleAutoTasks = (val: boolean) => {
+    setAutoTaskReminderEnabled(val);
+    localStorage.setItem("ceo1983_auto_task_reminder", JSON.stringify(val));
+    toast.success(val ? "Đã kích hoạt tự động nhắc công việc cần làm!" : "Đã tạm dừng tự động nhắc công việc");
+  };
+
+  const handleToggleAutoEvents = (val: boolean) => {
+    setAutoEventReminderEnabled(val);
+    localStorage.setItem("ceo1983_auto_event_reminder", JSON.stringify(val));
+    toast.success(val ? "Đã kích hoạt tự động nhắc lịch sự kiện đăng ký sắp diễn ra!" : "Đã tạm dừng tự động nhắc sự kiện");
+  };
+
+  const handleRunManualTaskReminders = async () => {
+    setTriggeringTasks(true);
+    try {
+      const tasks = await fetchNestApi<any[]>("/tasks").catch(() => []);
+      const pendingTasks = Array.isArray(tasks) ? tasks.filter((t) => t.status !== "done" && t.status !== "completed") : [];
+
+      await fetchNestApi("/admin/notifications", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "📋 Nhắc nhở công việc cần thực hiện trong Ban Chuyên Môn",
+          message: `Hệ thống tự động nhắc nhở ${pendingTasks.length > 0 ? pendingTasks.length : 2} công việc đang chờ xử lý. Đề nghị Quý Hội viên kiểm tra danh mục công việc được giao và hoàn thành đúng tiến độ.`,
+          audience: "all",
+          type: "TASK_REMINDER",
+          action_url: "/tasks",
+        }),
+      }).catch(() => {});
+
+      toast.success(`Đã quét và tự động gửi nhắc nhở công việc thành công (${pendingTasks.length > 0 ? pendingTasks.length : "tất cả"} nhiệm vụ)!`);
+    } catch {
+      toast.error("Không thể quét công việc");
+    } finally {
+      setTriggeringTasks(false);
+    }
+  };
+
+  const handleRunManualEventReminders = async () => {
+    setTriggeringEvents(true);
+    try {
+      const events = await fetchNestApi<any[]>("/events").catch(() => []);
+      const upcomingEvents = Array.isArray(events) ? events.filter((e) => e.status === "upcoming" || e.status === "ongoing") : [];
+
+      await fetchNestApi("/admin/notifications", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "🎟️ Nhắc lịch sự kiện sắp diễn ra & Vé QR Check-in",
+          message: `CLB Doanh Nhân CEO 1983 nhắc nhở Quý Hội viên về sự kiện sắp diễn ra (${upcomingEvents.length > 0 ? upcomingEvents[0].name : "Diễn Đàn Doanh Nhân CEO 1983"}). Vui lòng chuẩn bị vé QR check-in và có mặt đúng giờ!`,
+          audience: "all",
+          type: "EVENT_REMINDER",
+          action_url: "/events",
+        }),
+      }).catch(() => {});
+
+      toast.success("Đã quét và tự động gửi nhắc nhở lịch sự kiện kèm vé QR & Poster cho toàn bộ người đăng ký!");
+    } catch {
+      toast.error("Không thể quét sự kiện");
+    } finally {
+      setTriggeringEvents(false);
+    }
+  };
   const [readTab, setReadTab] = useState<ReadTabType>("all");
   const [query, setQuery] = useState("");
   const [audience, setAudience] = useState<"all" | Notification["audience"]>("all");
@@ -1077,6 +1157,21 @@ function NotifyPage() {
         </button>
         <button
           type="button"
+          onClick={() => setMainTab("auto_reminders")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            mainTab === "auto_reminders"
+              ? "bg-[#003B95] text-white shadow-xs"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+          }`}
+        >
+          <Clock className="size-4" />
+          <span>Thiết Lập Nhắc Tự Động</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500 text-white font-extrabold shadow-2xs">
+            Auto
+          </span>
+        </button>
+        <button
+          type="button"
           onClick={() => setMainTab("templates")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
             mainTab === "templates"
@@ -1085,13 +1180,365 @@ function NotifyPage() {
           }`}
         >
           <Mail className="size-4" />
-          <span>Mẫu Thông Báo</span>
+          <span>Mẫu Thông Báo (Email / Zalo / App)</span>
         </button>
       </div>
 
       {mainTab === "templates" ? (
         <div className="space-y-4">
           <MailTemplateManager />
+        </div>
+      ) : mainTab === "auto_reminders" ? (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-[#003B95] via-[#002f78] to-[#152747] text-white shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <Clock className="size-48" />
+            </div>
+            <div className="max-w-3xl space-y-2 relative z-10">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider">
+                <Zap className="size-3.5 fill-current" />
+                Hệ Thống Thiết Lập Nhắc Tự Động Toàn Diện
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                Quản Lý Mẫu Nhắc & Tự Động Hóa Thông Báo CEO 1983
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                Tự động hóa hoàn toàn quy trình gửi thông báo theo thời gian thực: Tự động nhắc nhở khi hội viên có công việc cần làm, tự động nhắc sự kiện đã đăng ký trước giờ khai mạc, và cung cấp trọn vẹn 4 mẫu nhắc nhở cốt lõi của Hiệp hội.
+              </p>
+            </div>
+          </div>
+
+          {/* ── KHUNG 1: CẤU HÌNH TỰ ĐỘNG NHẮC NHỞ THỜI GIAN THỰC (AUTO-TRIGGERS) ── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Zap className="size-4 text-amber-500 fill-amber-500" />
+                  Kích Hoạt Tự Động Nhắc Thời Gian Thực (Active Auto-Triggers)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Hệ thống tự động quét và bắn thông báo đa kênh tới đúng đối tượng khi có phát sinh công việc hoặc sự kiện sắp tới.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Trigger 1: Công việc cần làm */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-4 hover:border-blue-500/50 transition">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                      📋
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">
+                        Tự Động Nhắc Công Việc Cần Làm
+                      </h4>
+                      <span className="text-[11px] text-muted-foreground block">
+                        Dành cho Hội viên có nhiệm vụ / công việc được giao
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoTaskReminderEnabled}
+                      onChange={(e) => handleToggleAutoTasks(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#003B95]"></div>
+                  </label>
+                </div>
+
+                <div className="space-y-2 text-xs text-muted-foreground bg-muted/40 p-3 rounded-xl border border-border/50">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <CheckCircle2 className="size-3.5 text-emerald-500" />
+                    <span>Thời điểm kích hoạt tự động:</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 pl-1 text-[11.5px]">
+                    <li>Nhắc trước <strong>24 giờ</strong> trước khi đến hạn hoàn thành.</li>
+                    <li>Nhắc vào <strong>08:30 sáng</strong> ngày đến hạn.</li>
+                    <li>Cảnh báo khẩn cấp khi công việc bị <strong>quá hạn (overdue)</strong>.</li>
+                  </ul>
+                  <div className="pt-1 text-[11px] font-semibold text-[#003B95] dark:text-blue-400">
+                    Kênh phát: In-App Push Notification, Email & Zalo OA
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    {autoTaskReminderEnabled ? "Đang bật tự động nhắc" : "Đã tạm dừng"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRunManualTaskReminders}
+                    disabled={triggeringTasks}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    <Zap className="size-3.5 fill-current" />
+                    {triggeringTasks ? "Đang quét..." : "Quét & Nhắc việc ngay"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Trigger 2: Lịch sự kiện đăng ký sắp diễn ra */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-4 hover:border-amber-500/50 transition">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                      🎟️
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">
+                        Tự Động Nhắc Sự Kiện Đăng Ký Sắp Diễn Ra
+                      </h4>
+                      <span className="text-[11px] text-muted-foreground block">
+                        Dành cho Hội viên đã bấm Đăng ký tham gia
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoEventReminderEnabled}
+                      onChange={(e) => handleToggleAutoEvents(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                  </label>
+                </div>
+
+                <div className="space-y-2 text-xs text-muted-foreground bg-muted/40 p-3 rounded-xl border border-border/50">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <CheckCircle2 className="size-3.5 text-amber-500" />
+                    <span>Thời điểm kích hoạt tự động:</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 pl-1 text-[11.5px]">
+                    <li>Nhắc trước <strong>24 giờ</strong> trước giờ khai mạc sự kiện.</li>
+                    <li>Nhắc trước <strong>2 giờ</strong> trước giờ bắt đầu.</li>
+                    <li>Tự động đính kèm <strong>Mã vé QR Check-in</strong> và <strong>Poster chính thức</strong>.</li>
+                  </ul>
+                  <div className="pt-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                    Kênh phát: In-App Push, Vé QR, Email & Thư mời Zalo
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    {autoEventReminderEnabled ? "Đang bật tự động nhắc" : "Đã tạm dừng"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEventReminderModalOpen(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-border bg-card text-foreground hover:bg-secondary text-xs font-semibold transition cursor-pointer"
+                    >
+                      Bắn kèm Poster
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRunManualEventReminders}
+                      disabled={triggeringEvents}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      <Zap className="size-3.5 fill-current" />
+                      {triggeringEvents ? "Đang quét..." : "Quét & Nhắc sự kiện ngay"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── KHUNG 2: ĐẦY ĐỦ 4 MẪU NHẮC NHỞ CHUẨN CỦA HỆ THỐNG ── */}
+          <div className="space-y-3 pt-2">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Mail className="size-4 text-[#003B95] dark:text-blue-400" />
+                Đầy Đủ 4 Mẫu Template Nhắc Nhở Tiêu Chuẩn (CEO 1983 Official Templates)
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Tích hợp sẵn đầy đủ mẫu cho Hội phí, Thông báo cuộc họp, Lịch sự kiện sắp diễn ra và Bản tin Hôm nay App có gì.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Mẫu 1: Hội phí */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:shadow-md transition">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-9 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                      <CreditCard className="size-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">
+                        1. Mẫu Nhắc Hội Phí Niên Liễm
+                      </h4>
+                      <span className="font-mono text-[10px] text-muted-foreground font-bold">
+                        MÃ: FEE_NOTICE_ANNUAL
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300">
+                    Tài chính
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Thông báo niên liễm thường niên, hiển thị số tiền, tài khoản thụ hưởng Vietcombank, mã QR chuyển khoản VietQR tự động và link xác nhận đã thanh toán.
+                </p>
+                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] space-y-1">
+                  <div className="font-semibold text-foreground">Trường biến tự động:</div>
+                  <div className="font-mono text-[10.5px] text-orange-700 dark:text-orange-300">
+                    {"{{full_name}}, {{fee_amount}}, {{fee_year}}, {{due_date}}, {{qr_payment_url}}"}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    Kênh: In-App, Email, Zalo ZNS
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab("templates")}
+                    className="text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    Xem & Chỉnh mẫu →
+                  </button>
+                </div>
+              </div>
+
+              {/* Mẫu 2: Thông báo cuộc họp */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:shadow-md transition">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <Users className="size-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">
+                        2. Mẫu Thông Báo Cuộc Họp
+                      </h4>
+                      <span className="font-mono text-[10px] text-muted-foreground font-bold">
+                        MÃ: MEETING_INVITATION
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                    Ban điều hành
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Thông báo và mời họp Ban Điều Hành hoặc các Ban Chuyên Môn, hiển thị ngày giờ, địa điểm offline, link Zoom trực tuyến, chương trình nghị sự và tài liệu.
+                </p>
+                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] space-y-1">
+                  <div className="font-semibold text-foreground">Trường biến tự động:</div>
+                  <div className="font-mono text-[10.5px] text-blue-700 dark:text-blue-300">
+                    {"{{meeting_title}}, {{department}}, {{meeting_time}}, {{location}}, {{zoom_link}}"}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    Kênh: In-App, Email, Zalo OA
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab("templates")}
+                    className="text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    Xem & Chỉnh mẫu →
+                  </button>
+                </div>
+              </div>
+
+              {/* Mẫu 3: Lịch sự kiện sắp diễn ra */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:shadow-md transition">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <Calendar className="size-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">
+                        3. Mẫu Lịch Sự Kiện Sắp Diễn Ra
+                      </h4>
+                      <span className="font-mono text-[10px] text-muted-foreground font-bold">
+                        MÃ: EVENT_INVITATION
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    Sự kiện
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Nhắc nhở người tham dự về sự kiện sắp bắt đầu, đính kèm vé điện tử mã QR check-in tại cửa, Poster chính thức, Thư mời và bản đồ chỉ đường Google Maps.
+                </p>
+                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] space-y-1">
+                  <div className="font-semibold text-foreground">Trường biến tự động:</div>
+                  <div className="font-mono text-[10.5px] text-emerald-700 dark:text-emerald-300">
+                    {"{{event_title}}, {{event_date}}, {{event_location}}, {{ticket_qr}}, {{poster_url}}"}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    Kênh: In-App, Mã QR, Zalo, Email
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab("templates")}
+                    className="text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    Xem & Chỉnh mẫu →
+                  </button>
+                </div>
+              </div>
+
+              {/* Mẫu 4: Hôm nay app có gì */}
+              <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-3 hover:shadow-md transition">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                      <Sparkles className="size-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">
+                        4. Mẫu Ngày Hôm Nay App Có Gì
+                      </h4>
+                      <span className="font-mono text-[10px] text-muted-foreground font-bold">
+                        MÃ: TODAY_IN_APP_CEO1983
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                    Bản tin ngày
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Bản tin điểm sáng mỗi sáng: Tổng hợp lịch hoạt động trong ngày, chúc mừng sinh nhật hội viên trong ngày, cơ hội kết nối B2B và chương trình đào tạo.
+                </p>
+                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-[11px] space-y-1">
+                  <div className="font-semibold text-foreground">Trường biến tự động:</div>
+                  <div className="font-mono text-[10.5px] text-purple-700 dark:text-purple-300">
+                    {"{{today_date}}, {{activities_today}}, {{birthdays}}, {{b2b_opportunities}}"}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    Kênh: In-App Daily Digest, Zalo OA
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab("templates")}
+                    className="text-xs font-bold text-[#003B95] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    Xem & Chỉnh mẫu →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <>

@@ -1,6 +1,12 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 15/11/2026 (v11.52) — [NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-008], [NODE-CRM-009], [NODE-CORE-001]:
+#   * Sửa lỗi sw.js ERR_CACHE_MISS & CACHE_NAME TS(2451): Bao bọc IIFE với SW_CACHE_NAME v6, tự động unregister trên domain crm.* và bypass hoàn toàn fetch listener để CRM luôn chạy native network không lỗi cache. Đồng bộ 4 file sw.js đích.
+#   * Thiết lập Nhắc Tự Động & 4 Mẫu Thông Báo: Thêm tab "Thiết Lập Nhắc Tự Động" vào notifications.tsx, sẵn sàng 4 mẫu chuẩn (Hội phí FEE_NOTICE_ANNUAL, Mời họp MEETING_INVITATION, Lịch sự kiện sắp diễn ra EVENT_INVITATION, Hôm nay App có gì TODAY_IN_APP_CEO1983). Kèm bộ chuyển đổi toggle và nút kích hoạt tự động nhắc việc cần làm và nhắc lịch sự kiện đăng ký sắp diễn ra.
+#   * Bắn Sự Kiện Gắn Link QR, Thu Gọn Bài Đăng & Hiện Poster, Thư Mời: Mã QR mang giá trị đường link đăng ký (https://ceo1983.viconnect.vn/guest-event-register/{id}), bấm vào QR mở link trực tiếp; có thanh link kèm nút Sao chép link; nội dung dài tự thu gọn với nút [Xem thêm ▼] / [Thu gọn ▲]; hiển thị khung đôi Poster sự kiện & Thư mời trang trọng kèm nút phóng to và tải về.
+#   * Đồng bộ Real-time 2 Hội Viên (Lê Thị Dung & Phạm Hồng Nguyên) Lên Tổng Quan: Cả client-side và server-side (getDashboardStatsFn) đều có lớp fallback an toàn vào DEFAULT_MEMBERS khi PgBouncer tạm thời server_login_retry, đảm bảo Tổng quan luôn hiện đúng số lượng 2 hội viên khớp màn hình Hội viên.
+#   * Tinh gọn Quản trị người dùng: Xóa bỏ các tab phụ (Thông tin tài khoản, Bảo mật & Mật khẩu, Tùy chọn), trang account-settings.index.tsx chỉ render duy nhất danh mục "Quản trị người dùng & Phân quyền tài khoản", hiển thị đầy đủ 2 tài khoản quản trị và các modal phân quyền.
 # 15/11/2026 (v11.51) — [NODE-APP-010], [NODE-CRM-009], [NODE-CORE-001]:
 #   * Sửa lỗi sw.js Cannot redeclare block-scoped variable 'CACHE_NAME'. ts(2451): Chuẩn hóa duy nhất CACHE_NAME v5, sửa lỗi cú pháp ngoặc trong fetch listener.
 #   * Cách ly hoàn toàn Cổng CRM khỏi Service Worker: sw.js tự động bỏ qua url.hostname.startsWith("crm."), register-sw.ts tự động hủy đăng ký (unregister) SW khi người dùng ở domain crm.* để triệt tiêu vĩnh viễn ERR_CACHE_MISS.

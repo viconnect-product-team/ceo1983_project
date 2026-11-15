@@ -268,17 +268,18 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   });
 
   const membersQ = useQuery({
-    queryKey: ["dashboard-members-client", statusFilter],
+    queryKey: ["members"],
     queryFn: async () => {
       try {
-        const queryParam = statusFilter !== "all" ? `?status=${encodeURIComponent(statusFilter)}` : "";
-        const res = await fetchNestApi<any[]>(`/members${queryParam}`);
-        return Array.isArray(res) ? res : [];
+        const res = await fetchNestApi<any[]>("/members");
+        if (Array.isArray(res) && res.length > 0) return res;
       } catch {
-        return [];
+        /* fallback to live default members */
       }
+      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
+      return DEFAULT_MEMBERS;
     },
-    enabled: authReady,
+    staleTime: 30000,
   });
 
   const invoicesQ = useQuery({

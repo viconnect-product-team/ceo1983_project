@@ -7,6 +7,13 @@ export function registerServiceWorker() {
           registration.unregister();
         }
       });
+      if (typeof window.caches !== "undefined") {
+        window.caches.keys().then((keys) => {
+          for (const key of keys) {
+            window.caches.delete(key);
+          }
+        });
+      }
       return;
     }
 
