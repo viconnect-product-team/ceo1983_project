@@ -743,7 +743,29 @@ export function Sidebar({
 
   const filteredSystem = system.filter((it) => isAllowed(it.to));
 
-  const filteredPermissions = permissionsGroup.filter((it) => isAllowed(it.to || "/permissions"));
+  const filteredPermissions = permissionsGroup.filter((it) => {
+    if (it.to?.includes("/account-settings") || it.to?.includes("/accounts")) {
+      const roleStr = String(srsRole || "");
+      return (
+        isPrivilegedAdmin ||
+        isPlatformAdmin ||
+        isAdmin ||
+        isChuTich ||
+        roleStr === "quan_tri" ||
+        roleStr === "admin" ||
+        roleStr === "chu_tich" ||
+        roleStr === "president" ||
+        roleStr === "tong_thu_ky" ||
+        roleStr === "ban_thu_ky" ||
+        roleStr === "truong_ban_dieu_hanh" ||
+        roleStr.startsWith("truong_ban_") ||
+        isAllowed(it.to) ||
+        isAllowed("/accounts") ||
+        isAllowed("/account-settings")
+      );
+    }
+    return isAllowed(it.to || "/permissions");
+  });
 
   const filteredAdmin = admin.filter((it) => isAllowed(it.to));
 

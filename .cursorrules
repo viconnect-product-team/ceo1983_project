@@ -1,6 +1,19 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 15/11/2026 (v11.51) — [NODE-APP-010], [NODE-CRM-009], [NODE-CORE-001]:
+#   * Sửa lỗi sw.js Cannot redeclare block-scoped variable 'CACHE_NAME'. ts(2451): Chuẩn hóa duy nhất CACHE_NAME v5, sửa lỗi cú pháp ngoặc trong fetch listener.
+#   * Cách ly hoàn toàn Cổng CRM khỏi Service Worker: sw.js tự động bỏ qua url.hostname.startsWith("crm."), register-sw.ts tự động hủy đăng ký (unregister) SW khi người dùng ở domain crm.* để triệt tiêu vĩnh viễn ERR_CACHE_MISS.
+#   * Kiểm tra & Xác nhận CSDL Chuẩn 113.20.107.184:6432: Đầy đủ 216 bảng trong schema public đáp ứng 100% mọi chức năng từ Web CRM đến Mobile App.
+#   * Phân quyền Riêng Tư Luồng Chia Sẻ Cơ Hội: Khi chia sẻ cơ hội, nếu chọn Public thì toàn CLB thấy; nếu chọn Private và tích chọn đích danh người nhận thì CHỈ NGƯỜI ĐÓ CÙNG NGƯỜI CHIA SẺ MỚI THẤY (áp dụng đồng bộ cả trên listMyOpportunities, listAllOpportunities và getOpportunityById).
+# 15/11/2026 (v11.50) — [NODE-CRM-005], [NODE-CRM-006], [NODE-APP-017], [NODE-APP-015], [NODE-APP-010], [NODE-APP-008]:
+#   * Sửa lỗi sw.js ERR_CACHE_MISS: Bổ sung kiểm tra chặn sớm `request.cache === "only-if-cached" && request.mode !== "same-origin"`, Network-First cho CRM domain/navigations, và khởi tạo new Request() cho Stale-While-Revalidate tránh lỗi cache miss trên Chrome.
+#   * Quản trị người dùng CRM: Sửa canAccessRoute mở rộng cho /account-settings?tab=users và /accounts, tự động ánh xạ route alias trong cây RBAC, và duy trì tab bar luôn hiển thị trong account-settings.index.tsx.
+#   * Luồng Kết Nối B2B: Cuộc hẹn chỉ thành công khi hội viên được mời bấm ĐỒNG Ý. Sau khi đồng ý sẽ mở modal chi tiết cuộc hẹn, lưu vào Lịch, lưu vào Hoạt động tại màn Sự kiện & Hoạt động.
+#   * Lịch Toàn Tháng Dạng Lưới & List: Thêm bộ điều hướng tháng [◀] [Tháng MM/YYYY] [▶] [Hôm nay], hỗ trợ 3 chế độ: Lưới cả tháng (month_grid 7 cột T2-CN kèm chấm màu 5 loại hoạt động), Danh sách tháng (month_list gom theo ngày) và Dải 14 ngày (strip).
+#   * Nhật Ký Ở Lịch & Đếm Ngược: Tất cả sự kiện, cơ hội, B2B, họp ban, đào tạo đều có đếm ngược thời gian thực. Khi đã diễn ra (now >= startMs), tự động ghi nhận vào Nhật ký ở lịch, mở tab [Nhật ký ở lịch] kèm ghi chú nhật ký.
+#   * Nút Chụp Ảnh Trực Tiếp & Tải Ảnh: Trong thời gian tính từ lúc bắt đầu hoạt động, trên mỗi thẻ và trong nhật ký có nút Chụp ảnh trực tiếp (capture="environment") và Tải ảnh lên (thư viện), có gallery xem trước, xóa và lightbox.
+#   * Đăng Bài Có Nút Chụp & Tải Ảnh: CreatePostModal và association.news.tsx có 2 nút tách biệt: "Chụp ảnh" (máy ảnh trực tiếp) và "Tải ảnh lên" (thư viện thiết bị).
 # 14/11/2026 (v11.47) — [NODE-CRM-005], [NODE-CRM-007], [NODE-CRM-014], [NODE-APP-008]:
 #   * Web CRM Mẫu Thư Nhắc: Tích hợp CustomReminderTemplateModal với các trường động textarea (mô tả), datetime (ngày giờ), price (chi phí VNĐ), qr (mã QR), text. Hỗ trợ xem trước App/Email/Zalo và lưu vào templates/localStorage.
 #   * Luồng Check QR Hết Hạn: guestRegister trong events.service.ts tự động kiểm tra sự kiện/đào tạo đã xóa/hết hạn và kích hoạt sendQrChangedOrExpiredEmail() trong mail.service.ts, gửi email thông báo chi tiết đến hòm thư người quét mã.
@@ -33,6 +46,25 @@
 # setup-ssl.sh không xóa/stop/recreate vione-ssl-proxy, không quản lý vione-network hoặc firewall 5445/5446.
 # setup-ssl.sh validate Compose rồi up --no-deps --force-recreate ssl-reverse-proxy; không down --remove-orphans hay docker rm liên dự án.
 # Giữ Host Nginx 80/443 và upstream production hiện có. Đối chiếu CEO 5443/5444 và ViOne 5445/5446 sau deploy.
+#
+# ------------------------------------------------------------------------------
+# 0.0. QUY CHUẨN TỐI CAO BẤT DI BẤT DỊCH VỀ DATABASE: 113.20.107.184:6432 (STRICT DATABASE LAW)
+# ------------------------------------------------------------------------------
+# 1. CƠ SỞ DỮ LIỆU DUY NHẤT & CHUẨN MỰC CỦA DỰ ÁN CEO1983:
+#    - Địa chỉ CSDL: 113.20.107.184:6432 (PgBouncer)
+#    - Database Name: ceo1983_project
+#    - Credentials: app1 / 5^S0CEpvYwC1(#YN1UoJ
+#    - Connection String: postgresql://app1:5%5ES0CEpvYwC1%28%23YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true
+#    - JDBC: jdbc:postgresql://113.20.107.184:6432/ceo1983_project
+# 2. RÀNG BUỘC GHI DỮ LIỆU (WRITE LAW):
+#    - Mọi chức năng lưu, thêm mới, cập nhật, xóa dữ liệu (INSERT, UPDATE, DELETE, RPC) từ hệ thống Backend NestJS,
+#      Web CRM Quản trị và Mobile App CEO 1983 TUYỆT ĐỐI PHẢI LƯU ĐÚNG VÀO DATABASE 113.20.107.184:6432.
+#    - TUYỆT ĐỐI KHÔNG LƯU VÀO DATABASE NÀO KHÁC.
+# 3. RÀNG BUỘC ĐỌC DỮ LIỆU (READ LAW):
+#    - Mọi chức năng lấy dữ liệu hiển thị về giao diện Web CRM và Mobile App CEO 1983 TUYỆT ĐỐI PHẢI LẤY TỪ 113.20.107.184:6432.
+# 4. TUYỆT ĐỐI CẤM DATABASE KHÁC:
+#    - Cụm máy chủ 14.225.217.232:5436 KHÔNG PHẢI DATABASE CHUẨN CỦA DỰ ÁN.
+#    - Cấm cấu hình biến môi trường, cấm viết script, cấm trỏ luồng sang bất kỳ database nào ngoài 113.20.107.184:6432.
 #
 # ------------------------------------------------------------------------------
 # 0. QUY TRÌNH 5 BƯỚC BẮT BUỘC & MA TRẬN NODE (STRICT NODE-DRIVEN WORKFLOW)

@@ -9,8 +9,8 @@ Hệ thống chuyển đổi số toàn diện của **CLB Doanh Nhân CEO 1983*
 
 ```
                                  ┌─────────────────────────────────────────────────────────┐
-                                 │       CƠ SỞ DỮ LIỆU POSTGRESQL 15 (ceo1983_project)     │
-                                 │               14.225.217.232:5436                       │
+                                 │       CƠ SỞ DỮ LIỆU POSTGRESQL CHUẨN (ceo1983_project)  │
+                                 │               113.20.107.184:6432 (PgBouncer)           │
                                  └────────────────────────────┬────────────────────────────┘
                                                               │
                                                               ▼
@@ -96,7 +96,7 @@ Hệ thống chuyển đổi số toàn diện của **CLB Doanh Nhân CEO 1983*
 
 ### C. Nhóm Node Hạ Tầng Dùng Chung ([NODE-CORE-xxx])
 1. **`[NODE-CORE-001]` Xác Thực & Bảo Mật JWT, Guard RBAC**: `auth.service.ts`, `jwt.strategy.ts`, `roles.guard.ts`.
-2. **`[NODE-CORE-002]` CSDL PostgreSQL & Prisma ORM**: Host `14.225.217.232:5436`, database `ceo1983_project`.
+2. **`[NODE-CORE-002]` CSDL PostgreSQL & Prisma ORM**: Host chuẩn duy nhất `113.20.107.184:6432` (PgBouncer), database `ceo1983_project`, user `app1` / `5^S0CEpvYwC1(#YN1UoJ`. Tuyệt đối mọi chức năng ghi và đọc dữ liệu đều qua CSDL này, không dùng `14.225.217.232:5436`.
 3. **`[NODE-CORE-003]` Realtime Socket.IO Gateway**: `events.gateway.ts`, `notifications.gateway.ts`.
 4. **`[NODE-CORE-004]` Triển Khai Độc Lập Mobile App CEO 1983**: Thư mục `deploy/ceo1983/`, Docker Compose Port 5002.
 5. **`[NODE-CORE-005]` Triển Khai Độc Lập Web CRM Quản Trị**: Thư mục `deploy/crm/`, Docker Compose Port 5005.

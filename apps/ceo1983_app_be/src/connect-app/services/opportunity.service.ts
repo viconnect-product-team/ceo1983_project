@@ -984,7 +984,7 @@ export class ConnectOpportunityService {
     }
   }
 
-  async getOpportunityById(opportunityId: string) {
+  async getOpportunityById(opportunityId: string, currentUserId?: string) {
     try {
       const opps = await this.prisma.$queryRaw<any[]>`
         SELECT o.*,
@@ -1004,6 +1004,39 @@ export class ConnectOpportunityService {
       `.catch(() => []);
       if (!opps[0]) return null;
       const r = opps[0];
+
+      // Kiểm tra quyền riêng tư nếu cơ hội được đặt là riêng tư (private / assigned / specific)
+      if (currentUserId) {
+        const posterId = String(r.poster_id || '');
+        const myMembers = await this.prisma.$queryRaw<any[]>`
+          SELECT id, code, department FROM public.members WHERE user_id::text = ${currentUserId} OR id = ${currentUserId} LIMIT 1
+        `.catch(() => []);
+        const myIds = new Set<string>([
+          String(currentUserId).toLowerCase(),
+          ...(myMembers[0]?.id ? [String(myMembers[0].id).toLowerCase()] : []),
+          ...(myMembers[0]?.code ? [String(myMembers[0].code).toLowerCase()] : []),
+        ]);
+        const isOwner = myIds.has(posterId.toLowerCase());
+        const scope = (r.target_scope || 'all').toLowerCase();
+        const recips: string[] = Array.isArray(r.target_recipients)
+          ? r.target_recipients.map(String)
+          : typeof r.target_recipients === 'string'
+            ? JSON.parse(r.target_recipients || '[]')
+            : [];
+        const isTargetRecipient = recips.some((recip) => {
+          const clean = String(recip).toLowerCase().replace(/^mem_/, '').replace(/^acc_/, '').trim();
+          return myIds.has(clean) || clean === String(currentUserId).toLowerCase();
+        });
+
+        if (
+          !isOwner &&
+          (scope === 'private' || scope === 'assigned' || scope === 'specific' || (recips.length > 0 && scope !== 'all' && scope !== 'public')) &&
+          !isTargetRecipient
+        ) {
+          // Người xem không phải chủ và không nằm trong danh sách người nhận được trao cơ hội riêng tư
+          return null;
+        }
+      }
 
       const interests = await this.prisma.$queryRaw<any[]>`
         SELECT oi.id, oi.opportunity_id, oi.member_id, oi.message, oi.contact, oi.interest_level, oi.created_at,
@@ -1115,8 +1148,18 @@ export class ConnectOpportunityService {
       data.images || (data.image ? [data.image] : []),
     );
     const oppImage = images[0] || data.image || data.thumbnail || null;
-    const targetScope = data.targetScope || 'all';
-    const targetRecipients = JSON.stringify(data.targetRecipients || []);
+    let targetScope = data.targetScope || 'all';
+    const rawRecipients: any[] = Array.isArray(data.targetRecipients)
+      ? data.targetRecipients
+      : [];
+    if (data.visibility === 'private' || rawRecipients.length > 0) {
+      if (targetScope === 'all' || !targetScope) {
+        targetScope = 'private';
+      }
+    } else if (data.visibility === 'public') {
+      targetScope = 'all';
+    }
+    const targetRecipients = JSON.stringify(rawRecipients);
     const targetGroups = JSON.stringify(data.targetGroups || []);
 
     const referrer = data.referrer ? String(data.referrer).trim() : null;
@@ -1203,7 +1246,6 @@ export class ConnectOpportunityService {
       .catch(() => null);
 
     // Bắn thông báo và socket cho người nhận được trao cơ hội
-    const rawRecipients: any[] = Array.isArray(data.targetRecipients) ? data.targetRecipients : [];
     if (rawRecipients.length > 0) {
       for (const r of rawRecipients) {
         const cleanRecip = String(r || '').replace(/^mem_/, '').replace(/^acc_/, '').trim();
@@ -1302,6 +1344,19 @@ export class ConnectOpportunityService {
           ? data.image
           : data.thumbnail;
 
+    let targetScope = data.targetScope;
+    const rawRecipients: any[] = Array.isArray(data.targetRecipients)
+      ? data.targetRecipients
+      : [];
+    if (data.visibility === 'private' || rawRecipients.length > 0) {
+      if (!targetScope || targetScope === 'all') {
+        targetScope = 'private';
+      }
+    } else if (data.visibility === 'public') {
+      targetScope = 'all';
+    }
+    const targetRecipients = JSON.stringify(rawRecipients);
+
     await this.prisma.$executeRaw`
       UPDATE public.opportunities
       SET
@@ -1319,6 +1374,8 @@ export class ConnectOpportunityService {
         company = COALESCE(${data.company}, company),
         referrer = COALESCE(${data.referrer !== undefined ? data.referrer : null}, referrer),
         commission_percent = COALESCE(${data.commissionPercent !== undefined ? data.commissionPercent : null}, commission_percent),
+        target_scope = COALESCE(${targetScope || null}, target_scope),
+        target_recipients = CASE WHEN ${data.targetRecipients !== undefined} THEN ${targetRecipients}::jsonb ELSE target_recipients END,
         image = COALESCE(${oppImage}, image),
         images = CASE WHEN ${images ? true : false} THEN ${images || []}::text[] ELSE images END,
         updated_at = now()
@@ -1391,7 +1448,7 @@ export class ConnectOpportunityService {
       ];
 
       const myMembers = await this.prisma.$queryRaw<any[]>`
-        SELECT id, code, user_id FROM public.members
+        SELECT id, code, user_id, department FROM public.members
         WHERE user_id::text = ${userId} OR id = ${userId}
       `.catch(() => [] as any[]);
       const myIds = new Set<string>([
@@ -1409,6 +1466,103 @@ export class ConnectOpportunityService {
         return [];
       }
 
+      let memberId: string | null = null;
+      let memberCode: string | null = null;
+      let userDept = '';
+      if (myMembers && myMembers.length > 0) {
+        memberId = myMembers[0].id ? String(myMembers[0].id) : null;
+        memberCode = myMembers[0].code ? String(myMembers[0].code) : null;
+        if (myMembers[0].department) {
+          userDept = String(myMembers[0].department).toLowerCase().trim();
+        }
+      }
+
+      let connectedUserIds: string[] = [];
+      if (isValidUuid(userId)) {
+        const conns = await this.prisma.$queryRaw<any[]>`
+          SELECT requester_user_id, recipient_user_id
+          FROM public.user_connections
+          WHERE status = 'accepted'::public.global_connection_status AND (requester_user_id = ${userId}::uuid OR recipient_user_id = ${userId}::uuid)
+        `.catch(() => []);
+        connectedUserIds = conns.map((c) =>
+          String(c.requester_user_id) === String(userId)
+            ? String(c.recipient_user_id)
+            : String(c.requester_user_id),
+        );
+      }
+
+      // Lọc nghiêm ngặt theo quyền riêng tư (Public ai cũng thấy; Private chỉ chủ cơ hội và người được chỉ định thấy)
+      const visibleOpportunities = opportunities.filter((o) => {
+        const posterId = String(o.poster_id || '');
+        const isOwner =
+          myIds.has(posterId.toLowerCase()) ||
+          posterId === String(userId) ||
+          (memberId && posterId === String(memberId)) ||
+          (memberCode && posterId === String(memberCode));
+
+        // Chủ cơ hội luôn luôn xem được cơ hội của chính mình
+        if (isOwner) return true;
+
+        const scope = (o.target_scope || 'all').toLowerCase();
+        const recips: string[] = Array.isArray(o.target_recipients)
+          ? o.target_recipients.map(String)
+          : typeof o.target_recipients === 'string'
+            ? JSON.parse(o.target_recipients || '[]')
+            : [];
+
+        const isTargetRecipient = recips.some((r) => {
+          const clean = String(r).toLowerCase().replace(/^mem_/, '').replace(/^acc_/, '').trim();
+          return (
+            myIds.has(clean) ||
+            clean === String(userId).toLowerCase() ||
+            (memberId && clean === String(memberId).toLowerCase()) ||
+            (memberCode && clean === String(memberCode).toLowerCase())
+          );
+        });
+
+        // 1. Khi cơ hội riêng tư / chỉ định đích danh (private, assigned, specific) hoặc có danh sách người nhận đích danh
+        // Bắt buộc: CHỈ CÓ chủ cơ hội và người được trao mới thấy; người khác KHÔNG được thấy!
+        if (
+          scope === 'assigned' ||
+          scope === 'specific' ||
+          scope === 'private' ||
+          (recips.length > 0 &&
+            scope !== 'public' &&
+            scope !== 'all' &&
+            scope !== 'department' &&
+            scope !== 'group')
+        ) {
+          return isTargetRecipient;
+        }
+
+        // 2. Chia sẻ riêng tư với bạn bè đã kết nối (friends)
+        if (scope === 'friends') {
+          if (recips.length > 0) return isTargetRecipient;
+          return connectedUserIds.includes(posterId);
+        }
+
+        // 3. Chia sẻ theo Ban chuyên môn
+        if (scope === 'department' || scope === 'group') {
+          if (isTargetRecipient) return true;
+          const targetGroups: string[] = Array.isArray(o.target_groups)
+            ? o.target_groups.map((g: any) => String(g).toLowerCase().trim())
+            : typeof o.target_groups === 'string'
+              ? JSON.parse(o.target_groups || '[]').map((g: any) => String(g).toLowerCase().trim())
+              : [];
+          if (userDept && targetGroups.some((tg: string) => userDept.includes(tg) || tg.includes(userDept))) {
+            return true;
+          }
+          return false;
+        }
+
+        // 4. Mặc định là công khai toàn CLB
+        return true;
+      });
+
+      if (visibleOpportunities.length === 0) {
+        return [];
+      }
+
       const TAG_VI_MAP: Record<string, string> = {
         partnership: 'Hợp tác B2B',
         investment: 'Đầu tư & Vốn',
@@ -1418,7 +1572,7 @@ export class ConnectOpportunityService {
         export: 'Xuất nhập khẩu',
       };
 
-      return opportunities.map((o, i) => {
+      return visibleOpportunities.map((o, i) => {
         const rawTag = o.type || o.tag || 'Hợp tác B2B';
         const tagVi = TAG_VI_MAP[rawTag.toLowerCase()] || rawTag;
         const bMin = o.budget_min ? Number(o.budget_min) : undefined;
@@ -1514,6 +1668,17 @@ export class ConnectOpportunityService {
             myIds.has(String(o.poster_id || '').toLowerCase()) ||
             (Boolean(o.poster_code) &&
               myIds.has(String(o.poster_code).toLowerCase())),
+          targetScope: o.target_scope || 'all',
+          targetRecipients: Array.isArray(o.target_recipients)
+            ? o.target_recipients
+            : typeof o.target_recipients === 'string'
+              ? JSON.parse(o.target_recipients || '[]')
+              : [],
+          visibility:
+            o.target_scope === 'private' ||
+            (Array.isArray(o.target_recipients) && o.target_recipients.length > 0)
+              ? 'private'
+              : 'public',
         };
       });
     } catch {

@@ -461,29 +461,28 @@ function EventPosterCard({
 
         {/* Status badge top right */}
         <div
-          className={`px-2.5 py-1 right-[48px] top-[12.64px] absolute rounded-3xl inline-flex justify-start items-center gap-1.5 shadow-md z-10 ${
-            isPast
+          className={`px-2.5 py-1 right-[48px] top-[12.64px] absolute rounded-3xl inline-flex justify-start items-center gap-1.5 shadow-md z-10 ${isPast
               ? "bg-slate-700 text-slate-200"
               : registered
-              ? "bg-blue-600 text-white"
-              : isFull
-              ? "bg-rose-600 text-white"
-              : isFree
-              ? "bg-sky-500 text-white"
-              : "bg-[#003B95] text-white font-bold"
-          }`}
+                ? "bg-blue-600 text-white"
+                : isFull
+                  ? "bg-rose-600 text-white"
+                  : isFree
+                    ? "bg-sky-500 text-white"
+                    : "bg-[#003B95] text-white font-bold"
+            }`}
         >
           <div className="size-1.5 bg-white rounded-full" />
           <div className="text-[9.5px] font-bold font-sans leading-none">
             {isPast
               ? "Đã kết thúc"
               : registered
-              ? "Đã đăng ký"
-              : isFull
-              ? "Đã hết vé"
-              : isFree
-              ? "Đang mở - miễn phí"
-              : `${new Intl.NumberFormat("vi-VN").format(price)} đ`}
+                ? "Đã đăng ký"
+                : isFull
+                  ? "Đã hết vé"
+                  : isFree
+                    ? "Đang mở - miễn phí"
+                    : `${new Intl.NumberFormat("vi-VN").format(price)} đ`}
           </div>
         </div>
 
@@ -495,11 +494,10 @@ function EventPosterCard({
             onToggleBookmark(event.id);
             toast.success(isBookmarked ? "Đã bỏ lưu sự kiện" : "Đã lưu sự kiện vào danh sách quan tâm");
           }}
-          className={`size-8 right-[12.64px] top-[12.64px] absolute rounded-full outline outline-1 outline-offset-[-1.05px] outline-white/20 inline-flex justify-center items-center overflow-hidden transition cursor-pointer shadow-md z-10 ${
-            isBookmarked
+          className={`size-8 right-[12.64px] top-[12.64px] absolute rounded-full outline outline-1 outline-offset-[-1.05px] outline-white/20 inline-flex justify-center items-center overflow-hidden transition cursor-pointer shadow-md z-10 ${isBookmarked
               ? "bg-[#003B95] text-white font-bold"
               : "bg-stone-900/80 hover:bg-stone-800 text-white"
-          }`}
+            }`}
           title={isBookmarked ? "Bỏ lưu sự kiện" : "Lưu sự kiện"}
         >
           <Bookmark className={`size-4 ${isBookmarked ? "fill-white text-white" : ""}`} />
@@ -739,11 +737,10 @@ function UpcomingEventsCoverflow({
                 zIndex,
                 opacity,
               }}
-              className={`group/slide absolute top-0 bottom-0 w-[84%] sm:w-[68%] max-w-[420px] my-auto cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden shadow-lg transition-all duration-500 ease-out ${
-                isCenter
+              className={`group/slide absolute top-0 bottom-0 w-[84%] sm:w-[68%] max-w-[420px] my-auto cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden shadow-lg transition-all duration-500 ease-out ${isCenter
                   ? "shadow-[0_16px_36px_rgba(0,0,0,0.65)] ring-1 ring-white/20"
                   : "hover:opacity-90"
-              }`}
+                }`}
             >
               {/* Ảnh poster sự kiện */}
               <img
@@ -802,11 +799,10 @@ function UpcomingEventsCoverflow({
               type="button"
               onClick={() => setActiveIdx(dotIdx)}
               aria-label={`Chuyển đến slide ${dotIdx + 1}`}
-              className={`transition-all duration-300 rounded-full cursor-pointer ${
-                isActive
+              className={`transition-all duration-300 rounded-full cursor-pointer ${isActive
                   ? "w-6 h-1.5 bg-[#001B54] dark:bg-white shadow-xs"
                   : "w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
-              }`}
+                }`}
             />
           );
         })}
@@ -852,7 +848,7 @@ export function formatEventTimeRange(ev: any, title?: string): string {
         const mm = String(d.getMinutes()).padStart(2, "0");
         return `${hh}:${mm} - 21:30`;
       }
-    } catch {}
+    } catch { }
   }
 
   const tl = (title || ev?.title || ev?.name || "").toLowerCase();
@@ -1168,11 +1164,10 @@ function FeaturedUpcomingEventHero({
             key={i}
             type="button"
             onClick={() => setActiveIdx(i)}
-            className={`transition-all duration-300 cursor-pointer ${
-              i === activeIdx
+            className={`transition-all duration-300 cursor-pointer ${i === activeIdx
                 ? "w-2.5 h-1 bg-[#003B95] rounded-[99px]"
                 : "size-1 bg-slate-300 dark:bg-slate-700 rounded-[99px] hover:bg-slate-400"
-            }`}
+              }`}
           />
         ))}
       </div>
@@ -1227,14 +1222,28 @@ function EventsScreen() {
         } else {
           setLocalRegistered({});
         }
-      } catch {}
+      } catch { }
     };
     window.addEventListener("vba.events.changed", handleEventsChanged);
     return () => window.removeEventListener("vba.events.changed", handleEventsChanged);
   }, []);
 
-  // 2 Kiểu: 1 là Sự kiện CLB, 2 là Cuộc họp gặp mặt (Chuẩn YBA Sài Gòn)
-  const [mainTab, setMainTab] = useState<"events" | "meetings">("events");
+  // 2 Kiểu: 1 là Sự kiện CLB, 2 là Cuộc họp gặp mặt & Hoạt động B2B
+  const [mainTab, setMainTab] = useState<"events" | "meetings">(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const tabParam = sp.get("tab");
+      if (tabParam === "activities" || tabParam === "meetings" || tabParam === "hoat-dong") return "meetings";
+      try {
+        const saved = sessionStorage.getItem("vba_events_active_tab");
+        if (saved === "activities" || saved === "meetings") {
+          sessionStorage.removeItem("vba_events_active_tab");
+          return "meetings";
+        }
+      } catch { }
+    }
+    return "events";
+  });
   const [meetingsList, setMeetingsList] = useState<any[]>([]);
   const [b2bConnections, setB2bConnections] = useState<any[]>([]);
   const [crmTrainings, setCrmTrainings] = useState<any[]>([]);
@@ -1266,25 +1275,31 @@ function EventsScreen() {
       })
       .finally(() => setLoadingMeetings(false));
 
-    // 2. Cuộc gặp kết nối B2B giữa 2 tài khoản
-    fetchNestApi<any>("/meetings/connection-appointments")
-      .then((res: any) => {
-        const list = Array.isArray(res) ? res : res?.items || [];
-        if (list.length > 0) {
-          setB2bConnections(list);
-        } else {
+    // 2. Cuộc gặp kết nối B2B giữa 2 tài khoản (Tự động đồng bộ thời gian thực)
+    const loadB2bList = () => {
+      fetchNestApi<any>("/meetings/connection-appointments")
+        .then((res: any) => {
+          const list = Array.isArray(res) ? res : res?.items || [];
+          if (list.length > 0) {
+            setB2bConnections(list);
+          } else {
+            try {
+              const local = JSON.parse(localStorage.getItem("vba_connection_appointments") || "[]");
+              setB2bConnections(Array.isArray(local) ? local : []);
+            } catch { }
+          }
+        })
+        .catch(() => {
           try {
             const local = JSON.parse(localStorage.getItem("vba_connection_appointments") || "[]");
             setB2bConnections(Array.isArray(local) ? local : []);
-          } catch {}
-        }
-      })
-      .catch(() => {
-        try {
-          const local = JSON.parse(localStorage.getItem("vba_connection_appointments") || "[]");
-          setB2bConnections(Array.isArray(local) ? local : []);
-        } catch {}
-      });
+          } catch { }
+        });
+    };
+    loadB2bList();
+
+    window.addEventListener("vba.connection.changed", loadB2bList);
+    window.addEventListener("vba.meeting.changed", loadB2bList);
 
     // 3. Khóa đào tạo từ hệ thống CRM
     fetchNestApi<any[]>("/trainings")
@@ -1298,250 +1313,274 @@ function EventsScreen() {
             if (Array.isArray(res)) setCrmTrainings(res);
             else if (res?.data && Array.isArray(res.data)) setCrmTrainings(res.data);
           })
-          .catch(() => {});
+          .catch(() => { });
       });
+
+    return () => {
+      window.removeEventListener("vba.connection.changed", loadB2bList);
+      window.removeEventListener("vba.meeting.changed", loadB2bList);
+    };
   }, []);
 
-  // Category & bookmark state
-  const [eventCategory, setEventCategory] = useState<
-    "all" | "upcoming" | "free" | "paid" | "registered" | "bookmarked" | "history" | "b2b" | "gala" | "training" | "caravan"
-  >("all");
-  const [activityFilter, setActivityFilter] = useState<"all" | "b2b_connect" | "trainings" | "fixed_committee" | "extraordinary">("all");
-  const [recapModalEvent, setRecapModalEvent] = useState<MyEvent | any | null>(null);
-  const [eventsPage, setEventsPage] = useState(1);
-  const EVENTS_PER_PAGE = 4;
-  const [cancellingEvent, setCancellingEvent] = useState<MyEvent | null>(null);
-  const [cancelReason, setCancelReason] = useState<string>("Có việc bận đột xuất");
+// Category & bookmark state
+const [eventCategory, setEventCategory] = useState<
+  "all" | "upcoming" | "free" | "paid" | "registered" | "bookmarked" | "history" | "b2b" | "gala" | "training" | "caravan"
+>("all");
+const [activityFilter, setActivityFilter] = useState<"all" | "b2b_connect" | "trainings" | "fixed_committee" | "extraordinary">("all");
+const [recapModalEvent, setRecapModalEvent] = useState<MyEvent | any | null>(null);
+const [eventsPage, setEventsPage] = useState(1);
+const EVENTS_PER_PAGE = 4;
+const [cancellingEvent, setCancellingEvent] = useState<MyEvent | null>(null);
+const [cancelReason, setCancelReason] = useState<string>("Có việc bận đột xuất");
 
-  const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>(() => {
-    if (typeof window === "undefined") return {};
+const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>(() => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem("vba_bookmarked_events") || "{}");
+  } catch {
+    return {};
+  }
+});
+
+// Lịch sử sự kiện xem gần đây
+const [recentEventIds, setRecentEventIds] = useState<string[]>(() => {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem("vba_recent_viewed_events") || "[]");
+  } catch {
+    return [];
+  }
+});
+
+const toggleBookmark = (id: string) => {
+  setBookmarkedIds((prev) => {
+    const next = { ...prev, [id]: !prev[id] };
     try {
-      return JSON.parse(localStorage.getItem("vba_bookmarked_events") || "{}");
-    } catch {
-      return {};
+      localStorage.setItem("vba_bookmarked_events", JSON.stringify(next));
+    } catch { }
+    if (next[id]) {
+      toast.success(isEn ? "Event bookmarked" : "Đã đánh dấu sự kiện");
+    } else {
+      toast.info(isEn ? "Bookmark removed" : "Đã bỏ đánh dấu sự kiện");
     }
+    return next;
   });
+};
 
-  // Lịch sử sự kiện xem gần đây
-  const [recentEventIds, setRecentEventIds] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
+const getEventPrice = (e: MyEvent | any) => {
+  if (!e) return 0;
+  const rawPrice = e.ticketPrice !== undefined && e.ticketPrice !== null
+    ? Number(e.ticketPrice)
+    : (e.fee !== undefined && e.fee !== null ? Number(e.fee) : 0);
+  return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
+};
+
+const isEventFree = (e: MyEvent | any) => {
+  return getEventPrice(e) <= 0;
+};
+
+// Modals state
+const [selectedEvent, setSelectedEvent] = useState<MyEvent | null>(null);
+
+const handleSelectEvent = (e: MyEvent) => {
+  setSelectedEvent(e);
+  setRecentEventIds((prev) => {
+    const updated = [e.id, ...prev.filter((id) => id !== e.id)].slice(0, 8);
     try {
-      return JSON.parse(localStorage.getItem("vba_recent_viewed_events") || "[]");
-    } catch {
-      return [];
-    }
+      localStorage.setItem("vba_recent_viewed_events", JSON.stringify(updated));
+    } catch { }
+    return updated;
   });
+};
 
-  const toggleBookmark = (id: string) => {
-    setBookmarkedIds((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      try {
-        localStorage.setItem("vba_bookmarked_events", JSON.stringify(next));
-      } catch {}
-      if (next[id]) {
-        toast.success(isEn ? "Event bookmarked" : "Đã đánh dấu sự kiện");
-      } else {
-        toast.info(isEn ? "Bookmark removed" : "Đã bỏ đánh dấu sự kiện");
-      }
-      return next;
-    });
-  };
+const [registeringEvent, setRegisteringEvent] = useState<MyEvent | null>(null);
+const [registeredSuccessInfo, setRegisteredSuccessInfo] = useState<{
+  eventTitle: string;
+  totalAmount: number;
+  invoiceNo: string;
+  ticketCount: number;
+  isFree?: boolean;
+  luckyNumber?: string;
+  seatAssignment?: string;
+  qrCodeUrl?: string;
+  phone?: string;
+  event?: MyEvent | null;
+} | null>(null);
+const [ticketPassModal, setTicketPassModal] = useState<{
+  eventTitle: string;
+  ticketCode: string;
+  luckyNumber: string;
+  ticketType: string;
+  ticketCount: number;
+  isFree: boolean;
+  date: string;
+  time: string;
+  location: string;
+  attendeeName: string;
+  attendeePhone?: string;
+  attendeeCompany?: string;
+  attendeePosition?: string;
+  qrUrl: string;
+} | null>(null);
+const [allTicketsModalOpen, setAllTicketsModalOpen] = useState(false);
 
-  const getEventPrice = (e: MyEvent | any) => {
-    if (!e) return 0;
-    const rawPrice = e.ticketPrice !== undefined && e.ticketPrice !== null
-      ? Number(e.ticketPrice)
-      : (e.fee !== undefined && e.fee !== null ? Number(e.fee) : 0);
-    return Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0;
-  };
+// Form registration state
+const [formName, setFormName] = useState("");
+const [formPhone, setFormPhone] = useState("");
+const [formEmail, setFormEmail] = useState("");
+const [formCompany, setFormCompany] = useState("");
+const [formPosition, setFormPosition] = useState("");
+const [formTicketCount, setFormTicketCount] = useState<number | "">(1);
+const [formTicketType, setFormTicketType] = useState("Standard");
+const [formNote, setFormNote] = useState("");
+const [submittingReg, setSubmittingReg] = useState(false);
 
-  const isEventFree = (e: MyEvent | any) => {
-    return getEventPrice(e) <= 0;
-  };
+// Open registration modal with auto prefilled user profile
+function handleOpenRegister(e: MyEvent, evt?: React.MouseEvent) {
+  if (evt) evt.stopPropagation();
+  if (isEventFull(e)) {
+    toast.error("Sự kiện này đã đủ số lượng đại biểu đăng ký (Hết chỗ). Vui lòng liên hệ Ban Tổ Chức.");
+    return;
+  }
+  setRegisteringEvent(e);
+  setFormName(member?.name || user?.name || user?.user_metadata?.full_name || "");
+  setFormEmail(member?.email || user?.email || "");
+  setFormPhone(member?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : ""));
+  setFormCompany((member as any)?.company || (member as any)?.companyName || (user?.user_metadata as any)?.company || "CLB Doanh Nhân CEO 1983");
+  setFormPosition(member?.title || (member as any)?.position || "Hội viên CLB Doanh Nhân CEO 1983");
+  setFormTicketCount(1);
+  setFormTicketType("Standard");
+  setFormNote("");
+}
 
-  // Modals state
-  const [selectedEvent, setSelectedEvent] = useState<MyEvent | null>(null);
+// Lắng nghe URL Query Params khi quét mã QR hoặc click link từ Zalo OA / Email:
+// Ví dụ: /association/events?action=register&id=...&ticket=...&ref=qr_scan
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  const action = params.get("action");
+  const targetEventId = params.get("id") || params.get("eventId");
+  const ticketParam = params.get("ticket") || params.get("ticketCode") || params.get("regId");
+  const qrData = params.get("qrData");
 
-  const handleSelectEvent = (e: MyEvent) => {
-    setSelectedEvent(e);
-    setRecentEventIds((prev) => {
-      const updated = [e.id, ...prev.filter((id) => id !== e.id)].slice(0, 8);
-      try {
-        localStorage.setItem("vba_recent_viewed_events", JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
+  // Chỉ kích hoạt khi URL có tham số đăng ký, mã vé hoặc xem chi tiết sự kiện
+  if (action === "register" || action === "dang-ky" || targetEventId || ticketParam || qrData) {
+    const allEvs = serverEvents || [];
+    const matched = allEvs.find((ev) => ev.id === targetEventId) || allEvs[0];
 
-  const [registeringEvent, setRegisteringEvent] = useState<MyEvent | null>(null);
-  const [registeredSuccessInfo, setRegisteredSuccessInfo] = useState<{
-    eventTitle: string;
-    totalAmount: number;
-    invoiceNo: string;
-    ticketCount: number;
-    isFree?: boolean;
-    luckyNumber?: string;
-    seatAssignment?: string;
-    qrCodeUrl?: string;
-    phone?: string;
-    event?: MyEvent | null;
-  } | null>(null);
-  const [ticketPassModal, setTicketPassModal] = useState<{
-    eventTitle: string;
-    ticketCode: string;
-    luckyNumber: string;
-    ticketType: string;
-    ticketCount: number;
-    isFree: boolean;
-    date: string;
-    time: string;
-    location: string;
-    attendeeName: string;
-    attendeePhone?: string;
-    attendeeCompany?: string;
-    attendeePosition?: string;
-    qrUrl: string;
-  } | null>(null);
-  const [allTicketsModalOpen, setAllTicketsModalOpen] = useState(false);
+    if (action === "ticket" && ticketParam) {
+      setTicketPassModal({
+        eventTitle: matched?.title || "Sự Kiện CLB Doanh Nhân CEO 1983",
+        ticketCode: ticketParam,
+        luckyNumber: "1983",
+        ticketType: "VIP Member Pass",
+        ticketCount: 1,
+        isFree: true,
+        date: matched?.date ? formatDisplayDate(matched.date) : "15/11/2026",
+        time: matched?.time || "08:30 - Thứ Bảy",
+        location: matched?.place || "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
+        attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
+        attendeePhone: member?.phone || "",
+        attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
+        attendeePosition: member?.title || "Hội viên chính thức",
+        qrUrl: `https://crm.ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(ticketParam)}`,
+      });
+    } else {
+      const evToOpen: MyEvent = matched || {
+        id: targetEventId || "gala-ceo1983-2026",
+        title: "Gala Doanh Nhân CEO 1983 & Kết Nối Giao Thương 2026",
+        description: "Sự kiện kết nối giao thương trọng điểm thường niên của CLB Doanh Nhân CEO 1983 (HanoiBA).",
+        date: new Date().toISOString(),
+        time: "08:30 - Thứ Bảy",
+        place: "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
+        fee: 0,
+        ticketPrice: 0,
+        registered: false,
+        communityName: "CLB Doanh Nhân CEO 1983 (HanoiBA)",
+      } as any;
 
-  // Lắng nghe URL Query Params khi quét mã QR hoặc click link từ Zalo OA / Email:
-  // Ví dụ: /association/events?action=register&id=...&ticket=...&ref=qr_scan
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const action = params.get("action");
-    const targetEventId = params.get("id") || params.get("eventId");
-    const ticketParam = params.get("ticket") || params.get("ticketCode") || params.get("regId");
-    const qrData = params.get("qrData");
-
-    // Chỉ kích hoạt khi URL có tham số đăng ký, mã vé hoặc xem chi tiết sự kiện
-    if (action === "register" || action === "dang-ky" || targetEventId || ticketParam || qrData) {
-      const allEvs = serverEvents || [];
-      const matched = allEvs.find((ev) => ev.id === targetEventId) || allEvs[0];
-
-      if (action === "ticket" && ticketParam) {
-        setTicketPassModal({
-          eventTitle: matched?.title || "Sự Kiện CLB Doanh Nhân CEO 1983",
-          ticketCode: ticketParam,
-          luckyNumber: "1983",
-          ticketType: "VIP Member Pass",
-          ticketCount: 1,
-          isFree: true,
-          date: matched?.date ? formatDisplayDate(matched.date) : "15/11/2026",
-          time: matched?.time || "08:30 - Thứ Bảy",
-          location: matched?.place || "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
-          attendeeName: member?.name || user?.name || "Hội viên CEO 1983",
-          attendeePhone: member?.phone || "",
-          attendeeCompany: (member as any)?.companyName || "CLB Doanh Nhân CEO 1983",
-          attendeePosition: member?.title || "Hội viên chính thức",
-          qrUrl: `https://crm.ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(ticketParam)}`,
+      // Nếu rõ ràng có action đăng ký từ QR thì mới mở Form Đăng Ký
+      if (action === "register" || action === "dang-ky") {
+        handleOpenRegister(evToOpen);
+        toast.success(`Đã tự động mở Form Đăng Ký tham dự sự kiện "${evToOpen.title}"!`, {
+          icon: "🎟️",
+          duration: 4000,
         });
       } else {
-        const evToOpen: MyEvent = matched || {
-          id: targetEventId || "gala-ceo1983-2026",
-          title: "Gala Doanh Nhân CEO 1983 & Kết Nối Giao Thương 2026",
-          description: "Sự kiện kết nối giao thương trọng điểm thường niên của CLB Doanh Nhân CEO 1983 (HanoiBA).",
-          date: new Date().toISOString(),
-          time: "08:30 - Thứ Bảy",
-          place: "Keangnam Landmark 72, Phạm Hùng, Hà Nội",
-          fee: 0,
-          ticketPrice: 0,
-          registered: false,
-          communityName: "CLB Doanh Nhân CEO 1983 (HanoiBA)",
-        } as any;
-
-        // Nếu rõ ràng có action đăng ký từ QR thì mới mở Form Đăng Ký
-        if (action === "register" || action === "dang-ky") {
-          handleOpenRegister(evToOpen);
-          toast.success(`Đã tự động mở Form Đăng Ký tham dự sự kiện "${evToOpen.title}"!`, {
-            icon: "🎟️",
-            duration: 4000,
-          });
-        } else {
-          // Ngược lại (bấm Xem Chi Tiết từ Banner Trang chủ hoặc liên kết sự kiện): Mở thẳng Popup Chi Tiết Sự Kiện
-          handleSelectEvent(evToOpen);
-        }
+        // Ngược lại (bấm Xem Chi Tiết từ Banner Trang chủ hoặc liên kết sự kiện): Mở thẳng Popup Chi Tiết Sự Kiện
+        handleSelectEvent(evToOpen);
       }
     }
-  }, [serverEvents]);
+  }
+}, [serverEvents]);
 
+const isRegistered = (e: MyEvent) => {
+  if (localRegistered[e.id] !== undefined) return localRegistered[e.id];
+  return !!e.registered;
+};
 
-  // Form registration state
-  const [formName, setFormName] = useState("");
-  const [formPhone, setFormPhone] = useState("");
-  const [formEmail, setFormEmail] = useState("");
-  const [formCompany, setFormCompany] = useState("");
-  const [formPosition, setFormPosition] = useState("");
-  const [formTicketCount, setFormTicketCount] = useState<number | "">(1);
-  const [formTicketType, setFormTicketType] = useState("Standard");
-  const [formNote, setFormNote] = useState("");
-  const [submittingReg, setSubmittingReg] = useState(false);
+const events = serverEvents || [];
+const upcomingEvents = events.filter((e) => !isEventPast(e));
+const pastEvents = events.filter((e) => isEventPast(e));
 
-  const isRegistered = (e: MyEvent) => {
-    if (localRegistered[e.id] !== undefined) return localRegistered[e.id];
-    return !!e.registered;
-  };
+const freeEvents = upcomingEvents.filter((e) => isEventFree(e));
+const paidEvents = upcomingEvents.filter((e) => !isEventFree(e));
+const registeredEvents = events.filter((e) => isRegistered(e));
+const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
 
-  const events = serverEvents || [];
-  const upcomingEvents = events.filter((e) => !isEventPast(e));
-  const pastEvents = events.filter((e) => isEventPast(e));
-
-  const freeEvents = upcomingEvents.filter((e) => isEventFree(e));
-  const paidEvents = upcomingEvents.filter((e) => !isEventFree(e));
-  const registeredEvents = events.filter((e) => isRegistered(e));
-  const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
-
-  const filteredEvents = useMemo(() => {
-    const allList = events;
-    switch (eventCategory) {
-      case "all":
-        return allList;
-      case "upcoming":
-        return upcomingEvents;
-      case "free":
-        return freeEvents;
-      case "paid":
-        return paidEvents;
-      case "registered":
-        return registeredEvents;
-      case "bookmarked":
-        return bookmarkedEventsList;
-      case "history":
-        return pastEvents;
-      case "b2b":
-        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b")));
-      case "gala":
-        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("gala") || (e.category || e.type || "").toLowerCase().includes("đại hội")));
-      case "training":
-        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("đào tạo") || (e.category || e.type || "").toLowerCase().includes("tọa đàm") || (e.category || e.type || "").toLowerCase().includes("workshop")));
-      case "caravan":
-        return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("caravan") || (e.category || e.type || "").toLowerCase().includes("xúc tiến")));
-      default:
-        return allList;
-    }
-  }, [eventCategory, events, freeEvents, paidEvents, registeredEvents, bookmarkedEventsList, pastEvents, upcomingEvents]);
+const filteredEvents = useMemo(() => {
+  const allList = events;
+  switch (eventCategory) {
+    case "all":
+      return allList;
+    case "upcoming":
+      return upcomingEvents;
+    case "free":
+      return freeEvents;
+    case "paid":
+      return paidEvents;
+    case "registered":
+      return registeredEvents;
+    case "bookmarked":
+      return bookmarkedEventsList;
+    case "history":
+      return pastEvents;
+    case "b2b":
+      return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("giao thương") || (e.category || e.type || "").toLowerCase().includes("b2b")));
+    case "gala":
+      return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("gala") || (e.category || e.type || "").toLowerCase().includes("đại hội")));
+    case "training":
+      return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("đào tạo") || (e.category || e.type || "").toLowerCase().includes("tọa đàm") || (e.category || e.type || "").toLowerCase().includes("workshop")));
+    case "caravan":
+      return allList.filter((e: any) => ((e.category || e.type || "").toLowerCase().includes("caravan") || (e.category || e.type || "").toLowerCase().includes("xúc tiến")));
+    default:
+      return allList;
+  }
+}, [eventCategory, events, freeEvents, paidEvents, registeredEvents, bookmarkedEventsList, pastEvents, upcomingEvents]);
 
   const mappedB2bItems = useMemo(() => {
-    return b2bConnections.map((b: any, idx: number) => {
-      const partnerName = b.partner_name || b.partnerName || b.partner?.name || b.receiver?.name || "Hội viên Doanh nhân";
-      const partnerComp = b.partner_company || b.partnerCompany || b.partner?.company_name || b.receiver?.company || "Doanh nghiệp CEO 1983";
-      const myName = member?.name || user?.name || "Bạn";
-      return {
-        id: b.id || `b2b-${idx}`,
-        activityType: "b2b_connect",
-        title: b.title || `Hẹn gặp kết nối 1-1: ${myName} & ${partnerName}`,
-        partnerName,
-        partnerCompany: partnerComp,
-        partnerAvatar: b.partner_avatar || b.partnerAvatar || b.partner?.avatar_url,
-        time: b.appointment_time || b.time || "09:30",
-        date: b.appointment_date || b.date || new Date().toISOString(),
-        location: b.location || b.meeting_link || "Highlands Coffee / Trực tuyến",
-        isOnline: !!b.meeting_link || b.location?.toLowerCase().includes("online") || b.location?.toLowerCase().includes("zoom"),
-        meetingLink: b.meeting_link,
-        status: b.status || "confirmed",
-        notes: b.purpose || b.notes || "Trao đổi cơ hội hợp tác kinh doanh 1-on-1",
-      };
-    });
+    return b2bConnections
+      .filter((b: any) => b.status === "confirmed" || b.status === "accepted")
+      .map((b: any, idx: number) => {
+        const partnerName = b.partner_name || b.partnerName || b.partner?.name || b.receiver?.name || "Hội viên Doanh nhân";
+        const partnerComp = b.partner_company || b.partnerCompany || b.partner?.company_name || b.receiver?.company || "Doanh nghiệp CEO 1983";
+        const myName = member?.name || user?.name || "Bạn";
+        return {
+          id: b.id || `b2b-${idx}`,
+          activityType: "b2b_connect",
+          title: b.title || `Hẹn gặp kết nối 1-1: ${myName} & ${partnerName}`,
+          partnerName,
+          partnerCompany: partnerComp,
+          partnerAvatar: b.partner_avatar || b.partnerAvatar || b.partner?.avatar_url,
+          time: b.appointment_time || b.time || "09:30",
+          date: b.appointment_date || b.date || new Date().toISOString(),
+          location: b.location || b.meeting_link || "Highlands Coffee / Trực tuyến",
+          isOnline: !!b.meeting_link || b.location?.toLowerCase().includes("online") || b.location?.toLowerCase().includes("zoom"),
+          meetingLink: b.meeting_link,
+          status: b.status || "confirmed",
+          notes: b.purpose || b.notes || "Trao đổi cơ hội hợp tác kinh doanh 1-on-1",
+        };
+      });
   }, [b2bConnections, member, user]);
 
   const mappedTrainings = useMemo(() => {
@@ -1582,24 +1621,6 @@ function EventsScreen() {
       ...mappedTrainings,
     ];
   }, [meetingsList, mappedB2bItems, mappedTrainings, activityFilter]);
-
-  // Open registration modal with auto prefilled user profile
-  function handleOpenRegister(e: MyEvent, evt?: React.MouseEvent) {
-    if (evt) evt.stopPropagation();
-    if (isEventFull(e)) {
-      toast.error("Sự kiện này đã đủ số lượng đại biểu đăng ký (Hết chỗ). Vui lòng liên hệ Ban Tổ Chức.");
-      return;
-    }
-    setRegisteringEvent(e);
-    setFormName(member?.name || user?.name || user?.user_metadata?.full_name || "");
-    setFormEmail(member?.email || user?.email || "");
-    setFormPhone(member?.phone || (user?.username && /^\d+$/.test(user.username) ? user.username : ""));
-    setFormCompany((member as any)?.company || (member as any)?.companyName || (user?.user_metadata as any)?.company || "CLB Doanh Nhân CEO 1983");
-    setFormPosition(member?.title || (member as any)?.position || "Hội viên CLB Doanh Nhân CEO 1983");
-    setFormTicketCount(1);
-    setFormTicketType("Standard");
-    setFormNote("");
-  }
 
   async function handleConfirmRegistration(e: React.FormEvent) {
     e.preventDefault();
@@ -1887,7 +1908,7 @@ function EventsScreen() {
           userId: user?.id,
           metadata: { eventId: id, eventTitle: cancellingEvent.title, reason: cancelReason },
         });
-      } catch {}
+      } catch { }
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
       setCancellingEvent(null);
       reload();
@@ -1909,7 +1930,7 @@ function EventsScreen() {
           userId: user?.id,
           metadata: { eventId: id, eventTitle: cancellingEvent.title, reason: cancelReason },
         });
-      } catch {}
+      } catch { }
       toast.success(isEn ? "Cancelled event registration successfully!" : "Đã hủy tham gia sự kiện thành công!");
       setCancellingEvent(null);
     } finally {
@@ -2025,11 +2046,10 @@ function EventsScreen() {
                 className="flex-1 inline-flex flex-col justify-end items-center overflow-hidden cursor-pointer"
               >
                 <div className="self-stretch py-3 relative flex flex-col justify-center items-center gap-2.5 overflow-hidden">
-                  <div className={`text-base font-['Inter'] leading-5 transition-colors ${
-                    mainTab === "events"
+                  <div className={`text-base font-['Inter'] leading-5 transition-colors ${mainTab === "events"
                       ? "text-[#003B95] dark:text-blue-400 font-semibold"
                       : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
-                  }`}>
+                    }`}>
                     Sự kiện
                   </div>
                   {mainTab === "events" && (
@@ -2045,11 +2065,10 @@ function EventsScreen() {
                 className="flex-1 inline-flex flex-col justify-end items-center overflow-hidden cursor-pointer"
               >
                 <div className="self-stretch py-3 relative flex flex-col justify-center items-center gap-2.5 overflow-hidden">
-                  <div className={`text-base font-['Inter'] leading-5 transition-colors ${
-                    mainTab === "meetings"
+                  <div className={`text-base font-['Inter'] leading-5 transition-colors ${mainTab === "meetings"
                       ? "text-[#003B95] dark:text-blue-400 font-semibold"
                       : "text-slate-600 dark:text-slate-400 font-normal hover:text-slate-900 dark:hover:text-white"
-                  }`}>
+                    }`}>
                     Hoạt động
                   </div>
                   {mainTab === "meetings" && (
@@ -2109,16 +2128,14 @@ function EventsScreen() {
                 <button
                   type="button"
                   onClick={() => setEventCategory("all")}
-                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${
-                    eventCategory === "all"
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${eventCategory === "all"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span>Tất cả</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                    eventCategory === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
                     {allEventsCount}
                   </span>
                 </button>
@@ -2127,16 +2144,14 @@ function EventsScreen() {
                 <button
                   type="button"
                   onClick={() => setEventCategory("upcoming")}
-                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                    eventCategory === "upcoming"
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${eventCategory === "upcoming"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span>Sắp diễn ra</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                    eventCategory === "upcoming" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "upcoming" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
                     {upcomingCount}
                   </span>
                 </button>
@@ -2147,16 +2162,14 @@ function EventsScreen() {
                 <button
                   type="button"
                   onClick={() => setEventCategory("registered")}
-                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                    eventCategory === "registered"
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${eventCategory === "registered"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span>Đã đăng ký</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                    eventCategory === "registered" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "registered" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
                     {registeredCount}
                   </span>
                 </button>
@@ -2165,16 +2178,14 @@ function EventsScreen() {
                 <button
                   type="button"
                   onClick={() => setEventCategory("free")}
-                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                    eventCategory === "free"
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${eventCategory === "free"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span>Miễn phí</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                    eventCategory === "free" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "free" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
                     {freeCount}
                   </span>
                 </button>
@@ -2183,16 +2194,14 @@ function EventsScreen() {
                 <button
                   type="button"
                   onClick={() => setEventCategory("paid")}
-                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                    eventCategory === "paid"
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${eventCategory === "paid"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span>Có phí</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                    eventCategory === "paid" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "paid" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
                     {paidCount}
                   </span>
                 </button>
@@ -2201,16 +2210,14 @@ function EventsScreen() {
                 <button
                   type="button"
                   onClick={() => setEventCategory("history")}
-                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                    eventCategory === "history"
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${eventCategory === "history"
                       ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                       : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <span>Lịch sử</span>
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                    eventCategory === "history" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                  }`}>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "history" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
                     {pastCount}
                   </span>
                 </button>
@@ -2265,113 +2272,111 @@ function EventsScreen() {
                 </div>
               ) : (
                 displayEventsList.map((e, idx) => {
-                const rawPrice = getEventPrice(e);
-                const isFree = isEventFree(e);
-                const registered = isRegistered(e);
-                const rawImg =
-                  (e as any).image ||
-                  (e as any).banner ||
-                  (e as any).posterUrl ||
-                  (e as any).imageUrl ||
-                  (e as any).coverImage;
-                const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
-                const dateFormatted = formatEventDayOfWeekAndDate(e.date);
-                const timeStr = formatEventTimeRange(e, e.title);
-                const statusText = (e as any).statusText || (isFree ? "Miễn phí" : `${rawPrice.toLocaleString("vi-VN")} đ`);
+                  const rawPrice = getEventPrice(e);
+                  const isFree = isEventFree(e);
+                  const registered = isRegistered(e);
+                  const rawImg =
+                    (e as any).image ||
+                    (e as any).banner ||
+                    (e as any).posterUrl ||
+                    (e as any).imageUrl ||
+                    (e as any).coverImage;
+                  const imgUrl = (rawImg ? resolveMediaUrl(rawImg) || rawImg : null) || defaultEventImages[idx % defaultEventImages.length];
+                  const dateFormatted = formatEventDayOfWeekAndDate(e.date);
+                  const timeStr = formatEventTimeRange(e, e.title);
+                  const statusText = (e as any).statusText || (isFree ? "Miễn phí" : `${rawPrice.toLocaleString("vi-VN")} đ`);
 
-                return (
-                  <div
-                    key={e.id || idx}
-                    onClick={() => handleSelectEvent(e)}
-                    className="self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-4 shadow-2xs hover:shadow-xs transition cursor-pointer"
-                  >
-                    <div className="self-stretch inline-flex justify-start items-start gap-3">
-                      <div className="w-24 h-24 self-stretch relative bg-gradient-to-r from-blue-900 to-slate-900 rounded-2xl overflow-hidden shrink-0">
-                        <img className="size-full object-cover" src={imgUrl} alt={e.title} />
-                      </div>
+                  return (
+                    <div
+                      key={e.id || idx}
+                      onClick={() => handleSelectEvent(e)}
+                      className="self-stretch p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-start items-start gap-4 shadow-2xs hover:shadow-xs transition cursor-pointer"
+                    >
+                      <div className="self-stretch inline-flex justify-start items-start gap-3">
+                        <div className="w-24 h-24 self-stretch relative bg-gradient-to-r from-blue-900 to-slate-900 rounded-2xl overflow-hidden shrink-0">
+                          <img className="size-full object-cover" src={imgUrl} alt={e.title} />
+                        </div>
 
-                      <div className="flex-1 inline-flex flex-col justify-start items-start min-w-0">
-                        <div className="self-stretch inline-flex justify-between items-start">
-                          <div className="flex-1 pb-1 inline-flex flex-col justify-start items-start overflow-hidden">
-                            <div className="self-stretch pb-1 inline-flex justify-start items-start gap-2.5">
-                              <span className="text-slate-500 text-xs font-medium font-['Inter'] leading-4 uppercase tracking-wider">
-                                {(e as any).category || (e as any).event_type || "SỰ KIỆN CLB CEO1983"}
+                        <div className="flex-1 inline-flex flex-col justify-start items-start min-w-0">
+                          <div className="self-stretch inline-flex justify-between items-start">
+                            <div className="flex-1 pb-1 inline-flex flex-col justify-start items-start overflow-hidden">
+                              <div className="self-stretch pb-1 inline-flex justify-start items-start gap-2.5">
+                                <span className="text-slate-500 text-xs font-medium font-['Inter'] leading-4 uppercase tracking-wider">
+                                  {(e as any).category || (e as any).event_type || "SỰ KIỆN CLB CEO1983"}
+                                </span>
+                              </div>
+                              <div className="self-stretch text-blue-950 dark:text-blue-200 text-sm font-semibold font-['Inter'] leading-5 line-clamp-2">
+                                {e.title}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(evt) => {
+                                evt.stopPropagation();
+                                executeShare(
+                                  {
+                                    type: "event",
+                                    id: e.id,
+                                    title: `[Sự Kiện CEO 1983] ${e.title}`,
+                                    desc: `Tham gia sự kiện cùng CLB Doanh Nhân CEO 1983: ${e.title}`,
+                                    targetPath: `/guest-event-register/${e.id}`,
+                                  },
+                                  () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
+                                );
+                              }}
+                              className="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 shrink-0 hover:bg-slate-50 cursor-pointer active:scale-95 transition"
+                              title="Chia sẻ sự kiện"
+                              aria-label="Chia sẻ sự kiện"
+                            >
+                              <Share2 className="size-4 text-slate-600 dark:text-slate-300" />
+                            </button>
+                          </div>
+
+                          <div className="self-stretch pb-1 inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                            <img src="/icons/events/alarm-clock.svg" className="size-3.5 shrink-0" alt="time" />
+                            <span className="text-xs font-normal font-['Inter'] leading-4">{dateFormatted}</span>
+                            <img src="/icons/events/dot-separator.svg" className="size-1" alt="dot" />
+                            <span className="text-xs font-normal font-['Inter'] leading-4">{timeStr}</span>
+                          </div>
+
+                          <div className="self-stretch inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                            <img src="/icons/events/location-01.svg" className="size-3.5 shrink-0" alt="location" />
+                            <div className="flex-1 inline-flex flex-col justify-start items-start overflow-hidden">
+                              <span className="self-stretch text-xs font-normal font-['Inter'] leading-4 truncate">
+                                {e.place || "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội"}
                               </span>
                             </div>
-                            <div className="self-stretch text-blue-950 dark:text-blue-200 text-sm font-semibold font-['Inter'] leading-5 line-clamp-2">
-                              {e.title}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(evt) => {
-                              evt.stopPropagation();
-                              executeShare(
-                                {
-                                  type: "event",
-                                  id: e.id,
-                                  title: `[Sự Kiện CEO 1983] ${e.title}`,
-                                  desc: `Tham gia sự kiện cùng CLB Doanh Nhân CEO 1983: ${e.title}`,
-                                  targetPath: `/guest-event-register/${e.id}`,
-                                },
-                                () => toast.success("Đã sao chép liên kết sự kiện để chia sẻ!")
-                              );
-                            }}
-                            className="p-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex justify-start items-center gap-1.5 shrink-0 hover:bg-slate-50 cursor-pointer active:scale-95 transition"
-                            title="Chia sẻ sự kiện"
-                            aria-label="Chia sẻ sự kiện"
-                          >
-                            <Share2 className="size-4 text-slate-600 dark:text-slate-300" />
-                          </button>
-                        </div>
-
-                        <div className="self-stretch pb-1 inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                          <img src="/icons/events/alarm-clock.svg" className="size-3.5 shrink-0" alt="time" />
-                          <span className="text-xs font-normal font-['Inter'] leading-4">{dateFormatted}</span>
-                          <img src="/icons/events/dot-separator.svg" className="size-1" alt="dot" />
-                          <span className="text-xs font-normal font-['Inter'] leading-4">{timeStr}</span>
-                        </div>
-
-                        <div className="self-stretch inline-flex justify-start items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                          <img src="/icons/events/location-01.svg" className="size-3.5 shrink-0" alt="location" />
-                          <div className="flex-1 inline-flex flex-col justify-start items-start overflow-hidden">
-                            <span className="self-stretch text-xs font-normal font-['Inter'] leading-4 truncate">
-                              {e.place || "Hội trường Cung Trí Thức Thành Phố, Cầu Giấy, Hà Nội"}
-                            </span>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="self-stretch pt-3 border-t border-slate-100 dark:border-slate-800 inline-flex justify-between items-center">
-                      <div className={`px-3 py-1.5 rounded-full flex justify-start items-center gap-1.5 ${
-                        isFree
-                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                          : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400"
-                      }`}>
-                        <span className="text-xs font-semibold font-['Inter'] leading-4">
-                          {statusText}
-                        </span>
+                      <div className="self-stretch pt-3 border-t border-slate-100 dark:border-slate-800 inline-flex justify-between items-center">
+                        <div className={`px-3 py-1.5 rounded-full flex justify-start items-center gap-1.5 ${isFree
+                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                            : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400"
+                          }`}>
+                          <span className="text-xs font-semibold font-['Inter'] leading-4">
+                            {statusText}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            handleSelectEvent(e);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg border flex justify-start items-center gap-1.5 text-sm font-semibold font-['Inter'] leading-5 active:scale-95 transition cursor-pointer shadow-xs ${registered
+                              ? "bg-emerald-600 border-emerald-600 text-white"
+                              : "bg-[#003B95] hover:bg-[#002B70] border-[#003B95] text-white"
+                            }`}
+                        >
+                          <span>{registered ? "Đã đăng ký (Xem chi tiết)" : "Xem chi tiết"}</span>
+                        </button>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={(evt) => {
-                          evt.stopPropagation();
-                          handleSelectEvent(e);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg border flex justify-start items-center gap-1.5 text-sm font-semibold font-['Inter'] leading-5 active:scale-95 transition cursor-pointer shadow-xs ${
-                          registered
-                            ? "bg-emerald-600 border-emerald-600 text-white"
-                            : "bg-[#003B95] hover:bg-[#002B70] border-[#003B95] text-white"
-                        }`}
-                      >
-                        <span>{registered ? "Đã đăng ký (Xem chi tiết)" : "Xem chi tiết"}</span>
-                      </button>
                     </div>
-                  </div>
-                );
-              }))}
+                  );
+                }))}
             </div>
 
             {/* Xem tất cả - Chỉ hiển thị khi đang lọc theo danh mục khác tab Tất cả và danh sách có dữ liệu (tránh trùng nút trong empty box) */}
@@ -2468,16 +2473,14 @@ function EventsScreen() {
               <button
                 type="button"
                 onClick={() => setActivityFilter("all")}
-                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${
-                  activityFilter === "all"
+                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-semibold cursor-pointer transition shrink-0 ${activityFilter === "all"
                     ? "bg-[#003B95] border-[#003B95] text-white shadow-xs"
                     : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <span>Tất cả</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                  activityFilter === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${activityFilter === "all" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
                   {allActivitiesCount}
                 </span>
               </button>
@@ -2486,17 +2489,15 @@ function EventsScreen() {
               <button
                 type="button"
                 onClick={() => setActivityFilter("b2b_connect")}
-                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                  activityFilter === "b2b_connect"
+                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${activityFilter === "b2b_connect"
                     ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                     : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <Handshake className="size-3.5" />
                 <span>Kết nối B2B</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                  activityFilter === "b2b_connect" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${activityFilter === "b2b_connect" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
                   {b2bConnectCount}
                 </span>
               </button>
@@ -2505,17 +2506,15 @@ function EventsScreen() {
               <button
                 type="button"
                 onClick={() => setActivityFilter("trainings")}
-                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                  activityFilter === "trainings"
+                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${activityFilter === "trainings"
                     ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                     : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <GraduationCap className="size-3.5" />
                 <span>Chương trình đào tạo</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                  activityFilter === "trainings" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${activityFilter === "trainings" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
                   {trainingsCount}
                 </span>
               </button>
@@ -2524,16 +2523,14 @@ function EventsScreen() {
               <button
                 type="button"
                 onClick={() => setActivityFilter("fixed_committee")}
-                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                  activityFilter === "fixed_committee"
+                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${activityFilter === "fixed_committee"
                     ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                     : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <span>Họp ban định kỳ</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                  activityFilter === "fixed_committee" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${activityFilter === "fixed_committee" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
                   {fixedMeetingsCount}
                 </span>
               </button>
@@ -2542,16 +2539,14 @@ function EventsScreen() {
               <button
                 type="button"
                 onClick={() => setActivityFilter("extraordinary")}
-                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${
-                  activityFilter === "extraordinary"
+                className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${activityFilter === "extraordinary"
                     ? "bg-[#003B95] border-[#003B95] text-white shadow-xs font-semibold"
                     : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <span>Họp bất thường/ Đột xuất</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${
-                  activityFilter === "extraordinary" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${activityFilter === "extraordinary" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  }`}>
                   {extraordinaryMeetingsCount}
                 </span>
               </button>
@@ -2574,149 +2569,148 @@ function EventsScreen() {
               </div>
             ) : (
               displayMeetingsList.map((m: any, idx: number) => {
-              const isOnline = m.isOnline;
-              const times = (m.time || "09:00 - 10:30").split("-").map((s: string) => s.trim());
-              const startTime = times[0] || "09:00";
-              const endTime = times[1] || "";
-              const isB2bConnect = m.activityType === "b2b_connect";
-              const isTrainingCourse = m.activityType === "trainings";
-              const isExtraordinary = m.category === "extraordinary" || m.isExtraordinary;
+                const isOnline = m.isOnline;
+                const times = (m.time || "09:00 - 10:30").split("-").map((s: string) => s.trim());
+                const startTime = times[0] || "09:00";
+                const endTime = times[1] || "";
+                const isB2bConnect = m.activityType === "b2b_connect";
+                const isTrainingCourse = m.activityType === "trainings";
+                const isExtraordinary = m.category === "extraordinary" || m.isExtraordinary;
 
-              return (
-                <div
-                  key={m.id || idx}
-                  className="self-stretch p-3.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 inline-flex justify-start items-start shadow-2xs hover:shadow-xs transition"
-                >
-                  {/* Left time column */}
-                  <div className="self-stretch pr-3 border-r border-slate-200 dark:border-slate-700 flex flex-col justify-start items-center gap-0.5 min-w-[52px] shrink-0">
-                    <div className="text-[#001B54] dark:text-blue-300 text-xs font-bold font-['Inter'] leading-4">
-                      {startTime}
-                    </div>
-                    {endTime && (
-                      <>
-                        <div className="w-px h-2.5 bg-slate-300 dark:bg-slate-600 my-0.5" />
-                        <div className="text-slate-400 text-xs font-semibold font-['Inter'] leading-4">
-                          {endTime}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Right content column */}
-                  <div className="flex-1 pl-3 inline-flex flex-col justify-start items-start gap-1.5 min-w-0">
-                    <div className="self-stretch inline-flex justify-between items-center gap-2 flex-wrap">
-                      <div className="inline-flex items-center gap-1.5">
-                        <div className={`px-2 py-0.5 rounded-full flex justify-start items-center gap-1 ${
-                          isB2bConnect
-                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
-                            : isTrainingCourse
-                            ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60"
-                            : isOnline
-                            ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
-                            : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300"
-                        }`}>
-                          {isB2bConnect ? (
-                            <Handshake className="size-3 shrink-0" />
-                          ) : isTrainingCourse ? (
-                            <GraduationCap className="size-3 shrink-0" />
-                          ) : isOnline ? (
-                            <img src="/icons/activities/Wifi.svg" className="size-3 shrink-0" alt="online" />
-                          ) : null}
-                          <span className="text-[10px] font-bold font-['Inter'] leading-4">
-                            {isB2bConnect
-                              ? "Kết nối B2B 1-1"
-                              : isTrainingCourse
-                              ? "Chương trình đào tạo"
-                              : isOnline
-                              ? "Trực tuyến"
-                              : "Trực tiếp"}
-                          </span>
-                        </div>
-                        <div className="text-slate-400 text-xs font-medium font-['Inter'] leading-4 truncate">
-                          {isB2bConnect
-                            ? "Cuộc gặp giữa 2 tài khoản"
-                            : isTrainingCourse
-                            ? "Khóa học từ CRM"
-                            : isExtraordinary
-                            ? "Họp bất thường/ Đột xuất"
-                            : "Họp ban định kỳ"}
-                        </div>
+                return (
+                  <div
+                    key={m.id || idx}
+                    className="self-stretch p-3.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 inline-flex justify-start items-start shadow-2xs hover:shadow-xs transition"
+                  >
+                    {/* Left time column */}
+                    <div className="self-stretch pr-3 border-r border-slate-200 dark:border-slate-700 flex flex-col justify-start items-center gap-0.5 min-w-[52px] shrink-0">
+                      <div className="text-[#001B54] dark:text-blue-300 text-xs font-bold font-['Inter'] leading-4">
+                        {startTime}
                       </div>
-                    </div>
-
-                    <div className="self-stretch text-slate-900 dark:text-white text-sm font-bold font-['Inter'] leading-5 line-clamp-2">
-                      {m.title}
-                    </div>
-
-                    {isB2bConnect && m.partnerName && (
-                      <div className="self-stretch text-xs text-slate-600 dark:text-slate-300 flex items-center gap-1.5 font-medium">
-                        <Users className="size-3.5 text-[#003B95] shrink-0" />
-                        <span className="truncate">Đối tác: <strong className="text-slate-900 dark:text-white">{m.partnerName}</strong> ({m.partnerCompany || "Doanh nghiệp CEO 1983"})</span>
-                      </div>
-                    )}
-
-                    {isTrainingCourse && m.instructor && (
-                      <div className="self-stretch text-xs text-slate-600 dark:text-slate-300 flex items-center gap-1.5 font-medium">
-                        <GraduationCap className="size-3.5 text-purple-600 shrink-0" />
-                        <span className="truncate">Giảng viên: <strong className="text-slate-900 dark:text-white">{m.instructor}</strong> • {m.instructorCompany || "Ban Đào Tạo"}</span>
-                      </div>
-                    )}
-
-                    <div className="self-stretch inline-flex justify-start items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">
-                      <img
-                        src={isOnline ? "/icons/activities/globe-02.svg" : "/icons/activities/home-04.svg"}
-                        className="size-3.5 shrink-0 opacity-70"
-                        alt={isOnline ? "url" : "venue"}
-                      />
-                      <span className="truncate">
-                        {m.location || m.meetingLink || "Cung Tri Thức Thành Phố"}
-                      </span>
-                    </div>
-
-                    <div className="self-stretch pt-1 inline-flex justify-start items-start gap-1.5">
-                      {isTrainingCourse ? (
-                        <Link
-                          to="/association/training"
-                          className="flex-1 px-3 py-1.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-lg border border-[#003B95] flex justify-center items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
-                        >
-                          <GraduationCap className="size-3.5" />
-                          <span>Chi tiết &amp; Đăng ký khóa học</span>
-                        </Link>
-                      ) : isB2bConnect ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isOnline && m.meetingLink) {
-                              setActiveMeetingRoom({ title: m.title, link: m.meetingLink });
-                            } else {
-                              toast.info(`Cuộc hẹn kết nối 1-1 với ${m.partnerName}. Địa điểm: ${m.location}`);
-                            }
-                          }}
-                          className="flex-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg border border-emerald-600 flex justify-center items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
-                        >
-                          <Handshake className="size-3.5" />
-                          <span>{isOnline ? "Vào phòng họp ngay" : "Xem chi tiết cuộc hẹn"}</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isOnline && m.meetingLink) {
-                              setActiveMeetingRoom({ title: m.title, link: m.meetingLink });
-                            } else {
-                              toast.success(`Đã xác nhận tham dự cuộc họp: ${m.title}`);
-                            }
-                          }}
-                          className="flex-1 px-3 py-1.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-lg border border-[#003B95] flex justify-center items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
-                        >
-                          <span>{isOnline ? "Vào phòng họp ngay" : "Xác nhận tham dự"}</span>
-                        </button>
+                      {endTime && (
+                        <>
+                          <div className="w-px h-2.5 bg-slate-300 dark:bg-slate-600 my-0.5" />
+                          <div className="text-slate-400 text-xs font-semibold font-['Inter'] leading-4">
+                            {endTime}
+                          </div>
+                        </>
                       )}
                     </div>
+
+                    {/* Right content column */}
+                    <div className="flex-1 pl-3 inline-flex flex-col justify-start items-start gap-1.5 min-w-0">
+                      <div className="self-stretch inline-flex justify-between items-center gap-2 flex-wrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          <div className={`px-2 py-0.5 rounded-full flex justify-start items-center gap-1 ${isB2bConnect
+                              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
+                              : isTrainingCourse
+                                ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60"
+                                : isOnline
+                                  ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300"
+                                  : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300"
+                            }`}>
+                            {isB2bConnect ? (
+                              <Handshake className="size-3 shrink-0" />
+                            ) : isTrainingCourse ? (
+                              <GraduationCap className="size-3 shrink-0" />
+                            ) : isOnline ? (
+                              <img src="/icons/activities/Wifi.svg" className="size-3 shrink-0" alt="online" />
+                            ) : null}
+                            <span className="text-[10px] font-bold font-['Inter'] leading-4">
+                              {isB2bConnect
+                                ? "Kết nối B2B 1-1"
+                                : isTrainingCourse
+                                  ? "Chương trình đào tạo"
+                                  : isOnline
+                                    ? "Trực tuyến"
+                                    : "Trực tiếp"}
+                            </span>
+                          </div>
+                          <div className="text-slate-400 text-xs font-medium font-['Inter'] leading-4 truncate">
+                            {isB2bConnect
+                              ? "Cuộc gặp giữa 2 tài khoản"
+                              : isTrainingCourse
+                                ? "Khóa học từ CRM"
+                                : isExtraordinary
+                                  ? "Họp bất thường/ Đột xuất"
+                                  : "Họp ban định kỳ"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="self-stretch text-slate-900 dark:text-white text-sm font-bold font-['Inter'] leading-5 line-clamp-2">
+                        {m.title}
+                      </div>
+
+                      {isB2bConnect && m.partnerName && (
+                        <div className="self-stretch text-xs text-slate-600 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                          <Users className="size-3.5 text-[#003B95] shrink-0" />
+                          <span className="truncate">Đối tác: <strong className="text-slate-900 dark:text-white">{m.partnerName}</strong> ({m.partnerCompany || "Doanh nghiệp CEO 1983"})</span>
+                        </div>
+                      )}
+
+                      {isTrainingCourse && m.instructor && (
+                        <div className="self-stretch text-xs text-slate-600 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                          <GraduationCap className="size-3.5 text-purple-600 shrink-0" />
+                          <span className="truncate">Giảng viên: <strong className="text-slate-900 dark:text-white">{m.instructor}</strong> • {m.instructorCompany || "Ban Đào Tạo"}</span>
+                        </div>
+                      )}
+
+                      <div className="self-stretch inline-flex justify-start items-center gap-1 text-slate-500 dark:text-slate-400 text-xs font-normal font-['Inter'] leading-4">
+                        <img
+                          src={isOnline ? "/icons/activities/globe-02.svg" : "/icons/activities/home-04.svg"}
+                          className="size-3.5 shrink-0 opacity-70"
+                          alt={isOnline ? "url" : "venue"}
+                        />
+                        <span className="truncate">
+                          {m.location || m.meetingLink || "Cung Tri Thức Thành Phố"}
+                        </span>
+                      </div>
+
+                      <div className="self-stretch pt-1 inline-flex justify-start items-start gap-1.5">
+                        {isTrainingCourse ? (
+                          <Link
+                            to="/association/training"
+                            className="flex-1 px-3 py-1.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-lg border border-[#003B95] flex justify-center items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
+                          >
+                            <GraduationCap className="size-3.5" />
+                            <span>Chi tiết &amp; Đăng ký khóa học</span>
+                          </Link>
+                        ) : isB2bConnect ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isOnline && m.meetingLink) {
+                                setActiveMeetingRoom({ title: m.title, link: m.meetingLink });
+                              } else {
+                                toast.info(`Cuộc hẹn kết nối 1-1 với ${m.partnerName}. Địa điểm: ${m.location}`);
+                              }
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg border border-emerald-600 flex justify-center items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
+                          >
+                            <Handshake className="size-3.5" />
+                            <span>{isOnline ? "Vào phòng họp ngay" : "Xem chi tiết cuộc hẹn"}</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isOnline && m.meetingLink) {
+                                setActiveMeetingRoom({ title: m.title, link: m.meetingLink });
+                              } else {
+                                toast.success(`Đã xác nhận tham dự cuộc họp: ${m.title}`);
+                              }
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-[#003B95] hover:bg-[#002B70] text-white rounded-lg border border-[#003B95] flex justify-center items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 shadow-xs active:scale-95 transition cursor-pointer"
+                          >
+                            <span>{isOnline ? "Vào phòng họp ngay" : "Xác nhận tham dự"}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            }))}
+                );
+              }))}
 
             {/* Footer disclaimer */}
             <div className="self-stretch pt-2 pb-8 flex flex-col justify-start items-center">
@@ -2737,7 +2731,7 @@ function EventsScreen() {
               <div className="flex items-center gap-2">
                 <Users className="size-5 text-[#003B95]" />
                 <div>
-                  <h4 className="font-bold text-xs truncate max-w-xs sm:max-w-md">{activeMeetingRoom.title}</h4>
+                  <h4 className="font-bold text-xs truncate max-w-xs sm:max-w-md">{activeMeetingRoom?.title}</h4>
                   <span className="text-[10px] text-slate-300">Phòng họp trực tuyến Jitsi Meet CLB CEO 1983</span>
                 </div>
               </div>
@@ -2751,7 +2745,7 @@ function EventsScreen() {
             </div>
             <div className="flex-1 w-full h-full bg-black">
               <iframe
-                src={activeMeetingRoom.link}
+                src={activeMeetingRoom?.link || ""}
                 title="Phòng họp CEO 1983"
                 className="w-full h-full border-none"
                 allow="camera; microphone; fullscreen; display-capture; autoplay"
@@ -2946,11 +2940,10 @@ function EventsScreen() {
                 ].map((reason) => (
                   <label
                     key={reason}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
-                      cancelReason === reason
+                    className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${cancelReason === reason
                         ? "bg-slate-100 border-[#1F3864] text-[#1F3864] font-medium"
                         : "bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"

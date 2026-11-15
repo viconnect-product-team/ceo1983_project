@@ -33,8 +33,8 @@ export class OpportunityController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.connectAppService.getOpportunityById(id);
+  async getById(@Request() req: any, @Param('id') id: string) {
+    return this.connectAppService.getOpportunityById(id, req?.user?.id);
   }
 
   @Post()

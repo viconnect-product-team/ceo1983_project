@@ -2397,8 +2397,8 @@ export class ConnectAppService implements OnModuleInit {
   listAllOpportunities(userId: string) {
     return this.opportunityService.listAllOpportunities(userId);
   }
-  getOpportunityById(id: string) {
-    return this.opportunityService.getOpportunityById(id);
+  getOpportunityById(id: string, currentUserId?: string) {
+    return this.opportunityService.getOpportunityById(id, currentUserId);
   }
   createOpportunity(userId: string, data: any) {
     return this.opportunityService.createOpportunity(userId, data);

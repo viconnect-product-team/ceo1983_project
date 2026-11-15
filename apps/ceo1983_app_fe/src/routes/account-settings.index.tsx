@@ -90,6 +90,21 @@ function AccountManagementPage() {
     searchTab || (action === "reset_password" ? "users" : "profile")
   );
 
+  useEffect(() => {
+    if (searchTab === "users" || searchTab === "security" || searchTab === "preferences" || searchTab === "profile") {
+      setActiveTab(searchTab);
+    }
+  }, [searchTab]);
+
+  const handleSwitchTab = (tab: "profile" | "security" | "users" | "preferences") => {
+    setActiveTab(tab);
+    navigate({
+      to: "/account-settings",
+      search: { tab: tab === "profile" ? undefined : tab },
+      replace: true,
+    });
+  };
+
   // Account State
   const [loading, setLoading] = useState(true);
   const [account, setAccount] = useState<any>(null);
@@ -807,59 +822,65 @@ function AccountManagementPage() {
           </div>
         )}
 
-        {/* Tab Navigation - Chỉ hiển thị khi xem hồ sơ cá nhân / bảo mật / tùy chọn */}
-        {activeTab !== "users" && (
-          <div className="flex border-b border-border overflow-x-auto scrollbar-none gap-2">
+        {/* Tab Navigation - Luôn hiển thị để người dùng chuyển tab và Quản trị người dùng không bị biến mất */}
+        <div className="flex border-b border-border overflow-x-auto scrollbar-none gap-2">
+          <button
+            type="button"
+            onClick={() => handleSwitchTab("profile")}
+            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 cursor-pointer ${
+              activeTab === "profile"
+                ? "border-primary text-primary font-bold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <User className="h-4 w-4" />
+            {t("account.tab.profile") || "Hồ sơ tài khoản"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchTab("security")}
+            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 cursor-pointer ${
+              activeTab === "security"
+                ? "border-primary text-primary font-bold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <KeyRound className="h-4 w-4" />
+            {t("account.tab.security") || "Bảo mật & Mật khẩu"}
+          </button>
+
+          {canManageUsers && (
             <button
-              onClick={() => setActiveTab("profile")}
-              className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-                activeTab === "profile"
-                  ? "border-primary text-primary"
+              type="button"
+              onClick={() => handleSwitchTab("users")}
+              className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 cursor-pointer ${
+                activeTab === "users"
+                  ? "border-primary text-primary font-bold"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <User className="h-4 w-4" />
-              {t("account.tab.profile") || "Hồ sơ tài khoản"}
+              <Users className="h-4 w-4" />
+              {t("account.tab.users") || "Quản trị người dùng"}
+              <span className="rounded-full bg-primary/10 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+                Admin
+              </span>
             </button>
+          )}
 
-            <button
-              onClick={() => setActiveTab("security")}
-              className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-                activeTab === "security"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <KeyRound className="h-4 w-4" />
-              {t("account.tab.security") || "Bảo mật & Mật khẩu"}
-            </button>
-
-            {canManageUsers && (
-              <button
-                onClick={() => setActiveTab("users")}
-                className="inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 border-transparent text-muted-foreground hover:text-foreground"
-              >
-                <Users className="h-4 w-4" />
-                {t("account.tab.users") || "Quản trị người dùng"}
-                <span className="rounded-full bg-primary/10 text-primary px-1.5 py-0.2 text-[10px] font-bold">
-                  Admin
-                </span>
-              </button>
-            )}
-
-            <button
-              onClick={() => setActiveTab("preferences")}
-              className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 ${
-                activeTab === "preferences"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {t("account.tab.preferences") || "Tuỳ chọn"}
-            </button>
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => handleSwitchTab("preferences")}
+            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition shrink-0 cursor-pointer ${
+              activeTab === "preferences"
+                ? "border-primary text-primary font-bold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            {t("account.tab.preferences") || "Tuỳ chọn"}
+          </button>
+        </div>
 
         {/* ── TAB 1: PROFILE & ACCOUNT DETAILS ──────────────────────────────── */}
         {activeTab === "profile" && (

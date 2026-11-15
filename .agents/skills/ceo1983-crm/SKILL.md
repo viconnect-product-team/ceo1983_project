@@ -50,9 +50,10 @@ Khi nhận yêu cầu về CRM, Agent tra cứu mã Node tương ứng:
 2. **Biểu đồ trực quan Recharts**:
    - Palette màu chuẩn tài chính: Thu (Emerald `#059669`), Chi (Rose `#E11D48`), Thặng Dư (Gold `#F59E0B`), Navy (`#003B95`).
    - Mọi số tiền phải định dạng VNĐ có dấu phân tách hàng nghìn (`100.000.000 đ`).
-3. **Đồng Bộ Dữ Liệu PostgreSQL (Pure NestJS)**:
-   - 100% dữ liệu phải nạp và lưu vào CSDL PostgreSQL qua NestJS REST API (`fetchNestApi`).
+3. **Đồng Bộ Dữ Liệu PostgreSQL Chuẩn 113.20.107.184:6432 (Pure NestJS)**:
+   - 100% dữ liệu phải nạp và lưu vào CSDL PostgreSQL chuẩn duy nhất tại **`113.20.107.184:6432`** (`ceo1983_project`, user `app1` / `5^S0CEpvYwC1(#YN1UoJ`) qua NestJS REST API (`fetchNestApi`).
    - TUYỆT ĐỐI KHÔNG dùng mock data hoặc hardcode mảng dữ liệu giả.
+   - TUYỆT ĐỐI KHÔNG lưu vào hoặc đọc từ database khác (như `14.225.217.232:5436`). Toàn bộ luồng ghi và đọc của CRM đều phải chuẩn xác từ `113.20.107.184:6432`.
 
 ---
 

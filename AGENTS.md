@@ -1,5 +1,25 @@
 # AGENTS RULES & CONSTRAINTS - HỆ THỐNG CEO 1983 (HANOIBA)
-*Phiên bản: 5.0 - Chuẩn hóa kiến trúc tách biệt Web CRM & Mobile App kèm Functional Node Indexing*
+*Phiên bản: 5.1 - Quy chuẩn Tối cao về CSDL Chuẩn 113.20.107.184:6432, Kiến trúc tách biệt Web CRM & Mobile App kèm Functional Node Indexing*
+
+---
+
+## 0. Quy Chuẩn Bất Di Bất Dịch Về Cơ Sở Dữ Liệu: 113.20.107.184:6432 (STRICT DATABASE LAW)
+- **CƠ SỞ DỮ LIỆU DUY NHẤT & CHUẨN MỰC CỦA TOÀN DỰ ÁN**:
+  - Địa chỉ máy chủ CSDL chính thức của dự án `ceo1983_project`: **`113.20.107.184:6432`** (kết nối qua PgBouncer).
+  - Tên CSDL (Database Name): **`ceo1983_project`**.
+  - Tài khoản / Mật khẩu: `app1` / `5^S0CEpvYwC1(#YN1UoJ`.
+  - Chuỗi kết nối chuẩn hóa (Connection String):
+    ```text
+    postgresql://app1:5^S0CEpvYwC1(#YN1UoJ@113.20.107.184:6432/ceo1983_project?pgbouncer=true
+    jdbc:postgresql://113.20.107.184:6432/ceo1983_project
+    ```
+- **QUY TẮC LƯU DỮ LIỆU BẮT BUỘC (WRITE RULE)**:
+  - Khi sửa, viết mới hoặc kiểm tra bất kỳ chức năng lưu dữ liệu nào (INSERT, UPDATE, DELETE, RPC) từ hệ thống Backend NestJS, Web CRM Quản trị, hay Mobile App CEO 1983: **TUYỆT ĐỐI PHẢI LƯU ĐÚNG VÀO DATABASE `113.20.107.184:6432`**, KHÔNG LƯU VÀO DATABASE KHÁC.
+- **QUY TẮC LẤY DỮ LIỆU HIỂN THỊ GIAO DIỆN (READ RULE)**:
+  - Mọi dữ liệu hiển thị về giao diện Web CRM và Mobile App (Hội viên, Sự kiện, B2B Connect, Lịch, Nhật ký, Cuộc họp, Tin tức bài viết, Quyền hạn RBAC, Tài chính): **TUYỆT ĐỐI PHẢI LẤY TỪ `113.20.107.184:6432` RA ĐỂ HIỆN VỀ GIAO DIỆN**.
+- **TUYỆT ĐỐI NGHIÊM CẤM LƯU / TRỎ SANG DATABASE KHÁC**:
+  - Máy chủ `14.225.217.232:5436` KHÔNG PHẢI là database chuẩn của dự án.
+  - Tuyệt đối không cấu hình biến môi trường, không viết script, không redirect dữ liệu sang bất kỳ database nào khác ngoài `113.20.107.184:6432`.
 
 ---
 

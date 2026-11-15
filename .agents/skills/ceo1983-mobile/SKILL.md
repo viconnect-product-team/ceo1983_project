@@ -53,3 +53,10 @@ Khi nhận yêu cầu về Mobile App, Agent tra cứu mã Node tương ứng:
 1. Chạy `npm run routes:gen` nếu có tạo hoặc sửa file route.
 2. Chạy `npx tsc --noEmit` xác nhận 0 lỗi (Exit Code 0).
 3. Cập nhật `MEMORY.md` và `.cursorrules`.
+
+---
+
+## 6. Quy Chuẩn Cơ Sở Dữ Liệu Bất Di Bất Dịch: 113.20.107.184:6432
+1. Mọi chức năng lưu dữ liệu (INSERT, UPDATE, DELETE) từ Mobile App CEO 1983 (Đăng bài, kết nối B2B, đăng ký sự kiện, điểm danh QR, lưu nhật ký ở lịch, tải ảnh) TUYỆT ĐỐI PHẢI LƯU ĐÚNG VÀO DATABASE **`113.20.107.184:6432`** (`ceo1983_project`).
+2. Mọi dữ liệu hiển thị về giao diện Mobile App TUYỆT ĐỐI PHẢI LẤY TỪ **`113.20.107.184:6432`** thông qua API Backend.
+3. TUYỆT ĐỐI KHÔNG lưu vào hoặc đọc từ database khác (như `14.225.217.232:5436`). Cụm `14.225.217.232:5436` KHÔNG PHẢI database chuẩn của dự án.
