@@ -1,317 +1,248 @@
-const CACHE_NAME = "ceo1983-pwa-v5";
-const STATIC_ASSETS = [
-  "/manifest.webmanifest",
-  "/apple-touch-icon.png",
-  "/apple-touch-icon-180x180.png",
-  "/favicon.png",
-  "/app-icon-192.png",
-  "/app-icon-512.png",
-  "/app-icon-maskable-192.png",
-  "/app-icon-maskable-512.png",
-  "/app-icon.png",
-  "/ceo1983-official-logo.png"
-];
+// @ts-nocheck
+/* eslint-disable */
+/**
+ * CEO 1983 Progressive Web App Service Worker (PWA & Offline First)
+ * Phiên bản: ceo1983-pwa-v6
+ */
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        /* Continue even if some optional assets are missed */
-      });
-    })
-  );
-  self.skipWaiting();
-});
+(function () {
+  "use strict";
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+  // Tự động hủy đăng ký ngay lập tức nếu chạy trên domain Quản trị CRM
+  // Tuyệt đối không can thiệp hay cài đặt fetch listener trên portal CRM!
+  if (typeof self !== "undefined" && self.location && self.location.hostname && self.location.hostname.startsWith("crm.")) {
+    self.addEventListener("install", () => self.skipWaiting());
+    self.addEventListener("activate", (event) => {
+      event.waitUntil(
+        self.registration.unregister().then(() => {
+          return self.clients.matchAll();
+        }).then((clients) => {
+          clients.forEach((client) => {
+            if (client.url && "navigate" in client) {
+              client.navigate(client.url);
+            }
+          });
+        })
       );
-    })
-  );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  if (request.method !== "GET") return;
-
-  // Tránh lỗi net::ERR_CACHE_MISS khi browser gửi request only-if-cached
-  if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+    });
     return;
   }
 
-  const url = new URL(request.url);
+  const SW_CACHE_NAME = "ceo1983-pwa-v6";
 
-  // Chỉ can thiệp vào same-origin requests
-  if (url.origin !== self.location.origin) return;
+  const STATIC_ASSETS = [
+    "/manifest.webmanifest",
+    "/apple-touch-icon.png",
+    "/apple-touch-icon-180x180.png",
+    "/favicon.png",
+    "/app-icon-192.png",
+    "/app-icon-512.png",
+    "/app-icon-maskable-192.png",
+    "/app-icon-maskable-512.png",
+    "/app-icon.png",
+    "/ceo1983-official-logo.png"
+  ];
 
-  // Không can thiệp API calls, WebSocket, Server Functions hoặc data endpoints
-  if (
-    url.pathname.startsWith("/api") ||
-    url.pathname.startsWith("/dm") ||
-    url.pathname.startsWith("/connect-app") ||
-    url.pathname.startsWith("/socket.io") ||
-    url.pathname.startsWith("/_serverFn") ||
-    url.pathname.startsWith("/admin") ||
-    url.pathname.startsWith("/notifications") ||
-    url.pathname.startsWith("/members") ||
-    url.pathname.startsWith("/events") ||
-    url.pathname.startsWith("/meetings") ||
-    url.pathname.startsWith("/news") ||
-    url.pathname.startsWith("/opportunities") ||
-    url.pathname.startsWith("/products") ||
-    url.pathname.startsWith("/transactions") ||
-    url.pathname.startsWith("/invoices")
-  ) {
-    return;
-  }
-
-  // 1. Navigation request (HTML pages) hoặc tài liệu gốc: Network-First để luôn nhận phiên bản mới nhất khi deploy
-  if (request.mode === "navigate" || request.destination === "document" || url.pathname === "/" || url.hostname.startsWith("crm.")) {
-    event.respondWith(
-      (async () => {
-        try {
-          const networkResponse = await fetch(request);
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
-          }
-          return networkResponse;
-        } catch {
-          const cached = await caches.match(request);
-          if (cached) return cached;
-          const fallback = (await caches.match("/association")) || (await caches.match("/"));
-          if (fallback) return fallback;
-          return new Response("Offline", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
-        }
-      })()
+  self.addEventListener("install", (event) => {
+    event.waitUntil(
+      caches.open(SW_CACHE_NAME).then((cache) => {
+        return cache.addAll(STATIC_ASSETS).catch(() => {
+          /* Continue even if some optional assets are missed */
+        });
+      })
     );
-    return;
-  }
+    self.skipWaiting();
+  });
 
-  // 2. Chunks JS/CSS hoặc assets: Network-First với fallback cache
-  if (url.pathname.includes("/assets/") || url.pathname.includes("/_build/")) {
+  self.addEventListener("activate", (event) => {
+    event.waitUntil(
+      caches.keys().then((keys) => {
+        return Promise.all(
+          keys.filter((key) => key !== SW_CACHE_NAME).map((key) => caches.delete(key))
+        );
+      })
+    );
+    self.clients.claim();
+  });
+
+  self.addEventListener("fetch", (event) => {
+    const request = event.request;
+    if (request.method !== "GET") return;
+
+    // Tránh lỗi net::ERR_CACHE_MISS khi browser gửi request only-if-cached
+    if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+      return;
+    }
+
+    const url = new URL(request.url);
+
+    // Chỉ can thiệp vào same-origin requests
+    if (url.origin !== self.location.origin) return;
+
+    // Bỏ qua hoàn toàn trên cổng CRM để không cache hay can thiệp luồng web quản trị
+    if (self.location.hostname.startsWith("crm.") || url.hostname.startsWith("crm.")) return;
+
+    // Không can thiệp API calls, WebSocket, Server Functions hoặc data endpoints
+    if (
+      url.pathname.startsWith("/api") ||
+      url.pathname.startsWith("/dm") ||
+      url.pathname.startsWith("/connect-app") ||
+      url.pathname.startsWith("/socket.io") ||
+      url.pathname.startsWith("/_serverFn") ||
+      url.pathname.startsWith("/admin") ||
+      url.pathname.startsWith("/notifications") ||
+      url.pathname.startsWith("/members") ||
+      url.pathname.startsWith("/events") ||
+      url.pathname.startsWith("/meetings") ||
+      url.pathname.startsWith("/news") ||
+      url.pathname.startsWith("/opportunities") ||
+      url.pathname.startsWith("/products") ||
+      url.pathname.startsWith("/transactions") ||
+      url.pathname.startsWith("/invoices")
+    ) {
+      return;
+    }
+
+    // 1. Navigation request (HTML pages) hoặc tài liệu gốc: Network-First để luôn nhận phiên bản mới nhất khi deploy
+    if (request.mode === "navigate" || request.destination === "document" || url.pathname === "/") {
+      event.respondWith(
+        (async () => {
+          try {
+            const networkResponse = await fetch(request);
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(SW_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
+            }
+            return networkResponse;
+          } catch {
+            const cached = await caches.match(request);
+            if (cached) return cached;
+            const fallback = (await caches.match("/association")) || (await caches.match("/"));
+            if (fallback) return fallback;
+            return new Response("Offline", { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+          }
+        })()
+      );
+      return;
+    }
+
+    // 2. Chunks JS/CSS hoặc assets: Network-First với fallback cache
+    if (url.pathname.includes("/assets/") || url.pathname.includes("/_build/")) {
+      event.respondWith(
+        (async () => {
+          try {
+            const networkResponse = await fetch(request);
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(SW_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
+            }
+            return networkResponse;
+          } catch {
+            const cached = await caches.match(request);
+            if (cached) return cached;
+            return new Response("", { status: 408, statusText: "Request Timeout" });
+          }
+        })()
+      );
+      return;
+    }
+
+    // 3. Các assets tĩnh khác: Stale-While-Revalidate an toàn
     event.respondWith(
       (async () => {
         try {
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) {
+            if (request.cache !== "only-if-cached") {
+              try {
+                fetch(new Request(request.url, {
+                  method: "GET",
+                  headers: request.headers,
+                  credentials: request.credentials,
+                  cache: "no-cache",
+                }))
+                  .then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                      const copy = networkResponse.clone();
+                      caches.open(SW_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
+                    }
+                  })
+                  .catch(() => { });
+              } catch { }
+            }
+            return cachedResponse;
+          }
+
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+            caches.open(SW_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => { });
           }
           return networkResponse;
         } catch {
-          const cached = await caches.match(request);
-          if (cached) return cached;
           return new Response("", { status: 408, statusText: "Request Timeout" });
         }
       })()
     );
-    return;
-  }
+  });
 
-  // 3. Các assets tĩnh khác: Stale-While-Revalidate an toàn (tránh fetch(request) gây ERR_CACHE_MISS)
-  event.respondWith(
-    (async () => {
-      try {
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-          if (request.cache !== "only-if-cached") {
-            try {
-              fetch(new Request(request.url, {
-                method: "GET",
-                headers: request.headers,
-                credentials: request.credentials,
-                cache: "no-cache",
-              }))
-                .then((networkResponse) => {
-                  if (networkResponse && networkResponse.status === 200) {
-                    const copy = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
-                  }
-                })
-                .catch(() => {});
-            } catch {}
-          }
-          return cachedResponse;
-        }
-        const networkResponse = await fetch(request);
-        if (networkResponse && networkResponse.status === 200) {
-          const copy = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
-        }
-        return networkResponse;
-      } catch {
-        const fallback = await caches.match(request);
-        if (fallback) return fallback;
-        return new Response("", { status: 404, statusText: "Not Found" });
-      }
-    })()
-  );
-});
+  // 4. Xử lý Push Notifications (Hỗ trợ thông báo đẩy chạy nền PWA)
+  self.addEventListener("push", (event) => {
+    if (!event.data) return;
 
-// 4. Background Push Notification & Incoming Calls
-let currentUserId = null;
-let currentToken = null;
-let lastActiveCallId = null;
-const seenNotificationIds = new Set();
-
-// Safe helper to show notification only if permission has been granted
-async function safeShowNotification(title, options = {}) {
-  try {
-    if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
-      return null;
-    }
-    return await self.registration.showNotification(title, options);
-  } catch (err) {
-    // Gracefully ignore notification permission error or silent dismiss
-    return null;
-  }
-}
-
-self.addEventListener("message", (event) => {
-  if (!event.data) return;
-  if (event.data.type === "REGISTER_USER") {
-    currentUserId = event.data.userId || null;
-    currentToken = event.data.token || null;
-  } else if (event.data.type === "SHOW_NOTIFICATION") {
-    const { title, options } = event.data;
-    if (title) {
-      safeShowNotification(title, options || {}).catch(() => {});
-    }
-  }
-});
-
-// Periodic background check for incoming calls and urgent notifications (runs even when tab is backgrounded)
-setInterval(async () => {
-  if (!currentUserId) return;
-  try {
-    const headers = {
-      Accept: "application/json",
-      ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
-    };
-
-    // 1. Kiểm tra cuộc gọi đến đang đổ chuông
-    const callRes = await fetch("/api/me/active-call", { headers }).catch(() => null);
-    if (callRes && callRes.ok) {
-      const callData = await callRes.json().catch(() => null);
-      if (callData?.ok && callData?.call && callData.call.status === "ringing") {
-        const call = callData.call;
-        const callId = call.callId;
-        if (callId && callId !== lastActiveCallId) {
-          lastActiveCallId = callId;
-          const callerName = call.callerName || "Hội viên CEO 1983";
-          const callType = call.callType === "video" ? "Video" : "Thoại";
-          safeShowNotification(`📞 Cuộc gọi ${callType} đến từ ${callerName}`, {
-            body: `${callerName} đang gọi cho bạn... Bấm để trả lời ngay!`,
-            icon: call.callerAvatar || "/app-icon.png",
-            badge: "/favicon.png",
-            tag: `call-${callId}`,
-            data: `/association/messages?callId=${callId}`,
-            vibrate: [500, 250, 500, 250, 500, 250, 500],
-            requireInteraction: true,
-            renotify: true,
-            silent: false,
-            actions: [
-              { action: "accept", title: "📞 Trả lời" },
-              { action: "decline", title: "✕ Từ chối" },
-            ],
-          }).catch(() => {});
-        }
-      } else if (lastActiveCallId) {
-        lastActiveCallId = null;
-      }
-    }
-
-    // 2. Kiểm tra thông báo mới từ hệ thống CLB Doanh Nhân CEO 1983
-    let notifRes = await fetch("/api/connect-app/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
-    if (!notifRes || !notifRes.ok) {
-      notifRes = await fetch("/api/me/notifications?limit=5&unreadOnly=true", { headers }).catch(() => null);
-    }
-    if (notifRes && notifRes.ok) {
-      const notifData = await notifRes.json().catch(() => null);
-      const list = Array.isArray(notifData) ? notifData : notifData?.data || [];
-      for (const item of list) {
-        const notifId = item.id || `${item.title}-${item.created_at || item.createdAt || Date.now()}`;
-        if (!seenNotificationIds.has(notifId) && (item.is_read === false || item.unread === true)) {
-          seenNotificationIds.add(notifId);
-          safeShowNotification(item.title || "CLB Doanh Nhân CEO 1983", {
-            body: item.body || item.message || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
-            icon: item.icon || "/ceo1983-emblem-8.png",
-            badge: "/favicon.png",
-            tag: `notif-${notifId}`,
-            data: item.action_url || item.url || item.targetRoute || "/association/notifications",
-            vibrate: [200, 100, 200],
-            renotify: true,
-          }).catch(() => {});
-        }
-      }
-    }
-  } catch {
-    /* Silent catch for background checks */
-  }
-}, 4500);
-
-self.addEventListener("push", (event) => {
-  if (!event.data) return;
-  try {
-    const data = event.data.json();
-    const title = data.title || "CEO 1983";
-    const isCall = data.type === "call" || data.tag?.startsWith("call-");
-    const options = {
-      body: data.body || "",
-      icon: data.icon || "/app-icon.png",
+    let payload = {
+      title: "CEO 1983 Thông báo",
+      body: "Bạn có cập nhật mới từ CLB Doanh Nhân CEO 1983",
+      icon: "/app-icon-192.png",
       badge: "/favicon.png",
-      tag: data.tag || `notif-${Date.now()}`,
-      data: data.url || (isCall ? "/association/messages" : "/association"),
-      vibrate: isCall ? [500, 250, 500, 250, 500] : [200, 100, 200],
-      requireInteraction: isCall,
-      renotify: true,
-      actions: isCall
-        ? [
-            { action: "accept", title: "📞 Trả lời" },
-            { action: "decline", title: "✕ Từ chối" },
-          ]
-        : [],
+      data: { url: "/notifications" },
     };
-    event.waitUntil(safeShowNotification(title, options).catch(() => {}));
-  } catch {
-    const text = event.data ? event.data.text() : "";
+
+    try {
+      const data = event.data.json();
+      payload = {
+        title: data.title || payload.title,
+        body: data.body || payload.body,
+        icon: data.icon || payload.icon,
+        badge: data.badge || payload.badge,
+        data: data.data || { url: data.url || "/notifications" },
+      };
+    } catch {
+      payload.body = event.data.text();
+    }
+
+    const options = {
+      body: payload.body,
+      icon: payload.icon,
+      badge: payload.badge,
+      data: payload.data,
+      vibrate: [100, 50, 100],
+      requireInteraction: false,
+    };
+
+    event.waitUntil(self.registration.showNotification(payload.title, options));
+  });
+
+  // 5. Chuyển hướng khi người dùng nhấn vào Notification
+  self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+
+    const targetUrl = (event.notification.data && event.notification.data.url) || "/notifications";
+
     event.waitUntil(
-      safeShowNotification("CEO 1983", {
-        body: text || "Bạn có thông báo mới từ CLB Doanh Nhân CEO 1983",
-        icon: "/app-icon.png",
-      }).catch(() => {})
-    );
-  }
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const urlToOpen = event.notification.data || "/association";
-
-  if (event.action === "decline") {
-    // Người dùng từ chối cuộc gọi
-    return;
-  }
-
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      for (const client of windowClients) {
-        if ("focus" in client) {
-          if (client.url && "navigate" in client) {
-            client.navigate(urlToOpen);
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            if ("navigate" in client) {
+              client.navigate(targetUrl);
+            }
+            return client.focus();
           }
-          return client.focus();
         }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    })
-  );
-});
-
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+    );
+  });
+})();

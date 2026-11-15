@@ -24,6 +24,8 @@ import {
   Users,
   QrCode,
   Download,
+  Copy,
+  Eye,
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
@@ -530,6 +532,7 @@ export function FeedView({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [activeUploadPostId, setActiveUploadPostId] = useState<string | null>(null);
+  const [expandedPostIds, setExpandedPostIds] = useState<Set<string>>(new Set());
 
   const toggleCommentsVisibility = (postId: string) => {
     setOpenCommentsMap((prev) => ({
@@ -1124,9 +1127,36 @@ export function FeedView({
                     {post.title}
                   </h3>
                 )}
-                <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
-                  {post.content}
-                </p>
+                {(() => {
+                  const rawContent = post.content || "";
+                  const isLong = rawContent.length > 220 || (rawContent.match(/\n/g) || []).length > 3;
+                  const isExpanded = expandedPostIds.has(post.id);
+                  const displayContent = !isLong || isExpanded ? rawContent : rawContent.slice(0, 200).trim() + "...";
+
+                  return (
+                    <div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                        {displayContent}
+                      </p>
+                      {isLong && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExpandedPostIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(post.id)) next.delete(post.id);
+                              else next.add(post.id);
+                              return next;
+                            });
+                          }}
+                          className="mt-1 text-xs font-bold text-[#003B95] dark:text-amber-400 hover:underline cursor-pointer inline-flex items-center gap-1"
+                        >
+                          {isExpanded ? "Thu gọn ▲" : "Xem thêm ▼"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ── BÀI VIẾT CHIA SẺ TỪ ỨNG DỤNG BÊN NGOÀI (CHUẨN GIAO DIỆN FACEBOOK SHARE CARD) ── */}
                 {post.sharedArticle || post.externalLink ? (
@@ -1368,6 +1398,129 @@ export function FeedView({
                         </div>
                       </div>
 
+                      {/* ── HIỂN THỊ POSTER VÀ THƯ MỜI CHÍNH THỨC CỦA SỰ KIỆN ── */}
+                      {(post.posterUrl || (post as any).invitationLetterUrl) && (
+                        <div className="space-y-2">
+                          <div className={`grid gap-2.5 ${post.posterUrl && (post as any).invitationLetterUrl ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+                            {post.posterUrl && (
+                              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 group shadow-xs">
+                                <div
+                                  className="relative aspect-16/9 bg-slate-950 overflow-hidden cursor-pointer"
+                                  onClick={() => setLightboxImage(post.posterUrl!)}
+                                  title="Bấm để xem poster sự kiện phóng to"
+                                >
+                                  <img
+                                    src={resolveMediaUrl(post.posterUrl) || post.posterUrl}
+                                    alt="Poster sự kiện"
+                                    className="w-full h-full object-cover group-hover:scale-102 transition duration-300"
+                                  />
+                                  <div className="absolute top-2 left-2 bg-[#003B95] text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
+                                    POSTER SỰ KIỆN
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <span className="bg-black/75 text-white text-xs font-bold px-3 py-1.5 rounded-xl backdrop-blur-xs flex items-center gap-1.5">
+                                      <Eye className="size-3.5" /> Phóng to Poster
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="p-2.5 flex items-center justify-between text-xs border-t border-slate-100 dark:border-slate-800">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                    🖼️ Poster sự kiện
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadPoster(post.posterUrl, post.title)}
+                                    className="text-[#003B95] dark:text-amber-400 font-bold hover:underline cursor-pointer inline-flex items-center gap-1 text-[11px]"
+                                  >
+                                    <Download className="size-3.5" /> Tải về
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {(post as any).invitationLetterUrl && (
+                              <div className="rounded-2xl border border-amber-300 dark:border-amber-700/80 overflow-hidden bg-white dark:bg-slate-900 group shadow-xs">
+                                <div
+                                  className="relative aspect-16/9 bg-slate-950 overflow-hidden cursor-pointer"
+                                  onClick={() => setLightboxImage((post as any).invitationLetterUrl)}
+                                  title="Bấm để xem thư mời sự kiện phóng to"
+                                >
+                                  <img
+                                    src={resolveMediaUrl((post as any).invitationLetterUrl) || (post as any).invitationLetterUrl}
+                                    alt="Thư mời sự kiện"
+                                    className="w-full h-full object-cover group-hover:scale-102 transition duration-300"
+                                  />
+                                  <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
+                                    THƯ MỜI CHÍNH THỨC
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                    <span className="bg-black/75 text-white text-xs font-bold px-3 py-1.5 rounded-xl backdrop-blur-xs flex items-center gap-1.5">
+                                      <Eye className="size-3.5" /> Xem Thư Mời
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="p-2.5 flex items-center justify-between text-xs border-t border-amber-100 dark:border-amber-900/40">
+                                  <span className="font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                                    ✉️ Thư mời sự kiện
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLightboxImage((post as any).invitationLetterUrl)}
+                                    className="text-[#003B95] dark:text-amber-400 font-bold hover:underline cursor-pointer inline-flex items-center gap-1 text-[11px]"
+                                  >
+                                    <Eye className="size-3.5" /> Mở xem
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── LINK ĐĂNG KÝ SỰ KIỆN GẮN KÈM MÃ QR ── */}
+                      {(post.meetingLink || (post.qrCodeUrl && post.qrCodeUrl.startsWith("http"))) && (
+                        <div className="p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-between gap-2.5 text-xs shadow-2xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="size-7 rounded-lg bg-[#003B95] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                              <ExternalLink className="size-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Link đăng ký tham dự:</span>
+                              <a
+                                href={post.meetingLink || post.qrCodeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#003B95] dark:text-blue-300 font-mono text-[11px] truncate block hover:underline"
+                              >
+                                {post.meetingLink || post.qrCodeUrl}
+                              </a>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                const link = post.meetingLink || post.qrCodeUrl || "";
+                                navigator.clipboard.writeText(link);
+                                toast.success("Đã sao chép link đăng ký thành công!");
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-border text-[11px] font-bold text-foreground hover:bg-secondary transition flex items-center gap-1 cursor-pointer"
+                            >
+                              <Copy className="size-3" /> Sao chép
+                            </button>
+                            <a
+                              href={post.meetingLink || post.qrCodeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#003B95] text-white text-[11px] font-bold hover:bg-[#002B70] transition flex items-center gap-1 cursor-pointer"
+                            >
+                              Mở link <ExternalLink className="size-3" />
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
                       {/* ── BẮT BUỘC HIỂN THỊ MÃ QR TRỰC TIẾP LÊN MẠNG LƯỚI & FORM ĐĂNG KÝ (YÊU CẦU 3) ── */}
                       {(() => {
                         const meetingQrValue =
@@ -1383,18 +1536,22 @@ export function FeedView({
                             <div className="flex flex-col sm:flex-row items-center gap-3.5">
                               {/* QR Code Canvas hiển thị TRỰC TIẾP to rõ nét */}
                               <div
-                                onClick={() =>
-                                  setRegisteringMeeting({
-                                    id: post.id,
-                                    title: (post.content || "Cuộc họp / Diễn đàn CLB CEO 1983").slice(0, 80),
-                                    time: post.meetingTime,
-                                    location: post.meetingLocation,
-                                    isOnline: post.isOnline,
-                                    department: post.department,
-                                    posterName: post.authorName,
-                                    qrCodeUrl: post.qrCodeUrl,
-                                  })
-                                }
+                                onClick={() => {
+                                  if (meetingQrValue.startsWith("http")) {
+                                    window.open(meetingQrValue, "_blank");
+                                  } else {
+                                    setRegisteringMeeting({
+                                      id: post.id,
+                                      title: (post.content || "Cuộc họp / Diễn đàn CLB CEO 1983").slice(0, 80),
+                                      time: post.meetingTime,
+                                      location: post.meetingLocation,
+                                      isOnline: post.isOnline,
+                                      department: post.department,
+                                      posterName: post.authorName,
+                                      qrCodeUrl: post.qrCodeUrl,
+                                    });
+                                  }
+                                }}
                                 className="group relative p-2 rounded-2xl bg-white dark:bg-slate-900 border-2 border-amber-400/60 shadow-md flex flex-col items-center justify-center shrink-0 cursor-pointer hover:border-[#003B95] dark:hover:border-amber-400 transition"
                                 title="Chạm để mở form đăng ký tham gia"
                               >

@@ -446,7 +446,7 @@ function EventsPage() {
         (e as any).bannerUrl ||
         "/app-icon.png";
       const regUrl = `https://ceo1983.viconnect.vn/guest-event-register/${e.id}`;
-      const checkinQr = `https://ceo1983.viconnect.vn/api/events/qr?data=${encodeURIComponent(regUrl)}&size=500`;
+      const checkinQr = regUrl; // Mã QR chứa trực tiếp đường link đăng ký
 
       await fetchNestApi("/feed", {
         method: "POST",
@@ -459,20 +459,21 @@ ${e.name}
 📍 Địa điểm: ${e.location || "Trụ sở CLB CEO 1983"}
 🎟️ Vé tham dự: ${e.ticketPrice && Number(e.ticketPrice) > 0 ? Number(e.ticketPrice).toLocaleString("vi-VN") + " VNĐ" : "Miễn phí dành cho Hội viên"}
 
-${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""}👉 Quý Doanh nhân quét mã QR đính kèm để mở form đăng ký và hoàn tất thủ tục tham gia!`,
+${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""}👉 Quý Doanh nhân bấm vào mã QR hoặc truy cập đường link để đăng ký tham gia: ${regUrl}`,
           category: "EVENT_MEETING",
           department: "Ban Sự Kiện",
           images: [poster],
           posterUrl: poster,
           qrCodeUrl: checkinQr,
           meetingLink: regUrl,
+          invitationLetterUrl: (e as any).invitationUrl || poster,
         }),
       }).catch((err) => {
         console.warn("Feed event broadcast fallback:", err);
       });
 
       toast.success(
-        "Đã bắn chi tiết sự kiện kèm Poster & Mã QR xuống Mạng lưới CEO 1983 thành công!"
+        "Đã bắn chi tiết sự kiện kèm Poster, Thư mời & Mã QR gắn link xuống Mạng lưới thành công!"
       );
     } catch {
       toast.error("Không thể bắn sự kiện xuống Bảng tin");

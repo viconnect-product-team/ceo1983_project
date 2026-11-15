@@ -48,8 +48,11 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         fetchNestApiFromServer<any[]>("/admin/transactions", token),
       ]);
 
-      if (membersRes.status === "fulfilled" && Array.isArray(membersRes.value)) {
+      if (membersRes.status === "fulfilled" && Array.isArray(membersRes.value) && membersRes.value.length > 0) {
         nestMembers = membersRes.value;
+      } else {
+        const { DEFAULT_MEMBERS } = await import("./members-data");
+        nestMembers = DEFAULT_MEMBERS;
       }
       if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
         nestEvents = eventsRes.value;
