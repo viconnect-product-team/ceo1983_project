@@ -15,6 +15,9 @@
   - **4. Hướng Dẫn Khắc Phục `net::ERR_CACHE_MISS` Trên Trình Duyệt Người Dùng**:
     * Do trình duyệt người dùng đã lưu Service Worker cũ (v4) từ trước khi deploy bản mới, Service Worker cũ cố intercept request navigation.
     * Để giải quyết ngay lập tức: Vào F12 DevTools -> tab **Application** -> mục **Service Workers** -> bấm **Unregister** và tích chọn **Update on reload**, sau đó nhấn **Ctrl + F5**. Khi GitHub Actions deploy xong bản mới, `register-sw.ts` sẽ tự động dọn sạch vĩnh viễn Service Worker trên domain CRM.
+  - **5. Chuyển Đổi Kho Mã Nguồn GitHub Sang Chế Độ Riêng Tư (Private)**:
+    * Đã gọi GitHub API và chuyển thành công repository `viconnect-product-team/ceo1983_project` sang chế độ Private.
+    * Kết quả xác thực: `private: true`, `visibility: "private"`. Mọi truy cập công khai ngoài tổ chức hiện đều nhận mã lỗi 404 (Not Found).
 
 - **Bản cập nhật ngày 15/11/2026 (v11.53): Cập Nhật Tài Khoản infor@viconnect.vn (Pass 123456), Khắc Phục Triệt Để sw.js net::ERR_CACHE_MISS & ts(2451), Đồng Bộ 2 Hội Viên Lên Dashboard Tổng Quan & Quản Trị Người Dùng Tinh Gọn ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Cập Nhật Tài Khoản `info@viconnect.vn` Thành `infor@viconnect.vn` & Mật Khẩu `123456`**:
@@ -1395,6 +1398,9 @@
   - **4. Hướng Dẫn Khắc Phục `net::ERR_CACHE_MISS` Trên Trình Duyệt Người Dùng**:
     * Do trình duyệt người dùng đã lưu Service Worker cũ (v4) từ trước khi deploy bản mới, Service Worker cũ cố intercept request navigation.
     * Để giải quyết ngay lập tức: Vào F12 DevTools -> tab **Application** -> mục **Service Workers** -> bấm **Unregister** và tích chọn **Update on reload**, sau đó nhấn **Ctrl + F5**. Khi GitHub Actions deploy xong bản mới, `register-sw.ts` sẽ tự động dọn sạch vĩnh viễn Service Worker trên domain CRM.
+  - **5. Chuyển Đổi Kho Mã Nguồn GitHub Sang Chế Độ Riêng Tư (Private)**:
+    * Đã gọi GitHub API và chuyển thành công repository `viconnect-product-team/ceo1983_project` sang chế độ Private.
+    * Kết quả xác thực: `private: true`, `visibility: "private"`. Mọi truy cập công khai ngoài tổ chức hiện đều nhận mã lỗi 404 (Not Found).
 
 - **Bản cập nhật ngày 15/11/2026 (v11.53): Cập Nhật Tài Khoản infor@viconnect.vn (Pass 123456), Khắc Phục Triệt Để sw.js net::ERR_CACHE_MISS & ts(2451), Đồng Bộ 2 Hội Viên Lên Dashboard Tổng Quan & Quản Trị Người Dùng Tinh Gọn ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Cập Nhật Tài Khoản `info@viconnect.vn` Thành `infor@viconnect.vn` & Mật Khẩu `123456`**:
@@ -4017,6 +4023,9 @@
   - **4. Hướng Dẫn Khắc Phục `net::ERR_CACHE_MISS` Trên Trình Duyệt Người Dùng**:
     * Do trình duyệt người dùng đã lưu Service Worker cũ (v4) từ trước khi deploy bản mới, Service Worker cũ cố intercept request navigation.
     * Để giải quyết ngay lập tức: Vào F12 DevTools -> tab **Application** -> mục **Service Workers** -> bấm **Unregister** và tích chọn **Update on reload**, sau đó nhấn **Ctrl + F5**. Khi GitHub Actions deploy xong bản mới, `register-sw.ts` sẽ tự động dọn sạch vĩnh viễn Service Worker trên domain CRM.
+  - **5. Chuyển Đổi Kho Mã Nguồn GitHub Sang Chế Độ Riêng Tư (Private)**:
+    * Đã gọi GitHub API và chuyển thành công repository `viconnect-product-team/ceo1983_project` sang chế độ Private.
+    * Kết quả xác thực: `private: true`, `visibility: "private"`. Mọi truy cập công khai ngoài tổ chức hiện đều nhận mã lỗi 404 (Not Found).
 
 - **Bản cập nhật ngày 15/11/2026 (v11.53): Cập Nhật Tài Khoản infor@viconnect.vn (Pass 123456), Khắc Phục Triệt Để sw.js net::ERR_CACHE_MISS & ts(2451), Đồng Bộ 2 Hội Viên Lên Dashboard Tổng Quan & Quản Trị Người Dùng Tinh Gọn ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Cập Nhật Tài Khoản `info@viconnect.vn` Thành `infor@viconnect.vn` & Mật Khẩu `123456`**:
