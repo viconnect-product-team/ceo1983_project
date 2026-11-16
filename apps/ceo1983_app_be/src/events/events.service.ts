@@ -232,7 +232,7 @@ export class EventsService implements OnModuleInit {
     }
 
     const rawType = String(r.type ?? 'forum').toLowerCase();
-    const type = ['forum', 'workshop', 'networking', 'training'].includes(
+    const type = ['forum', 'workshop', 'networking', 'training', 'charity'].includes(
       rawType,
     )
       ? rawType
@@ -247,6 +247,8 @@ export class EventsService implements OnModuleInit {
         'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80',
       training:
         'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80',
+      charity:
+        'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1200&q=80',
     };
 
     const img =
@@ -311,6 +313,7 @@ export class EventsService implements OnModuleInit {
       associationName: r.association_name ?? null,
       communityName: r.association_name ?? null,
       associationLogo: r.association_logo ?? null,
+      charityDetails: r.charity_details || null,
     };
   }
 
@@ -834,6 +837,53 @@ export class EventsService implements OnModuleInit {
       )
     `.catch(() => null);
 
+    // Lưu thông tin chi tiết sự kiện thiện nguyện nếu có
+    if (data.charityDetails) {
+      await this.prisma.$executeRaw`
+        UPDATE public.events 
+        SET charity_details = ${JSON.stringify(data.charityDetails)}::jsonb
+        WHERE id = ${eventId}
+      `.catch(() => null);
+    }
+
+    // Tự động lưu ảnh/poster sự kiện vào Quản lý tài liệu (Danh mục "Sự kiện", Thư mục "Ban Truyền thông")
+    if (evImg) {
+      try {
+        let folderId: string | null = null;
+        const folderRows = await this.prisma.$queryRaw<any[]>`
+          SELECT code FROM public.documents 
+          WHERE (association_id = ${assocId}::uuid OR association_id IS NULL) 
+            AND is_folder = true 
+            AND (name ILIKE '%Ban Truyền thông%' OR name ILIKE '%Truyền thông%')
+          LIMIT 1
+        `.catch(() => []);
+        if (folderRows.length > 0) {
+          folderId = folderRows[0].code;
+        } else {
+          folderId = 'FLD-BTT-' + Date.now().toString(36).toUpperCase();
+          await this.prisma.$executeRaw`
+            INSERT INTO public.documents (
+              code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, is_folder, share_scope, created_at, uploaded_at
+            ) VALUES (
+              ${folderId}, 'Ban Truyền thông', 'Sự kiện', 'Thư mục', 'Hệ thống', 'folder', NULL, ${assocId}::uuid, NULL, true, 'public', now(), now()
+            )
+          `.catch(() => {});
+        }
+
+        const docCode = 'DOC-EV-' + Date.now().toString(36).toUpperCase();
+        const docName = `Poster Sự kiện: ${data.name}`;
+        await this.prisma.$executeRaw`
+          INSERT INTO public.documents (
+            code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, is_folder, share_scope, created_at, uploaded_at, description
+          ) VALUES (
+            ${docCode}, ${docName}, 'Sự kiện', 'Ảnh Poster', 'Ban Truyền thông', 'image', ${evImg}, ${assocId}::uuid, ${folderId}, false, 'public', now(), now(), ${'Poster sự kiện ' + data.name}
+          )
+        `.catch(() => {});
+      } catch (docErr) {
+        this.logger.warn(`Failed to auto-catalog event image to documents: ${docErr}`);
+      }
+    }
+
     const created = await this.getEventById(userId, eventId);
     return {
       event: created,
@@ -1020,6 +1070,51 @@ export class EventsService implements OnModuleInit {
             updated_at = now()
           WHERE id = ${id}
         `;
+      }
+    }
+
+    if (data.charityDetails) {
+      await this.prisma.$executeRaw`
+        UPDATE public.events 
+        SET charity_details = ${JSON.stringify(data.charityDetails)}::jsonb
+        WHERE id = ${id}
+      `.catch(() => null);
+    }
+
+    if (evImg && evImg !== current.image) {
+      try {
+        let folderId: string | null = null;
+        const folderRows = await this.prisma.$queryRaw<any[]>`
+          SELECT code FROM public.documents 
+          WHERE (association_id = ${current.association_id}::uuid OR association_id IS NULL) 
+            AND is_folder = true 
+            AND (name ILIKE '%Ban Truyền thông%' OR name ILIKE '%Truyền thông%')
+          LIMIT 1
+        `.catch(() => []);
+        if (folderRows.length > 0) {
+          folderId = folderRows[0].code;
+        } else {
+          folderId = 'FLD-BTT-' + Date.now().toString(36).toUpperCase();
+          await this.prisma.$executeRaw`
+            INSERT INTO public.documents (
+              code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, is_folder, share_scope, created_at, uploaded_at
+            ) VALUES (
+              ${folderId}, 'Ban Truyền thông', 'Sự kiện', 'Thư mục', 'Hệ thống', 'folder', NULL, ${current.association_id}::uuid, NULL, true, 'public', now(), now()
+            )
+          `.catch(() => {});
+        }
+
+        const docCode = 'DOC-EV-' + Date.now().toString(36).toUpperCase();
+        const docName = `Poster Sự kiện: ${name || current.name}`;
+        await this.prisma.$executeRaw`
+          INSERT INTO public.documents (
+            code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, is_folder, share_scope, created_at, uploaded_at, description
+          ) VALUES (
+            ${docCode}, ${docName}, 'Sự kiện', 'Ảnh Poster', 'Ban Truyền thông', 'image', ${evImg}, ${current.association_id}::uuid, ${folderId}, false, 'public', now(), now(), ${'Poster sự kiện ' + (name || current.name)}
+          )
+        `.catch(() => {});
+      } catch (docErr) {
+        this.logger.warn(`Failed to auto-catalog event image to documents: ${docErr}`);
       }
     }
 

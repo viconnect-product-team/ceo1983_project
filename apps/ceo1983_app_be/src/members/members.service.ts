@@ -51,8 +51,7 @@ export class MembersService {
       cleanId === '00000000-0000-0000-0000-000000000000' ||
       cleanId === '00000000-0000-4000-8000-000000000002' ||
       cleanId === 'admin@connect.vn' ||
-      cleanId === 'clbceo1983@gmail.com' ||
-      cleanId === 'vumikasa6@gmail.com'
+      cleanId === 'clbceo1983@gmail.com'
     ) {
       return true;
     }
@@ -82,7 +81,6 @@ export class MembersService {
       if (
         uEmail === 'admin@connect.vn' ||
         uEmail === 'clbceo1983@gmail.com' ||
-        uEmail === 'vumikasa6@gmail.com' ||
         uEmail.startsWith('admin') ||
         uName === 'admin@connect.vn' ||
         uName.startsWith('admin') ||

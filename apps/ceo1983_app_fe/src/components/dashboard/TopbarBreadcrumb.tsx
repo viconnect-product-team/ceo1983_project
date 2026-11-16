@@ -16,6 +16,75 @@ function findNav(path: string): { group: NavGroup; item: NavItem } | null {
   return null;
 }
 
+const ROUTE_LABELS: Record<string, { group?: string; label: string }> = {
+  "/profile": { group: "Hệ thống", label: "Hồ sơ cá nhân" },
+  "/accounts": { group: "Hệ thống", label: "Quản trị người dùng" },
+  "/account-settings": { group: "Hệ thống", label: "Quản trị người dùng" },
+  "/departments": { group: "Phân quyền", label: "Quản lý Ban Chuyên Môn" },
+  "/permissions": { group: "Phân quyền", label: "Phân quyền hệ thống" },
+  "/templates": { group: "Quản lý mẫu trang", label: "Quản lý Thư Mời" },
+  "/admin/landing-templates": { group: "Hệ thống", label: "Quản lý chủ đề" },
+  "/fees": { group: "Tài chính", label: "Hội phí" },
+  "/income": { group: "Tài chính", label: "Khoản thu" },
+  "/expenses": { group: "Tài chính", label: "Khoản chi" },
+  "/finance-report": { group: "Tài chính", label: "Báo cáo tài chính" },
+  "/checkin": { group: "Sự kiện & Họp", label: "Check-in sự kiện" },
+  "/checkin-qr": { group: "Sự kiện & Họp", label: "Mã QR Check-in" },
+  "/events-overview": { group: "Sự kiện & Họp", label: "Tổng quan sự kiện" },
+  "/event-registrations": { group: "Sự kiện & Họp", label: "Đăng ký sự kiện" },
+  "/sponsor-packages": { group: "Tài trợ", label: "Gói tài trợ" },
+  "/sponsor-report": { group: "Tài trợ", label: "Báo cáo tài trợ" },
+  "/email-marketing": { group: "Truyền thông", label: "Email Marketing" },
+  "/perks": { group: "Truyền thông", label: "Quyền lợi & Ưu đãi" },
+  "/benefits": { group: "Truyền thông", label: "Khen thưởng & Danh hiệu" },
+  "/activity": { group: "Hệ thống", label: "Lịch sử hoạt động" },
+  "/settings": { group: "Hệ thống", label: "Cài đặt hệ thống" },
+  "/tasks": { group: "Hệ thống", label: "Quản lý công việc" },
+  "/documents": { group: "Quản trị", label: "Tài liệu & Biểu mẫu" },
+  "/marketplace": { group: "Kết nối kinh doanh", label: "Marketplace B2B" },
+  "/opportunities": { group: "Kết nối kinh doanh", label: "Cơ hội hợp tác" },
+  "/network": { group: "Kết nối kinh doanh", label: "Tin nhắn & Trao đổi" },
+  "/voting": { group: "Sự kiện & Họp", label: "Biểu quyết & Bầu cử" },
+  "/meetings": { group: "Sự kiện & Họp", label: "Cuộc họp" },
+  "/events": { group: "Sự kiện & Họp", label: "Sự kiện" },
+  "/members": { group: "Hội viên", label: "Hội viên" },
+  "/companies": { group: "Hội viên", label: "Doanh nghiệp" },
+  "/renewal": { group: "Hội viên", label: "Gia hạn hội viên" },
+  "/news": { group: "Truyền thông", label: "Tin tức & Truyền thông" },
+  "/notifications": { group: "Truyền thông", label: "Thông báo" },
+};
+
+const SEGMENT_NAMES: Record<string, string> = {
+  profile: "Hồ sơ cá nhân",
+  accounts: "Quản trị người dùng",
+  account: "Tài khoản",
+  settings: "Cài đặt",
+  departments: "Ban chuyên môn",
+  permissions: "Phân quyền",
+  templates: "Thư mời",
+  expenses: "Khoản chi",
+  income: "Khoản thu",
+  fees: "Hội phí",
+  finance: "Tài chính",
+  documents: "Tài liệu",
+  events: "Sự kiện",
+  meetings: "Cuộc họp",
+  members: "Hội viên",
+  companies: "Doanh nghiệp",
+  opportunities: "Cơ hội",
+  marketplace: "Thương mại",
+  products: "Sản phẩm",
+  tasks: "Công việc",
+  activity: "Hoạt động",
+  news: "Tin tức",
+  notifications: "Thông báo",
+  edit: "Chỉnh sửa",
+  detail: "Chi tiết",
+  create: "Tạo mới",
+  add: "Thêm mới",
+  scan: "Quét mã",
+};
+
 /**
  * Build breadcrumb crumbs from the current pathname using the nav registry
  * as the single source of truth. Read-only; derives from the router only.
@@ -27,7 +96,16 @@ function useCrumbs(): Crumb[] {
   // Home / dashboard.
   if (pathname === "/") return [{ label: t("nav.dashboard") }];
 
-  // 1. Try exact match first (e.g. /business-connect/meetings)
+  // 1. Try explicit Route label mapping
+  const directMapping = ROUTE_LABELS[pathname];
+  if (directMapping) {
+    const crumbs: Crumb[] = [];
+    if (directMapping.group) crumbs.push({ label: directMapping.group });
+    crumbs.push({ label: directMapping.label, to: pathname });
+    return crumbs;
+  }
+
+  // 2. Try exact match from nav groups
   const exactMatch = findNav(pathname);
   if (exactMatch) {
     const crumbs: Crumb[] = [];
@@ -38,13 +116,24 @@ function useCrumbs(): Crumb[] {
 
   const segments = pathname.split("/").filter(Boolean);
   const base = "/" + segments[0];
-  const match = findNav(base);
 
+  const baseMapping = ROUTE_LABELS[base];
+  if (baseMapping) {
+    const crumbs: Crumb[] = [];
+    if (baseMapping.group) crumbs.push({ label: baseMapping.group });
+    crumbs.push({ label: baseMapping.label, to: base });
+    if (segments.length > 1) {
+      const sub = segments[1];
+      crumbs.push({ label: SEGMENT_NAMES[sub] || sub });
+    }
+    return crumbs;
+  }
+
+  const match = findNav(base);
   const crumbs: Crumb[] = [];
 
   if (match) {
     if (match.group.label) crumbs.push({ label: t(match.group.label) });
-    // The section item links back to its list/root route.
     crumbs.push({ label: t(match.item.key), to: base });
   } else {
     // Check if it's a known nested namespace like /business-connect
@@ -55,25 +144,26 @@ function useCrumbs(): Crumb[] {
       } else if (segments[1] === "saved-cards") {
         crumbs.push({ label: t("nav.bc.saved" as TKey), to: "/business-connect/saved-cards" });
       } else {
+        const sub = segments[1] || segments[0];
         crumbs.push({
-          label: (segments[1] || segments[0]).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          label: SEGMENT_NAMES[sub] || sub.replace(/-/g, " "),
           to: pathname,
         });
       }
       return crumbs;
     } else {
-      // Fallback: Title-case the first segment for routes outside the registry.
+      const segName = SEGMENT_NAMES[segments[0]] || segments[0].replace(/-/g, " ");
       crumbs.push({
-        label: segments[0].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        label: segName,
         to: base,
       });
     }
   }
 
-  // Nested detail / sub-page crumb (Members > Detail, Opportunities > Edit, ...).
+  // Nested detail / sub-page crumb
   if (segments.length > 1) {
-    const trailingKey: TKey = segments.includes("edit") ? "bc.edit" : "bc.detail";
-    crumbs.push({ label: t(trailingKey) });
+    const trailing = segments[segments.length - 1];
+    crumbs.push({ label: SEGMENT_NAMES[trailing] || "Chi tiết" });
   }
 
   return crumbs;

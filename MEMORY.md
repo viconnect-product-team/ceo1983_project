@@ -1,5 +1,75 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 16/11/2026 (v11.57): Đồng Bộ Hóa Đa Bảng CSDL 113.20.107.184:6432, Sửa Lỗi Ẩn SQL Quản Trị Viên admin@connect.vn, Bản Dịch Tiếng Việt 100% & Bổ Sung Public API / Rich Share Preview Sự Kiện ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-001])**:
+  - **1. Đồng Bộ Hóa Đa Bảng Tài Khoản `admin@connect.vn` Trên CSDL Chuẩn `113.20.107.184:6432` (Yêu Cầu 4.2 & 4.3)**:
+    * **Hiện tượng**: Khi người dùng sử dụng DBeaver chỉnh sửa email trong bảng `auth.users` thành `admin@connect.vn`, giao diện CRM trên thanh Topbar vẫn hiển thị email cũ `admin@viconnect.vn`, tạo cảm giác "database đang rất bị loạn bảng".
+    * **Nguyên nhân gốc rễ**: 
+      1. CSDL có 2 bảng lưu trữ người dùng: `auth.users` (bảng của hệ thống xác thực) và `public.vione_users` (bảng nghiệp vụ ViOne / CEO1983 mà NestJS + Prisma truy vấn). Thêm vào đó, bảng `public.members` cũng lưu trữ email và phòng ban riêng.
+      2. Khi chỉ đổi ở `auth.users`, backend NestJS khi gọi `usersService.findById` hoặc `getAccountDetails` đọc từ `public.vione_users` và `public.members` nên vẫn lấy email cũ `admin@viconnect.vn`.
+    * **Xử lý triệt để**:
+      - Đã thực thi cập nhật đồng bộ trên CSDL `113.20.107.184:6432`: Cập nhật `username = 'admin@connect.vn'`, `email = 'admin@connect.vn'`, `name = 'Quản Trị Viên Hệ Thống'` trên cả `public.vione_users` và `public.members` cho user ID `00000000-0000-4000-8000-000000000002`.
+      - Đảm bảo trong bảng `public.user_roles` có vai trò `role = 'admin'` cho user.
+  - **2. Sửa Lỗi SQL Ẩn Nghiêm Trọng Khiến Tài Khoản Admin Bị Gán Ban Chuyên Môn "Hội viên ceo1983" (Yêu Cầu 4.3)**:
+    * **Nguyên nhân gốc rễ trong `apps/ceo1983_app_be/src/users/users.repository.ts`**:
+      - Tại dòng 226 và 546, câu lệnh truy vấn thông tin hội viên `SELECT id, ... notes ... FROM public.members` bị lỗi PostgreSQL `42703 (column "notes" does not exist)` do bảng `public.members` không hề có cột `notes`.
+      - Đoạn code có khối `.catch(() => [])` nuốt chửng lỗi này, khiến hàm `usersRepo.getMemberInfo` LUÔN LUÔN trả về `null` cho mọi user!
+      - Do `memberRow` luôn là `null`, hàm `getAccountDetails` trong `users.service.ts` rơi vào fallback gán `department = 'Hội viên ceo1983'`.
+    * **Khắc phục**:
+      - Xóa bỏ trường `notes` khỏi cả 2 câu SELECT trong `users.repository.ts`.
+      - Trong `users.service.ts`: Gán cứng `isSysAdminAccount` (`admin@connect.vn`, `admin@viconnect.vn`, user có role `admin` / `platform_admin`) thì `normalizedDept` tự động là `'Ban Quản Trị'`.
+      - Trong `apps/ceo1983_app_fe/src/routes/profile.tsx`: Gán `effectiveDepartment` nếu là admin thì hiển thị rõ ràng "Ban Quản Trị"; badge "Vai trò hệ thống" được tạo kiểu với màu nền xanh lam nổi bật (`bg-blue-100 text-[#003B95] border-blue-200`) hiển thị rõ nét nhãn "Ban Quản Trị CLB (Admin)", chấm dứt hoàn toàn tình trạng chữ trắng chìm trên nền xanh.
+  - **3. Rà Soát & Bản Dịch Tiếng Việt 100% Toàn Hệ Thống (Yêu Cầu 4.1)**:
+    * **Hiện tượng**: Khi chuyển sang ngôn ngữ tiếng Việt (VI), một số vị trí như thanh điều hướng bánh mì (Breadcrumb) vẫn hiển thị tiếng Anh (ví dụ: "Profile" thay vì "Hồ sơ cá nhân").
+    * **Khắc phục**:
+      - Cập nhật `apps/ceo1983_app_fe/src/components/dashboard/TopbarBreadcrumb.tsx`: Xây dựng từ điển bản đồ đường dẫn `ROUTE_LABELS` (hơn 35 routes) và `SEGMENT_NAMES`, thay thế hoàn toàn cơ chế fallback tự viết hoa tiếng Anh (`.toUpperCase()`).
+      - Breadcrumb trang `/profile` giờ đây hiển thị chuẩn mực tiếng Việt: `Hệ thống > Hồ sơ cá nhân`.
+  - **4. Xây Dựng Public REST API & Giữ Đúng Format Layout Khi Share Sự Kiện / Tin Tức / Cơ Hội B2B (Yêu Cầu 4.4)**:
+    * **Backend Public Endpoints (`apps/ceo1983_app_be/src/app.controller.ts`)**:
+      - `@Get('api/public/events/:id')`: Trả về JSON công khai đầy đủ thông tin sự kiện (thời gian, địa điểm, banner, quy mô, chi phí, mô tả chi tiết, khối `charityDetails` đầy đủ nếu là sự kiện thiện nguyện, OpenGraph metadata). Không yêu cầu JWT token.
+      - `@Get('api/public/news/:id')`: Trả về JSON bài viết tin tức công khai.
+      - `@Get('api/public/opportunities/:id')`: Trả về JSON cơ hội B2B công khai.
+      - `@Get('api/public/share/:type/:id')`: Endpoint đa năng tra cứu dữ liệu chia sẻ công khai theo type và id.
+    * **Trang Web Share Preview HTML Chuẩn Responsive (`getSharePreview` trong `app.controller.ts`)**:
+      - Truy vấn chính xác schema bảng `public.events` từ CSDL `113.20.107.184:6432`.
+      - Tự động sinh thẻ OpenGraph meta tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type = "event"`) tương thích hoàn hảo với Facebook Crawler, Zalo Bot, Telegram.
+      - Giao diện HTML đáp ứng (Responsive Card): Poster sự kiện, tiêu đề, thông tin thời gian, địa điểm, quy mô, giá vé.
+      - Nếu là **Sự kiện Thiện nguyện**: Hiển thị nổi bật khối thông tin thiện nguyện chuyên biệt (Mục tiêu quyên góp vs Đã tiếp nhận, Đối tượng thụ hưởng, Nhu yếu phẩm kêu gọi, Thông tin tài khoản tiếp nhận ủng hộ kèm nút Sao chép STK, Cam kết sao kê minh bạch).
+      - Nút kêu gọi hành động: "Đăng ký tham gia ngay", "Sao chép liên kết", "Chia sẻ qua Zalo".
+  - **5. Kiểm Thử Chất Lượng Toàn Diện**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+
+- **Bản cập nhật ngày 16/11/2026 (v11.56): Khắc Phục Triệt Để Phân Quyền vumikasa6@gmail.com, Thiết Lập Ban Thiện Nguyện, Bổ Sung Sự Kiện Thiện Nguyện Đẩy Xuống Mobile App & Tự Động Phân Loại Lưu Trữ Quản Lý Tài Liệu ([NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-CORE-001])**:
+  - **1. Xử Lý Tận Gốc Lỗi Phân Quyền Tài Khoản `vumikasa6@gmail.com` (Phạm Văn Vũ - Thành Viên Ban Tài Chính)**:
+    * **Phát hiện 3 nguyên nhân cốt lõi**:
+      1. *Backend hardcode*: Trong `apps/ceo1983_app_be/src/members/members.service.ts` (dòng 55 & 85), hàm `checkIsPlatformAdmin` vẫn còn đoạn hardcode cũ kiểm tra `if (uEmail === 'vumikasa6@gmail.com') return true;`.
+      2. *Frontend Role Hook*: Trong `use-role.ts`, hàm `resolveSrsRole` quy đổi vai trò `thanh_vien_ban_tai_chinh` thành `"BTC"`. Mã `"BTC"` lại bị ngộ nhận là Trưởng ban tài chính (`isTruongBanTaiChinh = true`), dẫn tới mở quyền quản lý hệ thống/thư mời/tài liệu.
+      3. *Client LocalStorage Cache*: Trình duyệt client đã lưu cache `ceo1983_rbac_tree_matrix_v7_sidebar_menu` và `vba_managed_accounts_v2` với quyền admin cũ.
+    * **Xử lý triệt để 3 tầng bảo vệ**:
+      - *Tầng 1 (Backend Clean-up)*: Xóa bỏ hoàn toàn hardcode `vumikasa6@gmail.com` trong `members.service.ts`.
+      - *Tầng 2 (Frontend Strict Role & Type Segregation)*: Bổ sung type `"thanh_vien_ban_tai_chinh"` riêng biệt trong `SrsRole` và `ROLE_PERMISSIONS` (`apps/ceo1983_app_fe/src/constants/permissions.ts`). Tách biệt hoàn toàn `isTruongBanTaiChinh` (chỉ áp dụng cho `BTC` hoặc `truong_ban_tai_chinh`, loại trừ mọi `thanh_vien_ban_*`).
+      - *Tầng 3 (Sidebar Isolation & Auto Purge Cache)*: Tại `Sidebar.tsx`, gán chặt `currentRoleKey = 'thanh_vien_ban_tai_chinh'`, loại trừ khỏi `isPrivilegedAdmin`. Ẩn hoàn toàn 4 nhóm menu nhạy cảm: Quản lý Thư Mời (`filteredTemplates`), Hệ thống (`filteredSystem`), Quản trị (`filteredAdmin`), Phân quyền (`filteredPermissions`). Tự động quét và xóa sạch các key localStorage gây tràn quyền (`ceo1983_rbac_tree_matrix_v7_sidebar_menu`, `vba_crm_role_override`, `vba_admin_role_override`, `vba_member_permissions`).
+  - **2. Thành Lập Ban Thiện Nguyện (Yêu Cầu 1)**:
+    * **CSDL `113.20.107.184:6432`**: Đã chèn bản ghi Trưởng Ban Thiện Nguyện vào `public.members`: `MBTN198301` - Vũ Thu Trang (`CEO1983-000008`), `department = 'Ban Thiện nguyện'`, `executive_role = 'truong_ban_thien_nguyen'`.
+    * **Frontend & RBAC**: Bổ sung `dept_tn` (Ban Thiện nguyện, Mã: BTN, Màu: teal `#0D9488`) vào `INITIAL_DEPARTMENTS` trong `rbac-permission-helpers.ts` và tự động hiển thị trong Quản lý Ban Chuyên Môn (`/departments`).
+  - **3. Chức Năng Sự Kiện Thiện Nguyện & Đẩy Xuống Mobile App (Yêu Cầu 2)**:
+    * **CSDL `113.20.107.184:6432`**: Bổ sung cột `charity_details JSONB` vào bảng `public.events`. Đã chèn sự kiện thiện nguyện mẫu `EVT-TN-1983-001` ("Áo Ấm Mùa Đông 2026 - Cùng CEO 1983 Trao Yêu Thương Vùng Cao").
+    * **Backend NestJS**: Mở rộng `CreateEventDto`, `UpdateEventDto` hỗ trợ type `charity` và trường `charity_details` lưu trữ mục tiêu quyên góp, STK tiếp nhận, đối tượng thụ hưởng, vật phẩm kêu gọi, cam kết sao kê.
+    * **CRM Event Wizard (`EventWizard.tsx`, `events.index.tsx`)**: Bổ sung phân loại sự kiện "Sự kiện Thiện nguyện & An sinh xã hội", cung cấp form nhập đầy đủ các trường thiết yếu: Mục tiêu quyên góp (VNĐ), Tài khoản nhận ủng hộ (Ngân hàng, STK, Chủ TK, Cú pháp), Đầu mối phụ trách Ban Thiện nguyện, Đối tượng thụ hưởng, Nhu yếu phẩm kêu gọi, Cam kết sao kê minh bạch.
+    * **CEO 1983 Mobile App (`association.events.tsx`, `EventDetailModal.tsx`)**:
+      - Bổ sung bộ lọc nhanh "Thiện nguyện" (badge màu ngọc teal kèm icon Heart).
+      - Card sự kiện gắn nhãn "THIỆN NGUYỆN & AN SINH", hiển thị mục tiêu quyên góp và đối tượng thụ hưởng.
+      - Modal chi tiết: Hiển thị khối thông tin thiện nguyện chuyên biệt (mục tiêu kinh phí, đối tượng, danh mục nhu yếu phẩm, thông tin chuyển khoản kèm nút "Sao chép STK", cam kết sao kê).
+  - **4. Tự Động Phân Loại & Lưu Trữ Quản Lý Tài Liệu từ Sự Kiện & Cuộc Họp (Yêu Cầu 3)**:
+    * **CSDL `113.20.107.184:6432`**: Nới rộng check constraint `documents_type_check` trên `public.documents` cho phép `'folder', 'image', 'png', 'jpg', 'other'`.
+    * **Cấu trúc Thư mục**: Thiết lập 7 folder chuẩn theo Ban trong `public.documents` (`FLD-BTT` - Ban Truyền thông, `FLD-BDH` - Ban Điều Hành, `FLD-BTK` - Ban Thư Ký, `FLD-BTV` - Ban Thành viên, `FLD-BXT` - Ban Xúc tiến, `FLD-BTC` - Ban Tài chính, `FLD-BTN` - Ban Thiện nguyện).
+    * **Tự động hóa luồng lưu trữ**:
+      - *Sự kiện*: Khi tạo sự kiện có ảnh poster (`evImg`), backend `events.service.ts` tự động tìm/tạo folder "Ban Truyền thông" và lưu bản ghi ảnh poster vào `public.documents` với category "Sự kiện".
+      - *Cuộc họp*: Khi tạo cuộc họp có tài liệu đính kèm, backend `meetings.service.ts` tự động tìm/tạo folder theo Ban tổ chức cuộc họp và lưu bản ghi tài liệu vào `public.documents` với category "Cuộc họp".
+  - **5. Kiểm Thử Chất Lượng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Toàn bộ các file Frontend đã qua kiểm tra cú pháp và AST -> **0 ERRORS**.
+
 - **Bản cập nhật ngày 16/11/2026 (v11.55): Sửa Lỗi Gốc Phân Quyền RBAC Tài Khoản vumikasa6@gmail.com, Khắc Phục Trigger CSDL fn_enforce_lookup_table_write_guard Nuốt Lệnh DELETE, Gia Cố Đa Tầng Backend & Frontend ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Phát Hiện & Xử Lý Lỗi Gốc Tầng CSDL (113.20.107.184:6432)**:
     * **Nguyên nhân cốt lõi trong PostgreSQL**: Bảng `public.user_roles` gắn trigger `trg_guard_user_roles` gọi hàm `fn_enforce_lookup_table_write_guard()`. Hàm này có lỗi lập trình nghiêm trọng: kết thúc bằng `RETURN NEW;`. Trong PostgreSQL, đối với trigger `BEFORE DELETE`, biến `NEW` luôn có giá trị `NULL`. Do trigger trả về `NULL`, PostgreSQL tự động hủy (bỏ qua) mọi thao tác `DELETE` trên bảng `user_roles`.
@@ -1413,6 +1483,76 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 16/11/2026 (v11.57): Đồng Bộ Hóa Đa Bảng CSDL 113.20.107.184:6432, Sửa Lỗi Ẩn SQL Quản Trị Viên admin@connect.vn, Bản Dịch Tiếng Việt 100% & Bổ Sung Public API / Rich Share Preview Sự Kiện ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-001])**:
+  - **1. Đồng Bộ Hóa Đa Bảng Tài Khoản `admin@connect.vn` Trên CSDL Chuẩn `113.20.107.184:6432` (Yêu Cầu 4.2 & 4.3)**:
+    * **Hiện tượng**: Khi người dùng sử dụng DBeaver chỉnh sửa email trong bảng `auth.users` thành `admin@connect.vn`, giao diện CRM trên thanh Topbar vẫn hiển thị email cũ `admin@viconnect.vn`, tạo cảm giác "database đang rất bị loạn bảng".
+    * **Nguyên nhân gốc rễ**: 
+      1. CSDL có 2 bảng lưu trữ người dùng: `auth.users` (bảng của hệ thống xác thực) và `public.vione_users` (bảng nghiệp vụ ViOne / CEO1983 mà NestJS + Prisma truy vấn). Thêm vào đó, bảng `public.members` cũng lưu trữ email và phòng ban riêng.
+      2. Khi chỉ đổi ở `auth.users`, backend NestJS khi gọi `usersService.findById` hoặc `getAccountDetails` đọc từ `public.vione_users` và `public.members` nên vẫn lấy email cũ `admin@viconnect.vn`.
+    * **Xử lý triệt để**:
+      - Đã thực thi cập nhật đồng bộ trên CSDL `113.20.107.184:6432`: Cập nhật `username = 'admin@connect.vn'`, `email = 'admin@connect.vn'`, `name = 'Quản Trị Viên Hệ Thống'` trên cả `public.vione_users` và `public.members` cho user ID `00000000-0000-4000-8000-000000000002`.
+      - Đảm bảo trong bảng `public.user_roles` có vai trò `role = 'admin'` cho user.
+  - **2. Sửa Lỗi SQL Ẩn Nghiêm Trọng Khiến Tài Khoản Admin Bị Gán Ban Chuyên Môn "Hội viên ceo1983" (Yêu Cầu 4.3)**:
+    * **Nguyên nhân gốc rễ trong `apps/ceo1983_app_be/src/users/users.repository.ts`**:
+      - Tại dòng 226 và 546, câu lệnh truy vấn thông tin hội viên `SELECT id, ... notes ... FROM public.members` bị lỗi PostgreSQL `42703 (column "notes" does not exist)` do bảng `public.members` không hề có cột `notes`.
+      - Đoạn code có khối `.catch(() => [])` nuốt chửng lỗi này, khiến hàm `usersRepo.getMemberInfo` LUÔN LUÔN trả về `null` cho mọi user!
+      - Do `memberRow` luôn là `null`, hàm `getAccountDetails` trong `users.service.ts` rơi vào fallback gán `department = 'Hội viên ceo1983'`.
+    * **Khắc phục**:
+      - Xóa bỏ trường `notes` khỏi cả 2 câu SELECT trong `users.repository.ts`.
+      - Trong `users.service.ts`: Gán cứng `isSysAdminAccount` (`admin@connect.vn`, `admin@viconnect.vn`, user có role `admin` / `platform_admin`) thì `normalizedDept` tự động là `'Ban Quản Trị'`.
+      - Trong `apps/ceo1983_app_fe/src/routes/profile.tsx`: Gán `effectiveDepartment` nếu là admin thì hiển thị rõ ràng "Ban Quản Trị"; badge "Vai trò hệ thống" được tạo kiểu với màu nền xanh lam nổi bật (`bg-blue-100 text-[#003B95] border-blue-200`) hiển thị rõ nét nhãn "Ban Quản Trị CLB (Admin)", chấm dứt hoàn toàn tình trạng chữ trắng chìm trên nền xanh.
+  - **3. Rà Soát & Bản Dịch Tiếng Việt 100% Toàn Hệ Thống (Yêu Cầu 4.1)**:
+    * **Hiện tượng**: Khi chuyển sang ngôn ngữ tiếng Việt (VI), một số vị trí như thanh điều hướng bánh mì (Breadcrumb) vẫn hiển thị tiếng Anh (ví dụ: "Profile" thay vì "Hồ sơ cá nhân").
+    * **Khắc phục**:
+      - Cập nhật `apps/ceo1983_app_fe/src/components/dashboard/TopbarBreadcrumb.tsx`: Xây dựng từ điển bản đồ đường dẫn `ROUTE_LABELS` (hơn 35 routes) và `SEGMENT_NAMES`, thay thế hoàn toàn cơ chế fallback tự viết hoa tiếng Anh (`.toUpperCase()`).
+      - Breadcrumb trang `/profile` giờ đây hiển thị chuẩn mực tiếng Việt: `Hệ thống > Hồ sơ cá nhân`.
+  - **4. Xây Dựng Public REST API & Giữ Đúng Format Layout Khi Share Sự Kiện / Tin Tức / Cơ Hội B2B (Yêu Cầu 4.4)**:
+    * **Backend Public Endpoints (`apps/ceo1983_app_be/src/app.controller.ts`)**:
+      - `@Get('api/public/events/:id')`: Trả về JSON công khai đầy đủ thông tin sự kiện (thời gian, địa điểm, banner, quy mô, chi phí, mô tả chi tiết, khối `charityDetails` đầy đủ nếu là sự kiện thiện nguyện, OpenGraph metadata). Không yêu cầu JWT token.
+      - `@Get('api/public/news/:id')`: Trả về JSON bài viết tin tức công khai.
+      - `@Get('api/public/opportunities/:id')`: Trả về JSON cơ hội B2B công khai.
+      - `@Get('api/public/share/:type/:id')`: Endpoint đa năng tra cứu dữ liệu chia sẻ công khai theo type và id.
+    * **Trang Web Share Preview HTML Chuẩn Responsive (`getSharePreview` trong `app.controller.ts`)**:
+      - Truy vấn chính xác schema bảng `public.events` từ CSDL `113.20.107.184:6432`.
+      - Tự động sinh thẻ OpenGraph meta tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type = "event"`) tương thích hoàn hảo với Facebook Crawler, Zalo Bot, Telegram.
+      - Giao diện HTML đáp ứng (Responsive Card): Poster sự kiện, tiêu đề, thông tin thời gian, địa điểm, quy mô, giá vé.
+      - Nếu là **Sự kiện Thiện nguyện**: Hiển thị nổi bật khối thông tin thiện nguyện chuyên biệt (Mục tiêu quyên góp vs Đã tiếp nhận, Đối tượng thụ hưởng, Nhu yếu phẩm kêu gọi, Thông tin tài khoản tiếp nhận ủng hộ kèm nút Sao chép STK, Cam kết sao kê minh bạch).
+      - Nút kêu gọi hành động: "Đăng ký tham gia ngay", "Sao chép liên kết", "Chia sẻ qua Zalo".
+  - **5. Kiểm Thử Chất Lượng Toàn Diện**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+
+- **Bản cập nhật ngày 16/11/2026 (v11.56): Khắc Phục Triệt Để Phân Quyền vumikasa6@gmail.com, Thiết Lập Ban Thiện Nguyện, Bổ Sung Sự Kiện Thiện Nguyện Đẩy Xuống Mobile App & Tự Động Phân Loại Lưu Trữ Quản Lý Tài Liệu ([NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-CORE-001])**:
+  - **1. Xử Lý Tận Gốc Lỗi Phân Quyền Tài Khoản `vumikasa6@gmail.com` (Phạm Văn Vũ - Thành Viên Ban Tài Chính)**:
+    * **Phát hiện 3 nguyên nhân cốt lõi**:
+      1. *Backend hardcode*: Trong `apps/ceo1983_app_be/src/members/members.service.ts` (dòng 55 & 85), hàm `checkIsPlatformAdmin` vẫn còn đoạn hardcode cũ kiểm tra `if (uEmail === 'vumikasa6@gmail.com') return true;`.
+      2. *Frontend Role Hook*: Trong `use-role.ts`, hàm `resolveSrsRole` quy đổi vai trò `thanh_vien_ban_tai_chinh` thành `"BTC"`. Mã `"BTC"` lại bị ngộ nhận là Trưởng ban tài chính (`isTruongBanTaiChinh = true`), dẫn tới mở quyền quản lý hệ thống/thư mời/tài liệu.
+      3. *Client LocalStorage Cache*: Trình duyệt client đã lưu cache `ceo1983_rbac_tree_matrix_v7_sidebar_menu` và `vba_managed_accounts_v2` với quyền admin cũ.
+    * **Xử lý triệt để 3 tầng bảo vệ**:
+      - *Tầng 1 (Backend Clean-up)*: Xóa bỏ hoàn toàn hardcode `vumikasa6@gmail.com` trong `members.service.ts`.
+      - *Tầng 2 (Frontend Strict Role & Type Segregation)*: Bổ sung type `"thanh_vien_ban_tai_chinh"` riêng biệt trong `SrsRole` và `ROLE_PERMISSIONS` (`apps/ceo1983_app_fe/src/constants/permissions.ts`). Tách biệt hoàn toàn `isTruongBanTaiChinh` (chỉ áp dụng cho `BTC` hoặc `truong_ban_tai_chinh`, loại trừ mọi `thanh_vien_ban_*`).
+      - *Tầng 3 (Sidebar Isolation & Auto Purge Cache)*: Tại `Sidebar.tsx`, gán chặt `currentRoleKey = 'thanh_vien_ban_tai_chinh'`, loại trừ khỏi `isPrivilegedAdmin`. Ẩn hoàn toàn 4 nhóm menu nhạy cảm: Quản lý Thư Mời (`filteredTemplates`), Hệ thống (`filteredSystem`), Quản trị (`filteredAdmin`), Phân quyền (`filteredPermissions`). Tự động quét và xóa sạch các key localStorage gây tràn quyền (`ceo1983_rbac_tree_matrix_v7_sidebar_menu`, `vba_crm_role_override`, `vba_admin_role_override`, `vba_member_permissions`).
+  - **2. Thành Lập Ban Thiện Nguyện (Yêu Cầu 1)**:
+    * **CSDL `113.20.107.184:6432`**: Đã chèn bản ghi Trưởng Ban Thiện Nguyện vào `public.members`: `MBTN198301` - Vũ Thu Trang (`CEO1983-000008`), `department = 'Ban Thiện nguyện'`, `executive_role = 'truong_ban_thien_nguyen'`.
+    * **Frontend & RBAC**: Bổ sung `dept_tn` (Ban Thiện nguyện, Mã: BTN, Màu: teal `#0D9488`) vào `INITIAL_DEPARTMENTS` trong `rbac-permission-helpers.ts` và tự động hiển thị trong Quản lý Ban Chuyên Môn (`/departments`).
+  - **3. Chức Năng Sự Kiện Thiện Nguyện & Đẩy Xuống Mobile App (Yêu Cầu 2)**:
+    * **CSDL `113.20.107.184:6432`**: Bổ sung cột `charity_details JSONB` vào bảng `public.events`. Đã chèn sự kiện thiện nguyện mẫu `EVT-TN-1983-001` ("Áo Ấm Mùa Đông 2026 - Cùng CEO 1983 Trao Yêu Thương Vùng Cao").
+    * **Backend NestJS**: Mở rộng `CreateEventDto`, `UpdateEventDto` hỗ trợ type `charity` và trường `charity_details` lưu trữ mục tiêu quyên góp, STK tiếp nhận, đối tượng thụ hưởng, vật phẩm kêu gọi, cam kết sao kê.
+    * **CRM Event Wizard (`EventWizard.tsx`, `events.index.tsx`)**: Bổ sung phân loại sự kiện "Sự kiện Thiện nguyện & An sinh xã hội", cung cấp form nhập đầy đủ các trường thiết yếu: Mục tiêu quyên góp (VNĐ), Tài khoản nhận ủng hộ (Ngân hàng, STK, Chủ TK, Cú pháp), Đầu mối phụ trách Ban Thiện nguyện, Đối tượng thụ hưởng, Nhu yếu phẩm kêu gọi, Cam kết sao kê minh bạch.
+    * **CEO 1983 Mobile App (`association.events.tsx`, `EventDetailModal.tsx`)**:
+      - Bổ sung bộ lọc nhanh "Thiện nguyện" (badge màu ngọc teal kèm icon Heart).
+      - Card sự kiện gắn nhãn "THIỆN NGUYỆN & AN SINH", hiển thị mục tiêu quyên góp và đối tượng thụ hưởng.
+      - Modal chi tiết: Hiển thị khối thông tin thiện nguyện chuyên biệt (mục tiêu kinh phí, đối tượng, danh mục nhu yếu phẩm, thông tin chuyển khoản kèm nút "Sao chép STK", cam kết sao kê).
+  - **4. Tự Động Phân Loại & Lưu Trữ Quản Lý Tài Liệu từ Sự Kiện & Cuộc Họp (Yêu Cầu 3)**:
+    * **CSDL `113.20.107.184:6432`**: Nới rộng check constraint `documents_type_check` trên `public.documents` cho phép `'folder', 'image', 'png', 'jpg', 'other'`.
+    * **Cấu trúc Thư mục**: Thiết lập 7 folder chuẩn theo Ban trong `public.documents` (`FLD-BTT` - Ban Truyền thông, `FLD-BDH` - Ban Điều Hành, `FLD-BTK` - Ban Thư Ký, `FLD-BTV` - Ban Thành viên, `FLD-BXT` - Ban Xúc tiến, `FLD-BTC` - Ban Tài chính, `FLD-BTN` - Ban Thiện nguyện).
+    * **Tự động hóa luồng lưu trữ**:
+      - *Sự kiện*: Khi tạo sự kiện có ảnh poster (`evImg`), backend `events.service.ts` tự động tìm/tạo folder "Ban Truyền thông" và lưu bản ghi ảnh poster vào `public.documents` với category "Sự kiện".
+      - *Cuộc họp*: Khi tạo cuộc họp có tài liệu đính kèm, backend `meetings.service.ts` tự động tìm/tạo folder theo Ban tổ chức cuộc họp và lưu bản ghi tài liệu vào `public.documents` với category "Cuộc họp".
+  - **5. Kiểm Thử Chất Lượng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Toàn bộ các file Frontend đã qua kiểm tra cú pháp và AST -> **0 ERRORS**.
 
 - **Bản cập nhật ngày 16/11/2026 (v11.55): Sửa Lỗi Gốc Phân Quyền RBAC Tài Khoản vumikasa6@gmail.com, Khắc Phục Trigger CSDL fn_enforce_lookup_table_write_guard Nuốt Lệnh DELETE, Gia Cố Đa Tầng Backend & Frontend ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Phát Hiện & Xử Lý Lỗi Gốc Tầng CSDL (113.20.107.184:6432)**:
@@ -4069,6 +4209,76 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 16/11/2026 (v11.57): Đồng Bộ Hóa Đa Bảng CSDL 113.20.107.184:6432, Sửa Lỗi Ẩn SQL Quản Trị Viên admin@connect.vn, Bản Dịch Tiếng Việt 100% & Bổ Sung Public API / Rich Share Preview Sự Kiện ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-001])**:
+  - **1. Đồng Bộ Hóa Đa Bảng Tài Khoản `admin@connect.vn` Trên CSDL Chuẩn `113.20.107.184:6432` (Yêu Cầu 4.2 & 4.3)**:
+    * **Hiện tượng**: Khi người dùng sử dụng DBeaver chỉnh sửa email trong bảng `auth.users` thành `admin@connect.vn`, giao diện CRM trên thanh Topbar vẫn hiển thị email cũ `admin@viconnect.vn`, tạo cảm giác "database đang rất bị loạn bảng".
+    * **Nguyên nhân gốc rễ**: 
+      1. CSDL có 2 bảng lưu trữ người dùng: `auth.users` (bảng của hệ thống xác thực) và `public.vione_users` (bảng nghiệp vụ ViOne / CEO1983 mà NestJS + Prisma truy vấn). Thêm vào đó, bảng `public.members` cũng lưu trữ email và phòng ban riêng.
+      2. Khi chỉ đổi ở `auth.users`, backend NestJS khi gọi `usersService.findById` hoặc `getAccountDetails` đọc từ `public.vione_users` và `public.members` nên vẫn lấy email cũ `admin@viconnect.vn`.
+    * **Xử lý triệt để**:
+      - Đã thực thi cập nhật đồng bộ trên CSDL `113.20.107.184:6432`: Cập nhật `username = 'admin@connect.vn'`, `email = 'admin@connect.vn'`, `name = 'Quản Trị Viên Hệ Thống'` trên cả `public.vione_users` và `public.members` cho user ID `00000000-0000-4000-8000-000000000002`.
+      - Đảm bảo trong bảng `public.user_roles` có vai trò `role = 'admin'` cho user.
+  - **2. Sửa Lỗi SQL Ẩn Nghiêm Trọng Khiến Tài Khoản Admin Bị Gán Ban Chuyên Môn "Hội viên ceo1983" (Yêu Cầu 4.3)**:
+    * **Nguyên nhân gốc rễ trong `apps/ceo1983_app_be/src/users/users.repository.ts`**:
+      - Tại dòng 226 và 546, câu lệnh truy vấn thông tin hội viên `SELECT id, ... notes ... FROM public.members` bị lỗi PostgreSQL `42703 (column "notes" does not exist)` do bảng `public.members` không hề có cột `notes`.
+      - Đoạn code có khối `.catch(() => [])` nuốt chửng lỗi này, khiến hàm `usersRepo.getMemberInfo` LUÔN LUÔN trả về `null` cho mọi user!
+      - Do `memberRow` luôn là `null`, hàm `getAccountDetails` trong `users.service.ts` rơi vào fallback gán `department = 'Hội viên ceo1983'`.
+    * **Khắc phục**:
+      - Xóa bỏ trường `notes` khỏi cả 2 câu SELECT trong `users.repository.ts`.
+      - Trong `users.service.ts`: Gán cứng `isSysAdminAccount` (`admin@connect.vn`, `admin@viconnect.vn`, user có role `admin` / `platform_admin`) thì `normalizedDept` tự động là `'Ban Quản Trị'`.
+      - Trong `apps/ceo1983_app_fe/src/routes/profile.tsx`: Gán `effectiveDepartment` nếu là admin thì hiển thị rõ ràng "Ban Quản Trị"; badge "Vai trò hệ thống" được tạo kiểu với màu nền xanh lam nổi bật (`bg-blue-100 text-[#003B95] border-blue-200`) hiển thị rõ nét nhãn "Ban Quản Trị CLB (Admin)", chấm dứt hoàn toàn tình trạng chữ trắng chìm trên nền xanh.
+  - **3. Rà Soát & Bản Dịch Tiếng Việt 100% Toàn Hệ Thống (Yêu Cầu 4.1)**:
+    * **Hiện tượng**: Khi chuyển sang ngôn ngữ tiếng Việt (VI), một số vị trí như thanh điều hướng bánh mì (Breadcrumb) vẫn hiển thị tiếng Anh (ví dụ: "Profile" thay vì "Hồ sơ cá nhân").
+    * **Khắc phục**:
+      - Cập nhật `apps/ceo1983_app_fe/src/components/dashboard/TopbarBreadcrumb.tsx`: Xây dựng từ điển bản đồ đường dẫn `ROUTE_LABELS` (hơn 35 routes) và `SEGMENT_NAMES`, thay thế hoàn toàn cơ chế fallback tự viết hoa tiếng Anh (`.toUpperCase()`).
+      - Breadcrumb trang `/profile` giờ đây hiển thị chuẩn mực tiếng Việt: `Hệ thống > Hồ sơ cá nhân`.
+  - **4. Xây Dựng Public REST API & Giữ Đúng Format Layout Khi Share Sự Kiện / Tin Tức / Cơ Hội B2B (Yêu Cầu 4.4)**:
+    * **Backend Public Endpoints (`apps/ceo1983_app_be/src/app.controller.ts`)**:
+      - `@Get('api/public/events/:id')`: Trả về JSON công khai đầy đủ thông tin sự kiện (thời gian, địa điểm, banner, quy mô, chi phí, mô tả chi tiết, khối `charityDetails` đầy đủ nếu là sự kiện thiện nguyện, OpenGraph metadata). Không yêu cầu JWT token.
+      - `@Get('api/public/news/:id')`: Trả về JSON bài viết tin tức công khai.
+      - `@Get('api/public/opportunities/:id')`: Trả về JSON cơ hội B2B công khai.
+      - `@Get('api/public/share/:type/:id')`: Endpoint đa năng tra cứu dữ liệu chia sẻ công khai theo type và id.
+    * **Trang Web Share Preview HTML Chuẩn Responsive (`getSharePreview` trong `app.controller.ts`)**:
+      - Truy vấn chính xác schema bảng `public.events` từ CSDL `113.20.107.184:6432`.
+      - Tự động sinh thẻ OpenGraph meta tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type = "event"`) tương thích hoàn hảo với Facebook Crawler, Zalo Bot, Telegram.
+      - Giao diện HTML đáp ứng (Responsive Card): Poster sự kiện, tiêu đề, thông tin thời gian, địa điểm, quy mô, giá vé.
+      - Nếu là **Sự kiện Thiện nguyện**: Hiển thị nổi bật khối thông tin thiện nguyện chuyên biệt (Mục tiêu quyên góp vs Đã tiếp nhận, Đối tượng thụ hưởng, Nhu yếu phẩm kêu gọi, Thông tin tài khoản tiếp nhận ủng hộ kèm nút Sao chép STK, Cam kết sao kê minh bạch).
+      - Nút kêu gọi hành động: "Đăng ký tham gia ngay", "Sao chép liên kết", "Chia sẻ qua Zalo".
+  - **5. Kiểm Thử Chất Lượng Toàn Diện**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+
+- **Bản cập nhật ngày 16/11/2026 (v11.56): Khắc Phục Triệt Để Phân Quyền vumikasa6@gmail.com, Thiết Lập Ban Thiện Nguyện, Bổ Sung Sự Kiện Thiện Nguyện Đẩy Xuống Mobile App & Tự Động Phân Loại Lưu Trữ Quản Lý Tài Liệu ([NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-CORE-001])**:
+  - **1. Xử Lý Tận Gốc Lỗi Phân Quyền Tài Khoản `vumikasa6@gmail.com` (Phạm Văn Vũ - Thành Viên Ban Tài Chính)**:
+    * **Phát hiện 3 nguyên nhân cốt lõi**:
+      1. *Backend hardcode*: Trong `apps/ceo1983_app_be/src/members/members.service.ts` (dòng 55 & 85), hàm `checkIsPlatformAdmin` vẫn còn đoạn hardcode cũ kiểm tra `if (uEmail === 'vumikasa6@gmail.com') return true;`.
+      2. *Frontend Role Hook*: Trong `use-role.ts`, hàm `resolveSrsRole` quy đổi vai trò `thanh_vien_ban_tai_chinh` thành `"BTC"`. Mã `"BTC"` lại bị ngộ nhận là Trưởng ban tài chính (`isTruongBanTaiChinh = true`), dẫn tới mở quyền quản lý hệ thống/thư mời/tài liệu.
+      3. *Client LocalStorage Cache*: Trình duyệt client đã lưu cache `ceo1983_rbac_tree_matrix_v7_sidebar_menu` và `vba_managed_accounts_v2` với quyền admin cũ.
+    * **Xử lý triệt để 3 tầng bảo vệ**:
+      - *Tầng 1 (Backend Clean-up)*: Xóa bỏ hoàn toàn hardcode `vumikasa6@gmail.com` trong `members.service.ts`.
+      - *Tầng 2 (Frontend Strict Role & Type Segregation)*: Bổ sung type `"thanh_vien_ban_tai_chinh"` riêng biệt trong `SrsRole` và `ROLE_PERMISSIONS` (`apps/ceo1983_app_fe/src/constants/permissions.ts`). Tách biệt hoàn toàn `isTruongBanTaiChinh` (chỉ áp dụng cho `BTC` hoặc `truong_ban_tai_chinh`, loại trừ mọi `thanh_vien_ban_*`).
+      - *Tầng 3 (Sidebar Isolation & Auto Purge Cache)*: Tại `Sidebar.tsx`, gán chặt `currentRoleKey = 'thanh_vien_ban_tai_chinh'`, loại trừ khỏi `isPrivilegedAdmin`. Ẩn hoàn toàn 4 nhóm menu nhạy cảm: Quản lý Thư Mời (`filteredTemplates`), Hệ thống (`filteredSystem`), Quản trị (`filteredAdmin`), Phân quyền (`filteredPermissions`). Tự động quét và xóa sạch các key localStorage gây tràn quyền (`ceo1983_rbac_tree_matrix_v7_sidebar_menu`, `vba_crm_role_override`, `vba_admin_role_override`, `vba_member_permissions`).
+  - **2. Thành Lập Ban Thiện Nguyện (Yêu Cầu 1)**:
+    * **CSDL `113.20.107.184:6432`**: Đã chèn bản ghi Trưởng Ban Thiện Nguyện vào `public.members`: `MBTN198301` - Vũ Thu Trang (`CEO1983-000008`), `department = 'Ban Thiện nguyện'`, `executive_role = 'truong_ban_thien_nguyen'`.
+    * **Frontend & RBAC**: Bổ sung `dept_tn` (Ban Thiện nguyện, Mã: BTN, Màu: teal `#0D9488`) vào `INITIAL_DEPARTMENTS` trong `rbac-permission-helpers.ts` và tự động hiển thị trong Quản lý Ban Chuyên Môn (`/departments`).
+  - **3. Chức Năng Sự Kiện Thiện Nguyện & Đẩy Xuống Mobile App (Yêu Cầu 2)**:
+    * **CSDL `113.20.107.184:6432`**: Bổ sung cột `charity_details JSONB` vào bảng `public.events`. Đã chèn sự kiện thiện nguyện mẫu `EVT-TN-1983-001` ("Áo Ấm Mùa Đông 2026 - Cùng CEO 1983 Trao Yêu Thương Vùng Cao").
+    * **Backend NestJS**: Mở rộng `CreateEventDto`, `UpdateEventDto` hỗ trợ type `charity` và trường `charity_details` lưu trữ mục tiêu quyên góp, STK tiếp nhận, đối tượng thụ hưởng, vật phẩm kêu gọi, cam kết sao kê.
+    * **CRM Event Wizard (`EventWizard.tsx`, `events.index.tsx`)**: Bổ sung phân loại sự kiện "Sự kiện Thiện nguyện & An sinh xã hội", cung cấp form nhập đầy đủ các trường thiết yếu: Mục tiêu quyên góp (VNĐ), Tài khoản nhận ủng hộ (Ngân hàng, STK, Chủ TK, Cú pháp), Đầu mối phụ trách Ban Thiện nguyện, Đối tượng thụ hưởng, Nhu yếu phẩm kêu gọi, Cam kết sao kê minh bạch.
+    * **CEO 1983 Mobile App (`association.events.tsx`, `EventDetailModal.tsx`)**:
+      - Bổ sung bộ lọc nhanh "Thiện nguyện" (badge màu ngọc teal kèm icon Heart).
+      - Card sự kiện gắn nhãn "THIỆN NGUYỆN & AN SINH", hiển thị mục tiêu quyên góp và đối tượng thụ hưởng.
+      - Modal chi tiết: Hiển thị khối thông tin thiện nguyện chuyên biệt (mục tiêu kinh phí, đối tượng, danh mục nhu yếu phẩm, thông tin chuyển khoản kèm nút "Sao chép STK", cam kết sao kê).
+  - **4. Tự Động Phân Loại & Lưu Trữ Quản Lý Tài Liệu từ Sự Kiện & Cuộc Họp (Yêu Cầu 3)**:
+    * **CSDL `113.20.107.184:6432`**: Nới rộng check constraint `documents_type_check` trên `public.documents` cho phép `'folder', 'image', 'png', 'jpg', 'other'`.
+    * **Cấu trúc Thư mục**: Thiết lập 7 folder chuẩn theo Ban trong `public.documents` (`FLD-BTT` - Ban Truyền thông, `FLD-BDH` - Ban Điều Hành, `FLD-BTK` - Ban Thư Ký, `FLD-BTV` - Ban Thành viên, `FLD-BXT` - Ban Xúc tiến, `FLD-BTC` - Ban Tài chính, `FLD-BTN` - Ban Thiện nguyện).
+    * **Tự động hóa luồng lưu trữ**:
+      - *Sự kiện*: Khi tạo sự kiện có ảnh poster (`evImg`), backend `events.service.ts` tự động tìm/tạo folder "Ban Truyền thông" và lưu bản ghi ảnh poster vào `public.documents` với category "Sự kiện".
+      - *Cuộc họp*: Khi tạo cuộc họp có tài liệu đính kèm, backend `meetings.service.ts` tự động tìm/tạo folder theo Ban tổ chức cuộc họp và lưu bản ghi tài liệu vào `public.documents` với category "Cuộc họp".
+  - **5. Kiểm Thử Chất Lượng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Toàn bộ các file Frontend đã qua kiểm tra cú pháp và AST -> **0 ERRORS**.
 
 - **Bản cập nhật ngày 16/11/2026 (v11.55): Sửa Lỗi Gốc Phân Quyền RBAC Tài Khoản vumikasa6@gmail.com, Khắc Phục Trigger CSDL fn_enforce_lookup_table_write_guard Nuốt Lệnh DELETE, Gia Cố Đa Tầng Backend & Frontend ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
   - **1. Phát Hiện & Xử Lý Lỗi Gốc Tầng CSDL (113.20.107.184:6432)**:

@@ -27,6 +27,10 @@ export type MyEvent = {
   qrStaff?: string[];
   description?: string;
   sponsors?: any[];
+  type?: string;
+  category?: string;
+  charityDetails?: any;
+  charity_details?: any;
 };
 
 export function isEventFull(e: any): boolean {

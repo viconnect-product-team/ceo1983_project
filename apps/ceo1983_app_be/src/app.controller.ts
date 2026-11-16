@@ -15,6 +15,172 @@ export class AppController {
   }
 
   /**
+   * Public REST API: Lấy thông tin sự kiện công khai (kèm chi tiết thiện nguyện nếu có)
+   * Không yêu cầu JWT Bearer token, hỗ trợ hiển thị format chuẩn cho web / app / crawler
+   */
+  @Get('api/public/events/:id')
+  async getPublicEventJson(@Param('id') id: string) {
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT id, name, title, date, time, location, place, capacity, registered, status, type, tagline, fee, ticket_price, image, banner, description, charity_details 
+       FROM public.events 
+       WHERE id::text = $1 OR name = $1 OR title = $1 
+       LIMIT 1`,
+      id,
+    ).catch(() => []);
+
+    if (!rows || rows.length === 0) {
+      return { success: false, message: 'Event not found' };
+    }
+    const item = rows[0];
+    const BASE_WEB_URL = 'https://ceo1983.viconnect.vn';
+    const bannerImg = item.image || item.banner || 'https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg';
+    const absoluteImg = bannerImg.startsWith('http') ? bannerImg : `${BASE_WEB_URL}${bannerImg.startsWith('/') ? '' : '/'}${bannerImg}`;
+    const isCharity = item.type === 'charity' || Boolean(item.charity_details);
+
+    return {
+      success: true,
+      data: {
+        id: item.id,
+        title: item.title || item.name,
+        name: item.name,
+        tagline: item.tagline,
+        date: item.date,
+        dateFormatted: item.date ? new Date(item.date).toLocaleDateString('vi-VN') : '',
+        time: item.time,
+        location: item.location || item.place,
+        address: item.place || item.location,
+        type: item.type,
+        isCharity,
+        status: item.status,
+        capacity: item.capacity,
+        registered: item.registered,
+        fee: item.fee,
+        ticketPrice: item.ticket_price,
+        image: absoluteImg,
+        banner: absoluteImg,
+        description: item.description,
+        charityDetails: item.charity_details || null,
+        shareUrl: `https://ceo1983.viconnect.vn/share/event/${encodeURIComponent(item.id)}`,
+        openGraph: {
+          title: `[Sự Kiện CEO 1983] ${item.title || item.name}`,
+          description: (item.description || item.tagline || '').slice(0, 260),
+          image: absoluteImg,
+          type: 'event',
+        },
+      },
+    };
+  }
+
+  /**
+   * Public REST API: Lấy bài viết tin tức công khai
+   */
+  @Get('api/public/news/:id')
+  async getPublicNewsJson(@Param('id') id: string) {
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT id, code, title, category, author, published_at, views, status, excerpt, content, cover_image, images 
+       FROM public.news 
+       WHERE id::text = $1 OR code = $1 OR title = $1 
+       LIMIT 1`,
+      id,
+    ).catch(() => []);
+
+    if (!rows || rows.length === 0) {
+      return { success: false, message: 'News article not found' };
+    }
+    const item = rows[0];
+    const BASE_WEB_URL = 'https://ceo1983.viconnect.vn';
+    const coverImg = item.cover_image || 'https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg';
+    const absoluteImg = coverImg.startsWith('http') ? coverImg : `${BASE_WEB_URL}${coverImg.startsWith('/') ? '' : '/'}${coverImg}`;
+
+    return {
+      success: true,
+      data: {
+        id: item.id,
+        code: item.code,
+        title: item.title,
+        category: item.category,
+        author: item.author,
+        publishedAt: item.published_at,
+        views: item.views,
+        excerpt: item.excerpt,
+        content: item.content,
+        coverImage: absoluteImg,
+        images: item.images,
+        shareUrl: `https://ceo1983.viconnect.vn/share/news/${encodeURIComponent(item.id)}`,
+        openGraph: {
+          title: `[Tin Tức CEO 1983] ${item.title}`,
+          description: (item.excerpt || item.content || '').slice(0, 260),
+          image: absoluteImg,
+          type: 'article',
+        },
+      },
+    };
+  }
+
+  /**
+   * Public REST API: Lấy thông tin cơ hội giao thương B2B công khai
+   */
+  @Get('api/public/opportunities/:id')
+  async getPublicOpportunityJson(@Param('id') id: string) {
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT id, title, description, type, budget_min, budget_max, region, industry, deadline, status, company, contact_name, contact_phone, contact_title, image, images 
+       FROM public.opportunities 
+       WHERE id::text = $1 
+       LIMIT 1`,
+      id,
+    ).catch(() => []);
+
+    if (!rows || rows.length === 0) {
+      return { success: false, message: 'Opportunity not found' };
+    }
+    const item = rows[0];
+    const BASE_WEB_URL = 'https://ceo1983.viconnect.vn';
+    let bannerImg = item.image;
+    if (!bannerImg && Array.isArray(item.images) && item.images.length > 0) bannerImg = item.images[0];
+    if (!bannerImg) bannerImg = 'https://ceo1983.viconnect.vn/ceo1983_hero_daylight_skyline.jpg';
+    const absoluteImg = bannerImg.startsWith('http') ? bannerImg : `${BASE_WEB_URL}${bannerImg.startsWith('/') ? '' : '/'}${bannerImg}`;
+
+    return {
+      success: true,
+      data: {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        budgetMin: item.budget_min,
+        budgetMax: item.budget_max,
+        region: item.region,
+        industry: item.industry,
+        deadline: item.deadline,
+        company: item.company,
+        contactName: item.contact_name,
+        contactPhone: item.contact_phone,
+        contactTitle: item.contact_title,
+        image: absoluteImg,
+        shareUrl: `https://ceo1983.viconnect.vn/share/opportunity/${encodeURIComponent(item.id)}`,
+        openGraph: {
+          title: `[Cơ Hội Giao Thương B2B] ${item.title} — CEO 1983`,
+          description: (item.description || '').slice(0, 260),
+          image: absoluteImg,
+          type: 'website',
+        },
+      },
+    };
+  }
+
+  /**
+   * Public REST API đa năng: Lấy thông tin chia sẻ theo type & id
+   */
+  @Get('api/public/share/:type/:id')
+  async getPublicSharePayload(@Param('type') type: string, @Param('id') id: string) {
+    const t = (type || '').toLowerCase();
+    if (t === 'event') return this.getPublicEventJson(id);
+    if (t === 'news' || t === 'article') return this.getPublicNewsJson(id);
+    if (t === 'opportunity' || t === 'b2b') return this.getPublicOpportunityJson(id);
+    return { success: false, message: `Unsupported share type: ${type}` };
+  }
+
+  /**
    * GET /api/share/preview, /share/preview, /share/:type/:id, /api/share/:type/:id
    * Trả về HTML chứa OpenGraph tags & Twitter Cards động chuẩn mực cho Facebook, Zalo, Telegram.
    * Chống hoàn toàn tình trạng Facebook crawler nhảy vào SPA index.html mất nội dung.
@@ -70,6 +236,22 @@ export class AppController {
       likesCount?: number;
       commentsCount?: number;
       articleSnippet?: any;
+    } | null = null;
+
+    let richEventData: {
+      id: string;
+      title: string;
+      tagline?: string;
+      dateStr: string;
+      timeStr: string;
+      locationStr: string;
+      bannerImage: string;
+      descriptionHtml: string;
+      type: string;
+      capacity?: number;
+      registered?: number;
+      feeStr?: string;
+      charityDetails?: any;
     } | null = null;
 
     try {
@@ -183,35 +365,90 @@ export class AppController {
           customTarget ||
           `${BASE_WEB_URL}/association/events?id=${encodeURIComponent(targetId)}`;
         const rows = await this.prisma
-          .$queryRawUnsafe<
-            any[]
-          >(`SELECT title, description, cover_image, banner_url, location, event_date, category FROM public.events WHERE id::text = $1 LIMIT 1`, targetId)
+          .$queryRawUnsafe<any[]>(
+            `SELECT id, name, title, date, time, location, place, capacity, registered, status, type, tagline, fee, ticket_price, image, banner, description, charity_details 
+             FROM public.events 
+             WHERE id::text = $1 OR name = $1 OR title = $1 
+             LIMIT 1`,
+            targetId,
+          )
           .catch(() => [] as any[]);
 
         if (rows && rows.length > 0) {
           const item = rows[0];
-          resolvedTitle = item.title
-            ? `[Sự Kiện CEO 1983] ${item.title}`
-            : resolvedTitle;
+          const isCharity = item.type === 'charity' || Boolean(item.charity_details);
+          const evTitle = item.title || item.name || 'Sự kiện CLB CEO 1983';
+          resolvedTitle = isCharity
+            ? `[Thiện Nguyện & An Sinh] ${evTitle} — CEO 1983`
+            : `[Sự Kiện CEO 1983] ${evTitle}`;
+
           const details: string[] = [];
-          if (item.event_date) {
+          let dStr = '';
+          if (item.date) {
             try {
-              const d = new Date(item.event_date);
-              details.push(`Thời gian: ${d.toLocaleDateString('vi-VN')}`);
+              const d = new Date(item.date);
+              dStr = d.toLocaleDateString('vi-VN');
+              details.push(`Thời gian: ${dStr}${item.time ? ` (${item.time})` : ''}`);
             } catch {}
           }
-          if (item.location) {
-            details.push(`Địa điểm: ${item.location}`);
+          const locStr = item.location || item.place || '';
+          if (locStr) {
+            details.push(`Địa điểm: ${locStr}`);
           }
-          if (item.description) {
+          if (item.tagline) {
+            details.push(item.tagline);
+          } else if (item.description) {
             details.push(item.description.replace(/<[^>]*>?/gm, '').trim());
           }
           if (details.length > 0) {
             resolvedDesc = details.join(' — ').slice(0, 260);
           }
-          if (item.cover_image || item.banner_url) {
-            resolvedImage = item.cover_image || item.banner_url;
+
+          const evImg = item.image || item.banner;
+          if (evImg) {
+            resolvedImage = evImg;
           }
+
+          const rawDesc = item.description || '';
+          const escapedDesc = rawDesc.startsWith('<')
+            ? rawDesc
+            : rawDesc
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .split('\n\n')
+                .map(
+                  (p: string) =>
+                    `<p style="margin: 0 0 12px 0; line-height: 1.65; font-size: 15px; color: #1e293b;">${p.replace(/\n/g, '<br/>')}</p>`,
+                )
+                .join('');
+
+          let feeDisplay = 'Miễn phí tham dự';
+          const feeNum =
+            item.fee != null
+              ? Number(item.fee)
+              : item.ticket_price != null
+                ? Number(item.ticket_price)
+                : 0;
+          if (feeNum > 0) {
+            feeDisplay = `${feeNum.toLocaleString('vi-VN')} VNĐ`;
+          }
+
+          richEventData = {
+            id: item.id,
+            title: evTitle,
+            tagline: item.tagline,
+            dateStr: dStr,
+            timeStr: item.time || 'Cả ngày',
+            locationStr: locStr || 'Hà Nội',
+            bannerImage: resolvedImage,
+            descriptionHtml: escapedDesc,
+            type: item.type || 'standard',
+            capacity: item.capacity || 100,
+            registered: item.registered || 0,
+            feeStr: feeDisplay,
+            charityDetails: item.charity_details || null,
+          };
         }
       } else if ((targetType === 'post' || targetType === 'feed') && targetId) {
         targetUrl =
@@ -530,6 +767,160 @@ export class AppController {
             </a>
             <a href="${safeTarget}" class="action-btn primary">
               <span>🚀 Mở App CEO 1983</span>
+            </a>
+          </div>
+        </div>
+      `;
+    } else if (richEventData) {
+      const isCharity =
+        richEventData.type === 'charity' ||
+        Boolean(richEventData.charityDetails);
+      const ch = richEventData.charityDetails || {};
+
+      let charityHtml = '';
+      if (
+        isCharity &&
+        (ch.targetAmount || ch.donationAccount || ch.beneficiary)
+      ) {
+        charityHtml = `
+          <div style="margin: 18px; padding: 20px; border-radius: 16px; background: linear-gradient(135deg, #042f2e 0%, #134e4a 100%); color: #ffffff; border: 1px solid #14b8a6; box-shadow: 0 8px 24px rgba(20, 184, 166, 0.2);">
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; background: rgba(20, 184, 166, 0.25); border: 1px solid #2dd4bf; font-size: 11.5px; font-weight: 800; color: #5eead4; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+              ❤️ CHIẾN DỊCH THIỆN NGUYỆN & AN SINH XÃ HỘI
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 12px 14px; border-radius: 12px;">
+              <div>
+                <div style="font-size: 11px; color: #99f6e4; font-weight: 600;">MỤC TIÊU QUYÊN GÓP</div>
+                <div style="font-size: 18px; font-weight: 800; color: #fef08a; margin-top: 2px;">${ch.targetAmount || '150.000.000 VNĐ'}</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 11px; color: #99f6e4; font-weight: 600;">ĐÃ TIẾP NHẬN</div>
+                <div style="font-size: 18px; font-weight: 800; color: #6ee7b7; margin-top: 2px;">${ch.currentAmount || '86.500.000 VNĐ'}</div>
+              </div>
+            </div>
+
+            ${
+              ch.beneficiary
+                ? `
+              <div style="margin-bottom: 12px; font-size: 13.5px; line-height: 1.5;">
+                <strong style="color: #5eead4;">🎯 Đối tượng thụ hưởng:</strong>
+                <div style="color: #e2e8f0; margin-top: 2px;">${ch.beneficiary}</div>
+              </div>
+            `
+                : ''
+            }
+
+            ${
+              ch.itemsNeeded
+                ? `
+              <div style="margin-bottom: 14px; font-size: 13.5px; line-height: 1.5;">
+                <strong style="color: #5eead4;">📦 Nhu yếu phẩm kêu gọi:</strong>
+                <div style="color: #e2e8f0; margin-top: 2px;">${ch.itemsNeeded}</div>
+              </div>
+            `
+                : ''
+            }
+
+            ${
+              ch.donationAccount
+                ? `
+              <div style="background: rgba(255,255,255,0.08); border: 1px dashed #2dd4bf; border-radius: 12px; padding: 14px; margin-top: 10px;">
+                <div style="font-size: 11px; font-weight: 800; color: #fde047; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                  🏦 TÀI KHOẢN TIẾP NHẬN QUYÊN GÓP
+                </div>
+                <div style="font-size: 13px; color: #f8fafc; line-height: 1.6; white-space: pre-line; font-family: monospace;">${ch.donationAccount}</div>
+              </div>
+            `
+                : ''
+            }
+
+            ${
+              ch.contactLeader
+                ? `
+              <div style="margin-top: 12px; font-size: 12.5px; color: #cbd5e1;">
+                <strong>Đầu mối phụ trách:</strong> ${ch.contactLeader}
+              </div>
+            `
+                : ''
+            }
+
+            ${
+              ch.transparencyNote
+                ? `
+              <div style="margin-top: 10px; font-size: 11.5px; color: #94a3b8; font-style: italic;">
+                🛡️ ${ch.transparencyNote}
+              </div>
+            `
+                : ''
+            }
+          </div>
+        `;
+      }
+
+      bodyContentHtml = `
+        <div class="post-card">
+          <div class="brand-bar">
+            <div class="brand-logo-wrap">
+              <img src="https://ceo1983.viconnect.vn/logo_ceo_1983_round.png" alt="CEO 1983" class="brand-logo" />
+              <div>
+                <div class="brand-name">CLB DOANH NHÂN CEO 1983</div>
+                <div class="brand-sub">Hội Doanh Nghiệp Trẻ Hà Nội (HanoiBA)</div>
+              </div>
+            </div>
+            <a href="${safeTarget}" class="btn-open-app">${isCharity ? 'Ủng Hộ Ngay' : 'Đăng Ký Tham Gia'}</a>
+          </div>
+
+          <div style="width: 100%; max-height: 420px; overflow: hidden; background: #0f172a;">
+            <img src="${richEventData.bannerImage}" alt="${safeTitle}" style="width: 100%; height: 100%; max-height: 420px; object-fit: cover; display: block;" onerror="this.src='${DEFAULT_IMAGE}'" />
+          </div>
+
+          <div style="padding: 20px 20px 10px;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; background: ${isCharity ? '#ccfbf1' : '#eff6ff'}; color: ${isCharity ? '#0f766e' : '#1d4ed8'}; text-transform: uppercase; margin-bottom: 8px;">
+              ${isCharity ? '❤️ SỰ KIỆN THIỆN NGUYỆN & AN SINH' : '📅 SỰ KIỆN CHÍNH THỨC CLB CEO 1983'}
+            </div>
+            <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 6px; line-height: 1.35;">${richEventData.title}</h1>
+            ${richEventData.tagline ? `<p style="font-size: 13.5px; color: #b45309; font-weight: 600; margin: 0 0 16px; font-style: italic;">${richEventData.tagline}</p>` : ''}
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 18px 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; font-size: 13px;">
+            <div>
+              <div style="color: #64748b; font-size: 11px; font-weight: 600;">📅 THỜI GIAN</div>
+              <div style="font-weight: 700; color: #0f172a; margin-top: 2px;">${richEventData.dateStr} ${richEventData.timeStr ? `(${richEventData.timeStr})` : ''}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 11px; font-weight: 600;">📍 ĐỊA ĐIỂM</div>
+              <div style="font-weight: 700; color: #0f172a; margin-top: 2px;">${richEventData.locationStr}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 11px; font-weight: 600;">👥 QUY MÔ & ĐĂNG KÝ</div>
+              <div style="font-weight: 700; color: #0f172a; margin-top: 2px;">${richEventData.registered} / ${richEventData.capacity} người tham dự</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 11px; font-weight: 600;">🎟️ CHI PHÍ THAM GIA</div>
+              <div style="font-weight: 700; color: #0f172a; margin-top: 2px;">${richEventData.feeStr}</div>
+            </div>
+          </div>
+
+          ${charityHtml}
+
+          <div style="padding: 10px 18px 20px;">
+            <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px;">
+              📝 NỘI DUNG CHI TIẾT SỰ KIỆN
+            </div>
+            <div class="post-body" style="padding: 0;">
+              ${richEventData.descriptionHtml || `<p>${safeDesc}</p>`}
+            </div>
+          </div>
+
+          <div class="bottom-actions">
+            <a href="${safeTarget}" class="action-btn primary">
+              <span>✍️ Đăng ký tham gia ngay</span>
+            </a>
+            <button onclick="navigator.clipboard.writeText(window.location.href); alert('Đã sao chép liên kết sự kiện!');" class="action-btn">
+              <span>🔗 Sao chép link</span>
+            </button>
+            <a href="https://zalo.me/share?url=${encodeURIComponent(canonicalShareUrl)}" target="_blank" class="action-btn" style="background: #0068FF; color: #ffffff; border: none;">
+              <span>💬 Chia sẻ Zalo</span>
             </a>
           </div>
         </div>

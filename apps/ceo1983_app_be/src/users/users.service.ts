@@ -597,11 +597,11 @@ export class UsersService implements OnModuleInit {
     if (username === 'admin@viconnect.vn' || username === 'admin@connect.vn') {
       return {
         id: '00000000-0000-4000-8000-000000000002',
-        username: 'admin@viconnect.vn',
+        username: 'admin@connect.vn',
         password:
           '$2b$10$FLMpymq2ujbhVinusol9XuMc5pjTY97IZNrT0b9UAmzRtMoKrXHbu',
-        email: 'admin@viconnect.vn',
-        name: 'Administrator',
+        email: 'admin@connect.vn',
+        name: 'Quản Trị Viên Hệ Thống',
         avatar_url: null,
         google_id: null,
         apple_id: null,
@@ -662,11 +662,11 @@ export class UsersService implements OnModuleInit {
 
       return {
         id: '00000000-0000-4000-8000-000000000002',
-        username: 'admin@viconnect.vn',
+        username: 'admin@connect.vn',
         password:
           '$2b$10$FLMpymq2ujbhVinusol9XuMc5pjTY97IZNrT0b9UAmzRtMoKrXHbu',
-        email: 'admin@viconnect.vn',
-        name: 'Administrator',
+        email: 'admin@connect.vn',
+        name: 'Quản Trị Viên Hệ Thống',
         avatar_url: null,
         google_id: null,
         apple_id: null,
@@ -726,7 +726,7 @@ export class UsersService implements OnModuleInit {
       return this.findByUsername('infor@viconnect.vn');
     }
     if (clean === 'admin@viconnect.vn' || clean === 'admin@connect.vn') {
-      return this.findByUsername('admin@viconnect.vn');
+      return this.findByUsername('admin@connect.vn');
     }
     return null;
   }
@@ -903,11 +903,21 @@ export class UsersService implements OnModuleInit {
       let normalizedDept =
         memberRow?.department ||
         memberships?.[0]?.department ||
-        'Hội viên ceo1983';
-      if (normalizedDept.toLowerCase().includes('quản trị')) {
-        normalizedDept = normalizedDept
-          .replace(/ban quản trị/gi, 'Ban Điều Hành')
-          .replace(/quản trị/gi, 'Điều Hành');
+        '';
+
+      const isSysAdminAccount =
+        user.id === '00000000-0000-4000-8000-000000000002' ||
+        user.id === '00000000-0000-0000-0000-000000000000' ||
+        (user.email || '').toLowerCase() === 'admin@connect.vn' ||
+        (user.username || '').toLowerCase() === 'admin@connect.vn' ||
+        (user.email || '').toLowerCase() === 'admin@viconnect.vn' ||
+        roleList.includes('admin') ||
+        roleList.includes('platform_admin');
+
+      if (isSysAdminAccount && (!normalizedDept || normalizedDept.toLowerCase().includes('hội viên'))) {
+        normalizedDept = 'Ban Quản Trị';
+      } else if (!normalizedDept) {
+        normalizedDept = 'Hội viên ceo1983';
       }
 
       let primaryRole = 'member';
@@ -1767,7 +1777,10 @@ export class UsersService implements OnModuleInit {
       const m = memberMap.get(u.id) || (u.email ? memberMap.get(u.email.toLowerCase()) : null);
       if (
         (u.id === '00000000-0000-0000-0000-000000000000' ||
+          u.id === '00000000-0000-4000-8000-000000000002' ||
           u.username === 'admin@connect.vn' ||
+          u.email === 'admin@connect.vn' ||
+          u.username === 'admin@viconnect.vn' ||
           u.email === 'admin@viconnect.vn') &&
         !userRoles.includes('admin')
       ) {
@@ -1793,7 +1806,9 @@ export class UsersService implements OnModuleInit {
         u.email === 'info@viconnect.vn' ||
         u.username === 'info@viconnect.vn'
           ? 'truong_ban_truyen_thong'
-          : userRoles.includes('platform_admin')
+          : u.email === 'admin@connect.vn' ||
+            u.username === 'admin@connect.vn' ||
+            userRoles.includes('platform_admin')
           ? 'quan_tri'
           : userRoles.includes('admin')
           ? 'admin'
@@ -1805,6 +1820,11 @@ export class UsersService implements OnModuleInit {
         u.email === 'info@viconnect.vn' ||
         u.username === 'info@viconnect.vn'
           ? 'Ban Truyền Thông'
+          : u.email === 'admin@connect.vn' ||
+            u.username === 'admin@connect.vn' ||
+            userRoles.includes('admin') ||
+            userRoles.includes('platform_admin')
+          ? 'Ban Quản Trị'
           : 'Hội viên ceo1983');
 
       return {

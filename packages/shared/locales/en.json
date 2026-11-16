@@ -1677,6 +1677,7 @@
   "events.type.workshop": "Workshop",
   "events.type.networking": "Networking",
   "events.type.training": "Training",
+  "events.type.charity": "Charity",
   "events.view.cards": "Cards",
   "events.view.calendar": "Calendar",
   "events.bucket.all": "All",

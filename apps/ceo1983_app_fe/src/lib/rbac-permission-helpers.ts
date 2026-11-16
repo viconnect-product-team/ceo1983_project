@@ -213,7 +213,15 @@ export function getCustomDepartments(): DepartmentItem[] {
     const raw = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const merged = [...parsed];
+        for (const initDept of INITIAL_DEPARTMENTS) {
+          if (!merged.some((d: any) => d.id === initDept.id || d.name?.toLowerCase() === initDept.name.toLowerCase())) {
+            merged.push(initDept);
+          }
+        }
+        return merged;
+      }
     }
   } catch {}
   return INITIAL_DEPARTMENTS;

@@ -201,12 +201,22 @@ function ProfilePage() {
     }
   }
 
+  const isSystemAdminEmail =
+    (user?.email || "").toLowerCase() === "admin@connect.vn" ||
+    (user?.email || "").toLowerCase() === "admin@viconnect.vn";
+
+  const effectiveDepartment =
+    (isAdmin || isPlatformAdmin || isBQT || isSystemAdminEmail) &&
+    (!userDepartment || userDepartment.toLowerCase().includes("hội viên"))
+      ? "Ban Quản Trị"
+      : userDepartment || "Hội viên ceo1983";
+
   const roleBadgeLabel = isPresident
     ? "Chủ tịch CLB CEO 1983"
     : isPlatformAdmin
     ? "Quản trị viên Nền tảng (Platform Admin)"
-    : isAdmin || isBQT
-    ? "Ban Quản Trị CLB (BQT)"
+    : isAdmin || isBQT || isSystemAdminEmail
+    ? "Ban Quản Trị CLB (Admin)"
     : srsRole === "truong_ban_tai_chinh" || srsRole === "BTC"
     ? "Trưởng Ban Tài chính"
     : srsRole === "truong_ban_thanh_vien" || srsRole === "BTV"
@@ -215,6 +225,10 @@ function ProfilePage() {
     ? "Trưởng Ban Truyền thông"
     : srsRole === "truong_ban_xuc_tien" || srsRole === "BXT"
     ? "Trưởng Ban Xúc tiến Giao thương"
+    : srsRole === "truong_ban_thien_nguyen" || srsRole === "BTN"
+    ? "Trưởng Ban Thiện nguyện"
+    : srsRole === "thanh_vien_ban_tai_chinh"
+    ? "Thành viên Ban Tài chính"
     : srsRole === "tong_thu_ky" || srsRole === "BTK"
     ? "Tổng Thư ký CLB"
     : "Hội viên chính thức";
@@ -339,16 +353,16 @@ function ProfilePage() {
             <div className="space-y-4 text-xs">
               <div className="p-3 rounded-xl bg-background border border-border/80 shadow-xs">
                 <span className="text-muted-foreground block text-[11px] mb-1">Vai trò hệ thống</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#003B95]/10 text-[#003B95] dark:bg-blue-900/40 dark:text-blue-200 font-bold text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100 text-[#003B95] dark:bg-blue-900/60 dark:text-blue-100 font-bold text-xs border border-blue-200 dark:border-blue-800">
                   <Shield className="size-3.5" />
                   {roleBadgeLabel}
                 </span>
               </div>
 
-              {userDepartment && (
+              {effectiveDepartment && (
                 <div className="p-3 rounded-xl bg-background border border-border/80 shadow-xs">
                   <span className="text-muted-foreground block text-[11px] mb-1">Ban chuyên môn</span>
-                  <span className="font-semibold text-foreground text-xs">{userDepartment}</span>
+                  <span className="font-semibold text-foreground text-xs">{effectiveDepartment}</span>
                 </div>
               )}
 

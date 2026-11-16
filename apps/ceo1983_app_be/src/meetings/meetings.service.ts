@@ -241,6 +241,46 @@ export class MeetingsService implements OnModuleInit {
         zoomUrl,
         cancelReason,
       ).catch((err) => console.warn('meetings sync warning:', err?.message));
+
+      // Tự động lưu tài liệu đính kèm cuộc họp vào Quản lý tài liệu (Danh mục "Cuộc họp", Thư mục theo Ban tổ chức)
+      const docUrl = data.documentUrl || data.attachmentUrl || data.document_url || (Array.isArray(data.attachments) ? data.attachments[0] : null);
+      if (docUrl) {
+        try {
+          const deptName = department || 'Ban Điều Hành';
+          let folderId: string | null = null;
+          const folderRows = await this.prisma.$queryRawUnsafe<any[]>(
+            `SELECT code FROM public.documents 
+             WHERE is_folder = true AND LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1`,
+            deptName,
+          ).catch(() => []);
+          if (folderRows.length > 0) {
+            folderId = folderRows[0].code;
+          } else {
+            folderId = 'FLD-' + Date.now().toString(36).toUpperCase();
+            await this.prisma.$executeRawUnsafe(
+              `INSERT INTO public.documents (code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, is_folder, share_scope, created_at, uploaded_at)
+               VALUES ($1, $2, 'Cuộc họp', 'Thư mục', 'Hệ thống', 'folder', NULL, 'c1983000-0000-4000-8000-000000001983'::uuid, NULL, true, 'public', NOW(), NOW())`,
+              folderId,
+              deptName,
+            ).catch(() => {});
+          }
+
+          const docCode = 'DOC-MT-' + Date.now().toString(36).toUpperCase();
+          const docName = `Tài liệu cuộc họp: ${title}`;
+          await this.prisma.$executeRawUnsafe(
+            `INSERT INTO public.documents (code, name, category, size, uploaded_by, type, file_path, association_id, folder_id, is_folder, share_scope, created_at, uploaded_at, description)
+             VALUES ($1, $2, 'Cuộc họp', 'Tài liệu', $3, 'pdf', $4, 'c1983000-0000-4000-8000-000000001983'::uuid, $5, false, 'public', NOW(), NOW(), $6)`,
+            docCode,
+            docName,
+            deptName,
+            docUrl,
+            folderId,
+            `Tài liệu đính kèm cuộc họp: ${title} (${deptName})`,
+          ).catch(() => {});
+        } catch (err: any) {
+          console.warn('Auto catalog meeting document failed:', err?.message);
+        }
+      }
     }
 
     // 4c. Đồng bộ lên Bảng tin CLB (public.feed_posts) với danh mục EVENT_MEETING (Requirement 4)

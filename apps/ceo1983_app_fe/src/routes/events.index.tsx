@@ -81,6 +81,7 @@ const TYPE_KEY: Record<EventItem["type"], TKey> = {
   workshop: "events.type.workshop",
   networking: "events.type.networking",
   training: "events.type.training",
+  charity: "events.type.charity" as TKey,
 };
 // Decorative branded covers per event type — purely visual, no fabricated data.
 const TYPE_COVER: Record<EventItem["type"], string> = {
@@ -88,6 +89,7 @@ const TYPE_COVER: Record<EventItem["type"], string> = {
   workshop: "linear-gradient(135deg, oklch(0.55 0.15 195), oklch(0.60 0.14 235))",
   networking: "linear-gradient(135deg, oklch(0.58 0.16 330), oklch(0.60 0.16 20))",
   training: "linear-gradient(135deg, oklch(0.55 0.15 155), oklch(0.60 0.14 195))",
+  charity: "linear-gradient(135deg, oklch(0.55 0.16 175), oklch(0.60 0.14 195))",
 };
 
 function startOfDay(d: Date) {

@@ -37,6 +37,8 @@ import {
   AlertTriangle,
   Share2,
   Headphones,
+  Heart,
+  HeartHandshake,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -516,9 +518,16 @@ function EventPosterCard({
       <div className="self-stretch px-3.5 pt-3.5 pb-2.5 flex flex-col justify-start items-start gap-2.5 overflow-hidden">
         {/* Category Tag + Time */}
         <div className="self-stretch inline-flex justify-between items-center overflow-hidden">
-          <div className="px-2.5 py-[3.16px] bg-slate-100 dark:bg-slate-800 rounded-[105.36px] outline outline-[0.74px] outline-offset-[-0.74px] outline-slate-200 dark:outline-slate-700 flex justify-start items-start">
-            <span className="text-slate-800 dark:text-slate-200 text-[9.48px] font-bold font-sans leading-3">
-              {agenda.category || "SỰ KIỆN CLB CEO 1983"}
+          <div className={`px-2.5 py-[3.16px] rounded-[105.36px] outline outline-[0.74px] outline-offset-[-0.74px] flex justify-start items-center gap-1 ${
+            event.type === 'charity' || event.charityDetails || (event as any).charity_details
+              ? "bg-teal-50 dark:bg-teal-950/60 border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300"
+              : "bg-slate-100 dark:bg-slate-800 outline-slate-200 dark:outline-slate-700 text-slate-800 dark:text-slate-200"
+          }`}>
+            {(event.type === 'charity' || event.charityDetails || (event as any).charity_details) && (
+              <Heart className="size-3 text-teal-600 fill-teal-500 shrink-0" />
+            )}
+            <span className="text-[9.48px] font-bold font-sans leading-3">
+              {event.type === 'charity' ? "THIỆN NGUYỆN & AN SINH" : (agenda.category || "SỰ KIỆN CLB CEO 1983")}
             </span>
           </div>
           <div className="flex justify-start items-center gap-1 text-slate-500 dark:text-slate-400">
@@ -526,6 +535,32 @@ function EventPosterCard({
             <span className="text-xs font-normal font-sans leading-4">{formatEventTimeRange(event, event.title)}</span>
           </div>
         </div>
+
+        {/* Khối tóm tắt Sự kiện Thiện nguyện nếu có */}
+        {(event.type === 'charity' || event.charityDetails || (event as any).charity_details) && (
+          <div className="self-stretch p-2.5 rounded-xl bg-teal-50/90 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/60 flex flex-col gap-1.5 text-[11px]">
+            <div className="flex items-center justify-between font-bold text-teal-800 dark:text-teal-300">
+              <span className="flex items-center gap-1">
+                <HeartHandshake className="size-3.5 text-teal-600 shrink-0" />
+                Mục tiêu quyên góp:
+              </span>
+              <span className="text-teal-900 dark:text-teal-200">
+                {(event.charityDetails || (event as any).charity_details)?.targetAmount || "150.000.000 VNĐ"}
+              </span>
+            </div>
+            {((event.charityDetails || (event as any).charity_details)?.currentAmount) && (
+              <div className="flex items-center justify-between text-[10px] text-teal-700 dark:text-teal-400">
+                <span>Đã tiếp nhận:</span>
+                <span className="font-semibold text-teal-800 dark:text-teal-300">
+                  {(event.charityDetails || (event as any).charity_details)?.currentAmount}
+                </span>
+              </div>
+            )}
+            <div className="text-[10.5px] text-teal-700/90 dark:text-teal-300 line-clamp-1">
+              Thụ hưởng: {(event.charityDetails || (event as any).charity_details)?.beneficiary || "Học sinh nghèo vượt khó"}
+            </div>
+          </div>
+        )}
 
         {/* Title */}
         <div className="self-stretch text-slate-800 dark:text-white text-sm font-bold font-sans leading-5 group-hover:text-[#003B95] dark:group-hover:text-blue-400 transition-colors line-clamp-2">
@@ -1324,7 +1359,7 @@ function EventsScreen() {
 
 // Category & bookmark state
 const [eventCategory, setEventCategory] = useState<
-  "all" | "upcoming" | "free" | "paid" | "registered" | "bookmarked" | "history" | "b2b" | "gala" | "training" | "caravan"
+  "all" | "upcoming" | "free" | "paid" | "registered" | "bookmarked" | "history" | "b2b" | "gala" | "training" | "caravan" | "charity"
 >("all");
 const [activityFilter, setActivityFilter] = useState<"all" | "b2b_connect" | "trainings" | "fixed_committee" | "extraordinary">("all");
 const [recapModalEvent, setRecapModalEvent] = useState<MyEvent | any | null>(null);
@@ -1527,6 +1562,8 @@ const freeEvents = upcomingEvents.filter((e) => isEventFree(e));
 const paidEvents = upcomingEvents.filter((e) => !isEventFree(e));
 const registeredEvents = events.filter((e) => isRegistered(e));
 const bookmarkedEventsList = events.filter((e) => !!bookmarkedIds[e.id]);
+const charityEvents = events.filter((e: any) => e.type === "charity" || Boolean(e.charityDetails) || Boolean(e.charity_details) || (e.category || "").toLowerCase().includes("thiện nguyện") || (e.title || "").toLowerCase().includes("thiện nguyện"));
+const charityCount = charityEvents.length;
 
 const filteredEvents = useMemo(() => {
   const allList = events;
@@ -1535,6 +1572,8 @@ const filteredEvents = useMemo(() => {
       return allList;
     case "upcoming":
       return upcomingEvents;
+    case "charity":
+      return charityEvents;
     case "free":
       return freeEvents;
     case "paid":
@@ -1556,7 +1595,7 @@ const filteredEvents = useMemo(() => {
     default:
       return allList;
   }
-}, [eventCategory, events, freeEvents, paidEvents, registeredEvents, bookmarkedEventsList, pastEvents, upcomingEvents]);
+}, [eventCategory, events, freeEvents, paidEvents, registeredEvents, bookmarkedEventsList, pastEvents, upcomingEvents, charityEvents]);
 
   const mappedB2bItems = useMemo(() => {
     return b2bConnections
@@ -2153,6 +2192,23 @@ const filteredEvents = useMemo(() => {
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "upcoming" ? "bg-[#002766] text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                     }`}>
                     {upcomingCount}
+                  </span>
+                </button>
+
+                {/* 3. Thiện nguyện & An sinh xã hội */}
+                <button
+                  type="button"
+                  onClick={() => setEventCategory("charity")}
+                  className={`px-3 py-1.5 rounded-full border flex justify-center items-center gap-1.5 text-xs font-medium cursor-pointer transition shrink-0 ${eventCategory === "charity"
+                      ? "bg-teal-600 border-teal-600 text-white shadow-xs font-semibold"
+                      : "border-teal-200 dark:border-teal-800/60 text-teal-700 dark:text-teal-300 hover:bg-teal-50/50"
+                    }`}
+                >
+                  <Heart className="size-3 text-rose-500 fill-rose-500" />
+                  <span>Thiện nguyện</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs font-normal ${eventCategory === "charity" ? "bg-teal-800 text-white" : "bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200"
+                    }`}>
+                    {charityCount}
                   </span>
                 </button>
 
