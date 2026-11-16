@@ -758,8 +758,8 @@ function InfoStep({
             <div>
               <label className={labelCls}>Mục tiêu kinh phí quyên góp (VNĐ)</label>
               <VndCurrencyInput
-                value={info.charityTargetAmount || "0"}
-                onChange={(val) => setInfo({ ...info, charityTargetAmount: val })}
+                value={Number(info.charityTargetAmount) || 0}
+                onChange={(val) => setInfo({ ...info, charityTargetAmount: String(val) })}
                 placeholder="VD: 100.000.000 đ"
                 className={inputCls}
               />
