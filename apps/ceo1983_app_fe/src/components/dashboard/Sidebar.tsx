@@ -505,7 +505,7 @@ export function Sidebar({
     // 3. Vai trò Lãnh đạo cấp cao & Quản trị hệ thống
     if (rawRole === "chu_tich" || rawRole === "president" || isChuTich) return "chu_tich";
     if (rawRole === "quan_tri" || rawRole === "ADM" || isPlatformAdmin) return "quan_tri";
-    if (rawRole === "admin" || isAdmin || isBQT) return "admin";
+    if (rawRole === "admin" || (isAdmin && !rawRole.startsWith("thanh_vien_ban_") && rawRole !== "member" && rawRole !== "HVT") || isBQT) return "admin";
     return "member";
   }, [
     srsRole,
@@ -542,7 +542,11 @@ export function Sidebar({
   );
 
   // Scoped permissions according to the SRS RBAC matrix:
-  const isPrivilegedAdmin = isPlatformAdmin || isAdmin || isChuTich || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "ADM" || srsRole === "chu_tich";
+  const isPrivilegedAdmin =
+    !String(srsRole).startsWith("thanh_vien_ban_") &&
+    srsRole !== "member" &&
+    srsRole !== "HVT" &&
+    (isPlatformAdmin || isAdmin || isChuTich || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "ADM" || srsRole === "chu_tich");
   const canViewMembers = true; // All can view member directory (HVT is read-only)
   const canViewEvents = true; // All can view events
   const canViewSponsors = true;
@@ -550,8 +554,8 @@ export function Sidebar({
   const canViewComm = true;
   const canViewNetwork = true;
   const canViewBusinessConnect = true;
-  const canViewSystem = true;
-  const canViewPlatform = true;
+  const canViewSystem = isPrivilegedAdmin || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "chu_tich";
+  const canViewPlatform = isPrivilegedAdmin || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "chu_tich";
 
   const location = useRouterState({ select: (s) => s?.location });
   const pathname = location?.pathname;
@@ -742,22 +746,33 @@ export function Sidebar({
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
-  const filteredTemplates = pageTemplates.filter((it) => isAllowed(it.to));
+  const filteredTemplates = pageTemplates.filter((it) => {
+    // Quản lý Thư Mời chỉ dành cho Quản trị viên, Thư ký, Ban Truyền thông và Ban Sự kiện
+    const srsRoleStr = String(srsRole || "");
+    const isTemplatesAllowedRole =
+      isPrivilegedAdmin ||
+      isTongThuKy ||
+      isBanThuKy ||
+      srsRoleStr === "truong_ban_truyen_thong" ||
+      srsRoleStr === "thanh_vien_ban_truyen_thong" ||
+      srsRoleStr === "thanh_vien_ban_su_kien" ||
+      srsRoleStr === "BTT";
+    return isTemplatesAllowedRole && isAllowed(it.to);
+  });
 
   const filteredSystem = system.filter((it) => isAllowed(it.to));
 
   const filteredPermissions = permissionsGroup.filter((it) => {
+    // Chỉ Quản trị cấp cao, Chủ tịch, Tổng thư ký hoặc Trưởng ban chuyên môn mới có quyền truy cập nhóm phân quyền
+    if (!isPrivilegedAdmin && !isTongThuKy && !isBanThuKy && !String(srsRole).startsWith("truong_ban_")) {
+      return false;
+    }
     if (it.to?.includes("/account-settings") || it.to?.includes("/accounts")) {
       const roleStr = String(srsRole || "");
       const emailLower = (user?.email || "").toLowerCase().trim();
       return (
         isPrivilegedAdmin ||
-        isPlatformAdmin ||
-        isAdmin ||
-        isChuTich ||
         emailLower === "admin@viconnect.vn" ||
-        emailLower === "infor@viconnect.vn" ||
-        emailLower === "info@viconnect.vn" ||
         emailLower === "admin@connect.vn" ||
         roleStr === "quan_tri" ||
         roleStr === "admin" ||
@@ -766,13 +781,10 @@ export function Sidebar({
         roleStr === "tong_thu_ky" ||
         roleStr === "ban_thu_ky" ||
         roleStr === "truong_ban_dieu_hanh" ||
-        roleStr.startsWith("truong_ban_") ||
-        isAllowed(it.to) ||
-        isAllowed("/accounts") ||
-        isAllowed("/account-settings")
+        roleStr.startsWith("truong_ban_")
       );
     }
-    return isAllowed(it.to || "/permissions");
+    return isPrivilegedAdmin && isAllowed(it.to || "/permissions");
   });
 
   const filteredAdmin = admin.filter((it) => isAllowed(it.to));

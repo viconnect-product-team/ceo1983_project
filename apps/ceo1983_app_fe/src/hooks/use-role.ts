@@ -111,7 +111,13 @@ export function useRole(): RoleState {
     }
 
     // 0. ƯU TIÊN TUYỆT ĐỐI: Vai trò được phân bổ trực tiếp cho tài khoản từ CSDL (members.executive_role) hoặc Quản lý tài khoản (vba_managed_accounts_v2)
-    const rawExecRole = member?.executiveRole || userObj?.executiveRole || userObj?.executive_role || user?.executiveRole;
+    const rawExecRole =
+      member?.executiveRole ||
+      userObj?.executiveRole ||
+      userObj?.executive_role ||
+      user?.executiveRole ||
+      (userObj?.role && userObj.role.startsWith("thanh_vien_ban_") ? userObj.role : undefined) ||
+      (user?.role && user.role.startsWith("thanh_vien_ban_") ? user.role : undefined);
     if (rawExecRole) {
       const explicitRole = String(rawExecRole).toLowerCase().trim();
       if (explicitRole === "truong_ban_truyen_thong" || explicitRole === "btt") return "truong_ban_truyen_thong";
@@ -275,8 +281,17 @@ export function useRole(): RoleState {
       rList.includes("quan_tri") ||
       rList.includes("superadmin")
     ) {
-      // Nếu tài khoản được phân vai trò rõ ràng là hội viên thường thì ưu tiên HVT
-      if (execRole === "member" || execRole === "hoi_vien") {
+      // Nếu tài khoản được phân vai trò rõ ràng là hội viên thường hoặc ban chuyên môn thì không coi là admin
+      if (
+        execRole === "member" ||
+        execRole === "hoi_vien" ||
+        execRole.startsWith("thanh_vien_ban_") ||
+        primaryRole.startsWith("thanh_vien_ban_") ||
+        primaryRole === "member" ||
+        primaryRole === "hoi_vien"
+      ) {
+        if (execRole.startsWith("thanh_vien_ban_")) return execRole as SrsRole;
+        if (primaryRole.startsWith("thanh_vien_ban_")) return primaryRole as SrsRole;
         return "HVT";
       }
       return "admin";

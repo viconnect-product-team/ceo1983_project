@@ -93,18 +93,25 @@ export function resolveUserPermissions(
   const rList = roles.map((r) => r.toLowerCase().trim());
   const dept = (department || '').toLowerCase().trim();
 
-  // 1. Quản trị hệ thống, Admin, Chủ tịch -> Toàn quyền
+  // 1. Quản trị hệ thống, Admin, Chủ tịch -> Toàn quyền (Chỉ áp dụng khi không phải vai trò hội viên chuyên môn hoặc hội viên thường)
+  const isExplicitSpecialistOrMember =
+    normRole.startsWith('thanh_vien_ban_') ||
+    normRole === 'member' ||
+    normRole === 'hoi_vien' ||
+    normRole === 'hvt';
+
   if (
-    isAdmin ||
-    isPresident ||
-    normRole === 'admin' ||
-    normRole === 'quan_tri' ||
-    normRole === 'chu_tich' ||
-    normRole === 'president' ||
-    normRole === 'platform_admin' ||
-    rList.includes('admin') ||
-    rList.includes('quan_tri') ||
-    rList.includes('chu_tich')
+    !isExplicitSpecialistOrMember &&
+    (isAdmin ||
+      isPresident ||
+      normRole === 'admin' ||
+      normRole === 'quan_tri' ||
+      normRole === 'chu_tich' ||
+      normRole === 'president' ||
+      normRole === 'platform_admin' ||
+      rList.includes('admin') ||
+      rList.includes('quan_tri') ||
+      rList.includes('chu_tich'))
   ) {
     return [
       '*',
@@ -1187,31 +1194,69 @@ export class UsersService implements OnModuleInit {
             account_status: profile.account_status,
           }
           : null,
-        roles: roleList,
+        roles: (() => {
+          const isSpecialistOrMember =
+            primaryRole.startsWith('thanh_vien_ban_') ||
+            primaryRole === 'member' ||
+            primaryRole === 'hoi_vien' ||
+            exec.startsWith('thanh_vien_ban_') ||
+            exec === 'member' ||
+            exec === 'hoi_vien';
+          if (isSpecialistOrMember) {
+            const cleaned = roleList.filter(
+              (r) =>
+                r !== 'admin' &&
+                r !== 'platform_admin' &&
+                r !== 'quan_tri' &&
+                r !== 'superadmin' &&
+                r !== 'chu_tich' &&
+                r !== 'president' &&
+                r !== 'ban_dieu_hanh' &&
+                r !== 'bqt'
+            );
+            if (!cleaned.includes(primaryRole)) cleaned.push(primaryRole);
+            return cleaned;
+          }
+          return roleList;
+        })(),
         role: primaryRole,
         isPresident:
-          primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'chu_tich' || roleList.includes('chu_tich')),
         isAdmin:
-          primaryRole === 'admin' ||
-          primaryRole === 'chu_tich' ||
-          roleList.includes('admin') ||
-          roleList.includes('platform_admin'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'admin' ||
+            primaryRole === 'chu_tich' ||
+            primaryRole === 'quan_tri' ||
+            primaryRole === 'platform_admin' ||
+            roleList.includes('admin') ||
+            roleList.includes('platform_admin')),
         isExecutive:
-          primaryRole === 'ban_dieu_hanh' ||
-          roleList.includes('ban_dieu_hanh') ||
-          roleList.includes('bqt'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'ban_dieu_hanh' ||
+            roleList.includes('ban_dieu_hanh') ||
+            roleList.includes('bqt')),
         isGeneralSecretary:
-          primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky'),
-        isDepartmentLeader: primaryRole.startsWith('truong_ban_'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky')),
+        isDepartmentLeader:
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          primaryRole.startsWith('truong_ban_'),
         permissions: resolveUserPermissions(
           primaryRole,
-          roleList,
+          (primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien')
+            ? roleList.filter((r) => r !== 'admin' && r !== 'platform_admin' && r !== 'quan_tri')
+            : roleList,
           normalizedDept,
-          primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
-          primaryRole === 'admin' ||
-          primaryRole === 'chu_tich' ||
-          roleList.includes('admin') ||
-          roleList.includes('platform_admin'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+            (primaryRole === 'chu_tich' || roleList.includes('chu_tich')),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+            (primaryRole === 'admin' ||
+              primaryRole === 'chu_tich' ||
+              primaryRole === 'quan_tri' ||
+              primaryRole === 'platform_admin' ||
+              roleList.includes('admin') ||
+              roleList.includes('platform_admin')),
           dynamicMatrix,
         ),
         permissionMatrix: dynamicMatrix,

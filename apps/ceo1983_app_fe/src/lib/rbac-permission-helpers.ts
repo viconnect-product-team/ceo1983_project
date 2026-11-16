@@ -612,6 +612,25 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
     return false;
   }
 
+  // Quản lý mẫu trang (Thư mời): Chỉ cho phép Ban Truyền thông, Ban Sự kiện, Tổng thư ký và Quản trị
+  if (cleanRoute.startsWith("/templates")) {
+    const isTemplatesAllowedRole =
+      sRole === "quan_tri" ||
+      sRole === "admin" ||
+      sRole === "chu_tich" ||
+      sRole === "president" ||
+      sRole === "tong_thu_ky" ||
+      sRole === "ban_thu_ky" ||
+      sRole === "truong_ban_truyen_thong" ||
+      sRole === "thanh_vien_ban_truyen_thong" ||
+      sRole === "truong_ban_su_kien" ||
+      sRole === "thanh_vien_ban_su_kien" ||
+      sRole === "BTT";
+    if (!isTemplatesAllowedRole) {
+      return false;
+    }
+  }
+
   // Quản lý tài khoản & Quản trị người dùng (/accounts hoặc /account-settings): Cho phép Quản trị, Chủ tịch, Ban điều hành, Thư ký và Trưởng ban chuyên môn
   if (cleanRoute.startsWith("/accounts") || cleanRoute.startsWith("/account-settings")) {
     if (

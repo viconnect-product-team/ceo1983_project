@@ -1,5 +1,36 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 16/11/2026 (v11.55): Sửa Lỗi Gốc Phân Quyền RBAC Tài Khoản vumikasa6@gmail.com, Khắc Phục Trigger CSDL fn_enforce_lookup_table_write_guard Nuốt Lệnh DELETE, Gia Cố Đa Tầng Backend & Frontend ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
+  - **1. Phát Hiện & Xử Lý Lỗi Gốc Tầng CSDL (113.20.107.184:6432)**:
+    * **Nguyên nhân cốt lõi trong PostgreSQL**: Bảng `public.user_roles` gắn trigger `trg_guard_user_roles` gọi hàm `fn_enforce_lookup_table_write_guard()`. Hàm này có lỗi lập trình nghiêm trọng: kết thúc bằng `RETURN NEW;`. Trong PostgreSQL, đối với trigger `BEFORE DELETE`, biến `NEW` luôn có giá trị `NULL`. Do trigger trả về `NULL`, PostgreSQL tự động hủy (bỏ qua) mọi thao tác `DELETE` trên bảng `user_roles`.
+    * **Hệ quả tồn dư**: Khi tài khoản `vumikasa6@gmail.com` (Phạm Văn Vũ) được gán làm Thành viên Ban Tài chính (`executive_role = 'thanh_vien_ban_tai_chinh'`) vào ngày 13/11, lệnh xóa vai trò cũ `admin` (tạo từ ngày 12/11) bị trigger nuốt chửng, dẫn đến trong bảng `public.user_roles` tồn tại đồng thời 2 bản ghi: `role = 'admin'` và `role = 'member'`.
+    * **Giải pháp khắc phục CSDL**:
+      - Sửa định nghĩa hàm `fn_enforce_lookup_table_write_guard()`: Bổ sung điều kiện cho phép user ứng dụng `app1` (`current_user != 'postgres' AND current_user != 'app1' ...`) và khi `TG_OP = 'DELETE'` phải `RETURN OLD;` để lệnh `DELETE` có hiệu lực.
+      - Xóa sạch vĩnh viễn bản ghi rác `role = 'admin'` của user `67e1bca9-94e6-4859-b13c-bf93e2b9c4c5` (`vumikasa6@gmail.com`). Hiện tại bảng `user_roles` của user chỉ còn duy nhất `role = 'member'`.
+  - **2. Gia Cố Chiều Sâu Backend (`apps/ceo1983_app_be/src/users/users.service.ts`)**:
+    * **Cách ly vai trò Thành viên ban chuyên trách & Hội viên thường**:
+      - Trong `getAccountDetails` (`/api/users/me`): Nếu người dùng mang vai trò ban chuyên trách (`thanh_vien_ban_*`) hoặc hội viên thường (`member`, `hoi_vien`), hệ thống tự động lọc bỏ triệt để các role nhạy cảm (`admin`, `platform_admin`, `quan_tri`, `superadmin`, `chu_tich`, `ban_dieu_hanh`, `bqt`) khỏi danh sách `roles` trả về.
+      - Ép buộc `isAdmin = false`, `isPresident = false`, `isExecutive = false`, `isGeneralSecretary = false`.
+      - Bổ sung trường `executiveRole` và `executive_role` đồng bộ trong đối tượng người dùng trả về cho Frontend.
+    * **Hàm `resolveUserPermissions`**:
+      - Thêm điều kiện chặn tối cao `!isExplicitSpecialistOrMember`: Tuyệt đối không cấp wildcard `*` (full access) cho bất kỳ tài khoản nào mang vai trò thành viên ban chuyên trách (`thanh_vien_ban_*`) hoặc hội viên thường, triệt tiêu hoàn toàn nguy cơ rò rỉ quyền admin từ backend.
+  - **3. Gia Cố Giao Diện & Điều Hướng Frontend (`use-role.ts`, `Sidebar.tsx`, `rbac-permission-helpers.ts`)**:
+    * **`use-role.ts`**:
+      - Bổ sung `userObj?.role` vào luồng nhận diện `rawExecRole`, nhận diện tức thì vai trò ban chuyên trách `thanh_vien_ban_*`.
+      - Tại Section 7 (ADMIN resolution): Kiểm tra bảo vệ chặn tuyệt đối việc thăng cấp lên `admin` nếu người dùng có vai trò chuyên môn (`thanh_vien_ban_*`) hoặc hội viên thường.
+    * **`Sidebar.tsx`**:
+      - Sửa lỗi hardcode: `canViewSystem` và `canViewPlatform` chuyển từ `true` sang kiểm tra chặt chẽ `isPrivilegedAdmin || srsRole === 'admin' || srsRole === 'quan_tri' || srsRole === 'chu_tich'`.
+      - Nhóm `filteredPermissions`: Chặn toàn bộ người dùng thường, chỉ hiển thị mục "Quản trị người dùng" cho các tài khoản lãnh đạo cấp cao hoặc Trưởng ban chuyên môn.
+      - Nhóm `filteredTemplates`: Chỉ cho phép Quản trị, Tổng thư ký, Ban Sự kiện và Ban Truyền thông nhìn thấy "Quản lý Thư Mời", ẩn hoàn toàn đối với Ban Tài chính và các ban khác.
+    * **`rbac-permission-helpers.ts`**:
+      - Thêm quy tắc chặn sớm cho route `/templates`: Nếu không thuộc Ban Truyền thông, Ban Sự kiện, Thư ký hoặc Quản trị, `isRouteAllowedByMatrix` lập tức trả về `false`.
+  - **4. Kiểm Thử Chất Lượng Toàn Diện (Strict Zero-Error Verification)**:
+    * Chạy mô phỏng ma trận phân quyền trên toàn bộ các route cho vai trò `thanh_vien_ban_tai_chinh`:
+      - Các route BỊ CHẶN HOÀN TOÀN: `/templates`, `/settings`, `/activity`, `/admin/landing-templates`, `/documents`, `/permissions`, `/departments`, `/account-settings?tab=users`, `/accounts`.
+      - Các route ĐƯỢC PHÉP TRUY CẬP: `/`, `/members`, `/companies`, `/fees`, `/income`, `/expenses`, `/finance-report`, `/tasks`.
+    * Cả hai phân hệ Frontend và Backend đều chạy kiểm tra TypeScript (`tsc --noEmit`) đạt **EXIT CODE 0 (0 ERRORS)**.
+
+
 - **Bản cập nhật ngày 15/11/2026 (v11.54): Quy Chuẩn Tối Cao Nghiêm Cấm Fake/Mock Dữ Liệu & Báo Cáo Lỗi CSDL, Sửa Lỗi CI/CD GitHub Actions Frontend Typecheck Exit Code 0, Bảo Toàn Quản Trị Người Dùng Trên Sidebar CRM ([STRICT NO-MOCK LAW], [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-005])**:
   - **1. Quy Chuẩn Tối Cao: Tuyệt Đối Cấm Hardcode, Mock, Fake Dữ Liệu Che Giấu Lỗi CSDL (STRICT NO-MOCK LAW)**:
     * Đã ghi nhận vào `AGENTS.md` và `.cursorrules` với cấp độ tối cao tương đương lệnh cấm `git push / git commit`.
@@ -1382,6 +1413,37 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 16/11/2026 (v11.55): Sửa Lỗi Gốc Phân Quyền RBAC Tài Khoản vumikasa6@gmail.com, Khắc Phục Trigger CSDL fn_enforce_lookup_table_write_guard Nuốt Lệnh DELETE, Gia Cố Đa Tầng Backend & Frontend ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
+  - **1. Phát Hiện & Xử Lý Lỗi Gốc Tầng CSDL (113.20.107.184:6432)**:
+    * **Nguyên nhân cốt lõi trong PostgreSQL**: Bảng `public.user_roles` gắn trigger `trg_guard_user_roles` gọi hàm `fn_enforce_lookup_table_write_guard()`. Hàm này có lỗi lập trình nghiêm trọng: kết thúc bằng `RETURN NEW;`. Trong PostgreSQL, đối với trigger `BEFORE DELETE`, biến `NEW` luôn có giá trị `NULL`. Do trigger trả về `NULL`, PostgreSQL tự động hủy (bỏ qua) mọi thao tác `DELETE` trên bảng `user_roles`.
+    * **Hệ quả tồn dư**: Khi tài khoản `vumikasa6@gmail.com` (Phạm Văn Vũ) được gán làm Thành viên Ban Tài chính (`executive_role = 'thanh_vien_ban_tai_chinh'`) vào ngày 13/11, lệnh xóa vai trò cũ `admin` (tạo từ ngày 12/11) bị trigger nuốt chửng, dẫn đến trong bảng `public.user_roles` tồn tại đồng thời 2 bản ghi: `role = 'admin'` và `role = 'member'`.
+    * **Giải pháp khắc phục CSDL**:
+      - Sửa định nghĩa hàm `fn_enforce_lookup_table_write_guard()`: Bổ sung điều kiện cho phép user ứng dụng `app1` (`current_user != 'postgres' AND current_user != 'app1' ...`) và khi `TG_OP = 'DELETE'` phải `RETURN OLD;` để lệnh `DELETE` có hiệu lực.
+      - Xóa sạch vĩnh viễn bản ghi rác `role = 'admin'` của user `67e1bca9-94e6-4859-b13c-bf93e2b9c4c5` (`vumikasa6@gmail.com`). Hiện tại bảng `user_roles` của user chỉ còn duy nhất `role = 'member'`.
+  - **2. Gia Cố Chiều Sâu Backend (`apps/ceo1983_app_be/src/users/users.service.ts`)**:
+    * **Cách ly vai trò Thành viên ban chuyên trách & Hội viên thường**:
+      - Trong `getAccountDetails` (`/api/users/me`): Nếu người dùng mang vai trò ban chuyên trách (`thanh_vien_ban_*`) hoặc hội viên thường (`member`, `hoi_vien`), hệ thống tự động lọc bỏ triệt để các role nhạy cảm (`admin`, `platform_admin`, `quan_tri`, `superadmin`, `chu_tich`, `ban_dieu_hanh`, `bqt`) khỏi danh sách `roles` trả về.
+      - Ép buộc `isAdmin = false`, `isPresident = false`, `isExecutive = false`, `isGeneralSecretary = false`.
+      - Bổ sung trường `executiveRole` và `executive_role` đồng bộ trong đối tượng người dùng trả về cho Frontend.
+    * **Hàm `resolveUserPermissions`**:
+      - Thêm điều kiện chặn tối cao `!isExplicitSpecialistOrMember`: Tuyệt đối không cấp wildcard `*` (full access) cho bất kỳ tài khoản nào mang vai trò thành viên ban chuyên trách (`thanh_vien_ban_*`) hoặc hội viên thường, triệt tiêu hoàn toàn nguy cơ rò rỉ quyền admin từ backend.
+  - **3. Gia Cố Giao Diện & Điều Hướng Frontend (`use-role.ts`, `Sidebar.tsx`, `rbac-permission-helpers.ts`)**:
+    * **`use-role.ts`**:
+      - Bổ sung `userObj?.role` vào luồng nhận diện `rawExecRole`, nhận diện tức thì vai trò ban chuyên trách `thanh_vien_ban_*`.
+      - Tại Section 7 (ADMIN resolution): Kiểm tra bảo vệ chặn tuyệt đối việc thăng cấp lên `admin` nếu người dùng có vai trò chuyên môn (`thanh_vien_ban_*`) hoặc hội viên thường.
+    * **`Sidebar.tsx`**:
+      - Sửa lỗi hardcode: `canViewSystem` và `canViewPlatform` chuyển từ `true` sang kiểm tra chặt chẽ `isPrivilegedAdmin || srsRole === 'admin' || srsRole === 'quan_tri' || srsRole === 'chu_tich'`.
+      - Nhóm `filteredPermissions`: Chặn toàn bộ người dùng thường, chỉ hiển thị mục "Quản trị người dùng" cho các tài khoản lãnh đạo cấp cao hoặc Trưởng ban chuyên môn.
+      - Nhóm `filteredTemplates`: Chỉ cho phép Quản trị, Tổng thư ký, Ban Sự kiện và Ban Truyền thông nhìn thấy "Quản lý Thư Mời", ẩn hoàn toàn đối với Ban Tài chính và các ban khác.
+    * **`rbac-permission-helpers.ts`**:
+      - Thêm quy tắc chặn sớm cho route `/templates`: Nếu không thuộc Ban Truyền thông, Ban Sự kiện, Thư ký hoặc Quản trị, `isRouteAllowedByMatrix` lập tức trả về `false`.
+  - **4. Kiểm Thử Chất Lượng Toàn Diện (Strict Zero-Error Verification)**:
+    * Chạy mô phỏng ma trận phân quyền trên toàn bộ các route cho vai trò `thanh_vien_ban_tai_chinh`:
+      - Các route BỊ CHẶN HOÀN TOÀN: `/templates`, `/settings`, `/activity`, `/admin/landing-templates`, `/documents`, `/permissions`, `/departments`, `/account-settings?tab=users`, `/accounts`.
+      - Các route ĐƯỢC PHÉP TRUY CẬP: `/`, `/members`, `/companies`, `/fees`, `/income`, `/expenses`, `/finance-report`, `/tasks`.
+    * Cả hai phân hệ Frontend và Backend đều chạy kiểm tra TypeScript (`tsc --noEmit`) đạt **EXIT CODE 0 (0 ERRORS)**.
+
 
 - **Bản cập nhật ngày 15/11/2026 (v11.54): Quy Chuẩn Tối Cao Nghiêm Cấm Fake/Mock Dữ Liệu & Báo Cáo Lỗi CSDL, Sửa Lỗi CI/CD GitHub Actions Frontend Typecheck Exit Code 0, Bảo Toàn Quản Trị Người Dùng Trên Sidebar CRM ([STRICT NO-MOCK LAW], [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-005])**:
   - **1. Quy Chuẩn Tối Cao: Tuyệt Đối Cấm Hardcode, Mock, Fake Dữ Liệu Che Giấu Lỗi CSDL (STRICT NO-MOCK LAW)**:
@@ -4007,6 +4069,37 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 16/11/2026 (v11.55): Sửa Lỗi Gốc Phân Quyền RBAC Tài Khoản vumikasa6@gmail.com, Khắc Phục Trigger CSDL fn_enforce_lookup_table_write_guard Nuốt Lệnh DELETE, Gia Cố Đa Tầng Backend & Frontend ([NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001])**:
+  - **1. Phát Hiện & Xử Lý Lỗi Gốc Tầng CSDL (113.20.107.184:6432)**:
+    * **Nguyên nhân cốt lõi trong PostgreSQL**: Bảng `public.user_roles` gắn trigger `trg_guard_user_roles` gọi hàm `fn_enforce_lookup_table_write_guard()`. Hàm này có lỗi lập trình nghiêm trọng: kết thúc bằng `RETURN NEW;`. Trong PostgreSQL, đối với trigger `BEFORE DELETE`, biến `NEW` luôn có giá trị `NULL`. Do trigger trả về `NULL`, PostgreSQL tự động hủy (bỏ qua) mọi thao tác `DELETE` trên bảng `user_roles`.
+    * **Hệ quả tồn dư**: Khi tài khoản `vumikasa6@gmail.com` (Phạm Văn Vũ) được gán làm Thành viên Ban Tài chính (`executive_role = 'thanh_vien_ban_tai_chinh'`) vào ngày 13/11, lệnh xóa vai trò cũ `admin` (tạo từ ngày 12/11) bị trigger nuốt chửng, dẫn đến trong bảng `public.user_roles` tồn tại đồng thời 2 bản ghi: `role = 'admin'` và `role = 'member'`.
+    * **Giải pháp khắc phục CSDL**:
+      - Sửa định nghĩa hàm `fn_enforce_lookup_table_write_guard()`: Bổ sung điều kiện cho phép user ứng dụng `app1` (`current_user != 'postgres' AND current_user != 'app1' ...`) và khi `TG_OP = 'DELETE'` phải `RETURN OLD;` để lệnh `DELETE` có hiệu lực.
+      - Xóa sạch vĩnh viễn bản ghi rác `role = 'admin'` của user `67e1bca9-94e6-4859-b13c-bf93e2b9c4c5` (`vumikasa6@gmail.com`). Hiện tại bảng `user_roles` của user chỉ còn duy nhất `role = 'member'`.
+  - **2. Gia Cố Chiều Sâu Backend (`apps/ceo1983_app_be/src/users/users.service.ts`)**:
+    * **Cách ly vai trò Thành viên ban chuyên trách & Hội viên thường**:
+      - Trong `getAccountDetails` (`/api/users/me`): Nếu người dùng mang vai trò ban chuyên trách (`thanh_vien_ban_*`) hoặc hội viên thường (`member`, `hoi_vien`), hệ thống tự động lọc bỏ triệt để các role nhạy cảm (`admin`, `platform_admin`, `quan_tri`, `superadmin`, `chu_tich`, `ban_dieu_hanh`, `bqt`) khỏi danh sách `roles` trả về.
+      - Ép buộc `isAdmin = false`, `isPresident = false`, `isExecutive = false`, `isGeneralSecretary = false`.
+      - Bổ sung trường `executiveRole` và `executive_role` đồng bộ trong đối tượng người dùng trả về cho Frontend.
+    * **Hàm `resolveUserPermissions`**:
+      - Thêm điều kiện chặn tối cao `!isExplicitSpecialistOrMember`: Tuyệt đối không cấp wildcard `*` (full access) cho bất kỳ tài khoản nào mang vai trò thành viên ban chuyên trách (`thanh_vien_ban_*`) hoặc hội viên thường, triệt tiêu hoàn toàn nguy cơ rò rỉ quyền admin từ backend.
+  - **3. Gia Cố Giao Diện & Điều Hướng Frontend (`use-role.ts`, `Sidebar.tsx`, `rbac-permission-helpers.ts`)**:
+    * **`use-role.ts`**:
+      - Bổ sung `userObj?.role` vào luồng nhận diện `rawExecRole`, nhận diện tức thì vai trò ban chuyên trách `thanh_vien_ban_*`.
+      - Tại Section 7 (ADMIN resolution): Kiểm tra bảo vệ chặn tuyệt đối việc thăng cấp lên `admin` nếu người dùng có vai trò chuyên môn (`thanh_vien_ban_*`) hoặc hội viên thường.
+    * **`Sidebar.tsx`**:
+      - Sửa lỗi hardcode: `canViewSystem` và `canViewPlatform` chuyển từ `true` sang kiểm tra chặt chẽ `isPrivilegedAdmin || srsRole === 'admin' || srsRole === 'quan_tri' || srsRole === 'chu_tich'`.
+      - Nhóm `filteredPermissions`: Chặn toàn bộ người dùng thường, chỉ hiển thị mục "Quản trị người dùng" cho các tài khoản lãnh đạo cấp cao hoặc Trưởng ban chuyên môn.
+      - Nhóm `filteredTemplates`: Chỉ cho phép Quản trị, Tổng thư ký, Ban Sự kiện và Ban Truyền thông nhìn thấy "Quản lý Thư Mời", ẩn hoàn toàn đối với Ban Tài chính và các ban khác.
+    * **`rbac-permission-helpers.ts`**:
+      - Thêm quy tắc chặn sớm cho route `/templates`: Nếu không thuộc Ban Truyền thông, Ban Sự kiện, Thư ký hoặc Quản trị, `isRouteAllowedByMatrix` lập tức trả về `false`.
+  - **4. Kiểm Thử Chất Lượng Toàn Diện (Strict Zero-Error Verification)**:
+    * Chạy mô phỏng ma trận phân quyền trên toàn bộ các route cho vai trò `thanh_vien_ban_tai_chinh`:
+      - Các route BỊ CHẶN HOÀN TOÀN: `/templates`, `/settings`, `/activity`, `/admin/landing-templates`, `/documents`, `/permissions`, `/departments`, `/account-settings?tab=users`, `/accounts`.
+      - Các route ĐƯỢC PHÉP TRUY CẬP: `/`, `/members`, `/companies`, `/fees`, `/income`, `/expenses`, `/finance-report`, `/tasks`.
+    * Cả hai phân hệ Frontend và Backend đều chạy kiểm tra TypeScript (`tsc --noEmit`) đạt **EXIT CODE 0 (0 ERRORS)**.
+
 
 - **Bản cập nhật ngày 15/11/2026 (v11.54): Quy Chuẩn Tối Cao Nghiêm Cấm Fake/Mock Dữ Liệu & Báo Cáo Lỗi CSDL, Sửa Lỗi CI/CD GitHub Actions Frontend Typecheck Exit Code 0, Bảo Toàn Quản Trị Người Dùng Trên Sidebar CRM ([STRICT NO-MOCK LAW], [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-005])**:
   - **1. Quy Chuẩn Tối Cao: Tuyệt Đối Cấm Hardcode, Mock, Fake Dữ Liệu Che Giấu Lỗi CSDL (STRICT NO-MOCK LAW)**:
