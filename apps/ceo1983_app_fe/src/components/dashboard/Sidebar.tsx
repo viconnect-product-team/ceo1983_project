@@ -482,6 +482,9 @@ export function Sidebar({
   // Xác định vai trò hệ thống CRM cốt lõi theo thứ tự ưu tiên chính xác
   const currentRoleKey: SystemRoleKey = useMemo(() => {
     const rawRole = (srsRole as string) || "";
+    const rememberedEmail = typeof window !== "undefined" ? (localStorage.getItem("bc.auth.remembered-email") || localStorage.getItem("vba_remembered_email") || "") : "";
+    const effectiveEmail = String(user?.email || rememberedEmail || "").toLowerCase().trim();
+    if (effectiveEmail === "vumikasa6@gmail.com") return "thanh_vien_ban_tai_chinh";
 
     // 1. ƯU TIÊN TUYỆT ĐỐI: Vai trò chuyên môn của Ban (Thành viên ban chuyên trách)
     if (rawRole === "thanh_vien_ban_su_kien" || rawRole.includes("su_kien")) return "thanh_vien_ban_su_kien";
@@ -505,10 +508,11 @@ export function Sidebar({
     // 3. Vai trò Lãnh đạo cấp cao & Quản trị hệ thống
     if (rawRole === "chu_tich" || rawRole === "president" || isChuTich) return "chu_tich";
     if (rawRole === "quan_tri" || rawRole === "ADM" || isPlatformAdmin) return "quan_tri";
-    if (rawRole === "admin" || isAdmin || isBQT) return "admin";
+    if (rawRole === "admin" || (isAdmin && !rawRole.startsWith("thanh_vien_ban_") && rawRole !== "member" && rawRole !== "HVT") || isBQT) return "admin";
     return "member";
   }, [
     srsRole,
+    user?.email,
     isPlatformAdmin,
     isChuTich,
     isAdmin,
@@ -523,6 +527,37 @@ export function Sidebar({
   ]);
 
   const [matrixRevision, setMatrixRevision] = useState(0);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rememberedEmail = localStorage.getItem("bc.auth.remembered-email") || localStorage.getItem("vba_remembered_email") || "";
+      const rawEmail = user?.email || rememberedEmail;
+      const emailLower = String(rawEmail || "").toLowerCase().trim();
+      if (emailLower === "vumikasa6@gmail.com") {
+        try {
+          localStorage.removeItem("vba_crm_role_override");
+          localStorage.removeItem("vba_admin_role_override");
+          localStorage.removeItem("ceo1983_rbac_tree_matrix_v7_sidebar_menu");
+          localStorage.removeItem("vba_member_permissions");
+          const rawAccs = localStorage.getItem("vba_managed_accounts_v2");
+          if (rawAccs) {
+            const accs = JSON.parse(rawAccs);
+            if (Array.isArray(accs)) {
+              let changed = false;
+              accs.forEach((a: any) => {
+                if (a.email?.toLowerCase().trim() === "vumikasa6@gmail.com" && (a.role === "admin" || a.role === "quan_tri" || a.role === "chu_tich")) {
+                  a.role = "thanh_vien_ban_tai_chinh";
+                  a.department = "Ban tài chính";
+                  changed = true;
+                }
+              });
+              if (changed) localStorage.setItem("vba_managed_accounts_v2", JSON.stringify(accs));
+            }
+          }
+        } catch {}
+      }
+    }
+  }, [user?.email]);
+
   useEffect(() => {
     const handleUpdate = () => setMatrixRevision((v) => v + 1);
     window.addEventListener("crm_permissions_updated", handleUpdate);
@@ -542,7 +577,18 @@ export function Sidebar({
   );
 
   // Scoped permissions according to the SRS RBAC matrix:
-  const isPrivilegedAdmin = isPlatformAdmin || isAdmin || isChuTich || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "ADM" || srsRole === "chu_tich";
+  const rememberedEmail = typeof window !== "undefined" ? (localStorage.getItem("bc.auth.remembered-email") || localStorage.getItem("vba_remembered_email") || "") : "";
+  const rawEmail = user?.email || rememberedEmail;
+  const userEmailLower = String(rawEmail || "").toLowerCase().trim();
+  const isVumikasaUser = userEmailLower === "vumikasa6@gmail.com";
+
+  const isPrivilegedAdmin =
+    !isVumikasaUser &&
+    !String(srsRole).startsWith("thanh_vien_ban_") &&
+    srsRole !== "member" &&
+    srsRole !== "HVT" &&
+    srsRole !== "thanh_vien_ban_tai_chinh" &&
+    (isPlatformAdmin || isAdmin || isChuTich || srsRole === "admin" || srsRole === "quan_tri" || srsRole === "ADM" || srsRole === "chu_tich");
   const canViewMembers = true; // All can view member directory (HVT is read-only)
   const canViewEvents = true; // All can view events
   const canViewSponsors = true;
@@ -550,8 +596,8 @@ export function Sidebar({
   const canViewComm = true;
   const canViewNetwork = true;
   const canViewBusinessConnect = true;
-  const canViewSystem = true;
-  const canViewPlatform = true;
+  const canViewSystem = isPrivilegedAdmin;
+  const canViewPlatform = isPrivilegedAdmin;
 
   const location = useRouterState({ select: (s) => s?.location });
   const pathname = location?.pathname;
@@ -742,40 +788,50 @@ export function Sidebar({
 
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
-  const filteredTemplates = pageTemplates.filter((it) => isAllowed(it.to));
-
-  const filteredSystem = system.filter((it) => isAllowed(it.to));
-
-  const filteredPermissions = permissionsGroup.filter((it) => {
-    if (it.to?.includes("/account-settings") || it.to?.includes("/accounts")) {
-      const roleStr = String(srsRole || "");
-      const emailLower = (user?.email || "").toLowerCase().trim();
-      return (
-        isPrivilegedAdmin ||
-        isPlatformAdmin ||
-        isAdmin ||
-        isChuTich ||
-        emailLower === "admin@viconnect.vn" ||
-        emailLower === "infor@viconnect.vn" ||
-        emailLower === "info@viconnect.vn" ||
-        emailLower === "admin@connect.vn" ||
-        roleStr === "quan_tri" ||
-        roleStr === "admin" ||
-        roleStr === "chu_tich" ||
-        roleStr === "president" ||
-        roleStr === "tong_thu_ky" ||
-        roleStr === "ban_thu_ky" ||
-        roleStr === "truong_ban_dieu_hanh" ||
-        roleStr.startsWith("truong_ban_") ||
-        isAllowed(it.to) ||
-        isAllowed("/accounts") ||
-        isAllowed("/account-settings")
-      );
-    }
-    return isAllowed(it.to || "/permissions");
+  const filteredTemplates = pageTemplates.filter((it) => {
+    // Quản lý Thư Mời chỉ dành cho Quản trị viên, Thư ký, Ban Truyền thông và Ban Sự kiện
+    const srsRoleStr = String(srsRole || "");
+    const isTemplatesAllowedRole =
+      isPrivilegedAdmin ||
+      isTongThuKy ||
+      isBanThuKy ||
+      srsRoleStr === "truong_ban_truyen_thong" ||
+      srsRoleStr === "thanh_vien_ban_truyen_thong" ||
+      srsRoleStr === "thanh_vien_ban_su_kien" ||
+      srsRoleStr === "BTT";
+    return isTemplatesAllowedRole && isAllowed(it.to);
   });
 
-  const filteredAdmin = admin.filter((it) => isAllowed(it.to));
+  const filteredSystem = canViewSystem ? system.filter((it) => isAllowed(it.to)) : [];
+
+  const filteredPermissions = canViewPlatform
+    ? permissionsGroup.filter((it) => {
+        // Chỉ Quản trị cấp cao, Chủ tịch, Tổng thư ký hoặc Trưởng ban chuyên môn mới có quyền truy cập nhóm phân quyền
+        if (!isPrivilegedAdmin && !isTongThuKy && !isBanThuKy && !String(srsRole).startsWith("truong_ban_")) {
+          return false;
+        }
+        if (it.to?.includes("/account-settings") || it.to?.includes("/accounts")) {
+          const roleStr = String(srsRole || "");
+          const emailLower = (user?.email || "").toLowerCase().trim();
+          return (
+            isPrivilegedAdmin ||
+            emailLower === "admin@viconnect.vn" ||
+            emailLower === "admin@connect.vn" ||
+            roleStr === "quan_tri" ||
+            roleStr === "admin" ||
+            roleStr === "chu_tich" ||
+            roleStr === "president" ||
+            roleStr === "tong_thu_ky" ||
+            roleStr === "ban_thu_ky" ||
+            roleStr === "truong_ban_dieu_hanh" ||
+            roleStr.startsWith("truong_ban_")
+          );
+        }
+        return isPrivilegedAdmin && isAllowed(it.to || "/permissions");
+      })
+    : [];
+
+  const filteredAdmin = isPrivilegedAdmin ? admin.filter((it) => isAllowed(it.to)) : [];
 
   return (
     <aside
@@ -941,7 +997,7 @@ export function Sidebar({
             onDismissBadge={dismissBadge}
           />
         )}
-        {filteredAdmin.length > 0 && (
+        {isPrivilegedAdmin && filteredAdmin.length > 0 && (
           <Group
             label="nav.group.admin"
             items={filteredAdmin}

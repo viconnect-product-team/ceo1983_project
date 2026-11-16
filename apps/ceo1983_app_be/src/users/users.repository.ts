@@ -223,7 +223,7 @@ export class UsersRepository {
       );
     const cleanEmail = (email || '').trim().toLowerCase();
     const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT id, code, email, company_name, company_size, employees, executive_role, department, association_id, about, notes, name, contact, phone FROM public.members 
+      SELECT id, code, email, company_name, company_size, employees, executive_role, department, association_id, about, name, contact, phone FROM public.members 
       WHERE ( ${isUuid} AND user_id = ${userId}::uuid )
          OR id = ${userId}
          OR ( ${cleanEmail !== ''} AND LOWER(email) = ${cleanEmail} )
@@ -543,10 +543,10 @@ export class UsersRepository {
       const rows: any[] = await this.prisma
         .$queryRawUnsafe<
           any[]
-        >(`SELECT about, notes FROM public.members WHERE user_id = $1::uuid OR email = $2 OR contact_email = $2 LIMIT 1`, userId, email)
+        >(`SELECT about FROM public.members WHERE user_id = $1::uuid OR email = $2 OR contact_email = $2 LIMIT 1`, userId, email)
         .catch(() => []);
       if (rows.length > 0) {
-        return `${rows[0].about || ''} ${rows[0].notes || ''}`.trim();
+        return `${rows[0].about || ''}`.trim();
       }
       return '';
     } catch {

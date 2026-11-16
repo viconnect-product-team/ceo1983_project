@@ -4,7 +4,7 @@ export class CreateEventDto {
   date!: string;
   location?: string;
   capacity?: number;
-  type?: 'forum' | 'workshop' | 'networking' | 'training';
+  type?: 'forum' | 'workshop' | 'networking' | 'training' | 'charity';
   status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
   associationId?: string;
   qrFields?: string[];
@@ -22,6 +22,15 @@ export class CreateEventDto {
   time?: string;
   agenda?: any;
   checkinQr?: string;
+  charityDetails?: {
+    targetAmount?: number;
+    currentAmount?: number;
+    beneficiary?: string;
+    donationAccount?: string;
+    itemsNeeded?: string;
+    contactLeader?: string;
+    transparencyNote?: string;
+  };
   tickets?: {
     name: string;
     price?: number;
@@ -36,7 +45,7 @@ export class UpdateEventDto {
   date?: string;
   location?: string;
   capacity?: number;
-  type?: 'forum' | 'workshop' | 'networking' | 'training';
+  type?: 'forum' | 'workshop' | 'networking' | 'training' | 'charity';
   status?: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
   image?: string;
   banner?: string;
@@ -52,6 +61,15 @@ export class UpdateEventDto {
   time?: string;
   agenda?: any;
   checkinQr?: string;
+  charityDetails?: {
+    targetAmount?: number;
+    currentAmount?: number;
+    beneficiary?: string;
+    donationAccount?: string;
+    itemsNeeded?: string;
+    contactLeader?: string;
+    transparencyNote?: string;
+  };
 }
 
 export class RegisterEventDto {

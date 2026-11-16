@@ -28,7 +28,7 @@ export type EventItem = {
   capacity: number;
   registered: number;
   status: "upcoming" | "ongoing" | "completed" | "cancelled";
-  type: "forum" | "workshop" | "networking" | "training";
+  type: "forum" | "workshop" | "networking" | "training" | "charity";
   qrFields: QrField[];
   image?: string | null;
   banner?: string | null;
@@ -36,6 +36,15 @@ export type EventItem = {
   photoGalleryUrl?: string | null;
   sponsors?: EventSponsorItem[];
   qrScanners?: string[];
+  charityDetails?: {
+    targetAmount?: number;
+    currentAmount?: number;
+    beneficiary?: string;
+    donationAccount?: string;
+    itemsNeeded?: string;
+    contactLeader?: string;
+    transparencyNote?: string;
+  } | null;
 };
 
 export type TicketType = {

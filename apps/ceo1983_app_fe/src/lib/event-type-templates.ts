@@ -1,4 +1,4 @@
-export type EventTypeKey = "forum" | "workshop" | "networking" | "training";
+export type EventTypeKey = "forum" | "workshop" | "networking" | "training" | "charity";
 
 export interface EventTypeTemplate {
   key: EventTypeKey;
@@ -90,6 +90,24 @@ export const EVENT_TYPE_TEMPLATES: Record<EventTypeKey, EventTypeTemplate> = {
     defaultCapacity: "120",
     description: "Khóa đào tạo chuyên sâu về kỹ năng đàm phán thương vụ lớn, truyền cảm hứng đội ngũ và xây dựng văn hóa doanh nghiệp bền vững.",
     defaultTicketName: "Vé Huấn Luyện C-Level (Chứng nhận hoàn thành)",
+    defaultTicketPrice: "0",
+  },
+  charity: {
+    key: "charity",
+    label: "Thiện nguyện & An sinh (Charity & CSR)",
+    name: "CHƯƠNG TRÌNH THIỆN NGUYỆN: TẤM LÒNG DOANH NHÂN CEO 1983 VÌ CỘNG ĐỒNG",
+    badge: "❤️ THIỆN NGUYỆN & AN SINH XÃ HỘI",
+    tagline: "Chung tay kết nối yêu thương, lan tỏa giá trị nhân văn vì cộng đồng",
+    themeGradient: "linear-gradient(135deg, #0F382E 0%, #0D9488 55%, #134E4A 100%)",
+    badgeBg: "rgba(20, 184, 166, 0.25)",
+    badgeText: "#2DD4BF",
+    textColor: "#FFFFFF",
+    accentColor: "#2DD4BF",
+    bgImage: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1200&auto=format&fit=crop&q=80",
+    defaultLocation: "Điểm trường vùng cao / Trung tâm bảo trợ xã hội",
+    defaultCapacity: "100",
+    description: "Chương trình thiện nguyện do Ban Thiện nguyện CLB Doanh Nhân CEO 1983 chủ trì, kêu gọi quyên góp kinh phí, sách vở, áo ấm và nhu yếu phẩm cho đồng bào và các em học sinh có hoàn cảnh khó khăn.",
+    defaultTicketName: "Đăng ký tham gia đoàn Thiện nguyện (Miễn phí)",
     defaultTicketPrice: "0",
   },
 };

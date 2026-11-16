@@ -40,6 +40,12 @@ type Info = {
   description?: string;
   qrStaff: string[];
   sponsors: EventSponsorItem[];
+  charityTargetAmount?: string;
+  charityBeneficiary?: string;
+  charityDonationAccount?: string;
+  charityItemsNeeded?: string;
+  charityContactLeader?: string;
+  charityTransparencyNote?: string;
 };
 
 const emptyTicket = (): TicketDraft => ({ name: "", price: "", quantity: "", description: "" });
@@ -48,7 +54,7 @@ import { VndCurrencyInput, parseVndNumber } from "@/components/dashboard/VndCurr
 import { StandardDateInput, formatToDdmmyyyy } from "@/components/common/StandardDateInput";
 import { GoogleMapAddressPicker } from "@/components/common/GoogleMapAddressPicker";
 
-const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training"];
+const TYPE_OPTS: EventType[] = ["forum", "workshop", "networking", "training", "charity"];
 const STATUS_OPTS: EventStatus[] = ["upcoming", "ongoing", "completed", "cancelled"];
 
 export function EventWizard({
@@ -233,6 +239,15 @@ function EventWizardDialog({
           ticketPrice: computedTicketPrice,
           fee: computedTicketPrice,
           description: info.description || "",
+          charityDetails: info.type === "charity" ? {
+            targetAmount: parseVndNumber(info.charityTargetAmount || "0"),
+            currentAmount: 0,
+            beneficiary: (info.charityBeneficiary || "").trim(),
+            donationAccount: (info.charityDonationAccount || "").trim(),
+            itemsNeeded: (info.charityItemsNeeded || "").trim(),
+            contactLeader: (info.charityContactLeader || "").trim(),
+            transparencyNote: (info.charityTransparencyNote || "").trim(),
+          } : undefined,
           qrStaff: info.qrStaff,
           qrScanners: info.qrStaff,
           sponsors: info.sponsors,
@@ -730,6 +745,77 @@ function InfoStep({
           </select>
         </div>
       </div>
+
+      {/* Thông tin dành riêng cho Sự Kiện Thiện Nguyện & An Sinh */}
+      {info.type === "charity" && (
+        <div className="rounded-2xl border border-teal-500/30 bg-teal-50/50 dark:bg-teal-950/20 p-4 space-y-3.5 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 text-teal-800 dark:text-teal-300 font-bold text-sm">
+            <span>❤️ THÔNG TIN QUYÊN GÓP & THIỆN NGUYỆN</span>
+            <span className="text-[11px] font-normal text-teal-600 dark:text-teal-400">(Ban Thiện Nguyện phụ trách)</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Mục tiêu kinh phí quyên góp (VNĐ)</label>
+              <VndCurrencyInput
+                value={Number(info.charityTargetAmount) || 0}
+                onChange={(val) => setInfo({ ...info, charityTargetAmount: String(val) })}
+                placeholder="VD: 100.000.000 đ"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Đầu mối Ban Thiện nguyện phụ trách</label>
+              <input
+                className={inputCls}
+                placeholder="Họ tên & SĐT (VD: Trưởng ban Thu Trang - 0984.078.727)"
+                value={info.charityContactLeader || ""}
+                onChange={(e) => setInfo({ ...info, charityContactLeader: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Đối tượng thụ hưởng / Địa bàn giúp đỡ</label>
+            <input
+              className={inputCls}
+              placeholder="VD: Học sinh nghèo điểm trường Tà Mung, Than Uyên, Lai Châu..."
+              value={info.charityBeneficiary || ""}
+              onChange={(e) => setInfo({ ...info, charityBeneficiary: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className={labelCls}>Tài khoản tiếp nhận ủng hộ (Ngân hàng, STK, Chủ TK, Cú pháp)</label>
+            <input
+              className={inputCls}
+              placeholder="VD: 19830000 - Techcombank - CLB Doanh Nhân CEO 1983 (Cú pháp: [Tên HV] [Tên SK])"
+              value={info.charityDonationAccount || ""}
+              onChange={(e) => setInfo({ ...info, charityDonationAccount: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className={labelCls}>Vật phẩm / Nhu yếu phẩm kêu gọi (nếu có)</label>
+            <input
+              className={inputCls}
+              placeholder="VD: 200 áo ấm, 500 tập vở, 50 thùng sữa, 20 xe đạp..."
+              value={info.charityItemsNeeded || ""}
+              onChange={(e) => setInfo({ ...info, charityItemsNeeded: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className={labelCls}>Cam kết sao kê & Minh bạch tài chính</label>
+            <input
+              className={inputCls}
+              placeholder="VD: Toàn bộ thu chi được Ban Thiện nguyện công khai minh bạch 100% sau chương trình"
+              value={info.charityTransparencyNote || ""}
+              onChange={(e) => setInfo({ ...info, charityTransparencyNote: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Mô tả / Nội dung chi tiết sự kiện */}
       <div>

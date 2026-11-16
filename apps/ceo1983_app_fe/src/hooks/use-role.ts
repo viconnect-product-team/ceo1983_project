@@ -110,8 +110,21 @@ export function useRole(): RoleState {
       } catch {}
     }
 
+    const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase().trim();
+
+    // RÀNG BUỘC TUYỆT ĐỐI: vumikasa6@gmail.com là Thành viên Ban Tài Chính, tuyệt đối không leo thang quyền Admin
+    if (userEmail === "vumikasa6@gmail.com") {
+      return "thanh_vien_ban_tai_chinh";
+    }
+
     // 0. ƯU TIÊN TUYỆT ĐỐI: Vai trò được phân bổ trực tiếp cho tài khoản từ CSDL (members.executive_role) hoặc Quản lý tài khoản (vba_managed_accounts_v2)
-    const rawExecRole = member?.executiveRole || userObj?.executiveRole || userObj?.executive_role || user?.executiveRole;
+    const rawExecRole =
+      member?.executiveRole ||
+      userObj?.executiveRole ||
+      userObj?.executive_role ||
+      user?.executiveRole ||
+      (userObj?.role && userObj.role.startsWith("thanh_vien_ban_") ? userObj.role : undefined) ||
+      (user?.role && user.role.startsWith("thanh_vien_ban_") ? user.role : undefined);
     if (rawExecRole) {
       const explicitRole = String(rawExecRole).toLowerCase().trim();
       if (explicitRole === "truong_ban_truyen_thong" || explicitRole === "btt") return "truong_ban_truyen_thong";
@@ -122,7 +135,14 @@ export function useRole(): RoleState {
       if (explicitRole === "ban_thu_ky" || explicitRole === "btk") return "ban_thu_ky";
       if (explicitRole === "tong_thu_ky") return "tong_thu_ky";
       if (explicitRole === "member" || explicitRole === "hoi_vien") return "HVT";
-      if (explicitRole.startsWith("thanh_vien_ban_")) return explicitRole as SrsRole;
+      if (explicitRole === "thanh_vien_ban_tai_chinh") return "thanh_vien_ban_tai_chinh";
+      if (explicitRole === "thanh_vien_ban_truyen_thong") return "thanh_vien_ban_truyen_thong";
+      if (explicitRole === "thanh_vien_ban_thanh_vien") return "thanh_vien_ban_thanh_vien";
+      if (explicitRole === "thanh_vien_ban_xuc_tien") return "thanh_vien_ban_xuc_tien";
+      if (explicitRole === "thanh_vien_ban_thien_nguyen") return "thanh_vien_ban_thien_nguyen";
+      if (explicitRole === "thanh_vien_ban_su_kien") return "thanh_vien_ban_su_kien";
+      if (explicitRole === "thanh_vien_ban_dieu_hanh") return "thanh_vien_ban_dieu_hanh";
+      if (explicitRole.startsWith("thanh_vien_ban_")) return "HVT";
       if (explicitRole === "chu_tich" || explicitRole === "president") return "chu_tich";
       if (explicitRole === "ban_dieu_hanh" || explicitRole === "bqt" || explicitRole === "truong_ban_dieu_hanh") return "ban_dieu_hanh";
       if (explicitRole === "admin" || explicitRole === "quan_tri" || explicitRole === "platform_admin") return "admin";
@@ -133,8 +153,6 @@ export function useRole(): RoleState {
 
     const execRole = String(member?.executiveRole || userObj?.executiveRole || userObj?.executive_role || user?.executiveRole || "").toLowerCase();
     const dept = String(member?.department || userObj?.department || user?.department || "").toLowerCase();
-
-    const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase();
 
     // 1. CHỦ TỊCH (Cấp cao nhất của Hiệp hội)
     if (
@@ -256,7 +274,15 @@ export function useRole(): RoleState {
 
     // 6. THÀNH VIÊN BAN CHUYÊN MÔN
     if (execRole.startsWith("thanh_vien_ban_") || primaryRole.startsWith("thanh_vien_ban_")) {
-      return (execRole.startsWith("thanh_vien_ban_") ? execRole : primaryRole) as SrsRole;
+      const e = execRole.startsWith("thanh_vien_ban_") ? execRole : primaryRole;
+      if (e === "thanh_vien_ban_tai_chinh") return "thanh_vien_ban_tai_chinh";
+      if (e === "thanh_vien_ban_truyen_thong") return "thanh_vien_ban_truyen_thong";
+      if (e === "thanh_vien_ban_thanh_vien") return "thanh_vien_ban_thanh_vien";
+      if (e === "thanh_vien_ban_xuc_tien") return "thanh_vien_ban_xuc_tien";
+      if (e === "thanh_vien_ban_thien_nguyen") return "thanh_vien_ban_thien_nguyen";
+      if (e === "thanh_vien_ban_su_kien") return "thanh_vien_ban_su_kien";
+      if (e === "thanh_vien_ban_dieu_hanh") return "thanh_vien_ban_dieu_hanh";
+      return "HVT";
     }
 
     // 7. ADMIN / QUẢN TRỊ (Quản trị viên kỹ thuật & vận hành CRM)
@@ -275,8 +301,26 @@ export function useRole(): RoleState {
       rList.includes("quan_tri") ||
       rList.includes("superadmin")
     ) {
-      // Nếu tài khoản được phân vai trò rõ ràng là hội viên thường thì ưu tiên HVT
-      if (execRole === "member" || execRole === "hoi_vien") {
+      // Nếu tài khoản được phân vai trò rõ ràng là hội viên thường hoặc ban chuyên môn thì không coi là admin
+      if (
+        execRole === "member" ||
+        execRole === "hoi_vien" ||
+        execRole.startsWith("thanh_vien_ban_") ||
+        primaryRole.startsWith("thanh_vien_ban_") ||
+        primaryRole === "member" ||
+        primaryRole === "hoi_vien"
+      ) {
+        if (execRole.startsWith("thanh_vien_ban_") || primaryRole.startsWith("thanh_vien_ban_")) {
+          const e = execRole.startsWith("thanh_vien_ban_") ? execRole : primaryRole;
+          if (e === "thanh_vien_ban_tai_chinh") return "thanh_vien_ban_tai_chinh";
+          if (e === "thanh_vien_ban_truyen_thong") return "thanh_vien_ban_truyen_thong";
+          if (e === "thanh_vien_ban_thanh_vien") return "thanh_vien_ban_thanh_vien";
+          if (e === "thanh_vien_ban_xuc_tien") return "thanh_vien_ban_xuc_tien";
+          if (e === "thanh_vien_ban_thien_nguyen") return "thanh_vien_ban_thien_nguyen";
+          if (e === "thanh_vien_ban_su_kien") return "thanh_vien_ban_su_kien";
+          if (e === "thanh_vien_ban_dieu_hanh") return "thanh_vien_ban_dieu_hanh";
+          return "HVT";
+        }
         return "HVT";
       }
       return "admin";
@@ -366,7 +410,17 @@ export function useRole(): RoleState {
                     (a.id && myId && (a.id === myId || a.id === `acc_${myId}` || a.dbMemberId === myId))
                 );
                 if (found && found.role) {
-                  member = { ...(member || {}), executiveRole: found.role, department: found.department };
+                  // KHÔNG cho phép localStorage tự ý phong quyền admin/quan_tri nếu backend không cấp
+                  if (found.role === "admin" || found.role === "quan_tri" || found.role === "platform_admin") {
+                    if (me?.isAdmin) {
+                      member = { ...(member || {}), executiveRole: found.role, department: found.department };
+                    }
+                  } else {
+                    member = { ...(member || {}), executiveRole: found.role, department: found.department };
+                  }
+                }
+                if (myEmail === "vumikasa6@gmail.com") {
+                  member = { ...(member || {}), executiveRole: "thanh_vien_ban_tai_chinh", department: "Ban tài chính" };
                 }
               }
             }
@@ -523,8 +577,8 @@ export function useRole(): RoleState {
   const isBTV = isTruongBanThanhVien || (!isExplicitNonAdminRole && isBQT);
   const isTruongBanThienNguyen = srsRole === "BTN" || srsRole === "truong_ban_thien_nguyen";
   const isBTN = isTruongBanThienNguyen || (!isExplicitNonAdminRole && isBQT);
-  const isTruongBanTaiChinh = srsRole === "BTC" || srsRole === "truong_ban_tai_chinh";
-  const isBTC = isTruongBanTaiChinh || (!isExplicitNonAdminRole && isBQT);
+  const isTruongBanTaiChinh = !isExplicitNonAdminRole && (srsRole === "BTC" || srsRole === "truong_ban_tai_chinh");
+  const isBTC = isTruongBanTaiChinh || srsRole === "thanh_vien_ban_tai_chinh" || (!isExplicitNonAdminRole && isBQT);
   const isHVT = srsRole === "HVT" || srsRole === "member";
   const isTruongBan =
     isTruongBanTruyenThong ||

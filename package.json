@@ -15,6 +15,7 @@
     "dev:fe": "npm run dev --prefix apps/ceo1983_app_fe",
     "dev:be": "npm run dev --prefix apps/ceo1983_app_be",
     "lint": "turbo run lint",
+    "save": "git add -A && git commit -m \"chore(save): auto-save checkpoint\"",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "mobile:ceo1983:apk": "npm run build:apk --prefix apps/mobile_ceo1983",
     "mobile:ceo1983:apk:local": "npm run build:apk:fast --prefix apps/mobile_ceo1983",

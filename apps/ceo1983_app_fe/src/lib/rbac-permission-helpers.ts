@@ -213,7 +213,15 @@ export function getCustomDepartments(): DepartmentItem[] {
     const raw = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const merged = [...parsed];
+        for (const initDept of INITIAL_DEPARTMENTS) {
+          if (!merged.some((d: any) => d.id === initDept.id || d.name?.toLowerCase() === initDept.name.toLowerCase())) {
+            merged.push(initDept);
+          }
+        }
+        return merged;
+      }
     }
   } catch {}
   return INITIAL_DEPARTMENTS;
@@ -610,6 +618,25 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
       return true;
     }
     return false;
+  }
+
+  // Quản lý mẫu trang (Thư mời): Chỉ cho phép Ban Truyền thông, Ban Sự kiện, Tổng thư ký và Quản trị
+  if (cleanRoute.startsWith("/templates")) {
+    const isTemplatesAllowedRole =
+      sRole === "quan_tri" ||
+      sRole === "admin" ||
+      sRole === "chu_tich" ||
+      sRole === "president" ||
+      sRole === "tong_thu_ky" ||
+      sRole === "ban_thu_ky" ||
+      sRole === "truong_ban_truyen_thong" ||
+      sRole === "thanh_vien_ban_truyen_thong" ||
+      sRole === "truong_ban_su_kien" ||
+      sRole === "thanh_vien_ban_su_kien" ||
+      sRole === "BTT";
+    if (!isTemplatesAllowedRole) {
+      return false;
+    }
   }
 
   // Quản lý tài khoản & Quản trị người dùng (/accounts hoặc /account-settings): Cho phép Quản trị, Chủ tịch, Ban điều hành, Thư ký và Trưởng ban chuyên môn

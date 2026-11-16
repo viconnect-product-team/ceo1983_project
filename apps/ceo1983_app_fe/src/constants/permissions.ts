@@ -70,6 +70,13 @@ export type SrsRole =
   | "truong_ban_tai_chinh"
   | "truong_ban_thien_nguyen"
   | "truong_ban_dieu_hanh"
+  | "thanh_vien_ban_tai_chinh"
+  | "thanh_vien_ban_truyen_thong"
+  | "thanh_vien_ban_thanh_vien"
+  | "thanh_vien_ban_xuc_tien"
+  | "thanh_vien_ban_thien_nguyen"
+  | "thanh_vien_ban_su_kien"
+  | "thanh_vien_ban_dieu_hanh"
   | "member"
   | "ADM"
   | "BQT"
@@ -227,6 +234,49 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.SPONSOR_PACKAGE_MANAGE,
     PERMISSIONS.MEMBER_VIEW,
     PERMISSIONS.EVENT_VIEW,
+  ],
+  thanh_vien_ban_tai_chinh: [
+    PERMISSIONS.FINANCE_VIEW,
+    PERMISSIONS.FINANCE_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.SPONSOR_VIEW,
+  ],
+  thanh_vien_ban_truyen_thong: [
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.MEDIA_VIEW,
+    PERMISSIONS.MEDIA_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+  ],
+  thanh_vien_ban_thanh_vien: [
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.MEMBER_CREATE,
+    PERMISSIONS.MEMBER_EDIT,
+    PERMISSIONS.EVENT_VIEW,
+  ],
+  thanh_vien_ban_xuc_tien: [
+    PERMISSIONS.OPPORTUNITY_VIEW,
+    PERMISSIONS.OPPORTUNITY_MANAGE,
+    PERMISSIONS.MARKETPLACE_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.EVENT_VIEW,
+  ],
+  thanh_vien_ban_thien_nguyen: [
+    PERMISSIONS.CHARITY_VIEW,
+    PERMISSIONS.CHARITY_MANAGE,
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.MEMBER_VIEW,
+  ],
+  thanh_vien_ban_su_kien: [
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.EVENT_CHECKIN_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+  ],
+  thanh_vien_ban_dieu_hanh: [
+    PERMISSIONS.EVENT_VIEW,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.MEETING_VIEW,
+    PERMISSIONS.OPPORTUNITY_VIEW,
   ],
   ban_thu_ky: [
     PERMISSIONS.MEETING_VIEW,

@@ -93,18 +93,25 @@ export function resolveUserPermissions(
   const rList = roles.map((r) => r.toLowerCase().trim());
   const dept = (department || '').toLowerCase().trim();
 
-  // 1. Quản trị hệ thống, Admin, Chủ tịch -> Toàn quyền
+  // 1. Quản trị hệ thống, Admin, Chủ tịch -> Toàn quyền (Chỉ áp dụng khi không phải vai trò hội viên chuyên môn hoặc hội viên thường)
+  const isExplicitSpecialistOrMember =
+    normRole.startsWith('thanh_vien_ban_') ||
+    normRole === 'member' ||
+    normRole === 'hoi_vien' ||
+    normRole === 'hvt';
+
   if (
-    isAdmin ||
-    isPresident ||
-    normRole === 'admin' ||
-    normRole === 'quan_tri' ||
-    normRole === 'chu_tich' ||
-    normRole === 'president' ||
-    normRole === 'platform_admin' ||
-    rList.includes('admin') ||
-    rList.includes('quan_tri') ||
-    rList.includes('chu_tich')
+    !isExplicitSpecialistOrMember &&
+    (isAdmin ||
+      isPresident ||
+      normRole === 'admin' ||
+      normRole === 'quan_tri' ||
+      normRole === 'chu_tich' ||
+      normRole === 'president' ||
+      normRole === 'platform_admin' ||
+      rList.includes('admin') ||
+      rList.includes('quan_tri') ||
+      rList.includes('chu_tich'))
   ) {
     return [
       '*',
@@ -590,11 +597,11 @@ export class UsersService implements OnModuleInit {
     if (username === 'admin@viconnect.vn' || username === 'admin@connect.vn') {
       return {
         id: '00000000-0000-4000-8000-000000000002',
-        username: 'admin@viconnect.vn',
+        username: 'admin@connect.vn',
         password:
           '$2b$10$FLMpymq2ujbhVinusol9XuMc5pjTY97IZNrT0b9UAmzRtMoKrXHbu',
-        email: 'admin@viconnect.vn',
-        name: 'Administrator',
+        email: 'admin@connect.vn',
+        name: 'Quản Trị Viên Hệ Thống',
         avatar_url: null,
         google_id: null,
         apple_id: null,
@@ -655,11 +662,11 @@ export class UsersService implements OnModuleInit {
 
       return {
         id: '00000000-0000-4000-8000-000000000002',
-        username: 'admin@viconnect.vn',
+        username: 'admin@connect.vn',
         password:
           '$2b$10$FLMpymq2ujbhVinusol9XuMc5pjTY97IZNrT0b9UAmzRtMoKrXHbu',
-        email: 'admin@viconnect.vn',
-        name: 'Administrator',
+        email: 'admin@connect.vn',
+        name: 'Quản Trị Viên Hệ Thống',
         avatar_url: null,
         google_id: null,
         apple_id: null,
@@ -719,7 +726,7 @@ export class UsersService implements OnModuleInit {
       return this.findByUsername('infor@viconnect.vn');
     }
     if (clean === 'admin@viconnect.vn' || clean === 'admin@connect.vn') {
-      return this.findByUsername('admin@viconnect.vn');
+      return this.findByUsername('admin@connect.vn');
     }
     return null;
   }
@@ -896,11 +903,21 @@ export class UsersService implements OnModuleInit {
       let normalizedDept =
         memberRow?.department ||
         memberships?.[0]?.department ||
-        'Hội viên ceo1983';
-      if (normalizedDept.toLowerCase().includes('quản trị')) {
-        normalizedDept = normalizedDept
-          .replace(/ban quản trị/gi, 'Ban Điều Hành')
-          .replace(/quản trị/gi, 'Điều Hành');
+        '';
+
+      const isSysAdminAccount =
+        user.id === '00000000-0000-4000-8000-000000000002' ||
+        user.id === '00000000-0000-0000-0000-000000000000' ||
+        (user.email || '').toLowerCase() === 'admin@connect.vn' ||
+        (user.username || '').toLowerCase() === 'admin@connect.vn' ||
+        (user.email || '').toLowerCase() === 'admin@viconnect.vn' ||
+        roleList.includes('admin') ||
+        roleList.includes('platform_admin');
+
+      if (isSysAdminAccount && (!normalizedDept || normalizedDept.toLowerCase().includes('hội viên'))) {
+        normalizedDept = 'Ban Quản Trị';
+      } else if (!normalizedDept) {
+        normalizedDept = 'Hội viên ceo1983';
       }
 
       let primaryRole = 'member';
@@ -1187,31 +1204,69 @@ export class UsersService implements OnModuleInit {
             account_status: profile.account_status,
           }
           : null,
-        roles: roleList,
+        roles: (() => {
+          const isSpecialistOrMember =
+            primaryRole.startsWith('thanh_vien_ban_') ||
+            primaryRole === 'member' ||
+            primaryRole === 'hoi_vien' ||
+            exec.startsWith('thanh_vien_ban_') ||
+            exec === 'member' ||
+            exec === 'hoi_vien';
+          if (isSpecialistOrMember) {
+            const cleaned = roleList.filter(
+              (r) =>
+                r !== 'admin' &&
+                r !== 'platform_admin' &&
+                r !== 'quan_tri' &&
+                r !== 'superadmin' &&
+                r !== 'chu_tich' &&
+                r !== 'president' &&
+                r !== 'ban_dieu_hanh' &&
+                r !== 'bqt'
+            );
+            if (!cleaned.includes(primaryRole)) cleaned.push(primaryRole);
+            return cleaned;
+          }
+          return roleList;
+        })(),
         role: primaryRole,
         isPresident:
-          primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'chu_tich' || roleList.includes('chu_tich')),
         isAdmin:
-          primaryRole === 'admin' ||
-          primaryRole === 'chu_tich' ||
-          roleList.includes('admin') ||
-          roleList.includes('platform_admin'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'admin' ||
+            primaryRole === 'chu_tich' ||
+            primaryRole === 'quan_tri' ||
+            primaryRole === 'platform_admin' ||
+            roleList.includes('admin') ||
+            roleList.includes('platform_admin')),
         isExecutive:
-          primaryRole === 'ban_dieu_hanh' ||
-          roleList.includes('ban_dieu_hanh') ||
-          roleList.includes('bqt'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'ban_dieu_hanh' ||
+            roleList.includes('ban_dieu_hanh') ||
+            roleList.includes('bqt')),
         isGeneralSecretary:
-          primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky'),
-        isDepartmentLeader: primaryRole.startsWith('truong_ban_'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          (primaryRole === 'tong_thu_ky' || roleList.includes('tong_thu_ky')),
+        isDepartmentLeader:
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+          primaryRole.startsWith('truong_ban_'),
         permissions: resolveUserPermissions(
           primaryRole,
-          roleList,
+          (primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien')
+            ? roleList.filter((r) => r !== 'admin' && r !== 'platform_admin' && r !== 'quan_tri')
+            : roleList,
           normalizedDept,
-          primaryRole === 'chu_tich' || roleList.includes('chu_tich'),
-          primaryRole === 'admin' ||
-          primaryRole === 'chu_tich' ||
-          roleList.includes('admin') ||
-          roleList.includes('platform_admin'),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+            (primaryRole === 'chu_tich' || roleList.includes('chu_tich')),
+          !(primaryRole.startsWith('thanh_vien_ban_') || primaryRole === 'member' || primaryRole === 'hoi_vien') &&
+            (primaryRole === 'admin' ||
+              primaryRole === 'chu_tich' ||
+              primaryRole === 'quan_tri' ||
+              primaryRole === 'platform_admin' ||
+              roleList.includes('admin') ||
+              roleList.includes('platform_admin')),
           dynamicMatrix,
         ),
         permissionMatrix: dynamicMatrix,
@@ -1722,7 +1777,10 @@ export class UsersService implements OnModuleInit {
       const m = memberMap.get(u.id) || (u.email ? memberMap.get(u.email.toLowerCase()) : null);
       if (
         (u.id === '00000000-0000-0000-0000-000000000000' ||
+          u.id === '00000000-0000-4000-8000-000000000002' ||
           u.username === 'admin@connect.vn' ||
+          u.email === 'admin@connect.vn' ||
+          u.username === 'admin@viconnect.vn' ||
           u.email === 'admin@viconnect.vn') &&
         !userRoles.includes('admin')
       ) {
@@ -1748,7 +1806,9 @@ export class UsersService implements OnModuleInit {
         u.email === 'info@viconnect.vn' ||
         u.username === 'info@viconnect.vn'
           ? 'truong_ban_truyen_thong'
-          : userRoles.includes('platform_admin')
+          : u.email === 'admin@connect.vn' ||
+            u.username === 'admin@connect.vn' ||
+            userRoles.includes('platform_admin')
           ? 'quan_tri'
           : userRoles.includes('admin')
           ? 'admin'
@@ -1760,6 +1820,11 @@ export class UsersService implements OnModuleInit {
         u.email === 'info@viconnect.vn' ||
         u.username === 'info@viconnect.vn'
           ? 'Ban Truyền Thông'
+          : u.email === 'admin@connect.vn' ||
+            u.username === 'admin@connect.vn' ||
+            userRoles.includes('admin') ||
+            userRoles.includes('platform_admin')
+          ? 'Ban Quản Trị'
           : 'Hội viên ceo1983');
 
       return {

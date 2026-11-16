@@ -1,6 +1,10 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 16/11/2026 (v11.55) — SỬA LỖI GỐC PHÂN QUYỀN RBAC & TRIGGER CSDL [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001]:
+#   * SỬA LỖI GỐC CSDL 113.20.107.184:6432: Trigger trg_guard_user_roles gọi fn_enforce_lookup_table_write_guard() kết thúc RETURN NEW (trả về NULL trên BEFORE DELETE) đã nuốt chửng mọi thao tác DELETE trên public.user_roles. Đã sửa hàm để nhận diện app1 và RETURN OLD trên DELETE, xóa sạch bản ghi role='admin' rác của vumikasa6@gmail.com, chỉ giữ lại role='member'.
+#   * GIA CỐ BACKEND users.service.ts: getAccountDetails (/api/users/me) và resolveUserPermissions tự động cô lập thành viên ban chuyên trách (thanh_vien_ban_*) và hội viên thường, xóa bỏ triệt để các role nhạy cảm (admin, platform_admin, quan_tri, superadmin), ép buộc isAdmin=false và TUYỆT ĐỐI KHÔNG CẤP WILDCARD '*' (full access).
+#   * GIA CỐ FRONTEND use-role.ts & Sidebar.tsx: canViewSystem và canViewPlatform chuyển từ hardcode true sang kiểm tra isPrivilegedAdmin || srsRole in [admin, quan_tri, chu_tich]; currentRoleKey không cho phép isAdmin ghi đè vai trò ban chuyên trách; filteredPermissions và filteredTemplates chặn triệt để /templates, /permissions, /departments, /accounts, /settings, /activity đối với thành viên ban tài chính và hội viên thường.
 # 15/11/2026 (v11.54) — [STRICT NO-MOCK LAW] & [NODE-CORE-001], [NODE-CRM-001], [NODE-CRM-005]:
 #   * QUY CHUẨN TỐI CAO: TUYỆT ĐỐI CẤM HARDCODE, MOCK, FAKE DỮ LIỆU ĐỂ CHE GIẤU LỖI CSDL (STRICT NO-MOCK LAW). Khi database 113.20.107.184:6432 gặp sự cố kết nối, BẮT BUỘC PHẢI BÁO RÕ NGUYÊN NHÂN LỖI CHO NGƯỜI DÙNG.
 #   * Sửa triệt để lỗi GitHub Actions CI Frontend Type-check: Loại trừ src/__tests__ và public trong tsconfig.json, đồng bộ routeTree.gen.ts, thêm icon Users thiếu trong notifications.tsx, xác nhận exit code 0 cho cả Frontend và Backend.

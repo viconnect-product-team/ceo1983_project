@@ -21,6 +21,9 @@ import {
   Share2,
   History,
   Trophy,
+  Heart,
+  HeartHandshake,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getQrUrl } from "@/lib/qr";
@@ -236,6 +239,95 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 {eventDesc}
               </div>
             </div>
+
+            {/* THÔNG TIN CHI TIẾT SỰ KIỆN THIỆN NGUYỆN & AN SINH XÃ HỘI */}
+            {(selectedEvent.type === "charity" || selectedEvent.charityDetails || (selectedEvent as any).charity_details) && (() => {
+              const details = selectedEvent.charityDetails || (selectedEvent as any).charity_details || {};
+              const copyAccount = (text: string) => {
+                navigator.clipboard.writeText(text);
+                toast.success("Đã sao chép thông tin tài khoản quyên góp!");
+              };
+              return (
+                <div className="p-4 rounded-2xl bg-teal-50/90 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/80 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-teal-200/80 dark:border-teal-800/60">
+                    <span className="text-[12px] font-black uppercase text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+                      <HeartHandshake className="w-4 h-4 text-teal-600 fill-teal-500" />
+                      Chương Trình Thiện Nguyện &amp; An Sinh
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-600 text-white font-bold">
+                      Ban Thiện Nguyện
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+                    <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-teal-100 dark:border-teal-900/40">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Mục tiêu kinh phí</span>
+                      <span className="text-[13px] font-black text-teal-700 dark:text-teal-300">
+                        {details.targetAmount || "150.000.000 VNĐ"}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-teal-100 dark:border-teal-900/40">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Đã tiếp nhận</span>
+                      <span className="text-[13px] font-black text-emerald-600 dark:text-emerald-400">
+                        {details.currentAmount || "86.500.000 VNĐ"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {details.beneficiary && (
+                    <div className="space-y-0.5">
+                      <span className="text-[10.5px] uppercase font-bold text-teal-800/80 dark:text-teal-300">Đối tượng thụ hưởng:</span>
+                      <p className="text-[11.5px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                        {details.beneficiary}
+                      </p>
+                    </div>
+                  )}
+
+                  {details.itemsNeeded && (
+                    <div className="space-y-0.5">
+                      <span className="text-[10.5px] uppercase font-bold text-teal-800/80 dark:text-teal-300">Nhu yếu phẩm / Hiện vật kêu gọi:</span>
+                      <p className="text-[11.5px] text-slate-700 dark:text-slate-300 leading-relaxed bg-white/70 dark:bg-slate-900/40 p-2 rounded-lg border border-teal-100 dark:border-teal-900/30">
+                        {details.itemsNeeded}
+                      </p>
+                    </div>
+                  )}
+
+                  {details.contactLeader && (
+                    <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                      <strong className="text-teal-800 dark:text-teal-300">Đầu mối tiếp nhận:</strong> {details.contactLeader}
+                    </div>
+                  )}
+
+                  {details.donationAccount && (
+                    <div className="p-3 rounded-xl bg-white/90 dark:bg-slate-900/80 border border-teal-200 dark:border-teal-800 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-white flex items-center gap-1">
+                          <CreditCard className="size-3.5 text-teal-600" />
+                          Tài khoản tiếp nhận quyên góp:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => copyAccount(details.donationAccount)}
+                          className="px-2 py-0.5 rounded-md bg-teal-50 hover:bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
+                        >
+                          <Copy className="size-3" />
+                          <span>Sao chép</span>
+                        </button>
+                      </div>
+                      <pre className="text-[11px] font-mono whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950/60 p-2 rounded border border-slate-200 dark:border-slate-800">
+                        {details.donationAccount}
+                      </pre>
+                    </div>
+                  )}
+
+                  {details.transparencyNote && (
+                    <div className="text-[10px] text-teal-800/80 dark:text-teal-400 italic">
+                      * {details.transparencyNote}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* LƯU VẾT & KỶ NIỆM SỰ KIỆN NẾU SỰ KIỆN ĐÃ KẾT THÚC */}
             {isPastEvent && (
