@@ -38,6 +38,9 @@ import { ViOneAiTutorGuide } from "../common/ViOneAiTutorGuide";
 import { AiVerificationCard, VerificationCardData } from "./AiVerificationCard";
 import { AiStepExecutionCard, AiStepExecutionData } from "./AiStepExecutionCard";
 import { AiChoiceChips } from "./AiChoiceChips";
+import { AiTaskPlanCard, TaskPlanData, RevisionDiff } from "./AiTaskPlanCard";
+import { AiLiveExecutionCard, ExecutionProgressState } from "./AiLiveExecutionCard";
+import { AiLiveWorkspace } from "./AiLiveWorkspace";
 import {
   analyzeImportedFileForAi,
   AiFileActionOption,
@@ -59,6 +62,9 @@ export interface ChatMessage {
   fileClarification?: AiFileClarificationData;
   verificationCard?: VerificationCardData;
   stepExecution?: AiStepExecutionData;
+  taskPlan?: TaskPlanData;
+  executionState?: ExecutionProgressState;
+  diff?: RevisionDiff;
 }
 
 export interface ChatSession {
@@ -396,6 +402,8 @@ export function CrmChatGPTView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [liveAlert, setLiveAlert] = useState<string | null>(null);
   const [isTutorOpen, setIsTutorOpen] = useState(false);
+  const [selectedWorkspacePlan, setSelectedWorkspacePlan] = useState<TaskPlanData | null>(null);
+  const [isApprovingTaskId, setIsApprovingTaskId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -733,17 +741,51 @@ export function CrmChatGPTView() {
         content: m.content,
       }));
 
-      const res = await fetchNestApi<any>("/api/ai/crm/chat", {
-        method: "POST",
-        body: JSON.stringify({
-          message: messageText,
-          history: historyPayload,
-          model: selectedModel,
-          persona: usePersona,
-        }),
-      });
+      const activePendingMsg = messages.slice().reverse().find((m) => m.taskPlan && !m.executionState);
+      const activeTaskId = activePendingMsg?.taskPlan?.taskId;
 
-      if (res?.ok && res?.reply) {
+      const lowerText = messageText.toLowerCase();
+      const isTaskWorkflowIntent =
+        Boolean(activeTaskId) ||
+        lowerText.includes("tìm") ||
+        lowerText.includes("gửi") ||
+        lowerText.includes("import") ||
+        lowerText.includes("tạo") ||
+        lowerText.includes("thư mời") ||
+        lowerText.includes("kế hoạch") ||
+        lowerText.includes("logistics") ||
+        lowerText.includes("sự kiện") ||
+        lowerText.includes("đào tạo") ||
+        lowerText.includes("báo cáo") ||
+        lowerText.includes("sản phẩm") ||
+        lowerText.includes("chi phí") ||
+        lowerText.includes("doanh nghiệp");
+
+      let res: any;
+      if (isTaskWorkflowIntent) {
+        res = await fetchNestApi<any>("/api/ai/agent/chat", {
+          method: "POST",
+          body: JSON.stringify({
+            message: messageText,
+            taskId: activeTaskId,
+            platform: "crm",
+          }),
+        });
+      } else {
+        res = await fetchNestApi<any>("/api/ai/crm/chat", {
+          method: "POST",
+          body: JSON.stringify({
+            message: messageText,
+            history: historyPayload,
+            model: selectedModel,
+            persona: usePersona,
+          }),
+        });
+      }
+
+      const resData = res?.data || res;
+      if (res?.ok && (resData?.reply || res?.reply)) {
+        const replyText = resData?.reply || res?.reply;
         if (res.proactiveAlert) {
           setLiveAlert(res.proactiveAlert);
         }
@@ -751,15 +793,19 @@ export function CrmChatGPTView() {
         const assistantMsg: ChatMessage = {
           id: `msg_a_${Date.now()}`,
           role: "assistant",
-          content: res.reply,
+          content: replyText,
           createdAt: new Date().toISOString(),
-          model: res.modelUsed || "Gemini 2.0 Flash (Free)",
+          model: resData?.taskPlan
+            ? "CEO 1983 Dynamic Autonomous Agent"
+            : res.modelUsed || "Gemini 2.0 Flash (Free)",
           latencyMs: res.latencyMs || 250,
           persona: usePersona,
           evidence: res.evidence || [],
           proactiveAlert: res.proactiveAlert,
-          verificationCard: res.verificationCard,
+          verificationCard: resData?.verificationCard || res.verificationCard,
           fileClarification: res.fileClarification,
+          taskPlan: resData?.taskPlan,
+          diff: resData?.diff,
         };
 
         setSessions((prev) =>
@@ -787,6 +833,93 @@ export function CrmChatGPTView() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // 1. Phê duyệt tác vụ (Bắt buộc nhấn nút Duyệt thực hiện - NO APPROVAL = NO EXECUTION)
+  const handleApproveTask = async (plan: TaskPlanData, messageId: string) => {
+    setIsApprovingTaskId(plan.taskId);
+    toast.info(`Đang xác thực quyền & phê duyệt tác vụ "${plan.title}" (v${plan.revisionVersion})...`);
+
+    try {
+      const res = await fetchNestApi<any>(`/api/ai/agent/tasks/${plan.taskId}/approve`, {
+        method: "POST",
+        body: JSON.stringify({
+          revisionVersion: plan.revisionVersion,
+          payloadHash: plan.payloadHash,
+          platform: "crm",
+        }),
+      });
+
+      if (res?.ok && res?.data?.state) {
+        toast.success("Phê duyệt thành công! Bắt đầu thực thi Live trên CSDL chuẩn 113.20.107.184:6432.");
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === currentSessionId
+              ? {
+                  ...s,
+                  messages: s.messages.map((m) =>
+                    m.id === messageId
+                      ? { ...m, executionState: res.data.state }
+                      : m
+                  ),
+                }
+              : s
+          )
+        );
+      } else {
+        toast.error(res?.message || "Không thể phê duyệt tác vụ");
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi phê duyệt: ${err?.message || "Vui lòng thử lại"}`);
+    } finally {
+      setIsApprovingTaskId(null);
+    }
+  };
+
+  // 2. Tiếp nhận sửa đổi yêu cầu (Conversational Revision)
+  const handleReviseTask = (plan: TaskPlanData) => {
+    setInputMessage(`Điều chỉnh kế hoạch v${plan.revisionVersion}: `);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  // 3. Mở Live Workspace trực quan
+  const handleOpenWorkspace = (plan: TaskPlanData) => {
+    setSelectedWorkspacePlan(plan);
+  };
+
+  // 4. Hủy tác vụ
+  const handleCancelTask = (plan: TaskPlanData, messageId: string) => {
+    toast.info(`Đã hủy tác vụ: ${plan.title}`);
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === currentSessionId
+          ? {
+              ...s,
+              messages: s.messages.filter((m) => m.id !== messageId),
+            }
+          : s
+      )
+    );
+  };
+
+  // 5. Cập nhật khi tác vụ Live Execution hoàn thành
+  const handleTaskCompleted = (messageId: string, card: VerificationCardData) => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === currentSessionId
+          ? {
+              ...s,
+              messages: s.messages.map((m) =>
+                m.id === messageId
+                  ? { ...m, verificationCard: card }
+                  : m
+              ),
+            }
+          : s
+      )
+    );
   };
 
   const handleCopyMessage = (content: string) => {
@@ -1087,8 +1220,30 @@ export function CrmChatGPTView() {
                             />
                           )}
 
+                          {/* THẺ KẾ HOẠCH THỰC THI (TASK PLAN CARD - WAITING FOR APPROVAL / REVISION) */}
+                          {msg.taskPlan && !msg.executionState && (
+                            <AiTaskPlanCard
+                              plan={msg.taskPlan}
+                              diff={msg.diff}
+                              onApprove={(plan) => handleApproveTask(plan, msg.id)}
+                              onRevise={(plan) => handleReviseTask(plan)}
+                              onViewWorkspace={(plan) => handleOpenWorkspace(plan)}
+                              onCancel={(plan) => handleCancelTask(plan, msg.id)}
+                              isApproving={isApprovingTaskId === msg.taskPlan.taskId}
+                            />
+                          )}
+
+                          {/* THẺ TIẾN TRÌNH LIVE EXECUTION (LIVE PROGRESS STREAMING VIA SSE) */}
+                          {msg.executionState && (
+                            <AiLiveExecutionCard
+                              initialState={msg.executionState}
+                              onViewWorkspace={() => msg.taskPlan && handleOpenWorkspace(msg.taskPlan)}
+                              onCompleted={(card) => handleTaskCompleted(msg.id, card)}
+                            />
+                          )}
+
                           {/* THẺ KIỂM TRA ĐỐI SOÁT SAU KHI AI THAO TÁC XONG (VERIFICATION CARD) */}
-                          {msg.verificationCard && (
+                          {msg.verificationCard && !msg.executionState && (
                             <AiVerificationCard data={msg.verificationCard} />
                           )}
 
@@ -1212,6 +1367,15 @@ export function CrmChatGPTView() {
         onClose={() => setIsTutorOpen(false)}
         systemType="crm"
       />
+
+      {/* KHÔNG GIAN LÀM VIỆC TRỰC QUAN LIVE WORKSPACE */}
+      {selectedWorkspacePlan && (
+        <AiLiveWorkspace
+          plan={selectedWorkspacePlan}
+          isOpen={Boolean(selectedWorkspacePlan)}
+          onClose={() => setSelectedWorkspacePlan(null)}
+        />
+      )}
     </div>
   );
 }

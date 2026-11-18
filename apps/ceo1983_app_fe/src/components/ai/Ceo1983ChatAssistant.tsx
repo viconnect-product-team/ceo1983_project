@@ -20,6 +20,8 @@ import {
   Bot,
   TrendingUp,
   Paperclip,
+  Brain,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -27,8 +29,10 @@ import { fetchNestApi } from "@/lib/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { AiVerificationCard, VerificationCardData } from "./AiVerificationCard";
 import { AiStepExecutionCard, AiStepExecutionData } from "./AiStepExecutionCard";
-import { FileText, Brain } from "lucide-react";
 import { AiChoiceChips } from "./AiChoiceChips";
+import { AiTaskPlanCard, TaskPlanData, RevisionDiff } from "./AiTaskPlanCard";
+import { AiLiveExecutionCard, ExecutionProgressState } from "./AiLiveExecutionCard";
+import { AiLiveWorkspace } from "./AiLiveWorkspace";
 import {
   analyzeImportedFileForAi,
   AiFileActionOption,
@@ -89,6 +93,9 @@ export interface AssistantMessage {
   fileClarification?: AiFileClarificationData;
   verificationCard?: VerificationCardData;
   stepExecution?: AiStepExecutionData;
+  taskPlan?: TaskPlanData;
+  executionState?: ExecutionProgressState;
+  diff?: RevisionDiff;
 }
 
 interface QuickPrompt {
@@ -234,6 +241,8 @@ export function Ceo1983ChatAssistant() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedWorkspacePlan, setSelectedWorkspacePlan] = useState<TaskPlanData | null>(null);
+  const [isApprovingTaskId, setIsApprovingTaskId] = useState<string | null>(null);
   const streamingIntervalRef = useRef<any>(null);
 
   useEffect(() => {
@@ -1025,6 +1034,61 @@ HƯỚNG DẪN TRẢ LỜI:
 - Trả lời bằng định dạng markdown có icon doanh nhân, bullet point rõ ràng.`;
   };
 
+  // ==========================================
+  // DYNAMIC AUTONOMOUS AGENT APPROVAL & WORKSPACE
+  // ==========================================
+  const handleApproveTask = async (plan: TaskPlanData, messageId: string) => {
+    setIsApprovingTaskId(plan.taskId);
+    toast.info(`Đang xác thực quyền & phê duyệt tác vụ "${plan.title}" (v${plan.revisionVersion})...`);
+
+    try {
+      const res = await fetchNestApi<any>(`/api/ai/agent/tasks/${plan.taskId}/approve`, {
+        method: "POST",
+        body: JSON.stringify({
+          revisionVersion: plan.revisionVersion,
+          payloadHash: plan.payloadHash,
+          platform: "member",
+        }),
+      });
+
+      if (res?.ok && res?.data?.state) {
+        toast.success("Phê duyệt thành công! Bắt đầu thực thi Live trên CSDL chuẩn 113.20.107.184:6432.");
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId ? { ...m, executionState: res.data.state } : m
+          )
+        );
+      } else {
+        toast.error(res?.message || "Không thể phê duyệt tác vụ");
+      }
+    } catch (err: any) {
+      toast.error(`Lỗi phê duyệt: ${err?.message || "Vui lòng thử lại"}`);
+    } finally {
+      setIsApprovingTaskId(null);
+    }
+  };
+
+  const handleReviseTask = (plan: TaskPlanData) => {
+    setInput(`Điều chỉnh kế hoạch v${plan.revisionVersion}: `);
+  };
+
+  const handleOpenWorkspace = (plan: TaskPlanData) => {
+    setSelectedWorkspacePlan(plan);
+  };
+
+  const handleCancelTask = (plan: TaskPlanData, messageId: string) => {
+    toast.info(`Đã hủy tác vụ: ${plan.title}`);
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+  };
+
+  const handleTaskCompleted = (messageId: string, card: VerificationCardData) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, verificationCard: card } : m
+      )
+    );
+  };
+
   // Send message to AI with Multi-model Free fallback and Smart Local Evaluator
   const handleSendMessage = async (textToSend?: string) => {
     const promptText = (textToSend || input).trim();
@@ -1066,6 +1130,49 @@ HƯỚNG DẪN TRẢ LỜI:
       let verificationCard: any = undefined;
       let fileClarification: any = undefined;
       const history = newMessages.slice(-7, -1).map((m) => ({ role: m.role, content: m.content }));
+
+      // 0. Dynamic Autonomous Agent Engine (Task Planning & Conversational Revision)
+      const activePendingMsg = messages.slice().reverse().find((m) => m.taskPlan && !m.executionState);
+      const activeTaskId = activePendingMsg?.taskPlan?.taskId;
+      const lower = promptText.toLowerCase();
+      const isTaskWorkflowIntent =
+        Boolean(activeTaskId) ||
+        lower.includes("tìm đối tác") ||
+        lower.includes("tìm kiếm") ||
+        lower.includes("đăng sản phẩm") ||
+        lower.includes("tạo cơ hội") ||
+        lower.includes("kết nối") ||
+        lower.includes("gửi thư mời") ||
+        lower.includes("kế hoạch");
+
+      if (isTaskWorkflowIntent) {
+        try {
+          const agentRes: any = await fetchNestApi("/api/ai/agent/chat", {
+            method: "POST",
+            body: JSON.stringify({
+              message: promptText,
+              taskId: activeTaskId,
+              platform: "member",
+            }),
+          });
+          const ad = agentRes?.data ?? agentRes;
+          if (ad?.reply) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `bot-${Date.now()}`,
+                role: "assistant",
+                content: ad.reply,
+                timestamp: Date.now(),
+                taskPlan: ad.taskPlan,
+                diff: ad.diff,
+              },
+            ]);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {}
+      }
 
       // 1. Backend AI (nắm TOÀN BỘ dữ liệu thật của tài khoản + phân quyền; tự đếm quota)
       try {
@@ -1422,8 +1529,30 @@ HƯỚNG DẪN TRẢ LỜI:
                         />
                       )}
 
+                      {/* Thẻ Kế Hoạch Thực Thi (Task Plan Card - Waiting for Approval / Revision) */}
+                      {!isUser && m.taskPlan && !m.executionState && (
+                        <AiTaskPlanCard
+                          plan={m.taskPlan}
+                          diff={m.diff}
+                          onApprove={(plan) => handleApproveTask(plan, m.id)}
+                          onRevise={(plan) => handleReviseTask(plan)}
+                          onViewWorkspace={(plan) => handleOpenWorkspace(plan)}
+                          onCancel={(plan) => handleCancelTask(plan, m.id)}
+                          isApproving={isApprovingTaskId === m.taskPlan.taskId}
+                        />
+                      )}
+
+                      {/* Thẻ Tiến Trình Live Execution (Live Progress Streaming via SSE) */}
+                      {!isUser && m.executionState && (
+                        <AiLiveExecutionCard
+                          initialState={m.executionState}
+                          onViewWorkspace={() => m.taskPlan && handleOpenWorkspace(m.taskPlan)}
+                          onCompleted={(card) => handleTaskCompleted(m.id, card)}
+                        />
+                      )}
+
                       {/* Thẻ Kiểm Tra Kết Quả sau khi AI thao tác (Verification Card) */}
-                      {!isUser && m.verificationCard && (
+                      {!isUser && m.verificationCard && !m.executionState && (
                         <AiVerificationCard data={m.verificationCard} />
                       )}
 
@@ -1563,6 +1692,15 @@ HƯỚNG DẪN TRẢ LỜI:
             </form>
           </div>
         </div>
+      )}
+
+      {/* KHÔNG GIAN LÀM VIỆC TRỰC QUAN LIVE WORKSPACE */}
+      {selectedWorkspacePlan && (
+        <AiLiveWorkspace
+          plan={selectedWorkspacePlan}
+          isOpen={Boolean(selectedWorkspacePlan)}
+          onClose={() => setSelectedWorkspacePlan(null)}
+        />
       )}
     </>
   );

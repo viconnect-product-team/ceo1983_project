@@ -1,5 +1,65 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
+  - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
+    * **Case 1 (Public Opportunity & Deal Margin Ranking)**:
+      - Đăng cơ hội kinh doanh công khai (`visibility: public` / `scope: all`) với tiêu chí chiết khấu hoa hồng rõ ràng.
+      - Thành viên khác xem cơ hội trên sàn giao thương và gửi đề xuất Deal chào giá (`deal_amount`, `% lợi nhuận / hoa hồng`).
+      - Người đăng cơ hội mở tab "Ai đang quan tâm / Deal cơ hội của tôi", kích hoạt bộ lọc `% Có lợi nhất cho tôi` (`highest_benefit` descending): Danh sách đề xuất Deal tự động sắp xếp theo thứ tự mang lại lợi nhuận cao nhất từ trên xuống dưới.
+      - Minh chứng: `tc_01_public_opp_created.png`, `tc_02_submit_deal_proposal.png`, `tc_03_deals_ranked_by_profit.png`.
+    * **Case 2 (Assigned / Private Opportunity & Strict Privacy Boundary Verification)**:
+      - Đăng cơ hội chỉ định đích danh một hội viên cụ thể (`targetMemberId` / `assignedMembers` - User B: `vumikasa6@gmail.com`).
+      - Cơ chế bảo mật và phân quyền trên backend (`opportunity.service.ts`) đảm bảo chỉ hội viên được chỉ định mới nhìn thấy cơ hội này trên giao diện, các thành viên khác hoàn toàn không thấy.
+      - **Kiểm thử đối chiếu 3 người dùng thực tế trên domain `ceo1983.viconnect.vn`**:
+        + Người tạo A (`info@viconnect.vn`): Tạo cơ hội Private thành công. Minh chứng: `private_test_01_userA_created_private_opp.png`.
+        + Người B được chỉ định (`vumikasa6@gmail.com`): Đăng nhập và **THẤY** cơ hội hiển thị rõ ràng trên giao diện của mình. Minh chứng: `private_test_02_userB_SEES_private_opp.png`.
+        + Người C không liên quan (`vupv090120@gmail.com`): Đăng nhập và **HOÀN TOÀN KHÔNG THẤY** cơ hội này trên sàn giao thương (xác nhận ranh giới bảo mật private hoạt động tuyệt đối). Minh chứng: `private_test_03_userC_CANNOT_SEE_private_opp.png`.
+      - Hội viên B thiết lập kết nối B2B 1-1 (`/association/connect`) đề xuất gặp mặt. Minh chứng: `private_test_04_userB_sends_b2b_meeting_request.png`.
+    * **Case 3 (Accept B2B Connection & Save to Calendar & Activity - Strictly for Connected Partners)**:
+      - Người trao cơ hội A nhận đề xuất gặp mặt và bấm "Đồng ý lịch hẹn" (Accept Connection). Minh chứng: `private_test_05_userA_accepts_b2b_meeting.png`.
+      - Hệ thống tự động lưu chi tiết buổi gặp gỡ vào Lịch cá nhân (`/association/calendar`) và Nhật ký hoạt động (`/association/connect`) của Người A và Người B, đồng thời kích hoạt nhắc hẹn qua Email. Minh chứng: `private_test_06_meeting_saved_calendar_and_email_reminder.png`.
+      - Người C không liên quan mở Lịch (`/association/calendar`): **HOÀN TOÀN KHÔNG CÓ** buổi gặp B2B này (xác thực chỉ 2 người có kết nối B2B với nhau mới nhìn thấy thông tin buổi hẹn). Minh chứng: `private_test_07_userC_calendar_no_private_meeting.png`.
+    * **Case 4 (Meeting Calendar Reminder via Email)**:
+      - Thiết lập cài đặt nhắc nhở trước buổi họp (Trước 15 phút, 1 giờ, hoặc 1 ngày).
+      - Hệ thống tự động đồng bộ lịch và gửi email thông báo nhắc nhở đến hòm thư của hai bên đối tác.
+      - Minh chứng: `tc_07_calendar_reminder_email_set.png`.
+  - **2. Kiểm thử Thành Công Phân Hệ Web CRM Quản Trị (`https://crm.ceo1983.viconnect.vn`)**:
+    * **Case 5 (Financial Report Export with Category, Date & Exporter)**:
+      - Bổ sung thanh thông tin kiểm soát 3 thành phần trong modal xuất báo cáo (`InvoiceExportModal.tsx`):
+        + 🏷️ **Danh mục báo cáo**: Hiển thị chính xác danh mục được chọn (VD: "Hội phí thường niên" / "Tất cả danh mục").
+        + 📅 **Ngày xuất báo cáo**: Hiển thị ngày thực tế theo định dạng chuẩn DD/MM/YYYY.
+        + 👤 **Người xuất báo cáo**: Tự động nhận diện Họ tên và Vai trò của người đăng nhập (VD: "Quản Trị Viên Hệ Thống (SUPER_ADMIN)").
+      - Toàn bộ metadata này được nhúng đồng bộ vào tiêu đề file Excel xuất ra và khung xem trước in A4.
+      - Minh chứng: `tc_08_crm_finance_report_categorized.png`.
+    * **Case 6 (Event Guest Excel Import & Auto Email Dispatch)**:
+      - Triển khai modal nhập Excel khách mời sự kiện (`EventGuestExcelImportModal.tsx`) trên trang Đăng ký sự kiện (`/event-registrations`).
+      - Đọc và phân tích tự động các cột: Họ tên, Email, Số điện thoại, Đơn vị/Công ty, Số bàn/Ghế, Loại vé kèm kiểm tra tính hợp lệ email.
+      - Khi bấm "Nhập & Gửi Email Thư Mời", hệ thống ghi nhận danh sách khách mời vào bảng đăng ký sự kiện và tự động gửi email thư mời sự kiện trực tiếp tới toàn bộ hòm thư của khách mời có trong tệp Excel.
+      - Minh chứng: `tc_09_event_guest_excel_import_preview.png`, `tc_10_event_guests_imported_email_dispatched.png`.
+  - **3. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL chuẩn duy nhất: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Typecheck TypeScript: `tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt 0 lỗi (Exit Code 0), `tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` đạt 0 lỗi (Exit Code 0).
+    * Tuân thủ quy định tối cao: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.66): Triển Khai Toàn Diện Hệ Thống Dynamic Autonomous AI Agent Đa Nền Tảng (Web CRM & Mobile App) Chuẩn Master Prompt: Kiểm Duyệt Bắt Buộc (Human Approval), Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision), Live Execution Streaming & Workspace Trực Quan ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CRM-001]..[NODE-CRM-024], [NODE-APP-001]..[NODE-APP-017])**:
+  - **1. Xây Dựng Kiến Trúc AI Core Độc Lập & Toàn Diện (Unified AI Architecture)**:
+    * **DynamicTaskPlannerService**: Tiếp nhận yêu cầu ngôn ngữ tự nhiên từ người dùng, phân loại nghiệp vụ (Logistics, Thư mời, Import Excel, Sự kiện, Đào tạo, Sàn TM B2B, Tài chính TT200), bóc tách số lượng bản ghi và lập Kế Hoạch Thực Hiện có cấu trúc (Task Plan v1) gồm: Mục tiêu, phạm vi module, nguồn dữ liệu (CSDL PostgreSQL `113.20.107.184:6432`), các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã băm payload bất biến (`payloadHash`).
+    * **ConversationalRevisionService (Giai đoạn 4)**: Không coi bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và chỉnh sửa nhiều lần trước khi duyệt ("Không cần tìm doanh nghiệp nhỏ, chỉ lấy quy mô vừa và lớn", "Không gửi Zalo, chỉ gửi email", "Thêm giới thiệu quyền lợi hội viên và đính kèm hồ sơ CLB", "Làm theo hướng chuyên nghiệp hơn"). Giữ nguyên các yêu cầu không đổi, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải thông báo Diff trực quan (Thêm mới, Điều chỉnh, Loại bỏ). Tự động vô hiệu hóa phê duyệt của phiên bản cũ.
+    * **ApprovalService (Giai đoạn 5 - QUY CHUẨN TỐI CAO: NO APPROVAL = NO EXECUTION)**: Tuyệt đối không tự động thực thi chỉ qua lời nói hoặc câu chat thông thường ("OK", "Làm đi", "Được rồi"). Bắt buộc người dùng phải nhấn nút **DUYỆT THỰC HIỆN** gắn với chính xác `taskId`, `revisionVersion` và `payloadHash`. Xác thực chặt chẽ quyền RBAC của người duyệt (AI Admin vs AI Member) và ghi nhận nhật ký kiểm toán bất biến vào bảng `public.audit_logs`.
+    * **TaskExecutionService (Giai đoạn 6 & 7)**: Điều phối thực thi tuần tự từng bước đã duyệt qua các công cụ. Trạng thái từng bước (`PENDING` -> `RUNNING` -> `COMPLETED` / `FAILED`) được lưu bền vững vào CSDL `113.20.107.184:6432` (`public.ai_agent_tasks`), đảm bảo an toàn tuyệt đối khi người dùng chuyển màn hình, mở lại hội thoại, F5 hoặc khi backend khởi động lại.
+    * **AiToolRegistryService (Giai đoạn 9)**: Đăng ký danh mục 10 nhóm công cụ: CRM, Event, Training, Document, Email, Zalo, Marketplace, Community, Finance, External Research với đầy đủ Input/Output schema, Risk Level (LOW, MEDIUM, HIGH, CRITICAL), quyền RBAC và chính sách Idempotency.
+  - **2. Bộ Thành Phần Giao Diện Live Trực Quan Đẳng Cấp (Frontend Components)**:
+    * **`AiTaskPlanCard.tsx`**: Thẻ kế hoạch chờ duyệt với đầy đủ 3 Tab (Các bước thực hiện, Xem trước nội dung, Kiểm tra rủi ro), dải Diff thay đổi giữa các phiên bản, 4 nút điều khiển (`DUYỆT THỰC HIỆN`, `CHỈNH SỬA YÊU CẦU`, `XEM WORKSPACE`, `HỦY TÁC VỤ`).
+    * **`AiLiveExecutionCard.tsx`**: Thẻ hiển thị trực tiếp AI đang thao tác theo thời gian thực (Live Progress Streaming qua Server-Sent Events `/api/ai/agent/tasks/:taskId/stream` & WebSocket), progress bar tổng, số bản ghi đã xử lý, thành công, thất bại, thời gian trôi qua, trạng thái từng bước và khung Activity Stream logs. Tự động chuyển giao sang `AiVerificationCard` khi hoàn thành 100%.
+    * **`AiLiveWorkspace.tsx`**: Không gian làm việc trực quan tương tác (Visual Action Interface) cho từng loại tác vụ: Bảng dữ liệu đối soát từng dòng (hợp lệ / cần xác minh / lỗi), khung xem trước email chính thức HTML, nguồn trích dẫn tra cứu đối tác ngoài.
+  - **3. Tích Hợp Đồng Bộ Cho Cả 2 Phân Hệ (Web CRM Quản Trị & Mobile App Hội Viên)**:
+    * **Web CRM Quản Trị (`CrmChatGPTView.tsx`)**: Tích hợp luồng Autonomous Agent song hành cùng hệ thống Cố vấn Điều hành CRM, tự động phát hiện lệnh tác vụ hoặc tiếp tục điều chỉnh phiên bản kế hoạch đang chờ duyệt.
+    * **Mobile App CEO 1983 (`Ceo1983ChatAssistant.tsx`)**: Tích hợp các thẻ hành động tối ưu cho màn hình cảm ứng di động, phân quyền hội viên an toàn, chống việc gọi trái phép các công cụ quản trị CRM.
+  - **4. Kiểm Thử & Xác Nhận Chất Lượng Mã Nguồn**:
+    * Backend NestJS: `npm run build` đạt Exit Code 0 (0 errors).
+    * Frontend React/Vite: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt Exit Code 0 (0 errors).
+    * Tuân thủ triệt để nguyên tắc không mock fake dữ liệu và không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
     * **Nguyên nhân gốc rễ**: 
@@ -1682,6 +1742,66 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
+  - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
+    * **Case 1 (Public Opportunity & Deal Margin Ranking)**:
+      - Đăng cơ hội kinh doanh công khai (`visibility: public` / `scope: all`) với tiêu chí chiết khấu hoa hồng rõ ràng.
+      - Thành viên khác xem cơ hội trên sàn giao thương và gửi đề xuất Deal chào giá (`deal_amount`, `% lợi nhuận / hoa hồng`).
+      - Người đăng cơ hội mở tab "Ai đang quan tâm / Deal cơ hội của tôi", kích hoạt bộ lọc `% Có lợi nhất cho tôi` (`highest_benefit` descending): Danh sách đề xuất Deal tự động sắp xếp theo thứ tự mang lại lợi nhuận cao nhất từ trên xuống dưới.
+      - Minh chứng: `tc_01_public_opp_created.png`, `tc_02_submit_deal_proposal.png`, `tc_03_deals_ranked_by_profit.png`.
+    * **Case 2 (Assigned / Private Opportunity & Strict Privacy Boundary Verification)**:
+      - Đăng cơ hội chỉ định đích danh một hội viên cụ thể (`targetMemberId` / `assignedMembers` - User B: `vumikasa6@gmail.com`).
+      - Cơ chế bảo mật và phân quyền trên backend (`opportunity.service.ts`) đảm bảo chỉ hội viên được chỉ định mới nhìn thấy cơ hội này trên giao diện, các thành viên khác hoàn toàn không thấy.
+      - **Kiểm thử đối chiếu 3 người dùng thực tế trên domain `ceo1983.viconnect.vn`**:
+        + Người tạo A (`info@viconnect.vn`): Tạo cơ hội Private thành công. Minh chứng: `private_test_01_userA_created_private_opp.png`.
+        + Người B được chỉ định (`vumikasa6@gmail.com`): Đăng nhập và **THẤY** cơ hội hiển thị rõ ràng trên giao diện của mình. Minh chứng: `private_test_02_userB_SEES_private_opp.png`.
+        + Người C không liên quan (`vupv090120@gmail.com`): Đăng nhập và **HOÀN TOÀN KHÔNG THẤY** cơ hội này trên sàn giao thương (xác nhận ranh giới bảo mật private hoạt động tuyệt đối). Minh chứng: `private_test_03_userC_CANNOT_SEE_private_opp.png`.
+      - Hội viên B thiết lập kết nối B2B 1-1 (`/association/connect`) đề xuất gặp mặt. Minh chứng: `private_test_04_userB_sends_b2b_meeting_request.png`.
+    * **Case 3 (Accept B2B Connection & Save to Calendar & Activity - Strictly for Connected Partners)**:
+      - Người trao cơ hội A nhận đề xuất gặp mặt và bấm "Đồng ý lịch hẹn" (Accept Connection). Minh chứng: `private_test_05_userA_accepts_b2b_meeting.png`.
+      - Hệ thống tự động lưu chi tiết buổi gặp gỡ vào Lịch cá nhân (`/association/calendar`) và Nhật ký hoạt động (`/association/connect`) của Người A và Người B, đồng thời kích hoạt nhắc hẹn qua Email. Minh chứng: `private_test_06_meeting_saved_calendar_and_email_reminder.png`.
+      - Người C không liên quan mở Lịch (`/association/calendar`): **HOÀN TOÀN KHÔNG CÓ** buổi gặp B2B này (xác thực chỉ 2 người có kết nối B2B với nhau mới nhìn thấy thông tin buổi hẹn). Minh chứng: `private_test_07_userC_calendar_no_private_meeting.png`.
+    * **Case 4 (Meeting Calendar Reminder via Email)**:
+      - Thiết lập cài đặt nhắc nhở trước buổi họp (Trước 15 phút, 1 giờ, hoặc 1 ngày).
+      - Hệ thống tự động đồng bộ lịch và gửi email thông báo nhắc nhở đến hòm thư của hai bên đối tác.
+      - Minh chứng: `tc_07_calendar_reminder_email_set.png`.
+  - **2. Kiểm thử Thành Công Phân Hệ Web CRM Quản Trị (`https://crm.ceo1983.viconnect.vn`)**:
+    * **Case 5 (Financial Report Export with Category, Date & Exporter)**:
+      - Bổ sung thanh thông tin kiểm soát 3 thành phần trong modal xuất báo cáo (`InvoiceExportModal.tsx`):
+        + 🏷️ **Danh mục báo cáo**: Hiển thị chính xác danh mục được chọn (VD: "Hội phí thường niên" / "Tất cả danh mục").
+        + 📅 **Ngày xuất báo cáo**: Hiển thị ngày thực tế theo định dạng chuẩn DD/MM/YYYY.
+        + 👤 **Người xuất báo cáo**: Tự động nhận diện Họ tên và Vai trò của người đăng nhập (VD: "Quản Trị Viên Hệ Thống (SUPER_ADMIN)").
+      - Toàn bộ metadata này được nhúng đồng bộ vào tiêu đề file Excel xuất ra và khung xem trước in A4.
+      - Minh chứng: `tc_08_crm_finance_report_categorized.png`.
+    * **Case 6 (Event Guest Excel Import & Auto Email Dispatch)**:
+      - Triển khai modal nhập Excel khách mời sự kiện (`EventGuestExcelImportModal.tsx`) trên trang Đăng ký sự kiện (`/event-registrations`).
+      - Đọc và phân tích tự động các cột: Họ tên, Email, Số điện thoại, Đơn vị/Công ty, Số bàn/Ghế, Loại vé kèm kiểm tra tính hợp lệ email.
+      - Khi bấm "Nhập & Gửi Email Thư Mời", hệ thống ghi nhận danh sách khách mời vào bảng đăng ký sự kiện và tự động gửi email thư mời sự kiện trực tiếp tới toàn bộ hòm thư của khách mời có trong tệp Excel.
+      - Minh chứng: `tc_09_event_guest_excel_import_preview.png`, `tc_10_event_guests_imported_email_dispatched.png`.
+  - **3. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL chuẩn duy nhất: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Typecheck TypeScript: `tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt 0 lỗi (Exit Code 0), `tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` đạt 0 lỗi (Exit Code 0).
+    * Tuân thủ quy định tối cao: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.66): Triển Khai Toàn Diện Hệ Thống Dynamic Autonomous AI Agent Đa Nền Tảng (Web CRM & Mobile App) Chuẩn Master Prompt: Kiểm Duyệt Bắt Buộc (Human Approval), Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision), Live Execution Streaming & Workspace Trực Quan ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CRM-001]..[NODE-CRM-024], [NODE-APP-001]..[NODE-APP-017])**:
+  - **1. Xây Dựng Kiến Trúc AI Core Độc Lập & Toàn Diện (Unified AI Architecture)**:
+    * **DynamicTaskPlannerService**: Tiếp nhận yêu cầu ngôn ngữ tự nhiên từ người dùng, phân loại nghiệp vụ (Logistics, Thư mời, Import Excel, Sự kiện, Đào tạo, Sàn TM B2B, Tài chính TT200), bóc tách số lượng bản ghi và lập Kế Hoạch Thực Hiện có cấu trúc (Task Plan v1) gồm: Mục tiêu, phạm vi module, nguồn dữ liệu (CSDL PostgreSQL `113.20.107.184:6432`), các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã băm payload bất biến (`payloadHash`).
+    * **ConversationalRevisionService (Giai đoạn 4)**: Không coi bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và chỉnh sửa nhiều lần trước khi duyệt ("Không cần tìm doanh nghiệp nhỏ, chỉ lấy quy mô vừa và lớn", "Không gửi Zalo, chỉ gửi email", "Thêm giới thiệu quyền lợi hội viên và đính kèm hồ sơ CLB", "Làm theo hướng chuyên nghiệp hơn"). Giữ nguyên các yêu cầu không đổi, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải thông báo Diff trực quan (Thêm mới, Điều chỉnh, Loại bỏ). Tự động vô hiệu hóa phê duyệt của phiên bản cũ.
+    * **ApprovalService (Giai đoạn 5 - QUY CHUẨN TỐI CAO: NO APPROVAL = NO EXECUTION)**: Tuyệt đối không tự động thực thi chỉ qua lời nói hoặc câu chat thông thường ("OK", "Làm đi", "Được rồi"). Bắt buộc người dùng phải nhấn nút **DUYỆT THỰC HIỆN** gắn với chính xác `taskId`, `revisionVersion` và `payloadHash`. Xác thực chặt chẽ quyền RBAC của người duyệt (AI Admin vs AI Member) và ghi nhận nhật ký kiểm toán bất biến vào bảng `public.audit_logs`.
+    * **TaskExecutionService (Giai đoạn 6 & 7)**: Điều phối thực thi tuần tự từng bước đã duyệt qua các công cụ. Trạng thái từng bước (`PENDING` -> `RUNNING` -> `COMPLETED` / `FAILED`) được lưu bền vững vào CSDL `113.20.107.184:6432` (`public.ai_agent_tasks`), đảm bảo an toàn tuyệt đối khi người dùng chuyển màn hình, mở lại hội thoại, F5 hoặc khi backend khởi động lại.
+    * **AiToolRegistryService (Giai đoạn 9)**: Đăng ký danh mục 10 nhóm công cụ: CRM, Event, Training, Document, Email, Zalo, Marketplace, Community, Finance, External Research với đầy đủ Input/Output schema, Risk Level (LOW, MEDIUM, HIGH, CRITICAL), quyền RBAC và chính sách Idempotency.
+  - **2. Bộ Thành Phần Giao Diện Live Trực Quan Đẳng Cấp (Frontend Components)**:
+    * **`AiTaskPlanCard.tsx`**: Thẻ kế hoạch chờ duyệt với đầy đủ 3 Tab (Các bước thực hiện, Xem trước nội dung, Kiểm tra rủi ro), dải Diff thay đổi giữa các phiên bản, 4 nút điều khiển (`DUYỆT THỰC HIỆN`, `CHỈNH SỬA YÊU CẦU`, `XEM WORKSPACE`, `HỦY TÁC VỤ`).
+    * **`AiLiveExecutionCard.tsx`**: Thẻ hiển thị trực tiếp AI đang thao tác theo thời gian thực (Live Progress Streaming qua Server-Sent Events `/api/ai/agent/tasks/:taskId/stream` & WebSocket), progress bar tổng, số bản ghi đã xử lý, thành công, thất bại, thời gian trôi qua, trạng thái từng bước và khung Activity Stream logs. Tự động chuyển giao sang `AiVerificationCard` khi hoàn thành 100%.
+    * **`AiLiveWorkspace.tsx`**: Không gian làm việc trực quan tương tác (Visual Action Interface) cho từng loại tác vụ: Bảng dữ liệu đối soát từng dòng (hợp lệ / cần xác minh / lỗi), khung xem trước email chính thức HTML, nguồn trích dẫn tra cứu đối tác ngoài.
+  - **3. Tích Hợp Đồng Bộ Cho Cả 2 Phân Hệ (Web CRM Quản Trị & Mobile App Hội Viên)**:
+    * **Web CRM Quản Trị (`CrmChatGPTView.tsx`)**: Tích hợp luồng Autonomous Agent song hành cùng hệ thống Cố vấn Điều hành CRM, tự động phát hiện lệnh tác vụ hoặc tiếp tục điều chỉnh phiên bản kế hoạch đang chờ duyệt.
+    * **Mobile App CEO 1983 (`Ceo1983ChatAssistant.tsx`)**: Tích hợp các thẻ hành động tối ưu cho màn hình cảm ứng di động, phân quyền hội viên an toàn, chống việc gọi trái phép các công cụ quản trị CRM.
+  - **4. Kiểm Thử & Xác Nhận Chất Lượng Mã Nguồn**:
+    * Backend NestJS: `npm run build` đạt Exit Code 0 (0 errors).
+    * Frontend React/Vite: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt Exit Code 0 (0 errors).
+    * Tuân thủ triệt để nguyên tắc không mock fake dữ liệu và không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
@@ -4607,6 +4727,66 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
+  - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
+    * **Case 1 (Public Opportunity & Deal Margin Ranking)**:
+      - Đăng cơ hội kinh doanh công khai (`visibility: public` / `scope: all`) với tiêu chí chiết khấu hoa hồng rõ ràng.
+      - Thành viên khác xem cơ hội trên sàn giao thương và gửi đề xuất Deal chào giá (`deal_amount`, `% lợi nhuận / hoa hồng`).
+      - Người đăng cơ hội mở tab "Ai đang quan tâm / Deal cơ hội của tôi", kích hoạt bộ lọc `% Có lợi nhất cho tôi` (`highest_benefit` descending): Danh sách đề xuất Deal tự động sắp xếp theo thứ tự mang lại lợi nhuận cao nhất từ trên xuống dưới.
+      - Minh chứng: `tc_01_public_opp_created.png`, `tc_02_submit_deal_proposal.png`, `tc_03_deals_ranked_by_profit.png`.
+    * **Case 2 (Assigned / Private Opportunity & Strict Privacy Boundary Verification)**:
+      - Đăng cơ hội chỉ định đích danh một hội viên cụ thể (`targetMemberId` / `assignedMembers` - User B: `vumikasa6@gmail.com`).
+      - Cơ chế bảo mật và phân quyền trên backend (`opportunity.service.ts`) đảm bảo chỉ hội viên được chỉ định mới nhìn thấy cơ hội này trên giao diện, các thành viên khác hoàn toàn không thấy.
+      - **Kiểm thử đối chiếu 3 người dùng thực tế trên domain `ceo1983.viconnect.vn`**:
+        + Người tạo A (`info@viconnect.vn`): Tạo cơ hội Private thành công. Minh chứng: `private_test_01_userA_created_private_opp.png`.
+        + Người B được chỉ định (`vumikasa6@gmail.com`): Đăng nhập và **THẤY** cơ hội hiển thị rõ ràng trên giao diện của mình. Minh chứng: `private_test_02_userB_SEES_private_opp.png`.
+        + Người C không liên quan (`vupv090120@gmail.com`): Đăng nhập và **HOÀN TOÀN KHÔNG THẤY** cơ hội này trên sàn giao thương (xác nhận ranh giới bảo mật private hoạt động tuyệt đối). Minh chứng: `private_test_03_userC_CANNOT_SEE_private_opp.png`.
+      - Hội viên B thiết lập kết nối B2B 1-1 (`/association/connect`) đề xuất gặp mặt. Minh chứng: `private_test_04_userB_sends_b2b_meeting_request.png`.
+    * **Case 3 (Accept B2B Connection & Save to Calendar & Activity - Strictly for Connected Partners)**:
+      - Người trao cơ hội A nhận đề xuất gặp mặt và bấm "Đồng ý lịch hẹn" (Accept Connection). Minh chứng: `private_test_05_userA_accepts_b2b_meeting.png`.
+      - Hệ thống tự động lưu chi tiết buổi gặp gỡ vào Lịch cá nhân (`/association/calendar`) và Nhật ký hoạt động (`/association/connect`) của Người A và Người B, đồng thời kích hoạt nhắc hẹn qua Email. Minh chứng: `private_test_06_meeting_saved_calendar_and_email_reminder.png`.
+      - Người C không liên quan mở Lịch (`/association/calendar`): **HOÀN TOÀN KHÔNG CÓ** buổi gặp B2B này (xác thực chỉ 2 người có kết nối B2B với nhau mới nhìn thấy thông tin buổi hẹn). Minh chứng: `private_test_07_userC_calendar_no_private_meeting.png`.
+    * **Case 4 (Meeting Calendar Reminder via Email)**:
+      - Thiết lập cài đặt nhắc nhở trước buổi họp (Trước 15 phút, 1 giờ, hoặc 1 ngày).
+      - Hệ thống tự động đồng bộ lịch và gửi email thông báo nhắc nhở đến hòm thư của hai bên đối tác.
+      - Minh chứng: `tc_07_calendar_reminder_email_set.png`.
+  - **2. Kiểm thử Thành Công Phân Hệ Web CRM Quản Trị (`https://crm.ceo1983.viconnect.vn`)**:
+    * **Case 5 (Financial Report Export with Category, Date & Exporter)**:
+      - Bổ sung thanh thông tin kiểm soát 3 thành phần trong modal xuất báo cáo (`InvoiceExportModal.tsx`):
+        + 🏷️ **Danh mục báo cáo**: Hiển thị chính xác danh mục được chọn (VD: "Hội phí thường niên" / "Tất cả danh mục").
+        + 📅 **Ngày xuất báo cáo**: Hiển thị ngày thực tế theo định dạng chuẩn DD/MM/YYYY.
+        + 👤 **Người xuất báo cáo**: Tự động nhận diện Họ tên và Vai trò của người đăng nhập (VD: "Quản Trị Viên Hệ Thống (SUPER_ADMIN)").
+      - Toàn bộ metadata này được nhúng đồng bộ vào tiêu đề file Excel xuất ra và khung xem trước in A4.
+      - Minh chứng: `tc_08_crm_finance_report_categorized.png`.
+    * **Case 6 (Event Guest Excel Import & Auto Email Dispatch)**:
+      - Triển khai modal nhập Excel khách mời sự kiện (`EventGuestExcelImportModal.tsx`) trên trang Đăng ký sự kiện (`/event-registrations`).
+      - Đọc và phân tích tự động các cột: Họ tên, Email, Số điện thoại, Đơn vị/Công ty, Số bàn/Ghế, Loại vé kèm kiểm tra tính hợp lệ email.
+      - Khi bấm "Nhập & Gửi Email Thư Mời", hệ thống ghi nhận danh sách khách mời vào bảng đăng ký sự kiện và tự động gửi email thư mời sự kiện trực tiếp tới toàn bộ hòm thư của khách mời có trong tệp Excel.
+      - Minh chứng: `tc_09_event_guest_excel_import_preview.png`, `tc_10_event_guests_imported_email_dispatched.png`.
+  - **3. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL chuẩn duy nhất: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Typecheck TypeScript: `tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt 0 lỗi (Exit Code 0), `tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` đạt 0 lỗi (Exit Code 0).
+    * Tuân thủ quy định tối cao: Không tự ý chạy `git push` hay `git commit`.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.66): Triển Khai Toàn Diện Hệ Thống Dynamic Autonomous AI Agent Đa Nền Tảng (Web CRM & Mobile App) Chuẩn Master Prompt: Kiểm Duyệt Bắt Buộc (Human Approval), Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision), Live Execution Streaming & Workspace Trực Quan ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CRM-001]..[NODE-CRM-024], [NODE-APP-001]..[NODE-APP-017])**:
+  - **1. Xây Dựng Kiến Trúc AI Core Độc Lập & Toàn Diện (Unified AI Architecture)**:
+    * **DynamicTaskPlannerService**: Tiếp nhận yêu cầu ngôn ngữ tự nhiên từ người dùng, phân loại nghiệp vụ (Logistics, Thư mời, Import Excel, Sự kiện, Đào tạo, Sàn TM B2B, Tài chính TT200), bóc tách số lượng bản ghi và lập Kế Hoạch Thực Hiện có cấu trúc (Task Plan v1) gồm: Mục tiêu, phạm vi module, nguồn dữ liệu (CSDL PostgreSQL `113.20.107.184:6432`), các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã băm payload bất biến (`payloadHash`).
+    * **ConversationalRevisionService (Giai đoạn 4)**: Không coi bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và chỉnh sửa nhiều lần trước khi duyệt ("Không cần tìm doanh nghiệp nhỏ, chỉ lấy quy mô vừa và lớn", "Không gửi Zalo, chỉ gửi email", "Thêm giới thiệu quyền lợi hội viên và đính kèm hồ sơ CLB", "Làm theo hướng chuyên nghiệp hơn"). Giữ nguyên các yêu cầu không đổi, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải thông báo Diff trực quan (Thêm mới, Điều chỉnh, Loại bỏ). Tự động vô hiệu hóa phê duyệt của phiên bản cũ.
+    * **ApprovalService (Giai đoạn 5 - QUY CHUẨN TỐI CAO: NO APPROVAL = NO EXECUTION)**: Tuyệt đối không tự động thực thi chỉ qua lời nói hoặc câu chat thông thường ("OK", "Làm đi", "Được rồi"). Bắt buộc người dùng phải nhấn nút **DUYỆT THỰC HIỆN** gắn với chính xác `taskId`, `revisionVersion` và `payloadHash`. Xác thực chặt chẽ quyền RBAC của người duyệt (AI Admin vs AI Member) và ghi nhận nhật ký kiểm toán bất biến vào bảng `public.audit_logs`.
+    * **TaskExecutionService (Giai đoạn 6 & 7)**: Điều phối thực thi tuần tự từng bước đã duyệt qua các công cụ. Trạng thái từng bước (`PENDING` -> `RUNNING` -> `COMPLETED` / `FAILED`) được lưu bền vững vào CSDL `113.20.107.184:6432` (`public.ai_agent_tasks`), đảm bảo an toàn tuyệt đối khi người dùng chuyển màn hình, mở lại hội thoại, F5 hoặc khi backend khởi động lại.
+    * **AiToolRegistryService (Giai đoạn 9)**: Đăng ký danh mục 10 nhóm công cụ: CRM, Event, Training, Document, Email, Zalo, Marketplace, Community, Finance, External Research với đầy đủ Input/Output schema, Risk Level (LOW, MEDIUM, HIGH, CRITICAL), quyền RBAC và chính sách Idempotency.
+  - **2. Bộ Thành Phần Giao Diện Live Trực Quan Đẳng Cấp (Frontend Components)**:
+    * **`AiTaskPlanCard.tsx`**: Thẻ kế hoạch chờ duyệt với đầy đủ 3 Tab (Các bước thực hiện, Xem trước nội dung, Kiểm tra rủi ro), dải Diff thay đổi giữa các phiên bản, 4 nút điều khiển (`DUYỆT THỰC HIỆN`, `CHỈNH SỬA YÊU CẦU`, `XEM WORKSPACE`, `HỦY TÁC VỤ`).
+    * **`AiLiveExecutionCard.tsx`**: Thẻ hiển thị trực tiếp AI đang thao tác theo thời gian thực (Live Progress Streaming qua Server-Sent Events `/api/ai/agent/tasks/:taskId/stream` & WebSocket), progress bar tổng, số bản ghi đã xử lý, thành công, thất bại, thời gian trôi qua, trạng thái từng bước và khung Activity Stream logs. Tự động chuyển giao sang `AiVerificationCard` khi hoàn thành 100%.
+    * **`AiLiveWorkspace.tsx`**: Không gian làm việc trực quan tương tác (Visual Action Interface) cho từng loại tác vụ: Bảng dữ liệu đối soát từng dòng (hợp lệ / cần xác minh / lỗi), khung xem trước email chính thức HTML, nguồn trích dẫn tra cứu đối tác ngoài.
+  - **3. Tích Hợp Đồng Bộ Cho Cả 2 Phân Hệ (Web CRM Quản Trị & Mobile App Hội Viên)**:
+    * **Web CRM Quản Trị (`CrmChatGPTView.tsx`)**: Tích hợp luồng Autonomous Agent song hành cùng hệ thống Cố vấn Điều hành CRM, tự động phát hiện lệnh tác vụ hoặc tiếp tục điều chỉnh phiên bản kế hoạch đang chờ duyệt.
+    * **Mobile App CEO 1983 (`Ceo1983ChatAssistant.tsx`)**: Tích hợp các thẻ hành động tối ưu cho màn hình cảm ứng di động, phân quyền hội viên an toàn, chống việc gọi trái phép các công cụ quản trị CRM.
+  - **4. Kiểm Thử & Xác Nhận Chất Lượng Mã Nguồn**:
+    * Backend NestJS: `npm run build` đạt Exit Code 0 (0 errors).
+    * Frontend React/Vite: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt Exit Code 0 (0 errors).
+    * Tuân thủ triệt để nguyên tắc không mock fake dữ liệu và không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
