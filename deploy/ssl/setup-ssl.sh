@@ -41,10 +41,142 @@ docker logs --tail 15 ceo1983-ssl-proxy 2>&1 || true
 # Tạm ngắt exit on error để các lệnh kiểm thử curl không làm fail script deploy
 set +e
 
-# Reload host nginx nếu đang chạy trên VPS để cập nhật cấu hình nếu có
-if systemctl is-active --quiet nginx 2>/dev/null; then
-    echo "[Host Nginx] Tải lại Nginx chính trên máy chủ chủ..."
-    systemctl reload nginx 2>/dev/null || true
+# 7. Tự động đồng bộ và cấu hình Nginx chính (Host Nginx) trên Ubuntu VPS
+if command -v nginx >/dev/null 2>&1; then
+    echo "[Host Nginx] Thiết lập cấu hình Reverse Proxy cho 2 Subdomain trên máy chủ VPS..."
+    mkdir -p /etc/nginx/ssl
+    cp -f /root/ssl-proxy/server.crt /etc/nginx/ssl/ceo1983.crt 2>/dev/null || true
+    cp -f /root/ssl-proxy/server.key /etc/nginx/ssl/ceo1983.key 2>/dev/null || true
+    chmod 644 /etc/nginx/ssl/ceo1983.* 2>/dev/null || true
+
+    SSL_CERT="/etc/nginx/ssl/ceo1983.crt"
+    SSL_KEY="/etc/nginx/ssl/ceo1983.key"
+    if [ -f /etc/letsencrypt/live/ceo1983.vn/fullchain.pem ]; then
+        SSL_CERT="/etc/letsencrypt/live/ceo1983.vn/fullchain.pem"
+        SSL_KEY="/etc/letsencrypt/live/ceo1983.vn/privkey.pem"
+    elif [ -f /etc/letsencrypt/live/viconnect.vn/fullchain.pem ]; then
+        SSL_CERT="/etc/letsencrypt/live/viconnect.vn/fullchain.pem"
+        SSL_KEY="/etc/letsencrypt/live/viconnect.vn/privkey.pem"
+    fi
+
+    cat << EOF > /etc/nginx/conf.d/ceo1983_subdomains.conf
+# =========================================================================
+# REVERSE PROXY CHO 2 SUBDOMAIN CEO 1983 & CRM (TU DONG DONG BO)
+# =========================================================================
+
+server {
+    listen 80;
+    server_name ceo1983.viconnect.vn crm.ceo1983.viconnect.vn app.ceo1983.vn crm.ceo1983.vn;
+    return 301 https://\$host\$request_uri;
+}
+
+# 1. Web CRM Hiệp Hội: https://crm.ceo1983.viconnect.vn
+server {
+    listen 443 ssl http2;
+    server_name crm.ceo1983.viconnect.vn crm.ceo1983.vn;
+
+    ssl_certificate $SSL_CERT;
+    ssl_certificate_key $SSL_KEY;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:5004;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:5005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+# 2. Mobile App CEO 1983: https://ceo1983.viconnect.vn
+server {
+    listen 443 ssl http2;
+    server_name ceo1983.viconnect.vn app.ceo1983.vn;
+
+    ssl_certificate $SSL_CERT;
+    ssl_certificate_key $SSL_KEY;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:5002;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:5003;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5003;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+EOF
+
+    # Đồng bộ sang sites-available/sites-enabled nếu hệ thống dùng cấu trúc sites
+    if [ -d /etc/nginx/sites-available ]; then
+        cp -f /etc/nginx/conf.d/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
+        mkdir -p /etc/nginx/sites-enabled
+        ln -sf /etc/nginx/sites-available/ceo1983_subdomains.conf /etc/nginx/sites-enabled/ 2>/dev/null || true
+    fi
+
+    # Kiểm tra tính hợp lệ trước khi reload
+    if nginx -t 2>/dev/null; then
+        echo "[Host Nginx] Cấu hình Nginx hợp lệ. Đang tải lại Nginx..."
+        systemctl reload nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
+    else
+        echo "[Host Nginx Cảnh Báo] Cấu hình Nginx có cảnh báo, không reload để tránh gián đoạn dịch vụ."
+    fi
 fi
 
 echo "--- TEST NỘI BỘ HTTPS 443 (SUBDOMAINS) ---"
