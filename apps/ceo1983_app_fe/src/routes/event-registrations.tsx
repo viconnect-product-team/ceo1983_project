@@ -23,6 +23,7 @@ import {
   XCircle,
   RefreshCw,
   Sparkles,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -47,6 +48,7 @@ import { useRole } from "@/hooks/use-role";
 import { EventReminderPosterModal } from "@/components/dashboard/EventReminderPosterModal";
 import { EventPosterStudioModal } from "@/components/dashboard/EventPosterStudioModal";
 import { VnpayPaymentModal } from "@/components/common/VnpayPaymentModal";
+import { EventGuestExcelImportModal } from "@/components/dashboard/EventGuestExcelImportModal";
 
 export const Route = createFileRoute("/event-registrations")({
   ssr: false,
@@ -178,6 +180,7 @@ function RegPage() {
 
   // Add Attendee / QR Checkin Modal state
   const [addAttendeeModalOpen, setAddAttendeeModalOpen] = useState(false);
+  const [guestExcelModalOpen, setGuestExcelModalOpen] = useState(false);
   const [eventReminderModalOpen, setEventReminderModalOpen] = useState(false);
   const [posterStudioOpen, setPosterStudioOpen] = useState(false);
   const [vnpayModalOpen, setVnpayModalOpen] = useState(false);
@@ -707,6 +710,14 @@ function RegPage() {
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer"
             >
               <span>Thêm Người Tham Dự</span>
+            </button>
+            <button
+              onClick={() => setGuestExcelModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              title="Nhập danh sách khách mời từ file Excel và tự động gửi email thư mời sự kiện"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Nhập Excel Khách Mời &amp; Gửi Mail</span>
             </button>
             <button className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer">
               <Download className="h-4 w-4 text-slate-500" />
@@ -1743,6 +1754,18 @@ function RegPage() {
         attendeeName={selectedVnpayReg?.memberName}
         memberCode={selectedVnpayReg?.memberCode}
         onSuccess={() => {
+          fetchLiveRegistrations();
+          router.invalidate();
+        }}
+      />
+
+      {/* Modal Nhập Khách Mời từ Excel & Tự Động Gửi Email Thư Mời Sự Kiện */}
+      <EventGuestExcelImportModal
+        isOpen={guestExcelModalOpen}
+        onClose={() => setGuestExcelModalOpen(false)}
+        events={EVENTS}
+        defaultEventId={EVENTS[0]?.id}
+        onImportSuccess={() => {
           fetchLiveRegistrations();
           router.invalidate();
         }}

@@ -11,7 +11,10 @@ import {
   CheckCircle2,
   Coins,
   ShieldCheck,
+  UserCheck,
+  Tag,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
 import { getFormTemplate, getCachedFormTemplates } from "@/lib/form-templates";
 import type { InvoiceTemplate } from "@/types/form-template.types";
@@ -45,12 +48,19 @@ export function InvoiceExportModal({
   sourceType,
   items,
 }: InvoiceExportModalProps) {
+  const { user } = useAuth();
+  const exporterName = user?.name || user?.username || "Admin Ban Quản Trị";
+  const exporterRole = user?.role === "admin" ? "Ban Quản Trị / Kế Toán Trưởng" : (user?.role || "Quản trị viên");
+  const exportDateStr = new Date().toLocaleDateString("vi-VN");
+
   const [exportMode, setExportMode] = useState<"all" | "category">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [timeFilter, setTimeFilter] = useState<"all" | "month" | "quarter" | "year">("year");
   const [invoiceTemplate, setInvoiceTemplate] = useState<InvoiceTemplate>(
     () => getCachedFormTemplates().INVOICE_RECEIPT_PDF
   );
+
+  const currentCategoryLabel = exportMode === "all" ? "Tất cả danh mục" : selectedCategory;
 
   useEffect(() => {
     let mounted = true;
@@ -195,7 +205,7 @@ export function InvoiceExportModal({
       filename,
       sheetName: "Hoa_Don_Chung_Tu",
       title: `BẢNG KÊ HÓA ĐƠN CHỨNG TỪ - ${exportMode === "all" ? "TỔNG HỢP" : selectedCategory.toUpperCase()}`,
-      subtitle: `CLB Doanh Nhân CEO 1983 (HanoiBA) - Xuất ngày ${new Date().toLocaleDateString("vi-VN")}`,
+      subtitle: `CLB Doanh Nhân CEO 1983 (HanoiBA) | Danh mục: ${currentCategoryLabel} | Ngày xuất: ${exportDateStr} | Người xuất: ${exporterName} (${exporterRole})`,
       columns: [
         { header: "STT", key: "index", width: 8, value: (r) => r.index },
         { header: "Mã Chứng Từ / Hóa Đơn", key: "code", width: 22, value: (r) => r.code },
@@ -211,10 +221,10 @@ export function InvoiceExportModal({
         ["TỔNG CỘNG THÀNH TIỀN:", "", "", "", "", "", "", formatExcelCurrency(totalAmount) + " đ"],
       ],
       amountInWords: numberToVietnameseWords(totalAmount),
-      signerTitles: ["NGƯỜI LẬP BẢNG", "KẾ TOÁN TRƯỞNG", "CHỦ TỊCH CLB CEO 1983"],
+      signerTitles: [`NGƯỜI XUẤT: ${exporterName}`, "KẾ TOÁN TRƯỞNG", "CHỦ TỊCH CLB CEO 1983"],
     });
 
-    toast.success("Xuất bảng kê hóa đơn Excel thành công!");
+    toast.success(`Đã xuất báo cáo danh mục "${currentCategoryLabel}" bởi ${exporterName} ngày ${exportDateStr} thành công!`);
   };
 
   return (
@@ -306,6 +316,31 @@ export function InvoiceExportModal({
           </div>
         </div>
 
+        {/* Export Metadata Info Banner (Req: Cụ thể danh mục, ngày xuất và người xuất báo cáo) */}
+        <div className="px-6 py-2.5 bg-blue-50/80 dark:bg-blue-950/30 border-b border-blue-200/60 dark:border-blue-800/40 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5 text-blue-600" />
+              Danh mục báo cáo:
+            </span>
+            <span className="px-2.5 py-0.5 rounded-md bg-[#003B95] text-white font-bold text-[11px] shadow-2xs">
+              {currentCategoryLabel}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+              <Calendar className="h-3.5 w-3.5 text-slate-500" />
+              <span><strong>Ngày xuất:</strong> {exportDateStr}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+              <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span><strong>Người xuất:</strong> {exporterName} <span className="text-[10px] text-slate-500 font-semibold">({exporterRole})</span></span>
+            </div>
+          </div>
+        </div>
+
         {/* Live A4 Document Preview */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-slate-100 dark:bg-slate-900/60 flex justify-center">
           <div
@@ -348,7 +383,15 @@ export function InvoiceExportModal({
                   <strong>Tài khoản thanh toán:</strong> 1983000000 - Cổng Quốc Gia VNPAY / MB Bank
                 </span>
                 <span>
-                  <strong>Ngày trích xuất:</strong> {new Date().toLocaleDateString("vi-VN")}
+                  <strong>Ngày trích xuất:</strong> {exportDateStr}
+                </span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-200">
+                <span>
+                  <strong>Danh mục báo cáo:</strong> <span className="text-blue-900 font-bold">{currentCategoryLabel}</span>
+                </span>
+                <span>
+                  <strong>Người xuất báo cáo:</strong> <span className="font-bold text-slate-900">{exporterName}</span> ({exporterRole})
                 </span>
               </div>
             </div>
