@@ -133,14 +133,15 @@ function PublicSharePage() {
         const qPrice = searchParams.get("price") || searchParams.get("value");
 
         if (type === "event") {
-          // Thử tải event từ backend
-          const single = await fetchNestApi<any>(`/events/${id}`).catch(() => null);
+          // Thử tải event từ public endpoint trước, sau đó fallback
+          const single = await fetchNestApi<any>(`/public/events/${id}`)
+            .catch(() => fetchNestApi<any>(`/events/${id}`).catch(() => null));
           const found = single || (await fetchNestApi<any[]>("/events").catch(() => [])).find((e: any) => String(e.id) === String(id));
           if (found && isMounted) {
             setItem({
               id: found.id,
               type: "event",
-              title: found.title,
+              title: found.title || found.name,
               subtitle: found.category || "Sự kiện CLB CEO 1983",
               content: found.description || found.content || "Chương trình sự kiện trọng điểm của CLB CEO 1983 - HanoiBA.",
               image: found.cover_image || found.banner_url || found.image || "/skyline_perspective_dark.jpg",
@@ -149,11 +150,31 @@ function PublicSharePage() {
               place: found.location || found.place,
               externalLink: found.fanpageUrl || found.webArticleUrl,
             });
-            recordExternalShareClick(found.id, "event", found.title, platform, false);
+            recordExternalShareClick(found.id, "event", found.title || found.name, platform, false);
+            return;
+          }
+        } else if (type === "meeting") {
+          const single = await fetchNestApi<any>(`/public/meetings/${id}`)
+            .catch(() => fetchNestApi<any>(`/meetings/${id}`).catch(() => null));
+          if (single && isMounted) {
+            setItem({
+              id: single.id,
+              type: "event",
+              title: single.title || "Cuộc họp Ban & Gặp gỡ CLB CEO 1983",
+              subtitle: "Cuộc họp & Gặp gỡ CLB",
+              content: single.description || "Nội dung cuộc họp kết nối Ban Điều Hành và Hội viên CLB Doanh Nhân CEO 1983.",
+              image: "/skyline_perspective_dark.jpg",
+              date: single.date,
+              time: single.time,
+              place: single.location || "Cung Tri Thức Thành Phố, Cầu Giấy, Hà Nội",
+              externalLink: single.meeting_link,
+            });
+            recordExternalShareClick(single.id, "meeting", single.title, platform, false);
             return;
           }
         } else if (type === "opportunity") {
-          const single = await fetchNestApi<any>(`/opportunities/${id}`).catch(() => null);
+          const single = await fetchNestApi<any>(`/public/opportunities/${id}`)
+            .catch(() => fetchNestApi<any>(`/opportunities/${id}`).catch(() => null));
           const found = single || (await fetchNestApi<any[]>("/opportunities").catch(() => [])).find((o: any) => String(o.id) === String(id));
           if (found && isMounted) {
             setItem({
@@ -189,7 +210,8 @@ function PublicSharePage() {
             return;
           }
         } else if (type === "post" || (type as string) === "feed") {
-          const single = await fetchNestApi<any>(`/feed/${id}`).catch(() => null);
+          const single = await fetchNestApi<any>(`/public/feed/${id}`)
+            .catch(() => fetchNestApi<any>(`/feed/${id}`).catch(() => null));
           const found = single || (await fetchNestApi<any[]>("/feed").catch(() => [])).find((p: any) => String(p.id) === String(id));
           if (found && isMounted) {
             setItem({
@@ -284,10 +306,10 @@ function PublicSharePage() {
     });
 
     navigate({
-      to: "/association/login",
+      to: "/association/login" as any,
       search: {
         redirect: targetUrl,
-      },
+      } as any,
     });
   };
 
@@ -451,8 +473,8 @@ function PublicSharePage() {
                 {item.type === "event" ? (
                   <>
                     <Link
-                      to="/guest-event-register/$eventId"
-                      params={{ eventId: item.id }}
+                      to={"/guest-event-register/$eventId" as any}
+                      params={{ eventId: item.id } as any}
                       className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-sm shadow-xl active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wide"
                     >
                       <Ticket className="size-4 stroke-[2.5]" />

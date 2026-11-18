@@ -100,4 +100,28 @@ export class PublicController {
   async getTrafficStats() {
     return this.connectAppService.getLandingTrafficStats();
   }
+
+  /**
+   * Public APIs for external sharing: Events, Meetings, Opportunities, Feed Posts
+   * Allows shared links outside the app (Zalo, Facebook, Web) to render complete formatting without login
+   */
+  @Get('events/:id')
+  async getPublicEvent(@Param('id') id: string) {
+    return this.connectAppService.getPublicEvent(id);
+  }
+
+  @Get('meetings/:id')
+  async getPublicMeeting(@Param('id') id: string) {
+    return this.connectAppService.getPublicMeeting(id);
+  }
+
+  @Get('opportunities/:id')
+  async getPublicOpportunity(@Param('id') id: string) {
+    return this.connectAppService.getOpportunityById(id, undefined);
+  }
+
+  @Get('feed/:id')
+  async getPublicFeedPost(@Param('id') id: string) {
+    return this.connectAppService.getPublicFeedPost(id);
+  }
 }

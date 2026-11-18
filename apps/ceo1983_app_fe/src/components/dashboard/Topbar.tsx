@@ -18,7 +18,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         <button
           onClick={onMenuClick}
           className="shrink-0 rounded-lg p-1.5 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-          aria-label="Open menu"
+          aria-label="Mở thanh điều hướng"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -31,10 +31,10 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           type="button"
           onClick={() => setOpen(true)}
           className="group flex h-9 lg:h-10 w-full items-center gap-2.5 rounded-full border border-border bg-secondary/80 pl-3.5 pr-2 text-left text-xs lg:text-sm text-muted-foreground transition-colors hover:border-ring/40 hover:bg-card focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-          aria-label={t("cmd.open")}
+          aria-label={t("cmd.open") || "Tìm kiếm nhanh"}
         >
           <Search className="h-4 w-4 shrink-0" />
-          <span className="flex-1 truncate">{t("top.search")}</span>
+          <span className="flex-1 truncate">{t("top.search") || "Tìm kiếm (Ctrl+K)..."}</span>
           <kbd className="hidden shrink-0 items-center gap-0.5 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground lg:inline-flex">
             ⌘K
           </kbd>
@@ -48,7 +48,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           type="button"
           onClick={() => setOpen(true)}
           className="rounded-full p-1.5 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
-          aria-label={t("cmd.open")}
+          aria-label={t("cmd.open") || "Tìm kiếm nhanh"}
         >
           <Search className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
@@ -58,7 +58,11 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         <ThemeSwitcher className="hidden sm:inline-flex" />
         <NotificationCenter />
 
-        <button className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:inline-flex">
+        <button
+          className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground xl:inline-flex"
+          title="Trợ giúp & Hướng dẫn"
+          aria-label="Trợ giúp & Hướng dẫn"
+        >
           <HelpCircle className="h-5 w-5" />
         </button>
 

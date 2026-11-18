@@ -188,21 +188,55 @@ function injectGlobalThemeOverride(theme: Ceo1983ColorTheme): void {
       --vba-theme-light-border: ${lightBorder} !important;
     }
 
-    /* Đổi biến CSS đồng bộ khi ở Dark Mode */
+    /* Đổi biến CSS đồng bộ khi ở Dark Mode (NỀN ĐEN THUẦN #000000 & CHỮ TRẮNG SÁNG) */
     html.dark,
     .dark {
+      --background: #000000 !important;
+      --foreground: #FFFFFF !important;
       --primary: ${primary} !important;
       --primary-foreground: #FFFFFF !important;
       --ring: ${accent} !important;
       --accent: ${accent} !important;
       --accent-foreground: #FFFFFF !important;
-      --card: ${darkSurface} !important;
-      --popover: ${darkSurface} !important;
+      --card: #0A0A0A !important;
+      --card-foreground: #FFFFFF !important;
+      --popover: #0A0A0A !important;
+      --popover-foreground: #FFFFFF !important;
       --border: ${darkBorder} !important;
       --input: ${darkBorderSoft} !important;
+      --vba-bg: #000000 !important;
+      --vba-bg-2: #050505 !important;
+      --vba-surface: #0A0A0A !important;
+      --vba-surface-2: #121212 !important;
       --vba-border: ${darkBorder} !important;
-      --vba-surface: ${darkSurface} !important;
-      --vba-surface-2: ${darkSurface2} !important;
+      --vba-border-soft: ${darkBorderSoft} !important;
+      --vba-text: #FFFFFF !important;
+      --vba-text-muted: #E2E8F0 !important;
+    }
+
+    /* Quy chuẩn: Text, Label, Tiêu đề, Tên nút, Placeholder luôn là màu trắng trên nền tối */
+    html.dark input::placeholder,
+    html.dark textarea::placeholder,
+    .dark input::placeholder,
+    .dark textarea::placeholder {
+      color: rgba(255, 255, 255, 0.75) !important;
+      opacity: 1 !important;
+    }
+
+    html.dark label,
+    .dark label,
+    html.dark [role="label"] {
+      color: #FFFFFF !important;
+    }
+
+    html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+    .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+      color: #FFFFFF !important;
+    }
+
+    html.dark .vba-app {
+      background-color: #000000 !important;
+      color: #FFFFFF !important;
     }
 
     /* 1. Recolor All Primary Buttons & Interactive Badges across all 3 brand colors */
@@ -369,14 +403,20 @@ export function applyCeo1983ColorTheme(themeId: Ceo1983ColorThemeId): void {
     document.body.dataset.appColorTheme = theme.id;
   }
 
-  const isDark = root.classList.contains("dark") || (typeof localStorage !== "undefined" && localStorage.getItem("theme") === "dark");
+  const isDark =
+    root.classList.contains("dark") ||
+    (typeof localStorage !== "undefined" &&
+      (localStorage.getItem("theme") === "dark" ||
+        localStorage.getItem("vba.theme") === "dark" ||
+        localStorage.getItem("vba.crm_theme") === "dark"));
 
-  const bg = isDark ? theme.threeColors[1] : "#FFFFFF";
-  const bg2 = isDark ? theme.darkSurface : "#F8FAFC";
-  const surface = isDark ? theme.darkSurface : "#FFFFFF";
-  const surface2 = isDark ? theme.darkSurface2 : "#F8FAFC";
+  // QUY TẮC BẮT BUỘC: Khi dùng theme tối, màu nền LUÔN LÀ MÀU ĐEN THUẦN (#000000)
+  const bg = isDark ? "#000000" : "#FFFFFF";
+  const bg2 = isDark ? "#050505" : "#F8FAFC";
+  const surface = isDark ? "#0A0A0A" : "#FFFFFF";
+  const surface2 = isDark ? "#121212" : "#F8FAFC";
   const textColor = isDark ? "#FFFFFF" : "#0F172A";
-  const textMuted = isDark ? "#94A3B8" : "#475569";
+  const textMuted = isDark ? "#E2E8F0" : "#475569";
 
   // Áp dụng biến CSS thời gian thực
   root.style.setProperty("--vba-bg", bg);

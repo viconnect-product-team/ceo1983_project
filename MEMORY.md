@@ -1,5 +1,71 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 18/11/2026 (v11.61): Tự Động Bóc Tách Tệp (Excel, Word, PDF) Cho Khởi Tạo Sự Kiện & Khóa Đào Tạo ([NODE-CRM-005], [NODE-CRM-014])**:
+  - **1. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Sự Kiện (`EventWizard.tsx`)**:
+    * Bổ sung vùng tải tệp (Dropzone Card) chuẩn nhận diện thương hiệu CEO 1983 tại bước 1 thông tin sự kiện.
+    * Thuộc tính: Không bắt buộc (`không require`).
+    * Hỗ trợ định dạng phong phú: Excel (`.xlsx`, `.xls`, `.csv`), Word (`.docx`), PDF (`.pdf`), Text (`.txt`).
+    * Tự động trích xuất và bóc tách thông minh:
+      - Tên sự kiện (`name` / `title`), Khẩu hiệu banner (`tagline`)
+      - Lịch & ngày giờ diễn ra (`date` YYYY-MM-DD, `startTime`, `endTime`)
+      - Địa điểm / Hội trường tổ chức (`location`)
+      - Sức chứa đại biểu / quy mô tham dự (`capacity`)
+      - Phân loại sự kiện tự động theo từ khóa (`forum`, `workshop`, `networking`, `training`, `charity`)
+      - Diễn giả / Khách mời (`speaker`, `speakerTitle`, `speakerCompany`) tự động tích hợp vào lịch trình
+      - Bố cục nội dung / Lịch trình chi tiết (`description`)
+      - Hạng vé & giá vé tham gia (`tickets`) nếu có
+    * Tự động điền đầy đủ dữ liệu bóc tách vào form và hiển thị các badge trực quan xác nhận thành công.
+  - **2. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Chương Trình Đào Tạo (`trainings.tsx`)**:
+    * Bổ sung vùng tải tệp kế hoạch đào tạo / thông báo chiêu sinh tại modal Khai báo khóa đào tạo.
+    * Thuộc tính: Không bắt buộc (`không require`).
+    * Hỗ trợ định dạng: Excel, Word, PDF, Text.
+    * Tự động trích xuất và bóc tách thông minh:
+      - Tên khóa học / chuyên đề (`title`), Khẩu hiệu khóa học (`tagline`)
+      - Giảng viên / Chuyên gia (`instructor_name`, `instructor_title`, `instructor_company`)
+      - Lịch học (`date`, `start_time`, `end_time`)
+      - Hình thức tổ chức (`format`: online, offline, hybrid)
+      - Địa điểm hội trường / phòng học (`location`, `address`)
+      - Quy mô lớp học / Sức chứa tối đa (`max_attendees`)
+      - Đề cương / Mục tiêu khóa học (`description`)
+      - Hạng vé & học phí (`ticket_tiers`)
+    * Tự động điền vào form khai báo và hiển thị badge xác nhận các trường thông tin đã bóc tách.
+  - **3. Kiến Trúc Bộ Bóc Tách (`apps/ceo1983_app_fe/src/lib/document-parser.ts`)**:
+    * Sử dụng trực tiếp `xlsx` (SheetJS) và `jszip` đã có sẵn trong dự án để đọc tệp tức thì trên trình duyệt mà không gây quá tải mạng hay nghẽn server.
+    * Parser nhận diện các cấu trúc bảng tính, đoạn văn bản XML Word, bảng biểu lịch trình, regex ngày tháng tiếng Việt đa dạng (`ngày DD tháng MM năm YYYY`, `DD/MM/YYYY`,...), giờ giấc (`HH:mm`), số lượng và tiền tệ.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.60): Khôi Phục Giao Diện Dark Theme Đen Thuần #000000 Cho Mobile App CEO 1983, Nút Chụp & Chia Sẻ Ảnh Hoạt Động Sự Kiện Kèm Public API, Chuẩn Hóa 100% Tiếng Việt Cho Thanh Breadcrumb / Header CRM ([NODE-APP-001], [NODE-APP-003], [NODE-APP-005], [NODE-CRM-001], [NODE-CORE-001], [NODE-CORE-006])**:
+  - **1. Khôi Phục & Chuẩn Hóa Dark Theme Đen Thuần (#000000) Cho App CEO 1983**:
+    * Sửa dứt điểm cơ chế cưỡng ép Light mode cũ trong `theme.tsx` và `association.tsx`, lưu và tôn trọng lựa chọn giao diện của người dùng vào `localStorage`.
+    * Quy chuẩn màu Dark Mode:
+      - Nền ứng dụng chuyển sang màu đen thuần `#000000` (`--background: #000000`, `--card: #0A0A0A`, `--vba-bg: #000000`, `--vba-surface: #0A0A0A`).
+      - Chữ text, nhãn label, tiêu đề h1-h6, tên nút bấm và placeholder luôn hiển thị màu trắng sáng trên nền tối tương phản cao.
+      - Tối giản dải màu hổ phách/vàng kim, loại bỏ hoàn toàn các vầng hào quang rực rỡ và badge đa sắc trên các biểu tượng shortcut.
+      - Tuyệt đối không dùng file ảnh icon tĩnh gán cứng cho dark theme; 100% sử dụng vector SVG dynamic từ Lucide Icons.
+    * Bổ sung bộ chuyển đổi giao diện Sáng / Tối (Nền đen thuần) ngay trong màn hình Cấu hình hệ thống (`/association/system-config`).
+  - **2. Nút Chụp Ảnh, Tải Ảnh & Chia Sẻ Tại Sự Kiện, Cuộc Họp**:
+    * Phát triển modal `EventLivePhotoModal.tsx`:
+      - Nút Chụp ảnh trực tiếp mở Camera native thiết bị (`capture="environment"`).
+      - Nút Tải ảnh cho phép chọn nhiều ảnh từ thư viện.
+      - Lựa chọn 1: Lưu ảnh trực tiếp tại sự kiện / cuộc họp (lưu vào bộ nhớ nhật ký hoạt động và đồng bộ tới hệ thống tài liệu qua API `/documents/sync-activity-media`).
+      - Lựa chọn 2: Chia sẻ với 2 hướng:
+        + Share lên Bảng tin Mạng lưới CLB (`POST /feed` danh mục `EVENT_MEETING`).
+        + Share ra ngoài ứng dụng qua Web Share API / Copy Link công khai.
+    * Tích hợp đồng bộ trên màn hình Sự kiện (`association.events.tsx`) và Lịch hoạt động (`association.calendar.tsx`).
+    * Backend Public API cho phép người nhận ngoài ứng dụng xem định dạng thẻ chuẩn:
+      - `GET /public/events/:id`
+      - `GET /public/meetings/:id`
+      - `GET /public/opportunities/:id`
+      - `GET /public/feed/:id`
+      - Cập nhật trang xem trước chia sẻ `apps/ceo1983_app_fe/src/routes/share.$type.$id.tsx` tự động gọi các Public API này mà không cần đăng nhập.
+  - **3. Dịch Hoàn Chỉnh Tiếng Việt 100% Cho Header & Breadcrumb CRM**:
+    * Mở rộng bảng `ROUTE_LABELS` trong `TopbarBreadcrumb.tsx` bao phủ toàn bộ các tuyến đường CRM: `/ai-assistant`, `/analytics`, `/trainings`, `/lucky-draw`, `/segments`, `/sponsors`, `/admin/landing-webs`, `/admin/audit-logs`,...
+    * Bổ sung bảng ánh xạ `QUERY_SUB_LABELS` cho các danh mục con trong Sidebar (ví dụ: `?category=member_activities`, `?filter=my_tasks`, `?tab=matrix`,...).
+    * Tự động ẩn UUID/ID thô thành nhãn `Chi tiết` thân thiện.
+    * Cập nhật `aria-label` và tooltip tiếng Việt trên Topbar.
+  - **4. Kiểm Tra Chất Lượng Tuyệt Đối**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `npx tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
+
 - **Bản cập nhật ngày 17/11/2026 (v11.59): Chia Tách Độc Lập "Tài Liệu" & "Biểu Mẫu", Cấu Hình Định Dạng Xuất Động Excel/PDF Cho Báo Cáo Tài Chính & Hóa Đơn Không Hardcode ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001])**:
   - **1. Chia Tách Độc Lập 2 Chức Năng Trên Giao Diện & Điều Hướng**:
     * **Tài liệu (`/documents`)**: Nơi lưu trữ toàn bộ tài liệu, ảnh hoạt động, tài liệu sự kiện và biên bản cuộc họp được phân bổ theo 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`) với phân quyền RBAC chỉ tài khoản thuộc đúng ban mới được mở folder của ban đó.
@@ -1538,6 +1604,72 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.61): Tự Động Bóc Tách Tệp (Excel, Word, PDF) Cho Khởi Tạo Sự Kiện & Khóa Đào Tạo ([NODE-CRM-005], [NODE-CRM-014])**:
+  - **1. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Sự Kiện (`EventWizard.tsx`)**:
+    * Bổ sung vùng tải tệp (Dropzone Card) chuẩn nhận diện thương hiệu CEO 1983 tại bước 1 thông tin sự kiện.
+    * Thuộc tính: Không bắt buộc (`không require`).
+    * Hỗ trợ định dạng phong phú: Excel (`.xlsx`, `.xls`, `.csv`), Word (`.docx`), PDF (`.pdf`), Text (`.txt`).
+    * Tự động trích xuất và bóc tách thông minh:
+      - Tên sự kiện (`name` / `title`), Khẩu hiệu banner (`tagline`)
+      - Lịch & ngày giờ diễn ra (`date` YYYY-MM-DD, `startTime`, `endTime`)
+      - Địa điểm / Hội trường tổ chức (`location`)
+      - Sức chứa đại biểu / quy mô tham dự (`capacity`)
+      - Phân loại sự kiện tự động theo từ khóa (`forum`, `workshop`, `networking`, `training`, `charity`)
+      - Diễn giả / Khách mời (`speaker`, `speakerTitle`, `speakerCompany`) tự động tích hợp vào lịch trình
+      - Bố cục nội dung / Lịch trình chi tiết (`description`)
+      - Hạng vé & giá vé tham gia (`tickets`) nếu có
+    * Tự động điền đầy đủ dữ liệu bóc tách vào form và hiển thị các badge trực quan xác nhận thành công.
+  - **2. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Chương Trình Đào Tạo (`trainings.tsx`)**:
+    * Bổ sung vùng tải tệp kế hoạch đào tạo / thông báo chiêu sinh tại modal Khai báo khóa đào tạo.
+    * Thuộc tính: Không bắt buộc (`không require`).
+    * Hỗ trợ định dạng: Excel, Word, PDF, Text.
+    * Tự động trích xuất và bóc tách thông minh:
+      - Tên khóa học / chuyên đề (`title`), Khẩu hiệu khóa học (`tagline`)
+      - Giảng viên / Chuyên gia (`instructor_name`, `instructor_title`, `instructor_company`)
+      - Lịch học (`date`, `start_time`, `end_time`)
+      - Hình thức tổ chức (`format`: online, offline, hybrid)
+      - Địa điểm hội trường / phòng học (`location`, `address`)
+      - Quy mô lớp học / Sức chứa tối đa (`max_attendees`)
+      - Đề cương / Mục tiêu khóa học (`description`)
+      - Hạng vé & học phí (`ticket_tiers`)
+    * Tự động điền vào form khai báo và hiển thị badge xác nhận các trường thông tin đã bóc tách.
+  - **3. Kiến Trúc Bộ Bóc Tách (`apps/ceo1983_app_fe/src/lib/document-parser.ts`)**:
+    * Sử dụng trực tiếp `xlsx` (SheetJS) và `jszip` đã có sẵn trong dự án để đọc tệp tức thì trên trình duyệt mà không gây quá tải mạng hay nghẽn server.
+    * Parser nhận diện các cấu trúc bảng tính, đoạn văn bản XML Word, bảng biểu lịch trình, regex ngày tháng tiếng Việt đa dạng (`ngày DD tháng MM năm YYYY`, `DD/MM/YYYY`,...), giờ giấc (`HH:mm`), số lượng và tiền tệ.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.60): Khôi Phục Giao Diện Dark Theme Đen Thuần #000000 Cho Mobile App CEO 1983, Nút Chụp & Chia Sẻ Ảnh Hoạt Động Sự Kiện Kèm Public API, Chuẩn Hóa 100% Tiếng Việt Cho Thanh Breadcrumb / Header CRM ([NODE-APP-001], [NODE-APP-003], [NODE-APP-005], [NODE-CRM-001], [NODE-CORE-001], [NODE-CORE-006])**:
+  - **1. Khôi Phục & Chuẩn Hóa Dark Theme Đen Thuần (#000000) Cho App CEO 1983**:
+    * Sửa dứt điểm cơ chế cưỡng ép Light mode cũ trong `theme.tsx` và `association.tsx`, lưu và tôn trọng lựa chọn giao diện của người dùng vào `localStorage`.
+    * Quy chuẩn màu Dark Mode:
+      - Nền ứng dụng chuyển sang màu đen thuần `#000000` (`--background: #000000`, `--card: #0A0A0A`, `--vba-bg: #000000`, `--vba-surface: #0A0A0A`).
+      - Chữ text, nhãn label, tiêu đề h1-h6, tên nút bấm và placeholder luôn hiển thị màu trắng sáng trên nền tối tương phản cao.
+      - Tối giản dải màu hổ phách/vàng kim, loại bỏ hoàn toàn các vầng hào quang rực rỡ và badge đa sắc trên các biểu tượng shortcut.
+      - Tuyệt đối không dùng file ảnh icon tĩnh gán cứng cho dark theme; 100% sử dụng vector SVG dynamic từ Lucide Icons.
+    * Bổ sung bộ chuyển đổi giao diện Sáng / Tối (Nền đen thuần) ngay trong màn hình Cấu hình hệ thống (`/association/system-config`).
+  - **2. Nút Chụp Ảnh, Tải Ảnh & Chia Sẻ Tại Sự Kiện, Cuộc Họp**:
+    * Phát triển modal `EventLivePhotoModal.tsx`:
+      - Nút Chụp ảnh trực tiếp mở Camera native thiết bị (`capture="environment"`).
+      - Nút Tải ảnh cho phép chọn nhiều ảnh từ thư viện.
+      - Lựa chọn 1: Lưu ảnh trực tiếp tại sự kiện / cuộc họp (lưu vào bộ nhớ nhật ký hoạt động và đồng bộ tới hệ thống tài liệu qua API `/documents/sync-activity-media`).
+      - Lựa chọn 2: Chia sẻ với 2 hướng:
+        + Share lên Bảng tin Mạng lưới CLB (`POST /feed` danh mục `EVENT_MEETING`).
+        + Share ra ngoài ứng dụng qua Web Share API / Copy Link công khai.
+    * Tích hợp đồng bộ trên màn hình Sự kiện (`association.events.tsx`) và Lịch hoạt động (`association.calendar.tsx`).
+    * Backend Public API cho phép người nhận ngoài ứng dụng xem định dạng thẻ chuẩn:
+      - `GET /public/events/:id`
+      - `GET /public/meetings/:id`
+      - `GET /public/opportunities/:id`
+      - `GET /public/feed/:id`
+      - Cập nhật trang xem trước chia sẻ `apps/ceo1983_app_fe/src/routes/share.$type.$id.tsx` tự động gọi các Public API này mà không cần đăng nhập.
+  - **3. Dịch Hoàn Chỉnh Tiếng Việt 100% Cho Header & Breadcrumb CRM**:
+    * Mở rộng bảng `ROUTE_LABELS` trong `TopbarBreadcrumb.tsx` bao phủ toàn bộ các tuyến đường CRM: `/ai-assistant`, `/analytics`, `/trainings`, `/lucky-draw`, `/segments`, `/sponsors`, `/admin/landing-webs`, `/admin/audit-logs`,...
+    * Bổ sung bảng ánh xạ `QUERY_SUB_LABELS` cho các danh mục con trong Sidebar (ví dụ: `?category=member_activities`, `?filter=my_tasks`, `?tab=matrix`,...).
+    * Tự động ẩn UUID/ID thô thành nhãn `Chi tiết` thân thiện.
+    * Cập nhật `aria-label` và tooltip tiếng Việt trên Topbar.
+  - **4. Kiểm Tra Chất Lượng Tuyệt Đối**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `npx tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
 
 - **Bản cập nhật ngày 17/11/2026 (v11.59): Chia Tách Độc Lập "Tài Liệu" & "Biểu Mẫu", Cấu Hình Định Dạng Xuất Động Excel/PDF Cho Báo Cáo Tài Chính & Hóa Đơn Không Hardcode ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001])**:
   - **1. Chia Tách Độc Lập 2 Chức Năng Trên Giao Diện & Điều Hướng**:
@@ -4319,6 +4451,72 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.61): Tự Động Bóc Tách Tệp (Excel, Word, PDF) Cho Khởi Tạo Sự Kiện & Khóa Đào Tạo ([NODE-CRM-005], [NODE-CRM-014])**:
+  - **1. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Sự Kiện (`EventWizard.tsx`)**:
+    * Bổ sung vùng tải tệp (Dropzone Card) chuẩn nhận diện thương hiệu CEO 1983 tại bước 1 thông tin sự kiện.
+    * Thuộc tính: Không bắt buộc (`không require`).
+    * Hỗ trợ định dạng phong phú: Excel (`.xlsx`, `.xls`, `.csv`), Word (`.docx`), PDF (`.pdf`), Text (`.txt`).
+    * Tự động trích xuất và bóc tách thông minh:
+      - Tên sự kiện (`name` / `title`), Khẩu hiệu banner (`tagline`)
+      - Lịch & ngày giờ diễn ra (`date` YYYY-MM-DD, `startTime`, `endTime`)
+      - Địa điểm / Hội trường tổ chức (`location`)
+      - Sức chứa đại biểu / quy mô tham dự (`capacity`)
+      - Phân loại sự kiện tự động theo từ khóa (`forum`, `workshop`, `networking`, `training`, `charity`)
+      - Diễn giả / Khách mời (`speaker`, `speakerTitle`, `speakerCompany`) tự động tích hợp vào lịch trình
+      - Bố cục nội dung / Lịch trình chi tiết (`description`)
+      - Hạng vé & giá vé tham gia (`tickets`) nếu có
+    * Tự động điền đầy đủ dữ liệu bóc tách vào form và hiển thị các badge trực quan xác nhận thành công.
+  - **2. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Chương Trình Đào Tạo (`trainings.tsx`)**:
+    * Bổ sung vùng tải tệp kế hoạch đào tạo / thông báo chiêu sinh tại modal Khai báo khóa đào tạo.
+    * Thuộc tính: Không bắt buộc (`không require`).
+    * Hỗ trợ định dạng: Excel, Word, PDF, Text.
+    * Tự động trích xuất và bóc tách thông minh:
+      - Tên khóa học / chuyên đề (`title`), Khẩu hiệu khóa học (`tagline`)
+      - Giảng viên / Chuyên gia (`instructor_name`, `instructor_title`, `instructor_company`)
+      - Lịch học (`date`, `start_time`, `end_time`)
+      - Hình thức tổ chức (`format`: online, offline, hybrid)
+      - Địa điểm hội trường / phòng học (`location`, `address`)
+      - Quy mô lớp học / Sức chứa tối đa (`max_attendees`)
+      - Đề cương / Mục tiêu khóa học (`description`)
+      - Hạng vé & học phí (`ticket_tiers`)
+    * Tự động điền vào form khai báo và hiển thị badge xác nhận các trường thông tin đã bóc tách.
+  - **3. Kiến Trúc Bộ Bóc Tách (`apps/ceo1983_app_fe/src/lib/document-parser.ts`)**:
+    * Sử dụng trực tiếp `xlsx` (SheetJS) và `jszip` đã có sẵn trong dự án để đọc tệp tức thì trên trình duyệt mà không gây quá tải mạng hay nghẽn server.
+    * Parser nhận diện các cấu trúc bảng tính, đoạn văn bản XML Word, bảng biểu lịch trình, regex ngày tháng tiếng Việt đa dạng (`ngày DD tháng MM năm YYYY`, `DD/MM/YYYY`,...), giờ giấc (`HH:mm`), số lượng và tiền tệ.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.60): Khôi Phục Giao Diện Dark Theme Đen Thuần #000000 Cho Mobile App CEO 1983, Nút Chụp & Chia Sẻ Ảnh Hoạt Động Sự Kiện Kèm Public API, Chuẩn Hóa 100% Tiếng Việt Cho Thanh Breadcrumb / Header CRM ([NODE-APP-001], [NODE-APP-003], [NODE-APP-005], [NODE-CRM-001], [NODE-CORE-001], [NODE-CORE-006])**:
+  - **1. Khôi Phục & Chuẩn Hóa Dark Theme Đen Thuần (#000000) Cho App CEO 1983**:
+    * Sửa dứt điểm cơ chế cưỡng ép Light mode cũ trong `theme.tsx` và `association.tsx`, lưu và tôn trọng lựa chọn giao diện của người dùng vào `localStorage`.
+    * Quy chuẩn màu Dark Mode:
+      - Nền ứng dụng chuyển sang màu đen thuần `#000000` (`--background: #000000`, `--card: #0A0A0A`, `--vba-bg: #000000`, `--vba-surface: #0A0A0A`).
+      - Chữ text, nhãn label, tiêu đề h1-h6, tên nút bấm và placeholder luôn hiển thị màu trắng sáng trên nền tối tương phản cao.
+      - Tối giản dải màu hổ phách/vàng kim, loại bỏ hoàn toàn các vầng hào quang rực rỡ và badge đa sắc trên các biểu tượng shortcut.
+      - Tuyệt đối không dùng file ảnh icon tĩnh gán cứng cho dark theme; 100% sử dụng vector SVG dynamic từ Lucide Icons.
+    * Bổ sung bộ chuyển đổi giao diện Sáng / Tối (Nền đen thuần) ngay trong màn hình Cấu hình hệ thống (`/association/system-config`).
+  - **2. Nút Chụp Ảnh, Tải Ảnh & Chia Sẻ Tại Sự Kiện, Cuộc Họp**:
+    * Phát triển modal `EventLivePhotoModal.tsx`:
+      - Nút Chụp ảnh trực tiếp mở Camera native thiết bị (`capture="environment"`).
+      - Nút Tải ảnh cho phép chọn nhiều ảnh từ thư viện.
+      - Lựa chọn 1: Lưu ảnh trực tiếp tại sự kiện / cuộc họp (lưu vào bộ nhớ nhật ký hoạt động và đồng bộ tới hệ thống tài liệu qua API `/documents/sync-activity-media`).
+      - Lựa chọn 2: Chia sẻ với 2 hướng:
+        + Share lên Bảng tin Mạng lưới CLB (`POST /feed` danh mục `EVENT_MEETING`).
+        + Share ra ngoài ứng dụng qua Web Share API / Copy Link công khai.
+    * Tích hợp đồng bộ trên màn hình Sự kiện (`association.events.tsx`) và Lịch hoạt động (`association.calendar.tsx`).
+    * Backend Public API cho phép người nhận ngoài ứng dụng xem định dạng thẻ chuẩn:
+      - `GET /public/events/:id`
+      - `GET /public/meetings/:id`
+      - `GET /public/opportunities/:id`
+      - `GET /public/feed/:id`
+      - Cập nhật trang xem trước chia sẻ `apps/ceo1983_app_fe/src/routes/share.$type.$id.tsx` tự động gọi các Public API này mà không cần đăng nhập.
+  - **3. Dịch Hoàn Chỉnh Tiếng Việt 100% Cho Header & Breadcrumb CRM**:
+    * Mở rộng bảng `ROUTE_LABELS` trong `TopbarBreadcrumb.tsx` bao phủ toàn bộ các tuyến đường CRM: `/ai-assistant`, `/analytics`, `/trainings`, `/lucky-draw`, `/segments`, `/sponsors`, `/admin/landing-webs`, `/admin/audit-logs`,...
+    * Bổ sung bảng ánh xạ `QUERY_SUB_LABELS` cho các danh mục con trong Sidebar (ví dụ: `?category=member_activities`, `?filter=my_tasks`, `?tab=matrix`,...).
+    * Tự động ẩn UUID/ID thô thành nhãn `Chi tiết` thân thiện.
+    * Cập nhật `aria-label` và tooltip tiếng Việt trên Topbar.
+  - **4. Kiểm Tra Chất Lượng Tuyệt Đối**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `npx tsc --project apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **EXIT CODE 0 (0 ERRORS)**.
 
 - **Bản cập nhật ngày 17/11/2026 (v11.59): Chia Tách Độc Lập "Tài Liệu" & "Biểu Mẫu", Cấu Hình Định Dạng Xuất Động Excel/PDF Cho Báo Cáo Tài Chính & Hóa Đơn Không Hardcode ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001])**:
   - **1. Chia Tách Độc Lập 2 Chức Năng Trên Giao Diện & Điều Hướng**:

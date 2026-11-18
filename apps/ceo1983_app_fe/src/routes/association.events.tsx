@@ -36,6 +36,7 @@ import {
   History,
   AlertTriangle,
   Share2,
+  Camera,
   Headphones,
   Heart,
   HeartHandshake,
@@ -71,6 +72,7 @@ import {
   EventHistoryRecapModal,
 } from "@/components/events/modals";
 import { RegisteredEventsQrSlider } from "@/components/events/RegisteredEventsQrSlider";
+import { EventLivePhotoModal } from "@/components/events/EventLivePhotoModal";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -1284,6 +1286,7 @@ function EventsScreen() {
   const [crmTrainings, setCrmTrainings] = useState<any[]>([]);
   const [loadingMeetings, setLoadingMeetings] = useState(false);
   const [activeMeetingRoom, setActiveMeetingRoom] = useState<{ title: string; link: string } | null>(null);
+  const [livePhotoModalTarget, setLivePhotoModalTarget] = useState<any | null>(null);
 
   useEffect(() => {
     setLoadingMeetings(true);
@@ -2406,8 +2409,8 @@ const filteredEvents = useMemo(() => {
                         </div>
                       </div>
 
-                      <div className="self-stretch pt-3 border-t border-slate-100 dark:border-slate-800 inline-flex justify-between items-center">
-                        <div className={`px-3 py-1.5 rounded-full flex justify-start items-center gap-1.5 ${isFree
+                      <div className="self-stretch pt-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between gap-2 flex-wrap">
+                        <div className={`px-2.5 py-1 rounded-full flex justify-start items-center gap-1.5 ${isFree
                             ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
                             : "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400"
                           }`}>
@@ -2416,19 +2419,43 @@ const filteredEvents = useMemo(() => {
                           </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={(evt) => {
-                            evt.stopPropagation();
-                            handleSelectEvent(e);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg border flex justify-start items-center gap-1.5 text-sm font-semibold font-['Inter'] leading-5 active:scale-95 transition cursor-pointer shadow-xs ${registered
-                              ? "bg-emerald-600 border-emerald-600 text-white"
-                              : "bg-[#003B95] hover:bg-[#002B70] border-[#003B95] text-white"
-                            }`}
-                        >
-                          <span>{registered ? "Đã đăng ký (Xem chi tiết)" : "Xem chi tiết"}</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          {/* Nút chụp ảnh / tải ảnh sự kiện trực tiếp */}
+                          <button
+                            type="button"
+                            onClick={(evt) => {
+                              evt.stopPropagation();
+                              setLivePhotoModalTarget({
+                                id: e.id,
+                                title: e.title,
+                                type: "event",
+                                date: dateFormatted,
+                                time: timeStr,
+                                location: e.place,
+                                image: imgUrl,
+                              });
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-1 cursor-pointer active:scale-95 transition"
+                            title="Chụp ảnh / Tải ảnh sự kiện"
+                          >
+                            <Camera className="size-3.5" />
+                            <span>Chụp ảnh</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(evt) => {
+                              evt.stopPropagation();
+                              handleSelectEvent(e);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg border flex justify-start items-center gap-1.5 text-xs font-semibold font-['Inter'] leading-5 active:scale-95 transition cursor-pointer shadow-xs ${registered
+                                ? "bg-emerald-600 border-emerald-600 text-white"
+                                : "bg-[#003B95] hover:bg-[#002B70] border-[#003B95] text-white"
+                              }`}
+                          >
+                            <span>{registered ? "Đã đăng ký" : "Xem chi tiết"}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -2723,7 +2750,49 @@ const filteredEvents = useMemo(() => {
                         </span>
                       </div>
 
-                      <div className="self-stretch pt-1 inline-flex justify-start items-start gap-1.5">
+                      <div className="self-stretch pt-1 inline-flex justify-start items-center gap-1.5 flex-wrap">
+                        {/* Nút chụp ảnh / tải ảnh cuộc họp */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLivePhotoModalTarget({
+                              id: m.id || m.code || `meeting-${idx}`,
+                              title: m.title,
+                              type: "meeting",
+                              date: m.date,
+                              time: m.time,
+                              location: m.location || m.meetingLink,
+                            });
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition cursor-pointer"
+                          title="Chụp ảnh / Tải ảnh cuộc họp"
+                        >
+                          <Camera className="size-3.5" />
+                          <span>Chụp ảnh</span>
+                        </button>
+
+                        {/* Nút chia sẻ cuộc họp */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            executeShare(
+                              {
+                                type: "event",
+                                id: m.id || m.code || `meeting-${idx}`,
+                                title: `[Cuộc họp CEO 1983] ${m.title}`,
+                                desc: `Cuộc họp / Gặp mặt cùng CLB CEO 1983: ${m.title}`,
+                                targetPath: `/share/meeting/${m.id || m.code || `meeting-${idx}`}`,
+                              },
+                              () => toast.success("Đã sao chép liên kết cuộc họp để chia sẻ!")
+                            );
+                          }}
+                          className="p-1.5 rounded-lg border border-slate-200 dark:border-white/15 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition cursor-pointer active:scale-95"
+                          title="Chia sẻ cuộc họp"
+                          aria-label="Chia sẻ cuộc họp"
+                        >
+                          <Share2 className="size-3.5" />
+                        </button>
+
                         {isTrainingCourse ? (
                           <Link
                             to="/association/training"
@@ -3048,6 +3117,12 @@ const filteredEvents = useMemo(() => {
         open={!!recapModalEvent}
         onClose={() => setRecapModalEvent(null)}
         event={recapModalEvent}
+      />
+
+      <EventLivePhotoModal
+        isOpen={Boolean(livePhotoModalTarget)}
+        onClose={() => setLivePhotoModalTarget(null)}
+        target={livePhotoModalTarget}
       />
     </div>
   );

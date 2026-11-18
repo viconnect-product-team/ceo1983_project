@@ -58,6 +58,7 @@ import {
   ChevronDown,
   LayoutTemplate,
   Palette,
+  FileSpreadsheet,
   BarChart3,
   GraduationCap,
   Globe,

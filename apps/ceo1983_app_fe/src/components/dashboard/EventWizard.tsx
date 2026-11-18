@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users, Award } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, QrCode, Ticket, Trash2, X, ImagePlus, Sparkles, MapPin, Users, Award, FileSpreadsheet, UploadCloud, CheckCircle2, FileUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   QR_FIELDS,
@@ -14,6 +14,7 @@ import { useT } from "@/lib/i18n";
 import { EVENT_TYPE_TEMPLATES, type EventTypeKey } from "@/lib/event-type-templates";
 import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
 import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
+import { parseEventDocument, type ParsedEventData } from "@/lib/document-parser";
 
 type EventType = EventItem["type"];
 type EventStatus = EventItem["status"];
@@ -347,7 +348,15 @@ function EventWizardDialog({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 bg-background text-foreground">
-          {step === 0 && <InfoStep info={info} setInfo={setInfo} errors={errors} setErrors={setErrors} />}
+          {step === 0 && (
+            <InfoStep
+              info={info}
+              setInfo={setInfo}
+              errors={errors}
+              setErrors={setErrors}
+              onTicketsExtracted={setTickets}
+            />
+          )}
           {step === 1 && <TicketStep tickets={tickets} setTickets={setTickets} errors={errors} setErrors={setErrors} />}
           {step === 2 && <QrStep qrFields={qrFields} toggleQr={toggleQr} sample={qrSample} />}
         </div>
@@ -406,14 +415,104 @@ function InfoStep({
   setInfo,
   errors,
   setErrors,
+  onTicketsExtracted,
 }: {
   info: Info;
   setInfo: (v: Info) => void;
   errors: Record<string, string>;
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onTicketsExtracted?: (tickets: TicketDraft[]) => void;
 }) {
   const t = useT();
   const currentTpl = EVENT_TYPE_TEMPLATES[info.type as EventTypeKey] || EVENT_TYPE_TEMPLATES.forum;
+
+  const [parsingDoc, setParsingDoc] = useState(false);
+  const [importedDoc, setImportedDoc] = useState<{
+    fileName: string;
+    hasName: boolean;
+    hasDate: boolean;
+    hasLocation: boolean;
+    hasSpeaker: boolean;
+    speakerName?: string;
+    hasCapacity: boolean;
+    hasTickets: boolean;
+  } | null>(null);
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset value để có thể chọn lại cùng 1 file nếu cần
+    e.target.value = "";
+
+    setParsingDoc(true);
+    const toastId = toast.loading(`Đang đọc & bóc tách dữ liệu từ tệp: ${file.name}...`);
+    try {
+      const parsed = await parseEventDocument(file);
+
+      // Điền thông tin vào info
+      const updatedInfo: Info = { ...info };
+
+      if (parsed.name) updatedInfo.name = parsed.name;
+      if (parsed.tagline) updatedInfo.tagline = parsed.tagline;
+      if (parsed.date) updatedInfo.date = parsed.date;
+      if (parsed.startTime) updatedInfo.startTime = parsed.startTime;
+      if (parsed.endTime) updatedInfo.endTime = parsed.endTime;
+      if (parsed.location) updatedInfo.location = parsed.location;
+      if (parsed.capacity) updatedInfo.capacity = String(parsed.capacity);
+      if (parsed.type) updatedInfo.type = parsed.type;
+
+      // Xử lý mô tả & diễn giả
+      let newDesc = parsed.description || updatedInfo.description || "";
+      if (parsed.speaker && !newDesc.includes(parsed.speaker)) {
+        const speakerChunk = `\n\n🎤 Diễn giả / Khách mời: ${parsed.speaker}${
+          parsed.speakerTitle ? ` - ${parsed.speakerTitle}` : ""
+        }${parsed.speakerCompany ? ` (${parsed.speakerCompany})` : ""}`;
+        newDesc = newDesc ? `${newDesc}${speakerChunk}` : speakerChunk.trim();
+      }
+      updatedInfo.description = newDesc;
+
+      setInfo(updatedInfo);
+
+      // Nếu có vé/hạng vé bóc tách được
+      if (parsed.tickets && parsed.tickets.length > 0 && onTicketsExtracted) {
+        onTicketsExtracted(parsed.tickets);
+      }
+
+      // Xóa các lỗi validate tương ứng nếu trường đó đã được fill
+      setErrors((prev) => {
+        const nextErrs = { ...prev };
+        if (parsed.name) delete nextErrs.name;
+        if (parsed.date) delete nextErrs.date;
+        if (parsed.location) delete nextErrs.location;
+        if (parsed.capacity) delete nextErrs.capacity;
+        return nextErrs;
+      });
+
+      setImportedDoc({
+        fileName: file.name,
+        hasName: Boolean(parsed.name),
+        hasDate: Boolean(parsed.date),
+        hasLocation: Boolean(parsed.location),
+        hasSpeaker: Boolean(parsed.speaker),
+        speakerName: parsed.speaker,
+        hasCapacity: Boolean(parsed.capacity),
+        hasTickets: Boolean(parsed.tickets && parsed.tickets.length > 0),
+      });
+
+      toast.success(
+        `Đã bóc tách thành công dữ liệu từ "${file.name}"! Tự động điền các trường sự kiện.`,
+        { id: toastId, duration: 5000 }
+      );
+    } catch (err: any) {
+      console.error("[EventWizard] File parse error:", err);
+      toast.error(err?.message || "Không thể bóc tách nội dung từ tệp này. Vui lòng kiểm tra lại định dạng tệp.", {
+        id: toastId,
+      });
+    } finally {
+      setParsingDoc(false);
+    }
+  };
 
   const handleSelectType = (newType: EventTypeKey) => {
     const tpl = EVENT_TYPE_TEMPLATES[newType];
@@ -435,6 +534,94 @@ function InfoStep({
       <div>
         <h3 className="text-sm font-semibold text-foreground">{t("ewz.info.heading")}</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">{t("ewz.info.hint")}</p>
+      </div>
+
+      {/* 0. Tự động bóc tách từ tệp đính kèm (Excel, Word, PDF) - Không bắt buộc */}
+      <div className="rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 p-4 transition-all hover:border-[#003B95]/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#003B95] dark:text-blue-300 shrink-0">
+              <FileSpreadsheet className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-foreground">
+                  Nhập tự động từ tệp (Excel, Word, PDF)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-muted-foreground font-semibold">
+                  Không bắt buộc
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Tải lên file kế hoạch (.xlsx, .xls, .docx, .doc, .pdf, .txt) - Hệ thống tự động bóc tách tên, ngày giờ, địa điểm, diễn giả và điền vào các trường bên dưới.
+              </p>
+            </div>
+          </div>
+
+          <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs font-bold cursor-pointer transition shadow-xs shrink-0 disabled:opacity-50">
+            {parsingDoc ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Đang bóc tách...</span>
+              </>
+            ) : (
+              <>
+                <UploadCloud className="h-4 w-4" />
+                <span>Chọn Tệp Tải Lên</span>
+              </>
+            )}
+            <input
+              type="file"
+              accept=".xlsx,.xls,.docx,.doc,.pdf,.txt,.csv"
+              disabled={parsingDoc}
+              className="hidden"
+              onChange={handleFileImport}
+            />
+          </label>
+        </div>
+
+        {importedDoc && (
+          <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-900/50 flex flex-wrap items-center justify-between gap-2 animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>
+                Đã bóc tách thành công từ: <strong className="font-bold underline">{importedDoc.fileName}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {importedDoc.hasName && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                  ✓ Tên SK
+                </span>
+              )}
+              {importedDoc.hasDate && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                  ✓ Lịch & Ngày giờ
+                </span>
+              )}
+              {importedDoc.hasLocation && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                  ✓ Địa điểm
+                </span>
+              )}
+              {importedDoc.hasSpeaker && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                  ✓ Diễn giả ({importedDoc.speakerName})
+                </span>
+              )}
+              {importedDoc.hasCapacity && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                  ✓ Sức chứa
+                </span>
+              )}
+              {importedDoc.hasTickets && (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                  ✓ Hạng vé
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Event Type Grid Selector (Requirement 2: chọn loại sự kiện -> tự động hiện text & banner đúng) */}

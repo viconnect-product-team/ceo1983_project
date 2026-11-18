@@ -359,20 +359,22 @@ function MemberRoot() {
   useRenewalReminder();
   useAssociationRealtimeNotifications();
 
-  // Mặc định vào App CEO 1983 luôn là Theme Sáng chuẩn nhận diện thương hiệu
+  // Khôi phục và tôn trọng theme người dùng (Sáng hoặc Tối đen thuần #000000)
   useEffect(() => {
-    if (typeof document !== "undefined") {
+    if (typeof document !== "undefined" && typeof localStorage !== "undefined") {
+      const stored = localStorage.getItem("vba.theme") || localStorage.getItem("theme");
       const root = document.documentElement;
-      root.classList.remove("dark");
-      root.classList.remove("hc");
-      root.classList.add("light");
-      root.dataset.theme = "light";
-      root.style.colorScheme = "light";
-    }
-    if (typeof localStorage !== "undefined") {
-      try {
-        localStorage.setItem("vba.theme", "light");
-      } catch { }
+      if (stored === "dark") {
+        root.classList.add("dark");
+        root.classList.remove("light");
+        root.dataset.theme = "dark";
+        root.style.colorScheme = "dark";
+      } else if (stored === "light") {
+        root.classList.remove("dark");
+        root.classList.add("light");
+        root.dataset.theme = "light";
+        root.style.colorScheme = "light";
+      }
     }
   }, []);
 
