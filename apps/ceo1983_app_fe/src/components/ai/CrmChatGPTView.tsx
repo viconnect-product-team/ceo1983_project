@@ -29,10 +29,19 @@ import {
   FileText,
   Briefcase,
   Bot,
+  Paperclip,
+  UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { ViOneAiTutorGuide } from "../common/ViOneAiTutorGuide";
+import { AiVerificationCard, VerificationCardData } from "./AiVerificationCard";
+import { AiChoiceChips } from "./AiChoiceChips";
+import {
+  analyzeImportedFileForAi,
+  AiFileActionOption,
+  AiFileClarificationData,
+} from "@/lib/document-parser";
 
 export type AiPersonaType = "general" | "opportunity" | "events" | "meetings" | "finance" | "documents";
 
@@ -46,6 +55,8 @@ export interface ChatMessage {
   persona?: AiPersonaType;
   evidence?: Array<{ title: string; countOrVal: string; source: string }>;
   proactiveAlert?: string;
+  fileClarification?: AiFileClarificationData;
+  verificationCard?: VerificationCardData;
 }
 
 export interface ChatSession {
@@ -386,6 +397,7 @@ export function CrmChatGPTView() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Khởi tạo sessions từ localStorage
   useEffect(() => {
@@ -543,6 +555,130 @@ export function CrmChatGPTView() {
     }
   };
 
+  // Tải lên và phân tích tệp thông minh (Excel, Word, PDF)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentSessionId) return;
+    e.target.value = ""; // Reset input
+
+    setIsGenerating(true);
+    toast.info(`Đang phân tích tệp "${file.name}"...`);
+
+    try {
+      const clarificationData = await analyzeImportedFileForAi(file);
+      const userMsg: ChatMessage = {
+        id: `msg_u_${Date.now()}`,
+        role: "user",
+        content: `📎 Tải lên tệp: ${file.name} (${clarificationData.fileSizeFormatted})`,
+        createdAt: new Date().toISOString(),
+        persona: selectedPersona,
+      };
+
+      const assistantMsg: ChatMessage = {
+        id: `msg_a_${Date.now()}`,
+        role: "assistant",
+        content: `${clarificationData.summary}\n\n**${clarificationData.clarificationQuestion}**`,
+        createdAt: new Date().toISOString(),
+        model: "CEO 1983 Document Intelligence",
+        latencyMs: 120,
+        persona: selectedPersona,
+        fileClarification: clarificationData,
+      };
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === currentSessionId
+            ? {
+                ...s,
+                messages: [...s.messages, userMsg, assistantMsg],
+              }
+            : s
+        )
+      );
+      toast.success(`Đã phân tích xong tệp "${file.name}"!`);
+    } catch (err: any) {
+      toast.error(`Không thể phân tích tệp: ${err?.message || "Lỗi đọc tệp"}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Chọn một thao tác từ các lựa chọn bên dưới (Choice Chips)
+  const handleSelectOptionFromChoiceChips = async (option: AiFileActionOption) => {
+    if (isGenerating || !currentSessionId) return;
+
+    const userMsg: ChatMessage = {
+      id: `msg_u_${Date.now()}`,
+      role: "user",
+      content: `👉 Yêu cầu AI thực hiện: ${option.label}`,
+      createdAt: new Date().toISOString(),
+      persona: selectedPersona,
+    };
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === currentSessionId
+          ? {
+              ...s,
+              messages: [...s.messages, userMsg],
+            }
+          : s
+      )
+    );
+
+    setIsGenerating(true);
+    toast.info(`AI đang tự động thực thi thao tác "${option.label}"...`);
+
+    try {
+      const res = await fetchNestApi<any>("/api/ai/crm/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: `Yêu cầu thực hiện: ${option.label}`,
+          model: selectedModel,
+          persona: selectedPersona,
+          selectedAction: {
+            actionType: option.actionType,
+            payload: {
+              name: option.label,
+              title: option.label,
+            },
+          },
+        }),
+      });
+
+      if (res?.ok) {
+        const assistantMsg: ChatMessage = {
+          id: `msg_a_${Date.now()}`,
+          role: "assistant",
+          content: res.reply || `Đã thực thi thành công: ${option.label}`,
+          createdAt: new Date().toISOString(),
+          model: res.modelUsed || "CEO 1983 Autonomous Engine",
+          latencyMs: res.latencyMs || 200,
+          persona: selectedPersona,
+          verificationCard: res.verificationCard,
+        };
+
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === currentSessionId
+              ? {
+                  ...s,
+                  messages: [...s.messages, assistantMsg],
+                }
+              : s
+          )
+        );
+        toast.success("Thao tác thành công! Thẻ kiểm tra đối soát đã sẵn sàng.");
+      } else {
+        toast.error("Không thể hoàn tất thao tác tự động");
+      }
+    } catch (e: any) {
+      toast.error(`Lỗi thực thi: ${e?.message || "Vui lòng thử lại"}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Tự co giãn textarea
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
@@ -620,6 +756,8 @@ export function CrmChatGPTView() {
           persona: usePersona,
           evidence: res.evidence || [],
           proactiveAlert: res.proactiveAlert,
+          verificationCard: res.verificationCard,
+          fileClarification: res.fileClarification,
         };
 
         setSessions((prev) =>
@@ -938,6 +1076,20 @@ export function CrmChatGPTView() {
 
                           <MarkdownRenderer content={msg.content} />
 
+                          {/* THẺ HỎI NGƯỢC LẠI KÈM CÁC LỰA CHỌN BÊN DƯỚI KHI IMPORT FILE */}
+                          {msg.fileClarification && (
+                            <AiChoiceChips
+                              data={msg.fileClarification}
+                              onSelectOption={handleSelectOptionFromChoiceChips}
+                              disabled={isGenerating}
+                            />
+                          )}
+
+                          {/* THẺ KIỂM TRA ĐỐI SOÁT SAU KHI AI THAO TÁC XONG (VERIFICATION CARD) */}
+                          {msg.verificationCard && (
+                            <AiVerificationCard data={msg.verificationCard} />
+                          )}
+
                           {/* Evidence & Action footer */}
                           {msg.evidence && msg.evidence.length > 0 && (
                             <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex flex-wrap gap-1.5">
@@ -1010,10 +1162,30 @@ export function CrmChatGPTView() {
               className="w-full px-4 py-3 text-xs bg-transparent border-none outline-none resize-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 max-h-44 min-h-[44px]"
             />
             <div className="flex items-center justify-between px-3 pb-2 pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className="font-semibold text-primary">{activePersonaObj.name}</span>
-                <span className="text-slate-300 dark:text-slate-700">•</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{activeModelObj.name}</span>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".xlsx,.xls,.docx,.pdf,.txt,.csv"
+                  onChange={handleFileUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 text-[11px] font-medium transition cursor-pointer"
+                  title="Nhập tệp Excel, Word, PDF để AI phân tích và hỏi ngược yêu cầu"
+                >
+                  <Paperclip className="size-3.5 text-primary" />
+                  <span className="hidden sm:inline">Đính kèm file</span>
+                </button>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="font-semibold text-primary">{activePersonaObj.name}</span>
+                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{activeModelObj.name}</span>
+                </div>
               </div>
 
               <button

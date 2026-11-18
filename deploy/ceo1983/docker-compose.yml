@@ -7,12 +7,14 @@ services:
       - .env.association
     environment:
       - PORT=8080
+      - NITRO_PORT=8080
       - HOST=0.0.0.0
       - NITRO_HOST=0.0.0.0
       - NEST_API_URL=http://ceo1983-backend:4000
       - VITE_APP_SCOPE=association_app
       - VITE_APP_NAME="CLB Doanh Nhân CEO 1983"
       - VITE_APP_DEFAULT_ROUTE=/association
+    user: "0:0"
     ports:
       - "${ASSOCIATION_PORT_FRONTEND:-5002}:8080"
     depends_on:

@@ -1,5 +1,46 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 18/11/2026 (v11.63): Đào Tạo & Huấn Luyện Toàn Diện 2 Trợ Lý AI (CRM & Mobile App) Với BRD, SRS, Thiết Kế CSDL Chuẩn 113.20.107.184:6432 & API Catalog; Tự Động Thực Thi Nghiệp Vụ Kèm Thẻ Kiểm Tra Đối Soát (Verification Card); Phân Tích Thông Minh Tệp Import & Hỏi Ngược Lại Người Dùng Kèm Danh Sách Lựa Chọn (Choice Chips) ([NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001], [NODE-CORE-002])**:
+  - **1. Bộ Tri Thức Chuẩn Hóa Toàn Diện Cho 2 Con AI (`ai-knowledge-and-actions.ts`)**:
+    * Đúc kết toàn bộ tài liệu BRD, SRS, mô hình tổ chức 7 Ban chuyên môn (FLD-DEPT-*), quy chế Thông tư 200/2014/TT-BTC, thiết kế bảng CSDL PostgreSQL trên `113.20.107.184:6432` và danh mục toàn bộ API Backend thực thi.
+    * Nạp trực tiếp vào ngữ cảnh hệ thống (`sysPrompt` trong `AiService.askAssistant` cho Mobile App và `personaSystemInstruction` trong `AiCrmAnalyticsService.handleChatAssistant` cho Web CRM).
+  - **2. Tự Động Thực Thi Thao Tác Trực Tiếp & Xuất Thẻ Kiểm Tra Sau Khi Làm Xong (Post-Action Verification Card)**:
+    * Khi người dùng ra lệnh bằng lời nói / text hoặc nhấn chọn thao tác: AI tự động phân tích tham số và thực thi trực tiếp trên CSDL chuẩn `113.20.107.184:6432` (`CREATE_EVENT`, `CREATE_TRAINING`, `RECORD_FINANCE`, `ARCHIVE_DOCUMENT`,...).
+    * **Bắt buộc có Thẻ Kiểm Tra Đối Soát (`AiVerificationCard`)**: Hiển thị Action ID, Tên bảng, ID bản ghi vừa tạo/sửa, thời gian thực tế, các trường dữ liệu quan trọng đối soát, kiểm tra tính toàn vẹn (Integrity Check Passed, DB Validated, No Duplicate, RBAC Permitted) cùng nút bấm xem nhanh hoặc sửa trên hệ thống.
+  - **3. Phân Tích Tệp Import, Hỏi Ngược Lại Người Dùng & Hiển Thị Các Lựa Chọn Bên Dưới (Interactive Choice Chips)**:
+    * Khi người dùng đính kèm file Excel, Word, PDF trên thanh nhập liệu ChatGPT của CRM (`CrmChatGPTView.tsx`) hoặc nút đính kèm của Mobile App (`Ceo1983ChatAssistant.tsx`):
+    * Hàm `analyzeImportedFileForAi` bóc tách văn bản, phát hiện loại văn bản và sinh tóm tắt nội dung.
+    * AI **tự động hỏi ngược lại người dùng muốn làm gì với tệp** và render danh sách các nút lựa chọn bên dưới (`AiChoiceChips.tsx`):
+      - "Khởi tạo Sự kiện mới từ tệp này"
+      - "Khởi tạo Khóa Đào tạo chuyên đề"
+      - "Lưu văn bản vào Thư mục Ban chuyên môn"
+      - "Ghi nhận phiếu thu / Giao dịch tài chính"
+    * Khi người dùng bấm vào một lựa chọn: AI tiếp nhận và tự động thực thi thao tác đó, sau đó lập tức trả về Thẻ Kiểm Tra Đối Soát để người dùng rà soát kết quả.
+  - **4. Backend Endpoint & Service Mở Rộng**:
+    * `POST /api/ai/analyze-imported-file`: Phân tích tệp và sinh câu hỏi kèm các lựa chọn.
+    * `POST /api/ai/execute-action`: Thực thi thao tác tự động trên CSDL chuẩn `113.20.107.184:6432` và trả về `verificationCard`.
+    * Mở rộng `POST /api/ai/crm/chat` và `POST /api/ai/ask` hỗ trợ `filePayload` và `selectedAction`.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.62): Xử Lý Triệt Để Lỗi 502 Bad Gateway Nginx Cho Subdomain Web CRM (`crm.ceo1983.viconnect.vn`) & Chuẩn Hóa Cổng Lắng Nghe Nitro SSR ([NODE-CORE-004])**:
+  - **1. Nguyên Nhân Gốc Rễ Gây Lỗi 502 Bad Gateway**:
+    * **Xung đột Header WebSocket/HTTP**: Trong cấu hình Nginx reverse proxy cũ (`setup-ssl.sh` và `nginx.conf`), header `proxy_set_header Connection "upgrade"` bị gán cứng vô điều kiện cho cả location `/` và `/api/`. Khi người dùng gửi request HTTP GET thông thường từ trình duyệt, Node.js runtime (v22 `llhttp`) phát hiện `Connection: upgrade` nên chuyển tiếp sang sự kiện `'upgrade'` thay vì phát `'request'`, dẫn đến Nitro SSR không xử lý request và ngắt kết nối đột ngột, khiến Nginx trả về lỗi `502 Bad Gateway`.
+    * **Cổng Lắng Nghe SSR Nitro**: Tiến trình Nitro SSR của TanStack Start ưu tiên đọc `NITRO_PORT`, trong khi cấu hình Docker Compose chỉ truyền `PORT=8080`, và file `.env.crm` cũ có biến `PORT=4000` làm sai lệch cổng lắng nghe nội bộ trong container.
+  - **2. Giải Pháp Xử Lý Toàn Diện Đã Thực Hiện**:
+    * **Cấu hình Nginx Map Chuẩn**: Bổ sung `map $http_upgrade $connection_upgrade` chuẩn RFC 7230:
+      ```nginx
+      map $http_upgrade $connection_upgrade {
+          default upgrade;
+          ''      close;
+      }
+      ```
+      Áp dụng `proxy_set_header Connection $connection_upgrade;` cho tất cả các location HTTP (`/`, `/api/`), chỉ giữ `Connection "upgrade"` riêng cho `/socket.io/`.
+    * **Đồng Bộ & Chuẩn Hóa Biến Cổng Lắng Nghe SSR**:
+      - Bổ sung `NITRO_PORT=8080`, `PORT=8080`, `NITRO_HOST=0.0.0.0`, `HOST=0.0.0.0` vào `docker-entrypoint.sh`, `deploy/crm/docker-compose.yml`, `deploy/ceo1983/docker-compose.yml`.
+      - Loại bỏ `PORT=4000` khỏi `.env.crm`, `.env.association`, `.env.production` để tránh ghi đè sai cổng của frontend container.
+    * **Bổ Sung Log & Diagnostic Tự Động Trong CI/CD**:
+      - Cập nhật `.github/workflows/auto-deploy-subdomains.yml` và `deploy/ssl/setup-ssl.sh` để kiểm tra trạng thái (`docker ps`), in log (`docker logs --tail 20`) và test curl nội bộ trực tiếp các container ngay sau khi khởi động.
+
+
 - **Bản cập nhật ngày 18/11/2026 (v11.61): Tự Động Bóc Tách Tệp (Excel, Word, PDF) Cho Khởi Tạo Sự Kiện & Khóa Đào Tạo ([NODE-CRM-005], [NODE-CRM-014])**:
   - **1. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Sự Kiện (`EventWizard.tsx`)**:
     * Bổ sung vùng tải tệp (Dropzone Card) chuẩn nhận diện thương hiệu CEO 1983 tại bước 1 thông tin sự kiện.
@@ -1604,6 +1645,47 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.63): Đào Tạo & Huấn Luyện Toàn Diện 2 Trợ Lý AI (CRM & Mobile App) Với BRD, SRS, Thiết Kế CSDL Chuẩn 113.20.107.184:6432 & API Catalog; Tự Động Thực Thi Nghiệp Vụ Kèm Thẻ Kiểm Tra Đối Soát (Verification Card); Phân Tích Thông Minh Tệp Import & Hỏi Ngược Lại Người Dùng Kèm Danh Sách Lựa Chọn (Choice Chips) ([NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001], [NODE-CORE-002])**:
+  - **1. Bộ Tri Thức Chuẩn Hóa Toàn Diện Cho 2 Con AI (`ai-knowledge-and-actions.ts`)**:
+    * Đúc kết toàn bộ tài liệu BRD, SRS, mô hình tổ chức 7 Ban chuyên môn (FLD-DEPT-*), quy chế Thông tư 200/2014/TT-BTC, thiết kế bảng CSDL PostgreSQL trên `113.20.107.184:6432` và danh mục toàn bộ API Backend thực thi.
+    * Nạp trực tiếp vào ngữ cảnh hệ thống (`sysPrompt` trong `AiService.askAssistant` cho Mobile App và `personaSystemInstruction` trong `AiCrmAnalyticsService.handleChatAssistant` cho Web CRM).
+  - **2. Tự Động Thực Thi Thao Tác Trực Tiếp & Xuất Thẻ Kiểm Tra Sau Khi Làm Xong (Post-Action Verification Card)**:
+    * Khi người dùng ra lệnh bằng lời nói / text hoặc nhấn chọn thao tác: AI tự động phân tích tham số và thực thi trực tiếp trên CSDL chuẩn `113.20.107.184:6432` (`CREATE_EVENT`, `CREATE_TRAINING`, `RECORD_FINANCE`, `ARCHIVE_DOCUMENT`,...).
+    * **Bắt buộc có Thẻ Kiểm Tra Đối Soát (`AiVerificationCard`)**: Hiển thị Action ID, Tên bảng, ID bản ghi vừa tạo/sửa, thời gian thực tế, các trường dữ liệu quan trọng đối soát, kiểm tra tính toàn vẹn (Integrity Check Passed, DB Validated, No Duplicate, RBAC Permitted) cùng nút bấm xem nhanh hoặc sửa trên hệ thống.
+  - **3. Phân Tích Tệp Import, Hỏi Ngược Lại Người Dùng & Hiển Thị Các Lựa Chọn Bên Dưới (Interactive Choice Chips)**:
+    * Khi người dùng đính kèm file Excel, Word, PDF trên thanh nhập liệu ChatGPT của CRM (`CrmChatGPTView.tsx`) hoặc nút đính kèm của Mobile App (`Ceo1983ChatAssistant.tsx`):
+    * Hàm `analyzeImportedFileForAi` bóc tách văn bản, phát hiện loại văn bản và sinh tóm tắt nội dung.
+    * AI **tự động hỏi ngược lại người dùng muốn làm gì với tệp** và render danh sách các nút lựa chọn bên dưới (`AiChoiceChips.tsx`):
+      - "Khởi tạo Sự kiện mới từ tệp này"
+      - "Khởi tạo Khóa Đào tạo chuyên đề"
+      - "Lưu văn bản vào Thư mục Ban chuyên môn"
+      - "Ghi nhận phiếu thu / Giao dịch tài chính"
+    * Khi người dùng bấm vào một lựa chọn: AI tiếp nhận và tự động thực thi thao tác đó, sau đó lập tức trả về Thẻ Kiểm Tra Đối Soát để người dùng rà soát kết quả.
+  - **4. Backend Endpoint & Service Mở Rộng**:
+    * `POST /api/ai/analyze-imported-file`: Phân tích tệp và sinh câu hỏi kèm các lựa chọn.
+    * `POST /api/ai/execute-action`: Thực thi thao tác tự động trên CSDL chuẩn `113.20.107.184:6432` và trả về `verificationCard`.
+    * Mở rộng `POST /api/ai/crm/chat` và `POST /api/ai/ask` hỗ trợ `filePayload` và `selectedAction`.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.62): Xử Lý Triệt Để Lỗi 502 Bad Gateway Nginx Cho Subdomain Web CRM (`crm.ceo1983.viconnect.vn`) & Chuẩn Hóa Cổng Lắng Nghe Nitro SSR ([NODE-CORE-004])**:
+  - **1. Nguyên Nhân Gốc Rễ Gây Lỗi 502 Bad Gateway**:
+    * **Xung đột Header WebSocket/HTTP**: Trong cấu hình Nginx reverse proxy cũ (`setup-ssl.sh` và `nginx.conf`), header `proxy_set_header Connection "upgrade"` bị gán cứng vô điều kiện cho cả location `/` và `/api/`. Khi người dùng gửi request HTTP GET thông thường từ trình duyệt, Node.js runtime (v22 `llhttp`) phát hiện `Connection: upgrade` nên chuyển tiếp sang sự kiện `'upgrade'` thay vì phát `'request'`, dẫn đến Nitro SSR không xử lý request và ngắt kết nối đột ngột, khiến Nginx trả về lỗi `502 Bad Gateway`.
+    * **Cổng Lắng Nghe SSR Nitro**: Tiến trình Nitro SSR của TanStack Start ưu tiên đọc `NITRO_PORT`, trong khi cấu hình Docker Compose chỉ truyền `PORT=8080`, và file `.env.crm` cũ có biến `PORT=4000` làm sai lệch cổng lắng nghe nội bộ trong container.
+  - **2. Giải Pháp Xử Lý Toàn Diện Đã Thực Hiện**:
+    * **Cấu hình Nginx Map Chuẩn**: Bổ sung `map $http_upgrade $connection_upgrade` chuẩn RFC 7230:
+      ```nginx
+      map $http_upgrade $connection_upgrade {
+          default upgrade;
+          ''      close;
+      }
+      ```
+      Áp dụng `proxy_set_header Connection $connection_upgrade;` cho tất cả các location HTTP (`/`, `/api/`), chỉ giữ `Connection "upgrade"` riêng cho `/socket.io/`.
+    * **Đồng Bộ & Chuẩn Hóa Biến Cổng Lắng Nghe SSR**:
+      - Bổ sung `NITRO_PORT=8080`, `PORT=8080`, `NITRO_HOST=0.0.0.0`, `HOST=0.0.0.0` vào `docker-entrypoint.sh`, `deploy/crm/docker-compose.yml`, `deploy/ceo1983/docker-compose.yml`.
+      - Loại bỏ `PORT=4000` khỏi `.env.crm`, `.env.association`, `.env.production` để tránh ghi đè sai cổng của frontend container.
+    * **Bổ Sung Log & Diagnostic Tự Động Trong CI/CD**:
+      - Cập nhật `.github/workflows/auto-deploy-subdomains.yml` và `deploy/ssl/setup-ssl.sh` để kiểm tra trạng thái (`docker ps`), in log (`docker logs --tail 20`) và test curl nội bộ trực tiếp các container ngay sau khi khởi động.
+
 
 - **Bản cập nhật ngày 18/11/2026 (v11.61): Tự Động Bóc Tách Tệp (Excel, Word, PDF) Cho Khởi Tạo Sự Kiện & Khóa Đào Tạo ([NODE-CRM-005], [NODE-CRM-014])**:
   - **1. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Sự Kiện (`EventWizard.tsx`)**:
@@ -4451,6 +4533,47 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.63): Đào Tạo & Huấn Luyện Toàn Diện 2 Trợ Lý AI (CRM & Mobile App) Với BRD, SRS, Thiết Kế CSDL Chuẩn 113.20.107.184:6432 & API Catalog; Tự Động Thực Thi Nghiệp Vụ Kèm Thẻ Kiểm Tra Đối Soát (Verification Card); Phân Tích Thông Minh Tệp Import & Hỏi Ngược Lại Người Dùng Kèm Danh Sách Lựa Chọn (Choice Chips) ([NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001], [NODE-CORE-002])**:
+  - **1. Bộ Tri Thức Chuẩn Hóa Toàn Diện Cho 2 Con AI (`ai-knowledge-and-actions.ts`)**:
+    * Đúc kết toàn bộ tài liệu BRD, SRS, mô hình tổ chức 7 Ban chuyên môn (FLD-DEPT-*), quy chế Thông tư 200/2014/TT-BTC, thiết kế bảng CSDL PostgreSQL trên `113.20.107.184:6432` và danh mục toàn bộ API Backend thực thi.
+    * Nạp trực tiếp vào ngữ cảnh hệ thống (`sysPrompt` trong `AiService.askAssistant` cho Mobile App và `personaSystemInstruction` trong `AiCrmAnalyticsService.handleChatAssistant` cho Web CRM).
+  - **2. Tự Động Thực Thi Thao Tác Trực Tiếp & Xuất Thẻ Kiểm Tra Sau Khi Làm Xong (Post-Action Verification Card)**:
+    * Khi người dùng ra lệnh bằng lời nói / text hoặc nhấn chọn thao tác: AI tự động phân tích tham số và thực thi trực tiếp trên CSDL chuẩn `113.20.107.184:6432` (`CREATE_EVENT`, `CREATE_TRAINING`, `RECORD_FINANCE`, `ARCHIVE_DOCUMENT`,...).
+    * **Bắt buộc có Thẻ Kiểm Tra Đối Soát (`AiVerificationCard`)**: Hiển thị Action ID, Tên bảng, ID bản ghi vừa tạo/sửa, thời gian thực tế, các trường dữ liệu quan trọng đối soát, kiểm tra tính toàn vẹn (Integrity Check Passed, DB Validated, No Duplicate, RBAC Permitted) cùng nút bấm xem nhanh hoặc sửa trên hệ thống.
+  - **3. Phân Tích Tệp Import, Hỏi Ngược Lại Người Dùng & Hiển Thị Các Lựa Chọn Bên Dưới (Interactive Choice Chips)**:
+    * Khi người dùng đính kèm file Excel, Word, PDF trên thanh nhập liệu ChatGPT của CRM (`CrmChatGPTView.tsx`) hoặc nút đính kèm của Mobile App (`Ceo1983ChatAssistant.tsx`):
+    * Hàm `analyzeImportedFileForAi` bóc tách văn bản, phát hiện loại văn bản và sinh tóm tắt nội dung.
+    * AI **tự động hỏi ngược lại người dùng muốn làm gì với tệp** và render danh sách các nút lựa chọn bên dưới (`AiChoiceChips.tsx`):
+      - "Khởi tạo Sự kiện mới từ tệp này"
+      - "Khởi tạo Khóa Đào tạo chuyên đề"
+      - "Lưu văn bản vào Thư mục Ban chuyên môn"
+      - "Ghi nhận phiếu thu / Giao dịch tài chính"
+    * Khi người dùng bấm vào một lựa chọn: AI tiếp nhận và tự động thực thi thao tác đó, sau đó lập tức trả về Thẻ Kiểm Tra Đối Soát để người dùng rà soát kết quả.
+  - **4. Backend Endpoint & Service Mở Rộng**:
+    * `POST /api/ai/analyze-imported-file`: Phân tích tệp và sinh câu hỏi kèm các lựa chọn.
+    * `POST /api/ai/execute-action`: Thực thi thao tác tự động trên CSDL chuẩn `113.20.107.184:6432` và trả về `verificationCard`.
+    * Mở rộng `POST /api/ai/crm/chat` và `POST /api/ai/ask` hỗ trợ `filePayload` và `selectedAction`.
+
+- **Bản cập nhật ngày 18/11/2026 (v11.62): Xử Lý Triệt Để Lỗi 502 Bad Gateway Nginx Cho Subdomain Web CRM (`crm.ceo1983.viconnect.vn`) & Chuẩn Hóa Cổng Lắng Nghe Nitro SSR ([NODE-CORE-004])**:
+  - **1. Nguyên Nhân Gốc Rễ Gây Lỗi 502 Bad Gateway**:
+    * **Xung đột Header WebSocket/HTTP**: Trong cấu hình Nginx reverse proxy cũ (`setup-ssl.sh` và `nginx.conf`), header `proxy_set_header Connection "upgrade"` bị gán cứng vô điều kiện cho cả location `/` và `/api/`. Khi người dùng gửi request HTTP GET thông thường từ trình duyệt, Node.js runtime (v22 `llhttp`) phát hiện `Connection: upgrade` nên chuyển tiếp sang sự kiện `'upgrade'` thay vì phát `'request'`, dẫn đến Nitro SSR không xử lý request và ngắt kết nối đột ngột, khiến Nginx trả về lỗi `502 Bad Gateway`.
+    * **Cổng Lắng Nghe SSR Nitro**: Tiến trình Nitro SSR của TanStack Start ưu tiên đọc `NITRO_PORT`, trong khi cấu hình Docker Compose chỉ truyền `PORT=8080`, và file `.env.crm` cũ có biến `PORT=4000` làm sai lệch cổng lắng nghe nội bộ trong container.
+  - **2. Giải Pháp Xử Lý Toàn Diện Đã Thực Hiện**:
+    * **Cấu hình Nginx Map Chuẩn**: Bổ sung `map $http_upgrade $connection_upgrade` chuẩn RFC 7230:
+      ```nginx
+      map $http_upgrade $connection_upgrade {
+          default upgrade;
+          ''      close;
+      }
+      ```
+      Áp dụng `proxy_set_header Connection $connection_upgrade;` cho tất cả các location HTTP (`/`, `/api/`), chỉ giữ `Connection "upgrade"` riêng cho `/socket.io/`.
+    * **Đồng Bộ & Chuẩn Hóa Biến Cổng Lắng Nghe SSR**:
+      - Bổ sung `NITRO_PORT=8080`, `PORT=8080`, `NITRO_HOST=0.0.0.0`, `HOST=0.0.0.0` vào `docker-entrypoint.sh`, `deploy/crm/docker-compose.yml`, `deploy/ceo1983/docker-compose.yml`.
+      - Loại bỏ `PORT=4000` khỏi `.env.crm`, `.env.association`, `.env.production` để tránh ghi đè sai cổng của frontend container.
+    * **Bổ Sung Log & Diagnostic Tự Động Trong CI/CD**:
+      - Cập nhật `.github/workflows/auto-deploy-subdomains.yml` và `deploy/ssl/setup-ssl.sh` để kiểm tra trạng thái (`docker ps`), in log (`docker logs --tail 20`) và test curl nội bộ trực tiếp các container ngay sau khi khởi động.
+
 
 - **Bản cập nhật ngày 18/11/2026 (v11.61): Tự Động Bóc Tách Tệp (Excel, Word, PDF) Cho Khởi Tạo Sự Kiện & Khóa Đào Tạo ([NODE-CRM-005], [NODE-CRM-014])**:
   - **1. Trường Nhập Tệp Đính Kèm Tự Động Bóc Tách Cho Sự Kiện (`EventWizard.tsx`)**:

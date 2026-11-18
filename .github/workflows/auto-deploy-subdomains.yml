@@ -179,6 +179,10 @@ jobs:
             docker compose -f docker-compose.yml stop 2>/dev/null || true
             docker rm -f ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true
             docker compose -f docker-compose.yml up -d --force-recreate
+            sleep 3
+            echo "--- TRẠNG THÁI CONTAINER MOBILE CEO 1983 ---"
+            docker ps -a --filter name=ceo1983 --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+            docker logs --tail 15 ceo1983-frontend-prod 2>&1 || true
 
             echo ">>> [4/5] Đồng bộ và khởi động CRM Hiệp Hội (https://crm.ceo1983.viconnect.vn)..."
             mkdir -p /root/crm
@@ -188,6 +192,11 @@ jobs:
             docker compose -f docker-compose.yml stop 2>/dev/null || true
             docker rm -f crm-frontend-prod crm-backend-prod 2>/dev/null || true
             docker compose -f docker-compose.yml up -d --force-recreate
+            sleep 3
+            echo "--- TRẠNG THÁI CONTAINER CRM ---"
+            docker ps -a --filter name=crm --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+            docker logs --tail 15 crm-frontend-prod 2>&1 || true
+            docker logs --tail 15 crm-backend-prod 2>&1 || true
 
             echo ">>> [5/5] Cập nhật Nginx Reverse Proxy SSL..."
             mkdir -p /root/ssl-proxy

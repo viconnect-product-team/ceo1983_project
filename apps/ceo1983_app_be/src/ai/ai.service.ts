@@ -1,6 +1,13 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import {
+  CEO1983_COMPREHENSIVE_KNOWLEDGE_BASE,
+  detectFileClarification,
+  executeAutonomousAction,
+  FileClarificationPayload,
+  VerificationCardPayload,
+} from './ai-knowledge-and-actions';
 
 @Injectable()
 export class AiService {
@@ -2382,6 +2389,8 @@ export class AiService {
     dynamicData?: any;
     provider: string;
     model: string;
+    fileClarification?: FileClarificationPayload;
+    verificationCard?: VerificationCardPayload;
   }> {
     // 0. Giới hạn 50 câu hỏi cho mỗi tài khoản
     const quotaCheck = await this.checkAndIncrementUserQuota(userId, prompt);
@@ -2398,6 +2407,70 @@ export class AiService {
     const context = await this.getLiveMemberAssistantContext(userId);
     const rawPrompt = (prompt || '').trim();
     const q = rawPrompt.toLowerCase();
+
+    // 0. Xử lý khi nhận yêu cầu hành động tự động cụ thể (selectedAction)
+    if (clientContext?.selectedAction?.actionType) {
+      const actionRes = await executeAutonomousAction(
+        this.prisma,
+        userId,
+        clientContext.selectedAction.actionType,
+        clientContext.selectedAction.payload || {},
+      );
+      return {
+        answer: actionRes.replyText,
+        speechText: `Em đã thực thi thao tác ${clientContext.selectedAction.actionType} trên hệ thống thành công và đã đối soát dữ liệu ạ!`,
+        intent: 'action',
+        provider: 'ceo1983-autonomous-engine',
+        model: 'action-executor',
+        verificationCard: actionRes.verificationCard,
+      };
+    }
+
+    // 0.1 Xử lý khi người dùng tải lên tệp (filePayload)
+    if (clientContext?.filePayload?.fileName && clientContext?.filePayload?.fileText) {
+      const fileClarification = detectFileClarification(
+        clientContext.filePayload.fileName,
+        clientContext.filePayload.fileText,
+      );
+      return {
+        answer: `${fileClarification.summary}\n\n**${fileClarification.clarificationQuestion}**`,
+        speechText: `Em đã phân tích tệp ${clientContext.filePayload.fileName}. Quý Anh/Chị muốn thực hiện thao tác gì tiếp theo ạ?`,
+        intent: 'chat',
+        provider: 'ceo1983-document-engine',
+        model: 'doc-intelligence',
+        fileClarification,
+      };
+    }
+
+    // 0.2 Tự động phát hiện ý định thao tác trực tiếp trên CSDL chuẩn từ câu lệnh (Autonomous Action Intent)
+    if (q.startsWith('tạo sự kiện') || q.includes('tạo sự kiện mới')) {
+      const matchName = prompt.match(/(?:tên|sự kiện)\s*[:：]?\s*["“']?([^"”'\n,]+)["”']?/i);
+      const eventName = matchName ? matchName[1].trim() : prompt.replace(/^(hãy |vui lòng |em )?tạo sự kiện( mới)?/i, '').trim() || 'Sự Kiện Kết Nối CEO 1983';
+      const actionRes = await executeAutonomousAction(this.prisma, userId, 'CREATE_EVENT', { name: eventName });
+      return {
+        answer: actionRes.replyText,
+        speechText: `Em đã tự động tạo sự kiện ${eventName} vào cơ sở dữ liệu và gửi thẻ kiểm tra đối soát cho Quý Anh/Chị ạ!`,
+        intent: 'action',
+        route: '/association/events',
+        provider: 'ceo1983-autonomous-engine',
+        model: 'action-executor',
+        verificationCard: actionRes.verificationCard,
+      };
+    }
+
+    if (q.startsWith('tạo khóa học') || q.startsWith('tạo đào tạo') || q.includes('tạo chương trình đào tạo')) {
+      const trainingTitle = prompt.replace(/^(hãy |vui lòng |em )?tạo (khóa học|chương trình đào tạo|đào tạo)( mới)?/i, '').trim() || 'Khóa Đào Tạo Quản Trị';
+      const actionRes = await executeAutonomousAction(this.prisma, userId, 'CREATE_TRAINING', { title: trainingTitle });
+      return {
+        answer: actionRes.replyText,
+        speechText: `Em đã khởi tạo khóa đào tạo ${trainingTitle} trên hệ thống thành công ạ!`,
+        intent: 'action',
+        route: '/association/training',
+        provider: 'ceo1983-autonomous-engine',
+        model: 'action-executor',
+        verificationCard: actionRes.verificationCard,
+      };
+    }
 
     // 0.a Câu hỏi về chính trợ lý / chào hỏi -> trả lời đúng ngữ cảnh, không tra cứu từ khóa
     const metaAnswer = this.answerMetaQuestion(rawPrompt, context);
@@ -2647,6 +2720,8 @@ DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG 
 
 LỊCH SỬ HỘI THOẠI GẦN NHẤT (để hiểu câu hỏi nối tiếp):
 ${historyText || '(chưa có)'}
+
+${CEO1983_COMPREHENSIVE_KNOWLEDGE_BASE}
 
 DANH MỤC API HỆ THỐNG CEO 1983 (SYSTEM_API_CATALOG):
 - Hội viên:
