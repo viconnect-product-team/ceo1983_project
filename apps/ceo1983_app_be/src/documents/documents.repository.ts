@@ -234,4 +234,221 @@ export class DocumentsRepository {
       name: rows[0].name || 'document',
     };
   }
+
+  /**
+   * Đảm bảo 7 thư mục gốc của 7 Ban Chuyên Môn luôn sẵn sàng trong hệ thống
+   */
+  async ensureDepartmentFolders(associationId: string | null): Promise<void> {
+    const DEPARTMENTS = [
+      {
+        code: 'FLD-DEPT-BDH',
+        name: 'Ban Điều Hành',
+        category: 'ban_dieu_hanh',
+        description: 'Văn kiện, nghị quyết, chỉ đạo điều hành CLB CEO 1983',
+        shareRole: 'admin,bqt,bdh,chu_tich,tong_thu_ky',
+      },
+      {
+        code: 'FLD-DEPT-BTK',
+        name: 'Ban Thư Ký',
+        category: 'ban_thu_ky',
+        description: 'Biên bản cuộc họp, kế hoạch công tác và tài liệu hành chính',
+        shareRole: 'admin,bqt,btk,tong_thu_ky',
+      },
+      {
+        code: 'FLD-DEPT-BTV',
+        name: 'Ban Thành Viên',
+        category: 'ban_thanh_vien',
+        description: 'Hồ sơ kết nạp, danh bạ và quy chế hội viên',
+        shareRole: 'admin,bqt,btv,truong_ban_thanh_vien',
+      },
+      {
+        code: 'FLD-DEPT-BXT',
+        name: 'Ban Xúc Tiến Thương Mại',
+        category: 'ban_xuc_tien',
+        description: 'Hồ sơ giao thương B2B, hợp đồng liên minh và cơ hội đầu tư',
+        shareRole: 'admin,bqt,bxt,truong_ban_xuc_tien',
+      },
+      {
+        code: 'FLD-DEPT-BTT',
+        name: 'Ban Truyền Thông & Sự Kiện',
+        category: 'ban_truyen_thong',
+        description: 'Hình ảnh, video khoảnh khắc sự kiện, thông cáo báo chí và tư liệu đào tạo',
+        shareRole: 'admin,bqt,btt,truong_ban_truyen_thong',
+      },
+      {
+        code: 'FLD-DEPT-BTN',
+        name: 'Ban Thiện Nguyện',
+        category: 'ban_thien_nguyen',
+        description: 'Chương trình an sinh xã hội, sao kê đóng góp và kế hoạch từ thiện',
+        shareRole: 'admin,bqt,btn,truong_ban_thien_nguyen',
+      },
+      {
+        code: 'FLD-DEPT-BTC',
+        name: 'Ban Tài Chính',
+        category: 'ban_tai_chinh',
+        description: 'Báo cáo thu chi, quyết toán hội phí và ngân sách quỹ CLB',
+        shareRole: 'admin,bqt,btc,ke_toan,thu_quy',
+      },
+    ];
+
+    for (const dept of DEPARTMENTS) {
+      try {
+        const existing = await this.prisma.$queryRaw<any[]>`
+          SELECT code FROM public.documents WHERE code = ${dept.code} LIMIT 1
+        `;
+        if (existing.length === 0) {
+          await this.prisma.$executeRaw`
+            INSERT INTO public.documents (
+              code, name, category, size, uploaded_by, type, file_path, association_id,
+              folder_id, is_folder, share_scope, share_role, shared_with, is_starred,
+              color_tag, description, doc_scope, uploaded_at
+            ) VALUES (
+              ${dept.code}, ${dept.name}, ${dept.category}, 'Thư mục Ban', 'Ban Quản Trị',
+              'folder', null, ${associationId ? associationId : null}::uuid,
+              null, true, 'department', ${dept.shareRole}, '[]'::jsonb, false,
+              '#003B95', ${dept.description}, 'association', NOW()
+            )
+          `;
+        }
+      } catch (e) {
+        // bỏ qua lỗi nếu đã tồn tại
+      }
+    }
+  }
+
+  /**
+   * Tạo hoặc lấy thư mục con tương ứng cho Sự kiện, Khóa đào tạo hoặc Cuộc họp
+   */
+  async ensureActivitySubfolder(
+    activityType: 'event' | 'training' | 'meeting',
+    activityId: string,
+    activityTitle: string,
+    associationId: string | null,
+  ): Promise<string> {
+    await this.ensureDepartmentFolders(associationId);
+
+    let parentFolderCode = 'FLD-DEPT-BTT';
+    let folderCodePrefix = 'FLD-EVT-';
+    let category = 'ban_truyen_thong';
+    let labelPrefix = 'Sự kiện: ';
+
+    if (activityType === 'training') {
+      parentFolderCode = 'FLD-DEPT-BTT';
+      folderCodePrefix = 'FLD-TRN-';
+      category = 'ban_truyen_thong';
+      labelPrefix = 'Đào tạo: ';
+    } else if (activityType === 'meeting') {
+      parentFolderCode = 'FLD-DEPT-BTK';
+      folderCodePrefix = 'FLD-MTG-';
+      category = 'ban_thu_ky';
+      labelPrefix = 'Cuộc họp: ';
+    }
+
+    const subfolderCode = `${folderCodePrefix}${activityId}`;
+    const folderName = `${labelPrefix}${activityTitle}`;
+
+    try {
+      const existing = await this.prisma.$queryRaw<any[]>`
+        SELECT code FROM public.documents WHERE code = ${subfolderCode} LIMIT 1
+      `;
+      if (existing.length === 0) {
+        await this.prisma.$executeRaw`
+          INSERT INTO public.documents (
+            code, name, category, size, uploaded_by, type, file_path, association_id,
+            folder_id, is_folder, share_scope, share_role, shared_with, is_starred,
+            color_tag, description, doc_scope, uploaded_at
+          ) VALUES (
+            ${subfolderCode}, ${folderName}, ${category}, 'Thư mục Hoạt động', 'Hệ thống tự động',
+            'folder', null, ${associationId ? associationId : null}::uuid,
+            ${parentFolderCode}, true, 'department', 'member', '[]'::jsonb, false,
+            '#0284C7', ${`Tập tin & Hình ảnh khoảnh khắc của ${folderName}`}, 'association', NOW()
+          )
+        `;
+      }
+    } catch (e) {}
+
+    return subfolderCode;
+  }
+
+  /**
+   * Tự động lưu ảnh khoảnh khắc hoặc tài liệu media vào đúng thư mục con của sự kiện / đào tạo / cuộc họp
+   */
+  async saveMediaToActivity(
+    activityType: 'event' | 'training' | 'meeting',
+    activityId: string,
+    activityTitle: string,
+    mediaUrl: string,
+    uploadedBy: string,
+    associationId: string | null,
+    fileName?: string,
+  ): Promise<any> {
+    const subfolderCode = await this.ensureActivitySubfolder(
+      activityType,
+      activityId,
+      activityTitle,
+      associationId,
+    );
+
+    const docCode = `MED-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const isVideo = Boolean(mediaUrl.match(/\.(mp4|mov|avi|webm)$/i));
+    const type = isVideo ? 'video' : 'image';
+    const name = fileName || `Khoảnh khắc - ${activityTitle} (${new Date().toLocaleDateString('vi-VN')})`;
+
+    let category = 'ban_truyen_thong';
+    if (activityType === 'meeting') category = 'ban_thu_ky';
+
+    try {
+      await this.prisma.$executeRaw`
+        INSERT INTO public.documents (
+          code, name, category, size, uploaded_by, type, file_path, association_id,
+          folder_id, is_folder, share_scope, share_role, shared_with, is_starred,
+          color_tag, description, doc_scope, uploaded_at
+        ) VALUES (
+          ${docCode}, ${name}, ${category}, 'Media đính kèm', ${uploadedBy},
+          ${type}, ${mediaUrl}, ${associationId ? associationId : null}::uuid,
+          ${subfolderCode}, false, 'public', 'viewer', '[]'::jsonb, false,
+          null, ${`Được lưu tự động từ hoạt động ${activityTitle}`}, 'association', NOW()
+        )
+      `;
+      return { success: true, docCode, subfolderCode };
+    } catch (e: any) {
+      console.warn('saveMediaToActivity error:', e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Lấy quyền và ban chuyên môn của người dùng từ CSDL
+   */
+  async getUserRoleAndDepartment(userId: string): Promise<{ roles: string[]; departments: string[] }> {
+    try {
+      const [userRoles, memberships] = await Promise.all([
+        this.prisma.$queryRaw<any[]>`
+          SELECT role FROM public.user_roles WHERE user_id = ${userId}::uuid
+        `.catch(() => []),
+        this.prisma.$queryRaw<any[]>`
+          SELECT role, department FROM public.memberships WHERE user_id = ${userId}::uuid
+        `.catch(() => []),
+      ]);
+
+      const roles = Array.from(
+        new Set([
+          ...userRoles.map((r) => String(r.role).toLowerCase()),
+          ...memberships.map((m) => String(m.role).toLowerCase()),
+        ]),
+      );
+
+      const departments = Array.from(
+        new Set(
+          memberships
+            .map((m) => String(m.department || '').toLowerCase())
+            .filter(Boolean),
+        ),
+      );
+
+      return { roles, departments };
+    } catch (e) {
+      return { roles: ['member'], departments: [] };
+    }
+  }
 }

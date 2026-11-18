@@ -13,6 +13,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { exportToExcel, formatDisplayDate, formatExcelCurrency, numberToVietnameseWords } from "@/lib/excel-export";
+import { getFormTemplate, getCachedFormTemplates } from "@/lib/form-templates";
+import type { InvoiceTemplate } from "@/types/form-template.types";
+import { Sliders } from "lucide-react";
 import { toast } from "sonner";
 
 export interface InvoiceItem {
@@ -45,6 +48,29 @@ export function InvoiceExportModal({
   const [exportMode, setExportMode] = useState<"all" | "category">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [timeFilter, setTimeFilter] = useState<"all" | "month" | "quarter" | "year">("year");
+  const [invoiceTemplate, setInvoiceTemplate] = useState<InvoiceTemplate>(
+    () => getCachedFormTemplates().INVOICE_RECEIPT_PDF
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    getFormTemplate<InvoiceTemplate>("INVOICE_RECEIPT_PDF").then((tpl) => {
+      if (mounted && tpl) setInvoiceTemplate(tpl);
+    });
+
+    const handleTplUpdate = (e: any) => {
+      if (!e?.detail?.code || e.detail.code === "INVOICE_RECEIPT_PDF" || e.detail.reset) {
+        getFormTemplate<InvoiceTemplate>("INVOICE_RECEIPT_PDF").then((tpl) => {
+          if (mounted && tpl) setInvoiceTemplate(tpl);
+        });
+      }
+    };
+    window.addEventListener("form_templates_updated", handleTplUpdate);
+    return () => {
+      mounted = false;
+      window.removeEventListener("form_templates_updated", handleTplUpdate);
+    };
+  }, []);
 
   // Get distinct categories
   const categories = useMemo(() => {

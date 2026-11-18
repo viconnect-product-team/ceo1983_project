@@ -2768,6 +2768,157 @@ export class AdminService implements OnModuleInit {
     };
   }
 
+  // ── FORM TEMPLATES & DOCUMENT FORMAT CONFIGURATION ────────────────────────
+  private readonly DEFAULT_FORM_TEMPLATES: Record<string, any> = {
+    FINANCE_REPORT_EXCEL: {
+      code: 'FINANCE_REPORT_EXCEL',
+      name: 'Mẫu Báo Cáo Kiểm Toán & Sổ Nhật Ký Thu Chi (Excel)',
+      category: 'finance',
+      formatType: 'excel',
+      title: 'BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH',
+      subtitle: 'Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983',
+      organization: 'CLB DOANH NHÂN CEO 1983 (HANOIBA)',
+      address: 'Tòa nhà HanoiBA, TP. Hà Nội',
+      circularCode: 'Mẫu số S07-DN',
+      circularNote: '(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)',
+      fundType: 'Quỹ hoạt động CLB Doanh Nhân CEO 1983',
+      currencyUnit: 'VNĐ',
+      sheetName: 'Nhat_Ky_Thu_Chi',
+      filenamePrefix: 'bao-cao-tai-chinh',
+      columns: [
+        { key: 'id', label: 'Mã chứng từ', width: 16, enabled: true },
+        { key: 'date', label: 'Ngày ghi sổ', width: 16, enabled: true },
+        { key: 'type', label: 'Loại giao dịch', width: 16, enabled: true },
+        { key: 'category', label: 'Danh mục', width: 22, enabled: true },
+        { key: 'description', label: 'Nội dung hạch toán', width: 38, enabled: true },
+        { key: 'method', label: 'Hình thức', width: 18, enabled: true },
+        { key: 'acc', label: 'TK Đối ứng', width: 18, enabled: true },
+        { key: 'amount', label: 'Số tiền (VNĐ)', width: 22, enabled: true },
+        { key: 'recipient', label: 'Đối tác / Người nộp - nhận', width: 30, enabled: true },
+        { key: 'status', label: 'Trạng thái kiểm toán', width: 18, enabled: true },
+      ],
+      summaryLabels: {
+        totalIn: 'TỔNG CỘNG NGUỒN THU:',
+        totalOut: 'TỔNG CỘNG KHOẢN CHI:',
+        net: 'TỒN QUỸ RÒNG / THẶNG DƯ:',
+      },
+      signerTitles: ['NGƯỜI LẬP BÁO CÁO', 'TRƯỞNG BAN TÀI CHÍNH', 'CHỦ TỊCH CLB CEO 1983'],
+      updatedAt: new Date().toISOString(),
+    },
+    INVOICE_RECEIPT_PDF: {
+      code: 'INVOICE_RECEIPT_PDF',
+      name: 'Mẫu Phiếu Thu Tiền & Hóa Đơn Điện Tử (PDF / In)',
+      category: 'finance',
+      formatType: 'pdf_print',
+      orgName: 'CLB DOANH NHÂN CEO 1983 (HANOIBA)',
+      orgAddress: 'Tòa nhà HanoiBA, TP. Hà Nội',
+      taxCode: '0101234567',
+      invoiceFormNumber: '01GTKT0/001',
+      invoiceSerial: 'CEO/26E',
+      invoiceTitle: 'PHIẾU THU & HÓA ĐƠN ĐIỆN TỬ',
+      footerNote: 'Cảm ơn Quý Doanh nhân đã đồng hành cùng CLB Doanh Nhân CEO 1983!',
+      signers: ['Người nộp tiền', 'Thủ quỹ / Kế toán viên', 'Trưởng Ban Tài chính'],
+      updatedAt: new Date().toISOString(),
+    },
+    MEMBER_FEE_REPORT: {
+      code: 'MEMBER_FEE_REPORT',
+      name: 'Mẫu Báo Cáo Thu Hội Phí Thường Niên',
+      category: 'members',
+      formatType: 'excel',
+      title: 'BÁO CÁO TỔNG HỢP THU HỘI PHÍ HỘI VIÊN CEO 1983',
+      organization: 'CLB DOANH NHÂN CEO 1983 (HANOIBA)',
+      standardFee: 5000000,
+      currencyUnit: 'VNĐ',
+      signers: ['Kế toán hội phí', 'Trưởng Ban Tài chính'],
+      updatedAt: new Date().toISOString(),
+    },
+  };
+
+  async getFormTemplates() {
+    try {
+      const rows = await this.prisma.$queryRaw<{ value: any }[]>`
+        SELECT value FROM public.app_settings WHERE key = 'crm_form_templates' LIMIT 1
+      `.catch(() => []);
+
+      if (rows.length && rows[0]?.value) {
+        const val = rows[0].value;
+        const stored = typeof val === 'string' ? JSON.parse(val) : val.templates || val;
+        return { ok: true, templates: { ...this.DEFAULT_FORM_TEMPLATES, ...(stored || {}) } };
+      }
+
+      return { ok: true, templates: this.DEFAULT_FORM_TEMPLATES };
+    } catch {
+      return { ok: true, templates: this.DEFAULT_FORM_TEMPLATES };
+    }
+  }
+
+  async getFormTemplateByCode(code: string) {
+    const all = await this.getFormTemplates();
+    const tpl = all.templates[code] || this.DEFAULT_FORM_TEMPLATES[code];
+    return { ok: true, template: tpl || null };
+  }
+
+  async saveFormTemplate(code: string, payload: any, userId?: string) {
+    const current = await this.getFormTemplates();
+    const updated = {
+      ...current.templates,
+      [code]: {
+        ...(current.templates[code] || this.DEFAULT_FORM_TEMPLATES[code] || {}),
+        ...payload,
+        code,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    const jsonValue = JSON.stringify({
+      templates: updated,
+      updatedAt: new Date().toISOString(),
+    });
+
+    const userParam = this.isUuid(userId) ? `'${userId}'::uuid` : 'NULL';
+
+    await this.prisma.$executeRawUnsafe(
+      `
+      INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+      VALUES ('crm_form_templates', $1::jsonb, NOW(), ${userParam})
+      ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
+    `,
+      jsonValue,
+    );
+
+    return {
+      success: true,
+      message: `Cập nhật biểu mẫu [${code}] thành công`,
+      template: updated[code],
+    };
+  }
+
+  async resetFormTemplates(userId?: string) {
+    const jsonValue = JSON.stringify({
+      templates: this.DEFAULT_FORM_TEMPLATES,
+      updatedAt: new Date().toISOString(),
+    });
+
+    const userParam = this.isUuid(userId) ? `'${userId}'::uuid` : 'NULL';
+
+    await this.prisma.$executeRawUnsafe(
+      `
+      INSERT INTO public.app_settings (key, value, updated_at, updated_by)
+      VALUES ('crm_form_templates', $1::jsonb, NOW(), ${userParam})
+      ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW(), updated_by = EXCLUDED.updated_by
+    `,
+      jsonValue,
+    );
+
+    return {
+      success: true,
+      message: 'Khôi phục toàn bộ biểu mẫu về định dạng mặc định thành công',
+      templates: this.DEFAULT_FORM_TEMPLATES,
+    };
+  }
+
   // ── MEMBER PERMISSION PROFILES (RBAC INDIVIDUAL OVERRIDES) ─────────────────
   async getMemberPermissions() {
     const rows = await this.prisma.$queryRaw<{ value: any }[]>`

@@ -37,13 +37,134 @@ export class DocumentsService {
       description: r.description || null,
       docScope: r.doc_scope || 'association',
       enterpriseName: r.enterprise_name || null,
+      hasAccess: r.hasAccess !== undefined ? Boolean(r.hasAccess) : true,
+      lockedReason: r.lockedReason || null,
     };
   }
 
   async list(userId: string) {
     const activeId = await this.documentsRepo.getActiveAssociationId(userId);
+    // Đảm bảo 7 thư mục ban luôn có sẵn
+    await this.documentsRepo.ensureDepartmentFolders(activeId);
+
     const rows = await this.documentsRepo.listDocuments(activeId);
-    return rows.map((r) => this.mapRow(r));
+    const { roles, departments } = await this.documentsRepo.getUserRoleAndDepartment(userId);
+
+    const isGlobalAdmin = roles.some((r) =>
+      ['admin', 'superadmin', 'bqt', 'chu_tich', 'tong_thu_ky', 'platform_admin', 'adm'].includes(r),
+    );
+
+    // Xây dựng map kiểm tra quyền cho từng thư mục cha
+    const parentAccessMap = new Map<string, boolean>();
+
+    return rows.map((r) => {
+      let hasAccess = true;
+      let lockedReason: string | null = null;
+
+      // Nếu là thư mục gốc của một Ban (không có folderId cha)
+      if (r.is_folder && !r.folder_id && r.code?.startsWith('FLD-DEPT-')) {
+        if (!isGlobalAdmin) {
+          const allowedRoles = (r.share_role || '')
+            .split(',')
+            .map((s: string) => s.trim().toLowerCase())
+            .filter(Boolean);
+
+          const matchesRole = roles.some((userRole) => allowedRoles.includes(userRole));
+          const matchesDepartment = departments.some((d) => d === String(r.category || '').toLowerCase());
+
+          if (!matchesRole && !matchesDepartment) {
+            hasAccess = false;
+            lockedReason = `Chỉ dành riêng cho thành viên ${r.name} hoặc Ban Quản Trị CLB`;
+          }
+        }
+        parentAccessMap.set(r.code, hasAccess);
+      } else if (r.folder_id && parentAccessMap.has(r.folder_id)) {
+        // Thư mục con hoặc file con kế thừa quyền của thư mục cha
+        hasAccess = parentAccessMap.get(r.folder_id)!;
+        if (!hasAccess) {
+          lockedReason = `Thuộc thư mục ban chuyên môn bị giới hạn quyền truy cập`;
+        }
+      }
+
+      return this.mapRow({ ...r, hasAccess, lockedReason });
+    });
+  }
+
+  /**
+   * Kiểm tra quyền mở thư mục cụ thể
+   */
+  async checkFolderAccess(folderCode: string, userId: string): Promise<boolean> {
+    const row = await this.documentsRepo.findDocumentById(folderCode);
+    if (!row) throw new NotFoundException('Không tìm thấy thư mục');
+
+    const { roles, departments } = await this.documentsRepo.getUserRoleAndDepartment(userId);
+    const isGlobalAdmin = roles.some((r) =>
+      ['admin', 'superadmin', 'bqt', 'chu_tich', 'tong_thu_ky', 'platform_admin', 'adm'].includes(r),
+    );
+    if (isGlobalAdmin) return true;
+
+    // Kiểm tra thư mục cha nếu đây là thư mục con
+    let targetFolder = row;
+    if (row.folder_id && row.folder_id.startsWith('FLD-DEPT-')) {
+      const parentRow = await this.documentsRepo.findDocumentById(row.folder_id);
+      if (parentRow) targetFolder = parentRow;
+    }
+
+    if (targetFolder.code?.startsWith('FLD-DEPT-')) {
+      const allowedRoles = (targetFolder.share_role || '')
+        .split(',')
+        .map((s: string) => s.trim().toLowerCase())
+        .filter(Boolean);
+
+      const matchesRole = roles.some((userRole) => allowedRoles.includes(userRole));
+      const matchesDepartment = departments.some((d) => d === String(targetFolder.category || '').toLowerCase());
+
+      if (!matchesRole && !matchesDepartment) {
+        throw new ForbiddenException(
+          `Bạn không có quyền truy cập vào thư mục "${targetFolder.name}". Thư mục chỉ dành cho thành viên của Ban và Ban Quản Trị.`,
+        );
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Tự động đồng bộ ảnh khoảnh khắc và tài liệu hoạt động vào thư mục con của Ban
+   */
+  async syncActivityMedia(
+    userId: string,
+    payload: {
+      activityType: 'event' | 'training' | 'meeting';
+      activityId: string;
+      activityTitle: string;
+      mediaUrls: string[];
+      uploadedBy?: string;
+      notes?: string;
+    },
+  ) {
+    const activeId = await this.documentsRepo.getActiveAssociationId(userId);
+    const results: any[] = [];
+    const uploader = payload.uploadedBy || 'Hội viên tham gia';
+
+    for (const url of payload.mediaUrls || []) {
+      const res = await this.documentsRepo.saveMediaToActivity(
+        payload.activityType,
+        payload.activityId,
+        payload.activityTitle,
+        url,
+        uploader,
+        activeId,
+        payload.notes ? `Khoảnh khắc: ${payload.notes.slice(0, 40)}` : undefined,
+      );
+      if (res) results.push(res);
+    }
+
+    return {
+      success: true,
+      count: results.length,
+      subfolderCode: results[0]?.subfolderCode,
+    };
   }
 
   async create(userId: string, data: CreateDocumentDto) {

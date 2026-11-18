@@ -41,7 +41,7 @@ export interface ExportExcelOptions<T> {
   data: T[];
   summaryRows?: Array<Array<string | number | null | undefined>>;
   amountInWords?: string;
-  signerTitles?: [string, string, string];
+  signerTitles?: [string, string, string] | string[];
   // Cashbook / Vietnamese accounting standards (Circular 200/2014/TT-BTC & Circular 133/2016/TT-BTC)
   templateType?: "cashbook" | "standard";
   organization?: string;

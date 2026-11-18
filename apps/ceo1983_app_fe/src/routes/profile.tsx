@@ -202,36 +202,36 @@ function ProfilePage() {
   }
 
   const isSystemAdminEmail =
-    (user?.email || "").toLowerCase() === "admin@connect.vn" ||
-    (user?.email || "").toLowerCase() === "admin@viconnect.vn";
+    (user?.email || "").toLowerCase().trim() === "admin@connect.vn" ||
+    (user?.email || "").toLowerCase().trim() === "admin@viconnect.vn";
 
   const effectiveDepartment =
-    (isAdmin || isPlatformAdmin || isBQT || isSystemAdminEmail) &&
-    (!userDepartment || userDepartment.toLowerCase().includes("hội viên"))
+    isSystemAdminEmail || isAdmin || isPlatformAdmin || isBQT || isPresident
       ? "Ban Quản Trị"
       : userDepartment || "Hội viên ceo1983";
 
-  const roleBadgeLabel = isPresident
-    ? "Chủ tịch CLB CEO 1983"
-    : isPlatformAdmin
-    ? "Quản trị viên Nền tảng (Platform Admin)"
-    : isAdmin || isBQT || isSystemAdminEmail
-    ? "Ban Quản Trị CLB (Admin)"
-    : srsRole === "truong_ban_tai_chinh" || srsRole === "BTC"
-    ? "Trưởng Ban Tài chính"
-    : srsRole === "truong_ban_thanh_vien" || srsRole === "BTV"
-    ? "Trưởng Ban Hội viên"
-    : srsRole === "truong_ban_truyen_thong" || srsRole === "BTT"
-    ? "Trưởng Ban Truyền thông"
-    : srsRole === "truong_ban_xuc_tien" || srsRole === "BXT"
-    ? "Trưởng Ban Xúc tiến Giao thương"
-    : srsRole === "truong_ban_thien_nguyen" || srsRole === "BTN"
-    ? "Trưởng Ban Thiện nguyện"
-    : srsRole === "thanh_vien_ban_tai_chinh"
-    ? "Thành viên Ban Tài chính"
-    : srsRole === "tong_thu_ky" || srsRole === "BTK"
-    ? "Tổng Thư ký CLB"
-    : "Hội viên chính thức";
+  const roleBadgeLabel =
+    isSystemAdminEmail || isPresident
+      ? "Chủ tịch CLB CEO 1983"
+      : isPlatformAdmin
+      ? "Quản trị viên Nền tảng (Platform Admin)"
+      : isAdmin || isBQT
+      ? "Ban Quản Trị CLB (Admin)"
+      : srsRole === "truong_ban_tai_chinh" || srsRole === "BTC"
+      ? "Trưởng Ban Tài chính"
+      : srsRole === "truong_ban_thanh_vien" || srsRole === "BTV"
+      ? "Trưởng Ban Hội viên"
+      : srsRole === "truong_ban_truyen_thong" || srsRole === "BTT"
+      ? "Trưởng Ban Truyền thông"
+      : srsRole === "truong_ban_xuc_tien" || srsRole === "BXT"
+      ? "Trưởng Ban Xúc tiến Giao thương"
+      : srsRole === "truong_ban_thien_nguyen" || srsRole === "BTN"
+      ? "Trưởng Ban Thiện nguyện"
+      : srsRole === "thanh_vien_ban_tai_chinh"
+      ? "Thành viên Ban Tài chính"
+      : srsRole === "tong_thu_ky" || srsRole === "BTK"
+      ? "Tổng Thư ký CLB"
+      : "Hội viên chính thức";
 
   return (
     <AppShell>

@@ -889,7 +889,7 @@ export class UsersService implements OnModuleInit {
         this.usersRepo.getMemberships(safeUuid),
         this.usersRepo.getMemberInfo(safeUuid, user.email),
       ]);
-      const roleList = (roles || []).map((r) => r.role).filter(Boolean);
+      let roleList = (roles || []).map((r) => r.role).filter(Boolean);
       const isAssocAdmin = (memberships ?? []).some(
         (m: any) =>
           m.role === 'admin' ||
@@ -908,13 +908,14 @@ export class UsersService implements OnModuleInit {
       const isSysAdminAccount =
         user.id === '00000000-0000-4000-8000-000000000002' ||
         user.id === '00000000-0000-0000-0000-000000000000' ||
-        (user.email || '').toLowerCase() === 'admin@connect.vn' ||
-        (user.username || '').toLowerCase() === 'admin@connect.vn' ||
-        (user.email || '').toLowerCase() === 'admin@viconnect.vn' ||
+        (user.email || '').toLowerCase().trim() === 'admin@connect.vn' ||
+        (user.username || '').toLowerCase().trim() === 'admin@connect.vn' ||
+        (user.email || '').toLowerCase().trim() === 'admin@viconnect.vn' ||
+        (user.username || '').toLowerCase().trim() === 'admin@viconnect.vn' ||
         roleList.includes('admin') ||
         roleList.includes('platform_admin');
 
-      if (isSysAdminAccount && (!normalizedDept || normalizedDept.toLowerCase().includes('hội viên'))) {
+      if (isSysAdminAccount) {
         normalizedDept = 'Ban Quản Trị';
       } else if (!normalizedDept) {
         normalizedDept = 'Hội viên ceo1983';
@@ -929,7 +930,11 @@ export class UsersService implements OnModuleInit {
           ? String(memberRow.executive_role).toLowerCase().trim()
           : '') || fallbackExec;
       const dept = normalizedDept.toLowerCase();
-      const userEmail = (user.email || user.username || '').toLowerCase();
+      const userEmail = (user.email || user.username || '').toLowerCase().trim();
+
+      if (userEmail === 'vumikasa6@gmail.com') {
+        normalizedDept = 'Ban Tài chính';
+      }
 
       // Check if user has an explicit role assigned in memberRow or in roleList
       const isExplicitPresident =
@@ -1140,6 +1145,17 @@ export class UsersService implements OnModuleInit {
 
       if (roleList.length === 0) {
         roleList.push(primaryRole);
+      }
+
+      if (userEmail === 'vumikasa6@gmail.com') {
+        primaryRole = 'thanh_vien_ban_tai_chinh';
+        roleList = ['thanh_vien_ban_tai_chinh', 'member'];
+        normalizedDept = 'Ban Tài chính';
+      } else if (isSysAdminAccount) {
+        if (!roleList.includes('admin')) roleList.push('admin');
+        if (!roleList.includes('platform_admin')) roleList.push('platform_admin');
+        if (primaryRole === 'member' || !primaryRole) primaryRole = 'admin';
+        normalizedDept = 'Ban Quản Trị';
       }
 
       // Tải ma trận phân quyền từ app_settings để đồng bộ hóa quyền hạn thời gian thực

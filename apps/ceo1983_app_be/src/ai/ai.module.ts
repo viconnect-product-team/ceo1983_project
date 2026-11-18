@@ -3,9 +3,10 @@ import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AiCrmAnalyticsService } from './ai-crm-analytics.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, MailModule],
   controllers: [AiController],
   providers: [AiService, AiCrmAnalyticsService],
   exports: [AiService, AiCrmAnalyticsService],

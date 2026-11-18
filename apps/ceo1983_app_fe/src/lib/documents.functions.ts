@@ -26,6 +26,8 @@ export type Document = {
   isStarred?: boolean;
   colorTag?: string | null;
   description?: string | null;
+  hasAccess?: boolean;
+  lockedReason?: string;
 };
 
 export const listDocumentsFn = createServerFn({ method: "GET" })

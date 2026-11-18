@@ -600,6 +600,48 @@ export function isRouteAllowedByMatrix(route: string, roleKey: SystemRoleKey): b
     }
   } catch {}
 
+  // Guard bảo mật tuyệt đối: Nếu tài khoản là Thành viên Ban hoặc Hội viên thường, CẤM toàn bộ menu Hệ thống, Phân quyền, Cài đặt, Quản trị tài khoản
+  const isSpecialistOrNormalMember =
+    sRole.startsWith("thanh_vien_ban_") || sRole === "member" || sRole === "HVT";
+
+  if (isSpecialistOrNormalMember) {
+    if (
+      cleanRoute.startsWith("/permissions") ||
+      cleanRoute.startsWith("/departments") ||
+      cleanRoute.startsWith("/settings") ||
+      cleanRoute.startsWith("/activity") ||
+      cleanRoute.startsWith("/admin") ||
+      cleanRoute.startsWith("/accounts") ||
+      cleanRoute.startsWith("/account-settings") ||
+      cleanRoute.startsWith("/templates") ||
+      cleanRoute.startsWith("/tasks")
+    ) {
+      return false;
+    }
+  }
+
+  // Chuyên môn riêng của Thành viên Ban Tài Chính:
+  if (sRole === "thanh_vien_ban_tai_chinh") {
+    const isAllowedForFinanceMember =
+      cleanRoute === "/" ||
+      cleanRoute === "/members" ||
+      cleanRoute === "/companies" ||
+      cleanRoute.startsWith("/finance") ||
+      cleanRoute.startsWith("/income") ||
+      cleanRoute.startsWith("/expenses") ||
+      cleanRoute.startsWith("/fees") ||
+      cleanRoute.startsWith("/sponsor") ||
+      cleanRoute.startsWith("/analytics") ||
+      cleanRoute.startsWith("/events") ||
+      cleanRoute.startsWith("/meetings") ||
+      cleanRoute.startsWith("/network") ||
+      cleanRoute.startsWith("/opportunities") ||
+      cleanRoute.startsWith("/marketplace");
+    if (!isAllowedForFinanceMember) {
+      return false;
+    }
+  }
+
   // Danh bạ hội viên & doanh nghiệp mở quyền tra cứu danh bạ cho toàn bộ tài khoản hợp lệ
   if (cleanRoute === "/members" || cleanRoute === "/companies" || cleanRoute === "/association/members") {
     return true;

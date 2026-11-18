@@ -649,6 +649,16 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 </ul>
               </div>
             )}
+
+            {/* ĐĂNG KHOẢNH KHẮC & TƯ LIỆU SỰ KIỆN TRỰC TIẾP */}
+            <div className="pt-2">
+              <LiveActivityMediaSection
+                activityType="event"
+                activityId={selectedEvent.id}
+                activityTitle={selectedEvent.title || "Sự kiện CEO 1983"}
+                canPushToFeed={true}
+              />
+            </div>
           </div>
         </div>
 

@@ -12,7 +12,12 @@ export class UsersRepository {
 
     const inputLower = input.toLowerCase();
     const isMediaAccount = inputLower === 'info@viconnect.vn' || inputLower === 'infor@viconnect.vn';
-    const queryVariants = isMediaAccount ? ['infor@viconnect.vn', 'info@viconnect.vn'] : [input];
+    const isAdminAccount = inputLower === 'admin@viconnect.vn' || inputLower === 'admin@connect.vn';
+    const queryVariants = isMediaAccount
+      ? ['infor@viconnect.vn', 'info@viconnect.vn']
+      : isAdminAccount
+      ? ['admin@connect.vn', 'admin@viconnect.vn']
+      : [input];
 
     // 1. Direct match on username or email
     const user = await this.prisma.vione_users
@@ -112,9 +117,21 @@ export class UsersRepository {
   }
 
   async findByEmail(email: string): Promise<vione_users | null> {
+    const clean = (email || '').trim().toLowerCase();
+    if (!clean) return null;
+    const isMedia = clean === 'info@viconnect.vn' || clean === 'infor@viconnect.vn';
+    const isAdmin = clean === 'admin@viconnect.vn' || clean === 'admin@connect.vn';
+    const queryVariants = isMedia
+      ? ['infor@viconnect.vn', 'info@viconnect.vn']
+      : isAdmin
+      ? ['admin@connect.vn', 'admin@viconnect.vn']
+      : [clean];
+
     return this.prisma.vione_users
-      .findUnique({
-        where: { email },
+      .findFirst({
+        where: {
+          email: { in: queryVariants, mode: 'insensitive' },
+        },
       })
       .catch(() => null);
   }
@@ -222,10 +239,15 @@ export class UsersRepository {
         userId,
       );
     const cleanEmail = (email || '').trim().toLowerCase();
+    const isMedia = cleanEmail === 'info@viconnect.vn' || cleanEmail === 'infor@viconnect.vn';
+    const isAdmin = cleanEmail === 'admin@viconnect.vn' || cleanEmail === 'admin@connect.vn' || userId === '00000000-0000-4000-8000-000000000002';
+
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT id, code, email, company_name, company_size, employees, executive_role, department, association_id, about, name, contact, phone FROM public.members 
       WHERE ( ${isUuid} AND user_id = ${userId}::uuid )
          OR id = ${userId}
+         OR ( ${isAdmin} AND (id = '00000000-0000-4000-8000-000000000002' OR LOWER(email) IN ('admin@connect.vn', 'admin@viconnect.vn')) )
+         OR ( ${isMedia} AND (id = 'MBMWBR2VWN' OR LOWER(email) IN ('infor@viconnect.vn', 'info@viconnect.vn')) )
          OR ( ${cleanEmail !== ''} AND LOWER(email) = ${cleanEmail} )
       LIMIT 1
     `.catch(() => []);

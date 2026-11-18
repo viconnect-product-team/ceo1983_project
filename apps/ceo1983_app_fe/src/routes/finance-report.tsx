@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { getFormTemplate, getCachedFormTemplates } from "@/lib/form-templates";
+import type { FinanceReportTemplate } from "@/types/form-template.types";
 import {
   Download,
   PieChart,
@@ -21,6 +23,7 @@ import {
   X,
   Printer,
   Upload,
+  Sliders,
 } from "lucide-react";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { Card, PageHeader } from "@/components/dashboard/PageKit";
@@ -68,6 +71,29 @@ function FinanceReport() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [invoiceExportModalOpen, setInvoiceExportModalOpen] = useState(false);
+  const [financeTemplate, setFinanceTemplate] = useState<FinanceReportTemplate>(
+    () => getCachedFormTemplates().FINANCE_REPORT_EXCEL
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    getFormTemplate<FinanceReportTemplate>("FINANCE_REPORT_EXCEL").then((tpl) => {
+      if (mounted && tpl) setFinanceTemplate(tpl);
+    });
+
+    const handleTplUpdate = (e: any) => {
+      if (!e?.detail?.code || e.detail.code === "FINANCE_REPORT_EXCEL" || e.detail.reset) {
+        getFormTemplate<FinanceReportTemplate>("FINANCE_REPORT_EXCEL").then((tpl) => {
+          if (mounted && tpl) setFinanceTemplate(tpl);
+        });
+      }
+    };
+    window.addEventListener("form_templates_updated", handleTplUpdate);
+    return () => {
+      mounted = false;
+      window.removeEventListener("form_templates_updated", handleTplUpdate);
+    };
+  }, []);
 
   const txQuery = useQuery({
     queryKey: ["finance-report-data", statusFilter],
@@ -242,43 +268,89 @@ function FinanceReport() {
   };
 
   const handleExportCsv = () => {
+    const tpl = financeTemplate || getCachedFormTemplates().FINANCE_REPORT_EXCEL;
     const totalIn = income.reduce((s, tx) => s + tx.amount, 0);
     const totalOut = expense.reduce((s, tx) => s + tx.amount, 0);
     const net = totalIn - totalOut;
 
+    const columnGetters: Record<string, (tx: Transaction) => any> = {
+      id: (tx) => tx.id,
+      date: (tx) => formatDisplayDate(tx.date),
+      type: (tx) => (tx.type === "income" ? "Khoản Thu" : "Khoản Chi"),
+      category: (tx) => tx.category,
+      description: (tx) => tx.description,
+      method: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "bank" ? "Chuyển khoản" : "Thẻ ngân hàng"),
+      acc: (tx) => (tx.method === "cash" ? "111 - Tiền mặt" : "112 - TG Ngân hàng"),
+      amount: (tx) => formatExcelCurrency(tx.amount),
+      recipient: (tx) => tx.recipient || "—",
+      status: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt"),
+    };
+
+    const activeCols = (tpl.columns || []).filter((c) => c.enabled !== false);
+    const exportColumns = (activeCols.length > 0
+      ? activeCols
+      : [
+          { key: "id", label: "Mã chứng từ", width: 16 },
+          { key: "date", label: "Ngày ghi sổ", width: 16 },
+          { key: "type", label: "Loại giao dịch", width: 16 },
+          { key: "category", label: "Danh mục", width: 22 },
+          { key: "description", label: "Nội dung hạch toán", width: 38 },
+          { key: "method", label: "Hình thức", width: 18 },
+          { key: "acc", label: "TK Đối ứng", width: 18 },
+          { key: "amount", label: "Số tiền (VNĐ)", width: 22 },
+          { key: "recipient", label: "Đối tác / Người nộp - nhận", width: 30 },
+          { key: "status", label: "Trạng thái kiểm toán", width: 18 },
+        ]
+    ).map((col) => ({
+      header: col.label,
+      key: col.key,
+      width: col.width || 18,
+      value: columnGetters[col.key] || ((tx: any) => (tx as any)[col.key] ?? ""),
+    }));
+
+    const amountColIdx = exportColumns.findIndex((c) => c.key === "amount");
+    const colCount = exportColumns.length + 1;
+    const makeSummaryRow = (label: string, value: string) => {
+      const row = new Array(colCount).fill("");
+      row[0] = label;
+      if (amountColIdx !== -1) {
+        row[amountColIdx + 1] = value;
+      } else {
+        row[colCount - 1] = value;
+      }
+      return row;
+    };
+
+    const summaryRows = [
+      makeSummaryRow(tpl.summaryLabels?.totalIn || "TỔNG CỘNG NGUỒN THU:", formatExcelCurrency(totalIn) + " đ"),
+      makeSummaryRow(tpl.summaryLabels?.totalOut || "TỔNG CỘNG KHOẢN CHI:", formatExcelCurrency(totalOut) + " đ"),
+      makeSummaryRow(tpl.summaryLabels?.net || "TỒN QUỸ RÒNG / THẶNG DƯ:", formatExcelCurrency(net) + " đ"),
+    ];
+
+    const signers = [
+      tpl.signerTitles?.[0] || "NGƯỜI LẬP BÁO CÁO",
+      tpl.signerTitles?.[1] || "TRƯỞNG BAN TÀI CHÍNH",
+      tpl.signerTitles?.[2] || "CHỦ TỊCH CLB CEO 1983",
+    ];
+
     exportToExcel<Transaction>({
-      title: `BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH (${periodLabels[period].toUpperCase()})`,
-      subtitle: `${periodLabels[period]} | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983`,
-      filename: `bao-cao-tai-chinh-${period}-ceo1983`,
-      sheetName: "Nhat_Ky_Thu_Chi",
-      organization: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
-      address: "Tòa nhà HanoiBA, TP. Hà Nội",
-      circularCode: "Mẫu số S07-DN",
-      circularNote: "(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)",
-      fundType: "Quỹ hoạt động CLB Doanh Nhân CEO 1983",
-      currencyUnit: "VNĐ",
+      title: `${tpl.title || "BÁO CÁO TỔNG HỢP KIỂM TOÁN TÀI CHÍNH"} (${periodLabels[period].toUpperCase()})`,
+      subtitle: `${tpl.subtitle ? `${tpl.subtitle} | ` : ""}${periodLabels[period]} | Hệ thống quản lý tài chính CLB Doanh Nhân CEO 1983`,
+      filename: `${tpl.filenamePrefix || "bao-cao-tai-chinh"}-${period}-ceo1983`,
+      sheetName: tpl.sheetName || "Nhat_Ky_Thu_Chi",
+      organization: tpl.organization || "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
+      address: tpl.address || "Tòa nhà HanoiBA, TP. Hà Nội",
+      circularCode: tpl.circularCode || "Mẫu số S07-DN",
+      circularNote: tpl.circularNote || "(Ban hành theo Thông tư số 200/2014/TT-BTC ngày 22/12/2014 của Bộ Tài chính)",
+      fundType: tpl.fundType || "Quỹ hoạt động CLB Doanh Nhân CEO 1983",
+      currencyUnit: tpl.currencyUnit || "VNĐ",
       data: transactions,
-      columns: [
-        { header: "Mã chứng từ", key: "id", width: 16, value: (tx) => tx.id },
-        { header: "Ngày ghi sổ", key: "date", width: 16, value: (tx) => formatDisplayDate(tx.date) },
-        { header: "Loại giao dịch", key: "type", width: 16, value: (tx) => (tx.type === "income" ? "Khoản Thu" : "Khoản Chi") },
-        { header: "Danh mục", key: "category", width: 22, value: (tx) => tx.category },
-        { header: "Nội dung hạch toán", key: "description", width: 38, value: (tx) => tx.description },
-        { header: "Hình thức", key: "method", width: 18, value: (tx) => (tx.method === "cash" ? "Tiền mặt" : tx.method === "bank" ? "Chuyển khoản" : "Thẻ ngân hàng") },
-        { header: "TK Đối ứng", key: "acc", width: 18, value: (tx) => (tx.method === "cash" ? "111 - Tiền mặt" : "112 - TG Ngân hàng") },
-        { header: "Số tiền (VNĐ)", key: "amount", width: 22, value: (tx) => formatExcelCurrency(tx.amount) },
-        { header: "Đối tác / Người nộp - nhận", key: "recipient", width: 30, value: (tx) => tx.recipient || "—" },
-        { header: "Trạng thái kiểm toán", key: "status", width: 18, value: (tx) => (tx.status === "completed" ? "Đã duyệt" : "Chờ duyệt") },
-      ],
-      summaryRows: [
-        ["TỔNG CỘNG NGUỒN THU:", "", "", "", "", "", "", formatExcelCurrency(totalIn) + " đ", "", ""],
-        ["TỔNG CỘNG KHOẢN CHI:", "", "", "", "", "", "", formatExcelCurrency(totalOut) + " đ", "", ""],
-        ["TỒN QUỸ RÒNG / THẶNG DƯ:", "", "", "", "", "", "", formatExcelCurrency(net) + " đ", "", ""],
-      ],
+      columns: exportColumns,
+      summaryRows,
       amountInWords: numberToVietnameseWords(net >= 0 ? net : totalIn),
-      signerTitles: ["NGƯỜI LẬP BÁO CÁO", "TRƯỞNG BAN TÀI CHÍNH", "CHỦ TỊCH CLB CEO 1983"],
+      signerTitles: signers,
     });
-    toast.success(`Đã xuất báo cáo tài chính (${periodLabels[period]}) chuẩn doanh nghiệp CEO 1983 (.xlsx)!`);
+    toast.success(`Đã xuất báo cáo tài chính (${periodLabels[period]}) theo định dạng Biểu Mẫu đã thiết lập!`);
   };
 
   const handleExportPdf = () => {
@@ -293,6 +365,15 @@ function FinanceReport() {
         subtitle="Tổng hợp thu chi thực tế, cơ cấu ngân quỹ và số liệu kế toán minh bạch"
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/templates"
+              search={{ tab: "forms" } as any}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-3 py-2 text-xs font-bold text-[#003B95] dark:text-blue-300 shadow-xs hover:bg-blue-100/60 cursor-pointer transition"
+              title="Cài đặt định dạng biểu mẫu Excel, Word, PDF theo Thông tư"
+            >
+              <Sliders className="h-4 w-4" />
+              <span>Biểu Mẫu Xuất</span>
+            </Link>
             <button
               type="button"
               onClick={() => setShowImportModal(true)}

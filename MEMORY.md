@@ -1,5 +1,60 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 17/11/2026 (v11.59): Chia Tách Độc Lập "Tài Liệu" & "Biểu Mẫu", Cấu Hình Định Dạng Xuất Động Excel/PDF Cho Báo Cáo Tài Chính & Hóa Đơn Không Hardcode ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001])**:
+  - **1. Chia Tách Độc Lập 2 Chức Năng Trên Giao Diện & Điều Hướng**:
+    * **Tài liệu (`/documents`)**: Nơi lưu trữ toàn bộ tài liệu, ảnh hoạt động, tài liệu sự kiện và biên bản cuộc họp được phân bổ theo 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`) với phân quyền RBAC chỉ tài khoản thuộc đúng ban mới được mở folder của ban đó.
+    * **Biểu mẫu (`/templates?tab=forms`)**: Tách bạch thành trung tâm thiết lập định dạng văn bản, mẫu file Excel kiểm toán và mẫu phiếu thu hóa đơn PDF. Cho phép người dùng trực tiếp cấu hình tiêu đề báo cáo, căn cứ thông tư tài chính, thứ tự/tên gọi/độ rộng của từng cột Excel, các dòng tổng kết và chức danh người ký duyệt.
+    * Điều chỉnh toàn diện nhãn và cấu trúc menu tại `Sidebar.tsx` và `use-sidebar-labels.ts`:
+      - `/documents`: "Quản lý Tài liệu"
+      - `/templates`: "Quản lý Biểu mẫu" (`/templates?tab=forms` cho Biểu Mẫu, `/templates?tab=invitation-setup` cho Thư Mời Sự Kiện)
+  - **2. Kiến Trúc Backend Lưu Trữ Cấu Hình Biểu Mẫu Động Trên CSDL Chuẩn `113.20.107.184:6432`**:
+    * Tích hợp vào `apps/ceo1983_app_be/src/admin/admin.service.ts` và `admin.controller.ts`:
+      - `@Get('form-templates')`: Lấy danh sách cấu hình biểu mẫu toàn hệ thống (Báo cáo tài chính `FINANCE_REPORT_EXCEL`, Phiếu thu & hóa đơn `INVOICE_RECEIPT_PDF`, Báo cáo hội phí `MEMBER_FEE_REPORT`).
+      - `@Get('form-templates/:code')`: Lấy chi tiết mẫu theo mã.
+      - `@Put('form-templates/:code')`: Cập nhật cấu hình biểu mẫu (lưu vào bảng `public.app_settings` với key `crm_form_templates` trên DB `113.20.107.184:6432`).
+      - `@Post('form-templates/reset')`: Khôi phục mẫu mặc định chuẩn Thông tư 200/2014/TT-BTC của Bộ Tài chính.
+  - **3. Nâng Cấp Báo Cáo Tài Chính & Hóa Đơn Đọc Định Dạng Động (Tuyệt Đối Không Hardcode)**:
+    * `apps/ceo1983_app_fe/src/routes/finance-report.tsx`:
+      - Hàm `handleExportCsv` đọc trực tiếp từ `financeTemplate` (tiêu đề, căn cứ thông tư, tên đơn vị, danh sách cột được bật/tắt/đổi tên, dòng tổng kết, chức danh ký duyệt).
+      - Bổ sung nút liên kết nhanh `Biểu Mẫu Xuất` (`Sliders`) ngay tại thanh công cụ hành động của trang Báo cáo tài chính để kế toán/quản trị viên dễ dàng tinh chỉnh định dạng khi cần.
+    * `apps/ceo1983_app_fe/src/components/dashboard/InvoiceExportModal.tsx`:
+      - Đọc trực tiếp cấu hình từ `INVOICE_RECEIPT_PDF` cho đơn vị phát hành, mã số thuế, địa chỉ, mẫu số hóa đơn (`invoiceFormNumber`), ký hiệu hóa đơn (`invoiceSerial`), tiêu đề, chữ ký và ghi chú chân trang.
+      - Tích hợp nút `Biểu mẫu` trên tiêu đề modal để mở nhanh trang cấu hình.
+  - **4. Kiểm Tra Chất Lượng & Đóng Gói Triển Khai**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `vite build` (SSR + Client) -> **EXIT CODE 0 (0 ERRORS)**.
+    * Đã đóng gói mới nhất `be-dist.tar.gz` và `fe-output.tar.gz` tại thư mục gốc, sẵn sàng chạy `.\deploy-direct.ps1` để đồng bộ lên máy chủ VPS.
+
+
+- **Bản cập nhật ngày 17/11/2026 (v11.58): Khắc Phục Triệt Để Phân Quyền vumikasa6@gmail.com, Đăng Khoảnh Khắc Sự Kiện & Lưu Trữ Độc Quyền Theo Folder Ban Chuyên Môn, Nâng Cấp AI Thao Tác Gửi Mail / Báo Cáo, Chuẩn Bị Toàn Diện Môi Trường Demo VOA CEOHN10 ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
+  - **1. Sửa Dứt Điểm Gốc Rễ Lỗi Phân Quyền `vumikasa6@gmail.com` & Cơ Chế Build Triển Khai VPS**:
+    * **Nguyên nhân cốt lõi khiến lỗi lặp lại 3 ngày**: Code TypeScript đã được sửa tại local nhưng các thư mục build `.output` và `dist` chưa từng được compile lại (tồn tại từ 14/11 - 15/11). Do đó, khi triển khai lên VPS `14.225.217.232`, hệ thống vẫn chạy bản build cũ.
+    * **Đã xử lý tận gốc**:
+      - `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`: Chặn độc lập 4 nhóm menu nhạy cảm (`filteredTemplates`, `filteredSystem`, `filteredPermissions`, `filteredAdmin`) bằng biến `!isVumikasaUser` và ràng buộc vai trò `thanh_vien_ban_tai_chinh`.
+      - `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`: Guard chặn sớm toàn bộ route hệ thống (`/permissions`, `/departments`, `/settings`, `/activity`, `/admin`, `/accounts`, `/templates`, `/tasks`) đối với vai trò thành viên ban và `vumikasa6@gmail.com`.
+      - Biên dịch mới 100%: `npm run build` thành công cho cả Backend (`apps/ceo1983_app_be/dist`) và Frontend TanStack Start (`apps/ceo1983_app_fe/.output`).
+      - Nén sẵn 2 tệp `fe-output.tar.gz` (103MB) và `be-dist.tar.gz` (1MB) tại thư mục gốc và chuẩn hóa script `deploy-direct.ps1` sẵn sàng cho lệnh deploy 1 bước lên VPS `14.225.217.232`.
+  - **2. Nâng Cấp Chức Năng Sự Kiện & Đăng Khoảnh Khắc Tức Thời (Yêu Cầu 1)**:
+    * Tạo component `LiveActivityMediaSection.tsx`: Cho phép hội viên chụp ảnh trực tiếp từ camera hoặc chọn ảnh từ thư viện thiết bị tại Modal chi tiết sự kiện (`EventDetailModal.tsx`).
+    * Sau khi đăng:
+      1. Tự động đẩy bài viết khoảnh khắc ra màn hình Mạng lưới (`/network`) kèm huy hiệu nổi bật `📸 Khoảnh khắc sự kiện` và tag tên sự kiện.
+      2. Tự động gọi API `POST /documents/sync-activity-media` đồng bộ lưu ảnh vào folder sự kiện tương ứng của Ban Truyền thông.
+  - **3. Phân Quyền Folder Tài Liệu Theo Từng Ban Chuyên Môn & Tự Động Lưu Trữ Theo Hoạt Động (Yêu Cầu 2)**:
+    * CSDL `113.20.107.184:6432`: Khởi tạo 7 folder cấp cao của 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`).
+    * Cơ chế bảo mật RBAC Folder:
+      - Thành viên ban nào CHỈ ĐƯỢC MỞ folder của Ban đó. Ví dụ: Ban Tài chính chỉ mở được `FLD-DEPT-BTC`, không mở được folder của Ban khác.
+      - Ban Quản Trị / Admin / Chủ tịch / Tổng thư ký được mở toàn quyền tất cả các folder.
+      - Giao diện: Nếu folder không có quyền mở, hiển thị icon Khóa 🔒 màu đỏ, làm mờ card và chặn click kèm thông báo lỗi quyền hạn.
+    * Tự động sinh folder con: Khi có sự kiện (`FLD-EVT-[eventId]`), khóa đào tạo (`FLD-TRN-[trainingId]`), hoặc cuộc họp (`FLD-MTG-[meetingId]`), hệ thống tự động sinh folder con bên trong Ban phụ trách để lưu trữ ảnh khoảnh khắc và tài liệu.
+  - **4. Nâng Cấp AI Thao Tác Trực Tiếp (Gửi Mail Toàn Hệ Thống & Xuất Báo Cáo Chi Tiết) (Yêu Cầu 3)**:
+    * `apps/ceo1983_app_be/src/ai/ai.service.ts`:
+      - Thêm phương thức `handleMailNotificationCommand`: Nhận diện các lệnh gửi email thông báo từ Quản trị viên (Nhắc hạn hội phí, Thư mời sự kiện, Thư mời họp Ban, Chào mừng hội viên mới). Tự động lấy danh sách email thực tế từ `public.members` trên CSDL `113.20.107.184:6432` và đưa vào hàng đợi gửi qua `MailService`.
+      - Thêm phương thức `handleExportReportCommand`: Nhận diện các lệnh xuất báo cáo, truy vấn số liệu thực tế thời gian thực từ CSDL chuẩn (tỷ lệ đóng hội phí, ước tính quỹ, cơ cấu hội viên theo từng Ban chuyên môn) và định dạng bảng biểu Markdown chi tiết kèm liên kết tải file Excel.
+      - Tích hợp `SYSTEM_API_CATALOG` vào System Prompt để AI nắm toàn bộ danh mục endpoint REST API của hệ thống (Hội viên, Sự kiện, Tài chính, Tài liệu, Thông báo, Email) để thực hiện thao tác trực tiếp thay vì chỉ hỏi đáp thụ động.
+  - **5. Kiểm Tra Chất Lượng Tuyệt Đối**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `vite build` (SSR + Client) -> **EXIT CODE 0 (0 ERRORS)**.
+
 - **Bản cập nhật ngày 16/11/2026 (v11.57): Đồng Bộ Hóa Đa Bảng CSDL 113.20.107.184:6432, Sửa Lỗi Ẩn SQL Quản Trị Viên admin@connect.vn, Bản Dịch Tiếng Việt 100% & Bổ Sung Public API / Rich Share Preview Sự Kiện ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-001])**:
   - **1. Đồng Bộ Hóa Đa Bảng Tài Khoản `admin@connect.vn` Trên CSDL Chuẩn `113.20.107.184:6432` (Yêu Cầu 4.2 & 4.3)**:
     * **Hiện tượng**: Khi người dùng sử dụng DBeaver chỉnh sửa email trong bảng `auth.users` thành `admin@connect.vn`, giao diện CRM trên thanh Topbar vẫn hiển thị email cũ `admin@viconnect.vn`, tạo cảm giác "database đang rất bị loạn bảng".
@@ -1483,6 +1538,61 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 17/11/2026 (v11.59): Chia Tách Độc Lập "Tài Liệu" & "Biểu Mẫu", Cấu Hình Định Dạng Xuất Động Excel/PDF Cho Báo Cáo Tài Chính & Hóa Đơn Không Hardcode ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001])**:
+  - **1. Chia Tách Độc Lập 2 Chức Năng Trên Giao Diện & Điều Hướng**:
+    * **Tài liệu (`/documents`)**: Nơi lưu trữ toàn bộ tài liệu, ảnh hoạt động, tài liệu sự kiện và biên bản cuộc họp được phân bổ theo 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`) với phân quyền RBAC chỉ tài khoản thuộc đúng ban mới được mở folder của ban đó.
+    * **Biểu mẫu (`/templates?tab=forms`)**: Tách bạch thành trung tâm thiết lập định dạng văn bản, mẫu file Excel kiểm toán và mẫu phiếu thu hóa đơn PDF. Cho phép người dùng trực tiếp cấu hình tiêu đề báo cáo, căn cứ thông tư tài chính, thứ tự/tên gọi/độ rộng của từng cột Excel, các dòng tổng kết và chức danh người ký duyệt.
+    * Điều chỉnh toàn diện nhãn và cấu trúc menu tại `Sidebar.tsx` và `use-sidebar-labels.ts`:
+      - `/documents`: "Quản lý Tài liệu"
+      - `/templates`: "Quản lý Biểu mẫu" (`/templates?tab=forms` cho Biểu Mẫu, `/templates?tab=invitation-setup` cho Thư Mời Sự Kiện)
+  - **2. Kiến Trúc Backend Lưu Trữ Cấu Hình Biểu Mẫu Động Trên CSDL Chuẩn `113.20.107.184:6432`**:
+    * Tích hợp vào `apps/ceo1983_app_be/src/admin/admin.service.ts` và `admin.controller.ts`:
+      - `@Get('form-templates')`: Lấy danh sách cấu hình biểu mẫu toàn hệ thống (Báo cáo tài chính `FINANCE_REPORT_EXCEL`, Phiếu thu & hóa đơn `INVOICE_RECEIPT_PDF`, Báo cáo hội phí `MEMBER_FEE_REPORT`).
+      - `@Get('form-templates/:code')`: Lấy chi tiết mẫu theo mã.
+      - `@Put('form-templates/:code')`: Cập nhật cấu hình biểu mẫu (lưu vào bảng `public.app_settings` với key `crm_form_templates` trên DB `113.20.107.184:6432`).
+      - `@Post('form-templates/reset')`: Khôi phục mẫu mặc định chuẩn Thông tư 200/2014/TT-BTC của Bộ Tài chính.
+  - **3. Nâng Cấp Báo Cáo Tài Chính & Hóa Đơn Đọc Định Dạng Động (Tuyệt Đối Không Hardcode)**:
+    * `apps/ceo1983_app_fe/src/routes/finance-report.tsx`:
+      - Hàm `handleExportCsv` đọc trực tiếp từ `financeTemplate` (tiêu đề, căn cứ thông tư, tên đơn vị, danh sách cột được bật/tắt/đổi tên, dòng tổng kết, chức danh ký duyệt).
+      - Bổ sung nút liên kết nhanh `Biểu Mẫu Xuất` (`Sliders`) ngay tại thanh công cụ hành động của trang Báo cáo tài chính để kế toán/quản trị viên dễ dàng tinh chỉnh định dạng khi cần.
+    * `apps/ceo1983_app_fe/src/components/dashboard/InvoiceExportModal.tsx`:
+      - Đọc trực tiếp cấu hình từ `INVOICE_RECEIPT_PDF` cho đơn vị phát hành, mã số thuế, địa chỉ, mẫu số hóa đơn (`invoiceFormNumber`), ký hiệu hóa đơn (`invoiceSerial`), tiêu đề, chữ ký và ghi chú chân trang.
+      - Tích hợp nút `Biểu mẫu` trên tiêu đề modal để mở nhanh trang cấu hình.
+  - **4. Kiểm Tra Chất Lượng & Đóng Gói Triển Khai**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `vite build` (SSR + Client) -> **EXIT CODE 0 (0 ERRORS)**.
+    * Đã đóng gói mới nhất `be-dist.tar.gz` và `fe-output.tar.gz` tại thư mục gốc, sẵn sàng chạy `.\deploy-direct.ps1` để đồng bộ lên máy chủ VPS.
+
+
+- **Bản cập nhật ngày 17/11/2026 (v11.58): Khắc Phục Triệt Để Phân Quyền vumikasa6@gmail.com, Đăng Khoảnh Khắc Sự Kiện & Lưu Trữ Độc Quyền Theo Folder Ban Chuyên Môn, Nâng Cấp AI Thao Tác Gửi Mail / Báo Cáo, Chuẩn Bị Toàn Diện Môi Trường Demo VOA CEOHN10 ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
+  - **1. Sửa Dứt Điểm Gốc Rễ Lỗi Phân Quyền `vumikasa6@gmail.com` & Cơ Chế Build Triển Khai VPS**:
+    * **Nguyên nhân cốt lõi khiến lỗi lặp lại 3 ngày**: Code TypeScript đã được sửa tại local nhưng các thư mục build `.output` và `dist` chưa từng được compile lại (tồn tại từ 14/11 - 15/11). Do đó, khi triển khai lên VPS `14.225.217.232`, hệ thống vẫn chạy bản build cũ.
+    * **Đã xử lý tận gốc**:
+      - `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`: Chặn độc lập 4 nhóm menu nhạy cảm (`filteredTemplates`, `filteredSystem`, `filteredPermissions`, `filteredAdmin`) bằng biến `!isVumikasaUser` và ràng buộc vai trò `thanh_vien_ban_tai_chinh`.
+      - `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`: Guard chặn sớm toàn bộ route hệ thống (`/permissions`, `/departments`, `/settings`, `/activity`, `/admin`, `/accounts`, `/templates`, `/tasks`) đối với vai trò thành viên ban và `vumikasa6@gmail.com`.
+      - Biên dịch mới 100%: `npm run build` thành công cho cả Backend (`apps/ceo1983_app_be/dist`) và Frontend TanStack Start (`apps/ceo1983_app_fe/.output`).
+      - Nén sẵn 2 tệp `fe-output.tar.gz` (103MB) và `be-dist.tar.gz` (1MB) tại thư mục gốc và chuẩn hóa script `deploy-direct.ps1` sẵn sàng cho lệnh deploy 1 bước lên VPS `14.225.217.232`.
+  - **2. Nâng Cấp Chức Năng Sự Kiện & Đăng Khoảnh Khắc Tức Thời (Yêu Cầu 1)**:
+    * Tạo component `LiveActivityMediaSection.tsx`: Cho phép hội viên chụp ảnh trực tiếp từ camera hoặc chọn ảnh từ thư viện thiết bị tại Modal chi tiết sự kiện (`EventDetailModal.tsx`).
+    * Sau khi đăng:
+      1. Tự động đẩy bài viết khoảnh khắc ra màn hình Mạng lưới (`/network`) kèm huy hiệu nổi bật `📸 Khoảnh khắc sự kiện` và tag tên sự kiện.
+      2. Tự động gọi API `POST /documents/sync-activity-media` đồng bộ lưu ảnh vào folder sự kiện tương ứng của Ban Truyền thông.
+  - **3. Phân Quyền Folder Tài Liệu Theo Từng Ban Chuyên Môn & Tự Động Lưu Trữ Theo Hoạt Động (Yêu Cầu 2)**:
+    * CSDL `113.20.107.184:6432`: Khởi tạo 7 folder cấp cao của 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`).
+    * Cơ chế bảo mật RBAC Folder:
+      - Thành viên ban nào CHỈ ĐƯỢC MỞ folder của Ban đó. Ví dụ: Ban Tài chính chỉ mở được `FLD-DEPT-BTC`, không mở được folder của Ban khác.
+      - Ban Quản Trị / Admin / Chủ tịch / Tổng thư ký được mở toàn quyền tất cả các folder.
+      - Giao diện: Nếu folder không có quyền mở, hiển thị icon Khóa 🔒 màu đỏ, làm mờ card và chặn click kèm thông báo lỗi quyền hạn.
+    * Tự động sinh folder con: Khi có sự kiện (`FLD-EVT-[eventId]`), khóa đào tạo (`FLD-TRN-[trainingId]`), hoặc cuộc họp (`FLD-MTG-[meetingId]`), hệ thống tự động sinh folder con bên trong Ban phụ trách để lưu trữ ảnh khoảnh khắc và tài liệu.
+  - **4. Nâng Cấp AI Thao Tác Trực Tiếp (Gửi Mail Toàn Hệ Thống & Xuất Báo Cáo Chi Tiết) (Yêu Cầu 3)**:
+    * `apps/ceo1983_app_be/src/ai/ai.service.ts`:
+      - Thêm phương thức `handleMailNotificationCommand`: Nhận diện các lệnh gửi email thông báo từ Quản trị viên (Nhắc hạn hội phí, Thư mời sự kiện, Thư mời họp Ban, Chào mừng hội viên mới). Tự động lấy danh sách email thực tế từ `public.members` trên CSDL `113.20.107.184:6432` và đưa vào hàng đợi gửi qua `MailService`.
+      - Thêm phương thức `handleExportReportCommand`: Nhận diện các lệnh xuất báo cáo, truy vấn số liệu thực tế thời gian thực từ CSDL chuẩn (tỷ lệ đóng hội phí, ước tính quỹ, cơ cấu hội viên theo từng Ban chuyên môn) và định dạng bảng biểu Markdown chi tiết kèm liên kết tải file Excel.
+      - Tích hợp `SYSTEM_API_CATALOG` vào System Prompt để AI nắm toàn bộ danh mục endpoint REST API của hệ thống (Hội viên, Sự kiện, Tài chính, Tài liệu, Thông báo, Email) để thực hiện thao tác trực tiếp thay vì chỉ hỏi đáp thụ động.
+  - **5. Kiểm Tra Chất Lượng Tuyệt Đối**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `vite build` (SSR + Client) -> **EXIT CODE 0 (0 ERRORS)**.
 
 - **Bản cập nhật ngày 16/11/2026 (v11.57): Đồng Bộ Hóa Đa Bảng CSDL 113.20.107.184:6432, Sửa Lỗi Ẩn SQL Quản Trị Viên admin@connect.vn, Bản Dịch Tiếng Việt 100% & Bổ Sung Public API / Rich Share Preview Sự Kiện ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-001])**:
   - **1. Đồng Bộ Hóa Đa Bảng Tài Khoản `admin@connect.vn` Trên CSDL Chuẩn `113.20.107.184:6432` (Yêu Cầu 4.2 & 4.3)**:
@@ -4209,6 +4319,61 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 17/11/2026 (v11.59): Chia Tách Độc Lập "Tài Liệu" & "Biểu Mẫu", Cấu Hình Định Dạng Xuất Động Excel/PDF Cho Báo Cáo Tài Chính & Hóa Đơn Không Hardcode ([NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001])**:
+  - **1. Chia Tách Độc Lập 2 Chức Năng Trên Giao Diện & Điều Hướng**:
+    * **Tài liệu (`/documents`)**: Nơi lưu trữ toàn bộ tài liệu, ảnh hoạt động, tài liệu sự kiện và biên bản cuộc họp được phân bổ theo 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`) với phân quyền RBAC chỉ tài khoản thuộc đúng ban mới được mở folder của ban đó.
+    * **Biểu mẫu (`/templates?tab=forms`)**: Tách bạch thành trung tâm thiết lập định dạng văn bản, mẫu file Excel kiểm toán và mẫu phiếu thu hóa đơn PDF. Cho phép người dùng trực tiếp cấu hình tiêu đề báo cáo, căn cứ thông tư tài chính, thứ tự/tên gọi/độ rộng của từng cột Excel, các dòng tổng kết và chức danh người ký duyệt.
+    * Điều chỉnh toàn diện nhãn và cấu trúc menu tại `Sidebar.tsx` và `use-sidebar-labels.ts`:
+      - `/documents`: "Quản lý Tài liệu"
+      - `/templates`: "Quản lý Biểu mẫu" (`/templates?tab=forms` cho Biểu Mẫu, `/templates?tab=invitation-setup` cho Thư Mời Sự Kiện)
+  - **2. Kiến Trúc Backend Lưu Trữ Cấu Hình Biểu Mẫu Động Trên CSDL Chuẩn `113.20.107.184:6432`**:
+    * Tích hợp vào `apps/ceo1983_app_be/src/admin/admin.service.ts` và `admin.controller.ts`:
+      - `@Get('form-templates')`: Lấy danh sách cấu hình biểu mẫu toàn hệ thống (Báo cáo tài chính `FINANCE_REPORT_EXCEL`, Phiếu thu & hóa đơn `INVOICE_RECEIPT_PDF`, Báo cáo hội phí `MEMBER_FEE_REPORT`).
+      - `@Get('form-templates/:code')`: Lấy chi tiết mẫu theo mã.
+      - `@Put('form-templates/:code')`: Cập nhật cấu hình biểu mẫu (lưu vào bảng `public.app_settings` với key `crm_form_templates` trên DB `113.20.107.184:6432`).
+      - `@Post('form-templates/reset')`: Khôi phục mẫu mặc định chuẩn Thông tư 200/2014/TT-BTC của Bộ Tài chính.
+  - **3. Nâng Cấp Báo Cáo Tài Chính & Hóa Đơn Đọc Định Dạng Động (Tuyệt Đối Không Hardcode)**:
+    * `apps/ceo1983_app_fe/src/routes/finance-report.tsx`:
+      - Hàm `handleExportCsv` đọc trực tiếp từ `financeTemplate` (tiêu đề, căn cứ thông tư, tên đơn vị, danh sách cột được bật/tắt/đổi tên, dòng tổng kết, chức danh ký duyệt).
+      - Bổ sung nút liên kết nhanh `Biểu Mẫu Xuất` (`Sliders`) ngay tại thanh công cụ hành động của trang Báo cáo tài chính để kế toán/quản trị viên dễ dàng tinh chỉnh định dạng khi cần.
+    * `apps/ceo1983_app_fe/src/components/dashboard/InvoiceExportModal.tsx`:
+      - Đọc trực tiếp cấu hình từ `INVOICE_RECEIPT_PDF` cho đơn vị phát hành, mã số thuế, địa chỉ, mẫu số hóa đơn (`invoiceFormNumber`), ký hiệu hóa đơn (`invoiceSerial`), tiêu đề, chữ ký và ghi chú chân trang.
+      - Tích hợp nút `Biểu mẫu` trên tiêu đề modal để mở nhanh trang cấu hình.
+  - **4. Kiểm Tra Chất Lượng & Đóng Gói Triển Khai**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `vite build` (SSR + Client) -> **EXIT CODE 0 (0 ERRORS)**.
+    * Đã đóng gói mới nhất `be-dist.tar.gz` và `fe-output.tar.gz` tại thư mục gốc, sẵn sàng chạy `.\deploy-direct.ps1` để đồng bộ lên máy chủ VPS.
+
+
+- **Bản cập nhật ngày 17/11/2026 (v11.58): Khắc Phục Triệt Để Phân Quyền vumikasa6@gmail.com, Đăng Khoảnh Khắc Sự Kiện & Lưu Trữ Độc Quyền Theo Folder Ban Chuyên Môn, Nâng Cấp AI Thao Tác Gửi Mail / Báo Cáo, Chuẩn Bị Toàn Diện Môi Trường Demo VOA CEOHN10 ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001])**:
+  - **1. Sửa Dứt Điểm Gốc Rễ Lỗi Phân Quyền `vumikasa6@gmail.com` & Cơ Chế Build Triển Khai VPS**:
+    * **Nguyên nhân cốt lõi khiến lỗi lặp lại 3 ngày**: Code TypeScript đã được sửa tại local nhưng các thư mục build `.output` và `dist` chưa từng được compile lại (tồn tại từ 14/11 - 15/11). Do đó, khi triển khai lên VPS `14.225.217.232`, hệ thống vẫn chạy bản build cũ.
+    * **Đã xử lý tận gốc**:
+      - `apps/ceo1983_app_fe/src/components/dashboard/Sidebar.tsx`: Chặn độc lập 4 nhóm menu nhạy cảm (`filteredTemplates`, `filteredSystem`, `filteredPermissions`, `filteredAdmin`) bằng biến `!isVumikasaUser` và ràng buộc vai trò `thanh_vien_ban_tai_chinh`.
+      - `apps/ceo1983_app_fe/src/lib/rbac-permission-helpers.ts`: Guard chặn sớm toàn bộ route hệ thống (`/permissions`, `/departments`, `/settings`, `/activity`, `/admin`, `/accounts`, `/templates`, `/tasks`) đối với vai trò thành viên ban và `vumikasa6@gmail.com`.
+      - Biên dịch mới 100%: `npm run build` thành công cho cả Backend (`apps/ceo1983_app_be/dist`) và Frontend TanStack Start (`apps/ceo1983_app_fe/.output`).
+      - Nén sẵn 2 tệp `fe-output.tar.gz` (103MB) và `be-dist.tar.gz` (1MB) tại thư mục gốc và chuẩn hóa script `deploy-direct.ps1` sẵn sàng cho lệnh deploy 1 bước lên VPS `14.225.217.232`.
+  - **2. Nâng Cấp Chức Năng Sự Kiện & Đăng Khoảnh Khắc Tức Thời (Yêu Cầu 1)**:
+    * Tạo component `LiveActivityMediaSection.tsx`: Cho phép hội viên chụp ảnh trực tiếp từ camera hoặc chọn ảnh từ thư viện thiết bị tại Modal chi tiết sự kiện (`EventDetailModal.tsx`).
+    * Sau khi đăng:
+      1. Tự động đẩy bài viết khoảnh khắc ra màn hình Mạng lưới (`/network`) kèm huy hiệu nổi bật `📸 Khoảnh khắc sự kiện` và tag tên sự kiện.
+      2. Tự động gọi API `POST /documents/sync-activity-media` đồng bộ lưu ảnh vào folder sự kiện tương ứng của Ban Truyền thông.
+  - **3. Phân Quyền Folder Tài Liệu Theo Từng Ban Chuyên Môn & Tự Động Lưu Trữ Theo Hoạt Động (Yêu Cầu 2)**:
+    * CSDL `113.20.107.184:6432`: Khởi tạo 7 folder cấp cao của 7 Ban chuyên môn (`FLD-DEPT-BDH`, `FLD-DEPT-BTK`, `FLD-DEPT-BTV`, `FLD-DEPT-BXT`, `FLD-DEPT-BTT`, `FLD-DEPT-BTN`, `FLD-DEPT-BTC`).
+    * Cơ chế bảo mật RBAC Folder:
+      - Thành viên ban nào CHỈ ĐƯỢC MỞ folder của Ban đó. Ví dụ: Ban Tài chính chỉ mở được `FLD-DEPT-BTC`, không mở được folder của Ban khác.
+      - Ban Quản Trị / Admin / Chủ tịch / Tổng thư ký được mở toàn quyền tất cả các folder.
+      - Giao diện: Nếu folder không có quyền mở, hiển thị icon Khóa 🔒 màu đỏ, làm mờ card và chặn click kèm thông báo lỗi quyền hạn.
+    * Tự động sinh folder con: Khi có sự kiện (`FLD-EVT-[eventId]`), khóa đào tạo (`FLD-TRN-[trainingId]`), hoặc cuộc họp (`FLD-MTG-[meetingId]`), hệ thống tự động sinh folder con bên trong Ban phụ trách để lưu trữ ảnh khoảnh khắc và tài liệu.
+  - **4. Nâng Cấp AI Thao Tác Trực Tiếp (Gửi Mail Toàn Hệ Thống & Xuất Báo Cáo Chi Tiết) (Yêu Cầu 3)**:
+    * `apps/ceo1983_app_be/src/ai/ai.service.ts`:
+      - Thêm phương thức `handleMailNotificationCommand`: Nhận diện các lệnh gửi email thông báo từ Quản trị viên (Nhắc hạn hội phí, Thư mời sự kiện, Thư mời họp Ban, Chào mừng hội viên mới). Tự động lấy danh sách email thực tế từ `public.members` trên CSDL `113.20.107.184:6432` và đưa vào hàng đợi gửi qua `MailService`.
+      - Thêm phương thức `handleExportReportCommand`: Nhận diện các lệnh xuất báo cáo, truy vấn số liệu thực tế thời gian thực từ CSDL chuẩn (tỷ lệ đóng hội phí, ước tính quỹ, cơ cấu hội viên theo từng Ban chuyên môn) và định dạng bảng biểu Markdown chi tiết kèm liên kết tải file Excel.
+      - Tích hợp `SYSTEM_API_CATALOG` vào System Prompt để AI nắm toàn bộ danh mục endpoint REST API của hệ thống (Hội viên, Sự kiện, Tài chính, Tài liệu, Thông báo, Email) để thực hiện thao tác trực tiếp thay vì chỉ hỏi đáp thụ động.
+  - **5. Kiểm Tra Chất Lượng Tuyệt Đối**:
+    * Backend `apps/ceo1983_app_be`: `nest build` -> **EXIT CODE 0 (0 ERRORS)**.
+    * Frontend `apps/ceo1983_app_fe`: `vite build` (SSR + Client) -> **EXIT CODE 0 (0 ERRORS)**.
 
 - **Bản cập nhật ngày 16/11/2026 (v11.57): Đồng Bộ Hóa Đa Bảng CSDL 113.20.107.184:6432, Sửa Lỗi Ẩn SQL Quản Trị Viên admin@connect.vn, Bản Dịch Tiếng Việt 100% & Bổ Sung Public API / Rich Share Preview Sự Kiện ([NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-001])**:
   - **1. Đồng Bộ Hóa Đa Bảng Tài Khoản `admin@connect.vn` Trên CSDL Chuẩn `113.20.107.184:6432` (Yêu Cầu 4.2 & 4.3)**:
