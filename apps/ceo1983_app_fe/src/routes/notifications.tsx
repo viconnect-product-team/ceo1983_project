@@ -1122,17 +1122,6 @@ function NotifyPage() {
               <Calendar className="h-4 w-4" />
               <span>Bắn Tin Nhắc Sự Kiện (Kèm Poster)</span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditing(null);
-                setOpen(true);
-              }}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition bg-[#003B95] hover:bg-[#002f78] cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>{t("notif.create")}</span>
-            </button>
           </div>
         }
       />

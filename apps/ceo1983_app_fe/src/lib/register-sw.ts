@@ -23,10 +23,31 @@ export function registerServiceWorker() {
       return;
     }
 
+    // Trên Mobile App: Kiểm tra và làm mới các Service Worker cũ
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        reg.update().catch(() => {});
+      }
+    });
+
     window.addEventListener("load", () => {
       navigator.serviceWorker
         .register("/sw.js")
         .then((reg) => {
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            if (installingWorker) {
+              installingWorker.onstatechange = () => {
+                if (
+                  installingWorker.state === "installed" &&
+                  navigator.serviceWorker.controller
+                ) {
+                  // Đã có phiên bản build mới, tự làm mới để không dính cache cũ
+                  window.location.reload();
+                }
+              };
+            }
+          };
           console.log("[PWA] Service Worker registered:", reg.scope);
         })
         .catch((err) => {

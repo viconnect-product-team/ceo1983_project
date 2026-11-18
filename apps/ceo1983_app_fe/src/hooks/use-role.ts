@@ -112,11 +112,6 @@ export function useRole(): RoleState {
 
     const userEmail = String(userObj?.email || member?.email || user?.email || "").toLowerCase().trim();
 
-    // RÀNG BUỘC TUYỆT ĐỐI: vumikasa6@gmail.com là Thành viên Ban Tài Chính, tuyệt đối không leo thang quyền Admin
-    if (userEmail === "vumikasa6@gmail.com") {
-      return "thanh_vien_ban_tai_chinh";
-    }
-
     // 0. ƯU TIÊN TUYỆT ĐỐI: Vai trò được phân bổ trực tiếp cho tài khoản từ CSDL (members.executive_role) hoặc Quản lý tài khoản (vba_managed_accounts_v2)
     const rawExecRole =
       member?.executiveRole ||
@@ -419,9 +414,7 @@ export function useRole(): RoleState {
                     member = { ...(member || {}), executiveRole: found.role, department: found.department };
                   }
                 }
-                if (myEmail === "vumikasa6@gmail.com") {
-                  member = { ...(member || {}), executiveRole: "thanh_vien_ban_tai_chinh", department: "Ban tài chính" };
-                }
+
               }
             }
           } catch (err) {

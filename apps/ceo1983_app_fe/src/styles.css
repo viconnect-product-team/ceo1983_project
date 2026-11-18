@@ -242,7 +242,7 @@ html.dark .bg-crm-system,
   --secondary: #121212;
   --secondary-foreground: #FFFFFF;
   --muted: #121212;
-  --muted-foreground: #94A3B8;
+  --muted-foreground: #F1F5F9;
   --accent: #1E293B;
   --accent-foreground: #FFFFFF;
   --border: rgba(255, 255, 255, 0.12);
@@ -260,7 +260,7 @@ html.dark .bg-crm-system,
   --info-foreground: #000000;
 
   --sidebar: #000000;
-  --sidebar-foreground: #CBD5E1;
+  --sidebar-foreground: #FFFFFF;
   --sidebar-primary: #F59E0B;
   --sidebar-primary-foreground: #000000;
   --sidebar-accent: #0A0A0A;
@@ -324,7 +324,27 @@ html.dark .text-slate-500:not([class*="dark:text-"]):not(.bg-white *):not([class
 html.dark .text-gray-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
 html.dark .text-zinc-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *),
 html.dark .text-neutral-500:not([class*="dark:text-"]):not(.bg-white *):not([class*="bg-amber-"] *):not([class*="bg-yellow-"] *):not([class*="bg-orange-"] *):not([class*="bg-emerald-"] *):not([class*="bg-green-"] *) {
-  color: #94A3B8 !important;
+  color: #F8FAFC !important;
+}
+
+html.dark .text-slate-400:not([class*="dark:text-"]):not(.bg-white *),
+html.dark .text-gray-400:not([class*="dark:text-"]):not(.bg-white *),
+html.dark .text-zinc-400:not([class*="dark:text-"]):not(.bg-white *),
+html.dark .text-neutral-400:not([class*="dark:text-"]):not(.bg-white *) {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-muted-foreground:not(.bg-white *) {
+  color: #F1F5F9 !important;
+}
+
+html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6 {
+  color: #FFFFFF !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 /* Đảm bảo toàn bộ bảng, thẻ card, modal, dropdown trên CRM hiển thị chữ sáng rõ nét trên dark theme */

@@ -1488,22 +1488,13 @@ export class ZaloService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (recipients.length === 0) {
-      recipients = [
-        {
-          phone: '0973924819',
-          name: 'Phạm Văn Vũ',
-          memberCode: 'CEO1983-001',
-          company: 'ViConnect Tech',
-          feeAmount: 10000000,
-        },
-        {
-          phone: '0973205683',
-          name: 'Lê Thị Thùy Dung',
-          memberCode: 'CEO1983-002',
-          company: 'Phó Chánh VP CEO 1983',
-          feeAmount: 10000000,
-        },
-      ];
+      return {
+        success: false,
+        total: 0,
+        sent: 0,
+        failed: 0,
+        message: 'Không tìm thấy hội viên nào có số điện thoại hợp lệ trong CSDL để gửi thông báo.',
+      };
     }
 
     const template =

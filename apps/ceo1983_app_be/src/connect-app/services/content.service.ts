@@ -509,21 +509,21 @@ export class ConnectContentService {
       `${baseUrl}/tin-tuc-blog-25236`,
       `${baseUrl}/tin-tuc-252346`,
       `${baseUrl}/su-kien-252317`,
+      `${baseUrl}/tin-tuc-252316`,
+      `${baseUrl}/blog-252347`,
     ];
 
-    const foundArticles = new Map<string, string>();
-    const IGNORED_PHRASES = [
-      'trang chủ',
-      'giới thiệu',
-      'hội viên',
-      'danh sách',
-      'thư viện',
-      'liên hệ',
-      'đăng ký',
-      'đăng nhập',
-      'blog',
-      'sự kiện',
-      'tin tức',
+    const foundArticleUrls = new Set<string>();
+    const IGNORED_PATHS = [
+      'thanh-vien-tinh-tue',
+      'danh-sach-thanh-vien',
+      'tai-lieu',
+      'xuc-tien-thuong-mai',
+      'lien-he',
+      'gui-gop-y',
+      'business-mentoring',
+      'business-matching',
+      'gui-thong-tin-thanh-cong',
     ];
 
     for (const pageUrl of targetPages) {
@@ -535,47 +535,33 @@ export class ConnectContentService {
           },
           signal:
             typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
-              ? AbortSignal.timeout(10000)
+              ? AbortSignal.timeout(12000)
               : undefined,
         });
         if (!res.ok) continue;
         const html = await res.text();
 
-        // Match links that end with -numbers or --numbers (common CMS pattern on ceo1983.com)
-        const linkRegex =
-          /href=["']([^"']*(?:--\d+|-+\d{4,})[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        // Match links ending with -number (CMS news format on ceo1983.com)
+        const regex = /href=["']([^"']*-(\d{5,}))["']/gi;
         let m: RegExpExecArray | null;
-        while ((m = linkRegex.exec(html)) !== null) {
-          let url = m[1].trim();
-          if (!url.startsWith('http')) {
-            url = baseUrl + (url.startsWith('/') ? '' : '/') + url;
+        while ((m = regex.exec(html)) !== null) {
+          let href = m[1].trim();
+          if (IGNORED_PATHS.some((p) => href.includes(p))) continue;
+          if (!href.startsWith('http')) {
+            href = baseUrl + (href.startsWith('/') ? '' : '/') + href;
           }
-          const cleanedHtml = m[2].replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-          const rawTitle = cleanedHtml.replace(/<[^>]+>/g, '').trim();
-          const lower = rawTitle.toLowerCase();
-          const isMenu =
-            rawTitle.length < 12 ||
-            lower.includes('location.protocol') ||
-            lower.includes('chatwoot') ||
-            lower.includes('function(') ||
-            IGNORED_PHRASES.some((phrase) => lower === phrase);
-          if (!isMenu && !foundArticles.has(url)) {
-            foundArticles.set(url, rawTitle);
-          }
+          foundArticleUrls.add(href);
         }
       } catch (err: any) {
-        console.warn(
-          `[NewsSync] Failed to fetch page ${pageUrl}:`,
-          err?.message,
-        );
+        console.warn(`[NewsSync] Failed to fetch page ${pageUrl}:`, err?.message);
       }
     }
 
     let syncedCount = 0;
 
-    for (const [articleUrl, initialTitle] of foundArticles.entries()) {
+    for (const articleUrl of foundArticleUrls) {
       try {
-        const slugMatch = articleUrl.match(/-+(\d{4,})/);
+        const slugMatch = articleUrl.match(/-+(\d{5,})(?:\.html|\/)?$/);
         const articleId = slugMatch ? slugMatch[1] : null;
         if (!articleId) continue;
 
@@ -588,45 +574,64 @@ export class ConnectContentService {
           },
           signal:
             typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
-              ? AbortSignal.timeout(8000)
+              ? AbortSignal.timeout(10000)
               : undefined,
         });
 
-        let title = initialTitle;
-        let excerpt = initialTitle;
+        if (!artRes.ok) continue;
+        const artHtml = await artRes.text();
+
+        // 1. Tiêu đề bài viết từ H1
+        const h1Match = artHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        let title = h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : '';
+        title = title.replace(/^\d{1,2}\/\d{1,2}\/\d{4}\s*/, '').replace(/[\r\n\t]+/g, ' ').trim();
+        if (!title || title.length < 8) continue;
+
+        // 2. Trích đoạn tóm lược từ og:description
+        let excerpt = title;
+        const descMatch = artHtml.match(
+          /<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]*)"/i,
+        );
+        if (descMatch && descMatch[1]) {
+          excerpt = descMatch[1].replace(/[\r\n\t]+/g, ' ').trim();
+        }
+
+        // 3. Ảnh bài viết từ /public/upload/
         let coverImage = '';
+        const ogImgMatch = artHtml.match(
+          /<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]*)"/i,
+        );
+        if (ogImgMatch && ogImgMatch[1] && !ogImgMatch[1].endsWith('ceo1983.com') && !ogImgMatch[1].endsWith('ceo1983.com/')) {
+          coverImage = ogImgMatch[1].trim();
+          if (coverImage.startsWith('/')) coverImage = baseUrl + coverImage;
+        }
 
-        if (artRes.ok) {
-          const artHtml = await artRes.text();
-          const h1Match = artHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-          if (h1Match) {
-            const h1Text = h1Match[1].replace(/<[^>]+>/g, '').trim();
-            if (h1Text && h1Text.length > 10) {
-              title = h1Text;
-            }
+        const uploadImgs: string[] = [];
+        const imgRegex = /src=["'](\/public\/upload\/[^"']+)["']/gi;
+        let im;
+        while ((im = imgRegex.exec(artHtml)) !== null) {
+          const src = im[1];
+          if (!src.toLowerCase().includes('logo') && !src.toLowerCase().includes('icon') && !src.toLowerCase().includes('dang_thuc')) {
+            uploadImgs.push(baseUrl + src);
           }
+        }
+        if (!coverImage && uploadImgs.length > 0) {
+          coverImage = uploadImgs[0];
+        }
 
-          const descMatch = artHtml.match(
-            /<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]*)"/i,
-          );
-          if (descMatch && descMatch[1]) {
-            excerpt = descMatch[1].trim();
-          }
-
-          const imgMatch = artHtml.match(
-            /<meta[^>]+(?:property|name)="og:image"[^>]+content="([^"]*)"/i,
-          );
-          if (imgMatch && imgMatch[1]) {
-            coverImage = imgMatch[1].trim();
-            if (coverImage.startsWith('/')) {
-              coverImage = baseUrl + coverImage;
-            }
+        // 4. Nội dung bài viết từ các đoạn văn
+        let content = excerpt;
+        const pMatches = artHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+        if (pMatches && pMatches.length > 0) {
+          const paragraphs = pMatches
+            .map((p) => p.replace(/<[^>]+>/g, '').trim())
+            .filter((p) => p.length > 25 && !p.includes('chatwoot') && !p.includes('location.protocol'));
+          if (paragraphs.length > 0) {
+            content = paragraphs.join('\n\n');
           }
         }
 
-        if (title.length < 10) continue;
-
-        const imgsJson = JSON.stringify(coverImage ? [coverImage] : []);
+        const imgsJson = JSON.stringify(uploadImgs.length > 0 ? uploadImgs : (coverImage ? [coverImage] : []));
 
         await this.prisma.$executeRaw`
           INSERT INTO public.news (
@@ -639,7 +644,7 @@ export class ConnectContentService {
             NOW(),
             'published',
             ${excerpt},
-            ${excerpt},
+            ${content},
             ${coverImage},
             ${imgsJson}::jsonb,
             ${Math.floor(Math.random() * 300) + 150},
@@ -654,25 +659,18 @@ export class ConnectContentService {
             images = CASE WHEN EXCLUDED.cover_image != '' THEN EXCLUDED.images ELSE public.news.images END,
             updated_at = NOW()
         `.catch(async () => {
-          const exist = await this.prisma.$queryRaw<
-            any[]
-          >`SELECT id FROM public.news WHERE code = ${code} LIMIT 1`.catch(
-            () => [],
-          );
+          const exist = await this.prisma.$queryRaw<any[]>`SELECT id FROM public.news WHERE code = ${code} LIMIT 1`.catch(() => []);
           if (exist.length === 0) {
             await this.prisma.$executeRaw`
               INSERT INTO public.news (code, title, category, author, published_at, status, excerpt, content, cover_image, images, views, created_at, updated_at)
-              VALUES (${code}, ${title}, 'Hoạt động CLB', 'CLB Doanh Nhân CEO 1983', NOW(), 'published', ${excerpt}, ${excerpt}, ${coverImage}, ${imgsJson}::jsonb, 250, NOW(), NOW())
+              VALUES (${code}, ${title}, 'Hoạt động CLB', 'CLB Doanh Nhân CEO 1983 (ceo1983.com)', NOW(), 'published', ${excerpt}, ${content}, ${coverImage}, ${imgsJson}::jsonb, 250, NOW(), NOW())
             `.catch(() => {});
           }
         });
 
         syncedCount++;
       } catch (err: any) {
-        console.warn(
-          `[NewsSync] Error syncing article ${articleUrl}:`,
-          err?.message,
-        );
+        console.warn(`[NewsSync] Error syncing article ${articleUrl}:`, err?.message);
       }
     }
 

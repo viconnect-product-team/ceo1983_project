@@ -1,6 +1,19 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 18/11/2026 (v11.64) — KHẮC PHỤC TRIỆT ĐỂ LỖI WEBSOCKET 307 REDIRECT, CRAWL TIN TỨC CEO1983.COM & ĐIỀU KIỆN QUAN TÂM ZALO OA CẤP TÀI KHOẢN [NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003]:
+#   * SỬA LỖI WEBSOCKET 307 REDIRECT TRÊN SUBDOMAIN CRM (deploy/ssl/setup-ssl.sh, deploy/ssl/nginx.conf):
+#       - Chuyển `location /socket.io/` sang `location /socket.io` (loại bỏ dấu gạch chéo cuối) để tránh bị TanStack Start frontend (port 5004) chuyển hướng 307 làm vỡ WebSocket handshake.
+#       - Thêm `proxy_read_timeout 86400s; proxy_send_timeout 86400s;` và `proxy_set_header Connection "upgrade";`.
+#       - Thêm cơ chế tự động giải quyết xung đột directive `map` trong `setup-ssl.sh` để đảm bảo `nginx -t` luôn đạt exit code 0 trên VPS.
+#   * TỰ ĐỘNG ĐỒNG BỘ TIN TỨC TỪ CEO1983.COM (apps/ceo1983_app_be/src/connect-app/services/content.service.ts):
+#       - Cải tiến regex tách ID bài viết theo chuỗi 5-7 chữ số cuối đường dẫn: `/-+(\d{5,})(?:\.html|\/)?$/`.
+#       - Trích xuất ảnh bìa thực tế từ thẻ `<img src="/public/upload/...">` thay cho thẻ `og:image` rỗng.
+#       - Tự động kích hoạt đồng bộ khi bảng `news` chưa có bài viết nào.
+#   * CLEAR SỐ ĐIỆN THOẠI MẶC ĐỊNH & GATING QUAN TÂM ZALO OA KHI CẤP TÀI KHOẢN MỚI:
+#       - Xóa bỏ triệt để số điện thoại hardcode `0973924819` trên frontend và backend.
+#       - Khi đăng ký tài khoản mới: Chỉ gửi email Thư Cảm Ơn Đăng Ký kèm Lời Kêu Gọi Quan Tâm Zalo OA, không gửi mật khẩu ngay.
+#       - Sau khi người dùng Quan tâm Zalo OA CLB CEO 1983 (`https://zalo.me/clbceo1983`), hệ thống kiểm tra và tự động gửi thông tin tài khoản qua email và tin nhắn Zalo tới số điện thoại của hội viên.
 # 18/11/2026 (v11.63) — ĐÀO TẠO TOÀN DIỆN 2 TRỢ LÝ AI (CRM & MOBILE APP) VỚI BRD, SRS, CSDL CHUẨN 113.20.107.184:6432 & API CATALOG; TỰ ĐỘNG THỰC THI NGHIỆP VỤ KÈM THẺ KIỂM TRA ĐỐI SOÁT (VERIFICATION CARD); PHÂN TÍCH TỆP HỎI NGƯỢC LẠI KÈM LỰA CHỌN (CHOICE CHIPS) [NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001]:
 #   * TRI THỨC TOÀN DIỆN HỆ SINH THÁI CEO 1983 (apps/ceo1983_app_be/src/ai/ai-knowledge-and-actions.ts):
 #       - Huấn luyện 2 con AI (Web CRM qua handleChatAssistant và Mobile App qua askAssistant) với toàn bộ BRD, SRS, 7 Ban chuyên môn (FLD-DEPT-*), Thông tư 200/2014/TT-BTC, schema bảng CSDL và API Catalog.

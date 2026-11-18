@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
 import { ViOneAiTutorGuide } from "../common/ViOneAiTutorGuide";
 import { AiVerificationCard, VerificationCardData } from "./AiVerificationCard";
+import { AiStepExecutionCard, AiStepExecutionData } from "./AiStepExecutionCard";
 import { AiChoiceChips } from "./AiChoiceChips";
 import {
   analyzeImportedFileForAi,
@@ -57,6 +58,7 @@ export interface ChatMessage {
   proactiveAlert?: string;
   fileClarification?: AiFileClarificationData;
   verificationCard?: VerificationCardData;
+  stepExecution?: AiStepExecutionData;
 }
 
 export interface ChatSession {

@@ -11,6 +11,8 @@ import {
   Users,
   HeartHandshake,
   CheckCircle2,
+  MessageSquare,
+  RefreshCw,
   ChevronLeft,
   ExternalLink,
   Send,
@@ -28,6 +30,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi, uploadFileToNest } from "@/lib/api-client";
 import { toast } from "sonner";
+import { verifyZaloAndDispatchAccountFn } from "@/lib/club-application.functions";
 import { sanitizePhoneNumber, handleNumericKeyDown } from "@/lib/utils";
 import { StandardDateInput } from "@/components/common/StandardDateInput";
 
@@ -60,6 +63,33 @@ export function Ceo1983MemberRegistrationForm({
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [zaloFollowVerified, setZaloFollowVerified] = useState(false);
+  const [isVerifyingZalo, setIsVerifyingZalo] = useState(false);
+  const [zaloMessage, setZaloMessage] = useState<string | null>(null);
+
+  const handleVerifyZaloAndGetAccount = async () => {
+    setIsVerifyingZalo(true);
+    try {
+      const res = await verifyZaloAndDispatchAccountFn({
+        data: {
+          phone: registeredData?.phone,
+          email: registeredData?.email,
+        },
+      });
+
+      if (res?.ok && res?.accountDispatched) {
+        setZaloFollowVerified(true);
+        setZaloMessage(res.message || "Tài khoản đăng nhập đã được gửi thành công về Email và Zalo!");
+        toast.success("Xác nhận thành công! Đã gửi thông tin tài khoản.");
+      } else {
+        toast.info(res?.message || "Vui lòng bấm Quan tâm Zalo OA CLB CEO 1983 trước để nhận tài khoản.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Lỗi kiểm tra trạng thái Zalo OA");
+    } finally {
+      setIsVerifyingZalo(false);
+    }
+  };
   const [registeredData, setRegisteredData] = useState<any>(null);
   const [referrerCode, setReferrerCode] = useState<string>(referrerCodeProp || "");
 
@@ -269,17 +299,53 @@ export function Ceo1983MemberRegistrationForm({
               )}
             </div>
 
-            {/* Process Notice */}
-            <div className="bg-blue-50 border-l-4 border-[#003B95] p-4 rounded-r-xl text-left text-xs sm:text-sm text-[#003B95] mb-8">
-              <p className="font-bold mb-1">📌 Quy trình thẩm định & cấp tài khoản hội viên:</p>
-              <ul className="list-disc list-inside space-y-1 text-slate-700">
-                <li>Ban Thành Viên Hiệp hội CEO 1983 sẽ thẩm định hồ sơ trong vòng 24 giờ.</li>
-                <li>
-                  Khi được phê duyệt, hệ thống sẽ <strong>tự động gửi email</strong> chứa tên đăng nhập
-                  và mật khẩu kích hoạt tới hòm thư <strong>{registeredData?.email}</strong>.
-                </li>
-                <li>Anh/Chị có thể sử dụng thông tin đó để đăng nhập vào App Hiệp Hội.</li>
-              </ul>
+            {/* Khối Quan Tâm Zalo OA Để Cấp Gửi Tài Khoản */}
+            <div className="bg-gradient-to-br from-blue-50 via-indigo-50/50 to-blue-50 border-2 border-[#003B95]/30 rounded-2xl p-6 mb-8 text-center shadow-sm">
+              <span className="inline-block px-3 py-1 bg-[#003B95] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider mb-2.5">
+                ✦ BƯỚC BẮT BUỘC ĐỂ KÍCH HOẠT &amp; NHẬN TÀI KHOẢN ✦
+              </span>
+
+              <h2 className="text-lg sm:text-xl font-black text-[#001A4D] mb-2">
+                Quan Tâm Zalo Official Account CLB CEO 1983
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-700 max-w-lg mx-auto mb-5 leading-relaxed">
+                Để nhận thông báo kết nối B2B, sự kiện và lịch họp qua Zalo, Quý Anh/Chị vui lòng nhấn nút <strong>Quan tâm Zalo OA</strong> bên dưới.
+                <br />
+                <span className="text-[#003B95] font-semibold mt-1 inline-block">
+                  💡 Ngay sau khi Quan tâm, hệ thống sẽ tự động gửi tên đăng nhập &amp; mật khẩu về Email cùng tin nhắn Zalo tới số điện thoại của Quý Anh/Chị.
+                </span>
+              </p>
+
+              {zaloFollowVerified ? (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-sm font-semibold flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>{zaloMessage || "Đã xác thực Quan tâm Zalo OA! Thông tin tài khoản đã được gửi thành công về Email và Zalo."}</span>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <a
+                    href="https://zalo.me/clbceo1983"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#0068FF] hover:bg-[#0055D4] text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Bấm Quan Tâm Zalo OA Ngay
+                    <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleVerifyZaloAndGetAccount}
+                    disabled={isVerifyingZalo}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white font-bold text-sm shadow-md transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isVerifyingZalo ? "animate-spin" : ""}`} />
+                    {isVerifyingZalo ? "Đang xác thực..." : "Tôi Đã Quan Tâm - Nhận Tài Khoản"}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Action buttons */}

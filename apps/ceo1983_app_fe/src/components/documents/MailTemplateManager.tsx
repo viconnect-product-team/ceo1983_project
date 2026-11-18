@@ -1215,7 +1215,7 @@ export function MailTemplateManager() {
   );
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [testEmail, setTestEmail] = useState<string>("admin@connect.vn");
-  const [testPhone, setTestPhone] = useState<string>("0973924819");
+  const [testPhone, setTestPhone] = useState<string>("");
   const [sendChannel, setSendChannel] = useState<"all" | "email" | "in_app" | "zalo_oa">("all");
   const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
   const [phoneError, setPhoneError] = useState("");
@@ -1228,6 +1228,7 @@ export function MailTemplateManager() {
   const [trainingPrograms, setTrainingPrograms] = useState<any[]>([]);
   const [allEvents, setAllEvents] = useState<any[]>([]);
   const [allMeetings, setAllMeetings] = useState<any[]>([]);
+  const [departmentGroups, setDepartmentGroups] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [deptSelectMode, setDeptSelectMode] = useState<"all" | "single" | "multiple">("all");
   const [selectedDeptMemberIds, setSelectedDeptMemberIds] = useState<string[]>([]);
@@ -1259,6 +1260,17 @@ export function MailTemplateManager() {
       })
       .catch(() => {});
 
+    // Call API chuẩn Hội viên theo Ban từ CSDL PostgreSQL 113.20.107.184:6432
+    fetchNestApi<any[]>("/members/by-department")
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data;
+        if (Array.isArray(list) && list.length > 0) {
+          setDepartmentGroups(list);
+        }
+      })
+      .catch(() => {});
+
+    // Call API chuẩn Người tương tác Zalo OA (Subscribers & Chatters)
     fetchNestApi<any>("/zalo/subscribers")
       .then((res: any) => {
         const rawList = res?.data || res?.subscribers || (Array.isArray(res) ? res : []);
@@ -1274,21 +1286,11 @@ export function MailTemplateManager() {
           }));
           setZaloSubscribers(list);
         } else {
-          setZaloSubscribers([
-            { id: "zalo-sub-01", name: "Nguyễn Văn Hải", displayName: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
-            { id: "zalo-sub-02", name: "Trần Thị Mai Lan", displayName: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
-            { id: "zalo-sub-03", name: "Lê Hoàng Quân", displayName: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
-            { id: "zalo-sub-04", name: "Phạm Thu Hà", displayName: "Phạm Thu Hà", phone: "0973205683", zalo_user_id: "zalo_04", company: "Hà Thành Real Estate" },
-            { id: "zalo-sub-05", name: "Đặng Tiến Dũng", displayName: "Đặng Tiến Dũng", phone: "0915667788", zalo_user_id: "zalo_05", company: "Dũng Minh Tech" },
-          ]);
+          setZaloSubscribers([]);
         }
       })
       .catch(() => {
-        setZaloSubscribers([
-          { id: "zalo-sub-01", name: "Nguyễn Văn Hải", displayName: "Nguyễn Văn Hải", phone: "0912345678", zalo_user_id: "zalo_01", company: "Hải Nam Logistics" },
-          { id: "zalo-sub-02", name: "Trần Thị Mai Lan", displayName: "Trần Thị Mai Lan", phone: "0988776655", zalo_user_id: "zalo_02", company: "Mai Lan Decor" },
-          { id: "zalo-sub-03", name: "Lê Hoàng Quân", displayName: "Lê Hoàng Quân", phone: "0903205683", zalo_user_id: "zalo_03", company: "Quân Anh Corp" },
-        ]);
+        setZaloSubscribers([]);
       });
 
     fetchNestApi<any>("/events")
@@ -1308,44 +1310,46 @@ export function MailTemplateManager() {
     fetchNestApi<any>("/events?type=training")
       .then((res: any) => {
         const list = Array.isArray(res) ? res : res?.data;
-        if (Array.isArray(list) && list.length > 0) {
+        if (Array.isArray(list)) {
           setTrainingPrograms(list);
         } else {
-          setTrainingPrograms([
-            { id: "train-01", title: "Khóa Đào Tạo: Quản Trị Tài Chính Doanh Nghiệp & Tối Ưu Dòng Tiền 2026", speaker: "TS. Lê Thẩm Dương", duration: "1 Ngày (Thứ Bảy)", place: "Hội trường CEO 1983, Keangnam Landmark 72, Hà Nội", date: "2026-11-20" },
-            { id: "train-02", title: "Chương Trình Đào Tạo: Ứng Dụng AI & Tự Động Hóa Vận Hành Trong Doanh Nghiệp SME", speaker: "Chuyên Gia AI VICONNECT", duration: "2 Buổi", place: "Trụ sở HanoiBA & Hybrid Online", date: "2026-11-25" },
-            { id: "train-03", title: "Workshop: Chiến Lược Đàm Phán & Ký Kết Hợp Đồng Giao Thương B2B", speaker: "Ban Thường Trực CEO 1983", duration: "Nửa ngày", place: "Habblet Hotel Hanoi", date: "2026-12-05" },
-          ]);
+          setTrainingPrograms([]);
         }
       })
       .catch(() => {
-        setTrainingPrograms([
-          { id: "train-01", title: "Khóa Đào Tạo: Quản Trị Tài Chính Doanh Nghiệp & Tối Ưu Dòng Tiền 2026", speaker: "TS. Lê Thẩm Dương", duration: "1 Ngày", place: "Keangnam Landmark 72, Hà Nội", date: "2026-11-20" },
-          { id: "train-02", title: "Chương Trình Đào Tạo: Ứng Dụng AI Trong Vận Hành Doanh Nghiệp", speaker: "Chuyên Gia AI VICONNECT", duration: "2 Buổi", place: "Trụ sở HanoiBA", date: "2026-11-25" },
-        ]);
+        setTrainingPrograms([]);
       });
   }, []);
 
   const departmentList = useMemo(() => {
+    if (departmentGroups.length > 0) {
+      return departmentGroups.map((g) => g.department);
+    }
     return [
-      "Ban Hội Viên",
-      "Ban Truyền Thông",
-      "Ban Xúc Tiến Thương Mại",
-      "Ban Tài Chính",
-      "Ban Đào Tạo",
-      "Ban Sự Kiện",
       "Ban Điều Hành",
+      "Ban Thành viên",
+      "Ban xúc tiến",
+      "Ban truyền thông",
+      "Ban tài chính",
+      "Ban thiện nguyện",
       "Ban Thư Ký",
+      "Hội viên ceo1983",
     ];
-  }, []);
+  }, [departmentGroups]);
 
-  // Members in selected department (or all)
+  // Members in selected department lấy trực tiếp từ CSDL
   const deptMembers = useMemo(() => {
     if (!selectedDepartment) return membersList;
+    const group = departmentGroups.find(
+      (g) => g.department.toLowerCase().trim() === selectedDepartment.toLowerCase().trim()
+    );
+    if (group && group.members && group.members.length > 0) {
+      return group.members;
+    }
     return membersList.filter((m) =>
       (m.department || "").toLowerCase().includes(selectedDepartment.toLowerCase())
     );
-  }, [membersList, selectedDepartment]);
+  }, [membersList, selectedDepartment, departmentGroups]);
 
   const handleSelectDepartment = (dept: string) => {
     setSelectedDepartment(dept);
@@ -1385,7 +1389,7 @@ export function MailTemplateManager() {
     if (mode === "all") {
       targetList = deptMembers;
     } else {
-      targetList = deptMembers.filter((m) => memberIds.includes(String(m.id || m.code)));
+      targetList = deptMembers.filter((m: any) => memberIds.includes(String(m.id || m.code)));
     }
 
     const newPhones = targetList.map((m) => m.phone).filter(Boolean);
@@ -2876,7 +2880,7 @@ export function MailTemplateManager() {
 
                     {/* Dropdown tree / multi-select hội viên của Ban */}
                     {showMemberDropdown && (
-                      <div className="mt-1 p-2 rounded-lg border border-blue-200 dark:border-blue-900 bg-slate-50 dark:bg-slate-950 max-h-48 overflow-y-auto space-y-1">
+                      <div className="mt-1 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-h-56 overflow-y-auto space-y-1 shadow-xl ring-1 ring-black/5">
                         <input
                           type="text"
                           value={memberSearchTerm}
@@ -2885,13 +2889,13 @@ export function MailTemplateManager() {
                           className="w-full text-[10.5px] p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mb-1"
                         />
                         {deptMembers
-                          .filter((m) =>
+                          .filter((m: any) =>
                             !memberSearchTerm ||
                             String(m.name || m.fullName || "").toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
                             String(m.phone || "").includes(memberSearchTerm) ||
                             String(m.company || m.companyName || "").toLowerCase().includes(memberSearchTerm.toLowerCase())
                           )
-                          .map((m) => {
+                          .map((m: any) => {
                             const mId = String(m.id || m.code);
                             const isSelected = selectedDeptMemberIds.includes(mId);
                             return (
@@ -3007,7 +3011,7 @@ export function MailTemplateManager() {
 
                     {/* Dropdown multi-select Zalo subscribers */}
                     {showZaloDropdown && (
-                      <div className="mt-1 p-2 rounded-lg border border-cyan-200 dark:border-cyan-900 bg-slate-50 dark:bg-slate-950 max-h-48 overflow-y-auto space-y-1">
+                      <div className="mt-1 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-h-56 overflow-y-auto space-y-1 shadow-xl ring-1 ring-black/5">
                         <input
                           type="text"
                           value={zaloSearchTerm}

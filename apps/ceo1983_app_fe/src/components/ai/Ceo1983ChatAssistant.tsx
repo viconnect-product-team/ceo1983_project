@@ -26,6 +26,8 @@ import { useAuth } from "@/context/AuthContext";
 import { fetchNestApi } from "@/lib/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { AiVerificationCard, VerificationCardData } from "./AiVerificationCard";
+import { AiStepExecutionCard, AiStepExecutionData } from "./AiStepExecutionCard";
+import { FileText, Brain } from "lucide-react";
 import { AiChoiceChips } from "./AiChoiceChips";
 import {
   analyzeImportedFileForAi,
@@ -86,6 +88,7 @@ export interface AssistantMessage {
   };
   fileClarification?: AiFileClarificationData;
   verificationCard?: VerificationCardData;
+  stepExecution?: AiStepExecutionData;
 }
 
 interface QuickPrompt {
@@ -94,6 +97,58 @@ interface QuickPrompt {
   icon: typeof Calendar;
   route?: string;
 }
+
+
+export interface AiDomainCategory {
+  id: string;
+  label: string;
+  icon: any;
+  color: string;
+  activeBg: string;
+  desc: string;
+}
+
+export const AI_DOMAIN_CATEGORIES: AiDomainCategory[] = [
+  { id: "all", label: "Tất cả", icon: Sparkles, color: "text-amber-500", activeBg: "bg-amber-500 text-slate-950 font-bold", desc: "Tổng thể CLB" },
+  { id: "events", label: "Sự kiện", icon: Calendar, color: "text-rose-500", activeBg: "bg-rose-500 text-white font-bold", desc: "Sự kiện & Check-in" },
+  { id: "training", label: "Đào tạo", icon: Brain, color: "text-purple-500", activeBg: "bg-purple-500 text-white font-bold", desc: "Khóa học & Giảng viên" },
+  { id: "finance", label: "Tài chính", icon: TrendingUp, color: "text-emerald-500", activeBg: "bg-emerald-500 text-white font-bold", desc: "Sổ quỹ & Hội phí" },
+  { id: "members", label: "Hội viên", icon: Users, color: "text-blue-500", activeBg: "bg-blue-500 text-white font-bold", desc: "Danh bạ & 7 Ban" },
+  { id: "b2b", label: "Cơ hội B2B", icon: Handshake, color: "text-orange-500", activeBg: "bg-orange-500 text-white font-bold", desc: "Giao thương & Lịch hẹn" },
+  { id: "document", label: "Tài liệu", icon: FileText, color: "text-indigo-500", activeBg: "bg-indigo-500 text-white font-bold", desc: "Văn bản & Bóc tách tệp" },
+];
+
+export const CATEGORY_QUICK_PROMPTS: Record<string, QuickPrompt[]> = {
+  events: [
+    { label: "Tạo sự kiện Gala 2026", query: "Tạo sự kiện Gala Doanh Nhân CEO 1983 chào năm mới 2026 tại Khách sạn Daewoo, quy mô 200 người", icon: Calendar },
+    { label: "Sự kiện tôi đã đăng ký", query: "Tôi có đăng ký sự kiện nào không?", icon: Calendar, route: "/association/events" },
+    { label: "Lịch sự kiện sắp tới", query: "Lịch sự kiện sắp diễn ra của CLB Doanh Nhân CEO 1983 gồm có những sự kiện nào?", icon: Calendar, route: "/association/events" },
+  ],
+  training: [
+    { label: "Tạo khóa đào tạo Lãnh đạo", query: "Tạo khóa đào tạo Chiến Lược Quản Trị Doanh Nghiệp 2026 do TS. Chuyên gia CEO 1983 giảng dạy", icon: Brain },
+    { label: "Bóc tách giáo trình đào tạo", query: "Bóc tách tệp giáo trình và chuẩn bị dữ liệu tạo khóa đào tạo mới", icon: FileText },
+    { label: "Chương trình đào tạo mới", query: "Hiện tại CLB đang có những khóa đào tạo và hội thảo nâng cao năng lực nào?", icon: Brain, route: "/trainings" },
+  ],
+  finance: [
+    { label: "Xuất báo cáo quỹ TT200", query: "Xuất báo cáo tài chính và sổ quỹ theo Thông tư 200/2014/TT-BTC", icon: TrendingUp },
+    { label: "Hóa đơn / Hội phí cần đóng", query: "Tôi có hóa đơn hay khoản hội phí nào phải thanh toán không?", icon: CreditCard, route: "/association/renew/pay" },
+    { label: "Quy định hội phí 10tr/năm", query: "Hội phí thường niên bao nhiêu và thông tin chuyển khoản ngân hàng?", icon: CreditCard },
+  ],
+  members: [
+    { label: "Cơ cấu các Ban chuyên môn", query: "Hiệp hội CEO 1983 gồm những Ban chuyên môn nào và chức năng của từng ban?", icon: Building2 },
+    { label: "Bạn bè & kết nối của tôi", query: "Tôi có bao nhiêu bạn bè và kết nối trong CLB CEO 1983?", icon: Users, route: "/association/members" },
+    { label: "Tra cứu danh bạ hội viên", query: "Tra cứu danh bạ hội viên CLB Doanh Nhân CEO 1983", icon: Users, route: "/association/members" },
+  ],
+  b2b: [
+    { label: "Tôi có 50tr deal cơ hội nào?", query: "Tôi có 50000000 thì có cơ hội kinh doanh nào phù hợp và phân tích lời lỗ nếu deal cơ hội đó?", icon: Sparkles, route: "/association/opportunities" },
+    { label: "Cơ hội tôi quan tâm", query: "Tôi có quan tâm cơ hội giao thương nào không?", icon: Handshake, route: "/association/opportunities" },
+    { label: "Lịch hẹn kết nối B2B", query: "Tôi có cuộc gặp kết nối nào sắp tới không?", icon: MessageSquare, route: "/association/business-cards" },
+  ],
+  document: [
+    { label: "Phân hệ tài liệu hiệp hội", query: "Tài liệu và điều lệ Hiệp hội CEO 1983 được quản lý và phân quyền như thế nào?", icon: FileText, route: "/association/library" },
+    { label: "Bóc tách tệp đính kèm", query: "Bóc tách dữ liệu từ file tài liệu và hỏi ngược lại yêu cầu xử lý", icon: FileText },
+  ],
+};
 
 const QUICK_PROMPTS: QuickPrompt[] = [
   {
@@ -176,6 +231,7 @@ export function Ceo1983ChatAssistant() {
     return [];
   });
   const [input, setInput] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const streamingIntervalRef = useRef<any>(null);
@@ -1258,7 +1314,7 @@ HƯỚNG DẪN TRẢ LỜI:
           onClick={() => setIsOpen(false)}
         >
           <div
-            className="w-full max-w-lg mx-auto flex flex-col h-[85vh] max-h-[720px] rounded-t-3xl bg-white dark:bg-[#0B132B] border-t-2 border-x border-amber-500/40 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-250"
+            className="w-full max-w-lg mx-auto flex flex-col h-[85vh] max-h-[720px] rounded-t-3xl bg-white dark:bg-black border-t-2 border-x border-amber-500/40 text-slate-900 dark:text-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-250"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -1352,7 +1408,7 @@ HƯỚNG DẪN TRẢ LỜI:
                     <div
                       className={`relative max-w-[85%] rounded-2xl px-3.5 py-2.5 shadow-xs ${isUser
                         ? "bg-gradient-to-r from-[#002B70] to-[#003B95] text-white rounded-tr-xs border border-amber-400/30"
-                        : "bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 rounded-tl-xs border border-slate-200 dark:border-slate-700/80"
+                        : "bg-slate-100 dark:bg-[#121212] text-slate-900 dark:text-white rounded-tl-xs border border-slate-200 dark:border-slate-800"
                         }`}
                     >
                       <div className="whitespace-pre-wrap break-words">{m.content}</div>
