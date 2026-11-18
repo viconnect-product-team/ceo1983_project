@@ -33,6 +33,8 @@ import {
   Ticket,
   Award,
   Building2,
+  FileSpreadsheet,
+  UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -49,6 +51,7 @@ import { StandardDateInput, formatToDdmmyyyy } from "@/components/common/Standar
 import { GoogleMapAddressPicker } from "@/components/common/GoogleMapAddressPicker";
 import { VndCurrencyInput } from "@/components/dashboard/VndCurrencyInput";
 import { QrCanvas } from "@/components/member/QrCanvas";
+import { parseTrainingDocument, type ParsedTrainingData } from "@/lib/document-parser";
 
 export const Route = createFileRoute("/trainings")({
   component: TrainingsPage,
@@ -155,6 +158,80 @@ export function TrainingsPage() {
     },
   ]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Bóc tách tệp đính kèm (Excel, Word, PDF) cho đào tạo - Không bắt buộc
+  const [parsingDoc, setParsingDoc] = useState(false);
+  const [importedDoc, setImportedDoc] = useState<{
+    fileName: string;
+    hasTitle: boolean;
+    hasDate: boolean;
+    hasLocation: boolean;
+    hasInstructor: boolean;
+    instructorName?: string;
+    hasAttendees: boolean;
+    hasTicketTiers: boolean;
+  } | null>(null);
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    e.target.value = "";
+    setParsingDoc(true);
+    const toastId = toast.loading(`Đang đọc & bóc tách dữ liệu từ tệp: ${file.name}...`);
+    try {
+      const parsed = await parseTrainingDocument(file);
+
+      if (parsed.title) setFormTitle(parsed.title);
+      if (parsed.tagline) setFormTagline(parsed.tagline);
+      if (parsed.instructor_name) setFormInstructorName(parsed.instructor_name);
+      if (parsed.instructor_title) setFormInstructorTitle(parsed.instructor_title);
+      if (parsed.instructor_company) setFormInstructorCompany(parsed.instructor_company);
+      if (parsed.date) setFormDate(parsed.date);
+      if (parsed.start_time) setFormStartTime(parsed.start_time);
+      if (parsed.end_time) setFormEndTime(parsed.end_time);
+      if (parsed.location) setFormLocation(parsed.location);
+      if (parsed.address) setFormAddress(parsed.address);
+      if (parsed.category) setFormCategory(parsed.category);
+      if (parsed.format) setFormFormat(parsed.format);
+      if (parsed.max_attendees) setFormMaxAttendees(String(parsed.max_attendees));
+      if (parsed.description) setFormDescription(parsed.description);
+
+      if (parsed.ticket_tiers && parsed.ticket_tiers.length > 0) {
+        setFormTicketTiers(
+          parsed.ticket_tiers.map((t) => ({
+            name: t.name,
+            price: t.price,
+            quantity: t.quantity,
+            description: t.description || "",
+          }))
+        );
+      }
+
+      setImportedDoc({
+        fileName: file.name,
+        hasTitle: Boolean(parsed.title),
+        hasDate: Boolean(parsed.date),
+        hasLocation: Boolean(parsed.location),
+        hasInstructor: Boolean(parsed.instructor_name),
+        instructorName: parsed.instructor_name,
+        hasAttendees: Boolean(parsed.max_attendees),
+        hasTicketTiers: Boolean(parsed.ticket_tiers && parsed.ticket_tiers.length > 0),
+      });
+
+      toast.success(
+        `Đã bóc tách thành công dữ liệu từ "${file.name}"! Tự động điền thông tin khóa đào tạo.`,
+        { id: toastId, duration: 5000 }
+      );
+    } catch (err: any) {
+      console.error("[Trainings] File parse error:", err);
+      toast.error(err?.message || "Không thể bóc tách nội dung từ tệp này. Vui lòng kiểm tra lại định dạng tệp.", {
+        id: toastId,
+      });
+    } finally {
+      setParsingDoc(false);
+    }
+  };
 
   // Load danh sách khóa đào tạo từ CSDL Backend
   const fetchTrainings = async () => {
@@ -264,11 +341,13 @@ export function TrainingsPage() {
         description: "Dành cho đại biểu & khách mời ngoài CLB giao lưu",
       },
     ]);
+    setImportedDoc(null);
     setShowWizardModal(true);
   };
 
   // Mở modal chỉnh sửa
   const handleOpenEdit = (t: TrainingItem) => {
+    setImportedDoc(null);
     setEditingTraining(t);
     setFormTitle(t.title);
     setFormTagline(t.tagline || "");
@@ -759,6 +838,94 @@ export function TrainingsPage() {
 
               {/* Modal Body */}
               <form onSubmit={handleSaveTraining} className="flex-1 overflow-y-auto p-6 space-y-5">
+                {/* 0. Tự động bóc tách từ tệp đính kèm (Excel, Word, PDF) - Không bắt buộc */}
+                <div className="rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 p-4 transition-all hover:border-[#003B95]/60">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#003B95] dark:text-blue-300 shrink-0">
+                        <FileSpreadsheet className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-foreground">
+                            Nhập tự động từ tệp kế hoạch / giáo trình (Excel, Word, PDF)
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-muted-foreground font-semibold">
+                            Không bắt buộc
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Tải lên file thông báo chiêu sinh hoặc kế hoạch đào tạo (.xlsx, .xls, .docx, .doc, .pdf, .txt) - Hệ thống tự động bóc tách tên chuyên đề, giảng viên, thời gian, địa điểm, học phí và điền vào các mục bên dưới.
+                        </p>
+                      </div>
+                    </div>
+
+                    <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B95] hover:bg-[#002d73] text-white text-xs font-bold cursor-pointer transition shadow-xs shrink-0 disabled:opacity-50">
+                      {parsingDoc ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Đang bóc tách...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="h-4 w-4" />
+                          <span>Chọn Tệp Tải Lên</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.docx,.doc,.pdf,.txt,.csv"
+                        disabled={parsingDoc}
+                        className="hidden"
+                        onChange={handleFileImport}
+                      />
+                    </label>
+                  </div>
+
+                  {importedDoc && (
+                    <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-900/50 flex flex-wrap items-center justify-between gap-2 animate-in fade-in duration-150">
+                      <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        <span>
+                          Đã bóc tách thành công từ: <strong className="font-bold underline">{importedDoc.fileName}</strong>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {importedDoc.hasTitle && (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                            ✓ Tên khóa học
+                          </span>
+                        )}
+                        {importedDoc.hasInstructor && (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                            ✓ Giảng viên ({importedDoc.instructorName})
+                          </span>
+                        )}
+                        {importedDoc.hasDate && (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                            ✓ Ngày giờ học
+                          </span>
+                        )}
+                        {importedDoc.hasLocation && (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                            ✓ Địa điểm
+                          </span>
+                        )}
+                        {importedDoc.hasAttendees && (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                            ✓ Sức chứa
+                          </span>
+                        )}
+                        {importedDoc.hasTicketTiers && (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-semibold">
+                            ✓ Hạng vé
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* 1. Tên & Tagline */}
                 <div className="space-y-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-400 flex items-center gap-1.5">

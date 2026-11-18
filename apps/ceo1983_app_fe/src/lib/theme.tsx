@@ -31,18 +31,8 @@ function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
 
-  // Nếu đang ở App CEO 1983 Mobile (/association), LUÔN LUÔN là theme sáng (Light Theme) theo yêu cầu
-  if (isAssociationApp()) {
-    root.classList.remove("dark");
-    root.classList.remove("hc");
-    root.classList.add("light");
-    root.dataset.theme = "light";
-    root.style.colorScheme = "light";
-    applyCeo1983ColorTheme(getActiveCeo1983ColorThemeId());
-    return;
-  }
-
-  // Trên CRM Web: Hỗ trợ chuyển đổi Theme sáng / tối theo lựa chọn của quản trị viên
+  // Hỗ trợ chuyển đổi Theme sáng / tối cho toàn bộ hệ thống (cả Web CRM và Mobile App CEO 1983)
+  // Khi ở Theme tối, background luôn là màu đen thuần (#000000) theo quy chuẩn thương hiệu
   if (theme === "dark") {
     root.classList.add("dark");
     root.classList.remove("light");
@@ -61,11 +51,8 @@ function applyTheme(theme: Theme) {
 
 function readInitial(): Theme {
   if (typeof window !== "undefined") {
-    if (isAssociationApp()) {
-      return "light";
-    }
     try {
-      const stored = localStorage.getItem(CRM_THEME_KEY) || localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(CRM_THEME_KEY);
       if (stored === "dark" || stored === "light") return stored;
     } catch {
       /* ignore */
@@ -96,16 +83,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setTheme = (t: Theme) => {
-    if (isAssociationApp()) {
-      setThemeState("light");
-      applyTheme("light");
-      return;
-    }
     setThemeState(t);
     applyTheme(t);
     try {
-      localStorage.setItem(CRM_THEME_KEY, t);
       localStorage.setItem(STORAGE_KEY, t);
+      localStorage.setItem(CRM_THEME_KEY, t);
+      localStorage.setItem("theme", t);
     } catch {
       /* ignore */
     }
@@ -117,7 +100,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   const toggle = () => {
-    if (isAssociationApp()) return;
     setTheme(theme === "dark" ? "light" : "dark");
   };
 

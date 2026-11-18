@@ -20,11 +20,6 @@ export function ThemeSwitcher({
   const { theme, setTheme } = useTheme();
   const t = useT();
 
-  // App CEO 1983 Mobile luôn dùng theme sáng, không hiển thị nút đổi theme
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/association")) {
-    return null;
-  }
-
   const isOverlay = variant === "overlay";
 
   const wrap = isOverlay

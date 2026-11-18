@@ -1866,16 +1866,16 @@ export function CalendarScreen() {
           )}
         </div>
 
-        {/* ── NÚT CHỤP ẢNH & TẢI ẢNH KHI ĐÃ ĐẾN GIỜ / BẮT ĐẦU HOẠT ĐỘNG ── */}
-        {hasStarted && (
+        {/* ── NÚT CHỤP ẢNH & TẢI ẢNH TẠI SỰ KIỆN / CUỘC HỌP ── */}
+        {(hasStarted || item.status === "confirmed" || item.status === "registered" || isToday || photos.length > 0) && (
           <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-1.5">
               <span className="text-[11px] font-extrabold text-amber-900 dark:text-amber-300 flex items-center gap-1">
                 <Camera className="size-3.5 text-amber-600" />
-                <span>Nhật ký & Ảnh kỷ niệm ({photos.length})</span>
+                <span>Nhật ký &amp; Ảnh ({photos.length})</span>
               </span>
 
-              {/* Action buttons: Camera & Gallery Upload */}
+              {/* Action buttons: Camera, Gallery Upload, and Share */}
               <div className="flex items-center gap-1.5">
                 {/* Nút chụp ảnh trực tiếp */}
                 <label className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-[10.5px] font-bold flex items-center gap-1 cursor-pointer transition shadow-xs active:scale-95">
@@ -1904,6 +1904,50 @@ export function CalendarScreen() {
                     onChange={(e) => handleAddPhotosToActivity(item.id, e.target.files)}
                   />
                 </label>
+
+                {/* Nút chia sẻ ảnh lên mạng lưới hoặc ra ngoài */}
+                {photos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const shareUrls = photos.map((p) => p.url);
+                      const shareTitle = `📸 [Khoảnh khắc hoạt động] ${item.title}`;
+                      const shareContent = `${shareTitle}\n📍 ${item.location || "CLB CEO 1983"}\n⏰ ${item.date} ${item.time}`;
+
+                      // Đăng lên Mạng lưới
+                      try {
+                        await fetchNestApi("/feed", {
+                          method: "POST",
+                          body: JSON.stringify({
+                            title: shareTitle,
+                            content: shareContent,
+                            category: "EVENT_MEETING",
+                            images: shareUrls,
+                          }),
+                        });
+                        toast.success("Đã chia sẻ ảnh lên Mạng lưới CLB CEO 1983!");
+                      } catch {
+                        toast.info("Đã lưu ảnh hoạt động.");
+                      }
+
+                      // Đồng thời hỗ trợ chia sẻ ra ngoài
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: shareTitle,
+                            text: shareContent,
+                            url: window.location.href,
+                          });
+                        } catch {}
+                      }
+                    }}
+                    className="px-2 py-1 rounded-xl bg-[#003B95] hover:bg-[#002B70] text-white text-[10.5px] font-bold flex items-center gap-1 shadow-xs active:scale-95 transition cursor-pointer"
+                    title="Chia sẻ ảnh lên Mạng lưới / Ra ngoài"
+                  >
+                    <Share2 className="size-3" />
+                    <span>Chia sẻ</span>
+                  </button>
+                )}
 
                 {/* Nút viết ghi chú */}
                 <button

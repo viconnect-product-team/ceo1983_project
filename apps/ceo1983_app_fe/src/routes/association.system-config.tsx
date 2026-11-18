@@ -200,6 +200,53 @@ export function AssociationSystemConfigScreen() {
           </div>
         </div>
 
+        {/* ── CHẾ ĐỘ HIỂN THỊ SÁNG / TỐI (NỀN ĐEN THUẦN #000000) ── */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {isEn ? "Appearance Mode" : "Chế độ giao diện (Sáng / Tối)"}
+            </div>
+            <span className="text-[11px] font-bold text-slate-700 dark:text-white">
+              {theme === "dark" ? (isEn ? "Pure Black Dark" : "Tối (Đen thuần)") : (isEn ? "Light" : "Sáng")}
+            </span>
+          </div>
+          <div className="rounded-3xl bg-white dark:bg-[#0A0A0A] border border-slate-200/80 dark:border-white/10 p-3 shadow-xs grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setTheme("light");
+                toast.success(isEn ? "Switched to Light mode" : "Đã chuyển sang giao diện Sáng");
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition cursor-pointer ${
+                theme === "light"
+                  ? "bg-slate-100 border-slate-300 text-slate-900 shadow-xs"
+                  : "bg-transparent border-slate-200/50 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-white"
+              }`}
+            >
+              <Sun className={`size-4 ${theme === "light" ? "text-amber-500" : ""}`} />
+              <span>{isEn ? "Light" : "Giao diện Sáng"}</span>
+              {theme === "light" && <Check className="size-3.5 ml-auto text-emerald-600" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setTheme("dark");
+                toast.success(isEn ? "Switched to Pure Black Dark mode" : "Đã chuyển sang giao diện Tối (Đen thuần)");
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs font-bold transition cursor-pointer ${
+                theme === "dark"
+                  ? "bg-black border-white/20 text-white shadow-xs"
+                  : "bg-transparent border-slate-200/50 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-white"
+              }`}
+            >
+              <Moon className={`size-4 ${theme === "dark" ? "text-white" : ""}`} />
+              <span>{isEn ? "Dark" : "Tối (Đen thuần)"}</span>
+              {theme === "dark" && <Check className="size-3.5 ml-auto text-white" />}
+            </button>
+          </div>
+        </div>
+
         {/* ── 1. KHỐI TÙY CHỌN MÀU GIAO DIỆN (BRANDBOOK CEO 1983) ── */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-1">
@@ -213,7 +260,7 @@ export function AssociationSystemConfigScreen() {
               {brandColorTheme.name}
             </span>
           </div>
-          <div className="rounded-3xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+          <div className="rounded-3xl bg-white dark:bg-[#0A0A0A] border border-slate-200/80 dark:border-white/10 p-4 shadow-xs">
             <Ceo1983ColorThemeSelector />
           </div>
         </div>

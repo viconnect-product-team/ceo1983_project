@@ -3282,4 +3282,124 @@ export class ConnectAppService implements OnModuleInit {
       };
     }
   }
+
+  // ==========================================
+  // Public Sharing Endpoints (Event / Meeting / Feed)
+  // ==========================================
+  async getPublicEvent(id: string) {
+    const rows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `SELECT id, name, name as title, date, location, location as place, capacity, registered, status, type,
+                qr_fields, created_at, updated_at, association_id
+         FROM public.events
+         WHERE id = $1
+         LIMIT 1`,
+        id,
+      )
+      .catch(() => []);
+
+    if (!rows || rows.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin sự kiện');
+    }
+
+    const e = rows[0];
+    const tickets = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `SELECT id, name, price, quantity, description FROM public.event_ticket_types WHERE event_id = $1 ORDER BY sort_order ASC`,
+        id,
+      )
+      .catch(() => []);
+
+    return {
+      ...e,
+      title: e.name || e.title,
+      tickets: tickets || [],
+    };
+  }
+
+  async getPublicMeeting(id: string) {
+    const rows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `SELECT id, title, description, scheduled_start_at, scheduled_end_at, status, timezone
+         FROM public.business_meetings
+         WHERE id::text = $1
+         LIMIT 1`,
+        id,
+      )
+      .catch(() => []);
+
+    if (rows && rows.length > 0) {
+      const m = rows[0];
+      return {
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        date: m.scheduled_start_at,
+        time: m.scheduled_start_at
+          ? new Date(m.scheduled_start_at).toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '',
+        status: m.status,
+      };
+    }
+
+    const crmRows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `SELECT id, title, description, date, time, location, status, meeting_link, is_online
+         FROM public.meetings
+         WHERE id::text = $1 OR code = $2
+         LIMIT 1`,
+        id,
+        id,
+      )
+      .catch(() => []);
+
+    if (crmRows && crmRows.length > 0) {
+      return crmRows[0];
+    }
+
+    throw new NotFoundException('Không tìm thấy thông tin cuộc họp');
+  }
+
+  async getPublicFeedPost(id: string) {
+    const rows = await this.prisma
+      .$queryRawUnsafe<any[]>(
+        `SELECT id, title, content, images, category, department, created_at, author_id
+         FROM public.feed_posts
+         WHERE id::text = $1
+         LIMIT 1`,
+        id,
+      )
+      .catch(() => []);
+
+    if (!rows || rows.length === 0) {
+      throw new NotFoundException('Không tìm thấy bài viết');
+    }
+
+    const p = rows[0];
+    let authorName = 'Hội viên CEO 1983';
+    let authorAvatar = '';
+
+    if (p.author_id) {
+      const mems = await this.prisma
+        .$queryRawUnsafe<any[]>(
+          `SELECT name, avatar FROM public.members WHERE user_id::text = $1 OR id::text = $2 LIMIT 1`,
+          String(p.author_id),
+          String(p.author_id),
+        )
+        .catch(() => []);
+      if (mems && mems.length > 0) {
+        authorName = mems[0].name;
+        authorAvatar = mems[0].avatar;
+      }
+    }
+
+    return {
+      ...p,
+      authorName,
+      authorAvatar,
+    };
+  }
 }

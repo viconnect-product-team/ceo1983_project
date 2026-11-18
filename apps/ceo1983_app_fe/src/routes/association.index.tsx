@@ -1560,12 +1560,12 @@ function Home() {
                     {getShortcutIcon(item.iconName, "size-6", brandColorTheme.primaryColor)}
 
                     {item.badge && (
-                      <div className={`px-1.5 py-0.2 right-[-4px] top-[-6px] absolute ${item.badgeColor || "bg-amber-500 text-slate-900"} rounded-full text-[9px] font-black uppercase ring-1 ring-white dark:ring-slate-900 shadow-xs`}>
+                      <div className={`px-1.5 py-0.2 right-[-4px] top-[-6px] absolute ${item.badgeColor || "bg-primary text-white"} dark:bg-primary dark:text-white rounded-full text-[9px] font-black uppercase ring-1 ring-white dark:ring-black shadow-xs`}>
                         {item.badge}
                       </div>
                     )}
                   </div>
-                  <div className="text-center text-slate-800 dark:text-slate-200 text-[11px] sm:text-xs font-semibold font-['Inter'] leading-tight line-clamp-1 truncate max-w-full">
+                  <div className="text-center text-slate-800 dark:text-white text-[11px] sm:text-xs font-semibold font-['Inter'] leading-tight line-clamp-1 truncate max-w-full">
                     {item.name}
                   </div>
                 </div>

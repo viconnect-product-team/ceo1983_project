@@ -228,25 +228,25 @@ html.dark .bg-crm-system,
 .dark {
   /* ============================================================
      CEO 1983 OFFICIAL DARK MODE IDENTITY (Brandbook HanoiBA CEO 1983)
-     Deep Obsidian Cobalt Navy, Warm Amber Gold Accents, Zero Purple
+     Pure Black #000000 Background, Refined Accents, Crisp White Text
      ============================================================ */
-  --background: var(--vba-bg, #070D1A);
+  --background: #000000;
   --foreground: #FFFFFF;
-  --card: var(--vba-surface, #0E172A);
+  --card: #0A0A0A;
   --card-foreground: #FFFFFF;
-  --popover: var(--vba-surface, #0E172A);
+  --popover: #0A0A0A;
   --popover-foreground: #FFFFFF;
   --primary: var(--vba-navy, #003B95);
   --primary-foreground: #FFFFFF;
   --primary-glow: var(--vba-gold-2, #FBBF24);
-  --secondary: var(--vba-surface-2, #14223E);
-  --secondary-foreground: #CBD5E1;
-  --muted: var(--vba-surface-2, #14223E);
+  --secondary: #121212;
+  --secondary-foreground: #FFFFFF;
+  --muted: #121212;
   --muted-foreground: #94A3B8;
-  --accent: var(--vba-gold, #F59E0B);
+  --accent: #1E293B;
   --accent-foreground: #FFFFFF;
-  --border: var(--vba-border, rgba(245, 158, 11, 0.22));
-  --input: var(--vba-border-soft, rgba(245, 158, 11, 0.25));
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.15);
   --ring: var(--vba-navy, #003B95);
 
   /* State colours tuned for CEO 1983 dark surfaces */
@@ -255,19 +255,19 @@ html.dark .bg-crm-system,
   --success: #10B981;
   --success-foreground: #FFFFFF;
   --warning: #F59E0B;
-  --warning-foreground: #070D1A;
+  --warning-foreground: #000000;
   --info: #38BDF8;
-  --info-foreground: #070D1A;
+  --info-foreground: #000000;
 
-  --sidebar: #050912;
+  --sidebar: #000000;
   --sidebar-foreground: #CBD5E1;
   --sidebar-primary: #F59E0B;
-  --sidebar-primary-foreground: #070D1A;
-  --sidebar-accent: #0E172A;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #0A0A0A;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(245, 158, 11, 0.16);
+  --sidebar-border: rgba(255, 255, 255, 0.10);
   --sidebar-ring: #F59E0B;
-  --gradient-sidebar: linear-gradient(180deg, #070D1A 0%, #050912 100%);
+  --gradient-sidebar: #000000;
 
   --chart-1: #003B95;
   --chart-2: #F59E0B;
@@ -815,10 +815,20 @@ button.ceo-login-submit svg {
 
 /* ============================================================
    CEO 1983 DARK THEME STANDARDS (DÂY CHUYỀN MÀU THEO THEME CHUẨN)
+   Nền đen thuần #000000, Text/Label/Button/Placeholder màu trắng
    ============================================================ */
 .dark .vba-app,
-.vba-app {
-  background-color: var(--vba-bg) !important;
+html.dark .vba-app,
+[data-theme="dark"] .vba-app {
+  --vba-bg: #000000 !important;
+  --vba-bg-2: #050505 !important;
+  --vba-surface: #0A0A0A !important;
+  --vba-surface-2: #121212 !important;
+  --vba-border: rgba(255, 255, 255, 0.12) !important;
+  --vba-border-soft: rgba(255, 255, 255, 0.08) !important;
+  --vba-text: #FFFFFF !important;
+  --vba-text-muted: #E2E8F0 !important;
+  background-color: #000000 !important;
   color: #FFFFFF !important;
 }
 
@@ -842,6 +852,22 @@ button.ceo-login-submit svg {
 .vba-app .border-slate-800,
 .vba-app .border-slate-700 {
   border-color: var(--vba-border-soft) !important;
+}
+
+/* Quy chuẩn Dark Mode: Input placeholder, label, heading, button text luôn là màu trắng */
+.dark input::placeholder,
+.dark textarea::placeholder,
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: rgba(255, 255, 255, 0.70) !important;
+  opacity: 1 !important;
+}
+
+.dark label,
+html.dark label,
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6 {
+  color: #FFFFFF !important;
 }
 
 /* Biến đổi màu chủ đạo và accent linh hoạt trong vba-app */

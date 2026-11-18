@@ -357,7 +357,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   return (
-    <div className="vba-app fixed inset-0 h-full w-full overflow-hidden bg-white dark:bg-[var(--vba-bg)] text-[var(--vba-text)] transition-colors duration-200 flex flex-col items-center">
+    <div className="vba-app fixed inset-0 h-full w-full overflow-hidden bg-white dark:bg-black text-[var(--vba-text)] transition-colors duration-200 flex flex-col items-center">
       {/* Dynamic Background Mesh Overlay — only in dark luxury mode */}
       {!isLight && (
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
@@ -366,9 +366,9 @@ export function MemberScreen({ children }: { children: ReactNode }) {
             alt=""
             width={1024}
             height={640}
-            className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-35"
+            className="pointer-events-none absolute inset-x-0 top-0 h-[640px] w-full select-none object-cover opacity-20"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-[var(--vba-bg)]/80 to-[var(--vba-bg)]" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-black/80 to-black" />
         </div>
       )}
 
@@ -383,7 +383,7 @@ export function MemberScreen({ children }: { children: ReactNode }) {
       />
 
       <div
-        className={`relative z-10 flex h-full w-full max-w-[480px] flex-col justify-between overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${isLight ? "bg-white" : "bg-[var(--vba-bg)]"
+        className={`relative z-10 flex h-full w-full max-w-[480px] flex-col justify-between overflow-hidden border-x border-[var(--vba-border-soft)]/30 ${isLight ? "bg-white" : "bg-black"
           } shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)]`}
       >
         <OfflineBanner />
@@ -876,7 +876,7 @@ function MemberTabBar() {
   return (
     <>
       <nav
-        className="vba-bottom-bar sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none transition-all duration-200 bg-white dark:bg-[var(--vba-bg-2)] border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        className="vba-bottom-bar sticky bottom-0 z-40 mx-auto w-full max-w-[480px] shrink-0 select-none transition-all duration-200 bg-white dark:bg-black border-t border-slate-200/80 dark:border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
         style={{
           bottom: 0,
           marginBottom: 0,
