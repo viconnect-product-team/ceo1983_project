@@ -1,6 +1,31 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 17/11/2026 (v11.59) — CHIA TÁCH ĐỘC LẬP TÀI LIỆU & BIỂU MẪU, CẤU HÌNH ĐỊNH DẠNG XUẤT ĐỘNG EXCEL/PDF CHO BÁO CÁO TÀI CHÍNH & HÓA ĐƠN [NODE-CRM-001], [NODE-CRM-007], [NODE-CRM-010], [NODE-CRM-013], [NODE-CORE-001]:
+#   * CHIA TÁCH 2 PHÂN HỆ ĐỘC LẬP:
+#       - Tài liệu (/documents): Nơi lưu trữ văn bản, kỷ yếu, media và ảnh sự kiện phân bổ theo 7 Ban chuyên môn (FLD-DEPT-*) có phân quyền bảo mật thư mục theo ban.
+#       - Biểu mẫu (/templates?tab=forms): Trung tâm thiết lập định dạng văn bản, báo cáo tài chính Excel, phiếu thu & hóa đơn PDF (tiêu đề, căn cứ thông tư 200/2014/TT-BTC, thứ tự/tên cột, độ rộng, dòng tổng kết, chức danh ký duyệt).
+#   * LƯU TRỮ CSDL CHUẨN 113.20.107.184:6432:
+#       - Cấu hình lưu trữ vào public.app_settings (key: crm_form_templates) qua API NestJS: GET/PUT /admin/form-templates, POST /admin/form-templates/reset.
+#   * BÁO CÁO TÀI CHÍNH & XUẤT HÓA ĐƠN ĐỘNG (TUYỆT ĐỐI KHÔNG HARDCODE):
+#       - /finance-report: Hàm handleExportCsv đọc trực tiếp cấu hình từ financeTemplate (tiêu đề, căn cứ thông tư, các cột bật/tắt, công thức tổng và chức danh ký). Thêm nút "Biểu Mẫu" truy cập nhanh trên header.
+#       - InvoiceExportModal: Đọc trực tiếp từ INVOICE_RECEIPT_PDF cho đơn vị phát hành, mã số thuế, ký hiệu, mẫu số, tiêu đề và người ký.
+#   * KIỂM THỬ & ĐÓNG GÓI:
+#       - Backend nest build & Frontend vite build đạt 0 lỗi (Exit code 0). Sẵn sàng be-dist.tar.gz và fe-output.tar.gz cho .\deploy-direct.ps1.
+# 17/11/2026 (v11.58) — SỬA DỨT ĐIỂM GỐC RỄ PHÂN QUYỀN vumikasa6@gmail.com, TỰ ĐỘNG LƯU TRỮ MEDIA THEO FOLDER BAN CHUYÊN MÔN & NÂNG CẤP AI THAO TÁC API [NODE-CRM-001], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-010], [NODE-APP-003], [NODE-APP-004], [NODE-CORE-001]:
+#   * SỬA DỨT ĐIỂM PHÂN QUYỀN TÀI KHOẢN vumikasa6@gmail.com: 
+#       - Nguyên nhân lặp lại 3 ngày: Mọi thay đổi TypeScript ở local chưa từng được chạy build (`npm run build`). Thư mục .output (14/11) và dist (15/11) trên production hoàn toàn là bản cũ.
+#       - Frontend: Sidebar.tsx cô lập chặt chẽ 4 nhóm menu nhạy cảm (filteredTemplates, filteredSystem, filteredPermissions, filteredAdmin) với biến !isVumikasaUser và role thanh_vien_ban_tai_chinh; rbac-permission-helpers.ts chặn sớm mọi route nhạy cảm.
+#       - Biên dịch mới 100%: Build thành công cả Backend NestJS (apps/ceo1983_app_be/dist) và Frontend TanStack Start (apps/ceo1983_app_fe/.output) với 0 lỗi (Exit code 0). Đóng gói sẵn fe-output.tar.gz (103MB) và be-dist.tar.gz (1MB).
+#   * ĐĂNG KHOẢNH KHẮC SỰ KIỆN & LƯU TRỮ VÀO FOLDER BAN TRUYỀN THÔNG:
+#       - Thêm LiveActivityMediaSection.tsx vào EventDetailModal: Cho phép chụp ảnh trực tiếp hoặc tải ảnh từ thư viện.
+#       - Sau khi đăng ảnh: Vừa xuất hiện trên mạng lưới (/network) với badge nổi bật '📸 Khoảnh khắc sự kiện', vừa tự động gọi POST /documents/sync-activity-media lưu ảnh vào folder sự kiện con FLD-EVT-[eventId] trong folder Ban Truyền thông (FLD-DEPT-BTT).
+#   * PHÂN QUYỀN FOLDER THEO TỪNG BAN CHUYÊN MÔN (RBAC FOLDER ISOLATION):
+#       - CSDL 113.20.107.184:6432: Tạo 7 folder gốc cho 7 Ban (FLD-DEPT-BDH, FLD-DEPT-BTK, FLD-DEPT-BTV, FLD-DEPT-BXT, FLD-DEPT-BTT, FLD-DEPT-BTN, FLD-DEPT-BTC).
+#       - Phân quyền: Thành viên Ban nào chỉ được mở folder của Ban đó. Admin / Chủ tịch / Ban Điều Hành / Thư ký mở được toàn bộ. Folder bị khóa hiển thị icon Khóa 🔒 màu đỏ, mờ card và chặn truy cập.
+#   * NÂNG CẤP AI THAO TÁC REST API:
+#       - ai.service.ts: Bổ sung handleMailNotificationCommand (gửi email thông báo hàng loạt theo mẫu) và handleExportReportCommand (truy vấn số liệu thật CSDL và xuất báo cáo tài chính/hội viên chi tiết).
+#       - System prompt bổ sung SYSTEM_API_CATALOG để AI nắm toàn bộ endpoint API thực tế của hệ thống.
 # 16/11/2026 (v11.55) — SỬA LỖI GỐC PHÂN QUYỀN RBAC & TRIGGER CSDL [NODE-CRM-005], [NODE-CRM-006], [NODE-CORE-001]:
 #   * SỬA LỖI GỐC CSDL 113.20.107.184:6432: Trigger trg_guard_user_roles gọi fn_enforce_lookup_table_write_guard() kết thúc RETURN NEW (trả về NULL trên BEFORE DELETE) đã nuốt chửng mọi thao tác DELETE trên public.user_roles. Đã sửa hàm để nhận diện app1 và RETURN OLD trên DELETE, xóa sạch bản ghi role='admin' rác của vumikasa6@gmail.com, chỉ giữ lại role='member'.
 #   * GIA CỐ BACKEND users.service.ts: getAccountDetails (/api/users/me) và resolveUserPermissions tự động cô lập thành viên ban chuyên trách (thanh_vien_ban_*) và hội viên thường, xóa bỏ triệt để các role nhạy cảm (admin, platform_admin, quan_tri, superadmin), ép buộc isAdmin=false và TUYỆT ĐỐI KHÔNG CẤP WILDCARD '*' (full access).

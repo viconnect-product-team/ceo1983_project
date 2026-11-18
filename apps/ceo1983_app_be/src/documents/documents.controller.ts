@@ -82,6 +82,43 @@ export class DocumentsController {
     return this.documentsService.delete(id, userId);
   }
 
+  @Get('check-access/:folderCode')
+  async checkFolderAccess(
+    @Request() req: any,
+    @Param('folderCode') folderCode: string,
+  ) {
+    const userId = req.user?.id || req.user?.sub;
+    return this.documentsService.checkFolderAccess(folderCode, userId);
+  }
+
+  @Post('sync-activity-media')
+  async syncActivityMedia(
+    @Request() req: any,
+    @Body()
+    body: {
+      activityType: 'event' | 'training' | 'meeting';
+      activityId: string;
+      activityTitle: string;
+      mediaUrls: string[];
+      notes?: string;
+    },
+  ) {
+    const userId = req.user?.id || req.user?.sub;
+    if (!body.activityType || !body.activityId || !body.mediaUrls?.length) {
+      throw new BadRequestException(
+        'Missing required fields: activityType, activityId, mediaUrls',
+      );
+    }
+    return this.documentsService.syncActivityMedia(userId, {
+      activityType: body.activityType,
+      activityId: body.activityId,
+      activityTitle: body.activityTitle || 'Hoạt động',
+      mediaUrls: body.mediaUrls,
+      uploadedBy: userId,
+      notes: body.notes,
+    });
+  }
+
   @Get(':id/url')
   async getUrl(@Param('id') id: string) {
     return this.documentsService.getUrl(id);

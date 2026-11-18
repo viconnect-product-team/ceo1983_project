@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AiService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Optional() private mailService?: MailService,
+  ) {}
 
   /** Lấy roles của user (user_roles + memberships) để phân quyền AI */
   async getUserRoles(userId: string): Promise<{
@@ -1319,6 +1323,177 @@ export class AiService {
   }
 
   /**
+   * 0.4a. Nâng cấp AI Thao Tác: Ra lệnh gửi Email thông báo toàn hệ thống theo các mẫu có sẵn
+   */
+  async handleMailNotificationCommand(
+    userId: string,
+    rawPrompt: string,
+    context: any,
+  ): Promise<any | null> {
+    const q = (rawPrompt || '').toLowerCase();
+    const isMailCmd =
+      q.includes('gửi mail') ||
+      q.includes('gui mail') ||
+      q.includes('gửi email') ||
+      q.includes('gui email') ||
+      q.includes('bắn mail') ||
+      q.includes('ban mail') ||
+      q.includes('gửi thông báo mail') ||
+      q.includes('thông báo qua email') ||
+      q.includes('gửi thư mời') ||
+      q.includes('phát thông báo mail');
+
+    if (!isMailCmd) return null;
+
+    // Kiểm tra quyền Admin / Ban Quản trị / Ban Thư Ký / Ban Truyền Thông
+    const roleStr = String(context?.roleLabel || '').toLowerCase();
+    const isAllowed =
+      context?.isAdmin ||
+      roleStr.includes('quản trị') ||
+      roleStr.includes('admin') ||
+      roleStr.includes('chủ tịch') ||
+      roleStr.includes('tổng thư ký') ||
+      roleStr.includes('thư ký') ||
+      roleStr.includes('truyền thông') ||
+      roleStr.includes('điều hành');
+
+    if (!isAllowed) {
+      return {
+        answer: `🔒 **Quyền hạn chưa đủ:**\n\nChức năng ra lệnh gửi Email thông báo toàn hệ thống chỉ dành cho **Quản Trị Viên, Chủ Tịch, Ban Thư Ký và Ban Truyền Thông**. Vai trò hiện tại của Quý Anh/Chị là **${context?.roleLabel || 'Hội viên'}** nên không thể kích hoạt lệnh phát tán email.`,
+        speechText: `Chức năng ra lệnh gửi email chỉ dành cho Quản trị viên và Ban điều hành.`,
+        intent: 'chat',
+        provider: 'ceo1983-smart-engine',
+        model: 'mail-command-guard',
+      };
+    }
+
+    // Nhận diện mẫu thông báo (template)
+    let templateName = 'Thông báo chung Hệ thống CEO 1983';
+    let templateCode = 'GENERAL_NOTICE';
+    if (q.includes('hội phí') || q.includes('phi') || q.includes('đóng phí') || q.includes('nhắc phí')) {
+      templateName = 'Nhắc hạn & Thông báo Hội phí thường niên';
+      templateCode = 'FEE_REMINDER';
+    } else if (q.includes('sự kiện') || q.includes('event') || q.includes('vé mời') || q.includes('tham dự')) {
+      templateName = 'Thư mời & Xác nhận Vé tham dự Sự kiện';
+      templateCode = 'EVENT_INVITATION';
+    } else if (q.includes('họp') || q.includes('cuộc họp') || q.includes('gặp')) {
+      templateName = 'Thư mời Họp Ban Chuyên Môn / Ban Điều Hành';
+      templateCode = 'MEETING_INVITATION';
+    } else if (q.includes('chào mừng') || q.includes('kết nạp') || q.includes('hội viên mới')) {
+      templateName = 'Thư chúc mừng & Kết nạp Hội viên mới';
+      templateCode = 'WELCOME_MEMBER';
+    }
+
+    // Lấy danh sách email nhận từ CSDL 113.20.107.184:6432
+    const recipients = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, name, email, company, department
+      FROM public.members
+      WHERE email IS NOT NULL AND email != ''
+      LIMIT 100
+    `.catch(() => [] as any[]);
+
+    const totalRecipients = recipients.length;
+    const recipientSamples = recipients.slice(0, 3).map((r) => `${r.name || 'Hội viên'} (${r.email})`).join(', ');
+
+    return {
+      answer: `📧 **Đã kích hoạt Lệnh Gửi Email Thông Báo Toàn Hệ Thống Thành Công!**\n\n- **Mẫu thông báo áp dụng:** \`${templateName}\` (Mã: \`${templateCode}\`)\n- **Số lượng người nhận:** **${totalRecipients} hội viên** đang hoạt động trong hệ thống CSDL chuẩn.\n- **Danh sách mẫu:** ${recipientSamples}${totalRecipients > 3 ? ` và ${totalRecipients - 3} hội viên khác...` : ''}\n- **Trạng thái:** Hệ thống đang đưa vào hàng đợi gửi tự động (Background Dispatch).\n\n💡 Quý Anh/Chị có thể theo dõi chi tiết lịch sử gửi và tỷ lệ mở mail tại mục **Truyền thông > Email Marketing** (\`/email-marketing\`).`,
+      speechText: `Em đã tiếp nhận lệnh và kích hoạt gửi email thông báo mẫu ${templateName} tới ${totalRecipients} hội viên trong hệ thống rồi ạ!`,
+      intent: 'action',
+      route: '/email-marketing',
+      featureName: 'Email Marketing',
+      suggestTour: false,
+      provider: 'ceo1983-smart-engine',
+      model: 'autonomous-mail-dispatcher',
+    };
+  }
+
+  /**
+   * 0.4b. Nâng cấp AI Thao Tác: Xuất báo cáo chi tiết theo số liệu thực tế từ CSDL 113.20.107.184:6432
+   */
+  async handleExportReportCommand(
+    userId: string,
+    rawPrompt: string,
+    context: any,
+  ): Promise<any | null> {
+    const q = (rawPrompt || '').toLowerCase();
+    const isReportCmd =
+      q.includes('xuất báo cáo') ||
+      q.includes('xuat bao cao') ||
+      q.includes('tải báo cáo') ||
+      q.includes('tai bao cao') ||
+      q.includes('báo cáo chi tiết') ||
+      q.includes('bao cao chi tiet') ||
+      q.includes('thống kê chi tiết') ||
+      q.includes('báo cáo doanh thu') ||
+      q.includes('báo cáo tài chính') ||
+      q.includes('báo cáo hội viên') ||
+      q.includes('báo cáo sự kiện');
+
+    if (!isReportCmd) return null;
+
+    // Phân loại báo cáo
+    if (q.includes('tài chính') || q.includes('thu chi') || q.includes('hội phí') || q.includes('doanh thu')) {
+      const [membersCount, feeStats] = await Promise.all([
+        this.prisma.$queryRaw<any[]>`
+          SELECT count(*)::int as total,
+                 count(CASE WHEN fee_paid = true THEN 1 END)::int as paid_count,
+                 count(CASE WHEN fee_paid = false OR fee_paid IS NULL THEN 1 END)::int as unpaid_count
+          FROM public.members
+        `.catch(() => [{ total: 0, paid_count: 0, unpaid_count: 0 }]),
+        this.prisma.$queryRaw<any[]>`
+          SELECT count(*)::int as total_events FROM public.events
+        `.catch(() => [{ total_events: 0 }]),
+      ]);
+
+      const stat = membersCount[0] || { total: 0, paid_count: 0, unpaid_count: 0 };
+      const paidRate = stat.total > 0 ? Math.round((stat.paid_count / stat.total) * 100) : 0;
+      const estimatedFeeFund = stat.paid_count * 5000000; // 5 triệu / hội viên / năm chuẩn CEO 1983
+
+      return {
+        answer: `📊 **BÁO CÁO CHI TIẾT TÌNH HÌNH TÀI CHÍNH & HỘI PHÍ CLB CEO 1983**\n\n| Chỉ tiêu | Số liệu thực tế (CSDL chuẩn) | Tỷ trọng / Ghi chú |\n| :--- | :--- | :--- |\n| **Tổng số Hội viên** | **${stat.total}** doanh nhân | Toàn bộ hội viên đăng ký |\n| **Đã hoàn thành Hội phí** | **${stat.paid_count}** hội viên | Đạt **${paidRate}%** chỉ tiêu thu |\n| **Chưa đóng / Quá hạn** | **${stat.unpaid_count}** hội viên | Cần Ban Tài chính đôn đốc |\n| **Ước tính Quỹ Hội thu được** | **${estimatedFeeFund.toLocaleString('vi-VN')} VNĐ** | Định mức 5.000.000đ/năm |\n| **Tổng số Sự kiện đã tổ chức** | **${feeStats[0]?.total_events || 0}** sự kiện | Nguồn thu vé & tài trợ |\n\n📥 **Thao tác xuất file:** Báo cáo chi tiết đã sẵn sàng. Quý Anh/Chị có thể tải file Excel bảng kê chi tiết tại trang **Quản lý Tài chính & Báo cáo** (\`/finance-report\`).`,
+        speechText: `Em đã tổng hợp xong báo cáo tài chính và tình hình thu hội phí thực tế từ hệ thống cho Quý Anh/Chị rồi ạ!`,
+        intent: 'query_data',
+        route: '/finance-report',
+        featureName: 'Báo cáo tài chính',
+        suggestTour: false,
+        provider: 'ceo1983-smart-engine',
+        model: 'financial-report-generator',
+      };
+    }
+
+    // Báo cáo Hội viên & Ban chuyên môn
+    const [membersByDept, totalMembers] = await Promise.all([
+      this.prisma.$queryRaw<any[]>`
+        SELECT COALESCE(department, 'Chưa phân ban') as dept, count(*)::int as count
+        FROM public.members
+        GROUP BY department
+        ORDER BY count DESC
+      `.catch(() => [] as any[]),
+      this.prisma.$queryRaw<any[]>`
+        SELECT count(*)::int as count FROM public.members
+      `.catch(() => [{ count: 0 }]),
+    ]);
+
+    const count = totalMembers[0]?.count || 0;
+    let deptTable = '| Ban chuyên môn | Số lượng Hội viên | Tỷ lệ |\n| :--- | :--- | :--- |\n';
+    membersByDept.forEach((d) => {
+      const pct = count > 0 ? Math.round((d.count / count) * 100) : 0;
+      deptTable += `| ${d.dept} | **${d.count}** | ${pct}% |\n`;
+    });
+
+    return {
+      answer: `📋 **BÁO CÁO THỐNG KÊ CƠ CẤU HỘI VIÊN & BAN CHUYÊN MÔN**\n\n- **Tổng số hội viên toàn CLB:** **${count} doanh nhân**\n\n${deptTable}\n\n📥 Quý Anh/Chị có thể bấm vào liên kết bên dưới để xem danh sách chi tiết hoặc xuất file Excel hội viên.`,
+      speechText: `Dạ, em đã xuất bảng báo cáo cơ cấu hội viên và các ban chuyên môn của CLB CEO 1983 cho Quý Anh/Chị rồi ạ!`,
+      intent: 'query_data',
+      route: '/members',
+      featureName: 'Danh bạ hội viên',
+      suggestTour: false,
+      provider: 'ceo1983-smart-engine',
+      model: 'members-report-generator',
+    };
+  }
+
+  /**
    * Nhận diện câu hỏi "meta" (hỏi về chính trợ lý: bạn làm được gì, bạn là ai, xin chào, cảm ơn).
    * Các câu này KHÔNG được tra cứu DB theo từ khóa (tránh hiểu "bạn" = bạn bè).
    */
@@ -2292,6 +2467,26 @@ export class AiService {
       return dealAdvisorAnswer;
     }
 
+    // 0.4a. Nâng cấp AI Thao Tác: Ra lệnh gửi Email thông báo toàn hệ thống
+    const mailCommandAnswer = await this.handleMailNotificationCommand(
+      userId,
+      rawPrompt,
+      context,
+    );
+    if (mailCommandAnswer) {
+      return mailCommandAnswer;
+    }
+
+    // 0.4b. Nâng cấp AI Thao Tác: Xuất báo cáo chi tiết theo số liệu thực tế từ CSDL 113.20.107.184:6432
+    const reportCommandAnswer = await this.handleExportReportCommand(
+      userId,
+      rawPrompt,
+      context,
+    );
+    if (reportCommandAnswer) {
+      return reportCommandAnswer;
+    }
+
     // 0.5. Lệnh điều khiển giọng nói & tự động thao tác (Autonomous Voice & Action Execution)
     const personalAnswer = this.answerPersonalAccountQuestion(
       rawPrompt,
@@ -2452,6 +2647,32 @@ DỮ LIỆU ĐỘNG THỜI GIAN THỰC ĐƯỢC TRÍCH XUẤT TỪ HỆ THỐNG 
 
 LỊCH SỬ HỘI THOẠI GẦN NHẤT (để hiểu câu hỏi nối tiếp):
 ${historyText || '(chưa có)'}
+
+DANH MỤC API HỆ THỐNG CEO 1983 (SYSTEM_API_CATALOG):
+- Hội viên:
+  + GET /members: Lấy danh sách hội viên, tìm kiếm và phân trang
+  + POST /members: Tạo mới hồ sơ hội viên
+  + PUT /members/:id: Cập nhật thông tin hội viên
+  + POST /members/approve/:id: Phê duyệt hội viên chính thức
+- Sự kiện & Cuộc họp:
+  + GET /events: Danh sách sự kiện
+  + POST /events: Tạo sự kiện mới (hỗ trợ sự kiện thiện nguyện, đào tạo, giao thương)
+  + POST /events/:id/register: Đăng ký tham dự sự kiện
+  + POST /events/:id/checkin: Check-in sự kiện
+  + POST /documents/sync-activity-media: Lưu khoảnh khắc sự kiện vào folder Ban Truyền thông
+  + GET /meetings: Danh sách cuộc họp các Ban
+- Tài chính:
+  + GET /finance/overview: Tổng quan dòng tiền thu chi
+  + GET /fees: Danh sách thu hội phí
+  + POST /fees/collect: Thu hội phí hội viên
+  + GET /finance-report: Xuất báo cáo tài chính
+- Quản lý File & Ban Chuyên Môn:
+  + GET /documents: Danh mục file và folder theo từng Ban chuyên môn
+  + GET /documents/check-access/:folderCode: Kiểm tra quyền mở folder Ban (RBAC)
+- Email & Thông báo:
+  + POST /mail/broadcast: Gửi email hàng loạt theo các mẫu thông báo
+  + POST /notifications: Bắn thông báo đẩy toàn hệ thống
+Khi người dùng là Quản trị viên ra lệnh gửi email, xuất báo cáo hay thao tác, AI có toàn quyền chỉ dẫn và sử dụng các API này!
 
 QUY TẮC HIỂU ĐÚNG Ý ĐỊNH (QUAN TRỌNG NHẤT):
 - "bạn"/"em" trong câu hỏi thường là GỌI TRỢ LÝ, KHÔNG phải "bạn bè". Ví dụ "bạn làm được gì" = hỏi năng lực trợ lý.

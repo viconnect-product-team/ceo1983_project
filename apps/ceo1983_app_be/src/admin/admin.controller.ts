@@ -287,6 +287,34 @@ export class AdminController {
     return this.adminService.saveMemberPermissions(body, req.user?.id);
   }
 
+  // ── FORM TEMPLATES & DOCUMENT FORMAT CONFIGURATION ────────────────────────
+
+  @Get('form-templates')
+  async getFormTemplates() {
+    return this.adminService.getFormTemplates();
+  }
+
+  @Get('form-templates/:code')
+  async getFormTemplateByCode(@Param('code') code: string) {
+    return this.adminService.getFormTemplateByCode(code);
+  }
+
+  @Put('form-templates/:code')
+  @UseGuards(JwtAuthGuard)
+  async saveFormTemplate(
+    @Request() req: any,
+    @Param('code') code: string,
+    @Body() body: any,
+  ) {
+    return this.adminService.saveFormTemplate(code, body, req.user?.id);
+  }
+
+  @Post('form-templates/reset')
+  @UseGuards(JwtAuthGuard)
+  async resetFormTemplates(@Request() req: any) {
+    return this.adminService.resetFormTemplates(req.user?.id);
+  }
+
   // ── LUCKY DRAW CONFIGURATION & LANDING BANNER ─────────────────────────────
 
   @Get('lucky-draw-config')

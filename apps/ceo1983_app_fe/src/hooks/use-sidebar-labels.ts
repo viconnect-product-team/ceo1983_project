@@ -39,8 +39,10 @@ export const DEFAULT_SIDEBAR_LABELS: Record<string, string> = {
   "/departments": "Quản lý Ban Chuyên Môn",
   "/accounts": "Quản trị người dùng",
   "/account-settings?tab=users": "Quản trị người dùng",
-  "/documents": "Tài liệu & Biểu mẫu",
-  "/templates": "Quản lý mẫu trang",
+  "/documents": "Quản lý Tài liệu",
+  "/templates": "Quản lý Biểu mẫu",
+  "/templates?tab=forms": "Quản lý Biểu mẫu",
+  "/templates?tab=invitation-setup": "Quản lý Thư Mời",
   // Group keys:
   "nav.group.overview": "Tổng quan",
   "nav.group.members": "Hội viên",

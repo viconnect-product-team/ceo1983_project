@@ -719,14 +719,24 @@ function DocsPage() {
 
   function DocCard({ d }: { d: Document }) {
     const isFolder = d.isFolder || d.type === "folder";
+    const hasAccess = (d as any).hasAccess !== false;
+    const lockedReason = (d as any).lockedReason;
     return (
       <div
         onClick={() => {
+          if (!hasAccess) {
+            toast.error(lockedReason || "Bạn không có quyền truy cập thư mục của Ban này theo phân quyền RBAC!");
+            return;
+          }
           if (isFolder) setCurrentFolderId(d.id);
           else setPreviewDoc(d);
         }}
-        className={`group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-md)] cursor-pointer ${
-          isFolder ? "hover:border-amber-500/50 hover:bg-amber-500/5" : "hover:border-blue-500/40 hover:bg-muted/40"
+        className={`group flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-md)] cursor-pointer ${
+          !hasAccess
+            ? "border-rose-300/40 bg-rose-50/20 dark:bg-rose-950/10 opacity-75"
+            : isFolder
+            ? "border-border hover:border-amber-500/50 hover:bg-amber-500/5"
+            : "border-border hover:border-blue-500/40 hover:bg-muted/40"
         }`}
       >
         <div className="flex items-start gap-3">
@@ -734,10 +744,11 @@ function DocsPage() {
           <div className="min-w-0 flex-1">
             {isFolder ? (
               <span
-                className="block truncate text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"
+                className="flex items-center gap-1.5 truncate text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"
                 title={d.name}
               >
-                📁 {d.name}
+                {!hasAccess ? <Lock className="size-3.5 text-rose-500 shrink-0" /> : null}
+                <span>📁 {d.name}</span>
               </span>
             ) : (
               <button
@@ -1544,42 +1555,66 @@ function DocsPage() {
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                       {currentFolders.map((f) => {
                         const childCount = DOCUMENTS.filter((d) => d.folderId === f.id).length;
+                        const hasAccess = (f as any).hasAccess !== false;
+                        const lockedReason = (f as any).lockedReason;
                         return (
                           <div
                             key={`f-${f.id}`}
-                            onClick={() => setCurrentFolderId(f.id)}
-                            className="group flex items-center justify-between gap-2.5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 transition-all hover:border-amber-500/50 hover:bg-amber-500/10 hover:shadow-md cursor-pointer"
+                            onClick={() => {
+                              if (!hasAccess) {
+                                toast.error(lockedReason || "Bạn không có quyền truy cập thư mục của Ban này!");
+                                return;
+                              }
+                              setCurrentFolderId(f.id);
+                            }}
+                            className={`group flex items-center justify-between gap-2.5 rounded-2xl border p-3.5 transition-all hover:shadow-md cursor-pointer ${
+                              !hasAccess
+                                ? "border-rose-300/50 bg-rose-50/20 dark:bg-rose-950/10 opacity-75 hover:border-rose-400"
+                                : "border-amber-500/20 bg-amber-500/5 hover:border-amber-500/50 hover:bg-amber-500/10"
+                            }`}
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div
                                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-xs group-hover:scale-105 transition-transform"
-                                style={{ backgroundColor: f.colorTag || "#F59E0B" }}
+                                style={{ backgroundColor: !hasAccess ? "#EF4444" : (f.colorTag || "#F59E0B") }}
                               >
-                                <Folder className="h-5 w-5 fill-white/20" />
+                                {!hasAccess ? (
+                                  <Lock className="h-5 w-5 fill-white/20" />
+                                ) : (
+                                  <Folder className="h-5 w-5 fill-white/20" />
+                                )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                                <p className={`truncate text-sm font-bold ${!hasAccess ? "text-slate-500" : "text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"}`}>
                                   {f.name}
                                 </p>
                                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                  <span>{childCount} mục</span>
-                                  <span>•</span>
-                                  <span className="truncate max-w-[80px]">{f.category}</span>
+                                  {!hasAccess ? (
+                                    <span className="text-rose-600 font-bold">🔒 Khóa phân quyền Ban</span>
+                                  ) : (
+                                    <>
+                                      <span>{childCount} mục</span>
+                                      <span>•</span>
+                                      <span className="truncate max-w-[80px]">{f.category}</span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShareModalDoc(f);
-                                }}
-                                title="Chia sẻ thư mục"
-                                className="rounded-lg p-1.5 text-muted-foreground hover:bg-blue-500/10 hover:text-blue-600 cursor-pointer transition-colors"
-                              >
-                                <Share2 className="h-3.5 w-3.5" />
-                              </button>
+                              {hasAccess && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShareModalDoc(f);
+                                  }}
+                                  title="Chia sẻ thư mục"
+                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-blue-500/10 hover:text-blue-600 cursor-pointer transition-colors"
+                                >
+                                  <Share2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                               <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
                             </div>
                           </div>

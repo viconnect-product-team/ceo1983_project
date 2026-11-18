@@ -182,6 +182,20 @@ export const LiveActivityMediaSection: React.FC<LiveActivityMediaSectionProps> =
         }
       }
 
+      // Tự động gom và lưu trữ ảnh/video vào Thư mục Ban & Thư mục con của sự kiện trong Quản lý tài liệu
+      await fetchNestApi("/documents/sync-activity-media", {
+        method: "POST",
+        body: JSON.stringify({
+          activityType: activityType === "connect" ? "event" : activityType,
+          activityId,
+          activityTitle,
+          mediaUrls: uploadedUrls,
+          notes: note.trim() || undefined,
+        }),
+      }).catch((docErr) => {
+        console.warn("Could not sync media to documents folder:", docErr);
+      });
+
       toast.success(
         `Đã lưu ${uploadedUrls.length} ảnh/video vào lịch sử ${
           pushed ? "và chia sẻ lên Mạng lưới!" : "thành công!"

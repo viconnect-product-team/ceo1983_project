@@ -182,6 +182,12 @@ const permissionsGroup: Item[] = [
 ];
 const pageTemplates: Item[] = [
   {
+    key: "nav.forms" as TKey,
+    icon: FileSpreadsheet,
+    to: "/templates?tab=forms",
+    label: "Quản lý Biểu mẫu",
+  },
+  {
     key: "nav.pageTemplates" as TKey,
     icon: LayoutTemplate,
     to: "/templates?tab=invitation-setup",
@@ -189,7 +195,13 @@ const pageTemplates: Item[] = [
   },
 ];
 const admin: Item[] = [
-  { key: "nav.documents", icon: FolderOpen, to: "/documents" },
+  { key: "nav.documents", icon: FolderOpen, to: "/documents", label: "Quản lý Tài liệu" },
+  {
+    key: "nav.forms" as TKey,
+    icon: FileSpreadsheet,
+    to: "/templates?tab=forms",
+    label: "Quản lý Biểu mẫu",
+  },
 ];
 
 const COLLAPSE_KEY = "vba.sidebar.collapsed";
@@ -789,6 +801,7 @@ export function Sidebar({
   const filteredNetwork = network.filter((it) => isAllowed(it.to));
 
   const filteredTemplates = pageTemplates.filter((it) => {
+    if (isVumikasaUser) return false;
     // Quản lý Thư Mời chỉ dành cho Quản trị viên, Thư ký, Ban Truyền thông và Ban Sự kiện
     const srsRoleStr = String(srsRole || "");
     const isTemplatesAllowedRole =
@@ -802,10 +815,11 @@ export function Sidebar({
     return isTemplatesAllowedRole && isAllowed(it.to);
   });
 
-  const filteredSystem = canViewSystem ? system.filter((it) => isAllowed(it.to)) : [];
+  const filteredSystem = canViewSystem && !isVumikasaUser ? system.filter((it) => isAllowed(it.to)) : [];
 
-  const filteredPermissions = canViewPlatform
+  const filteredPermissions = canViewPlatform && !isVumikasaUser
     ? permissionsGroup.filter((it) => {
+        if (isVumikasaUser) return false;
         // Chỉ Quản trị cấp cao, Chủ tịch, Tổng thư ký hoặc Trưởng ban chuyên môn mới có quyền truy cập nhóm phân quyền
         if (!isPrivilegedAdmin && !isTongThuKy && !isBanThuKy && !String(srsRole).startsWith("truong_ban_")) {
           return false;
@@ -831,7 +845,7 @@ export function Sidebar({
       })
     : [];
 
-  const filteredAdmin = isPrivilegedAdmin ? admin.filter((it) => isAllowed(it.to)) : [];
+  const filteredAdmin = isPrivilegedAdmin && !isVumikasaUser ? admin.filter((it) => isAllowed(it.to)) : [];
 
   return (
     <aside

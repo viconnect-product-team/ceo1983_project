@@ -2596,6 +2596,11 @@ function NetworkPage() {
     // 4. Custom Posts & Shared Articles from Mobile / Web Network
     customPosts.forEach((cp) => {
       const isShared = Boolean(cp.sharedArticle && cp.sharedArticle.url);
+      const isEventMoment =
+        cp.category === "EVENT_MEETING" ||
+        cp.category === "EVENT_MOMENT" ||
+        (cp.title && cp.title.toLowerCase().includes("khoảnh khắc")) ||
+        (cp.content && cp.content.toLowerCase().includes("khoảnh khắc"));
       const authorMem = findMemberForFeed(cp.authorId, cp.authorName);
       list.push({
         id: cp.id,
@@ -2612,6 +2617,11 @@ function NetworkPage() {
           ? {
             label: "🔗 Chia sẻ ngoài",
             colorCls: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
+          }
+          : isEventMoment
+          ? {
+            label: "📸 Khoảnh khắc sự kiện",
+            colorCls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
           }
           : {
             label: "📝 Hội viên đăng",
