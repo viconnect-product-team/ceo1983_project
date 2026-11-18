@@ -1,5 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  CEO1983_COMPREHENSIVE_KNOWLEDGE_BASE,
+  detectFileClarification,
+  executeAutonomousAction,
+  FileClarificationPayload,
+  VerificationCardPayload,
+} from './ai-knowledge-and-actions';
 
 export interface AiSystemConfigDto {
   activeProvider: string;
@@ -507,6 +514,8 @@ export class AiCrmAnalyticsService {
     history: Array<{ role: string; content: string }> = [],
     model = 'gemini-2.0-flash',
     persona: AiPersonaType = 'general',
+    filePayload?: { fileName: string; fileText: string },
+    selectedAction?: { actionType: string; payload?: any },
   ): Promise<{
     ok: boolean;
     reply: string;
@@ -516,8 +525,64 @@ export class AiCrmAnalyticsService {
     evidence: Array<{ title: string; countOrVal: string; source: string }>;
     suggestedFollowUps: string[];
     proactiveAlert?: string;
+    fileClarification?: FileClarificationPayload;
+    verificationCard?: VerificationCardPayload;
   }> {
     const startTime = Date.now();
+
+    // 0. Xử lý khi người dùng chọn một hành động cụ thể từ lựa chọn gợi ý (Choice Chips)
+    if (selectedAction && selectedAction.actionType) {
+      const actionResult = await executeAutonomousAction(
+        this.prisma,
+        userId,
+        selectedAction.actionType,
+        selectedAction.payload || {},
+      );
+      return {
+        ok: true,
+        reply: actionResult.replyText,
+        modelUsed: 'CEO 1983 Autonomous Action Engine',
+        latencyMs: Date.now() - startTime,
+        persona,
+        evidence: [
+          {
+            title: 'Hành động tự động',
+            countOrVal: selectedAction.actionType,
+            source: 'CSDL 113.20.107.184:6432',
+          },
+        ],
+        suggestedFollowUps: [
+          'Kiểm tra dữ liệu vừa lưu',
+          'Xuất báo cáo đối soát',
+          'Tiếp tục yêu cầu khác',
+        ],
+        verificationCard: actionResult.verificationCard,
+      };
+    }
+
+    // 0.1 Xử lý khi người dùng tải lên một tệp (File Upload)
+    if (filePayload && filePayload.fileName && filePayload.fileText) {
+      const fileClarification = detectFileClarification(
+        filePayload.fileName,
+        filePayload.fileText,
+      );
+      return {
+        ok: true,
+        reply: `${fileClarification.summary}\n\n**${fileClarification.clarificationQuestion}**`,
+        modelUsed: 'CEO 1983 Document Intelligence Engine',
+        latencyMs: Date.now() - startTime,
+        persona,
+        evidence: [
+          {
+            title: 'Tệp bóc tách',
+            countOrVal: filePayload.fileName,
+            source: `${fileClarification.totalLines} dòng dữ liệu`,
+          },
+        ],
+        suggestedFollowUps: fileClarification.options.map((o) => o.label),
+        fileClarification,
+      };
+    }
 
     // 1. Quét dữ liệu THỰC TẾ 100% từ database
     let membersCount = 0;
@@ -672,6 +737,39 @@ export class AiCrmAnalyticsService {
 
     // 4. Sinh phản hồi thông minh dựa trên dữ liệu thực tế 100%
     const lower = message.toLowerCase();
+
+    // 4.1 Tự động phân tích câu lệnh nếu là yêu cầu thao tác trực tiếp (Autonomous Action Intent)
+    if (lower.startsWith('tạo sự kiện') || lower.includes('tạo sự kiện mới')) {
+      const matchName = message.match(/(?:tên|sự kiện)\s*[:：]?\s*["“']?([^"”'\n,]+)["”']?/i);
+      const eventName = matchName ? matchName[1].trim() : message.replace(/^(hãy |vui lòng )?tạo sự kiện( mới)?/i, '').trim() || 'Sự Kiện Kết Nối CEO 1983';
+      const actionRes = await executeAutonomousAction(this.prisma, userId, 'CREATE_EVENT', { name: eventName });
+      return {
+        ok: true,
+        reply: actionRes.replyText,
+        modelUsed: 'CEO 1983 Autonomous Engine',
+        latencyMs: Date.now() - startTime,
+        persona,
+        evidence,
+        suggestedFollowUps: ['Xem danh sách sự kiện', 'In thẻ check-in QR', 'Tiếp tục'],
+        verificationCard: actionRes.verificationCard,
+      };
+    }
+
+    if (lower.startsWith('tạo khóa học') || lower.startsWith('tạo đào tạo') || lower.includes('tạo chương trình đào tạo')) {
+      const trainingTitle = message.replace(/^(hãy |vui lòng )?tạo (khóa học|chương trình đào tạo|đào tạo)( mới)?/i, '').trim() || 'Khóa Đào Tạo Quản Trị';
+      const actionRes = await executeAutonomousAction(this.prisma, userId, 'CREATE_TRAINING', { title: trainingTitle });
+      return {
+        ok: true,
+        reply: actionRes.replyText,
+        modelUsed: 'CEO 1983 Autonomous Engine',
+        latencyMs: Date.now() - startTime,
+        persona,
+        evidence,
+        suggestedFollowUps: ['Xem danh sách đào tạo', 'Mời giảng viên', 'Tiếp tục'],
+        verificationCard: actionRes.verificationCard,
+      };
+    }
+
     let generatedReply: string | null = null;
     let modelLabel = 'Gemini 2.0 Flash (Free Tier)';
 
@@ -694,6 +792,8 @@ Quy tắc trả lời:
   + Tài chính thật: Tổng thu ${totalIncome.toLocaleString('vi-VN')} đ, Tổng chi ${totalExpense.toLocaleString('vi-VN')} đ, Số dư quỹ ${financialBalance.toLocaleString('vi-VN')} đ.
   + Tài liệu thật: ${docsCount} văn bản.
 - Trình bày Markdown đẹp mắt: tiêu đề h3 (###), in đậm (**), bảng biểu khi so sánh, bullet rõ ràng.
+
+${CEO1983_COMPREHENSIVE_KNOWLEDGE_BASE}
 `;
 
       if (model.includes('gemini') && geminiKey) {

@@ -1,6 +1,23 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 18/11/2026 (v11.63) — ĐÀO TẠO TOÀN DIỆN 2 TRỢ LÝ AI (CRM & MOBILE APP) VỚI BRD, SRS, CSDL CHUẨN 113.20.107.184:6432 & API CATALOG; TỰ ĐỘNG THỰC THI NGHIỆP VỤ KÈM THẺ KIỂM TRA ĐỐI SOÁT (VERIFICATION CARD); PHÂN TÍCH TỆP HỎI NGƯỢC LẠI KÈM LỰA CHỌN (CHOICE CHIPS) [NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001]:
+#   * TRI THỨC TOÀN DIỆN HỆ SINH THÁI CEO 1983 (apps/ceo1983_app_be/src/ai/ai-knowledge-and-actions.ts):
+#       - Huấn luyện 2 con AI (Web CRM qua handleChatAssistant và Mobile App qua askAssistant) với toàn bộ BRD, SRS, 7 Ban chuyên môn (FLD-DEPT-*), Thông tư 200/2014/TT-BTC, schema bảng CSDL và API Catalog.
+#   * TỰ ĐỘNG THỰC THI NGHIỆP VỤ & XUẤT THẺ KIỂM TRA ĐỐI SOÁT (AiVerificationCard.tsx):
+#       - Khi người dùng ra lệnh bằng giọng nói / text hoặc nhấn chọn thao tác, AI tự động thực thi trực tiếp trên CSDL chuẩn 113.20.107.184:6432 (CREATE_EVENT, CREATE_TRAINING, RECORD_FINANCE, ARCHIVE_DOCUMENT,...).
+#       - BẮT BUỘC: Sau khi thực hiện phải trả về Thẻ Kiểm Tra Kết Quả (Verification Card) hiển thị Action ID, Tên bảng, ID bản ghi, thời gian, chi tiết các trường đối soát và xác nhận tính toàn vẹn (Integrity Check Passed, DB Validated, No Duplicate, RBAC Permitted) cùng nút Xem/Sửa trên hệ thống.
+#   * PHÂN TÍCH TỆP IMPORT, HỎI NGƯỢC YÊU CẦU & HIỂN THỊ CÁC LỰA CHỌN BÊN DƯỚI (AiChoiceChips.tsx):
+#       - Khi import file Excel, Word, PDF trên thanh nhập liệu ChatGPT CRM hoặc nút đính kèm trên Mobile App:
+#       - AI tự động đọc nội dung, phát hiện dạng văn bản, tóm tắt và HỎI NGƯỢC LẠI người dùng muốn làm gì với tệp kèm danh sách nút lựa chọn (Choice Chips).
+#       - Bấm vào lựa chọn sẽ kích hoạt AI tự động thực thi và trả về Thẻ Kiểm Tra Đối Soát.
+# 18/11/2026 (v11.62) — XỬ LÝ TRIỆT ĐỂ LỖI 502 BAD GATEWAY NGINX CHO CRM SUBDOMAIN & CHUẨN HÓA CỔNG SSR NITRO [NODE-CORE-004]:
+#   * SỬA LỖI XUNG ĐỘT HEADER NGINX PROXY:
+#       - Tuyệt đối không hardcode `proxy_set_header Connection "upgrade"` trên các location HTTP thông thường (/, /api/).
+#       - Bắt buộc dùng `map $http_upgrade $connection_upgrade` chuẩn RFC 7230 để request HTTP bình thường không bị hiểu nhầm là WebSocket Upgrade làm Node.js đóng socket đột ngột gây 502.
+#   * CHUẨN HÓA CỔNG LẮNG NGHE SSR NITRO 8080:
+#       - Luôn khai báo rõ cả NITRO_PORT=8080 lẫn PORT=8080 trong docker-entrypoint.sh và docker-compose.yml.
+#       - Không đặt PORT=4000 trong file .env dùng chung cho frontend để tránh ghi đè cổng frontend.
 # 18/11/2026 (v11.61) — TỰ ĐỘNG BÓC TÁCH TỆP ĐÍNH KÈM (EXCEL, WORD, PDF) CHO TẠO SỰ KIỆN & KHÓA ĐÀO TẠO [NODE-CRM-005], [NODE-CRM-014]:
 #   * TỰ ĐỘNG BÓC TÁCH TỆP CHO SỰ KIỆN (EventWizard.tsx):
 #       - Thêm vùng tải tệp (Dropzone Card) chuẩn nhận diện CEO 1983 Navy (#003B95) tại bước 1 popup Tạo sự kiện.

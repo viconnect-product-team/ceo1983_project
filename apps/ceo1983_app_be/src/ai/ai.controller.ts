@@ -11,6 +11,11 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiService } from './ai.service';
 import { AiCrmAnalyticsService } from './ai-crm-analytics.service';
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  detectFileClarification,
+  executeAutonomousAction,
+} from './ai-knowledge-and-actions';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
@@ -18,6 +23,7 @@ export class AiController {
   constructor(
     private readonly aiService: AiService,
     private readonly crmAnalytics: AiCrmAnalyticsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /** GET /api/ai/live-context — Ngữ cảnh động tài khoản phiên đăng nhập */
@@ -318,6 +324,8 @@ export class AiController {
       history?: Array<{ role: 'user' | 'assistant'; content: string }>;
       model?: string;
       persona?: any;
+      filePayload?: { fileName: string; fileText: string };
+      selectedAction?: { actionType: string; payload?: any };
     },
   ) {
     const res = await this.crmAnalytics.handleChatAssistant(
@@ -326,7 +334,34 @@ export class AiController {
       body.history || [],
       body.model,
       body.persona,
+      body.filePayload,
+      body.selectedAction,
     );
     return res;
+  }
+
+  /** POST /api/ai/analyze-imported-file — Tự động phân tích tệp import và hỏi ngược lại người dùng yêu cầu muốn làm gì kèm danh sách lựa chọn bên dưới */
+  @Post('analyze-imported-file')
+  async analyzeImportedFile(
+    @Request() req: any,
+    @Body() body: { fileName: string; fileText: string },
+  ) {
+    const res = detectFileClarification(body.fileName, body.fileText);
+    return { ok: true, data: res };
+  }
+
+  /** POST /api/ai/execute-action — Tự động thao tác trên CSDL PostgreSQL chuẩn 113.20.107.184:6432 và trả về Thẻ Kiểm Tra (Verification Card) */
+  @Post('execute-action')
+  async executeAction(
+    @Request() req: any,
+    @Body() body: { actionType: string; payload?: any },
+  ) {
+    const res = await executeAutonomousAction(
+      this.prisma,
+      req.user?.id || 'admin',
+      body.actionType,
+      body.payload,
+    );
+    return { ok: true, data: res };
   }
 }

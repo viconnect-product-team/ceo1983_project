@@ -19,11 +19,19 @@ import {
   ShieldAlert,
   Bot,
   TrendingUp,
+  Paperclip,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { fetchNestApi } from "@/lib/api-client";
 import { useNavigate } from "@tanstack/react-router";
+import { AiVerificationCard, VerificationCardData } from "./AiVerificationCard";
+import { AiChoiceChips } from "./AiChoiceChips";
+import {
+  analyzeImportedFileForAi,
+  AiFileActionOption,
+  AiFileClarificationData,
+} from "@/lib/document-parser";
 
 export const VOICE_AI_STORAGE_KEY = "ceo1983_voice_ai_enabled";
 export const VOICE_AI_EVENT_NAME = "ceo1983-voice-ai-toggle";
@@ -76,6 +84,8 @@ export interface AssistantMessage {
     label: string;
     route: string;
   };
+  fileClarification?: AiFileClarificationData;
+  verificationCard?: VerificationCardData;
 }
 
 interface QuickPrompt {
@@ -420,9 +430,98 @@ export function Ceo1983ChatAssistant() {
 
   // Auto scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
+  // Phân tích tệp import và hỏi ngược lại người dùng yêu cầu
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    setIsLoading(true);
+    toast.info(`Đang phân tích tệp "${file.name}"...`);
+
+    try {
+      const clarificationData = await analyzeImportedFileForAi(file);
+      const userMsg: AssistantMessage = {
+        id: `u-${Date.now()}`,
+        role: "user",
+        content: `📎 Tải lên tệp: ${file.name} (${clarificationData.fileSizeFormatted})`,
+        timestamp: Date.now(),
+      };
+
+      const assistantMsg: AssistantMessage = {
+        id: `a-${Date.now()}`,
+        role: "assistant",
+        content: `${clarificationData.summary}\n\n**${clarificationData.clarificationQuestion}**`,
+        timestamp: Date.now(),
+        fileClarification: clarificationData,
+        suggestions: clarificationData.options.map((o) => o.label),
+      };
+
+      setMessages((prev) => [...prev, userMsg, assistantMsg]);
+      toast.success(`Đã phân tích xong tệp "${file.name}"!`);
+    } catch (err: any) {
+      toast.error(`Không thể phân tích tệp: ${err?.message || "Lỗi đọc tệp"}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Chọn một thao tác từ các lựa chọn bên dưới (Choice Chips)
+  const handleSelectOptionFromChoiceChips = async (option: AiFileActionOption) => {
+    if (isLoading) return;
+
+    const userMsg: AssistantMessage = {
+      id: `u-${Date.now()}`,
+      role: "user",
+      content: `👉 Yêu cầu thực hiện: ${option.label}`,
+      timestamp: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+    toast.info(`Đang tự động thực thi thao tác "${option.label}"...`);
+
+    try {
+      const nestRes: any = await fetchNestApi("/ai/ask", {
+        method: "POST",
+        body: JSON.stringify({
+          prompt: `Yêu cầu thực hiện: ${option.label}`,
+          clientContext: {
+            selectedAction: {
+              actionType: option.actionType,
+              payload: {
+                name: option.label,
+                title: option.label,
+              },
+            },
+          },
+        }),
+      });
+
+      const d = nestRes?.data ?? nestRes;
+      const reply = d?.answer || d?.reply || `Đã thực thi thành công: ${option.label}`;
+
+      const assistantMsg: AssistantMessage = {
+        id: `a-${Date.now()}`,
+        role: "assistant",
+        content: reply,
+        timestamp: Date.now(),
+        verificationCard: d?.verificationCard,
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+      toast.success("Thao tác hoàn tất! Thẻ kiểm tra đối soát đã sẵn sàng.");
+    } catch (e: any) {
+      toast.error(`Lỗi thực thi: ${e?.message || "Vui lòng thử lại"}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -908,6 +1007,8 @@ HƯỚNG DẪN TRẢ LỜI:
       let responseText = "";
       let actionLink = dynamicEvaluation.actionLink;
       let suggestions = dynamicEvaluation.suggestions;
+      let verificationCard: any = undefined;
+      let fileClarification: any = undefined;
       const history = newMessages.slice(-7, -1).map((m) => ({ role: m.role, content: m.content }));
 
       // 1. Backend AI (nắm TOÀN BỘ dữ liệu thật của tài khoản + phân quyền; tự đếm quota)
@@ -927,6 +1028,9 @@ HƯỚNG DẪN TRẢ LỜI:
           }
           if (d?.provider !== "ceo1983-smart-engine") suggestions = undefined;
         }
+        if (d?.verificationCard) verificationCard = d.verificationCard;
+        if (d?.fileClarification) fileClarification = d.fileClarification;
+
         fetchNestApi<any>("/ai/quota")
           .then((r) => {
             if (r?.data) setQuota(r.data);
@@ -999,6 +1103,8 @@ HƯỚNG DẪN TRẢ LỜI:
           timestamp: Date.now(),
           actionLink: actionLink,
           suggestions: suggestions,
+          verificationCard,
+          fileClarification,
         },
       ]);
 
@@ -1251,6 +1357,20 @@ HƯỚNG DẪN TRẢ LỜI:
                     >
                       <div className="whitespace-pre-wrap break-words">{m.content}</div>
 
+                      {/* Thẻ hỏi ngược lại khi tải tệp lên (Choice Chips) */}
+                      {!isUser && m.fileClarification && (
+                        <AiChoiceChips
+                          data={m.fileClarification}
+                          onSelectOption={handleSelectOptionFromChoiceChips}
+                          disabled={isLoading}
+                        />
+                      )}
+
+                      {/* Thẻ Kiểm Tra Kết Quả sau khi AI thao tác (Verification Card) */}
+                      {!isUser && m.verificationCard && (
+                        <AiVerificationCard data={m.verificationCard} />
+                      )}
+
                       {/* Action Link button if present */}
                       {!isUser && m.actionLink && (
                         <div className="mt-2.5">
@@ -1348,6 +1468,22 @@ HƯỚNG DẪN TRẢ LỜI:
               }}
               className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070D1A] flex items-center gap-2 shrink-0"
             >
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".xlsx,.xls,.docx,.pdf,.txt,.csv"
+                onChange={handleFileUpload}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || quota.isExceeded}
+                className="h-10 w-10 shrink-0 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition cursor-pointer active:scale-95 border border-slate-200 dark:border-slate-700"
+                title="Tải lên tệp Excel, Word, PDF để AI phân tích và hỏi ngược yêu cầu"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
               <input
                 type="text"
                 value={input}

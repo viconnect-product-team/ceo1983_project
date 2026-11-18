@@ -730,3 +730,157 @@ export async function parseTrainingDocument(file: File): Promise<ParsedTrainingD
   const text = await extractTextFromFile(file);
   return extractTrainingDataFromText(text, file.name);
 }
+
+export interface AiFileActionOption {
+  id: string;
+  label: string;
+  actionType: string;
+  description: string;
+  iconName?: "calendar" | "graduation-cap" | "users" | "wallet" | "folder" | "file-text" | "sparkles";
+  badge?: string;
+  payload?: any;
+}
+
+export interface AiFileClarificationData {
+  fileName: string;
+  fileSizeFormatted: string;
+  fileType: string;
+  totalLines: number;
+  previewText: string;
+  summary: string;
+  clarificationQuestion: string;
+  options: AiFileActionOption[];
+  extractedEntities: {
+    dates?: string[];
+    times?: string[];
+    locations?: string[];
+    people?: string[];
+    moneyAmounts?: string[];
+  };
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Phân tích tệp nhập vào dành cho Trợ lý AI (CRM AI & Mobile AI):
+ * - Đọc nội dung đa định dạng (Excel, Word, PDF, Text).
+ * - Nhận diện cấu trúc thực thể (ngày giờ, địa điểm, diễn giả, số tiền, hội viên).
+ * - Tự động đề xuất các hành động và câu hỏi ngược để người dùng lựa chọn.
+ */
+export async function analyzeImportedFileForAi(file: File): Promise<AiFileClarificationData> {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  const text = await extractTextFromFile(file);
+  const lines = text.split("\n").filter((l) => l.trim().length > 0);
+  const lowerText = text.toLowerCase();
+
+  // Bóc tách thực thể
+  const extractedDates = Array.from(new Set(text.match(/(?:ngày\s+)?\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{4}/gi) || [])).slice(0, 3);
+  const extractedTimes = Array.from(new Set(text.match(/\b\d{1,2}[:h]\d{2}\b/gi) || [])).slice(0, 3);
+  const extractedMoney = Array.from(new Set(text.match(/\b\d{1,3}(?:\.\d{3})+(?:\s*(?:vnđ|vnd|đ|triệu|tỷ))\b/gi) || [])).slice(0, 3);
+
+  // Nhận diện kiểu tài liệu
+  const isEvent = /sự kiện|event|gala|hội nghị|diễn đàn|networking|sinh nhật|workshop|hội thảo/i.test(lowerText);
+  const isTraining = /đào tạo|chiêu sinh|khóa học|giảng viên|chuyên gia|học viên|lớp học|training/i.test(lowerText);
+  const isMember = /danh sách|hội viên|doanh nhân|giám đốc|chức vụ|email|điện thoại|công ty|sđt|mst/i.test(lowerText);
+  const isFinance = /thu chi|hội phí|ngân sách|chi phí|dự toán|phiếu thu|hóa đơn|quỹ|tiền|thanh toán/i.test(lowerText);
+  const isMeeting = /biên bản|cuộc họp|nhiệm vụ|phân công|tiến độ|deadline|kết luận/i.test(lowerText);
+
+  // Sinh tóm tắt trực quan
+  let summary = `Tệp chứa ${lines.length} dòng dữ liệu, định dạng .${ext.toUpperCase()}.`;
+  if (isEvent && extractedDates.length > 0) {
+    summary += ` Phát hiện kế hoạch sự kiện diễn ra ngày ${extractedDates[0]}${extractedTimes.length ? ` lúc ${extractedTimes[0]}` : ""}.`;
+  } else if (isTraining) {
+    summary += ` Phát hiện thông tin chuyên đề đào tạo/chiêu sinh cho hội viên.`;
+  } else if (isMember) {
+    summary += ` Phát hiện danh sách hội viên/doanh nghiệp với các trường liên hệ.`;
+  } else if (isFinance && extractedMoney.length > 0) {
+    summary += ` Phát hiện dự toán/khoản thu chi với các số tiền: ${extractedMoney.join(", ")}.`;
+  } else if (isMeeting) {
+    summary += ` Phát hiện biên bản làm việc & phân công công việc.`;
+  }
+
+  // Tạo danh sách Options hỏi ngược lại
+  const options: AiFileActionOption[] = [];
+
+  if (isEvent || (!isTraining && !isMember && !isFinance)) {
+    options.push({
+      id: "opt_create_event",
+      label: "Tạo Sự Kiện Mới & Tự Động Điền Lịch Trình",
+      actionType: "CREATE_EVENT",
+      description: "Tạo sự kiện trên hệ thống, bóc tách diễn giả, địa điểm và các hạng vé.",
+      iconName: "calendar",
+      badge: "Sự kiện",
+    });
+  }
+
+  if (isTraining || isEvent) {
+    options.push({
+      id: "opt_create_training",
+      label: "Khởi Tạo Chương Trình Đào Tạo Mới",
+      actionType: "CREATE_TRAINING",
+      description: "Mở lớp chiêu sinh, bóc tách thông tin giảng viên và đề cương bài giảng.",
+      iconName: "graduation-cap",
+      badge: "Đào tạo",
+    });
+  }
+
+  if (isMember) {
+    options.push({
+      id: "opt_import_members",
+      label: "Nhập Danh Sách Hội Viên Vào CSDL CRM",
+      actionType: "IMPORT_MEMBERS",
+      description: "Đồng bộ danh sách hội viên vào database 113.20.107.184:6432.",
+      iconName: "users",
+      badge: "Hội viên",
+    });
+  }
+
+  if (isFinance || isEvent) {
+    options.push({
+      id: "opt_record_finance",
+      label: "Ghi Nhận Dự Toán / Thu Chi Tài Chính",
+      actionType: "RECORD_FINANCE",
+      description: "Tạo phiếu thu/chi hoặc ghi nhận vào sổ quỹ tài chính theo TT 200.",
+      iconName: "wallet",
+      badge: "Tài chính",
+    });
+  }
+
+  options.push({
+    id: "opt_archive_document",
+    label: "Lưu Trữ Vào Kho Tài Liệu Ban Chuyên Môn",
+    actionType: "ARCHIVE_DOCUMENT",
+    description: "Phân loại và lưu trữ vào thư mục Ban tương ứng (FLD-DEPT-*).",
+    iconName: "folder",
+    badge: "Tài liệu",
+  });
+
+  options.push({
+    id: "opt_extract_tasks",
+    label: "Bóc Tách Nhiệm Vụ & Phân Công Cho Các Ban",
+    actionType: "EXTRACT_TASKS",
+    description: "Trích xuất danh sách đầu việc, người phụ trách và deadline bàn giao.",
+    iconName: "file-text",
+    badge: "Nhiệm vụ",
+  });
+
+  return {
+    fileName: file.name,
+    fileSizeFormatted: formatFileSize(file.size),
+    fileType: ext.toUpperCase(),
+    totalLines: lines.length,
+    previewText: lines.slice(0, 10).join("\n"),
+    summary,
+    clarificationQuestion: `Tôi đã phân tích tệp "${file.name}". Anh/Chị muốn tôi thực hiện thao tác gì với tệp này trên hệ thống? Vui lòng bấm chọn một yêu cầu bên dưới hoặc nhập chỉ đạo riêng:`,
+    options,
+    extractedEntities: {
+      dates: extractedDates,
+      times: extractedTimes,
+      moneyAmounts: extractedMoney,
+    },
+  };
+}

@@ -7,12 +7,14 @@ services:
       - .env.crm
     environment:
       - PORT=8080
+      - NITRO_PORT=8080
       - HOST=0.0.0.0
       - NITRO_HOST=0.0.0.0
       - NEST_API_URL=http://crm-backend:4000
       - VITE_APP_SCOPE=crm_platform
       - VITE_APP_NAME="CEO 1983 CRM Admin"
       - VITE_APP_DEFAULT_ROUTE=/association
+    user: "0:0"
     ports:
       - "${ASSOCIATION_PORT_FRONTEND:-5004}:8080"
     depends_on:

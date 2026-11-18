@@ -64,6 +64,11 @@ if command -v nginx >/dev/null 2>&1; then
 # REVERSE PROXY CHO 2 SUBDOMAIN CEO 1983 & CRM (TU DONG DONG BO)
 # =========================================================================
 
+map \$http_upgrade \$connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
 server {
     listen 80;
     server_name ceo1983.viconnect.vn crm.ceo1983.viconnect.vn app.ceo1983.vn crm.ceo1983.vn;
@@ -86,7 +91,7 @@ server {
         proxy_pass http://127.0.0.1:5004;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -97,7 +102,7 @@ server {
         proxy_pass http://127.0.0.1:5005;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -132,7 +137,7 @@ server {
         proxy_pass http://127.0.0.1:5002;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -143,7 +148,7 @@ server {
         proxy_pass http://127.0.0.1:5003;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -163,21 +168,22 @@ server {
 }
 EOF
 
-    # Đồng bộ sang sites-available/sites-enabled nếu hệ thống dùng cấu trúc sites
-    if [ -d /etc/nginx/sites-available ]; then
-        cp -f /etc/nginx/conf.d/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
-        mkdir -p /etc/nginx/sites-enabled
-        ln -sf /etc/nginx/sites-available/ceo1983_subdomains.conf /etc/nginx/sites-enabled/ 2>/dev/null || true
-    fi
+    # Dọn dẹp liên kết trùng lặp trong sites-enabled để không bị lỗi duplicate "map" directive
+    rm -f /etc/nginx/sites-enabled/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
 
     # Kiểm tra tính hợp lệ trước khi reload
     if nginx -t 2>/dev/null; then
         echo "[Host Nginx] Cấu hình Nginx hợp lệ. Đang tải lại Nginx..."
         systemctl reload nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
     else
-        echo "[Host Nginx Cảnh Báo] Cấu hình Nginx có cảnh báo, không reload để tránh gián đoạn dịch vụ."
+        echo "[Host Nginx Cảnh Báo] Chi tiết kiểm tra Nginx:"
+        nginx -t || true
     fi
 fi
+
+echo "--- TEST NỘI BỘ HTTP 5004 & 5002 (FRONTEND CONTAINERS) ---"
+curl -s -I http://127.0.0.1:5004/ 2>&1 | head -n 5 || echo "Lỗi kết nối http 5004 (CRM Frontend)"
+curl -s -I http://127.0.0.1:5002/ 2>&1 | head -n 5 || echo "Lỗi kết nối http 5002 (Mobile Frontend)"
 
 echo "--- TEST NỘI BỘ HTTPS 443 (SUBDOMAINS) ---"
 curl -k -s -I -H "Host: ceo1983.viconnect.vn" https://127.0.0.1:443/ 2>&1 | head -n 5 || echo "Lỗi kết nối https 443 ceo1983 nội bộ"
