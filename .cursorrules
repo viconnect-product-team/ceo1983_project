@@ -1,6 +1,18 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 18/11/2026 (v11.66) — HỆ THỐNG DYNAMIC AUTONOMOUS AI AGENT ĐA NỀN TẢNG (WEB CRM & MOBILE APP) CHUẨN MASTER PROMPT:
+#   * QUY CHUẨN BẤT DI BẤT DỊCH VỀ KIỂM DUYỆT (STRICT NO APPROVAL = NO EXECUTION):
+#       - Tuyệt đối cấm AI thực hiện bất kỳ thao tác ghi dữ liệu, gửi thông báo, đăng bài, tạo giao dịch hoặc gọi API bên ngoài trước khi người dùng phê duyệt kế hoạch cụ thể.
+#       - Lời nói hoặc tin nhắn chat như "OK", "Làm đi", "Đồng ý" KHÔNG được phép kích hoạt tác vụ.
+#       - Việc phê duyệt bắt buộc phải thực hiện bằng nút DUYỆT THỰC HIỆN gắn với chính xác task_id, revision_version và mã hash của payload.
+#   * CHỈNH SỬA HỘI THOẠI ĐA VÒNG (CONVERSATIONAL REVISION ENGINE):
+#       - Không xem bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và sửa đổi nhiều lần trước khi duyệt.
+#       - Đọc ngữ cảnh, giữ nguyên yêu cầu không đổi, cập nhật tham số mới, tăng revision_version, hiển thị dải Diff và yêu cầu duyệt lại. Phê duyệt cũ tự động mất hiệu lực đối với phần thay đổi.
+#   * LIVE EXECUTION & LIVE WORKSPACE:
+#       - Truyền trạng thái tiến trình trực tiếp theo thời gian thực qua Server-Sent Events (SSE) và WebSocket.
+#       - Lưu trữ bền vững trong CSDL PostgreSQL 113.20.107.184:6432 (public.ai_agent_tasks). F5 tải lại trang hay đổi thiết bị vẫn phục hồi nguyên trạng.
+#       - Mở không gian làm việc trực quan (Live Workspace) cho từng loại dữ liệu (bảng Excel, xem trước email HTML, tra cứu đối tác ngoài).
 # 18/11/2026 (v11.64) — KHẮC PHỤC TRIỆT ĐỂ LỖI WEBSOCKET 307 REDIRECT, CRAWL TIN TỨC CEO1983.COM & ĐIỀU KIỆN QUAN TÂM ZALO OA CẤP TÀI KHOẢN [NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003]:
 #   * SỬA LỖI WEBSOCKET 307 REDIRECT TRÊN SUBDOMAIN CRM (deploy/ssl/setup-ssl.sh, deploy/ssl/nginx.conf):
 #       - Chuyển `location /socket.io/` sang `location /socket.io` (loại bỏ dấu gạch chéo cuối) để tránh bị TanStack Start frontend (port 5004) chuyển hướng 307 làm vỡ WebSocket handshake.

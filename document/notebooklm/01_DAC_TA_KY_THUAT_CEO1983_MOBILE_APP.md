@@ -279,4 +279,14 @@
   - Cho phép người có quyền tùy chọn đẩy nhanh khoảnh khắc hoạt động lên bảng tin Mạng Lưới (`/feed`) với danh mục `EVENT_MEETING`.
   - Trên bảng tin mạng lưới, các bài đăng sự kiện hiển thị nút link `<QrCode /> [Xem mã QR Check-in]` và nút `<Download /> [Tải poster sự kiện]` thay vì render canvas QR lớn chiếm màn hình.
 
+### `[NODE-APP-019]` Trợ Lý AI Hội Viên Thông Minh (Dynamic Autonomous AI Member Assistant: Human Approval - Conversational Revision - Live Execution)
+- **Thành phần**: `Ceo1983ChatAssistant.tsx`, `AiTaskPlanCard.tsx`, `AiLiveExecutionCard.tsx`, `AiLiveWorkspace.tsx`.
+- **API Backend**: `POST /api/ai/agent/chat`, `POST /api/ai/agent/tasks/:taskId/approve`, `GET /api/ai/agent/tasks/:taskId`, `GET /api/ai/agent/tasks/:taskId/stream`.
+- **Luồng xử lý**:
+  - Phục vụ hội viên doanh nhân kết nối giao thương B2B, đăng ký sự kiện, đăng sản phẩm lên Sàn, tìm kiếm đối tác và đăng cơ hội kinh doanh.
+  - Sử dụng chung AI Core, Dynamic Task Planner, Conversational Revision Engine và Approval Engine với Web CRM, nhưng áp dụng phân quyền độc lập (RBAC Member Policy): Hội viên không có quyền truy cập các công cụ quản trị hệ thống của CRM.
+  - Tuân thủ quy chuẩn kiểm duyệt tối cao: **NO APPROVAL = NO EXECUTION**. Mọi tác vụ tạo sản phẩm, đăng cơ hội hay kết nối đối tác đều phải trình kế hoạch và chỉ thực thi khi hội viên nhấn nút **DUYỆT THỰC HIỆN**.
+  - Hiển thị trực tiếp tiến trình từng bước (Live Execution Streaming qua SSE / WebSocket) và mở Live Workspace trực quan ngay trên ứng dụng di động.
+
+
 

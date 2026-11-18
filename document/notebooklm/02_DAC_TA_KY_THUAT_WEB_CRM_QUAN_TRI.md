@@ -318,22 +318,29 @@
     + Nút "Xem Landing Page" trên Sidebar tự động nạp cấu hình của bản Landing Web đang được kích hoạt xuất bản (`isPublished: true` hoặc active template) từ CSDL / localStorage thay vì hiển thị component cố định.
     + Đảm bảo chế độ Light Theme (`light [color-scheme:light]`) cô lập trên container Landing Web để giao diện Hero và Header luôn giữ nguyên chuẩn sắc nét theo thiết kế Pinterest kể cả khi CRM đang bật Dark Mode.
 
-### `[NODE-CRM-024]` Quy Chuẩn Toàn Hệ Thống: Đẩy Bản Ghi Mới Tạo / Chỉnh Sửa Lên Đầu Danh Sách & Số Đếm Thông Báo Từng Chức Năng
-- **Phân hệ**: Toàn bộ CRM (`/accounts`, `/members`, `/tasks`, `/opportunities`, `/finance`, `/documents`, v.v.).
-- **Luồng xử lý**:
-  - **Quy tắc Sắp Xếp Bản Ghi (Record Ordering Standard)**:
-    + Khi tạo mới một bản ghi hoặc vừa chỉnh sửa thành công một bản ghi bất kỳ, bản ghi đó BẮT BUỘC được đưa lên vị trí đầu tiên của bảng danh sách (STT 1 / index 0) để người dùng thấy ngay kết quả thao tác mà không cần cuộn trang.
-    + Cơ chế: Cập nhật trường `updatedAt` / `updated_at` và sắp xếp danh sách ưu tiên `updatedAt` giảm dần khi ở chế độ hiển thị mặc định (`sortKey === null` hoặc `sort = newest`).
-  - **Hệ Thống Badge Số Đếm Thông Báo Trên Menu Tree & Từng Chức Năng**:
-    + Hook `useUnreadNotifications` phân tích toàn bộ thông báo chưa đọc theo từng nhóm chuyên môn (`new_members`, `fee_alerts`, `admin_system`, `events_meetings`).
-    + Sidebar tự động hiển thị huy hiệu số đếm (`bg-rose-500 text-white rounded-full`) tại các mục menu tree tương ứng:
-      - Khi có hội viên mới nộp hồ sơ: Hiện badge tại `/notifications?filter=new_members` và `/members`.
-      - Khi có cảnh báo hội phí: Hiện badge tại `/notifications?filter=fee_alerts` và `/renewal` / `/finance`.
-      - Khi có sự kiện / cuộc họp: Hiện badge tại `/notifications?filter=events_meetings` và `/events` / `/meetings`.
-      - Khi có công việc mới: Hiện badge tại `/tasks`.
-  - **Quy Chuẩn Phân Quyền & Lưu Quyền Tức Thì**:
-    + Khi người dùng bấm nút "Lưu Thay Đổi" phân quyền, cờ `hasUnsavedChanges` lập tức được reset về `false` và banner cảnh báo màu cam biến mất ngay.
-    + Khi gỡ quyền hoặc thay đổi quyền của một tài khoản trong ma trận quyền, giao diện lập tức phản ánh trạng thái mới, không bypass cứng cho tài khoản admin và quyền bị thu hồi có hiệu lực tức thì.
+### `[NODE-CRM-025]` Trợ Lý AI Điều Hành Toàn Năng (Dynamic Autonomous AI Agent: Human Approval - Conversational Revision - Live Execution & Live Workspace)
+- **Route Frontend**: `/ai-assistant` (`src/routes/ai-assistant.tsx`, `CrmChatGPTView.tsx`).
+- **API Backend**: `POST /api/ai/agent/chat`, `POST /api/ai/agent/tasks/:taskId/approve`, `GET /api/ai/agent/tasks/:taskId`, `GET /api/ai/agent/tasks/:taskId/stream`, `GET /api/ai/agent/tools` (`DynamicAgentController`).
+- **Dịch vụ Backend**: `DynamicTaskPlannerService`, `ConversationalRevisionService`, `ApprovalService`, `TaskExecutionService`, `AiToolRegistryService`.
+- **Bảng CSDL**: `public.ai_agent_tasks`, `public.audit_logs`, `public.members`, `public.events`, `public.transactions`, `public.opportunities`, `public.documents` trên PostgreSQL `113.20.107.184:6432`.
+- **Luồng xử lý nghiệp vụ chuẩn mực**:
+  - **1. Quy Chuẩn Tối Cao (STRICT NO APPROVAL = NO EXECUTION)**:
+    - AI KHÔNG ĐƯỢC PHÉP thực hiện bất kỳ thao tác ghi dữ liệu, gửi thông báo, phát hành email/Zalo, đăng bài, tạo giao dịch tài chính trước khi người dùng nhấn nút **DUYỆT THỰC HIỆN** trên giao diện.
+    - Lời nói hoặc tin nhắn chat như "OK", "Làm đi", "Đồng ý" KHÔNG được kích hoạt tác vụ thực thi.
+  - **2. Lập Kế Hoạch Động (Dynamic Task Planner)**:
+    - Tiếp nhận yêu cầu tự nhiên, bóc tách số lượng bản ghi và lập Task Plan chi tiết gồm: Mục tiêu, phạm vi module, danh sách các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã hash payload.
+  - **3. Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision Engine)**:
+    - Người dùng có thể yêu cầu sửa đổi nhiều lần trước khi duyệt ("Không gửi Zalo chỉ gửi email", "Chỉ lấy doanh nghiệp vừa và lớn", "Bổ sung quyền lợi hội viên", "Làm theo hướng chuyên nghiệp hơn").
+    - Giữ nguyên các yêu cầu cũ, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải Diff thay đổi trực quan. Mọi phê duyệt cũ tự động mất hiệu lực đối với phần thay đổi.
+  - **4. Kiểm Duyệt & Thẩm Quyền (Approval Engine)**:
+    - Backend xác minh quyền hạn RBAC của người duyệt (ADMIN / PRESIDENT / BOARD) và kiểm tra khớp nối chính xác `taskId`, `revisionVersion`, `payloadHash`.
+    - Ghi nhận nhật ký kiểm toán bất biến vào `public.audit_logs`.
+  - **5. Truyền Phát Tiến Trình Trực Tiếp (Live Execution Streaming & Live Workspace)**:
+    - Truyền trực tiếp trạng thái từng bước và log thao tác qua Server-Sent Events (SSE) `/stream` và WebSocket.
+    - Tiến trình được lưu bền vững vào PostgreSQL (`public.ai_agent_tasks`). Người dùng chuyển màn hình, mở lại hội thoại hay tải lại trang đều phục hồi nguyên vẹn.
+    - Khởi tạo Không Gian Làm Việc Trực Quan (Live Workspace) cho phép đối soát bảng dữ liệu từng dòng, xem mẫu email HTML thực tế và nguồn trích dẫn dữ liệu.
+    - Tự động xuất Thẻ Kiểm Tra Đối Soát (Verification Card) xác nhận dữ liệu đã được ghi an toàn 100% vào CSDL chuẩn `113.20.107.184:6432`.
+
 
 
 

@@ -1,5 +1,24 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 18/11/2026 (v11.66): Triển Khai Toàn Diện Hệ Thống Dynamic Autonomous AI Agent Đa Nền Tảng (Web CRM & Mobile App) Chuẩn Master Prompt: Kiểm Duyệt Bắt Buộc (Human Approval), Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision), Live Execution Streaming & Workspace Trực Quan ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CRM-001]..[NODE-CRM-024], [NODE-APP-001]..[NODE-APP-017])**:
+  - **1. Xây Dựng Kiến Trúc AI Core Độc Lập & Toàn Diện (Unified AI Architecture)**:
+    * **DynamicTaskPlannerService**: Tiếp nhận yêu cầu ngôn ngữ tự nhiên từ người dùng, phân loại nghiệp vụ (Logistics, Thư mời, Import Excel, Sự kiện, Đào tạo, Sàn TM B2B, Tài chính TT200), bóc tách số lượng bản ghi và lập Kế Hoạch Thực Hiện có cấu trúc (Task Plan v1) gồm: Mục tiêu, phạm vi module, nguồn dữ liệu (CSDL PostgreSQL `113.20.107.184:6432`), các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã băm payload bất biến (`payloadHash`).
+    * **ConversationalRevisionService (Giai đoạn 4)**: Không coi bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và chỉnh sửa nhiều lần trước khi duyệt ("Không cần tìm doanh nghiệp nhỏ, chỉ lấy quy mô vừa và lớn", "Không gửi Zalo, chỉ gửi email", "Thêm giới thiệu quyền lợi hội viên và đính kèm hồ sơ CLB", "Làm theo hướng chuyên nghiệp hơn"). Giữ nguyên các yêu cầu không đổi, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải thông báo Diff trực quan (Thêm mới, Điều chỉnh, Loại bỏ). Tự động vô hiệu hóa phê duyệt của phiên bản cũ.
+    * **ApprovalService (Giai đoạn 5 - QUY CHUẨN TỐI CAO: NO APPROVAL = NO EXECUTION)**: Tuyệt đối không tự động thực thi chỉ qua lời nói hoặc câu chat thông thường ("OK", "Làm đi", "Được rồi"). Bắt buộc người dùng phải nhấn nút **DUYỆT THỰC HIỆN** gắn với chính xác `taskId`, `revisionVersion` và `payloadHash`. Xác thực chặt chẽ quyền RBAC của người duyệt (AI Admin vs AI Member) và ghi nhận nhật ký kiểm toán bất biến vào bảng `public.audit_logs`.
+    * **TaskExecutionService (Giai đoạn 6 & 7)**: Điều phối thực thi tuần tự từng bước đã duyệt qua các công cụ. Trạng thái từng bước (`PENDING` -> `RUNNING` -> `COMPLETED` / `FAILED`) được lưu bền vững vào CSDL `113.20.107.184:6432` (`public.ai_agent_tasks`), đảm bảo an toàn tuyệt đối khi người dùng chuyển màn hình, mở lại hội thoại, F5 hoặc khi backend khởi động lại.
+    * **AiToolRegistryService (Giai đoạn 9)**: Đăng ký danh mục 10 nhóm công cụ: CRM, Event, Training, Document, Email, Zalo, Marketplace, Community, Finance, External Research với đầy đủ Input/Output schema, Risk Level (LOW, MEDIUM, HIGH, CRITICAL), quyền RBAC và chính sách Idempotency.
+  - **2. Bộ Thành Phần Giao Diện Live Trực Quan Đẳng Cấp (Frontend Components)**:
+    * **`AiTaskPlanCard.tsx`**: Thẻ kế hoạch chờ duyệt với đầy đủ 3 Tab (Các bước thực hiện, Xem trước nội dung, Kiểm tra rủi ro), dải Diff thay đổi giữa các phiên bản, 4 nút điều khiển (`DUYỆT THỰC HIỆN`, `CHỈNH SỬA YÊU CẦU`, `XEM WORKSPACE`, `HỦY TÁC VỤ`).
+    * **`AiLiveExecutionCard.tsx`**: Thẻ hiển thị trực tiếp AI đang thao tác theo thời gian thực (Live Progress Streaming qua Server-Sent Events `/api/ai/agent/tasks/:taskId/stream` & WebSocket), progress bar tổng, số bản ghi đã xử lý, thành công, thất bại, thời gian trôi qua, trạng thái từng bước và khung Activity Stream logs. Tự động chuyển giao sang `AiVerificationCard` khi hoàn thành 100%.
+    * **`AiLiveWorkspace.tsx`**: Không gian làm việc trực quan tương tác (Visual Action Interface) cho từng loại tác vụ: Bảng dữ liệu đối soát từng dòng (hợp lệ / cần xác minh / lỗi), khung xem trước email chính thức HTML, nguồn trích dẫn tra cứu đối tác ngoài.
+  - **3. Tích Hợp Đồng Bộ Cho Cả 2 Phân Hệ (Web CRM Quản Trị & Mobile App Hội Viên)**:
+    * **Web CRM Quản Trị (`CrmChatGPTView.tsx`)**: Tích hợp luồng Autonomous Agent song hành cùng hệ thống Cố vấn Điều hành CRM, tự động phát hiện lệnh tác vụ hoặc tiếp tục điều chỉnh phiên bản kế hoạch đang chờ duyệt.
+    * **Mobile App CEO 1983 (`Ceo1983ChatAssistant.tsx`)**: Tích hợp các thẻ hành động tối ưu cho màn hình cảm ứng di động, phân quyền hội viên an toàn, chống việc gọi trái phép các công cụ quản trị CRM.
+  - **4. Kiểm Thử & Xác Nhận Chất Lượng Mã Nguồn**:
+    * Backend NestJS: `npm run build` đạt Exit Code 0 (0 errors).
+    * Frontend React/Vite: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt Exit Code 0 (0 errors).
+    * Tuân thủ triệt để nguyên tắc không mock fake dữ liệu và không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
     * **Nguyên nhân gốc rễ**: 
@@ -1682,6 +1701,25 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.66): Triển Khai Toàn Diện Hệ Thống Dynamic Autonomous AI Agent Đa Nền Tảng (Web CRM & Mobile App) Chuẩn Master Prompt: Kiểm Duyệt Bắt Buộc (Human Approval), Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision), Live Execution Streaming & Workspace Trực Quan ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CRM-001]..[NODE-CRM-024], [NODE-APP-001]..[NODE-APP-017])**:
+  - **1. Xây Dựng Kiến Trúc AI Core Độc Lập & Toàn Diện (Unified AI Architecture)**:
+    * **DynamicTaskPlannerService**: Tiếp nhận yêu cầu ngôn ngữ tự nhiên từ người dùng, phân loại nghiệp vụ (Logistics, Thư mời, Import Excel, Sự kiện, Đào tạo, Sàn TM B2B, Tài chính TT200), bóc tách số lượng bản ghi và lập Kế Hoạch Thực Hiện có cấu trúc (Task Plan v1) gồm: Mục tiêu, phạm vi module, nguồn dữ liệu (CSDL PostgreSQL `113.20.107.184:6432`), các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã băm payload bất biến (`payloadHash`).
+    * **ConversationalRevisionService (Giai đoạn 4)**: Không coi bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và chỉnh sửa nhiều lần trước khi duyệt ("Không cần tìm doanh nghiệp nhỏ, chỉ lấy quy mô vừa và lớn", "Không gửi Zalo, chỉ gửi email", "Thêm giới thiệu quyền lợi hội viên và đính kèm hồ sơ CLB", "Làm theo hướng chuyên nghiệp hơn"). Giữ nguyên các yêu cầu không đổi, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải thông báo Diff trực quan (Thêm mới, Điều chỉnh, Loại bỏ). Tự động vô hiệu hóa phê duyệt của phiên bản cũ.
+    * **ApprovalService (Giai đoạn 5 - QUY CHUẨN TỐI CAO: NO APPROVAL = NO EXECUTION)**: Tuyệt đối không tự động thực thi chỉ qua lời nói hoặc câu chat thông thường ("OK", "Làm đi", "Được rồi"). Bắt buộc người dùng phải nhấn nút **DUYỆT THỰC HIỆN** gắn với chính xác `taskId`, `revisionVersion` và `payloadHash`. Xác thực chặt chẽ quyền RBAC của người duyệt (AI Admin vs AI Member) và ghi nhận nhật ký kiểm toán bất biến vào bảng `public.audit_logs`.
+    * **TaskExecutionService (Giai đoạn 6 & 7)**: Điều phối thực thi tuần tự từng bước đã duyệt qua các công cụ. Trạng thái từng bước (`PENDING` -> `RUNNING` -> `COMPLETED` / `FAILED`) được lưu bền vững vào CSDL `113.20.107.184:6432` (`public.ai_agent_tasks`), đảm bảo an toàn tuyệt đối khi người dùng chuyển màn hình, mở lại hội thoại, F5 hoặc khi backend khởi động lại.
+    * **AiToolRegistryService (Giai đoạn 9)**: Đăng ký danh mục 10 nhóm công cụ: CRM, Event, Training, Document, Email, Zalo, Marketplace, Community, Finance, External Research với đầy đủ Input/Output schema, Risk Level (LOW, MEDIUM, HIGH, CRITICAL), quyền RBAC và chính sách Idempotency.
+  - **2. Bộ Thành Phần Giao Diện Live Trực Quan Đẳng Cấp (Frontend Components)**:
+    * **`AiTaskPlanCard.tsx`**: Thẻ kế hoạch chờ duyệt với đầy đủ 3 Tab (Các bước thực hiện, Xem trước nội dung, Kiểm tra rủi ro), dải Diff thay đổi giữa các phiên bản, 4 nút điều khiển (`DUYỆT THỰC HIỆN`, `CHỈNH SỬA YÊU CẦU`, `XEM WORKSPACE`, `HỦY TÁC VỤ`).
+    * **`AiLiveExecutionCard.tsx`**: Thẻ hiển thị trực tiếp AI đang thao tác theo thời gian thực (Live Progress Streaming qua Server-Sent Events `/api/ai/agent/tasks/:taskId/stream` & WebSocket), progress bar tổng, số bản ghi đã xử lý, thành công, thất bại, thời gian trôi qua, trạng thái từng bước và khung Activity Stream logs. Tự động chuyển giao sang `AiVerificationCard` khi hoàn thành 100%.
+    * **`AiLiveWorkspace.tsx`**: Không gian làm việc trực quan tương tác (Visual Action Interface) cho từng loại tác vụ: Bảng dữ liệu đối soát từng dòng (hợp lệ / cần xác minh / lỗi), khung xem trước email chính thức HTML, nguồn trích dẫn tra cứu đối tác ngoài.
+  - **3. Tích Hợp Đồng Bộ Cho Cả 2 Phân Hệ (Web CRM Quản Trị & Mobile App Hội Viên)**:
+    * **Web CRM Quản Trị (`CrmChatGPTView.tsx`)**: Tích hợp luồng Autonomous Agent song hành cùng hệ thống Cố vấn Điều hành CRM, tự động phát hiện lệnh tác vụ hoặc tiếp tục điều chỉnh phiên bản kế hoạch đang chờ duyệt.
+    * **Mobile App CEO 1983 (`Ceo1983ChatAssistant.tsx`)**: Tích hợp các thẻ hành động tối ưu cho màn hình cảm ứng di động, phân quyền hội viên an toàn, chống việc gọi trái phép các công cụ quản trị CRM.
+  - **4. Kiểm Thử & Xác Nhận Chất Lượng Mã Nguồn**:
+    * Backend NestJS: `npm run build` đạt Exit Code 0 (0 errors).
+    * Frontend React/Vite: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt Exit Code 0 (0 errors).
+    * Tuân thủ triệt để nguyên tắc không mock fake dữ liệu và không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
@@ -4607,6 +4645,25 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.66): Triển Khai Toàn Diện Hệ Thống Dynamic Autonomous AI Agent Đa Nền Tảng (Web CRM & Mobile App) Chuẩn Master Prompt: Kiểm Duyệt Bắt Buộc (Human Approval), Chỉnh Sửa Hội Thoại Đa Vòng (Conversational Revision), Live Execution Streaming & Workspace Trực Quan ([NODE-CORE-001], [NODE-CORE-002], [NODE-CORE-003], [NODE-CRM-001]..[NODE-CRM-024], [NODE-APP-001]..[NODE-APP-017])**:
+  - **1. Xây Dựng Kiến Trúc AI Core Độc Lập & Toàn Diện (Unified AI Architecture)**:
+    * **DynamicTaskPlannerService**: Tiếp nhận yêu cầu ngôn ngữ tự nhiên từ người dùng, phân loại nghiệp vụ (Logistics, Thư mời, Import Excel, Sự kiện, Đào tạo, Sàn TM B2B, Tài chính TT200), bóc tách số lượng bản ghi và lập Kế Hoạch Thực Hiện có cấu trúc (Task Plan v1) gồm: Mục tiêu, phạm vi module, nguồn dữ liệu (CSDL PostgreSQL `113.20.107.184:6432`), các bước tuần tự/song song, nội dung xem trước (Live Preview), các kiểm tra tính toàn vẹn (hợp lệ/thiếu/trùng) và mã băm payload bất biến (`payloadHash`).
+    * **ConversationalRevisionService (Giai đoạn 4)**: Không coi bản kế hoạch đầu tiên là cố định. Hỗ trợ người dùng trao đổi và chỉnh sửa nhiều lần trước khi duyệt ("Không cần tìm doanh nghiệp nhỏ, chỉ lấy quy mô vừa và lớn", "Không gửi Zalo, chỉ gửi email", "Thêm giới thiệu quyền lợi hội viên và đính kèm hồ sơ CLB", "Làm theo hướng chuyên nghiệp hơn"). Giữ nguyên các yêu cầu không đổi, cập nhật tham số mới, tăng `revisionVersion` (v1 -> v2 -> v3...), tính lại mã hash payload và hiển thị dải thông báo Diff trực quan (Thêm mới, Điều chỉnh, Loại bỏ). Tự động vô hiệu hóa phê duyệt của phiên bản cũ.
+    * **ApprovalService (Giai đoạn 5 - QUY CHUẨN TỐI CAO: NO APPROVAL = NO EXECUTION)**: Tuyệt đối không tự động thực thi chỉ qua lời nói hoặc câu chat thông thường ("OK", "Làm đi", "Được rồi"). Bắt buộc người dùng phải nhấn nút **DUYỆT THỰC HIỆN** gắn với chính xác `taskId`, `revisionVersion` và `payloadHash`. Xác thực chặt chẽ quyền RBAC của người duyệt (AI Admin vs AI Member) và ghi nhận nhật ký kiểm toán bất biến vào bảng `public.audit_logs`.
+    * **TaskExecutionService (Giai đoạn 6 & 7)**: Điều phối thực thi tuần tự từng bước đã duyệt qua các công cụ. Trạng thái từng bước (`PENDING` -> `RUNNING` -> `COMPLETED` / `FAILED`) được lưu bền vững vào CSDL `113.20.107.184:6432` (`public.ai_agent_tasks`), đảm bảo an toàn tuyệt đối khi người dùng chuyển màn hình, mở lại hội thoại, F5 hoặc khi backend khởi động lại.
+    * **AiToolRegistryService (Giai đoạn 9)**: Đăng ký danh mục 10 nhóm công cụ: CRM, Event, Training, Document, Email, Zalo, Marketplace, Community, Finance, External Research với đầy đủ Input/Output schema, Risk Level (LOW, MEDIUM, HIGH, CRITICAL), quyền RBAC và chính sách Idempotency.
+  - **2. Bộ Thành Phần Giao Diện Live Trực Quan Đẳng Cấp (Frontend Components)**:
+    * **`AiTaskPlanCard.tsx`**: Thẻ kế hoạch chờ duyệt với đầy đủ 3 Tab (Các bước thực hiện, Xem trước nội dung, Kiểm tra rủi ro), dải Diff thay đổi giữa các phiên bản, 4 nút điều khiển (`DUYỆT THỰC HIỆN`, `CHỈNH SỬA YÊU CẦU`, `XEM WORKSPACE`, `HỦY TÁC VỤ`).
+    * **`AiLiveExecutionCard.tsx`**: Thẻ hiển thị trực tiếp AI đang thao tác theo thời gian thực (Live Progress Streaming qua Server-Sent Events `/api/ai/agent/tasks/:taskId/stream` & WebSocket), progress bar tổng, số bản ghi đã xử lý, thành công, thất bại, thời gian trôi qua, trạng thái từng bước và khung Activity Stream logs. Tự động chuyển giao sang `AiVerificationCard` khi hoàn thành 100%.
+    * **`AiLiveWorkspace.tsx`**: Không gian làm việc trực quan tương tác (Visual Action Interface) cho từng loại tác vụ: Bảng dữ liệu đối soát từng dòng (hợp lệ / cần xác minh / lỗi), khung xem trước email chính thức HTML, nguồn trích dẫn tra cứu đối tác ngoài.
+  - **3. Tích Hợp Đồng Bộ Cho Cả 2 Phân Hệ (Web CRM Quản Trị & Mobile App Hội Viên)**:
+    * **Web CRM Quản Trị (`CrmChatGPTView.tsx`)**: Tích hợp luồng Autonomous Agent song hành cùng hệ thống Cố vấn Điều hành CRM, tự động phát hiện lệnh tác vụ hoặc tiếp tục điều chỉnh phiên bản kế hoạch đang chờ duyệt.
+    * **Mobile App CEO 1983 (`Ceo1983ChatAssistant.tsx`)**: Tích hợp các thẻ hành động tối ưu cho màn hình cảm ứng di động, phân quyền hội viên an toàn, chống việc gọi trái phép các công cụ quản trị CRM.
+  - **4. Kiểm Thử & Xác Nhận Chất Lượng Mã Nguồn**:
+    * Backend NestJS: `npm run build` đạt Exit Code 0 (0 errors).
+    * Frontend React/Vite: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` đạt Exit Code 0 (0 errors).
+    * Tuân thủ triệt để nguyên tắc không mock fake dữ liệu và không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
