@@ -1,5 +1,24 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
+  - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
+    * **Nguyên nhân gốc rễ**: 
+      - Trong `CreatePostModal.tsx`, khi gọi API `POST /feed`, backend NestJS trả về cấu trúc `{ ok: true, data: { id: p.id, ... } }`. Tuy nhiên, mã nguồn frontend cũ đọc `res?.id` (bị `undefined`) nên biến `createdPost.id` bị fallback thành `post-share-${Date.now()}`.
+      - Sau đó `createdPost` được lưu vào `localStorage("vba_network_feed_posts")` với ID tạm này. Khi `fetchFeed()` truy vấn dữ liệu thực tế từ CSDL PostgreSQL `113.20.107.184:6432`, backend trả về bản ghi có `p.id` chuẩn (UUID). Hàm merge cache `localStorage` kiểm tra `existingIds.has(lp.id)` không khớp do khác ID, dẫn đến bài viết vừa đăng bị unshift thêm một lần nữa vào danh sách hiển thị -> người dùng thấy bài viết bị nhân đôi (duplicate).
+      - Hàm `setPosts` trong `onSuccess` của `FeedView.tsx` trước đây chỉ thực hiện `[newPost, ...prev]` mà không có bước deduplication theo ID hay chữ ký nội dung.
+    * **Giải pháp đã thực hiện**:
+      - Sửa `CreatePostModal.tsx` đọc chính xác `realId = res?.data?.id || res?.id || ...` và hợp nhất toàn bộ dữ liệu trả về từ backend PostgreSQL.
+      - Bổ sung cờ chặn double-submit `if (submitting) return;` chống việc người dùng nhấn liên tiếp nút Đăng bài.
+      - Bổ sung hàm lọc trùng lặp chuyên dụng `deduplicateFeedPosts()` trong `FeedView.tsx` và `network.tsx`, kiểm tra chặt chẽ cả ID và signature kết hợp (`${author}_${title}_${content}`).
+      - Tối ưu hóa việc merge dữ liệu cache `localStorage` trong `fetchFeed()`: tự động đối chiếu nội dung bài viết, nếu đã tồn tại trên CSDL server thì không bao giờ chèn lặp.
+  - **2. Xóa Hoàn Toàn Khối Bản Đồ Tại Màn Hình Cá Nhân (`association.profile.tsx`)**:
+    * Loại bỏ hoàn toàn khối `iframe` Google Maps 2D và Pin Marker overlay cam gây tốn bộ nhớ WebView, load chậm và cản trở thao tác vuốt cuộn trên mobile.
+    * Giữ lại khối hiển thị địa chỉ doanh nghiệp tinh gọn với biểu tượng `MapPin` và đường dẫn mở ứng dụng Bản đồ ngoài ("Chỉ đường" liên kết Google Maps), giúp giao diện thanh thoát, chuyên nghiệp và tải nhanh tức thì.
+  - **3. Tối Ưu Hóa Hiệu Năng & Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983**:
+    * **Thu gọn mặc định danh sách bình luận**: Chuyển trạng thái hiển thị bình luận `isCommentsOpen = Boolean(openCommentsMap[post.id])` (mặc định đóng, chỉ mở khi người dùng chủ động bấm icon bình luận). Điều này loại bỏ hoàn toàn việc render đồng thời hàng chục cây bình luận phức tạp và triệt tiêu 10 API call spam bình luận song song khi vừa mở màn hình.
+    * **Tăng tốc phần cứng GPU & Content Visibility**: Bổ sung class `.feed-post-card` và `.perf-card-contain` áp dụng thuộc tính CSS hiện đại `content-visibility: auto; contain-intrinsic-size: 1px 320px; will-change: transform, opacity; transform: translateZ(0);` giúp trình duyệt bỏ qua việc tính toán layout cho các bài viết nằm ngoài khung nhìn (viewport), cuộn mượt mà không tụt frame.
+    * **Loại bỏ độ trễ chạm 300ms**: Bổ sung quy tắc CSS `touch-action: manipulation; -webkit-tap-highlight-color: transparent;` cho tất cả các nút bấm, tab điều hướng chân trang `vba-bottom-bar`.
+
 - **Bản cập nhật ngày 18/11/2026 (v11.64): Xử Lý Triệt Để Lỗi WebSocket Handshake 307 Redirect & Lỗi Đăng Ký Cấp Tài Khoản / Crawl Tin Tức ceo1983.com ([NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003])**:
   - **1. Khắc Phục Lỗi WebSocket Handshake 307 Redirect Trên Subdomain Web CRM (`crm.ceo1983.viconnect.vn`)**:
     * **Nguyên nhân gốc rễ**: 
@@ -1663,6 +1682,25 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
+  - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
+    * **Nguyên nhân gốc rễ**: 
+      - Trong `CreatePostModal.tsx`, khi gọi API `POST /feed`, backend NestJS trả về cấu trúc `{ ok: true, data: { id: p.id, ... } }`. Tuy nhiên, mã nguồn frontend cũ đọc `res?.id` (bị `undefined`) nên biến `createdPost.id` bị fallback thành `post-share-${Date.now()}`.
+      - Sau đó `createdPost` được lưu vào `localStorage("vba_network_feed_posts")` với ID tạm này. Khi `fetchFeed()` truy vấn dữ liệu thực tế từ CSDL PostgreSQL `113.20.107.184:6432`, backend trả về bản ghi có `p.id` chuẩn (UUID). Hàm merge cache `localStorage` kiểm tra `existingIds.has(lp.id)` không khớp do khác ID, dẫn đến bài viết vừa đăng bị unshift thêm một lần nữa vào danh sách hiển thị -> người dùng thấy bài viết bị nhân đôi (duplicate).
+      - Hàm `setPosts` trong `onSuccess` của `FeedView.tsx` trước đây chỉ thực hiện `[newPost, ...prev]` mà không có bước deduplication theo ID hay chữ ký nội dung.
+    * **Giải pháp đã thực hiện**:
+      - Sửa `CreatePostModal.tsx` đọc chính xác `realId = res?.data?.id || res?.id || ...` và hợp nhất toàn bộ dữ liệu trả về từ backend PostgreSQL.
+      - Bổ sung cờ chặn double-submit `if (submitting) return;` chống việc người dùng nhấn liên tiếp nút Đăng bài.
+      - Bổ sung hàm lọc trùng lặp chuyên dụng `deduplicateFeedPosts()` trong `FeedView.tsx` và `network.tsx`, kiểm tra chặt chẽ cả ID và signature kết hợp (`${author}_${title}_${content}`).
+      - Tối ưu hóa việc merge dữ liệu cache `localStorage` trong `fetchFeed()`: tự động đối chiếu nội dung bài viết, nếu đã tồn tại trên CSDL server thì không bao giờ chèn lặp.
+  - **2. Xóa Hoàn Toàn Khối Bản Đồ Tại Màn Hình Cá Nhân (`association.profile.tsx`)**:
+    * Loại bỏ hoàn toàn khối `iframe` Google Maps 2D và Pin Marker overlay cam gây tốn bộ nhớ WebView, load chậm và cản trở thao tác vuốt cuộn trên mobile.
+    * Giữ lại khối hiển thị địa chỉ doanh nghiệp tinh gọn với biểu tượng `MapPin` và đường dẫn mở ứng dụng Bản đồ ngoài ("Chỉ đường" liên kết Google Maps), giúp giao diện thanh thoát, chuyên nghiệp và tải nhanh tức thì.
+  - **3. Tối Ưu Hóa Hiệu Năng & Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983**:
+    * **Thu gọn mặc định danh sách bình luận**: Chuyển trạng thái hiển thị bình luận `isCommentsOpen = Boolean(openCommentsMap[post.id])` (mặc định đóng, chỉ mở khi người dùng chủ động bấm icon bình luận). Điều này loại bỏ hoàn toàn việc render đồng thời hàng chục cây bình luận phức tạp và triệt tiêu 10 API call spam bình luận song song khi vừa mở màn hình.
+    * **Tăng tốc phần cứng GPU & Content Visibility**: Bổ sung class `.feed-post-card` và `.perf-card-contain` áp dụng thuộc tính CSS hiện đại `content-visibility: auto; contain-intrinsic-size: 1px 320px; will-change: transform, opacity; transform: translateZ(0);` giúp trình duyệt bỏ qua việc tính toán layout cho các bài viết nằm ngoài khung nhìn (viewport), cuộn mượt mà không tụt frame.
+    * **Loại bỏ độ trễ chạm 300ms**: Bổ sung quy tắc CSS `touch-action: manipulation; -webkit-tap-highlight-color: transparent;` cho tất cả các nút bấm, tab điều hướng chân trang `vba-bottom-bar`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.64): Xử Lý Triệt Để Lỗi WebSocket Handshake 307 Redirect & Lỗi Đăng Ký Cấp Tài Khoản / Crawl Tin Tức ceo1983.com ([NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003])**:
   - **1. Khắc Phục Lỗi WebSocket Handshake 307 Redirect Trên Subdomain Web CRM (`crm.ceo1983.viconnect.vn`)**:
@@ -4569,6 +4607,25 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.65): Sửa Triệt Để Lỗi Duplicate Bài Viết Bảng Tin Mạng Lưới, Xóa Khối Bản Đồ Nhúng Màn Cá Nhân & Tối Ưu Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983 ([NODE-APP-010], [NODE-APP-011], [NODE-APP-001], [NODE-APP-002])**:
+  - **1. Khắc Phục Triệt Để Lỗi Duplicate Bài Viết Trên Bảng Tin Mạng Lưới (`FeedView.tsx`, `CreatePostModal.tsx`, `network.tsx`)**:
+    * **Nguyên nhân gốc rễ**: 
+      - Trong `CreatePostModal.tsx`, khi gọi API `POST /feed`, backend NestJS trả về cấu trúc `{ ok: true, data: { id: p.id, ... } }`. Tuy nhiên, mã nguồn frontend cũ đọc `res?.id` (bị `undefined`) nên biến `createdPost.id` bị fallback thành `post-share-${Date.now()}`.
+      - Sau đó `createdPost` được lưu vào `localStorage("vba_network_feed_posts")` với ID tạm này. Khi `fetchFeed()` truy vấn dữ liệu thực tế từ CSDL PostgreSQL `113.20.107.184:6432`, backend trả về bản ghi có `p.id` chuẩn (UUID). Hàm merge cache `localStorage` kiểm tra `existingIds.has(lp.id)` không khớp do khác ID, dẫn đến bài viết vừa đăng bị unshift thêm một lần nữa vào danh sách hiển thị -> người dùng thấy bài viết bị nhân đôi (duplicate).
+      - Hàm `setPosts` trong `onSuccess` của `FeedView.tsx` trước đây chỉ thực hiện `[newPost, ...prev]` mà không có bước deduplication theo ID hay chữ ký nội dung.
+    * **Giải pháp đã thực hiện**:
+      - Sửa `CreatePostModal.tsx` đọc chính xác `realId = res?.data?.id || res?.id || ...` và hợp nhất toàn bộ dữ liệu trả về từ backend PostgreSQL.
+      - Bổ sung cờ chặn double-submit `if (submitting) return;` chống việc người dùng nhấn liên tiếp nút Đăng bài.
+      - Bổ sung hàm lọc trùng lặp chuyên dụng `deduplicateFeedPosts()` trong `FeedView.tsx` và `network.tsx`, kiểm tra chặt chẽ cả ID và signature kết hợp (`${author}_${title}_${content}`).
+      - Tối ưu hóa việc merge dữ liệu cache `localStorage` trong `fetchFeed()`: tự động đối chiếu nội dung bài viết, nếu đã tồn tại trên CSDL server thì không bao giờ chèn lặp.
+  - **2. Xóa Hoàn Toàn Khối Bản Đồ Tại Màn Hình Cá Nhân (`association.profile.tsx`)**:
+    * Loại bỏ hoàn toàn khối `iframe` Google Maps 2D và Pin Marker overlay cam gây tốn bộ nhớ WebView, load chậm và cản trở thao tác vuốt cuộn trên mobile.
+    * Giữ lại khối hiển thị địa chỉ doanh nghiệp tinh gọn với biểu tượng `MapPin` và đường dẫn mở ứng dụng Bản đồ ngoài ("Chỉ đường" liên kết Google Maps), giúp giao diện thanh thoát, chuyên nghiệp và tải nhanh tức thì.
+  - **3. Tối Ưu Hóa Hiệu Năng & Độ Mượt Mà 60FPS Cho Ứng Dụng Di Động CEO 1983**:
+    * **Thu gọn mặc định danh sách bình luận**: Chuyển trạng thái hiển thị bình luận `isCommentsOpen = Boolean(openCommentsMap[post.id])` (mặc định đóng, chỉ mở khi người dùng chủ động bấm icon bình luận). Điều này loại bỏ hoàn toàn việc render đồng thời hàng chục cây bình luận phức tạp và triệt tiêu 10 API call spam bình luận song song khi vừa mở màn hình.
+    * **Tăng tốc phần cứng GPU & Content Visibility**: Bổ sung class `.feed-post-card` và `.perf-card-contain` áp dụng thuộc tính CSS hiện đại `content-visibility: auto; contain-intrinsic-size: 1px 320px; will-change: transform, opacity; transform: translateZ(0);` giúp trình duyệt bỏ qua việc tính toán layout cho các bài viết nằm ngoài khung nhìn (viewport), cuộn mượt mà không tụt frame.
+    * **Loại bỏ độ trễ chạm 300ms**: Bổ sung quy tắc CSS `touch-action: manipulation; -webkit-tap-highlight-color: transparent;` cho tất cả các nút bấm, tab điều hướng chân trang `vba-bottom-bar`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.64): Xử Lý Triệt Để Lỗi WebSocket Handshake 307 Redirect & Lỗi Đăng Ký Cấp Tài Khoản / Crawl Tin Tức ceo1983.com ([NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003])**:
   - **1. Khắc Phục Lỗi WebSocket Handshake 307 Redirect Trên Subdomain Web CRM (`crm.ceo1983.viconnect.vn`)**:

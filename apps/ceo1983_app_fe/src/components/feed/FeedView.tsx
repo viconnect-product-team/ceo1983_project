@@ -411,6 +411,26 @@ const CATEGORY_TABS = [
   { id: "OTHER", label: "Khác" },
 ];
 
+function deduplicateFeedPosts(items: FeedPost[]): FeedPost[] {
+  const seenIds = new Set<string>();
+  const seenKeys = new Set<string>();
+  return items.filter((p) => {
+    if (!p || !p.id) return false;
+    const strId = String(p.id);
+    if (seenIds.has(strId)) return false;
+    seenIds.add(strId);
+
+    const normContent = (p.content || "").trim().toLowerCase().slice(0, 100);
+    const normTitle = (p.title || "").trim().toLowerCase();
+    const author = (p.authorName || (p as any).author?.name || "").toLowerCase();
+    const key = `${author}_${normTitle}_${normContent}`;
+    if (key.length > 5 && seenKeys.has(key)) return false;
+    if (key.length > 5) seenKeys.add(key);
+
+    return true;
+  });
+}
+
 export function FeedView({
   searchQuery = "",
   initialShare,
@@ -610,28 +630,28 @@ export function FeedView({
         feedItems = res;
       }
 
-      // Merge local shared posts (including external shared posts from members)
+      // Merge local shared posts (tránh duplicate triệt để theo ID và nội dung)
       try {
         const local = localStorage.getItem("vba_network_feed_posts");
         if (local) {
           const localPosts = JSON.parse(local);
-          const existingIds = new Set(feedItems.map((p) => p.id));
+          const existingIds = new Set(feedItems.map((p) => String(p.id)));
+          const existingKeys = new Set(
+            feedItems.map(
+              (p) =>
+                `${(p.authorName || (p as any).author?.name || "").toLowerCase()}_${(p.title || "").trim().toLowerCase()}_${(p.content || "").trim().toLowerCase().slice(0, 100)}`
+            )
+          );
           localPosts.forEach((lp: any) => {
-            if (!existingIds.has(lp.id) && lp.status !== "hidden" && lp.status !== "deleted") {
+            const key = `${(lp.authorName || (lp as any).author?.name || "").toLowerCase()}_${(lp.title || "").trim().toLowerCase()}_${(lp.content || "").trim().toLowerCase().slice(0, 100)}`;
+            if (!existingIds.has(String(lp.id)) && !existingKeys.has(key) && lp.status !== "hidden" && lp.status !== "deleted") {
               feedItems.unshift(lp);
             }
           });
         }
       } catch {}
 
-      setPosts(feedItems);
-
-      // Auto-load comments for top posts if not already loaded (tránh spam API khi tìm kiếm)
-      feedItems.slice(0, 10).forEach((p) => {
-        if (!postCommentsMap[p.id]) {
-          fetchCommentsForPost(p.id);
-        }
-      });
+      setPosts(deduplicateFeedPosts(feedItems));
     } catch {
       toast.error("Không thể tải bảng tin lúc này");
     } finally {
@@ -1024,13 +1044,13 @@ export function FeedView({
               Boolean(post.externalLink);
             const postComments = postCommentsMap[post.id] || [];
             const commentTrees = organizeComments(postComments);
-            const isCommentsOpen = openCommentsMap[post.id] !== false;
+            const isCommentsOpen = Boolean(openCommentsMap[post.id]);
             const totalCommentsCount = Math.max(postComments.length, post.commentsCount || 0);
 
             return (
               <article
                 key={post.id}
-                className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-3"
+                className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col gap-3 feed-post-card"
               >
                 {/* Post Header: Avatar, Name, Dept, Time, Badge */}
                 <div className="flex items-center justify-between gap-2">
@@ -1662,9 +1682,9 @@ export function FeedView({
                     {/* Comments with comment add-02.svg */}
                     <button
                       type="button"
-                      onClick={() => setActiveCommentPostId(post.id)}
+                      onClick={() => toggleCommentsVisibility(post.id)}
                       className="px-2.5 flex items-center gap-1 hover:opacity-80 transition cursor-pointer"
-                      title="Mở tất cả bình luận"
+                      title="Bình luận bài viết"
                     >
                       <img src="/icons/feed/comment add-02.svg" alt="Comment" className="size-5" />
                       <span className="text-slate-500 dark:text-slate-400 text-sm font-medium font-['Inter'] leading-5">
@@ -1714,7 +1734,7 @@ export function FeedView({
         onClose={() => setCreateModalOpen(false)}
         initialShare={initialShare}
         onSuccess={(newPost) => {
-          setPosts((prev) => [newPost, ...prev]);
+          setPosts((prev) => deduplicateFeedPosts([newPost, ...prev]));
           recordUserActivity({
             action: "CREATE_POST",
             title: `Đã đăng bài viết: "${(newPost.content || newPost.title || "Bài viết mới").slice(0, 35)}..."`,

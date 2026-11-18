@@ -2312,10 +2312,16 @@ function NetworkPage() {
       const next = isExist
         ? prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p))
         : [updatedPost, ...prev];
+      const seen = new Set<string>();
+      const deduped = next.filter((p) => {
+        if (!p?.id || seen.has(String(p.id))) return false;
+        seen.add(String(p.id));
+        return true;
+      });
       try {
-        localStorage.setItem("vba_network_feed_posts", JSON.stringify(next));
+        localStorage.setItem("vba_network_feed_posts", JSON.stringify(deduped));
       } catch {}
-      return next;
+      return deduped;
     });
   };
 

@@ -240,6 +240,7 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
       return;
     }
 
+    if (submitting) return;
     setSubmitting(true);
     try {
       const cleanUrl = sharedUrl.trim().startsWith("http")
@@ -275,8 +276,8 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
         body: JSON.stringify(payload),
       }).catch(() => null);
 
+      const realId = res?.data?.id || res?.id || res?.data?.post?.id || `post-share-${Date.now()}`;
       const createdPost = {
-        id: res?.id || `post-share-${Date.now()}`,
         authorId: user?.id || "mem-me",
         authorName: user?.fullName || (user as any)?.name || "Doanh nhân CEO 1983",
         authorAvatar:
@@ -294,14 +295,24 @@ export function CreatePostModal({ isOpen, onClose, onSuccess, initialShare }: Cr
         commentsCount: 0,
         sharesCount: 1,
         createdAt: new Date().toISOString(),
+        ...(res?.data || {}),
+        id: realId,
       };
 
-      // Store into localStorage feed cache
+      // Store into localStorage feed cache (loại bỏ trùng lặp triệt để)
       try {
         const existing = localStorage.getItem("vba_network_feed_posts");
         const list = existing ? JSON.parse(existing) : [];
-        list.unshift(createdPost);
-        localStorage.setItem("vba_network_feed_posts", JSON.stringify(list));
+        const filtered = list.filter(
+          (p: any) =>
+            String(p.id) !== String(createdPost.id) &&
+            !(
+              (p.content || "").trim() === (createdPost.content || "").trim() &&
+              (p.title || "").trim() === (createdPost.title || "").trim()
+            )
+        );
+        filtered.unshift(createdPost);
+        localStorage.setItem("vba_network_feed_posts", JSON.stringify(filtered.slice(0, 50)));
       } catch {}
 
       toast.success("Đăng bài thành công lên Bảng tin & Mạng lưới CEO 1983!");

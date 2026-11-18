@@ -3044,6 +3044,38 @@ button, a, input, select, textarea, [role="button"], [role="tab"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ULTRA-SMOOTH MOBILE APP PERFORMANCE (GPU ACCELERATION & CONTENT VISIBILITY)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.feed-post-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 320px;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.perf-smooth-scroll {
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  scroll-behavior: smooth;
+}
+
+.perf-card-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 200px;
+}
+
+/* Eliminate tap delays and gesture stalls */
+.vba-app button, 
+.vba-app a, 
+.vba-bottom-bar a,
+.vba-bottom-bar button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    CRM TABLE AUTO-ELLIPSIS & TOOLTIP PRESERVATION (GLOBAL REQUIREMENT 4)
    ═══════════════════════════════════════════════════════════════════════════ */
 table td {

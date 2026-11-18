@@ -65,7 +65,6 @@ import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQ
 import { UserGuideModal } from "@/components/member/UserGuideModal";
 import { ContactSupportModal } from "@/components/member/ContactSupportModal";
 import { QuickProfileEditModal } from "@/components/common/QuickProfileEditModal";
-import { CeoBusinessLocationPicker } from "@/components/member/CeoBusinessLocationPicker";
 import { AccountSecuritySettingsForm } from "@/components/member/AccountSecuritySettingsForm";
 import {
   CustomHomeShortcutsModal,
@@ -204,7 +203,6 @@ export default function ProfileScreen() {
   // 2 Nhóm chức năng chính (Yêu cầu 1): Tổng quan & Bài viết (overview) | Hoạt động & Giao thương (activities)
   const [activeTab, setActiveTab] = useState<"overview" | "activities">("overview");
   const [subTab, setSubTab] = useState<"business" | "posts">("business");
-  const [showLocationEditor, setShowLocationEditor] = useState(false);
   const [systemSettingsOpen, setSystemSettingsOpen] = useState(false);
 
   // Bài viết mạng lưới của hội viên (Yêu cầu 1, 3)
@@ -1223,7 +1221,7 @@ export default function ProfileScreen() {
                   </div>
                 </div>
 
-                {/* Khối Địa chỉ doanh nghiệp & Bản đồ 2D Google (dòng 589-656) */}
+                {/* Khối Địa chỉ doanh nghiệp (Đã loại bỏ bản đồ theo yêu cầu người dùng để màn hình nhẹ và mượt) */}
                 <div className="self-stretch p-4 bg-white dark:bg-[#0F172A] rounded-[20px] outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start gap-3 shadow-2xs">
                   <div className="self-stretch inline-flex justify-between items-center">
                     <div className="flex-1 flex justify-start items-center">
@@ -1231,89 +1229,31 @@ export default function ProfileScreen() {
                         Địa chỉ doanh nghiệp
                       </div>
                     </div>
-                  </div>
-
-                  {/* Thanh hiển thị địa chỉ với icon search */}
-                  <div className="self-stretch h-9 px-2.5 py-1.5 rounded-lg outline outline-1 outline-offset-[-1px] outline-Border-default inline-flex justify-start items-center gap-2 bg-slate-50 dark:bg-slate-800/50">
-                    <img src="/icons/profile/search-01.svg" className="size-4 shrink-0" alt="search" />
-                    <div className="flex-1 text-slate-900 dark:text-white text-sm font-normal font-['Inter'] leading-5 truncate">
-                      {displayAddress}
-                    </div>
-                  </div>
-
-                  {/* Bản đồ 2D Google chuẩn xác 100% hiển thị trực tiếp với overlay Pin Marker tone cam */}
-                  <div className="self-stretch h-56 relative rounded-xl outline outline-1 outline-offset-[-1px] outline-Border-default flex flex-col justify-start items-start overflow-hidden bg-slate-100 dark:bg-slate-900">
-                    <iframe
-                      title="Google Map 2D Doanh nghiệp"
-                      src={
-                        displayLat && displayLng && !isNaN(displayLat) && !isNaN(displayLng)
-                          ? `https://maps.google.com/maps?q=${displayLat},${displayLng}&t=m&z=16&output=embed`
-                          : `https://maps.google.com/maps?q=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}&t=m&z=16&output=embed`
-                      }
-                      className="w-full h-full border-0"
-                      loading="lazy"
-                    />
-
-                    {/* Center Pin Marker theo chuẩn Figma snippet (tone màu cam) */}
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center -mt-3 z-10">
-                      <div className="size-9 bg-orange-100/90 rounded-2xl flex items-center justify-center shadow-md border border-white/60">
-                        <div className="size-7 bg-orange-600 rounded-xl outline outline-2 outline-white flex items-center justify-center shadow-xs">
-                          <MapPin className="size-3.5 text-white fill-white" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Nút hành động nổi trên bản đồ */}
-                    <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setShowLocationEditor(!showLocationEditor)}
-                        className="px-2.5 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-orange-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-orange-50 transition flex items-center gap-1 cursor-pointer"
-                      >
-                        <MapPin className="size-3 text-orange-600" />
-                        <span>{showLocationEditor ? "Đóng sửa vị trí" : "Dời ghim / Sửa địa chỉ"}</span>
-                      </button>
+                    {displayAddress && (
                       <a
                         href={
                           displayLat && displayLng && !isNaN(displayLat) && !isNaN(displayLng)
                             ? `https://www.google.com/maps/search/?api=1&query=${displayLat},${displayLng}`
-                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || "Keangnam Landmark 72, Hà Nội")}`
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || "Hà Nội")}`
                         }
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs rounded-xl border border-orange-200 dark:border-slate-700 shadow-sm text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-orange-50 transition flex items-center gap-1"
-                        title="Mở ứng dụng Google Maps"
+                        className="text-xs font-semibold text-[#003B95] dark:text-amber-400 hover:underline flex items-center gap-1"
+                        title="Xem trên ứng dụng Bản đồ"
                       >
-                        <ExternalLink className="size-3.5 text-orange-600" />
+                        <ExternalLink className="size-3.5" />
+                        <span>Chỉ đường</span>
                       </a>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Panel Sửa Vị Trí / Dời Ghim khi bấm mở */}
-                  {showLocationEditor && (
-                    <div className="self-stretch pt-2 animate-in fade-in duration-150">
-                      <CeoBusinessLocationPicker
-                        initialAddress={displayAddress}
-                        initialLat={displayLat}
-                        initialLng={displayLng}
-                        companyName={displayCompany}
-                        userId={user?.id}
-                        onAddressSaved={(newAddress, lat, lng) => {
-                          setLocalProfile((prev: any) => ({
-                            ...prev,
-                            address: newAddress,
-                            officeAddress: newAddress,
-                            lat,
-                            latitude: lat,
-                            lng,
-                            longitude: lng,
-                          }));
-                          reloadMember?.();
-                          setShowLocationEditor(false);
-                        }}
-                      />
+                  {/* Thanh hiển thị địa chỉ với icon */}
+                  <div className="self-stretch min-h-9 px-3 py-2 rounded-xl outline outline-1 outline-offset-[-1px] outline-Border-default inline-flex justify-start items-center gap-2 bg-slate-50 dark:bg-slate-800/50">
+                    <MapPin className="size-4 text-orange-600 shrink-0" />
+                    <div className="flex-1 text-slate-900 dark:text-white text-sm font-normal font-['Inter'] leading-5 break-words">
+                      {displayAddress || "Chưa cập nhật địa chỉ doanh nghiệp"}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             )}

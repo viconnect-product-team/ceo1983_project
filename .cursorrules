@@ -2559,3 +2559,18 @@
   + Nút bấm Check-in trung tâm: Bỏ chữ text "Check-in", trang bị thanh laser quét ngang từ trên xuống liên tục mô phỏng hiệu ứng MoMo scanner.
   + Quy tắc tương phản Zero-Tolerance: Cấm tuyệt đối text đen trên nền xanh navy, ép buộc chữ và icon luôn là #FFFFFF !important trên toàn bộ các nền xanh.
   + Bộ chọn màu hệ thống: Đổi màu đồng bộ 100% toàn ứng dụng thông qua CSS variables và global style override.
+
+
+# [BẮT BUỘC 126] Quy Chuẩn Deduplicate Bảng Tin Mạng Lưới, Xóa Bản Đồ Màn Cá Nhân & Tối Ưu Hiệu Năng 60FPS Mobile App
+- Quy Chuẩn 1: Deduplicate Triệt Để Bảng Tin Mạng Lưới (Feed & Network):
+  + Khi tạo bài viết mới từ CreatePostModal, bắt buộc trích xuất ID thực từ kết quả API: `realId = res?.data?.id || res?.id`. Tuyệt đối không để rơi vào fallback temporary ID khi API đã trả về dữ liệu.
+  + Hàm `setPosts` khi thêm bài mới bắt buộc thông qua `deduplicateFeedPosts()` để lọc trùng lặp theo cả ID và chữ ký nội dung `${author}_${title}_${content}`.
+  + Khi nạp cache `localStorage("vba_network_feed_posts")`, bắt buộc đối chiếu với `feedItems` lấy từ CSDL PostgreSQL `113.20.107.184:6432`. Nếu bài viết đã có trên server thì không được chèn trùng.
+  + Ngăn chặn double-submit: Bắt buộc kiểm tra `if (submitting) return;` trước khi gửi request tạo bài viết.
+- Quy Chuẩn 2: Màn Hình Hồ Sơ Cá Nhân (association.profile.tsx):
+  + Tuyệt đối không nhúng iframe Google Maps trực tiếp trong màn hình cá nhân để tránh ngốn bộ nhớ WebView, giật lag cuộn trang và xung đột touch gesture.
+  + Hiển thị địa chỉ doanh nghiệp dưới dạng text box tinh gọn kèm icon MapPin và nút "Chỉ đường" (liên kết mở Google Maps ngoài).
+- Quy Chuẩn 3: Tối Ưu Hóa Độ Mượt Mà 60FPS Mobile App:
+  + Mặc định thu gọn khu vực bình luận trên bảng tin feed (`isCommentsOpen = Boolean(openCommentsMap[post.id])`), chỉ tải và render bình luận khi người dùng nhấn mở.
+  + Tăng tốc phần cứng GPU bằng CSS: Áp dụng `.feed-post-card { content-visibility: auto; contain-intrinsic-size: 1px 320px; will-change: transform, opacity; transform: translateZ(0); }`.
+  + Loại bỏ hoàn toàn độ trễ 300ms trên màn hình cảm ứng: Áp dụng `touch-action: manipulation; -webkit-tap-highlight-color: transparent;` trên tất cả button, tabbar và links.
