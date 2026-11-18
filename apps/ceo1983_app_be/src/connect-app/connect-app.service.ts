@@ -2592,6 +2592,10 @@ export class ConnectAppService implements OnModuleInit {
     return this.publicRegistrationService.checkClubRegistrationStatus(query);
   }
 
+  verifyZaloAndDispatchAccount(dto: any) {
+    return this.publicRegistrationService.verifyZaloAndDispatchAccount(dto);
+  }
+
   // ==========================================
   // 14. Settings, Audit & System Administration (Core Service)
   // ==========================================

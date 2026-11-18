@@ -59,15 +59,20 @@ if command -v nginx >/dev/null 2>&1; then
         SSL_KEY="/etc/letsencrypt/live/viconnect.vn/privkey.pem"
     fi
 
+    MAP_BLOCK=""
+    if ! grep -rq "connection_upgrade" /etc/nginx/ 2>/dev/null; then
+        MAP_BLOCK="map \$http_upgrade \$connection_upgrade {
+    default upgrade;
+    ''      close;
+}"
+    fi
+
     cat << EOF > /etc/nginx/conf.d/ceo1983_subdomains.conf
 # =========================================================================
 # REVERSE PROXY CHO 2 SUBDOMAIN CEO 1983 & CRM (TU DONG DONG BO)
 # =========================================================================
 
-map \$http_upgrade \$connection_upgrade {
-    default upgrade;
-    ''      close;
-}
+\$MAP_BLOCK
 
 server {
     listen 80;
@@ -87,6 +92,13 @@ server {
 
     client_max_body_size 50M;
 
+    location = /sw.js {
+        proxy_pass http://127.0.0.1:5004;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:5004;
         proxy_http_version 1.1;
@@ -96,6 +108,9 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
     }
 
     location /api/ {
@@ -109,15 +124,17 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
-    location /socket.io/ {
+    location /socket.io {
         proxy_pass http://127.0.0.1:5005;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
     }
 }
 
@@ -133,6 +150,13 @@ server {
 
     client_max_body_size 50M;
 
+    location = /sw.js {
+        proxy_pass http://127.0.0.1:5002;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:5002;
         proxy_http_version 1.1;
@@ -142,6 +166,9 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
     }
 
     location /api/ {
@@ -155,21 +182,39 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
-    location /socket.io/ {
+    location /socket.io {
         proxy_pass http://127.0.0.1:5003;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
     }
 }
 EOF
 
-    # Dọn dẹp liên kết trùng lặp trong sites-enabled để không bị lỗi duplicate "map" directive
-    rm -f /etc/nginx/sites-enabled/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
+    # Đồng bộ sang cả conf.d và sites-enabled (nếu Ubuntu không include conf.d)
+    if [ -d /etc/nginx/sites-available ] && ! grep -q "include.*/etc/nginx/conf.d/\*\.conf" /etc/nginx/nginx.conf 2>/dev/null; then
+        cp -f /etc/nginx/conf.d/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
+        mkdir -p /etc/nginx/sites-enabled
+        ln -sf /etc/nginx/sites-available/ceo1983_subdomains.conf /etc/nginx/sites-enabled/ 2>/dev/null || true
+    else
+        rm -f /etc/nginx/sites-enabled/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
+    fi
+
+    # Tự động khắc phục xung đột directive map nếu có
+    if ! nginx -t 2>/dev/null; then
+        echo "[Host Nginx] Phát hiện lỗi cú pháp, tự động xử lý map directive..."
+        sed -i '/map \$http_upgrade/,/}/d' /etc/nginx/conf.d/ceo1983_subdomains.conf 2>/dev/null || true
+        sed -i 's/\$connection_upgrade/"upgrade"/g' /etc/nginx/conf.d/ceo1983_subdomains.conf 2>/dev/null || true
+        if [ -f /etc/nginx/sites-available/ceo1983_subdomains.conf ]; then
+            cp -f /etc/nginx/conf.d/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
+        fi
+    fi
 
     # Kiểm tra tính hợp lệ trước khi reload
     if nginx -t 2>/dev/null; then

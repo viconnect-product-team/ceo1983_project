@@ -16,6 +16,12 @@ import {
   detectFileClarification,
   executeAutonomousAction,
 } from './ai-knowledge-and-actions';
+import { AiEventService } from './services/ai-event.service';
+import { AiTrainingService } from './services/ai-training.service';
+import { AiFinanceService } from './services/ai-finance.service';
+import { AiMemberService } from './services/ai-member.service';
+import { AiB2bService } from './services/ai-b2b.service';
+import { AiDocumentService } from './services/ai-document.service';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
@@ -24,6 +30,12 @@ export class AiController {
     private readonly aiService: AiService,
     private readonly crmAnalytics: AiCrmAnalyticsService,
     private readonly prisma: PrismaService,
+    private readonly aiEventService: AiEventService,
+    private readonly aiTrainingService: AiTrainingService,
+    private readonly aiFinanceService: AiFinanceService,
+    private readonly aiMemberService: AiMemberService,
+    private readonly aiB2bService: AiB2bService,
+    private readonly aiDocumentService: AiDocumentService,
   ) {}
 
   /** GET /api/ai/live-context — Ngữ cảnh động tài khoản phiên đăng nhập */
@@ -348,6 +360,66 @@ export class AiController {
   ) {
     const res = detectFileClarification(body.fileName, body.fileText);
     return { ok: true, data: res };
+  }
+
+  /** POST /api/ai/service-action — Phân luồng AI theo chuyên môn (Sự kiện, Đào tạo, Tài chính, Hội viên, B2B, Tài liệu) */
+  @Post('service-action')
+  async handleServiceAction(
+    @Request() req: any,
+    @Body()
+    body: {
+      category?: 'events' | 'training' | 'finance' | 'members' | 'b2b' | 'document' | 'all';
+      prompt: string;
+      fileName?: string;
+      fileText?: string;
+      payload?: any;
+    },
+  ) {
+    const userId = req.user?.id || 'admin';
+    const cat = body.category || 'all';
+
+    if (cat === 'events') {
+      return this.aiEventService.processEventCommand(userId, body.prompt, body.payload);
+    }
+    if (cat === 'training') {
+      return this.aiTrainingService.processTrainingCommand(userId, body.prompt, body.payload);
+    }
+    if (cat === 'finance') {
+      return this.aiFinanceService.processFinanceCommand(userId, body.prompt, body.payload);
+    }
+    if (cat === 'members') {
+      return this.aiMemberService.processMemberCommand(userId, body.prompt, body.payload);
+    }
+    if (cat === 'b2b') {
+      return this.aiB2bService.processB2bCommand(userId, body.prompt, body.payload);
+    }
+    if (cat === 'document' || body.fileName || body.fileText) {
+      return this.aiDocumentService.processDocumentCommand(userId, body.prompt, {
+        fileName: body.fileName,
+        fileText: body.fileText,
+        ...body.payload,
+      });
+    }
+
+    // Nếu chọn 'all', tự động nhận diện từ khóa để điều hướng đến service tương ứng
+    const p = (body.prompt || '').toLowerCase();
+    if (p.includes('sự kiện') || p.includes('điểm danh') || p.includes('vé') || p.includes('poster')) {
+      return this.aiEventService.processEventCommand(userId, body.prompt, body.payload);
+    }
+    if (p.includes('đào tạo') || p.includes('khóa học') || p.includes('học viên') || p.includes('bài giảng')) {
+      return this.aiTrainingService.processTrainingCommand(userId, body.prompt, body.payload);
+    }
+    if (p.includes('tiền') || p.includes('thu') || p.includes('chi') || p.includes('quỹ') || p.includes('hội phí') || p.includes('tt200')) {
+      return this.aiFinanceService.processFinanceCommand(userId, body.prompt, body.payload);
+    }
+    if (p.includes('hội viên') || p.includes('ban') || p.includes('gia nhập') || p.includes('hồ sơ')) {
+      return this.aiMemberService.processMemberCommand(userId, body.prompt, body.payload);
+    }
+    if (p.includes('cơ hội') || p.includes('deal') || p.includes('hợp tác') || p.includes('b2b') || p.includes('vốn')) {
+      return this.aiB2bService.processB2bCommand(userId, body.prompt, body.payload);
+    }
+
+    return this.aiEventService.processEventCommand(userId, body.prompt, body.payload);
   }
 
   /** POST /api/ai/execute-action — Tự động thao tác trên CSDL PostgreSQL chuẩn 113.20.107.184:6432 và trả về Thẻ Kiểm Tra (Verification Card) */

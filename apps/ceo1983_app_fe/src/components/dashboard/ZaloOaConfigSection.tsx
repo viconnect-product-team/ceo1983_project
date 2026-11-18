@@ -58,8 +58,8 @@ export const ZaloOaConfigSection: React.FC = () => {
   const [isExchangingCode, setIsExchangingCode] = useState(false);
 
   // Khối kiểm thử gửi tin nhanh
-  const [testPhone, setTestPhone] = useState("0973924819");
-  const [testRecipientName, setTestRecipientName] = useState("Phạm Văn Vũ");
+  const [testPhone, setTestPhone] = useState("");
+  const [testRecipientName, setTestRecipientName] = useState("");
   const [testType, setTestType] = useState<"event" | "forum" | "meeting" | "fee" | "custom">("event");
   const [customMessage, setCustomMessage] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -631,7 +631,7 @@ ${qrImageUrl}
               type="text"
               value={testPhone}
               onChange={(e) => setTestPhone(e.target.value)}
-              placeholder="VD: 0973924819"
+              placeholder="Nhập số điện thoại nhận tin thử nghiệm..."
               className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100"
             />
           </div>

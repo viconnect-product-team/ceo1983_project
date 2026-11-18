@@ -81,3 +81,35 @@ export const checkClubRegistrationStatus = createServerFn({ method: "POST" })
     }
   });
 
+const verifyZaloSchema = z.object({
+  phone: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  memberId: z.string().trim().optional(),
+});
+
+export const verifyZaloAndDispatchAccountFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => verifyZaloSchema.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const res = await fetchNestApiFromServer<{
+        ok?: boolean;
+        zaloFollowed?: boolean;
+        accountDispatched?: boolean;
+        message?: string;
+      }>("/public/club-registration/verify-zalo-and-dispatch-account", null, {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      return res || { ok: false, zaloFollowed: false, accountDispatched: false, message: "Lỗi kết nối máy chủ" };
+    } catch (err: any) {
+      console.error("[verifyZaloAndDispatchAccountFn] API error:", err);
+      return {
+        ok: false,
+        zaloFollowed: false,
+        accountDispatched: false,
+        message: err?.message || "Không thể kết nối máy chủ",
+      };
+    }
+  });
+

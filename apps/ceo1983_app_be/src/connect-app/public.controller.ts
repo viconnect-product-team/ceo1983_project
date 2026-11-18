@@ -62,6 +62,14 @@ export class PublicController {
     return this.connectAppService.checkClubRegistrationStatus(body);
   }
 
+  /** Xác thực hội viên đã quan tâm Zalo OA và tự động cấp gửi thông tin tài khoản */
+  @Post('club-registration/verify-zalo-and-dispatch-account')
+  async verifyZaloAndDispatchAccount(
+    @Body() body: { phone?: string; email?: string; memberId?: string },
+  ) {
+    return this.connectAppService.verifyZaloAndDispatchAccount(body);
+  }
+
   /** Admin renewal audit scope — requires JWT. */
   @Get('admin/renewal-scope')
   @UseGuards(JwtAuthGuard)

@@ -932,10 +932,6 @@ export class UsersService implements OnModuleInit {
       const dept = normalizedDept.toLowerCase();
       const userEmail = (user.email || user.username || '').toLowerCase().trim();
 
-      if (userEmail === 'vumikasa6@gmail.com') {
-        normalizedDept = 'Ban Tài chính';
-      }
-
       // Check if user has an explicit role assigned in memberRow or in roleList
       const isExplicitPresident =
         exec.includes('chủ tịch') ||
@@ -1147,11 +1143,7 @@ export class UsersService implements OnModuleInit {
         roleList.push(primaryRole);
       }
 
-      if (userEmail === 'vumikasa6@gmail.com') {
-        primaryRole = 'thanh_vien_ban_tai_chinh';
-        roleList = ['thanh_vien_ban_tai_chinh', 'member'];
-        normalizedDept = 'Ban Tài chính';
-      } else if (isSysAdminAccount) {
+      if (isSysAdminAccount) {
         if (!roleList.includes('admin')) roleList.push('admin');
         if (!roleList.includes('platform_admin')) roleList.push('platform_admin');
         if (primaryRole === 'member' || !primaryRole) primaryRole = 'admin';

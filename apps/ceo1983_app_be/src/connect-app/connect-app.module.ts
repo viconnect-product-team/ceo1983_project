@@ -29,9 +29,10 @@ import { ConnectNetworkService } from './services/network.service';
 import { ConnectAppRepository } from './connect-app.repository';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MailModule } from '../mail/mail.module';
+import { ZaloModule } from '../zalo/zalo.module';
 
 @Module({
-  imports: [PrismaModule, MailModule],
+  imports: [PrismaModule, MailModule, ZaloModule],
   controllers: [
     MeController,
     ProfileController,

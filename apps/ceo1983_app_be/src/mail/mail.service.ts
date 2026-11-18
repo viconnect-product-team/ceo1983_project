@@ -2060,6 +2060,24 @@ export class MailService {
       }
       </div>
 
+      <!-- Khối Yêu Cầu Quan Tâm Zalo OA Để Nhận Thông Tin Tài Khoản -->
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px dashed #003B95; border-radius: 16px; padding: 22px; margin: 24px 0; text-align: center;">
+        <div style="display: inline-block; background: #003B95; color: #ffffff; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">
+          ✦ BƯỚC BẮT BUỘC ĐỂ KÍCH HOẠT & NHẬN TÀI KHOẢN ✦
+        </div>
+        <h3 style="font-size: 17px; font-weight: 900; color: #001A4D; margin: 0 0 8px 0;">
+          Quan Tâm Zalo Official Account CLB CEO 1983
+        </h3>
+        <p style="font-size: 13.5px; line-height: 1.6; color: #1e3a8a; max-width: 520px; margin: 0 auto 16px auto;">
+          Để bảo mật danh tính doanh nhân và nhận thông báo chính thức về sự kiện, lịch họp và cơ hội B2B qua Zalo, Quý Anh/Chị vui lòng bấm nút <strong>Quan tâm Zalo OA</strong> bên dưới.
+          <br/><br/>
+          💡 <em>Ngay khi Quý Anh/Chị nhấn <strong>Quan tâm</strong>, hệ thống sẽ tự động xác thực và <strong>bắn thông tin tài khoản (Tên đăng nhập & Mật khẩu) về Email này cùng tin nhắn Zalo tới số điện thoại ${phone || 'của Anh/Chị'}</strong>.</em>
+        </p>
+        <a href="https://zalo.me/clbceo1983" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #0068FF 0%, #003B95 100%); color: #ffffff; font-weight: 800; font-size: 14px; text-decoration: none; padding: 13px 28px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(0, 59, 149, 0.35);">
+          👉 BẤM VÀO ĐÂY ĐỂ QUAN TÂM ZALO OA & NHẬN TÀI KHOẢN
+        </a>
+      </div>
+
       <div class="status-box">
         <strong>📌 Quy trình xét duyệt tiếp theo:</strong>
         <ol class="step-list">

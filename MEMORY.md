@@ -1,5 +1,23 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 18/11/2026 (v11.64): Xử Lý Triệt Để Lỗi WebSocket Handshake 307 Redirect & Lỗi Đăng Ký Cấp Tài Khoản / Crawl Tin Tức ceo1983.com ([NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003])**:
+  - **1. Khắc Phục Lỗi WebSocket Handshake 307 Redirect Trên Subdomain Web CRM (`crm.ceo1983.viconnect.vn`)**:
+    * **Nguyên nhân gốc rễ**: 
+      - Trong cấu hình Nginx (`deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`), location WebSocket được khai báo có dấu gạch chéo cuối (`location /socket.io/`). Khi client Socket.IO kết nối trực tiếp qua `wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket`, Nginx proxy pass sang container frontend TanStack Start (port 5004) do fallback location `/`. TanStack Start tự động chuẩn hóa URL bằng việc chuyển hướng bỏ dấu gạch chéo cuối với mã trạng thái `307 Temporary Redirect`. Chuẩn RFC 6455 của giao thức WebSocket cấm chuyển hướng (redirect) trong quá trình handshake, khiến trình duyệt ném lỗi đỏ liên tục `WebSocket connection failed: Unexpected response code: 307`.
+      - Ngoài ra, trong file `setup-ssl.sh`, khối `map $http_upgrade $connection_upgrade` bị khai báo trùng lặp với file cấu hình gốc trên máy chủ Host Nginx Ubuntu dẫn đến nguy cơ `nginx -t` báo lỗi duplicate map và không thể reload cấu hình mới.
+    * **Giải pháp đã thực hiện**:
+      - Chuyển toàn bộ các vị trí `location /socket.io/` sang `location /socket.io` (không có dấu gạch chéo cuối) ở cả `deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`, trỏ trực tiếp về container backend NestJS (port 5005 / port 4000).
+      - Bổ sung `proxy_read_timeout 86400s; proxy_send_timeout 86400s;` và `proxy_set_header Connection "upgrade";` cho WebSocket.
+      - Bổ sung cơ chế tự phát hiện và tự sửa xung đột `map` directive trong script `setup-ssl.sh` để luôn đảm bảo `nginx -t` đạt exit code 0 và tải lại cấu hình thành công.
+  - **2. Bóc Tách & Đồng Bộ Tin Tức Tự Động Từ Website Chính Thức `ceo1983.com` (`ConnectContentService`)**:
+    * Khắc phục regex tách ID bài viết: CMS `ceo1983.com` có định dạng slug kết thúc bằng chuỗi 5-7 chữ số (ví dụ `...-khoi-nghiep-nam-2026-3425360`), regex cũ nhận nhầm số năm `2026` thay vì mã bài `3425360`. Đã nâng cấp regex `/-+(\d{5,})(?:\.html|\/)?$/`.
+    * Xử lý trường ảnh đại diện: `og:image` trên `ceo1983.com` trả về root domain thay vì link ảnh; đã bổ sung bóc tách ảnh thật từ thẻ `<img src="/public/upload/...">` và lưu trữ trường `images` JSON.
+    * Tự động kích hoạt đồng bộ tin tức khi bảng `public.news` trên CSDL `113.20.107.184:6432` chưa có dữ liệu.
+  - **3. Làm Sạch Số Điện Thoại Mặc Định & Chuẩn Hóa Luồng Cấp Tài Khoản Mới Kèm Điều Kiện Quan Tâm Zalo OA**:
+    * Xóa bỏ hoàn toàn số điện thoại hardcode `0973924819` trên toàn bộ giao diện (`ZaloOaConfigSection.tsx`, `MailTemplateManager.tsx`) và backend fallback array (`zalo.service.ts`).
+    * Tái cấu trúc luồng đăng ký hội viên mới (`submitClubRegistration`): Không gửi mật khẩu tài khoản ngay lập tức khi vừa nộp đơn. Thay vào đó, hệ thống gửi email Thư Cảm Ơn Đăng Ký kèm Lời Kêu Gọi Quan Tâm Zalo OA (`https://zalo.me/clbceo1983`).
+    * Hội viên mới bấm Quan tâm Zalo OA CLB CEO 1983 và xác nhận qua endpoint `verify-zalo-and-dispatch-account`. Hệ thống tự động kiểm tra trạng thái quan tâm trong `zalo_subscribers` / webhook, sau đó tự động cấp và gửi tài khoản về Email và tin nhắn Zalo trực tiếp tới số điện thoại của hội viên đó.
+
 - **Bản cập nhật ngày 18/11/2026 (v11.63): Đào Tạo & Huấn Luyện Toàn Diện 2 Trợ Lý AI (CRM & Mobile App) Với BRD, SRS, Thiết Kế CSDL Chuẩn 113.20.107.184:6432 & API Catalog; Tự Động Thực Thi Nghiệp Vụ Kèm Thẻ Kiểm Tra Đối Soát (Verification Card); Phân Tích Thông Minh Tệp Import & Hỏi Ngược Lại Người Dùng Kèm Danh Sách Lựa Chọn (Choice Chips) ([NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001], [NODE-CORE-002])**:
   - **1. Bộ Tri Thức Chuẩn Hóa Toàn Diện Cho 2 Con AI (`ai-knowledge-and-actions.ts`)**:
     * Đúc kết toàn bộ tài liệu BRD, SRS, mô hình tổ chức 7 Ban chuyên môn (FLD-DEPT-*), quy chế Thông tư 200/2014/TT-BTC, thiết kế bảng CSDL PostgreSQL trên `113.20.107.184:6432` và danh mục toàn bộ API Backend thực thi.
@@ -1645,6 +1663,24 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.64): Xử Lý Triệt Để Lỗi WebSocket Handshake 307 Redirect & Lỗi Đăng Ký Cấp Tài Khoản / Crawl Tin Tức ceo1983.com ([NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003])**:
+  - **1. Khắc Phục Lỗi WebSocket Handshake 307 Redirect Trên Subdomain Web CRM (`crm.ceo1983.viconnect.vn`)**:
+    * **Nguyên nhân gốc rễ**: 
+      - Trong cấu hình Nginx (`deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`), location WebSocket được khai báo có dấu gạch chéo cuối (`location /socket.io/`). Khi client Socket.IO kết nối trực tiếp qua `wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket`, Nginx proxy pass sang container frontend TanStack Start (port 5004) do fallback location `/`. TanStack Start tự động chuẩn hóa URL bằng việc chuyển hướng bỏ dấu gạch chéo cuối với mã trạng thái `307 Temporary Redirect`. Chuẩn RFC 6455 của giao thức WebSocket cấm chuyển hướng (redirect) trong quá trình handshake, khiến trình duyệt ném lỗi đỏ liên tục `WebSocket connection failed: Unexpected response code: 307`.
+      - Ngoài ra, trong file `setup-ssl.sh`, khối `map $http_upgrade $connection_upgrade` bị khai báo trùng lặp với file cấu hình gốc trên máy chủ Host Nginx Ubuntu dẫn đến nguy cơ `nginx -t` báo lỗi duplicate map và không thể reload cấu hình mới.
+    * **Giải pháp đã thực hiện**:
+      - Chuyển toàn bộ các vị trí `location /socket.io/` sang `location /socket.io` (không có dấu gạch chéo cuối) ở cả `deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`, trỏ trực tiếp về container backend NestJS (port 5005 / port 4000).
+      - Bổ sung `proxy_read_timeout 86400s; proxy_send_timeout 86400s;` và `proxy_set_header Connection "upgrade";` cho WebSocket.
+      - Bổ sung cơ chế tự phát hiện và tự sửa xung đột `map` directive trong script `setup-ssl.sh` để luôn đảm bảo `nginx -t` đạt exit code 0 và tải lại cấu hình thành công.
+  - **2. Bóc Tách & Đồng Bộ Tin Tức Tự Động Từ Website Chính Thức `ceo1983.com` (`ConnectContentService`)**:
+    * Khắc phục regex tách ID bài viết: CMS `ceo1983.com` có định dạng slug kết thúc bằng chuỗi 5-7 chữ số (ví dụ `...-khoi-nghiep-nam-2026-3425360`), regex cũ nhận nhầm số năm `2026` thay vì mã bài `3425360`. Đã nâng cấp regex `/-+(\d{5,})(?:\.html|\/)?$/`.
+    * Xử lý trường ảnh đại diện: `og:image` trên `ceo1983.com` trả về root domain thay vì link ảnh; đã bổ sung bóc tách ảnh thật từ thẻ `<img src="/public/upload/...">` và lưu trữ trường `images` JSON.
+    * Tự động kích hoạt đồng bộ tin tức khi bảng `public.news` trên CSDL `113.20.107.184:6432` chưa có dữ liệu.
+  - **3. Làm Sạch Số Điện Thoại Mặc Định & Chuẩn Hóa Luồng Cấp Tài Khoản Mới Kèm Điều Kiện Quan Tâm Zalo OA**:
+    * Xóa bỏ hoàn toàn số điện thoại hardcode `0973924819` trên toàn bộ giao diện (`ZaloOaConfigSection.tsx`, `MailTemplateManager.tsx`) và backend fallback array (`zalo.service.ts`).
+    * Tái cấu trúc luồng đăng ký hội viên mới (`submitClubRegistration`): Không gửi mật khẩu tài khoản ngay lập tức khi vừa nộp đơn. Thay vào đó, hệ thống gửi email Thư Cảm Ơn Đăng Ký kèm Lời Kêu Gọi Quan Tâm Zalo OA (`https://zalo.me/clbceo1983`).
+    * Hội viên mới bấm Quan tâm Zalo OA CLB CEO 1983 và xác nhận qua endpoint `verify-zalo-and-dispatch-account`. Hệ thống tự động kiểm tra trạng thái quan tâm trong `zalo_subscribers` / webhook, sau đó tự động cấp và gửi tài khoản về Email và tin nhắn Zalo trực tiếp tới số điện thoại của hội viên đó.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.63): Đào Tạo & Huấn Luyện Toàn Diện 2 Trợ Lý AI (CRM & Mobile App) Với BRD, SRS, Thiết Kế CSDL Chuẩn 113.20.107.184:6432 & API Catalog; Tự Động Thực Thi Nghiệp Vụ Kèm Thẻ Kiểm Tra Đối Soát (Verification Card); Phân Tích Thông Minh Tệp Import & Hỏi Ngược Lại Người Dùng Kèm Danh Sách Lựa Chọn (Choice Chips) ([NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001], [NODE-CORE-002])**:
   - **1. Bộ Tri Thức Chuẩn Hóa Toàn Diện Cho 2 Con AI (`ai-knowledge-and-actions.ts`)**:
@@ -4533,6 +4569,24 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 18/11/2026 (v11.64): Xử Lý Triệt Để Lỗi WebSocket Handshake 307 Redirect & Lỗi Đăng Ký Cấp Tài Khoản / Crawl Tin Tức ceo1983.com ([NODE-CORE-004], [NODE-CORE-005], [NODE-CRM-003], [NODE-APP-003])**:
+  - **1. Khắc Phục Lỗi WebSocket Handshake 307 Redirect Trên Subdomain Web CRM (`crm.ceo1983.viconnect.vn`)**:
+    * **Nguyên nhân gốc rễ**: 
+      - Trong cấu hình Nginx (`deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`), location WebSocket được khai báo có dấu gạch chéo cuối (`location /socket.io/`). Khi client Socket.IO kết nối trực tiếp qua `wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket`, Nginx proxy pass sang container frontend TanStack Start (port 5004) do fallback location `/`. TanStack Start tự động chuẩn hóa URL bằng việc chuyển hướng bỏ dấu gạch chéo cuối với mã trạng thái `307 Temporary Redirect`. Chuẩn RFC 6455 của giao thức WebSocket cấm chuyển hướng (redirect) trong quá trình handshake, khiến trình duyệt ném lỗi đỏ liên tục `WebSocket connection failed: Unexpected response code: 307`.
+      - Ngoài ra, trong file `setup-ssl.sh`, khối `map $http_upgrade $connection_upgrade` bị khai báo trùng lặp với file cấu hình gốc trên máy chủ Host Nginx Ubuntu dẫn đến nguy cơ `nginx -t` báo lỗi duplicate map và không thể reload cấu hình mới.
+    * **Giải pháp đã thực hiện**:
+      - Chuyển toàn bộ các vị trí `location /socket.io/` sang `location /socket.io` (không có dấu gạch chéo cuối) ở cả `deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`, trỏ trực tiếp về container backend NestJS (port 5005 / port 4000).
+      - Bổ sung `proxy_read_timeout 86400s; proxy_send_timeout 86400s;` và `proxy_set_header Connection "upgrade";` cho WebSocket.
+      - Bổ sung cơ chế tự phát hiện và tự sửa xung đột `map` directive trong script `setup-ssl.sh` để luôn đảm bảo `nginx -t` đạt exit code 0 và tải lại cấu hình thành công.
+  - **2. Bóc Tách & Đồng Bộ Tin Tức Tự Động Từ Website Chính Thức `ceo1983.com` (`ConnectContentService`)**:
+    * Khắc phục regex tách ID bài viết: CMS `ceo1983.com` có định dạng slug kết thúc bằng chuỗi 5-7 chữ số (ví dụ `...-khoi-nghiep-nam-2026-3425360`), regex cũ nhận nhầm số năm `2026` thay vì mã bài `3425360`. Đã nâng cấp regex `/-+(\d{5,})(?:\.html|\/)?$/`.
+    * Xử lý trường ảnh đại diện: `og:image` trên `ceo1983.com` trả về root domain thay vì link ảnh; đã bổ sung bóc tách ảnh thật từ thẻ `<img src="/public/upload/...">` và lưu trữ trường `images` JSON.
+    * Tự động kích hoạt đồng bộ tin tức khi bảng `public.news` trên CSDL `113.20.107.184:6432` chưa có dữ liệu.
+  - **3. Làm Sạch Số Điện Thoại Mặc Định & Chuẩn Hóa Luồng Cấp Tài Khoản Mới Kèm Điều Kiện Quan Tâm Zalo OA**:
+    * Xóa bỏ hoàn toàn số điện thoại hardcode `0973924819` trên toàn bộ giao diện (`ZaloOaConfigSection.tsx`, `MailTemplateManager.tsx`) và backend fallback array (`zalo.service.ts`).
+    * Tái cấu trúc luồng đăng ký hội viên mới (`submitClubRegistration`): Không gửi mật khẩu tài khoản ngay lập tức khi vừa nộp đơn. Thay vào đó, hệ thống gửi email Thư Cảm Ơn Đăng Ký kèm Lời Kêu Gọi Quan Tâm Zalo OA (`https://zalo.me/clbceo1983`).
+    * Hội viên mới bấm Quan tâm Zalo OA CLB CEO 1983 và xác nhận qua endpoint `verify-zalo-and-dispatch-account`. Hệ thống tự động kiểm tra trạng thái quan tâm trong `zalo_subscribers` / webhook, sau đó tự động cấp và gửi tài khoản về Email và tin nhắn Zalo trực tiếp tới số điện thoại của hội viên đó.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.63): Đào Tạo & Huấn Luyện Toàn Diện 2 Trợ Lý AI (CRM & Mobile App) Với BRD, SRS, Thiết Kế CSDL Chuẩn 113.20.107.184:6432 & API Catalog; Tự Động Thực Thi Nghiệp Vụ Kèm Thẻ Kiểm Tra Đối Soát (Verification Card); Phân Tích Thông Minh Tệp Import & Hỏi Ngược Lại Người Dùng Kèm Danh Sách Lựa Chọn (Choice Chips) ([NODE-CRM-008], [NODE-APP-009], [NODE-CORE-001], [NODE-CORE-002])**:
   - **1. Bộ Tri Thức Chuẩn Hóa Toàn Diện Cho 2 Con AI (`ai-knowledge-and-actions.ts`)**:
