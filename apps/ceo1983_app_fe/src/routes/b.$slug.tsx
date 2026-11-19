@@ -35,7 +35,7 @@ import { SaveCardButton } from "@/components/business-card/SaveCardButton";
 import { BusinessProfileRelationshipActions } from "@/components/connect/BusinessProfileRelationshipActions";
 import { resolveMediaUrl } from "@/lib/api-client";
 
-const SITE = "https://qlhh.lovable.app";
+const SITE = "https://ceo1983.viconnect.vn";
 
 export const Route = createFileRoute("/b/$slug")({
   // SSR enabled so search engines, social platforms and AI crawlers receive a

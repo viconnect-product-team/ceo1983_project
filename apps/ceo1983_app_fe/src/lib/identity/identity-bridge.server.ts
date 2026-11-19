@@ -124,12 +124,12 @@ export async function resolveBusinessCardOwnerContext(
   const { data: members } = await supabase.from("members").select("user_id").eq("id", memberId);
 
   const linked = (members ?? [])
-    .map((m) => m.user_id as string | null)
-    .filter((u): u is string => Boolean(u));
-  const unique = Array.from(new Set(linked));
+    .map((m: any) => m.user_id as string | null)
+    .filter((u: any): u is string => Boolean(u));
+  const unique = Array.from(new Set<string>(linked));
 
   if (unique.length === 1) {
-    return { ...base, ownerUserId: unique[0], ownershipMode: "legacy_member" };
+    return { ...base, ownerUserId: unique[0]!, ownershipMode: "legacy_member" };
   }
 
   // 0 (unlinked) or >1 (ambiguous) — never guess.

@@ -44,7 +44,7 @@ export const getMemberPassesFn = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(50);
 
-    const passes: AdminPass[] = (passRows ?? []).map((row) => {
+    const passes: AdminPass[] = (passRows ?? []).map((row: any) => {
       const p = row as Record<string, unknown>;
       return {
         id: p.id as string,
@@ -65,7 +65,7 @@ export const getMemberPassesFn = createServerFn({ method: "GET" })
       };
     });
 
-    const events: IdentityEvent[] = (eventRows ?? []).map((row) => {
+    const events: IdentityEvent[] = (eventRows ?? []).map((row: any) => {
       const e = row as Record<string, unknown>;
       return {
         id: e.id as string,

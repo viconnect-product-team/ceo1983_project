@@ -42,7 +42,7 @@ export async function listMyDeviceSessions(
     .eq("user_id", userId)
     .order("last_seen_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => mapRow(row, currentKey));
+  return (data ?? []).map((row: any) => mapRow(row, currentKey));
 }
 
 /**
