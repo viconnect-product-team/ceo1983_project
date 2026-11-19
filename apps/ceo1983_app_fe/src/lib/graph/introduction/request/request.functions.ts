@@ -1,7 +1,7 @@
 // BC-6.2 — Introduction Request server-fn RPC boundary.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import type { IntroductionRequestDTO, IntroductionRequestPageDTO } from "./types";
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";

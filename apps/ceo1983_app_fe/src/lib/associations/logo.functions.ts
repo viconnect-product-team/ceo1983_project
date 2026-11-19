@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer, getBaseApiUrl } from "@/lib/api-client";
 
 export const updateAssociationLogoFn = createServerFn({ method: "POST" })

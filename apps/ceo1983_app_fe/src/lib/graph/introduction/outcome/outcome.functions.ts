@@ -1,7 +1,7 @@
 // BC-6.4 — Introduction Outcome server-fn RPC boundary.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import type { IntroductionOutcomeDTO, IntroductionOutcomePageDTO } from "./types";
 
 const uuid = z.string().uuid();

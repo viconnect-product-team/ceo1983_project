@@ -4,7 +4,7 @@
 // requireSupabaseAuth middleware which fails in standalone NestJS env.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer, fetchNestApi } from "../../api-client";
 import type {
   BcMobileMomentPrepareResult,

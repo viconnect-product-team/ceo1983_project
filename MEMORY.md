@@ -1,5 +1,68 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 19/11/2026 (v11.69): Chẩn Đoán Dứt Điểm Sự Cố 502 Bad Gateway Trên `https://crm.ceo1983.viconnect.vn`, Cơ Chế Đột Tử Do Linux OOM Killer Sau Chu Kỳ 24h & Thiết Lập Phòng Tuyến Giới Hạn Bộ Nhớ (Memory Limits) + Log Rotation Cho Docker Compose ([NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Kết Quả Quét Hạ Tầng & Chẩn Đoán Thực Tế Trên VPS `14.225.217.232`**:
+    * Quét trực tiếp toàn bộ các cổng dịch vụ:
+      + Cổng `80` & `443` (Host Nginx): Đang chạy bình thường.
+      + Cổng `5002` (Frontend App Hội viên `ceo1983-frontend-prod`): **ĐANG SỐNG (HTTP 200 OK)** -> `https://ceo1983.viconnect.vn` hoạt động bình thường.
+      + Cổng `5003` (Backend App Hội viên `ceo1983-backend-prod`): **ĐANG SỐNG**.
+      + Cổng `5004` (Frontend CRM Quản trị `crm-frontend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+      + Cổng `5005` (Backend CRM Quản trị `crm-backend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+    * Cơ chế lỗi: Nginx host nhận request từ domain `https://crm.ceo1983.viconnect.vn`, chuyển tiếp tới upstream `http://127.0.0.1:5004`. Do container `crm-frontend-prod` đã dừng, Nginx không thể kết nối tới upstream và ngay lập tức phản hồi mã lỗi `502 Bad Gateway (nginx/1.18.0 (Ubuntu))`.
+  - **2. Nguyên Nhân Gốc Rễ Khiến Hệ Thống Bị "Sập Sau Chưa Đầy 24 Giờ"**:
+    * **Tràn RAM máy chủ & Linux OOM Killer**: VPS `14.225.217.232` gánh đồng thời Nginx, PostgreSQL, MinIO, Mobile App (FE + BE), Web CRM (FE + BE) và cụm container ViOne. Ứng dụng SSR TanStack Start/Nitro và NestJS khi chạy liên tục không có trần bộ nhớ sẽ phình RAM dần theo thời gian. Khi tổng RAM của VPS đạt 100%, nhân Linux kích hoạt `oom-killer` và gửi tín hiệu `SIGKILL` tiêu diệt tiến trình chiếm dụng nhiều bộ nhớ nhất (cặp container CRM).
+    * **Không có giới hạn tài nguyên trong Docker Compose**: File `deploy/crm/docker-compose.yml` trước đây chưa khai báo `mem_limit`, `mem_reservation`, và chưa cấu hình cờ khống chế Node.js heap `NODE_OPTIONS=--max-old-space-size=768`.
+    * **Phụ thuộc mạng ngoài `vione-network`**: Khai báo mạng ngoài `vione-network: external: true` nếu mạng này bị lỗi hoặc không khởi tạo kịp trên VPS sẽ khiến Docker Compose fail không thể tự khôi phục khi restart.
+  - **3. Các Biện Pháp Tăng Cường & Phòng Vệ Đã Thực Hiện Cục Bộ**:
+    * `deploy/crm/docker-compose.yml` & `deploy/ceo1983/docker-compose.yml`:
+      + Thiết lập cứng trần bộ nhớ: `mem_limit: 1024m` và `mem_reservation: 256m` cho từng service.
+      + Thiết lập cờ Node.js: `NODE_OPTIONS=--max-old-space-size=768` giúp V8 Engine chủ động dọn rác (GC) trước khi chạm mốc 1GB.
+      + Cấu hình xoay vòng nhật ký (Log Rotation): `logging.options.max-size: "10m"` và `max-file: "3"` chống tràn ổ đĩa VPS.
+      + Loại bỏ phụ thuộc mạng thừa `vione-network`, chỉ dùng mạng nội bộ thuần khiết `ceo1983-network`.
+    * `deploy/crm/Dockerfile.frontend` & `deploy/ceo1983/Dockerfile.frontend`: Bổ sung `ENV NODE_OPTIONS="--max-old-space-size=768"`.
+  - **4. Hướng Dẫn Kích Hoạt Lại CRM Trên Máy Chủ Ngay Lập Tức**:
+    * Cách 1 (Nhanh nhất - 5 giây trên VPS): Người dùng truy cập SSH vào VPS `14.225.217.232` và gõ:
+      ```bash
+      cd /root/crm && docker compose up -d
+      ```
+    * Cách 2 (Qua GitHub Actions): Tạo PR hoặc push nhánh `dev` sang `main`, workflow GitHub Actions sẽ tự động build và deploy toàn bộ lên VPS qua SSH secret.
+
+- **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
+  - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
+    * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
+    * Đưa `WelcomeMemberModal.tsx` về no-op trả về `null`, không còn xuất hiện cửa sổ bật lên cản trở trải nghiệm khi hội viên mở ứng dụng.
+  - **2. Khắc Phục Dứt Điểm Lỗi WebSocket Handshake 307**:
+    * Nguyên nhân: TanStack Start / Nitro frontend container (cổng 5004) chuẩn hóa URL không có dấu gạch chéo cuối bằng mã chuyển hướng 307 (Temporary Redirect), khiến các kết nối `wss://crm.ceo1983.viconnect.vn/socket.io/?...` bị trả về mã 307 thay vì bắt tay thành công sang NestJS.
+    * Giải pháp: Nâng cấp Nginx configuration trong `deploy/ssl/setup-ssl.sh` và `deploy/ssl/nginx.conf` với tiền tố ưu tiên cao nhất `location ^~ /socket.io`, bật `proxy_redirect off;` và `proxy_buffering off;`. Bổ sung fallback `transports: ["websocket", "polling"]` trong `use-connect-app-socket.ts`.
+  - **3. Sửa Lỗi React Hydration Mismatch (Minified React Error #418)**:
+    * Gỡ bỏ component `MockModeBanner` khỏi `apps/ceo1983_app_fe/src/routes/__root.tsx`.
+    * Thiết lập thuộc tính `suppressHydrationWarning={true}` tường minh trên cả thẻ `<html>` và `<body>` trong `RootShell`.
+  - **4. Triệt Tiêu Toàn Bộ Tàn Dư Supabase & Xóa Bỏ Hoàn Toàn Dữ Liệu Mock Fallback**:
+    * Xây dựng tầng middleware xác thực NestJS JWT thuần khiết: `apps/ceo1983_app_fe/src/lib/auth-middleware.ts` cung cấp `attachNestAuth`, `requireNestAuth` và `optionalNestAuth`.
+    * Cập nhật `apps/ceo1983_app_fe/src/start.ts` sử dụng `attachNestAuth`.
+    * Chuyển đổi đồng bộ toàn bộ 116 tệp chức năng `.functions.ts` sang sử dụng `@/lib/auth-middleware`.
+    * Gỡ bỏ gói `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * Decouple `client.ts` và `client.server.ts` khỏi Supabase SDK bằng stub proxy độc lập, không phụ thuộc bên ngoài.
+    * Dọn dẹp triệt để các đoạn code mock và fallback tĩnh (`DEFAULT_MEMBERS`, `DEFAULT_FEE_INVOICES`) trong `dashboard.functions.ts`, `fees.functions.ts`, `members.functions.ts`, `directory.functions.ts`, `ExecutiveDashboard.tsx`, `members.index.tsx`, `companies.index.tsx`, `members.$memberId.tsx`, `departments.tsx`, `account-settings.index.tsx`.
+    * Đặt `DEFAULT_MEMBERS = []` và `DEFAULT_FEE_INVOICES = []` để triệt tiêu mọi khả năng rò rỉ fake data ra ngoài UI.
+  - **5. Xây Dựng Kiến Trúc API Khách Tập Trung Theo Phân Hệ (Domain-Driven API Architecture)**:
+    * Khởi tạo thư mục chuẩn mực `apps/ceo1983_app_fe/src/api/` với các module độc lập:
+      + `http-client.ts`: Quản lý HTTP client đồng nhất, tự động tiêm Bearer token từ `localStorage` hoặc SSR headers, bắt lỗi HTTP chuẩn xác.
+      + `auth.api.ts`: API đăng nhập, đăng xuất, làm mới token, lấy thông tin tài khoản hiện tại, đổi mật khẩu.
+      + `members.api.ts`: API quản lý danh sách hội viên, chi tiết, phòng ban ban điều hành, đặc quyền hội viên, check-in.
+      + `opportunities.api.ts`: API cơ hội giao thương B2B, phân quyền phạm vi công khai/chỉ định thành viên riêng tư, gửi đề xuất Deal, sắp xếp deal theo tỷ suất lợi nhuận cao nhất, xác nhận chốt deal.
+      + `events.api.ts`: API sự kiện, đăng ký, soát vé QR, nhập file Excel khách mời và tự động gửi thư mời qua email.
+      + `meetings.api.ts`: API kết nối B2B 1-1, đặt lịch hẹn gặp gỡ, chấp thuận lịch hẹn (đồng bộ tự động vào Lịch cá nhân & Nhật ký hoạt động chỉ hiển thị cho 2 đối tác kết nối), kích hoạt gửi email nhắc hẹn.
+      + `finance.api.ts`: API hóa đơn, thanh toán hội phí, thu chi, xuất báo cáo tài chính cụ thể theo danh mục, khoảng thời gian và người xuất báo cáo.
+      + `marketplace.api.ts`: API sàn giao thương sản phẩm, đăng sản phẩm, báo giá, lịch sử báo giá.
+      + `documents.api.ts`: API văn bản, quy chế, biểu mẫu, tài liệu CLB.
+      + `notifications.api.ts`: API thông báo hệ thống, số lượng chưa đọc, đánh dấu đã đọc.
+      + `index.ts`: Điểm xuất tổng hợp `api` và từng API service riêng lẻ.
+  - **6. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL duy nhất của toàn dự án: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Backend NestJS `apps/ceo1983_app_be`: `npm run build` hoàn thành với 0 lỗi (Exit Code 0).
+    * Tuân thủ quy tắc tối cao: Không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
   - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
     * **Case 1 (Public Opportunity & Deal Margin Ranking)**:
@@ -1742,6 +1805,69 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.69): Chẩn Đoán Dứt Điểm Sự Cố 502 Bad Gateway Trên `https://crm.ceo1983.viconnect.vn`, Cơ Chế Đột Tử Do Linux OOM Killer Sau Chu Kỳ 24h & Thiết Lập Phòng Tuyến Giới Hạn Bộ Nhớ (Memory Limits) + Log Rotation Cho Docker Compose ([NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Kết Quả Quét Hạ Tầng & Chẩn Đoán Thực Tế Trên VPS `14.225.217.232`**:
+    * Quét trực tiếp toàn bộ các cổng dịch vụ:
+      + Cổng `80` & `443` (Host Nginx): Đang chạy bình thường.
+      + Cổng `5002` (Frontend App Hội viên `ceo1983-frontend-prod`): **ĐANG SỐNG (HTTP 200 OK)** -> `https://ceo1983.viconnect.vn` hoạt động bình thường.
+      + Cổng `5003` (Backend App Hội viên `ceo1983-backend-prod`): **ĐANG SỐNG**.
+      + Cổng `5004` (Frontend CRM Quản trị `crm-frontend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+      + Cổng `5005` (Backend CRM Quản trị `crm-backend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+    * Cơ chế lỗi: Nginx host nhận request từ domain `https://crm.ceo1983.viconnect.vn`, chuyển tiếp tới upstream `http://127.0.0.1:5004`. Do container `crm-frontend-prod` đã dừng, Nginx không thể kết nối tới upstream và ngay lập tức phản hồi mã lỗi `502 Bad Gateway (nginx/1.18.0 (Ubuntu))`.
+  - **2. Nguyên Nhân Gốc Rễ Khiến Hệ Thống Bị "Sập Sau Chưa Đầy 24 Giờ"**:
+    * **Tràn RAM máy chủ & Linux OOM Killer**: VPS `14.225.217.232` gánh đồng thời Nginx, PostgreSQL, MinIO, Mobile App (FE + BE), Web CRM (FE + BE) và cụm container ViOne. Ứng dụng SSR TanStack Start/Nitro và NestJS khi chạy liên tục không có trần bộ nhớ sẽ phình RAM dần theo thời gian. Khi tổng RAM của VPS đạt 100%, nhân Linux kích hoạt `oom-killer` và gửi tín hiệu `SIGKILL` tiêu diệt tiến trình chiếm dụng nhiều bộ nhớ nhất (cặp container CRM).
+    * **Không có giới hạn tài nguyên trong Docker Compose**: File `deploy/crm/docker-compose.yml` trước đây chưa khai báo `mem_limit`, `mem_reservation`, và chưa cấu hình cờ khống chế Node.js heap `NODE_OPTIONS=--max-old-space-size=768`.
+    * **Phụ thuộc mạng ngoài `vione-network`**: Khai báo mạng ngoài `vione-network: external: true` nếu mạng này bị lỗi hoặc không khởi tạo kịp trên VPS sẽ khiến Docker Compose fail không thể tự khôi phục khi restart.
+  - **3. Các Biện Pháp Tăng Cường & Phòng Vệ Đã Thực Hiện Cục Bộ**:
+    * `deploy/crm/docker-compose.yml` & `deploy/ceo1983/docker-compose.yml`:
+      + Thiết lập cứng trần bộ nhớ: `mem_limit: 1024m` và `mem_reservation: 256m` cho từng service.
+      + Thiết lập cờ Node.js: `NODE_OPTIONS=--max-old-space-size=768` giúp V8 Engine chủ động dọn rác (GC) trước khi chạm mốc 1GB.
+      + Cấu hình xoay vòng nhật ký (Log Rotation): `logging.options.max-size: "10m"` và `max-file: "3"` chống tràn ổ đĩa VPS.
+      + Loại bỏ phụ thuộc mạng thừa `vione-network`, chỉ dùng mạng nội bộ thuần khiết `ceo1983-network`.
+    * `deploy/crm/Dockerfile.frontend` & `deploy/ceo1983/Dockerfile.frontend`: Bổ sung `ENV NODE_OPTIONS="--max-old-space-size=768"`.
+  - **4. Hướng Dẫn Kích Hoạt Lại CRM Trên Máy Chủ Ngay Lập Tức**:
+    * Cách 1 (Nhanh nhất - 5 giây trên VPS): Người dùng truy cập SSH vào VPS `14.225.217.232` và gõ:
+      ```bash
+      cd /root/crm && docker compose up -d
+      ```
+    * Cách 2 (Qua GitHub Actions): Tạo PR hoặc push nhánh `dev` sang `main`, workflow GitHub Actions sẽ tự động build và deploy toàn bộ lên VPS qua SSH secret.
+
+- **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
+  - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
+    * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
+    * Đưa `WelcomeMemberModal.tsx` về no-op trả về `null`, không còn xuất hiện cửa sổ bật lên cản trở trải nghiệm khi hội viên mở ứng dụng.
+  - **2. Khắc Phục Dứt Điểm Lỗi WebSocket Handshake 307**:
+    * Nguyên nhân: TanStack Start / Nitro frontend container (cổng 5004) chuẩn hóa URL không có dấu gạch chéo cuối bằng mã chuyển hướng 307 (Temporary Redirect), khiến các kết nối `wss://crm.ceo1983.viconnect.vn/socket.io/?...` bị trả về mã 307 thay vì bắt tay thành công sang NestJS.
+    * Giải pháp: Nâng cấp Nginx configuration trong `deploy/ssl/setup-ssl.sh` và `deploy/ssl/nginx.conf` với tiền tố ưu tiên cao nhất `location ^~ /socket.io`, bật `proxy_redirect off;` và `proxy_buffering off;`. Bổ sung fallback `transports: ["websocket", "polling"]` trong `use-connect-app-socket.ts`.
+  - **3. Sửa Lỗi React Hydration Mismatch (Minified React Error #418)**:
+    * Gỡ bỏ component `MockModeBanner` khỏi `apps/ceo1983_app_fe/src/routes/__root.tsx`.
+    * Thiết lập thuộc tính `suppressHydrationWarning={true}` tường minh trên cả thẻ `<html>` và `<body>` trong `RootShell`.
+  - **4. Triệt Tiêu Toàn Bộ Tàn Dư Supabase & Xóa Bỏ Hoàn Toàn Dữ Liệu Mock Fallback**:
+    * Xây dựng tầng middleware xác thực NestJS JWT thuần khiết: `apps/ceo1983_app_fe/src/lib/auth-middleware.ts` cung cấp `attachNestAuth`, `requireNestAuth` và `optionalNestAuth`.
+    * Cập nhật `apps/ceo1983_app_fe/src/start.ts` sử dụng `attachNestAuth`.
+    * Chuyển đổi đồng bộ toàn bộ 116 tệp chức năng `.functions.ts` sang sử dụng `@/lib/auth-middleware`.
+    * Gỡ bỏ gói `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * Decouple `client.ts` và `client.server.ts` khỏi Supabase SDK bằng stub proxy độc lập, không phụ thuộc bên ngoài.
+    * Dọn dẹp triệt để các đoạn code mock và fallback tĩnh (`DEFAULT_MEMBERS`, `DEFAULT_FEE_INVOICES`) trong `dashboard.functions.ts`, `fees.functions.ts`, `members.functions.ts`, `directory.functions.ts`, `ExecutiveDashboard.tsx`, `members.index.tsx`, `companies.index.tsx`, `members.$memberId.tsx`, `departments.tsx`, `account-settings.index.tsx`.
+    * Đặt `DEFAULT_MEMBERS = []` và `DEFAULT_FEE_INVOICES = []` để triệt tiêu mọi khả năng rò rỉ fake data ra ngoài UI.
+  - **5. Xây Dựng Kiến Trúc API Khách Tập Trung Theo Phân Hệ (Domain-Driven API Architecture)**:
+    * Khởi tạo thư mục chuẩn mực `apps/ceo1983_app_fe/src/api/` với các module độc lập:
+      + `http-client.ts`: Quản lý HTTP client đồng nhất, tự động tiêm Bearer token từ `localStorage` hoặc SSR headers, bắt lỗi HTTP chuẩn xác.
+      + `auth.api.ts`: API đăng nhập, đăng xuất, làm mới token, lấy thông tin tài khoản hiện tại, đổi mật khẩu.
+      + `members.api.ts`: API quản lý danh sách hội viên, chi tiết, phòng ban ban điều hành, đặc quyền hội viên, check-in.
+      + `opportunities.api.ts`: API cơ hội giao thương B2B, phân quyền phạm vi công khai/chỉ định thành viên riêng tư, gửi đề xuất Deal, sắp xếp deal theo tỷ suất lợi nhuận cao nhất, xác nhận chốt deal.
+      + `events.api.ts`: API sự kiện, đăng ký, soát vé QR, nhập file Excel khách mời và tự động gửi thư mời qua email.
+      + `meetings.api.ts`: API kết nối B2B 1-1, đặt lịch hẹn gặp gỡ, chấp thuận lịch hẹn (đồng bộ tự động vào Lịch cá nhân & Nhật ký hoạt động chỉ hiển thị cho 2 đối tác kết nối), kích hoạt gửi email nhắc hẹn.
+      + `finance.api.ts`: API hóa đơn, thanh toán hội phí, thu chi, xuất báo cáo tài chính cụ thể theo danh mục, khoảng thời gian và người xuất báo cáo.
+      + `marketplace.api.ts`: API sàn giao thương sản phẩm, đăng sản phẩm, báo giá, lịch sử báo giá.
+      + `documents.api.ts`: API văn bản, quy chế, biểu mẫu, tài liệu CLB.
+      + `notifications.api.ts`: API thông báo hệ thống, số lượng chưa đọc, đánh dấu đã đọc.
+      + `index.ts`: Điểm xuất tổng hợp `api` và từng API service riêng lẻ.
+  - **6. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL duy nhất của toàn dự án: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Backend NestJS `apps/ceo1983_app_be`: `npm run build` hoàn thành với 0 lỗi (Exit Code 0).
+    * Tuân thủ quy tắc tối cao: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
   - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
@@ -4727,6 +4853,69 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.69): Chẩn Đoán Dứt Điểm Sự Cố 502 Bad Gateway Trên `https://crm.ceo1983.viconnect.vn`, Cơ Chế Đột Tử Do Linux OOM Killer Sau Chu Kỳ 24h & Thiết Lập Phòng Tuyến Giới Hạn Bộ Nhớ (Memory Limits) + Log Rotation Cho Docker Compose ([NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Kết Quả Quét Hạ Tầng & Chẩn Đoán Thực Tế Trên VPS `14.225.217.232`**:
+    * Quét trực tiếp toàn bộ các cổng dịch vụ:
+      + Cổng `80` & `443` (Host Nginx): Đang chạy bình thường.
+      + Cổng `5002` (Frontend App Hội viên `ceo1983-frontend-prod`): **ĐANG SỐNG (HTTP 200 OK)** -> `https://ceo1983.viconnect.vn` hoạt động bình thường.
+      + Cổng `5003` (Backend App Hội viên `ceo1983-backend-prod`): **ĐANG SỐNG**.
+      + Cổng `5004` (Frontend CRM Quản trị `crm-frontend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+      + Cổng `5005` (Backend CRM Quản trị `crm-backend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+    * Cơ chế lỗi: Nginx host nhận request từ domain `https://crm.ceo1983.viconnect.vn`, chuyển tiếp tới upstream `http://127.0.0.1:5004`. Do container `crm-frontend-prod` đã dừng, Nginx không thể kết nối tới upstream và ngay lập tức phản hồi mã lỗi `502 Bad Gateway (nginx/1.18.0 (Ubuntu))`.
+  - **2. Nguyên Nhân Gốc Rễ Khiến Hệ Thống Bị "Sập Sau Chưa Đầy 24 Giờ"**:
+    * **Tràn RAM máy chủ & Linux OOM Killer**: VPS `14.225.217.232` gánh đồng thời Nginx, PostgreSQL, MinIO, Mobile App (FE + BE), Web CRM (FE + BE) và cụm container ViOne. Ứng dụng SSR TanStack Start/Nitro và NestJS khi chạy liên tục không có trần bộ nhớ sẽ phình RAM dần theo thời gian. Khi tổng RAM của VPS đạt 100%, nhân Linux kích hoạt `oom-killer` và gửi tín hiệu `SIGKILL` tiêu diệt tiến trình chiếm dụng nhiều bộ nhớ nhất (cặp container CRM).
+    * **Không có giới hạn tài nguyên trong Docker Compose**: File `deploy/crm/docker-compose.yml` trước đây chưa khai báo `mem_limit`, `mem_reservation`, và chưa cấu hình cờ khống chế Node.js heap `NODE_OPTIONS=--max-old-space-size=768`.
+    * **Phụ thuộc mạng ngoài `vione-network`**: Khai báo mạng ngoài `vione-network: external: true` nếu mạng này bị lỗi hoặc không khởi tạo kịp trên VPS sẽ khiến Docker Compose fail không thể tự khôi phục khi restart.
+  - **3. Các Biện Pháp Tăng Cường & Phòng Vệ Đã Thực Hiện Cục Bộ**:
+    * `deploy/crm/docker-compose.yml` & `deploy/ceo1983/docker-compose.yml`:
+      + Thiết lập cứng trần bộ nhớ: `mem_limit: 1024m` và `mem_reservation: 256m` cho từng service.
+      + Thiết lập cờ Node.js: `NODE_OPTIONS=--max-old-space-size=768` giúp V8 Engine chủ động dọn rác (GC) trước khi chạm mốc 1GB.
+      + Cấu hình xoay vòng nhật ký (Log Rotation): `logging.options.max-size: "10m"` và `max-file: "3"` chống tràn ổ đĩa VPS.
+      + Loại bỏ phụ thuộc mạng thừa `vione-network`, chỉ dùng mạng nội bộ thuần khiết `ceo1983-network`.
+    * `deploy/crm/Dockerfile.frontend` & `deploy/ceo1983/Dockerfile.frontend`: Bổ sung `ENV NODE_OPTIONS="--max-old-space-size=768"`.
+  - **4. Hướng Dẫn Kích Hoạt Lại CRM Trên Máy Chủ Ngay Lập Tức**:
+    * Cách 1 (Nhanh nhất - 5 giây trên VPS): Người dùng truy cập SSH vào VPS `14.225.217.232` và gõ:
+      ```bash
+      cd /root/crm && docker compose up -d
+      ```
+    * Cách 2 (Qua GitHub Actions): Tạo PR hoặc push nhánh `dev` sang `main`, workflow GitHub Actions sẽ tự động build và deploy toàn bộ lên VPS qua SSH secret.
+
+- **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
+  - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
+    * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
+    * Đưa `WelcomeMemberModal.tsx` về no-op trả về `null`, không còn xuất hiện cửa sổ bật lên cản trở trải nghiệm khi hội viên mở ứng dụng.
+  - **2. Khắc Phục Dứt Điểm Lỗi WebSocket Handshake 307**:
+    * Nguyên nhân: TanStack Start / Nitro frontend container (cổng 5004) chuẩn hóa URL không có dấu gạch chéo cuối bằng mã chuyển hướng 307 (Temporary Redirect), khiến các kết nối `wss://crm.ceo1983.viconnect.vn/socket.io/?...` bị trả về mã 307 thay vì bắt tay thành công sang NestJS.
+    * Giải pháp: Nâng cấp Nginx configuration trong `deploy/ssl/setup-ssl.sh` và `deploy/ssl/nginx.conf` với tiền tố ưu tiên cao nhất `location ^~ /socket.io`, bật `proxy_redirect off;` và `proxy_buffering off;`. Bổ sung fallback `transports: ["websocket", "polling"]` trong `use-connect-app-socket.ts`.
+  - **3. Sửa Lỗi React Hydration Mismatch (Minified React Error #418)**:
+    * Gỡ bỏ component `MockModeBanner` khỏi `apps/ceo1983_app_fe/src/routes/__root.tsx`.
+    * Thiết lập thuộc tính `suppressHydrationWarning={true}` tường minh trên cả thẻ `<html>` và `<body>` trong `RootShell`.
+  - **4. Triệt Tiêu Toàn Bộ Tàn Dư Supabase & Xóa Bỏ Hoàn Toàn Dữ Liệu Mock Fallback**:
+    * Xây dựng tầng middleware xác thực NestJS JWT thuần khiết: `apps/ceo1983_app_fe/src/lib/auth-middleware.ts` cung cấp `attachNestAuth`, `requireNestAuth` và `optionalNestAuth`.
+    * Cập nhật `apps/ceo1983_app_fe/src/start.ts` sử dụng `attachNestAuth`.
+    * Chuyển đổi đồng bộ toàn bộ 116 tệp chức năng `.functions.ts` sang sử dụng `@/lib/auth-middleware`.
+    * Gỡ bỏ gói `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * Decouple `client.ts` và `client.server.ts` khỏi Supabase SDK bằng stub proxy độc lập, không phụ thuộc bên ngoài.
+    * Dọn dẹp triệt để các đoạn code mock và fallback tĩnh (`DEFAULT_MEMBERS`, `DEFAULT_FEE_INVOICES`) trong `dashboard.functions.ts`, `fees.functions.ts`, `members.functions.ts`, `directory.functions.ts`, `ExecutiveDashboard.tsx`, `members.index.tsx`, `companies.index.tsx`, `members.$memberId.tsx`, `departments.tsx`, `account-settings.index.tsx`.
+    * Đặt `DEFAULT_MEMBERS = []` và `DEFAULT_FEE_INVOICES = []` để triệt tiêu mọi khả năng rò rỉ fake data ra ngoài UI.
+  - **5. Xây Dựng Kiến Trúc API Khách Tập Trung Theo Phân Hệ (Domain-Driven API Architecture)**:
+    * Khởi tạo thư mục chuẩn mực `apps/ceo1983_app_fe/src/api/` với các module độc lập:
+      + `http-client.ts`: Quản lý HTTP client đồng nhất, tự động tiêm Bearer token từ `localStorage` hoặc SSR headers, bắt lỗi HTTP chuẩn xác.
+      + `auth.api.ts`: API đăng nhập, đăng xuất, làm mới token, lấy thông tin tài khoản hiện tại, đổi mật khẩu.
+      + `members.api.ts`: API quản lý danh sách hội viên, chi tiết, phòng ban ban điều hành, đặc quyền hội viên, check-in.
+      + `opportunities.api.ts`: API cơ hội giao thương B2B, phân quyền phạm vi công khai/chỉ định thành viên riêng tư, gửi đề xuất Deal, sắp xếp deal theo tỷ suất lợi nhuận cao nhất, xác nhận chốt deal.
+      + `events.api.ts`: API sự kiện, đăng ký, soát vé QR, nhập file Excel khách mời và tự động gửi thư mời qua email.
+      + `meetings.api.ts`: API kết nối B2B 1-1, đặt lịch hẹn gặp gỡ, chấp thuận lịch hẹn (đồng bộ tự động vào Lịch cá nhân & Nhật ký hoạt động chỉ hiển thị cho 2 đối tác kết nối), kích hoạt gửi email nhắc hẹn.
+      + `finance.api.ts`: API hóa đơn, thanh toán hội phí, thu chi, xuất báo cáo tài chính cụ thể theo danh mục, khoảng thời gian và người xuất báo cáo.
+      + `marketplace.api.ts`: API sàn giao thương sản phẩm, đăng sản phẩm, báo giá, lịch sử báo giá.
+      + `documents.api.ts`: API văn bản, quy chế, biểu mẫu, tài liệu CLB.
+      + `notifications.api.ts`: API thông báo hệ thống, số lượng chưa đọc, đánh dấu đã đọc.
+      + `index.ts`: Điểm xuất tổng hợp `api` và từng API service riêng lẻ.
+  - **6. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL duy nhất của toàn dự án: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Backend NestJS `apps/ceo1983_app_be`: `npm run build` hoàn thành với 0 lỗi (Exit Code 0).
+    * Tuân thủ quy tắc tối cao: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
   - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:

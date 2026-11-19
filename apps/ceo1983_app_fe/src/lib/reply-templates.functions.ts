@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { resolveAssociationId } from "@/lib/current-member";
 
 // Reply templates managed per-association. Channel mirrors the business-card

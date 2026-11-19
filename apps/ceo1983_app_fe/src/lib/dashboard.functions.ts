@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 export type DashboardStats = {
@@ -48,11 +48,10 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         fetchNestApiFromServer<any[]>("/admin/transactions", token),
       ]);
 
-      if (membersRes.status === "fulfilled" && Array.isArray(membersRes.value) && membersRes.value.length > 0) {
+      if (membersRes.status === "fulfilled" && Array.isArray(membersRes.value)) {
         nestMembers = membersRes.value;
       } else {
-        const { DEFAULT_MEMBERS } = await import("./members-data");
-        nestMembers = DEFAULT_MEMBERS;
+        nestMembers = [];
       }
       if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
         nestEvents = eventsRes.value;

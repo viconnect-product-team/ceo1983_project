@@ -12,7 +12,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { createBusinessMeetingSDK } from "./business-meetings/sdk";
 import type { MeetingServiceDeps } from "./business-meetings/service";
 import { BUSINESS_MEETING_TYPES, BUSINESS_MEETING_LOCATION_TYPES } from "./business-meetings/types";

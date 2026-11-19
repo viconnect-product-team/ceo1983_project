@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import type { BusinessConnectAICapability } from "@/lib/business-connect/intelligence/registry";
 import type { IntelligenceScope, ViewerContext } from "@/lib/business-connect/intelligence/types";
 import { fnv1a64Hex } from "@/lib/business-connect/intelligence/persistence-hash";

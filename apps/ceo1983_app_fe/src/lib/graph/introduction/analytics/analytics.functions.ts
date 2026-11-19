@@ -1,7 +1,7 @@
 // BC-6.7 — Introduction Analytics server-fn boundary.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import type {
   AnalyticsFilters,
   ConfidencePerformanceDTO,

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer, NEST_API_URL } from "./api-client";
 import type { Product, ProductCategoryKey, QuoteRequest } from "./marketplace-data";
 

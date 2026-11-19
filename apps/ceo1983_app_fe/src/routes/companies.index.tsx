@@ -102,18 +102,14 @@ function CompaniesPage() {
       if (!Array.isArray(res) || res.length === 0) {
         res = await fetchNestApi<Member[]>("/members");
       }
-      if (Array.isArray(res) && res.length > 0) {
+      if (Array.isArray(res)) {
         setMembers(res);
         return;
       }
-      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
-      setMembers(DEFAULT_MEMBERS.filter((m) => m.type === "company" || Boolean(m.company)));
+      setMembers([]);
     } catch (err) {
       console.error("[Companies] Failed to load companies:", err);
-      try {
-        const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
-        setMembers(DEFAULT_MEMBERS.filter((m) => m.type === "company" || Boolean(m.company)));
-      } catch {}
+      setMembers([]);
     }
   };
 

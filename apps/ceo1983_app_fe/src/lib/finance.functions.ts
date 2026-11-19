@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+import { requireNestAuth } from "@/lib/auth-middleware";
+import { fetchNestApiFromServer } from "./api-client";
 
 export type Transaction = {
   id: string;
@@ -38,8 +36,6 @@ function mapTx(tx: Row): Transaction {
     recipient: (tx.recipient as string) ?? "",
   };
 }
-
-import { fetchNestApiFromServer } from "./api-client";
 
 export const listTransactionsFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])

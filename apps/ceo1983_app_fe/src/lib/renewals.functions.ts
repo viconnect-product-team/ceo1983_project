@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { RenewalRecord } from "./renewal-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { addOneYear, toRecord, isApprovedMember, type Row } from "./renewals-calc";
 

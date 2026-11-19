@@ -69,7 +69,7 @@ function channelName(slug: string): string {
 export function subscribeScanEvents(slug: string, onEvent: (e: ScanEvent) => void): () => void {
   const channel = supabase
     .channel(channelName(slug), { config: { broadcast: { self: false } } })
-    .on("broadcast", { event: "scan" }, (msg) => {
+    .on("broadcast", { event: "scan" }, (msg: any) => {
       const p = (msg?.payload ?? {}) as Partial<ScanEvent>;
       if (typeof p.token === "string" && typeof p.at === "number") {
         onEvent({
@@ -93,7 +93,7 @@ export function subscribeScanEvents(slug: string, onEvent: (e: ScanEvent) => voi
 export async function broadcastScanEvent(slug: string, ev: ScanEvent): Promise<void> {
   const channel = supabase.channel(channelName(slug));
   await new Promise<void>((resolve) => {
-    channel.subscribe((status) => {
+    channel.subscribe((status: any) => {
       if (status === "SUBSCRIBED") resolve();
     });
     // Safety timeout — never block UI on broadcast handshake.

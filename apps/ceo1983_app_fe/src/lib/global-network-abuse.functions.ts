@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "@/lib/api-client";
 import { GN_REPORT_CATEGORIES } from "./global-network/abuse.types";
 import type { GnNotificationDTO, GnNotificationPrefs } from "./global-network/abuse.types";

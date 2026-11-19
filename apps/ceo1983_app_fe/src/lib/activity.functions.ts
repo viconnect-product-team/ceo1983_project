@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ActivityLog } from "@/lib/extra-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "@/lib/api-client";
 
 export const listActivityLogFn = createServerFn({ method: "GET" })

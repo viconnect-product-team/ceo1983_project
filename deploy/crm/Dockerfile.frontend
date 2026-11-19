@@ -12,8 +12,9 @@ USER appuser
 EXPOSE 8080
 WORKDIR /app/apps/ceo1983_app_fe
 
-ENV VITE_APP_SCOPE=association_app
-ENV VITE_APP_NAME="CLB Doanh Nhân CEO 1983"
+ENV NODE_OPTIONS="--max-old-space-size=768"
+ENV VITE_APP_SCOPE=crm_platform
+ENV VITE_APP_NAME="CEO 1983 CRM Admin"
 ENV VITE_APP_DEFAULT_ROUTE=/association
 
 CMD ["sh", "-c", "if [ -f docker-entrypoint.sh ]; then ./docker-entrypoint.sh; else node .output/server/index.mjs; fi"]

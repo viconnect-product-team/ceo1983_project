@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 
 // ── Domain type + constant re-exports ──────────────────────────────────────
 // Canonical home is @/lib/business-card/business-card.types. Re-exported here so

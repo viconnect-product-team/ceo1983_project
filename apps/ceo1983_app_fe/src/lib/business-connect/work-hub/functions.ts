@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import {
   WORK_HUB_CATEGORIES,
   WORK_HUB_SOURCE_TYPES,

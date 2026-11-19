@@ -5,7 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { checkAiRateLimit } from "@/lib/ai-rate-limit";
 import { CARD_TEMPLATES, recommendTemplate, type CardLayout } from "@/lib/card-templates";
 

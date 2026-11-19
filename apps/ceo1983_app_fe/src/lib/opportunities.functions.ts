@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Opportunity, OpportunityInterest, OpportunityTypeKey } from "./opportunities-data";
-import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 type Row = Record<string, unknown>;

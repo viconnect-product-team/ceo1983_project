@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { BusinessInteractionService } from "./interaction.service";
 
 const interactionTypeSchema = z.enum([

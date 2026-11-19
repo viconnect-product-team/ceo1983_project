@@ -3,6 +3,13 @@ services:
     image: ${ASSOCIATION_FE_IMAGE:-ceo1983-frontend}:latest
     container_name: ceo1983-frontend-prod
     restart: always
+    mem_limit: 1024m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     env_file:
       - .env.association
     environment:
@@ -10,6 +17,7 @@ services:
       - NITRO_PORT=8080
       - HOST=0.0.0.0
       - NITRO_HOST=0.0.0.0
+      - NODE_OPTIONS=--max-old-space-size=768
       - NEST_API_URL=http://ceo1983-backend:4000
       - VITE_APP_SCOPE=association_app
       - VITE_APP_NAME="CLB Doanh Nhân CEO 1983"
@@ -21,17 +29,24 @@ services:
       - ceo1983-backend
     networks:
       - ceo1983-network
-      - vione-network
 
   ceo1983-backend:
     image: ${ASSOCIATION_BE_IMAGE:-ceo1983-backend}:latest
     container_name: ceo1983-backend-prod
     restart: always
+    mem_limit: 1024m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     env_file:
       - .env.association
     environment:
       - NODE_ENV=production
       - PORT=4000
+      - NODE_OPTIONS=--max-old-space-size=768
       - APP_SCOPE=association_app
       - DOCKER_CONTAINER=true
     user: "0:0"
@@ -42,11 +57,6 @@ services:
     networks:
       ceo1983-network:
         aliases:
-          - backend
-          - ceo1983-backend
-      vione-network:
-        aliases:
-          - backend
           - ceo1983-backend
 
 volumes:
@@ -56,7 +66,4 @@ volumes:
 networks:
   ceo1983-network:
     name: ceo1983-network
-    external: true
-  vione-network:
-    name: vione-network
     external: true
