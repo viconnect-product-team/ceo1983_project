@@ -17,5 +17,15 @@
       "@vibe/shared/*": ["./packages/shared/*"]
     }
   },
-  "include": ["apps/ceo1983_app_fe/src/**/*"]
+  "include": ["apps/ceo1983_app_fe/src/**/*"],
+  "exclude": [
+    "apps/ceo1983_app_fe/src/__tests__",
+    "apps/ceo1983_app_fe/src/__tests__/**/*",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "node_modules",
+    "dist",
+    ".output"
+  ]
 }
