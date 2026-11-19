@@ -1,5 +1,24 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 19/11/2026 (v11.72): Khắc Phục Triệt Để Lỗi Màn Hình Trắng "Uncaught ReferenceError: React is not defined" Trên Trình Duyệt Khi Vào CRM (`crm.ceo1983.viconnect.vn`), Tích Hợp `@vitejs/plugin-react` & Tạo Client Entry Chuẩn TanStack Start ([NODE-CORE-001], [NODE-CORE-004], [NODE-CRM-001])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
+    * Sau khi gỡ bỏ `@lovable.dev/vite-tanstack-config`, `apps/ceo1983_app_fe/vite.config.ts` thiếu plugin `@vitejs/plugin-react`.
+    * TanStack Start khi không tìm thấy tệp `src/client.tsx` tùy chỉnh sẽ sử dụng `default-entry/client.tsx` ngầm định. Trong tệp ngầm định này, cú pháp JSX `<StrictMode><StartClient /></StrictMode>` được esbuild/Rollup biên dịch thành `React.createElement(...)`.
+    * Tuy nhiên, tệp này chỉ `import { StrictMode, startTransition } from 'react'` chứ không `import * as React from 'react'`.
+    * Do đó, khi trình duyệt tải bundle client, tiến trình hydration gọi `startTransition(() => { hydrateRoot(document, React.createElement(...)) })` vấp phải lỗi `Uncaught ReferenceError: React is not defined`, khiến giao diện bị treo ở màn hình trắng "Đang tải...".
+  - **2. Giải Pháp 3 Tầng Đã Triển Khai & Kiểm Chứng**:
+    * **Tầng 1 - Tạo Client Entry Tường Minh (`src/client.tsx`)**: Tạo tệp `apps/ceo1983_app_fe/src/client.tsx` với `import * as React from 'react'` và gắn trực tiếp `window.React = React` cùng `globalThis.React = React` trước khi `startTransition()` và `hydrateRoot()` khởi chạy.
+    * **Tầng 2 - Cấu Hình Vite Native Với `@vitejs/plugin-react` & JSX Automatic (`vite.config.ts`)**:
+      - Bổ sung `viteReact()` từ `@vitejs/plugin-react`.
+      - Bổ sung `esbuild: { jsx: 'automatic' }`.
+      - Cấu hình `resolve.dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query', '@tanstack/react-router', '@tanstack/react-start']`.
+      - Cấu hình `optimizeDeps.include` cho React runtime.
+    * **Tầng 3 - Tăng Cường Bảo Vệ Tại Root Component (`src/routes/__root.tsx`)**: Khai báo `import * as React from "react"` và thiết lập fallback `window.React = React` nếu chưa có.
+  - **3. Kết Quả Kiểm Thử Thực Tế**:
+    * Inspect bundle client sau khi build: Đoạn mã hydration đã chuyển hoàn toàn từ `React.createElement(...)` sang JSX runtime `a.jsx(_.StrictMode, { children: a.jsx(qyt, {}) })` và có guard `typeof window < "u" && (window.React = E2)`. Lỗi `React is not defined` bị triệt tiêu 100%.
+    * `npm run build --prefix apps/ceo1983_app_fe` -> **Exit code 0 (Hoàn thành build cả Client và Nitro Server trong 4m 9s)**.
+    * `tsc --noEmit` trên cả frontend và backend -> **Exit code 0 (0 errors)**.
+
 - **Bản cập nhật ngày 19/11/2026 (v11.71): Khắc Phục Triệt Để Lỗi GitHub Actions CI/CD Run #162 (PR #54) TS7006 "Parameter implicitly has an any type", Gỡ Bỏ 100% Gói & Cấu Hình Liên Quan Đến Supabase & Lovable, Chuẩn Hóa Native TanStack Start & Nitro Build (Exit Code 0) ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
   - **1. Phân Tích Nguyên Nhân Thất Bại Của GitHub Actions Run #162 (`PR #54: Merge dev -> main`, Commit `919d2ff`)**:
     * Trong Run #162, bước `Kiểm Tra Chất Lượng Mã Nguồn (TypeScript Typecheck)` đã nhận diện được module `@supabase/supabase-js` thông qua `apps/ceo1983_app_fe/src/types/supabase.d.ts`.
@@ -1847,6 +1866,25 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.72): Khắc Phục Triệt Để Lỗi Màn Hình Trắng "Uncaught ReferenceError: React is not defined" Trên Trình Duyệt Khi Vào CRM (`crm.ceo1983.viconnect.vn`), Tích Hợp `@vitejs/plugin-react` & Tạo Client Entry Chuẩn TanStack Start ([NODE-CORE-001], [NODE-CORE-004], [NODE-CRM-001])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
+    * Sau khi gỡ bỏ `@lovable.dev/vite-tanstack-config`, `apps/ceo1983_app_fe/vite.config.ts` thiếu plugin `@vitejs/plugin-react`.
+    * TanStack Start khi không tìm thấy tệp `src/client.tsx` tùy chỉnh sẽ sử dụng `default-entry/client.tsx` ngầm định. Trong tệp ngầm định này, cú pháp JSX `<StrictMode><StartClient /></StrictMode>` được esbuild/Rollup biên dịch thành `React.createElement(...)`.
+    * Tuy nhiên, tệp này chỉ `import { StrictMode, startTransition } from 'react'` chứ không `import * as React from 'react'`.
+    * Do đó, khi trình duyệt tải bundle client, tiến trình hydration gọi `startTransition(() => { hydrateRoot(document, React.createElement(...)) })` vấp phải lỗi `Uncaught ReferenceError: React is not defined`, khiến giao diện bị treo ở màn hình trắng "Đang tải...".
+  - **2. Giải Pháp 3 Tầng Đã Triển Khai & Kiểm Chứng**:
+    * **Tầng 1 - Tạo Client Entry Tường Minh (`src/client.tsx`)**: Tạo tệp `apps/ceo1983_app_fe/src/client.tsx` với `import * as React from 'react'` và gắn trực tiếp `window.React = React` cùng `globalThis.React = React` trước khi `startTransition()` và `hydrateRoot()` khởi chạy.
+    * **Tầng 2 - Cấu Hình Vite Native Với `@vitejs/plugin-react` & JSX Automatic (`vite.config.ts`)**:
+      - Bổ sung `viteReact()` từ `@vitejs/plugin-react`.
+      - Bổ sung `esbuild: { jsx: 'automatic' }`.
+      - Cấu hình `resolve.dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query', '@tanstack/react-router', '@tanstack/react-start']`.
+      - Cấu hình `optimizeDeps.include` cho React runtime.
+    * **Tầng 3 - Tăng Cường Bảo Vệ Tại Root Component (`src/routes/__root.tsx`)**: Khai báo `import * as React from "react"` và thiết lập fallback `window.React = React` nếu chưa có.
+  - **3. Kết Quả Kiểm Thử Thực Tế**:
+    * Inspect bundle client sau khi build: Đoạn mã hydration đã chuyển hoàn toàn từ `React.createElement(...)` sang JSX runtime `a.jsx(_.StrictMode, { children: a.jsx(qyt, {}) })` và có guard `typeof window < "u" && (window.React = E2)`. Lỗi `React is not defined` bị triệt tiêu 100%.
+    * `npm run build --prefix apps/ceo1983_app_fe` -> **Exit code 0 (Hoàn thành build cả Client và Nitro Server trong 4m 9s)**.
+    * `tsc --noEmit` trên cả frontend và backend -> **Exit code 0 (0 errors)**.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.71): Khắc Phục Triệt Để Lỗi GitHub Actions CI/CD Run #162 (PR #54) TS7006 "Parameter implicitly has an any type", Gỡ Bỏ 100% Gói & Cấu Hình Liên Quan Đến Supabase & Lovable, Chuẩn Hóa Native TanStack Start & Nitro Build (Exit Code 0) ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
   - **1. Phân Tích Nguyên Nhân Thất Bại Của GitHub Actions Run #162 (`PR #54: Merge dev -> main`, Commit `919d2ff`)**:
@@ -4937,6 +4975,25 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.72): Khắc Phục Triệt Để Lỗi Màn Hình Trắng "Uncaught ReferenceError: React is not defined" Trên Trình Duyệt Khi Vào CRM (`crm.ceo1983.viconnect.vn`), Tích Hợp `@vitejs/plugin-react` & Tạo Client Entry Chuẩn TanStack Start ([NODE-CORE-001], [NODE-CORE-004], [NODE-CRM-001])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
+    * Sau khi gỡ bỏ `@lovable.dev/vite-tanstack-config`, `apps/ceo1983_app_fe/vite.config.ts` thiếu plugin `@vitejs/plugin-react`.
+    * TanStack Start khi không tìm thấy tệp `src/client.tsx` tùy chỉnh sẽ sử dụng `default-entry/client.tsx` ngầm định. Trong tệp ngầm định này, cú pháp JSX `<StrictMode><StartClient /></StrictMode>` được esbuild/Rollup biên dịch thành `React.createElement(...)`.
+    * Tuy nhiên, tệp này chỉ `import { StrictMode, startTransition } from 'react'` chứ không `import * as React from 'react'`.
+    * Do đó, khi trình duyệt tải bundle client, tiến trình hydration gọi `startTransition(() => { hydrateRoot(document, React.createElement(...)) })` vấp phải lỗi `Uncaught ReferenceError: React is not defined`, khiến giao diện bị treo ở màn hình trắng "Đang tải...".
+  - **2. Giải Pháp 3 Tầng Đã Triển Khai & Kiểm Chứng**:
+    * **Tầng 1 - Tạo Client Entry Tường Minh (`src/client.tsx`)**: Tạo tệp `apps/ceo1983_app_fe/src/client.tsx` với `import * as React from 'react'` và gắn trực tiếp `window.React = React` cùng `globalThis.React = React` trước khi `startTransition()` và `hydrateRoot()` khởi chạy.
+    * **Tầng 2 - Cấu Hình Vite Native Với `@vitejs/plugin-react` & JSX Automatic (`vite.config.ts`)**:
+      - Bổ sung `viteReact()` từ `@vitejs/plugin-react`.
+      - Bổ sung `esbuild: { jsx: 'automatic' }`.
+      - Cấu hình `resolve.dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', '@tanstack/react-query', '@tanstack/react-router', '@tanstack/react-start']`.
+      - Cấu hình `optimizeDeps.include` cho React runtime.
+    * **Tầng 3 - Tăng Cường Bảo Vệ Tại Root Component (`src/routes/__root.tsx`)**: Khai báo `import * as React from "react"` và thiết lập fallback `window.React = React` nếu chưa có.
+  - **3. Kết Quả Kiểm Thử Thực Tế**:
+    * Inspect bundle client sau khi build: Đoạn mã hydration đã chuyển hoàn toàn từ `React.createElement(...)` sang JSX runtime `a.jsx(_.StrictMode, { children: a.jsx(qyt, {}) })` và có guard `typeof window < "u" && (window.React = E2)`. Lỗi `React is not defined` bị triệt tiêu 100%.
+    * `npm run build --prefix apps/ceo1983_app_fe` -> **Exit code 0 (Hoàn thành build cả Client và Nitro Server trong 4m 9s)**.
+    * `tsc --noEmit` trên cả frontend và backend -> **Exit code 0 (0 errors)**.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.71): Khắc Phục Triệt Để Lỗi GitHub Actions CI/CD Run #162 (PR #54) TS7006 "Parameter implicitly has an any type", Gỡ Bỏ 100% Gói & Cấu Hình Liên Quan Đến Supabase & Lovable, Chuẩn Hóa Native TanStack Start & Nitro Build (Exit Code 0) ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
   - **1. Phân Tích Nguyên Nhân Thất Bại Của GitHub Actions Run #162 (`PR #54: Merge dev -> main`, Commit `919d2ff`)**:

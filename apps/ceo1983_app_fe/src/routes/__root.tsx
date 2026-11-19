@@ -1,4 +1,12 @@
+import * as React from "react";
 import "@/lib/utils";
+
+if (typeof window !== "undefined" && !(window as any).React) {
+  (window as any).React = React;
+}
+if (typeof globalThis !== "undefined" && !(globalThis as any).React) {
+  (globalThis as any).React = React;
+}
 import {
   Outlet,
   Link,
