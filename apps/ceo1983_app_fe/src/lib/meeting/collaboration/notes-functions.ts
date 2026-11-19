@@ -2,7 +2,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { MeetingPrivateNoteService, MeetingSharedNoteService } from "./notes-service.server";
 import { MEETING_NOTE_CONTENT_MAX } from "./types";
 

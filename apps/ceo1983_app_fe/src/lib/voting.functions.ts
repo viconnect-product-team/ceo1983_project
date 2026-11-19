@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fetchNestApiFromServer } from "./api-client";
 

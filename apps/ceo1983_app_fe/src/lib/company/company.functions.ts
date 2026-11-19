@@ -7,7 +7,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { CompanyService } from "./company.service";
 import type { PublicCompanyResult } from "./company.types";

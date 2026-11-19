@@ -34,7 +34,6 @@ import {
   isRouteAllowedByMatrix,
 } from "@/lib/rbac-permission-helpers";
 import { useRole } from "@/hooks/use-role";
-import { DEFAULT_MEMBERS } from "@/lib/members-data";
 import { fetchNestApi } from "@/lib/api-client";
 import { CustomTable, type CustomTableColumn } from "@/components/common/CustomTable";
 import { CeoTableEllipsis } from "@/components/common/CeoTableEllipsis";
@@ -177,7 +176,7 @@ function DepartmentsPage() {
         if (Array.isArray(parsed)) localAccounts = parsed;
       }
     } catch {}
-    return [...DEFAULT_MEMBERS, ...localAccounts];
+    return [...localAccounts];
   });
 
   useEffect(() => {

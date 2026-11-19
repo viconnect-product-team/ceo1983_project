@@ -23,7 +23,7 @@ export function getConnectAppSocket(): Socket {
   }
   if (!globalSocket) {
     globalSocket = io(NEST_API_URL || undefined, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 2,

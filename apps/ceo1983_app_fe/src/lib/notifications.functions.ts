@@ -5,7 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Notification } from "@/lib/extra-data";
-import { optionalNestAuth, requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { optionalNestAuth, requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 export const listNotificationsFn = createServerFn({ method: "GET" })

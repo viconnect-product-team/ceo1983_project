@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
+import { requireNestAuth } from "@/lib/auth-middleware";
+import { fetchNestApiFromServer } from "./api-client";
 
 export type AdminBenefit = {
   id: string;
@@ -18,35 +16,24 @@ type Row = Record<string, unknown>;
 
 function mapBenefit(r: Row): AdminBenefit {
   return {
-    id: r.id as string,
-    titleVi: (r.title_vi as string) ?? "",
-    titleEn: (r.title_en as string) ?? "",
-    descVi: (r.desc_vi as string) ?? "",
-    descEn: (r.desc_en as string) ?? "",
-    sortOrder: (r.sort_order as number) ?? 0,
+    id: (r.id as string) || "",
+    titleVi: (r.title_vi as string) || (r.titleVi as string) || "",
+    titleEn: (r.title_en as string) || (r.titleEn as string) || "",
+    descVi: (r.desc_vi as string) || (r.descVi as string) || "",
+    descEn: (r.desc_en as string) || (r.descEn as string) || "",
+    sortOrder: Number(r.sort_order ?? r.sortOrder ?? 0),
   };
-}
-
-async function activeAssociationId(context: any): Promise<string> {
-  try {
-    const { data } = await getDb(context).rpc("current_association_id");
-    if (typeof data === "string" && data.length > 0) return data;
-  } catch {}
-  const { data: assoc } = await getDb(context).from("associations").select("id").limit(1).maybeSingle();
-  return assoc?.id ?? "c1983000-0000-4000-8000-000000001983";
 }
 
 export const listBenefitsAdminFn = createServerFn({ method: "GET" })
   .middleware([requireNestAuth])
   .handler(async ({ context }): Promise<AdminBenefit[]> => {
-    const associationId = await activeAssociationId(context);
-    const { data, error } = await getDb(context)
-      .from("association_benefits")
-      .select("*")
-      .eq("association_id", associationId)
-      .order("sort_order", { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((r: any) => mapBenefit(r as Row));
+    try {
+      const data = await fetchNestApiFromServer<Row[]>("/members/benefits/admin", context.token);
+      return (data ?? []).map(mapBenefit);
+    } catch {
+      return [];
+    }
   });
 
 const benefitInput = z.object({
@@ -57,83 +44,76 @@ const benefitInput = z.object({
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
 });
 
-function toRow(d: z.infer<typeof benefitInput>) {
-  return {
-    title_vi: d.titleVi,
-    title_en: d.titleEn,
-    desc_vi: d.descVi,
-    desc_en: d.descEn,
-    sort_order: d.sortOrder,
-  };
-}
-
 export const createBenefitFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => benefitInput.parse(d))
   .handler(async ({ data, context }): Promise<AdminBenefit> => {
-    const associationId = await activeAssociationId(context);
-    const { data: row, error } = await getDb(context)
-      .from("association_benefits")
-      .insert({ ...toRow(data), association_id: associationId })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    try {
-      const { logActivity } = await import("./crud.server");
-      await logActivity(getDb(context), {
-        action: "Tạo quyền lợi hội viên",
-        target: data.titleVi,
-        category: "member",
-        associationId,
-      });
-    } catch {}
-    return mapBenefit(row);
+    const res = await fetchNestApiFromServer<Row>("/members/benefits/admin", context.token, {
+      method: "POST",
+      body: JSON.stringify({
+        title_vi: data.titleVi,
+        title_en: data.titleEn,
+        desc_vi: data.descVi,
+        desc_en: data.descEn,
+        sort_order: data.sortOrder,
+      }),
+    });
+    return mapBenefit(res);
   });
 
 export const updateBenefitFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
-  .inputValidator((d: unknown) => benefitInput.extend({ id: z.string().uuid() }).parse(d))
+  .inputValidator(
+    (d: unknown) =>
+      z.object({
+        id: z.string().uuid(),
+        patch: benefitInput.partial(),
+      }).parse(d),
+  )
   .handler(async ({ data, context }): Promise<AdminBenefit> => {
-    const associationId = await activeAssociationId(context);
-    const { data: row, error } = await getDb(context)
-      .from("association_benefits")
-      .update(toRow(data))
-      .eq("id", data.id)
-      .eq("association_id", associationId)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    try {
-      const { logActivity } = await import("./crud.server");
-      await logActivity(getDb(context), {
-        action: "Cập nhật quyền lợi hội viên",
-        target: data.titleVi,
-        category: "member",
-        associationId,
-      });
-    } catch {}
-    return mapBenefit(row);
+    const body: Record<string, unknown> = {};
+    if (data.patch.titleVi !== undefined) body.title_vi = data.patch.titleVi;
+    if (data.patch.titleEn !== undefined) body.title_en = data.patch.titleEn;
+    if (data.patch.descVi !== undefined) body.desc_vi = data.patch.descVi;
+    if (data.patch.descEn !== undefined) body.desc_en = data.patch.descEn;
+    if (data.patch.sortOrder !== undefined) body.sort_order = data.patch.sortOrder;
+
+    const res = await fetchNestApiFromServer<Row>(`/members/benefits/admin/${data.id}`, context.token, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+    return mapBenefit(res);
   });
 
 export const deleteBenefitFn = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
-    const associationId = await activeAssociationId(context);
-    const { error } = await getDb(context)
-      .from("association_benefits")
-      .delete()
-      .eq("id", data.id)
-      .eq("association_id", associationId);
-    if (error) throw new Error(error.message);
-    try {
-      const { logActivity } = await import("./crud.server");
-      await logActivity(getDb(context), {
-        action: "Xóa quyền lợi hội viên",
-        target: data.id,
-        category: "member",
-        associationId,
+    await fetchNestApiFromServer(`/members/benefits/admin/${data.id}`, context.token, {
+      method: "DELETE",
+    });
+    return { ok: true };
+  });
+
+export const reorderBenefitsFn = createServerFn({ method: "POST" })
+  .middleware([requireNestAuth])
+  .inputValidator(
+    (d: unknown) =>
+      z.object({
+        items: z.array(
+          z.object({
+            id: z.string().uuid(),
+            sortOrder: z.coerce.number().int().min(0).max(9999),
+          }),
+        ),
+      }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    for (const item of data.items) {
+      await fetchNestApiFromServer(`/members/benefits/admin/${item.id}`, context.token, {
+        method: "PUT",
+        body: JSON.stringify({ sort_order: item.sortOrder }),
       });
-    } catch {}
+    }
     return { ok: true };
   });

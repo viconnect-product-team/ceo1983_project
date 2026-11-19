@@ -311,14 +311,13 @@ function MembersPage() {
     queryFn: async () => {
       try {
         const res = await fetchNestApi<Member[]>("/members");
-        if (Array.isArray(res) && res.length > 0) {
+        if (Array.isArray(res)) {
           return res;
         }
       } catch (err) {
         console.error("[Members] Failed to load members:", err);
       }
-      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
-      return DEFAULT_MEMBERS;
+      return [];
     },
   });
 

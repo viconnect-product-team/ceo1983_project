@@ -1,5 +1,41 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
+  - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
+    * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
+    * Đưa `WelcomeMemberModal.tsx` về no-op trả về `null`, không còn xuất hiện cửa sổ bật lên cản trở trải nghiệm khi hội viên mở ứng dụng.
+  - **2. Khắc Phục Dứt Điểm Lỗi WebSocket Handshake 307**:
+    * Nguyên nhân: TanStack Start / Nitro frontend container (cổng 5004) chuẩn hóa URL không có dấu gạch chéo cuối bằng mã chuyển hướng 307 (Temporary Redirect), khiến các kết nối `wss://crm.ceo1983.viconnect.vn/socket.io/?...` bị trả về mã 307 thay vì bắt tay thành công sang NestJS.
+    * Giải pháp: Nâng cấp Nginx configuration trong `deploy/ssl/setup-ssl.sh` và `deploy/ssl/nginx.conf` với tiền tố ưu tiên cao nhất `location ^~ /socket.io`, bật `proxy_redirect off;` và `proxy_buffering off;`. Bổ sung fallback `transports: ["websocket", "polling"]` trong `use-connect-app-socket.ts`.
+  - **3. Sửa Lỗi React Hydration Mismatch (Minified React Error #418)**:
+    * Gỡ bỏ component `MockModeBanner` khỏi `apps/ceo1983_app_fe/src/routes/__root.tsx`.
+    * Thiết lập thuộc tính `suppressHydrationWarning={true}` tường minh trên cả thẻ `<html>` và `<body>` trong `RootShell`.
+  - **4. Triệt Tiêu Toàn Bộ Tàn Dư Supabase & Xóa Bỏ Hoàn Toàn Dữ Liệu Mock Fallback**:
+    * Xây dựng tầng middleware xác thực NestJS JWT thuần khiết: `apps/ceo1983_app_fe/src/lib/auth-middleware.ts` cung cấp `attachNestAuth`, `requireNestAuth` và `optionalNestAuth`.
+    * Cập nhật `apps/ceo1983_app_fe/src/start.ts` sử dụng `attachNestAuth`.
+    * Chuyển đổi đồng bộ toàn bộ 116 tệp chức năng `.functions.ts` sang sử dụng `@/lib/auth-middleware`.
+    * Gỡ bỏ gói `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * Decouple `client.ts` và `client.server.ts` khỏi Supabase SDK bằng stub proxy độc lập, không phụ thuộc bên ngoài.
+    * Dọn dẹp triệt để các đoạn code mock và fallback tĩnh (`DEFAULT_MEMBERS`, `DEFAULT_FEE_INVOICES`) trong `dashboard.functions.ts`, `fees.functions.ts`, `members.functions.ts`, `directory.functions.ts`, `ExecutiveDashboard.tsx`, `members.index.tsx`, `companies.index.tsx`, `members.$memberId.tsx`, `departments.tsx`, `account-settings.index.tsx`.
+    * Đặt `DEFAULT_MEMBERS = []` và `DEFAULT_FEE_INVOICES = []` để triệt tiêu mọi khả năng rò rỉ fake data ra ngoài UI.
+  - **5. Xây Dựng Kiến Trúc API Khách Tập Trung Theo Phân Hệ (Domain-Driven API Architecture)**:
+    * Khởi tạo thư mục chuẩn mực `apps/ceo1983_app_fe/src/api/` với các module độc lập:
+      + `http-client.ts`: Quản lý HTTP client đồng nhất, tự động tiêm Bearer token từ `localStorage` hoặc SSR headers, bắt lỗi HTTP chuẩn xác.
+      + `auth.api.ts`: API đăng nhập, đăng xuất, làm mới token, lấy thông tin tài khoản hiện tại, đổi mật khẩu.
+      + `members.api.ts`: API quản lý danh sách hội viên, chi tiết, phòng ban ban điều hành, đặc quyền hội viên, check-in.
+      + `opportunities.api.ts`: API cơ hội giao thương B2B, phân quyền phạm vi công khai/chỉ định thành viên riêng tư, gửi đề xuất Deal, sắp xếp deal theo tỷ suất lợi nhuận cao nhất, xác nhận chốt deal.
+      + `events.api.ts`: API sự kiện, đăng ký, soát vé QR, nhập file Excel khách mời và tự động gửi thư mời qua email.
+      + `meetings.api.ts`: API kết nối B2B 1-1, đặt lịch hẹn gặp gỡ, chấp thuận lịch hẹn (đồng bộ tự động vào Lịch cá nhân & Nhật ký hoạt động chỉ hiển thị cho 2 đối tác kết nối), kích hoạt gửi email nhắc hẹn.
+      + `finance.api.ts`: API hóa đơn, thanh toán hội phí, thu chi, xuất báo cáo tài chính cụ thể theo danh mục, khoảng thời gian và người xuất báo cáo.
+      + `marketplace.api.ts`: API sàn giao thương sản phẩm, đăng sản phẩm, báo giá, lịch sử báo giá.
+      + `documents.api.ts`: API văn bản, quy chế, biểu mẫu, tài liệu CLB.
+      + `notifications.api.ts`: API thông báo hệ thống, số lượng chưa đọc, đánh dấu đã đọc.
+      + `index.ts`: Điểm xuất tổng hợp `api` và từng API service riêng lẻ.
+  - **6. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL duy nhất của toàn dự án: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Backend NestJS `apps/ceo1983_app_be`: `npm run build` hoàn thành với 0 lỗi (Exit Code 0).
+    * Tuân thủ quy tắc tối cao: Không tự ý chạy `git push` hay `git commit`.
+
 - **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
   - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
     * **Case 1 (Public Opportunity & Deal Margin Ranking)**:
@@ -1742,6 +1778,42 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
+  - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
+    * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
+    * Đưa `WelcomeMemberModal.tsx` về no-op trả về `null`, không còn xuất hiện cửa sổ bật lên cản trở trải nghiệm khi hội viên mở ứng dụng.
+  - **2. Khắc Phục Dứt Điểm Lỗi WebSocket Handshake 307**:
+    * Nguyên nhân: TanStack Start / Nitro frontend container (cổng 5004) chuẩn hóa URL không có dấu gạch chéo cuối bằng mã chuyển hướng 307 (Temporary Redirect), khiến các kết nối `wss://crm.ceo1983.viconnect.vn/socket.io/?...` bị trả về mã 307 thay vì bắt tay thành công sang NestJS.
+    * Giải pháp: Nâng cấp Nginx configuration trong `deploy/ssl/setup-ssl.sh` và `deploy/ssl/nginx.conf` với tiền tố ưu tiên cao nhất `location ^~ /socket.io`, bật `proxy_redirect off;` và `proxy_buffering off;`. Bổ sung fallback `transports: ["websocket", "polling"]` trong `use-connect-app-socket.ts`.
+  - **3. Sửa Lỗi React Hydration Mismatch (Minified React Error #418)**:
+    * Gỡ bỏ component `MockModeBanner` khỏi `apps/ceo1983_app_fe/src/routes/__root.tsx`.
+    * Thiết lập thuộc tính `suppressHydrationWarning={true}` tường minh trên cả thẻ `<html>` và `<body>` trong `RootShell`.
+  - **4. Triệt Tiêu Toàn Bộ Tàn Dư Supabase & Xóa Bỏ Hoàn Toàn Dữ Liệu Mock Fallback**:
+    * Xây dựng tầng middleware xác thực NestJS JWT thuần khiết: `apps/ceo1983_app_fe/src/lib/auth-middleware.ts` cung cấp `attachNestAuth`, `requireNestAuth` và `optionalNestAuth`.
+    * Cập nhật `apps/ceo1983_app_fe/src/start.ts` sử dụng `attachNestAuth`.
+    * Chuyển đổi đồng bộ toàn bộ 116 tệp chức năng `.functions.ts` sang sử dụng `@/lib/auth-middleware`.
+    * Gỡ bỏ gói `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * Decouple `client.ts` và `client.server.ts` khỏi Supabase SDK bằng stub proxy độc lập, không phụ thuộc bên ngoài.
+    * Dọn dẹp triệt để các đoạn code mock và fallback tĩnh (`DEFAULT_MEMBERS`, `DEFAULT_FEE_INVOICES`) trong `dashboard.functions.ts`, `fees.functions.ts`, `members.functions.ts`, `directory.functions.ts`, `ExecutiveDashboard.tsx`, `members.index.tsx`, `companies.index.tsx`, `members.$memberId.tsx`, `departments.tsx`, `account-settings.index.tsx`.
+    * Đặt `DEFAULT_MEMBERS = []` và `DEFAULT_FEE_INVOICES = []` để triệt tiêu mọi khả năng rò rỉ fake data ra ngoài UI.
+  - **5. Xây Dựng Kiến Trúc API Khách Tập Trung Theo Phân Hệ (Domain-Driven API Architecture)**:
+    * Khởi tạo thư mục chuẩn mực `apps/ceo1983_app_fe/src/api/` với các module độc lập:
+      + `http-client.ts`: Quản lý HTTP client đồng nhất, tự động tiêm Bearer token từ `localStorage` hoặc SSR headers, bắt lỗi HTTP chuẩn xác.
+      + `auth.api.ts`: API đăng nhập, đăng xuất, làm mới token, lấy thông tin tài khoản hiện tại, đổi mật khẩu.
+      + `members.api.ts`: API quản lý danh sách hội viên, chi tiết, phòng ban ban điều hành, đặc quyền hội viên, check-in.
+      + `opportunities.api.ts`: API cơ hội giao thương B2B, phân quyền phạm vi công khai/chỉ định thành viên riêng tư, gửi đề xuất Deal, sắp xếp deal theo tỷ suất lợi nhuận cao nhất, xác nhận chốt deal.
+      + `events.api.ts`: API sự kiện, đăng ký, soát vé QR, nhập file Excel khách mời và tự động gửi thư mời qua email.
+      + `meetings.api.ts`: API kết nối B2B 1-1, đặt lịch hẹn gặp gỡ, chấp thuận lịch hẹn (đồng bộ tự động vào Lịch cá nhân & Nhật ký hoạt động chỉ hiển thị cho 2 đối tác kết nối), kích hoạt gửi email nhắc hẹn.
+      + `finance.api.ts`: API hóa đơn, thanh toán hội phí, thu chi, xuất báo cáo tài chính cụ thể theo danh mục, khoảng thời gian và người xuất báo cáo.
+      + `marketplace.api.ts`: API sàn giao thương sản phẩm, đăng sản phẩm, báo giá, lịch sử báo giá.
+      + `documents.api.ts`: API văn bản, quy chế, biểu mẫu, tài liệu CLB.
+      + `notifications.api.ts`: API thông báo hệ thống, số lượng chưa đọc, đánh dấu đã đọc.
+      + `index.ts`: Điểm xuất tổng hợp `api` và từng API service riêng lẻ.
+  - **6. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL duy nhất của toàn dự án: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Backend NestJS `apps/ceo1983_app_be`: `npm run build` hoàn thành với 0 lỗi (Exit Code 0).
+    * Tuân thủ quy tắc tối cao: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
   - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:
@@ -4727,6 +4799,42 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
+  - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
+    * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
+    * Đưa `WelcomeMemberModal.tsx` về no-op trả về `null`, không còn xuất hiện cửa sổ bật lên cản trở trải nghiệm khi hội viên mở ứng dụng.
+  - **2. Khắc Phục Dứt Điểm Lỗi WebSocket Handshake 307**:
+    * Nguyên nhân: TanStack Start / Nitro frontend container (cổng 5004) chuẩn hóa URL không có dấu gạch chéo cuối bằng mã chuyển hướng 307 (Temporary Redirect), khiến các kết nối `wss://crm.ceo1983.viconnect.vn/socket.io/?...` bị trả về mã 307 thay vì bắt tay thành công sang NestJS.
+    * Giải pháp: Nâng cấp Nginx configuration trong `deploy/ssl/setup-ssl.sh` và `deploy/ssl/nginx.conf` với tiền tố ưu tiên cao nhất `location ^~ /socket.io`, bật `proxy_redirect off;` và `proxy_buffering off;`. Bổ sung fallback `transports: ["websocket", "polling"]` trong `use-connect-app-socket.ts`.
+  - **3. Sửa Lỗi React Hydration Mismatch (Minified React Error #418)**:
+    * Gỡ bỏ component `MockModeBanner` khỏi `apps/ceo1983_app_fe/src/routes/__root.tsx`.
+    * Thiết lập thuộc tính `suppressHydrationWarning={true}` tường minh trên cả thẻ `<html>` và `<body>` trong `RootShell`.
+  - **4. Triệt Tiêu Toàn Bộ Tàn Dư Supabase & Xóa Bỏ Hoàn Toàn Dữ Liệu Mock Fallback**:
+    * Xây dựng tầng middleware xác thực NestJS JWT thuần khiết: `apps/ceo1983_app_fe/src/lib/auth-middleware.ts` cung cấp `attachNestAuth`, `requireNestAuth` và `optionalNestAuth`.
+    * Cập nhật `apps/ceo1983_app_fe/src/start.ts` sử dụng `attachNestAuth`.
+    * Chuyển đổi đồng bộ toàn bộ 116 tệp chức năng `.functions.ts` sang sử dụng `@/lib/auth-middleware`.
+    * Gỡ bỏ gói `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * Decouple `client.ts` và `client.server.ts` khỏi Supabase SDK bằng stub proxy độc lập, không phụ thuộc bên ngoài.
+    * Dọn dẹp triệt để các đoạn code mock và fallback tĩnh (`DEFAULT_MEMBERS`, `DEFAULT_FEE_INVOICES`) trong `dashboard.functions.ts`, `fees.functions.ts`, `members.functions.ts`, `directory.functions.ts`, `ExecutiveDashboard.tsx`, `members.index.tsx`, `companies.index.tsx`, `members.$memberId.tsx`, `departments.tsx`, `account-settings.index.tsx`.
+    * Đặt `DEFAULT_MEMBERS = []` và `DEFAULT_FEE_INVOICES = []` để triệt tiêu mọi khả năng rò rỉ fake data ra ngoài UI.
+  - **5. Xây Dựng Kiến Trúc API Khách Tập Trung Theo Phân Hệ (Domain-Driven API Architecture)**:
+    * Khởi tạo thư mục chuẩn mực `apps/ceo1983_app_fe/src/api/` với các module độc lập:
+      + `http-client.ts`: Quản lý HTTP client đồng nhất, tự động tiêm Bearer token từ `localStorage` hoặc SSR headers, bắt lỗi HTTP chuẩn xác.
+      + `auth.api.ts`: API đăng nhập, đăng xuất, làm mới token, lấy thông tin tài khoản hiện tại, đổi mật khẩu.
+      + `members.api.ts`: API quản lý danh sách hội viên, chi tiết, phòng ban ban điều hành, đặc quyền hội viên, check-in.
+      + `opportunities.api.ts`: API cơ hội giao thương B2B, phân quyền phạm vi công khai/chỉ định thành viên riêng tư, gửi đề xuất Deal, sắp xếp deal theo tỷ suất lợi nhuận cao nhất, xác nhận chốt deal.
+      + `events.api.ts`: API sự kiện, đăng ký, soát vé QR, nhập file Excel khách mời và tự động gửi thư mời qua email.
+      + `meetings.api.ts`: API kết nối B2B 1-1, đặt lịch hẹn gặp gỡ, chấp thuận lịch hẹn (đồng bộ tự động vào Lịch cá nhân & Nhật ký hoạt động chỉ hiển thị cho 2 đối tác kết nối), kích hoạt gửi email nhắc hẹn.
+      + `finance.api.ts`: API hóa đơn, thanh toán hội phí, thu chi, xuất báo cáo tài chính cụ thể theo danh mục, khoảng thời gian và người xuất báo cáo.
+      + `marketplace.api.ts`: API sàn giao thương sản phẩm, đăng sản phẩm, báo giá, lịch sử báo giá.
+      + `documents.api.ts`: API văn bản, quy chế, biểu mẫu, tài liệu CLB.
+      + `notifications.api.ts`: API thông báo hệ thống, số lượng chưa đọc, đánh dấu đã đọc.
+      + `index.ts`: Điểm xuất tổng hợp `api` và từng API service riêng lẻ.
+  - **6. Tuân Thủ Nghiêm Ngặt Quy Chuẩn Kỹ Thuật**:
+    * CSDL duy nhất của toàn dự án: PostgreSQL Enterprise `113.20.107.184:6432` (`ceo1983_project`). Tuyệt đối không mock/fake dữ liệu.
+    * Backend NestJS `apps/ceo1983_app_be`: `npm run build` hoàn thành với 0 lỗi (Exit Code 0).
+    * Tuân thủ quy tắc tối cao: Không tự ý chạy `git push` hay `git commit`.
 
 - **Bản cập nhật ngày 18/11/2026 (v11.67): Hoàn Tất Kiểm Thử E2E Toàn Diện Luồng Cơ Hội B2B & Deal (Public / Private Assigned / Calendar Meeting Reminder) Trên Mobile App & Luồng Xuất Báo Cáo Tài Chính Kèm Import Excel Khách Mời Gửi Email Trên Web CRM ([NODE-APP-005], [NODE-APP-006], [NODE-APP-008], [NODE-CRM-005], [NODE-CRM-006], [NODE-CRM-011])**:
   - **1. Kiểm thử Thành Công Toàn Diện Luồng Cơ Hội Giao Thương B2B & Deal trên CEO 1983 Mobile App (`https://ceo1983.viconnect.vn`)**:

@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { FeeRecord, ReminderEntry } from "./fees-data";
-import { DEFAULT_FEE_INVOICES } from "./fees-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 export const listInvoicesFn = createServerFn({ method: "GET" })
@@ -34,8 +33,7 @@ export const getInvoiceFn = createServerFn({ method: "GET" })
       } catch (err: any) {
         console.error("[getInvoiceFn] error:", err);
       }
-      const fallback = DEFAULT_FEE_INVOICES.find((i) => i.id === data.id);
-      return fallback ? { invoice: fallback, reminders: [] } : null;
+      return null;
     },
   );
 

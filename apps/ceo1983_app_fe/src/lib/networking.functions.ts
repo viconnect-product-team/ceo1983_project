@@ -15,7 +15,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { ChatMessage, ConnectionStatus } from "./networking-data";
-import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 // ── Schemas ────────────────────────────────────────────────────────────────────

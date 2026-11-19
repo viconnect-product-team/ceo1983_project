@@ -9,7 +9,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { BusinessCardService } from "@/lib/business-card/business-card.service";
 import type { BusinessCard, BusinessCardSummary } from "@/lib/business-card/business-card.types";
 

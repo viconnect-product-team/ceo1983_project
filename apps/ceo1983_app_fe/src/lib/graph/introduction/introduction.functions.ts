@@ -1,7 +1,7 @@
 // BC-6.0 — Smart Introduction server-fn adapter.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import type { SmartIntroductionPageDTO } from "./types";
 
 const input = z.object({

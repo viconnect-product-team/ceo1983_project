@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 
 const feedInput = z.object({

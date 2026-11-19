@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { optionalNestAuth } from "@/lib/auth-middleware";
 
 // ---------- Member directory ----------
 export type DirectoryMember = {
@@ -43,31 +43,11 @@ export const listMembers = createServerFn({ method: "GET" })
       }
     }
 
-    if (Array.isArray(data) && data.length > 0) {
+    if (Array.isArray(data)) {
       return data;
     }
 
-    const { DEFAULT_MEMBERS } = await import("../members-data");
-    return DEFAULT_MEMBERS.map((m) => ({
-      code: m.code,
-      name: m.name,
-      company: m.company || m.about || "CLB Doanh Nhân CEO 1983",
-      companyName: m.company || m.about || "CLB Doanh Nhân CEO 1983",
-      contact: m.contact || m.name,
-      personName: m.contact || m.name,
-      personTitle: m.executiveRole || "Hội viên chính thức",
-      email: m.email,
-      phone: m.phone,
-      about: m.about,
-      address: m.address,
-      website: m.website,
-      industry: m.industry,
-      region: m.region,
-      type: m.type,
-      verified: true,
-      userId: m.id,
-      avatar: null,
-    }));
+    return [];
   });
 
 export const listConnectedMembers = createServerFn({ method: "GET" })

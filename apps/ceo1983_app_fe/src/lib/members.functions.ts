@@ -5,7 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Member } from "./members-data";
-import { requireNestAuth, optionalNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth, optionalNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "./api-client";
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
@@ -104,7 +104,6 @@ export const listPeersFn = createServerFn({ method: "GET" })
     }
 
     if (Array.isArray(data) && data.length > 0) {
-      const { DEFAULT_MEMBERS } = await import("./members-data");
       const mapped = data.map((r: Row) => ({
         id: (r.id ?? r.userId ?? r.user_id ?? r.code) as string,
         code: (r.code as string) ?? "",
@@ -125,11 +124,10 @@ export const listPeersFn = createServerFn({ method: "GET" })
         executiveRole: (r.executiveRole ?? r.executive_role ?? "") as string,
         department: (r.department ?? r.board ?? r.boardWish ?? "") as string,
       }));
-      return mapped.length > 0 ? mapped : DEFAULT_MEMBERS;
+      return mapped;
     }
 
-    const { DEFAULT_MEMBERS } = await import("./members-data");
-    return DEFAULT_MEMBERS;
+    return [];
   });
 
 /** POST /api/members — Tạo hội viên mới */
@@ -159,16 +157,6 @@ export const getMemberFn = createServerFn({ method: "GET" })
     }
 
     const cleanId = String(data.id || "").toLowerCase().trim();
-
-    // Fallback tìm kiếm trong DEFAULT_MEMBERS
-    const { DEFAULT_MEMBERS } = await import("./members-data");
-    const foundInDefault = DEFAULT_MEMBERS.find(
-      (m) =>
-        m.id.toLowerCase() === cleanId ||
-        m.code.toLowerCase() === cleanId ||
-        m.email.toLowerCase() === cleanId
-    );
-    if (foundInDefault) return foundInDefault;
 
     // Fallback tìm kiếm trong committee accounts
     const { readManagedAccounts, accountToMember } = await import("./committee-accounts");
@@ -262,55 +250,9 @@ export const updateMemberRoleAndDeptFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RoleAndDeptSchema.parse(d))
   .handler(async ({ data, context }) => {
     const token = (context as any)?.token;
-    try {
-      const res = await fetchNestApiFromServer<any>(`/members/${data.memberId}/role-dept`, token, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
-      if (res && res.ok) {
-        return { ok: true };
-      }
-    } catch (e) {
-      console.warn("Fallback to direct db update for role-dept:", e);
-    }
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as any;
-    
-    // Update members
-    await admin
-      .from("members")
-      .update({
-        executive_role: data.executiveRole,
-        department: data.department,
-      })
-      .eq("id", data.memberId);
-
-    // Update memberships & user_roles
-    const { data: m } = await admin
-      .from("members")
-      .select("user_id")
-      .eq("id", data.memberId)
-      .maybeSingle();
-
-    if (m?.user_id) {
-      const sysRole = (data.executiveRole === 'president' || data.executiveRole === 'vice_president' || data.executiveRole === 'secretary') ? 'admin' : 'member';
-      await admin
-        .from("memberships")
-        .update({
-          executive_role: data.executiveRole,
-          department: data.department,
-          role: sysRole,
-        })
-        .eq("user_id", m.user_id);
-
-      await admin
-        .from("user_roles")
-        .upsert({
-          user_id: m.user_id,
-          role: sysRole,
-        }, { onConflict: "user_id" });
-    }
-
-    return { ok: true };
+    const res = await fetchNestApiFromServer<any>(`/members/${data.memberId}/role-dept`, token, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    return res ?? { ok: true };
   });

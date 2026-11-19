@@ -6,7 +6,7 @@ import type {
   RecentEntry,
   TicketStat,
 } from "./checkin-data";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "@/lib/api-client";
 
 export const getCheckinStateFn = createServerFn({ method: "GET" })

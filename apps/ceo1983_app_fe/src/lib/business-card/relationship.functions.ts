@@ -6,7 +6,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { RelationshipService } from "./relationship.service";
 import type { SavedCard } from "./relationship.types";
 

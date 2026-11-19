@@ -27,7 +27,7 @@ const bookingInput = z.object({
 /** Returns only taken slot keys ("YYYY-MM-DD|HH:mm") — no personal data. */
 export const getDemoAvailability = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => availabilityInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ taken: string[] }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("demo_requests")
@@ -37,7 +37,7 @@ export const getDemoAvailability = createServerFn({ method: "GET" })
       .not("preferred_slot", "is", null);
     if (error) throw new Error(error.message);
     const taken = (rows ?? [])
-      .filter((r) => r.preferred_date && r.preferred_slot)
+      .filter((r: any) => r.preferred_date && r.preferred_slot)
       .map((r: any) => `${r.preferred_date}|${String(r.preferred_slot).slice(0, 5)}`);
     return { taken: Array.from(new Set(taken)) };
   });

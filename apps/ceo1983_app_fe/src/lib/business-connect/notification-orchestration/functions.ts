@@ -8,7 +8,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { NotificationError, toNotificationError } from "./errors";
 import { DEFAULT_PREFERENCES, validateCategory, validateDigestMode } from "./preference-policy";
 import { normalizeQuietHours } from "./quiet-hours-policy";

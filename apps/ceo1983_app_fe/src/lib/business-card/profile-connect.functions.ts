@@ -11,7 +11,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { GlobalConnectionService } from "@/lib/global-network/service";
 import { GlobalNetworkError } from "@/lib/global-network/errors";
 import type { GlobalConnectionMutationResult } from "@/lib/global-network/types";

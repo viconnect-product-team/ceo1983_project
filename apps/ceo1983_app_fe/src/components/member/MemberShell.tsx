@@ -14,7 +14,6 @@ const emblem83 = "/ceo1983-emblem-8.png";
 
 import { PullToRefresh } from "@/components/member/PullToRefresh";
 import { IncomingConnectionModal } from "@/components/member/IncomingConnectionModal";
-import { WelcomeMemberModal } from "@/components/member/WelcomeMemberModal";
 import { sendExternalNotification, registerNativePushUser, getNotificationPermission } from "@/lib/notification-permissions";
 import { useAuth } from "@/context/AuthContext";
 import { AssociationMemberQrModal } from "@/components/member/AssociationMemberQrModal";
@@ -405,7 +404,6 @@ export function MemberScreen({ children }: { children: ReactNode }) {
           onSnooze={snoozeNotice}
         />
         <IncomingConnectionModal />
-        <WelcomeMemberModal />
         <FirstDayAiWelcomeModal onOpenTour={() => setShowAiTour(true)} />
         <ViOneAiTutorGuide
           isOpen={showAiTour}

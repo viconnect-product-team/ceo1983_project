@@ -290,12 +290,8 @@ function AccountManagementPage() {
         let mems: any[] = [];
         try {
           const memsRes = await fetchNestApi<any[]>("/members");
-          if (Array.isArray(memsRes) && memsRes.length > 0) mems = memsRes;
+          if (Array.isArray(memsRes)) mems = memsRes;
         } catch {}
-        if (mems.length === 0) {
-          const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
-          mems = DEFAULT_MEMBERS;
-        }
 
         userItems = mems.map((m: any, idx: number) => {
           let email = m.email || (m.code === "M1983-001" ? "admin@viconnect.vn" : "infor@viconnect.vn");
@@ -345,33 +341,9 @@ function AccountManagementPage() {
       setUserStats(statsData || { total: userItems.length, active: userItems.length, suspended: 0, admins: 1 });
     } catch (err: any) {
       console.error("Lỗi khi tải danh sách người dùng từ CSDL:", err);
-      // Fallback thời gian thực để không bao giờ bị 0
-      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
-      const fallbackUsers = DEFAULT_MEMBERS.map((m: any, idx: number) => {
-        let email = m.email || (m.code === "M1983-001" ? "admin@viconnect.vn" : "infor@viconnect.vn");
-        if (email === "info@viconnect.vn") email = "infor@viconnect.vn";
-        const isLTD = email.includes("admin@") || String(m.name || "").includes("Lê Thị Dung");
-        return {
-          id: m.id || `usr-mem-${idx + 1}`,
-          username: email,
-          email: email,
-          name: m.name || (isLTD ? "Lê Thị Dung (Admin Viconnect)" : "Phạm Hồng Nguyên"),
-          avatar_url: m.avatar || null,
-          email_verified: true,
-          account_status: "active",
-          company_name: m.company || "CLB Doanh Nhân CEO 1983",
-          professional_title: isLTD ? "Quản Trị Viên Hệ Thống" : "Trưởng Ban Truyền Thông",
-          roles: isLTD ? ["admin", "platform_admin"] : ["staff", "ban_dieu_hanh"],
-          primaryRole: isLTD ? "admin" : "staff",
-          department: isLTD ? "Ban Điều Hành" : "Ban Truyền Thông",
-          executiveRole: isLTD ? "admin" : "truong_ban_truyen_thong",
-          memberCode: m.code || `M1983-00${idx + 1}`,
-          created_at: m.joinedAt || "2026-08-18T00:00:00.000Z",
-        };
-      });
-      setUsersList(fallbackUsers);
-      setPagination({ page: 1, limit: 10, total: fallbackUsers.length, totalPages: 1 });
-      setUserStats({ total: 2, active: 2, suspended: 0, admins: 1 });
+      setUsersList([]);
+      setPagination({ page: 1, limit: 10, total: 0, totalPages: 1 });
+      setUserStats({ total: 0, active: 0, suspended: 0, admins: 0 });
     } finally {
       setUsersLoading(false);
     }

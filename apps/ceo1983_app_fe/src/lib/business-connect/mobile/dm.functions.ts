@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "../../api-client";
 import {
   DM_MAX_BODY_LEN,

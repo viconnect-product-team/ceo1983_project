@@ -3,7 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "@/lib/api-client";
 
 const MAX_THUMB_BYTES = 400 * 1024; // ~400KB thumbnail cap

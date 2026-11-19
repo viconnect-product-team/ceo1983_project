@@ -4,7 +4,7 @@
 // behind a single NestJS server function that returns ONLY a member-safe DTO.
 
 import { createServerFn } from "@tanstack/react-start";
-import { requireNestAuth } from "@/integrations/supabase/nest-auth-middleware";
+import { requireNestAuth } from "@/lib/auth-middleware";
 import { fetchNestApiFromServer } from "@/lib/api-client";
 
 export type MemberContextDTO = {

@@ -48,7 +48,6 @@ import type { ActivityLog } from "@/lib/extra-data";
 import { EmptyState, ErrorState, ListSkeleton, Skeleton } from "@/components/dashboard/StateKit";
 import { useRole } from "@/hooks/use-role";
 import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
-import { DEFAULT_MEMBERS } from "@/lib/members-data";
 
 /* ----------------------------- helpers ----------------------------- */
 
@@ -277,7 +276,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
       } catch {
         /* fallback to live default members */
       }
-      return DEFAULT_MEMBERS;
+      return [];
     },
     staleTime: 30000,
   });
@@ -396,7 +395,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
   // Robust merging: enrich server stats with client-queried Postgres records
   const s = useMemo<DashboardStats | undefined>(() => {
     const base = statsQ.data;
-    const clientMembers = membersQ.data && membersQ.data.length > 0 ? membersQ.data : DEFAULT_MEMBERS;
+    const clientMembers = membersQ.data || [];
     const clientInvoices = invoicesQ.data ?? [];
 
     if (!base && clientMembers.length === 0) return undefined;
@@ -418,8 +417,8 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
           return true;
         });
 
-    const totalMembers = members.length > 0 ? members.length : DEFAULT_MEMBERS.length;
-    const activeMembers = members.length > 0 ? members.filter((m: any) => m.status === "active" || m.status === "approved").length : DEFAULT_MEMBERS.length;
+    const totalMembers = members.length;
+    const activeMembers = members.length > 0 ? members.filter((m: any) => m.status === "active" || m.status === "approved").length : 0;
     const companies = members.filter((m: any) => m.type === "company" || m.type === "enterprise" || m.type === "corporate").length || 2;
     const individuals = members.filter((m: any) => m.type === "individual" || m.type === "personal" || !m.type).length;
     const pendingRenewals = members.filter((m: any) => m.status === "expired" || m.status === "pending" || m.status === "pending_approval").length;
@@ -471,7 +470,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
         const j = timeVal ? new Date(timeVal) : null;
         return j && !isNaN(j.getTime()) && j.getTime() <= end;
       }).length;
-      gList.push({ month: `${d.getMonth() + 1}/${d.getFullYear()}`, count: c || members.length || DEFAULT_MEMBERS.length });
+      gList.push({ month: `${d.getMonth() + 1}/${d.getFullYear()}`, count: c || members.length || 0 });
     }
 
     return {
@@ -521,7 +520,7 @@ export function ExecutiveDashboard({ authReady }: { authReady: boolean }) {
 
   const feeTotal = s.paidInvoices + s.unpaidInvoices;
   const feeRate = feeTotal > 0 ? Math.round((s.paidInvoices / feeTotal) * 100) : 0;
-  const effectiveMembers = membersQ.data && membersQ.data.length > 0 ? membersQ.data : DEFAULT_MEMBERS;
+  const effectiveMembers = membersQ.data || [];
 
   return (
     <div className="space-y-6">

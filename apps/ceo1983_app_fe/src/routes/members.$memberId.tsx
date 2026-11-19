@@ -76,18 +76,7 @@ export const Route = createFileRoute("/members/$memberId")({
   ssr: false,
   validateSearch: parseReviewSearch,
   loader: async ({ params }) => {
-    let member = await getMemberFn({ data: { id: params.memberId } }).catch(() => null);
-    if (!member) {
-      const { DEFAULT_MEMBERS } = await import("@/lib/members-data");
-      const cleanId = String(params.memberId || "").toLowerCase().trim();
-      member =
-        DEFAULT_MEMBERS.find(
-          (m) =>
-            m.id.toLowerCase() === cleanId ||
-            m.code.toLowerCase() === cleanId ||
-            m.email.toLowerCase() === cleanId
-        ) || null;
-    }
+    const member = await getMemberFn({ data: { id: params.memberId } }).catch(() => null);
     if (!member) throw notFound();
     const { reviews = [], stats = {} } = await listReviewsFn({ data: { sellerId: params.memberId } }).catch(() => ({ reviews: [], stats: {} }));
     const allProducts = await listProductsFn().catch(() => []);
