@@ -18,7 +18,7 @@ import { RecipientCardView } from "@/components/business-connect/mobile/me/Recip
 import { safeWebHref } from "@/lib/business-connect/mobile/public-actions";
 import type { PublicIdentityResult } from "@/lib/business-connect/mobile/identity.types";
 
-const SITE = "https://qlhh.lovable.app";
+const SITE = "https://ceo1983.viconnect.vn";
 
 const STATIC_META = {
   title: "Danh thiếp số — Business Connect",

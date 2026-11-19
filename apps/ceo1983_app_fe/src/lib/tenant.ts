@@ -13,7 +13,6 @@ export const PLATFORM_APP_HOSTS = [
 export function hostIsAppDomain(hostname: string): boolean {
   const h = hostname.split(":")[0].toLowerCase();
   if (!h || h === "localhost" || /^[\d.]+$/.test(h)) return true;
-  if (h.endsWith(".lovable.app") || h === "lovable.app") return true;
   if (h.endsWith(".viconnect.vn") || h === "viconnect.vn") return true;
   if (PLATFORM_APP_HOSTS.includes(h)) return true;
   return false;
@@ -25,7 +24,7 @@ export function isTenantHost(hostname: string): boolean {
 }
 
 /** Canonical published PWA install URL, used as SSR/fallback default. */
-export const CANONICAL_PWA_URL = "https://qlhh.lovable.app/m";
+export const CANONICAL_PWA_URL = "https://ceo1983.viconnect.vn/m";
 
 /**
  * Resolve the PWA install URL (QR/NFC target) for the current request.

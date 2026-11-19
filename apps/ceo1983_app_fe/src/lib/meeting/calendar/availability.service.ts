@@ -64,7 +64,7 @@ export async function findCommonAvailability(
 
   const prefsByUser = new Map<string, AvailabilityParticipant>();
   for (const id of ids) {
-    const row = (prefs ?? []).find((p) => String(p.user_id) === id);
+    const row = (prefs ?? []).find((p: any) => String(p.user_id) === id);
     prefsByUser.set(id, {
       userId: id,
       timezone: row?.timezone ?? input.organizerTimezone,

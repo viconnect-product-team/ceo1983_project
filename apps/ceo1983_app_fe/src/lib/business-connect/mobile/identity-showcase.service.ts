@@ -56,7 +56,7 @@ export async function getMyIdentityShowcase(
 
   if (error) throw new Error(error.message);
 
-  const items = (data ?? []).map((r: any) => mapRow(r as Row));
+  const items: IdentityShowcaseItem[] = (data ?? []).map((r: any) => mapRow(r as Row));
   return {
     businessAreas: items.filter((i) => i.kind === "business_area"),
     clients: items.filter((i) => i.kind === "client"),

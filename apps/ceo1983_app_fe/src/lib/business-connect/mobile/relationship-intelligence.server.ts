@@ -105,7 +105,7 @@ async function listSavedCardEdges(
   if (error) throw new Error(error.message);
   return (data ?? [])
     .map((r: any) => mapSavedEdge(r as Record<string, unknown>))
-    .filter((e): e is SavedCardEdge => e !== null);
+    .filter((e: any): e is SavedCardEdge => e !== null);
 }
 
 async function getSavedCardEdge(

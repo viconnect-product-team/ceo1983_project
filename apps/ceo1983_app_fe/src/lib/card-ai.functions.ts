@@ -135,8 +135,8 @@ export const analyzeCardImage = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data, context }): Promise<CardAiSuggestion> => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY missing on server");
+    const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("API Key cho Trợ lý AI chưa được cấu hình trên máy chủ.");
 
     // Identity comes from the verified auth context — never client input.
     // Rate limit is bound to the authenticated user; users without an active
@@ -314,8 +314,8 @@ export const recommendOptimalTemplate = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((d: unknown) => OptimalInput.parse(d))
   .handler(async ({ data, context }): Promise<OptimalTemplatePick> => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY missing on server");
+    const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("API Key cho Trợ lý AI chưa được cấu hình trên máy chủ.");
 
     // Same identity + spend guard as analyzeCardImage.
     let associationId2: string | null = null;

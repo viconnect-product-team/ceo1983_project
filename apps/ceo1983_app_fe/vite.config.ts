@@ -1,4 +1,7 @@
-import { defineConfig } from '@lovable.dev/vite-tanstack-config';
+import { defineConfig } from 'vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import viteTsConfigPaths from 'vite-tsconfig-paths';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,8 +9,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const emptyMock = path.resolve(__dirname, 'src/mock-empty.js');
 
-export default defineConfig({
-  vite: {
+export default defineConfig(async ({ command }) => {
+  const plugins = [
+    tailwindcss(),
+    viteTsConfigPaths({ projects: ['./tsconfig.json'] }),
+    tanstackStart({
+      importProtection: {
+        behavior: 'error',
+        client: {
+          files: ['**/server/**'],
+          specifiers: ['server-only'],
+        },
+      },
+    }),
+  ];
+
+  if (command === 'build') {
+    const { nitro } = await import('nitro/vite');
+    plugins.push(nitro());
+  }
+
+  return {
+    plugins,
     resolve: {
       alias: {
         'xmlhttprequest-ssl': emptyMock,
@@ -49,5 +72,5 @@ export default defineConfig({
         },
       },
     },
-  },
+  };
 });

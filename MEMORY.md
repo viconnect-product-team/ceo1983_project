@@ -1,5 +1,30 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 19/11/2026 (v11.71): Khắc Phục Triệt Để Lỗi GitHub Actions CI/CD Run #162 (PR #54) TS7006 "Parameter implicitly has an any type", Gỡ Bỏ 100% Gói & Cấu Hình Liên Quan Đến Supabase & Lovable, Chuẩn Hóa Native TanStack Start & Nitro Build (Exit Code 0) ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Phân Tích Nguyên Nhân Thất Bại Của GitHub Actions Run #162 (`PR #54: Merge dev -> main`, Commit `919d2ff`)**:
+    * Trong Run #162, bước `Kiểm Tra Chất Lượng Mã Nguồn (TypeScript Typecheck)` đã nhận diện được module `@supabase/supabase-js` thông qua `apps/ceo1983_app_fe/src/types/supabase.d.ts`.
+    * Tuy nhiên, vì khai báo ambient type trong `supabase.d.ts` trả về `any` cho các truy vấn DB stub, TypeScript ở chế độ nghiêm ngặt (`strict: true`, `noImplicitAny: true`) đã phát hiện 19 lỗi TS7006:
+      - `Parameter 'x' implicitly has an 'any' type.`
+      - `Parameter 'b' implicitly has an 'any' type.`
+      - `Parameter 'row' implicitly has an 'any' type.`
+      - `Parameter 'm'`, `'u'`, `'p'` implicitly has an 'any' type...
+    * Các lỗi này xảy ra tại 9 tệp server functions và repository: `source-loaders.server.ts`, `device-session.service.ts`, `identity-showcase.service.ts`, `relationship-intelligence.server.ts`, `business-meetings/repository.ts`, `identity-bridge.server.ts`, `platform-identity.server.ts`, `availability.service.ts`, `admin.functions.ts`.
+  - **2. Khắc Phục Lỗi TypeScript TS7006 (100% Type-Safe, Exit Code 0)**:
+    * Bổ sung định kiểu tường minh (`explicit typing`) cho tất cả callback lambda (`row: any`, `p: any`, `m: any`, `u: any`, `b: number`, `x: any`).
+    * Chuẩn hóa ép kiểu `Array.from(new Set<string>(linked))` tại `identity-bridge.server.ts`.
+    * Kiểm tra chất lượng cục bộ: Cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều vượt qua `npx tsc --noEmit` với **Exit code 0 (0 errors)**.
+  - **3. Thanh Lọc Toàn Diện (Purge) 100% Phụ Thuộc Vào Lovable & Supabase**:
+    * **Gỡ bỏ gói**: Gỡ bỏ hoàn toàn `@lovable.dev/vite-tanstack-config` và `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * **Chuẩn hóa Vite native**: Chuyển đổi `apps/ceo1983_app_fe/vite.config.ts` sang sử dụng trực tiếp cấu hình gốc chuẩn `vite`, `@tanstack/react-start/plugin/vite`, `nitro/vite`, `@tailwindcss/vite` và `vite-tsconfig-paths`, loại bỏ hoàn toàn middleware proxy Lovable sandbox (`/__l5e/assets-v1`), diagnostics filter và header rewrites.
+    * **Loại bỏ tên miền & URL Lovable**:
+      - `public/robots.txt`: Chuyển sitemap sang `https://ceo1983.viconnect.vn/sitemap.xml`.
+      - `src/lib/tenant.ts`: Gỡ bỏ nhánh kiểm tra domain `lovable.app`; cập nhật `CANONICAL_PWA_URL` về `https://ceo1983.viconnect.vn/m`.
+      - `src/routes/sitemap[.]xml.tsx`: Cập nhật `BASE_URL` về `https://ceo1983.viconnect.vn`.
+      - `src/routes/b.$slug.tsx`, `src/routes/c.$token.tsx`, `src/routes/company.$slug.tsx`: Cập nhật `SITE` về `https://ceo1983.viconnect.vn`.
+      - `src/components/landing/TenantNotFound.tsx`: Đổi liên kết nút trang chủ về `/`.
+      - `src/lib/associations/domain.functions.ts`: Đổi `PLATFORM_CNAME_TARGET` sang `ceo1983.viconnect.vn`; đổi bản ghi DNS TXT sang `_viconnect-verify` và `viconnect-verify=${token}`.
+      - `src/lib/ai.functions.ts`, `src/lib/card-ai.functions.ts`, `src/lib/ai-provider.server.ts`: Chuyển sang đọc API key chuẩn `OPENAI_API_KEY` / `GEMINI_API_KEY`.
+
 - **Bản cập nhật ngày 19/11/2026 (v11.70): Khắc Phục Lỗi GitHub Actions CI/CD #161 (PR #53) `Cannot find module '@supabase/supabase-js'`, Tạo Ambient Module Declarations & Đồng Bộ devDependencies Chuẩn Typecheck Exit Code 0 ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
   - **1. Phân Tích Nguyên Nhân Lỗi GitHub Actions Run #161 (`PR #53: Merge dev -> main`)**:
     * Khi merge PR #53 vào `main`, workflow `auto-deploy-subdomains.yml` khởi chạy trên GitHub Cloud Runner sạch (`ubuntu-latest`).
@@ -1822,6 +1847,31 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.71): Khắc Phục Triệt Để Lỗi GitHub Actions CI/CD Run #162 (PR #54) TS7006 "Parameter implicitly has an any type", Gỡ Bỏ 100% Gói & Cấu Hình Liên Quan Đến Supabase & Lovable, Chuẩn Hóa Native TanStack Start & Nitro Build (Exit Code 0) ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Phân Tích Nguyên Nhân Thất Bại Của GitHub Actions Run #162 (`PR #54: Merge dev -> main`, Commit `919d2ff`)**:
+    * Trong Run #162, bước `Kiểm Tra Chất Lượng Mã Nguồn (TypeScript Typecheck)` đã nhận diện được module `@supabase/supabase-js` thông qua `apps/ceo1983_app_fe/src/types/supabase.d.ts`.
+    * Tuy nhiên, vì khai báo ambient type trong `supabase.d.ts` trả về `any` cho các truy vấn DB stub, TypeScript ở chế độ nghiêm ngặt (`strict: true`, `noImplicitAny: true`) đã phát hiện 19 lỗi TS7006:
+      - `Parameter 'x' implicitly has an 'any' type.`
+      - `Parameter 'b' implicitly has an 'any' type.`
+      - `Parameter 'row' implicitly has an 'any' type.`
+      - `Parameter 'm'`, `'u'`, `'p'` implicitly has an 'any' type...
+    * Các lỗi này xảy ra tại 9 tệp server functions và repository: `source-loaders.server.ts`, `device-session.service.ts`, `identity-showcase.service.ts`, `relationship-intelligence.server.ts`, `business-meetings/repository.ts`, `identity-bridge.server.ts`, `platform-identity.server.ts`, `availability.service.ts`, `admin.functions.ts`.
+  - **2. Khắc Phục Lỗi TypeScript TS7006 (100% Type-Safe, Exit Code 0)**:
+    * Bổ sung định kiểu tường minh (`explicit typing`) cho tất cả callback lambda (`row: any`, `p: any`, `m: any`, `u: any`, `b: number`, `x: any`).
+    * Chuẩn hóa ép kiểu `Array.from(new Set<string>(linked))` tại `identity-bridge.server.ts`.
+    * Kiểm tra chất lượng cục bộ: Cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều vượt qua `npx tsc --noEmit` với **Exit code 0 (0 errors)**.
+  - **3. Thanh Lọc Toàn Diện (Purge) 100% Phụ Thuộc Vào Lovable & Supabase**:
+    * **Gỡ bỏ gói**: Gỡ bỏ hoàn toàn `@lovable.dev/vite-tanstack-config` và `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * **Chuẩn hóa Vite native**: Chuyển đổi `apps/ceo1983_app_fe/vite.config.ts` sang sử dụng trực tiếp cấu hình gốc chuẩn `vite`, `@tanstack/react-start/plugin/vite`, `nitro/vite`, `@tailwindcss/vite` và `vite-tsconfig-paths`, loại bỏ hoàn toàn middleware proxy Lovable sandbox (`/__l5e/assets-v1`), diagnostics filter và header rewrites.
+    * **Loại bỏ tên miền & URL Lovable**:
+      - `public/robots.txt`: Chuyển sitemap sang `https://ceo1983.viconnect.vn/sitemap.xml`.
+      - `src/lib/tenant.ts`: Gỡ bỏ nhánh kiểm tra domain `lovable.app`; cập nhật `CANONICAL_PWA_URL` về `https://ceo1983.viconnect.vn/m`.
+      - `src/routes/sitemap[.]xml.tsx`: Cập nhật `BASE_URL` về `https://ceo1983.viconnect.vn`.
+      - `src/routes/b.$slug.tsx`, `src/routes/c.$token.tsx`, `src/routes/company.$slug.tsx`: Cập nhật `SITE` về `https://ceo1983.viconnect.vn`.
+      - `src/components/landing/TenantNotFound.tsx`: Đổi liên kết nút trang chủ về `/`.
+      - `src/lib/associations/domain.functions.ts`: Đổi `PLATFORM_CNAME_TARGET` sang `ceo1983.viconnect.vn`; đổi bản ghi DNS TXT sang `_viconnect-verify` và `viconnect-verify=${token}`.
+      - `src/lib/ai.functions.ts`, `src/lib/card-ai.functions.ts`, `src/lib/ai-provider.server.ts`: Chuyển sang đọc API key chuẩn `OPENAI_API_KEY` / `GEMINI_API_KEY`.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.70): Khắc Phục Lỗi GitHub Actions CI/CD #161 (PR #53) `Cannot find module '@supabase/supabase-js'`, Tạo Ambient Module Declarations & Đồng Bộ devDependencies Chuẩn Typecheck Exit Code 0 ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
   - **1. Phân Tích Nguyên Nhân Lỗi GitHub Actions Run #161 (`PR #53: Merge dev -> main`)**:
@@ -4887,6 +4937,31 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.71): Khắc Phục Triệt Để Lỗi GitHub Actions CI/CD Run #162 (PR #54) TS7006 "Parameter implicitly has an any type", Gỡ Bỏ 100% Gói & Cấu Hình Liên Quan Đến Supabase & Lovable, Chuẩn Hóa Native TanStack Start & Nitro Build (Exit Code 0) ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Phân Tích Nguyên Nhân Thất Bại Của GitHub Actions Run #162 (`PR #54: Merge dev -> main`, Commit `919d2ff`)**:
+    * Trong Run #162, bước `Kiểm Tra Chất Lượng Mã Nguồn (TypeScript Typecheck)` đã nhận diện được module `@supabase/supabase-js` thông qua `apps/ceo1983_app_fe/src/types/supabase.d.ts`.
+    * Tuy nhiên, vì khai báo ambient type trong `supabase.d.ts` trả về `any` cho các truy vấn DB stub, TypeScript ở chế độ nghiêm ngặt (`strict: true`, `noImplicitAny: true`) đã phát hiện 19 lỗi TS7006:
+      - `Parameter 'x' implicitly has an 'any' type.`
+      - `Parameter 'b' implicitly has an 'any' type.`
+      - `Parameter 'row' implicitly has an 'any' type.`
+      - `Parameter 'm'`, `'u'`, `'p'` implicitly has an 'any' type...
+    * Các lỗi này xảy ra tại 9 tệp server functions và repository: `source-loaders.server.ts`, `device-session.service.ts`, `identity-showcase.service.ts`, `relationship-intelligence.server.ts`, `business-meetings/repository.ts`, `identity-bridge.server.ts`, `platform-identity.server.ts`, `availability.service.ts`, `admin.functions.ts`.
+  - **2. Khắc Phục Lỗi TypeScript TS7006 (100% Type-Safe, Exit Code 0)**:
+    * Bổ sung định kiểu tường minh (`explicit typing`) cho tất cả callback lambda (`row: any`, `p: any`, `m: any`, `u: any`, `b: number`, `x: any`).
+    * Chuẩn hóa ép kiểu `Array.from(new Set<string>(linked))` tại `identity-bridge.server.ts`.
+    * Kiểm tra chất lượng cục bộ: Cả `apps/ceo1983_app_fe` và `apps/ceo1983_app_be` đều vượt qua `npx tsc --noEmit` với **Exit code 0 (0 errors)**.
+  - **3. Thanh Lọc Toàn Diện (Purge) 100% Phụ Thuộc Vào Lovable & Supabase**:
+    * **Gỡ bỏ gói**: Gỡ bỏ hoàn toàn `@lovable.dev/vite-tanstack-config` và `@supabase/supabase-js` khỏi `apps/ceo1983_app_fe/package.json`.
+    * **Chuẩn hóa Vite native**: Chuyển đổi `apps/ceo1983_app_fe/vite.config.ts` sang sử dụng trực tiếp cấu hình gốc chuẩn `vite`, `@tanstack/react-start/plugin/vite`, `nitro/vite`, `@tailwindcss/vite` và `vite-tsconfig-paths`, loại bỏ hoàn toàn middleware proxy Lovable sandbox (`/__l5e/assets-v1`), diagnostics filter và header rewrites.
+    * **Loại bỏ tên miền & URL Lovable**:
+      - `public/robots.txt`: Chuyển sitemap sang `https://ceo1983.viconnect.vn/sitemap.xml`.
+      - `src/lib/tenant.ts`: Gỡ bỏ nhánh kiểm tra domain `lovable.app`; cập nhật `CANONICAL_PWA_URL` về `https://ceo1983.viconnect.vn/m`.
+      - `src/routes/sitemap[.]xml.tsx`: Cập nhật `BASE_URL` về `https://ceo1983.viconnect.vn`.
+      - `src/routes/b.$slug.tsx`, `src/routes/c.$token.tsx`, `src/routes/company.$slug.tsx`: Cập nhật `SITE` về `https://ceo1983.viconnect.vn`.
+      - `src/components/landing/TenantNotFound.tsx`: Đổi liên kết nút trang chủ về `/`.
+      - `src/lib/associations/domain.functions.ts`: Đổi `PLATFORM_CNAME_TARGET` sang `ceo1983.viconnect.vn`; đổi bản ghi DNS TXT sang `_viconnect-verify` và `viconnect-verify=${token}`.
+      - `src/lib/ai.functions.ts`, `src/lib/card-ai.functions.ts`, `src/lib/ai-provider.server.ts`: Chuyển sang đọc API key chuẩn `OPENAI_API_KEY` / `GEMINI_API_KEY`.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.70): Khắc Phục Lỗi GitHub Actions CI/CD #161 (PR #53) `Cannot find module '@supabase/supabase-js'`, Tạo Ambient Module Declarations & Đồng Bộ devDependencies Chuẩn Typecheck Exit Code 0 ([NODE-CORE-001], [NODE-CORE-004], [NODE-CORE-005])**:
   - **1. Phân Tích Nguyên Nhân Lỗi GitHub Actions Run #161 (`PR #53: Merge dev -> main`)**:

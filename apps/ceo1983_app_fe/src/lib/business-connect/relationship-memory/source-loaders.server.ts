@@ -176,7 +176,7 @@ export async function loadAgendaSource(
   if (!owners.has(receipt.ownerUserId)) forbidden("owner not authorized on agenda");
   const aggregateVersion = arr
     .map((r: any) => Number(r.version ?? 0))
-    .reduce((a, b) => a + b, 0)
+    .reduce((a: number, b: number) => a + b, 0)
     .toString();
   requireSameVersion(receipt, aggregateVersion);
 
@@ -187,7 +187,7 @@ export async function loadAgendaSource(
     .limit(50);
   const counterparts = (parts ?? [])
     .map((p: any) => p.person_node_id as string | null)
-    .filter((x): x is string => Boolean(x));
+    .filter((x: any): x is string => Boolean(x));
 
   const dto: AgendaExtractionSourceDTO = {
     sourceDomain: "agenda_safe",

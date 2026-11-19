@@ -1,6 +1,17 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 19/11/2026 (v11.71) — TRIỆT TIÊU 100% PHỤ THUỘC SUPABASE & LOVABLE, SỬA LỖI CI/CD TS7006 (0 ERRORS):
+#   * SỬA TRIỆT ĐỂ LỖI GITHUB ACTIONS RUN #162 (PR #54) TS7006 "Parameter implicitly has an any type":
+#       - Khắc phục toàn bộ 19 lỗi TS7006 do untyped callback parameters trong các tệp server functions và repositories.
+#       - Bổ sung explicit type annotations (row: any, p: any, m: any, u: any, b: number, x: any).
+#       - Cả hai phân hệ apps/ceo1983_app_fe và apps/ceo1983_app_be đều vượt qua `npx tsc --noEmit` với 0 lỗi (Exit Code 0).
+#   * GỠ BỎ HOÀN TOÀN CÁC GÓI VÀ THÀNH PHẦN LIÊN QUAN ĐẾN SUPABASE & LOVABLE:
+#       - Gỡ bỏ @lovable.dev/vite-tanstack-config và @supabase/supabase-js khỏi package.json.
+#       - Cấu hình apps/ceo1983_app_fe/vite.config.ts thuần khiết Vite với @tanstack/react-start, nitro, tailwindcss, vite-tsconfig-paths.
+#       - Cập nhật toàn bộ domain qlhh.lovable.app sang ceo1983.viconnect.vn trong robots.txt, tenant.ts, sitemap[.]xml.tsx, b.$slug.tsx, c.$token.tsx, company.$slug.tsx.
+#       - Cập nhật domain DNS verification sang _viconnect-verify.
+#       - Cập nhật các module AI đọc API key chuẩn OPENAI_API_KEY / GEMINI_API_KEY.
 # 18/11/2026 (v11.66) — HỆ THỐNG DYNAMIC AUTONOMOUS AI AGENT ĐA NỀN TẢNG (WEB CRM & MOBILE APP) CHUẨN MASTER PROMPT:
 #   * QUY CHUẨN BẤT DI BẤT DỊCH VỀ KIỂM DUYỆT (STRICT NO APPROVAL = NO EXECUTION):
 #       - Tuyệt đối cấm AI thực hiện bất kỳ thao tác ghi dữ liệu, gửi thông báo, đăng bài, tạo giao dịch hoặc gọi API bên ngoài trước khi người dùng phê duyệt kế hoạch cụ thể.

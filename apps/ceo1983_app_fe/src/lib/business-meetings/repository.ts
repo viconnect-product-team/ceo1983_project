@@ -94,7 +94,7 @@ export const MeetingRepository = {
       .eq("user_id", userId)
       .eq("response_status", "pending");
     if (pErr) throw new Error(pErr.message);
-    const ids = (parts ?? []).map((p) => (p as { meeting_id: string }).meeting_id);
+    const ids = (parts ?? []).map((p: any) => (p as { meeting_id: string }).meeting_id);
     if (ids.length === 0) return [];
     let q = supabase
       .from(MEETINGS)
@@ -227,7 +227,7 @@ async function participantMeetingIds(supabase: DB, userId: string): Promise<stri
     .eq("user_id", userId)
     .is("left_at", null);
   if (error) throw new Error(error.message);
-  const ids = (data ?? []).map((p) => (p as { meeting_id: string }).meeting_id);
+  const ids = (data ?? []).map((p: any) => (p as { meeting_id: string }).meeting_id);
   // Return a value that never matches when empty, keeping the .or() valid.
   return ids.length ? ids.join(",") : "00000000-0000-0000-0000-000000000000";
 }

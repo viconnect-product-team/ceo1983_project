@@ -7,7 +7,7 @@ import {
   type SitemapEntry,
 } from "@/lib/business-card/seo-engine";
 
-const BASE_URL = "https://qlhh.lovable.app";
+const BASE_URL = "https://ceo1983.viconnect.vn";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {

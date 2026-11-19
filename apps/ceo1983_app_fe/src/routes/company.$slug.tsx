@@ -14,7 +14,7 @@ import { useServerData } from "@/hooks/use-server-data";
 import { getPublicCompanyFn } from "@/lib/company/company.functions";
 import type { PublicCompany, PublicCompanyResult } from "@/lib/company/company.types";
 
-const SITE = "https://qlhh.lovable.app";
+const SITE = "https://ceo1983.viconnect.vn";
 
 export const Route = createFileRoute("/company/$slug")({
   // SSR so crawlers/social get a fully-rendered <head>. Body hydrates via

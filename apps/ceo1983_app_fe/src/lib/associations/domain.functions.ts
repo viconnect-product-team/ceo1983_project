@@ -10,7 +10,7 @@ const getDb = (ctx?: any) => ctx?.supabase || supabaseAdmin;
 // ============================================================
 
 /** Hostname that custom domains must CNAME to (the platform published host). */
-const PLATFORM_CNAME_TARGET = "qlhh.lovable.app";
+const PLATFORM_CNAME_TARGET = "ceo1983.viconnect.vn";
 
 export type DomainState = {
   subdomain: string | null;
@@ -37,9 +37,9 @@ function buildRecords(customDomain: string | null, token: string | null) {
   return {
     cname: { host: customDomain, type: "CNAME" as const, value: PLATFORM_CNAME_TARGET },
     txt: {
-      host: `_lovable-verify.${customDomain}`,
+      host: `_viconnect-verify.${customDomain}`,
       type: "TXT" as const,
-      value: `lovable-verify=${token}`,
+      value: `viconnect-verify=${token}`,
     },
   };
 }
@@ -220,11 +220,13 @@ export const verifyAssociationDomainFn = createServerFn({ method: "POST" })
       if (!dom || !token) throw new Error("NO_DOMAIN");
 
       // TXT ownership check.
-      const txtAnswers = await dohQuery(`_lovable-verify.${dom}`, "TXT");
-      const expected = `lovable-verify=${token}`;
-      const txtFound = txtAnswers.some((a) =>
-        a.data.replace(/^"|"$/g, "").replace(/""/g, "").includes(expected),
-      );
+      const txtAnswers = await dohQuery(`_viconnect-verify.${dom}`, "TXT");
+      const expected = `viconnect-verify=${token}`;
+      const legacyExpected = `lovable-verify=${token}`;
+      const txtFound = txtAnswers.some((a) => {
+        const clean = a.data.replace(/^"|"$/g, "").replace(/""/g, "");
+        return clean.includes(expected) || clean.includes(legacyExpected);
+      });
 
       // CNAME routing check (informational; not strictly required for ownership).
       const cnameAnswers = await dohQuery(dom, "CNAME");

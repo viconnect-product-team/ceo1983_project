@@ -102,7 +102,7 @@ export async function getAssociationContexts(
     if (m.association_id) memberByAssoc.set(m.association_id, m.id);
   }
 
-  return memberships.map((row) => {
+  return memberships.map((row: any) => {
     const assoc = row.associations as unknown as { name: string | null } | null;
     return {
       associationId: row.association_id,

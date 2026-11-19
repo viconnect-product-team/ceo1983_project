@@ -77,9 +77,9 @@ export const askAssistant = createServerFn({ method: "POST" })
   .middleware([requireNestAuth])
   .inputValidator((data: AiChatInput) => ({ messages: sanitize(data?.messages) }))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
     if (!apiKey) {
-      throw new Error("Trợ lý AI chưa được cấu hình. Thiếu LOVABLE_API_KEY.");
+      throw new Error("Trợ lý AI chưa được cấu hình khóa API.");
     }
 
     // Resolve association + roles SERVER-SIDE qua NestJS

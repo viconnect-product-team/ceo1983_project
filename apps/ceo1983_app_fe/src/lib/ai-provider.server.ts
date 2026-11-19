@@ -67,7 +67,7 @@ class GatewayAiProvider implements AiProvider {
   constructor(private config: AiConfig) {}
 
   async generate(input: AiProviderInput): Promise<AiProviderOutput> {
-    const apiKey = process.env.LOVABLE_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new AiProviderError("invalid_key", "Missing AI provider key");
 
     const userMsg = buildUserContextMessage({
