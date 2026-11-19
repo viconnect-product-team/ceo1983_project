@@ -1,7 +1,9 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type UserConfig } from 'vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import viteReact from '@vitejs/plugin-react';
 import viteTsConfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
+import { nitro } from 'nitro/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const emptyMock = path.resolve(__dirname, 'src/mock-empty.js');
 
-export default defineConfig(async ({ command }) => {
+export default defineConfig(({ command }): UserConfig => {
   const plugins = [
     tailwindcss(),
     viteTsConfigPaths({ projects: ['./tsconfig.json'] }),
@@ -22,21 +24,40 @@ export default defineConfig(async ({ command }) => {
         },
       },
     }),
+    viteReact(),
+    ...(command === 'build' ? [nitro()] : []),
   ];
-
-  if (command === 'build') {
-    const { nitro } = await import('nitro/vite');
-    plugins.push(nitro());
-  }
 
   return {
     plugins,
+    esbuild: {
+      jsx: 'automatic',
+    },
     resolve: {
       alias: {
         'xmlhttprequest-ssl': emptyMock,
         https: 'node:https',
         http: 'node:http',
       },
+      dedupe: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        '@tanstack/react-query',
+        '@tanstack/query-core',
+        '@tanstack/react-router',
+        '@tanstack/react-start',
+      ],
+    },
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+      ],
     },
     build: {
       sourcemap: false,
