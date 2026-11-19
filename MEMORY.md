@@ -1,5 +1,32 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 19/11/2026 (v11.69): Chẩn Đoán Dứt Điểm Sự Cố 502 Bad Gateway Trên `https://crm.ceo1983.viconnect.vn`, Cơ Chế Đột Tử Do Linux OOM Killer Sau Chu Kỳ 24h & Thiết Lập Phòng Tuyến Giới Hạn Bộ Nhớ (Memory Limits) + Log Rotation Cho Docker Compose ([NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Kết Quả Quét Hạ Tầng & Chẩn Đoán Thực Tế Trên VPS `14.225.217.232`**:
+    * Quét trực tiếp toàn bộ các cổng dịch vụ:
+      + Cổng `80` & `443` (Host Nginx): Đang chạy bình thường.
+      + Cổng `5002` (Frontend App Hội viên `ceo1983-frontend-prod`): **ĐANG SỐNG (HTTP 200 OK)** -> `https://ceo1983.viconnect.vn` hoạt động bình thường.
+      + Cổng `5003` (Backend App Hội viên `ceo1983-backend-prod`): **ĐANG SỐNG**.
+      + Cổng `5004` (Frontend CRM Quản trị `crm-frontend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+      + Cổng `5005` (Backend CRM Quản trị `crm-backend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+    * Cơ chế lỗi: Nginx host nhận request từ domain `https://crm.ceo1983.viconnect.vn`, chuyển tiếp tới upstream `http://127.0.0.1:5004`. Do container `crm-frontend-prod` đã dừng, Nginx không thể kết nối tới upstream và ngay lập tức phản hồi mã lỗi `502 Bad Gateway (nginx/1.18.0 (Ubuntu))`.
+  - **2. Nguyên Nhân Gốc Rễ Khiến Hệ Thống Bị "Sập Sau Chưa Đầy 24 Giờ"**:
+    * **Tràn RAM máy chủ & Linux OOM Killer**: VPS `14.225.217.232` gánh đồng thời Nginx, PostgreSQL, MinIO, Mobile App (FE + BE), Web CRM (FE + BE) và cụm container ViOne. Ứng dụng SSR TanStack Start/Nitro và NestJS khi chạy liên tục không có trần bộ nhớ sẽ phình RAM dần theo thời gian. Khi tổng RAM của VPS đạt 100%, nhân Linux kích hoạt `oom-killer` và gửi tín hiệu `SIGKILL` tiêu diệt tiến trình chiếm dụng nhiều bộ nhớ nhất (cặp container CRM).
+    * **Không có giới hạn tài nguyên trong Docker Compose**: File `deploy/crm/docker-compose.yml` trước đây chưa khai báo `mem_limit`, `mem_reservation`, và chưa cấu hình cờ khống chế Node.js heap `NODE_OPTIONS=--max-old-space-size=768`.
+    * **Phụ thuộc mạng ngoài `vione-network`**: Khai báo mạng ngoài `vione-network: external: true` nếu mạng này bị lỗi hoặc không khởi tạo kịp trên VPS sẽ khiến Docker Compose fail không thể tự khôi phục khi restart.
+  - **3. Các Biện Pháp Tăng Cường & Phòng Vệ Đã Thực Hiện Cục Bộ**:
+    * `deploy/crm/docker-compose.yml` & `deploy/ceo1983/docker-compose.yml`:
+      + Thiết lập cứng trần bộ nhớ: `mem_limit: 1024m` và `mem_reservation: 256m` cho từng service.
+      + Thiết lập cờ Node.js: `NODE_OPTIONS=--max-old-space-size=768` giúp V8 Engine chủ động dọn rác (GC) trước khi chạm mốc 1GB.
+      + Cấu hình xoay vòng nhật ký (Log Rotation): `logging.options.max-size: "10m"` và `max-file: "3"` chống tràn ổ đĩa VPS.
+      + Loại bỏ phụ thuộc mạng thừa `vione-network`, chỉ dùng mạng nội bộ thuần khiết `ceo1983-network`.
+    * `deploy/crm/Dockerfile.frontend` & `deploy/ceo1983/Dockerfile.frontend`: Bổ sung `ENV NODE_OPTIONS="--max-old-space-size=768"`.
+  - **4. Hướng Dẫn Kích Hoạt Lại CRM Trên Máy Chủ Ngay Lập Tức**:
+    * Cách 1 (Nhanh nhất - 5 giây trên VPS): Người dùng truy cập SSH vào VPS `14.225.217.232` và gõ:
+      ```bash
+      cd /root/crm && docker compose up -d
+      ```
+    * Cách 2 (Qua GitHub Actions): Tạo PR hoặc push nhánh `dev` sang `main`, workflow GitHub Actions sẽ tự động build và deploy toàn bộ lên VPS qua SSH secret.
+
 - **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
   - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
     * Loại bỏ component `<WelcomeMemberModal />` khỏi `MemberShell.tsx`.
@@ -1778,6 +1805,33 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.69): Chẩn Đoán Dứt Điểm Sự Cố 502 Bad Gateway Trên `https://crm.ceo1983.viconnect.vn`, Cơ Chế Đột Tử Do Linux OOM Killer Sau Chu Kỳ 24h & Thiết Lập Phòng Tuyến Giới Hạn Bộ Nhớ (Memory Limits) + Log Rotation Cho Docker Compose ([NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Kết Quả Quét Hạ Tầng & Chẩn Đoán Thực Tế Trên VPS `14.225.217.232`**:
+    * Quét trực tiếp toàn bộ các cổng dịch vụ:
+      + Cổng `80` & `443` (Host Nginx): Đang chạy bình thường.
+      + Cổng `5002` (Frontend App Hội viên `ceo1983-frontend-prod`): **ĐANG SỐNG (HTTP 200 OK)** -> `https://ceo1983.viconnect.vn` hoạt động bình thường.
+      + Cổng `5003` (Backend App Hội viên `ceo1983-backend-prod`): **ĐANG SỐNG**.
+      + Cổng `5004` (Frontend CRM Quản trị `crm-frontend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+      + Cổng `5005` (Backend CRM Quản trị `crm-backend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+    * Cơ chế lỗi: Nginx host nhận request từ domain `https://crm.ceo1983.viconnect.vn`, chuyển tiếp tới upstream `http://127.0.0.1:5004`. Do container `crm-frontend-prod` đã dừng, Nginx không thể kết nối tới upstream và ngay lập tức phản hồi mã lỗi `502 Bad Gateway (nginx/1.18.0 (Ubuntu))`.
+  - **2. Nguyên Nhân Gốc Rễ Khiến Hệ Thống Bị "Sập Sau Chưa Đầy 24 Giờ"**:
+    * **Tràn RAM máy chủ & Linux OOM Killer**: VPS `14.225.217.232` gánh đồng thời Nginx, PostgreSQL, MinIO, Mobile App (FE + BE), Web CRM (FE + BE) và cụm container ViOne. Ứng dụng SSR TanStack Start/Nitro và NestJS khi chạy liên tục không có trần bộ nhớ sẽ phình RAM dần theo thời gian. Khi tổng RAM của VPS đạt 100%, nhân Linux kích hoạt `oom-killer` và gửi tín hiệu `SIGKILL` tiêu diệt tiến trình chiếm dụng nhiều bộ nhớ nhất (cặp container CRM).
+    * **Không có giới hạn tài nguyên trong Docker Compose**: File `deploy/crm/docker-compose.yml` trước đây chưa khai báo `mem_limit`, `mem_reservation`, và chưa cấu hình cờ khống chế Node.js heap `NODE_OPTIONS=--max-old-space-size=768`.
+    * **Phụ thuộc mạng ngoài `vione-network`**: Khai báo mạng ngoài `vione-network: external: true` nếu mạng này bị lỗi hoặc không khởi tạo kịp trên VPS sẽ khiến Docker Compose fail không thể tự khôi phục khi restart.
+  - **3. Các Biện Pháp Tăng Cường & Phòng Vệ Đã Thực Hiện Cục Bộ**:
+    * `deploy/crm/docker-compose.yml` & `deploy/ceo1983/docker-compose.yml`:
+      + Thiết lập cứng trần bộ nhớ: `mem_limit: 1024m` và `mem_reservation: 256m` cho từng service.
+      + Thiết lập cờ Node.js: `NODE_OPTIONS=--max-old-space-size=768` giúp V8 Engine chủ động dọn rác (GC) trước khi chạm mốc 1GB.
+      + Cấu hình xoay vòng nhật ký (Log Rotation): `logging.options.max-size: "10m"` và `max-file: "3"` chống tràn ổ đĩa VPS.
+      + Loại bỏ phụ thuộc mạng thừa `vione-network`, chỉ dùng mạng nội bộ thuần khiết `ceo1983-network`.
+    * `deploy/crm/Dockerfile.frontend` & `deploy/ceo1983/Dockerfile.frontend`: Bổ sung `ENV NODE_OPTIONS="--max-old-space-size=768"`.
+  - **4. Hướng Dẫn Kích Hoạt Lại CRM Trên Máy Chủ Ngay Lập Tức**:
+    * Cách 1 (Nhanh nhất - 5 giây trên VPS): Người dùng truy cập SSH vào VPS `14.225.217.232` và gõ:
+      ```bash
+      cd /root/crm && docker compose up -d
+      ```
+    * Cách 2 (Qua GitHub Actions): Tạo PR hoặc push nhánh `dev` sang `main`, workflow GitHub Actions sẽ tự động build và deploy toàn bộ lên VPS qua SSH secret.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
   - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:
@@ -4799,6 +4853,33 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.69): Chẩn Đoán Dứt Điểm Sự Cố 502 Bad Gateway Trên `https://crm.ceo1983.viconnect.vn`, Cơ Chế Đột Tử Do Linux OOM Killer Sau Chu Kỳ 24h & Thiết Lập Phòng Tuyến Giới Hạn Bộ Nhớ (Memory Limits) + Log Rotation Cho Docker Compose ([NODE-CORE-004], [NODE-CORE-005])**:
+  - **1. Kết Quả Quét Hạ Tầng & Chẩn Đoán Thực Tế Trên VPS `14.225.217.232`**:
+    * Quét trực tiếp toàn bộ các cổng dịch vụ:
+      + Cổng `80` & `443` (Host Nginx): Đang chạy bình thường.
+      + Cổng `5002` (Frontend App Hội viên `ceo1983-frontend-prod`): **ĐANG SỐNG (HTTP 200 OK)** -> `https://ceo1983.viconnect.vn` hoạt động bình thường.
+      + Cổng `5003` (Backend App Hội viên `ceo1983-backend-prod`): **ĐANG SỐNG**.
+      + Cổng `5004` (Frontend CRM Quản trị `crm-frontend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+      + Cổng `5005` (Backend CRM Quản trị `crm-backend-prod`): **ĐÃ DỪNG / KHÔNG PHẢN HỒI (Connection Refused)**.
+    * Cơ chế lỗi: Nginx host nhận request từ domain `https://crm.ceo1983.viconnect.vn`, chuyển tiếp tới upstream `http://127.0.0.1:5004`. Do container `crm-frontend-prod` đã dừng, Nginx không thể kết nối tới upstream và ngay lập tức phản hồi mã lỗi `502 Bad Gateway (nginx/1.18.0 (Ubuntu))`.
+  - **2. Nguyên Nhân Gốc Rễ Khiến Hệ Thống Bị "Sập Sau Chưa Đầy 24 Giờ"**:
+    * **Tràn RAM máy chủ & Linux OOM Killer**: VPS `14.225.217.232` gánh đồng thời Nginx, PostgreSQL, MinIO, Mobile App (FE + BE), Web CRM (FE + BE) và cụm container ViOne. Ứng dụng SSR TanStack Start/Nitro và NestJS khi chạy liên tục không có trần bộ nhớ sẽ phình RAM dần theo thời gian. Khi tổng RAM của VPS đạt 100%, nhân Linux kích hoạt `oom-killer` và gửi tín hiệu `SIGKILL` tiêu diệt tiến trình chiếm dụng nhiều bộ nhớ nhất (cặp container CRM).
+    * **Không có giới hạn tài nguyên trong Docker Compose**: File `deploy/crm/docker-compose.yml` trước đây chưa khai báo `mem_limit`, `mem_reservation`, và chưa cấu hình cờ khống chế Node.js heap `NODE_OPTIONS=--max-old-space-size=768`.
+    * **Phụ thuộc mạng ngoài `vione-network`**: Khai báo mạng ngoài `vione-network: external: true` nếu mạng này bị lỗi hoặc không khởi tạo kịp trên VPS sẽ khiến Docker Compose fail không thể tự khôi phục khi restart.
+  - **3. Các Biện Pháp Tăng Cường & Phòng Vệ Đã Thực Hiện Cục Bộ**:
+    * `deploy/crm/docker-compose.yml` & `deploy/ceo1983/docker-compose.yml`:
+      + Thiết lập cứng trần bộ nhớ: `mem_limit: 1024m` và `mem_reservation: 256m` cho từng service.
+      + Thiết lập cờ Node.js: `NODE_OPTIONS=--max-old-space-size=768` giúp V8 Engine chủ động dọn rác (GC) trước khi chạm mốc 1GB.
+      + Cấu hình xoay vòng nhật ký (Log Rotation): `logging.options.max-size: "10m"` và `max-file: "3"` chống tràn ổ đĩa VPS.
+      + Loại bỏ phụ thuộc mạng thừa `vione-network`, chỉ dùng mạng nội bộ thuần khiết `ceo1983-network`.
+    * `deploy/crm/Dockerfile.frontend` & `deploy/ceo1983/Dockerfile.frontend`: Bổ sung `ENV NODE_OPTIONS="--max-old-space-size=768"`.
+  - **4. Hướng Dẫn Kích Hoạt Lại CRM Trên Máy Chủ Ngay Lập Tức**:
+    * Cách 1 (Nhanh nhất - 5 giây trên VPS): Người dùng truy cập SSH vào VPS `14.225.217.232` và gõ:
+      ```bash
+      cd /root/crm && docker compose up -d
+      ```
+    * Cách 2 (Qua GitHub Actions): Tạo PR hoặc push nhánh `dev` sang `main`, workflow GitHub Actions sẽ tự động build và deploy toàn bộ lên VPS qua SSH secret.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.68): Triệt Tiêu Toàn Bộ Supabase, Xóa Bỏ Dữ Liệu Mock / Fallback Theo Worktree, Chuẩn Hóa Kiến Trúc Domain API Layer, Sửa Lỗi WebSocket Handshake 307 & Lỗi Hydration React 19 ([NODE-CORE-001], [NODE-CORE-002], [NODE-APP-001], [NODE-CRM-001])**:
   - **1. Gỡ Bỏ Popup Chào Mừng Doanh Nhân Trên CEO 1983 Mobile App**:

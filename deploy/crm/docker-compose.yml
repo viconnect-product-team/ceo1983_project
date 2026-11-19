@@ -3,6 +3,13 @@ services:
     image: ${ASSOCIATION_FE_IMAGE:-crm-frontend}:latest
     container_name: crm-frontend-prod
     restart: always
+    mem_limit: 1024m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     env_file:
       - .env.crm
     environment:
@@ -10,6 +17,7 @@ services:
       - NITRO_PORT=8080
       - HOST=0.0.0.0
       - NITRO_HOST=0.0.0.0
+      - NODE_OPTIONS=--max-old-space-size=768
       - NEST_API_URL=http://crm-backend:4000
       - VITE_APP_SCOPE=crm_platform
       - VITE_APP_NAME="CEO 1983 CRM Admin"
@@ -21,17 +29,24 @@ services:
       - crm-backend
     networks:
       - ceo1983-network
-      - vione-network
 
   crm-backend:
     image: ${ASSOCIATION_BE_IMAGE:-crm-backend}:latest
     container_name: crm-backend-prod
     restart: always
+    mem_limit: 1024m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     env_file:
       - .env.crm
     environment:
       - NODE_ENV=production
       - PORT=4000
+      - NODE_OPTIONS=--max-old-space-size=768
       - APP_SCOPE=crm_platform
       - DOCKER_CONTAINER=true
     user: "0:0"
@@ -42,11 +57,6 @@ services:
     networks:
       ceo1983-network:
         aliases:
-          - backend
-          - crm-backend
-      vione-network:
-        aliases:
-          - backend
           - crm-backend
 
 volumes:
@@ -56,7 +66,4 @@ volumes:
 networks:
   ceo1983-network:
     name: ceo1983-network
-    external: true
-  vione-network:
-    name: vione-network
     external: true
