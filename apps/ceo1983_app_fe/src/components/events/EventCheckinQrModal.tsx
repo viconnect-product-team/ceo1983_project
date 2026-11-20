@@ -41,7 +41,8 @@ export function EventCheckinQrModal({
 }: EventCheckinQrModalProps) {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [protocolMode, setProtocolMode] = useState<"https" | "http">("http"); // Mặc định http để Zalo và mọi camera quét ăn ngay không bị lỗi chứng chỉ
+  const [protocolMode, setProtocolMode] = useState<"https" | "http">("http");
+  const [targetHostMode, setTargetHostMode] = useState<"current" | "prod">("current");
 
   if (!open) return null;
 
@@ -50,8 +51,16 @@ export function EventCheckinQrModal({
       ? window.location.host
       : "crm.ceo1983.viconnect.vn";
 
-  const scheme = protocolMode === "http" ? "http:" : "https:";
-  const checkinUrl = `${scheme}//${currentHost}/checkin/${event.id}`;
+  const selectedHost =
+    targetHostMode === "prod" ? "crm.ceo1983.viconnect.vn" : currentHost;
+
+  const isSelectedHostLocal =
+    selectedHost.includes("localhost") || selectedHost.includes("127.0.0.1");
+
+  // Localhost dev server chạy HTTP, không chạy HTTPS (tránh ERR_SSL_PROTOCOL_ERROR)
+  const effectiveProtocol = isSelectedHostLocal ? "http" : protocolMode;
+  const scheme = effectiveProtocol === "http" ? "http:" : "https:";
+  const checkinUrl = `${scheme}//${selectedHost}/checkin/${event.id}`;
   const qrImageUrl = getAbsoluteQrUrl(checkinUrl, 500);
 
   const eventName =
@@ -186,7 +195,7 @@ export function EventCheckinQrModal({
           <div className="w-full max-w-md bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600 text-left space-y-1">
             <div className="flex items-center gap-2 font-semibold text-slate-800">
               <MapPin className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
-              <span>Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội</span>
+              <span>Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội</span>
             </div>
             <div className="flex items-center gap-2 font-medium text-slate-600">
               <Phone className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />

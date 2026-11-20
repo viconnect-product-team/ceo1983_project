@@ -2722,7 +2722,7 @@ export class EventsService implements OnModuleInit {
     // 1. Check in event_registrations first
     const regRows = await this.prisma.$queryRaw<any[]>`
       SELECT 
-        r.id, r.member_name as name, r.email, r.ticket_type, r.seat_assignment, r.payment_status, r.checked_in_at,
+        r.id, r.event_id, r.member_name as name, r.email, r.ticket_type, r.seat_assignment, r.payment_status, r.checked_in_at,
         COALESCE(m.company, 'Doanh nghiệp CEO 1983') as company, COALESCE(m.position, 'CEO / Hội viên') as title, COALESCE(m.phone, '0983000001') as phone
       FROM public.event_registrations r
       LEFT JOIN public.members m ON (m.code = r.member_code OR (r.email != '' AND m.email = r.email))
@@ -2739,6 +2739,32 @@ export class EventsService implements OnModuleInit {
           SET checked_in_at = now(), updated_at = now()
           WHERE id = ${attendeeId}
         `.catch(() => null);
+
+        // Tự động gửi báo cáo danh sách check-in 3 định dạng về email viendoanhtri.iem@gmail.com
+        const autoReportEmail =
+          process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+        const targetEventId = cur.event_id;
+        if (targetEventId) {
+          this.sendCheckinReportEmail(
+            'system',
+            targetEventId,
+            autoReportEmail,
+            'all',
+            {
+              fullName: cur.name,
+              company: cur.company,
+              position: cur.title,
+              checkinTime: new Date().toLocaleString('vi-VN', {
+                timeZone: 'Asia/Ho_Chi_Minh',
+              }),
+              checkinStatus: 'on_time',
+            },
+          ).catch((err: any) => {
+            this.logger.warn(
+              `[AUTO-REPORT] Failed auto-send report on scan checkin: ${err.message}`,
+            );
+          });
+        }
 
         // Dispatch 2-way business notification
         try {
@@ -3530,6 +3556,28 @@ export class EventsService implements OnModuleInit {
         .catch(() => null);
     }
 
+    if (checkedIn) {
+      const autoReportEmail =
+        process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+      this.sendCheckinReportEmail(
+        userId,
+        eventId,
+        autoReportEmail,
+        'all',
+        {
+          fullName: memberName,
+          checkinTime: new Date().toLocaleString('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+          }),
+          checkinStatus: 'on_time',
+        },
+      ).catch((err: any) => {
+        this.logger.warn(
+          `[AUTO-REPORT] Failed auto-send report on admin addOrCheckinAttendee: ${err.message}`,
+        );
+      });
+    }
+
     return {
       ok: true,
       registrationId: regId,
@@ -4151,10 +4199,10 @@ export class EventsService implements OnModuleInit {
           company,
           eventTitle: event.name || event.title,
           eventDate: 'Thứ 7, ngày 21/11/2026',
-          eventTime: '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
+          eventTime: '14h30 - 17h30, Thứ 7, ngày 21/11/2026',
           eventLocation:
             event.location ||
-            'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
+            'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội',
           checkedInAt: checkedInAtFormatted,
           checkinStatus,
           hotline: '0988.870.888 / 0903.203.204',
@@ -4165,6 +4213,33 @@ export class EventsService implements OnModuleInit {
           );
         });
     }
+
+    // 4.1. Tự động gửi báo cáo danh sách check-in đầy đủ 3 định dạng (Excel, Word, PDF) về email viendoanhtri.iem@gmail.com
+    const autoReportEmail =
+      process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+    this.sendCheckinReportEmail(
+      'system',
+      resolvedEventId,
+      autoReportEmail,
+      'all',
+      {
+        fullName,
+        position,
+        company,
+        checkinTime: checkedInAtFormatted,
+        checkinStatus,
+      },
+    )
+      .then(() => {
+        this.logger.log(
+          `[AUTO-REPORT] Đã tự động gửi báo cáo check-in đủ 3 định dạng (Excel, Word, PDF) về ${autoReportEmail} sau khi ${fullName} check-in (Mã: ${regId})`,
+        );
+      })
+      .catch((reportErr: any) => {
+        this.logger.warn(
+          `[AUTO-REPORT] Lỗi tự động gửi báo cáo check-in về ${autoReportEmail}: ${reportErr.message}`,
+        );
+      });
 
     // 5. Lấy danh sách đại biểu đã đăng ký & điểm danh mới nhất
     const attendeesData = await this.getPublicAttendees(resolvedEventId).catch(() => ({
@@ -4373,7 +4448,7 @@ export class EventsService implements OnModuleInit {
       ['BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN'],
       [`Sự kiện: ${eventName}`],
       ['Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)'],
-      ['Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội'],
+      ['Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội'],
       [`Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: ${nowFormatted}`],
       [`Tổng số đại biểu: ${rows.length} | Đúng giờ (trong 30p): ${onTimeCount} | Check-in muộn: ${lateCount}`],
       [],
@@ -4508,7 +4583,7 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 160 },
               children: [
                 new DocxTextRun({
-                  text: 'Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00) | Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội | Hotline: 0988.870.888 / 0903.203.204',
+                  text: 'Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00) | Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội | Hotline: 0988.870.888 / 0903.203.204',
                   italics: true,
                   size: 18,
                   color: '64748B',
@@ -4520,7 +4595,7 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 160 },
               children: [
                 new DocxTextRun({
-                  text: `Thời gian: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00)\nĐịa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội\n`,
+                  text: `Thời gian: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00)\nĐịa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội\n`,
                   size: 19,
                   color: '64748B',
                 }),
@@ -4789,7 +4864,7 @@ export class EventsService implements OnModuleInit {
     });
 
     page.drawText(
-      `Thoi gian: 14h30 - 17h30, 21/11/2026 (Tiec 18h00 - 22h00) | Dia diem: Tang 2, NH Long Phung, 29T2 Trung hoa nhan chinh, HN`,
+      `Thoi gian: 14h30 - 17h30, 21/11/2026 (Tiec 18h00 - 22h00) | Dia diem: Tang 2, NH Long Phung, 29T2 Hoang Dao Thuy, HN`,
       {
         x: 50,
         y: height - 110,
@@ -4902,6 +4977,13 @@ export class EventsService implements OnModuleInit {
     eventId: string,
     targetEmail: string,
     format: 'all' | 'excel' | 'word' | 'pdf' = 'all',
+    latestAttendee?: {
+      fullName: string;
+      position?: string;
+      company?: string;
+      checkinTime?: string;
+      checkinStatus?: string;
+    },
   ) {
     const cleanEmail = (targetEmail || '').trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -5012,6 +5094,7 @@ export class EventsService implements OnModuleInit {
       totalAttendees: rows.filter((r) => r.checked_in_at).length,
       onTimeCount,
       lateCount,
+      latestAttendee,
     });
 
     return {

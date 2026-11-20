@@ -110,7 +110,7 @@ export function InvitationSetupManager() {
   const [eventTimeRange, setEventTimeRange] = useState<string>("14h30 – 22h00");
   const [eventDateString, setEventDateString] = useState<string>("Thứ Bảy, ngày 21/11/2026");
   const [eventVenue, setEventVenue] = useState<string>("Tầng 2, Nhà hàng Long Phụng");
-  const [eventAddress, setEventAddress] = useState<string>("29T2 Trung Hòa – Nhân Chính, Hà Nội");
+  const [eventAddress, setEventAddress] = useState<string>("29T2 Hoàng Đạo Thúy, Hà Nội");
   // Lời cảm ơn & Chữ ký
   const [saluteQuote, setSaluteQuote] = useState<string>(
     "Sự hiện diện của Quý vị là niềm vinh hạnh và góp phần tạo nên thành công của chương trình."

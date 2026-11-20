@@ -161,10 +161,28 @@ async function bootstrap() {
       res.setHeader('Cache-Control', 'no-store');
     }
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload',
-    );
+
+    // Strict-Transport-Security (HSTS): CHỈ áp dụng trên môi trường Production với kết nối HTTPS thực thụ.
+    // TUYỆT ĐỐI KHÔNG gửi HSTS về localhost, 127.0.0.1, IP nội bộ hoặc HTTP thông thường,
+    // vì sẽ khiến Chrome/Edge lưu cache HSTS và tự động ép chuyển hướng https://localhost:... gây lỗi ERR_SSL_PROTOCOL_ERROR khi test local!
+    const reqHost = (req.headers.host || req.hostname || '').toLowerCase();
+    const isLocalOrIp =
+      reqHost.includes('localhost') ||
+      reqHost.includes('127.0.0.1') ||
+      /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?::\d+)?$/.test(reqHost);
+    const isHttps =
+      req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+    if (isLocalOrIp) {
+      // Gửi max-age=0 để xóa sạch mọi cache HSTS trước đó nếu trình duyệt đã lỡ lưu
+      res.setHeader('Strict-Transport-Security', 'max-age=0');
+    } else if (process.env.NODE_ENV === 'production' && isHttps) {
+      res.setHeader(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains; preload',
+      );
+    }
+
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader(
       'Permissions-Policy',

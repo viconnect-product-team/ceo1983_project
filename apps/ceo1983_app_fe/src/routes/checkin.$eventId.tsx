@@ -42,12 +42,12 @@ export const Route = createFileRoute("/checkin/$eventId")({
       // Fallback chuẩn theo yêu cầu sự kiện Viện Doanh Trí 21/11/2026
       event = {
         id: params.eventId,
-        name: "KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11 - TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”",
-        title: "TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”",
-        tagline: "Dòng tiền - Năng suất thực - Thị trường, trong kỷ nguyên AI",
+        name: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11",
+        title: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11",
+        tagline: "Kỷ niệm 4 năm thành lập Viện Doanh Trí",
         date: "2026-11-21",
-        time: "14h30 - 17h30 (Tiệc: 18h00 - 22h00)",
-        location: "Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội",
+        time: "14h30 - 17h30, Thứ 7, ngày 21/11/2026",
+        location: "Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy",
       };
     }
     return { event };
@@ -255,12 +255,12 @@ function PublicEventCheckinPage() {
                     <span className="font-bold text-slate-900">{result.email}</span>
                   </div>
                   <div className="flex justify-between py-1 border-t border-dashed border-slate-200">
-                    <span className="text-slate-500 font-medium">Chức danh:</span>
-                    <span className="font-bold text-slate-900">{result.position || "—"}</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-t border-dashed border-slate-200">
                     <span className="text-slate-500 font-medium">Doanh nghiệp:</span>
                     <span className="font-bold text-slate-900">{result.company || "—"}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-t border-dashed border-slate-200">
+                    <span className="text-slate-500 font-medium">Chức danh:</span>
+                    <span className="font-bold text-slate-900">{result.position || "—"}</span>
                   </div>
                   <div className="flex justify-between py-1 border-t border-dashed border-slate-200">
                     <span className="text-slate-500 font-medium">Mã đăng ký:</span>
@@ -280,18 +280,17 @@ function PublicEventCheckinPage() {
                 <div className="bg-sky-50/70 border border-sky-200/60 rounded-2xl p-4 text-xs text-sky-950 space-y-2">
                   <div className="font-bold text-[#005BAC] flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-[#00A859]" />
-                    CHƯƠNG TRÌNH HÔM NAY (21/11/2026):
+                    CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ
                   </div>
-                  <ul className="space-y-1.5 list-disc list-inside text-[11px] leading-relaxed text-slate-700">
-                    <li>
-                      <strong>14h30 - 17h30:</strong> Toạ đàm “Doanh nghiệp Việt 2027: Củng cố nội lực - Kết nối - Tạo đà tăng trưởng”
-                    </li>
-                    <li>
-                      <strong>18h00 - 22h00:</strong> Tiệc mừng sinh nhật Viện Doanh Trí 4 năm & Tri ân Ngày Nhà Giáo Việt Nam 20/11
-                    </li>
-                  </ul>
-                  <div className="text-[11px] text-slate-600 pt-1 border-t border-sky-200/50">
-                    📍 Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội
+                  <div className="text-[11px] text-slate-700 flex flex-col gap-1.5 pt-1 border-t border-sky-200/50">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
+                      <span><strong>Thời gian:</strong> 14h30 - 17h30, Thứ 7, ngày 21/11/2026</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
+                      <span><strong>Địa điểm:</strong> Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy</span>
+                    </div>
                   </div>
                 </div>
 
@@ -449,54 +448,49 @@ function PublicEventCheckinPage() {
         ) : (
           /* FORM CHECK-IN VÀ TAB CHUYỂN ĐỔI */
           <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-            {/* Header thông tin sự kiện với nhận diện Viện Doanh Trí (Xanh lá & Xanh dương) */}
-            <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] p-6 text-white relative overflow-hidden">
-              <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-white/10 rounded-full pointer-events-none blur-2xl" />
-              <div className="relative z-10 space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30 shadow-sm">
-                  <Sparkles className="w-3 h-3 text-emerald-300" />
-                  KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN 20/11
+            {/* Header thông tin sự kiện nhận diện Viện Doanh Trí chuẩn theo Image 1 */}
+            <div className="bg-white p-6 sm:p-7 border-b border-slate-200 text-center">
+              <div className="inline-flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+                <div className="text-right">
+                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
+                    CHƯƠNG TRÌNH
+                  </div>
+                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
+                    KỶ NIỆM
+                  </div>
                 </div>
-
-                <h2 className="text-base sm:text-lg font-black leading-snug text-white">
-                  TOẠ ĐÀM: “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”
-                </h2>
-
-                <p className="text-xs text-emerald-100 font-medium italic">
-                  Dòng tiền - Năng suất thực - Thị trường, trong kỷ nguyên AI
-                </p>
-
-                {/* Key Event Badges */}
-                <div className="pt-2 flex flex-col gap-1.5 text-xs text-sky-100">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                    <span>14h30 - 17h30, Thứ 7, ngày 21/11/2026</span>
+                <div className="h-10 sm:h-12 w-[2px] bg-slate-300 mx-1 hidden sm:block" />
+                <div className="text-4xl sm:text-5xl font-black text-[#00A859] leading-none px-1">
+                  4
+                </div>
+                <div className="text-left">
+                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
+                    NĂM THÀNH LẬP
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                    <span>(18h00 - 22h00: Tiệc sinh nhật Viện & Tri ân 20/11)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                    <span>Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội</span>
-                  </div>
-                  <div className="flex items-center gap-2 font-bold text-white">
-                    <Phone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                    <span>Hotline: 0988.870.888 / 0903.203.204</span>
+                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
+                    VIỆN DOANH TRÍ
                   </div>
                 </div>
               </div>
-            </div>
+              <div className="mt-2.5 text-xs sm:text-sm font-extrabold text-[#008A44] tracking-wider uppercase">
+                &amp; TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11
+              </div>
 
-            {/* Note Check-in */}
-            <div className="px-6 py-3 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between text-xs text-amber-900 font-semibold">
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-amber-600" />
-                Check-in 30 phút đầu tính là Đúng giờ
-              </span>
-              <span className="text-[11px] font-normal text-amber-700">
-                (Sau 30 phút: Check-in muộn)
-              </span>
+              {/* Thông tin Thời gian & Địa điểm (chỉ text gọn theo yêu cầu) */}
+              <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-col gap-1.5 text-xs text-slate-600 max-w-md mx-auto">
+                <div className="flex items-center justify-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#00A859] shrink-0" />
+                  <span className="font-bold text-slate-800">14h30 - 17h30, Thứ 7, ngày 21/11/2026</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <MapPin className="w-4 h-4 text-[#00A859] shrink-0" />
+                  <span className="font-bold text-slate-800">Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy</span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500">
+                  <Phone className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />
+                  <span>Hotline BTC: 0988.870.888 / 0903.203.204</span>
+                </div>
+              </div>
             </div>
 
             {/* Tab chuyển đổi giữa Form và Danh sách đại biểu */}
@@ -531,7 +525,7 @@ function PublicEventCheckinPage() {
             </div>
 
             {activeTab === "form" ? (
-              /* Form ngắn gọn 4 trường */
+              /* Form ngắn gọn 4-5 trường */
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 {/* Họ và tên */}
                 <div className="space-y-1">
@@ -564,32 +558,17 @@ function PublicEventCheckinPage() {
                   />
                 </div>
 
-                {/* Email (tuỳ chọn) */}
+                {/* Email */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5 text-[#005BAC]" />
-                    Địa chỉ Email (nhận thư cảm ơn & thông báo):
+                    Email:
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@company.vn (không bắt buộc)"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
-                  />
-                </div>
-
-                {/* Chức danh */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-[#005BAC]" />
-                    Chức danh:
-                  </label>
-                  <input
-                    type="text"
-                    value={position}
-                    onChange={(e) => setPosition(e.target.value)}
-                    placeholder="Ví dụ: Chủ tịch, Tổng giám đốc, Giám đốc..."
+                    placeholder="email@company.vn"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
                   />
                 </div>
@@ -605,6 +584,21 @@ function PublicEventCheckinPage() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     placeholder="Ví dụ: Công ty CP Đầu Tư & Phát Triển..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
+                  />
+                </div>
+
+                {/* Chức danh */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-[#005BAC]" />
+                    Chức danh:
+                  </label>
+                  <input
+                    type="text"
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    placeholder="Ví dụ: Chủ tịch, Tổng giám đốc, Giám đốc..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
                   />
                 </div>

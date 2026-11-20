@@ -1,5 +1,69 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.84): Kích Hoạt Tự Động Gửi Báo Cáo Check-in Đầy Đủ 3 Định Dạng (Excel, Word, PDF) Về Email `viendoanhtri.iem@gmail.com` Ngay Khi Có Người Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Cơ Chế Tự Động Kích Hoạt Ngay Sau Check-in**:
+    * Khi bất kỳ khách mời hoặc đại biểu nào hoàn tất check-in (qua Form QR Public, quét camera điểm danh, hoặc xác nhận trên CRM):
+      - Backend NestJS (`apps/ceo1983_app_be/src/events/events.service.ts`) tự động bắt sự kiện và lấy ngay danh sách đại biểu cập nhật mới nhất từ CSDL `113.20.107.184:6432`.
+      - Hệ thống tự động tạo đồng thời cả 3 tệp báo cáo chuẩn hóa:
+        1. **Excel (.xlsx)**: Đầy đủ 8 dòng Header Viện Doanh Trí, 10 cột dữ liệu (Họ tên, SĐT, Email, Doanh nghiệp, Chức danh, Giờ check-in, Phân loại Đúng giờ/Muộn) và 3 ô ký duyệt chân trang.
+        2. **Word (.docx)**: Tiêu đề trang trọng, thống kê số lượng và bảng dữ liệu đại biểu chi tiết.
+        3. **PDF (.pdf)**: Thiết kế màu xanh thương hiệu Viện Doanh Trí, phân trang chuẩn và số liệu rõ ràng.
+      - Tự động đính kèm cả 3 tệp vào thư và bắn email về địa chỉ: **`viendoanhtri.iem@gmail.com`** (hỗ trợ ghi đè qua biến môi trường `VIEN_DOANHTRI_REPORT_EMAIL`).
+  - **2. Nội Dung Email Báo Cáo Trực Quan & Nổi Bật Người Vừa Check-in**:
+    * Tiêu đề email: `[Viện Doanh Trí] Báo Cáo Check-in ([Họ và tên]): [Tên sự kiện]`.
+    * Thân thư thông báo rõ ràng:
+      - Họ và tên đại biểu vừa check-in, đơn vị/doanh nghiệp, chức danh, giờ check-in (đúng giờ hay muộn).
+      - Thẻ thống kê tổng số đại biểu, số người check-in đúng giờ (trong 30 phút đầu), số người check-in muộn.
+      - Danh sách 3 tệp đính kèm để Ban tổ chức mở xem hoặc in ấn ngay lập tức.
+  - **3. Kiến Trúc Bất Đồng Bộ (Non-blocking)**:
+    * Việc tạo 3 tệp và gửi SMTP được thực thi ngầm (asynchronous background execution) qua Promise `.then().catch()`, tuyệt đối không làm trễ thời gian phản hồi HTTP của khách mời trên màn hình di động. Khách quét QR bấm check-in là nhận kết quả thành công tức thì.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.83): Chuẩn Hóa Giao Diện Form Check-in Viện Doanh Trí Theo Thiết Kế Ảnh 1, Xóa Bỏ Hoàn Toàn Popup Hướng Dẫn Kéo Lên, Đổi Thứ Tự Trường Form & Chuẩn Hóa Địa Chỉ `29T2 Hoàng Đạo Thúy` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Xóa Bỏ Hoàn Toàn Popup Hướng Dẫn Kéo Từ Dưới Lên Khi Quét QR Check-in**:
+    * Trong `apps/ceo1983_app_fe/src/components/member/IosInstallPrompt.tsx` và `apps/ceo1983_app_fe/src/routes/__root.tsx`:
+      - Bổ sung bộ lọc đường dẫn nghiêm ngặt: nếu `pathname.toLowerCase().startsWith('/checkin')` thì trả về `null` ngay lập tức.
+      - Triệt tiêu hoàn toàn tình trạng hiện popup cài đặt PWA hoặc hướng dẫn mở trình duyệt ngoài khi người dùng quét mã QR check-in qua Zalo hoặc trình duyệt di động.
+  - **2. Tái Thiết Kế Header Form Check-in Viện Doanh Trí Chuẩn Xác Theo Ảnh 1 (`media_1795174806684_973108ff.jpg`)**:
+    * Thiết kế typography nhận diện thương hiệu Viện Doanh Trí:
+      - Bên trái: `CHƯƠNG TRÌNH KỶ NIỆM` (Xanh dương đậm `#003B7A`).
+      - Dải ngăn cách dọc `|`.
+      - Trung tâm: Số `4` cỡ lớn (Xanh lá `#00A859`).
+      - Bên phải: `NĂM THÀNH LẬP VIỆN DOANH TRÍ` (Xanh dương đậm `#003B7A`).
+      - Dòng dưới: `& TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11` (Xanh lá đậm `#008A44`).
+    * Thông tin thời gian & địa điểm cô đọng, trang trọng:
+      - `🕒 14h30 - 17h30, Thứ 7, ngày 21/11/2026`
+      - `📍 Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy`
+      - `Hotline BTC: 0988.870.888 / 0903.203.204`
+    * Lược bỏ hoàn toàn khối agenda chi tiết (bỏ toạ đàm dòng tiền, bỏ tiệc sinh nhật 18h-22h) và lược bỏ thanh lưu ý check-in 30 phút theo đúng yêu cầu.
+  - **3. Chuẩn Hóa Nhãn Trường Email & Đảo Thứ Tự Trường Nhập Liệu**:
+    * Nhãn trường Email rút gọn thành: `Email:` (thay cho dòng dài `Địa chỉ Email (nhận thư cảm ơn & thông báo):`).
+    * Đảo vị trí trường `Công ty / Doanh nghiệp` lên trước trường `Chức danh`.
+    * Thứ tự chuẩn 5 trường trên Form check-in:
+      1. `Họ và tên của Quý Anh/Chị: *`
+      2. `Số điện thoại liên hệ:`
+      3. `Email:`
+      4. `Công ty / Doanh nghiệp:`
+      5. `Chức danh:`
+    * Đồng bộ thứ tự này cả trên màn hình kết quả check-in thành công.
+  - **4. Chuẩn Hóa Toàn Diện Địa Chỉ `29T2 Hoàng Đạo Thúy`**:
+    * Thay thế toàn bộ địa chỉ cũ (`29T2 Trung hòa nhân chính`) thành `29T2 Hoàng Đạo Thúy` trên:
+      - Form check-in public (`apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`).
+      - Màn hình kết quả xác nhận check-in.
+      - Modal hiển thị mã QR check-in (`EventCheckinQrModal.tsx`).
+      - Modal cấu hình thư mời (`InvitationSetupManager.tsx`, `ZaloZbsInvitationModal.tsx`).
+      - Backend Events Service (`events.service.ts`: template email, xuất Excel, xuất Word docx, xuất PDF).
+      - Backend Mail Service (`mail.service.ts`).
+  - **5. Kiểm Tra Chất Lượng Mã Nguồn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.82): Nâng Cấp Tự Động Cấp Phát Chứng Chỉ SSL Let's Encrypt CA Trusted Cho `crm.ceo1983.viconnect.vn` & `ceo1983.viconnect.vn`, Khắc Phục Triệt Để Lỗi Zalo `NET::ERR_CERT_AUTHORITY_INVALID` ([NODE-CORE-006])**:
   - **1. Phân Tích Thực Trạng Nguyên Nhân Gốc Rễ Lỗi SSL**:
     * Khi kiểm tra trực tiếp qua mạng internet tới IP VPS `14.225.217.232` (port 443 và port 80):
@@ -2166,6 +2230,70 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.84): Kích Hoạt Tự Động Gửi Báo Cáo Check-in Đầy Đủ 3 Định Dạng (Excel, Word, PDF) Về Email `viendoanhtri.iem@gmail.com` Ngay Khi Có Người Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Cơ Chế Tự Động Kích Hoạt Ngay Sau Check-in**:
+    * Khi bất kỳ khách mời hoặc đại biểu nào hoàn tất check-in (qua Form QR Public, quét camera điểm danh, hoặc xác nhận trên CRM):
+      - Backend NestJS (`apps/ceo1983_app_be/src/events/events.service.ts`) tự động bắt sự kiện và lấy ngay danh sách đại biểu cập nhật mới nhất từ CSDL `113.20.107.184:6432`.
+      - Hệ thống tự động tạo đồng thời cả 3 tệp báo cáo chuẩn hóa:
+        1. **Excel (.xlsx)**: Đầy đủ 8 dòng Header Viện Doanh Trí, 10 cột dữ liệu (Họ tên, SĐT, Email, Doanh nghiệp, Chức danh, Giờ check-in, Phân loại Đúng giờ/Muộn) và 3 ô ký duyệt chân trang.
+        2. **Word (.docx)**: Tiêu đề trang trọng, thống kê số lượng và bảng dữ liệu đại biểu chi tiết.
+        3. **PDF (.pdf)**: Thiết kế màu xanh thương hiệu Viện Doanh Trí, phân trang chuẩn và số liệu rõ ràng.
+      - Tự động đính kèm cả 3 tệp vào thư và bắn email về địa chỉ: **`viendoanhtri.iem@gmail.com`** (hỗ trợ ghi đè qua biến môi trường `VIEN_DOANHTRI_REPORT_EMAIL`).
+  - **2. Nội Dung Email Báo Cáo Trực Quan & Nổi Bật Người Vừa Check-in**:
+    * Tiêu đề email: `[Viện Doanh Trí] Báo Cáo Check-in ([Họ và tên]): [Tên sự kiện]`.
+    * Thân thư thông báo rõ ràng:
+      - Họ và tên đại biểu vừa check-in, đơn vị/doanh nghiệp, chức danh, giờ check-in (đúng giờ hay muộn).
+      - Thẻ thống kê tổng số đại biểu, số người check-in đúng giờ (trong 30 phút đầu), số người check-in muộn.
+      - Danh sách 3 tệp đính kèm để Ban tổ chức mở xem hoặc in ấn ngay lập tức.
+  - **3. Kiến Trúc Bất Đồng Bộ (Non-blocking)**:
+    * Việc tạo 3 tệp và gửi SMTP được thực thi ngầm (asynchronous background execution) qua Promise `.then().catch()`, tuyệt đối không làm trễ thời gian phản hồi HTTP của khách mời trên màn hình di động. Khách quét QR bấm check-in là nhận kết quả thành công tức thì.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.83): Chuẩn Hóa Giao Diện Form Check-in Viện Doanh Trí Theo Thiết Kế Ảnh 1, Xóa Bỏ Hoàn Toàn Popup Hướng Dẫn Kéo Lên, Đổi Thứ Tự Trường Form & Chuẩn Hóa Địa Chỉ `29T2 Hoàng Đạo Thúy` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Xóa Bỏ Hoàn Toàn Popup Hướng Dẫn Kéo Từ Dưới Lên Khi Quét QR Check-in**:
+    * Trong `apps/ceo1983_app_fe/src/components/member/IosInstallPrompt.tsx` và `apps/ceo1983_app_fe/src/routes/__root.tsx`:
+      - Bổ sung bộ lọc đường dẫn nghiêm ngặt: nếu `pathname.toLowerCase().startsWith('/checkin')` thì trả về `null` ngay lập tức.
+      - Triệt tiêu hoàn toàn tình trạng hiện popup cài đặt PWA hoặc hướng dẫn mở trình duyệt ngoài khi người dùng quét mã QR check-in qua Zalo hoặc trình duyệt di động.
+  - **2. Tái Thiết Kế Header Form Check-in Viện Doanh Trí Chuẩn Xác Theo Ảnh 1 (`media_1795174806684_973108ff.jpg`)**:
+    * Thiết kế typography nhận diện thương hiệu Viện Doanh Trí:
+      - Bên trái: `CHƯƠNG TRÌNH KỶ NIỆM` (Xanh dương đậm `#003B7A`).
+      - Dải ngăn cách dọc `|`.
+      - Trung tâm: Số `4` cỡ lớn (Xanh lá `#00A859`).
+      - Bên phải: `NĂM THÀNH LẬP VIỆN DOANH TRÍ` (Xanh dương đậm `#003B7A`).
+      - Dòng dưới: `& TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11` (Xanh lá đậm `#008A44`).
+    * Thông tin thời gian & địa điểm cô đọng, trang trọng:
+      - `🕒 14h30 - 17h30, Thứ 7, ngày 21/11/2026`
+      - `📍 Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy`
+      - `Hotline BTC: 0988.870.888 / 0903.203.204`
+    * Lược bỏ hoàn toàn khối agenda chi tiết (bỏ toạ đàm dòng tiền, bỏ tiệc sinh nhật 18h-22h) và lược bỏ thanh lưu ý check-in 30 phút theo đúng yêu cầu.
+  - **3. Chuẩn Hóa Nhãn Trường Email & Đảo Thứ Tự Trường Nhập Liệu**:
+    * Nhãn trường Email rút gọn thành: `Email:` (thay cho dòng dài `Địa chỉ Email (nhận thư cảm ơn & thông báo):`).
+    * Đảo vị trí trường `Công ty / Doanh nghiệp` lên trước trường `Chức danh`.
+    * Thứ tự chuẩn 5 trường trên Form check-in:
+      1. `Họ và tên của Quý Anh/Chị: *`
+      2. `Số điện thoại liên hệ:`
+      3. `Email:`
+      4. `Công ty / Doanh nghiệp:`
+      5. `Chức danh:`
+    * Đồng bộ thứ tự này cả trên màn hình kết quả check-in thành công.
+  - **4. Chuẩn Hóa Toàn Diện Địa Chỉ `29T2 Hoàng Đạo Thúy`**:
+    * Thay thế toàn bộ địa chỉ cũ (`29T2 Trung hòa nhân chính`) thành `29T2 Hoàng Đạo Thúy` trên:
+      - Form check-in public (`apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`).
+      - Màn hình kết quả xác nhận check-in.
+      - Modal hiển thị mã QR check-in (`EventCheckinQrModal.tsx`).
+      - Modal cấu hình thư mời (`InvitationSetupManager.tsx`, `ZaloZbsInvitationModal.tsx`).
+      - Backend Events Service (`events.service.ts`: template email, xuất Excel, xuất Word docx, xuất PDF).
+      - Backend Mail Service (`mail.service.ts`).
+  - **5. Kiểm Tra Chất Lượng Mã Nguồn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.82): Nâng Cấp Tự Động Cấp Phát Chứng Chỉ SSL Let's Encrypt CA Trusted Cho `crm.ceo1983.viconnect.vn` & `ceo1983.viconnect.vn`, Khắc Phục Triệt Để Lỗi Zalo `NET::ERR_CERT_AUTHORITY_INVALID` ([NODE-CORE-006])**:
   - **1. Phân Tích Thực Trạng Nguyên Nhân Gốc Rễ Lỗi SSL**:
@@ -5575,6 +5703,70 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.84): Kích Hoạt Tự Động Gửi Báo Cáo Check-in Đầy Đủ 3 Định Dạng (Excel, Word, PDF) Về Email `viendoanhtri.iem@gmail.com` Ngay Khi Có Người Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Cơ Chế Tự Động Kích Hoạt Ngay Sau Check-in**:
+    * Khi bất kỳ khách mời hoặc đại biểu nào hoàn tất check-in (qua Form QR Public, quét camera điểm danh, hoặc xác nhận trên CRM):
+      - Backend NestJS (`apps/ceo1983_app_be/src/events/events.service.ts`) tự động bắt sự kiện và lấy ngay danh sách đại biểu cập nhật mới nhất từ CSDL `113.20.107.184:6432`.
+      - Hệ thống tự động tạo đồng thời cả 3 tệp báo cáo chuẩn hóa:
+        1. **Excel (.xlsx)**: Đầy đủ 8 dòng Header Viện Doanh Trí, 10 cột dữ liệu (Họ tên, SĐT, Email, Doanh nghiệp, Chức danh, Giờ check-in, Phân loại Đúng giờ/Muộn) và 3 ô ký duyệt chân trang.
+        2. **Word (.docx)**: Tiêu đề trang trọng, thống kê số lượng và bảng dữ liệu đại biểu chi tiết.
+        3. **PDF (.pdf)**: Thiết kế màu xanh thương hiệu Viện Doanh Trí, phân trang chuẩn và số liệu rõ ràng.
+      - Tự động đính kèm cả 3 tệp vào thư và bắn email về địa chỉ: **`viendoanhtri.iem@gmail.com`** (hỗ trợ ghi đè qua biến môi trường `VIEN_DOANHTRI_REPORT_EMAIL`).
+  - **2. Nội Dung Email Báo Cáo Trực Quan & Nổi Bật Người Vừa Check-in**:
+    * Tiêu đề email: `[Viện Doanh Trí] Báo Cáo Check-in ([Họ và tên]): [Tên sự kiện]`.
+    * Thân thư thông báo rõ ràng:
+      - Họ và tên đại biểu vừa check-in, đơn vị/doanh nghiệp, chức danh, giờ check-in (đúng giờ hay muộn).
+      - Thẻ thống kê tổng số đại biểu, số người check-in đúng giờ (trong 30 phút đầu), số người check-in muộn.
+      - Danh sách 3 tệp đính kèm để Ban tổ chức mở xem hoặc in ấn ngay lập tức.
+  - **3. Kiến Trúc Bất Đồng Bộ (Non-blocking)**:
+    * Việc tạo 3 tệp và gửi SMTP được thực thi ngầm (asynchronous background execution) qua Promise `.then().catch()`, tuyệt đối không làm trễ thời gian phản hồi HTTP của khách mời trên màn hình di động. Khách quét QR bấm check-in là nhận kết quả thành công tức thì.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.83): Chuẩn Hóa Giao Diện Form Check-in Viện Doanh Trí Theo Thiết Kế Ảnh 1, Xóa Bỏ Hoàn Toàn Popup Hướng Dẫn Kéo Lên, Đổi Thứ Tự Trường Form & Chuẩn Hóa Địa Chỉ `29T2 Hoàng Đạo Thúy` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Xóa Bỏ Hoàn Toàn Popup Hướng Dẫn Kéo Từ Dưới Lên Khi Quét QR Check-in**:
+    * Trong `apps/ceo1983_app_fe/src/components/member/IosInstallPrompt.tsx` và `apps/ceo1983_app_fe/src/routes/__root.tsx`:
+      - Bổ sung bộ lọc đường dẫn nghiêm ngặt: nếu `pathname.toLowerCase().startsWith('/checkin')` thì trả về `null` ngay lập tức.
+      - Triệt tiêu hoàn toàn tình trạng hiện popup cài đặt PWA hoặc hướng dẫn mở trình duyệt ngoài khi người dùng quét mã QR check-in qua Zalo hoặc trình duyệt di động.
+  - **2. Tái Thiết Kế Header Form Check-in Viện Doanh Trí Chuẩn Xác Theo Ảnh 1 (`media_1795174806684_973108ff.jpg`)**:
+    * Thiết kế typography nhận diện thương hiệu Viện Doanh Trí:
+      - Bên trái: `CHƯƠNG TRÌNH KỶ NIỆM` (Xanh dương đậm `#003B7A`).
+      - Dải ngăn cách dọc `|`.
+      - Trung tâm: Số `4` cỡ lớn (Xanh lá `#00A859`).
+      - Bên phải: `NĂM THÀNH LẬP VIỆN DOANH TRÍ` (Xanh dương đậm `#003B7A`).
+      - Dòng dưới: `& TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11` (Xanh lá đậm `#008A44`).
+    * Thông tin thời gian & địa điểm cô đọng, trang trọng:
+      - `🕒 14h30 - 17h30, Thứ 7, ngày 21/11/2026`
+      - `📍 Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy`
+      - `Hotline BTC: 0988.870.888 / 0903.203.204`
+    * Lược bỏ hoàn toàn khối agenda chi tiết (bỏ toạ đàm dòng tiền, bỏ tiệc sinh nhật 18h-22h) và lược bỏ thanh lưu ý check-in 30 phút theo đúng yêu cầu.
+  - **3. Chuẩn Hóa Nhãn Trường Email & Đảo Thứ Tự Trường Nhập Liệu**:
+    * Nhãn trường Email rút gọn thành: `Email:` (thay cho dòng dài `Địa chỉ Email (nhận thư cảm ơn & thông báo):`).
+    * Đảo vị trí trường `Công ty / Doanh nghiệp` lên trước trường `Chức danh`.
+    * Thứ tự chuẩn 5 trường trên Form check-in:
+      1. `Họ và tên của Quý Anh/Chị: *`
+      2. `Số điện thoại liên hệ:`
+      3. `Email:`
+      4. `Công ty / Doanh nghiệp:`
+      5. `Chức danh:`
+    * Đồng bộ thứ tự này cả trên màn hình kết quả check-in thành công.
+  - **4. Chuẩn Hóa Toàn Diện Địa Chỉ `29T2 Hoàng Đạo Thúy`**:
+    * Thay thế toàn bộ địa chỉ cũ (`29T2 Trung hòa nhân chính`) thành `29T2 Hoàng Đạo Thúy` trên:
+      - Form check-in public (`apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`).
+      - Màn hình kết quả xác nhận check-in.
+      - Modal hiển thị mã QR check-in (`EventCheckinQrModal.tsx`).
+      - Modal cấu hình thư mời (`InvitationSetupManager.tsx`, `ZaloZbsInvitationModal.tsx`).
+      - Backend Events Service (`events.service.ts`: template email, xuất Excel, xuất Word docx, xuất PDF).
+      - Backend Mail Service (`mail.service.ts`).
+  - **5. Kiểm Tra Chất Lượng Mã Nguồn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.82): Nâng Cấp Tự Động Cấp Phát Chứng Chỉ SSL Let's Encrypt CA Trusted Cho `crm.ceo1983.viconnect.vn` & `ceo1983.viconnect.vn`, Khắc Phục Triệt Để Lỗi Zalo `NET::ERR_CERT_AUTHORITY_INVALID` ([NODE-CORE-006])**:
   - **1. Phân Tích Thực Trạng Nguyên Nhân Gốc Rễ Lỗi SSL**:

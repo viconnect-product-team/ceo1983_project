@@ -55,7 +55,7 @@ export function ZaloZbsInvitationModal({
   );
   const [eventDate, setEventDate] = useState(eventData?.eventDate || "21/11/2026");
   const [eventLocation, setEventLocation] = useState(
-    eventData?.eventLocation || "Tầng 2, Nhà hàng Long Phụng, 29T2 Trung Hòa - Nhân Chính, Hà Nội",
+    eventData?.eventLocation || "Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội",
   );
   const [templateId, setTemplateId] = useState("324561");
   const [templateCode, setTemplateCode] = useState("EVENT_INVITATION");
