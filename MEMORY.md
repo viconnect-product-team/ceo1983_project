@@ -1,5 +1,34 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.90): Hoàn Thiện Toàn Diện 2 Luồng Biểu Quyết (Email Khách Check-in, 1 Người 1 Vote, Realtime Chart) & Vòng Quay May Mắn (Xóa Tên Người Trúng, Ẩn Giải Đã Hết, Kết Quả Dưới Vòng Quay Scroll > 5 Giải) ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Luồng Biểu Quyết Voting Cho Khách Đã Check-in**:
+    * **Gửi Thư Mời Biểu Quyết Qua Email**:
+      - Khi Ban Tổ Chức tạo biểu quyết hoặc bấm nút gửi cho đại biểu đã check-in, hệ thống tự động phát email thư mời trang trọng Viện Doanh Trí (brand colors `#005BAC` & `#00A859`) với nút bấm CTA "★ BẤM VÀO ĐÂY ĐỂ BIỂU QUYẾT NGAY ★".
+      - Liên kết tích hợp sẵn URL query param `?email=...&name=...` dẫn thẳng tới form biểu quyết `https://crm.ceo1983.viconnect.vn/vote/:pollId`.
+    * **Form Biểu Quyết Public & Quy Tắc "1 Người Chỉ Được Biểu Quyết 1 Lần"**:
+      - Form công khai (`apps/ceo1983_app_fe/src/routes/vote.$pollId.tsx`) tự động điền sẵn Họ tên và Email từ liên kết, tối thiểu có trường **Họ và tên**, **Email** (bắt buộc).
+      - Cơ chế chống biểu quyết trùng lặp 2 tầng:
+        + Tầng 1 (Client): Tra cứu `localStorage.getItem('voted_poll_' + id + '_' + email)` và URL query params, nếu đã vote sẽ tự động chuyển sang tab "Biểu Đồ Kết Quả Realtime" kèm thông báo vinh danh "Bạn Đã Hoàn Thành Biểu Quyết!".
+        + Tầng 2 (Backend CSDL 113.20.107.184:6432): Kiểm tra bảng `public.poll_votes` với UUID định danh từ email (`crypto.createHash('md5')`). Nếu email đã từng vote, backend trả về thông báo lỗi: *"Quý Anh/Chị đã hoàn thành biểu quyết cho nội dung này rồi! Mỗi đại biểu chỉ được biểu quyết 1 lần."*
+    * **Biểu Đồ Kết Quả Trực Quan Realtime**:
+      - Biểu đồ phân bổ sao (1-5★) và tỷ lệ phần trăm được cập nhật tự động thời gian thực mỗi 2.5 giây, tự động nhảy số theo số lượng ý kiến đóng góp từ các đại biểu.
+  - **2. Luồng Vòng Quay Bốc Thăm Trúng Thưởng (Lucky Draw Wheel)**:
+    * **Loại Bỏ Người Trúng Thưởng Khỏi Vòng Quay**:
+      - Ngay khi kim dừng lại và xác định người trúng giải, tên người thắng lập tức bị xóa khỏi danh sách `candidates`. Vòng quay Canvas tự động vẽ lại nan quạt không còn tên người đã trúng giải.
+      - Khi tải lại danh sách đại biểu, hệ thống tự động lọc bỏ toàn bộ các đại biểu đã trúng từ trước.
+    * **Ẩn Giải Thưởng Đã Hết & Tự Động Chuyển Giải Tiếp Theo**:
+      - Các giải thưởng đã trao hết suất (`remaining <= 0`) sẽ không còn được hiển thị trên giao diện (ẩn khỏi thanh chọn giải nhanh và danh sách giải).
+      - Khi một giải thưởng vừa trao hết lượt cuối cùng, hệ thống tự động chuyển `activePrizeId` sang giải tiếp theo còn quà.
+    * **Show Kết Quả Trúng Thưởng Ở BÊN DƯỚI VÒNG QUAY & Scroll Khi Vượt Quá 5 Giải**:
+      - Tái cấu trúc bố cục: Vòng quay Canvas đặt ở trên (căn giữa, nổi bật, đường kính lớn), toàn bộ phần **"KẾT QUẢ BỐC THĂM TRÚNG THƯỞNG"** nằm ở **BÊN DƯỚI VÒNG QUAY** (Full Width).
+      - **Quy chuẩn scroll**: Khi số lượng giải thưởng trúng `winners.length > 5`, kích hoạt `max-h-[420px] overflow-y-auto` với thanh cuộn mượt mà.
+      - Thẻ đại biểu trúng giải thể hiện đầy đủ: Cúp hạng mục giải, Tên đại biểu, Chức vụ, Công ty, Phần quà may mắn, Thời gian trúng giải, và nhãn xác nhận đã gửi email thông tin giải thưởng đến hộp thư của đại biểu.
+  - **3. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend & Frontend: TypeScript Type Check đạt chuẩn 0 errors.
+    * TanStack Router Tree: `node apps/ceo1983_app_fe/scripts/gen-routes.mjs` -> Success.
+    * CSDL: Tuân thủ tuyệt đối máy chủ chuẩn `113.20.107.184:6432`.
+    * Git: Tuân thủ nghiêm ngặt quy định không tự ý commit / push.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.89): Show Trực Tiếp Vòng Quay Bốc Thăm Trúng Thưởng Ngay Trên CRM & Chiếu LED, Bỏ Trường Loại Biểu Quyết, Thêm Tùy Chọn Khách Check-in Kèm List Chi Tiết Đại Biểu Của Mỗi Sự Kiện ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Khắc Phục & Hiển Thị Trực Tiếp Giao Diện Vòng Quay Bốc Thăm Trúng Thưởng (Lucky Draw Wheel)**:
     * **Phân tích nguyên nhân**:

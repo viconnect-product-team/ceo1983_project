@@ -186,7 +186,7 @@ export function LuckyDrawWheel({
     location: "Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy",
   });
 
-  // Danh sách đại biểu
+  // Danh sách đại biểu trong vòng quay
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
 
@@ -199,10 +199,7 @@ export function LuckyDrawWheel({
     return DEFAULT_PRIZES;
   });
 
-  // Giải đang quay
-  const [activePrizeId, setActivePrizeId] = useState<string>(prizes[0]?.id || "p-dac-biet");
-
-  // Lịch sử trúng thưởng
+  // Lịch sử người trúng thưởng
   const [winners, setWinners] = useState<WinnerRecord[]>(() => {
     try {
       const saved = localStorage.getItem(`lucky_draw_winners_${eventId}`);
@@ -210,6 +207,30 @@ export function LuckyDrawWheel({
     } catch {}
     return [];
   });
+
+  // DANH SÁCH GIẢI THƯỞNG CÒN QUÀ ĐƯỢC PHÉP HIỂN THỊ (ẨN GIẢI ĐÃ TRAO HẾT)
+  const availablePrizes = useMemo(() => {
+    return prizes.filter((p) => p.remaining > 0);
+  }, [prizes]);
+
+  // Giải đang kích hoạt quay
+  const [activePrizeId, setActivePrizeId] = useState<string>(() => {
+    const firstAvail = prizes.find((p) => p.remaining > 0);
+    return firstAvail?.id || prizes[0]?.id || "p-dac-biet";
+  });
+
+  // Giải đang quay thực tế
+  const activePrize = useMemo(() => {
+    const found = availablePrizes.find((p) => p.id === activePrizeId);
+    return found || availablePrizes[0] || null;
+  }, [availablePrizes, activePrizeId]);
+
+  // Tự động đồng bộ activePrizeId nếu giải hiện tại đã trao hết quà
+  useEffect(() => {
+    if (availablePrizes.length > 0 && !availablePrizes.some((p) => p.id === activePrizeId)) {
+      setActivePrizeId(availablePrizes[0].id);
+    }
+  }, [availablePrizes, activePrizeId]);
 
   // Modal trúng thưởng & Modal cài đặt giải
   const [winnerModalOpen, setWinnerModalOpen] = useState(false);
@@ -235,6 +256,7 @@ export function LuckyDrawWheel({
     setLoadingCandidates(true);
     try {
       const res = await fetchNestApi<any>(`/events/${eventId}/public-attendees`).catch(() => null);
+      let list: Candidate[] = [];
       if (res && Array.isArray(res.attendees) && res.attendees.length > 0) {
         const raw = res.attendees.map((a: any, idx: number) => ({
           id: a.id || `CAND-${idx}`,
@@ -249,10 +271,10 @@ export function LuckyDrawWheel({
 
         // Ưu tiên những người đã check-in thực tế
         const checkedInOnes = raw.filter((c: Candidate) => c.checkedIn);
-        setCandidates(checkedInOnes.length > 0 ? checkedInOnes : raw);
+        list = checkedInOnes.length > 0 ? checkedInOnes : raw;
       } else {
         // Fallback danh sách đại biểu mẫu Viện Doanh Trí
-        setCandidates([
+        list = [
           { id: "1", name: "Phạm Hồng Nguyên", company: "CTY CP Kết Nối Công Nghệ", position: "CEO", checkedIn: true },
           { id: "2", name: "Phạm Văn Vũ", company: "Viconnect Corp", position: "Tổng Giám Đốc", checkedIn: true },
           { id: "3", name: "Nguyễn Văn Linh", company: "Công ty Cổ phần Đầu tư VIO", position: "Chủ tịch", checkedIn: true },
@@ -261,8 +283,13 @@ export function LuckyDrawWheel({
           { id: "6", name: "Đặng Thu Trang", company: "Viện Đào Tạo & Phát Triển", position: "Trưởng Ban", checkedIn: true },
           { id: "7", name: "Vũ Quang Hải", company: "Tập Đoàn Tài Chính Á Châu", position: "CEO", checkedIn: true },
           { id: "8", name: "Bùi Thị Minh", company: "Công ty Công Nghệ Xanh", position: "Chủ Tịch HĐQT", checkedIn: true },
-        ]);
+        ];
       }
+
+      // LOẠI BỎ NHỮNG NGƯỜI ĐÃ TRÚNG GIẢI KHỎI VÒNG QUAY (AI TRÚNG RỒI SẼ BỊ XÓA TÊN KHỎI VÒNG QUAY)
+      const wonNames = new Set(winners.map((w) => w.candidateName.toLowerCase().trim()));
+      const availableCandidates = list.filter((c) => !wonNames.has(c.name.toLowerCase().trim()));
+      setCandidates(availableCandidates);
     } finally {
       setLoadingCandidates(false);
     }
@@ -286,11 +313,6 @@ export function LuckyDrawWheel({
     } catch {}
   }, [winners, eventId]);
 
-  // Lấy giải thưởng đang kích hoạt
-  const activePrize = useMemo(() => {
-    return prizes.find((p) => p.id === activePrizeId) || prizes[0];
-  }, [prizes, activePrizeId]);
-
   // Vẽ vòng quay trên Canvas
   const drawWheel = () => {
     const canvas = canvasRef.current;
@@ -306,7 +328,26 @@ export function LuckyDrawWheel({
 
     ctx.clearRect(0, 0, width, height);
 
-    const sliceCount = Math.max(candidates.length, 1);
+    if (candidates.length === 0) {
+      // Vòng quay khi không còn ai hoặc chưa có người
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = "#F8FAFC";
+      ctx.fill();
+      ctx.strokeStyle = "#CBD5E1";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillStyle = "#64748B";
+      ctx.textAlign = "center";
+      ctx.fillText("Tất cả đại biểu đã trúng thưởng", centerX, centerY - 8);
+      ctx.font = "12px sans-serif";
+      ctx.fillText("Nhấn 'Làm mới' để nạp lại danh sách", centerX, centerY + 14);
+      return;
+    }
+
+    const sliceCount = candidates.length;
     const sliceAngle = (2 * Math.PI) / sliceCount;
 
     // Outer glowing rim
@@ -333,41 +374,39 @@ export function LuckyDrawWheel({
     ctx.stroke();
 
     // Vẽ từng nan quạt (slices)
-    if (candidates.length > 0) {
-      candidates.forEach((cand, index) => {
-        const startAngle = angleRef.current + index * sliceAngle;
-        const endAngle = startAngle + sliceAngle;
+    candidates.forEach((cand, index) => {
+      const startAngle = angleRef.current + index * sliceAngle;
+      const endAngle = startAngle + sliceAngle;
 
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.closePath();
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.closePath();
 
-        // Màu xen kẽ
-        ctx.fillStyle = SLICE_COLORS[index % SLICE_COLORS.length];
-        ctx.fill();
+      // Màu xen kẽ
+      ctx.fillStyle = SLICE_COLORS[index % SLICE_COLORS.length];
+      ctx.fill();
 
-        // Viền trắng phân cách nan
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      // Viền trắng phân cách nan
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-        // Vẽ chữ tên thành viên
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(startAngle + sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = candidates.length > 20 ? "bold 11px sans-serif" : "bold 13px sans-serif";
-        ctx.shadowColor = "rgba(0,0,0,0.4)";
-        ctx.shadowBlur = 3;
+      // Vẽ chữ tên thành viên
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(startAngle + sliceAngle / 2);
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = candidates.length > 20 ? "bold 11px sans-serif" : "bold 13px sans-serif";
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowBlur = 3;
 
-        const maxLen = candidates.length > 20 ? 14 : 18;
-        const displayName = cand.name.length > maxLen ? cand.name.slice(0, maxLen - 2) + ".." : cand.name;
-        ctx.fillText(displayName, radius - 20, 4);
-        ctx.restore();
-      });
-    }
+      const maxLen = candidates.length > 20 ? 14 : 18;
+      const displayName = cand.name.length > maxLen ? cand.name.slice(0, maxLen - 2) + ".." : cand.name;
+      ctx.fillText(displayName, radius - 20, 4);
+      ctx.restore();
+    });
 
     // Tâm vòng quay (Center Golden Hub)
     const hubRadius = 38;
@@ -453,13 +492,13 @@ export function LuckyDrawWheel({
     if (spinning || candidates.length === 0) return;
 
     if (!activePrize || activePrize.remaining <= 0) {
-      toast.error(`Giải "${activePrize?.title}" đã trao hết! Vui lòng chọn giải khác hoặc thiết lập thêm.`);
+      toast.error("Giải thưởng này đã trao hết! Vui lòng chọn giải khác hoặc thiết lập thêm giải.");
       return;
     }
 
     setSpinning(true);
 
-    // Chọn ngẫu nhiên 1 người chiến thắng
+    // Chọn ngẫu nhiên 1 người chiến thắng từ danh sách đại biểu còn lại
     const winnerIndex = Math.floor(Math.random() * candidates.length);
     const winnerCandidate = candidates[winnerIndex];
 
@@ -468,7 +507,7 @@ export function LuckyDrawWheel({
     const targetSliceCenter = winnerIndex * sliceAngle + sliceAngle / 2;
     const finalAngle = 1.5 * Math.PI - targetSliceCenter;
 
-    // Số vòng quay tối thiểu: 6 đến 9 vòng
+    // Số vòng quay: 6 đến 9 vòng
     const totalSpins = (6 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
     const currentAngle = angleRef.current % (2 * Math.PI);
     const deltaAngle = totalSpins + ((finalAngle - currentAngle + 4 * Math.PI) % (2 * Math.PI));
@@ -516,19 +555,42 @@ export function LuckyDrawWheel({
           emailSent: false,
         };
 
-        // Giảm số lượng giải còn lại
-        setPrizes((prev) =>
-          prev.map((p) => (p.id === activePrize.id ? { ...p, remaining: Math.max(0, p.remaining - 1) } : p))
+        // 1. Cập nhật số lượng giải còn lại (nếu về 0 giải sẽ bị ẩn khỏi giao diện)
+        const updatedPrizes = prizes.map((p) =>
+          p.id === activePrize.id ? { ...p, remaining: Math.max(0, p.remaining - 1) } : p
+        );
+        setPrizes(updatedPrizes);
+
+        // 2. XÓA TÊN NGƯỜI TRÚNG KHỎI VÒNG QUAY NGAY LẬP TỨC
+        setCandidates((prev) =>
+          prev.filter(
+            (c) =>
+              c.name.toLowerCase().trim() !== winnerCandidate.name.toLowerCase().trim() &&
+              c.id !== winnerCandidate.id &&
+              (!winnerCandidate.email || c.email !== winnerCandidate.email)
+          )
         );
 
-        // Lưu vào danh sách trúng
+        // 3. Nếu giải hiện tại hết quà, chuyển sang giải tiếp theo còn quà (giải hết quà sẽ biến mất khỏi giao diện)
+        const currentRemaining = Math.max(0, activePrize.remaining - 1);
+        if (currentRemaining <= 0) {
+          const nextPrize = updatedPrizes.find((p) => p.id !== activePrize.id && p.remaining > 0);
+          if (nextPrize) {
+            setActivePrizeId(nextPrize.id);
+            toast.info(`Giải "${activePrize.title}" đã trao hết! Đã tự động chuyển sang: ${nextPrize.title}`);
+          } else {
+            toast.success("Toàn bộ các giải thưởng trong chương trình đã được trao trọn vẹn!");
+          }
+        }
+
+        // 4. Lưu vào danh sách trúng
         setWinners((prev) => [newRecord, ...prev]);
         setLatestWinner(newRecord);
 
-        // Tự động gửi email chúc mừng và thông tin phần thưởng tới đại biểu trúng giải
+        // 5. Tự động gửi email chúc mừng và thông tin phần thưởng tới đại biểu trúng giải
         notifyWinnerByEmail(winnerCandidate, activePrize);
 
-        // Bật pháo hoa & chúc mừng
+        // 6. Bật pháo hoa & chúc mừng rực rỡ
         if (soundEnabled) playFanfareSound();
         triggerFireworks();
         setWinnerModalOpen(true);
@@ -701,67 +763,88 @@ export function LuckyDrawWheel({
         </div>
       </header>
 
-      {/* Main Wheel Grid */}
-      <main className="w-full p-4 sm:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Cột Trái: Vòng Quay May Mắn (Spinning Wheel) */}
-        <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl border border-slate-200 p-6 flex flex-col items-center justify-center relative overflow-hidden">
-          {/* Badge Giải Thưởng Đang Quay */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+      {/* Main Container: Vòng Quay ở Trên, Kết Quả Trúng Thưởng ở BÊN DƯỚI VÒNG QUAY */}
+      <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 flex-1 flex flex-col gap-6 items-stretch">
+        {/* PHẦN 1: VÒNG QUAY MAY MẮN (TRÊN) */}
+        <section className="w-full bg-white rounded-3xl shadow-xl border border-slate-200 p-6 sm:p-8 flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Header Giải Thưởng Đang Bốc Thăm & Thanh Chọn Nhanh Giải Còn Quà */}
+          <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#005BAC]">
                 HẠNG MỤC ĐANG BỐC THĂM
               </span>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xl">{activePrize?.icon || "🏆"}</span>
-                <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                  {activePrize?.title}
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-200">
-                  Còn {activePrize?.remaining}/{activePrize?.quantity} giải
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Phần quà: <strong className="text-emerald-700">{activePrize?.gift}</strong>
-              </p>
+              {activePrize ? (
+                <>
+                  <div className="flex items-center gap-2.5 mt-1 flex-wrap">
+                    <span className="text-2xl">{activePrize.icon || "🏆"}</span>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                      {activePrize.title}
+                    </h2>
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300">
+                      Còn lại {activePrize.remaining}/{activePrize.quantity} suất
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
+                    Phần quà: <strong className="text-emerald-700">{activePrize.gift}</strong>
+                  </p>
+                </>
+              ) : (
+                <div className="mt-1">
+                  <h2 className="text-lg font-black text-emerald-700">
+                    🎉 Đã hoàn thành trao tất cả các giải thưởng!
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Vui lòng bấm "Thiết Lập Giải" nếu muốn bổ sung thêm hạng mục bốc thăm mới.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Quick Switch Prize */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-              {prizes.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setActivePrizeId(p.id)}
-                  disabled={spinning}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-1 ${
-                    activePrizeId === p.id
-                      ? "bg-[#005BAC] text-white shadow-md ring-2 ring-[#00A859]"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  <span>{p.icon}</span>
-                  <span>{p.title}</span>
-                  <span className="text-[10px] opacity-80">({p.remaining})</span>
-                </button>
-              ))}
+            {/* Quick Switch Prize: CHỈ HIỆN CÁC GIẢI CÒN QUÀ (remaining > 0) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+              {availablePrizes.length === 0 ? (
+                <span className="text-xs font-bold text-slate-400 italic">
+                  (Không còn giải thưởng nào)
+                </span>
+              ) : (
+                availablePrizes.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setActivePrizeId(p.id)}
+                    disabled={spinning}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-black transition shrink-0 cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                      activePrize?.id === p.id
+                        ? "bg-[#005BAC] text-white shadow-md ring-2 ring-[#00A859]"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <span>{p.icon}</span>
+                    <span>{p.title}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+                      {p.remaining}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Khung Vòng Quay Canvas */}
-          <div className="relative my-6 flex items-center justify-center">
+          {/* Khung Vòng Quay Canvas (Căn giữa to rõ, đẹp mắt) */}
+          <div className="relative my-8 flex items-center justify-center">
             {/* Kim chỉ vị trí trúng thưởng (Pointer Needle at Top) */}
-            <div className="absolute -top-3 z-30 flex flex-col items-center">
-              <div className="w-6 h-9 bg-gradient-to-b from-amber-400 to-amber-600 rounded-b-md shadow-xl border-2 border-white flex items-center justify-center animate-bounce">
-                <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
+            <div className="absolute -top-4 z-30 flex flex-col items-center">
+              <div className="w-7 h-10 bg-gradient-to-b from-amber-400 to-amber-600 rounded-b-md shadow-2xl border-2 border-white flex items-center justify-center animate-bounce">
+                <div className="w-2.5 h-2.5 rounded-full bg-white shadow-xs" />
               </div>
-              <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[14px] border-t-amber-600 drop-shadow-md -mt-1" />
+              <div className="w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[16px] border-t-amber-600 drop-shadow-lg -mt-1" />
             </div>
 
             {/* Canvas Wheel */}
             <canvas
               ref={canvasRef}
-              width={420}
-              height={420}
+              width={440}
+              height={440}
               className="max-w-full h-auto drop-shadow-2xl"
             />
 
@@ -769,155 +852,146 @@ export function LuckyDrawWheel({
             <button
               type="button"
               onClick={handleSpin}
-              disabled={spinning || candidates.length === 0 || activePrize?.remaining <= 0}
-              className="absolute z-20 w-24 h-24 rounded-full bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:scale-105 active:scale-95 text-white font-black text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-0.5 shadow-2xl ring-4 ring-white transition-all cursor-pointer disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed group"
+              disabled={spinning || candidates.length === 0 || !activePrize || activePrize.remaining <= 0}
+              className="absolute z-20 w-26 h-26 rounded-full bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:scale-105 active:scale-95 text-white font-black text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-1 shadow-2xl ring-4 ring-white transition-all cursor-pointer disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed group"
             >
-              <RotateCcw className={`w-5 h-5 ${spinning ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
+              <RotateCcw className={`w-6 h-6 ${spinning ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
               <span>{spinning ? "ĐANG QUAY" : "QUAY SỐ"}</span>
             </button>
           </div>
 
           {/* Stats & Actions Bar */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
+          <div className="w-full flex flex-wrap items-center justify-between gap-3 pt-5 border-t border-slate-100 text-xs text-slate-500">
+            <div className="flex items-center gap-2 flex-wrap">
               <Users className="w-4 h-4 text-[#005BAC]" />
               <span>
-                Tổng đại biểu trong vòng quay: <strong className="text-slate-900 font-bold">{candidates.length}</strong> người
+                Đại biểu trong vòng quay: <strong className="text-slate-900 font-bold">{candidates.length}</strong> người
+              </span>
+              <span className="text-[11px] text-slate-400">
+                (Đã tự động loại trừ {winners.length} đại biểu đã trúng thưởng)
               </span>
               <button
                 type="button"
                 onClick={fetchAttendees}
                 disabled={loadingCandidates || spinning}
-                className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 transition cursor-pointer"
-                title="Làm mới danh sách đại biểu"
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer flex items-center gap-1"
+                title="Làm mới danh sách đại biểu từ CSDL"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingCandidates ? "animate-spin text-[#005BAC]" : ""}`} />
+                <span className="text-[11px] font-semibold">Tải lại danh sách</span>
               </button>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 text-emerald-700 font-semibold">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Dữ liệu đại biểu check-in thời gian thực
+              <span className="flex items-center gap-1 text-emerald-700 font-semibold text-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Dữ liệu đại biểu check-in thời gian thực (CSDL 113.20.107.184:6432)
               </span>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Cột Phải: Lịch Sử Trúng Thưởng & Danh Sách Giải Thưởng */}
-        <div className="lg:col-span-4 space-y-5">
-          {/* Thẻ Lịch Sử Trúng Thưởng */}
-          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-3.5 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-yellow-200" />
-                <h3 className="text-sm font-black uppercase tracking-wider text-white">
-                  Đại Biểu Trúng Thưởng ({winners.length})
-                </h3>
+        {/* PHẦN 2: KẾT QUẢ TRÚNG THƯỞNG Ở BÊN DƯỚI VÒNG QUAY (FULL WIDTH, SCROLL KHI > 5 GIẢI) */}
+        <section className="w-full bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+          {/* Header Lịch Sử Trúng Thưởng */}
+          <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-6 py-4 text-white flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-yellow-200 shadow-inner">
+                <Trophy className="w-5 h-5" />
               </div>
-              {winners.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm("Bạn có chắc chắn muốn xóa lịch sử trúng thưởng để quay lại từ đầu?")) {
-                      setWinners([]);
-                    }
-                  }}
-                  className="text-[10px] font-bold text-amber-100 hover:text-white underline cursor-pointer"
-                >
-                  Xóa lịch sử
-                </button>
-              )}
+              <div>
+                <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
+                  <span>KẾT QUẢ BỐC THĂM TRÚNG THƯỞNG</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-white text-amber-800">
+                    {winners.length} đại biểu
+                  </span>
+                </h3>
+                <p className="text-[11px] text-amber-100 mt-0.5">
+                  Tự động lưu trữ CSDL và gửi email thông tin giải thưởng đến từng đại biểu may mắn
+                </p>
+              </div>
             </div>
 
-            <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto p-2">
-              {winners.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">
-                  <Award className="w-8 h-8 mx-auto mb-2 opacity-40 text-amber-500" />
-                  <p>Chưa có lượt quay nào trúng thưởng trong đêm nay.</p>
-                  <p className="mt-1 font-semibold text-slate-600">Hãy nhấn nút "QUAY SỐ" để bắt đầu!</p>
+            {winners.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm("Bạn có chắc chắn muốn xóa lịch sử trúng thưởng để quay lại từ đầu? Toàn bộ đại biểu sẽ được đưa lại vào vòng quay.")) {
+                    setWinners([]);
+                    localStorage.removeItem(`lucky_draw_winners_${eventId}`);
+                    fetchAttendees();
+                    toast.success("Đã xóa lịch sử trúng thưởng! Đã phục hồi danh sách đại biểu vào vòng quay.");
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Xóa lịch sử & quay lại</span>
+              </button>
+            )}
+          </div>
+
+          {/* VƯỢT QUÁ 5 GIẢI THƯỞNG SẼ HIỆN SCROLL (max-h-[380px] overflow-y-auto) */}
+          <div className={`p-5 ${winners.length > 5 ? "max-h-[420px] overflow-y-auto pr-3" : ""}`}>
+            {winners.length === 0 ? (
+              <div className="p-10 text-center text-slate-400">
+                <div className="w-14 h-14 mx-auto rounded-3xl bg-amber-50 flex items-center justify-center text-amber-500 mb-3 border border-amber-200">
+                  <Award className="w-8 h-8 opacity-60" />
                 </div>
-              ) : (
-                winners.map((w) => (
-                  <div key={w.id} className="p-3 hover:bg-slate-50 transition rounded-2xl flex items-center justify-between gap-3">
+                <h4 className="text-sm font-bold text-slate-700">Chưa có lượt quay nào trúng thưởng trong chương trình</h4>
+                <p className="text-xs text-slate-500 mt-1">
+                  Chọn hạng mục giải thưởng ở trên và nhấn nút <strong>"QUAY SỐ"</strong> để tìm ra những đại biểu may mắn nhất!
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {winners.map((w, index) => (
+                  <div
+                    key={w.id}
+                    className="p-4 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/70 hover:shadow-md transition-all flex flex-col justify-between gap-3 relative overflow-hidden group"
+                  >
+                    {/* Top strip badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 border border-amber-200 flex items-center gap-1">
+                        <Trophy className="w-3 h-3 text-amber-600" />
+                        {w.prizeTitle}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        {w.wonAt}
+                      </span>
+                    </div>
+
+                    {/* Winner Info */}
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-extrabold text-xs text-slate-900">{w.candidateName}</span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                          {w.prizeTitle}
-                        </span>
-                        {w.emailSent && (
-                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                            ✓ Đã gửi mail
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                      <h4 className="text-base font-black text-slate-900 line-clamp-1 group-hover:text-[#005BAC] transition">
+                        {w.candidateName}
+                      </h4>
+                      <p className="text-xs text-slate-600 line-clamp-1 mt-0.5 font-medium">
                         {w.company} {w.position && `· ${w.position}`}
-                      </div>
-                      <div className="text-[10px] text-emerald-700 font-semibold truncate mt-0.5">
+                      </p>
+                      <div className="mt-2.5 p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs font-semibold text-emerald-800 line-clamp-2">
                         🎁 {w.gift}
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] text-slate-400 block">{w.wonAt}</span>
+
+                    {/* Email status footer */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Mail className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />
+                        <span className="truncate text-slate-600 font-medium">
+                          {w.emailSent ? "Đã gửi mail xác nhận" : w.email || "Đã gửi thông báo"}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                        ✓ Thành công
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
-
-          {/* Cơ Cấu Giải Thưởng Tóm Tắt */}
-          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-[#005BAC]" />
-                Cơ Cấu Giải Thưởng
-              </span>
-              <button
-                type="button"
-                onClick={() => setSetupModalOpen(true)}
-                className="text-[11px] font-bold text-[#005BAC] hover:underline cursor-pointer"
-              >
-                + Chỉnh sửa
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {prizes.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => setActivePrizeId(p.id)}
-                  className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
-                    activePrizeId === p.id
-                      ? "border-[#00A859] bg-emerald-50/50 shadow-xs"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="text-xl shrink-0">{p.icon}</span>
-                    <div className="min-w-0">
-                      <div className="font-extrabold text-xs text-slate-900 truncate">
-                        {p.title}
-                      </div>
-                      <div className="text-[11px] text-slate-500 truncate">
-                        {p.gift}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${
-                      p.remaining > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-400"
-                    }`}>
-                      {p.remaining > 0 ? `Còn ${p.remaining}` : "Đã hết"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        </section>
       </main>
 
       {/* MODAL CHÚC MỪNG CHIẾN THẮNG */}
@@ -976,7 +1050,7 @@ export function LuckyDrawWheel({
                     email: latestWinner.email,
                     checkedIn: true,
                   };
-                  notifyWinnerByEmail(cand, activePrize);
+                  if (activePrize) notifyWinnerByEmail(cand, activePrize);
                 }}
                 disabled={sendingWinnerEmail}
                 className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shrink-0 transition cursor-pointer disabled:opacity-50"
@@ -999,7 +1073,7 @@ export function LuckyDrawWheel({
                   setWinnerModalOpen(false);
                   handleSpin();
                 }}
-                disabled={activePrize?.remaining <= 0}
+                disabled={!activePrize || activePrize.remaining <= 0 || candidates.length === 0}
                 className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004a8f] hover:to-[#00964e] text-white font-black text-xs uppercase tracking-wider shadow-lg transition cursor-pointer disabled:opacity-50"
               >
                 Quay Giải Tiếp Theo

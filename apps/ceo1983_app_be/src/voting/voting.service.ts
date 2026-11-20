@@ -448,21 +448,38 @@ export class VotingService {
     };
   }
 
-  async getPublicPoll(id: string) {
+  async getPublicPoll(id: string, email?: string) {
     const rows = await this.votingRepo.getPollByIdRaw(
       '00000000-0000-0000-0000-000000000000',
       id,
     );
-    if (rows.length === 0) {
+    let pollRaw = rows[0];
+    if (!pollRaw) {
       const list = await this.votingRepo.listPollsRaw(
         '00000000-0000-0000-0000-000000000000',
       );
       if (list.length > 0) {
-        return this.formatPollResponse(list[0]);
+        pollRaw = list[0];
+      } else {
+        throw new NotFoundException('Không tìm thấy cuộc biểu quyết');
       }
-      throw new NotFoundException('Không tìm thấy cuộc biểu quyết');
     }
-    return this.formatPollResponse(rows[0]);
+
+    const res = this.formatPollResponse(pollRaw);
+
+    if (email && email.includes('@')) {
+      const cleanEmail = email.trim().toLowerCase();
+      const hash = crypto.createHash('md5').update(cleanEmail).digest('hex');
+      const voterId = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+      const voteRows = await this.votingRepo.getUserVote(res.id, voterId);
+      if (voteRows.length > 0) {
+        (res as any).hasVoted = true;
+        (res as any).myVoteOptionId = voteRows[0].option_id;
+        (res as any).votedAt = voteRows[0].created_at;
+      }
+    }
+
+    return res;
   }
 
   private formatPollResponse(r: any) {
@@ -544,6 +561,26 @@ export class VotingService {
       throw new BadRequestException('Cuộc biểu quyết này đã kết thúc!');
     }
 
+    const cleanEmail = body.voterEmail ? String(body.voterEmail).trim().toLowerCase() : '';
+    const cleanName = body.voterName ? String(body.voterName).trim() : '';
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new BadRequestException('Vui lòng cung cấp địa chỉ Email hợp lệ để xác thực biểu quyết');
+    }
+    if (!cleanName) {
+      throw new BadRequestException('Vui lòng cung cấp Họ và tên để ghi nhận biểu quyết');
+    }
+
+    // Deterministic UUID for voter from email
+    const emailHash = crypto.createHash('md5').update(cleanEmail).digest('hex');
+    const voterId = `${emailHash.slice(0, 8)}-${emailHash.slice(8, 12)}-${emailHash.slice(12, 16)}-${emailHash.slice(16, 20)}-${emailHash.slice(20, 32)}`;
+
+    // Quy định 1 người chỉ được biểu quyết 1 lần
+    const alreadyVoted = await this.votingRepo.hasUserVoted(poll.id, voterId);
+    if (alreadyVoted) {
+      throw new BadRequestException(`Quý Anh/Chị (${cleanEmail}) đã hoàn thành biểu quyết cho nội dung này rồi! Mỗi đại biểu chỉ được biểu quyết 1 lần.`);
+    }
+
     let targetOptionId = body.optionId;
 
     if (body.stars && (!targetOptionId || targetOptionId.length < 5)) {
@@ -569,7 +606,6 @@ export class VotingService {
       throw new BadRequestException('Phương án biểu quyết không hợp lệ');
     }
 
-    const voterId = crypto.randomUUID();
     const voteId = crypto.randomUUID();
 
     await this.votingRepo.insertVote(
@@ -580,7 +616,10 @@ export class VotingService {
       'public_web',
     );
 
-    return this.getPublicPoll(poll.id);
+    const updated = await this.getPublicPoll(poll.id, cleanEmail);
+    (updated as any).hasVoted = true;
+    (updated as any).myVoteOptionId = targetOptionId;
+    return updated;
   }
 
   async sendPollToCheckedInAttendees(userId: string, pollId: string) {
@@ -596,14 +635,15 @@ export class VotingService {
     const attendees = await this.votingRepo.findCheckedInAttendees(eventId);
 
     let sentCount = 0;
-    const voteUrl = `https://crm.ceo1983.viconnect.vn/vote/${pollId}`;
+    const baseUrl = (process.env.CRM_PUBLIC_URL || process.env.FRONTEND_URL || 'https://crm.ceo1983.viconnect.vn').replace(/\/+$/, '');
+    const voteUrl = `${baseUrl}/vote/${pollId}`;
 
     if (this.mailService) {
       for (const att of attendees) {
         if (
           att.email &&
           att.email.includes('@') &&
-          !att.email.endsWith('@doanhtri.vn')
+          !att.email.includes('example.com')
         ) {
           try {
             await this.mailService.sendPollInvitationEmail({
