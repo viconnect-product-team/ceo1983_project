@@ -23,6 +23,7 @@ export type VoteSourceStats = {
 export type Vote = {
   id: string;
   title: string;
+  description?: string | null;
   type: "policy" | "election" | "amendment";
   eventId?: string | null;
   eventName?: string | null;
@@ -66,6 +67,7 @@ export const listVotesFn = createServerFn({ method: "GET" })
           return {
             id: r.id,
             title: r.title,
+            description: r.description || null,
             type: r.type || "policy",
             eventId: r.eventId || r.event_id || null,
             eventName: r.eventName || r.event_name || null,
@@ -141,6 +143,8 @@ export const createVoteFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => {
     const d = data as Record<string, unknown>;
     const title = String(d.title ?? "").trim();
+    const description = d.description ? String(d.description).trim() : undefined;
+    const voteFormat = d.voteFormat ? String(d.voteFormat).trim() : undefined;
     const type = String(d.type ?? "policy");
     const targetAudience = String(d.targetAudience ?? "all");
     const startsAt = String(d.startsAt ?? "").trim();
@@ -167,10 +171,10 @@ export const createVoteFn = createServerFn({ method: "POST" })
 
     if (!title) throw new Error("Vui lòng nhập câu hỏi bình chọn");
     if (title.length > 300) throw new Error("Câu hỏi quá dài");
-    if (options.length < 2) throw new Error("Cần ít nhất 2 lựa chọn");
+    if (voteFormat !== "star_rating" && options.length < 2) throw new Error("Cần ít nhất 2 lựa chọn");
     if (options.length > 20) throw new Error("Tối đa 20 lựa chọn");
     if (!["policy", "election", "amendment"].includes(type)) throw new Error("Loại không hợp lệ");
-    return { title, type, targetAudience, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId };
+    return { title, description, voteFormat, type, targetAudience, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId };
   })
   .handler(async ({ data, context }) => {
     return fetchNestApiFromServer("/voting/polls", context.token, {

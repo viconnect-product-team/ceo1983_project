@@ -448,6 +448,28 @@ function PublicEventCheckinPage() {
         ) : (
           /* FORM CHECK-IN VÀ TAB CHUYỂN ĐỔI */
           <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+            {/* Header dải màu xanh chuẩn nhận diện Viện Doanh Trí (#005BAC & #00A859) */}
+            <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] p-4 sm:p-5 text-white flex items-center justify-between shadow-md relative overflow-hidden">
+              <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="w-11 h-11 rounded-2xl bg-white text-[#005BAC] font-black flex items-center justify-center text-lg shadow-md ring-2 ring-emerald-300">
+                  DT
+                </div>
+                <div>
+                  <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                    VIỆN DOANH TRÍ
+                  </div>
+                  <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
+                    Cổng Check-in Điểm Danh
+                  </h1>
+                </div>
+              </div>
+              <span className="relative z-10 px-3 py-1 rounded-full text-[11px] font-black bg-white/15 backdrop-blur-md border border-white/30 text-white shadow-xs">
+                Kỷ niệm 4 năm
+              </span>
+            </div>
+
             {/* Header thông tin sự kiện nhận diện Viện Doanh Trí chuẩn theo Image 1 */}
             <div className="bg-white p-6 sm:p-7 border-b border-slate-200 text-center">
               <div className="inline-flex items-center justify-center gap-3 sm:gap-4 flex-wrap">

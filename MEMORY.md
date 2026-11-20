@@ -1,5 +1,40 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.87): Hoàn Thành 3 Yêu Cầu Nâng Cấp Viện Doanh Trí: Xóa Bỏ Mã QR HTTP & Chuẩn Hóa Header Xanh; Bốc Thăm Trúng Thưởng Public Dạng Vòng Quay Xoay (Theme Sáng, Pháo Hoa, Setup Giải); Cổng Biểu Quyết Public Hỗ Trợ Vote Sao 1-5★, Biểu Đồ Kết Quả & Gửi Mail Đại Biểu Đã Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Xóa Bỏ Hoàn Toàn Mã QR HTTP & Chuẩn Hóa Header Màu Xanh Viện Doanh Trí**:
+    * Trong `apps/ceo1983_app_fe/src/components/events/EventCheckinQrModal.tsx`:
+      - Đã xóa bỏ hoàn toàn chế độ phát mã QR giao thức HTTP và các nút toggle giao thức.
+      - Cố định liên kết HTTPS chính thức của hệ thống: `https://crm.ceo1983.viconnect.vn/checkin/:eventId`.
+    * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`:
+      - Thay thế toàn bộ banner/header màu đỏ cũ bằng dải màu xanh nhận diện thương hiệu Viện Doanh Trí (`#005BAC` và `#00A859`), huy hiệu "Kỷ niệm 4 năm" và logo DT chuẩn theo ảnh người dùng cung cấp.
+  - **2. Bốc Thăm Trúng Thưởng Public Ra Ngoài Với Vòng Quay May Mắn (Canvas Lucky Wheel) - Theme Sáng 100%**:
+    * Phát triển route mới: `https://crm.ceo1983.viconnect.vn/lucky-draw/:eventId` (`apps/ceo1983_app_fe/src/routes/lucky-draw.$eventId.tsx`):
+      - Công khai ra ngoài (Public Route, `ssr: false`), không yêu cầu đăng nhập tài khoản CRM hay App, tối ưu hiển thị full màn hình cho màn hình LED hội trường lớn.
+      - **Giao diện Vòng Quay Tròn (Canvas Lucky Spinning Wheel)**: Các nan quạt chia đều cho danh sách đại biểu đã check-in thành công lấy trực tiếp từ CSDL `113.20.107.184:6432`.
+      - **Bộ thiết lập cơ cấu giải thưởng tùy ý**: Cho phép thêm giải mới, sửa tên giải, xóa giải, tùy chỉnh số lượng phần quà, lưu cấu hình vào bộ nhớ trình duyệt hoặc khôi phục mặc định.
+      - **Hiệu ứng pháo hoa hoành tráng & chúc mừng rực rỡ**: Khi quay trúng người thắng cuộc, kích hoạt hiệu ứng pháo hoa toàn màn hình (Canvas fireworks particles), âm thanh fanfare chiến thắng và modal chúc mừng nổi bật tên, doanh nghiệp, chức danh và giải thưởng của đại biểu.
+      - **Theme Sáng 100%**: Toàn bộ giao diện sử dụng màu nền gradient tươi sáng (`from-slate-50 via-sky-50 to-emerald-50`), thẻ trắng cao cấp, tuyệt đối không dùng theme tối.
+    * Trong `apps/ceo1983_app_fe/src/routes/lucky-draw.tsx`:
+      - Bổ sung banner và nút bấm nổi bật mở Vòng quay may mắn Public toàn màn hình.
+  - **3. Cổng Biểu Quyết Public Ngoài Hệ Thống, Hỗ Trợ Đánh Giá Theo Sao (1-5★) & Bắn Email Cho Người Đã Check-in**:
+    * Phát triển route công khai: `https://crm.ceo1983.viconnect.vn/vote/:pollId` (`apps/ceo1983_app_fe/src/routes/vote.$pollId.tsx`):
+      - Public ra URL bên ngoài, đại biểu quét mã hoặc bấm link trên điện thoại là có thể tham gia bình chọn ngay mà không cần tài khoản hệ thống.
+      - **Dạng Vote Sao (Star Rating 1-5 sao ⭐⭐⭐⭐⭐)**: Cho phép đại biểu chấm điểm đánh giá (từ Rất không hài lòng đến Xuất sắc) với hiệu ứng sao vàng tương tác sinh động.
+      - **Biểu đồ kết quả trực quan**: Hiển thị điểm số trung bình (VD: 4.9/5.0 ⭐) và biểu đồ phân bổ phần trăm từng mức sao hoặc từng phương án lựa chọn.
+    * Nâng cấp Backend Quản Trị & Gửi Email (`apps/ceo1983_app_be`):
+      - `mail.service.ts`: Bổ sung template email thư mời biểu quyết Viện Doanh Trí trang trọng, nhận diện xanh thương hiệu kèm nút bấm CTA "★ BẤM VÀO ĐÂY ĐỂ BIỂU QUYẾT NGAY ★".
+      - `voting.repository.ts` & `voting.service.ts`: Thêm các hàm `findCheckedInAttendees`, `getPublicPoll`, `castPublicVote` và `sendPollToCheckedInAttendees`.
+      - `voting.controller.ts`: Mở các endpoint công khai `@Get('public/polls/:id')`, `@Post('public/polls/:id/vote')` và endpoint admin `@Post('polls/:id/send-to-checkedin')`.
+    * Tích hợp Quản Trị CRM (`apps/ceo1983_app_fe/src/routes/voting.tsx`):
+      - Bổ sung nút **"📧 Gửi chọn cho tất cả người đã check-in"**: Bấm 1 chạm tự động gửi link biểu quyết tới toàn bộ đại biểu đã check-in tham dự sự kiện.
+      - Bổ sung nút **"🔗 Copy Link Public"** và **"🌐 Mở form Public"** để BTC dễ dàng sao chép hoặc trình chiếu.
+      - Bổ sung tùy chọn định dạng **"⭐ Đánh giá theo sao (1-5★)"** ngay trong modal tạo biểu quyết mới, tự động khởi tạo 5 mức sao và biểu đồ sao.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * TanStack Router Tree: `node apps/ceo1983_app_fe/scripts/gen-routes.mjs` -> **Exit code 0 (Success)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.86): Chuẩn Hóa Logic Thời Gian Sự Kiện Ngày Mai (Thứ Bảy 21/11/2026): Bắt Đầu 14h30, Ngưỡng Đúng Giờ Đến 15h00, Sau 15h00 Ghi Nhận Check-in Muộn Kèm Lưu Trực Tiếp `company`, `position`, `checkin_status` Vào CSDL `113.20.107.184:6432` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Quy Chuẩn Xác Định Thời Gian Check-in Ngày Mai (21/11/2026)**:
     * **Thông tin sự kiện**: "Kỷ niệm 4 năm thành lập Viện Doanh Trí & Tri ân ngày Nhà giáo Việt Nam 20/11".
@@ -2284,6 +2319,41 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.87): Hoàn Thành 3 Yêu Cầu Nâng Cấp Viện Doanh Trí: Xóa Bỏ Mã QR HTTP & Chuẩn Hóa Header Xanh; Bốc Thăm Trúng Thưởng Public Dạng Vòng Quay Xoay (Theme Sáng, Pháo Hoa, Setup Giải); Cổng Biểu Quyết Public Hỗ Trợ Vote Sao 1-5★, Biểu Đồ Kết Quả & Gửi Mail Đại Biểu Đã Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Xóa Bỏ Hoàn Toàn Mã QR HTTP & Chuẩn Hóa Header Màu Xanh Viện Doanh Trí**:
+    * Trong `apps/ceo1983_app_fe/src/components/events/EventCheckinQrModal.tsx`:
+      - Đã xóa bỏ hoàn toàn chế độ phát mã QR giao thức HTTP và các nút toggle giao thức.
+      - Cố định liên kết HTTPS chính thức của hệ thống: `https://crm.ceo1983.viconnect.vn/checkin/:eventId`.
+    * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`:
+      - Thay thế toàn bộ banner/header màu đỏ cũ bằng dải màu xanh nhận diện thương hiệu Viện Doanh Trí (`#005BAC` và `#00A859`), huy hiệu "Kỷ niệm 4 năm" và logo DT chuẩn theo ảnh người dùng cung cấp.
+  - **2. Bốc Thăm Trúng Thưởng Public Ra Ngoài Với Vòng Quay May Mắn (Canvas Lucky Wheel) - Theme Sáng 100%**:
+    * Phát triển route mới: `https://crm.ceo1983.viconnect.vn/lucky-draw/:eventId` (`apps/ceo1983_app_fe/src/routes/lucky-draw.$eventId.tsx`):
+      - Công khai ra ngoài (Public Route, `ssr: false`), không yêu cầu đăng nhập tài khoản CRM hay App, tối ưu hiển thị full màn hình cho màn hình LED hội trường lớn.
+      - **Giao diện Vòng Quay Tròn (Canvas Lucky Spinning Wheel)**: Các nan quạt chia đều cho danh sách đại biểu đã check-in thành công lấy trực tiếp từ CSDL `113.20.107.184:6432`.
+      - **Bộ thiết lập cơ cấu giải thưởng tùy ý**: Cho phép thêm giải mới, sửa tên giải, xóa giải, tùy chỉnh số lượng phần quà, lưu cấu hình vào bộ nhớ trình duyệt hoặc khôi phục mặc định.
+      - **Hiệu ứng pháo hoa hoành tráng & chúc mừng rực rỡ**: Khi quay trúng người thắng cuộc, kích hoạt hiệu ứng pháo hoa toàn màn hình (Canvas fireworks particles), âm thanh fanfare chiến thắng và modal chúc mừng nổi bật tên, doanh nghiệp, chức danh và giải thưởng của đại biểu.
+      - **Theme Sáng 100%**: Toàn bộ giao diện sử dụng màu nền gradient tươi sáng (`from-slate-50 via-sky-50 to-emerald-50`), thẻ trắng cao cấp, tuyệt đối không dùng theme tối.
+    * Trong `apps/ceo1983_app_fe/src/routes/lucky-draw.tsx`:
+      - Bổ sung banner và nút bấm nổi bật mở Vòng quay may mắn Public toàn màn hình.
+  - **3. Cổng Biểu Quyết Public Ngoài Hệ Thống, Hỗ Trợ Đánh Giá Theo Sao (1-5★) & Bắn Email Cho Người Đã Check-in**:
+    * Phát triển route công khai: `https://crm.ceo1983.viconnect.vn/vote/:pollId` (`apps/ceo1983_app_fe/src/routes/vote.$pollId.tsx`):
+      - Public ra URL bên ngoài, đại biểu quét mã hoặc bấm link trên điện thoại là có thể tham gia bình chọn ngay mà không cần tài khoản hệ thống.
+      - **Dạng Vote Sao (Star Rating 1-5 sao ⭐⭐⭐⭐⭐)**: Cho phép đại biểu chấm điểm đánh giá (từ Rất không hài lòng đến Xuất sắc) với hiệu ứng sao vàng tương tác sinh động.
+      - **Biểu đồ kết quả trực quan**: Hiển thị điểm số trung bình (VD: 4.9/5.0 ⭐) và biểu đồ phân bổ phần trăm từng mức sao hoặc từng phương án lựa chọn.
+    * Nâng cấp Backend Quản Trị & Gửi Email (`apps/ceo1983_app_be`):
+      - `mail.service.ts`: Bổ sung template email thư mời biểu quyết Viện Doanh Trí trang trọng, nhận diện xanh thương hiệu kèm nút bấm CTA "★ BẤM VÀO ĐÂY ĐỂ BIỂU QUYẾT NGAY ★".
+      - `voting.repository.ts` & `voting.service.ts`: Thêm các hàm `findCheckedInAttendees`, `getPublicPoll`, `castPublicVote` và `sendPollToCheckedInAttendees`.
+      - `voting.controller.ts`: Mở các endpoint công khai `@Get('public/polls/:id')`, `@Post('public/polls/:id/vote')` và endpoint admin `@Post('polls/:id/send-to-checkedin')`.
+    * Tích hợp Quản Trị CRM (`apps/ceo1983_app_fe/src/routes/voting.tsx`):
+      - Bổ sung nút **"📧 Gửi chọn cho tất cả người đã check-in"**: Bấm 1 chạm tự động gửi link biểu quyết tới toàn bộ đại biểu đã check-in tham dự sự kiện.
+      - Bổ sung nút **"🔗 Copy Link Public"** và **"🌐 Mở form Public"** để BTC dễ dàng sao chép hoặc trình chiếu.
+      - Bổ sung tùy chọn định dạng **"⭐ Đánh giá theo sao (1-5★)"** ngay trong modal tạo biểu quyết mới, tự động khởi tạo 5 mức sao và biểu đồ sao.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * TanStack Router Tree: `node apps/ceo1983_app_fe/scripts/gen-routes.mjs` -> **Exit code 0 (Success)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.86): Chuẩn Hóa Logic Thời Gian Sự Kiện Ngày Mai (Thứ Bảy 21/11/2026): Bắt Đầu 14h30, Ngưỡng Đúng Giờ Đến 15h00, Sau 15h00 Ghi Nhận Check-in Muộn Kèm Lưu Trực Tiếp `company`, `position`, `checkin_status` Vào CSDL `113.20.107.184:6432` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Quy Chuẩn Xác Định Thời Gian Check-in Ngày Mai (21/11/2026)**:
@@ -5811,6 +5881,41 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.87): Hoàn Thành 3 Yêu Cầu Nâng Cấp Viện Doanh Trí: Xóa Bỏ Mã QR HTTP & Chuẩn Hóa Header Xanh; Bốc Thăm Trúng Thưởng Public Dạng Vòng Quay Xoay (Theme Sáng, Pháo Hoa, Setup Giải); Cổng Biểu Quyết Public Hỗ Trợ Vote Sao 1-5★, Biểu Đồ Kết Quả & Gửi Mail Đại Biểu Đã Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Xóa Bỏ Hoàn Toàn Mã QR HTTP & Chuẩn Hóa Header Màu Xanh Viện Doanh Trí**:
+    * Trong `apps/ceo1983_app_fe/src/components/events/EventCheckinQrModal.tsx`:
+      - Đã xóa bỏ hoàn toàn chế độ phát mã QR giao thức HTTP và các nút toggle giao thức.
+      - Cố định liên kết HTTPS chính thức của hệ thống: `https://crm.ceo1983.viconnect.vn/checkin/:eventId`.
+    * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`:
+      - Thay thế toàn bộ banner/header màu đỏ cũ bằng dải màu xanh nhận diện thương hiệu Viện Doanh Trí (`#005BAC` và `#00A859`), huy hiệu "Kỷ niệm 4 năm" và logo DT chuẩn theo ảnh người dùng cung cấp.
+  - **2. Bốc Thăm Trúng Thưởng Public Ra Ngoài Với Vòng Quay May Mắn (Canvas Lucky Wheel) - Theme Sáng 100%**:
+    * Phát triển route mới: `https://crm.ceo1983.viconnect.vn/lucky-draw/:eventId` (`apps/ceo1983_app_fe/src/routes/lucky-draw.$eventId.tsx`):
+      - Công khai ra ngoài (Public Route, `ssr: false`), không yêu cầu đăng nhập tài khoản CRM hay App, tối ưu hiển thị full màn hình cho màn hình LED hội trường lớn.
+      - **Giao diện Vòng Quay Tròn (Canvas Lucky Spinning Wheel)**: Các nan quạt chia đều cho danh sách đại biểu đã check-in thành công lấy trực tiếp từ CSDL `113.20.107.184:6432`.
+      - **Bộ thiết lập cơ cấu giải thưởng tùy ý**: Cho phép thêm giải mới, sửa tên giải, xóa giải, tùy chỉnh số lượng phần quà, lưu cấu hình vào bộ nhớ trình duyệt hoặc khôi phục mặc định.
+      - **Hiệu ứng pháo hoa hoành tráng & chúc mừng rực rỡ**: Khi quay trúng người thắng cuộc, kích hoạt hiệu ứng pháo hoa toàn màn hình (Canvas fireworks particles), âm thanh fanfare chiến thắng và modal chúc mừng nổi bật tên, doanh nghiệp, chức danh và giải thưởng của đại biểu.
+      - **Theme Sáng 100%**: Toàn bộ giao diện sử dụng màu nền gradient tươi sáng (`from-slate-50 via-sky-50 to-emerald-50`), thẻ trắng cao cấp, tuyệt đối không dùng theme tối.
+    * Trong `apps/ceo1983_app_fe/src/routes/lucky-draw.tsx`:
+      - Bổ sung banner và nút bấm nổi bật mở Vòng quay may mắn Public toàn màn hình.
+  - **3. Cổng Biểu Quyết Public Ngoài Hệ Thống, Hỗ Trợ Đánh Giá Theo Sao (1-5★) & Bắn Email Cho Người Đã Check-in**:
+    * Phát triển route công khai: `https://crm.ceo1983.viconnect.vn/vote/:pollId` (`apps/ceo1983_app_fe/src/routes/vote.$pollId.tsx`):
+      - Public ra URL bên ngoài, đại biểu quét mã hoặc bấm link trên điện thoại là có thể tham gia bình chọn ngay mà không cần tài khoản hệ thống.
+      - **Dạng Vote Sao (Star Rating 1-5 sao ⭐⭐⭐⭐⭐)**: Cho phép đại biểu chấm điểm đánh giá (từ Rất không hài lòng đến Xuất sắc) với hiệu ứng sao vàng tương tác sinh động.
+      - **Biểu đồ kết quả trực quan**: Hiển thị điểm số trung bình (VD: 4.9/5.0 ⭐) và biểu đồ phân bổ phần trăm từng mức sao hoặc từng phương án lựa chọn.
+    * Nâng cấp Backend Quản Trị & Gửi Email (`apps/ceo1983_app_be`):
+      - `mail.service.ts`: Bổ sung template email thư mời biểu quyết Viện Doanh Trí trang trọng, nhận diện xanh thương hiệu kèm nút bấm CTA "★ BẤM VÀO ĐÂY ĐỂ BIỂU QUYẾT NGAY ★".
+      - `voting.repository.ts` & `voting.service.ts`: Thêm các hàm `findCheckedInAttendees`, `getPublicPoll`, `castPublicVote` và `sendPollToCheckedInAttendees`.
+      - `voting.controller.ts`: Mở các endpoint công khai `@Get('public/polls/:id')`, `@Post('public/polls/:id/vote')` và endpoint admin `@Post('polls/:id/send-to-checkedin')`.
+    * Tích hợp Quản Trị CRM (`apps/ceo1983_app_fe/src/routes/voting.tsx`):
+      - Bổ sung nút **"📧 Gửi chọn cho tất cả người đã check-in"**: Bấm 1 chạm tự động gửi link biểu quyết tới toàn bộ đại biểu đã check-in tham dự sự kiện.
+      - Bổ sung nút **"🔗 Copy Link Public"** và **"🌐 Mở form Public"** để BTC dễ dàng sao chép hoặc trình chiếu.
+      - Bổ sung tùy chọn định dạng **"⭐ Đánh giá theo sao (1-5★)"** ngay trong modal tạo biểu quyết mới, tự động khởi tạo 5 mức sao và biểu đồ sao.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * TanStack Router Tree: `node apps/ceo1983_app_fe/scripts/gen-routes.mjs` -> **Exit code 0 (Success)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.86): Chuẩn Hóa Logic Thời Gian Sự Kiện Ngày Mai (Thứ Bảy 21/11/2026): Bắt Đầu 14h30, Ngưỡng Đúng Giờ Đến 15h00, Sau 15h00 Ghi Nhận Check-in Muộn Kèm Lưu Trực Tiếp `company`, `position`, `checkin_status` Vào CSDL `113.20.107.184:6432` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Quy Chuẩn Xác Định Thời Gian Check-in Ngày Mai (21/11/2026)**:

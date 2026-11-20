@@ -1,0 +1,1071 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect, useRef, useMemo } from "react";
+import {
+  Trophy,
+  Sparkles,
+  Gift,
+  RotateCcw,
+  Play,
+  Volume2,
+  VolumeX,
+  Settings,
+  Plus,
+  Trash2,
+  Users,
+  Award,
+  CheckCircle2,
+  ChevronRight,
+  RefreshCw,
+  X,
+  Flame,
+  Star,
+  PartyPopper,
+  Share2,
+  ArrowLeft,
+  Building2,
+  Calendar,
+  MapPin,
+} from "lucide-react";
+import { fetchNestApi } from "@/lib/api-client";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/lucky-draw/$eventId")({
+  ssr: false,
+  loader: async ({ params }) => {
+    let event = await fetchNestApi<any>(`/events/${params.eventId}`).catch(() => null);
+    if (!event) {
+      const allEvents = await fetchNestApi<any[]>("/events").catch(() => []);
+      if (Array.isArray(allEvents) && allEvents.length > 0) {
+        event =
+          allEvents.find(
+            (e: any) => e.id === params.eventId || e.slug === params.eventId
+          ) || (params.eventId === "latest" ? allEvents[0] : null);
+      }
+    }
+    if (!event) {
+      event = {
+        id: params.eventId,
+        name: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11",
+        title: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11",
+        date: "2026-11-21",
+        time: "14h30 - 17h30, Thứ 7, ngày 21/11/2026",
+        location: "Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy",
+      };
+    }
+    return { event };
+  },
+  component: PublicLuckyDrawWheelPage,
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: `Vòng Quay May Mắn: ${
+          loaderData?.event?.name || "Kỷ Niệm 4 Năm Viện Doanh Trí"
+        }`,
+      },
+      {
+        name: "description",
+        content: "Chương trình Bốc thăm trúng thưởng & Vòng quay may mắn dành cho đại biểu tham dự sự kiện.",
+      },
+    ],
+  }),
+});
+
+interface Prize {
+  id: string;
+  title: string;
+  gift: string;
+  quantity: number;
+  remaining: number;
+  color: string;
+  icon: string;
+}
+
+interface Candidate {
+  id: string;
+  name: string;
+  company: string;
+  position: string;
+  phone?: string;
+  code?: string;
+  checkedIn: boolean;
+}
+
+interface WinnerRecord {
+  id: string;
+  candidateName: string;
+  company: string;
+  position: string;
+  prizeTitle: string;
+  gift: string;
+  wonAt: string;
+}
+
+const DEFAULT_PRIZES: Prize[] = [
+  {
+    id: "p-dac-biet",
+    title: "GIẢI ĐẶC BIỆT",
+    gift: "Bộ Quà Tặng Doanh Nhân Kim Cương & Chuyến Du Lịch Nghỉ Dưỡng",
+    quantity: 1,
+    remaining: 1,
+    color: "#EAB308",
+    icon: "👑",
+  },
+  {
+    id: "p-nhat",
+    title: "GIẢI NHẤT",
+    gift: "Khóa Đào Tạo AI Doanh Trí Chiến Lược 2027",
+    quantity: 1,
+    remaining: 1,
+    color: "#005BAC",
+    icon: "🥇",
+  },
+  {
+    id: "p-nhi",
+    title: "GIẢI NHÌ",
+    gift: "Gói Dịch Vụ Tư Vấn Tăng Trưởng Doanh Nghiệp VIP",
+    quantity: 2,
+    remaining: 2,
+    color: "#00A859",
+    icon: "🥈",
+  },
+  {
+    id: "p-ba",
+    title: "GIẢI BA",
+    gift: "Kỷ Niệm Chương Pha Lê & Bộ Quà Viện Doanh Trí",
+    quantity: 3,
+    remaining: 3,
+    color: "#0284C7",
+    icon: "🥉",
+  },
+  {
+    id: "p-khuyen-khich",
+    title: "GIẢI KHUYẾN KHÍCH",
+    gift: "Voucher Kết Nối B2B Thượng Đỉnh Toạ Đàm Doanh Nghiệp",
+    quantity: 5,
+    remaining: 5,
+    color: "#10B981",
+    icon: "🎁",
+  },
+];
+
+const SLICE_COLORS = [
+  "#00A859", // Xanh lá Viện Doanh Trí
+  "#005BAC", // Xanh dương Viện Doanh Trí
+  "#0284C7", // Sky blue
+  "#EAB308", // Vàng gold
+  "#10B981", // Emerald
+  "#F59E0B", // Amber
+  "#6366F1", // Indigo
+  "#0D9488", // Teal
+  "#EC4899", // Pink
+  "#8B5CF6", // Violet
+];
+
+function playTickSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  } catch {}
+}
+
+function playFanfareSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = [261.63, 329.63, 392.0, 523.25, 659.25, 783.99]; // C chord
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + idx * 0.1 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.9);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx * 0.1);
+      osc.stop(ctx.currentTime + idx * 0.1 + 1.0);
+    });
+  } catch {}
+}
+
+export function PublicLuckyDrawWheelPage() {
+  const { event } = Route.useLoaderData();
+
+  // Danh sách đại biểu
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
+
+  // Danh sách giải thưởng
+  const [prizes, setPrizes] = useState<Prize[]>(() => {
+    try {
+      const saved = localStorage.getItem(`lucky_draw_prizes_${event.id}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_PRIZES;
+  });
+
+  // Giải đang quay
+  const [activePrizeId, setActivePrizeId] = useState<string>(prizes[0]?.id || "p-dac-biet");
+
+  // Lịch sử trúng thưởng
+  const [winners, setWinners] = useState<WinnerRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(`lucky_draw_winners_${event.id}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+
+  // Modal trúng thưởng & Modal cài đặt giải
+  const [winnerModalOpen, setWinnerModalOpen] = useState(false);
+  const [latestWinner, setLatestWinner] = useState<WinnerRecord | null>(null);
+  const [setupModalOpen, setSetupModalOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Wheel state
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fireworksCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [spinning, setSpinning] = useState(false);
+  const angleRef = useRef(0);
+  const animFrameRef = useRef<number | null>(null);
+  const lastTickSliceRef = useRef<number>(-1);
+
+  // Fetch attendees from public endpoint
+  const fetchAttendees = async () => {
+    setLoadingCandidates(true);
+    try {
+      const res = await fetchNestApi<any>(`/events/${event.id}/public-attendees`).catch(() => null);
+      if (res && Array.isArray(res.attendees) && res.attendees.length > 0) {
+        const raw = res.attendees.map((a: any, idx: number) => ({
+          id: a.id || `CAND-${idx}`,
+          name: a.memberName || `Đại biểu ${idx + 1}`,
+          company: a.company || "Doanh nghiệp",
+          position: a.position || "Đại biểu",
+          phone: a.maskedPhone || "",
+          code: `VIP-${idx + 1}`,
+          checkedIn: Boolean(a.checkedInAt),
+        }));
+
+        // Ưu tiên những người đã check-in thực tế
+        const checkedInOnes = raw.filter((c: Candidate) => c.checkedIn);
+        setCandidates(checkedInOnes.length > 0 ? checkedInOnes : raw);
+      } else {
+        // Fallback danh sách đại biểu mẫu Viện Doanh Trí
+        setCandidates([
+          { id: "1", name: "Phạm Hồng Nguyên", company: "CTY CP Kết Nối Công Nghệ", position: "CEO", checkedIn: true },
+          { id: "2", name: "Phạm Văn Vũ", company: "Viconnect Corp", position: "Tổng Giám Đốc", checkedIn: true },
+          { id: "3", name: "Nguyễn Văn Linh", company: "Công ty Cổ phần Đầu tư VIO", position: "Chủ tịch", checkedIn: true },
+          { id: "4", name: "Trần Mai Anh", company: "Tập Đoàn Doanh Trí Toàn Cầu", position: "Phó Giám Đốc", checkedIn: true },
+          { id: "5", name: "Lê Hoàng Long", company: "Công ty Giải Pháp AI Việt", position: "Giám Đốc", checkedIn: true },
+          { id: "6", name: "Đặng Thu Trang", company: "Viện Đào Tạo & Phát Triển", position: "Trưởng Ban", checkedIn: true },
+          { id: "7", name: "Vũ Quang Hải", company: "Tập Đoàn Tài Chính Á Châu", position: "CEO", checkedIn: true },
+          { id: "8", name: "Bùi Thị Minh", company: "Công ty Công Nghệ Xanh", position: "Chủ Tịch HĐQT", checkedIn: true },
+        ]);
+      }
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendees();
+  }, [event.id]);
+
+  // Lưu prizes vào localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`lucky_draw_prizes_${event.id}`, JSON.stringify(prizes));
+    } catch {}
+  }, [prizes, event.id]);
+
+  // Lưu winners vào localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`lucky_draw_winners_${event.id}`, JSON.stringify(winners));
+    } catch {}
+  }, [winners, event.id]);
+
+  // Lấy giải thưởng đang kích hoạt
+  const activePrize = useMemo(() => {
+    return prizes.find((p) => p.id === activePrizeId) || prizes[0];
+  }, [prizes, activePrizeId]);
+
+  // Vẽ vòng quay trên Canvas
+  const drawWheel = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(centerX, centerY) - 15;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const sliceCount = Math.max(candidates.length, 1);
+    const sliceAngle = (2 * Math.PI) / sliceCount;
+
+    // Outer glowing rim
+    ctx.save();
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "rgba(0, 168, 89, 0.45)";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 8, 0, 2 * Math.PI);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.restore();
+
+    // Vòng viền ngoài kép (Trắng & Vàng kim / Xanh lá)
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 4, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#005BAC";
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#00A859";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Vẽ từng nan quạt (slices)
+    candidates.forEach((cand, index) => {
+      const startAngle = angleRef.current + index * sliceAngle;
+      const endAngle = startAngle + sliceAngle;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.closePath();
+
+      // Màu xen kẽ
+      ctx.fillStyle = SLICE_COLORS[index % SLICE_COLORS.length];
+      ctx.fill();
+
+      // Viền trắng phân cách nan
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Vẽ chữ tên thành viên
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(startAngle + sliceAngle / 2);
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = candidates.length > 20 ? "bold 11px sans-serif" : "bold 13px sans-serif";
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowBlur = 3;
+
+      const maxLen = candidates.length > 20 ? 14 : 18;
+      const displayName = cand.name.length > maxLen ? cand.name.slice(0, maxLen - 2) + ".." : cand.name;
+      ctx.fillText(displayName, radius - 20, 4);
+      ctx.restore();
+    });
+
+    // Tâm vòng quay (Center Golden Hub)
+    const hubRadius = 38;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, hubRadius + 4, 0, 2 * Math.PI);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "rgba(0,0,0,0.2)";
+    ctx.fill();
+
+    const gradient = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, hubRadius);
+    gradient.addColorStop(0, "#FEF08A");
+    gradient.addColorStop(0.5, "#EAB308");
+    gradient.addColorStop(1, "#CA8A04");
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, hubRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.font = "black 11px sans-serif";
+    ctx.fillStyle = "#1E293B";
+    ctx.textAlign = "center";
+    ctx.fillText("VIỆN", centerX, centerY - 6);
+    ctx.font = "bold 9px sans-serif";
+    ctx.fillText("DOANH TRÍ", centerX, centerY + 8);
+    ctx.restore();
+  };
+
+  useEffect(() => {
+    drawWheel();
+  }, [candidates]);
+
+  // Xử lý quay số
+  const handleSpin = () => {
+    if (spinning || candidates.length === 0) return;
+
+    if (!activePrize || activePrize.remaining <= 0) {
+      toast.error(`Giải "${activePrize?.title}" đã trao hết! Vui lòng chọn giải khác hoặc thiết lập thêm.`);
+      return;
+    }
+
+    setSpinning(true);
+
+    // Chọn ngẫu nhiên 1 người chiến thắng
+    const winnerIndex = Math.floor(Math.random() * candidates.length);
+    const winnerCandidate = candidates[winnerIndex];
+
+    const sliceAngle = (2 * Math.PI) / candidates.length;
+    // Mũi tên nằm ở đỉnh trên cùng: 1.5 * Math.PI (270 độ)
+    const targetSliceCenter = winnerIndex * sliceAngle + sliceAngle / 2;
+    const finalAngle = 1.5 * Math.PI - targetSliceCenter;
+
+    // Số vòng quay tối thiểu: 6 đến 9 vòng
+    const totalSpins = (6 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
+    const currentAngle = angleRef.current % (2 * Math.PI);
+    const deltaAngle = totalSpins + ((finalAngle - currentAngle + 4 * Math.PI) % (2 * Math.PI));
+
+    const startTime = performance.now();
+    const duration = 5200; // 5.2 giây
+    const initialAngle = angleRef.current;
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing out cubic: 1 - (1 - t)^3
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      angleRef.current = initialAngle + deltaAngle * easeOut;
+
+      // Tính âm thanh click khi qua nan quạt
+      if (soundEnabled) {
+        const normAngle = (angleRef.current % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+        const currentSlice = Math.floor(normAngle / sliceAngle);
+        if (currentSlice !== lastTickSliceRef.current) {
+          playTickSound();
+          lastTickSliceRef.current = currentSlice;
+        }
+      }
+
+      drawWheel();
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        setSpinning(false);
+
+        // Tạo bản ghi người trúng giải
+        const newRecord: WinnerRecord = {
+          id: `WIN-${Date.now()}`,
+          candidateName: winnerCandidate.name,
+          company: winnerCandidate.company,
+          position: winnerCandidate.position,
+          prizeTitle: activePrize.title,
+          gift: activePrize.gift,
+          wonAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        };
+
+        // Giảm số lượng giải còn lại
+        setPrizes((prev) =>
+          prev.map((p) => (p.id === activePrize.id ? { ...p, remaining: Math.max(0, p.remaining - 1) } : p))
+        );
+
+        // Lưu vào danh sách trúng
+        setWinners((prev) => [newRecord, ...prev]);
+        setLatestWinner(newRecord);
+
+        // Bật pháo hoa & chúc mừng
+        if (soundEnabled) playFanfareSound();
+        triggerFireworks();
+        setWinnerModalOpen(true);
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+  };
+
+  // Hiệu ứng pháo hoa rực rỡ toàn màn hình
+  const triggerFireworks = () => {
+    const canvas = fireworksCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles: any[] = [];
+    const colors = ["#FFD700", "#FF1493", "#00FF7F", "#00E5FF", "#FF4500", "#FF69B4", "#7B68EE", "#FFFFFF"];
+
+    // Bắn 7 cụm pháo hoa ở các vị trí khác nhau
+    for (let c = 0; c < 7; c++) {
+      const cx = (0.2 + Math.random() * 0.6) * canvas.width;
+      const cy = (0.2 + Math.random() * 0.4) * canvas.height;
+      const clusterColor = colors[c % colors.length];
+
+      for (let p = 0; p < 45; p++) {
+        const speed = 2 + Math.random() * 6;
+        const angle = Math.random() * 2 * Math.PI;
+        particles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: 2 + Math.random() * 3,
+          color: Math.random() > 0.3 ? clusterColor : colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: 0.01 + Math.random() * 0.015,
+        });
+      }
+    }
+
+    let fireworkAnimId: number;
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+
+      particles.forEach((p) => {
+        if (p.alpha > 0) {
+          alive = true;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.08; // Trọng lực
+          p.alpha -= p.decay;
+
+          ctx.save();
+          ctx.globalAlpha = Math.max(p.alpha, 0);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+
+      if (alive) {
+        fireworkAnimId = requestAnimationFrame(render);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    render();
+  };
+
+  // Thêm giải mới
+  const [newPrizeTitle, setNewPrizeTitle] = useState("");
+  const [newPrizeGift, setNewPrizeGift] = useState("");
+  const [newPrizeQty, setNewPrizeQty] = useState(1);
+
+  const handleAddPrize = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPrizeTitle.trim() || !newPrizeGift.trim()) {
+      toast.error("Vui lòng điền đầy đủ tên giải và quà tặng!");
+      return;
+    }
+    const newPrize: Prize = {
+      id: `p-custom-${Date.now()}`,
+      title: newPrizeTitle.trim().toUpperCase(),
+      gift: newPrizeGift.trim(),
+      quantity: Math.max(1, newPrizeQty),
+      remaining: Math.max(1, newPrizeQty),
+      color: "#00A859",
+      icon: "🎁",
+    };
+    setPrizes([...prizes, newPrize]);
+    setNewPrizeTitle("");
+    setNewPrizeGift("");
+    setNewPrizeQty(1);
+    toast.success("Đã thêm giải thưởng mới thành công!");
+  };
+
+  const handleDeletePrize = (id: string) => {
+    if (prizes.length <= 1) {
+      toast.error("Cần duy trì tối thiểu 1 giải thưởng!");
+      return;
+    }
+    setPrizes(prizes.filter((p) => p.id !== id));
+    toast.success("Đã xóa giải thưởng!");
+  };
+
+  const handleResetPrizes = () => {
+    setPrizes(DEFAULT_PRIZES);
+    toast.success("Đã khôi phục bộ giải thưởng mặc định!");
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/60 to-emerald-50/40 text-slate-800 antialiased flex flex-col justify-between selection:bg-[#005BAC] selection:text-white">
+      {/* Canvas pháo hoa overlay toàn màn hình */}
+      <canvas
+        ref={fireworksCanvasRef}
+        className="fixed inset-0 pointer-events-none z-50 w-full h-full"
+      />
+
+      {/* Top Header Nhận Diện Viện Doanh Trí (#005BAC & #00A859) */}
+      <header className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-4 sm:px-8 py-3.5 text-white shadow-md">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/voting"
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1.5 text-xs font-bold"
+              title="Về danh sách biểu quyết"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Quay lại CRM</span>
+            </Link>
+            <div className="w-10 h-10 rounded-2xl bg-white text-[#005BAC] font-black flex items-center justify-center text-lg shadow-md ring-2 ring-emerald-300">
+              DT
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-200 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-yellow-300" />
+                VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM
+              </span>
+              <h1 className="text-sm sm:text-base font-black tracking-tight text-white line-clamp-1">
+                Bốc Thăm May Mắn & Vòng Quay Trúng Thưởng
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition text-xs font-semibold flex items-center gap-1 cursor-pointer"
+              title={soundEnabled ? "Tắt âm thanh" : "Bật âm thanh"}
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-300" /> : <VolumeX className="w-4 h-4 text-slate-300" />}
+            </button>
+            <button
+              onClick={() => setSetupModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-white text-[#005BAC] hover:bg-sky-50 transition text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#00A859]" />
+              <span>Thiết Lập Giải</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-7xl w-full mx-auto px-4 py-5 sm:py-7 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Cột Trái: Vòng Quay May Mắn (Spinning Wheel) */}
+        <div className="lg:col-span-8 bg-white rounded-3xl shadow-xl border border-slate-200 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Badge Giải Thưởng Đang Quay */}
+          <div className="w-full flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#005BAC]">
+                HẠNG MỤC ĐANG BỐC THĂM
+              </span>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xl">{activePrize?.icon || "🏆"}</span>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                  {activePrize?.title}
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-200">
+                  Còn {activePrize?.remaining}/{activePrize?.quantity} giải
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Phần quà: <strong className="text-emerald-700">{activePrize?.gift}</strong>
+              </p>
+            </div>
+
+            {/* Quick Switch Prize */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+              {prizes.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setActivePrizeId(p.id)}
+                  disabled={spinning}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer flex items-center gap-1 ${
+                    activePrizeId === p.id
+                      ? "bg-[#005BAC] text-white shadow-md ring-2 ring-[#00A859]"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  <span>{p.icon}</span>
+                  <span>{p.title}</span>
+                  <span className="text-[10px] opacity-80">({p.remaining})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Khung Vòng Quay Canvas */}
+          <div className="relative my-6 flex items-center justify-center">
+            {/* Kim chỉ vị trí trúng thưởng (Pointer Needle at Top) */}
+            <div className="absolute -top-3 z-30 flex flex-col items-center">
+              <div className="w-6 h-9 bg-gradient-to-b from-amber-400 to-amber-600 rounded-b-md shadow-xl border-2 border-white flex items-center justify-center animate-bounce">
+                <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
+              </div>
+              <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[14px] border-t-amber-600 drop-shadow-md -mt-1" />
+            </div>
+
+            {/* Canvas Wheel */}
+            <canvas
+              ref={canvasRef}
+              width={420}
+              height={420}
+              className="max-w-full h-auto drop-shadow-2xl"
+            />
+
+            {/* Center Spin Trigger Button Overlay */}
+            <button
+              onClick={handleSpin}
+              disabled={spinning || candidates.length === 0 || activePrize?.remaining <= 0}
+              className="absolute z-20 w-24 h-24 rounded-full bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:scale-105 active:scale-95 text-white font-black text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-0.5 shadow-2xl ring-4 ring-white transition-all cursor-pointer disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed group"
+            >
+              <RotateCcw className={`w-5 h-5 ${spinning ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
+              <span>{spinning ? "ĐANG QUAY" : "QUAY SỐ"}</span>
+            </button>
+          </div>
+
+          {/* Stats & Actions Bar */}
+          <div className="w-full flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 text-xs text-slate-500">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#005BAC]" />
+              <span>
+                Tổng đại biểu trong vòng quay: <strong className="text-slate-900 font-bold">{candidates.length}</strong> người
+              </span>
+              <button
+                onClick={fetchAttendees}
+                disabled={loadingCandidates || spinning}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 transition cursor-pointer"
+                title="Làm mới danh sách đại biểu"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingCandidates ? "animate-spin text-[#005BAC]" : ""}`} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                Dữ liệu đại biểu check-in thời gian thực
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cột Phải: Lịch Sử Trúng Thưởng & Danh Sách Giải Thưởng */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Thẻ Lịch Sử Trúng Thưởng */}
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-3.5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-yellow-200" />
+                <h3 className="text-sm font-black uppercase tracking-wider text-white">
+                  Đại Biểu Trúng Thưởng ({winners.length})
+                </h3>
+              </div>
+              {winners.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm("Bạn có chắc chắn muốn xóa lịch sử trúng thưởng để quay lại từ đầu?")) {
+                      setWinners([]);
+                    }
+                  }}
+                  className="text-[10px] font-bold text-amber-100 hover:text-white underline cursor-pointer"
+                >
+                  Xóa lịch sử
+                </button>
+              )}
+            </div>
+
+            <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto p-2">
+              {winners.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  <Award className="w-8 h-8 mx-auto mb-2 opacity-40 text-amber-500" />
+                  <p>Chưa có lượt quay nào trúng thưởng trong đêm nay.</p>
+                  <p className="mt-1 font-semibold text-slate-600">Hãy nhấn nút "QUAY SỐ" để bắt đầu!</p>
+                </div>
+              ) : (
+                winners.map((w, idx) => (
+                  <div key={w.id || idx} className="p-3 hover:bg-slate-50 transition rounded-xl flex items-start justify-between gap-2 text-xs">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                        {idx + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-extrabold text-slate-900 truncate">
+                          {w.candidateName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate">
+                          {w.position ? `${w.position} · ` : ""}{w.company}
+                        </div>
+                        <div className="text-[11px] text-emerald-700 font-semibold mt-0.5 truncate">
+                          Quà: {w.gift}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 uppercase">
+                        {w.prizeTitle}
+                      </span>
+                      <div className="text-[10px] text-slate-400 mt-1">{w.wonAt}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Thẻ Cơ Cấu Giải Thưởng */}
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                <Gift className="w-3.5 h-3.5 text-[#005BAC]" />
+                Cơ Cấu Giải Thưởng Sự Kiện
+              </h3>
+              <button
+                onClick={() => setSetupModalOpen(true)}
+                className="text-[11px] font-bold text-[#005BAC] hover:underline cursor-pointer"
+              >
+                + Thêm giải
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {prizes.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={() => setActivePrizeId(p.id)}
+                  className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 text-xs ${
+                    activePrizeId === p.id
+                      ? "bg-sky-50/80 border-[#005BAC] shadow-xs"
+                      : "bg-slate-50/60 border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-lg">{p.icon}</span>
+                    <div className="min-w-0">
+                      <div className="font-extrabold text-slate-900">{p.title}</div>
+                      <div className="text-[11px] text-slate-500 truncate">{p.gift}</div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        p.remaining > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-500"
+                      }`}
+                    >
+                      {p.remaining > 0 ? `Còn ${p.remaining}/${p.quantity}` : "Đã hết"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* MODAL CHÚC MỪNG NGƯỜI TRÚNG GIẢI (Grand Celebration Modal) */}
+      {winnerModalOpen && latestWinner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border-4 border-amber-400 overflow-hidden text-center p-6 sm:p-8 animate-in zoom-in-95 duration-300">
+            {/* Background sparkle effects */}
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-200/50 via-emerald-100/30 to-transparent pointer-events-none" />
+
+            <button
+              onClick={() => setWinnerModalOpen(false)}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Cup Icon with Flashing Glow */}
+            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 p-1 mx-auto mb-4 shadow-xl ring-4 ring-amber-200 animate-bounce">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-4xl">
+                🏆
+              </div>
+            </div>
+
+            <div className="inline-block px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-sm mb-2">
+              🎉 CHÚC MỪNG CHIẾN THẮNG 🎉
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+              {latestWinner.candidateName}
+            </h2>
+
+            <p className="text-sm font-semibold text-slate-600 mt-1">
+              {latestWinner.position ? `${latestWinner.position} · ` : ""}{latestWinner.company}
+            </p>
+
+            {/* Box Giải Thưởng Lòe Loẹt */}
+            <div className="my-5 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 shadow-inner">
+              <span className="text-[11px] font-black uppercase text-amber-800 tracking-wider">
+                {latestWinner.prizeTitle}
+              </span>
+              <div className="text-base sm:text-lg font-black text-emerald-800 mt-1">
+                {latestWinner.gift}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setWinnerModalOpen(false)}
+                className="flex-1 py-3 px-4 rounded-2xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => {
+                  setWinnerModalOpen(false);
+                  handleSpin();
+                }}
+                disabled={activePrize?.remaining <= 0}
+                className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004a8f] hover:to-[#00964e] text-white font-black text-xs uppercase tracking-wider shadow-lg transition cursor-pointer disabled:opacity-50"
+              >
+                Quay Giải Tiếp Theo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL THIẾT LẬP GIẢI THƯỞNG TÙY Ý */}
+      {setupModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] p-4 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-emerald-300" />
+                <h3 className="text-sm font-black uppercase tracking-wider">
+                  Thiết Lập Cơ Cấu Giải Thưởng
+                </h3>
+              </div>
+              <button
+                onClick={() => setSetupModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5 text-xs">
+              {/* Form Thêm Giải */}
+              <form onSubmit={handleAddPrize} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="font-extrabold text-slate-800 uppercase text-[11px] text-[#005BAC] flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5 text-[#00A859]" />
+                  Thêm Giải Thưởng Mới
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">Tên giải thưởng:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newPrizeTitle}
+                    onChange={(e) => setNewPrizeTitle(e.target.value)}
+                    placeholder="Ví dụ: GIẢI ĐẶC BIỆT, GIẢI BÌNH CHỌN..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005BAC]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">Hiện vật / Phần quà:</label>
+                  <input
+                    type="text"
+                    required
+                    value={newPrizeGift}
+                    onChange={(e) => setNewPrizeGift(e.target.value)}
+                    placeholder="Ví dụ: 1 Cặp Vé Máy Bay, Gói Tư Vấn..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005BAC]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">Số lượng giải:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    required
+                    value={newPrizeQty}
+                    onChange={(e) => setNewPrizeQty(parseInt(e.target.value, 10) || 1)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005BAC]"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 rounded-xl bg-[#00A859] hover:bg-[#00964e] text-white font-black text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
+                >
+                  + Thêm Vào Danh Sách Giải
+                </button>
+              </form>
+
+              {/* Danh sách giải hiện tại */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between font-extrabold text-slate-700 uppercase text-[11px]">
+                  <span>Các giải thưởng hiện hữu:</span>
+                  <button
+                    onClick={handleResetPrizes}
+                    className="text-[#005BAC] hover:underline cursor-pointer lowercase"
+                  >
+                    (khôi phục mặc định)
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {prizes.map((p) => (
+                    <div key={p.id} className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2 shadow-2xs">
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900">{p.title}</div>
+                        <div className="text-[11px] text-slate-500 truncate">{p.gift}</div>
+                        <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                          Số lượng: {p.quantity} (Còn lại: {p.remaining})
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeletePrize(p.id)}
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition cursor-pointer shrink-0"
+                        title="Xóa giải"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
+              <button
+                onClick={() => setSetupModalOpen(false)}
+                className="py-2.5 px-6 rounded-xl bg-[#005BAC] hover:bg-[#004a8f] text-white font-bold text-xs transition cursor-pointer"
+              >
+                Hoàn Tất & Lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+        <div className="max-w-xl mx-auto px-4 space-y-1">
+          <p className="font-bold text-[#005BAC]">VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM</p>
+          <p className="text-[11px] text-slate-500">
+            Hệ thống Bốc Thăm & Vòng Quay May Mắn Trực Tuyến Độc Quyền
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}

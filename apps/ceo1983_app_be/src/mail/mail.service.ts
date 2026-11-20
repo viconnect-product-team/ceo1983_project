@@ -150,6 +150,15 @@ export interface SendConnectionAppointmentEmailOptions {
   portalUrl?: string;
 }
 
+export interface SendPollInvitationEmailOptions {
+  to: string;
+  fullName: string;
+  pollTitle: string;
+  pollDescription?: string;
+  voteUrl: string;
+  eventTitle?: string;
+}
+
 export interface SendDoanhTriCheckinSuccessEmailOptions {
   to: string;
   fullName: string;
@@ -3704,6 +3713,94 @@ export class MailService {
       fromName: 'Ban Tổ Chức Viện Doanh Trí',
       auditContext: `[REPORT_ATTACHMENTS] ${eventName} sent to ${cleanTo}`,
       attachments,
+    });
+  }
+
+  async sendPollInvitationEmail(
+    options: SendPollInvitationEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      pollTitle,
+      pollDescription = 'Kính mời Quý Đại biểu tham gia bình chọn và đóng góp ý kiến cho sự kiện.',
+      voteUrl,
+      eventTitle = 'KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP',
+    } = options;
+
+    const cleanTo = (to || '').trim().toLowerCase();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const subject = `[Viện Doanh Trí] Thư Mời Biểu Quyết / Đóng Góp Ý Kiến: ${pollTitle}`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>${subject}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%); padding: 35px 24px; text-align: center; color: #ffffff; }
+    .logo-badge { display: inline-block; background: #ffffff; color: #005BAC; font-weight: 900; font-size: 14px; padding: 6px 14px; border-radius: 12px; margin-bottom: 12px; }
+    .title { font-size: 19px; font-weight: 900; margin: 0; line-height: 1.3; }
+    .subtitle { font-size: 11px; color: #e0f2fe; margin-top: 6px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+    .content { padding: 32px 28px; }
+    .poll-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #005BAC; border-radius: 14px; padding: 18px 20px; margin: 24px 0; }
+    .poll-title { font-size: 16px; font-weight: 800; color: #005BAC; margin-bottom: 8px; }
+    .poll-desc { font-size: 13px; color: #475569; line-height: 1.6; margin: 0; }
+    .cta-btn { display: inline-block; background: linear-gradient(135deg, #005BAC, #00A859); color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 14px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(0,91,172,0.35); }
+    .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 28px; text-align: center; font-size: 12px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="logo-badge">DT · VIỆN DOANH TRÍ</div>
+      <h1 class="title">THƯ MỜI BIỂU QUYẾT & LẤY Ý KIẾN</h1>
+      <div class="subtitle">${eventTitle}</div>
+    </div>
+    <div class="content">
+      <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
+        Kính gửi Anh/Chị: <strong>${fullName}</strong>,
+      </p>
+      <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 20px 0;">
+        Ban Tổ Chức <strong>Viện Doanh Trí</strong> xin trân trọng cảm ơn Quý Anh/Chị đã có mặt tham dự chương trình. Để nâng cao chất lượng kết nối và ghi nhận ý kiến từ các vị đại biểu, kính mời Quý Anh/Chị tham gia biểu quyết trực tuyến ngay bây giờ:
+      </p>
+
+      <div class="poll-box">
+        <div class="poll-title">${pollTitle}</div>
+        <div class="poll-desc">${pollDescription}</div>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${voteUrl}" class="cta-btn" target="_blank">
+          ★ BẤM VÀO ĐÂY ĐỂ BIỂU QUYẾT NGAY ★
+        </a>
+      </div>
+
+      <p style="font-size: 12px; color: #64748b; text-align: center; margin: 0;">
+        (Quý Anh/Chị chỉ mất khoảng 30 giây để hoàn tất biểu quyết trên điện thoại)
+      </p>
+    </div>
+    <div class="footer">
+      <strong>VIỆN DOANH TRÍ</strong><br/>
+      Hotline Ban Tổ Chức: 0988.870.888 / 0903.203.204
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Ban Tổ Chức Viện Doanh Trí',
+      auditContext: `[POLL_INVITATION] ${pollTitle} sent to ${cleanTo}`,
     });
   }
 }

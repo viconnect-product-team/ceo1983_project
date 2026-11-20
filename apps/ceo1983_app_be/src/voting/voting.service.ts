@@ -162,6 +162,26 @@ export class VotingService {
   }
 
   async createPoll(userId: string, data: CreatePollDto) {
+    const isStarRating =
+      (data as any).type === 'star_rating' ||
+      (data as any).pollType === 'star_rating';
+
+    if (isStarRating && (!data.options || data.options.length === 0)) {
+      data.options = [
+        '5★ - Xuất sắc / Rất hài lòng',
+        '4★ - Hài lòng',
+        '3★ - Bình thường',
+        '2★ - Chưa hài lòng',
+        '1★ - Rất không hài lòng',
+      ];
+      if (data.description && !data.description.includes('[STAR_RATING]')) {
+        data.description = `[STAR_RATING] ${data.description}`;
+      } else if (!data.description) {
+        data.description =
+          '[STAR_RATING] Khảo sát ý kiến và đánh giá theo thang điểm 1-5 sao.';
+      }
+    }
+
     if (
       !data.title ||
       !Array.isArray(data.options) ||
@@ -425,6 +445,193 @@ export class VotingService {
       recipientEmail: recipientEmail || null,
       prize: data.prize,
       targetRoute: '/association/perks',
+    };
+  }
+
+  async getPublicPoll(id: string) {
+    const rows = await this.votingRepo.getPollByIdRaw(
+      '00000000-0000-0000-0000-000000000000',
+      id,
+    );
+    if (rows.length === 0) {
+      const list = await this.votingRepo.listPollsRaw(
+        '00000000-0000-0000-0000-000000000000',
+      );
+      if (list.length > 0) {
+        return this.formatPollResponse(list[0]);
+      }
+      throw new NotFoundException('Không tìm thấy cuộc biểu quyết');
+    }
+    return this.formatPollResponse(rows[0]);
+  }
+
+  private formatPollResponse(r: any) {
+    const rawOptions = r.options || [];
+    const options = this.computeOptionsWithStats(rawOptions);
+    const totalVotes = options.reduce((sum, o) => sum + o.votesCount, 0);
+
+    const isStarRating =
+      String(r.description || '').includes('[STAR_RATING]') ||
+      (options.length === 5 &&
+        options.some((o) => o.title.includes('★') || o.title.includes('Sao')));
+
+    let averageRating = 0;
+    const starDistribution: Record<
+      number,
+      { count: number; percentage: number }
+    > = {
+      5: { count: 0, percentage: 0 },
+      4: { count: 0, percentage: 0 },
+      3: { count: 0, percentage: 0 },
+      2: { count: 0, percentage: 0 },
+      1: { count: 0, percentage: 0 },
+    };
+
+    if (isStarRating && totalVotes > 0) {
+      let weightedSum = 0;
+      options.forEach((opt) => {
+        let starLevel = 0;
+        if (opt.title.startsWith('5') || opt.title.includes('5★')) starLevel = 5;
+        else if (opt.title.startsWith('4') || opt.title.includes('4★'))
+          starLevel = 4;
+        else if (opt.title.startsWith('3') || opt.title.includes('3★'))
+          starLevel = 3;
+        else if (opt.title.startsWith('2') || opt.title.includes('2★'))
+          starLevel = 2;
+        else if (opt.title.startsWith('1') || opt.title.includes('1★'))
+          starLevel = 1;
+
+        if (starLevel > 0) {
+          starDistribution[starLevel] = {
+            count: opt.votesCount,
+            percentage: opt.percentage,
+          };
+          weightedSum += starLevel * opt.votesCount;
+        }
+      });
+      averageRating = Number((weightedSum / totalVotes).toFixed(1));
+    }
+
+    return {
+      id: r.id,
+      title: r.title,
+      description: (r.description || '').replace('[STAR_RATING]', '').trim(),
+      status: r.status || 'open',
+      isStarRating,
+      averageRating: isStarRating ? averageRating || 5.0 : null,
+      starDistribution: isStarRating ? starDistribution : null,
+      eventId: r.event_id || null,
+      eventName: r.event_name || 'Kỷ Niệm 4 Năm Viện Doanh Trí',
+      options,
+      totalVotes,
+      createdAt: r.created_at,
+      endDate: r.end_date || null,
+    };
+  }
+
+  async castPublicVote(
+    pollId: string,
+    body: {
+      optionId?: string;
+      stars?: number;
+      voterName?: string;
+      voterEmail?: string;
+      voterPhone?: string;
+    },
+  ) {
+    const poll = await this.getPublicPoll(pollId);
+    if (poll.status === 'closed') {
+      throw new BadRequestException('Cuộc biểu quyết này đã kết thúc!');
+    }
+
+    let targetOptionId = body.optionId;
+
+    if (body.stars && (!targetOptionId || targetOptionId.length < 5)) {
+      const match = poll.options.find(
+        (o: any) =>
+          o.title.startsWith(String(body.stars)) ||
+          o.title.includes(`${body.stars}★`) ||
+          o.title.includes(`${body.stars} Sao`),
+      );
+      if (match) {
+        targetOptionId = match.id;
+      } else if (poll.options.length >= body.stars) {
+        targetOptionId =
+          poll.options[5 - body.stars]?.id || poll.options[0]?.id;
+      }
+    }
+
+    if (!targetOptionId && poll.options.length > 0) {
+      targetOptionId = poll.options[0]?.id;
+    }
+
+    if (!targetOptionId) {
+      throw new BadRequestException('Phương án biểu quyết không hợp lệ');
+    }
+
+    const voterId = crypto.randomUUID();
+    const voteId = crypto.randomUUID();
+
+    await this.votingRepo.insertVote(
+      voteId,
+      poll.id,
+      targetOptionId,
+      voterId,
+      'public_web',
+    );
+
+    return this.getPublicPoll(poll.id);
+  }
+
+  async sendPollToCheckedInAttendees(userId: string, pollId: string) {
+    const poll = await this.getPollById(userId, pollId);
+    if (!poll) throw new NotFoundException('Không tìm thấy cuộc biểu quyết');
+
+    let eventId = poll.eventId;
+    if (!eventId) {
+      const events = await this.votingRepo.findLatestDoanhTriEvent();
+      if (events.length > 0) eventId = events[0].id;
+    }
+
+    const attendees = await this.votingRepo.findCheckedInAttendees(eventId);
+
+    let sentCount = 0;
+    const voteUrl = `https://crm.ceo1983.viconnect.vn/vote/${pollId}`;
+
+    if (this.mailService) {
+      for (const att of attendees) {
+        if (
+          att.email &&
+          att.email.includes('@') &&
+          !att.email.endsWith('@doanhtri.vn')
+        ) {
+          try {
+            await this.mailService.sendPollInvitationEmail({
+              to: att.email,
+              fullName: att.member_name || 'Quý Đại Biểu',
+              pollTitle: poll.title,
+              pollDescription: poll.description,
+              voteUrl: `${voteUrl}?email=${encodeURIComponent(att.email)}&name=${encodeURIComponent(att.member_name || '')}`,
+              eventTitle:
+                poll.eventName ||
+                'Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp',
+            });
+            sentCount++;
+          } catch (mailErr: any) {
+            console.warn(
+              `[sendPollToCheckedInAttendees] Failed for ${att.email}: ${mailErr.message}`,
+            );
+          }
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      sentCount,
+      totalCheckedIn: attendees.length,
+      voteUrl,
+      message: `Đã gửi liên kết biểu quyết tới ${sentCount}/${attendees.length} đại biểu đã điểm danh thành công!`,
     };
   }
 }
