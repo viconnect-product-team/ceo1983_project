@@ -25,7 +25,17 @@ export default defineConfig(({ command }): UserConfig => {
       },
     }),
     viteReact(),
-    ...(command === 'build' ? [nitro()] : []),
+    ...(command === 'build'
+      ? [
+          nitro({
+            routeRules: {
+              '/socket.io/**': {
+                proxy: `${process.env.NEST_API_URL || 'http://127.0.0.1:4000'}/socket.io/**`,
+              },
+            },
+          }),
+        ]
+      : []),
   ];
 
   return {

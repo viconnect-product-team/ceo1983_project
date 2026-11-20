@@ -124,6 +124,21 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_redirect off;
+        proxy_buffering off;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+
     location ^~ /socket.io {
         proxy_pass http://127.0.0.1:5005;
         proxy_http_version 1.1;
@@ -184,6 +199,21 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5003;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_redirect off;
+        proxy_buffering off;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+
     location ^~ /socket.io {
         proxy_pass http://127.0.0.1:5003;
         proxy_http_version 1.1;
@@ -201,13 +231,23 @@ server {
 }
 EOF
 
-    # Đồng bộ sang cả conf.d và sites-enabled (nếu Ubuntu không include conf.d)
-    if [ -d /etc/nginx/sites-available ] && ! grep -q "include.*/etc/nginx/conf.d/\*\.conf" /etc/nginx/nginx.conf 2>/dev/null; then
+    # Đồng bộ sang cả conf.d và sites-enabled
+    if [ -d /etc/nginx/sites-available ]; then
         cp -f /etc/nginx/conf.d/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
         mkdir -p /etc/nginx/sites-enabled
         ln -sf /etc/nginx/sites-available/ceo1983_subdomains.conf /etc/nginx/sites-enabled/ 2>/dev/null || true
-    else
-        rm -f /etc/nginx/sites-enabled/ceo1983_subdomains.conf /etc/nginx/sites-available/ceo1983_subdomains.conf 2>/dev/null || true
+        # Xóa bỏ các cấu hình cũ có thể gây xung đột tên miền crm.ceo1983 trong sites-enabled
+        for f in /etc/nginx/sites-enabled/*; do
+            if [ -f "$f" ] || [ -L "$f" ]; then
+                target_file=$(readlink -f "$f" 2>/dev/null || echo "$f")
+                if [ "$target_file" != "/etc/nginx/conf.d/ceo1983_subdomains.conf" ] && [ "$target_file" != "/etc/nginx/sites-available/ceo1983_subdomains.conf" ]; then
+                    if grep -rq "crm.ceo1983.viconnect.vn" "$f" 2>/dev/null || grep -rq "ceo1983.viconnect.vn" "$f" 2>/dev/null; then
+                        echo "[Host Nginx] Vô hiệu hóa cấu hình cũ gây xung đột: $f"
+                        rm -f "$f" 2>/dev/null || true
+                    fi
+                fi
+            fi
+        done
     fi
 
     # Tự động khắc phục xung đột directive map nếu có

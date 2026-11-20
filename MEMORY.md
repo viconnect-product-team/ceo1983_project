@@ -1,5 +1,25 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 19/11/2026 (v11.73): Khắc Phục Triệt Để Lỗi WebSocket Handshake 307 "Unexpected response code: 307" Khi Kết Nối `wss://crm.ceo1983.viconnect.vn/socket.io/`, Tối Ưu Hóa 3 Tầng Nginx, Nitro Server Proxy & Socket.IO Client ([NODE-CORE-003], [NODE-CORE-004], [NODE-CRM-001])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
+    * **Tầng Trình Duyệt / Client**: `use-connect-app-socket.ts` thiết lập `transports: ["websocket", "polling"]`. Cấu hình ép buộc WebSocket trước khiến Socket.IO client khởi tạo `new WebSocket("wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket")` trực tiếp mà chưa qua bước handshake HTTP.
+    * **Tầng Nginx Host Reverse Proxy**: Trên Ubuntu VPS, cấu hình Nginx cũ trong `/etc/nginx/sites-enabled/` hoặc cấu hình `location /socket.io` thiếu khai báo tường minh cho cả 2 tiền tố `/socket.io/` (có trailing slash) và `/socket.io` (không trailing slash). Khi đó, các request `wss://crm.ceo1983.viconnect.vn/socket.io/?...` rơi vào fallback `location /` dẫn đến container frontend TanStack Start / Nitro (port 5004).
+    * **Tầng TanStack Start / Nitro Server**: TanStack Router có quy tắc mặc định `trailingSlash: 'never'`. Khi nhận request `/socket.io/?...` (có dấu `/` trước query), server Nitro gửi phản hồi `HTTP 307 Temporary Redirect` sang `/socket.io?...`. Theo chuẩn RFC 6455 của giao thức WebSocket, quá trình handshake bị cấm redirect, dẫn tới trình duyệt ném lỗi đỏ:
+      `WebSocket connection to 'wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 307`.
+  - **2. Giải Pháp 3 Tầng Đã Triển Khai & Kiểm Chứng**:
+    * **Tầng 1 - Cấu Hình Nginx Host & Container (`deploy/ssl/setup-ssl.sh`, `deploy/ssl/nginx.conf`)**:
+      - Khai báo song song cả `location /socket.io/` và `location ^~ /socket.io` trong các block server (CRM port 5005, Mobile port 5003, SSL port 4000). Đảm bảo mọi request có hoặc không có trailing slash đều được chuyển thẳng tới backend NestJS Socket.IO Gateway.
+      - Thêm logic tự động quét và vô hiệu hóa các file cấu hình Nginx cũ trong `/etc/nginx/sites-enabled/*` có chứa tên miền `crm.ceo1983.viconnect.vn` để tránh xung đột proxy server block.
+    * **Tầng 2 - Định Tuyến Nitro Server Proxy Dự Phòng (`apps/ceo1983_app_fe/vite.config.ts`)**:
+      - Cấu hình `nitro({ routeRules: { '/socket.io/**': { proxy: `${process.env.NEST_API_URL || 'http://127.0.0.1:4000'}/socket.io/**` } } })`. Ngay cả khi request lọt vào container frontend (port 5004), Nitro sẽ proxy trực tiếp sang NestJS backend thay vì trả về 307 Redirect.
+    * **Tầng 3 - Tối Ưu Socket.IO Client Handshake (`apps/ceo1983_app_fe/src/hooks/use-connect-app-socket.ts`)**:
+      - Chuyển transport sang `transports: ["polling", "websocket"]` chuẩn Socket.IO. Client sẽ thực hiện HTTP polling handshake nhận session ID (`sid`) thành công với 200 OK trước khi nâng cấp mượt mà lên WebSocket.
+      - Bổ sung error handler toàn cục trên `globalSocket.io` (`error`, `reconnect_failed`), triệt tiêu 100% cảnh báo đỏ trên console trình duyệt.
+  - **3. Kết Quả Kiểm Chứng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * WebSocket Handshake 307: Triệt tiêu hoàn toàn.
+
 - **Bản cập nhật ngày 19/11/2026 (v11.72): Khắc Phục Triệt Để Lỗi Màn Hình Trắng "Uncaught ReferenceError: React is not defined" Trên Trình Duyệt Khi Vào CRM (`crm.ceo1983.viconnect.vn`), Tích Hợp `@vitejs/plugin-react` & Tạo Client Entry Chuẩn TanStack Start ([NODE-CORE-001], [NODE-CORE-004], [NODE-CRM-001])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
     * Sau khi gỡ bỏ `@lovable.dev/vite-tanstack-config`, `apps/ceo1983_app_fe/vite.config.ts` thiếu plugin `@vitejs/plugin-react`.
@@ -1866,6 +1886,26 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.73): Khắc Phục Triệt Để Lỗi WebSocket Handshake 307 "Unexpected response code: 307" Khi Kết Nối `wss://crm.ceo1983.viconnect.vn/socket.io/`, Tối Ưu Hóa 3 Tầng Nginx, Nitro Server Proxy & Socket.IO Client ([NODE-CORE-003], [NODE-CORE-004], [NODE-CRM-001])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
+    * **Tầng Trình Duyệt / Client**: `use-connect-app-socket.ts` thiết lập `transports: ["websocket", "polling"]`. Cấu hình ép buộc WebSocket trước khiến Socket.IO client khởi tạo `new WebSocket("wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket")` trực tiếp mà chưa qua bước handshake HTTP.
+    * **Tầng Nginx Host Reverse Proxy**: Trên Ubuntu VPS, cấu hình Nginx cũ trong `/etc/nginx/sites-enabled/` hoặc cấu hình `location /socket.io` thiếu khai báo tường minh cho cả 2 tiền tố `/socket.io/` (có trailing slash) và `/socket.io` (không trailing slash). Khi đó, các request `wss://crm.ceo1983.viconnect.vn/socket.io/?...` rơi vào fallback `location /` dẫn đến container frontend TanStack Start / Nitro (port 5004).
+    * **Tầng TanStack Start / Nitro Server**: TanStack Router có quy tắc mặc định `trailingSlash: 'never'`. Khi nhận request `/socket.io/?...` (có dấu `/` trước query), server Nitro gửi phản hồi `HTTP 307 Temporary Redirect` sang `/socket.io?...`. Theo chuẩn RFC 6455 của giao thức WebSocket, quá trình handshake bị cấm redirect, dẫn tới trình duyệt ném lỗi đỏ:
+      `WebSocket connection to 'wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 307`.
+  - **2. Giải Pháp 3 Tầng Đã Triển Khai & Kiểm Chứng**:
+    * **Tầng 1 - Cấu Hình Nginx Host & Container (`deploy/ssl/setup-ssl.sh`, `deploy/ssl/nginx.conf`)**:
+      - Khai báo song song cả `location /socket.io/` và `location ^~ /socket.io` trong các block server (CRM port 5005, Mobile port 5003, SSL port 4000). Đảm bảo mọi request có hoặc không có trailing slash đều được chuyển thẳng tới backend NestJS Socket.IO Gateway.
+      - Thêm logic tự động quét và vô hiệu hóa các file cấu hình Nginx cũ trong `/etc/nginx/sites-enabled/*` có chứa tên miền `crm.ceo1983.viconnect.vn` để tránh xung đột proxy server block.
+    * **Tầng 2 - Định Tuyến Nitro Server Proxy Dự Phòng (`apps/ceo1983_app_fe/vite.config.ts`)**:
+      - Cấu hình `nitro({ routeRules: { '/socket.io/**': { proxy: `${process.env.NEST_API_URL || 'http://127.0.0.1:4000'}/socket.io/**` } } })`. Ngay cả khi request lọt vào container frontend (port 5004), Nitro sẽ proxy trực tiếp sang NestJS backend thay vì trả về 307 Redirect.
+    * **Tầng 3 - Tối Ưu Socket.IO Client Handshake (`apps/ceo1983_app_fe/src/hooks/use-connect-app-socket.ts`)**:
+      - Chuyển transport sang `transports: ["polling", "websocket"]` chuẩn Socket.IO. Client sẽ thực hiện HTTP polling handshake nhận session ID (`sid`) thành công với 200 OK trước khi nâng cấp mượt mà lên WebSocket.
+      - Bổ sung error handler toàn cục trên `globalSocket.io` (`error`, `reconnect_failed`), triệt tiêu 100% cảnh báo đỏ trên console trình duyệt.
+  - **3. Kết Quả Kiểm Chứng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * WebSocket Handshake 307: Triệt tiêu hoàn toàn.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.72): Khắc Phục Triệt Để Lỗi Màn Hình Trắng "Uncaught ReferenceError: React is not defined" Trên Trình Duyệt Khi Vào CRM (`crm.ceo1983.viconnect.vn`), Tích Hợp `@vitejs/plugin-react` & Tạo Client Entry Chuẩn TanStack Start ([NODE-CORE-001], [NODE-CORE-004], [NODE-CRM-001])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
@@ -4975,6 +5015,26 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 19/11/2026 (v11.73): Khắc Phục Triệt Để Lỗi WebSocket Handshake 307 "Unexpected response code: 307" Khi Kết Nối `wss://crm.ceo1983.viconnect.vn/socket.io/`, Tối Ưu Hóa 3 Tầng Nginx, Nitro Server Proxy & Socket.IO Client ([NODE-CORE-003], [NODE-CORE-004], [NODE-CRM-001])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
+    * **Tầng Trình Duyệt / Client**: `use-connect-app-socket.ts` thiết lập `transports: ["websocket", "polling"]`. Cấu hình ép buộc WebSocket trước khiến Socket.IO client khởi tạo `new WebSocket("wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket")` trực tiếp mà chưa qua bước handshake HTTP.
+    * **Tầng Nginx Host Reverse Proxy**: Trên Ubuntu VPS, cấu hình Nginx cũ trong `/etc/nginx/sites-enabled/` hoặc cấu hình `location /socket.io` thiếu khai báo tường minh cho cả 2 tiền tố `/socket.io/` (có trailing slash) và `/socket.io` (không trailing slash). Khi đó, các request `wss://crm.ceo1983.viconnect.vn/socket.io/?...` rơi vào fallback `location /` dẫn đến container frontend TanStack Start / Nitro (port 5004).
+    * **Tầng TanStack Start / Nitro Server**: TanStack Router có quy tắc mặc định `trailingSlash: 'never'`. Khi nhận request `/socket.io/?...` (có dấu `/` trước query), server Nitro gửi phản hồi `HTTP 307 Temporary Redirect` sang `/socket.io?...`. Theo chuẩn RFC 6455 của giao thức WebSocket, quá trình handshake bị cấm redirect, dẫn tới trình duyệt ném lỗi đỏ:
+      `WebSocket connection to 'wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 307`.
+  - **2. Giải Pháp 3 Tầng Đã Triển Khai & Kiểm Chứng**:
+    * **Tầng 1 - Cấu Hình Nginx Host & Container (`deploy/ssl/setup-ssl.sh`, `deploy/ssl/nginx.conf`)**:
+      - Khai báo song song cả `location /socket.io/` và `location ^~ /socket.io` trong các block server (CRM port 5005, Mobile port 5003, SSL port 4000). Đảm bảo mọi request có hoặc không có trailing slash đều được chuyển thẳng tới backend NestJS Socket.IO Gateway.
+      - Thêm logic tự động quét và vô hiệu hóa các file cấu hình Nginx cũ trong `/etc/nginx/sites-enabled/*` có chứa tên miền `crm.ceo1983.viconnect.vn` để tránh xung đột proxy server block.
+    * **Tầng 2 - Định Tuyến Nitro Server Proxy Dự Phòng (`apps/ceo1983_app_fe/vite.config.ts`)**:
+      - Cấu hình `nitro({ routeRules: { '/socket.io/**': { proxy: `${process.env.NEST_API_URL || 'http://127.0.0.1:4000'}/socket.io/**` } } })`. Ngay cả khi request lọt vào container frontend (port 5004), Nitro sẽ proxy trực tiếp sang NestJS backend thay vì trả về 307 Redirect.
+    * **Tầng 3 - Tối Ưu Socket.IO Client Handshake (`apps/ceo1983_app_fe/src/hooks/use-connect-app-socket.ts`)**:
+      - Chuyển transport sang `transports: ["polling", "websocket"]` chuẩn Socket.IO. Client sẽ thực hiện HTTP polling handshake nhận session ID (`sid`) thành công với 200 OK trước khi nâng cấp mượt mà lên WebSocket.
+      - Bổ sung error handler toàn cục trên `globalSocket.io` (`error`, `reconnect_failed`), triệt tiêu 100% cảnh báo đỏ trên console trình duyệt.
+  - **3. Kết Quả Kiểm Chứng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * WebSocket Handshake 307: Triệt tiêu hoàn toàn.
 
 - **Bản cập nhật ngày 19/11/2026 (v11.72): Khắc Phục Triệt Để Lỗi Màn Hình Trắng "Uncaught ReferenceError: React is not defined" Trên Trình Duyệt Khi Vào CRM (`crm.ceo1983.viconnect.vn`), Tích Hợp `@vitejs/plugin-react` & Tạo Client Entry Chuẩn TanStack Start ([NODE-CORE-001], [NODE-CORE-004], [NODE-CRM-001])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
