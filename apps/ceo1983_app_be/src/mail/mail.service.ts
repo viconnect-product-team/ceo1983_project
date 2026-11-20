@@ -3465,23 +3465,23 @@ export class MailService {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b; }
     .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #8B0000 0%, #B22222 50%, #991b1b 100%); color: #ffffff; padding: 36px 30px 28px; text-align: center; position: relative; }
-    .header-badge { display: inline-block; background: rgba(255,215,0,0.2); border: 1px solid #FFD700; color: #FFD700; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 12px; }
+    .header { background: linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%); color: #ffffff; padding: 36px 30px 28px; text-align: center; position: relative; }
+    .header-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.6); color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 12px; }
     .header h1 { margin: 0 0 6px; font-size: 21px; font-weight: 900; line-height: 1.3; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; }
-    .header p { margin: 0; font-size: 13px; color: #fecdd3; font-weight: 500; }
+    .header p { margin: 0; font-size: 13px; color: #e0f2fe; font-weight: 500; }
     .content { padding: 32px 30px; }
     .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
     .intro-text { font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 22px; }
     .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 800; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; margin-bottom: 22px; width: 100%; box-sizing: border-box; }
-    .ticket-card { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #8B0000; }
+    .ticket-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #005BAC; }
     .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; font-size: 13px; }
     .info-row:last-child { border-bottom: none; }
     .info-label { color: #64748b; font-weight: 500; }
     .info-value { color: #0f172a; font-weight: 700; text-align: right; max-width: 65%; }
-    .agenda-card { background: #fff5f5; border: 1px solid #fecdd3; border-radius: 14px; padding: 16px 20px; font-size: 13px; color: #991b1b; line-height: 1.6; margin-bottom: 24px; }
+    .agenda-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px 20px; font-size: 13px; color: #166534; line-height: 1.6; margin-bottom: 24px; }
     .footer { background: #0f172a; color: #94a3b8; padding: 26px 30px; text-align: center; font-size: 12px; line-height: 1.6; }
     .footer strong { color: #f1f5f9; }
-    .footer a { color: #FFD700; text-decoration: none; }
+    .footer a { color: #00A859; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -3493,7 +3493,7 @@ export class MailService {
     </div>
 
     <div class="content">
-      <div class="greeting">Kính gửi Anh/Chị: <strong style="color: #8B0000;">${fullName}</strong>,</div>
+      <div class="greeting">Kính gửi Anh/Chị: <strong style="color: #005BAC;">${fullName}</strong>,</div>
       
       <p class="intro-text">
         <strong>Viện Doanh Trí</strong> xin trân trọng cảm ơn Anh/Chị đã có mặt và hoàn tất thủ tục check-in tham dự chương trình toạ đàm đặc biệt hôm nay. Chúc Anh/Chị có một buổi giao lưu, kết nối và đón nhận nhiều giá trị hữu ích!
@@ -3504,7 +3504,7 @@ export class MailService {
       </div>
 
       <div class="ticket-card">
-        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #8B0000; margin-bottom: 12px;">
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #005BAC; margin-bottom: 12px;">
           THÔNG TIN KHÁCH MỜI ĐIỂM DANH
         </div>
         <div class="info-row">
@@ -3521,7 +3521,7 @@ export class MailService {
         </div>
         <div class="info-row">
           <span class="info-label">Thời điểm check-in:</span>
-          <span class="info-value" style="color: ${statusColor};">${checkedInAt}</span>
+          <span class="info-value" style="color: ${statusColor}; font-weight: 800;">${checkedInAt}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Sự kiện:</span>
@@ -3544,7 +3544,7 @@ export class MailService {
       </div>
 
       <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin: 0;">
-        ☎ <strong>Hotline hỗ trợ Ban Tổ Chức:</strong> <span style="color: #8B0000; font-weight: 700;">${hotline}</span>
+        ☎ <strong>Hotline hỗ trợ Ban Tổ Chức:</strong> <span style="color: #00A859; font-weight: 700;">${hotline}</span>
       </p>
     </div>
 
@@ -3641,10 +3641,10 @@ export class MailService {
 </head>
 <body>
   <div class="box">
-    <h2 style="color: #8B0000; margin-top: 0;">DANH SÁCH ĐẠI BIỂU CHECK-IN SỰ KIỆN</h2>
+    <h2 style="color: #005BAC; margin-top: 0;">DANH SÁCH ĐẠI BIỂU CHECK-IN SỰ KIỆN</h2>
     <p>Kính gửi Ban Tổ Chức / Quản Trị Viên,</p>
     <p>Hệ thống Viện Doanh Trí trân trọng gửi đính kèm file danh sách khách mời đã thực hiện quét mã QR check-in tại sự kiện:</p>
-    <div style="background: #fff5f5; border-left: 4px solid #8B0000; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #991b1b;">
+    <div style="background: #f0fdf4; border-left: 4px solid #00A859; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #166534;">
       ${eventName}
     </div>
     <div style="margin: 20px 0;">

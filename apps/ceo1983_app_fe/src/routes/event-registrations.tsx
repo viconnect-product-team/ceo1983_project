@@ -725,9 +725,13 @@ function RegPage() {
 
   const handleOpenSendExcelModal = () => {
     const target =
-      EVENTS.find((e: any) => e.id === eventId) ||
+      (eventId && eventId !== "all" && EVENTS.find((e: any) => e.id === eventId)) ||
+      EVENTS.find((e: any) => e.id === "event-doanhtri-20261121") ||
       EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
-      EVENTS[0];
+      EVENTS[0] || {
+        id: "event-doanhtri-20261121",
+        name: "KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN 20/11 - TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027",
+      };
     setSelectedQrEvent(target);
     setSendExcelModalOpen(true);
   };
@@ -2077,12 +2081,13 @@ function RegPage() {
       )}
 
       {/* Modal Gửi File Excel Danh Sách Check-in qua Email */}
-      {sendExcelModalOpen && selectedQrEvent && (
+      {sendExcelModalOpen && (
         <EventSendCheckinExcelModal
           open={sendExcelModalOpen}
           onClose={() => setSendExcelModalOpen(false)}
-          eventId={selectedQrEvent.id}
-          eventName={selectedQrEvent.name || selectedQrEvent.title || "Sự kiện Viện Doanh Trí"}
+          eventId={selectedQrEvent?.id || "event-doanhtri-20261121"}
+          eventName={selectedQrEvent?.name || selectedQrEvent?.title || "Kỷ niệm 4 năm Viện Doanh Trí"}
+          events={EVENTS}
           totalAttendees={REGISTRATIONS.length}
         />
       )}

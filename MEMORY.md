@@ -1,5 +1,52 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.81): Chuẩn Hóa Màu Sắc Email Xác Nhận Check-in Viện Doanh Trí, Bổ Sung Header Trang Trọng Vào File Báo Cáo (Excel, Word, PDF), Thêm Dropdown Chọn Sự Kiện & Khắc Phục Triệt Để Lỗi 404 "Không Tìm Thấy Sự Kiện Nào" ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa 100% Màu Sắc Mẫu Email Xác Nhận Check-in Cá Nhân**:
+    * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts` (`sendDoanhTriCheckinSuccessEmail`):
+      - Thay thế toàn bộ mã màu đỏ cũ (`#8B0000`, `#B22222`, `#991b1b`) sang bảng màu nhận diện thương hiệu Viện Doanh Trí: Xanh dương (`#005BAC`, `#0284C7`) và Xanh lá (`#00A859`).
+      - Header thiệp email: Chuyển sang dải gradient chuẩn `linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%)`.
+      - Khối danh thiếp đại biểu điểm danh: Viền bên trái màu `#005BAC`, tiêu đề thẻ `#005BAC`.
+      - Khối lịch trình chương trình toạ đàm & tiệc mừng sinh nhật: Nền xanh nhạt `#f0fdf4`, viền `#bbf7d0`, chữ xanh sẫm `#166534`.
+      - Hotline Ban Tổ Chức: Nổi bật với màu xanh lá `#00A859`.
+  - **2. Bổ Sung Header Thông Tin Viện Doanh Trí Trang Trọng Vào File Báo Cáo Check-in**:
+    * **File Excel (`generateCheckinExcel`)**:
+      - Bổ sung 8 dòng Header đầu bảng trang trọng và chuẩn mực:
+        + Dòng 1: `VIỆN DOANH TRÍ` (Merge A1:J1).
+        + Dòng 2: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11`.
+        + Dòng 3: `BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN`.
+        + Dòng 4: `Sự kiện: [Tên sự kiện]`.
+        + Dòng 5: `Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)`.
+        + Dòng 6: `Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội`.
+        + Dòng 7: `Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: [Thời gian hiện tại]`.
+        + Dòng 8: `Tổng số đại biểu: [Tổng] | Đúng giờ (trong 30p): [Số lượng] | Check-in muộn: [Số lượng]`.
+      - Đầy đủ 10 cột dữ liệu chuẩn hóa: STT, Mã Đăng Ký, Họ và Tên Đại Biểu, Số Điện Thoại, Email, Chức Danh, Công Ty / Doanh Nghiệp, Thời Gian Check-in, Phân Loại Check-in, Hạng Vé.
+      - Phần chân trang gồm dòng tổng kết số liệu và 3 ô ký xác nhận: `NGƯỜI LẬP BIỂU`, `BAN TỔ CHỨC`, `VIỆN DOANH TRÍ`.
+    * **File Word (.docx - `generateCheckinDocx`)**:
+      - Tiêu đề VIỆN DOANH TRÍ in hoa đậm màu `#005BAC`.
+      - Dòng kỷ niệm 4 năm màu xanh lá `#00A859`.
+      - Ghi rõ sự kiện, thời gian, địa điểm, hotline và bảng dữ liệu đầy đủ.
+    * **File PDF (.pdf - `generateCheckinPdf`)**:
+      - Đổi màu tiêu đề từ đỏ `pdfRgb(0.545, 0, 0)` sang xanh dương thương hiệu `pdfRgb(0, 0.357, 0.675)` (#005BAC) và phụ đề xanh lá `pdfRgb(0, 0.659, 0.349)` (#00A859).
+      - Bổ sung thông tin sự kiện, địa điểm, hotline và các cột dữ liệu.
+  - **3. Thêm Dropdown Chọn Sự Kiện Trong Modal Gửi Báo Cáo & Khắc Phục Lỗi 404 "Không Tìm Thấy Sự Kiện"**:
+    * **Nguyên nhân lỗi 404**:
+      - Khi người dùng đang ở bộ lọc "Tất cả sự kiện" trên CRM, biến `eventId = 'all'`.
+      - API backend trước đây truy vấn `WHERE id = ${eventId}`, không khớp sự kiện nào nên ném `NotFoundException('Không tìm thấy sự kiện')`.
+    * **Giải pháp khắc phục triệt để**:
+      - **Backend (`apps/ceo1983_app_be/src/events/events.service.ts`)**:
+        + Trong cả `sendCheckinReportEmail` và `exportCheckinReport`: Xây dựng cơ chế fallback thông minh 3 tầng: nếu `eventId === 'all'` hoặc không tìm thấy, hệ thống tự động tìm sự kiện Viện Doanh Trí (`event-doanhtri-20261121`, hoặc `name/title ILIKE '%DOANH TRÍ%'`, hoặc sự kiện mới nhất).
+      - **Frontend Modal (`apps/ceo1983_app_fe/src/components/events/EventSendCheckinExcelModal.tsx`)**:
+        + Tiếp nhận prop `events` từ danh sách sự kiện trên CRM.
+        + Thêm ô chọn Dropdown `<select>` ngay đầu form cho phép người dùng chủ động chọn sự kiện cần xuất / gửi file báo cáo check-in.
+        + Thay toàn bộ màu sắc modal sang bộ nhận diện thương hiệu Viện Doanh Trí (Xanh dương - Xanh lá).
+      - **Tích hợp Web CRM (`apps/ceo1983_app_fe/src/routes/event-registrations.tsx`)**:
+        + Truyền `events={EVENTS}` vào modal và xử lý chọn sự kiện an toàn ngay cả khi đang xem "Tất cả sự kiện".
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt CSDL duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.80): Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` / "Không Tải Được Dữ Liệu", Khắc Phục Lỗi Crash 500 BigInt Serialization & Chuẩn Hóa Cột Thời Gian Check-in / Metadata Đại Biểu Trên Web CRM Kèm Xuất 3 Định Dạng File ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
   - **1. Phân Tích & Giải Pháp Triệt Để Lỗi SSL Zalo (`NET::ERR_CERT_AUTHORITY_INVALID` & "Không tải được dữ liệu")**:
     * **Nguyên nhân thực tế**:
@@ -2099,6 +2146,53 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.81): Chuẩn Hóa Màu Sắc Email Xác Nhận Check-in Viện Doanh Trí, Bổ Sung Header Trang Trọng Vào File Báo Cáo (Excel, Word, PDF), Thêm Dropdown Chọn Sự Kiện & Khắc Phục Triệt Để Lỗi 404 "Không Tìm Thấy Sự Kiện Nào" ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa 100% Màu Sắc Mẫu Email Xác Nhận Check-in Cá Nhân**:
+    * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts` (`sendDoanhTriCheckinSuccessEmail`):
+      - Thay thế toàn bộ mã màu đỏ cũ (`#8B0000`, `#B22222`, `#991b1b`) sang bảng màu nhận diện thương hiệu Viện Doanh Trí: Xanh dương (`#005BAC`, `#0284C7`) và Xanh lá (`#00A859`).
+      - Header thiệp email: Chuyển sang dải gradient chuẩn `linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%)`.
+      - Khối danh thiếp đại biểu điểm danh: Viền bên trái màu `#005BAC`, tiêu đề thẻ `#005BAC`.
+      - Khối lịch trình chương trình toạ đàm & tiệc mừng sinh nhật: Nền xanh nhạt `#f0fdf4`, viền `#bbf7d0`, chữ xanh sẫm `#166534`.
+      - Hotline Ban Tổ Chức: Nổi bật với màu xanh lá `#00A859`.
+  - **2. Bổ Sung Header Thông Tin Viện Doanh Trí Trang Trọng Vào File Báo Cáo Check-in**:
+    * **File Excel (`generateCheckinExcel`)**:
+      - Bổ sung 8 dòng Header đầu bảng trang trọng và chuẩn mực:
+        + Dòng 1: `VIỆN DOANH TRÍ` (Merge A1:J1).
+        + Dòng 2: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11`.
+        + Dòng 3: `BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN`.
+        + Dòng 4: `Sự kiện: [Tên sự kiện]`.
+        + Dòng 5: `Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)`.
+        + Dòng 6: `Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội`.
+        + Dòng 7: `Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: [Thời gian hiện tại]`.
+        + Dòng 8: `Tổng số đại biểu: [Tổng] | Đúng giờ (trong 30p): [Số lượng] | Check-in muộn: [Số lượng]`.
+      - Đầy đủ 10 cột dữ liệu chuẩn hóa: STT, Mã Đăng Ký, Họ và Tên Đại Biểu, Số Điện Thoại, Email, Chức Danh, Công Ty / Doanh Nghiệp, Thời Gian Check-in, Phân Loại Check-in, Hạng Vé.
+      - Phần chân trang gồm dòng tổng kết số liệu và 3 ô ký xác nhận: `NGƯỜI LẬP BIỂU`, `BAN TỔ CHỨC`, `VIỆN DOANH TRÍ`.
+    * **File Word (.docx - `generateCheckinDocx`)**:
+      - Tiêu đề VIỆN DOANH TRÍ in hoa đậm màu `#005BAC`.
+      - Dòng kỷ niệm 4 năm màu xanh lá `#00A859`.
+      - Ghi rõ sự kiện, thời gian, địa điểm, hotline và bảng dữ liệu đầy đủ.
+    * **File PDF (.pdf - `generateCheckinPdf`)**:
+      - Đổi màu tiêu đề từ đỏ `pdfRgb(0.545, 0, 0)` sang xanh dương thương hiệu `pdfRgb(0, 0.357, 0.675)` (#005BAC) và phụ đề xanh lá `pdfRgb(0, 0.659, 0.349)` (#00A859).
+      - Bổ sung thông tin sự kiện, địa điểm, hotline và các cột dữ liệu.
+  - **3. Thêm Dropdown Chọn Sự Kiện Trong Modal Gửi Báo Cáo & Khắc Phục Lỗi 404 "Không Tìm Thấy Sự Kiện"**:
+    * **Nguyên nhân lỗi 404**:
+      - Khi người dùng đang ở bộ lọc "Tất cả sự kiện" trên CRM, biến `eventId = 'all'`.
+      - API backend trước đây truy vấn `WHERE id = ${eventId}`, không khớp sự kiện nào nên ném `NotFoundException('Không tìm thấy sự kiện')`.
+    * **Giải pháp khắc phục triệt để**:
+      - **Backend (`apps/ceo1983_app_be/src/events/events.service.ts`)**:
+        + Trong cả `sendCheckinReportEmail` và `exportCheckinReport`: Xây dựng cơ chế fallback thông minh 3 tầng: nếu `eventId === 'all'` hoặc không tìm thấy, hệ thống tự động tìm sự kiện Viện Doanh Trí (`event-doanhtri-20261121`, hoặc `name/title ILIKE '%DOANH TRÍ%'`, hoặc sự kiện mới nhất).
+      - **Frontend Modal (`apps/ceo1983_app_fe/src/components/events/EventSendCheckinExcelModal.tsx`)**:
+        + Tiếp nhận prop `events` từ danh sách sự kiện trên CRM.
+        + Thêm ô chọn Dropdown `<select>` ngay đầu form cho phép người dùng chủ động chọn sự kiện cần xuất / gửi file báo cáo check-in.
+        + Thay toàn bộ màu sắc modal sang bộ nhận diện thương hiệu Viện Doanh Trí (Xanh dương - Xanh lá).
+      - **Tích hợp Web CRM (`apps/ceo1983_app_fe/src/routes/event-registrations.tsx`)**:
+        + Truyền `events={EVENTS}` vào modal và xử lý chọn sự kiện an toàn ngay cả khi đang xem "Tất cả sự kiện".
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt CSDL duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.80): Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` / "Không Tải Được Dữ Liệu", Khắc Phục Lỗi Crash 500 BigInt Serialization & Chuẩn Hóa Cột Thời Gian Check-in / Metadata Đại Biểu Trên Web CRM Kèm Xuất 3 Định Dạng File ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
   - **1. Phân Tích & Giải Pháp Triệt Để Lỗi SSL Zalo (`NET::ERR_CERT_AUTHORITY_INVALID` & "Không tải được dữ liệu")**:
@@ -5441,6 +5535,53 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.81): Chuẩn Hóa Màu Sắc Email Xác Nhận Check-in Viện Doanh Trí, Bổ Sung Header Trang Trọng Vào File Báo Cáo (Excel, Word, PDF), Thêm Dropdown Chọn Sự Kiện & Khắc Phục Triệt Để Lỗi 404 "Không Tìm Thấy Sự Kiện Nào" ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa 100% Màu Sắc Mẫu Email Xác Nhận Check-in Cá Nhân**:
+    * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts` (`sendDoanhTriCheckinSuccessEmail`):
+      - Thay thế toàn bộ mã màu đỏ cũ (`#8B0000`, `#B22222`, `#991b1b`) sang bảng màu nhận diện thương hiệu Viện Doanh Trí: Xanh dương (`#005BAC`, `#0284C7`) và Xanh lá (`#00A859`).
+      - Header thiệp email: Chuyển sang dải gradient chuẩn `linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%)`.
+      - Khối danh thiếp đại biểu điểm danh: Viền bên trái màu `#005BAC`, tiêu đề thẻ `#005BAC`.
+      - Khối lịch trình chương trình toạ đàm & tiệc mừng sinh nhật: Nền xanh nhạt `#f0fdf4`, viền `#bbf7d0`, chữ xanh sẫm `#166534`.
+      - Hotline Ban Tổ Chức: Nổi bật với màu xanh lá `#00A859`.
+  - **2. Bổ Sung Header Thông Tin Viện Doanh Trí Trang Trọng Vào File Báo Cáo Check-in**:
+    * **File Excel (`generateCheckinExcel`)**:
+      - Bổ sung 8 dòng Header đầu bảng trang trọng và chuẩn mực:
+        + Dòng 1: `VIỆN DOANH TRÍ` (Merge A1:J1).
+        + Dòng 2: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11`.
+        + Dòng 3: `BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN`.
+        + Dòng 4: `Sự kiện: [Tên sự kiện]`.
+        + Dòng 5: `Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)`.
+        + Dòng 6: `Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội`.
+        + Dòng 7: `Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: [Thời gian hiện tại]`.
+        + Dòng 8: `Tổng số đại biểu: [Tổng] | Đúng giờ (trong 30p): [Số lượng] | Check-in muộn: [Số lượng]`.
+      - Đầy đủ 10 cột dữ liệu chuẩn hóa: STT, Mã Đăng Ký, Họ và Tên Đại Biểu, Số Điện Thoại, Email, Chức Danh, Công Ty / Doanh Nghiệp, Thời Gian Check-in, Phân Loại Check-in, Hạng Vé.
+      - Phần chân trang gồm dòng tổng kết số liệu và 3 ô ký xác nhận: `NGƯỜI LẬP BIỂU`, `BAN TỔ CHỨC`, `VIỆN DOANH TRÍ`.
+    * **File Word (.docx - `generateCheckinDocx`)**:
+      - Tiêu đề VIỆN DOANH TRÍ in hoa đậm màu `#005BAC`.
+      - Dòng kỷ niệm 4 năm màu xanh lá `#00A859`.
+      - Ghi rõ sự kiện, thời gian, địa điểm, hotline và bảng dữ liệu đầy đủ.
+    * **File PDF (.pdf - `generateCheckinPdf`)**:
+      - Đổi màu tiêu đề từ đỏ `pdfRgb(0.545, 0, 0)` sang xanh dương thương hiệu `pdfRgb(0, 0.357, 0.675)` (#005BAC) và phụ đề xanh lá `pdfRgb(0, 0.659, 0.349)` (#00A859).
+      - Bổ sung thông tin sự kiện, địa điểm, hotline và các cột dữ liệu.
+  - **3. Thêm Dropdown Chọn Sự Kiện Trong Modal Gửi Báo Cáo & Khắc Phục Lỗi 404 "Không Tìm Thấy Sự Kiện"**:
+    * **Nguyên nhân lỗi 404**:
+      - Khi người dùng đang ở bộ lọc "Tất cả sự kiện" trên CRM, biến `eventId = 'all'`.
+      - API backend trước đây truy vấn `WHERE id = ${eventId}`, không khớp sự kiện nào nên ném `NotFoundException('Không tìm thấy sự kiện')`.
+    * **Giải pháp khắc phục triệt để**:
+      - **Backend (`apps/ceo1983_app_be/src/events/events.service.ts`)**:
+        + Trong cả `sendCheckinReportEmail` và `exportCheckinReport`: Xây dựng cơ chế fallback thông minh 3 tầng: nếu `eventId === 'all'` hoặc không tìm thấy, hệ thống tự động tìm sự kiện Viện Doanh Trí (`event-doanhtri-20261121`, hoặc `name/title ILIKE '%DOANH TRÍ%'`, hoặc sự kiện mới nhất).
+      - **Frontend Modal (`apps/ceo1983_app_fe/src/components/events/EventSendCheckinExcelModal.tsx`)**:
+        + Tiếp nhận prop `events` từ danh sách sự kiện trên CRM.
+        + Thêm ô chọn Dropdown `<select>` ngay đầu form cho phép người dùng chủ động chọn sự kiện cần xuất / gửi file báo cáo check-in.
+        + Thay toàn bộ màu sắc modal sang bộ nhận diện thương hiệu Viện Doanh Trí (Xanh dương - Xanh lá).
+      - **Tích hợp Web CRM (`apps/ceo1983_app_fe/src/routes/event-registrations.tsx`)**:
+        + Truyền `events={EVENTS}` vào modal và xử lý chọn sự kiện an toàn ngay cả khi đang xem "Tất cả sự kiện".
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt CSDL duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.80): Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` / "Không Tải Được Dữ Liệu", Khắc Phục Lỗi Crash 500 BigInt Serialization & Chuẩn Hóa Cột Thời Gian Check-in / Metadata Đại Biểu Trên Web CRM Kèm Xuất 3 Định Dạng File ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
   - **1. Phân Tích & Giải Pháp Triệt Để Lỗi SSL Zalo (`NET::ERR_CERT_AUTHORITY_INVALID` & "Không tải được dữ liệu")**:
