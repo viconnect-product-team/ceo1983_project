@@ -13,10 +13,7 @@ import {
   Phone,
   ShieldCheck,
   Clock,
-  Building2,
-  Wifi,
   Lock,
-  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAbsoluteQrUrl } from "@/lib/qr";
@@ -41,26 +38,11 @@ export function EventCheckinQrModal({
 }: EventCheckinQrModalProps) {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [protocolMode, setProtocolMode] = useState<"https" | "http">("http");
-  const [targetHostMode, setTargetHostMode] = useState<"current" | "prod">("current");
 
   if (!open) return null;
 
-  const currentHost =
-    typeof window !== "undefined"
-      ? window.location.host
-      : "crm.ceo1983.viconnect.vn";
-
-  const selectedHost =
-    targetHostMode === "prod" ? "crm.ceo1983.viconnect.vn" : currentHost;
-
-  const isSelectedHostLocal =
-    selectedHost.includes("localhost") || selectedHost.includes("127.0.0.1");
-
-  // Localhost dev server chạy HTTP, không chạy HTTPS (tránh ERR_SSL_PROTOCOL_ERROR)
-  const effectiveProtocol = isSelectedHostLocal ? "http" : protocolMode;
-  const scheme = effectiveProtocol === "http" ? "http:" : "https:";
-  const checkinUrl = `${scheme}//${selectedHost}/checkin/${event.id}`;
+  // Đường link check-in công khai chuẩn HTTPS của Viện Doanh Trí
+  const checkinUrl = `https://crm.ceo1983.viconnect.vn/checkin/${event.id}`;
   const qrImageUrl = getAbsoluteQrUrl(checkinUrl, 500);
 
   const eventName =
@@ -71,7 +53,7 @@ export function EventCheckinQrModal({
   const handleCopy = () => {
     navigator.clipboard.writeText(checkinUrl);
     setCopied(true);
-    toast.success("Đã sao chép liên kết Check-in!");
+    toast.success("Đã sao chép liên kết Check-in HTTPS!");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -146,77 +128,20 @@ export function EventCheckinQrModal({
             </div>
           </div>
 
-          {/* Chọn Môi Trường & Giao Thức (Local vs Test vs Production) */}
-          <div className="w-full max-w-md space-y-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
-            {/* Host Selector */}
-            <div className="flex items-center justify-between text-xs gap-1">
-              <span className="text-slate-500 font-bold shrink-0 text-[11px]">Môi trường:</span>
-              <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-semibold gap-1">
-                <button
-                  type="button"
-                  onClick={() => setTargetHostMode("current")}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
-                    targetHostMode === "current"
-                      ? "bg-white text-[#005BAC] shadow-xs font-bold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Host hiện tại ({currentHost})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTargetHostMode("prod")}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
-                    targetHostMode === "prod"
-                      ? "bg-white text-[#005BAC] shadow-xs font-bold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Production (crm.ceo1983.viconnect.vn)
-                </button>
-              </div>
+          {/* Liên kết chuẩn HTTPS của Viện Doanh Trí */}
+          <div className="w-full max-w-md bg-emerald-50 border border-emerald-200/80 p-2.5 rounded-2xl flex items-center justify-between text-xs gap-2">
+            <div className="flex items-center gap-1.5 min-w-0 text-emerald-900 font-semibold truncate">
+              <Lock className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
+              <span className="truncate font-mono text-[11px]">{checkinUrl}</span>
             </div>
-
-            {/* Protocol Toggle */}
-            <div className="flex items-center justify-between text-xs gap-1 border-t border-slate-200/60 pt-2">
-              <span className="text-slate-500 font-bold shrink-0 text-[11px]">Giao thức:</span>
-              <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-semibold gap-1">
-                <button
-                  type="button"
-                  onClick={() => setProtocolMode("http")}
-                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1 cursor-pointer ${
-                    effectiveProtocol === "http"
-                      ? "bg-[#005BAC] text-white shadow-xs font-bold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <Globe className="w-3 h-3" />
-                  <span>HTTP (Khuyên dùng)</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={isSelectedHostLocal}
-                  onClick={() => setProtocolMode("https")}
-                  title={isSelectedHostLocal ? "Localhost chỉ hỗ trợ HTTP" : undefined}
-                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1 cursor-pointer ${
-                    effectiveProtocol === "https"
-                      ? "bg-[#005BAC] text-white shadow-xs font-bold"
-                      : isSelectedHostLocal
-                        ? "text-slate-400 opacity-50 cursor-not-allowed"
-                        : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <Lock className="w-3 h-3" />
-                  <span>HTTPS</span>
-                </button>
-              </div>
-            </div>
-
-            {isSelectedHostLocal && (
-              <p className="text-[10px] text-amber-700 italic text-left">
-                * Đang ở môi trường Local dev server: Tự động dùng HTTP (tránh lỗi SSL Protocol Error).
-              </p>
-            )}
+            <a
+              href={checkinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded-lg bg-[#005BAC] hover:bg-[#004a8f] text-white text-[11px] font-bold shrink-0 transition shadow-2xs"
+            >
+              Mở Form
+            </a>
           </div>
 
           {/* QR Code Presentation Frame */}

@@ -13,6 +13,10 @@ import {
   Vote as VoteIcon,
   X,
   Ticket,
+  Mail,
+  Star,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -196,6 +200,42 @@ function VotingPage() {
       toast.error(err?.message || "Không thể kết thúc biểu quyết");
     } finally {
       setClosingId(null);
+    }
+  }
+
+  const [sendingPollId, setSendingPollId] = useState<string | null>(null);
+
+  async function handleSendToCheckedIn(pollId: string) {
+    if (
+      !confirm(
+        "Hệ thống sẽ gửi email chứa liên kết biểu quyết tới toàn bộ đại biểu đã điểm danh thành công tham dự sự kiện. Bạn có chắc chắn muốn gửi không?",
+      )
+    ) {
+      return;
+    }
+    setSendingPollId(pollId);
+    try {
+      const res = await fetchNestApi<any>(`/voting/polls/${pollId}/send-to-checkedin`, {
+        method: "POST",
+      });
+      toast.success(
+        res?.message ||
+          `Đã gửi liên kết biểu quyết tới ${res?.sentCount || 0} đại biểu đã điểm danh!`,
+      );
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể gửi email biểu quyết tới đại biểu");
+    } finally {
+      setSendingPollId(null);
+    }
+  }
+
+  function copyPublicVoteLink(pollId: string) {
+    const url = `https://crm.ceo1983.viconnect.vn/vote/${pollId}`;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url);
+      toast.success(`Đã sao chép link biểu quyết công khai:\n${url}`);
+    } else {
+      window.prompt("Sao chép link biểu quyết công khai:", url);
     }
   }
 
@@ -387,6 +427,12 @@ function VotingPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {t(TYPE_KEY[v.type])}
                     </span>
+                    {(v.title.includes("[STAR_RATING]") || (v.description && v.description.includes("[STAR_RATING]")) || (v.options?.length === 5 && v.options[0]?.includes("5★"))) && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                        <Star className="size-3 fill-amber-500 text-amber-500" />
+                        <span>Đánh giá 1-5 sao</span>
+                      </span>
+                    )}
                     {v.eventName && (
                       <span className="rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
                         📅 {v.eventName}
@@ -540,34 +586,77 @@ function VotingPage() {
                 />
               </div>
 
-              {/* Thống kê nguồn bỏ phiếu và nút kết thúc biểu quyết */}
-              <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-foreground/80">Kênh bỏ phiếu:</span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20">
-                    🏛️ Hiệp hội App: <strong>{v.sourceStats?.associationApp ?? 0}</strong>
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-500/10 text-slate-700 dark:text-slate-400 font-medium border border-slate-500/20">
-                    💻 CRM: <strong>{v.sourceStats?.crm ?? 0}</strong>
-                  </span>
+              {/* Thống kê nguồn bỏ phiếu, thao tác liên kết Public & nút kết thúc */}
+              <div className="mt-4 pt-3 border-t border-border/60 space-y-2.5 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-foreground/80">Kênh bỏ phiếu:</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20">
+                      🏛️ Hiệp hội App: <strong>{v.sourceStats?.associationApp ?? 0}</strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-500/10 text-slate-700 dark:text-slate-400 font-medium border border-slate-500/20">
+                      💻 CRM: <strong>{v.sourceStats?.crm ?? 0}</strong>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {!isClosed ? (
+                      <button
+                        type="button"
+                        onClick={() => handleClosePoll(v.id)}
+                        disabled={closingId === v.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border border-red-500/30 text-xs font-bold cursor-pointer transition-all shadow-2xs"
+                      >
+                        <CheckCircle2 className="size-3.5" />
+                        <span>{closingId === v.id ? "Đang xử lý..." : "Kết thúc biểu quyết"}</span>
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] border border-emerald-500/30">
+                        ✓ Đã kết thúc & Công bố kết quả
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {!isClosed ? (
+                {/* Thanh công cụ Public & Gửi link cho người đã check-in */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => handleClosePoll(v.id)}
-                      disabled={closingId === v.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border border-red-500/30 text-xs font-bold cursor-pointer transition-all shadow-2xs"
+                      onClick={() => handleSendToCheckedIn(v.id)}
+                      disabled={sendingPollId === v.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-700 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                      title="Gửi email chứa liên kết biểu quyết tới toàn bộ đại biểu đã check-in"
                     >
-                      <CheckCircle2 className="size-3.5" />
-                      <span>{closingId === v.id ? "Đang xử lý..." : "Kết thúc biểu quyết"}</span>
+                      <Mail className="size-3.5" />
+                      <span>{sendingPollId === v.id ? "Đang gửi..." : "Gửi chọn cho tất cả người đã check-in"}</span>
                     </button>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] border border-emerald-500/30">
-                      ✓ Đã kết thúc & Công bố kết quả
-                    </span>
-                  )}
+
+                    <button
+                      type="button"
+                      onClick={() => copyPublicVoteLink(v.id)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground font-semibold border border-border transition-all cursor-pointer"
+                      title="Sao chép liên kết biểu quyết công khai"
+                    >
+                      <Copy className="size-3.5 text-muted-foreground" />
+                      <span>Copy Link Public</span>
+                    </button>
+
+                    <a
+                      href={`/vote/${v.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-500/30 transition-all"
+                      title="Mở giao diện biểu quyết công khai"
+                    >
+                      <ExternalLink className="size-3.5 text-emerald-600" />
+                      <span>Mở form Public</span>
+                    </a>
+                  </div>
+
+                  <span className="text-[11px] text-muted-foreground italic">
+                    * Bất kỳ ai có liên kết đều có thể tham gia biểu quyết ngoài hệ thống
+                  </span>
                 </div>
               </div>
             </Card>
@@ -600,7 +689,16 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
   const router = useRouter();
   const createVote = useServerFn(createVoteFn);
   const updateVote = useServerFn(updateVoteFn);
-  const [title, setTitle] = useState(vote?.title ?? "");
+  const isStarVote =
+    vote?.title?.includes("[STAR_RATING]") ||
+    (vote?.description && vote.description.includes("[STAR_RATING]")) ||
+    (vote?.options?.length === 5 && vote?.options[0]?.includes("5★"));
+  const [voteFormat, setVoteFormat] = useState<"standard" | "star_rating">(
+    isStarVote ? "star_rating" : "standard",
+  );
+  const [title, setTitle] = useState(
+    vote?.title ? vote.title.replace("[STAR_RATING]", "").trim() : "",
+  );
   const [type, setType] = useState<Vote["type"]>(vote?.type ?? "policy");
   const [targetAudience, setTargetAudience] = useState("all");
   const [eventId, setEventId] = useState(vote?.eventId ?? "");
@@ -645,10 +743,50 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
         return;
       }
 
+      let finalTitle = title.trim();
+      if (voteFormat === "star_rating" && !finalTitle.includes("[STAR_RATING]")) {
+        finalTitle = `[STAR_RATING] ${finalTitle}`;
+      }
+      const finalOptions =
+        voteFormat === "star_rating"
+          ? [
+              "5★ - Xuất sắc / Rất hài lòng",
+              "4★ - Hài lòng",
+              "3★ - Bình thường",
+              "2★ - Chưa hài lòng",
+              "1★ - Rất không hài lòng",
+            ]
+          : options;
+
       if (vote) {
-        await updateVote({ data: { id: vote.id, title, type, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId: eventId || null } });
+        await updateVote({
+          data: {
+            id: vote.id,
+            title: finalTitle,
+            type,
+            startsAt: finalStartsAt,
+            endsAt: finalEndsAt,
+            options: finalOptions,
+            eventId: eventId || null,
+          },
+        });
       } else {
-        await createVote({ data: { title, type, targetAudience, startsAt: finalStartsAt, endsAt: finalEndsAt, options, eventId: eventId || null } });
+        await createVote({
+          data: {
+            title: finalTitle,
+            description:
+              voteFormat === "star_rating"
+                ? "[STAR_RATING] Khảo sát đánh giá mức độ hài lòng theo thang điểm 1-5 sao"
+                : undefined,
+            voteFormat,
+            type,
+            targetAudience,
+            startsAt: finalStartsAt,
+            endsAt: finalEndsAt,
+            options: finalOptions,
+            eventId: eventId || null,
+          },
+        });
       }
       await router.invalidate();
       onClose();
@@ -683,14 +821,52 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
         </div>
 
         <div className="space-y-4">
+          {/* Định dạng biểu quyết */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Câu hỏi</label>
+            <label className="mb-1.5 block text-sm font-semibold text-foreground">
+              Hình thức biểu quyết
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setVoteFormat("standard")}
+                className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all ${
+                  voteFormat === "standard"
+                    ? "border-primary bg-primary/10 text-primary shadow-xs"
+                    : "border-border bg-background text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                <span>📊 Phương án tùy chọn</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVoteFormat("star_rating")}
+                className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all ${
+                  voteFormat === "star_rating"
+                    ? "border-amber-500 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs"
+                    : "border-border bg-background text-muted-foreground hover:bg-secondary"
+                }`}
+              >
+                <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                <span>⭐ Đánh giá theo sao (1-5★)</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              {voteFormat === "star_rating" ? "Nội dung cần đánh giá ý kiến / mức độ hài lòng" : "Câu hỏi bình chọn"}
+            </label>
             <textarea
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               rows={2}
               maxLength={300}
-              placeholder="Nội dung bình chọn..."
+              placeholder={
+                voteFormat === "star_rating"
+                  ? "Ví dụ: Đánh giá chất lượng chương trình Kỷ niệm 4 năm Viện Doanh Trí..."
+                  : "Nội dung bình chọn..."
+              }
               className={inputCls}
             />
           </div>
@@ -806,35 +982,69 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
             </p>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Lựa chọn</label>
-            <div className="space-y-2">
-              {options.map((o, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    value={o}
-                    onChange={(e) => setOpt(i, e.target.value)}
-                    placeholder={`Lựa chọn ${i + 1}`}
-                    className={inputCls}
-                  />
-                  {options.length > 2 && (
-                    <button
-                      onClick={() => setOptions((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+          {voteFormat === "star_rating" ? (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                <Star className="size-4 fill-amber-500 text-amber-500" />
+                <span>Thang đánh giá 1 - 5 Sao tự động:</span>
+              </div>
+              <div className="space-y-1.5 text-xs text-foreground/80 pl-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-600">⭐⭐⭐⭐⭐</span>
+                  <span>5 Sao - Xuất sắc / Rất hài lòng</span>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-600">⭐⭐⭐⭐</span>
+                  <span>4 Sao - Hài lòng</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-600">⭐⭐⭐</span>
+                  <span>3 Sao - Bình thường</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-600">⭐⭐</span>
+                  <span>2 Sao - Chưa hài lòng</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-amber-600">⭐</span>
+                  <span>1 Sao - Rất không hài lòng</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground pt-1 border-t border-amber-500/20">
+                * Khi đại biểu biểu quyết qua form Public hoặc CRM, kết quả sẽ tự động tính điểm trung bình (VD: 4.8 / 5.0) và biểu đồ phân bổ sao trực quan.
+              </p>
             </div>
-            <button
-              onClick={() => setOptions((prev) => [...prev, ""])}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary"
-            >
-              <Plus className="h-4 w-4" /> Thêm lựa chọn
-            </button>
-          </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">Lựa chọn</label>
+              <div className="space-y-2">
+                {options.map((o, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      value={o}
+                      onChange={(e) => setOpt(i, e.target.value)}
+                      placeholder={`Lựa chọn ${i + 1}`}
+                      className={inputCls}
+                    />
+                    {options.length > 2 && (
+                      <button
+                        onClick={() => setOptions((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setOptions((prev) => [...prev, ""])}
+                className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary"
+              >
+                <Plus className="h-4 w-4" /> Thêm lựa chọn
+              </button>
+            </div>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

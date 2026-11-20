@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/dashboard/AppShell";
 import { LuckyDrawLandingBanner } from "@/components/dashboard/LuckyDrawLandingBanner";
-import { ArrowLeft, Sparkles, Gift } from "lucide-react";
+import { ArrowLeft, Sparkles, Gift, RotateCcw } from "lucide-react";
 
 export const Route = createFileRoute("/lucky-draw")({
   component: LuckyDrawRoutePage,
@@ -22,10 +22,18 @@ function LuckyDrawRoutePage() {
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Quay lại Biểu quyết & Sự kiện</span>
             </Link>
+            <Link
+              to="/lucky-draw/$eventId"
+              params={{ eventId: "event-doanhtri-20261121" }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-4 py-2 text-xs font-black text-white hover:opacity-95 transition shadow-md"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Mở Vòng Quay May Mắn Public (Toàn Màn Hình)</span>
+            </Link>
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-bold">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span>Chương Trình Bốc Thăm Trúng Thưởng & Vinh Danh</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+            <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+            <span>Viện Doanh Trí · Vòng Quay Bốc Thăm Trúng Thưởng</span>
           </div>
         </div>
 
