@@ -29,6 +29,7 @@ services:
       - crm-backend
     networks:
       - ceo1983-network
+      - crm-internal
 
   crm-backend:
     image: ${ASSOCIATION_BE_IMAGE:-crm-backend}:latest
@@ -58,6 +59,10 @@ services:
       ceo1983-network:
         aliases:
           - crm-backend
+      crm-internal:
+        aliases:
+          - backend
+          - crm-backend
 
 volumes:
   ceo1983-uploads-data:
@@ -67,3 +72,6 @@ networks:
   ceo1983-network:
     name: ceo1983-network
     external: true
+  crm-internal:
+    name: crm-internal
+    driver: bridge

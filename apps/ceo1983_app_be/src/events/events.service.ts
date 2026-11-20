@@ -542,8 +542,8 @@ export class EventsService implements OnModuleInit {
         SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location, e.ticket_price as event_ticket_price
         FROM public.event_registrations r
         LEFT JOIN public.events e ON r.event_id = e.id
-        WHERE r.event_id = ${eventId} AND r.status != 'cancelled'
-        ORDER BY r.registered_at DESC
+        WHERE (r.event_id = ${eventId} OR e.slug = ${eventId} OR e.id = ${eventId}) AND r.status != 'cancelled'
+        ORDER BY r.checked_in_at DESC NULLS LAST, r.registered_at DESC
       `.catch(() => []);
     } else if (isPlatformAdmin && !associationId) {
       rows = await this.prisma.$queryRaw<any[]>`
@@ -4117,6 +4117,17 @@ export class EventsService implements OnModuleInit {
         );
       });
 
+    // 5. Lấy danh sách đại biểu đã đăng ký & điểm danh mới nhất
+    const attendeesData = await this.getPublicAttendees(resolvedEventId).catch(() => ({
+      attendees: [],
+      total: 0,
+      checkedInCount: 0,
+      onTimeCount: 0,
+      lateCount: 0,
+      eventId: resolvedEventId,
+      eventName: event.name || event.title,
+    }));
+
     return {
       ok: true,
       registrationId: regId,
@@ -4131,6 +4142,104 @@ export class EventsService implements OnModuleInit {
         checkinStatus === 'on_time'
           ? 'Check-in thành công! (Điểm danh đúng giờ trong 30 phút)'
           : 'Check-in thành công! (Điểm danh sau 30 phút - Ghi nhận check-in muộn)',
+      ...attendeesData,
+    };
+  }
+
+  /**
+   * Lấy danh sách đại biểu công khai đã đăng ký / check-in cho sự kiện (Doanh Trí / Toạ đàm)
+   */
+  async getPublicAttendees(eventId: string) {
+    let resolvedEventId = eventId;
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, name, title, date, location FROM public.events
+      WHERE id = ${eventId} OR slug = ${eventId}
+      LIMIT 1
+    `.catch(() => []);
+
+    let eventName = 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027';
+    if (eventRows.length > 0) {
+      resolvedEventId = eventRows[0].id;
+      eventName = eventRows[0].name || eventRows[0].title || eventName;
+    } else {
+      const match = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, title, date, location FROM public.events
+        WHERE name ILIKE '%DOANH TRÍ%' OR title ILIKE '%DOANH TRÍ%'
+        ORDER BY created_at DESC LIMIT 1
+      `.catch(() => []);
+      if (match.length > 0) {
+        resolvedEventId = match[0].id;
+        eventName = match[0].name || match[0].title || eventName;
+      }
+    }
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, member_name, email, phone, company, position, checkin_status, checked_in_at, registered_at, ticket_type, qr_payload
+      FROM public.event_registrations
+      WHERE event_id = ${resolvedEventId} AND status != 'cancelled'
+      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
+    `.catch(() => []);
+
+    const attendees = rows.map((r, idx) => {
+      let parsedPayload: any = {};
+      if (r.qr_payload && typeof r.qr_payload === 'string') {
+        try {
+          parsedPayload = JSON.parse(r.qr_payload);
+        } catch {}
+      }
+
+      const rawEmail = r.email || parsedPayload.email || '';
+      const maskedEmail = rawEmail.includes('@')
+        ? rawEmail.replace(/^(.{2})(.*)(@.*)$/, (_: any, a: string, b: string, c: string) => `${a}${'*'.repeat(Math.min(b.length, 5))}${c}`)
+        : '';
+      const rawPhone = r.phone || parsedPayload.phone || '';
+      const maskedPhone = rawPhone.length >= 7
+        ? `${rawPhone.slice(0, 3)}***${rawPhone.slice(-3)}`
+        : rawPhone ? '***' : '';
+
+      const checkinStatus =
+        r.checkin_status ||
+        parsedPayload.checkinStatus ||
+        (r.checked_in_at ? 'on_time' : 'registered');
+
+      const checkedInAt = r.checked_in_at
+        ? (r.checked_in_at instanceof Date
+            ? r.checked_in_at.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+            : String(r.checked_in_at))
+        : parsedPayload.checkedInAt || null;
+
+      return {
+        stt: idx + 1,
+        id: r.id,
+        memberName: r.member_name || parsedPayload.fullName || 'Đại biểu',
+        company: r.company || parsedPayload.company || 'Doanh nghiệp',
+        position: r.position || parsedPayload.position || 'Đại biểu',
+        maskedEmail,
+        maskedPhone,
+        checkinStatus,
+        checkedInAt,
+        registeredAt: r.registered_at
+          ? (r.registered_at instanceof Date
+              ? r.registered_at.toLocaleDateString('vi-VN')
+              : String(r.registered_at).slice(0, 10))
+          : '',
+        ticketType: r.ticket_type || 'Vé Mời Toạ Đàm',
+      };
+    });
+
+    const checkedInCount = attendees.filter((a) => a.checkedInAt).length;
+    const onTimeCount = attendees.filter((a) => a.checkinStatus === 'on_time').length;
+    const lateCount = attendees.filter((a) => a.checkinStatus === 'late').length;
+
+    return {
+      ok: true,
+      eventId: resolvedEventId,
+      eventName,
+      total: attendees.length,
+      checkedInCount,
+      onTimeCount,
+      lateCount,
+      attendees,
     };
   }
 

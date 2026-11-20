@@ -29,6 +29,7 @@ services:
       - ceo1983-backend
     networks:
       - ceo1983-network
+      - ceo1983-internal
 
   ceo1983-backend:
     image: ${ASSOCIATION_BE_IMAGE:-ceo1983-backend}:latest
@@ -58,6 +59,10 @@ services:
       ceo1983-network:
         aliases:
           - ceo1983-backend
+      ceo1983-internal:
+        aliases:
+          - backend
+          - ceo1983-backend
 
 volumes:
   ceo1983-uploads-data:
@@ -67,3 +72,6 @@ networks:
   ceo1983-network:
     name: ceo1983-network
     external: true
+  ceo1983-internal:
+    name: ceo1983-internal
+    driver: bridge
