@@ -190,6 +190,15 @@ export class EventsController {
   }
 
   /**
+   * Preview danh sách đại biểu tham gia sự kiện (tương thích cho checkin và admin)
+   */
+  @Get(':id/attendees-preview')
+  async getAttendeesPreview(@Param('id') id: string) {
+    const data = await this.eventsService.getPublicAttendees(id);
+    return data?.attendees || [];
+  }
+
+  /**
    * Danh sách đăng ký theo eventId cho CRM Quản trị
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
