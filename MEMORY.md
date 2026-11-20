@@ -1,5 +1,32 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.77): Tách Biệt Độc Lập Form Check-in Viện Doanh Trí (Xóa 100% Text CEO 1983), Hỗ Trợ Xuất & Gửi Báo Cáo 3 Định Dạng (Word, PDF, Excel) Kèm Cột Thời Gian Check-in, Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` Bằng Cơ Chế HTTP Proxy Bypass ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
+  - **1. Tách Biệt Hoàn Toàn Viện Doanh Trí Khỏi CLB CEO 1983 Trong Form Điểm Danh**:
+    * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`, xóa bỏ toàn bộ chuỗi text và liên kết liên quan tới CEO 1983 (như `Cổng liên kết: ceo1983.viconnect.vn`). Thay bằng nhận diện chuyên nghiệp của Viện Doanh Trí kèm số Hotline hỗ trợ Ban Tổ Chức: `0988.870.888 / 0903.203.204`.
+    * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts`, chuẩn hóa cả 2 hàm gửi mail `sendDoanhTriCheckinSuccessEmail` và `sendCheckinReportEmail`: người gửi và nội dung thư hoàn toàn thuộc về Viện Doanh Trí, không có bất kỳ đường link hay văn bản nào nhắc tới CEO 1983.
+  - **2. Nâng Cấp Xuất & Gửi Email Danh Sách Check-in Đầy Đủ 3 Định Dạng: Word (.docx), PDF (.pdf), Excel (.xlsx)**:
+    * **Backend `events.service.ts` & `events.controller.ts`**:
+      - Tích hợp thư viện `docx` (pure JS, có sẵn trong dependencies) để tạo file Word hành chính chính thức mang quốc hiệu / tiêu ngữ Viện Doanh Trí, bảng danh sách khách mời đầy đủ: `STT`, `Họ và Tên`, `Chức Danh`, `Doanh Nghiệp`, `Email`, `Số ĐT`, `Thời Gian Check-in`, `Phân Loại Check-in` (Đúng giờ vs Muộn).
+      - Tích hợp thư viện `pdf-lib` tạo file PDF thanh lịch, tự động xử lý chuyển đổi tiếng Việt tương thích chuẩn bảng mã PDF với cột `THOI GIAN CHECK-IN`.
+      - Tích hợp thư viện `xlsx` tạo file Excel chuẩn hóa với cột `Thời Gian Check-in` và `Phân Loại Check-in`.
+      - Bổ sung endpoint `POST /api/events/:id/send-checkin-report-email` cho phép gửi tới bất kỳ email nào với tùy chọn format `all` (đính kèm cả 3 file), `word`, `pdf`, hoặc `excel`. Vẫn duy trì alias tương thích ngược `send-checkin-excel-email`.
+      - Bổ sung endpoint `GET /api/events/:id/export-checkin-file?format=excel|word|pdf` để người quản trị tải trực tiếp file về máy tính từ Web CRM.
+    * **Frontend CRM `EventSendCheckinExcelModal.tsx` & `event-registrations.tsx`**:
+      - Nâng cấp modal gửi mail cho phép người dùng chọn gửi "Cả 3 File", "Excel (.xlsx)", "Word (.docx)", hoặc "PDF (.pdf)".
+      - Bổ sung 3 nút tải trực tiếp: "Tải Excel", "Tải Word", "Tải PDF" ngay trên thanh tác vụ trang Quản lý đăng ký sự kiện.
+  - **3. Khắc Phục Triệt Để Lỗi SSL Trên Zalo & Máy Ảnh (`NET::ERR_CERT_AUTHORITY_INVALID`)**:
+    * **Nguyên nhân gốc rễ (phân tích từ ảnh người dùng cung cấp)**:
+      - Máy chủ Reverse Proxy sử dụng chứng chỉ SSL tự ký (`server.crt` với CN `14.225.217.232`).
+      - Zalo In-App Browser và các trình duyệt camera trên thiết bị di động kiểm tra CA rất khắt khe, chặn đứng trang web với lỗi `NET::ERR_CERT_AUTHORITY_INVALID` và không cho phép người dùng bấm "Nâng cao / Bỏ qua".
+    * **Giải pháp 3 lớp toàn diện**:
+      - *Lớp 1 (QR Modal Protocol Mode)*: Trong `EventCheckinQrModal.tsx`, bổ sung công tắc chuyển đổi HTTP / HTTPS. Mặc định tạo mã QR dưới dạng `http://crm.ceo1983.viconnect.vn/checkin/...` để đảm bảo bất kỳ ứng dụng nào (Zalo, Viber, Camera iPhone, Android) khi quét đều đi thẳng tới form điểm danh mà không kích hoạt kiểm tra SSL.
+      - *Lớp 2 (Nginx Port 80 Proxy Bypass)*: Trong `deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`, trên HTTP port 80 cho phép `location ^~ /checkin/`, `location ^~ /api/events/`, và `location /assets/` chuyển tiếp trực tiếp vào ứng dụng frontend/backend mà KHÔNG thực hiện 301 chuyển hướng ép sang HTTPS. Nhờ đó đường dẫn HTTP hoạt động mượt mà 100%.
+      - *Lớp 3 (Auto-link Let's Encrypt)*: Trong `setup-ssl.sh`, bổ sung kiểm tra chứng chỉ Let's Encrypt tại `/etc/letsencrypt/live/crm.ceo1983.viconnect.vn/fullchain.pem` và `ceo1983.viconnect.vn`, giúp Nginx tự động sử dụng chứng chỉ tin cậy khi được cấp phát.
+  - **4. Kiểm Thử & Xác Nhận Type-Check**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.76): Mở Public Cổng Check-in Điểm Danh Khách Mời Quét QR Không Cần Đăng Nhập & Hiển Thị Danh Sách Đại Biểu Đã Điểm Danh Thời Gian Thực ([NODE-CRM-006], [NODE-APP-003], [NODE-CORE-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Yêu Cầu Vào App / Đăng Nhập Khi Quét Mã QR Check-in**:
     * Trong `apps/ceo1983_app_fe/src/routes/__root.tsx`, `AuthGate` kiểm tra `isPublic` nhưng thiếu điều kiện cho tuyến đường `/checkin`. Do đó, khi khách mời quét mã QR Zalo hoặc mở link `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, `AuthGate` nhận diện trạng thái `status === "out"` và tự động redirect sang `/auth` (màn hình đăng nhập app).
@@ -1977,6 +2004,33 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.77): Tách Biệt Độc Lập Form Check-in Viện Doanh Trí (Xóa 100% Text CEO 1983), Hỗ Trợ Xuất & Gửi Báo Cáo 3 Định Dạng (Word, PDF, Excel) Kèm Cột Thời Gian Check-in, Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` Bằng Cơ Chế HTTP Proxy Bypass ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
+  - **1. Tách Biệt Hoàn Toàn Viện Doanh Trí Khỏi CLB CEO 1983 Trong Form Điểm Danh**:
+    * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`, xóa bỏ toàn bộ chuỗi text và liên kết liên quan tới CEO 1983 (như `Cổng liên kết: ceo1983.viconnect.vn`). Thay bằng nhận diện chuyên nghiệp của Viện Doanh Trí kèm số Hotline hỗ trợ Ban Tổ Chức: `0988.870.888 / 0903.203.204`.
+    * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts`, chuẩn hóa cả 2 hàm gửi mail `sendDoanhTriCheckinSuccessEmail` và `sendCheckinReportEmail`: người gửi và nội dung thư hoàn toàn thuộc về Viện Doanh Trí, không có bất kỳ đường link hay văn bản nào nhắc tới CEO 1983.
+  - **2. Nâng Cấp Xuất & Gửi Email Danh Sách Check-in Đầy Đủ 3 Định Dạng: Word (.docx), PDF (.pdf), Excel (.xlsx)**:
+    * **Backend `events.service.ts` & `events.controller.ts`**:
+      - Tích hợp thư viện `docx` (pure JS, có sẵn trong dependencies) để tạo file Word hành chính chính thức mang quốc hiệu / tiêu ngữ Viện Doanh Trí, bảng danh sách khách mời đầy đủ: `STT`, `Họ và Tên`, `Chức Danh`, `Doanh Nghiệp`, `Email`, `Số ĐT`, `Thời Gian Check-in`, `Phân Loại Check-in` (Đúng giờ vs Muộn).
+      - Tích hợp thư viện `pdf-lib` tạo file PDF thanh lịch, tự động xử lý chuyển đổi tiếng Việt tương thích chuẩn bảng mã PDF với cột `THOI GIAN CHECK-IN`.
+      - Tích hợp thư viện `xlsx` tạo file Excel chuẩn hóa với cột `Thời Gian Check-in` và `Phân Loại Check-in`.
+      - Bổ sung endpoint `POST /api/events/:id/send-checkin-report-email` cho phép gửi tới bất kỳ email nào với tùy chọn format `all` (đính kèm cả 3 file), `word`, `pdf`, hoặc `excel`. Vẫn duy trì alias tương thích ngược `send-checkin-excel-email`.
+      - Bổ sung endpoint `GET /api/events/:id/export-checkin-file?format=excel|word|pdf` để người quản trị tải trực tiếp file về máy tính từ Web CRM.
+    * **Frontend CRM `EventSendCheckinExcelModal.tsx` & `event-registrations.tsx`**:
+      - Nâng cấp modal gửi mail cho phép người dùng chọn gửi "Cả 3 File", "Excel (.xlsx)", "Word (.docx)", hoặc "PDF (.pdf)".
+      - Bổ sung 3 nút tải trực tiếp: "Tải Excel", "Tải Word", "Tải PDF" ngay trên thanh tác vụ trang Quản lý đăng ký sự kiện.
+  - **3. Khắc Phục Triệt Để Lỗi SSL Trên Zalo & Máy Ảnh (`NET::ERR_CERT_AUTHORITY_INVALID`)**:
+    * **Nguyên nhân gốc rễ (phân tích từ ảnh người dùng cung cấp)**:
+      - Máy chủ Reverse Proxy sử dụng chứng chỉ SSL tự ký (`server.crt` với CN `14.225.217.232`).
+      - Zalo In-App Browser và các trình duyệt camera trên thiết bị di động kiểm tra CA rất khắt khe, chặn đứng trang web với lỗi `NET::ERR_CERT_AUTHORITY_INVALID` và không cho phép người dùng bấm "Nâng cao / Bỏ qua".
+    * **Giải pháp 3 lớp toàn diện**:
+      - *Lớp 1 (QR Modal Protocol Mode)*: Trong `EventCheckinQrModal.tsx`, bổ sung công tắc chuyển đổi HTTP / HTTPS. Mặc định tạo mã QR dưới dạng `http://crm.ceo1983.viconnect.vn/checkin/...` để đảm bảo bất kỳ ứng dụng nào (Zalo, Viber, Camera iPhone, Android) khi quét đều đi thẳng tới form điểm danh mà không kích hoạt kiểm tra SSL.
+      - *Lớp 2 (Nginx Port 80 Proxy Bypass)*: Trong `deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`, trên HTTP port 80 cho phép `location ^~ /checkin/`, `location ^~ /api/events/`, và `location /assets/` chuyển tiếp trực tiếp vào ứng dụng frontend/backend mà KHÔNG thực hiện 301 chuyển hướng ép sang HTTPS. Nhờ đó đường dẫn HTTP hoạt động mượt mà 100%.
+      - *Lớp 3 (Auto-link Let's Encrypt)*: Trong `setup-ssl.sh`, bổ sung kiểm tra chứng chỉ Let's Encrypt tại `/etc/letsencrypt/live/crm.ceo1983.viconnect.vn/fullchain.pem` và `ceo1983.viconnect.vn`, giúp Nginx tự động sử dụng chứng chỉ tin cậy khi được cấp phát.
+  - **4. Kiểm Thử & Xác Nhận Type-Check**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.76): Mở Public Cổng Check-in Điểm Danh Khách Mời Quét QR Không Cần Đăng Nhập & Hiển Thị Danh Sách Đại Biểu Đã Điểm Danh Thời Gian Thực ([NODE-CRM-006], [NODE-APP-003], [NODE-CORE-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Yêu Cầu Vào App / Đăng Nhập Khi Quét Mã QR Check-in**:
@@ -5197,6 +5251,33 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.77): Tách Biệt Độc Lập Form Check-in Viện Doanh Trí (Xóa 100% Text CEO 1983), Hỗ Trợ Xuất & Gửi Báo Cáo 3 Định Dạng (Word, PDF, Excel) Kèm Cột Thời Gian Check-in, Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` Bằng Cơ Chế HTTP Proxy Bypass ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
+  - **1. Tách Biệt Hoàn Toàn Viện Doanh Trí Khỏi CLB CEO 1983 Trong Form Điểm Danh**:
+    * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`, xóa bỏ toàn bộ chuỗi text và liên kết liên quan tới CEO 1983 (như `Cổng liên kết: ceo1983.viconnect.vn`). Thay bằng nhận diện chuyên nghiệp của Viện Doanh Trí kèm số Hotline hỗ trợ Ban Tổ Chức: `0988.870.888 / 0903.203.204`.
+    * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts`, chuẩn hóa cả 2 hàm gửi mail `sendDoanhTriCheckinSuccessEmail` và `sendCheckinReportEmail`: người gửi và nội dung thư hoàn toàn thuộc về Viện Doanh Trí, không có bất kỳ đường link hay văn bản nào nhắc tới CEO 1983.
+  - **2. Nâng Cấp Xuất & Gửi Email Danh Sách Check-in Đầy Đủ 3 Định Dạng: Word (.docx), PDF (.pdf), Excel (.xlsx)**:
+    * **Backend `events.service.ts` & `events.controller.ts`**:
+      - Tích hợp thư viện `docx` (pure JS, có sẵn trong dependencies) để tạo file Word hành chính chính thức mang quốc hiệu / tiêu ngữ Viện Doanh Trí, bảng danh sách khách mời đầy đủ: `STT`, `Họ và Tên`, `Chức Danh`, `Doanh Nghiệp`, `Email`, `Số ĐT`, `Thời Gian Check-in`, `Phân Loại Check-in` (Đúng giờ vs Muộn).
+      - Tích hợp thư viện `pdf-lib` tạo file PDF thanh lịch, tự động xử lý chuyển đổi tiếng Việt tương thích chuẩn bảng mã PDF với cột `THOI GIAN CHECK-IN`.
+      - Tích hợp thư viện `xlsx` tạo file Excel chuẩn hóa với cột `Thời Gian Check-in` và `Phân Loại Check-in`.
+      - Bổ sung endpoint `POST /api/events/:id/send-checkin-report-email` cho phép gửi tới bất kỳ email nào với tùy chọn format `all` (đính kèm cả 3 file), `word`, `pdf`, hoặc `excel`. Vẫn duy trì alias tương thích ngược `send-checkin-excel-email`.
+      - Bổ sung endpoint `GET /api/events/:id/export-checkin-file?format=excel|word|pdf` để người quản trị tải trực tiếp file về máy tính từ Web CRM.
+    * **Frontend CRM `EventSendCheckinExcelModal.tsx` & `event-registrations.tsx`**:
+      - Nâng cấp modal gửi mail cho phép người dùng chọn gửi "Cả 3 File", "Excel (.xlsx)", "Word (.docx)", hoặc "PDF (.pdf)".
+      - Bổ sung 3 nút tải trực tiếp: "Tải Excel", "Tải Word", "Tải PDF" ngay trên thanh tác vụ trang Quản lý đăng ký sự kiện.
+  - **3. Khắc Phục Triệt Để Lỗi SSL Trên Zalo & Máy Ảnh (`NET::ERR_CERT_AUTHORITY_INVALID`)**:
+    * **Nguyên nhân gốc rễ (phân tích từ ảnh người dùng cung cấp)**:
+      - Máy chủ Reverse Proxy sử dụng chứng chỉ SSL tự ký (`server.crt` với CN `14.225.217.232`).
+      - Zalo In-App Browser và các trình duyệt camera trên thiết bị di động kiểm tra CA rất khắt khe, chặn đứng trang web với lỗi `NET::ERR_CERT_AUTHORITY_INVALID` và không cho phép người dùng bấm "Nâng cao / Bỏ qua".
+    * **Giải pháp 3 lớp toàn diện**:
+      - *Lớp 1 (QR Modal Protocol Mode)*: Trong `EventCheckinQrModal.tsx`, bổ sung công tắc chuyển đổi HTTP / HTTPS. Mặc định tạo mã QR dưới dạng `http://crm.ceo1983.viconnect.vn/checkin/...` để đảm bảo bất kỳ ứng dụng nào (Zalo, Viber, Camera iPhone, Android) khi quét đều đi thẳng tới form điểm danh mà không kích hoạt kiểm tra SSL.
+      - *Lớp 2 (Nginx Port 80 Proxy Bypass)*: Trong `deploy/ssl/nginx.conf` và `deploy/ssl/setup-ssl.sh`, trên HTTP port 80 cho phép `location ^~ /checkin/`, `location ^~ /api/events/`, và `location /assets/` chuyển tiếp trực tiếp vào ứng dụng frontend/backend mà KHÔNG thực hiện 301 chuyển hướng ép sang HTTPS. Nhờ đó đường dẫn HTTP hoạt động mượt mà 100%.
+      - *Lớp 3 (Auto-link Let's Encrypt)*: Trong `setup-ssl.sh`, bổ sung kiểm tra chứng chỉ Let's Encrypt tại `/etc/letsencrypt/live/crm.ceo1983.viconnect.vn/fullchain.pem` và `ceo1983.viconnect.vn`, giúp Nginx tự động sử dụng chứng chỉ tin cậy khi được cấp phát.
+  - **4. Kiểm Thử & Xác Nhận Type-Check**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.76): Mở Public Cổng Check-in Điểm Danh Khách Mời Quét QR Không Cần Đăng Nhập & Hiển Thị Danh Sách Đại Biểu Đã Điểm Danh Thời Gian Thực ([NODE-CRM-006], [NODE-APP-003], [NODE-CORE-002])**:
   - **1. Khắc Phục Triệt Để Lỗi Yêu Cầu Vào App / Đăng Nhập Khi Quét Mã QR Check-in**:

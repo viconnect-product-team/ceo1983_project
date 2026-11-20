@@ -268,7 +268,46 @@ export class EventsController {
   }
 
   /**
-   * Xuất và gửi file Excel danh sách khách mời đã check-in về email được chỉ định
+   * Xuất và gửi file báo cáo danh sách khách mời đã check-in (Word, PDF, Excel) về email được chỉ định
+   */
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post(':id/send-checkin-report-email')
+  async sendCheckinReportEmail(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('targetEmail') targetEmail: string,
+    @Body('format') format?: 'all' | 'excel' | 'word' | 'pdf',
+  ) {
+    const userId = req.user?.id || 'admin';
+    return this.eventsService.sendCheckinReportEmail(
+      userId,
+      id,
+      targetEmail,
+      format,
+    );
+  }
+
+  /**
+   * Tải trực tiếp file báo cáo danh sách check-in (Word, PDF, Excel)
+   */
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/export-checkin-file')
+  async exportCheckinReport(
+    @Param('id') id: string,
+    @Query('format') format: 'excel' | 'word' | 'pdf' = 'excel',
+    @Res() res: any,
+  ) {
+    const file = await this.eventsService.exportCheckinReport(id, format);
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(file.filename)}"`,
+    );
+    return res.end(file.buffer);
+  }
+
+  /**
+   * Xuất và gửi file Excel danh sách khách mời đã check-in về email được chỉ định (tương thích ngược)
    */
   @UseGuards(OptionalJwtAuthGuard)
   @Post(':id/send-checkin-excel-email')
@@ -276,9 +315,15 @@ export class EventsController {
     @Request() req: any,
     @Param('id') id: string,
     @Body('targetEmail') targetEmail: string,
+    @Body('format') format?: 'all' | 'excel' | 'word' | 'pdf',
   ) {
     const userId = req.user?.id || 'admin';
-    return this.eventsService.sendCheckinExcelEmail(userId, id, targetEmail);
+    return this.eventsService.sendCheckinReportEmail(
+      userId,
+      id,
+      targetEmail,
+      format || 'excel',
+    );
   }
 
   @UseGuards(JwtAuthGuard)

@@ -790,7 +790,7 @@ function PublicEventCheckinPage() {
         <div className="max-w-xl mx-auto px-4 space-y-1">
           <p className="font-bold text-slate-700">VIỆN DOANH TRÍ</p>
           <p className="text-[11px] text-slate-500">
-            Hotline: 0988.870.888 / 0903.203.204 · Cổng liên kết: ceo1983.viconnect.vn
+            Hotline hỗ trợ: 0988.870.888 / 0903.203.204
           </p>
         </div>
       </footer>

@@ -44,14 +44,20 @@ set +e
 # 7. Tự động đồng bộ và cấu hình Nginx chính (Host Nginx) trên Ubuntu VPS
 if command -v nginx >/dev/null 2>&1; then
     echo "[Host Nginx] Thiết lập cấu hình Reverse Proxy cho 2 Subdomain trên máy chủ VPS..."
-    mkdir -p /etc/nginx/ssl
+    mkdir -p /etc/nginx/ssl /var/www/certbot
     cp -f /root/ssl-proxy/server.crt /etc/nginx/ssl/ceo1983.crt 2>/dev/null || true
     cp -f /root/ssl-proxy/server.key /etc/nginx/ssl/ceo1983.key 2>/dev/null || true
     chmod 644 /etc/nginx/ssl/ceo1983.* 2>/dev/null || true
 
     SSL_CERT="/etc/nginx/ssl/ceo1983.crt"
     SSL_KEY="/etc/nginx/ssl/ceo1983.key"
-    if [ -f /etc/letsencrypt/live/ceo1983.vn/fullchain.pem ]; then
+    if [ -f /etc/letsencrypt/live/crm.ceo1983.viconnect.vn/fullchain.pem ]; then
+        SSL_CERT="/etc/letsencrypt/live/crm.ceo1983.viconnect.vn/fullchain.pem"
+        SSL_KEY="/etc/letsencrypt/live/crm.ceo1983.viconnect.vn/privkey.pem"
+    elif [ -f /etc/letsencrypt/live/ceo1983.viconnect.vn/fullchain.pem ]; then
+        SSL_CERT="/etc/letsencrypt/live/ceo1983.viconnect.vn/fullchain.pem"
+        SSL_KEY="/etc/letsencrypt/live/ceo1983.viconnect.vn/privkey.pem"
+    elif [ -f /etc/letsencrypt/live/ceo1983.vn/fullchain.pem ]; then
         SSL_CERT="/etc/letsencrypt/live/ceo1983.vn/fullchain.pem"
         SSL_KEY="/etc/letsencrypt/live/ceo1983.vn/privkey.pem"
     elif [ -f /etc/letsencrypt/live/viconnect.vn/fullchain.pem ]; then
@@ -77,7 +83,39 @@ if command -v nginx >/dev/null 2>&1; then
 server {
     listen 80;
     server_name ceo1983.viconnect.vn crm.ceo1983.viconnect.vn app.ceo1983.vn crm.ceo1983.vn;
-    return 301 https://\$host\$request_uri;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Cho phép truy cập form checkin trực tiếp qua HTTP không chuyển hướng HTTPS để camera/Zalo quét mượt mà không lỗi SSL
+    location ^~ /checkin/ {
+        proxy_pass http://127.0.0.1:5004;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ^~ /api/events/ {
+        proxy_pass http://127.0.0.1:5005;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /assets/ {
+        proxy_pass http://127.0.0.1:5004;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
 }
 
 # 1. Web CRM Hiệp Hội: https://crm.ceo1983.viconnect.vn

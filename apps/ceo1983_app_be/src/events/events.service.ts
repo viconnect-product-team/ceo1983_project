@@ -9,6 +9,18 @@ import {
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as XLSX from 'xlsx';
+import {
+  Document as DocxDocument,
+  Packer as DocxPacker,
+  Paragraph as DocxParagraph,
+  Table as DocxTable,
+  TableCell as DocxTableCell,
+  TableRow as DocxTableRow,
+  TextRun as DocxTextRun,
+  AlignmentType as DocxAlignmentType,
+  WidthType as DocxWidthType,
+} from 'docx';
+import { PDFDocument, rgb as pdfRgb, StandardFonts } from 'pdf-lib';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { ZaloService } from '../zalo/zalo.service';
@@ -4244,34 +4256,21 @@ export class EventsService implements OnModuleInit {
   }
 
   /**
-   * Xuất và gửi file Excel danh sách khách đã check-in sự kiện về email được chỉ định
+   * Chuyển đổi chuỗi tiếng Việt có dấu sang không dấu cho tiêu đề font PDF chuẩn
    */
-  async sendCheckinExcelEmail(
-    userId: string,
-    eventId: string,
-    targetEmail: string,
-  ) {
-    const cleanEmail = (targetEmail || '').trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes('@')) {
-      throw new BadRequestException(
-        'Vui lòng cung cấp địa chỉ email hợp lệ để nhận file Excel',
-      );
-    }
+  private sanitizePdfText(str: string): string {
+    if (!str) return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  }
 
-    const events = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
-    `.catch(() => []);
-    if (!events.length) {
-      throw new NotFoundException('Không tìm thấy sự kiện');
-    }
-    const event = events[0];
-
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.event_registrations
-      WHERE event_id = ${eventId} AND status != 'cancelled'
-      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
-    `.catch(() => []);
-
+  /**
+   * Tạo Buffer file Excel (.xlsx) danh sách đại biểu check-in
+   */
+  generateCheckinExcel(rows: any[], eventName: string): Buffer {
     const excelData = rows.map((r, index) => {
       let parsed: any = {};
       try {
@@ -4302,7 +4301,7 @@ export class EventsService implements OnModuleInit {
         'Số Điện Thoại': r.phone || parsed.phone || '—',
         'Thời Gian Check-in': checkinTime,
         'Phân Loại Check-in': statusText,
-        'Hạng Vé': r.ticket_type || 'Vé Mời',
+        'Hạng Vé': r.ticket_type || 'Vé Mời Toạ Đàm',
       };
     });
 
@@ -4323,22 +4322,506 @@ export class EventsService implements OnModuleInit {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh_Sach_CheckIn');
 
-    const excelBuffer = XLSX.write(workbook, {
+    return XLSX.write(workbook, {
       type: 'buffer',
       bookType: 'xlsx',
     });
-    const filename = `Danh_Sach_Checkin_${eventId}_${Date.now()}.xlsx`;
+  }
+
+  /**
+   * Tạo Buffer file Word (.docx) danh sách đại biểu check-in
+   */
+  async generateCheckinDocx(
+    rows: any[],
+    eventName: string,
+    onTimeCount: number,
+    lateCount: number,
+  ): Promise<Buffer> {
+    const doc = new DocxDocument({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new DocxParagraph({
+              alignment: DocxAlignmentType.CENTER,
+              spacing: { after: 100 },
+              children: [
+                new DocxTextRun({
+                  text: 'VIỆN DOANH TRÍ',
+                  bold: true,
+                  size: 32,
+                  color: '8B0000',
+                }),
+              ],
+            }),
+            new DocxParagraph({
+              alignment: DocxAlignmentType.CENTER,
+              spacing: { after: 60 },
+              children: [
+                new DocxTextRun({
+                  text: 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11',
+                  bold: true,
+                  size: 22,
+                  color: '1E293B',
+                }),
+              ],
+            }),
+            new DocxParagraph({
+              alignment: DocxAlignmentType.CENTER,
+              spacing: { after: 120 },
+              children: [
+                new DocxTextRun({
+                  text: 'BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN',
+                  bold: true,
+                  size: 26,
+                  color: '991B1B',
+                }),
+              ],
+            }),
+            new DocxParagraph({
+              alignment: DocxAlignmentType.CENTER,
+              spacing: { after: 160 },
+              children: [
+                new DocxTextRun({
+                  text: `Sự kiện: ${eventName}`,
+                  italics: true,
+                  size: 20,
+                  color: '475569',
+                }),
+              ],
+            }),
+            new DocxParagraph({
+              alignment: DocxAlignmentType.LEFT,
+              spacing: { after: 160 },
+              children: [
+                new DocxTextRun({
+                  text: `Thời gian: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00)\nĐịa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội\n`,
+                  size: 19,
+                  color: '64748B',
+                }),
+                new DocxTextRun({
+                  text: `Tổng số đại biểu: ${rows.length}  |  Điểm danh đúng giờ (trong 30p): ${onTimeCount}  |  Check-in muộn (>30p): ${lateCount}`,
+                  bold: true,
+                  size: 20,
+                  color: '0F172A',
+                }),
+              ],
+            }),
+            new DocxTable({
+              width: { size: 100, type: DocxWidthType.PERCENTAGE },
+              rows: [
+                new DocxTableRow({
+                  children: [
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          alignment: DocxAlignmentType.CENTER,
+                          children: [new DocxTextRun({ text: 'STT', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Họ và Tên', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Chức Danh', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Doanh Nghiệp', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Email', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Số ĐT', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Thời Gian Check-in', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                    new DocxTableCell({
+                      children: [
+                        new DocxParagraph({
+                          children: [new DocxTextRun({ text: 'Trạng Thái', bold: true, size: 18 })],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                ...rows.map((r, idx) => {
+                  let parsed: any = {};
+                  try {
+                    if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
+                  } catch {}
+
+                  const checkinTime = r.checked_in_at
+                    ? new Date(r.checked_in_at).toLocaleString('vi-VN', {
+                        timeZone: 'Asia/Ho_Chi_Minh',
+                      })
+                    : 'Chưa check-in';
+                  const statusText =
+                    r.checkin_status === 'on_time'
+                      ? 'Đúng giờ'
+                      : r.checkin_status === 'late'
+                        ? 'Check-in muộn'
+                        : r.checked_in_at
+                          ? 'Đã check-in'
+                          : 'Chưa đến';
+
+                  return new DocxTableRow({
+                    children: [
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            alignment: DocxAlignmentType.CENTER,
+                            children: [new DocxTextRun({ text: String(idx + 1), size: 18 })],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: r.member_name || parsed.fullName || '—',
+                                bold: true,
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: r.position || parsed.position || '—',
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: r.company || parsed.company || '—',
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: r.email || parsed.email || '—',
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: r.phone || parsed.phone || '—',
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: checkinTime,
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new DocxTableCell({
+                        children: [
+                          new DocxParagraph({
+                            children: [
+                              new DocxTextRun({
+                                text: statusText,
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  });
+                }),
+              ],
+            }),
+          ],
+        },
+      ],
+    });
+
+    return DocxPacker.toBuffer(doc);
+  }
+
+  /**
+   * Tạo Buffer file PDF (.pdf) danh sách đại biểu check-in
+   */
+  async generateCheckinPdf(
+    rows: any[],
+    eventName: string,
+    onTimeCount: number,
+    lateCount: number,
+  ): Promise<Buffer> {
+    const pdfDoc = await PDFDocument.create();
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const regFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    let page = pdfDoc.addPage([595.28, 841.89]); // A4
+    const { width, height } = page.getSize();
+
+    // Header Viện Doanh Trí
+    page.drawText('VIEN DOANH TRI', {
+      x: 50,
+      y: height - 50,
+      size: 16,
+      font: boldFont,
+      color: pdfRgb(0.545, 0, 0),
+    });
+
+    page.drawText('DANH SACH DAI BIEU DIEM DANH CHECK-IN', {
+      x: 50,
+      y: height - 72,
+      size: 13,
+      font: boldFont,
+      color: pdfRgb(0.1, 0.15, 0.25),
+    });
+
+    const safeEventName = this.sanitizePdfText(eventName);
+    page.drawText(`Su kien: ${safeEventName.slice(0, 75)}`, {
+      x: 50,
+      y: height - 90,
+      size: 9,
+      font: regFont,
+      color: pdfRgb(0.3, 0.35, 0.45),
+    });
+
+    page.drawText(
+      `Thoi gian: 14h30 - 17h30, 21/11/2026 | Dia diem: Tang 2, NH Long Phung, 29T2 Trung hoa nhan chinh, HN`,
+      {
+        x: 50,
+        y: height - 105,
+        size: 8,
+        font: regFont,
+        color: pdfRgb(0.4, 0.4, 0.4),
+      },
+    );
+
+    page.drawText(
+      `Tong so dai bieu: ${rows.length}  |  Dung gio (trong 30p): ${onTimeCount}  |  Check-in muon: ${lateCount}`,
+      {
+        x: 50,
+        y: height - 122,
+        size: 9,
+        font: boldFont,
+        color: pdfRgb(0.06, 0.09, 0.16),
+      },
+    );
+
+    // Table Header
+    let currentY = height - 145;
+    page.drawLine({
+      start: { x: 50, y: currentY + 12 },
+      end: { x: width - 50, y: currentY + 12 },
+      thickness: 1,
+      color: pdfRgb(0.8, 0.8, 0.8),
+    });
+
+    page.drawText('STT', { x: 52, y: currentY, size: 8, font: boldFont });
+    page.drawText('HO VA TEN', { x: 75, y: currentY, size: 8, font: boldFont });
+    page.drawText('CHUC DANH', { x: 175, y: currentY, size: 8, font: boldFont });
+    page.drawText('DOANH NGHIEP', { x: 255, y: currentY, size: 8, font: boldFont });
+    page.drawText('THOI GIAN CHECK-IN', { x: 385, y: currentY, size: 8, font: boldFont });
+    page.drawText('TRANG THAI', { x: 495, y: currentY, size: 8, font: boldFont });
+
+    currentY -= 8;
+    page.drawLine({
+      start: { x: 50, y: currentY },
+      end: { x: width - 50, y: currentY },
+      thickness: 0.5,
+      color: pdfRgb(0.7, 0.7, 0.7),
+    });
+
+    currentY -= 14;
+
+    for (let i = 0; i < rows.length; i++) {
+      if (currentY < 50) {
+        page = pdfDoc.addPage([595.28, 841.89]);
+        currentY = height - 50;
+      }
+
+      const r = rows[i];
+      let parsed: any = {};
+      try {
+        if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
+      } catch {}
+
+      const name = this.sanitizePdfText(r.member_name || parsed.fullName || '—');
+      const pos = this.sanitizePdfText(r.position || parsed.position || '—');
+      const comp = this.sanitizePdfText(r.company || parsed.company || '—');
+      const time = r.checked_in_at
+        ? new Date(r.checked_in_at).toLocaleTimeString('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          })
+        : 'Chua check-in';
+      const status =
+        r.checkin_status === 'on_time'
+          ? 'Dung gio'
+          : r.checkin_status === 'late'
+            ? 'Muon (>30p)'
+            : 'Chua den';
+
+      page.drawText(String(i + 1), { x: 52, y: currentY, size: 7.5, font: regFont });
+      page.drawText(name.slice(0, 20), { x: 75, y: currentY, size: 7.5, font: boldFont });
+      page.drawText(pos.slice(0, 16), { x: 175, y: currentY, size: 7.5, font: regFont });
+      page.drawText(comp.slice(0, 24), { x: 255, y: currentY, size: 7.5, font: regFont });
+      page.drawText(time, { x: 385, y: currentY, size: 7.5, font: regFont });
+      page.drawText(status, { x: 495, y: currentY, size: 7.5, font: boldFont });
+
+      currentY -= 14;
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return Buffer.from(pdfBytes);
+  }
+
+  /**
+   * Xuất và gửi file báo cáo danh sách khách đã check-in (Word, PDF, Excel) về email được chỉ định
+   */
+  async sendCheckinReportEmail(
+    userId: string,
+    eventId: string,
+    targetEmail: string,
+    format: 'all' | 'excel' | 'word' | 'pdf' = 'all',
+  ) {
+    const cleanEmail = (targetEmail || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new BadRequestException(
+        'Vui lòng cung cấp địa chỉ email hợp lệ để nhận file báo cáo',
+      );
+    }
+
+    const events = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+    if (!events.length) {
+      throw new NotFoundException('Không tìm thấy sự kiện');
+    }
+    const event = events[0];
+    const eventName = event.name || event.title;
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.event_registrations
+      WHERE event_id = ${eventId} AND status != 'cancelled'
+      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
+    `.catch(() => []);
 
     const onTimeCount = rows.filter(
       (r) => r.checkin_status === 'on_time',
     ).length;
     const lateCount = rows.filter((r) => r.checkin_status === 'late').length;
 
-    await this.mailService.sendCheckinListExcelEmail({
+    const timestamp = Date.now();
+    const attachments: Array<{
+      filename: string;
+      content: Buffer;
+      contentType: string;
+    }> = [];
+
+    // 1. File Excel (.xlsx)
+    if (format === 'all' || format === 'excel') {
+      const excelBuf = this.generateCheckinExcel(rows, eventName);
+      attachments.push({
+        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.xlsx`,
+        content: excelBuf,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+    }
+
+    // 2. File Word (.docx)
+    if (format === 'all' || format === 'word') {
+      const docxBuf = await this.generateCheckinDocx(
+        rows,
+        eventName,
+        onTimeCount,
+        lateCount,
+      );
+      attachments.push({
+        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.docx`,
+        content: docxBuf,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+    }
+
+    // 3. File PDF (.pdf)
+    if (format === 'all' || format === 'pdf') {
+      const pdfBuf = await this.generateCheckinPdf(
+        rows,
+        eventName,
+        onTimeCount,
+        lateCount,
+      );
+      attachments.push({
+        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.pdf`,
+        content: pdfBuf,
+        contentType: 'application/pdf',
+      });
+    }
+
+    await this.mailService.sendCheckinReportEmail({
       to: cleanEmail,
-      eventName: event.name || event.title,
-      excelBuffer,
-      filename,
+      eventName,
+      attachments,
       totalAttendees: rows.filter((r) => r.checked_in_at).length,
       onTimeCount,
       lateCount,
@@ -4347,10 +4830,87 @@ export class EventsService implements OnModuleInit {
     return {
       ok: true,
       sentTo: cleanEmail,
+      format,
+      attachmentsCount: attachments.length,
       totalAttendees: rows.length,
       onTimeCount,
       lateCount,
-      message: `Đã gửi file Excel danh sách check-in thành công tới ${cleanEmail}!`,
+      message: `Đã gửi báo cáo danh sách check-in (${attachments.length} tệp) thành công tới ${cleanEmail}!`,
     };
+  }
+
+  /**
+   * Tải trực tiếp file báo cáo danh sách check-in (Word, PDF, Excel)
+   */
+  async exportCheckinReport(
+    eventId: string,
+    format: 'excel' | 'word' | 'pdf' = 'excel',
+  ) {
+    const events = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+    if (!events.length) {
+      throw new NotFoundException('Không tìm thấy sự kiện');
+    }
+    const event = events[0];
+    const eventName = event.name || event.title;
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.event_registrations
+      WHERE event_id = ${eventId} AND status != 'cancelled'
+      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
+    `.catch(() => []);
+
+    const onTimeCount = rows.filter(
+      (r) => r.checkin_status === 'on_time',
+    ).length;
+    const lateCount = rows.filter((r) => r.checkin_status === 'late').length;
+    const timestamp = Date.now();
+
+    if (format === 'word') {
+      const buffer = await this.generateCheckinDocx(
+        rows,
+        eventName,
+        onTimeCount,
+        lateCount,
+      );
+      return {
+        buffer,
+        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.docx`,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      };
+    } else if (format === 'pdf') {
+      const buffer = await this.generateCheckinPdf(
+        rows,
+        eventName,
+        onTimeCount,
+        lateCount,
+      );
+      return {
+        buffer,
+        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.pdf`,
+        contentType: 'application/pdf',
+      };
+    } else {
+      const buffer = this.generateCheckinExcel(rows, eventName);
+      return {
+        buffer,
+        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.xlsx`,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      };
+    }
+  }
+
+  /**
+   * Xuất và gửi file Excel danh sách khách đã check-in sự kiện về email được chỉ định (tương thích ngược)
+   */
+  async sendCheckinExcelEmail(
+    userId: string,
+    eventId: string,
+    targetEmail: string,
+  ) {
+    return this.sendCheckinReportEmail(userId, eventId, targetEmail, 'excel');
   }
 }

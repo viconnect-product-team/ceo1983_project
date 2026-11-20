@@ -784,6 +784,27 @@ function RegPage() {
     toast.success(`Đã xuất thành công file Excel cho ${dataToExport.length} đại biểu!`);
   };
 
+  const handleDownloadReport = async (fmt: "excel" | "word" | "pdf") => {
+    const targetEventId = eventId !== "all" ? eventId : "event-doanhtri-20261121";
+    try {
+      const res = await fetch(`/api/events/${targetEventId}/export-checkin-file?format=${fmt}`);
+      if (!res.ok) throw new Error("Tải file thất bại");
+      const blob = await res.blob();
+      const ext = fmt === "word" ? "docx" : fmt === "pdf" ? "pdf" : "xlsx";
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Danh_Sach_CheckIn_Vien_Doanh_Tri_${Date.now()}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success(`Đã tải xuống file ${fmt.toUpperCase()} thành công!`);
+    } catch (err: any) {
+      toast.error(err?.message || `Lỗi khi tải file ${fmt.toUpperCase()}`);
+    }
+  };
+
   const onTimeCheckinCount = useMemo(() => {
     return REGISTRATIONS.filter(
       (r) =>
@@ -807,34 +828,54 @@ function RegPage() {
         subtitle="Quản lý danh sách tham dự, sơ đồ chỗ ngồi và theo dõi thanh toán sự kiện"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {/* Nút bật mã QR Check-in Viện Doanh Trí (Zalo) */}
+            {/* Nút bật mã QR Check-in Viện Doanh Trí (Zalo / Camera) */}
             <button
               onClick={handleOpenCheckinQrModal}
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#8B0000] via-[#A52A2A] to-[#991b1b] hover:from-[#750000] hover:to-[#8B0000] px-3.5 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer"
-              title="Mở mã QR Check-in điểm danh để khách mời quét bằng Zalo hoặc Camera điện thoại"
+              title="Mở mã QR Check-in điểm danh để khách mời quét bằng Zalo hoặc Camera điện thoại (không lỗi chứng chỉ bảo mật)"
             >
               <QrCode className="h-4 w-4 text-amber-300" />
-              <span>Mã QR Check-in (Zalo)</span>
+              <span>Mã QR Check-in (Zalo / Camera)</span>
             </button>
 
-            {/* Nút Xuất Excel Danh sách Check-in */}
+            {/* Nút Tải Excel Danh sách Check-in */}
             <button
-              onClick={handleExportCheckinExcel}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              title="Xuất file Excel danh sách khách mời kèm phân loại check-in Đúng giờ vs Muộn"
+              onClick={() => handleDownloadReport("excel")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              title="Tải xuống trực tiếp file Excel (.xlsx) danh sách khách check-in kèm thời gian & phân loại"
             >
               <FileSpreadsheet className="h-4 w-4" />
-              <span>Xuất Excel Check-in</span>
+              <span>Tải Excel</span>
             </button>
 
-            {/* Nút Gửi Excel về Email */}
+            {/* Nút Tải Word Danh sách Check-in */}
+            <button
+              onClick={() => handleDownloadReport("word")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              title="Tải xuống trực tiếp file Word (.docx) danh sách khách check-in chuẩn văn bản Viện Doanh Trí"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Tải Word</span>
+            </button>
+
+            {/* Nút Tải PDF Danh sách Check-in */}
+            <button
+              onClick={() => handleDownloadReport("pdf")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 px-3 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              title="Tải xuống trực tiếp file PDF (.pdf) danh sách khách check-in kèm cột thời gian"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Tải PDF</span>
+            </button>
+
+            {/* Nút Gửi Báo Cáo về Email (Word / PDF / Excel) */}
             <button
               onClick={handleOpenSendExcelModal}
               className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              title="Gửi file Excel danh sách check-in trực tiếp về email mong muốn"
+              title="Gửi file danh sách check-in (Word, PDF, Excel) trực tiếp về email bất kỳ"
             >
               <Mail className="h-4 w-4" />
-              <span>Gửi Excel về Mail</span>
+              <span>Gửi Mail Báo Cáo</span>
             </button>
 
             <button

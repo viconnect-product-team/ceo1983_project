@@ -14,6 +14,9 @@ import {
   ShieldCheck,
   Clock,
   Building2,
+  Wifi,
+  Lock,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAbsoluteQrUrl } from "@/lib/qr";
@@ -38,14 +41,17 @@ export function EventCheckinQrModal({
 }: EventCheckinQrModalProps) {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [protocolMode, setProtocolMode] = useState<"https" | "http">("http"); // Mặc định http để Zalo và mọi camera quét ăn ngay không bị lỗi chứng chỉ
 
   if (!open) return null;
 
-  const origin =
+  const currentHost =
     typeof window !== "undefined"
-      ? window.location.origin
-      : "https://ceo1983.viconnect.vn";
-  const checkinUrl = `${origin}/checkin/${event.id}`;
+      ? window.location.host
+      : "crm.ceo1983.viconnect.vn";
+
+  const scheme = protocolMode === "http" ? "http:" : "https:";
+  const checkinUrl = `${scheme}//${currentHost}/checkin/${event.id}`;
   const qrImageUrl = getAbsoluteQrUrl(checkinUrl, 500);
 
   const eventName =
@@ -63,7 +69,7 @@ export function EventCheckinQrModal({
   const handleDownloadQr = () => {
     const a = document.createElement("a");
     a.href = qrImageUrl;
-    a.download = `QR_Checkin_${event.id}.png`;
+    a.download = `QR_Checkin_Vien_Doanh_Tri_${event.id}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -78,18 +84,18 @@ export function EventCheckinQrModal({
         } bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col transition-all duration-300`}
       >
         {/* Top Header Viện Doanh Trí */}
-        <div className="bg-gradient-to-r from-[#8B0000] via-[#A52A2A] to-[#991b1b] px-6 py-5 text-white flex items-center justify-between shadow-md">
+        <div className="bg-gradient-to-r from-[#7A0000] via-[#8B0000] to-[#991b1b] px-6 py-4 text-white flex items-center justify-between shadow-md">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 text-[#8B0000] font-black flex items-center justify-center text-xl shadow-lg ring-2 ring-white/30">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 text-[#7A0000] font-black flex items-center justify-center text-lg shadow-lg ring-2 ring-white/30">
               DT
             </div>
             <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" />
                 VIỆN DOANH TRÍ · QUẦY ĐÓN TIẾP & ĐIỂM DANH
               </span>
               <h2 className="text-base sm:text-lg font-bold leading-tight line-clamp-1">
-                Mã QR Quét Check-in Sự Kiện (Zalo / Camera)
+                Mã QR Quét Check-in Sự Kiện
               </h2>
             </div>
           </div>
@@ -131,6 +137,34 @@ export function EventCheckinQrModal({
             </div>
           </div>
 
+          {/* Protocol Toggle (Bảo đảm Zalo & mọi thiết bị không bị lỗi chứng chỉ) */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold gap-1">
+            <button
+              type="button"
+              onClick={() => setProtocolMode("http")}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+                protocolMode === "http"
+                  ? "bg-[#8B0000] text-white shadow-xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>HTTP (Khuyên dùng - Quét ăn ngay trên Zalo & mọi camera)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setProtocolMode("https")}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+                protocolMode === "https"
+                  ? "bg-[#8B0000] text-white shadow-xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>HTTPS</span>
+            </button>
+          </div>
+
           {/* QR Code Presentation Frame */}
           <div className="relative p-4 bg-white rounded-3xl border-2 border-dashed border-[#8B0000] shadow-xl flex flex-col items-center justify-center group">
             <div className="bg-gradient-to-b from-amber-50 to-white p-3 rounded-2xl border border-amber-100">
@@ -144,7 +178,7 @@ export function EventCheckinQrModal({
             </div>
             <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[#8B0000]">
               <QrCode className="w-4 h-4 animate-pulse text-amber-600" />
-              <span>Quét bằng ứng dụng ZALO hoặc Máy ảnh để Check-in</span>
+              <span>Quét bằng ứng dụng ZALO hoặc MỌI MÁY ẢNH để Check-in</span>
             </div>
           </div>
 
@@ -156,7 +190,7 @@ export function EventCheckinQrModal({
             </div>
             <div className="flex items-center gap-2 font-medium text-slate-600">
               <Phone className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span>Hotline hỗ trợ: 0988.870.888 / 0903.203.204</span>
+              <span>Hotline hỗ trợ Ban Tổ Chức: 0988.870.888 / 0903.203.204</span>
             </div>
           </div>
 
