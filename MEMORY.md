@@ -1,5 +1,46 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.80): Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` / "Không Tải Được Dữ Liệu", Khắc Phục Lỗi Crash 500 BigInt Serialization & Chuẩn Hóa Cột Thời Gian Check-in / Metadata Đại Biểu Trên Web CRM Kèm Xuất 3 Định Dạng File ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
+  - **1. Phân Tích & Giải Pháp Triệt Để Lỗi SSL Zalo (`NET::ERR_CERT_AUTHORITY_INVALID` & "Không tải được dữ liệu")**:
+    * **Nguyên nhân thực tế**:
+      - Tên miền `crm.ceo1983.viconnect.vn` trỏ tới IP `14.225.217.232`.
+      - Khi kết nối HTTPS port 443, máy chủ trả về chứng chỉ tự ký `DEPTH_ZERO_SELF_SIGNED_CERT` (CN `14.225.217.232`).
+      - Zalo và các trình duyệt di động kiểm duyệt chứng chỉ rất nghiêm ngặt, chặn đứng với lỗi `NET::ERR_CERT_AUTHORITY_INVALID`. Nếu người dùng refresh trên Zalo, trang chuyển sang màn hình "Không tải được dữ liệu - Nhấn để tải lại trang".
+      - Trên HTTP port 80, trước đây cấu hình Host Nginx thực hiện 301 Redirect toàn bộ sang HTTPS, khiến quét QR bằng HTTP vẫn bị đẩy sang HTTPS và gặp lỗi chứng chỉ.
+    * **Xử lý toàn diện**:
+      - Trong `deploy/ssl/setup-ssl.sh`, bổ sung lệnh tự động cấp chứng chỉ bảo mật CA Trusted miễn phí từ Let's Encrypt qua Certbot:
+        `certbot certonly --webroot -w /var/www/certbot -d crm.ceo1983.viconnect.vn -d ceo1983.viconnect.vn ...`
+      - Trong cấu hình Nginx Port 80 (cả `nginx.conf` và Host Nginx trong `setup-ssl.sh`), bổ sung khối `location ^~ /checkin` chuyển thẳng về Frontend `http://127.0.0.1:5004`, KHÔNG redirect 301 sang HTTPS.
+      - Nhờ đó, mã QR quét bằng HTTP hay HTTPS đều hiển thị tức thì, 1 chạm là vào form ngay trên Zalo và mọi thiết bị di động.
+  - **2. Khắc Phục Lỗi HTTP 500 Khi Khách Bấm Nút "XÁC NHẬN CHECK-IN NGAY"**:
+    * **Nguyên nhân gốc rễ**:
+      - Bảng `public.event_registrations` trên CSDL `113.20.107.184:6432` chứa cột `payment_amount` với kiểu dữ liệu `bigint`.
+      - Khi Prisma truy vấn dữ liệu từ bảng, giá trị được trả về dưới dạng JavaScript `BigInt` nguyên bản.
+      - Khi NestJS Express thực hiện `res.json()`, `JSON.stringify` mặc định của Node.js ném ngoại lệ: `TypeError: Do not know how to serialize a BigInt`, dẫn đến máy chủ trả về HTTP 500 Internal Server Error.
+    * **Giải pháp khắc phục triệt để**:
+      - Tại `apps/ceo1983_app_be/src/main.ts`, bổ sung định nghĩa toàn cục:
+        `(BigInt.prototype as any).toJSON = function () { const n = Number(this); return Number.isSafeInteger(n) ? n : this.toString(); };`
+      - Giúp mọi truy vấn và phản hồi JSON chứa BigInt trên toàn hệ thống Backend NestJS luôn được serialize an toàn 100%, triệt tiêu hoàn toàn lỗi crash 500.
+      - Trong `publicCheckin`, lưu trữ chuẩn xác các trường `phone`, `checked_in_at = now()`, `payment_status = 'free'`, `payment_amount = 0`, đồng thời đóng gói metadata JSON vào `ticket_type` và `qr_payload`.
+  - **3. Chuẩn Hóa Cột Thời Gian Check-in & Thông Tin Đại Biểu Trên Web CRM**:
+    * **Cột "Người tham gia" (`apps/ceo1983_app_fe/src/routes/event-registrations.tsx`)**:
+      - Hiển thị đầy đủ: Họ và tên (`r.memberName`).
+      - Chức danh & Tên công ty / Doanh nghiệp: `[Chức danh] · [Tên Công Ty]`.
+      - Số điện thoại liên hệ & Email: `SĐT: [Số điện thoại] · [Email]`.
+    * **Cột "Check-in" (`event-registrations.tsx`)**:
+      - Bổ sung helper an toàn `formatCheckinTime` định dạng ngày giờ chuẩn Việt Nam (`HH:mm:ss DD/MM/YYYY`), triệt tiêu hoàn toàn lỗi `Invalid Date`.
+      - Badge phân loại rõ ràng: "Đúng giờ (30p)" (Xanh lá) hoặc "Muộn (>30p)" (Vàng cam) hoặc "Chưa check-in".
+      - Hiển thị chính xác thời gian đại biểu đã bấm nút check-in.
+    * **Xuất File Báo Cáo (Excel, Word, PDF)**:
+      - File Excel (`exportToExcel` và `generateCheckinExcel`): Đầy đủ các cột: STT, Mã Đăng Ký, Họ và Tên Đại Biểu, Số Điện Thoại, Email, Chức Danh, Công Ty / Doanh Nghiệp, Thời Gian Check-in, Phân Loại Check-in, Hạng Vé.
+      - File Word (.docx) & File PDF (.pdf): Trích xuất thông tin chức danh, công ty, SĐT, giờ check-in và trạng thái sớm/muộn từ cả `ticket_type` và `qr_payload`.
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Hoạt động chuẩn xác trên `113.20.107.184:6432`.
+    * Git: Tuân thủ nghiêm ngặt quy định không chạy `git commit` / `git push`.
+
+
 - **Bản cập nhật ngày 20/11/2026 (v11.79): Chuẩn Hóa Màu Sắc Nhận Diện Viện Doanh Trí (Xanh Lá #00A859 & Xanh Dương #005BAC), Bỏ Top Header Form Check-in, Khắc Phục Triệt Để Lỗi 500 Check-in Do Lệch Cột CSDL ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa Màu Sắc Thương Hiệu Viện Doanh Trí**:
     * Theo hình ảnh dải sóng nhận diện chính thức của Viện Doanh Trí do người dùng cung cấp (`media_1795163324133_844820fa.png`): dải màu gồm màu Xanh lá tươi (`#00A859` / `#16A34A`) và màu Xanh dương đậm (`#005BAC` / `#0284C7`).
@@ -2058,6 +2099,47 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.80): Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` / "Không Tải Được Dữ Liệu", Khắc Phục Lỗi Crash 500 BigInt Serialization & Chuẩn Hóa Cột Thời Gian Check-in / Metadata Đại Biểu Trên Web CRM Kèm Xuất 3 Định Dạng File ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
+  - **1. Phân Tích & Giải Pháp Triệt Để Lỗi SSL Zalo (`NET::ERR_CERT_AUTHORITY_INVALID` & "Không tải được dữ liệu")**:
+    * **Nguyên nhân thực tế**:
+      - Tên miền `crm.ceo1983.viconnect.vn` trỏ tới IP `14.225.217.232`.
+      - Khi kết nối HTTPS port 443, máy chủ trả về chứng chỉ tự ký `DEPTH_ZERO_SELF_SIGNED_CERT` (CN `14.225.217.232`).
+      - Zalo và các trình duyệt di động kiểm duyệt chứng chỉ rất nghiêm ngặt, chặn đứng với lỗi `NET::ERR_CERT_AUTHORITY_INVALID`. Nếu người dùng refresh trên Zalo, trang chuyển sang màn hình "Không tải được dữ liệu - Nhấn để tải lại trang".
+      - Trên HTTP port 80, trước đây cấu hình Host Nginx thực hiện 301 Redirect toàn bộ sang HTTPS, khiến quét QR bằng HTTP vẫn bị đẩy sang HTTPS và gặp lỗi chứng chỉ.
+    * **Xử lý toàn diện**:
+      - Trong `deploy/ssl/setup-ssl.sh`, bổ sung lệnh tự động cấp chứng chỉ bảo mật CA Trusted miễn phí từ Let's Encrypt qua Certbot:
+        `certbot certonly --webroot -w /var/www/certbot -d crm.ceo1983.viconnect.vn -d ceo1983.viconnect.vn ...`
+      - Trong cấu hình Nginx Port 80 (cả `nginx.conf` và Host Nginx trong `setup-ssl.sh`), bổ sung khối `location ^~ /checkin` chuyển thẳng về Frontend `http://127.0.0.1:5004`, KHÔNG redirect 301 sang HTTPS.
+      - Nhờ đó, mã QR quét bằng HTTP hay HTTPS đều hiển thị tức thì, 1 chạm là vào form ngay trên Zalo và mọi thiết bị di động.
+  - **2. Khắc Phục Lỗi HTTP 500 Khi Khách Bấm Nút "XÁC NHẬN CHECK-IN NGAY"**:
+    * **Nguyên nhân gốc rễ**:
+      - Bảng `public.event_registrations` trên CSDL `113.20.107.184:6432` chứa cột `payment_amount` với kiểu dữ liệu `bigint`.
+      - Khi Prisma truy vấn dữ liệu từ bảng, giá trị được trả về dưới dạng JavaScript `BigInt` nguyên bản.
+      - Khi NestJS Express thực hiện `res.json()`, `JSON.stringify` mặc định của Node.js ném ngoại lệ: `TypeError: Do not know how to serialize a BigInt`, dẫn đến máy chủ trả về HTTP 500 Internal Server Error.
+    * **Giải pháp khắc phục triệt để**:
+      - Tại `apps/ceo1983_app_be/src/main.ts`, bổ sung định nghĩa toàn cục:
+        `(BigInt.prototype as any).toJSON = function () { const n = Number(this); return Number.isSafeInteger(n) ? n : this.toString(); };`
+      - Giúp mọi truy vấn và phản hồi JSON chứa BigInt trên toàn hệ thống Backend NestJS luôn được serialize an toàn 100%, triệt tiêu hoàn toàn lỗi crash 500.
+      - Trong `publicCheckin`, lưu trữ chuẩn xác các trường `phone`, `checked_in_at = now()`, `payment_status = 'free'`, `payment_amount = 0`, đồng thời đóng gói metadata JSON vào `ticket_type` và `qr_payload`.
+  - **3. Chuẩn Hóa Cột Thời Gian Check-in & Thông Tin Đại Biểu Trên Web CRM**:
+    * **Cột "Người tham gia" (`apps/ceo1983_app_fe/src/routes/event-registrations.tsx`)**:
+      - Hiển thị đầy đủ: Họ và tên (`r.memberName`).
+      - Chức danh & Tên công ty / Doanh nghiệp: `[Chức danh] · [Tên Công Ty]`.
+      - Số điện thoại liên hệ & Email: `SĐT: [Số điện thoại] · [Email]`.
+    * **Cột "Check-in" (`event-registrations.tsx`)**:
+      - Bổ sung helper an toàn `formatCheckinTime` định dạng ngày giờ chuẩn Việt Nam (`HH:mm:ss DD/MM/YYYY`), triệt tiêu hoàn toàn lỗi `Invalid Date`.
+      - Badge phân loại rõ ràng: "Đúng giờ (30p)" (Xanh lá) hoặc "Muộn (>30p)" (Vàng cam) hoặc "Chưa check-in".
+      - Hiển thị chính xác thời gian đại biểu đã bấm nút check-in.
+    * **Xuất File Báo Cáo (Excel, Word, PDF)**:
+      - File Excel (`exportToExcel` và `generateCheckinExcel`): Đầy đủ các cột: STT, Mã Đăng Ký, Họ và Tên Đại Biểu, Số Điện Thoại, Email, Chức Danh, Công Ty / Doanh Nghiệp, Thời Gian Check-in, Phân Loại Check-in, Hạng Vé.
+      - File Word (.docx) & File PDF (.pdf): Trích xuất thông tin chức danh, công ty, SĐT, giờ check-in và trạng thái sớm/muộn từ cả `ticket_type` và `qr_payload`.
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Hoạt động chuẩn xác trên `113.20.107.184:6432`.
+    * Git: Tuân thủ nghiêm ngặt quy định không chạy `git commit` / `git push`.
+
 
 - **Bản cập nhật ngày 20/11/2026 (v11.79): Chuẩn Hóa Màu Sắc Nhận Diện Viện Doanh Trí (Xanh Lá #00A859 & Xanh Dương #005BAC), Bỏ Top Header Form Check-in, Khắc Phục Triệt Để Lỗi 500 Check-in Do Lệch Cột CSDL ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa Màu Sắc Thương Hiệu Viện Doanh Trí**:
@@ -5359,6 +5441,47 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.80): Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` / "Không Tải Được Dữ Liệu", Khắc Phục Lỗi Crash 500 BigInt Serialization & Chuẩn Hóa Cột Thời Gian Check-in / Metadata Đại Biểu Trên Web CRM Kèm Xuất 3 Định Dạng File ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
+  - **1. Phân Tích & Giải Pháp Triệt Để Lỗi SSL Zalo (`NET::ERR_CERT_AUTHORITY_INVALID` & "Không tải được dữ liệu")**:
+    * **Nguyên nhân thực tế**:
+      - Tên miền `crm.ceo1983.viconnect.vn` trỏ tới IP `14.225.217.232`.
+      - Khi kết nối HTTPS port 443, máy chủ trả về chứng chỉ tự ký `DEPTH_ZERO_SELF_SIGNED_CERT` (CN `14.225.217.232`).
+      - Zalo và các trình duyệt di động kiểm duyệt chứng chỉ rất nghiêm ngặt, chặn đứng với lỗi `NET::ERR_CERT_AUTHORITY_INVALID`. Nếu người dùng refresh trên Zalo, trang chuyển sang màn hình "Không tải được dữ liệu - Nhấn để tải lại trang".
+      - Trên HTTP port 80, trước đây cấu hình Host Nginx thực hiện 301 Redirect toàn bộ sang HTTPS, khiến quét QR bằng HTTP vẫn bị đẩy sang HTTPS và gặp lỗi chứng chỉ.
+    * **Xử lý toàn diện**:
+      - Trong `deploy/ssl/setup-ssl.sh`, bổ sung lệnh tự động cấp chứng chỉ bảo mật CA Trusted miễn phí từ Let's Encrypt qua Certbot:
+        `certbot certonly --webroot -w /var/www/certbot -d crm.ceo1983.viconnect.vn -d ceo1983.viconnect.vn ...`
+      - Trong cấu hình Nginx Port 80 (cả `nginx.conf` và Host Nginx trong `setup-ssl.sh`), bổ sung khối `location ^~ /checkin` chuyển thẳng về Frontend `http://127.0.0.1:5004`, KHÔNG redirect 301 sang HTTPS.
+      - Nhờ đó, mã QR quét bằng HTTP hay HTTPS đều hiển thị tức thì, 1 chạm là vào form ngay trên Zalo và mọi thiết bị di động.
+  - **2. Khắc Phục Lỗi HTTP 500 Khi Khách Bấm Nút "XÁC NHẬN CHECK-IN NGAY"**:
+    * **Nguyên nhân gốc rễ**:
+      - Bảng `public.event_registrations` trên CSDL `113.20.107.184:6432` chứa cột `payment_amount` với kiểu dữ liệu `bigint`.
+      - Khi Prisma truy vấn dữ liệu từ bảng, giá trị được trả về dưới dạng JavaScript `BigInt` nguyên bản.
+      - Khi NestJS Express thực hiện `res.json()`, `JSON.stringify` mặc định của Node.js ném ngoại lệ: `TypeError: Do not know how to serialize a BigInt`, dẫn đến máy chủ trả về HTTP 500 Internal Server Error.
+    * **Giải pháp khắc phục triệt để**:
+      - Tại `apps/ceo1983_app_be/src/main.ts`, bổ sung định nghĩa toàn cục:
+        `(BigInt.prototype as any).toJSON = function () { const n = Number(this); return Number.isSafeInteger(n) ? n : this.toString(); };`
+      - Giúp mọi truy vấn và phản hồi JSON chứa BigInt trên toàn hệ thống Backend NestJS luôn được serialize an toàn 100%, triệt tiêu hoàn toàn lỗi crash 500.
+      - Trong `publicCheckin`, lưu trữ chuẩn xác các trường `phone`, `checked_in_at = now()`, `payment_status = 'free'`, `payment_amount = 0`, đồng thời đóng gói metadata JSON vào `ticket_type` và `qr_payload`.
+  - **3. Chuẩn Hóa Cột Thời Gian Check-in & Thông Tin Đại Biểu Trên Web CRM**:
+    * **Cột "Người tham gia" (`apps/ceo1983_app_fe/src/routes/event-registrations.tsx`)**:
+      - Hiển thị đầy đủ: Họ và tên (`r.memberName`).
+      - Chức danh & Tên công ty / Doanh nghiệp: `[Chức danh] · [Tên Công Ty]`.
+      - Số điện thoại liên hệ & Email: `SĐT: [Số điện thoại] · [Email]`.
+    * **Cột "Check-in" (`event-registrations.tsx`)**:
+      - Bổ sung helper an toàn `formatCheckinTime` định dạng ngày giờ chuẩn Việt Nam (`HH:mm:ss DD/MM/YYYY`), triệt tiêu hoàn toàn lỗi `Invalid Date`.
+      - Badge phân loại rõ ràng: "Đúng giờ (30p)" (Xanh lá) hoặc "Muộn (>30p)" (Vàng cam) hoặc "Chưa check-in".
+      - Hiển thị chính xác thời gian đại biểu đã bấm nút check-in.
+    * **Xuất File Báo Cáo (Excel, Word, PDF)**:
+      - File Excel (`exportToExcel` và `generateCheckinExcel`): Đầy đủ các cột: STT, Mã Đăng Ký, Họ và Tên Đại Biểu, Số Điện Thoại, Email, Chức Danh, Công Ty / Doanh Nghiệp, Thời Gian Check-in, Phân Loại Check-in, Hạng Vé.
+      - File Word (.docx) & File PDF (.pdf): Trích xuất thông tin chức danh, công ty, SĐT, giờ check-in và trạng thái sớm/muộn từ cả `ticket_type` và `qr_payload`.
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Hoạt động chuẩn xác trên `113.20.107.184:6432`.
+    * Git: Tuân thủ nghiêm ngặt quy định không chạy `git commit` / `git push`.
+
 
 - **Bản cập nhật ngày 20/11/2026 (v11.79): Chuẩn Hóa Màu Sắc Nhận Diện Viện Doanh Trí (Xanh Lá #00A859 & Xanh Dương #005BAC), Bỏ Top Header Form Check-in, Khắc Phục Triệt Để Lỗi 500 Check-in Do Lệch Cột CSDL ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa Màu Sắc Thương Hiệu Viện Doanh Trí**:

@@ -2,6 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as net from 'net';
 
+// Safely serialize BigInt values to Number/string in JSON responses to prevent TypeError: Do not know how to serialize a BigInt
+(BigInt.prototype as any).toJSON = function () {
+  const n = Number(this);
+  return Number.isSafeInteger(n) ? n : this.toString();
+};
+
 function loadEnvFile(envPath: string) {
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, 'utf-8');
