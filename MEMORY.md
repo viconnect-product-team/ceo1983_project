@@ -1,5 +1,59 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.86): Chuẩn Hóa Logic Thời Gian Sự Kiện Ngày Mai (Thứ Bảy 21/11/2026): Bắt Đầu 14h30, Ngưỡng Đúng Giờ Đến 15h00, Sau 15h00 Ghi Nhận Check-in Muộn Kèm Lưu Trực Tiếp `company`, `position`, `checkin_status` Vào CSDL `113.20.107.184:6432` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Quy Chuẩn Xác Định Thời Gian Check-in Ngày Mai (21/11/2026)**:
+    * **Thông tin sự kiện**: "Kỷ niệm 4 năm thành lập Viện Doanh Trí & Tri ân ngày Nhà giáo Việt Nam 20/11".
+    * **Thời gian bắt đầu chính thức**: `14:30`, Thứ Bảy ngày `21/11/2026`.
+    * **Ngưỡng tính đúng giờ**: Tối đa 30 phút đầu kể từ khi bắt đầu sự kiện -> Mốc chuẩn là **đúng `15:00:00`** ngày 21/11/2026 (theo múi giờ Việt Nam `Asia/Ho_Chi_Minh` UTC+7).
+    * **Logic phân loại trạng thái điểm danh**:
+      - `now <= 2026-11-21T15:00:00+07:00`: Trạng thái `'on_time'` (Điểm danh đúng giờ trong 30 phút). Khi chạy test hôm nay (20/11) hoặc sáng mai đến trước 15h00 ngày 21/11 đều được xác nhận là Đúng giờ.
+      - `now > 2026-11-21T15:00:00+07:00`: Trạng thái `'late'` (Sau 15:00 chiều: Ghi nhận check-in muộn >30 phút).
+    * **Áp dụng đồng bộ trên toàn bộ các kênh điểm danh**:
+      - Form Public QR ngoài hệ thống (`publicCheckin`).
+      - Quét Camera mã QR trên CRM (`checkInAttendee`).
+      - Thêm mới / Xác nhận thủ công từ Admin CRM (`addOrCheckinAttendee`).
+  - **2. Lưu Trực Tiếp Dữ Liệu Vào Bảng `public.event_registrations` Trên CSDL `113.20.107.184:6432`**:
+    * Trong cả câu lệnh `UPDATE` và `INSERT INTO public.event_registrations`:
+      - Lưu trực tiếp các trường `company`, `position`, `checkin_status` vào cột riêng biệt của bảng thay vì chỉ lưu trong metadata JSON.
+      - Đảm bảo khi xuất file Excel/Word/PDF và hiển thị giao diện CRM, dữ liệu được truy xuất trực tiếp từ CSDL chuẩn mà không cần parse chuỗi.
+  - **3. Tự Động Bắn Báo Cáo 3 Định Dạng Về Email `viendoanhtri.iem@gmail.com`**:
+    * Mỗi khi có lượt check-in mới, hệ thống tự động xuất cả 3 file (.xlsx, .docx, .pdf) và gửi tức thì về email `viendoanhtri.iem@gmail.com` với thông báo rõ ràng đại biểu check-in Đúng giờ hay Muộn.
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ CSDL duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.85): Khắc Phục Triệt Để Lỗi SSL Localhost `ERR_SSL_PROTOCOL_ERROR`, Tối Ưu Hóa Tương Thích Đồng Thời Cả 3 Môi Trường: Localhost Dev, Server Link Test & Production Chính Thức ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-006])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ Lỗi `ERR_SSL_PROTOCOL_ERROR` Khi Chạy Localhost (Ảnh `media_1795179128639_47e15af0.png`)**:
+    * Trong `apps/ceo1983_app_be/src/main.ts`, middleware bảo mật trước đó gửi header:
+      `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` trên TOÀN BỘ các request bất kể localhost hay production.
+    * Khi người dùng truy cập web ở local (`http://localhost:5173`) hoặc backend (`http://localhost:4000`), trình duyệt Chrome/Edge lưu HSTS cache cho domain `localhost`.
+    * Từ đó, Chrome tự động ép chuyển hướng (Internal 307 Redirect) mọi request `http://localhost:5173/...` sang `https://localhost:5173/...`.
+    * Vì Vite Dev Server chạy plain HTTP trên cổng 5173 (không có chứng chỉ SSL), khi nhận bắt tay TLS từ Chrome, kết nối bị lỗi giao thức: `ERR_SSL_PROTOCOL_ERROR` (This site can't provide a secure connection).
+  - **2. Giải Pháp Xử Lý Toàn Diện & Tự Động Hóa**:
+    * **Backend NestJS (`apps/ceo1983_app_be/src/main.ts`)**:
+      - Kiểm tra host request: Nếu là `localhost`, `127.0.0.1` hoặc IP nội bộ: **Tuyệt đối KHÔNG gửi HSTS max-age lớn**. Thay vào đó, gửi `Strict-Transport-Security: max-age=0` để chủ động thông báo cho trình duyệt XÓA SẠCH cache HSTS trước đó!
+      - Chỉ kích hoạt HSTS khi `process.env.NODE_ENV === 'production'` và request thực sự qua HTTPS CA Trusted.
+      - Mở rộng CORS Whitelist: Cho phép mọi port localhost (`http://localhost:*`, `http://127.0.0.1:*`), IP mạng nội bộ (`http://192.168.*`, `http://10.*`) và IP server test (`14.225.217.232`) kết nối mượt mà không bị chặn.
+    * **Frontend Vite Config (`apps/ceo1983_app_fe/vite.config.ts`)**:
+      - Bổ sung `server.host: true` (lắng nghe `0.0.0.0`), cho phép các thiết bị di động trong cùng mạng Wi-Fi quét mã QR test truy cập thẳng vào máy dev.
+    * **Modal Mã QR Điểm Danh (`EventCheckinQrModal.tsx`)**:
+      - Bổ sung bộ chọn Môi trường:
+        + `Host hiện tại` (tự động nhận `localhost:5173` khi test local, hoặc link test khi ở server).
+        + `Production chính thức` (`crm.ceo1983.viconnect.vn`).
+      - Tự động nhận diện nếu host là localhost thì chỉ cho phép giao thức `http` (tránh bấm nhầm sang https gây lỗi SSL).
+      - Thêm nút "Mở form test" trực tiếp trên trình duyệt 1 chạm.
+  - **3. Hướng Dẫn Khắc Phục Nhanh Nếu Trình Duyệt Đã Bị Chrome Cache HSTS Cho Localhost**:
+    - Bước 1: Mở tab mới trên Chrome, gõ: `chrome://net-internals/#hsts`
+    - Bước 2: Kéo xuống mục **"Delete domain security policies"**, nhập `localhost` vào ô Domain rồi bấm nút **"Delete"**.
+    - Bước 3: Mở lại `http://localhost:5173/checkin/event-doanhtri-20261121` ➔ Form check-in sẽ tải bình thường ngay lập tức!
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.84): Kích Hoạt Tự Động Gửi Báo Cáo Check-in Đầy Đủ 3 Định Dạng (Excel, Word, PDF) Về Email `viendoanhtri.iem@gmail.com` Ngay Khi Có Người Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Cơ Chế Tự Động Kích Hoạt Ngay Sau Check-in**:
     * Khi bất kỳ khách mời hoặc đại biểu nào hoàn tất check-in (qua Form QR Public, quét camera điểm danh, hoặc xác nhận trên CRM):
@@ -2230,6 +2284,60 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.86): Chuẩn Hóa Logic Thời Gian Sự Kiện Ngày Mai (Thứ Bảy 21/11/2026): Bắt Đầu 14h30, Ngưỡng Đúng Giờ Đến 15h00, Sau 15h00 Ghi Nhận Check-in Muộn Kèm Lưu Trực Tiếp `company`, `position`, `checkin_status` Vào CSDL `113.20.107.184:6432` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Quy Chuẩn Xác Định Thời Gian Check-in Ngày Mai (21/11/2026)**:
+    * **Thông tin sự kiện**: "Kỷ niệm 4 năm thành lập Viện Doanh Trí & Tri ân ngày Nhà giáo Việt Nam 20/11".
+    * **Thời gian bắt đầu chính thức**: `14:30`, Thứ Bảy ngày `21/11/2026`.
+    * **Ngưỡng tính đúng giờ**: Tối đa 30 phút đầu kể từ khi bắt đầu sự kiện -> Mốc chuẩn là **đúng `15:00:00`** ngày 21/11/2026 (theo múi giờ Việt Nam `Asia/Ho_Chi_Minh` UTC+7).
+    * **Logic phân loại trạng thái điểm danh**:
+      - `now <= 2026-11-21T15:00:00+07:00`: Trạng thái `'on_time'` (Điểm danh đúng giờ trong 30 phút). Khi chạy test hôm nay (20/11) hoặc sáng mai đến trước 15h00 ngày 21/11 đều được xác nhận là Đúng giờ.
+      - `now > 2026-11-21T15:00:00+07:00`: Trạng thái `'late'` (Sau 15:00 chiều: Ghi nhận check-in muộn >30 phút).
+    * **Áp dụng đồng bộ trên toàn bộ các kênh điểm danh**:
+      - Form Public QR ngoài hệ thống (`publicCheckin`).
+      - Quét Camera mã QR trên CRM (`checkInAttendee`).
+      - Thêm mới / Xác nhận thủ công từ Admin CRM (`addOrCheckinAttendee`).
+  - **2. Lưu Trực Tiếp Dữ Liệu Vào Bảng `public.event_registrations` Trên CSDL `113.20.107.184:6432`**:
+    * Trong cả câu lệnh `UPDATE` và `INSERT INTO public.event_registrations`:
+      - Lưu trực tiếp các trường `company`, `position`, `checkin_status` vào cột riêng biệt của bảng thay vì chỉ lưu trong metadata JSON.
+      - Đảm bảo khi xuất file Excel/Word/PDF và hiển thị giao diện CRM, dữ liệu được truy xuất trực tiếp từ CSDL chuẩn mà không cần parse chuỗi.
+  - **3. Tự Động Bắn Báo Cáo 3 Định Dạng Về Email `viendoanhtri.iem@gmail.com`**:
+    * Mỗi khi có lượt check-in mới, hệ thống tự động xuất cả 3 file (.xlsx, .docx, .pdf) và gửi tức thì về email `viendoanhtri.iem@gmail.com` với thông báo rõ ràng đại biểu check-in Đúng giờ hay Muộn.
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ CSDL duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.85): Khắc Phục Triệt Để Lỗi SSL Localhost `ERR_SSL_PROTOCOL_ERROR`, Tối Ưu Hóa Tương Thích Đồng Thời Cả 3 Môi Trường: Localhost Dev, Server Link Test & Production Chính Thức ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-006])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ Lỗi `ERR_SSL_PROTOCOL_ERROR` Khi Chạy Localhost (Ảnh `media_1795179128639_47e15af0.png`)**:
+    * Trong `apps/ceo1983_app_be/src/main.ts`, middleware bảo mật trước đó gửi header:
+      `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` trên TOÀN BỘ các request bất kể localhost hay production.
+    * Khi người dùng truy cập web ở local (`http://localhost:5173`) hoặc backend (`http://localhost:4000`), trình duyệt Chrome/Edge lưu HSTS cache cho domain `localhost`.
+    * Từ đó, Chrome tự động ép chuyển hướng (Internal 307 Redirect) mọi request `http://localhost:5173/...` sang `https://localhost:5173/...`.
+    * Vì Vite Dev Server chạy plain HTTP trên cổng 5173 (không có chứng chỉ SSL), khi nhận bắt tay TLS từ Chrome, kết nối bị lỗi giao thức: `ERR_SSL_PROTOCOL_ERROR` (This site can't provide a secure connection).
+  - **2. Giải Pháp Xử Lý Toàn Diện & Tự Động Hóa**:
+    * **Backend NestJS (`apps/ceo1983_app_be/src/main.ts`)**:
+      - Kiểm tra host request: Nếu là `localhost`, `127.0.0.1` hoặc IP nội bộ: **Tuyệt đối KHÔNG gửi HSTS max-age lớn**. Thay vào đó, gửi `Strict-Transport-Security: max-age=0` để chủ động thông báo cho trình duyệt XÓA SẠCH cache HSTS trước đó!
+      - Chỉ kích hoạt HSTS khi `process.env.NODE_ENV === 'production'` và request thực sự qua HTTPS CA Trusted.
+      - Mở rộng CORS Whitelist: Cho phép mọi port localhost (`http://localhost:*`, `http://127.0.0.1:*`), IP mạng nội bộ (`http://192.168.*`, `http://10.*`) và IP server test (`14.225.217.232`) kết nối mượt mà không bị chặn.
+    * **Frontend Vite Config (`apps/ceo1983_app_fe/vite.config.ts`)**:
+      - Bổ sung `server.host: true` (lắng nghe `0.0.0.0`), cho phép các thiết bị di động trong cùng mạng Wi-Fi quét mã QR test truy cập thẳng vào máy dev.
+    * **Modal Mã QR Điểm Danh (`EventCheckinQrModal.tsx`)**:
+      - Bổ sung bộ chọn Môi trường:
+        + `Host hiện tại` (tự động nhận `localhost:5173` khi test local, hoặc link test khi ở server).
+        + `Production chính thức` (`crm.ceo1983.viconnect.vn`).
+      - Tự động nhận diện nếu host là localhost thì chỉ cho phép giao thức `http` (tránh bấm nhầm sang https gây lỗi SSL).
+      - Thêm nút "Mở form test" trực tiếp trên trình duyệt 1 chạm.
+  - **3. Hướng Dẫn Khắc Phục Nhanh Nếu Trình Duyệt Đã Bị Chrome Cache HSTS Cho Localhost**:
+    - Bước 1: Mở tab mới trên Chrome, gõ: `chrome://net-internals/#hsts`
+    - Bước 2: Kéo xuống mục **"Delete domain security policies"**, nhập `localhost` vào ô Domain rồi bấm nút **"Delete"**.
+    - Bước 3: Mở lại `http://localhost:5173/checkin/event-doanhtri-20261121` ➔ Form check-in sẽ tải bình thường ngay lập tức!
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.84): Kích Hoạt Tự Động Gửi Báo Cáo Check-in Đầy Đủ 3 Định Dạng (Excel, Word, PDF) Về Email `viendoanhtri.iem@gmail.com` Ngay Khi Có Người Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Cơ Chế Tự Động Kích Hoạt Ngay Sau Check-in**:
@@ -5703,6 +5811,60 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.86): Chuẩn Hóa Logic Thời Gian Sự Kiện Ngày Mai (Thứ Bảy 21/11/2026): Bắt Đầu 14h30, Ngưỡng Đúng Giờ Đến 15h00, Sau 15h00 Ghi Nhận Check-in Muộn Kèm Lưu Trực Tiếp `company`, `position`, `checkin_status` Vào CSDL `113.20.107.184:6432` ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Quy Chuẩn Xác Định Thời Gian Check-in Ngày Mai (21/11/2026)**:
+    * **Thông tin sự kiện**: "Kỷ niệm 4 năm thành lập Viện Doanh Trí & Tri ân ngày Nhà giáo Việt Nam 20/11".
+    * **Thời gian bắt đầu chính thức**: `14:30`, Thứ Bảy ngày `21/11/2026`.
+    * **Ngưỡng tính đúng giờ**: Tối đa 30 phút đầu kể từ khi bắt đầu sự kiện -> Mốc chuẩn là **đúng `15:00:00`** ngày 21/11/2026 (theo múi giờ Việt Nam `Asia/Ho_Chi_Minh` UTC+7).
+    * **Logic phân loại trạng thái điểm danh**:
+      - `now <= 2026-11-21T15:00:00+07:00`: Trạng thái `'on_time'` (Điểm danh đúng giờ trong 30 phút). Khi chạy test hôm nay (20/11) hoặc sáng mai đến trước 15h00 ngày 21/11 đều được xác nhận là Đúng giờ.
+      - `now > 2026-11-21T15:00:00+07:00`: Trạng thái `'late'` (Sau 15:00 chiều: Ghi nhận check-in muộn >30 phút).
+    * **Áp dụng đồng bộ trên toàn bộ các kênh điểm danh**:
+      - Form Public QR ngoài hệ thống (`publicCheckin`).
+      - Quét Camera mã QR trên CRM (`checkInAttendee`).
+      - Thêm mới / Xác nhận thủ công từ Admin CRM (`addOrCheckinAttendee`).
+  - **2. Lưu Trực Tiếp Dữ Liệu Vào Bảng `public.event_registrations` Trên CSDL `113.20.107.184:6432`**:
+    * Trong cả câu lệnh `UPDATE` và `INSERT INTO public.event_registrations`:
+      - Lưu trực tiếp các trường `company`, `position`, `checkin_status` vào cột riêng biệt của bảng thay vì chỉ lưu trong metadata JSON.
+      - Đảm bảo khi xuất file Excel/Word/PDF và hiển thị giao diện CRM, dữ liệu được truy xuất trực tiếp từ CSDL chuẩn mà không cần parse chuỗi.
+  - **3. Tự Động Bắn Báo Cáo 3 Định Dạng Về Email `viendoanhtri.iem@gmail.com`**:
+    * Mỗi khi có lượt check-in mới, hệ thống tự động xuất cả 3 file (.xlsx, .docx, .pdf) và gửi tức thì về email `viendoanhtri.iem@gmail.com` với thông báo rõ ràng đại biểu check-in Đúng giờ hay Muộn.
+  - **4. Kiểm Tra & Tuân Thủ Quy Chuẩn**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ CSDL duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.85): Khắc Phục Triệt Để Lỗi SSL Localhost `ERR_SSL_PROTOCOL_ERROR`, Tối Ưu Hóa Tương Thích Đồng Thời Cả 3 Môi Trường: Localhost Dev, Server Link Test & Production Chính Thức ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-006])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ Lỗi `ERR_SSL_PROTOCOL_ERROR` Khi Chạy Localhost (Ảnh `media_1795179128639_47e15af0.png`)**:
+    * Trong `apps/ceo1983_app_be/src/main.ts`, middleware bảo mật trước đó gửi header:
+      `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` trên TOÀN BỘ các request bất kể localhost hay production.
+    * Khi người dùng truy cập web ở local (`http://localhost:5173`) hoặc backend (`http://localhost:4000`), trình duyệt Chrome/Edge lưu HSTS cache cho domain `localhost`.
+    * Từ đó, Chrome tự động ép chuyển hướng (Internal 307 Redirect) mọi request `http://localhost:5173/...` sang `https://localhost:5173/...`.
+    * Vì Vite Dev Server chạy plain HTTP trên cổng 5173 (không có chứng chỉ SSL), khi nhận bắt tay TLS từ Chrome, kết nối bị lỗi giao thức: `ERR_SSL_PROTOCOL_ERROR` (This site can't provide a secure connection).
+  - **2. Giải Pháp Xử Lý Toàn Diện & Tự Động Hóa**:
+    * **Backend NestJS (`apps/ceo1983_app_be/src/main.ts`)**:
+      - Kiểm tra host request: Nếu là `localhost`, `127.0.0.1` hoặc IP nội bộ: **Tuyệt đối KHÔNG gửi HSTS max-age lớn**. Thay vào đó, gửi `Strict-Transport-Security: max-age=0` để chủ động thông báo cho trình duyệt XÓA SẠCH cache HSTS trước đó!
+      - Chỉ kích hoạt HSTS khi `process.env.NODE_ENV === 'production'` và request thực sự qua HTTPS CA Trusted.
+      - Mở rộng CORS Whitelist: Cho phép mọi port localhost (`http://localhost:*`, `http://127.0.0.1:*`), IP mạng nội bộ (`http://192.168.*`, `http://10.*`) và IP server test (`14.225.217.232`) kết nối mượt mà không bị chặn.
+    * **Frontend Vite Config (`apps/ceo1983_app_fe/vite.config.ts`)**:
+      - Bổ sung `server.host: true` (lắng nghe `0.0.0.0`), cho phép các thiết bị di động trong cùng mạng Wi-Fi quét mã QR test truy cập thẳng vào máy dev.
+    * **Modal Mã QR Điểm Danh (`EventCheckinQrModal.tsx`)**:
+      - Bổ sung bộ chọn Môi trường:
+        + `Host hiện tại` (tự động nhận `localhost:5173` khi test local, hoặc link test khi ở server).
+        + `Production chính thức` (`crm.ceo1983.viconnect.vn`).
+      - Tự động nhận diện nếu host là localhost thì chỉ cho phép giao thức `http` (tránh bấm nhầm sang https gây lỗi SSL).
+      - Thêm nút "Mở form test" trực tiếp trên trình duyệt 1 chạm.
+  - **3. Hướng Dẫn Khắc Phục Nhanh Nếu Trình Duyệt Đã Bị Chrome Cache HSTS Cho Localhost**:
+    - Bước 1: Mở tab mới trên Chrome, gõ: `chrome://net-internals/#hsts`
+    - Bước 2: Kéo xuống mục **"Delete domain security policies"**, nhập `localhost` vào ô Domain rồi bấm nút **"Delete"**.
+    - Bước 3: Mở lại `http://localhost:5173/checkin/event-doanhtri-20261121` ➔ Form check-in sẽ tải bình thường ngay lập tức!
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.84): Kích Hoạt Tự Động Gửi Báo Cáo Check-in Đầy Đủ 3 Định Dạng (Excel, Word, PDF) Về Email `viendoanhtri.iem@gmail.com` Ngay Khi Có Người Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Cơ Chế Tự Động Kích Hoạt Ngay Sau Check-in**:

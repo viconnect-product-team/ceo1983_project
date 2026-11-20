@@ -2734,9 +2734,16 @@ export class EventsService implements OnModuleInit {
       const already = Boolean(cur.checked_in_at);
       const result = already ? 'already' : 'success';
       if (!already) {
+        const now = new Date();
+        const thresholdDate = new Date('2026-11-21T15:00:00+07:00');
+        const checkinStatus: 'on_time' | 'late' =
+          now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
+
         await this.prisma.$executeRaw`
           UPDATE public.event_registrations
-          SET checked_in_at = now(), updated_at = now()
+          SET checked_in_at = now(),
+              checkin_status = ${checkinStatus},
+              updated_at = now()
           WHERE id = ${attendeeId}
         `.catch(() => null);
 
@@ -2757,7 +2764,7 @@ export class EventsService implements OnModuleInit {
               checkinTime: new Date().toLocaleString('vi-VN', {
                 timeZone: 'Asia/Ho_Chi_Minh',
               }),
-              checkinStatus: 'on_time',
+              checkinStatus,
             },
           ).catch((err: any) => {
             this.logger.warn(
@@ -3505,6 +3512,11 @@ export class EventsService implements OnModuleInit {
     }
 
     let regId: string;
+    const now = new Date();
+    const thresholdDate = new Date('2026-11-21T15:00:00+07:00');
+    const checkinStatus: 'on_time' | 'late' =
+      now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
+
     if (existing.length > 0) {
       regId = existing[0].id;
       await this.prisma
@@ -3512,6 +3524,7 @@ export class EventsService implements OnModuleInit {
           `
         UPDATE public.event_registrations
         SET checked_in_at = ${checkedIn ? 'NOW()' : 'checked_in_at'},
+            checkin_status = ${checkedIn ? `'${checkinStatus}'` : 'checkin_status'},
             seat_assignment = COALESCE($1, seat_assignment),
             payment_status = $2,
             updated_at = NOW()
@@ -3529,10 +3542,10 @@ export class EventsService implements OnModuleInit {
           `
         INSERT INTO public.event_registrations (
           id, event_id, member_code, member_name, email, registered_at, status,
-          ticket_type, seat_assignment, payment_status, reminder_count, checked_in_at, created_at, updated_at
+          ticket_type, seat_assignment, payment_status, reminder_count, checked_in_at, checkin_status, created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, NOW(), 'confirmed',
-          $6, $7, $8, 0, ${checkedIn ? 'NOW()' : 'NULL'}, NOW(), NOW()
+          $6, $7, $8, 0, ${checkedIn ? 'NOW()' : 'NULL'}, ${checkedIn ? `'${checkinStatus}'` : "''"}, NOW(), NOW()
         )
       `,
           regId,
@@ -3569,7 +3582,7 @@ export class EventsService implements OnModuleInit {
           checkinTime: new Date().toLocaleString('vi-VN', {
             timeZone: 'Asia/Ho_Chi_Minh',
           }),
-          checkinStatus: 'on_time',
+          checkinStatus,
         },
       ).catch((err: any) => {
         this.logger.warn(
@@ -4042,8 +4055,27 @@ export class EventsService implements OnModuleInit {
     const resolvedEventId = event.id;
 
     // 2. Tính toán phân loại check-in (30 phút từ thời điểm bắt đầu)
-    // Sự kiện 14h30 ngày 21/11/2026 => Mốc 30 phút là 15h00
+    // Sự kiện bắt đầu: 14h30 Thứ Bảy, 21/11/2026 => Mốc 30 phút đầu là đúng 15h00 chiều (15:00:00) theo giờ Việt Nam
     const now = new Date();
+
+    // Chuẩn hóa ngày sự kiện theo timezone Việt Nam (Asia/Ho_Chi_Minh)
+    let eventDateStr = '2026-11-21';
+    if (event.date) {
+      try {
+        const dObj = event.date instanceof Date ? event.date : new Date(event.date);
+        const vnDateParts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(dObj);
+        if (vnDateParts && vnDateParts.length === 10) {
+          eventDateStr = vnDateParts;
+        }
+      } catch {}
+    }
+
+    // Giờ bắt đầu mặc định: 14h30. Ngưỡng 30 phút: đúng 15h00 ngày 21/11/2026
     let startTimeHours = 14;
     let startTimeMinutes = 30;
     if (event.time && typeof event.time === 'string') {
@@ -4054,21 +4086,15 @@ export class EventsService implements OnModuleInit {
       }
     }
 
-    let thresholdDate: Date;
-    if (event.date) {
-      const dStr =
-        event.date instanceof Date
-          ? event.date.toISOString().slice(0, 10)
-          : String(event.date).slice(0, 10);
-      thresholdDate = new Date(
-        `${dStr}T${String(startTimeHours).padStart(2, '0')}:${String(startTimeMinutes).padStart(2, '0')}:00+07:00`,
-      );
-    } else {
-      thresholdDate = new Date('2026-11-21T14:30:00+07:00');
-    }
-    // Ngưỡng 30 phút sau khi khai mạc
+    const thresholdDate = new Date(
+      `${eventDateStr}T${String(startTimeHours).padStart(2, '0')}:${String(startTimeMinutes).padStart(2, '0')}:00+07:00`,
+    );
+    // Cộng đúng 30 phút đầu: 14h30 + 30p = đúng 15h00:00 ngày 21/11/2026
     thresholdDate.setMinutes(thresholdDate.getMinutes() + 30);
 
+    // Mốc thời gian chuẩn:
+    // - Check-in trước hoặc đúng 15h00: 'on_time' (Đúng giờ trong 30 phút đầu)
+    // - Check-in sau 15h00 chiều: 'late' (Check-in muộn)
     const checkinStatus: 'on_time' | 'late' =
       now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
 
@@ -4116,6 +4142,9 @@ export class EventsService implements OnModuleInit {
           SET member_name = ${fullName},
               email = ${email},
               phone = ${phone},
+              company = ${company},
+              position = ${position},
+              checkin_status = ${checkinStatus},
               status = 'confirmed',
               checked_in_at = now(),
               ticket_type = ${ticketMeta},
@@ -4134,6 +4163,7 @@ export class EventsService implements OnModuleInit {
         await this.prisma.$executeRaw`
           INSERT INTO public.event_registrations (
             id, event_id, member_code, member_name, email, phone,
+            company, position, checkin_status,
             registered_at, checked_in_at, status, ticket_type, qr_payload,
             payment_status, payment_amount, association_id,
             created_at, updated_at
@@ -4144,6 +4174,9 @@ export class EventsService implements OnModuleInit {
             ${fullName},
             ${email},
             ${phone},
+            ${company},
+            ${position},
+            ${checkinStatus},
             now()::date,
             now(),
             'confirmed',
@@ -4162,6 +4195,7 @@ export class EventsService implements OnModuleInit {
           await this.prisma.$executeRaw`
             INSERT INTO public.event_registrations (
               id, event_id, member_code, member_name, email, phone,
+              company, position, checkin_status,
               registered_at, checked_in_at, status, ticket_type, qr_payload,
               association_id
             ) VALUES (
@@ -4171,6 +4205,9 @@ export class EventsService implements OnModuleInit {
               ${fullName},
               ${email},
               ${phone},
+              ${company},
+              ${position},
+              ${checkinStatus},
               now()::date,
               now(),
               'confirmed',
