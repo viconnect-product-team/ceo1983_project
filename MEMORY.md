@@ -1,5 +1,29 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.89): Show Trực Tiếp Vòng Quay Bốc Thăm Trúng Thưởng Ngay Trên CRM & Chiếu LED, Bỏ Trường Loại Biểu Quyết, Thêm Tùy Chọn Khách Check-in Kèm List Chi Tiết Đại Biểu Của Mỗi Sự Kiện ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Khắc Phục & Hiển Thị Trực Tiếp Giao Diện Vòng Quay Bốc Thăm Trúng Thưởng (Lucky Draw Wheel)**:
+    * **Phân tích nguyên nhân**:
+      - Trước đó, route `/lucky-draw` (kênh truy cập chính từ Menu Sidebar CRM) chỉ hiển thị `LuckyDrawLandingBanner` cũ và không render Canvas Vòng quay xoay tròn.
+    * **Giải pháp & Triển khai**:
+      - Tách component tái sử dụng `LuckyDrawWheel` ([LuckyDrawWheel.tsx](file:///d:/download/VICONNECT/CEO_VIONE_PROJECT/ceo1983_project/apps/ceo1983_app_fe/src/components/events/LuckyDrawWheel.tsx)) với đầy đủ tính năng: Canvas Wheel xoay mượt mà chuẩn màu Viện Doanh Trí (`#005BAC` & `#00A859`), nan quạt tự động chia theo đại biểu check-in từ CSDL `113.20.107.184:6432`, âm thanh ticker/fanfare, pháo hoa rực rỡ, modal chúc mừng, tự động gửi email quà tặng và bộ thiết lập cơ cấu giải thưởng.
+      - Nâng cấp `apps/ceo1983_app_fe/src/routes/lucky-draw.tsx`: Hiển thị Vòng Quay Bốc Thăm Trúng Thưởng ngay lập tức khi vào trang (Tab mặc định), bổ sung bộ chọn sự kiện (Event Selector) và nút "Chiếu LED Toàn Màn Hình".
+      - Nâng cấp `apps/ceo1983_app_fe/src/routes/lucky-draw.$eventId.tsx`: Chuyên dụng cho chế độ trình chiếu LED hội trường / máy chiếu sân khấu không có thanh điều hướng gây xao nhãng.
+  - **2. Nâng Cấp Biểu Quyết: Bỏ Trường Loại Biểu Quyết & Thêm Đối Tượng Khách Đã Check-in Kèm List Chi Tiết**:
+    * **Loại bỏ trường "Loại biểu quyết"**:
+      - Trong `apps/ceo1983_app_fe/src/routes/voting.tsx`: Đã bỏ hoàn toàn trường chọn "Loại" (`Chính sách`, `Bầu cử`, `Sửa đổi điều lệ`) khỏi modal tạo/sửa biểu quyết, gán ngầm định an toàn khi gửi payload.
+    * **Thêm đối tượng "Khách / Đại biểu đã check-in sự kiện"**:
+      - Bổ sung tùy chọn `checked_in` vào dropdown "Đối tượng nhận thông báo biểu quyết" làm lựa chọn ưu tiên hàng đầu.
+      - **Tự động list ra danh sách khách đã check-in chi tiết của sự kiện cụ thể**:
+        + Hiển thị khung danh sách đại biểu đã điểm danh: Họ tên, Doanh nghiệp/Công ty, Chức danh, Email nhận thư, Số điện thoại, Thời gian check-in và nhãn phân loại (Đúng giờ / Check-in muộn).
+        + Tích hợp nút "Làm mới" (`RefreshCw`) để Ban Tổ Chức cập nhật danh sách khách vừa quét mã ở sảnh check-in.
+        + Khi tạo biểu quyết xong, hệ thống tự động phát email chứa liên kết biểu quyết trực tiếp tới toàn bộ danh sách khách đã check-in của sự kiện đó.
+  - **3. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * TanStack Router Tree: `node apps/ceo1983_app_fe/scripts/gen-routes.mjs` -> **Exit code 0 (Success)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.88): Bổ Sung Trường Giá Vé Sửa Sự Kiện (Đồng Bộ Free 0đ CSDL 113.20.107.184:6432), Cập Nhật Biểu Đồ Biểu Quyết Realtime & Tự Động Bắn Email Quà Tặng Cho Người Trúng Thưởng Vòng Quay May Mắn ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Bổ Sung Trường Chỉnh Sửa Giá Vé / Phí Tham Gia & Đưa Sự Kiện Về Miễn Phí (Free 0đ)**:
     * **Frontend CRM**:
