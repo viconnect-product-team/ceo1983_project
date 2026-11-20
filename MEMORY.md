@@ -1,5 +1,61 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.76): Mở Public Cổng Check-in Điểm Danh Khách Mời Quét QR Không Cần Đăng Nhập & Hiển Thị Danh Sách Đại Biểu Đã Điểm Danh Thời Gian Thực ([NODE-CRM-006], [NODE-APP-003], [NODE-CORE-002])**:
+  - **1. Khắc Phục Triệt Để Lỗi Yêu Cầu Vào App / Đăng Nhập Khi Quét Mã QR Check-in**:
+    * Trong `apps/ceo1983_app_fe/src/routes/__root.tsx`, `AuthGate` kiểm tra `isPublic` nhưng thiếu điều kiện cho tuyến đường `/checkin`. Do đó, khi khách mời quét mã QR Zalo hoặc mở link `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, `AuthGate` nhận diện trạng thái `status === "out"` và tự động redirect sang `/auth` (màn hình đăng nhập app).
+    * Đã bổ sung `pathname.startsWith("/checkin")` và `pathname.startsWith("/guest-checkin")` vào cả `isPublic` và `isRegisterOrAuthRoute`.
+    * Giờ đây, mọi khách mời mở form qua Zalo, Safari, Chrome hay bất kỳ trình duyệt di động nào đều truy cập thẳng vào trang điểm danh mà không bị yêu cầu đăng nhập hay tải app.
+  - **2. Bổ Sung Endpoint Công Khai Danh Sách Điểm Danh (`GET /api/events/:id/public-attendees`)**:
+    * Trong `apps/ceo1983_app_be/src/events/events.controller.ts`, khai báo `@Get(':id/public-attendees')` (public, không cần JWT token).
+    * Trong `apps/ceo1983_app_be/src/events/events.service.ts`, triển khai `getPublicAttendees(eventId: string)`:
+      - Tự động phân giải `event-doanhtri-20261121` hoặc tìm kiếm theo tên sự kiện chứa "Doanh Trí".
+      - Truy vấn từ `public.event_registrations` trên CSDL chuẩn `113.20.107.184:6432`.
+      - Trả về danh sách đại biểu kèm phân loại đúng giờ trong 30 phút (`on_time`), check-in muộn (`late`), thống kê số lượng (`total`, `checkedInCount`, `onTimeCount`, `lateCount`).
+      - Mã hóa bảo mật email và số điện thoại của đại biểu (`n***a@gmail.com`, `098***888`) để tuân thủ quyền riêng tư công cộng.
+    * Bổ sung route tối ưu `@Get(':id/registrations')` cho CRM Quản trị.
+  - **3. Hiển Thị Danh Sách Người Đã Bấm Nút Điểm Danh Ngay Trên Màn Hình Check-in (`checkin.$eventId.tsx`)**:
+    * Khi khách điền thông tin và bấm nút "XÁC NHẬN CHECK-IN NGAY":
+      - Form gửi thông tin về `POST /api/events/:id/public-checkin` và lưu trực tiếp vào CSDL `113.20.107.184:6432`.
+      - Hệ thống tự động gửi email xác nhận tức thì mang thương hiệu Viện Doanh Trí.
+      - Ngay bên dưới màn hình xác nhận, hiển thị trực quan phần **"DANH SÁCH ĐẠI BIỂU ĐÃ ĐIỂM DANH SỰ KIỆN DOANH TRÍ"**:
+        * Thẻ thống kê: Tổng đại biểu, Điểm danh đúng giờ (30 phút đầu), Điểm danh sau 30 phút (Muộn).
+        * Danh sách đại biểu với số thứ tự, Họ và tên, Chức danh, Doanh nghiệp, Thời gian check-in.
+        * Dòng của chính người vừa check-in được làm nổi bật với huy hiệu màu đỏ viền vàng `Quý khách vừa check-in`.
+        * Ô tìm kiếm nhanh đại biểu và nút "Làm mới danh sách" (Refresh) để xem các đại biểu điểm danh tiếp theo.
+    * Tại màn hình trước khi bấm nút, cung cấp tab chuyển đổi giữa "Form Điểm Danh" và "Đã Điểm Danh ({count})" kèm đường dẫn xem danh sách ngay.
+  - **4. Kiểm Thử & Xác Nhận Type Check Toàn Diện**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.75): Khắc Phục Triệt Để Lỗi Deploy Subdomains: Lỗi 502 Bad Gateway Flooding Logs do Hardcode Nitro Proxy Host `backend`, Cô Lập Mạng Docker Internal Bridge CRM vs Mobile, Cập Nhật Nạp Image Độc Lập & `--no-cache` Trong CI/CD ([NODE-CORE-006])**:
+  - **1. Phân Tích & Xác Định Nguyên Nhân Gốc Rễ Gây Lỗi Log Deploy**:
+    * **Lỗi 502 Bad Gateway / FetchError Flooding Logs Trên Frontend Containers (`crm-frontend-prod` & `ceo1983-frontend-prod`)**:
+      - Trong `apps/ceo1983_app_fe/nitro.config.ts`, `routeRules` khai báo proxy tĩnh: `/api/**`, `/upload/**`, `/uploads/**` trỏ tới `http://backend:4000`.
+      - Cơ chế build của Nitro biên dịch cứng (hardcode) giá trị `http://backend:4000` vào artifact `.output/server/index.mjs` (dòng 8653) tại thời điểm build trên GitHub Actions runner vì không có biến `NEST_API_URL`.
+      - Khi chạy runtime trên VPS trong Docker network `ceo1983-network`: chỉ có các container `crm-backend:4000` và `ceo1983-backend:4000`, **hoàn toàn không có container nào mang tên `backend`**.
+      - Kết quả: Mỗi khi frontend SSR hoặc có request `/api/**` gọi tới port trực tiếp (5004 / 5002), Nitro ném lỗi `[nitro] [error] [unhandled] FetchError: request to http://backend:4000/... failed, reason: getaddrinfo ENOTFOUND backend` và trả về `502 Bad Gateway`, gây xả log lỗi liên tục.
+    * **Lỗi Endpoint Check-in Mới `POST :id/public-checkin` Trả Về 404 Not Found**:
+      - `deploy/git-auto-deploy.sh` trên VPS chỉ chạy `docker compose up -d` mà không hề rebuild image, nên nếu cập nhật Git trực tiếp trên VPS thì Docker daemon vẫn chạy image cũ từ cache.
+      - Trong CI/CD `auto-deploy-subdomains.yml`, lệnh build Docker backend dùng cache mặc định và script nạp image trên VPS thiếu logic kiểm tra đa thư mục khi file `dist-images/backend-images.tar.gz` được nạp qua `scp-action`.
+  - **2. Giải Pháp Toàn Diện Đã Thực Thi**:
+    * **Thiết lập Mạng Internal Bridge Độc Lập Cho CRM & Mobile (`docker-compose.yml`)**:
+      - Trong `deploy/crm/docker-compose.yml`: Bổ sung mạng `crm-internal` (driver bridge) kết nối giữa `crm-frontend` và `crm-backend`. Đặt network alias `backend` và `crm-backend` cho `crm-backend`.
+      - Trong `deploy/ceo1983/docker-compose.yml`: Bổ sung mạng `ceo1983-internal` (driver bridge) kết nối giữa `ceo1983-frontend` và `ceo1983-backend`. Đặt network alias `backend` và `ceo1983-backend` cho `ceo1983-backend`.
+      - Cả hai phân hệ vẫn đồng thời kết nối vào `ceo1983-network` để Nginx Reverse Proxy phân giải chính xác.
+      - Kết quả: Khi Nitro frontend gọi `http://backend:4000`, Docker DNS nội bộ của từng phân hệ phân giải chuẩn xác 100% về đúng backend tương ứng, triệt tiêu hoàn toàn lỗi `getaddrinfo ENOTFOUND backend` và lỗi 502!
+    * **Cập Nhật CI/CD Workflow (`.github/workflows/auto-deploy-subdomains.yml`)**:
+      - Truyền biến môi trường `NEST_API_URL: "http://backend:4000"` khi build Frontend.
+      - Bổ sung flag `--no-cache` cho bước đóng gói `docker build -f Dockerfile.backend .` để đảm bảo code backend mới nhất luôn được compile sạch sẽ, không bị dính layer cache cũ.
+      - Thêm logic nạp tar.gz thông minh tại bước 1/5 trên VPS: Tự động kiểm tra cả `dist-images/*.tar.gz` lẫn `*.tar.gz` trong `/root/deploy-cache/`, đưa ra cảnh báo rõ ràng nếu thiếu file.
+    * **Nâng Cấp `deploy/git-auto-deploy.sh`**:
+      - Thêm bước tự động copy cấu hình mới nhất từ repo sang `/root/crm/`, `/root/association/`, `/root/ssl-proxy/`.
+      - Hỗ trợ tham số `--build` hoặc biến `BUILD=1` để tự động rebuild image sạch khi cập nhật Git trên VPS.
+  - **3. Kết Quả Kiểm Chứng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tất cả thay đổi chỉ thực hiện tại local (Working tree sạch sẽ), tuyệt đối tuân thủ không chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.74): Khởi Tạo Sự Kiện Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp Việt 2027, Hệ Thống Quét Mã QR Check-in Điểm Danh Zalo, Public Check-in Form 4 Trường, Phân Loại 30 Phút Đúng Giờ / Muộn, Email Xác Nhận Tức Thì & Báo Cáo Xuất/Gửi Excel Danh Sách ([NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Hoàn Thành Khởi Tạo Sự Kiện Chuẩn CSDL 113.20.107.184:6432 (`public.events`)**:
     * **Tên sự kiện**: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11 - TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”`
@@ -1921,6 +1977,62 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.76): Mở Public Cổng Check-in Điểm Danh Khách Mời Quét QR Không Cần Đăng Nhập & Hiển Thị Danh Sách Đại Biểu Đã Điểm Danh Thời Gian Thực ([NODE-CRM-006], [NODE-APP-003], [NODE-CORE-002])**:
+  - **1. Khắc Phục Triệt Để Lỗi Yêu Cầu Vào App / Đăng Nhập Khi Quét Mã QR Check-in**:
+    * Trong `apps/ceo1983_app_fe/src/routes/__root.tsx`, `AuthGate` kiểm tra `isPublic` nhưng thiếu điều kiện cho tuyến đường `/checkin`. Do đó, khi khách mời quét mã QR Zalo hoặc mở link `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, `AuthGate` nhận diện trạng thái `status === "out"` và tự động redirect sang `/auth` (màn hình đăng nhập app).
+    * Đã bổ sung `pathname.startsWith("/checkin")` và `pathname.startsWith("/guest-checkin")` vào cả `isPublic` và `isRegisterOrAuthRoute`.
+    * Giờ đây, mọi khách mời mở form qua Zalo, Safari, Chrome hay bất kỳ trình duyệt di động nào đều truy cập thẳng vào trang điểm danh mà không bị yêu cầu đăng nhập hay tải app.
+  - **2. Bổ Sung Endpoint Công Khai Danh Sách Điểm Danh (`GET /api/events/:id/public-attendees`)**:
+    * Trong `apps/ceo1983_app_be/src/events/events.controller.ts`, khai báo `@Get(':id/public-attendees')` (public, không cần JWT token).
+    * Trong `apps/ceo1983_app_be/src/events/events.service.ts`, triển khai `getPublicAttendees(eventId: string)`:
+      - Tự động phân giải `event-doanhtri-20261121` hoặc tìm kiếm theo tên sự kiện chứa "Doanh Trí".
+      - Truy vấn từ `public.event_registrations` trên CSDL chuẩn `113.20.107.184:6432`.
+      - Trả về danh sách đại biểu kèm phân loại đúng giờ trong 30 phút (`on_time`), check-in muộn (`late`), thống kê số lượng (`total`, `checkedInCount`, `onTimeCount`, `lateCount`).
+      - Mã hóa bảo mật email và số điện thoại của đại biểu (`n***a@gmail.com`, `098***888`) để tuân thủ quyền riêng tư công cộng.
+    * Bổ sung route tối ưu `@Get(':id/registrations')` cho CRM Quản trị.
+  - **3. Hiển Thị Danh Sách Người Đã Bấm Nút Điểm Danh Ngay Trên Màn Hình Check-in (`checkin.$eventId.tsx`)**:
+    * Khi khách điền thông tin và bấm nút "XÁC NHẬN CHECK-IN NGAY":
+      - Form gửi thông tin về `POST /api/events/:id/public-checkin` và lưu trực tiếp vào CSDL `113.20.107.184:6432`.
+      - Hệ thống tự động gửi email xác nhận tức thì mang thương hiệu Viện Doanh Trí.
+      - Ngay bên dưới màn hình xác nhận, hiển thị trực quan phần **"DANH SÁCH ĐẠI BIỂU ĐÃ ĐIỂM DANH SỰ KIỆN DOANH TRÍ"**:
+        * Thẻ thống kê: Tổng đại biểu, Điểm danh đúng giờ (30 phút đầu), Điểm danh sau 30 phút (Muộn).
+        * Danh sách đại biểu với số thứ tự, Họ và tên, Chức danh, Doanh nghiệp, Thời gian check-in.
+        * Dòng của chính người vừa check-in được làm nổi bật với huy hiệu màu đỏ viền vàng `Quý khách vừa check-in`.
+        * Ô tìm kiếm nhanh đại biểu và nút "Làm mới danh sách" (Refresh) để xem các đại biểu điểm danh tiếp theo.
+    * Tại màn hình trước khi bấm nút, cung cấp tab chuyển đổi giữa "Form Điểm Danh" và "Đã Điểm Danh ({count})" kèm đường dẫn xem danh sách ngay.
+  - **4. Kiểm Thử & Xác Nhận Type Check Toàn Diện**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.75): Khắc Phục Triệt Để Lỗi Deploy Subdomains: Lỗi 502 Bad Gateway Flooding Logs do Hardcode Nitro Proxy Host `backend`, Cô Lập Mạng Docker Internal Bridge CRM vs Mobile, Cập Nhật Nạp Image Độc Lập & `--no-cache` Trong CI/CD ([NODE-CORE-006])**:
+  - **1. Phân Tích & Xác Định Nguyên Nhân Gốc Rễ Gây Lỗi Log Deploy**:
+    * **Lỗi 502 Bad Gateway / FetchError Flooding Logs Trên Frontend Containers (`crm-frontend-prod` & `ceo1983-frontend-prod`)**:
+      - Trong `apps/ceo1983_app_fe/nitro.config.ts`, `routeRules` khai báo proxy tĩnh: `/api/**`, `/upload/**`, `/uploads/**` trỏ tới `http://backend:4000`.
+      - Cơ chế build của Nitro biên dịch cứng (hardcode) giá trị `http://backend:4000` vào artifact `.output/server/index.mjs` (dòng 8653) tại thời điểm build trên GitHub Actions runner vì không có biến `NEST_API_URL`.
+      - Khi chạy runtime trên VPS trong Docker network `ceo1983-network`: chỉ có các container `crm-backend:4000` và `ceo1983-backend:4000`, **hoàn toàn không có container nào mang tên `backend`**.
+      - Kết quả: Mỗi khi frontend SSR hoặc có request `/api/**` gọi tới port trực tiếp (5004 / 5002), Nitro ném lỗi `[nitro] [error] [unhandled] FetchError: request to http://backend:4000/... failed, reason: getaddrinfo ENOTFOUND backend` và trả về `502 Bad Gateway`, gây xả log lỗi liên tục.
+    * **Lỗi Endpoint Check-in Mới `POST :id/public-checkin` Trả Về 404 Not Found**:
+      - `deploy/git-auto-deploy.sh` trên VPS chỉ chạy `docker compose up -d` mà không hề rebuild image, nên nếu cập nhật Git trực tiếp trên VPS thì Docker daemon vẫn chạy image cũ từ cache.
+      - Trong CI/CD `auto-deploy-subdomains.yml`, lệnh build Docker backend dùng cache mặc định và script nạp image trên VPS thiếu logic kiểm tra đa thư mục khi file `dist-images/backend-images.tar.gz` được nạp qua `scp-action`.
+  - **2. Giải Pháp Toàn Diện Đã Thực Thi**:
+    * **Thiết lập Mạng Internal Bridge Độc Lập Cho CRM & Mobile (`docker-compose.yml`)**:
+      - Trong `deploy/crm/docker-compose.yml`: Bổ sung mạng `crm-internal` (driver bridge) kết nối giữa `crm-frontend` và `crm-backend`. Đặt network alias `backend` và `crm-backend` cho `crm-backend`.
+      - Trong `deploy/ceo1983/docker-compose.yml`: Bổ sung mạng `ceo1983-internal` (driver bridge) kết nối giữa `ceo1983-frontend` và `ceo1983-backend`. Đặt network alias `backend` và `ceo1983-backend` cho `ceo1983-backend`.
+      - Cả hai phân hệ vẫn đồng thời kết nối vào `ceo1983-network` để Nginx Reverse Proxy phân giải chính xác.
+      - Kết quả: Khi Nitro frontend gọi `http://backend:4000`, Docker DNS nội bộ của từng phân hệ phân giải chuẩn xác 100% về đúng backend tương ứng, triệt tiêu hoàn toàn lỗi `getaddrinfo ENOTFOUND backend` và lỗi 502!
+    * **Cập Nhật CI/CD Workflow (`.github/workflows/auto-deploy-subdomains.yml`)**:
+      - Truyền biến môi trường `NEST_API_URL: "http://backend:4000"` khi build Frontend.
+      - Bổ sung flag `--no-cache` cho bước đóng gói `docker build -f Dockerfile.backend .` để đảm bảo code backend mới nhất luôn được compile sạch sẽ, không bị dính layer cache cũ.
+      - Thêm logic nạp tar.gz thông minh tại bước 1/5 trên VPS: Tự động kiểm tra cả `dist-images/*.tar.gz` lẫn `*.tar.gz` trong `/root/deploy-cache/`, đưa ra cảnh báo rõ ràng nếu thiếu file.
+    * **Nâng Cấp `deploy/git-auto-deploy.sh`**:
+      - Thêm bước tự động copy cấu hình mới nhất từ repo sang `/root/crm/`, `/root/association/`, `/root/ssl-proxy/`.
+      - Hỗ trợ tham số `--build` hoặc biến `BUILD=1` để tự động rebuild image sạch khi cập nhật Git trên VPS.
+  - **3. Kết Quả Kiểm Chứng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tất cả thay đổi chỉ thực hiện tại local (Working tree sạch sẽ), tuyệt đối tuân thủ không chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.74): Khởi Tạo Sự Kiện Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp Việt 2027, Hệ Thống Quét Mã QR Check-in Điểm Danh Zalo, Public Check-in Form 4 Trường, Phân Loại 30 Phút Đúng Giờ / Muộn, Email Xác Nhận Tức Thì & Báo Cáo Xuất/Gửi Excel Danh Sách ([NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Hoàn Thành Khởi Tạo Sự Kiện Chuẩn CSDL 113.20.107.184:6432 (`public.events`)**:
@@ -5085,6 +5197,62 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.76): Mở Public Cổng Check-in Điểm Danh Khách Mời Quét QR Không Cần Đăng Nhập & Hiển Thị Danh Sách Đại Biểu Đã Điểm Danh Thời Gian Thực ([NODE-CRM-006], [NODE-APP-003], [NODE-CORE-002])**:
+  - **1. Khắc Phục Triệt Để Lỗi Yêu Cầu Vào App / Đăng Nhập Khi Quét Mã QR Check-in**:
+    * Trong `apps/ceo1983_app_fe/src/routes/__root.tsx`, `AuthGate` kiểm tra `isPublic` nhưng thiếu điều kiện cho tuyến đường `/checkin`. Do đó, khi khách mời quét mã QR Zalo hoặc mở link `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, `AuthGate` nhận diện trạng thái `status === "out"` và tự động redirect sang `/auth` (màn hình đăng nhập app).
+    * Đã bổ sung `pathname.startsWith("/checkin")` và `pathname.startsWith("/guest-checkin")` vào cả `isPublic` và `isRegisterOrAuthRoute`.
+    * Giờ đây, mọi khách mời mở form qua Zalo, Safari, Chrome hay bất kỳ trình duyệt di động nào đều truy cập thẳng vào trang điểm danh mà không bị yêu cầu đăng nhập hay tải app.
+  - **2. Bổ Sung Endpoint Công Khai Danh Sách Điểm Danh (`GET /api/events/:id/public-attendees`)**:
+    * Trong `apps/ceo1983_app_be/src/events/events.controller.ts`, khai báo `@Get(':id/public-attendees')` (public, không cần JWT token).
+    * Trong `apps/ceo1983_app_be/src/events/events.service.ts`, triển khai `getPublicAttendees(eventId: string)`:
+      - Tự động phân giải `event-doanhtri-20261121` hoặc tìm kiếm theo tên sự kiện chứa "Doanh Trí".
+      - Truy vấn từ `public.event_registrations` trên CSDL chuẩn `113.20.107.184:6432`.
+      - Trả về danh sách đại biểu kèm phân loại đúng giờ trong 30 phút (`on_time`), check-in muộn (`late`), thống kê số lượng (`total`, `checkedInCount`, `onTimeCount`, `lateCount`).
+      - Mã hóa bảo mật email và số điện thoại của đại biểu (`n***a@gmail.com`, `098***888`) để tuân thủ quyền riêng tư công cộng.
+    * Bổ sung route tối ưu `@Get(':id/registrations')` cho CRM Quản trị.
+  - **3. Hiển Thị Danh Sách Người Đã Bấm Nút Điểm Danh Ngay Trên Màn Hình Check-in (`checkin.$eventId.tsx`)**:
+    * Khi khách điền thông tin và bấm nút "XÁC NHẬN CHECK-IN NGAY":
+      - Form gửi thông tin về `POST /api/events/:id/public-checkin` và lưu trực tiếp vào CSDL `113.20.107.184:6432`.
+      - Hệ thống tự động gửi email xác nhận tức thì mang thương hiệu Viện Doanh Trí.
+      - Ngay bên dưới màn hình xác nhận, hiển thị trực quan phần **"DANH SÁCH ĐẠI BIỂU ĐÃ ĐIỂM DANH SỰ KIỆN DOANH TRÍ"**:
+        * Thẻ thống kê: Tổng đại biểu, Điểm danh đúng giờ (30 phút đầu), Điểm danh sau 30 phút (Muộn).
+        * Danh sách đại biểu với số thứ tự, Họ và tên, Chức danh, Doanh nghiệp, Thời gian check-in.
+        * Dòng của chính người vừa check-in được làm nổi bật với huy hiệu màu đỏ viền vàng `Quý khách vừa check-in`.
+        * Ô tìm kiếm nhanh đại biểu và nút "Làm mới danh sách" (Refresh) để xem các đại biểu điểm danh tiếp theo.
+    * Tại màn hình trước khi bấm nút, cung cấp tab chuyển đổi giữa "Form Điểm Danh" và "Đã Điểm Danh ({count})" kèm đường dẫn xem danh sách ngay.
+  - **4. Kiểm Thử & Xác Nhận Type Check Toàn Diện**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
+
+- **Bản cập nhật ngày 20/11/2026 (v11.75): Khắc Phục Triệt Để Lỗi Deploy Subdomains: Lỗi 502 Bad Gateway Flooding Logs do Hardcode Nitro Proxy Host `backend`, Cô Lập Mạng Docker Internal Bridge CRM vs Mobile, Cập Nhật Nạp Image Độc Lập & `--no-cache` Trong CI/CD ([NODE-CORE-006])**:
+  - **1. Phân Tích & Xác Định Nguyên Nhân Gốc Rễ Gây Lỗi Log Deploy**:
+    * **Lỗi 502 Bad Gateway / FetchError Flooding Logs Trên Frontend Containers (`crm-frontend-prod` & `ceo1983-frontend-prod`)**:
+      - Trong `apps/ceo1983_app_fe/nitro.config.ts`, `routeRules` khai báo proxy tĩnh: `/api/**`, `/upload/**`, `/uploads/**` trỏ tới `http://backend:4000`.
+      - Cơ chế build của Nitro biên dịch cứng (hardcode) giá trị `http://backend:4000` vào artifact `.output/server/index.mjs` (dòng 8653) tại thời điểm build trên GitHub Actions runner vì không có biến `NEST_API_URL`.
+      - Khi chạy runtime trên VPS trong Docker network `ceo1983-network`: chỉ có các container `crm-backend:4000` và `ceo1983-backend:4000`, **hoàn toàn không có container nào mang tên `backend`**.
+      - Kết quả: Mỗi khi frontend SSR hoặc có request `/api/**` gọi tới port trực tiếp (5004 / 5002), Nitro ném lỗi `[nitro] [error] [unhandled] FetchError: request to http://backend:4000/... failed, reason: getaddrinfo ENOTFOUND backend` và trả về `502 Bad Gateway`, gây xả log lỗi liên tục.
+    * **Lỗi Endpoint Check-in Mới `POST :id/public-checkin` Trả Về 404 Not Found**:
+      - `deploy/git-auto-deploy.sh` trên VPS chỉ chạy `docker compose up -d` mà không hề rebuild image, nên nếu cập nhật Git trực tiếp trên VPS thì Docker daemon vẫn chạy image cũ từ cache.
+      - Trong CI/CD `auto-deploy-subdomains.yml`, lệnh build Docker backend dùng cache mặc định và script nạp image trên VPS thiếu logic kiểm tra đa thư mục khi file `dist-images/backend-images.tar.gz` được nạp qua `scp-action`.
+  - **2. Giải Pháp Toàn Diện Đã Thực Thi**:
+    * **Thiết lập Mạng Internal Bridge Độc Lập Cho CRM & Mobile (`docker-compose.yml`)**:
+      - Trong `deploy/crm/docker-compose.yml`: Bổ sung mạng `crm-internal` (driver bridge) kết nối giữa `crm-frontend` và `crm-backend`. Đặt network alias `backend` và `crm-backend` cho `crm-backend`.
+      - Trong `deploy/ceo1983/docker-compose.yml`: Bổ sung mạng `ceo1983-internal` (driver bridge) kết nối giữa `ceo1983-frontend` và `ceo1983-backend`. Đặt network alias `backend` và `ceo1983-backend` cho `ceo1983-backend`.
+      - Cả hai phân hệ vẫn đồng thời kết nối vào `ceo1983-network` để Nginx Reverse Proxy phân giải chính xác.
+      - Kết quả: Khi Nitro frontend gọi `http://backend:4000`, Docker DNS nội bộ của từng phân hệ phân giải chuẩn xác 100% về đúng backend tương ứng, triệt tiêu hoàn toàn lỗi `getaddrinfo ENOTFOUND backend` và lỗi 502!
+    * **Cập Nhật CI/CD Workflow (`.github/workflows/auto-deploy-subdomains.yml`)**:
+      - Truyền biến môi trường `NEST_API_URL: "http://backend:4000"` khi build Frontend.
+      - Bổ sung flag `--no-cache` cho bước đóng gói `docker build -f Dockerfile.backend .` để đảm bảo code backend mới nhất luôn được compile sạch sẽ, không bị dính layer cache cũ.
+      - Thêm logic nạp tar.gz thông minh tại bước 1/5 trên VPS: Tự động kiểm tra cả `dist-images/*.tar.gz` lẫn `*.tar.gz` trong `/root/deploy-cache/`, đưa ra cảnh báo rõ ràng nếu thiếu file.
+    * **Nâng Cấp `deploy/git-auto-deploy.sh`**:
+      - Thêm bước tự động copy cấu hình mới nhất từ repo sang `/root/crm/`, `/root/association/`, `/root/ssl-proxy/`.
+      - Hỗ trợ tham số `--build` hoặc biến `BUILD=1` để tự động rebuild image sạch khi cập nhật Git trên VPS.
+  - **3. Kết Quả Kiểm Chứng**:
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tất cả thay đổi chỉ thực hiện tại local (Working tree sạch sẽ), tuyệt đối tuân thủ không chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.74): Khởi Tạo Sự Kiện Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp Việt 2027, Hệ Thống Quét Mã QR Check-in Điểm Danh Zalo, Public Check-in Form 4 Trường, Phân Loại 30 Phút Đúng Giờ / Muộn, Email Xác Nhận Tức Thì & Báo Cáo Xuất/Gửi Excel Danh Sách ([NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Hoàn Thành Khởi Tạo Sự Kiện Chuẩn CSDL 113.20.107.184:6432 (`public.events`)**:

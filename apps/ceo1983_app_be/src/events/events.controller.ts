@@ -181,6 +181,52 @@ export class EventsController {
     return this.eventsService.getEventTickets(id);
   }
 
+  /**
+   * Danh sách đại biểu công khai đã đăng ký / check-in cho sự kiện (Doanh Trí / Toạ đàm)
+   */
+  @Get(':id/public-attendees')
+  async getPublicAttendees(@Param('id') id: string) {
+    return this.eventsService.getPublicAttendees(id);
+  }
+
+  /**
+   * Danh sách đăng ký theo eventId cho CRM Quản trị
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(
+    'platform_admin',
+    'superadmin',
+    'adm',
+    'admin',
+    'bqt',
+    'btt',
+    'btv',
+    'btk',
+    'bxt',
+    'btn',
+    'quan_tri',
+    'tong_thu_ky',
+    'ban_thu_ky',
+    'truong_ban_truyen_thong',
+    'truong_ban_thanh_vien',
+    'truong_ban_xuc_tien',
+    'truong_ban_tai_chinh',
+    'truong_ban_thien_nguyen',
+    'member',
+  )
+  @Get(':id/registrations')
+  async listRegistrationsForEvent(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Query('associationId') associationId?: string,
+  ) {
+    return this.eventsService.listRegistrations(
+      req.user?.id || '',
+      associationId,
+      id,
+    );
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('platform_admin', 'superadmin', 'adm', 'admin', 'bqt', 'btt')
   @Post()

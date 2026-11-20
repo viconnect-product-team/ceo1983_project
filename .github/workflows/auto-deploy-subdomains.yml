@@ -83,6 +83,7 @@ jobs:
       - name: Build Frontend với Heap Memory 8GB (Chống tràn RAM)
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
+          NEST_API_URL: "http://backend:4000"
         run: |
           npm run build --prefix apps/ceo1983_app_fe
 
@@ -95,8 +96,8 @@ jobs:
           docker build -t ceo1983-frontend:latest -f deploy/ceo1983/Dockerfile.frontend .
           docker tag ceo1983-frontend:latest crm-frontend:latest
 
-          # 2. Build Backend Image từ root Dockerfile.backend
-          docker build -t ceo1983-backend:latest -f Dockerfile.backend .
+          # 2. Build Backend Image từ root Dockerfile.backend (không dùng cache để đảm bảo code mới nhất)
+          docker build --no-cache -t ceo1983-backend:latest -f Dockerfile.backend .
           docker tag ceo1983-backend:latest crm-backend:latest
 
           # 3. Nén images thành tar.gz để truyền nhanh qua SSH
@@ -158,13 +159,26 @@ jobs:
             set -e
             echo ">>> [1/5] Nạp Docker Images vào Docker Daemon trên VPS..."
             cd /root/deploy-cache/
-            if [ -f dist-images/frontend-images.tar.gz ]; then
-              docker load < dist-images/frontend-images.tar.gz
-              rm -f dist-images/frontend-images.tar.gz
+            FE_TAR=""
+            [ -f dist-images/frontend-images.tar.gz ] && FE_TAR="dist-images/frontend-images.tar.gz"
+            [ -f frontend-images.tar.gz ] && FE_TAR="frontend-images.tar.gz"
+            if [ -n "$FE_TAR" ]; then
+              echo ">>> Nạp $FE_TAR..."
+              docker load < "$FE_TAR"
+              rm -f "$FE_TAR"
+            else
+              echo ">>> [CẢNH BÁO] Không tìm thấy frontend-images.tar.gz!"
             fi
-            if [ -f dist-images/backend-images.tar.gz ]; then
-              docker load < dist-images/backend-images.tar.gz
-              rm -f dist-images/backend-images.tar.gz
+
+            BE_TAR=""
+            [ -f dist-images/backend-images.tar.gz ] && BE_TAR="dist-images/backend-images.tar.gz"
+            [ -f backend-images.tar.gz ] && BE_TAR="backend-images.tar.gz"
+            if [ -n "$BE_TAR" ]; then
+              echo ">>> Nạp $BE_TAR..."
+              docker load < "$BE_TAR"
+              rm -f "$BE_TAR"
+            else
+              echo ">>> [CẢNH BÁO] Không tìm thấy backend-images.tar.gz!"
             fi
 
             echo ">>> [2/5] Đảm bảo mạng nội bộ ceo1983-network & vione-network..."

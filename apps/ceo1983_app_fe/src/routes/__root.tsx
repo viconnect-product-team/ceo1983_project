@@ -597,6 +597,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     pathname.includes("/register") ||
     pathname.startsWith("/guest-event-register") ||
     (pathname.startsWith("/events/") && pathname.includes("/register")) ||
+    pathname.startsWith("/checkin") ||
+    pathname.startsWith("/guest-checkin") ||
     pathname === "/demo" ||
     pathname.startsWith("/h/") ||
     pathname === "/m" ||
@@ -610,7 +612,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     (pathname === "/" && tenantHost);
 
   useEffect(() => {
-    // CHẶN HOÀN TOÀN: Tuyệt đối không bao giờ redirect nếu người dùng đang truy cập cổng đăng ký hoặc đăng nhập
+    // CHẶN HOÀN TOÀN: Tuyệt đối không bao giờ redirect nếu người dùng đang truy cập cổng đăng ký hoặc đăng nhập hoặc check-in công khai
     const isRegisterOrAuthRoute =
       pathname === "/register" ||
       pathname.startsWith("/register") ||
@@ -620,7 +622,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       pathname === "/association/login" ||
       pathname.startsWith("/association/login") ||
       pathname === "/auth" ||
-      pathname.startsWith("/auth");
+      pathname.startsWith("/auth") ||
+      pathname.startsWith("/checkin") ||
+      pathname.startsWith("/guest-checkin");
 
     if (isRegisterOrAuthRoute) {
       return;

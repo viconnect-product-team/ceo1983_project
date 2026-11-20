@@ -18,6 +18,18 @@ if [ -d "$REPO_DIR/.git" ]; then
     cd "$REPO_DIR"
     git fetch origin "$BRANCH"
     git reset --hard "origin/$BRANCH"
+
+    echo ">>> Đồng bộ cấu hình triển khai sang các thư mục chạy..."
+    mkdir -p /root/association /root/crm /root/ssl-proxy
+    cp -a "$REPO_DIR/deploy/ceo1983/." /root/association/
+    cp -a "$REPO_DIR/deploy/crm/." /root/crm/
+    cp -a "$REPO_DIR/deploy/ssl/." /root/ssl-proxy/
+
+    if [ "$2" == "--build" ] || [ "$BUILD" == "1" ]; then
+        echo ">>> [Build] Đóng gói lại Docker Backend Image..."
+        docker build --no-cache -t ceo1983-backend:latest -f Dockerfile.backend .
+        docker tag ceo1983-backend:latest crm-backend:latest
+    fi
 else
     echo "Thư mục $REPO_DIR chưa có git repo. Đang sử dụng các thư mục deploy hiện có."
 fi
