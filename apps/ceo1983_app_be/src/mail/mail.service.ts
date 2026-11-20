@@ -3551,7 +3551,7 @@ export class MailService {
     <div class="footer">
       <div><strong>VIỆN DOANH TRÍ</strong></div>
       <div>Đồng hành cùng Doanh nghiệp Việt Nam phát triển bền vững</div>
-      <div style="margin-top: 6px;">Hotline: ${hotline} · Cổng liên kết: <a href="https://ceo1983.viconnect.vn">ceo1983.viconnect.vn</a></div>
+      <div style="margin-top: 6px;">Hotline: ${hotline}</div>
     </div>
   </div>
 </body>
@@ -3579,11 +3579,42 @@ export class MailService {
     onTimeCount: number;
     lateCount: number;
   }): Promise<{ ok: boolean; message?: string }> {
+    return this.sendCheckinReportEmail({
+      to: options.to,
+      eventName: options.eventName,
+      attachments: [
+        {
+          filename: options.filename,
+          content: options.excelBuffer,
+          contentType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+      totalAttendees: options.totalAttendees,
+      onTimeCount: options.onTimeCount,
+      lateCount: options.lateCount,
+    });
+  }
+
+  /**
+   * Gửi danh sách check-in sự kiện đính kèm file Word, PDF, Excel về email bất kỳ
+   */
+  async sendCheckinReportEmail(options: {
+    to: string;
+    eventName: string;
+    attachments: Array<{
+      filename: string;
+      content: Buffer;
+      contentType: string;
+    }>;
+    totalAttendees: number;
+    onTimeCount: number;
+    lateCount: number;
+  }): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
       eventName,
-      excelBuffer,
-      filename,
+      attachments,
       totalAttendees,
       onTimeCount,
       lateCount,
@@ -3593,6 +3624,8 @@ export class MailService {
     if (!cleanTo || !cleanTo.includes('@')) {
       return { ok: false, message: 'Invalid destination email' };
     }
+
+    const fileNamesList = attachments.map((a) => a.filename).join(', ');
 
     const subject = `[Báo Cáo Viện Doanh Trí] Danh Sách Đại Biểu Check-in Sự Kiện: ${eventName}`;
     const html = `
@@ -3610,7 +3643,7 @@ export class MailService {
   <div class="box">
     <h2 style="color: #8B0000; margin-top: 0;">DANH SÁCH ĐẠI BIỂU CHECK-IN SỰ KIỆN</h2>
     <p>Kính gửi Ban Tổ Chức / Quản Trị Viên,</p>
-    <p>Hệ thống trân trọng gửi đính kèm file Excel danh sách khách mời đã thực hiện quét mã QR check-in tại sự kiện:</p>
+    <p>Hệ thống Viện Doanh Trí trân trọng gửi đính kèm file danh sách khách mời đã thực hiện quét mã QR check-in tại sự kiện:</p>
     <div style="background: #fff5f5; border-left: 4px solid #8B0000; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #991b1b;">
       ${eventName}
     </div>
@@ -3628,9 +3661,9 @@ export class MailService {
         <div style="font-size: 22px; font-weight: 900; color: #d97706;">${lateCount}</div>
       </div>
     </div>
-    <p>File đính kèm: <strong>${filename}</strong></p>
+    <p>File đính kèm (${attachments.length} tệp): <strong>${fileNamesList}</strong></p>
     <p style="font-size: 12px; color: #64748b; margin-top: 30px;">
-      Báo cáo được trích xuất tự động thời gian thực từ Cổng Quản Trị CRM CEO 1983 & Viện Doanh Trí.
+      Báo cáo được trích xuất tự động thời gian thực từ Cổng Quản Trị Viện Doanh Trí.
     </p>
   </div>
 </body>
@@ -3642,15 +3675,8 @@ export class MailService {
       subject,
       html,
       fromName: 'Ban Tổ Chức Viện Doanh Trí',
-      auditContext: `[EXCEL_REPORT] ${eventName} sent to ${cleanTo}`,
-      attachments: [
-        {
-          filename,
-          content: excelBuffer,
-          contentType:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        },
-      ],
+      auditContext: `[REPORT_ATTACHMENTS] ${eventName} sent to ${cleanTo}`,
+      attachments,
     });
   }
 }
