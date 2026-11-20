@@ -42,6 +42,7 @@ import { EventCheckinGatekeeperModal } from "@/components/events/EventCheckinGat
 import { EventSponsorPackageSelector } from "@/components/events/EventSponsorPackageSelector";
 import { EventQrStaffSelector } from "@/components/events/EventQrStaffSelector";
 import { EventGuestQrPresenterModal } from "@/components/events/EventGuestQrPresenterModal";
+import { EventCheckinQrModal } from "@/components/events/EventCheckinQrModal";
 import { EventPosterModal } from "@/components/events/EventPosterModal";
 import { EventPoster } from "@/components/events/EventPoster";
 import { isValidDriveUrl } from "@/components/events/modals/EventDetailModal";
@@ -182,6 +183,7 @@ function EventDetailPage() {
   );
   const [cancelling, setCancelling] = useState(false);
   const [guestQrOpen, setGuestQrOpen] = useState(false);
+  const [checkinQrModalOpen, setCheckinQrModalOpen] = useState(false);
   const [posterOpen, setPosterOpen] = useState(false);
 
   const countdown = useCountdown(event.date, event.status);
@@ -474,6 +476,15 @@ function EventDetailPage() {
             >
               <Share2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />{" "}
               {t("edetail.share")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCheckinQrModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#8B0000] via-[#A52A2A] to-[#991b1b] hover:from-[#750000] hover:to-[#8B0000] px-4 py-2 text-sm font-bold text-white shadow-md transition cursor-pointer"
+              title="Mở mã QR Check-in điểm danh để khách mời quét bằng Zalo hoặc Máy ảnh"
+            >
+              <QrCode className="h-4 w-4 text-amber-300" aria-hidden="true" />
+              Mã QR Check-in Điểm Danh (Zalo)
             </button>
             <button
               type="button"
@@ -877,6 +888,19 @@ function EventDetailPage() {
           location: event.location,
           ticketPrice: (event as any).ticketPrice ?? (event as any).ticket_price ?? (event as any).fee,
           fee: (event as any).fee,
+        }}
+      />
+
+      <EventCheckinQrModal
+        open={checkinQrModalOpen}
+        onClose={() => setCheckinQrModalOpen(false)}
+        event={{
+          id: event.id,
+          name: event.name,
+          title: (event as any).title,
+          date: event.date ? fmt.date(event.date) : undefined,
+          time: (event as any).time,
+          location: event.location,
         }}
       />
 

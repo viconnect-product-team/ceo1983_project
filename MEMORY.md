@@ -1,5 +1,40 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.74): Khởi Tạo Sự Kiện Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp Việt 2027, Hệ Thống Quét Mã QR Check-in Điểm Danh Zalo, Public Check-in Form 4 Trường, Phân Loại 30 Phút Đúng Giờ / Muộn, Email Xác Nhận Tức Thì & Báo Cáo Xuất/Gửi Excel Danh Sách ([NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Hoàn Thành Khởi Tạo Sự Kiện Chuẩn CSDL 113.20.107.184:6432 (`public.events`)**:
+    * **Tên sự kiện**: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11 - TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”`
+    * **Tiêu đề & Tagline**: `TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”` · `Dòng tiền - Năng suất thực - Thị trường, trong kỷ nguyên AI`.
+    * **Thời gian & Địa điểm**: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00) tại Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội.
+    * **Hotline**: `0988.870.888 / 0903.203.204`.
+    * **Mã sự kiện**: `event-doanhtri-20261121` (Loại vé: Miễn phí `ticket_price: 0`, số lượng: 300 khách mời).
+  - **2. Kiến Trúc Mã QR Điểm Danh & Public Check-in Form (`/checkin/$eventId`)**:
+    * **Mã QR Zalo / Camera**: Mã hoá đường link ngắn gọn `${origin}/checkin/${eventId}`. Khách mời mở ứng dụng Zalo hoặc camera điện thoại quét mã QR tại quầy tiếp đón sẽ mở trực tiếp trang check-in mà không cần đăng nhập tài khoản.
+    * **Modal Trình Chiếu QR (`EventCheckinQrModal.tsx`)**: Tích hợp trên CRM Quản trị (`/event-registrations` và `/events/$eventId`), hỗ trợ: xem mã QR sắc nét, sao chép link, tải ảnh QR PNG, mở form trực tiếp và chế độ Trình chiếu toàn màn hình (Fullscreen) đặt tại bàn lễ tân / màn hình LED.
+    * **Form Check-in Rút Gọn Chuẩn 4 Trường**:
+      1. Họ và tên
+      2. Email (nhận email xác nhận)
+      3. Chức danh
+      4. Công ty / Doanh nghiệp
+      (Kèm số điện thoại tuỳ chọn liên hệ).
+    * **Logic Phân Loại 30 Phút Đúng Giờ vs Check-in Muộn**:
+      - Mốc khai mạc sự kiện: 14h30 ngày 21/11/2026.
+      - Check-in trong vòng 30 phút đầu (trước 15h00) => `checkinStatus = 'on_time'` (Điểm danh đúng giờ).
+      - Check-in sau 30 phút (từ 15h00 trở đi) => `checkinStatus = 'late'` (Ghi nhận check-in muộn).
+  - **3. Tự Động Gửi Email Xác Nhận Check-in Thuộc Về Viện Doanh Trí Tức Thì**:
+    * Khi khách bấm nút "Xác Nhận Check-in": Backend NestJS lập tức dispatch email xác nhận mang thương hiệu Viện Doanh Trí:
+      - Tiêu đề: `[Viện Doanh Trí] Cảm ơn Anh/Chị {fullName} đã check-in thành công - Kỷ niệm 4 năm Viện Doanh Trí`.
+      - Nội dung template: Lời cảm ơn trang trọng, thông tin đại biểu, thời gian check-in, huy hiệu phân loại (Đúng giờ trong 30p / Check-in muộn), lịch trình sự kiện và tiệc tri ân, hotline hỗ trợ 0988.870.888 / 0903.203.204.
+  - **4. Quản Lý Danh Sách Check-in Trên CRM, Xuất File Excel & Gửi File Excel Về Email**:
+    * **Bộ lọc Filter Tabs Phân Loại**: Chia rõ ràng 4 trạng thái: "Tất cả đại biểu", "✓ Đúng giờ (trong 30p)", "⏱ Check-in muộn (>30p)", "Chưa đến".
+    * **Xuất File Excel Trực Tiếp**: Nút "Xuất Excel Check-in" tải về file `.xlsx` định dạng bảng biểu trang trọng, có phân loại Đúng giờ vs Muộn, chức danh, công ty.
+    * **Gửi File Excel Về Email Bất Kỳ (`EventSendCheckinExcelModal.tsx`)**: Nút "Gửi Excel về Mail" mở modal nhập email người nhận, backend tạo Buffer file Excel `xlsx` đính kèm và gửi trực tiếp qua SMTP.
+  - **5. Kết Quả Kiểm Chứng**:
+    * CSDL chuẩn: Đã lưu trực tiếp vào `113.20.107.184:6432`.
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Router TanStack Router: `npm run routes:gen` sinh `routeTree.gen.ts` thành công.
+
+
 - **Bản cập nhật ngày 19/11/2026 (v11.73): Khắc Phục Triệt Để Lỗi WebSocket Handshake 307 "Unexpected response code: 307" Khi Kết Nối `wss://crm.ceo1983.viconnect.vn/socket.io/`, Tối Ưu Hóa 3 Tầng Nginx, Nitro Server Proxy & Socket.IO Client ([NODE-CORE-003], [NODE-CORE-004], [NODE-CRM-001])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
     * **Tầng Trình Duyệt / Client**: `use-connect-app-socket.ts` thiết lập `transports: ["websocket", "polling"]`. Cấu hình ép buộc WebSocket trước khiến Socket.IO client khởi tạo `new WebSocket("wss://crm.ceo1983.viconnect.vn/socket.io/?EIO=4&transport=websocket")` trực tiếp mà chưa qua bước handshake HTTP.
@@ -1886,6 +1921,41 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.74): Khởi Tạo Sự Kiện Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp Việt 2027, Hệ Thống Quét Mã QR Check-in Điểm Danh Zalo, Public Check-in Form 4 Trường, Phân Loại 30 Phút Đúng Giờ / Muộn, Email Xác Nhận Tức Thì & Báo Cáo Xuất/Gửi Excel Danh Sách ([NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Hoàn Thành Khởi Tạo Sự Kiện Chuẩn CSDL 113.20.107.184:6432 (`public.events`)**:
+    * **Tên sự kiện**: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11 - TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”`
+    * **Tiêu đề & Tagline**: `TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”` · `Dòng tiền - Năng suất thực - Thị trường, trong kỷ nguyên AI`.
+    * **Thời gian & Địa điểm**: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00) tại Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội.
+    * **Hotline**: `0988.870.888 / 0903.203.204`.
+    * **Mã sự kiện**: `event-doanhtri-20261121` (Loại vé: Miễn phí `ticket_price: 0`, số lượng: 300 khách mời).
+  - **2. Kiến Trúc Mã QR Điểm Danh & Public Check-in Form (`/checkin/$eventId`)**:
+    * **Mã QR Zalo / Camera**: Mã hoá đường link ngắn gọn `${origin}/checkin/${eventId}`. Khách mời mở ứng dụng Zalo hoặc camera điện thoại quét mã QR tại quầy tiếp đón sẽ mở trực tiếp trang check-in mà không cần đăng nhập tài khoản.
+    * **Modal Trình Chiếu QR (`EventCheckinQrModal.tsx`)**: Tích hợp trên CRM Quản trị (`/event-registrations` và `/events/$eventId`), hỗ trợ: xem mã QR sắc nét, sao chép link, tải ảnh QR PNG, mở form trực tiếp và chế độ Trình chiếu toàn màn hình (Fullscreen) đặt tại bàn lễ tân / màn hình LED.
+    * **Form Check-in Rút Gọn Chuẩn 4 Trường**:
+      1. Họ và tên
+      2. Email (nhận email xác nhận)
+      3. Chức danh
+      4. Công ty / Doanh nghiệp
+      (Kèm số điện thoại tuỳ chọn liên hệ).
+    * **Logic Phân Loại 30 Phút Đúng Giờ vs Check-in Muộn**:
+      - Mốc khai mạc sự kiện: 14h30 ngày 21/11/2026.
+      - Check-in trong vòng 30 phút đầu (trước 15h00) => `checkinStatus = 'on_time'` (Điểm danh đúng giờ).
+      - Check-in sau 30 phút (từ 15h00 trở đi) => `checkinStatus = 'late'` (Ghi nhận check-in muộn).
+  - **3. Tự Động Gửi Email Xác Nhận Check-in Thuộc Về Viện Doanh Trí Tức Thì**:
+    * Khi khách bấm nút "Xác Nhận Check-in": Backend NestJS lập tức dispatch email xác nhận mang thương hiệu Viện Doanh Trí:
+      - Tiêu đề: `[Viện Doanh Trí] Cảm ơn Anh/Chị {fullName} đã check-in thành công - Kỷ niệm 4 năm Viện Doanh Trí`.
+      - Nội dung template: Lời cảm ơn trang trọng, thông tin đại biểu, thời gian check-in, huy hiệu phân loại (Đúng giờ trong 30p / Check-in muộn), lịch trình sự kiện và tiệc tri ân, hotline hỗ trợ 0988.870.888 / 0903.203.204.
+  - **4. Quản Lý Danh Sách Check-in Trên CRM, Xuất File Excel & Gửi File Excel Về Email**:
+    * **Bộ lọc Filter Tabs Phân Loại**: Chia rõ ràng 4 trạng thái: "Tất cả đại biểu", "✓ Đúng giờ (trong 30p)", "⏱ Check-in muộn (>30p)", "Chưa đến".
+    * **Xuất File Excel Trực Tiếp**: Nút "Xuất Excel Check-in" tải về file `.xlsx` định dạng bảng biểu trang trọng, có phân loại Đúng giờ vs Muộn, chức danh, công ty.
+    * **Gửi File Excel Về Email Bất Kỳ (`EventSendCheckinExcelModal.tsx`)**: Nút "Gửi Excel về Mail" mở modal nhập email người nhận, backend tạo Buffer file Excel `xlsx` đính kèm và gửi trực tiếp qua SMTP.
+  - **5. Kết Quả Kiểm Chứng**:
+    * CSDL chuẩn: Đã lưu trực tiếp vào `113.20.107.184:6432`.
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Router TanStack Router: `npm run routes:gen` sinh `routeTree.gen.ts` thành công.
+
 
 - **Bản cập nhật ngày 19/11/2026 (v11.73): Khắc Phục Triệt Để Lỗi WebSocket Handshake 307 "Unexpected response code: 307" Khi Kết Nối `wss://crm.ceo1983.viconnect.vn/socket.io/`, Tối Ưu Hóa 3 Tầng Nginx, Nitro Server Proxy & Socket.IO Client ([NODE-CORE-003], [NODE-CORE-004], [NODE-CRM-001])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ**:
@@ -5015,6 +5085,41 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.74): Khởi Tạo Sự Kiện Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp Việt 2027, Hệ Thống Quét Mã QR Check-in Điểm Danh Zalo, Public Check-in Form 4 Trường, Phân Loại 30 Phút Đúng Giờ / Muộn, Email Xác Nhận Tức Thì & Báo Cáo Xuất/Gửi Excel Danh Sách ([NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Hoàn Thành Khởi Tạo Sự Kiện Chuẩn CSDL 113.20.107.184:6432 (`public.events`)**:
+    * **Tên sự kiện**: `KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11 - TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”`
+    * **Tiêu đề & Tagline**: `TOẠ ĐÀM “DOANH NGHIỆP VIỆT 2027: CỦNG CỐ NỘI LỰC - KẾT NỐI - TẠO ĐÀ TĂNG TRƯỞNG”` · `Dòng tiền - Năng suất thực - Thị trường, trong kỷ nguyên AI`.
+    * **Thời gian & Địa điểm**: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00) tại Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội.
+    * **Hotline**: `0988.870.888 / 0903.203.204`.
+    * **Mã sự kiện**: `event-doanhtri-20261121` (Loại vé: Miễn phí `ticket_price: 0`, số lượng: 300 khách mời).
+  - **2. Kiến Trúc Mã QR Điểm Danh & Public Check-in Form (`/checkin/$eventId`)**:
+    * **Mã QR Zalo / Camera**: Mã hoá đường link ngắn gọn `${origin}/checkin/${eventId}`. Khách mời mở ứng dụng Zalo hoặc camera điện thoại quét mã QR tại quầy tiếp đón sẽ mở trực tiếp trang check-in mà không cần đăng nhập tài khoản.
+    * **Modal Trình Chiếu QR (`EventCheckinQrModal.tsx`)**: Tích hợp trên CRM Quản trị (`/event-registrations` và `/events/$eventId`), hỗ trợ: xem mã QR sắc nét, sao chép link, tải ảnh QR PNG, mở form trực tiếp và chế độ Trình chiếu toàn màn hình (Fullscreen) đặt tại bàn lễ tân / màn hình LED.
+    * **Form Check-in Rút Gọn Chuẩn 4 Trường**:
+      1. Họ và tên
+      2. Email (nhận email xác nhận)
+      3. Chức danh
+      4. Công ty / Doanh nghiệp
+      (Kèm số điện thoại tuỳ chọn liên hệ).
+    * **Logic Phân Loại 30 Phút Đúng Giờ vs Check-in Muộn**:
+      - Mốc khai mạc sự kiện: 14h30 ngày 21/11/2026.
+      - Check-in trong vòng 30 phút đầu (trước 15h00) => `checkinStatus = 'on_time'` (Điểm danh đúng giờ).
+      - Check-in sau 30 phút (từ 15h00 trở đi) => `checkinStatus = 'late'` (Ghi nhận check-in muộn).
+  - **3. Tự Động Gửi Email Xác Nhận Check-in Thuộc Về Viện Doanh Trí Tức Thì**:
+    * Khi khách bấm nút "Xác Nhận Check-in": Backend NestJS lập tức dispatch email xác nhận mang thương hiệu Viện Doanh Trí:
+      - Tiêu đề: `[Viện Doanh Trí] Cảm ơn Anh/Chị {fullName} đã check-in thành công - Kỷ niệm 4 năm Viện Doanh Trí`.
+      - Nội dung template: Lời cảm ơn trang trọng, thông tin đại biểu, thời gian check-in, huy hiệu phân loại (Đúng giờ trong 30p / Check-in muộn), lịch trình sự kiện và tiệc tri ân, hotline hỗ trợ 0988.870.888 / 0903.203.204.
+  - **4. Quản Lý Danh Sách Check-in Trên CRM, Xuất File Excel & Gửi File Excel Về Email**:
+    * **Bộ lọc Filter Tabs Phân Loại**: Chia rõ ràng 4 trạng thái: "Tất cả đại biểu", "✓ Đúng giờ (trong 30p)", "⏱ Check-in muộn (>30p)", "Chưa đến".
+    * **Xuất File Excel Trực Tiếp**: Nút "Xuất Excel Check-in" tải về file `.xlsx` định dạng bảng biểu trang trọng, có phân loại Đúng giờ vs Muộn, chức danh, công ty.
+    * **Gửi File Excel Về Email Bất Kỳ (`EventSendCheckinExcelModal.tsx`)**: Nút "Gửi Excel về Mail" mở modal nhập email người nhận, backend tạo Buffer file Excel `xlsx` đính kèm và gửi trực tiếp qua SMTP.
+  - **5. Kết Quả Kiểm Chứng**:
+    * CSDL chuẩn: Đã lưu trực tiếp vào `113.20.107.184:6432`.
+    * Backend `apps/ceo1983_app_be`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend `apps/ceo1983_app_fe`: `tsc --noEmit` -> **Exit code 0 (0 errors)**.
+    * Router TanStack Router: `npm run routes:gen` sinh `routeTree.gen.ts` thành công.
+
 
 - **Bản cập nhật ngày 19/11/2026 (v11.73): Khắc Phục Triệt Để Lỗi WebSocket Handshake 307 "Unexpected response code: 307" Khi Kết Nối `wss://crm.ceo1983.viconnect.vn/socket.io/`, Tối Ưu Hóa 3 Tầng Nginx, Nitro Server Proxy & Socket.IO Client ([NODE-CORE-003], [NODE-CORE-004], [NODE-CRM-001])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ**:

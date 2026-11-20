@@ -8,6 +8,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as XLSX from 'xlsx';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { ZaloService } from '../zalo/zalo.service';
@@ -64,6 +65,10 @@ export class EventsService implements OnModuleInit {
         `
       ALTER TABLE public.events ADD COLUMN IF NOT EXISTS photo_gallery_url text DEFAULT '';
       ALTER TABLE public.events ADD COLUMN IF NOT EXISTS tagline text DEFAULT '';
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS phone text DEFAULT '';
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS company text DEFAULT '';
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS position text DEFAULT '';
+      ALTER TABLE public.event_registrations ADD COLUMN IF NOT EXISTS checkin_status text DEFAULT '';
     `,
       )
       .catch(() => {});
@@ -332,6 +337,20 @@ export class EventsService implements OnModuleInit {
   }
 
   private mapRegRow(r: any) {
+    let parsedPayload: any = {};
+    if (r.qr_payload && typeof r.qr_payload === 'string') {
+      try {
+        parsedPayload = JSON.parse(r.qr_payload);
+      } catch {}
+    }
+    const checkinStatus =
+      r.checkin_status ||
+      parsedPayload.checkinStatus ||
+      (r.checked_in_at ? 'on_time' : '');
+    const company = r.company || parsedPayload.company || '';
+    const position = r.position || parsedPayload.position || '';
+    const phone = r.phone || parsedPayload.phone || '';
+
     return {
       id: r.id,
       eventId: r.event_id,
@@ -345,6 +364,9 @@ export class EventsService implements OnModuleInit {
       memberCode: r.member_code,
       memberName: r.member_name ?? '',
       email: r.email ?? '',
+      phone,
+      company,
+      position,
       registeredAt: r.registered_at
         ? r.registered_at instanceof Date
           ? r.registered_at.toISOString().slice(0, 10)
@@ -364,6 +386,7 @@ export class EventsService implements OnModuleInit {
           ? r.checked_in_at.toISOString()
           : String(r.checked_in_at)
         : null,
+      checkinStatus,
       luckyNumber: r.lucky_number ?? '',
     };
   }
@@ -3901,5 +3924,324 @@ export class EventsService implements OnModuleInit {
     }
 
     return { ok: true, deleted: true, id: registrationId };
+  }
+
+  /**
+   * Check-in công khai sự kiện qua mã QR (dành cho khách quét Zalo / camera điện thoại)
+   * Form chỉ gồm: Tên, email, chức danh, công ty
+   * Phân loại check-in: tối thiểu trong 30 phút (trước/trong 30 phút từ lúc bắt đầu) là đúng giờ ('on_time'), sau 30 phút là muộn ('late').
+   * Ngay lập tức gửi email thông báo check-in thành công thuộc Viện Doanh Trí về email người đã điền.
+   */
+  async publicCheckin(eventId: string, body: any) {
+    const fullName = String(body?.fullName || body?.name || '').trim();
+    const email = String(body?.email || '').trim().toLowerCase();
+    const position = String(body?.position || body?.title || '').trim();
+    const company = String(body?.company || '').trim();
+    const phone = String(body?.phone || '').trim();
+
+    if (!fullName) {
+      throw new BadRequestException('Vui lòng nhập Họ và tên để check-in');
+    }
+    if (!email || !email.includes('@')) {
+      throw new BadRequestException(
+        'Vui lòng nhập địa chỉ Email hợp lệ để nhận xác nhận',
+      );
+    }
+
+    // 1. Tìm sự kiện
+    const eventRows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+
+    let targetEvent: any = eventRows.length > 0 ? eventRows[0] : null;
+    if (!targetEvent) {
+      const allEvents = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events LIMIT 10
+      `.catch(() => []);
+      targetEvent =
+        allEvents.find((e: any) => e.id === eventId || e.slug === eventId) ||
+        null;
+    }
+
+    if (!targetEvent) {
+      throw new NotFoundException('Không tìm thấy thông tin sự kiện');
+    }
+
+    const event = targetEvent;
+    const resolvedEventId = event.id;
+
+    // 2. Tính toán phân loại check-in (30 phút từ thời điểm bắt đầu)
+    // Sự kiện 14h30 ngày 21/11/2026 => Mốc 30 phút là 15h00
+    const now = new Date();
+    let startTimeHours = 14;
+    let startTimeMinutes = 30;
+    if (event.time && typeof event.time === 'string') {
+      const m = event.time.match(/(\d{1,2})[h:](\d{2})/i);
+      if (m) {
+        startTimeHours = parseInt(m[1], 10);
+        startTimeMinutes = parseInt(m[2], 10);
+      }
+    }
+
+    let thresholdDate: Date;
+    if (event.date) {
+      const dStr =
+        event.date instanceof Date
+          ? event.date.toISOString().slice(0, 10)
+          : String(event.date).slice(0, 10);
+      thresholdDate = new Date(
+        `${dStr}T${String(startTimeHours).padStart(2, '0')}:${String(startTimeMinutes).padStart(2, '0')}:00+07:00`,
+      );
+    } else {
+      thresholdDate = new Date('2026-11-21T14:30:00+07:00');
+    }
+    // Ngưỡng 30 phút sau khi khai mạc
+    thresholdDate.setMinutes(thresholdDate.getMinutes() + 30);
+
+    const checkinStatus: 'on_time' | 'late' =
+      now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
+
+    // 3. Tra cứu xem email này đã đăng ký trước cho sự kiện chưa
+    const existing = await this.prisma.$queryRaw<any[]>`
+      SELECT id, checkin_status, checked_in_at FROM public.event_registrations 
+      WHERE event_id = ${resolvedEventId} AND email = ${email}
+      LIMIT 1
+    `.catch(() => []);
+
+    let regId: string;
+    const qrPayload = JSON.stringify({
+      fullName,
+      email,
+      position,
+      company,
+      phone,
+      checkinStatus,
+      checkedInAt: now.toISOString(),
+      source: 'public_qr_checkin',
+    });
+
+    if (existing.length > 0) {
+      regId = existing[0].id;
+      await this.prisma.$executeRawUnsafe(
+        `
+        UPDATE public.event_registrations
+        SET member_name = $1,
+            company = $2,
+            position = $3,
+            phone = CASE WHEN $4 != '' THEN $4 ELSE phone END,
+            checkin_status = $5,
+            checked_in_at = NOW(),
+            qr_payload = $6,
+            updated_at = NOW()
+        WHERE id = $7
+      `,
+        fullName,
+        company,
+        position,
+        phone,
+        checkinStatus,
+        qrPayload,
+        regId,
+      );
+    } else {
+      regId = `REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+      const memberCode = `GUEST-${Math.floor(1000 + Math.random() * 9000)}`;
+      const assocId =
+        event.association_id && String(event.association_id).length === 36
+          ? event.association_id
+          : 'c1983000-0000-4000-8000-000000001983';
+
+      await this.prisma.$executeRawUnsafe(
+        `
+        INSERT INTO public.event_registrations (
+          id, event_id, member_code, member_name, email, phone, company, position,
+          registered_at, status, ticket_type, association_id, payment_status,
+          checkin_status, checked_in_at, qr_payload, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8,
+          NOW()::date, 'confirmed', 'Vé Mời Toạ Đàm', $9::uuid, 'free',
+          $10, NOW(), $11, NOW(), NOW()
+        )
+      `,
+        regId,
+        resolvedEventId,
+        memberCode,
+        fullName,
+        email,
+        phone,
+        company,
+        position,
+        assocId,
+        checkinStatus,
+        qrPayload,
+      );
+
+      await this.prisma
+        .$executeRawUnsafe(
+          `UPDATE public.events SET registered = COALESCE(registered, 0) + 1 WHERE id = $1`,
+          resolvedEventId,
+        )
+        .catch(() => null);
+    }
+
+    const checkedInAtFormatted = now.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    // 4. Ngay lập tức gửi email xác nhận check-in thành công về hòm thư người đã điền
+    this.mailService
+      .sendDoanhTriCheckinSuccessEmail({
+        to: email,
+        fullName,
+        position,
+        company,
+        eventTitle: event.name || event.title,
+        eventDate: 'Thứ 7, ngày 21/11/2026',
+        eventTime: '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
+        eventLocation:
+          event.location ||
+          'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
+        checkedInAt: checkedInAtFormatted,
+        checkinStatus,
+        hotline: '0988.870.888 / 0903.203.204',
+      })
+      .catch((err) => {
+        this.logger.warn(
+          `Failed to send checkin confirmation email: ${err.message}`,
+        );
+      });
+
+    return {
+      ok: true,
+      registrationId: regId,
+      fullName,
+      email,
+      position,
+      company,
+      checkinStatus,
+      checkedInAt: checkedInAtFormatted,
+      eventTitle: event.name || event.title,
+      message:
+        checkinStatus === 'on_time'
+          ? 'Check-in thành công! (Điểm danh đúng giờ trong 30 phút)'
+          : 'Check-in thành công! (Điểm danh sau 30 phút - Ghi nhận check-in muộn)',
+    };
+  }
+
+  /**
+   * Xuất và gửi file Excel danh sách khách đã check-in sự kiện về email được chỉ định
+   */
+  async sendCheckinExcelEmail(
+    userId: string,
+    eventId: string,
+    targetEmail: string,
+  ) {
+    const cleanEmail = (targetEmail || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new BadRequestException(
+        'Vui lòng cung cấp địa chỉ email hợp lệ để nhận file Excel',
+      );
+    }
+
+    const events = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
+    `.catch(() => []);
+    if (!events.length) {
+      throw new NotFoundException('Không tìm thấy sự kiện');
+    }
+    const event = events[0];
+
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM public.event_registrations
+      WHERE event_id = ${eventId} AND status != 'cancelled'
+      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
+    `.catch(() => []);
+
+    const excelData = rows.map((r, index) => {
+      let parsed: any = {};
+      try {
+        if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
+      } catch {}
+
+      const checkinTime = r.checked_in_at
+        ? new Date(r.checked_in_at).toLocaleString('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+          })
+        : 'Chưa check-in';
+      const statusText =
+        r.checkin_status === 'on_time'
+          ? 'Đúng giờ (trong 30p)'
+          : r.checkin_status === 'late'
+            ? 'Check-in muộn (>30p)'
+            : r.checked_in_at
+              ? 'Đã check-in'
+              : 'Chưa check-in';
+
+      return {
+        STT: index + 1,
+        'Mã Đăng Ký': r.id,
+        'Họ và Tên': r.member_name || parsed.fullName || '—',
+        Email: r.email || parsed.email || '—',
+        'Chức Danh': r.position || parsed.position || '—',
+        'Công Ty / Doanh Nghiệp': r.company || parsed.company || '—',
+        'Số Điện Thoại': r.phone || parsed.phone || '—',
+        'Thời Gian Check-in': checkinTime,
+        'Phân Loại Check-in': statusText,
+        'Hạng Vé': r.ticket_type || 'Vé Mời',
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    worksheet['!cols'] = [
+      { wch: 6 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 28 },
+      { wch: 20 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 22 },
+      { wch: 24 },
+      { wch: 15 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh_Sach_CheckIn');
+
+    const excelBuffer = XLSX.write(workbook, {
+      type: 'buffer',
+      bookType: 'xlsx',
+    });
+    const filename = `Danh_Sach_Checkin_${eventId}_${Date.now()}.xlsx`;
+
+    const onTimeCount = rows.filter(
+      (r) => r.checkin_status === 'on_time',
+    ).length;
+    const lateCount = rows.filter((r) => r.checkin_status === 'late').length;
+
+    await this.mailService.sendCheckinListExcelEmail({
+      to: cleanEmail,
+      eventName: event.name || event.title,
+      excelBuffer,
+      filename,
+      totalAttendees: rows.filter((r) => r.checked_in_at).length,
+      onTimeCount,
+      lateCount,
+    });
+
+    return {
+      ok: true,
+      sentTo: cleanEmail,
+      totalAttendees: rows.length,
+      onTimeCount,
+      lateCount,
+      message: `Đã gửi file Excel danh sách check-in thành công tới ${cleanEmail}!`,
+    };
   }
 }
