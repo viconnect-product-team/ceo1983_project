@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   QrCode,
   X,
@@ -11,12 +11,15 @@ import {
   Calendar,
   MapPin,
   Phone,
-  ShieldCheck,
   Clock,
   Lock,
+  Laptop,
+  Globe,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAbsoluteQrUrl } from "@/lib/qr";
+import { VienDoanhTriBrandBanner } from "./VienDoanhTriBrandBanner";
 
 interface EventCheckinQrModalProps {
   open: boolean;
@@ -39,28 +42,55 @@ export function EventCheckinQrModal({
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Xác định môi trường chạy: localhost hay production
+  const [isLocalHost, setIsLocalHost] = useState(false);
+  const [activeTab, setActiveTab] = useState<"prod" | "local">("prod");
+  const [localOrigin, setLocalOrigin] = useState("http://localhost:5173");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.");
+      setIsLocalHost(isLocal);
+      setLocalOrigin(`http://${window.location.host}`);
+      // Nếu đang mở trên localhost thì ưu tiên tab local để tránh lỗi SSL
+      if (isLocal) {
+        setActiveTab("local");
+      }
+    }
+  }, []);
+
   if (!open) return null;
 
-  // Đường link check-in công khai chuẩn HTTPS của Viện Doanh Trí
-  const checkinUrl = `https://crm.ceo1983.viconnect.vn/checkin/${event.id}`;
-  const qrImageUrl = getAbsoluteQrUrl(checkinUrl, 500);
+  // 1. Link chính thức HTTPS của Viện Doanh Trí (dùng cho in ấn, quét Zalo, khách mời)
+  const prodCheckinUrl = `https://crm.ceo1983.viconnect.vn/checkin/${event.id}`;
+  
+  // 2. Link máy cục bộ HTTP (dành cho thử nghiệm localhost, cam kết không lỗi SSL)
+  const localCheckinUrl = `${localOrigin}/checkin/${event.id}`;
+
+  const currentCheckinUrl = activeTab === "local" ? localCheckinUrl : prodCheckinUrl;
+  const qrImageUrl = getAbsoluteQrUrl(currentCheckinUrl, 500);
 
   const eventName =
     event.name ||
     event.title ||
-    "KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027";
+    "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN 20/11";
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(checkinUrl);
+    navigator.clipboard.writeText(currentCheckinUrl);
     setCopied(true);
-    toast.success("Đã sao chép liên kết Check-in HTTPS!");
+    toast.success(
+      activeTab === "local"
+        ? "Đã sao chép liên kết Check-in Localhost (HTTP)!"
+        : "Đã sao chép liên kết Check-in Chính Thức (HTTPS)!"
+    );
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadQr = () => {
     const a = document.createElement("a");
     a.href = qrImageUrl;
-    a.download = `QR_Checkin_Vien_Doanh_Tri_${event.id}.png`;
+    a.download = `QR_Checkin_Vien_Doanh_Tri_${event.id}_${activeTab}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -72,10 +102,10 @@ export function EventCheckinQrModal({
       <div
         className={`relative w-full ${
           isFullscreen ? "max-w-4xl h-[95vh]" : "max-w-xl"
-        } bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col transition-all duration-300`}
+        } bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col transition-all duration-300 max-h-[92vh]`}
       >
         {/* Top Header Viện Doanh Trí */}
-        <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-6 py-4 text-white flex items-center justify-between shadow-md">
+        <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-6 py-4 text-white flex items-center justify-between shadow-md shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md text-white font-black flex items-center justify-center text-lg shadow-lg ring-2 ring-white/40">
               DT
@@ -86,7 +116,7 @@ export function EventCheckinQrModal({
                 VIỆN DOANH TRÍ · QUẦY ĐÓN TIẾP & ĐIỂM DANH
               </span>
               <h2 className="text-base sm:text-lg font-bold leading-tight line-clamp-1">
-                Mã QR Quét Check-in Sự Kiện
+                Mã QR Quét Check-in Điểm Danh
               </h2>
             </div>
           </div>
@@ -108,34 +138,52 @@ export function EventCheckinQrModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 text-center space-y-4 overflow-y-auto flex-1 flex flex-col items-center justify-center">
-          <div className="max-w-md mx-auto">
-            <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 border border-sky-200 text-[#005BAC] mb-2">
-              Kỷ niệm 4 năm Viện Doanh Trí & Tri ân 20/11
-            </span>
-            <h3 className="text-base sm:text-lg font-extrabold text-slate-800 line-clamp-2">
-              {eventName}
-            </h3>
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-2 text-xs text-slate-500 font-medium">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[#00A859]" />
-                21/11/2026 (14h30 - 17h30)
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-[#005BAC]" />
-                Check-in 30 phút đầu: Đúng giờ
-              </span>
-            </div>
+        <div className="p-5 sm:p-6 text-center space-y-4 overflow-y-auto flex-1 flex flex-col items-center">
+          {/* Banner Nhận diện Viện Doanh Trí chuẩn Ảnh 1 */}
+          <div className="w-full bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
+            <VienDoanhTriBrandBanner variant="light" />
           </div>
 
-          {/* Liên kết chuẩn HTTPS của Viện Doanh Trí */}
+          {/* Tab chuyển đổi môi trường QR (Chính Thức HTTPS vs Localhost HTTP) */}
+          <div className="w-full max-w-md flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setActiveTab("prod")}
+              className={`flex-1 py-1.5 px-2.5 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === "prod"
+                  ? "bg-white text-[#005BAC] shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-[#005BAC]" />
+              <span>🌐 Chính Thức (HTTPS)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("local")}
+              className={`flex-1 py-1.5 px-2.5 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === "local"
+                  ? "bg-white text-[#00A859] shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Laptop className="w-3.5 h-3.5 text-[#00A859]" />
+              <span>💻 Test Localhost (HTTP)</span>
+            </button>
+          </div>
+
+          {/* Thanh hiển thị URL hiện hành */}
           <div className="w-full max-w-md bg-emerald-50 border border-emerald-200/80 p-2.5 rounded-2xl flex items-center justify-between text-xs gap-2">
             <div className="flex items-center gap-1.5 min-w-0 text-emerald-900 font-semibold truncate">
-              <Lock className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
-              <span className="truncate font-mono text-[11px]">{checkinUrl}</span>
+              {activeTab === "prod" ? (
+                <Lock className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
+              ) : (
+                <Laptop className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />
+              )}
+              <span className="truncate font-mono text-[11px]">{currentCheckinUrl}</span>
             </div>
             <a
-              href={checkinUrl}
+              href={currentCheckinUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="px-2.5 py-1 rounded-lg bg-[#005BAC] hover:bg-[#004a8f] text-white text-[11px] font-bold shrink-0 transition shadow-2xs"
@@ -144,14 +192,24 @@ export function EventCheckinQrModal({
             </a>
           </div>
 
-          {/* QR Code Presentation Frame */}
+          {/* Cảnh báo an toàn SSL */}
+          {activeTab === "local" && (
+            <div className="w-full max-w-md bg-amber-50 border border-amber-200 rounded-xl p-2 text-[11px] text-amber-900 flex items-center gap-2 text-left">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Ghi chú Localhost:</strong> Dùng giao thức <code>http://</code> để không bị lỗi SSL <code>ERR_SSL_PROTOCOL_ERROR</code> trên máy tính!
+              </span>
+            </div>
+          )}
+
+          {/* Khung trình chiếu mã QR */}
           <div className="relative p-4 bg-white rounded-3xl border-2 border-dashed border-[#005BAC] shadow-xl flex flex-col items-center justify-center group">
             <div className="bg-gradient-to-b from-sky-50 to-white p-3 rounded-2xl border border-sky-100">
               <img
                 src={qrImageUrl}
                 alt="Mã QR Check-in Sự Kiện"
                 className={`${
-                  isFullscreen ? "w-80 h-80" : "w-56 h-56 sm:w-64 sm:h-64"
+                  isFullscreen ? "w-80 h-80" : "w-52 h-52 sm:w-60 sm:h-60"
                 } object-contain rounded-xl transition-transform duration-200`}
               />
             </div>
@@ -161,7 +219,7 @@ export function EventCheckinQrModal({
             </div>
           </div>
 
-          {/* Hotline & Notice */}
+          {/* Hotline & Địa điểm */}
           <div className="w-full max-w-md bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600 text-left space-y-1">
             <div className="flex items-center gap-2 font-semibold text-slate-800">
               <MapPin className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
@@ -174,7 +232,7 @@ export function EventCheckinQrModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="w-full max-w-md flex flex-wrap items-center justify-center gap-2 pt-2">
+          <div className="w-full max-w-md flex flex-wrap items-center justify-center gap-2 pt-1 pb-2">
             <button
               onClick={handleCopy}
               className="flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm cursor-pointer"
@@ -201,7 +259,7 @@ export function EventCheckinQrModal({
             </button>
 
             <a
-              href={checkinUrl}
+              href={currentCheckinUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004b99] hover:to-[#00964e] text-white text-xs font-bold transition shadow-md cursor-pointer"

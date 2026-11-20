@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
+import { VienDoanhTriBrandBanner } from "@/components/events/VienDoanhTriBrandBanner";
 
 export const Route = createFileRoute("/checkin/$eventId")({
   ssr: false,
@@ -470,49 +471,9 @@ function PublicEventCheckinPage() {
               </span>
             </div>
 
-            {/* Header thông tin sự kiện nhận diện Viện Doanh Trí chuẩn theo Image 1 */}
-            <div className="bg-white p-6 sm:p-7 border-b border-slate-200 text-center">
-              <div className="inline-flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
-                <div className="text-right">
-                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
-                    CHƯƠNG TRÌNH
-                  </div>
-                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
-                    KỶ NIỆM
-                  </div>
-                </div>
-                <div className="h-10 sm:h-12 w-[2px] bg-slate-300 mx-1 hidden sm:block" />
-                <div className="text-4xl sm:text-5xl font-black text-[#00A859] leading-none px-1">
-                  4
-                </div>
-                <div className="text-left">
-                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
-                    NĂM THÀNH LẬP
-                  </div>
-                  <div className="text-xs sm:text-sm font-black text-[#003B7A] tracking-wider uppercase leading-tight">
-                    VIỆN DOANH TRÍ
-                  </div>
-                </div>
-              </div>
-              <div className="mt-2.5 text-xs sm:text-sm font-extrabold text-[#008A44] tracking-wider uppercase">
-                &amp; TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11
-              </div>
-
-              {/* Thông tin Thời gian & Địa điểm (chỉ text gọn theo yêu cầu) */}
-              <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-col gap-1.5 text-xs text-slate-600 max-w-md mx-auto">
-                <div className="flex items-center justify-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#00A859] shrink-0" />
-                  <span className="font-bold text-slate-800">14h30 - 17h30, Thứ 7, ngày 21/11/2026</span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <MapPin className="w-4 h-4 text-[#00A859] shrink-0" />
-                  <span className="font-bold text-slate-800">Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy</span>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500">
-                  <Phone className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />
-                  <span>Hotline BTC: 0988.870.888 / 0903.203.204</span>
-                </div>
-              </div>
+            {/* Header thông tin sự kiện nhận diện Viện Doanh Trí chuẩn đồ họa Ảnh 1 */}
+            <div className="bg-white p-6 sm:p-7 border-b border-slate-200">
+              <VienDoanhTriBrandBanner variant="light" showTimeAndLocation={true} />
             </div>
 
             {/* Tab chuyển đổi giữa Form và Danh sách đại biểu */}
