@@ -1,5 +1,25 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.82): Nâng Cấp Tự Động Cấp Phát Chứng Chỉ SSL Let's Encrypt CA Trusted Cho `crm.ceo1983.viconnect.vn` & `ceo1983.viconnect.vn`, Khắc Phục Triệt Để Lỗi Zalo `NET::ERR_CERT_AUTHORITY_INVALID` ([NODE-CORE-006])**:
+  - **1. Phân Tích Thực Trạng Nguyên Nhân Gốc Rễ Lỗi SSL**:
+    * Khi kiểm tra trực tiếp qua mạng internet tới IP VPS `14.225.217.232` (port 443 và port 80):
+      - Cổng 80 (HTTP): Nginx máy chủ Ubuntu trước đó thực hiện `301 Moved Permanently` toàn bộ sang `https://crm.ceo1983.viconnect.vn/checkin/...`.
+      - Cổng 443 (HTTPS): Nginx máy chủ đang sử dụng chứng chỉ tự ký OpenSSL (`/etc/nginx/ssl/ceo1983.crt`), chưa được cấp phát chứng chỉ CA Trusted từ Let's Encrypt.
+      - Trình duyệt nhúng Zalo và Android/iOS WebView kiểm tra Root CA rất nghiêm ngặt, từ chối kết nối tự ký và hiển thị màn hình cảnh báo: `Lỗi chứng chỉ bảo mật! Chứng chỉ bảo mật không đáng tin cậy NET::ERR_CERT_AUTHORITY_INVALID`.
+    * **Lý do Certbot trước đây chưa cấp được**:
+      - `setup-ssl.sh` cũ gọi `certbot` trước khi Nginx cập nhật và kích hoạt cấu hình webroot `location /.well-known/acme-challenge/`.
+      - Máy chủ Let's Encrypt kiểm tra HTTP port 80 thì bị Nginx redirect 301 sang HTTPS tự ký, dẫn đến xác thực thất bại.
+  - **2. Giải Pháp Xử Lý Toàn Diện & Tự Động Hóa 100% Trong `deploy/ssl/setup-ssl.sh`**:
+    * **Tự động cài đặt Certbot**: Tự động kiểm tra và cài đặt `certbot` cùng plugin `python3-certbot-nginx` qua `apt-get` nếu chưa có trên VPS.
+    * **Quy trình 2 pha hoàn hảo**:
+      - **Pha 1**: Khởi tạo webroot `/var/www/certbot`, cấu hình Port 80 đón nhận challenge `/.well-known/acme-challenge/` và phục vụ trực tiếp `/checkin` (không redirect). Tải lại Nginx ngay lập tức để port 80 sẵn sàng tiếp nhận kiểm tra ACME từ Let's Encrypt.
+      - **Pha 2**: Kích hoạt Certbot cấp chứng chỉ thật (CA Trusted) cho cả 2 tên miền `crm.ceo1983.viconnect.vn` và `ceo1983.viconnect.vn`.
+    * **Tự động áp dụng & reload Nginx**:
+      - Khi có file chứng chỉ `/etc/letsencrypt/live/.../fullchain.pem`, script tự động gán đường dẫn vào Nginx Host, đồng bộ vào `/root/ssl-proxy/server.crt` cho Docker container, xóa sạch các file cấu hình cũ gây xung đột trong `/etc/nginx/sites-enabled/`, và reload Nginx mượt mà.
+    * **Thiết lập Cron tự động gia hạn**: Đặt cron `0 3 * * * root certbot renew --quiet --deploy-hook "systemctl reload nginx"` tại `/etc/cron.d/certbot-renew`.
+  - **3. Hướng Dẫn Vận Hành Cho Người Dùng**:
+    * Cách 1: Chạy script `.\deploy\ssl\deploy-ssl.ps1` từ máy tính Windows để tự động SCP và kích hoạt trên VPS.
+    * Cách 2: Chạy trực tiếp 1 lệnh trên terminal VPS: `bash /root/ssl-proxy/setup-ssl.sh`.
 - **Bản cập nhật ngày 20/11/2026 (v11.81): Chuẩn Hóa Màu Sắc Email Xác Nhận Check-in Viện Doanh Trí, Bổ Sung Header Trang Trọng Vào File Báo Cáo (Excel, Word, PDF), Thêm Dropdown Chọn Sự Kiện & Khắc Phục Triệt Để Lỗi 404 "Không Tìm Thấy Sự Kiện Nào" ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa 100% Màu Sắc Mẫu Email Xác Nhận Check-in Cá Nhân**:
     * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts` (`sendDoanhTriCheckinSuccessEmail`):
@@ -2147,6 +2167,26 @@
 
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.82): Nâng Cấp Tự Động Cấp Phát Chứng Chỉ SSL Let's Encrypt CA Trusted Cho `crm.ceo1983.viconnect.vn` & `ceo1983.viconnect.vn`, Khắc Phục Triệt Để Lỗi Zalo `NET::ERR_CERT_AUTHORITY_INVALID` ([NODE-CORE-006])**:
+  - **1. Phân Tích Thực Trạng Nguyên Nhân Gốc Rễ Lỗi SSL**:
+    * Khi kiểm tra trực tiếp qua mạng internet tới IP VPS `14.225.217.232` (port 443 và port 80):
+      - Cổng 80 (HTTP): Nginx máy chủ Ubuntu trước đó thực hiện `301 Moved Permanently` toàn bộ sang `https://crm.ceo1983.viconnect.vn/checkin/...`.
+      - Cổng 443 (HTTPS): Nginx máy chủ đang sử dụng chứng chỉ tự ký OpenSSL (`/etc/nginx/ssl/ceo1983.crt`), chưa được cấp phát chứng chỉ CA Trusted từ Let's Encrypt.
+      - Trình duyệt nhúng Zalo và Android/iOS WebView kiểm tra Root CA rất nghiêm ngặt, từ chối kết nối tự ký và hiển thị màn hình cảnh báo: `Lỗi chứng chỉ bảo mật! Chứng chỉ bảo mật không đáng tin cậy NET::ERR_CERT_AUTHORITY_INVALID`.
+    * **Lý do Certbot trước đây chưa cấp được**:
+      - `setup-ssl.sh` cũ gọi `certbot` trước khi Nginx cập nhật và kích hoạt cấu hình webroot `location /.well-known/acme-challenge/`.
+      - Máy chủ Let's Encrypt kiểm tra HTTP port 80 thì bị Nginx redirect 301 sang HTTPS tự ký, dẫn đến xác thực thất bại.
+  - **2. Giải Pháp Xử Lý Toàn Diện & Tự Động Hóa 100% Trong `deploy/ssl/setup-ssl.sh`**:
+    * **Tự động cài đặt Certbot**: Tự động kiểm tra và cài đặt `certbot` cùng plugin `python3-certbot-nginx` qua `apt-get` nếu chưa có trên VPS.
+    * **Quy trình 2 pha hoàn hảo**:
+      - **Pha 1**: Khởi tạo webroot `/var/www/certbot`, cấu hình Port 80 đón nhận challenge `/.well-known/acme-challenge/` và phục vụ trực tiếp `/checkin` (không redirect). Tải lại Nginx ngay lập tức để port 80 sẵn sàng tiếp nhận kiểm tra ACME từ Let's Encrypt.
+      - **Pha 2**: Kích hoạt Certbot cấp chứng chỉ thật (CA Trusted) cho cả 2 tên miền `crm.ceo1983.viconnect.vn` và `ceo1983.viconnect.vn`.
+    * **Tự động áp dụng & reload Nginx**:
+      - Khi có file chứng chỉ `/etc/letsencrypt/live/.../fullchain.pem`, script tự động gán đường dẫn vào Nginx Host, đồng bộ vào `/root/ssl-proxy/server.crt` cho Docker container, xóa sạch các file cấu hình cũ gây xung đột trong `/etc/nginx/sites-enabled/`, và reload Nginx mượt mà.
+    * **Thiết lập Cron tự động gia hạn**: Đặt cron `0 3 * * * root certbot renew --quiet --deploy-hook "systemctl reload nginx"` tại `/etc/cron.d/certbot-renew`.
+  - **3. Hướng Dẫn Vận Hành Cho Người Dùng**:
+    * Cách 1: Chạy script `.\deploy\ssl\deploy-ssl.ps1` từ máy tính Windows để tự động SCP và kích hoạt trên VPS.
+    * Cách 2: Chạy trực tiếp 1 lệnh trên terminal VPS: `bash /root/ssl-proxy/setup-ssl.sh`.
 - **Bản cập nhật ngày 20/11/2026 (v11.81): Chuẩn Hóa Màu Sắc Email Xác Nhận Check-in Viện Doanh Trí, Bổ Sung Header Trang Trọng Vào File Báo Cáo (Excel, Word, PDF), Thêm Dropdown Chọn Sự Kiện & Khắc Phục Triệt Để Lỗi 404 "Không Tìm Thấy Sự Kiện Nào" ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa 100% Màu Sắc Mẫu Email Xác Nhận Check-in Cá Nhân**:
     * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts` (`sendDoanhTriCheckinSuccessEmail`):
@@ -5536,6 +5576,26 @@
 
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.82): Nâng Cấp Tự Động Cấp Phát Chứng Chỉ SSL Let's Encrypt CA Trusted Cho `crm.ceo1983.viconnect.vn` & `ceo1983.viconnect.vn`, Khắc Phục Triệt Để Lỗi Zalo `NET::ERR_CERT_AUTHORITY_INVALID` ([NODE-CORE-006])**:
+  - **1. Phân Tích Thực Trạng Nguyên Nhân Gốc Rễ Lỗi SSL**:
+    * Khi kiểm tra trực tiếp qua mạng internet tới IP VPS `14.225.217.232` (port 443 và port 80):
+      - Cổng 80 (HTTP): Nginx máy chủ Ubuntu trước đó thực hiện `301 Moved Permanently` toàn bộ sang `https://crm.ceo1983.viconnect.vn/checkin/...`.
+      - Cổng 443 (HTTPS): Nginx máy chủ đang sử dụng chứng chỉ tự ký OpenSSL (`/etc/nginx/ssl/ceo1983.crt`), chưa được cấp phát chứng chỉ CA Trusted từ Let's Encrypt.
+      - Trình duyệt nhúng Zalo và Android/iOS WebView kiểm tra Root CA rất nghiêm ngặt, từ chối kết nối tự ký và hiển thị màn hình cảnh báo: `Lỗi chứng chỉ bảo mật! Chứng chỉ bảo mật không đáng tin cậy NET::ERR_CERT_AUTHORITY_INVALID`.
+    * **Lý do Certbot trước đây chưa cấp được**:
+      - `setup-ssl.sh` cũ gọi `certbot` trước khi Nginx cập nhật và kích hoạt cấu hình webroot `location /.well-known/acme-challenge/`.
+      - Máy chủ Let's Encrypt kiểm tra HTTP port 80 thì bị Nginx redirect 301 sang HTTPS tự ký, dẫn đến xác thực thất bại.
+  - **2. Giải Pháp Xử Lý Toàn Diện & Tự Động Hóa 100% Trong `deploy/ssl/setup-ssl.sh`**:
+    * **Tự động cài đặt Certbot**: Tự động kiểm tra và cài đặt `certbot` cùng plugin `python3-certbot-nginx` qua `apt-get` nếu chưa có trên VPS.
+    * **Quy trình 2 pha hoàn hảo**:
+      - **Pha 1**: Khởi tạo webroot `/var/www/certbot`, cấu hình Port 80 đón nhận challenge `/.well-known/acme-challenge/` và phục vụ trực tiếp `/checkin` (không redirect). Tải lại Nginx ngay lập tức để port 80 sẵn sàng tiếp nhận kiểm tra ACME từ Let's Encrypt.
+      - **Pha 2**: Kích hoạt Certbot cấp chứng chỉ thật (CA Trusted) cho cả 2 tên miền `crm.ceo1983.viconnect.vn` và `ceo1983.viconnect.vn`.
+    * **Tự động áp dụng & reload Nginx**:
+      - Khi có file chứng chỉ `/etc/letsencrypt/live/.../fullchain.pem`, script tự động gán đường dẫn vào Nginx Host, đồng bộ vào `/root/ssl-proxy/server.crt` cho Docker container, xóa sạch các file cấu hình cũ gây xung đột trong `/etc/nginx/sites-enabled/`, và reload Nginx mượt mà.
+    * **Thiết lập Cron tự động gia hạn**: Đặt cron `0 3 * * * root certbot renew --quiet --deploy-hook "systemctl reload nginx"` tại `/etc/cron.d/certbot-renew`.
+  - **3. Hướng Dẫn Vận Hành Cho Người Dùng**:
+    * Cách 1: Chạy script `.\deploy\ssl\deploy-ssl.ps1` từ máy tính Windows để tự động SCP và kích hoạt trên VPS.
+    * Cách 2: Chạy trực tiếp 1 lệnh trên terminal VPS: `bash /root/ssl-proxy/setup-ssl.sh`.
 - **Bản cập nhật ngày 20/11/2026 (v11.81): Chuẩn Hóa Màu Sắc Email Xác Nhận Check-in Viện Doanh Trí, Bổ Sung Header Trang Trọng Vào File Báo Cáo (Excel, Word, PDF), Thêm Dropdown Chọn Sự Kiện & Khắc Phục Triệt Để Lỗi 404 "Không Tìm Thấy Sự Kiện Nào" ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa 100% Màu Sắc Mẫu Email Xác Nhận Check-in Cá Nhân**:
     * Trong `apps/ceo1983_app_be/src/mail/mail.service.ts` (`sendDoanhTriCheckinSuccessEmail`):
