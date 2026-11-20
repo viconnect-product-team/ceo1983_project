@@ -25,6 +25,7 @@ import {
   Building2,
   Calendar,
   MapPin,
+  Mail,
 } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -86,6 +87,7 @@ interface Candidate {
   company: string;
   position: string;
   phone?: string;
+  email?: string;
   code?: string;
   checkedIn: boolean;
 }
@@ -95,9 +97,12 @@ interface WinnerRecord {
   candidateName: string;
   company: string;
   position: string;
+  phone?: string;
+  email?: string;
   prizeTitle: string;
   gift: string;
   wonAt: string;
+  emailSent?: boolean;
 }
 
 const DEFAULT_PRIZES: Prize[] = [
@@ -251,7 +256,8 @@ export function PublicLuckyDrawWheelPage() {
           name: a.memberName || `Đại biểu ${idx + 1}`,
           company: a.company || "Doanh nghiệp",
           position: a.position || "Đại biểu",
-          phone: a.maskedPhone || "",
+          phone: a.phone || a.maskedPhone || "",
+          email: a.email || a.maskedEmail || "",
           code: `VIP-${idx + 1}`,
           checkedIn: Boolean(a.checkedInAt),
         }));
@@ -412,6 +418,49 @@ export function PublicLuckyDrawWheelPage() {
     drawWheel();
   }, [candidates]);
 
+  const [sendingWinnerEmail, setSendingWinnerEmail] = useState(false);
+
+  // Tự động gửi email chúc mừng và thông tin giải thưởng tới người trúng giải
+  const notifyWinnerByEmail = async (cand: Candidate, prize: Prize) => {
+    setSendingWinnerEmail(true);
+    try {
+      const res = await fetchNestApi<any>(`/events/${event.id}/lucky-draw/notify-winner`, {
+        method: "POST",
+        body: JSON.stringify({
+          winnerName: cand.name,
+          winnerEmail: cand.email,
+          winnerPhone: cand.phone,
+          winnerCompany: cand.company,
+          winnerPosition: cand.position,
+          prizeName: prize.title,
+          prizeRank: prize.title,
+          prizeDescription: prize.gift,
+          eventName: event.name || "KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ",
+        }),
+      });
+
+      if (res?.sent) {
+        toast.success(`Đã tự động gửi thông tin phần thưởng tới email: ${res.email}`);
+        setWinners((prev) =>
+          prev.map((w) =>
+            w.candidateName === cand.name
+              ? { ...w, emailSent: true, email: res.email }
+              : w,
+          ),
+        );
+        setLatestWinner((prev) =>
+          prev ? { ...prev, emailSent: true, email: res.email } : null,
+        );
+      } else if (res?.reason) {
+        console.info(`[LuckyDraw] Mail notice: ${res.reason}`);
+      }
+    } catch (err: any) {
+      console.warn("[LuckyDraw] Send winner email failed:", err);
+    } finally {
+      setSendingWinnerEmail(false);
+    }
+  };
+
   // Xử lý quay số
   const handleSpin = () => {
     if (spinning || candidates.length === 0) return;
@@ -472,9 +521,12 @@ export function PublicLuckyDrawWheelPage() {
           candidateName: winnerCandidate.name,
           company: winnerCandidate.company,
           position: winnerCandidate.position,
+          phone: winnerCandidate.phone,
+          email: winnerCandidate.email,
           prizeTitle: activePrize.title,
           gift: activePrize.gift,
           wonAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          emailSent: false,
         };
 
         // Giảm số lượng giải còn lại
@@ -485,6 +537,9 @@ export function PublicLuckyDrawWheelPage() {
         // Lưu vào danh sách trúng
         setWinners((prev) => [newRecord, ...prev]);
         setLatestWinner(newRecord);
+
+        // Tự động gửi email chúc mừng và thông tin phần thưởng tới đại biểu trúng giải
+        notifyWinnerByEmail(winnerCandidate, activePrize);
 
         // Bật pháo hoa & chúc mừng
         if (soundEnabled) playFanfareSound();
@@ -817,6 +872,12 @@ export function PublicLuckyDrawWheelPage() {
                         {w.prizeTitle}
                       </span>
                       <div className="text-[10px] text-slate-400 mt-1">{w.wonAt}</div>
+                      {w.emailSent && (
+                        <div className="text-[9.5px] font-semibold text-emerald-600 mt-0.5 flex items-center justify-end gap-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          <span>Đã gửi mail</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -914,6 +975,36 @@ export function PublicLuckyDrawWheelPage() {
               <div className="text-base sm:text-lg font-black text-emerald-800 mt-1">
                 {latestWinner.gift}
               </div>
+            </div>
+
+            {/* Trạng thái gửi Email thông tin phần thưởng */}
+            <div className="my-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between gap-2 text-left">
+              <div className="flex items-center gap-2 min-w-0">
+                <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="truncate">
+                  {latestWinner.emailSent
+                    ? `Đã gửi thông tin phần thưởng tới: ${latestWinner.email || "email đại biểu"}`
+                    : `Hệ thống tự động gửi thông tin phần thưởng về email đại biểu!`}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const cand = candidates.find((c) => c.name === latestWinner.candidateName) || {
+                    id: "temp",
+                    name: latestWinner.candidateName,
+                    company: latestWinner.company,
+                    position: latestWinner.position,
+                    email: latestWinner.email,
+                    checkedIn: true,
+                  };
+                  notifyWinnerByEmail(cand, activePrize);
+                }}
+                disabled={sendingWinnerEmail}
+                className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shrink-0 transition cursor-pointer disabled:opacity-50"
+              >
+                {sendingWinnerEmail ? "Đang gửi..." : "Gửi lại mail"}
+              </button>
             </div>
 
             <div className="flex gap-3 mt-6">

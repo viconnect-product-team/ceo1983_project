@@ -1,5 +1,39 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.88): Bổ Sung Trường Giá Vé Sửa Sự Kiện (Đồng Bộ Free 0đ CSDL 113.20.107.184:6432), Cập Nhật Biểu Đồ Biểu Quyết Realtime & Tự Động Bắn Email Quà Tặng Cho Người Trúng Thưởng Vòng Quay May Mắn ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Bổ Sung Trường Chỉnh Sửa Giá Vé / Phí Tham Gia & Đưa Sự Kiện Về Miễn Phí (Free 0đ)**:
+    * **Frontend CRM**:
+      - `apps/ceo1983_app_fe/src/routes/events.$eventId.tsx`: Đã thêm trường `ticketPrice` ("Giá vé / Phí tham gia (VNĐ - Điền 0 nếu Miễn phí)") vào danh sách trường `fields` của `CrudModal` sửa sự kiện.
+      - `apps/ceo1983_app_fe/src/routes/events.index.tsx`: Đồng bộ hóa form tạo mới / sửa sự kiện từ danh sách tổng thể để nhận và gửi `ticketPrice` cùng `fee`.
+    * **Backend NestJS (`apps/ceo1983_app_be/src/events/events.service.ts`)**:
+      - Trong hàm `updateEvent`: Tự động cập nhật đồng bộ bảng vé `public.event_ticket_types` (`UPDATE public.event_ticket_types SET price = $1, updated_at = now() WHERE event_id = $2`) khi admin sửa giá vé / phí tham gia.
+    * **Kiểm tra CSDL Chuẩn 113.20.107.184:6432**:
+      - Xác nhận bản ghi sự kiện Viện Doanh Trí `event-doanhtri-20261121` đã lưu `ticket_price = 0, fee = 0` và toàn bộ hạng vé mời liên quan trong `event_ticket_types` có `price = 0` (Miễn phí 100%).
+  - **2. Cơ Chế Realtime Biểu Đồ & Dữ Liệu Biểu Quyết Tự Động Khi Nhận Ý Kiến Từ Email**:
+    * **Form Biểu Quyết Public (`apps/ceo1983_app_fe/src/routes/vote.$pollId.tsx`)**:
+      - Kích hoạt cơ chế Polling thời gian thực mỗi 2.5 giây (`setInterval`) gọi API `/voting/public/polls/:id` để liên tục kéo dữ liệu số phiếu mới nhất.
+      - Khi bất kỳ ai vote từ email, giao diện biểu đồ phân bổ sao (1-5★), thanh tỷ lệ phần trăm và điểm số trung bình (VD: 4.9/5.0 ⭐) tự động nhảy số theo thời gian thực mà không cần người xem phải tải lại trang.
+    * **Màn Hình Quản Trị CRM (`apps/ceo1983_app_fe/src/routes/voting.tsx`)**:
+      - Chuyển danh sách biểu quyết sang state `liveVotes`, thiết lập vòng lặp đồng bộ tự động 3 giây gọi API quản trị `listVotesFn()`.
+      - Toàn bộ kết quả biểu quyết, số lượt tham gia và biểu đồ trên CRM của Ban Tổ Chức tự động nhảy số tức thì khi đại biểu ngoài hội trường tham gia vote.
+  - **3. Tự Động Gửi Email Chúc Mừng & Hướng Dẫn Nhận Thưởng Cho Người Trúng Bốc Thăm (Lucky Draw)**:
+    * **Template Email Viện Doanh Trí (`apps/ceo1983_app_be/src/mail/mail.service.ts`)**:
+      - Phát triển method `sendDoanhTriLuckyDrawWinnerEmail`: Thiết kế chuẩn nhận diện xanh thương hiệu Viện Doanh Trí (`#005BAC` và `#00A859`), khung vinh danh trang trọng, thể hiện chi tiết tên giải thưởng, hiện vật quà tặng, hướng dẫn nhận giải tại sân khấu hoặc bàn lễ tân và hotline Ban Tổ Chức `0988.870.888 / 0903.203.204`.
+    * **Backend Endpoint (`apps/ceo1983_app_be`)**:
+      - `events.service.ts`: Thêm method `notifyLuckyDrawWinner(eventId, body)`. Tự động tra cứu email của người thắng từ CSDL `113.20.107.184:6432` theo họ tên hoặc số điện thoại nếu dữ liệu client chưa có email.
+      - `events.controller.ts`: Mở endpoint `@Post(':id/lucky-draw/notify-winner')`.
+    * **Frontend Vòng Quay May Mắn (`apps/ceo1983_app_fe/src/routes/lucky-draw.$eventId.tsx`)**:
+      - Map đầy đủ `email` và `phone` của đại biểu check-in từ CSDL.
+      - Tự động gọi API gửi mail chúc mừng ngay khi kim vòng quay dừng lại và xác định được người trúng thưởng.
+      - Modal chúc mừng hiển thị rõ trạng thái email và nút bấm dự phòng "Gửi lại mail" cho Ban Tổ Chức.
+      - Bảng lịch sử trúng thưởng bổ sung nhãn `✓ Đã gửi mail`.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * TanStack Router Tree: `node apps/ceo1983_app_fe/scripts/gen-routes.mjs` -> **Exit code 0 (Success)**.
+    * CSDL: Tuân thủ nghiêm ngặt máy chủ duy nhất `113.20.107.184:6432`.
+    * Git: Tuân thủ quy định tối cao không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.87): Hoàn Thành 3 Yêu Cầu Nâng Cấp Viện Doanh Trí: Xóa Bỏ Mã QR HTTP & Chuẩn Hóa Header Xanh; Bốc Thăm Trúng Thưởng Public Dạng Vòng Quay Xoay (Theme Sáng, Pháo Hoa, Setup Giải); Cổng Biểu Quyết Public Hỗ Trợ Vote Sao 1-5★, Biểu Đồ Kết Quả & Gửi Mail Đại Biểu Đã Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Xóa Bỏ Hoàn Toàn Mã QR HTTP & Chuẩn Hóa Header Màu Xanh Viện Doanh Trí**:
     * Trong `apps/ceo1983_app_fe/src/components/events/EventCheckinQrModal.tsx`:

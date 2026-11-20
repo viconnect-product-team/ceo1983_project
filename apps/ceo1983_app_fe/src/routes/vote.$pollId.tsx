@@ -114,6 +114,22 @@ export function PublicPollVotePage() {
     }
   };
 
+  // Tự động đồng bộ Realtime biểu đồ kết quả biểu quyết theo thời gian thực (mỗi 2.5 giây)
+  useEffect(() => {
+    if (!poll?.id) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetchNestApi<any>(`/voting/public/polls/${poll.id}`).catch(() => null);
+        if (res && res.id) {
+          setPoll(res);
+        }
+      } catch {
+        // Silent background sync
+      }
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [poll?.id]);
+
   const handleVoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 

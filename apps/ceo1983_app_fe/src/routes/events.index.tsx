@@ -240,7 +240,8 @@ function EventsPage() {
       const payload = {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
-        ticketPrice: v.ticketPrice ? Number(v.ticketPrice) : 0,
+        ticketPrice: v.ticketPrice !== undefined && v.ticketPrice !== null && v.ticketPrice !== "" ? Number(v.ticketPrice) : 0,
+        fee: v.ticketPrice !== undefined && v.ticketPrice !== null && v.ticketPrice !== "" ? Number(v.ticketPrice) : 0,
         qrStaff: v.qrStaff || [],
         qrScanners: v.qrStaff || [],
       };
@@ -1007,10 +1008,12 @@ ${(e as any).description ? `📝 Chi tiết: ${(e as any).description}\n\n` : ""
           editing
             ? ({
                 ...editing,
+                ticketPrice: (editing as any).ticketPrice ?? (editing as any).ticket_price ?? (editing as any).fee ?? 0,
+                fee: (editing as any).fee ?? (editing as any).ticketPrice ?? 0,
                 sponsors: editing.sponsors || [],
                 qrStaff: (editing as any).qrStaff || (editing as any).qrScanners || [],
               } as unknown as CrudValues)
-            : { sponsors: [], qrStaff: [] }
+            : { ticketPrice: 0, fee: 0, sponsors: [], qrStaff: [] }
         }
         submitting={submitting}
         submitLabel={editing ? t("common.save") : t("common.create")}

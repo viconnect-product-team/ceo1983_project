@@ -3803,4 +3803,111 @@ export class MailService {
       auditContext: `[POLL_INVITATION] ${pollTitle} sent to ${cleanTo}`,
     });
   }
+
+  /**
+   * Gửi email chúc mừng và thông tin phần thưởng cho đại biểu trúng giải Bốc thăm may mắn (Lucky Draw) - Viện Doanh Trí
+   */
+  async sendDoanhTriLuckyDrawWinnerEmail(options: {
+    to: string;
+    fullName: string;
+    company?: string;
+    position?: string;
+    phone?: string;
+    prizeName: string;
+    prizeRank?: string;
+    prizeDescription?: string;
+    eventTitle?: string;
+  }): Promise<{ ok: boolean; messageId?: string; error?: string }> {
+    const cleanTo = (options.to || '').trim().toLowerCase();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      return { ok: false, error: 'Địa chỉ email người trúng giải không hợp lệ' };
+    }
+
+    const winnerName = options.fullName || 'Quý Đại Biểu';
+    const prizeName = options.prizeName || 'Giải Thưởng May Mắn';
+    const prizeRank = options.prizeRank || 'Giải Thưởng';
+    const prizeDesc = options.prizeDescription || 'Phần quà lưu niệm đặc biệt từ Ban Tổ Chức';
+    const company = options.company ? ` - ${options.company}` : '';
+    const eventTitle = options.eventTitle || 'KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11';
+
+    const subject = `[Viện Doanh Trí] CHÚC MỪNG ANH/CHỊ ${winnerName.toUpperCase()} ĐÃ TRÚNG ${prizeName.toUpperCase()}!`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chúc Mừng Trúng Giải Lucky Draw - Viện Doanh Trí</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .container { max-width: 620px; margin: 20px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header-wave { background: linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%); padding: 36px 24px 28px; text-align: center; color: #ffffff; }
+    .logo-badge { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background-color: #ffffff; color: #005BAC; font-weight: 900; font-size: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 12px; }
+    .header-sub { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #e0f2fe; margin-bottom: 4px; }
+    .header-title { font-size: 20px; font-weight: 900; margin: 0; line-height: 1.3; }
+    .content { padding: 32px 28px; background-color: #ffffff; }
+    .congrats-banner { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border: 2px dashed #f59e0b; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 24px; }
+    .prize-card { background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: 18px; padding: 22px; margin-bottom: 24px; text-align: center; }
+    .prize-rank { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0369a1; letter-spacing: 1.5px; margin-bottom: 6px; }
+    .prize-title { font-size: 22px; font-weight: 900; color: #005BAC; margin-bottom: 10px; line-height: 1.3; }
+    .prize-desc { font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500; }
+    .instruction-box { background-color: #f8fafc; border-radius: 14px; padding: 18px; border-left: 4px solid #00A859; margin-bottom: 24px; }
+    .footer { background-color: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-wave">
+      <div class="logo-badge">DT</div>
+      <div class="header-sub">VIỆN DOANH TRÍ • VÒNG QUAY MAY MẮN</div>
+      <h1 class="header-title">CHÚC MỪNG TRÚNG THƯỞNG!</h1>
+    </div>
+    <div class="content">
+      <div class="congrats-banner">
+        <div style="font-size: 32px; margin-bottom: 6px;">🎉 🏆 🎁</div>
+        <div style="font-size: 13px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 1px;">KẾT QUẢ BỐC THĂM MAY MẮN</div>
+        <div style="font-size: 18px; font-weight: 900; color: #1e293b; margin-top: 4px;">Kính chúc mừng Anh/Chị: <span style="color: #005BAC;">${winnerName}</span>${company}</div>
+      </div>
+
+      <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 20px 0;">
+        Ban Lãnh Đạo và Ban Tổ Chức <strong>Viện Doanh Trí</strong> xin gửi lời chúc mừng nồng nhiệt nhất tới Quý Anh/Chị đã trở thành người may mắn trúng giải thưởng tại chương trình <strong>${eventTitle}</strong>:
+      </p>
+
+      <div class="prize-card">
+        <div class="prize-rank">★ ${prizeRank} ★</div>
+        <div class="prize-title">${prizeName}</div>
+        <div class="prize-desc">🎁 <strong>Chi tiết phần thưởng:</strong> ${prizeDesc}</div>
+      </div>
+
+      <div class="instruction-box">
+        <strong style="color: #0f172a; font-size: 13px;">📌 HƯỚNG DẪN NHẬN GIẢI THƯỞNG:</strong>
+        <p style="font-size: 13px; color: #334155; margin: 6px 0 0 0; line-height: 1.6;">
+          • Kính mời Quý Anh/Chị tiến lên sân khấu chính (hoặc liên hệ bàn Lễ tân Ban Tổ Chức tại hội trường) để nhận phần quà lưu niệm ý nghĩa.<br/>
+          • Quý Anh/Chị có thể xuất trình email này hoặc đọc Họ tên & Số điện thoại khi nhận giải.
+        </p>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; text-align: center; margin: 0;">
+        Trân trọng cảm ơn sự hiện diện và đồng hành của Quý Anh/Chị cùng Viện Doanh Trí!
+      </p>
+    </div>
+    <div class="footer">
+      <strong>VIỆN DOANH TRÍ</strong><br/>
+      Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội<br/>
+      Hotline Ban Tổ Chức: <strong>0988.870.888 / 0903.203.204</strong>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Ban Tổ Chức Viện Doanh Trí',
+      auditContext: `[LUCKY_DRAW_WINNER] ${prizeName} to ${winnerName} (${cleanTo})`,
+    });
+  }
 }

@@ -1126,6 +1126,14 @@ export class EventsService implements OnModuleInit {
       `.catch(() => null);
     }
 
+    if (data.ticketPrice !== undefined || data.fee !== undefined) {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE public.event_ticket_types SET price = $1, updated_at = now() WHERE event_id = $2`,
+        safeTicketPrice,
+        id,
+      ).catch(() => null);
+    }
+
     if (evImg && evImg !== current.image) {
       try {
         let folderId: string | null = null;
@@ -5245,5 +5253,83 @@ export class EventsService implements OnModuleInit {
     targetEmail: string,
   ) {
     return this.sendCheckinReportEmail(userId, eventId, targetEmail, 'excel');
+  }
+
+  /**
+   * Tự động gửi email thông tin phần thưởng chúc mừng đại biểu trúng giải Lucky Draw
+   */
+  async notifyLuckyDrawWinner(
+    eventId: string,
+    body: {
+      winnerName: string;
+      winnerEmail?: string;
+      winnerPhone?: string;
+      winnerCompany?: string;
+      winnerPosition?: string;
+      prizeName: string;
+      prizeRank?: string;
+      prizeDescription?: string;
+      eventName?: string;
+    },
+  ) {
+    let email = (body.winnerEmail || '').trim().toLowerCase();
+    const winnerName = (body.winnerName || '').trim();
+    const winnerPhone = (body.winnerPhone || '').trim();
+
+    // Nếu email chưa có hoặc không hợp lệ, truy vấn CSDL 113.20.107.184:6432 để tìm email chính xác của đại biểu
+    if ((!email || !email.includes('@')) && (winnerName || winnerPhone)) {
+      const found = await this.prisma.$queryRaw<any[]>`
+        SELECT email FROM public.event_registrations
+        WHERE event_id = ${eventId}
+          AND (
+            member_name ILIKE ${winnerName}
+            OR (${winnerPhone} <> '' AND phone = ${winnerPhone})
+          )
+        ORDER BY created_at DESC
+        LIMIT 1
+      `.catch(() => []);
+
+      if (found.length > 0 && found[0].email) {
+        email = String(found[0].email).trim().toLowerCase();
+      }
+    }
+
+    if (!email || !email.includes('@') || email.endsWith('@doanhtri.vn')) {
+      return {
+        ok: true,
+        sent: false,
+        reason: 'Không tìm thấy địa chỉ email cá nhân hợp lệ của đại biểu để gửi thư',
+      };
+    }
+
+    try {
+      const res = await this.mailService.sendDoanhTriLuckyDrawWinnerEmail({
+        to: email,
+        fullName: winnerName || 'Quý Đại Biểu',
+        company: body.winnerCompany,
+        position: body.winnerPosition,
+        phone: winnerPhone,
+        prizeName: body.prizeName || 'Giải Thưởng May Mắn',
+        prizeRank: body.prizeRank || 'Giải Thưởng',
+        prizeDescription: body.prizeDescription,
+        eventTitle:
+          body.eventName ||
+          'KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11',
+      });
+
+      return {
+        ok: true,
+        sent: res.ok,
+        email,
+        message: res.ok
+          ? `Đã gửi thông tin phần thưởng tới email: ${email}`
+          : res.error || 'Lỗi gửi email',
+      };
+    } catch (err: any) {
+      this.logger.warn(
+        `[notifyLuckyDrawWinner] Failed for ${email}: ${err?.message}`,
+      );
+      return { ok: false, sent: false, error: err?.message };
+    }
   }
 }

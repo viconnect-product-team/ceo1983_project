@@ -252,6 +252,11 @@ function EventDetailPage() {
       ),
     },
     {
+      name: "ticketPrice",
+      label: "Giá vé / Phí tham gia (VNĐ - Điền 0 nếu Miễn phí)",
+      type: "number",
+    },
+    {
       name: "type",
       label: t("events.col.type"),
       type: "select",
@@ -281,6 +286,8 @@ function EventDetailPage() {
       const payload = {
         ...v,
         capacity: v.capacity ? Number(v.capacity) : 0,
+        ticketPrice: v.ticketPrice !== undefined && v.ticketPrice !== null && v.ticketPrice !== "" ? Number(v.ticketPrice) : 0,
+        fee: v.ticketPrice !== undefined && v.ticketPrice !== null && v.ticketPrice !== "" ? Number(v.ticketPrice) : 0,
         imageUrl: v.image || (v as any).imageUrl,
         photoGalleryUrl: (v as any).photoGalleryUrl || (v as any).photo_gallery_url || '',
         startTime: (v as any).startTime || (event as any).startTime,
@@ -784,6 +791,8 @@ function EventDetailPage() {
         fields={fields}
         initial={({
           ...event,
+          ticketPrice: (event as any).ticketPrice ?? (event as any).ticket_price ?? (event as any).fee ?? 0,
+          fee: (event as any).fee ?? (event as any).ticketPrice ?? 0,
           sponsors: event.sponsors || [],
           qrStaff: (event as any).qrStaff || (event as any).qrScanners || [],
         }) as unknown as CrudValues}
