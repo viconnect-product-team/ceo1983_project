@@ -1,5 +1,37 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.91): Triệt Tiêu Dữ Liệu Hardcode Giải Thưởng, Đồng Bộ Hai Chiều CSDL 113.20.107.184:6432, Khắc Phục Lỗi Vẽ Vòng Quay 1 Người & Nâng Cấp Tùy Chỉnh Giao Diện Banner Nền Sân Khấu Hoành Tráng ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Triệt Tiêu Dữ Liệu Hardcode Giải Thưởng & Đồng Bộ Hai Chiều CSDL Thực Tế**:
+    * **Phân tích nguyên nhân**:
+      - Trước đó, `LuckyDrawWheel` khởi tạo giải thưởng từ hằng số `DEFAULT_PRIZES` và chỉ lưu cục bộ vào `localStorage`. Khi người dùng xóa giải, hệ thống chưa đồng bộ lệnh `DELETE` xuống CSDL, dẫn đến khi load lại trang thì danh sách giải bị rollback hoặc không ăn khớp.
+    * **Giải pháp & Triển khai**:
+      - Mở 2 endpoint backend NestJS chuẩn CSDL:
+        + `GET /events/:id/lucky-draw/config`: Tải danh sách giải thưởng thực tế từ bảng `public.event_prizes` và cấu hình từ `public.app_settings` (key `lucky_draw_event_${eventId}`).
+        + `PUT /events/:id/lucky-draw/config`: Khi người dùng Thêm, Sửa hoặc XÓA giải thưởng, hệ thống thực thi xóa triệt để các giải bị loại bỏ (`DELETE FROM public.event_prizes WHERE event_id = $1 AND id NOT IN (...)`), đồng thời upsert các giải còn lại vào CSDL `113.20.107.184:6432`.
+      - Frontend tự động load giải thưởng THẬT từ CSDL ngay khi mở trang, khi xóa giải cũ thì số giải bên vòng quay và thanh chọn giải nhanh lập tức biến mất vĩnh viễn, không còn tình trạng phục hồi dữ liệu hardcode.
+  - **2. Khắc Phục Lỗi Vẽ Vòng Quay Khi Chỉ Có 1 Đại Biểu Check-in**:
+    * **Phân tích**: Khi `candidates.length === 1`, phương thức vẽ canvas cũ vẽ 1 góc `2 * PI` nhưng lại gọi `closePath()`, tạo thành một vạch bán kính chia đôi vòng tròn kỳ dị và chữ bị xoay ngược 180°.
+    * **Khắc phục**:
+      - Với 1 đại biểu: Vẽ đĩa tròn nguyên vẹn 360° (gradient Viện Doanh Trí `#00A859` - `#005BAC`), không vẽ vạch chia đôi.
+      - Tên đại biểu được hiển thị to, rõ nét (font 18px bold), nằm ngang ngay ngắn ở vị trí trung tâm, kèm tên doanh nghiệp và huy hiệu danh dự "⭐ ĐẠI BIỂU DUY NHẤT VÒNG NÀY ⭐".
+      - Với từ 2 đại biểu trở lên: Chia nan quạt chuẩn, căn chỉnh góc xoay chữ xuôi mắt nhìn, không bao giờ bị lộn ngược.
+  - **3. Nâng Cấp Giao Diện Hero Banner & Tùy Chỉnh Giao Diện Thoải Mái**:
+    * **Hero Stage Banner**:
+      - Banner sân khấu hoành tráng: Logo Viện Doanh Trí (DT), huy hiệu "VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM", tiêu đề to nổi bật, thời gian và địa điểm toạ đàm rõ ràng.
+    * **Modal Tùy Chỉnh Giao Diện Thoải Mái (Customization Panel)**:
+      - Tích hợp nút **"🎨 Tùy Chỉnh Giao Diện"** trên header.
+      - **5 Theme Đẳng Cấp**:
+        1. 👑 *Hoàng Kim Sân Khấu (Royal Gold)*: Xanh navy hoàng gia kết hợp vàng ánh kim và hiệu ứng ánh sáng sân khấu.
+        2. 🌿 *Xanh Viện Doanh Trí (Emerald Corporate)*: Phối màu chuẩn thương hiệu `#005BAC` và `#00A859`.
+        3. 💎 *Đại Tiệc Tri Ân (Sapphire Gala)*: Xanh sapphire huyền ảo, trang nhã.
+        4. 🌅 *Bình Minh Khởi Sắc (Warm Amber)*: Tông màu ấm cúng, sang trọng.
+        5. 🖼️ *Ảnh Nền Sân Khấu Tùy Chọn (Custom Backdrop)*: Cho phép dán link ảnh backdrop toạ đàm thật của Viện Doanh Trí và tùy chỉnh độ mờ (opacity) lớp phủ.
+      - Cho phép sửa trực tiếp Tiêu đề, Phụ đề, Ngày giờ, Địa điểm sự kiện và bấm **"Lưu Giao Diện Vào CSDL"** để đồng bộ vĩnh viễn.
+  - **4. Kiểm Tra Chất Lượng Mã Nguồn & CSDL**:
+    * Backend & Frontend: TypeScript Type Check đạt chuẩn 0 errors.
+    * CSDL: Tuân thủ tuyệt đối máy chủ chuẩn `113.20.107.184:6432`.
+    * Git: Tuân thủ nghiêm ngặt quy định không tự ý commit / push.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.90): Hoàn Thiện Toàn Diện 2 Luồng Biểu Quyết (Email Khách Check-in, 1 Người 1 Vote, Realtime Chart) & Vòng Quay May Mắn (Xóa Tên Người Trúng, Ẩn Giải Đã Hết, Kết Quả Dưới Vòng Quay Scroll > 5 Giải) ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Luồng Biểu Quyết Voting Cho Khách Đã Check-in**:
     * **Gửi Thư Mời Biểu Quyết Qua Email**:

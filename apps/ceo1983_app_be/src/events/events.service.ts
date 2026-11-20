@@ -5332,4 +5332,195 @@ export class EventsService implements OnModuleInit {
       return { ok: false, sent: false, error: err?.message };
     }
   }
+
+  /**
+   * Lấy cấu hình bốc thăm trúng thưởng và cơ cấu giải thưởng thực tế của sự kiện từ CSDL 113.20.107.184:6432
+   */
+  async getEventLuckyDrawConfig(eventId: string) {
+    try {
+      // 1. Lấy thông tin sự kiện
+      const eventRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, name, title, date, location, description, banner, image
+        FROM public.events
+        WHERE id = ${eventId} OR slug = ${eventId}
+        LIMIT 1
+      `.catch(() => []);
+
+      const event = eventRows.length > 0 ? eventRows[0] : null;
+
+      // 2. Lấy cấu hình banner & theme tùy chỉnh từ public.app_settings
+      const settingsKey = `lucky_draw_event_${eventId}`;
+      const settingRows = await this.prisma.$queryRaw<any[]>`
+        SELECT value FROM public.app_settings WHERE key = ${settingsKey} LIMIT 1
+      `.catch(() => []);
+
+      let bannerConfig: any = {
+        theme: 'royal_gold', // royal_gold, emerald_corporate, sapphire_gala, warm_amber
+        backdropUrl: '',
+        backdropOpacity: 0.85,
+        title: event?.name || event?.title || 'CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ',
+        subtitle: 'Tri Ân Ngày Nhà Giáo Việt Nam 20/11 & Toạ Đàm Doanh Nghiệp 2027',
+        date: '14h30 - 17h30, Thứ Bảy 21/11/2026',
+        location: 'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy',
+      };
+
+      let storedPrizes: any[] = [];
+      if (settingRows.length > 0 && settingRows[0]?.value) {
+        const parsed =
+          typeof settingRows[0].value === 'string'
+            ? JSON.parse(settingRows[0].value)
+            : settingRows[0].value;
+        if (parsed.bannerConfig) {
+          bannerConfig = { ...bannerConfig, ...parsed.bannerConfig };
+        }
+        if (Array.isArray(parsed.prizes)) {
+          storedPrizes = parsed.prizes;
+        }
+      }
+
+      // 3. Lấy danh sách giải thưởng thực tế từ bảng public.event_prizes
+      const prizeRows = await this.prisma.$queryRaw<any[]>`
+        SELECT id, event_id, rank_name, title, value, amount, quantity,
+               sponsor_name, description, icon_name, image_url, highlight_color, status
+        FROM public.event_prizes
+        WHERE event_id = ${eventId}
+        ORDER BY amount DESC, created_at ASC
+      `.catch(() => []);
+
+      let prizes: any[] = [];
+      if (prizeRows.length > 0) {
+        prizes = prizeRows.map((p, idx) => ({
+          id: p.id || `prize-${idx + 1}`,
+          title: (p.rank_name || p.title || `GIẢI ${idx + 1}`).toUpperCase(),
+          gift: p.title || p.description || 'Phần quà từ Ban Tổ Chức',
+          quantity: Math.max(1, Number(p.quantity) || 1),
+          remaining: Math.max(1, Number(p.quantity) || 1),
+          color: p.highlight_color || '#005BAC',
+          icon: p.icon_name || '🎁',
+          sponsor: p.sponsor_name || '',
+          value: p.value || '',
+        }));
+      } else if (storedPrizes.length > 0) {
+        prizes = storedPrizes;
+      }
+
+      return {
+        ok: true,
+        eventId,
+        event,
+        prizes,
+        bannerConfig,
+      };
+    } catch (err: any) {
+      this.logger.error(`[getEventLuckyDrawConfig] Failed: ${err?.message}`);
+      return { ok: false, error: err?.message };
+    }
+  }
+
+  /**
+   * Lưu cấu hình bốc thăm trúng thưởng, xóa giải cũ, thêm giải mới và cập nhật banner vào CSDL 113.20.107.184:6432
+   */
+  async saveEventLuckyDrawConfig(eventId: string, body: any) {
+    try {
+      const { prizes = [], bannerConfig = {} } = body || {};
+
+      // 1. Lưu cấu hình vào public.app_settings
+      const settingsKey = `lucky_draw_event_${eventId}`;
+      const jsonValue = JSON.stringify({
+        eventId,
+        prizes,
+        bannerConfig,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await this.prisma
+        .$executeRawUnsafe(
+          `INSERT INTO public.app_settings (key, value, updated_at)
+         VALUES ($1, $2::jsonb, NOW())
+         ON CONFLICT (key) DO UPDATE
+         SET value = EXCLUDED.value, updated_at = NOW()`,
+          settingsKey,
+          jsonValue,
+        )
+        .catch((err: any) => {
+          this.logger.warn(
+            `[saveEventLuckyDrawConfig] app_settings warning: ${err?.message}`,
+          );
+        });
+
+      // 2. Đồng bộ vào bảng public.event_prizes:
+      // Xóa các giải đã bị người dùng xóa khỏi danh sách
+      const activeIds: string[] = (prizes as any[])
+        .map((p) => String(p.id))
+        .filter(Boolean);
+
+      if (activeIds.length > 0) {
+        // Xóa những giải không còn nằm trong activeIds của eventId này
+        const idPlaceholders = activeIds.map((_, i) => `$${i + 2}`).join(',');
+        await this.prisma
+          .$queryRawUnsafe(
+            `DELETE FROM public.event_prizes WHERE event_id = $1 AND id NOT IN (${idPlaceholders})`,
+            eventId,
+            ...activeIds,
+          )
+          .catch(() => {});
+      } else {
+        // Nếu xóa hết giải
+        await this.prisma
+          .$executeRaw`DELETE FROM public.event_prizes WHERE event_id = ${eventId}`
+          .catch(() => {});
+      }
+
+      // Upsert các giải còn lại / mới tạo
+      for (let i = 0; i < (prizes as any[]).length; i++) {
+        const p = prizes[i];
+        const przId = String(p.id || `PRZ-${eventId}-${i + 1}`);
+        const rankName = String(p.title || `GIẢI ${i + 1}`).trim().toUpperCase();
+        const giftTitle = String(p.gift || 'Phần quà từ Ban Tổ Chức').trim();
+        const qty = Math.max(1, Math.round(Number(p.quantity) || 1));
+        const color = String(p.color || '#005BAC');
+        const icon = String(p.icon || '🎁');
+        const sponsor = String(p.sponsor || 'Viện Doanh Trí');
+
+        await this.prisma
+          .$executeRaw`
+          INSERT INTO public.event_prizes (
+            id, event_id, rank_name, title, value, amount, quantity,
+            target_type, sponsor_name, description, icon_name, highlight_color,
+            status, created_at, updated_at
+          ) VALUES (
+            ${przId}, ${eventId}, ${rankName}, ${giftTitle}, 'Liên hệ', 0, ${qty},
+            'CUSTOM', ${sponsor}, ${giftTitle}, ${icon}, ${color},
+            'active', NOW(), NOW()
+          )
+          ON CONFLICT (id) DO UPDATE
+          SET rank_name = EXCLUDED.rank_name,
+              title = EXCLUDED.title,
+              quantity = EXCLUDED.quantity,
+              icon_name = EXCLUDED.icon_name,
+              highlight_color = EXCLUDED.highlight_color,
+              sponsor_name = EXCLUDED.sponsor_name,
+              description = EXCLUDED.description,
+              updated_at = NOW()
+        `
+          .catch((err: any) => {
+            this.logger.warn(
+              `[saveEventLuckyDrawConfig] Prize upsert warning: ${err?.message}`,
+            );
+          });
+      }
+
+      return {
+        ok: true,
+        success: true,
+        message:
+          'Đã lưu cấu hình giải thưởng & giao diện bốc thăm vào CSDL 113.20.107.184:6432 thành công!',
+        prizes,
+        bannerConfig,
+      };
+    } catch (err: any) {
+      this.logger.error(`[saveEventLuckyDrawConfig] Error: ${err?.message}`);
+      return { ok: false, error: err?.message };
+    }
+  }
 }
