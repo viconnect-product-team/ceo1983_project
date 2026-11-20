@@ -161,6 +161,28 @@ function VotingPage() {
   const userId = user?.id ?? null;
   const { tab: filter, page, size: PAGE_SIZE } = Route.useSearch();
   const VOTES = Route.useLoaderData() as Vote[];
+  const listVotes = useServerFn(listVotesFn);
+  const [liveVotes, setLiveVotes] = useState<Vote[]>(VOTES);
+
+  useEffect(() => {
+    setLiveVotes(VOTES);
+  }, [VOTES]);
+
+  // Realtime Live: Tự động cập nhật kết quả và biểu đồ biểu quyết mỗi 3 giây khi có đại biểu vote
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await listVotes();
+        if (Array.isArray(res)) {
+          setLiveVotes(res);
+        }
+      } catch {
+        // Silent background sync
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [listVotes]);
+
   const [open, setOpen] = useState(false);
   const [luckyDrawOpen, setLuckyDrawOpen] = useState(false);
   const [showLuckyDrawBanner, setShowLuckyDrawBanner] = useState(true);
@@ -255,13 +277,13 @@ function VotingPage() {
     };
   }, [userId, loadPref]);
 
-  const filtered = VOTES.filter(
+  const filtered = liveVotes.filter(
     (v) => filter === "all" || deriveStatus(v.startsAt, v.endsAt) === filter,
   );
   const countFor = (key: "all" | Vote["status"]) =>
     key === "all"
-      ? VOTES.length
-      : VOTES.filter((v) => deriveStatus(v.startsAt, v.endsAt) === key).length;
+      ? liveVotes.length
+      : liveVotes.filter((v) => deriveStatus(v.startsAt, v.endsAt) === key).length;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);

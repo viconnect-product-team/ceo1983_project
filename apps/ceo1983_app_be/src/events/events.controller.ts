@@ -488,4 +488,15 @@ export class EventsController {
     const userId = req.user?.id || req.user?.sub || 'system';
     return this.eventsService.deleteEvent(userId, id);
   }
+
+  /**
+   * Bốc thăm trúng thưởng: Tự động gửi email chúc mừng và thông tin phần thưởng cho đại biểu trúng giải
+   */
+  @Post(':id/lucky-draw/notify-winner')
+  async notifyLuckyDrawWinner(
+    @Param('id') eventId: string,
+    @Body() body: any,
+  ) {
+    return this.eventsService.notifyLuckyDrawWinner(eventId, body);
+  }
 }
