@@ -232,6 +232,31 @@ export class VotingRepository {
     `.catch(() => {});
   }
 
+  async hasUserVoted(pollId: string, userId: string): Promise<boolean> {
+    const safePollId =
+      toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
+    const safeUserId =
+      toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
+    const rows = await this.prisma.$queryRaw<any[]>`
+      SELECT id FROM public.poll_votes
+      WHERE poll_id = ${safePollId}::uuid AND user_id = ${safeUserId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+    return rows.length > 0;
+  }
+
+  async getUserVote(pollId: string, userId: string): Promise<any[]> {
+    const safePollId =
+      toValidUuid(pollId) || '00000000-0000-0000-0000-000000000000';
+    const safeUserId =
+      toValidUuid(userId) || '00000000-0000-0000-0000-000000000000';
+    return this.prisma.$queryRaw<any[]>`
+      SELECT id, option_id, source_app, created_at FROM public.poll_votes
+      WHERE poll_id = ${safePollId}::uuid AND user_id = ${safeUserId}::uuid
+      LIMIT 1
+    `.catch(() => []);
+  }
+
   async findEventDate(eventId: string): Promise<any[]> {
     const validEvId = toValidUuid(eventId);
     if (!validEvId) return [];

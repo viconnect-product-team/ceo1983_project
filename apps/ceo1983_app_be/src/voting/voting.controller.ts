@@ -22,8 +22,11 @@ export class VotingController {
    * Endpoint biểu quyết công khai (dành cho đại biểu quét QR / mở link ngoài hệ thống)
    */
   @Get('public/polls/:id')
-  async getPublicPoll(@Param('id') id: string) {
-    return this.votingService.getPublicPoll(id);
+  async getPublicPoll(
+    @Param('id') id: string,
+    @Query('email') email?: string,
+  ) {
+    return this.votingService.getPublicPoll(id, email);
   }
 
   /**
